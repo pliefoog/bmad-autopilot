@@ -1,0 +1,46 @@
+name: Perf Harness Run (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'Sample file path (relative to boatingInstrumentsApp)'
+        required: true
+        default: 'vendor/sample-data/high_density.nmea'
+      rate:
+        description: 'Target messages per second'
+        required: true
+        default: '500'
+      duration:
+        description: 'Duration seconds'
+        required: true
+        default: '10'
+
+jobs:
+  run-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        working-directory: boatingInstrumentsApp
+        run: npm ci
+
+      - name: Run bench
+        working-directory: boatingInstrumentsApp
+        run: |
+          mkdir -p vendor/bench-results
+          node scripts/bench/playback-bench.js ${{ github.event.inputs.file }} ${{ github.event.inputs.rate }} ${{ github.event.inputs.duration }} --csv vendor/bench-results/bench-$(date +"%s").csv
+
+      - name: Upload bench CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-csv
+          path: boatingInstrumentsApp/vendor/bench-results/*.csv

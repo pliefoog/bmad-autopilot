@@ -1,0 +1,143 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { WidgetCard } from './WidgetCard';
+import { useNmeaStore } from '../core/nmeaStore';
+import { useTheme } from '../core/themeStore';
+
+type TempUnit = 'celsius' | 'fahrenheit';
+
+interface TempReading {
+  timestamp: number;
+  temperature: number;
+}
+
+export const WaterTemperatureWidget: React.FC = () => {
+  const waterTemp = useNmeaStore((state: any) => state.nmeaData.waterTemperature);
+  const theme = useTheme();
+  const [unit, setUnit] = useState<TempUnit>('celsius');
+  const [tempHistory, setTempHistory] = useState<TempReading[]>([]);
+
+  // Track temperature history for trend analysis
+  useEffect(() => {
+    if (waterTemp !== undefined && waterTemp !== null) {
+      const now = Date.now();
+      const oneHourAgo = now - 60 * 60 * 1000;
+      
+      setTempHistory(prev => {
+        const newHistory = [...prev, { timestamp: now, temperature: waterTemp }];
+        return newHistory.filter(reading => reading.timestamp > oneHourAgo);
+      });
+    }
+  }, [waterTemp]);
+
+  const convertTemperature = (tempC: number | undefined): { value: string; unitStr: string } => {
+    if (tempC === undefined || tempC === null) return { value: '--', unitStr: '°C' };
+    
+    switch (unit) {
+      case 'fahrenheit':
+        return { value: (tempC * 9/5 + 32).toFixed(1), unitStr: '°F' };
+      default:
+        return { value: tempC.toFixed(1), unitStr: '°C' };
+    }
+  };
+
+  const getTrend = (): 'up' | 'down' | 'stable' | null => {
+    if (tempHistory.length < 3) return null;
+    const recent = tempHistory.slice(-3);
+    const trend = recent[2].temperature - recent[0].temperature;
+    if (Math.abs(trend) < 0.5) return 'stable';
+    return trend > 0 ? 'up' : 'down';
+  };
+
+  const getTemperatureInfo = (temp: number): { status: string; color: string; state: 'normal' | 'highlighted' | 'alarm' } => {
+    // Temperature ranges for marine conditions
+    if (temp < 0) return { status: 'Freezing', color: theme.error, state: 'alarm' };
+    if (temp < 5) return { status: 'Very Cold', color: theme.warning, state: 'highlighted' };
+    if (temp < 15) return { status: 'Cold', color: theme.primary, state: 'normal' };
+    if (temp < 25) return { status: 'Moderate', color: theme.success, state: 'normal' };
+    if (temp < 30) return { status: 'Warm', color: theme.primary, state: 'normal' };
+    if (temp < 35) return { status: 'Hot', color: theme.warning, state: 'highlighted' };
+    return { status: 'Very Hot', color: theme.error, state: 'alarm' };
+  };
+
+  const getState = () => {
+    if (waterTemp === undefined || waterTemp === null) return 'no-data';
+    const tempInfo = getTemperatureInfo(waterTemp);
+    return tempInfo.state;
+  };
+
+  const { value, unitStr } = convertTemperature(waterTemp);
+  const trend = getTrend();
+  const tempInfo = waterTemp !== undefined ? getTemperatureInfo(waterTemp) : { status: '', color: theme.textSecondary };
+  const state = getState();
+
+  const cycleUnit = () => {
+    setUnit(unit === 'celsius' ? 'fahrenheit' : 'celsius');
+  };
+
+  const averageTemp = tempHistory.length > 0 
+    ? tempHistory.reduce((sum, reading) => sum + reading.temperature, 0) / tempHistory.length
+    : waterTemp;
+
+  return (
+    <TouchableOpacity onPress={cycleUnit}>
+      <WidgetCard
+        title="WATER TEMP"
+        icon="thermometer"
+        value={value}
+        unit={unitStr}
+        state={state}
+        secondary={tempInfo.status}
+      >
+        <View style={styles.trendContainer}>
+          {trend && (
+            <View style={styles.trendIndicator}>
+              <Ionicons
+                name={
+                  trend === 'up' ? 'trending-up' :
+                  trend === 'down' ? 'trending-down' : 'remove'
+                }
+                size={16}
+                color={
+                  trend === 'up' ? theme.warning :
+                  trend === 'down' ? theme.primary :
+                  theme.textSecondary
+                }
+              />
+              <Text style={[styles.trendText, { color: theme.textSecondary }]}>
+                {trend === 'up' ? 'Rising' : trend === 'down' ? 'Falling' : 'Stable'}
+              </Text>
+            </View>
+          )}
+        </View>
+        
+        {averageTemp !== undefined && waterTemp !== undefined && Math.abs(averageTemp - waterTemp) > 0.5 && (
+          <Text style={[styles.averageText, { color: theme.textSecondary }]}>
+            1h Avg: {unit === 'celsius' ? averageTemp.toFixed(1) + '°C' : (averageTemp * 9/5 + 32).toFixed(1) + '°F'}
+          </Text>
+        )}
+      </WidgetCard>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  trendContainer: {
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  trendIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  trendText: {
+    fontSize: 10,
+    marginLeft: 4,
+  },
+  averageText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+});

@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Create test file for NmeaConnectionManager",
+			"type": "shell",
+			"command": "touch boatingInstrumentsApp/__tests__/nmeaConnection.test.ts",
+			"args": [],
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "test"
+		}
+	]
+}

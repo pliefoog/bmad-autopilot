@@ -1,0 +1,4 @@
+3c8b10b feat: complete marine instrument dashboard codebase
+0498063 feat: implement autopilot control screen with marine UI
+15f448f feat: implement compact, responsive widget system with day theme
+f84ef34 Initial commit

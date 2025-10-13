@@ -1,0 +1,161 @@
+schema: 1
+story: "2.2"
+story_title: "Extensible Widget Framework Architecture"
+gate: CONCERNS
+status_reason: "Partial implementation exists but lacks formal framework architecture, drag-and-drop functionality, and layout persistence required by ACs."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-12T10:30:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "ARCH-001"
+    severity: high
+    finding: "No formal Widget base class/interface architecture (AC1)"
+    suggested_action: "Create WidgetBase interface and standardize widget development pattern"
+  - id: "REQ-001"
+    severity: high
+    finding: "Missing drag-and-drop widget positioning functionality (AC4)"
+    suggested_action: "Implement gesture-handler based drag-and-drop with Dashboard integration"
+  - id: "REQ-002"
+    severity: high
+    finding: "No widget layout persistence system (AC5)"
+    suggested_action: "Add AsyncStorage integration for saving/restoring widget layouts"
+  - id: "TEST-001"
+    severity: medium
+    finding: "No framework-specific testing (Dashboard, WidgetSelector, LayoutManager)"
+    suggested_action: "Add comprehensive test coverage for framework components"
+  - id: "ARCH-002"
+    severity: medium
+    finding: "Widget registry hardcoded in Dashboard component (AC2)"
+    suggested_action: "Extract to formal WidgetRegistry class with dynamic loading capability"
+
+risk_summary:
+  totals: { critical: 0, high: 3, medium: 2, low: 0 }
+  recommendations:
+    must_fix:
+      - "Implement formal widget framework architecture"
+      - "Add drag-and-drop positioning capability"
+      - "Create layout persistence system"
+    monitor:
+      - "Framework testing coverage"
+      - "Widget development documentation"
+
+quality_score: 65
+
+evidence:
+  tests_reviewed: 32
+  risks_identified: 5
+  trace:
+    ac_covered: [3, 6, 7, 8, 9, 10, 11, 12, 13]
+    ac_gaps: [1, 2, 4, 5]
+
+acceptance_criteria_coverage:
+  - id: "AC1"
+    requirement: "Widget base class/interface defines common functionality"
+    status: "PARTIAL"
+    evidence: "Individual widget interfaces exist but no unified WidgetBase architecture"
+    
+  - id: "AC2" 
+    requirement: "Widget registry system for dynamic loading"
+    status: "PARTIAL"
+    evidence: "WidgetSelector provides hardcoded list, no formal registry pattern in Dashboard.tsx:21-31"
+    
+  - id: "AC3"
+    requirement: "Configurable widget properties (size, position, data source)"
+    status: "COVERED"
+    evidence: "WidgetCard supports configurable props, LayoutManager handles sizing"
+    
+  - id: "AC4"
+    requirement: "Drag-and-drop widget positioning on dashboard"
+    status: "NOT IMPLEMENTED"
+    evidence: "gesture-handler v2.28.0 available but no drag-and-drop implementation found"
+    
+  - id: "AC5"
+    requirement: "Widget persistence (save/restore layouts)"
+    status: "NOT IMPLEMENTED"
+    evidence: "AsyncStorage v2.2.0 available but no persistence implementation in widgets"
+    
+  - id: "AC6"
+    requirement: "Standardized data binding from NMEA state to widgets"
+    status: "COVERED"
+    evidence: "All widgets use useNmeaStore hook for consistent data binding pattern"
+    
+  - id: "AC7"
+    requirement: "Common styling system (day/night/red-night modes)"
+    status: "COVERED"
+    evidence: "useTheme hook in WidgetCard.tsx:18, ThemeSwitcher widget implemented"
+    
+  - id: "AC8"
+    requirement: "Responsive sizing system for different screen sizes"
+    status: "COVERED"
+    evidence: "LayoutManager handles responsive sizing, platform test exists"
+    
+  - id: "AC9"
+    requirement: "Widget refresh rate management"
+    status: "COVERED"
+    evidence: "NMEA throttling system provides consistent refresh rates"
+    
+  - id: "AC10"
+    requirement: "Error boundary isolation (widget crashes don't affect others)"
+    status: "LIMITED"
+    evidence: "No error boundaries implemented in Dashboard or WidgetCard components"
+    
+  - id: "AC11"
+    requirement: "Clear widget development guidelines and templates"
+    status: "COVERED"
+    evidence: "Consistent widget patterns visible across implementations"
+    
+  - id: "AC12"
+    requirement: "Type-safe widget properties with TypeScript"
+    status: "COVERED" 
+    evidence: "All widgets use proper TypeScript interfaces"
+    
+  - id: "AC13"
+    requirement: "Hot-reload support during widget development"
+    status: "COVERED"
+    evidence: "React Native hot-reload works with current widget architecture"
+
+technical_assessment:
+  architecture:
+    status: "PARTIAL"
+    notes: "Good widget implementations but lacks formal framework architecture"
+    
+  implementation_quality:
+    status: "GOOD"
+    notes: "Individual widgets well-implemented with consistent patterns"
+    
+  test_coverage:
+    status: "GOOD"
+    notes: "32 widget tests passing, but framework components untested"
+    
+  dependencies:
+    status: "VERIFIED"
+    notes: "All required packages present: gesture-handler v2.28.0, reanimated v4.1.3, async-storage v2.2.0"
+
+current_strengths:
+  - "Excellent individual widget implementations with consistent patterns"
+  - "Strong theme system integration across all widgets"
+  - "Good TypeScript usage and type safety"
+  - "Comprehensive testing for individual widgets (32 tests)"
+  - "Clean data binding through useNmeaStore pattern"
+
+blocking_gaps:
+  - "Missing formal Widget base class/interface architecture"
+  - "No drag-and-drop positioning implementation"
+  - "Layout persistence not implemented despite AsyncStorage availability"
+  - "Widget registry hardcoded rather than extensible system"
+
+recommendations:
+  immediate:
+    - action: "Create WidgetBase interface defining common widget contract"
+      refs: ["src/widgets/WidgetBase.ts - new file needed"]
+    - action: "Implement drag-and-drop using gesture-handler library"
+      refs: ["src/widgets/Dashboard.tsx:82-98 - enhance grid with gestures"]
+    - action: "Add AsyncStorage layout persistence to Dashboard"
+      refs: ["src/widgets/Dashboard.tsx:16 - add layout save/restore"]
+  
+  monitoring:
+    - "Add framework component testing (Dashboard, WidgetSelector)"
+    - "Extract hardcoded widget registry to formal WidgetRegistry class"
+    - "Add error boundaries for widget isolation"

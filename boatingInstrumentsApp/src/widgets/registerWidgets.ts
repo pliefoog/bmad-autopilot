@@ -1,0 +1,181 @@
+import { WidgetRegistry } from './WidgetRegistry';
+import { DepthWidget } from './DepthWidget';
+import { SpeedWidget } from './SpeedWidget';
+import { WindWidget } from './WindWidget';
+import { GPSWidget } from './GPSWidget';
+import { CompassWidget } from './CompassWidget';
+import { EngineWidget } from './EngineWidget';
+import { BatteryWidget } from './BatteryWidget';
+import { TanksWidget } from './TanksWidget';
+import { AutopilotStatusWidget } from './AutopilotStatusWidget';
+import { RudderPositionWidget } from './RudderPositionWidget';
+import { WaterTemperatureWidget } from './WaterTemperatureWidget';
+import { ThemeSwitcher } from './ThemeSwitcher';
+
+/**
+ * Register all available widgets with the registry system
+ * This replaces the hardcoded widget lists in Dashboard and WidgetSelector
+ */
+export function registerAllWidgets(): void {
+  // Navigation widgets
+  WidgetRegistry.register(
+    {
+      id: 'depth',
+      title: 'Depth',
+      icon: 'water-outline',
+      description: 'Water depth sounder display',
+      category: 'navigation',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    DepthWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'speed',
+      title: 'Speed',
+      icon: 'speedometer-outline',
+      description: 'Vessel speed over ground',
+      category: 'navigation',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    SpeedWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'gps',
+      title: 'GPS',
+      icon: 'navigate-outline',
+      description: 'GPS position and status',
+      category: 'navigation',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    GPSWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'compass',
+      title: 'Compass',
+      icon: 'compass-outline',
+      description: 'Digital compass heading',
+      category: 'navigation',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    CompassWidget
+  );
+
+  // Environment widgets
+  WidgetRegistry.register(
+    {
+      id: 'wind',
+      title: 'Wind',
+      icon: 'cloud-outline',
+      description: 'Wind speed and direction',
+      category: 'environment',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    WindWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'watertemp',
+      title: 'Water Temp',
+      icon: 'thermometer-outline',
+      description: 'Water temperature sensor',
+      category: 'environment',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    WaterTemperatureWidget
+  );
+
+  // Engine widgets
+  WidgetRegistry.register(
+    {
+      id: 'engine',
+      title: 'Engine',
+      icon: 'car-outline',
+      description: 'Engine RPM and parameters',
+      category: 'engine',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    EngineWidget
+  );
+
+  // Electrical widgets
+  WidgetRegistry.register(
+    {
+      id: 'battery',
+      title: 'Battery',
+      icon: 'battery-charging-outline',
+      description: 'Battery voltage and status',
+      category: 'electrical',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    BatteryWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'tanks',
+      title: 'Tanks',
+      icon: 'cube-outline',
+      description: 'Fuel, water, and waste tank levels',
+      category: 'electrical',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    TanksWidget
+  );
+
+  // Autopilot widgets
+  WidgetRegistry.register(
+    {
+      id: 'autopilot',
+      title: 'Autopilot',
+      icon: 'swap-horizontal-outline',
+      description: 'Autopilot mode and status',
+      category: 'autopilot',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    AutopilotStatusWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'rudder',
+      title: 'Rudder',
+      icon: 'boat-outline',
+      description: 'Rudder position indicator',
+      category: 'autopilot',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    RudderPositionWidget
+  );
+
+  // Utility widgets
+  WidgetRegistry.register(
+    {
+      id: 'theme',
+      title: 'Theme',
+      icon: 'color-palette-outline',
+      description: 'Day/night theme switcher',
+      category: 'navigation', // Default category for utility
+      defaultSize: { width: 160, height: 160 },
+      configurable: false,
+    },
+    ThemeSwitcher
+  );
+}

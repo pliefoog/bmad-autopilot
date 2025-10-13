@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(md-tree explode:*)",
+      "Bash(chmod:*)",
+      "Bash(npm install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

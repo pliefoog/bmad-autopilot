@@ -1,0 +1,1594 @@
+=== BOATING INSTRUMENTS APP - FULL MVP PRODUCTION VERSION (iOS & Android) ===
+
+PROJECT CONTEXT & TECH STACK
+-----------------------------
+You are building the complete production-ready MVP of a React Native cross-platform marine instrument display and autopilot controller application. This is NOT a prototype - this is the full working application that will be submitted to the iOS App Store and Google Play Store.
+
+The app connects to boat NMEA 0183/2000 networks via WiFi bridges using TCP sockets, parses real-time marine sensor data (depth, speed, wind, GPS, engine parameters), displays customizable instrument widgets, and provides full bi-directional autopilot control for Raymarine Evolution systems.
+
+TECHNOLOGY STACK (Production):
+- Framework: React Native 0.82.0 with TypeScript 5.8+
+- Development Platform: Expo SDK 51+ (managed workflow with config plugins)
+- State Management: Zustand 5.0+ for real-time NMEA data and app state
+- Networking:
+  - react-native-tcp-socket 6.3+ for TCP connections to WiFi bridges
+  - react-native-udp 4.1+ for UDP multicast discovery (optional)
+- NMEA Parsing:
+  - nmea-simple 3.3+ for NMEA 0183 sentence parsing
+  - @canboat/canboatjs 3.11+ for NMEA 2000 PGN decoding
+  - Custom Raymarine autopilot command encoder (proprietary PGNs)
+- Styling: React Native StyleSheet API with custom theme system
+- Icons: react-native-vector-icons 10.3+ (Ionicons)
+- Animations: react-native-reanimated 4.1+ (60-120 FPS smooth performance)
+- Gestures: react-native-gesture-handler 2.28+ (drag-drop widgets)
+- Vector Graphics: react-native-svg 15.14+ (compass roses, gauges)
+- Storage:
+  - @react-native-async-storage/async-storage 2.2+ for settings/layouts
+  - expo-secure-store for WiFi credentials (encrypted)
+- File System: react-native-fs 2.20+ for NMEA playback files
+- Error Tracking: @sentry/react-native 7.3+ for crash reporting
+- Testing: Jest 29.7+ with @testing-library/react-native 13.3+
+- Navigation: Expo Router 3.5+ (file-based routing)
+- Platform Support: iOS 15+ and Android 10+ (MVP launch targets)
+
+VISUAL DESIGN AESTHETIC:
+- Style: Professional nautical/marine instrument design inspired by Raymarine P70 and i70s physical instruments
+- Color Scheme: Dark mode primary with Day/Night/Red-Night modes
+- Feel: Technical, reliable, glanceable in harsh conditions (bright sun, boat motion, gloves, night sailing)
+- Accessibility: WCAG 2.1 Level AA compliant (4.5:1 contrast ratios, 44pt touch targets)
+
+
+HIGH-LEVEL GOAL
+----------------
+Build the COMPLETE production-ready MVP React Native application with these core features:
+
+**Epic 1: Core Instrument Display (Month 1-3)**
+1. WiFi bridge TCP connection with auto-reconnection
+2. Real-time NMEA 0183/2000 parsing (500+ messages/second)
+3. 10 instrument widgets: Depth, Speed, Wind, GPS, Compass, Engine, Battery, Tanks, Autopilot Status, Rudder
+4. Dashboard canvas with widget display (static layout in Epic 1, drag-drop in Epic 2)
+5. Unit preferences (ft/m/fathoms, kts/mph/kmh, °F/°C)
+6. Display modes (Day/Night/Red-Night) with manual switching
+7. Connection settings and first-run setup wizard
+8. Playback mode for NMEA file replay (testing/demo)
+
+**Epic 2: Customizable Dashboard (Month 3-4)**
+9. Drag-and-drop widget positioning on canvas
+10. Widget resize via corner handles
+11. Widget selector modal (browse and add instruments)
+12. Persistent dashboard layouts (per device, AsyncStorage)
+13. Widget configuration (data source selection for multi-sensor boats)
+
+**Epic 3: Raymarine Autopilot Control (Month 5)**
+14. Bi-directional autopilot communication (read status + send commands)
+15. Heading adjustment (±1° and ±10° buttons)
+16. Mode switching (Auto/Standby/Wind/Track/Power Steer)
+17. Tack/Gybe commands with 5-second safety countdown
+18. Visual confirmation and error handling for all commands
+
+**Epic 4: Alarms & Safety (Month 6)**
+19. Configurable threshold alarms (depth, wind shift, speed, battery, engine temp, oil pressure)
+20. Visual + audio alarm alerts
+21. Alarm acknowledgment and persistent state
+22. Alarm history log (last 10 alarms)
+23. Grouped alarm widgets (Motor Alarms, Sailing Alarms templates)
+
+**Epic 5: Polish & Launch Prep (Month 7)**
+24. Crash reporting integration (Sentry)
+25. Beta testing with 50 users
+26. App Store assets (screenshots, descriptions, privacy policy)
+27. Performance optimization (8+ hour battery life, <1s data latency)
+28. Accessibility audit and compliance
+
+
+DETAILED STEP-BY-STEP INSTRUCTIONS
+-----------------------------------
+
+## PART 1: PROJECT SETUP & ARCHITECTURE FOUNDATION
+
+STEP 1: Initialize Expo project with TypeScript:
+```bash
+npx create-expo-app boating-instruments --template expo-template-blank-typescript
+cd boating-instruments
+```
+
+STEP 2: Install ALL required dependencies:
+```bash
+# Core dependencies
+npm install zustand@5.0.8
+npm install react-native-tcp-socket@6.3.0
+npm install react-native-udp@4.1.7
+npm install nmea-simple@3.3.0
+npm install @canboat/canboatjs@3.11.0
+npm install @react-native-async-storage/async-storage@2.2.0
+npm install expo-secure-store
+npm install react-native-fs@2.20.0
+npm install react-native-vector-icons@10.3.0
+npm install react-native-reanimated@4.1.3
+npm install react-native-gesture-handler@2.28.0
+npm install react-native-svg@15.14.0
+npm install react-native-safe-area-context@5.5.2
+npm install @sentry/react-native@7.3.0
+
+# Dev dependencies
+npm install --save-dev @testing-library/react-native@13.3.3
+npm install --save-dev @types/react@19.1.1
+npm install --save-dev typescript@5.8.3
+npm install --save-dev eslint@8.57.1
+npm install --save-dev prettier@2.8.8
+```
+
+STEP 3: Configure app.json for Expo with config plugins:
+```json
+{
+  "expo": {
+    "name": "Boating Instruments",
+    "slug": "boating-instruments",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A1929"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.boatinginstruments",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app connects to your boat's NMEA network via WiFi bridge to display instrument data.",
+        "NSBonjourServices": ["_nmea-0183._tcp"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A1929"
+      },
+      "package": "com.yourcompany.boatinginstruments",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      "react-native-tcp-socket",
+      "@sentry/react-native/expo"
+    ]
+  }
+}
+```
+
+STEP 4: Create complete project folder structure:
+```
+boating-instruments/
+├── app/                          # Expo Router screens
+│   ├── _layout.tsx               # Root layout with providers
+│   ├── index.tsx                 # Dashboard (main screen)
+│   ├── settings.tsx              # Settings screen
+│   ├── connection-settings.tsx   # WiFi bridge connection
+│   ├── widget-selector.tsx       # Widget library modal
+│   └── setup-wizard.tsx          # First-run wizard
+│
+├── src/
+│   ├── components/               # Reusable UI components
+│   │   ├── Button.tsx
+│   │   ├── Modal.tsx
+│   │   ├── StatusBar.tsx
+│   │   ├── SegmentedControl.tsx
+│   │   └── index.ts
+│   │
+│   ├── widgets/                  # 10 instrument widgets
+│   │   ├── WidgetCard.tsx        # Base container HOC
+│   │   ├── DepthWidget.tsx
+│   │   ├── SpeedWidget.tsx
+│   │   ├── WindWidget.tsx
+│   │   ├── GPSWidget.tsx
+│   │   ├── CompassWidget.tsx
+│   │   ├── EngineWidget.tsx
+│   │   ├── BatteryWidget.tsx
+│   │   ├── TanksWidget.tsx
+│   │   ├── AutopilotWidget.tsx
+│   │   ├── RudderWidget.tsx
+│   │   └── index.ts
+│   │
+│   ├── services/                 # Business logic layer
+│   │   ├── nmea/
+│   │   │   ├── NMEAConnection.ts      # TCP socket manager
+│   │   │   ├── NMEAParser.ts          # NMEA 0183/2000 parser
+│   │   │   ├── AutopilotCommands.ts   # Raymarine command encoder
+│   │   │   └── types.ts
+│   │   ├── storage/
+│   │   │   ├── widgetStorage.ts
+│   │   │   ├── settingsStorage.ts
+│   │   │   └── secureStorage.ts
+│   │   └── playback/
+│   │       └── NMEAPlayback.ts
+│   │
+│   ├── store/                    # Zustand stores
+│   │   ├── nmeaStore.ts          # Real-time NMEA data
+│   │   ├── widgetStore.ts        # Widget layout/config
+│   │   ├── settingsStore.ts      # App settings
+│   │   ├── alarmStore.ts         # Alarm configurations
+│   │   └── connectionStore.ts    # WiFi connection state
+│   │
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useNMEAData.ts
+│   │   ├── useTheme.ts
+│   │   ├── useConnection.ts
+│   │   └── index.ts
+│   │
+│   ├── theme/                    # Design system
+│   │   ├── colors.ts
+│   │   ├── typography.ts
+│   │   ├── spacing.ts
+│   │   └── ThemeProvider.tsx
+│   │
+│   ├── utils/
+│   │   ├── unitConversion.ts
+│   │   ├── validation.ts
+│   │   ├── formatters.ts
+│   │   └── index.ts
+│   │
+│   └── types/
+│       ├── widget.types.ts
+│       ├── nmea.types.ts
+│       └── index.ts
+│
+├── assets/
+├── __tests__/
+├── package.json
+├── tsconfig.json
+├── jest.config.js
+└── README.md
+```
+
+
+## PART 2: CORE INFRASTRUCTURE - NMEA COMMUNICATION LAYER
+
+STEP 5: Implement NMEAConnection service (src/services/nmea/NMEAConnection.ts):
+This is the TCP socket manager that connects to WiFi bridges. Requirements:
+- Connect to user-specified IP address and port (default 10110)
+- Maintain persistent connection with exponential backoff reconnection (1s, 2s, 4s, 8s, 15s max)
+- Handle connection lifecycle: disconnected → connecting → connected → error states
+- Emit raw NMEA data to parser
+- Send outgoing autopilot commands
+- Gracefully handle socket errors and timeouts
+- Update connectionStore with status changes
+
+Key methods:
+```typescript
+class NMEAConnection {
+  private socket: TcpSocket | null = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private reconnectAttempts: number = 0;
+
+  async connect(host: string, port: number): Promise<void>
+  disconnect(): void
+  sendCommand(nmeaSentence: string): Promise<boolean>
+  private handleData(data: Buffer): void
+  private handleError(error: Error): void
+  private scheduleReconnect(): void
+}
+```
+
+STEP 6: Implement NMEAParser service (src/services/nmea/NMEAParser.ts):
+Parses raw NMEA 0183 sentences and NMEA 2000 PGNs into structured data. Requirements:
+- Use nmea-simple for NMEA 0183 (DBT, VHW, MWV, GGA, HDG, etc.)
+- Use @canboat/canboatjs for NMEA 2000 PGNs (127488, 127489, 127508, 130306, etc.)
+- Handle Raymarine proprietary autopilot PGNs (65288, 65379, 126208)
+- Update nmeaStore with parsed data
+- Validate data ranges (e.g., depth 0-100m, heading 0-360°)
+- Handle corrupt/invalid sentences gracefully (log warning, don't crash)
+- Throttle updates to max 1/second per parameter (prevent UI thrashing)
+
+Supported NMEA 0183 sentences:
+- DBT (Depth Below Transducer)
+- VHW (Speed Through Water)
+- MWV (Apparent/True Wind)
+- GGA (GPS Position)
+- HDG/HDM (Heading Magnetic)
+- RMC (Recommended Minimum Navigation)
+- MTW (Water Temperature)
+- XDR (Transducer Data - engines, batteries, tanks)
+
+Supported NMEA 2000 PGNs:
+- 127488 (Engine Rapid Update)
+- 127489 (Engine Dynamic Parameters)
+- 127508 (Battery Status)
+- 128259 (Speed)
+- 128267 (Depth)
+- 130306 (Wind Data)
+- 65288 (Raymarine Autopilot Mode)
+- 65379 (Raymarine Autopilot Heading)
+
+STEP 7: Implement AutopilotCommands service (src/services/nmea/AutopilotCommands.ts):
+Encodes autopilot control commands into NMEA sentences/PGNs for Raymarine Evolution. Requirements:
+- Heading adjust: ±1° and ±10° increment commands
+- Mode switching: Auto, Standby, Wind, Track, Power Steer
+- Tack/Gybe commands with safety countdown
+- Calculate checksums for NMEA 0183 sentences
+- Encode proprietary Raymarine PGNs (reference EVO protocol spec)
+- Validate commands before sending (e.g., can't tack in Auto mode)
+- Rate limit to max 3 commands/second (NFR10)
+
+Example command encoding:
+```typescript
+class AutopilotCommands {
+  adjustHeading(degrees: number): string {
+    // Returns: "$ECAPB,+01*2D\r\n" for +1°
+  }
+
+  setMode(mode: 'auto' | 'standby' | 'wind' | 'track'): string {
+    // Returns appropriate Raymarine PGN
+  }
+
+  executeTack(): string {
+    // Returns tack command PGN
+  }
+
+  private calculateChecksum(sentence: string): string {
+    // XOR checksum for NMEA 0183
+  }
+}
+```
+
+STEP 8: Implement NMEAPlayback service (src/services/playback/NMEAPlayback.ts):
+Simulates NMEA data stream from recorded files for testing/demo. Requirements:
+- Load NMEA recording files from file system (react-native-fs)
+- Parse file line-by-line
+- Replay at real-time speed or configurable multiplier (1x, 2x, 10x)
+- Loop playback when reaching end of file
+- Provide playback controls (play/pause/stop/seek)
+- Generate sample data if no file loaded (demo mode)
+- Update nmeaStore exactly like live connection
+- Mutually exclusive with live WiFi connection (FR38)
+
+
+## PART 3: STATE MANAGEMENT - ZUSTAND STORES
+
+STEP 9: Implement nmeaStore (src/store/nmeaStore.ts):
+Central store for all real-time NMEA data. Requirements:
+- Interface matching NMEADataState from architecture doc
+- Separate fields for each parameter with timestamps (detect stale data)
+- Update methods called by NMEAParser
+- Selectors for widgets to subscribe to specific data slices
+- Reset all data on disconnect
+- Handle multi-engine boats (engines object with dynamic keys)
+
+```typescript
+interface NMEADataState {
+  // Depth
+  depth: number | null;
+  depthUnit: 'feet' | 'meters' | 'fathoms';
+  depthTimestamp: number | null;
+
+  // Speed
+  speedOverGround: number | null;
+  speedThroughWater: number | null;
+  speedUnit: 'knots' | 'mph' | 'kmh';
+  speedTimestamp: number | null;
+
+  // Wind
+  apparentWindAngle: number | null;
+  apparentWindSpeed: number | null;
+  trueWindAngle: number | null;
+  trueWindSpeed: number | null;
+  windTimestamp: number | null;
+
+  // GPS/Heading
+  heading: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  cog: number | null;
+  headingTimestamp: number | null;
+
+  // Autopilot
+  autopilotMode: 'standby' | 'auto' | 'wind' | 'track' | 'power_steer' | null;
+  targetHeading: number | null;
+  autopilotTimestamp: number | null;
+
+  // Engine (multi-engine support)
+  engines: {
+    [id: string]: {
+      rpm: number | null;
+      temperature: number | null;
+      oilPressure: number | null;
+      fuelRate: number | null;
+      timestamp: number | null;
+    };
+  };
+
+  // Battery
+  batteries: {
+    [id: string]: {
+      voltage: number | null;
+      current: number | null;
+      percentage: number | null;
+      timestamp: number | null;
+    };
+  };
+
+  // Tanks
+  tanks: {
+    [id: string]: {
+      level: number | null;
+      capacity: number | null;
+      type: 'fuel' | 'water' | 'waste';
+      timestamp: number | null;
+    };
+  };
+
+  // Rudder
+  rudderAngle: number | null;
+  rudderTimestamp: number | null;
+
+  // Water temperature
+  waterTemperature: number | null;
+  waterTempTimestamp: number | null;
+
+  // Actions
+  updateDepth: (value: number, unit: string) => void;
+  updateSpeed: (sog: number | null, stw: number | null) => void;
+  updateWind: (awa: number, aws: number, twa?: number, tws?: number) => void;
+  updateGPS: (lat: number, lon: number, cog?: number) => void;
+  updateHeading: (heading: number) => void;
+  updateAutopilot: (mode: string, targetHeading?: number) => void;
+  updateEngine: (engineId: string, data: Partial<EngineData>) => void;
+  updateBattery: (batteryId: string, data: Partial<BatteryData>) => void;
+  updateTank: (tankId: string, data: Partial<TankData>) => void;
+  updateRudder: (angle: number) => void;
+  updateWaterTemp: (temp: number) => void;
+  resetAllData: () => void;
+}
+
+export const useNmeaStore = create<NMEADataState>((set) => ({
+  // Initial state with all null values
+  depth: null,
+  depthUnit: 'feet',
+  depthTimestamp: null,
+  // ... all other fields
+
+  // Update methods
+  updateDepth: (value, unit) => set({
+    depth: value,
+    depthUnit: unit as any,
+    depthTimestamp: Date.now()
+  }),
+  // ... all other update methods
+}));
+```
+
+STEP 10: Implement widgetStore (src/store/widgetStore.ts):
+Manages dashboard widget layout and configurations. Requirements:
+- Array of WidgetConfig objects (id, type, position, size, config)
+- CRUD operations: addWidget, removeWidget, updateWidgetPosition, updateWidgetSize, updateWidgetConfig
+- Persist to AsyncStorage on every change (FR6)
+- Load from AsyncStorage on app startup
+- Default layout for first launch (suggested widget set from FR34)
+- Support multi-sensor data source selection (FR35)
+
+STEP 11: Implement settingsStore (src/store/settingsStore.ts):
+Global app settings. Requirements:
+- Unit preferences (depth, speed, temperature, distance, wind speed) - FR28
+- Display mode (day/night/red-night) - FR26/FR27
+- Auto display mode schedule (sunset/sunrise times)
+- Persist all settings to AsyncStorage (FR30)
+- Actions to update each setting category
+
+STEP 12: Implement alarmStore (src/store/alarmStore.ts):
+Alarm configurations and history. Requirements:
+- Array of alarm configurations (parameter, threshold type, value, enabled)
+- Alarm history (last 10 triggered alarms) - FR41
+- Pre-defined templates (Motor Alarms, Sailing Alarms) - FR42
+- Trigger alarm when threshold crossed (FR23)
+- Alarm state (triggered/acknowledged/cleared)
+- Audio alert flag (FR23)
+- Persist alarm configs and history to AsyncStorage
+
+STEP 13: Implement connectionStore (src/store/connectionStore.ts):
+WiFi bridge connection state. Requirements:
+- Connection status (disconnected/connecting/connected/error) - FR36
+- Host IP, port, last connected timestamp
+- Error message for troubleshooting
+- Reconnect attempts counter
+- Playback mode active flag (FR38 - mutually exclusive)
+- Actions: connect, disconnect, setStatus
+
+
+## PART 4: USER INTERFACE - WIDGETS & COMPONENTS
+
+STEP 14: Implement Theme System (src/theme/):
+Create color palette, typography, and spacing constants. Requirements:
+
+**colors.ts** - Three color modes (Day/Night/Red-Night):
+```typescript
+export const DayColors = {
+  primary: '#0284C7',
+  secondary: '#0EA5E9',
+  accent: '#06B6D4',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  backgroundDark: '#0A1929',
+  backgroundMedium: '#1E293B',
+  borderGray: '#334155',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#CBD5E1',
+  textTertiary: '#94A3B8',
+};
+
+export const NightColors = {
+  // Same hues, 40% dimmer for night vision
+  primary: '#01547A',
+  // ... all colors dimmed
+};
+
+export const RedNightColors = {
+  // Red spectrum only for night vision preservation
+  primary: '#DC2626',
+  backgroundDark: '#1A0000',
+  // ... all colors in red spectrum
+};
+```
+
+**typography.ts** - Font scale with monospace for data values:
+```typescript
+export const Typography = {
+  h1: { fontSize: 32, fontWeight: '700', lineHeight: 40 },
+  h2: { fontSize: 24, fontWeight: '700', lineHeight: 32 },
+  body: { fontSize: 16, fontWeight: '400', lineHeight: 24 },
+  widgetTitle: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  widgetValue: { fontSize: 42, fontWeight: '700', fontFamily: 'monospace' },
+  widgetUnit: { fontSize: 16, fontWeight: '400' },
+};
+```
+
+**spacing.ts** - 8pt baseline grid:
+```typescript
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+};
+```
+
+**ThemeProvider.tsx** - React Context for current theme:
+```typescript
+export const ThemeProvider: React.FC = ({ children }) => {
+  const displayMode = useSettingsStore(state => state.displayMode);
+  const colors = displayMode === 'day' ? DayColors :
+                 displayMode === 'night' ? NightColors : RedNightColors;
+
+  return (
+    <ThemeContext.Provider value={{ colors, typography: Typography, spacing: Spacing }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+```
+
+STEP 15: Implement WidgetCard base component (src/widgets/WidgetCard.tsx):
+Universal container for all widgets. Requirements:
+- Props: title, icon, value, unit, state, children
+- States: normal, alarm, no-data, highlighted
+- Styling: backgroundMedium, rounded corners, padding, min 160x160pt
+- Alarm state: red border with pulsing animation (Reanimated)
+- No-data state: 50% opacity, show "--" for value
+- Support long-press gesture for configuration menu (Epic 2)
+- Accessibility: proper labels for screen readers
+
+STEP 16-25: Implement 10 instrument widgets (src/widgets/):
+Each widget uses WidgetCard as base and subscribes to nmeaStore data.
+
+**DepthWidget.tsx** (STEP 16):
+- Subscribe to: depth, depthUnit, depthTimestamp from nmeaStore
+- Display: Depth value with unit (ft/m/fathoms)
+- Icon: 'water' from Ionicons
+- Visualization options: digital (default), analog depth gauge (Epic 1.5)
+- Handle unit conversion (use utils/unitConversion.ts)
+- Show stale data warning if timestamp > 5 seconds old
+
+**SpeedWidget.tsx** (STEP 17):
+- Subscribe to: speedOverGround, speedThroughWater, speedUnit
+- Display: Speed value with unit (kts/mph/kmh)
+- Icon: 'speedometer'
+- Toggle between SOG and STW via config
+- Secondary display: show both SOG and STW if available
+
+**WindWidget.tsx** (STEP 18):
+- Subscribe to: apparentWindAngle, apparentWindSpeed, trueWindAngle, trueWindSpeed
+- Display: Wind speed and direction arrow
+- Icon: Custom wind arrow SVG (react-native-svg)
+- Visualization: Analog compass rose with wind direction indicator
+- Toggle apparent vs true wind via config
+- Animate arrow rotation smoothly (Reanimated)
+
+**GPSWidget.tsx** (STEP 19):
+- Subscribe to: latitude, longitude, cog from nmeaStore
+- Display: Lat/lon in decimal degrees or DMS format
+- Icon: 'location'
+- Format: 37.7749° N, 122.4194° W
+- Secondary: Course over ground (COG)
+- Handle null GPS (show "NO FIX")
+
+**CompassWidget.tsx** (STEP 20):
+- Subscribe to: heading from nmeaStore
+- Display: Analog compass rose (SVG) with rotating outer ring
+- Icon: 'compass'
+- Smooth rotation animation following heading changes (Reanimated)
+- Digital heading value overlay (large font)
+- Cardinal directions (N/E/S/W) always visible
+
+**EngineWidget.tsx** (STEP 21):
+- Subscribe to: engines object from nmeaStore
+- Display: RPM, temperature, oil pressure
+- Icon: 'speedometer' (engine RPM)
+- Multi-engine support: Auto-detect 1 vs 2 engines (FR12)
+- Single engine: Full widget space
+- Dual engine: Split left/right (Port | Stbd)
+- Alarm integration: Red border if temp/pressure out of range
+
+**BatteryWidget.tsx** (STEP 22):
+- Subscribe to: batteries object from nmeaStore
+- Display: Voltage and percentage
+- Icon: 'battery-half' (dynamic based on percentage)
+- Multi-battery support: Select via config (House vs Engine battery)
+- Color coding: Green >12.5V, Yellow 12.0-12.5V, Red <12.0V
+
+**TanksWidget.tsx** (STEP 23):
+- Subscribe to: tanks object from nmeaStore
+- Display: Tank level with bar graph visualization
+- Icon: 'water' or 'flash' (fuel)
+- Customizable tank label (Fuel, Water, Grey Water, Holding)
+- Bar graph: Horizontal fill indicator
+- Show percentage and absolute volume if capacity known
+
+**AutopilotStatusWidget.tsx** (STEP 24):
+- Subscribe to: autopilotMode, targetHeading from nmeaStore
+- Display: Current mode (AUTO/STANDBY/WIND/TRACK) and target heading
+- Icon: 'navigate-circle'
+- Large text for mode status
+- Expandable to full autopilot control panel (Epic 3)
+- Color coding: Green (Auto), Yellow (Standby), Blue (Wind/Track)
+
+**RudderWidget.tsx** (STEP 25):
+- Subscribe to: rudderAngle from nmeaStore
+- Display: Rudder angle with indicator graphic (SVG)
+- Icon: Custom rudder SVG
+- Visualization: Centered rudder with angle indicator (-35° to +35°)
+- Smooth animation following rudder movement (Reanimated)
+
+
+## PART 5: SCREENS & USER FLOWS
+
+STEP 26: Implement Dashboard screen (app/index.tsx):
+Main screen where users spend 95% of time. Requirements:
+- StatusBar component at top (connection indicator, time, settings menu)
+- ScrollView with widget grid (2 columns phone, 3-4 tablet)
+- Load widgets from widgetStore
+- Render widgets dynamically based on widgetStore.widgets array
+- Empty state: "Tap + to add your first instrument" when no widgets
+- Floating Action Button (FAB) bottom-right to open widget selector
+- Handle orientation changes (portrait/landscape)
+- Performance: Virtualize widgets if >20 on screen (FlatList)
+
+STEP 27: Implement Setup Wizard (app/setup-wizard.tsx):
+First-run 3-step wizard (FR34). Requirements:
+
+**Step 1 - Welcome:**
+- App logo/icon
+- Welcome text: "Transform your device into a marine instrument display"
+- Safety disclaimer (scrollable, must scroll to bottom)
+- "I Accept" button (disabled until scrolled)
+- "Skip to Demo Mode" link
+
+**Step 2 - WiFi Connection:**
+- Text input: WiFi bridge IP address (validation via utils/validation.ts)
+- Text input: Port (default 10110)
+- "Connect" button triggers connectionStore.connect()
+- Connection status indicator during attempt
+- Error handling with troubleshooting expandable section
+- "Skip to Demo" option (activates playback mode)
+
+**Step 3 - Widget Selection:**
+- Header: "Choose your instruments"
+- Grid of 10 widget type cards with checkboxes
+- Pre-selected suggested set: Depth, Speed, Wind, GPS, Compass, Autopilot
+- "Add All" and "Clear All" buttons
+- "Done" button → Navigate to Dashboard
+
+Progress indicator: 3 dots at top showing current step
+
+STEP 28: Implement Settings screen (app/settings.tsx):
+Global settings interface. Requirements:
+- List of setting sections (unit preferences, display mode, alarms, connection, about)
+- Unit Preferences section:
+  - SegmentedControl for depth (ft/m/fathoms)
+  - SegmentedControl for speed (kts/mph/kmh)
+  - SegmentedControl for temperature (°F/°C)
+- Display Mode section:
+  - SegmentedControl for Day/Night/Red-Night
+  - Toggle for auto mode (based on sunset/sunrise)
+- Alarm Configuration section:
+  - Link to alarm setup screen (Epic 4)
+  - Show count of active alarms
+- Connection Settings:
+  - Link to connection-settings.tsx
+  - Show current connection status
+- About/Help:
+  - App version
+  - Privacy policy link
+  - Help documentation
+
+STEP 29: Implement Connection Settings screen (app/connection-settings.tsx):
+WiFi bridge configuration (FR29). Requirements:
+- Connection status section:
+  - Large status indicator (green/orange/red circle)
+  - Status text: "Connected" / "Connected - No Data" / "Disconnected"
+  - Last connected timestamp
+  - NMEA messages received count
+- Manual connection form:
+  - Text input: IP address or hostname
+  - Text input: Port (default 10110)
+  - "Connect" button
+  - "Disconnect" button (if connected)
+- Troubleshooting section (expandable):
+  - Common issues list
+  - Link to help docs
+  - "Test Demo Mode" button (activates playback)
+- Playback mode section:
+  - "Load NMEA File" button (file picker)
+  - Playback controls (play/pause/stop)
+  - Speed multiplier (1x, 2x, 10x)
+
+STEP 30: Implement Widget Selector modal (app/widget-selector.tsx):
+Browse and add widgets to dashboard (FR39). Requirements:
+- Modal sheet slides up from bottom (80% screen height)
+- Header: "Add Instrument" with close button
+- Grid of 10 widget type cards (2 columns phone, 3 tablet)
+- Each card shows:
+  - Widget icon
+  - Widget name (e.g., "DEPTH", "SPEED", "WIND")
+  - Checkmark if already on dashboard (dimmed)
+- Tap to add → Widget added to widgetStore, modal dismisses
+- Allow duplicates for multi-sensor boats
+- Smooth animations (slide-up enter, slide-down exit)
+
+
+## PART 6: EPIC 2 - DRAG & DROP CUSTOMIZATION
+
+STEP 31: Implement drag-and-drop widget positioning:
+Use react-native-gesture-handler for drag gestures. Requirements:
+- Long-press widget to enter "edit mode" (widget lifts with shadow)
+- Drag widget to new position on canvas
+- Snap to grid (optional, or free positioning)
+- Update widgetStore.updateWidgetPosition() on drag end
+- Visual feedback: Semi-transparent widget while dragging
+- Prevent dragging outside canvas bounds
+
+STEP 32: Implement widget resize with corner handles:
+Add resize handles to widget corners in edit mode. Requirements:
+- Corner handles (8x8pt circles) visible in edit mode
+- Drag handle to resize widget
+- Maintain minimum size (160x160pt phone, 200x200pt tablet)
+- Update widgetStore.updateWidgetSize() on resize end
+- Constrain aspect ratio (optional, or free resize)
+- Smooth animation during resize (Reanimated)
+
+
+## PART 7: EPIC 3 - RAYMARINE AUTOPILOT CONTROL
+
+STEP 33: Implement Autopilot Control Panel:
+Expand AutopilotStatusWidget to full control interface. Requirements:
+- Current mode display (AUTO/STANDBY/WIND/TRACK) - large, bold
+- Target heading display (very large, 48pt font)
+- Heading adjustment buttons:
+  - -10° (left), -1° (bottom left)
+  - +1° (bottom right), +10° (right)
+  - 60x60pt touch targets, marine blue background
+  - Flash green on successful command, red on failure
+- Mode switching buttons:
+  - Auto | Standby | Wind | Track | Power Steer
+  - Segmented control or button group
+  - Current mode highlighted
+- Tack/Gybe buttons (only visible in Wind/Track mode):
+  - Yellow/orange background (caution color)
+  - Side-by-side layout
+  - Tap triggers TackGybeModal (5-second countdown)
+
+STEP 34: Implement Tack/Gybe safety countdown modal:
+Safety-critical 5-second countdown before executing command (FR37). Requirements:
+- Full-screen modal (blocks all other UI)
+- Large countdown display: "TACKING IN 5..." (72pt font)
+- Countdown ticks every 1 second (5 → 4 → 3 → 2 → 1)
+- Huge ABORT button (200pt wide x 80pt tall, red background)
+- Tapping ABORT immediately cancels and closes modal
+- Countdown expiration → Send command → Show "TACKING NOW" confirmation (green)
+- Auto-close after 2 seconds
+- Connection lost during countdown → Auto-abort with error message
+
+STEP 35: Implement autopilot command transmission:
+Integrate AutopilotCommands service with UI actions. Requirements:
+- Button tap → Call AutopilotCommands method → Get NMEA sentence
+- Send via NMEAConnection.sendCommand()
+- Visual feedback: Button flash animation (green success, red failure)
+- Error handling: Display toast message if send fails
+- Rate limiting: Max 3 commands/second (NFR10)
+- Confirmation: Wait for autopilot status update from NMEA stream (within 3 seconds)
+- Timeout warning: "Command sent but no feedback received"
+
+
+## PART 8: EPIC 4 - ALARMS & SAFETY
+
+STEP 36: Implement Alarm Configuration screen:
+UI for setting up threshold alarms (FR22, FR44). Requirements:
+- Pre-defined templates section:
+  - Motor Alarms (engine temp, oil pressure, coolant)
+  - Sailing Alarms (depth, wind shift, speed)
+  - Tap to activate template with default thresholds
+- Custom alarm creation:
+  - Select NMEA parameter from detected list (FR43)
+  - Set threshold type (upper bound, lower bound, or both)
+  - Enter threshold value with unit
+  - Set alarm name
+  - Choose audio alert (beep/voice/silent)
+- Alarm list showing all configured alarms:
+  - Enable/disable toggle
+  - Edit threshold
+  - Delete alarm
+- Grouped alarms (FR42):
+  - Create alarm group
+  - Add multiple related alarms to group
+  - Single widget shows all alarms in group
+
+STEP 37: Implement alarm triggering and alerts:
+Monitor NMEA data and trigger alarms when thresholds crossed (FR23-FR25). Requirements:
+- Alarm monitoring loop in background (setInterval)
+- Check each enabled alarm against current NMEA data
+- Trigger when threshold crossed (with hysteresis to prevent flapping)
+- Visual alert: Widget border turns red, pulsing animation
+- Audio alert: Play alarm sound (expo-av)
+- Toast notification: "SHALLOW WATER ALARM: 5.2 ft"
+- Alarm persists until acknowledged (FR25)
+- Acknowledgment: Tap widget or toast to dismiss
+- Log to alarm history (FR41)
+
+STEP 38: Implement Alarm History screen:
+Display last 10 triggered alarms (FR41). Requirements:
+- List of alarm events with:
+  - Alarm name
+  - Timestamp
+  - Parameter value that triggered alarm
+  - Acknowledgment status (acknowledged/active)
+- Sort by most recent first
+- Color coding: Red (active), Yellow (acknowledged), Green (cleared)
+- Auto-delete oldest when >10 entries
+- "Clear History" button
+
+
+## PART 9: POLISH, TESTING & LAUNCH PREP
+
+STEP 39: Integrate Sentry crash reporting:
+Setup error tracking for 99.5% crash-free rate monitoring (NFR3, NFR14). Requirements:
+- Initialize Sentry in app/_layout.tsx
+- Wrap app with Sentry ErrorBoundary
+- Capture JavaScript errors, native crashes, promise rejections
+- Add breadcrumbs for NMEA connection events
+- Tag releases with version number
+- Configure sampling rate (100% in beta, 10% in production)
+
+STEP 40: Implement performance optimizations:
+Ensure 8+ hour battery life and <1s data latency (NFR5, FR33). Requirements:
+- React.memo() on all widget components (only re-render when data changes)
+- Zustand selectors (widgets subscribe to specific data slices, not entire store)
+- Throttle NMEA updates to 1/second per parameter
+- Debounce rapid NMEA bursts (parser layer)
+- Use FlatList virtualization if >20 widgets on dashboard
+- Minimize re-renders: Separate static UI from dynamic data
+- Profile with React DevTools and Flipper
+- Test continuous use for 8 hours on device (battery profiling)
+
+STEP 41: Accessibility compliance (WCAG 2.1 Level AA):
+Requirements:
+- Color contrast: 4.5:1 minimum for all text (test with contrast checker)
+- Touch targets: 44x44pt minimum for all interactive elements
+- Screen reader support:
+  - accessibilityLabel on all widgets ("Depth: 12.4 feet")
+  - accessibilityHint for non-obvious interactions ("Long press to configure")
+  - Announce alarm notifications immediately
+- Focus indicators for keyboard navigation (desktop)
+- Respect platform "Reduce Motion" preference (disable animations)
+- Dynamic Type support (iOS), font scaling (Android) up to 200%
+
+STEP 42: Create app store assets:
+Prepare for iOS App Store and Google Play submission. Requirements:
+- App screenshots (6.5", 5.5" iPhone, 12.9" iPad, Android phone/tablet)
+- App icon (1024x1024pt)
+- Splash screen
+- Privacy policy (hosted webpage)
+- App description text (App Store, Play Store)
+- Keywords for SEO
+- Age rating (4+ - no objectionable content)
+- Promo video (30-second demo of app in use)
+
+STEP 43: Beta testing with 50 users (Month 6-7):
+Requirements:
+- TestFlight build for iOS (upload via EAS)
+- Google Play Internal Testing track for Android
+- Beta tester recruitment (sailing forums, boating groups)
+- Feedback form (Google Forms or Typeform)
+- Track metrics:
+  - First-connection success rate (target 98% - NFR1)
+  - Autopilot command success rate (target 99% - NFR2)
+  - Crash-free session rate (target 99.5% - NFR3)
+  - Battery life measurements (target 8+ hours - NFR5)
+- Iterate based on feedback
+
+STEP 44: Final QA checklist:
+- All 44 functional requirements tested and working
+- All 18 non-functional requirements met
+- No critical bugs in issue tracker
+- Performance targets met (battery, latency, throughput)
+- Accessibility audit passed
+- Privacy policy reviewed
+- App Store guidelines compliance
+- 70%+ automated test coverage (NFR18)
+- Sentry integrated and monitoring
+
+
+CODE EXAMPLES, DATA STRUCTURES & CONSTRAINTS
+----------------------------------------------
+
+EXAMPLE 1 - NMEAConnection TCP Socket Implementation:
+```typescript
+import TcpSocket from 'react-native-tcp-socket';
+import { useConnectionStore } from '../store/connectionStore';
+
+class NMEAConnection {
+  private socket: TcpSocket.Socket | null = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private reconnectAttempts: number = 0;
+  private maxReconnectDelay: number = 15000;
+
+  async connect(host: string, port: number): Promise<void> {
+    const setStatus = useConnectionStore.getState().setStatus;
+
+    setStatus('connecting');
+
+    try {
+      this.socket = TcpSocket.createConnection({
+        host,
+        port,
+      }, () => {
+        console.log('Connected to NMEA bridge');
+        setStatus('connected');
+        this.reconnectAttempts = 0;
+      });
+
+      this.socket.on('data', (data: Buffer) => {
+        this.handleData(data);
+      });
+
+      this.socket.on('error', (error: Error) => {
+        this.handleError(error);
+      });
+
+      this.socket.on('close', () => {
+        console.log('Connection closed');
+        setStatus('disconnected');
+        this.scheduleReconnect(host, port);
+      });
+    } catch (error) {
+      setStatus('error');
+      throw error;
+    }
+  }
+
+  disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.socket) {
+      this.socket.destroy();
+      this.socket = null;
+    }
+    useConnectionStore.getState().setStatus('disconnected');
+  }
+
+  async sendCommand(nmeaSentence: string): Promise<boolean> {
+    if (!this.socket) {
+      console.error('Cannot send command: not connected');
+      return false;
+    }
+
+    return new Promise((resolve) => {
+      this.socket!.write(nmeaSentence, () => {
+        console.log('Command sent:', nmeaSentence);
+        resolve(true);
+      });
+    });
+  }
+
+  private handleData(data: Buffer): void {
+    const message = data.toString('utf8');
+    // Split by newline in case multiple sentences in buffer
+    const sentences = message.split('\r\n').filter(s => s.length > 0);
+
+    for (const sentence of sentences) {
+      // Pass to NMEAParser
+      NMEAParser.parse(sentence);
+    }
+  }
+
+  private handleError(error: Error): void {
+    console.error('Socket error:', error);
+    useConnectionStore.getState().setStatus('error');
+    useConnectionStore.getState().setErrorMessage(error.message);
+  }
+
+  private scheduleReconnect(host: string, port: number): void {
+    const delay = Math.min(
+      1000 * Math.pow(2, this.reconnectAttempts),
+      this.maxReconnectDelay
+    );
+
+    console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1})`);
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectAttempts++;
+      this.connect(host, port);
+    }, delay);
+  }
+}
+
+export const nmeaConnection = new NMEAConnection();
+```
+
+EXAMPLE 2 - NMEAParser with nmea-simple and @canboat/canboatjs:
+```typescript
+import * as nmea from 'nmea-simple';
+import { parseCanMessage } from '@canboat/canboatjs';
+import { useNmeaStore } from '../store/nmeaStore';
+
+class NMEAParser {
+  private lastUpdateTime: { [key: string]: number } = {};
+  private throttleInterval = 1000; // Max 1 update/second per parameter
+
+  parse(sentence: string): void {
+    try {
+      // Try NMEA 0183 first
+      if (sentence.startsWith('$')) {
+        this.parseNMEA0183(sentence);
+      }
+      // Try NMEA 2000 (usually comes as raw bytes, but could be in text format)
+      else {
+        this.parseNMEA2000(sentence);
+      }
+    } catch (error) {
+      console.warn('Failed to parse NMEA sentence:', sentence, error);
+    }
+  }
+
+  private parseNMEA0183(sentence: string): void {
+    const parsed = nmea.parseNmeaSentence(sentence);
+
+    if (!parsed) return;
+
+    switch (parsed.sentenceId) {
+      case 'DBT': // Depth Below Transducer
+        const dbt = parsed as nmea.DBTPacket;
+        if (this.shouldUpdate('depth')) {
+          useNmeaStore.getState().updateDepth(dbt.depthFeet, 'feet');
+        }
+        break;
+
+      case 'VHW': // Speed Through Water
+        const vhw = parsed as nmea.VHWPacket;
+        if (this.shouldUpdate('speed')) {
+          useNmeaStore.getState().updateSpeed(null, vhw.speedKnots);
+        }
+        break;
+
+      case 'MWV': // Apparent/True Wind
+        const mwv = parsed as nmea.MWVPacket;
+        if (this.shouldUpdate('wind')) {
+          useNmeaStore.getState().updateWind(
+            mwv.windAngle,
+            mwv.windSpeed,
+          );
+        }
+        break;
+
+      case 'GGA': // GPS Position
+        const gga = parsed as nmea.GGAPacket;
+        if (this.shouldUpdate('gps')) {
+          useNmeaStore.getState().updateGPS(
+            gga.latitude,
+            gga.longitude,
+          );
+        }
+        break;
+
+      case 'HDG': // Heading
+        const hdg = parsed as nmea.HDGPacket;
+        if (this.shouldUpdate('heading')) {
+          useNmeaStore.getState().updateHeading(hdg.heading);
+        }
+        break;
+    }
+  }
+
+  private parseNMEA2000(data: string): void {
+    // This is simplified - actual implementation depends on how
+    // your WiFi bridge transmits N2K data (Actisense format, etc.)
+    const message = parseCanMessage(data);
+
+    if (!message) return;
+
+    switch (message.pgn) {
+      case 128267: // Depth
+        if (this.shouldUpdate('depth')) {
+          useNmeaStore.getState().updateDepth(message.fields.depth, 'meters');
+        }
+        break;
+
+      case 128259: // Speed
+        if (this.shouldUpdate('speed')) {
+          useNmeaStore.getState().updateSpeed(
+            message.fields.sog,
+            message.fields.stw
+          );
+        }
+        break;
+
+      case 130306: // Wind Data
+        if (this.shouldUpdate('wind')) {
+          useNmeaStore.getState().updateWind(
+            message.fields.apparentWindAngle,
+            message.fields.apparentWindSpeed,
+            message.fields.trueWindAngle,
+            message.fields.trueWindSpeed
+          );
+        }
+        break;
+
+      case 127488: // Engine Rapid Update
+        if (this.shouldUpdate('engine')) {
+          useNmeaStore.getState().updateEngine(
+            message.fields.instance.toString(),
+            {
+              rpm: message.fields.rpm,
+            }
+          );
+        }
+        break;
+
+      case 127489: // Engine Dynamic Parameters
+        if (this.shouldUpdate('engine')) {
+          useNmeaStore.getState().updateEngine(
+            message.fields.instance.toString(),
+            {
+              temperature: message.fields.temperature,
+              oilPressure: message.fields.oilPressure,
+            }
+          );
+        }
+        break;
+
+      case 65288: // Raymarine Autopilot Mode (proprietary)
+        if (this.shouldUpdate('autopilot')) {
+          useNmeaStore.getState().updateAutopilot(
+            this.decodeRaymarineMode(message.fields.mode),
+          );
+        }
+        break;
+    }
+  }
+
+  private shouldUpdate(key: string): boolean {
+    const now = Date.now();
+    const last = this.lastUpdateTime[key] || 0;
+
+    if (now - last >= this.throttleInterval) {
+      this.lastUpdateTime[key] = now;
+      return true;
+    }
+    return false;
+  }
+
+  private decodeRaymarineMode(modeCode: number): string {
+    // Raymarine-specific mode decoding
+    switch (modeCode) {
+      case 0: return 'standby';
+      case 1: return 'auto';
+      case 2: return 'wind';
+      case 3: return 'track';
+      default: return 'standby';
+    }
+  }
+}
+
+export const NMEAParser = new NMEAParser();
+```
+
+EXAMPLE 3 - AutopilotCommands Encoder:
+```typescript
+class AutopilotCommands {
+  private lastCommandTime: number = 0;
+  private commandRateLimit: number = 333; // Max 3 commands/second
+
+  adjustHeading(degrees: number): string | null {
+    if (!this.checkRateLimit()) {
+      console.warn('Command rate limited');
+      return null;
+    }
+
+    // Raymarine heading adjust command (NMEA 0183 format)
+    // Example: "$ECAPB,+01*2D\r\n" for +1 degree
+    const sign = degrees > 0 ? '+' : '';
+    const value = Math.abs(degrees).toString().padStart(2, '0');
+    const sentence = `ECAPB,${sign}${value}`;
+
+    return this.formatNMEA0183(sentence);
+  }
+
+  setMode(mode: 'auto' | 'standby' | 'wind' | 'track' | 'power_steer'): string | null {
+    if (!this.checkRateLimit()) return null;
+
+    // Raymarine mode command (NMEA 2000 PGN format)
+    // This is simplified - actual implementation requires PGN encoding
+    const modeCode = this.encodeRaymarineMode(mode);
+
+    // Build PGN 126208 (ISO Request) targeting Raymarine autopilot
+    // Actual bytes depend on CANboat encoding
+    return this.buildModePGN(modeCode);
+  }
+
+  executeTack(): string | null {
+    if (!this.checkRateLimit()) return null;
+
+    // Raymarine tack command
+    const sentence = 'ECTACK,1';
+    return this.formatNMEA0183(sentence);
+  }
+
+  executeGybe(): string | null {
+    if (!this.checkRateLimit()) return null;
+
+    // Raymarine gybe command
+    const sentence = 'ECGYBE,1';
+    return this.formatNMEA0183(sentence);
+  }
+
+  private formatNMEA0183(sentence: string): string {
+    const checksum = this.calculateChecksum(sentence);
+    return `$${sentence}*${checksum}\r\n`;
+  }
+
+  private calculateChecksum(sentence: string): string {
+    let checksum = 0;
+    for (let i = 0; i < sentence.length; i++) {
+      checksum ^= sentence.charCodeAt(i);
+    }
+    return checksum.toString(16).toUpperCase().padStart(2, '0');
+  }
+
+  private encodeRaymarineMode(mode: string): number {
+    switch (mode) {
+      case 'standby': return 0;
+      case 'auto': return 1;
+      case 'wind': return 2;
+      case 'track': return 3;
+      case 'power_steer': return 4;
+      default: return 0;
+    }
+  }
+
+  private buildModePGN(modeCode: number): string {
+    // Simplified - actual Raymarine PGN encoding is more complex
+    // Consult Raymarine Evolution protocol documentation
+    return `PGN:65288,Mode:${modeCode}`;
+  }
+
+  private checkRateLimit(): boolean {
+    const now = Date.now();
+    if (now - this.lastCommandTime >= this.commandRateLimit) {
+      this.lastCommandTime = now;
+      return true;
+    }
+    return false;
+  }
+}
+
+export const autopilotCommands = new AutopilotCommands();
+```
+
+EXAMPLE 4 - Dashboard with Dynamic Widget Rendering:
+```typescript
+import React from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useWidgetStore } from '../store/widgetStore';
+import { useTheme } from '../hooks/useTheme';
+import * as Widgets from '../widgets';
+
+export default function Dashboard() {
+  const widgets = useWidgetStore(state => state.widgets);
+  const { colors, spacing } = useTheme();
+
+  const renderWidget = (widgetConfig: WidgetConfig) => {
+    const WidgetComponent = Widgets[`${widgetConfig.type}Widget`];
+
+    if (!WidgetComponent) {
+      console.warn('Unknown widget type:', widgetConfig.type);
+      return null;
+    }
+
+    return (
+      <WidgetComponent
+        key={widgetConfig.id}
+        config={widgetConfig.config}
+      />
+    );
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
+      {/* Status Bar */}
+      <StatusBar />
+
+      {/* Widget Grid */}
+      <ScrollView style={styles.widgetGrid} contentContainerStyle={styles.widgetGridContent}>
+        {widgets.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Icon name="compass-outline" size={64} color={colors.textTertiary} />
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
+              Tap + to add your first instrument
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.widgetRow}>
+            {widgets.map(renderWidget)}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => router.push('/widget-selector')}
+      >
+        <Icon name="add" size={24} color={colors.textPrimary} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  widgetGrid: {
+    flex: 1,
+    padding: 12,
+  },
+  widgetGridContent: {
+    flexGrow: 1,
+  },
+  widgetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    marginTop: 16,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+});
+```
+
+
+CONSTRAINTS & CRITICAL REQUIREMENTS
+------------------------------------
+
+DO:
+- Use TypeScript for ALL files with strict type checking enabled
+- Handle null/undefined NMEA data gracefully (show "--", never crash) - FR32, NFR16
+- Implement proper error boundaries (Sentry ErrorBoundary)
+- Test on real devices (not just simulators)
+- Implement reconnection logic with exponential backoff
+- Validate all user inputs (IP addresses, threshold values)
+- Use monospace fonts for numeric data to prevent jitter
+- Apply exact color palette for Day/Night/Red-Night modes
+- Make all touch targets minimum 44x44pt (WCAG AAA)
+- Throttle NMEA updates to prevent UI thrashing
+- Rate limit autopilot commands (max 3/second) - NFR10
+- Persist all settings and layouts to AsyncStorage - FR6, FR30
+- Support multi-engine and multi-battery boats - FR12, FR35
+- Implement 5-second countdown for tack/gybe - FR37
+- Achieve 70%+ test coverage - NFR18
+- Integrate Sentry for crash reporting - NFR14
+- Optimize for 8+ hour battery life - NFR5
+- Maintain <1 second data latency - FR33
+
+DO NOT:
+- Use Tailwind CSS or any CSS-in-JS libraries (use StyleSheet API only)
+- Include authentication or user accounts (fully offline app - NFR6, NFR13)
+- Sync data between devices (local-only in MVP)
+- Use external APIs or cloud services (except Sentry)
+- Implement voice commands (deferred to Phase 2)
+- Implement trip logging (deferred to Phase 2)
+- Support Windows/macOS in MVP (Phase 1.5)
+- Allow tack/gybe without 5-second countdown (safety requirement)
+- Send autopilot commands faster than 3/second (boat processing constraint)
+- Store WiFi credentials in plain text (use expo-secure-store)
+
+
+STRICT SCOPE DEFINITION
+------------------------
+
+CREATE THESE FILES (Complete MVP - ~100 files):
+
+**Configuration:**
+- package.json (with all dependencies listed above)
+- tsconfig.json (strict mode enabled)
+- app.json (Expo config with plugins)
+- eas.json (EAS Build config for iOS/Android)
+- jest.config.js
+- babel.config.js
+- .eslintrc.js
+- .prettierrc
+
+**App Screens (Expo Router):**
+- app/_layout.tsx
+- app/index.tsx (Dashboard)
+- app/settings.tsx
+- app/connection-settings.tsx
+- app/widget-selector.tsx
+- app/setup-wizard.tsx
+
+**Theme System:**
+- src/theme/colors.ts
+- src/theme/typography.ts
+- src/theme/spacing.ts
+- src/theme/ThemeProvider.tsx
+- src/theme/index.ts
+
+**Components:**
+- src/components/Button.tsx
+- src/components/Modal.tsx
+- src/components/StatusBar.tsx
+- src/components/SegmentedControl.tsx
+- src/components/index.ts
+
+**Widgets (10 instruments):**
+- src/widgets/WidgetCard.tsx
+- src/widgets/DepthWidget.tsx
+- src/widgets/SpeedWidget.tsx
+- src/widgets/WindWidget.tsx
+- src/widgets/GPSWidget.tsx
+- src/widgets/CompassWidget.tsx
+- src/widgets/EngineWidget.tsx
+- src/widgets/BatteryWidget.tsx
+- src/widgets/TanksWidget.tsx
+- src/widgets/AutopilotWidget.tsx
+- src/widgets/RudderWidget.tsx
+- src/widgets/index.ts
+
+**Services:**
+- src/services/nmea/NMEAConnection.ts
+- src/services/nmea/NMEAParser.ts
+- src/services/nmea/AutopilotCommands.ts
+- src/services/nmea/types.ts
+- src/services/storage/widgetStorage.ts
+- src/services/storage/settingsStorage.ts
+- src/services/storage/secureStorage.ts
+- src/services/playback/NMEAPlayback.ts
+
+**Zustand Stores:**
+- src/store/nmeaStore.ts
+- src/store/widgetStore.ts
+- src/store/settingsStore.ts
+- src/store/alarmStore.ts
+- src/store/connectionStore.ts
+
+**Custom Hooks:**
+- src/hooks/useNMEAData.ts
+- src/hooks/useTheme.ts
+- src/hooks/useConnection.ts
+- src/hooks/useWidgetConfig.ts
+- src/hooks/index.ts
+
+**Utils:**
+- src/utils/unitConversion.ts
+- src/utils/validation.ts
+- src/utils/formatters.ts
+- src/utils/index.ts
+
+**Types:**
+- src/types/widget.types.ts
+- src/types/nmea.types.ts
+- src/types/navigation.types.ts
+- src/types/index.ts
+
+**Tests (70%+ coverage):**
+- __tests__/components/Button.test.tsx
+- __tests__/widgets/DepthWidget.test.tsx
+- __tests__/services/nmea/NMEAParser.test.ts
+- __tests__/store/nmeaStore.test.ts
+- (Additional test files for other components/services)
+
+**Assets:**
+- assets/icon.png
+- assets/splash.png
+- assets/adaptive-icon.png
+- assets/icons/compass.svg
+- assets/icons/rudder.svg
+
+**Documentation:**
+- README.md (setup instructions, architecture overview)
+- docs/TESTING.md (beta testing guide)
+- docs/PRIVACY.md (privacy policy)
+
+
+OUTPUT FORMAT REQUIREMENTS
+---------------------------
+- Provide COMPLETE, PRODUCTION-READY TypeScript/React Native code
+- Include ALL imports and proper type annotations
+- Add comprehensive comments explaining complex logic (especially NMEA parsing, autopilot commands)
+- Ensure code follows React Native and TypeScript best practices
+- Include error handling for all async operations
+- Make it RUNNABLE IMMEDIATELY after copying files
+- Include sample NMEA recording file for playback mode testing
+- Provide basic unit tests for critical services (NMEAParser, AutopilotCommands, stores)
+
+
+FINAL NOTES
+-----------
+This is the FULL PRODUCTION MVP for iOS and Android app store submission. This is NOT a prototype or demo - this must be:
+
+1. **Stable**: 99.5% crash-free session rate (Sentry integrated)
+2. **Performant**: 8+ hour battery life, <1s data latency
+3. **Reliable**: 98% first-connection success rate, auto-reconnection
+4. **Safe**: 5-second countdown for tack/gybe, rate-limited commands
+5. **Accessible**: WCAG 2.1 Level AA compliant
+6. **Tested**: 70%+ automated test coverage, 50 beta users
+7. **Documented**: Privacy policy, help docs, README
+
+The generated code will be reviewed, tested on real boats with real WiFi bridges (Quark-Elec A032, Actisense W2K-1, Digital Yacht WLN10), and refined based on beta feedback before App Store submission.
+
+Pay special attention to:
+- NMEA parsing accuracy (must handle real-world noisy data)
+- TCP socket stability (maintain connection in challenging WiFi conditions on boats)
+- Autopilot command encoding (Raymarine-specific protocol - consult EVO documentation)
+- Battery optimization (marine use cases require all-day operation)
+- Error handling (graceful degradation when sensors fail or connection drops)
+
+Generate all files listed in the "CREATE THESE FILES" section above as complete, production-ready code suitable for App Store submission.

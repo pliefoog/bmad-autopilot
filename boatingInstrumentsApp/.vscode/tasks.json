@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Create unit test for NmeaConnectionManager",
+			"type": "shell",
+			"command": "npx jest --init",
+			"args": [],
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "test"
+		},
+		{
+			"label": "Create test file for NmeaConnectionManager",
+			"type": "shell",
+			"command": "touch __tests__/nmeaConnection.test.ts",
+			"args": [],
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "test"
+		}
+	]
+}

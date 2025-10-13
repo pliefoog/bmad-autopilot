@@ -1,0 +1,556 @@
+=== BOATING INSTRUMENTS APP - FULL FRONTEND GENERATION ===
+
+PROJECT CONTEXT & TECH STACK
+-----------------------------
+You are building a React Native cross-platform marine instrument display application that transforms smartphones, tablets, and desktop devices into comprehensive boating dashboards. This app connects to boat NMEA networks via WiFi bridges, displaying real-time marine data through customizable widget-based layouts.
+
+TECHNOLOGY STACK:
+- Framework: React Native 0.82.0 with TypeScript 5.8+
+- State Management: Zustand 5.0+ for global NMEA data state
+- Styling: React Native StyleSheet API (NOT Tailwind CSS)
+- Icons: react-native-vector-icons (Ionicons set)
+- Animations: react-native-reanimated 4.1+ for smooth 60 FPS performance
+- Gestures: react-native-gesture-handler 2.28+
+- Vector Graphics: react-native-svg 15.14+ for compass roses and gauges
+- Navigation: Tab-based or stack navigation for settings/modals
+- Platform Support: iOS, Android (Windows/macOS later - use cross-platform code only)
+
+VISUAL DESIGN AESTHETIC:
+- Style: Professional nautical/marine instrument design inspired by Raymarine physical instruments
+- Color Scheme: Dark mode primary (navy/dark gray backgrounds, high contrast text)
+- Feel: Technical, reliable, glanceable - NOT playful or consumer-app styled
+- Target Use Case: Readable in bright sunlight, during boat motion, with gloves
+
+
+HIGH-LEVEL GOAL
+----------------
+Create the complete React Native frontend for a boating instruments app with the following screens and features:
+
+1. **Dashboard/Canvas (Primary Screen)** - Widget-based layout displaying 10 marine instrument types
+2. **Setup Wizard (First Launch)** - 3-step onboarding: Welcome → WiFi Connection → Widget Selection
+3. **Widget Selector Modal** - Browse and add instruments to dashboard
+4. **Settings Screen** - Unit preferences, display modes, alarm configuration
+5. **Connection Settings** - Manual IP entry, connection status, troubleshooting
+6. **Widget Configuration** - Per-widget settings for units, data sources, visualization styles
+
+
+DETAILED STEP-BY-STEP INSTRUCTIONS
+-----------------------------------
+
+STEP 1: Create the project structure with these folders and files:
+```
+boatingInstrumentsApp/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── Button.tsx       # Primary/Secondary/Destructive button variants
+│   │   ├── Modal.tsx        # Modal container (bottom sheet, centered, full-screen variants)
+│   │   ├── StatusBar.tsx    # Top status bar with connection indicator
+│   │   └── SegmentedControl.tsx  # For unit/mode selection
+│   ├── widgets/             # 10 marine instrument widgets
+│   │   ├── WidgetCard.tsx   # Base widget container component
+│   │   ├── DepthWidget.tsx  # Depth below transducer
+│   │   ├── SpeedWidget.tsx  # Speed over ground / through water
+│   │   ├── WindWidget.tsx   # Wind speed & direction
+│   │   ├── GPSWidget.tsx    # GPS position (lat/lon)
+│   │   ├── CompassWidget.tsx # Heading with analog compass rose (SVG)
+│   │   ├── EngineWidget.tsx # Engine RPM, temp, oil pressure
+│   │   ├── BatteryWidget.tsx # Battery voltage/percentage
+│   │   ├── TanksWidget.tsx  # Fuel/water tank levels
+│   │   ├── AutopilotStatusWidget.tsx # Autopilot mode and target heading
+│   │   └── RudderWidget.tsx # Rudder angle indicator
+│   ├── screens/             # Full-screen views
+│   │   ├── Dashboard.tsx    # Main screen with widget grid
+│   │   ├── SetupWizard.tsx  # First-launch 3-step wizard
+│   │   ├── Settings.tsx     # Settings screen
+│   │   ├── WidgetSelector.tsx # Modal for adding widgets
+│   │   └── ConnectionSettings.tsx # WiFi bridge connection config
+│   ├── core/                # State management and business logic
+│   │   ├── nmeaStore.ts     # Zustand store for NMEA data
+│   │   ├── settingsStore.ts # Zustand store for app settings
+│   │   └── types.ts         # TypeScript interfaces
+│   ├── theme/               # Design system
+│   │   ├── colors.ts        # Color palette constants
+│   │   ├── typography.ts    # Font sizes and weights
+│   │   └── spacing.ts       # 8pt baseline grid spacing scale
+│   └── App.tsx              # Root app component
+└── package.json
+```
+
+STEP 2: Implement the color palette and design system:
+Use these EXACT color values in src/theme/colors.ts:
+```typescript
+export const Colors = {
+  primary: '#0284C7',      // Marine blue - buttons, active states
+  secondary: '#0EA5E9',    // Lighter blue - hover states
+  accent: '#06B6D4',       // Cyan - highlights
+  success: '#10B981',      // Green - confirmations, connected status
+  warning: '#F59E0B',      // Orange - warnings, "connected but no data"
+  error: '#EF4444',        // Red - errors, alarms, disconnected
+  backgroundDark: '#0A1929',  // Dark navy - main app background
+  backgroundMedium: '#1E293B', // Dark gray - widget cards, modals
+  borderGray: '#334155',   // Subtle gray - borders
+  textPrimary: '#FFFFFF',  // White - primary text, data values
+  textSecondary: '#CBD5E1', // Light gray - labels
+  textTertiary: '#94A3B8', // Medium gray - placeholders, disabled
+};
+```
+
+STEP 3: Create the WidgetCard base component (src/widgets/WidgetCard.tsx):
+This is the container for ALL widgets. It should:
+- Accept props: title (string), icon (Ionicons name), value (number/string), unit (string), state ('normal' | 'alarm' | 'no-data' | 'highlighted'), children (React.ReactNode)
+- Display widget title at top in small caps (12pt, bold, uppercase)
+- Show Ionicons icon (36pt) below title
+- Display primary value in very large font (42pt, bold, monospace)
+- Show unit text next to value (16pt, light gray)
+- Apply different styling based on state prop:
+  - 'normal': Default gray border
+  - 'alarm': Red border with subtle pulsing glow animation
+  - 'no-data': Dimmed (50% opacity), show "--" for value
+  - 'highlighted': Cyan border glow
+- Background: backgroundMedium, rounded corners (8pt), padding (12pt)
+- Minimum size: 160x160pt
+- Support optional children prop for additional content below main value
+
+STEP 4: Implement the 10 instrument widgets in src/widgets/:
+Each widget should:
+- Use the WidgetCard base component
+- Subscribe to relevant NMEA data from nmeaStore (useNmeaStore hook)
+- Display "--" or "N/A" when data unavailable (don't crash!)
+- Handle no-data state gracefully
+- Use appropriate icons from Ionicons
+
+Example widgets to create:
+- **DepthWidget**: Show depth value with "ft" or "m" unit, use 'water' icon
+- **SpeedWidget**: Show speed with "kts" unit, use 'speedometer' icon
+- **GPSWidget**: Show latitude/longitude, use 'location' icon
+- **CompassWidget**: Render analog compass rose using React Native SVG, rotate based on heading
+- **WindWidget**: Show wind speed and direction arrow
+- **EngineWidget**: Show RPM and temperature, multi-row display
+- **BatteryWidget**: Show voltage and percentage, battery icon
+- **TanksWidget**: Show fuel/water levels with bar graphs
+- **AutopilotStatusWidget**: Show current mode (AUTO/STANDBY/WIND) and target heading
+- **RudderWidget**: Show rudder angle with angle indicator graphic
+
+STEP 5: Build the Dashboard screen (src/screens/Dashboard.tsx):
+- Status bar at top (60pt height) with:
+  - Connection indicator dot (left) - red/orange/green based on nmeaStore connection status
+  - Current time (center)
+  - Settings hamburger menu button (right)
+- Scrollable widget grid below status bar:
+  - Use ScrollView (mobile) or FlexGrid layout
+  - 2 columns on phones, 3-4 on tablets
+  - 12pt padding around edges
+  - Dark navy background (backgroundDark)
+- Floating Action Button (FAB) bottom-right:
+  - 56x56pt circular button
+  - Marine blue background
+  - White "+" icon (add-outline)
+  - Tapping opens WidgetSelector modal
+- Empty state (when no widgets):
+  - Centered compass icon (64pt)
+  - Text: "Tap + to add your first instrument"
+
+STEP 6: Create the Setup Wizard (src/screens/SetupWizard.tsx):
+3-step linear flow with progress dots at top:
+
+**Step 1 - Welcome Screen:**
+- App logo/icon at top
+- Welcome text: "Transform your device into a marine instrument display"
+- Safety disclaimer (scrollable text)
+- "I Accept" button (disabled until scrolled to bottom)
+- "Skip to Demo Mode" link at bottom
+
+**Step 2 - WiFi Connection:**
+- Instruction text: "Enter your WiFi bridge IP address"
+- Text input field with placeholder "192.168.1.1"
+- "Connect" button
+- Connection status indicator during attempt
+- Error handling with troubleshooting tips on failure
+- "Skip to Demo" option
+
+**Step 3 - Widget Selection:**
+- Header: "Choose your instruments"
+- Grid of 10 widget type cards with checkboxes
+- Pre-selected suggested set: Depth, Speed, Wind, GPS, Compass, Autopilot
+- "Done" button proceeds to Dashboard
+
+STEP 7: Implement the Widget Selector modal (src/screens/WidgetSelector.tsx):
+- Modal sheet slides up from bottom (80% screen height)
+- Header: "Add Instrument" with close button (X)
+- Grid of 10 widget cards (2 columns on phone)
+- Each card shows:
+  - Widget preview icon
+  - Widget name (e.g., "DEPTH", "SPEED")
+  - Checkmark if already on dashboard (dimmed)
+- Tap to add → modal dismisses, widget appears on dashboard
+- Swipe down to dismiss
+
+STEP 8: Create Settings screen (src/screens/Settings.tsx):
+List of settings options:
+- **Unit Preferences**: Segmented control for depth (ft/m/fathoms), speed (kts/mph/kmh), temperature (°F/°C)
+- **Display Mode**: Day / Night / Red-Night mode selector
+- **Alarm Configuration**: Link to alarm setup screen (simplified for MVP - just show placeholder)
+- **Connection Settings**: Link to ConnectionSettings screen
+- **About/Help**: App version, credits, help documentation link
+
+STEP 9: Build Connection Settings screen (src/screens/ConnectionSettings.tsx):
+- Connection status section:
+  - Large status indicator (green/orange/red circle)
+  - Status text: "Connected" / "Connected - No Data" / "Disconnected"
+  - Last connection time
+- Manual connection form:
+  - Text input: "WiFi Bridge IP or Hostname"
+  - Port input: Default 10110
+  - "Connect" button
+- Troubleshooting expandable section:
+  - Common issues and solutions
+  - Link to help documentation
+- "Test Demo Mode" button for testing without hardware
+
+STEP 10: Implement Zustand stores (src/core/):
+
+**nmeaStore.ts** - NMEA data state:
+```typescript
+interface NMEAData {
+  depth: number | null;
+  speed: number | null;
+  heading: number | null;
+  gpsPosition: { lat: number, lon: number } | null;
+  windSpeed: number | null;
+  windAngle: number | null;
+  engineRPM: number | null;
+  batteryVoltage: number | null;
+  autopilotMode: string | null;
+  autopilotHeading: number | null;
+  // ... other NMEA parameters
+}
+
+interface NMEAStore {
+  connectionStatus: 'disconnected' | 'connected' | 'connected-no-data';
+  nmeaData: NMEAData;
+  updateData: (key: string, value: any) => void;
+  setConnectionStatus: (status: string) => void;
+}
+```
+
+**settingsStore.ts** - App settings:
+```typescript
+interface SettingsStore {
+  units: {
+    depth: 'ft' | 'm' | 'fathoms';
+    speed: 'kts' | 'mph' | 'kmh';
+    temperature: 'F' | 'C';
+  };
+  displayMode: 'day' | 'night' | 'red-night';
+  widgetLayout: string[]; // Array of widget IDs on dashboard
+  updateUnits: (category: string, value: string) => void;
+  setDisplayMode: (mode: string) => void;
+  addWidget: (widgetId: string) => void;
+  removeWidget: (widgetId: string) => void;
+}
+```
+
+STEP 11: Style the app with React Native StyleSheet:
+- Use the StyleSheet API (NOT CSS classes or Tailwind)
+- All components should use StyleSheet.create()
+- Apply color palette from Colors object
+- Typography: Use system fonts (SF Pro on iOS, Roboto on Android)
+- Spacing: Use 8pt baseline grid (4pt, 8pt, 12pt, 16pt, 24pt, 32pt)
+- Touch targets: Minimum 44x44pt for all interactive elements
+- Animations: Use Reanimated for smooth transitions (fade in/out, slide up/down)
+
+STEP 12: Implement basic animations and transitions:
+- Modal enter: Slide up from bottom (300ms, ease-out)
+- Modal exit: Slide down (250ms, ease-in)
+- Button press: Scale from 1.0 to 0.95 on press (100ms)
+- Connection status pulse: Opacity animation when connecting (1s loop)
+- Widget add: Fade in + scale from 0.9 to 1.0 (250ms)
+
+
+CODE EXAMPLES, DATA STRUCTURES & CONSTRAINTS
+----------------------------------------------
+
+EXAMPLE 1 - WidgetCard Component Structure:
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { Colors } from '../theme/colors';
+
+interface WidgetCardProps {
+  title: string;
+  icon: string;
+  value?: string | number;
+  unit?: string;
+  state?: 'normal' | 'alarm' | 'no-data' | 'highlighted';
+  children?: React.ReactNode;
+}
+
+export const WidgetCard: React.FC<WidgetCardProps> = ({
+  title,
+  icon,
+  value,
+  unit,
+  state = 'normal',
+  children
+}) => {
+  const cardStyle = [
+    styles.card,
+    state === 'alarm' && styles.cardAlarm,
+    state === 'no-data' && styles.cardNoData,
+    state === 'highlighted' && styles.cardHighlight,
+  ];
+
+  return (
+    <View style={cardStyle}>
+      <Text style={styles.title}>{title.toUpperCase()}</Text>
+      <Icon name={icon} size={36} color={state === 'no-data' ? Colors.textTertiary : Colors.primary} />
+      <Text style={[styles.value, state === 'no-data' && styles.valueNoData]}>
+        {value ?? '--'}
+        {unit && <Text style={styles.unit}> {unit}</Text>}
+      </Text>
+      {children}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.backgroundMedium,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.borderGray,
+    minWidth: 160,
+    minHeight: 160,
+    padding: 12,
+    margin: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardAlarm: {
+    borderColor: Colors.error,
+    shadowColor: Colors.error,
+    shadowOpacity: 0.5,
+  },
+  cardNoData: {
+    opacity: 0.5,
+  },
+  cardHighlight: {
+    borderColor: Colors.accent,
+    shadowColor: Colors.accent,
+    shadowOpacity: 0.5,
+  },
+  title: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: Colors.textSecondary,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  value: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: Colors.textPrimary,
+    fontFamily: 'monospace',
+  },
+  valueNoData: {
+    color: Colors.textTertiary,
+  },
+  unit: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    fontWeight: 'normal',
+  },
+});
+```
+
+EXAMPLE 2 - Zustand Store Structure:
+```typescript
+import { create } from 'zustand';
+
+interface NMEAData {
+  depth: number | null;
+  speed: number | null;
+  heading: number | null;
+  // ... other fields
+}
+
+interface NMEAStore {
+  connectionStatus: 'disconnected' | 'connected' | 'connected-no-data';
+  nmeaData: NMEAData;
+  updateData: (updates: Partial<NMEAData>) => void;
+  setConnectionStatus: (status: NMEAStore['connectionStatus']) => void;
+}
+
+export const useNmeaStore = create<NMEAStore>((set) => ({
+  connectionStatus: 'disconnected',
+  nmeaData: {
+    depth: null,
+    speed: null,
+    heading: null,
+  },
+  updateData: (updates) => set((state) => ({
+    nmeaData: { ...state.nmeaData, ...updates }
+  })),
+  setConnectionStatus: (status) => set({ connectionStatus: status }),
+}));
+```
+
+EXAMPLE 3 - Dashboard Layout:
+```typescript
+import React from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { DepthWidget } from '../widgets/DepthWidget';
+import { SpeedWidget } from '../widgets/SpeedWidget';
+// ... import other widgets
+import { Colors } from '../theme/colors';
+
+export const Dashboard = () => {
+  return (
+    <View style={styles.container}>
+      {/* Status Bar */}
+      <View style={styles.statusBar}>
+        <View style={styles.connectionDot} />
+        <Text style={styles.time}>12:34 PM</Text>
+        <TouchableOpacity>
+          <Icon name="menu" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Widget Grid */}
+      <ScrollView style={styles.widgetGrid}>
+        <View style={styles.row}>
+          <DepthWidget />
+          <SpeedWidget />
+        </View>
+        <View style={styles.row}>
+          <WindWidget />
+          <GPSWidget />
+        </View>
+        {/* ... more widgets */}
+      </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity style={styles.fab}>
+        <Icon name="add" size={24} color={Colors.textPrimary} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.backgroundDark,
+  },
+  statusBar: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    backgroundColor: Colors.backgroundMedium,
+  },
+  connectionDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.success,
+  },
+  time: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  widgetGrid: {
+    flex: 1,
+    padding: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+});
+```
+
+CONSTRAINTS & IMPORTANT RULES:
+- DO NOT use Tailwind CSS or any CSS-in-JS libraries - use StyleSheet API only
+- DO NOT include actual NMEA parsing or TCP socket code - just mock data in stores
+- DO NOT implement full autopilot control (Epic 3) - just show autopilot STATUS widget
+- DO NOT create alarm functionality - just placeholder UI for alarm configuration
+- DO use TypeScript for all files with proper type annotations
+- DO handle null/undefined data gracefully (show "--" not crash)
+- DO use Ionicons for all icons
+- DO make all touch targets minimum 44x44pt
+- DO use monospace fonts for numeric data values to prevent jitter
+- DO apply the exact color palette provided
+- DO create responsive layouts that work on phones and tablets
+
+
+STRICT SCOPE DEFINITION
+------------------------
+You should create the following files and ONLY these files:
+
+CREATE THESE FILES:
+- src/theme/colors.ts
+- src/theme/typography.ts
+- src/theme/spacing.ts
+- src/core/types.ts
+- src/core/nmeaStore.ts
+- src/core/settingsStore.ts
+- src/components/Button.tsx
+- src/components/Modal.tsx
+- src/components/StatusBar.tsx
+- src/components/SegmentedControl.tsx
+- src/widgets/WidgetCard.tsx
+- src/widgets/DepthWidget.tsx
+- src/widgets/SpeedWidget.tsx
+- src/widgets/WindWidget.tsx
+- src/widgets/GPSWidget.tsx
+- src/widgets/CompassWidget.tsx
+- src/widgets/EngineWidget.tsx
+- src/widgets/BatteryWidget.tsx
+- src/widgets/TanksWidget.tsx
+- src/widgets/AutopilotStatusWidget.tsx
+- src/widgets/RudderWidget.tsx
+- src/screens/Dashboard.tsx
+- src/screens/SetupWizard.tsx
+- src/screens/Settings.tsx
+- src/screens/WidgetSelector.tsx
+- src/screens/ConnectionSettings.tsx
+- src/App.tsx
+- package.json (update with dependencies)
+
+DO NOT MODIFY:
+- Any existing service layer code in src/core/nmea/ if present
+- Any existing socket connection code
+- Build configuration files (metro.config.js, etc.)
+- Platform-specific native code
+
+OUTPUT FORMAT:
+- Provide complete, production-ready TypeScript/React Native code
+- Include all imports and proper type annotations
+- Add helpful comments explaining widget logic
+- Ensure code follows React Native best practices
+- Make it runnable immediately after copying files
+
+FINAL NOTES:
+This is a UX prototype for testing and refinement. Focus on creating a beautiful, professional-looking interface that matches the marine instrument aesthetic. The actual NMEA data connection will be implemented later - for now, use mock data in the Zustand stores that updates periodically to simulate live data.
+
+Generate all the files listed in the "CREATE THESE FILES" section above as complete, copy-pasteable code.

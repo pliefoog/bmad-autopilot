@@ -1,0 +1,42 @@
+name: CI - Fast Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test-fast:
+    name: Fast test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: boatingInstrumentsApp
+        run: npm ci
+
+      - name: Run fast CI tests
+        working-directory: boatingInstrumentsApp
+        run: npm run test:ci-fast
+
+      - name: Add PR label on success
+        if: ${{ github.event_name == 'pull_request' && success() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (pr) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['ci/fast-passed']
+              });
+            }
