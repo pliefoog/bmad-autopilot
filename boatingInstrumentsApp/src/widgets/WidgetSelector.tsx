@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WidgetRegistry } from './WidgetRegistry';
+import { PlatformStyles } from '../utils/animationUtils';
 
 interface WidgetListItem {
   key: string;
@@ -124,10 +125,7 @@ const styles = StyleSheet.create({
     minHeight: 160,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 4, 0.2),
     position: 'relative',
   },
   cardDimmed: {
@@ -135,8 +133,7 @@ const styles = StyleSheet.create({
   },
   cardHighlight: {
     borderColor: '#06B6D4',
-    shadowColor: '#06B6D4',
-    shadowOpacity: 0.5,
+    ...PlatformStyles.boxShadow('#06B6D4', { x: 0, y: 2 }, 4, 0.5),
   },
   label: {
     fontSize: 15,

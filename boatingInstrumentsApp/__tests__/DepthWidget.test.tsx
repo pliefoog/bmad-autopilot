@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { DepthWidget } from '../src/widgets/DepthWidget';
 
 // Mock dependencies
@@ -106,15 +106,16 @@ describe('DepthWidget', () => {
     it('should render with no data state', () => {
       useNmeaStore.mockReturnValue(undefined);
       
-      const { getByText } = render(<DepthWidget />);
-      expect(getByText('DEPTH')).toBeTruthy();
+      const { getByTestId } = render(<DepthWidget />);
+      expect(getByTestId('depth-widget-title')).toBeTruthy();
     });
 
     it('should render with valid depth data', () => {
       useNmeaStore.mockReturnValue(5.5); // 5.5 meters
       
-      const { getByText } = render(<DepthWidget />);
-      expect(getByText('DEPTH')).toBeTruthy();
+      const { getByTestId } = render(<DepthWidget />);
+      expect(getByTestId('depth-widget-title')).toBeTruthy();
+      expect(getByTestId('metric-value')).toBeTruthy();
     });
 
     it('should handle undefined depth gracefully', () => {
@@ -153,6 +154,103 @@ describe('DepthWidget', () => {
       warnings.forEach(({ threshold }) => {
         expect(threshold).toBeGreaterThan(0);
         expect(threshold).toBeLessThan(10); // Reasonable upper bound
+      });
+    });
+  });
+
+  describe('Widget Expansion (Story 2.12)', () => {
+    it('starts in collapsed state by default', () => {
+      const { getByTestId } = render(<DepthWidget />);
+      
+      // Should have WidgetShell in collapsed state
+      expect(getByTestId('depth-widget-shell')).toBeTruthy();
+    });
+
+    it('expands when tapped', () => {
+      const { getByTestId } = render(<DepthWidget />);
+      
+      // Tap to expand
+      fireEvent.press(getByTestId('depth-widget-shell-touchable'));
+      
+      // Should now be in expanded state (no crash means success)
+      expect(getByTestId('depth-widget-shell')).toBeTruthy();
+    });
+
+    it('shows unit cycling button only in expanded state', async () => {
+      const { getByTestId, queryByTestId } = render(<DepthWidget />);
+      
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(getByTestId('depth-widget-shell')).toBeTruthy();
+      });
+      
+      // In collapsed state, unit button should not exist
+      expect(queryByTestId('depth-widget-unit-cycle')).toBeNull();
+      
+      // Expand widget
+      fireEvent.press(getByTestId('depth-widget-shell-touchable'));
+      
+      // Wait for expansion to complete and unit button to appear
+      await waitFor(() => {
+        expect(getByTestId('depth-widget-unit-cycle')).toBeTruthy();
+      });
+    });
+
+    it('handles unit cycling in expanded state', async () => {
+      // Set some depth data first so unit conversion is visible
+      useNmeaStore.mockReturnValue(3.0); // 3.0 meters
+      
+      const { getByTestId, getByText } = render(<DepthWidget />);
+      
+      // Wait for initial loading
+      await waitFor(() => {
+        expect(getByTestId('depth-widget-shell')).toBeTruthy();
+      });
+      
+      // Expand widget first
+      fireEvent.press(getByTestId('depth-widget-shell-touchable'));
+      
+      // Wait for expansion and unit button to appear
+      await waitFor(() => {
+        expect(getByTestId('depth-widget-unit-cycle')).toBeTruthy();
+      });
+      
+      // Should show meters initially
+      expect(getByText('m')).toBeTruthy();
+      
+      // Cycle units
+      fireEvent.press(getByTestId('depth-widget-unit-cycle'));
+      
+      // Wait for unit change to take effect
+      await waitFor(() => {
+        expect(getByText('ft')).toBeTruthy();
+      });
+    });
+
+    it('shows chevron indicator', () => {
+      const { getByTestId } = render(<DepthWidget />);
+      
+      // Chevron should be present
+      expect(getByTestId('depth-widget-chevron')).toBeTruthy();
+      
+      // Should show collapsed chevron initially (⌄)
+      expect(getByTestId('depth-widget-chevron')).toHaveTextContent('⌄');
+    });
+
+    it('updates chevron when expanded', async () => {
+      const { getByTestId } = render(<DepthWidget />);
+      
+      // Wait for initial loading
+      await waitFor(() => {
+        expect(getByTestId('depth-widget-shell')).toBeTruthy();
+      });
+      
+      // Expand widget
+      fireEvent.press(getByTestId('depth-widget-shell-touchable'));
+      
+      // Chevron should now show expanded state (⌃)
+      await waitFor(() => {
+        expect(getByTestId('depth-widget-chevron')).toHaveTextContent('⌃');
       });
     });
   });

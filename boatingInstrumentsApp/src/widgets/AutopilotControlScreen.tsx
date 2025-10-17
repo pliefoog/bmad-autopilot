@@ -1,33 +1,86 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
-  Dimensions,
-  Vibration,
   Modal,
+  Vibration,
+  Alert,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Sound from 'react-native-sound';
 import { useNmeaStore } from '../core/nmeaStore';
-import { useTheme } from '../core/themeStore';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import { AutopilotCommandManager } from '../services/autopilotService';
+import Svg, { Circle, Line, Text as SvgText, Path } from 'react-native-svg';
 
 interface AutopilotControlScreenProps {
-  onClose?: () => void;
+  visible: boolean;
+  onClose: () => void;
 }
 
-export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({ onClose }) => {
+/**
+ * P70-Inspired Autopilot Control Dialog
+ *
+ * Designed to match the Raymarine P70 Control Unit interface:
+ * - Grid-based button layout for +/- 1° and +/-10° course adjustments
+ * - Large, accessible touch targets optimized for marine conditions
+ * - Central heading display with compass visualization
+ * - Primary ENGAGE/STANDBY controls
+ * - Emergency disengage always accessible
+ */
+export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
+  visible,
+  onClose
+}) => {
   const autopilot = useNmeaStore((state: any) => state.nmeaData.autopilot);
   const heading = useNmeaStore((state: any) => state.nmeaData.heading);
-  const theme = useTheme();
-  const { width, height } = Dimensions.get('window');
-  const isLandscape = width > height;
-  
+
+  // Autopilot service instance
+  const commandManager = useRef<AutopilotCommandManager | null>(null);
+
+  // Audio alerts
+  const engageSound = useRef<Sound | null>(null);
+  const disengageSound = useRef<Sound | null>(null);
+  const alertSound = useRef<Sound | null>(null);
+
+  // Initialize command manager and audio
+  useEffect(() => {
+    commandManager.current = new AutopilotCommandManager();
+
+    // Initialize audio alerts (using system sounds for reliability)
+    Sound.setCategory('Playback');
+
+    engageSound.current = new Sound('engage_autopilot.wav', Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('Custom engage sound not available, using system sound');
+      }
+    });
+
+    disengageSound.current = new Sound('disengage_autopilot.wav', Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('Custom disengage sound not available, using system sound');
+      }
+    });
+
+    alertSound.current = new Sound('autopilot_alert.wav', Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('Custom alert sound not available, using system sound');
+      }
+    });
+
+    return () => {
+      commandManager.current = null;
+      engageSound.current?.release();
+      disengageSound.current?.release();
+      alertSound.current?.release();
+    };
+  }, []);
+
   // Local state for UI interactions
   const [showEngageConfirmation, setShowEngageConfirmation] = useState(false);
-  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [isCommandPending, setIsCommandPending] = useState(false);
+  const [commandError, setCommandError] = useState<string | null>(null);
 
   // Autopilot data with defaults
   const {
@@ -35,14 +88,38 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({ 
     engaged = false,
     active = false,
     targetHeading = heading || 0,
-    rudderPosition = 0,
   } = autopilot || {};
 
   const currentHeading = heading || 0;
 
   // Haptic feedback for all interactions
   const triggerHaptic = useCallback(() => {
-    Vibration.vibrate(50); // Short vibration
+    Vibration.vibrate(50);
+  }, []);
+
+  // Audio alerts for autopilot state changes
+  const playEngageAlert = useCallback(() => {
+    engageSound.current?.play((success) => {
+      if (!success) {
+        console.log('Failed to play engage sound');
+      }
+    });
+  }, []);
+
+  const playDisengageAlert = useCallback(() => {
+    disengageSound.current?.play((success) => {
+      if (!success) {
+        console.log('Failed to play disengage sound');
+      }
+    });
+  }, []);
+
+  const playErrorAlert = useCallback(() => {
+    alertSound.current?.play((success) => {
+      if (!success) {
+        console.log('Failed to play error alert sound');
+      }
+    });
   }, []);
 
   // Safety confirmation modal for engagement
@@ -52,49 +129,82 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({ 
   }, [triggerHaptic]);
 
   // Confirmed engagement
-  const handleEngageConfirm = useCallback(() => {
+  const handleEngageConfirm = useCallback(async () => {
     triggerHaptic();
     setShowEngageConfirmation(false);
     setIsCommandPending(true);
-    setPendingCommand('ENGAGE');
-    // TODO: Send engage command via autopilot service
-    setTimeout(() => {
+    setCommandError(null);
+
+    try {
+      if (commandManager.current) {
+        const success = await commandManager.current.engageCompassMode(currentHeading);
+        if (success) {
+          playEngageAlert();
+        } else {
+          setCommandError('Failed to engage autopilot');
+          playErrorAlert();
+        }
+      }
+    } catch (error) {
+      setCommandError(error instanceof Error ? error.message : 'Autopilot engagement failed');
+      playErrorAlert();
+    } finally {
       setIsCommandPending(false);
-      setPendingCommand(null);
-    }, 2000);
-  }, [triggerHaptic]);
+    }
+  }, [triggerHaptic, currentHeading, playEngageAlert, playErrorAlert]);
 
   // Emergency disengage - no confirmation needed
-  const handleEmergencyDisengage = useCallback(() => {
+  const handleEmergencyDisengage = useCallback(async () => {
     triggerHaptic();
     Vibration.vibrate([100, 50, 100]); // Pattern for emergency
     setIsCommandPending(true);
-    setPendingCommand('DISENGAGE');
-    // TODO: Send emergency disengage command
-    setTimeout(() => {
+    setCommandError(null);
+
+    try {
+      if (commandManager.current) {
+        const success = await commandManager.current.emergencyDisengage();
+        if (success) {
+          playDisengageAlert();
+        } else {
+          setCommandError('Emergency disengage failed');
+          playErrorAlert();
+        }
+      }
+    } catch (error) {
+      setCommandError(error instanceof Error ? error.message : 'Emergency disengage failed');
+      playErrorAlert();
+    } finally {
       setIsCommandPending(false);
-      setPendingCommand(null);
-    }, 1000);
-  }, [triggerHaptic]);
+    }
+  }, [triggerHaptic, playDisengageAlert, playErrorAlert]);
 
   // Heading adjustment
-  const adjustHeading = useCallback((adjustment: number) => {
+  const adjustHeading = useCallback(async (adjustment: number) => {
     triggerHaptic();
-    const newTargetHeading = (targetHeading + adjustment + 360) % 360;
     setIsCommandPending(true);
-    setPendingCommand(`ADJUST ${adjustment > 0 ? '+' : ''}${adjustment}°`);
-    // TODO: Send heading adjustment command
-    setTimeout(() => {
+    setCommandError(null);
+
+    try {
+      if (commandManager.current) {
+        const success = await commandManager.current.adjustHeading(adjustment);
+        if (!success) {
+          setCommandError(`Failed to adjust heading ${adjustment > 0 ? '+' : ''}${adjustment}°`);
+          playErrorAlert();
+        }
+      }
+    } catch (error) {
+      setCommandError(error instanceof Error ? error.message : 'Heading adjustment failed');
+      playErrorAlert();
+    } finally {
       setIsCommandPending(false);
-      setPendingCommand(null);
-    }, 1000);
-  }, [triggerHaptic, targetHeading]);
+    }
+  }, [triggerHaptic, playErrorAlert]);
 
   // Status colors based on engagement state
   const getStatusColor = () => {
-    if (engaged && active) return theme.success;
-    if (engaged && !active) return theme.warning;
-    return theme.textSecondary;
+    if (engaged && active) return '#10b981'; // Green
+    if (engaged && !active) return '#f59e0b'; // Amber
+    return '#6b7280'; // Gray
   };
 
   const getStatusText = () => {
@@ -103,592 +213,512 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({ 
     return 'OFF';
   };
 
-  // Large touch target button component
-  const TouchButton: React.FC<{
-    title: string;
-    onPress: () => void;
-    backgroundColor: string;
-    textColor?: string;
-    disabled?: boolean;
-    size?: 'small' | 'medium' | 'large' | 'emergency';
-    style?: any;
-  }> = ({ title, onPress, backgroundColor, textColor, disabled, size = 'medium', style }) => {
-    const buttonSizes = {
-      small: { width: 80, height: 60 },
-      medium: { width: 120, height: 80 },
-      large: { width: 160, height: 100 },
-      emergency: { width: 140, height: 140 },
-    };
-
-    const buttonSize = buttonSizes[size];
-    
-    return (
-      <TouchableOpacity
-        style={[
-          styles.touchButton,
-          {
-            backgroundColor: disabled ? theme.border : backgroundColor,
-            ...buttonSize,
-          },
-          style,
-        ]}
-        onPress={onPress}
-        disabled={disabled}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[
-            styles.touchButtonText,
-            {
-              color: textColor || theme.text,
-              fontSize: size === 'emergency' ? 16 : size === 'large' ? 18 : 16,
-            },
-          ]}
-        >
-          {title}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // Heading display component
-  const HeadingDisplay: React.FC = () => {
-    const compassSize = isLandscape ? 200 : 160;
-    const centerX = compassSize / 2;
-    const centerY = compassSize / 2;
-    
-    return (
-      <View style={styles.headingContainer}>
-        <Text style={[styles.headingLabel, { color: theme.text }]}>
-          HEADING
-        </Text>
-        <View style={styles.compassContainer}>
-          <Svg width={compassSize} height={compassSize}>
-            {/* Compass circle */}
-            <Circle
-              cx={centerX}
-              cy={centerY}
-              r={compassSize / 2 - 10}
-              fill="none"
-              stroke={theme.border}
-              strokeWidth="2"
-            />
-            
-            {/* Current heading indicator */}
-            <Line
-              x1={centerX}
-              y1={10}
-              x2={centerX}
-              y2={30}
-              stroke={theme.success}
-              strokeWidth="4"
-              strokeLinecap="round"
-            />
-            
-            {/* Target heading indicator (if different) */}
-            {Math.abs(currentHeading - targetHeading) > 1 && (
-              <Line
-                x1={centerX + Math.sin((targetHeading * Math.PI) / 180) * (compassSize / 2 - 15)}
-                y1={centerY - Math.cos((targetHeading * Math.PI) / 180) * (compassSize / 2 - 15)}
-                x2={centerX + Math.sin((targetHeading * Math.PI) / 180) * (compassSize / 2 - 35)}
-                y2={centerY - Math.cos((targetHeading * Math.PI) / 180) * (compassSize / 2 - 35)}
-                stroke={theme.warning}
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            )}
-            
-            {/* Compass markings for cardinal directions */}
-            <SvgText
-              x={centerX}
-              y={20}
-              fontSize="14"
-              fill={theme.text}
-              textAnchor="middle"
-            >
-              N
-            </SvgText>
-          </Svg>
-        </View>
-        
-        <View style={styles.headingValues}>
-          <View style={styles.headingValue}>
-            <Text style={[styles.headingValueLabel, { color: theme.textSecondary }]}>
-              CURRENT
-            </Text>
-            <Text style={[styles.headingValueText, { color: theme.success }]}>
-              {Math.round(currentHeading)}°
-            </Text>
-          </View>
-          
-          <View style={styles.headingValue}>
-            <Text style={[styles.headingValueLabel, { color: theme.textSecondary }]}>
-              TARGET
-            </Text>
-            <Text style={[styles.headingValueText, { color: theme.warning }]}>
-              {Math.round(targetHeading)}°
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  // Portrait layout
-  if (!isLandscape) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header with close button */}
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            AUTOPILOT CONTROL
-          </Text>
-          {onClose && (
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={[styles.closeButtonText, { color: theme.text }]}>
-                ✕
-              </Text>
-            </TouchableOpacity>
+          <Text style={styles.title}>AUTOPILOT CONTROL</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          {/* Status Display */}
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]} />
+            <View style={styles.statusTextContainer}>
+              <Text style={styles.statusText}>{getStatusText()}</Text>
+              <Text style={styles.modeText}>{mode}</Text>
+            </View>
+          </View>
+
+          {/* Error Display */}
+          {commandError && (
+            <View style={styles.errorContainer}>
+              <View style={styles.errorMessageContainer}>
+                <Ionicons name="warning-outline" size={16} color="#DC2626" />
+                <Text style={styles.errorText}>{commandError}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setCommandError(null)}
+                style={styles.errorCloseButton}
+              >
+                <Ionicons name="close-outline" size={16} color="#DC2626" />
+              </TouchableOpacity>
+            </View>
           )}
-        </View>
 
-        {/* Status indicator */}
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]} />
-          <Text style={[styles.statusText, { color: theme.text }]}>
-            {getStatusText()}
-          </Text>
-          <Text style={[styles.modeText, { color: theme.textSecondary }]}>
-            {mode}
-          </Text>
-        </View>
+          {/* Heading Display with Compass */}
+          <View style={styles.headingDisplay}>
+            <Text style={styles.headingLabel}>HEADING</Text>
 
-        {/* Heading display */}
-        <HeadingDisplay />
+            {/* Simple Compass Circle */}
+            <View style={styles.compassContainer}>
+              <Svg width={180} height={180}>
+                <Circle
+                  cx={90}
+                  cy={90}
+                  r={75}
+                  fill="none"
+                  stroke="#4b5563"
+                  strokeWidth="2"
+                />
+                {/* North indicator */}
+                <Line
+                  x1={90}
+                  y1={20}
+                  x2={90}
+                  y2={40}
+                  stroke="#10b981"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
+                <SvgText
+                  x={90}
+                  y={18}
+                  fontSize="14"
+                  fill="#fff"
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  N
+                </SvgText>
+              </Svg>
+            </View>
 
-        {/* Main control buttons */}
-        <View style={styles.mainControls}>
-          {!engaged ? (
-            <TouchButton
-              title="ENGAGE AUTOPILOT"
-              onPress={handleEngageRequest}
-              backgroundColor={theme.success}
-              textColor={theme.background}
-              size="large"
-              disabled={isCommandPending}
-            />
-          ) : (
-            <TouchButton
-              title="STANDBY"
-              onPress={handleEmergencyDisengage}
-              backgroundColor={theme.warning}
-              textColor={theme.background}
-              size="large"
-              disabled={isCommandPending}
-            />
-          )}
-        </View>
+            {/* Heading Values */}
+            <View style={styles.headingValues}>
+              <View style={styles.headingValue}>
+                <Text style={styles.headingValueLabel}>CURRENT</Text>
+                <Text style={styles.headingValueCurrent}>{Math.round(currentHeading)}°</Text>
+              </View>
+              <View style={styles.headingValue}>
+                <Text style={styles.headingValueLabel}>TARGET</Text>
+                <Text style={styles.headingValueTarget}>{Math.round(targetHeading)}°</Text>
+              </View>
+            </View>
+          </View>
 
-        {/* Heading adjustment controls */}
-        <View style={styles.headingAdjustments}>
-          <View style={styles.adjustmentRow}>
-            <TouchButton
-              title="-10°"
-              onPress={() => adjustHeading(-10)}
-              backgroundColor={theme.surface}
-              size="small"
-              disabled={!engaged || isCommandPending}
-            />
-            <TouchButton
-              title="-1°"
-              onPress={() => adjustHeading(-1)}
-              backgroundColor={theme.surface}
-              size="small"
-              disabled={!engaged || isCommandPending}
-            />
-            <TouchButton
-              title="+1°"
-              onPress={() => adjustHeading(1)}
-              backgroundColor={theme.surface}
-              size="small"
-              disabled={!engaged || isCommandPending}
-            />
-            <TouchButton
-              title="+10°"
-              onPress={() => adjustHeading(10)}
-              backgroundColor={theme.surface}
-              size="small"
-              disabled={!engaged || isCommandPending}
-            />
+          {/* P70-Inspired Control Grid */}
+          <View style={styles.controlGrid}>
+            {/* Primary Engage/Standby Control */}
+            <View style={styles.primaryControlRow}>
+              {!engaged ? (
+                <TouchableOpacity
+                  style={[styles.primaryButton, styles.engageButton]}
+                  onPress={handleEngageRequest}
+                  disabled={isCommandPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.primaryButtonText}>ENGAGE</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.primaryButton, styles.standbyButton]}
+                  onPress={handleEmergencyDisengage}
+                  disabled={isCommandPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.primaryButtonText}>STANDBY</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Course Adjustment Grid - P70 Style Layout */}
+            <View style={styles.adjustmentGrid}>
+              <Text style={styles.adjustmentLabel}>COURSE ADJUSTMENT</Text>
+
+              {/* Top Row: -10° and +10° */}
+              <View style={styles.adjustmentRow}>
+                <TouchableOpacity
+                  style={[styles.adjustButton, styles.adjustButtonLarge]}
+                  onPress={() => adjustHeading(-10)}
+                  disabled={!engaged || isCommandPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.adjustButtonText}>-10°</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.adjustButton, styles.adjustButtonLarge]}
+                  onPress={() => adjustHeading(10)}
+                  disabled={!engaged || isCommandPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.adjustButtonText}>+10°</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Bottom Row: -1° and +1° */}
+              <View style={styles.adjustmentRow}>
+                <TouchableOpacity
+                  style={[styles.adjustButton, styles.adjustButtonSmall]}
+                  onPress={() => adjustHeading(-1)}
+                  disabled={!engaged || isCommandPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.adjustButtonText}>-1°</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.adjustButton, styles.adjustButtonSmall]}
+                  onPress={() => adjustHeading(1)}
+                  disabled={!engaged || isCommandPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.adjustButtonText}>+1°</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* Emergency disengage - always visible */}
-        <View style={styles.emergencyContainer}>
-          <TouchButton
-            title="EMERGENCY DISENGAGE"
+        {/* Footer with Emergency Control */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.emergencyButton}
             onPress={handleEmergencyDisengage}
-            backgroundColor={theme.error}
-            textColor={theme.background}
-            size="emergency"
             disabled={isCommandPending}
-          />
+            activeOpacity={0.7}
+          >
+            <Text style={styles.emergencyButtonText}>EMERGENCY DISENGAGE</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Command feedback */}
-        {isCommandPending && (
-          <View style={styles.commandFeedback}>
-            <Text style={[styles.commandText, { color: theme.accent }]}>
-              {pendingCommand}
-            </Text>
-          </View>
-        )}
-
-        {/* Engagement confirmation modal */}
+        {/* Engagement Confirmation Modal */}
         <Modal
           visible={showEngageConfirmation}
           transparent={true}
           animationType="fade"
+          onRequestClose={() => setShowEngageConfirmation(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.confirmationModal, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.confirmationTitle, { color: theme.text }]}>
-                ENGAGE AUTOPILOT
+          <View style={styles.confirmationOverlay}>
+            <View style={styles.confirmationDialog}>
+              <Text style={styles.confirmationTitle}>ENGAGE AUTOPILOT</Text>
+              <Text style={styles.confirmationMessage}>
+                Engage autopilot on heading {Math.round(currentHeading)}°?
               </Text>
-              <Text style={[styles.confirmationText, { color: theme.textSecondary }]}>
-                Are you ready to engage autopilot on heading {Math.round(targetHeading)}°?
-              </Text>
-              
+
               <View style={styles.confirmationButtons}>
-                <TouchButton
-                  title="CANCEL"
+                <TouchableOpacity
+                  style={styles.confirmCancelButton}
                   onPress={() => setShowEngageConfirmation(false)}
-                  backgroundColor={theme.border}
-                  size="medium"
-                />
-                <TouchButton
-                  title="ENGAGE"
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.confirmCancelText}>CANCEL</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.confirmEngageButton}
                   onPress={handleEngageConfirm}
-                  backgroundColor={theme.success}
-                  textColor={theme.background}
-                  size="medium"
-                />
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.confirmEngageText}>ENGAGE</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
         </Modal>
       </View>
-    );
-  }
-
-  // Landscape layout (similar structure but optimized for horizontal space)
-  return (
-    <View style={[styles.container, styles.landscapeContainer, { backgroundColor: theme.background }]}>
-      {/* Left side - Status and heading */}
-      <View style={styles.leftPanel}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            AUTOPILOT
-          </Text>
-          {onClose && (
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={[styles.closeButtonText, { color: theme.text }]}>
-                ✕
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]} />
-          <Text style={[styles.statusText, { color: theme.text }]}>
-            {getStatusText()}
-          </Text>
-        </View>
-
-        <HeadingDisplay />
-      </View>
-
-      {/* Right side - Controls */}
-      <View style={styles.rightPanel}>
-        <View style={styles.mainControls}>
-          {!engaged ? (
-            <TouchButton
-              title="ENGAGE AUTOPILOT"
-              onPress={handleEngageRequest}
-              backgroundColor={theme.success}
-              textColor={theme.background}
-              size="large"
-              disabled={isCommandPending}
-            />
-          ) : (
-            <TouchButton
-              title="STANDBY"
-              onPress={handleEmergencyDisengage}
-              backgroundColor={theme.warning}
-              textColor={theme.background}
-              size="large"
-              disabled={isCommandPending}
-            />
-          )}
-        </View>
-
-        <View style={styles.headingAdjustments}>
-          <View style={styles.adjustmentRow}>
-            <TouchButton
-              title="-10°"
-              onPress={() => adjustHeading(-10)}
-              backgroundColor={theme.surface}
-              size="medium"
-              disabled={!engaged || isCommandPending}
-            />
-            <TouchButton
-              title="-1°"
-              onPress={() => adjustHeading(-1)}
-              backgroundColor={theme.surface}
-              size="medium"
-              disabled={!engaged || isCommandPending}
-            />
-          </View>
-          <View style={styles.adjustmentRow}>
-            <TouchButton
-              title="+1°"
-              onPress={() => adjustHeading(1)}
-              backgroundColor={theme.surface}
-              size="medium"
-              disabled={!engaged || isCommandPending}
-            />
-            <TouchButton
-              title="+10°"
-              onPress={() => adjustHeading(10)}
-              backgroundColor={theme.surface}
-              size="medium"
-              disabled={!engaged || isCommandPending}
-            />
-          </View>
-        </View>
-
-        <View style={styles.emergencyContainer}>
-          <TouchButton
-            title="EMERGENCY DISENGAGE"
-            onPress={handleEmergencyDisengage}
-            backgroundColor={theme.error}
-            textColor={theme.background}
-            size="emergency"
-            disabled={isCommandPending}
-          />
-        </View>
-      </View>
-
-      {/* Command feedback */}
-      {isCommandPending && (
-        <View style={styles.commandFeedback}>
-          <Text style={[styles.commandText, { color: theme.accent }]}>
-            {pendingCommand}
-          </Text>
-        </View>
-      )}
-
-      {/* Engagement confirmation modal (same as portrait) */}
-      <Modal
-        visible={showEngageConfirmation}
-        transparent={true}
-        animationType="fade"
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.confirmationModal, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.confirmationTitle, { color: theme.text }]}>
-              ENGAGE AUTOPILOT
-            </Text>
-            <Text style={[styles.confirmationText, { color: theme.textSecondary }]}>
-              Are you ready to engage autopilot on heading {Math.round(targetHeading)}°?
-            </Text>
-            
-            <View style={styles.confirmationButtons}>
-              <TouchButton
-                title="CANCEL"
-                onPress={() => setShowEngageConfirmation(false)}
-                backgroundColor={theme.border}
-                size="medium"
-              />
-              <TouchButton
-                title="ENGAGE"
-                onPress={handleEngageConfirm}
-                backgroundColor={theme.success}
-                textColor={theme.background}
-                size="medium"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-  },
-  landscapeContainer: {
-    flexDirection: 'row',
-  },
-  leftPanel: {
-    flex: 1,
-    marginRight: 20,
-  },
-  rightPanel: {
-    flex: 1,
-    justifyContent: 'space-around',
+    backgroundColor: '#1a1a1a',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
   },
   closeButton: {
-    width: 44,
-    height: 44,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeButtonText: {
-    fontSize: 20,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+
+  // Status Display
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    backgroundColor: '#2a2a2a',
+    padding: 15,
+    borderRadius: 8,
   },
   statusIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     marginRight: 12,
+  },
+  statusTextContainer: {
+    flex: 1,
   },
   statusText: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginRight: 12,
+    color: '#fff',
   },
   modeText: {
     fontSize: 14,
+    color: '#9ca3af',
+    marginTop: 2,
   },
-  headingContainer: {
+
+  // Error Display
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#dc2626',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+  },
+  errorMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  errorCloseButton: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  errorCloseText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+
+  // Heading Display
+  headingDisplay: {
     alignItems: 'center',
     marginBottom: 30,
   },
   headingLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#9ca3af',
+    marginBottom: 15,
+    letterSpacing: 1,
   },
   compassContainer: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
   headingValues: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
+    gap: 20,
   },
   headingValue: {
     alignItems: 'center',
+    flex: 1,
   },
   headingValueLabel: {
     fontSize: 12,
-    marginBottom: 4,
+    color: '#6b7280',
+    marginBottom: 8,
+    fontWeight: '600',
   },
-  headingValueText: {
+  headingValueCurrent: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#10b981',
+    fontFamily: 'monospace',
+  },
+  headingValueTarget: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#f59e0b',
+    fontFamily: 'monospace',
+  },
+
+  // Control Grid
+  controlGrid: {
+    marginTop: 20,
+  },
+  primaryControlRow: {
+    marginBottom: 30,
+  },
+  primaryButton: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 70,
+  },
+  engageButton: {
+    backgroundColor: '#10b981',
+  },
+  standbyButton: {
+    backgroundColor: '#f59e0b',
+  },
+  primaryButtonText: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 1,
   },
-  mainControls: {
-    alignItems: 'center',
-    marginBottom: 30,
+
+  // Adjustment Grid
+  adjustmentGrid: {
+    backgroundColor: '#2a2a2a',
+    padding: 20,
+    borderRadius: 12,
   },
-  headingAdjustments: {
-    alignItems: 'center',
-    marginBottom: 30,
+  adjustmentLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#9ca3af',
+    marginBottom: 15,
+    letterSpacing: 1,
+    textAlign: 'center',
   },
   adjustmentRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 12,
   },
-  emergencyContainer: {
-    alignItems: 'center',
-    marginTop: 'auto',
-  },
-  touchButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
-    marginHorizontal: 8,
-    marginVertical: 4,
-    // Minimum 44pt touch target for accessibility
-    minWidth: 44,
-    minHeight: 44,
-    // Enhanced for marine conditions
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  touchButtonText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  commandFeedback: {
-    position: 'absolute',
-    top: 100,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  commandText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  modalOverlay: {
+  adjustButton: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: '#3b82f6',
+    minHeight: 60,
+  },
+  adjustButtonLarge: {
+    minHeight: 70,
+  },
+  adjustButtonSmall: {
+    minHeight: 60,
+  },
+  adjustButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    fontFamily: 'monospace',
+  },
+
+  // Footer
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  emergencyButton: {
+    backgroundColor: '#dc2626',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    minHeight: 70,
+    justifyContent: 'center',
+  },
+  emergencyButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 1,
+  },
+
+  // Confirmation Modal
+  confirmationOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  confirmationModal: {
-    margin: 20,
-    borderRadius: 20,
+  confirmationDialog: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
     padding: 30,
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    margin: 20,
+    minWidth: 300,
+    maxWidth: 400,
   },
   confirmationTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
     marginBottom: 15,
-  },
-  confirmationText: {
-    fontSize: 16,
     textAlign: 'center',
+  },
+  confirmationMessage: {
+    fontSize: 16,
+    color: '#9ca3af',
     marginBottom: 25,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   confirmationButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    gap: 15,
+  },
+  confirmCancelButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    backgroundColor: '#3b3b3b',
+    alignItems: 'center',
+  },
+  confirmCancelText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmEngageButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    backgroundColor: '#10b981',
+    alignItems: 'center',
+  },
+  confirmEngageText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

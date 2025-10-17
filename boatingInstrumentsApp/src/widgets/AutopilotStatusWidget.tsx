@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WidgetCard } from './WidgetCard';
+import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../core/nmeaStore';
 import { useTheme } from '../core/themeStore';
 import { AutopilotCommandManager, AutopilotMode } from '../services/autopilotService';
@@ -229,6 +231,21 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
     );
   };
 
+  // Get metric states for autopilot parameters
+  const getHeadingMetricState = (): 'normal' | 'warning' | 'alarm' | undefined => {
+    if (alarms && alarms.length > 0) return 'alarm';
+    if (!(active || engaged)) return undefined; // No data when inactive
+    return 'normal';
+  };
+
+  const getRudderMetricState = (): 'normal' | 'warning' | 'alarm' | undefined => {
+    if (rudderPosition === undefined) return undefined;
+    if (alarms && alarms.length > 0) return 'alarm';
+    const absRudder = Math.abs(rudderPosition);
+    if (absRudder > 20) return 'warning'; // High rudder angle
+    return 'normal';
+  };
+
   const renderOverview = () => (
     <View style={styles.overview}>
       <View style={styles.statusRow}>
@@ -240,36 +257,43 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
         </Text>
       </View>
 
+      <View style={styles.metricGrid}>
+        <PrimaryMetricCell
+          mnemonic="ACTUAL"
+          value={actualHeading !== undefined ? Math.round(actualHeading).toString() : '--'}
+          unit="°"
+          state={getHeadingMetricState()}
+          style={styles.metricCell}
+        />
+        <PrimaryMetricCell
+          mnemonic="TARGET"
+          value={targetHeading !== undefined ? Math.round(targetHeading).toString() : '--'}
+          unit="°"
+          state={getHeadingMetricState()}
+          style={styles.metricCell}
+        />
+        {rudderPosition !== undefined && (
+          <PrimaryMetricCell
+            mnemonic="RUD"
+            value={`${rudderPosition > 0 ? '+' : ''}${rudderPosition.toFixed(0)}`}
+            unit="°"
+            state={getRudderMetricState()}
+            style={styles.metricCell}
+          />
+        )}
+      </View>
+
       <View style={styles.compassContainer}>
         <CompassRose actual={actualHeading} target={targetHeading} size={80} />
       </View>
 
-      <View style={styles.headingRow}>
-        <View style={styles.headingItem}>
-          <Text style={[styles.headingLabel, { color: theme.textSecondary }]}>ACTUAL</Text>
-          <Text style={[styles.headingValue, { color: theme.text }]}>
-            {actualHeading !== undefined ? `${Math.round(actualHeading)}°` : '--'}
-          </Text>
-        </View>
-        
-        <View style={styles.headingItem}>
-          <Text style={[styles.headingLabel, { color: theme.textSecondary }]}>TARGET</Text>
-          <Text style={[styles.headingValue, { color: theme.accent }]}>
-            {targetHeading !== undefined ? `${Math.round(targetHeading)}°` : '--'}
-          </Text>
-        </View>
-      </View>
-
-      {rudderPosition !== undefined && (
-        <Text style={[styles.rudderText, { color: theme.textSecondary }]}>
-          Rudder: {rudderPosition > 0 ? 'STB' : 'PORT'} {Math.abs(rudderPosition).toFixed(0)}°
-        </Text>
-      )}
-
       {alarms && alarms.length > 0 && (
-        <Text style={[styles.alarmText, { color: theme.error }]}>
-          ⚠ {alarms[0]}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="warning-outline" size={14} color={theme.error} style={{ marginRight: 4 }} />
+          <Text style={[styles.alarmText, { color: theme.error }]}>
+            {alarms[0]}
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -472,6 +496,14 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    flex: 1,
+    marginBottom: 8,
+  },
+  metricCell: {
     flex: 1,
   },
   overview: {

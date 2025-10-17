@@ -1,21 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { WidgetCard } from './WidgetCard';
+import { WidgetShell } from '../components/WidgetShell';
+import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../core/nmeaStore';
 import { useTheme } from '../core/themeStore';
+import { createThemedStyles, getStateColor } from '../styles/theme.stylesheet';
+import { useWidgetExpanded } from '../hooks/useWidgetExpanded';
 
 interface EngineWidgetProps {
   engineId?: 'port' | 'starboard' | 'main';
   showMultipleEngines?: boolean;
+  widgetId?: string; // For layout persistence
 }
 
 export const EngineWidget: React.FC<EngineWidgetProps> = ({ 
   engineId = 'main',
-  showMultipleEngines = false 
+  showMultipleEngines = false,
+  widgetId = 'engine-widget'
 }) => {
   const engine = useNmeaStore((state: any) => state.nmeaData.engine);
   const theme = useTheme();
-  const [selectedView, setSelectedView] = useState<'overview' | 'details'>('overview');
+  const styles = useMemo(() => createThemedStyles(theme), [theme]);
+  
+  // AC 3: State persists per widget in layout storage
+  const [expanded, toggleExpanded] = useWidgetExpanded(widgetId);
 
   // Engine data with defaults and multiple engine support
   const engineData = engine?.[engineId] || engine || {};
@@ -30,27 +39,67 @@ export const EngineWidget: React.FC<EngineWidgetProps> = ({
     engineLoad = undefined
   } = engineData;
 
-  // Marine safety thresholds
-  const getStatusColor = () => {
-    const tempHigh = coolantTemp > 90; // °C
-    const tempCritical = coolantTemp > 100;
-    const oilLow = oilPressure < 10; // psi
-    const oilCritical = oilPressure < 5;
-    const rpmHigh = rpm > 3800;
-    const rpmOverrev = rpm > 4200;
-
-    if (tempCritical || oilCritical || rpmOverrev) return theme.error;
-    if (tempHigh || oilLow || rpmHigh) return theme.warning;
-    if (rpm !== undefined && rpm > 0) return theme.success;
-    return theme.text;
-  };
-
+  // Marine safety thresholds - Conservative for reliability
+  const RPM_CAUTION = 2000;  // Orange warning threshold
+  const RPM_CRITICAL = 3800; // Red alarm threshold
+  const RPM_OVERREV = 4200;  // Flashing red critical
+  
   const getWidgetState = () => {
     if (rpm === undefined) return 'no-data';
-    if (coolantTemp > 100 || oilPressure < 5 || rpm > 4200) return 'alarm';
-    if (coolantTemp > 90 || oilPressure < 10 || rpm > 3800) return 'alarm';
-    if (rpm > 0) return 'normal';
+    
+    // Critical alarms - immediate attention required
+    if (coolantTemp > 100 || oilPressure < 5 || rpm > RPM_OVERREV) return 'alarm';
+    
+    // Warning conditions - attention needed
+    if (coolantTemp > 90 || oilPressure < 10 || rpm > RPM_CRITICAL) return 'highlighted';
+    
     return 'normal';
+  };
+
+  // Individual metric state functions for PrimaryMetricCell
+  const getRpmState = () => {
+    if (rpm === undefined) return 'normal';
+    if (rpm > RPM_OVERREV) return 'alarm';
+    if (rpm > RPM_CRITICAL) return 'warning';
+    return 'normal';
+  };
+
+  const getTempState = () => {
+    if (coolantTemp === undefined) return 'normal';
+    if (coolantTemp > 100) return 'alarm';
+    if (coolantTemp > 90) return 'warning';
+    return 'normal';
+  };
+
+  const getPressureState = () => {
+    if (oilPressure === undefined) return 'normal';
+    if (oilPressure < 5) return 'alarm';
+    if (oilPressure < 10) return 'warning';
+    return 'normal';
+  };
+
+  const getRpmDisplay = () => {
+    if (rpm === undefined) return '---';
+    
+    const state = getWidgetState();
+    const rpmText = Math.round(rpm).toString();
+    
+    // Add flashing effect for over-rev
+    if (state === 'alarm' && rpm > RPM_OVERREV) {
+      return rpmText; // Flashing handled by widget state
+    }
+    
+    return rpmText;
+  };
+
+  const getEngineStatus = () => {
+    if (rpm === undefined) return 'No Engine Data';
+    if (rpm === 0) return 'Engine Off';
+    if (rpm > RPM_OVERREV) return 'OVER-REV!';
+    if (rpm > RPM_CRITICAL) return 'High RPM';
+    if (rpm > RPM_CAUTION) return 'Elevated RPM';
+    if (rpm < 500) return 'Idle';
+    return 'Running';
   };
 
   const formatEngineHours = (hours: number) => {
@@ -58,65 +107,159 @@ export const EngineWidget: React.FC<EngineWidgetProps> = ({
     return `${Math.round(hours)}h`;
   };
 
-  const renderOverview = () => (
-    <View style={styles.overview}>
-      <View style={styles.primaryRow}>
-        <Text style={[styles.rpmValue, { color: getStatusColor() }]}>
-          {rpm !== undefined ? Math.round(rpm) : '--'}
-        </Text>
-        <Text style={[styles.rpmLabel, { color: theme.textSecondary }]}>RPM</Text>
+  // AC 9: EngineWidget collapsed: 3 key metrics (RPM, TEMP, PRESS only)
+  const renderCollapsedView = () => (
+    <View style={styles.grid2x2}>
+      {/* First Row: RPM and TEMP */}
+      <View style={styles.gridRow}>
+        <PrimaryMetricCell
+          mnemonic="RPM"
+          value={getRpmDisplay()}
+          unit="rpm"
+          state={getRpmState()}
+          style={styles.gridCell}
+        />
+        <PrimaryMetricCell
+          mnemonic="TEMP"
+          value={coolantTemp !== undefined ? Math.round(coolantTemp) : '---'}
+          unit="°C"
+          state={getTempState()}
+          style={styles.gridCell}
+        />
       </View>
       
-      <View style={styles.secondaryRow}>
-        <View style={styles.metric}>
-          <Text style={[styles.metricValue, { color: theme.text }]}>
-            {coolantTemp !== undefined ? `${Math.round(coolantTemp)}°` : '--'}
-          </Text>
-          <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>TEMP</Text>
-        </View>
-        
-        <View style={styles.metric}>
-          <Text style={[styles.metricValue, { color: theme.text }]}>
-            {oilPressure !== undefined ? Math.round(oilPressure) : '--'}
-          </Text>
-          <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>PSI</Text>
-        </View>
+      {/* Second Row: PRESS only (centered) */}
+      <View style={styles.gridRow}>
+        <PrimaryMetricCell
+          mnemonic="PRESS"
+          value={oilPressure !== undefined ? Math.round(oilPressure) : '---'}
+          unit="psi"
+          state={getPressureState()}
+          style={styles.gridCellCentered}
+        />
       </View>
 
-      {engineHours !== undefined && (
-        <Text style={[styles.hours, { color: theme.textSecondary }]}>
-          {formatEngineHours(engineHours)} engine hours
-        </Text>
-      )}
+      <Text style={styles.secondary}>
+        {getEngineStatus()}
+      </Text>
     </View>
   );
 
+  // AC 16: Expanded shows all 7 metrics (RPM, TEMP, PRESS, HOURS + FUEL, ALT, BOOST, LOAD)
+  const renderExpandedView = () => (
+    <View style={styles.grid2x2}>
+      {/* First Row */}
+      <View style={styles.gridRow}>
+        <PrimaryMetricCell
+          mnemonic="RPM"
+          value={getRpmDisplay()}
+          unit="rpm"
+          state={getRpmState()}
+          style={styles.gridCell}
+        />
+        <PrimaryMetricCell
+          mnemonic="TEMP"
+          value={coolantTemp !== undefined ? Math.round(coolantTemp) : '---'}
+          unit="°C"
+          state={getTempState()}
+          style={styles.gridCell}
+        />
+      </View>
+      
+      {/* Second Row */}
+      <View style={styles.gridRow}>
+        <PrimaryMetricCell
+          mnemonic="PRESS"
+          value={oilPressure !== undefined ? Math.round(oilPressure) : '---'}
+          unit="psi"
+          state={getPressureState()}
+          style={styles.gridCell}
+        />
+        <PrimaryMetricCell
+          mnemonic="HOURS"
+          value={engineHours !== undefined ? formatEngineHours(engineHours) : '---'}
+          unit="h"
+          state="normal"
+          style={styles.gridCell}
+        />
+      </View>
+
+      <Text style={styles.secondary}>
+        {getEngineStatus()}
+      </Text>
+
+      {/* Additional expanded metrics */}
+      <View style={styles.grid2x2}>
+        <Text style={styles.secondary}>
+          Additional Metrics
+        </Text>
+        
+        {/* Third Row */}
+        <View style={styles.gridRow}>
+          <PrimaryMetricCell
+            mnemonic="FUEL"
+            value={fuelFlow !== undefined ? fuelFlow.toFixed(1) : '---'}
+            unit="L/h"
+            state="normal"
+            style={styles.gridCell}
+          />
+          <PrimaryMetricCell
+            mnemonic="ALT"
+            value={alternatorVoltage !== undefined ? alternatorVoltage.toFixed(1) : '---'}
+            unit="V"
+            state="normal"
+            style={styles.gridCell}
+          />
+        </View>
+        
+        {/* Fourth Row */}
+        <View style={styles.gridRow}>
+          <PrimaryMetricCell
+            mnemonic="BOOST"
+            value={boostPressure !== undefined ? boostPressure.toFixed(1) : '---'}
+            unit="psi"
+            state="normal"
+            style={styles.gridCell}
+          />
+          <PrimaryMetricCell
+            mnemonic="LOAD"
+            value={engineLoad !== undefined ? Math.round(engineLoad) : '---'}
+            unit="%"
+            state="normal"
+            style={styles.gridCell}
+          />
+        </View>
+      </View>
+    </View>
+  );
+
+  // Legacy render function for reference - to be removed
   const renderDetails = () => (
-    <View style={styles.details}>
-      <View style={styles.detailRow}>
-        <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Fuel Flow:</Text>
-        <Text style={[styles.detailValue, { color: theme.text }]}>
+    <View style={styles.spacer}>
+      <View style={styles.gridRow}>
+        <Text style={styles.secondary}>Fuel Flow:</Text>
+        <Text style={styles.valueSmall}>
           {fuelFlow !== undefined ? `${fuelFlow.toFixed(1)} L/h` : '--'}
         </Text>
       </View>
       
-      <View style={styles.detailRow}>
-        <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Alternator:</Text>
-        <Text style={[styles.detailValue, { color: theme.text }]}>
+      <View style={styles.gridRow}>
+        <Text style={styles.secondary}>Alternator:</Text>
+        <Text style={styles.valueSmall}>
           {alternatorVoltage !== undefined ? `${alternatorVoltage.toFixed(1)}V` : '--'}
         </Text>
       </View>
       
-      <View style={styles.detailRow}>
-        <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Boost:</Text>
-        <Text style={[styles.detailValue, { color: theme.text }]}>
+      <View style={styles.gridRow}>
+        <Text style={styles.secondary}>Boost:</Text>
+        <Text style={styles.valueSmall}>
           {boostPressure !== undefined ? `${boostPressure.toFixed(1)} psi` : '--'}
         </Text>
       </View>
       
-      <View style={styles.detailRow}>
-        <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Load:</Text>
-        <Text style={[styles.detailValue, { color: theme.text }]}>
+      <View style={styles.gridRow}>
+        <Text style={styles.secondary}>Load:</Text>
+        <Text style={styles.valueSmall}>
           {engineLoad !== undefined ? `${Math.round(engineLoad)}%` : '--'}
         </Text>
       </View>
@@ -127,19 +270,28 @@ export const EngineWidget: React.FC<EngineWidgetProps> = ({
     `Engine ${engineId.charAt(0).toUpperCase() + engineId.slice(1)}` : 
     'Engine';
 
+  // AC 2: Handle tap to toggle expanded state
+  const handleToggleExpanded = () => {
+    toggleExpanded();
+  };
+
   return (
-    <TouchableOpacity 
-      onPress={() => setSelectedView(selectedView === 'overview' ? 'details' : 'overview')}
-      style={styles.container}
+    <WidgetShell
+      expanded={expanded}
+      onToggle={handleToggleExpanded}
+      testID={`${widgetId}-shell`}
     >
       <WidgetCard 
         title={title}
         icon="car-outline"
         state={getWidgetState()}
+        expanded={expanded}
+        testID={widgetId}
       >
-        {selectedView === 'overview' ? renderOverview() : renderDetails()}
+        {/* AC 9: Collapsed shows 3 metrics (RPM, TEMP, PRESS), AC 16: Expanded shows 7 total metrics */}
+        {expanded ? renderExpandedView() : renderCollapsedView()}
       </WidgetCard>
-    </TouchableOpacity>
+    </WidgetShell>
   );
 };
 
@@ -201,5 +353,53 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     fontFamily: 'monospace',
+  },
+  unitLabel: {
+    fontSize: 14,
+    marginLeft: 4,
+    // Color now set dynamically using theme
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginVertical: 4,
+    textAlign: 'center',
+  },
+  // AC 7: Four metrics: 2×2 grid
+  // AC 9: Grid cells equal-sized, 8pt gap between cells
+  gridContainer: {
+    width: '100%',
+    paddingHorizontal: 4,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 4, // 8pt gap between rows
+  },
+  gridCell: {
+    flex: 1,
+    marginHorizontal: 4, // 8pt gap between cells
+  },
+  // AC 9: Single cell centered in collapsed view
+  collapsedCenterCell: {
+    flex: 0.6, // Narrower than full row
+    alignSelf: 'center',
+  },
+  // AC 16: Expanded view additional metrics
+  expandedMetrics: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  expandedLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  expandedGrid: {
+    width: '100%',
+    paddingHorizontal: 4,
   },
 });

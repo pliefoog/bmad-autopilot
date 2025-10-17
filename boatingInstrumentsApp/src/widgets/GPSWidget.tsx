@@ -1,8 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WidgetCard } from './WidgetCard';
+import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../core/nmeaStore';
 import { useTheme } from '../core/themeStore';
+import { useCachedMarineCalculation } from '../utils/performanceOptimization';
 
 // GPS coordinate format converters
 export const formatLatLon = (lat: number, lon: number, format: 'DD' | 'DMS' = 'DD'): string => {
@@ -32,37 +35,85 @@ const decimalToDMS = (decimal: number, type: 'lat' | 'lon'): string => {
   return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
 };
 
-export const GPSWidget: React.FC = () => {
-  const gps = useNmeaStore((state: any) => state.nmeaData.gpsPosition);
-  const gpsQuality = useNmeaStore((state: any) => state.nmeaData.gpsQuality);
+export const GPSWidget: React.FC = React.memo(() => {
+  // Optimized store selectors
+  const gps = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsPosition, []));
+  const gpsQuality = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsQuality, []));
   const theme = useTheme();
   
-  // Determine fix status
-  const getFixStatus = (): string => {
-    if (!gps) return 'NO FIX';
-    if (gpsQuality?.fixType === 3) return '3D FIX';
-    if (gpsQuality?.fixType === 2) return '2D FIX';
-    return 'ACQUIRING';
-  };
+  // Memoized GPS status calculation
+  const gpsStatus = useMemo(() => {
+    const getFixStatus = (): string => {
+      if (!gps) return 'NO FIX';
+      if (gpsQuality?.fixType === 3) return '3D FIX';
+      if (gpsQuality?.fixType === 2) return '2D FIX';
+      return 'ACQUIRING';
+    };
+    
+    const fixStatus = getFixStatus();
+    const satellites = gpsQuality?.satellites || 0;
+    
+    return { fixStatus, satellites };
+  }, [gps, gpsQuality]);
   
-  const fixStatus = getFixStatus();
-  const satellites = gpsQuality?.satellites || 0;
+  // Cached coordinate formatting
+  const formattedCoordinates = useCachedMarineCalculation(
+    'gps-coordinates',
+    () => {
+      if (!gps || typeof gps.latitude !== 'number' || typeof gps.longitude !== 'number') {
+        return { dd: '--', dms: '--' };
+      }
+      
+      return {
+        dd: formatLatLon(gps.latitude, gps.longitude, 'DD'),
+        dms: formatLatLon(gps.latitude, gps.longitude, 'DMS'),
+      };
+    },
+    [gps?.latitude, gps?.longitude]
+  );
+  
+  const { fixStatus, satellites } = gpsStatus;
   const hdop = gpsQuality?.hdop?.toFixed(1) || '--';
   
   // Determine widget state
   const state = !gps ? 'no-data' : 'normal';
   
-  // Format coordinates
-  const value = gps ? formatLatLon(gps.lat, gps.lon, 'DD') : '--';
+  // Format individual coordinates
+  const latitude = gps ? `${gps.lat.toFixed(5)}°` : '--';
+  const longitude = gps ? `${gps.lon.toFixed(5)}°` : '--';
+  
+  // Determine metric states based on GPS quality
+  const getMetricState = (): 'normal' | 'warning' | 'alarm' | undefined => {
+    if (!gps) return undefined; // Will show as no-data in the widget
+    if (fixStatus === 'NO FIX') return 'alarm';
+    if (satellites < 4) return 'warning';
+    return 'normal';
+  };
+  
+  const metricState = getMetricState();
   
   return (
     <WidgetCard
       title="GPS POSITION"
       icon="location"
-      value={value}
-      unit=""
       state={state}
     >
+      <View style={styles.metricGrid}>
+        <PrimaryMetricCell 
+          mnemonic="LAT"
+          value={latitude}
+          unit=""
+          state={metricState}
+          style={styles.metricCell}
+        />
+        <PrimaryMetricCell 
+          mnemonic="LON" 
+          value={longitude}
+          unit=""
+          state={metricState}
+          style={styles.metricCell}
+        />
+      </View>
       <View style={styles.statusContainer}>
         <View style={styles.statusRow}>
           <Text 
@@ -71,11 +122,11 @@ export const GPSWidget: React.FC = () => {
           >
             Fix:
           </Text>
-          <Text 
+          <Text
             style={[
               styles.statusValue,
-              { 
-                color: fixStatus === 'NO FIX' ? theme.error : theme.success,
+              {
+                color: fixStatus === 'NO FIX' ? theme.error : theme.text,
               }
             ]}
             accessibilityLabel={`GPS fix status: ${fixStatus}`}
@@ -117,9 +168,16 @@ export const GPSWidget: React.FC = () => {
       </View>
     </WidgetCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
+  metricGrid: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  metricCell: {
+    flex: 1,
+  },
   statusContainer: {
     marginTop: 8,
     gap: 4,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { WidgetCard } from './WidgetCard';
+import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../core/nmeaStore';
 import { useTheme } from '../core/themeStore';
 import Svg, { Rect, Path } from 'react-native-svg';
@@ -89,33 +90,68 @@ export const TanksWidget: React.FC<TanksWidgetProps> = ({ showUsageRate = true }
     </View>
   );
 
+  // Get metric state for tank levels
+  const getTankMetricState = (level: number | undefined, type: 'fuel' | 'water' | 'waste'): 'normal' | 'warning' | 'alarm' | undefined => {
+    if (level === undefined) return undefined;
+    const status = getTankStatus(level, type);
+    switch (status) {
+      case 'critical': return 'alarm';
+      case 'low': return 'warning';
+      case 'high': return 'warning';
+      default: return 'normal';
+    }
+  };
+
   const renderOverview = () => (
     <View style={styles.overview}>
+      <View style={styles.metricGrid}>
+        {fuel !== undefined && (
+          <PrimaryMetricCell
+            mnemonic="FUEL"
+            value={Math.round(fuel).toString()}
+            unit="%"
+            state={getTankMetricState(fuel, 'fuel')}
+            style={styles.metricCell}
+          />
+        )}
+        
+        {freshWater !== undefined && (
+          <PrimaryMetricCell
+            mnemonic="H2O"
+            value={Math.round(freshWater).toString()}
+            unit="%"
+            state={getTankMetricState(freshWater, 'water')}
+            style={styles.metricCell}
+          />
+        )}
+        
+        {wasteWater !== undefined && (
+          <PrimaryMetricCell
+            mnemonic="WASTE"
+            value={Math.round(wasteWater).toString()}
+            unit="%"
+            state={getTankMetricState(wasteWater, 'waste')}
+            style={styles.metricCell}
+          />
+        )}
+      </View>
+
       <View style={styles.tanksRow}>
         {fuel !== undefined && (
           <View style={styles.tankItem}>
             <TankGauge level={fuel} color={getStatusColor(fuel, 'fuel')} type="FUEL" />
-            <Text style={[styles.tankValue, { color: getStatusColor(fuel, 'fuel') }]}>
-              {Math.round(fuel)}%
-            </Text>
           </View>
         )}
         
         {freshWater !== undefined && (
           <View style={styles.tankItem}>
             <TankGauge level={freshWater} color={getStatusColor(freshWater, 'water')} type="H2O" />
-            <Text style={[styles.tankValue, { color: getStatusColor(freshWater, 'water') }]}>
-              {Math.round(freshWater)}%
-            </Text>
           </View>
         )}
         
         {wasteWater !== undefined && (
           <View style={styles.tankItem}>
             <TankGauge level={wasteWater} color={getStatusColor(wasteWater, 'waste')} type="WASTE" />
-            <Text style={[styles.tankValue, { color: getStatusColor(wasteWater, 'waste') }]}>
-              {Math.round(wasteWater)}%
-            </Text>
           </View>
         )}
       </View>
@@ -195,6 +231,14 @@ export const TanksWidget: React.FC<TanksWidgetProps> = ({ showUsageRate = true }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    flex: 1,
+    marginBottom: 8,
+  },
+  metricCell: {
     flex: 1,
   },
   overview: {

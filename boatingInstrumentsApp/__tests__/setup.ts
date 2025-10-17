@@ -33,16 +33,98 @@ jest.mock('@sentry/react-native', () => ({
 // Mock react-native-svg globally
 jest.mock('react-native-svg', () => {
   const React = require('react');
+  
+  const MockSvgComponent = (testID: string) => React.forwardRef((props: any, ref: any) => 
+    React.createElement('View', { testID, ref, ...props })
+  );
+    
+  const MockTextComponent = React.forwardRef((props: any, ref: any) => 
+    React.createElement('Text', { testID: 'svg-text', ref, ...props })
+  );
+  
+  const SvgComponent = MockSvgComponent('svg');
+  
   return {
-    Svg: (props: any) => React.createElement('View', { testID: 'svg', ...props }),
-    Rect: (props: any) => React.createElement('View', { testID: 'rect', ...props }),
-    Path: (props: any) => React.createElement('View', { testID: 'path', ...props }),
-    Circle: (props: any) => React.createElement('View', { testID: 'circle', ...props }),
-    Line: (props: any) => React.createElement('View', { testID: 'line', ...props }),
-    G: (props: any) => React.createElement('View', { testID: 'g', ...props }),
-    Text: (props: any) => React.createElement('Text', { testID: 'svg-text', ...props }),
+    __esModule: true,
+    default: SvgComponent,
+    Svg: SvgComponent,
+    Rect: MockSvgComponent('rect'),
+    Path: MockSvgComponent('path'),
+    Circle: MockSvgComponent('circle'),
+    Line: MockSvgComponent('line'),
+    G: MockSvgComponent('g'),
+    Text: MockTextComponent,
+    // Additional SVG components that might be used
+    Ellipse: MockSvgComponent('ellipse'),
+    Polygon: MockSvgComponent('polygon'),
+    Polyline: MockSvgComponent('polyline'),
+    Defs: MockSvgComponent('defs'),
+    LinearGradient: MockSvgComponent('linearGradient'),
+    Stop: MockSvgComponent('stop'),
+    ClipPath: MockSvgComponent('clipPath'),
   };
 });
+
+// Mock react-native-sound
+jest.mock('react-native-sound', () => {
+  return class MockSound {
+    static setCategory = jest.fn();
+    static MAIN_BUNDLE = 'MAIN_BUNDLE';
+    
+    constructor(filename: string, basePath: string, callback?: (error: any) => void) {
+      if (callback) {
+        // Simulate successful load
+        setTimeout(() => callback(null), 0);
+      }
+    }
+    
+    play = jest.fn((callback?: (success: boolean) => void) => {
+      if (callback) {
+        setTimeout(() => callback(true), 0);
+      }
+    });
+    
+    release = jest.fn();
+  };
+});
+
+// Mock Modal component to avoid native dependencies
+jest.mock('react-native/Libraries/Modal/Modal', () => {
+  const React = require('react');
+  
+  const MockModal = ({ children, visible, ...props }: any) => {
+    return visible ? React.createElement('View', { 
+      testID: 'modal',
+      ...props 
+    }, children) : null;
+  };
+  
+  return {
+    __esModule: true,
+    default: MockModal,
+  };
+});
+
+// Mock SafeAreaView component to avoid native dependencies
+jest.mock('react-native/Libraries/Components/SafeAreaView/SafeAreaView', () => {
+  const React = require('react');
+  
+  const MockSafeAreaView = ({ children, ...props }: any) => {
+    return React.createElement('View', { 
+      testID: 'safe-area-view',
+      ...props 
+    }, children);
+  };
+  
+  return {
+    __esModule: true,
+    default: MockSafeAreaView,
+  };
+});
+
+// Additional React Native component mocks can be added here as needed
+
+// Vibration is mocked per-test file where needed to avoid React Native import issues
 
 // Suppress console errors in tests (optional, comment out if you need to see them)
 // console.error = jest.fn();

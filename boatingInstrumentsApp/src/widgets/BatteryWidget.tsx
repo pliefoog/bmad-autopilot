@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { WidgetCard } from './WidgetCard';
+import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../core/nmeaStore';
 import { useTheme } from '../core/themeStore';
 
@@ -69,32 +70,47 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = ({ showMultipleBanks 
 
   const renderOverview = () => (
     <View style={styles.overview}>
-      <View style={styles.batteryRow}>
-        <View style={styles.batteryBank}>
-          <Text style={[styles.bankLabel, { color: theme.textSecondary }]}>HOUSE</Text>
-          <Text style={[styles.voltageValue, { color: house !== undefined ? getStatusColor(house) : theme.text }]}>
-            {house !== undefined ? `${house.toFixed(1)}V` : '--'}
-          </Text>
-          {houseStateOfCharge !== undefined && (
-            <Text style={[styles.socValue, { color: theme.textSecondary }]}>
-              {Math.round(houseStateOfCharge)}%
-            </Text>
-          )}
-        </View>
-        
-        <View style={styles.batteryBank}>
-          <Text style={[styles.bankLabel, { color: theme.textSecondary }]}>ENGINE</Text>
-          <Text style={[styles.voltageValue, { color: engine !== undefined ? getStatusColor(engine) : theme.text }]}>
-            {engine !== undefined ? `${engine.toFixed(1)}V` : '--'}
-          </Text>
-          {engineStateOfCharge !== undefined && (
-            <Text style={[styles.socValue, { color: theme.textSecondary }]}>
-              {Math.round(engineStateOfCharge)}%
-            </Text>
-          )}
-        </View>
+      {/* PrimaryMetricCell Grid - 2x1 layout for battery voltages */}
+      <View style={styles.metricGrid}>
+        <PrimaryMetricCell
+          mnemonic="HOUSE"
+          value={house !== undefined ? house.toFixed(1) : '---'}
+          unit="V"
+          state={house !== undefined ? (
+            getBatteryStatus(house) === 'critical' || getBatteryStatus(house) === 'low' ? 'alarm' :
+            getBatteryStatus(house) === 'high' ? 'warning' : 'normal'
+          ) : 'normal'}
+          style={styles.metricCell}
+        />
+        <PrimaryMetricCell
+          mnemonic="ENG"
+          value={engine !== undefined ? engine.toFixed(1) : '---'}
+          unit="V"
+          state={engine !== undefined ? (
+            getBatteryStatus(engine) === 'critical' || getBatteryStatus(engine) === 'low' ? 'alarm' :
+            getBatteryStatus(engine) === 'high' ? 'warning' : 'normal'
+          ) : 'normal'}
+          style={styles.metricCell}
+        />
       </View>
 
+      {/* State of Charge Row */}
+      {(houseStateOfCharge !== undefined || engineStateOfCharge !== undefined) && (
+        <View style={styles.socRow}>
+          {houseStateOfCharge !== undefined && (
+            <Text style={[styles.socText, { color: theme.textSecondary }]}>
+              House: {Math.round(houseStateOfCharge)}%
+            </Text>
+          )}
+          {engineStateOfCharge !== undefined && (
+            <Text style={[styles.socText, { color: theme.textSecondary }]}>
+              Engine: {Math.round(engineStateOfCharge)}%
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Current Draw */}
       {houseCurrent !== undefined && (
         <View style={styles.currentRow}>
           <Text style={[styles.currentLabel, { color: theme.textSecondary }]}>
@@ -108,6 +124,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = ({ showMultipleBanks 
         </View>
       )}
 
+      {/* Alternator Output */}
       {alternatorOutput !== undefined && (
         <Text style={[styles.alternatorText, { color: theme.textSecondary }]}>
           Alt: {alternatorOutput.toFixed(1)}A
@@ -167,6 +184,26 @@ const styles = StyleSheet.create({
   },
   overview: {
     paddingVertical: 8,
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  metricCell: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  socRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 4,
+  },
+  socText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   batteryRow: {
     flexDirection: 'row',

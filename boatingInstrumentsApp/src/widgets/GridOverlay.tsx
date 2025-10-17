@@ -68,8 +68,7 @@ export const GridOverlay: React.FC<GridOverlayProps> = ({
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(200)}
-      style={styles.overlay}
-      pointerEvents="none"
+      style={[styles.overlay, { pointerEvents: 'none' }]}
     >
       {renderGridLines()}
     </Animated.View>

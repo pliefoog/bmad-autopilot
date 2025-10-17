@@ -9,17 +9,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { WidgetCard } from './WidgetCard';
 import { WidgetSelector } from './WidgetSelector';
-import { ThemeSwitcher } from './ThemeSwitcher';
-import { RudderPositionWidget } from './RudderPositionWidget';
-import { WaterTemperatureWidget } from './WaterTemperatureWidget';
-import { GPSWidget } from './GPSWidget';
-import { CompassWidget } from './CompassWidget';
-import { SpeedWidget } from './SpeedWidget';
-import { DepthWidget } from './DepthWidget';
-import { WindWidget } from './WindWidget';
+
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../core/themeStore';
 import { WidgetRegistry } from './WidgetRegistry';
+import { PlatformStyles } from '../utils/animationUtils';
 import { registerAllWidgets } from './registerWidgets';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { LayoutService, WidgetLayout } from '../services/layoutService';
@@ -343,10 +337,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 4, 0.3),
     elevation: 6,
   },
   profileFab: {
@@ -374,10 +365,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 4, 0.2),
     elevation: 8,
   },
   toastText: {

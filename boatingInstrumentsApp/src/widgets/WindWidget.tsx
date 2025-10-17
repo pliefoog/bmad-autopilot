@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Line, Polygon, G } from 'react-native-svg';
 import { WidgetCard } from './WidgetCard';
+import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../core/nmeaStore';
 import { useTheme } from '../core/themeStore';
+import { useCachedMarineCalculation, useThrottledCallback } from '../utils/performanceOptimization';
 
 type WindUnit = 'knots' | 'mph' | 'kmh' | 'ms';
 
@@ -13,16 +15,17 @@ interface WindReading {
   angle: number;
 }
 
-export const WindWidget: React.FC = () => {
-  const windAngle = useNmeaStore((state: any) => state.nmeaData.windAngle);
-  const windSpeed = useNmeaStore((state: any) => state.nmeaData.windSpeed);
-  const heading = useNmeaStore((state: any) => state.nmeaData.heading);
+export const WindWidget: React.FC = React.memo(() => {
+  // Optimized store selectors
+  const windAngle = useNmeaStore(useCallback((state: any) => state.nmeaData.windAngle, []));
+  const windSpeed = useNmeaStore(useCallback((state: any) => state.nmeaData.windSpeed, []));
+  const heading = useNmeaStore(useCallback((state: any) => state.nmeaData.heading, []));
   const theme = useTheme();
   const [unit, setUnit] = useState<WindUnit>('knots');
   const [windHistory, setWindHistory] = useState<WindReading[]>([]);
 
-  // Track 10-minute wind history
-  useEffect(() => {
+  // Throttled wind history update to avoid excessive state updates
+  const throttledHistoryUpdate = useThrottledCallback(() => {
     if (windSpeed !== undefined && windAngle !== undefined) {
       const now = Date.now();
       const tenMinutesAgo = now - 10 * 60 * 1000;
@@ -32,61 +35,75 @@ export const WindWidget: React.FC = () => {
         return newHistory.filter(reading => reading.timestamp > tenMinutesAgo);
       });
     }
-  }, [windSpeed, windAngle]);
+  }, 1000); // Update at most once per second
 
-  const convertWindSpeed = (speedKnots: number | undefined): { value: string; unitStr: string } => {
-    if (speedKnots === undefined || speedKnots === null) return { value: '--', unitStr: 'kn' };
+  // Track 10-minute wind history with throttling
+  useEffect(() => {
+    throttledHistoryUpdate();
+  }, [windSpeed, windAngle, throttledHistoryUpdate]);
+
+  // Memoized wind speed conversion
+  const convertedWindSpeed = useMemo(() => {
+    const convertWindSpeed = (speedKnots: number | undefined): { value: string; unitStr: string } => {
+      if (speedKnots === undefined || speedKnots === null) return { value: '--', unitStr: 'kn' };
+      
+      switch (unit) {
+        case 'mph':
+          return { value: (speedKnots * 1.15078).toFixed(1), unitStr: 'mph' };
+        case 'kmh':
+          return { value: (speedKnots * 1.852).toFixed(1), unitStr: 'km/h' };
+        case 'ms':
+          return { value: (speedKnots * 0.514444).toFixed(1), unitStr: 'm/s' };
+        default:
+          return { value: speedKnots.toFixed(1), unitStr: 'kn' };
+      }
+    };
     
-    switch (unit) {
-      case 'mph':
-        return { value: (speedKnots * 1.15078).toFixed(1), unitStr: 'mph' };
-      case 'kmh':
-        return { value: (speedKnots * 1.852).toFixed(1), unitStr: 'km/h' };
-      case 'ms':
-        return { value: (speedKnots * 0.514444).toFixed(1), unitStr: 'm/s' };
-      default:
-        return { value: speedKnots.toFixed(1), unitStr: 'kn' };
-    }
-  };
+    return convertWindSpeed(windSpeed);
+  }, [windSpeed, unit]);
 
-  const getWindStrength = (speed: number): { level: string; color: string } => {
-    if (speed < 1) return { level: 'Calm', color: theme.textSecondary };
-    if (speed < 4) return { level: 'Light Air', color: theme.success };
-    if (speed < 7) return { level: 'Light Breeze', color: theme.success };
-    if (speed < 11) return { level: 'Gentle Breeze', color: theme.primary };
-    if (speed < 16) return { level: 'Moderate Breeze', color: theme.primary };
-    if (speed < 22) return { level: 'Fresh Breeze', color: theme.warning };
-    if (speed < 28) return { level: 'Strong Breeze', color: theme.warning };
-    if (speed < 34) return { level: 'Near Gale', color: theme.error };
-    return { level: 'Gale+', color: theme.error };
-  };
+  // Memoized wind strength calculation
+  const windStrength = useMemo(() => {
+    const getWindStrength = (speed: number): { level: string; color: string } => {
+      if (speed < 1) return { level: 'Calm', color: theme.textSecondary };
+      if (speed < 4) return { level: 'Light Air', color: theme.success };
+      if (speed < 7) return { level: 'Light Breeze', color: theme.success };
+      if (speed < 11) return { level: 'Gentle Breeze', color: theme.primary };
+      if (speed < 16) return { level: 'Moderate Breeze', color: theme.primary };
+      if (speed < 22) return { level: 'Fresh Breeze', color: theme.warning };
+      if (speed < 28) return { level: 'Strong Breeze', color: theme.warning };
+      if (speed < 34) return { level: 'Near Gale', color: theme.error };
+      return { level: 'Gale+', color: theme.error };
+    };
+    
+    return windSpeed !== undefined ? getWindStrength(windSpeed) : { level: '', color: theme.textSecondary };
+  }, [windSpeed, theme]);
 
-  const getRelativeWindAngle = (): number | undefined => {
+  // Memoized relative wind angle calculation
+  const relativeAngle = useMemo(() => {
     if (windAngle === undefined || heading === undefined) return windAngle;
     // Calculate wind relative to boat heading
     let relative = windAngle - heading;
     if (relative < 0) relative += 360;
     if (relative > 360) relative -= 360;
     return relative;
-  };
+  }, [windAngle, heading]);
 
-  const getState = () => {
+  // Memoized widget state
+  const state = useMemo(() => {
     if (windSpeed === undefined || windAngle === undefined) return 'no-data';
     if (windSpeed > 25) return 'alarm'; // Strong wind warning
     if (windSpeed > 20) return 'highlighted'; // Caution
     return 'normal';
-  };
+  }, [windSpeed, windAngle]);
 
-  const { value, unitStr } = convertWindSpeed(windSpeed);
-  const relativeAngle = getRelativeWindAngle();
-  const windInfo = windSpeed !== undefined ? getWindStrength(windSpeed) : { level: '', color: theme.textSecondary };
-  const state = getState();
+  const { value, unitStr } = convertedWindSpeed;
 
-  const cycleUnit = () => {
+  const cycleUnit = useCallback(() => {
     const units: WindUnit[] = ['knots', 'mph', 'kmh', 'ms'];
     const currentIndex = units.indexOf(unit);
     setUnit(units[(currentIndex + 1) % units.length]);
-  };
+  }, [unit]);
 
   const averageWindSpeed = windHistory.length > 0 
     ? windHistory.reduce((sum, reading) => sum + reading.speed, 0) / windHistory.length
@@ -97,11 +114,32 @@ export const WindWidget: React.FC = () => {
       <WidgetCard
         title="WIND"
         icon="leaf"
-        value={value}
-        unit={unitStr}
         state={state}
-        secondary={windInfo.level}
       >
+        {/* PrimaryMetricCell Grid - 2x1 layout */}
+        <View style={styles.metricGrid}>
+          <PrimaryMetricCell
+            mnemonic="SPD"
+            value={value}
+            unit={unitStr}
+            state={state === 'no-data' ? 'normal' : state === 'alarm' ? 'alarm' : 'normal'}
+            style={styles.metricCell}
+          />
+          <PrimaryMetricCell
+            mnemonic="DIR"
+            value={relativeAngle !== undefined ? Math.round(relativeAngle) : '---'}
+            unit="°"
+            state={relativeAngle === undefined ? 'normal' : 'normal'}
+            style={styles.metricCell}
+          />
+        </View>
+
+        {/* Wind Classification */}
+        <Text style={[styles.windLevel, { color: windStrength.color }]}>
+          {windStrength.level}
+        </Text>
+
+        {/* Wind Rose Visualization */}
         <View style={styles.windRoseContainer}>
           {relativeAngle !== undefined && windSpeed !== undefined && (
             <WindRose 
@@ -111,6 +149,8 @@ export const WindWidget: React.FC = () => {
             />
           )}
         </View>
+
+        {/* Average Wind Speed */}
         {averageWindSpeed !== undefined && windSpeed !== undefined && (
           <Text style={[styles.averageText, { color: theme.textSecondary }]}>
             Avg: {averageWindSpeed.toFixed(1)} kn
@@ -119,7 +159,7 @@ export const WindWidget: React.FC = () => {
       </WidgetCard>
     </TouchableOpacity>
   );
-};
+});
 
 interface WindRoseProps {
   angle: number;
@@ -127,29 +167,37 @@ interface WindRoseProps {
   theme: any;
 }
 
-const WindRose: React.FC<WindRoseProps> = ({ angle, speed, theme }) => {
-  const size = 60;
-  const center = size / 2;
-  const radius = 22;
-  
-  // Convert angle to radians (0° = north, clockwise)
-  const angleRad = (angle - 90) * Math.PI / 180;
-  
-  // Wind arrow end point
-  const endX = center + radius * Math.cos(angleRad);
-  const endY = center + radius * Math.sin(angleRad);
-  
-  // Arrow head points
-  const arrowLength = 8;
-  const arrowAngle = Math.PI / 6;
-  const leftX = endX - arrowLength * Math.cos(angleRad - arrowAngle);
-  const leftY = endY - arrowLength * Math.sin(angleRad - arrowAngle);
-  const rightX = endX - arrowLength * Math.cos(angleRad + arrowAngle);
-  const rightY = endY - arrowLength * Math.sin(angleRad + arrowAngle);
+const WindRose: React.FC<WindRoseProps> = React.memo(({ angle, speed, theme }) => {
+  const windRoseCalculations = useMemo(() => {
+    const size = 60;
+    const center = size / 2;
+    const radius = 22;
+    
+    // Convert angle to radians (0° = north, clockwise)
+    const angleRad = (angle - 90) * Math.PI / 180;
+    
+    // Wind arrow end point
+    const endX = center + radius * Math.cos(angleRad);
+    const endY = center + radius * Math.sin(angleRad);
+    
+    // Arrow head points
+    const arrowLength = 8;
+    const arrowAngle = Math.PI / 6;
+    const leftX = endX - arrowLength * Math.cos(angleRad - arrowAngle);
+    const leftY = endY - arrowLength * Math.sin(angleRad - arrowAngle);
+    const rightX = endX - arrowLength * Math.cos(angleRad + arrowAngle);
+    const rightY = endY - arrowLength * Math.sin(angleRad + arrowAngle);
 
-  const speedColor = speed > 25 ? theme.error : 
-                   speed > 20 ? theme.warning : 
-                   speed > 10 ? theme.primary : theme.success;
+    const speedColor = speed > 25 ? theme.error : 
+                      speed > 20 ? theme.warning : 
+                      speed > 10 ? theme.primary : theme.success;
+    
+    return {
+      size, center, radius, endX, endY, leftX, leftY, rightX, rightY, speedColor
+    };
+  }, [angle, speed, theme]);
+
+  const { size, center, radius, endX, endY, leftX, leftY, rightX, rightY, speedColor } = windRoseCalculations;
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -187,9 +235,26 @@ const WindRose: React.FC<WindRoseProps> = ({ angle, speed, theme }) => {
       />
     </Svg>
   );
-};
+});
 
 const styles = StyleSheet.create({
+  metricGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  metricCell: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  windLevel: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginVertical: 4,
+  },
   windRoseContainer: {
     alignItems: 'center',
     marginVertical: 8,
