@@ -2,7 +2,21 @@
 
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite  
 **Story ID:** 2.8  
-**Status:** Done
+**Status:** Superseded
+
+## ⚠️ STORY SUPERSEDED NOTICE
+
+**This story has been superseded by Story 2.14: Marine-Compliant Theme System**
+
+**Reason for Superseding:** Story 2.14 provides a complete, marine-safety-compliant implementation of the theme system requirements originally specified in this story, with enhanced features including:
+- RGB wavelength validation for red-night mode marine compliance
+- Native brightness control integration via Expo Brightness API  
+- Enhanced theme validation system with development-time warnings
+- Comprehensive testing framework for marine safety requirements
+
+**Migration Path:** All development work should focus on Story 2.14. This story remains for historical reference only.
+
+**Redirect:** → [Story 2.14: Marine-Compliant Theme System](story-2.14-marine-compliant-theme-system.md)
 
 ---
 
@@ -93,6 +107,20 @@
 **Test standards:** Jest with React Native Testing Library
 **Testing frameworks:** Theme system tests, accessibility tests
 **Coverage target:** >90% for theme system, >80% for mode switching
+
+---
+
+## UI Architecture v2.1 Enhancement Note
+
+**⚠️ IMPORTANT UPDATE:** This story has been enhanced by **Story 2.14: Marine-Compliant Theme System** which extends the theme system with:
+- Marine safety validation for red-night mode RGB compliance
+- Native brightness control integration via Expo Brightness API
+- Enhanced theme compliance validation system
+- Auto-switch capabilities based on time/GPS
+
+**Integration:** Story 2.14 builds directly on the foundation established in this story, maintaining full backward compatibility while adding marine safety features critical for night navigation.
+
+**Status Update:** Consider this story COMPLETE but EXTENDED by Story 2.14.
 
 ---
 

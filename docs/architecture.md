@@ -5,49 +5,54 @@
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
 | 2025-10-10 | 1.0 | Initial full-stack architecture document | Winston (Architect) |
+| 2025-10-16 | 2.0 | Epic 6 Foundation Updates - Domain-separated architecture, enhanced hooks, testing infrastructure | James (Developer) |
 
 ---
 
 ## Introduction
 
-This document outlines the complete full-stack architecture for the **Boating Instruments App**, including the React Native UI layer ("frontend"), NMEA service layer ("backend"), and their integration. It serves as the single source of truth for AI-driven development, ensuring consistency across the entire technology stack.
+This document outlines the **core system architecture** for the Boating Instruments App, focusing on the NMEA service layer, data models, deployment infrastructure, and system integration patterns. It serves as the single source of truth for backend services, deployment, and system-level architecture decisions.
 
-### Architecture Overview
+**Recent Updates (Epic 6 Foundation):**
+- **Domain-Separated Service Layer:** Services reorganized by marine domains (navigation, engine, environment, autopilot)
+- **Enhanced Hook Architecture:** Comprehensive custom hooks for NMEA data, widget state, and performance monitoring
+- **Centralized Type System:** Complete TypeScript interfaces for all NMEA data, widget configurations, and service contracts
+- **Performance Optimization Framework:** React.memo patterns, memoization utilities, and render performance monitoring
+- **Comprehensive Testing Infrastructure:** Mock services, test fixtures, and domain-specific testing patterns
+- **Error Boundary System:** Graceful failure handling at widget and screen levels
 
-This is a **React Native cross-platform application** with an embedded NMEA data processing service layer. Unlike traditional web full-stack apps with separate client/server deployments, this architecture runs entirely on-device:
+**Document Scope:** Core system architecture, NMEA services, data flow, deployment, and integration patterns  
+**Frontend Architecture:** See [docs/ui-architecture.md](ui-architecture.md) for complete React Native UI specifications  
+**Together:** These documents provide comprehensive full-stack architectural guidance
 
-- **UI Layer (Frontend):** React Native components, widgets, screens
-- **Service Layer (Backend):** TCP socket management, NMEA parsing, autopilot command encoding
-- **State Bridge:** Zustand stores connecting service layer to UI layer
-- **External Integration:** WiFi bridge hardware providing NMEA data stream
+### System Architecture Overview
 
-The app transforms smartphones, tablets, and desktop devices into comprehensive marine instrument displays by processing real-time NMEA 0183/2000 data streams from boat networks.
+This is an **on-device marine data processing system** that transforms mobile devices into comprehensive boat instrument displays. Unlike traditional web applications with separate client/server deployments, this architecture runs entirely on-device:
 
-### Starter Template
+**Core System Components:**
+- **NMEA Service Layer:** TCP socket management, real-time data parsing, autopilot command encoding
+- **Data Processing Engine:** NMEA 0183/2000 protocol handling, PGN decoding, validation
+- **State Management Bridge:** Zustand stores providing service-to-UI data synchronization
+- **External Integration:** WiFi bridge hardware interface for boat network connectivity
 
-**Selected Starter:** Expo SDK 51+ with TypeScript
+**System Capabilities:**
+- Process 500+ NMEA messages/second from boat instruments
+- Maintain <1 second latency from sensor reading to display update  
+- Support complex autopilot control protocols (Raymarine Evolution)
+- Operate completely offline with zero cloud dependencies
 
-**Initial Setup Command:**
-```bash
-npx create-expo-app boating-instruments --template blank-typescript
-```
+### System Runtime Environment
 
-**Pre-configured Choices:**
-- Metro bundler for JavaScript packaging
-- Expo Router for file-based navigation
-- Built-in support for iOS/Android builds via EAS
-- Hot reload and instant previews via Expo Go
-- TypeScript configuration included
+**Deployment Target:** On-device native application (iOS, Android, Windows, macOS)  
+**Runtime Architecture:** React Native application with embedded TypeScript services  
+**Network Requirements:** Local WiFi connectivity to boat NMEA bridge (no internet required)
 
-**Constraints Imposed:**
-- Must use Expo-compatible libraries for native modules (TCP sockets require config plugins)
-- Build process through EAS (Expo Application Services)
-- Slightly larger bundle size than bare React Native (~20MB additional overhead)
+**Platform Deployment:**
+- **iOS/Android:** Native mobile application via app stores
+- **Windows/macOS:** Desktop application via platform stores (future)
+- **Offline-First:** Complete functionality without internet connectivity
 
-**What Can Be Modified:**
-- Can eject to bare workflow if needed for custom native modules
-- State management library (Zustand chosen)
-- UI component approach (custom widgets chosen over component libraries)
+**Framework Foundation:** Frontend development uses React Native with Expo toolchain as detailed in [docs/ui-architecture.md](ui-architecture.md)
 
 ---
 
@@ -81,6 +86,37 @@ Given this is a **client-side mobile/desktop application** with no cloud backend
 - **Cost:** Zero ongoing hosting costs; one-time development investment only
 - **Marine Environment:** Boats often have unreliable internet connectivity
 
+### Development Platform Strategy
+
+**Production Targets:** Mobile/Tablet (iOS/Android) → Desktop (macOS/Windows)  
+**Development Platform:** Web Browser (Webpack) → iOS/Android Simulator → Physical Device
+
+#### Web-First Development Workflow
+
+**Primary Development Environment: Web Browser**
+- **Purpose:** UI layout, styling, theme testing, state management validation
+- **Setup:** Complete webpack configuration with React Native Web
+- **Benefits:** Instant hot reload, browser DevTools, responsive design testing
+- **Command:** `npm run web` (opens http://localhost:3000)
+
+**NMEA Bridge Proxy for Web Development:**
+- **Location:** `boatingInstrumentsApp/server/nmea-websocket-bridge.js`
+- **Purpose:** Bridges TCP/UDP NMEA connections to WebSocket for browser development
+- **Architecture:** Browser ↔ WebSocket (ws://localhost:8080) ↔ Node.js Bridge ↔ TCP (WiFi Bridge/File)
+- **Modes:** Live WiFi bridge connection OR NMEA file playback for testing
+- **Integration:** Platform.select() in app uses WebSocket for web, TCP for native platforms
+
+**Native Module Mocking Strategy:**
+- **Location:** `boatingInstrumentsApp/__mocks__/` directory
+- **Scope:** File system, audio, storage, vibration (non-networking modules)
+- **Approach:** Console-based logging maintains development visibility
+- **NMEA Data:** Real NMEA parsing via WebSocket bridge proxy (not mocked)
+
+**Development & Testing Progression:**
+1. **Web Browser + Bridge Proxy:** Real NMEA parsing with WiFi bridge OR file playback
+2. **iOS/Android Simulator:** Native module integration testing  
+3. **Physical Device:** Real NMEA connections and performance validation
+
 ### Repository Structure
 
 **Structure:** Monorepo (single repository containing all platform targets)
@@ -90,6 +126,8 @@ Given this is a **client-side mobile/desktop application** with no cloud backend
 **Package Organization:**
 - Single `package.json` at root with all dependencies
 - Platform-specific code uses file suffixes (`.ios.tsx`, `.android.tsx`, `.windows.tsx`, `.macos.tsx`)
+- Web development configuration in `webpack.config.js` and `web/` directory
+- Comprehensive mocking infrastructure in `__mocks__/` directory
 - Shared code in `src/` directory with no platform qualifiers
 - ~95% code sharing across all platforms
 
@@ -149,66 +187,328 @@ graph TB
 
 ---
 
-## Tech Stack
+## Epic 6 Foundation: Domain-Separated Service Architecture
 
-This is the **DEFINITIVE technology selection** for the entire project. All development must use these exact versions and technologies.
+### Service Layer Organization
 
-### Technology Stack Table
+Epic 6 introduces a **domain-separated service architecture** that organizes marine functionality into logical domains, each with dedicated services, types, and testing infrastructure.
+
+#### Domain Structure
+
+```
+src/services/
+├── navigation/          # GPS, speed, heading, position tracking
+│   ├── gpsService.ts   # GPS coordinate processing and validation
+│   ├── speedService.ts # Speed over ground/water calculations
+│   └── headingService.ts # Compass heading and course calculations
+├── engine/             # Engine monitoring and control
+│   ├── engineMonitoringService.ts # RPM, temperature, pressure monitoring
+│   ├── fuelService.ts  # Fuel level and consumption tracking
+│   └── electricalService.ts # Battery voltage and charging systems
+├── environment/        # Weather and environmental data
+│   ├── windService.ts  # Wind speed/direction processing
+│   ├── depthService.ts # Water depth and sounder data
+│   └── weatherService.ts # Temperature, pressure, humidity
+├── autopilot/          # Autopilot control and monitoring
+│   ├── autopilotControlService.ts # Command sending and status
+│   ├── autopilotMonitoringService.ts # Performance tracking
+│   └── autopilotSafetyService.ts # Safety checks and limits
+└── core/               # Shared infrastructure services
+    ├── nmeaConnectionService.ts # TCP socket management
+    ├── nmeaParsingService.ts # Message parsing and validation
+    └── dataQualityService.ts # Data quality assessment
+```
+
+#### Service Interface Pattern
+
+All domain services implement consistent interfaces with dependency injection support:
+
+```typescript
+// Base service interface
+interface ServiceInterface {
+  initialize(): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  getStatus(): ServiceStatus;
+  cleanup(): Promise<void>;
+}
+
+// Domain-specific service example
+interface NavigationServiceInterface extends ServiceInterface {
+  // Data access
+  getCurrentPosition(): GPSPosition | null;
+  getSpeed(): SpeedData | null;
+  getHeading(): HeadingData | null;
+  
+  // Data validation
+  validatePosition(position: GPSPosition): boolean;
+  calculateDistance(from: GPSPosition, to: GPSPosition): number;
+  
+  // Event handling
+  onPositionUpdate(callback: (position: GPSPosition) => void): void;
+  onSpeedChange(callback: (speed: SpeedData) => void): void;
+}
+```
+
+#### Service Dependencies and Injection
+
+Services use constructor injection for testability and loose coupling:
+
+```typescript
+class NavigationService implements NavigationServiceInterface {
+  constructor(
+    private nmeaConnection: NmeaConnectionService,
+    private dataQuality: DataQualityService,
+    private logger: LoggerService
+  ) {}
+  
+  async initialize(): Promise<void> {
+    // Service initialization logic
+    await this.nmeaConnection.subscribe('RMC', this.handleRMCMessage.bind(this));
+    await this.nmeaConnection.subscribe('GGA', this.handleGGAMessage.bind(this));
+  }
+}
+```
+
+### Enhanced Hook Architecture
+
+Epic 6 introduces comprehensive custom hooks that abstract service complexity and provide optimized data access patterns:
+
+#### Core Data Hooks
+
+**`useNMEAData`** - Primary data access hook with advanced features:
+
+```typescript
+const {
+  data,                    // Current NMEA data
+  quality,                 // Data quality assessment
+  isStale,                 // Staleness indicator
+  isReceiving,             // Connection status
+  getValue,                // Type-safe field access
+  getFormattedValue,       // Formatted display values
+  isValid,                 // Field validation
+  getStats,                // Performance metrics
+  refresh,                 // Manual refresh
+  clearErrors,             // Error management
+  reset                    // Reset to initial state
+} = useNMEAData({
+  fields: ['speed', 'heading', 'latitude', 'longitude'],
+  units: { speed: 'mph', depth: 'feet' },
+  enableRealTimeUpdates: true,
+  filterOutliers: true,
+  enableCaching: true
+});
+```
+
+**`useServiceStatus`** - Service health monitoring:
+
+```typescript
+const {
+  services,                // All service statuses
+  isHealthy,              // Overall system health
+  getServiceStatus,       // Individual service status
+  restartService,         // Service recovery
+  getErrorDetails         // Error diagnostics
+} = useServiceStatus();
+```
+
+**`usePerformanceMonitoring`** - Real-time performance tracking:
+
+```typescript
+const {
+  renderMetrics,          // Component render performance
+  memoryUsage,           // Memory consumption tracking
+  connectionLatency,     // Network latency metrics
+  startProfiling,        // Begin performance capture
+  stopProfiling,         // End performance capture
+  getReport             // Generate performance report
+} = usePerformanceMonitoring();
+```
+
+### Centralized Type System
+
+Epic 6 establishes a comprehensive TypeScript type system for all marine data and service interfaces:
+
+#### NMEA Data Types
+
+```typescript
+// Core NMEA data structure
+interface NmeaData {
+  // GPS Position Data
+  latitude?: number;
+  longitude?: number;
+  altitude?: number;
+  heading?: number;
+  speed?: number;
+  course?: number;
+  
+  // GPS Quality and Status
+  satellites?: number;
+  hdop?: number;
+  fixType?: number;
+  timestamp?: number;
+  
+  // Wind Data
+  windSpeed?: number;
+  windDirection?: number;
+  apparentWindSpeed?: number;
+  apparentWindDirection?: number;
+  
+  // Engine Data
+  engineRpm?: number;
+  engineTemperature?: number;
+  enginePressure?: number;
+  fuelLevel?: number;
+  batteryVoltage?: number;
+  
+  // Environmental
+  depth?: number;
+  waterTemperature?: number;
+  airTemperature?: number;
+  barometricPressure?: number;
+  humidity?: number;
+  
+  // Autopilot Data
+  autopilotHeading?: number;
+  autopilotMode?: string;
+  autopilotStatus?: string;
+}
+
+// Data quality assessment
+interface DataQualityMetrics {
+  accuracy: number;       // 0-100 percentage
+  completeness: number;   // 0-100 percentage  
+  freshness: number;      // milliseconds since last update
+  consistency: number;    // 0-100 data consistency score
+  validity: boolean;      // overall data validity
+  source: string;         // data source identifier
+  timestamp: number;      // assessment timestamp
+}
+
+type DataQuality = 'excellent' | 'good' | 'fair' | 'poor' | 'invalid';
+```
+
+#### Service Types
+
+```typescript
+// Service status enumeration
+type ServiceStatus = 'initializing' | 'running' | 'stopped' | 'error' | 'recovering';
+
+// Service configuration
+interface ServiceConfig {
+  enabled: boolean;
+  updateInterval: number;
+  retryAttempts: number;
+  timeoutMs: number;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+// Service metrics
+interface ServiceMetrics {
+  uptime: number;
+  messageCount: number;
+  errorCount: number;
+  lastActivity: number;
+  averageProcessingTime: number;
+}
+```
+
+### Error Boundary System
+
+Epic 6 implements comprehensive error boundaries for graceful failure handling:
+
+#### Widget-Level Error Boundaries
+
+```typescript
+class WidgetErrorBoundary extends Component<WidgetErrorBoundaryProps, WidgetErrorBoundaryState> {
+  constructor(props: WidgetErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error: Error): WidgetErrorBoundaryState {
+    return { hasError: true, error, errorInfo: null };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Log error to monitoring service
+    ErrorReportingService.captureException(error, {
+      component: this.props.widgetType,
+      errorInfo,
+      context: 'widget-render'
+    });
+    
+    this.setState({ error, errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <WidgetErrorFallback 
+          error={this.state.error}
+          widgetType={this.props.widgetType}
+          onRetry={() => this.setState({ hasError: false, error: null })}
+        />
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+#### Screen-Level Error Boundaries
+
+Screen-level boundaries handle navigation and layout errors:
+
+```typescript
+class ScreenErrorBoundary extends Component {
+  // Similar pattern but with screen-level recovery options
+  // Provides navigation fallbacks and system restart capabilities
+}
+```
+
+---
+
+## Core System Tech Stack
+
+This section defines the **core system and service layer technologies**. For complete frontend technology specifications, see [docs/ui-architecture.md](ui-architecture.md).
+
+### System Architecture Technologies
 
 | Category | Technology | Version | Purpose | Rationale |
 |----------|------------|---------|---------|-----------|
-| **Frontend Language** | TypeScript | 5.3+ | Type-safe React Native development | Catches NMEA parsing errors at compile time; excellent IDE support; industry standard for React Native |
-| **Frontend Framework** | React Native | 0.74+ | Cross-platform mobile/desktop UI foundation | Only mature framework supporting iOS, Android, Windows, macOS from single codebase; 95% code sharing |
-| **Development Platform** | Expo | SDK 51+ | Build tooling, OTA updates, native module access | EAS simplifies multi-platform builds; OTA critical for marine app bug fixes; config plugins enable TCP sockets |
-| **UI Component Library** | Custom (No library) | N/A | Marine-specific instrument widgets | Material/NativeBase don't match Raymarine aesthetic; custom SVG gauges provide exact control; smaller bundle |
-| **State Management** | Zustand | 4.5+ | Global state for NMEA data, widgets, settings | <1KB bundle; excellent TypeScript; selector-based subscriptions prevent re-render cascades; 10x faster than Redux for real-time streams |
-| **Routing** | Expo Router | 3.5+ | File-based navigation | Built on React Navigation; reduces boilerplate; deep linking support for future features |
-| **Animation** | React Native Reanimated | 3.8+ | 60-120 FPS animations, compass rotation | Runs on UI thread bypassing JS bridge; supports ProMotion displays; critical for 10+ simultaneous widget updates |
-| **Vector Graphics** | React Native SVG | 15.1+ | Compass roses, analog gauges, custom icons | Scalable without raster images; smaller bundle; crisp on all screen densities |
-| **Styling** | StyleSheet API + Theme Context | Built-in | Component styling with Day/Night/Red-Night modes | Native to RN; performant; no CSS-in-JS overhead; custom theme provider for display modes |
-| **Form Handling** | React Hook Form | 7.51+ | Settings forms, alarm config, WiFi connection | Minimal re-renders; built-in validation; excellent performance and TypeScript support |
-| **Networking** | react-native-tcp-socket | 6.0+ | TCP connection to WiFi bridge for NMEA stream | Direct socket access; handles 500 msg/sec throughput; Expo compatible via config plugin |
-| **NMEA Parsing** | Custom NMEA Parser | N/A | Parse NMEA 0183/2000 into structured data | Existing libraries lack Raymarine autopilot PGN support; custom parser optimized for performance |
-| **Local Storage** | Expo SecureStore + AsyncStorage | Built-in | Widget layouts, settings, WiFi credentials | SecureStore for sensitive data (IP addresses); AsyncStorage for preferences; async doesn't block UI |
-| **Testing Framework** | Jest | 29.7+ | Unit and integration testing | Industry standard; works with Expo; snapshot testing for widgets |
-| **Testing Library** | React Native Testing Library | 12.4+ | Component testing | Async utilities for NMEA data flows; encourages best practices; accessibility-focused |
-| **Build Tool** | Metro (Expo) | Built-in | JavaScript bundler and dev server | Optimized for React Native; fast refresh; source maps; integrated with Expo workflow |
-| **Linting** | ESLint + Prettier | 8.x / 3.x | Code quality and formatting | Enforce TypeScript strict mode; catch errors early; consistent code style across team |
-| **Type Checking** | TypeScript Compiler | 5.3+ | Static type checking | Strict mode enabled; validates NMEA data types; prevents runtime errors |
-| **Crash Reporting** | Sentry React Native SDK | Latest | Production error tracking and crash reports | Meets NFR3 (99.5%+ crash-free rate); detailed stack traces; performance monitoring |
-| **Build & Deploy** | EAS (Expo Application Services) | Latest | Multi-platform builds and submissions | Handles iOS, Android, Windows, macOS builds from cloud; simplifies code signing |
-| **Development Tools** | React DevTools + Flipper (optional) | Latest | Component inspection, network debugging | Essential for debugging real-time NMEA data flows and widget re-render optimization |
+| **Core Language** | TypeScript | 5.3+ | Type-safe service development | Critical for NMEA parsing reliability; prevents runtime errors in marine safety systems |
+| **Runtime Platform** | React Native | 0.74+ | Cross-platform native runtime | Provides native performance for real-time data processing while supporting mobile/desktop deployment |
+| **Networking** | react-native-tcp-socket | 6.0+ | TCP connection to WiFi bridge for NMEA stream | Direct socket access; handles 500+ msg/sec throughput; essential for marine bridge connectivity |
+| **Web Bridge Proxy** | Node.js WebSocket Server | N/A | TCP-to-WebSocket bridge for browser development | Enables real NMEA testing in web browsers; supports file playback mode for development teams |
+| **NMEA Parsing** | Custom NMEA Parser | N/A | Parse NMEA 0183/2000 into structured data | Existing libraries lack Raymarine autopilot PGN support; optimized for mobile performance |
+| **Data Storage** | AsyncStorage + SecureStore | Built-in | System settings, credentials, configuration | AsyncStorage for non-sensitive data; SecureStore for WiFi credentials and sensitive config |
+| **State Bridge** | Zustand | 4.5+ | Service-to-UI data synchronization | Minimal overhead (<1KB); excellent TypeScript support; optimized for real-time data streams |
+| **Service Testing** | Jest | 29.7+ | Service layer unit and integration testing | Industry standard; critical for marine safety validation; supports async NMEA data testing |
+| **Type Safety** | TypeScript Compiler | 5.3+ | Compile-time validation of NMEA data structures | Strict mode prevents marine safety errors; validates complex PGN message structures |
+| **Error Tracking** | Sentry React Native SDK | Latest | Production service monitoring and crash reports | Essential for marine safety; detailed stack traces for NMEA parsing failures |
+| **Build & Deploy** | EAS (Expo Application Services) | Latest | Multi-platform native builds | Cloud-based build system; handles code signing; enables OTA updates for critical marine safety fixes |
 
-### Additional Stack Notes
+### System Architecture Decisions
 
-**Why Zustand over Redux Toolkit?**
-- **Bundle Size:** <1KB vs ~15KB (critical for 8-hour battery life goal)
-- **Performance:** No Context Provider wrapping eliminates re-render cascades
-- **Real-Time Fit:** Direct subscriptions to specific NMEA data slices (e.g., only depth widget subscribes to depth)
-- **Developer Experience:** Minimal boilerplate; excellent TypeScript inference
+**Why react-native-tcp-socket for Marine Connectivity?**
+- **Direct TCP Access:** Marine WiFi bridges expose raw NMEA streams on TCP port 10110 (not HTTP/WebSocket)
+- **NMEA 2000 Support:** Handles binary PGN messages from Raymarine autopilot systems
+- **Throughput:** Proven to handle 500+ messages/second without blocking the main application thread
+- **Marine Reliability:** Direct socket connection more reliable than higher-level protocols in marine environments
 
-**Why React Native Reanimated over Animated API?**
-- **UI Thread Execution:** Runs on native UI thread, bypassing JS bridge bottleneck
-- **ProMotion Support:** Automatically leverages 120Hz displays on iPhone 14/15 Pro
-- **Gesture Handling:** Integrated with React Native Gesture Handler for drag-and-drop widgets (Epic 2)
-- **Performance:** Critical for maintaining 60 FPS with 10+ widgets updating simultaneously
-
-**Why react-native-tcp-socket?**
-- **Direct TCP Access:** WiFi bridges expose NMEA on TCP port 10110 (not HTTP/WebSocket)
-- **NMEA 2000 Support:** Handles binary PGN messages from Raymarine autopilot
-- **Throughput:** Tested to handle 500+ messages/second without blocking UI thread
-- **Expo Compatibility:** Works via config plugin (no bare workflow ejection required)
-
-**Why Custom NMEA Parser?**
+**Why Custom NMEA Parser over Existing Libraries?**
 - **Raymarine-Specific PGNs:** Existing libraries (`nmea-simple`, `@canboat/canboatjs`) lack proprietary autopilot command support
-- **Performance:** Custom parser optimized for mobile; avoids unnecessary object allocations
-- **Bundle Size:** Only include parsers for messages we actually use (~20KB vs ~200KB for full libraries)
+- **Mobile Optimization:** Custom parser optimized for mobile performance; avoids unnecessary object allocations
+- **Bundle Efficiency:** Include only parsers for messages actually used (~20KB vs ~200KB for full libraries)
+- **Marine Safety:** Full control over parsing logic ensures reliable handling of safety-critical navigation data
 
-**Why No UI Component Library?**
-- **Aesthetic Mismatch:** Material Design/iOS HIG don't match Raymarine's professional nautical design
-- **Bundle Size:** Removing unused components from libraries adds complexity
-- **Flexibility:** Marine widgets (compass rose, analog depth gauge) are highly specialized
-- **Performance:** Custom components optimized for real-time data updates
+**Why Zustand for State Bridge?**
+- **Real-Time Performance:** Direct subscriptions to specific NMEA data slices prevent unnecessary re-renders
+- **Marine Safety:** Type-safe state updates ensure data integrity from sensors to display
+- **Minimal Overhead:** <1KB bundle size critical for battery life in marine environments
+- **Service Integration:** Excellent TypeScript inference enables reliable service-to-UI data flow
 
 ---
 
@@ -391,138 +691,399 @@ sequenceDiagram
 
 ---
 
-## Project Structure
+## WebSocket Bridge Proxy Architecture
 
-Complete directory structure for the Boating Instruments App:
+### Development & Testing Infrastructure
+
+**Purpose:** Enable real NMEA data processing in web browser environments for development and testing teams.
+
+**Problem:** Web browsers cannot directly connect to TCP/UDP sockets due to security restrictions. This prevents testing NMEA parsing logic and widget behavior with real boat data during web development.
+
+**Solution:** Node.js WebSocket bridge proxy that connects TCP (WiFi bridge) to WebSocket (browser).
+
+### Bridge Proxy Architecture
+
+```mermaid
+graph LR
+    subgraph "Boat Network"
+        Instruments[Marine Instruments]
+        Bridge[WiFi Bridge<br/>192.168.1.10:10110]
+    end
+    
+    subgraph "Development Environment"
+        Proxy[WebSocket Bridge Proxy<br/>server/nmea-websocket-bridge.js]
+        Browser[Web Browser<br/>localhost:3000]
+    end
+    
+    Instruments -->|NMEA 0183/2000| Bridge
+    Bridge -->|TCP Socket| Proxy
+    Proxy -->|WebSocket ws://localhost:8080| Browser
+    Browser -->|Autopilot Commands| Proxy
+    Proxy -->|TCP Socket| Bridge
+```
+
+### Bridge Proxy Components
+
+**Location:** `boatingInstrumentsApp/server/nmea-websocket-bridge.js`
+
+**Capabilities:**
+1. **Live WiFi Bridge Connection:** Connects to real boat WiFi bridge (e.g., Digital Yacht WLN10)
+2. **File Playback Mode:** Streams NMEA sentences from recorded files for consistent testing
+3. **Bidirectional Communication:** Supports both NMEA data ingestion and autopilot command transmission
+4. **Multiple Client Support:** Multiple browser instances can connect simultaneously
+5. **Automatic Reconnection:** Handles WiFi bridge disconnections gracefully
+
+**Startup Modes:**
+
+```bash
+# Connect to live WiFi bridge
+node server/nmea-websocket-bridge.js 192.168.1.10 10110
+
+# Playback from NMEA file (testing/development)
+node server/nmea-websocket-bridge.js --file vendor/sample-data/basic-instruments.nmea
+
+# File playback with loop (continuous testing)
+node server/nmea-websocket-bridge.js --file vendor/sample-data/autopilot-session.nmea --loop
+```
+
+### Platform-Specific Connection Strategy
+
+**App Integration:** Uses Platform.select() to choose connection method based on runtime environment.
+
+**Implementation Pattern:**
+```typescript
+// src/services/bridge/platformConnection.ts
+import { Platform } from 'react-native';
+
+const createConnection = Platform.select({
+  web: () => new WebSocketNMEAConnection('ws://localhost:8080'),
+  default: () => new TCPNMEAConnection(bridgeIP, bridgePort),
+});
+```
+
+**Web Platform (`Platform.OS === 'web'`):**
+- Connects via WebSocket to bridge proxy
+- Real NMEA parsing and state updates
+- Full autopilot command support
+- Same UI behavior as native platforms
+
+**Native Platforms (`ios`, `android`, `windows`, `macos`):**
+- Direct TCP socket connection to WiFi bridge
+- No proxy needed
+- Production-ready connection management
+
+### Test Data Management
+
+**Sample NMEA Files:** `vendor/sample-data/`
+
+**File Categories:**
+- **`basic-instruments.nmea`** - Depth, speed, wind, GPS data for UI validation
+- **`autopilot-session.nmea`** - Complete autopilot engagement/disengagement cycle
+- **`multi-engine.nmea`** - Dual-engine boat data for complex UI testing
+- **`storm-conditions.nmea`** - High wind/wave data for stress testing
+- **`shallow-water.nmea`** - Depth alarm testing data
+
+**File Format:** Standard NMEA 0183 sentences with proper checksums:
+```
+$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+$SDDBT,12.4,f,3.8,M,2.1,F*3A
+$WIMWV,045,R,12.5,N,A*27
+```
+
+### Epic 6 Testing Infrastructure
+
+Epic 6 introduces comprehensive testing infrastructure designed for domain-separated marine applications:
+
+#### Testing Architecture
 
 ```
-boating-instruments/
-├── app/                          # Expo Router file-based routing
-│   ├── _layout.tsx               # Root layout with theme provider
-│   ├── index.tsx                 # Dashboard/Canvas (primary screen)
-│   ├── settings.tsx              # Settings screen
-│   ├── widget-selector.tsx       # Widget library modal
-│   └── +not-found.tsx            # 404 screen
+src/testing/
+├── index.ts                    # Centralized testing utilities export
+├── fixtures/                   # Test data generators
+│   └── nmeaFixtures.ts        # Marine-specific test data
+├── mocks/                      # Mock service implementations
+│   ├── mockNmeaService.ts     # Controllable NMEA data simulation
+│   └── mockWidgetService.ts   # Widget state management mocking
+├── helpers/                    # Testing utilities and patterns
+│   └── testHelpers.ts         # Enhanced render functions and utilities
+└── __tests__/                  # Example comprehensive test suites
+    └── useNMEAData.enhanced.test.ts # Hook testing patterns
+```
+
+#### Enhanced Testing Capabilities
+
+**Mock NMEA Service:**
+```typescript
+// Controllable data simulation for testing
+const mockService = createMockNmeaService({
+  speed: 15.5,
+  heading: 275.0,
+  depth: 42.8
+});
+
+// Simulate real-time updates
+mockService.start(1000); // 1 second intervals
+
+// Simulate data quality changes
+mockService.setQuality('poor');
+
+// Simulate connection issues
+mockService.simulateDisconnection(5000);
+
+// Inject anomalies for testing
+mockService.simulateAnomaly('speed', 999, 2000);
+```
+
+**Performance Testing Utilities:**
+```typescript
+// Track rendering performance
+const profiler = new PerformanceProfiler();
+profiler.start();
+// ... perform operations
+profiler.mark('operation-complete');
+
+const stats = profiler.getStats('operation-complete');
+expect(stats.avg).toBeLessThan(16); // 60fps threshold
+
+// Memory leak detection
+const before = measureMemoryUsage();
+// ... memory-intensive operations
+const after = measureMemoryUsage();
+expect(after.heapUsed - before.heapUsed).toBeLessThan(50); // 50MB limit
+```
+
+**Network Condition Simulation:**
+```typescript
+// Simulate various network conditions
+const networkSim = new NetworkSimulator();
+networkSim.setLatency(200);     // 200ms latency
+networkSim.setErrorRate(0.1);   // 10% packet loss
+
+// Test with simulated conditions
+await networkSim.simulateRequest(() => fetchNmeaData());
+```
+
+**Domain-Specific Test Utilities:**
+```typescript
+// Navigation testing
+const gpsData = navigationTestUtils.createGpsData(37.7749, -122.4194);
+const speedData = navigationTestUtils.createSpeedData(15.5, 'knots');
+
+// Engine testing  
+const engineData = engineTestUtils.createEngineData(2500, 85);
+const fuelData = engineTestUtils.createFuelData(75);
+
+// Environmental testing
+const windData = environmentTestUtils.createWindData(15, 180);
+const depthData = environmentTestUtils.createDepthData(42.8);
+
+// Autopilot testing
+const autopilotActive = autopilotTestUtils.createActiveState(275);
+const autopilotAlarm = autopilotTestUtils.createAlarmState();
+```
+
+#### Enhanced Render Testing
+
+**Provider Wrapper with NMEA Context:**
+```typescript
+// Enhanced render with marine data context
+const { result, mockNmeaService } = renderWithProviders(
+  <SpeedWidget />,
+  { 
+    nmeaData: { speed: 15.5, heading: 180 },
+    enablePerformanceMonitoring: true
+  }
+);
+
+// Update data during test
+result.updateNmeaData({ speed: 20.0 });
+result.simulateDataQualityChange('poor');
+result.simulateDisconnection(5000);
+```
+
+#### Quality Assurance Standards
+
+**Performance Thresholds:**
+- Render time: <16ms (60fps requirement)
+- Memory increase: <50MB per operation
+- Data staleness: <5s for critical marine data
+
+**Data Quality Thresholds:**
+- **Excellent**: >95% accuracy, >90% completeness, <1s freshness
+- **Good**: >85% accuracy, >75% completeness, <3s freshness  
+- **Fair**: >70% accuracy, >50% completeness, <5s freshness
+- **Poor**: >50% accuracy, >25% completeness, <10s freshness
+
+**Coverage Requirements:**
+- Global coverage: 70% minimum
+- Hook coverage: 80% minimum
+- Service coverage: 75% minimum
+- Critical marine functions: 90% minimum
+
+#### Test Categories
+
+**Unit Tests:**
+- Individual hook functionality
+- Service method validation
+- Data transformation accuracy
+- Error handling robustness
+
+**Integration Tests:**
+- End-to-end NMEA data flow
+- Service interaction patterns
+- Widget-to-service communication
+- Cross-domain data dependencies
+
+**Performance Tests:**
+- High-frequency data processing (500+ msg/sec)
+- Memory leak detection
+- Render performance under load
+- Network condition resilience
+
+**Marine Domain Tests:**
+- Navigation accuracy calculations
+- Engine monitoring thresholds
+- Environmental data validation
+- Autopilot safety constraints
+
+### Development Workflow Integration
+
+**1. UI-Only Development (No Bridge Required):**
+```bash
+npm run web    # Uses mocked data, fastest iteration
+```
+
+**2. Real NMEA Testing (Bridge Proxy + Sample Files):**
+```bash
+# Terminal 1: Start bridge with test data
+node server/nmea-websocket-bridge.js --file vendor/sample-data/basic-instruments.nmea --loop
+
+# Terminal 2: Start web app
+npm run web
+```
+
+**3. Live Boat Testing (Bridge Proxy + Real WiFi Bridge):**
+```bash
+# Terminal 1: Connect to actual boat
+node server/nmea-websocket-bridge.js 192.168.1.10 10110
+
+# Terminal 2: Start web app  
+npm run web
+```
+
+**4. Production Testing (Native Direct Connection):**
+```bash
+npm run ios     # Direct TCP to WiFi bridge
+npm run android # Direct TCP to WiFi bridge
+```
+
+### Testing Strategy Integration
+
+**Unit Tests:** Bridge proxy not required (uses mocked connections)
+
+**Integration Tests:** Bridge proxy provides consistent NMEA data for repeatable tests
+```bash
+# Start bridge with known test data
+node server/nmea-websocket-bridge.js --file __tests__/fixtures/test-sequence.nmea
+
+# Run integration tests
+npm run test:integration
+```
+
+**Manual Testing:** Bridge proxy enables testing with real NMEA data patterns without requiring boat access
+
+**Performance Testing:** Bridge proxy supports high-frequency NMEA streams for load testing:
+```bash
+# High-frequency test data (500+ messages/second)
+node server/nmea-websocket-bridge.js --file vendor/sample-data/high-frequency.nmea --rate 500
+```
+
+---
+
+## System Architecture Organization
+
+This section focuses on **core system architecture** components. For complete project structure including frontend organization, see [docs/ui-architecture.md](ui-architecture.md).
+
+### Core System Components
+
+```
+src/
+├── services/                     # Core system services
+│   ├── nmea/                    # NMEA protocol handling
+│   │   ├── NMEAConnection.ts    # TCP socket connection manager
+│   │   ├── NMEAParser.ts        # NMEA 0183/2000 sentence parser
+│   │   ├── PGNDecoder.ts        # Binary PGN message decoder
+│   │   ├── AutopilotCommands.ts # Autopilot command encoding
+│   │   └── types.ts             # NMEA protocol type definitions
+│   │
+│   ├── storage/                 # System data persistence
+│   │   ├── settingsStorage.ts   # System configuration persistence
+│   │   ├── secureStorage.ts     # Encrypted credential storage
+│   │   └── connectionStorage.ts # WiFi bridge configuration
+│   │
+│   ├── playback/               # Development and testing support
+│   │   ├── NMEAPlayback.ts     # File-based NMEA simulation
+│   │   ├── sampleData.ts       # Test data generation
+│   │   └── mockConnection.ts   # Mock WiFi bridge for testing
+│   │
+│   └── bridge/                 # Web development bridge proxy
+│       ├── webSocketConnection.web.ts  # WebSocket client for web platform
+│       └── platformConnection.ts       # Platform.select() connection factory
 │
-├── src/
-│   ├── components/               # Reusable UI components
-│   │   ├── atoms/                # Atomic design: smallest building blocks
-│   │   │   ├── Button.tsx
-│   │   │   ├── StatusIndicator.tsx
-│   │   │   ├── LoadingSpinner.tsx
-│   │   │   └── index.ts
-│   │   ├── molecules/            # Composed components
-│   │   │   ├── ModalContainer.tsx
-│   │   │   ├── SegmentedControl.tsx
-│   │   │   ├── FormField.tsx
-│   │   │   └── index.ts
-│   │   ├── organisms/            # Complex UI sections
-│   │   │   ├── StatusBar.tsx
-│   │   │   ├── SetupWizard/
-│   │   │   └── index.ts
-│   │   └── index.ts
-│   │
-│   ├── widgets/                  # Marine instrument widgets
-│   │   ├── WidgetCard.tsx        # Base widget container (HOC)
-│   │   ├── DepthWidget.tsx
-│   │   ├── SpeedWidget.tsx
-│   │   ├── WindWidget.tsx
-│   │   ├── CompassWidget.tsx
-│   │   ├── AutopilotWidget/
-│   │   │   ├── AutopilotWidget.tsx
-│   │   │   ├── HeadingControls.tsx
-│   │   │   └── TackGybeModal.tsx
-│   │   ├── GPSWidget.tsx
-│   │   ├── TemperatureWidget.tsx
-│   │   ├── VoltageWidget.tsx
-│   │   ├── EngineWidget.tsx
-│   │   ├── AlarmWidget.tsx
-│   │   └── index.ts
-│   │
-│   ├── services/                 # Business logic and external interactions
-│   │   ├── nmea/
-│   │   │   ├── NMEAConnection.ts      # TCP socket manager
-│   │   │   ├── NMEAParser.ts          # NMEA 0183/2000 parser
-│   │   │   ├── PGNDecoder.ts          # Raymarine PGN decoder
-│   │   │   ├── AutopilotCommands.ts   # Autopilot command encoder
-│   │   │   └── types.ts               # NMEA data types
-│   │   ├── storage/
-│   │   │   ├── widgetStorage.ts       # AsyncStorage for layouts
-│   │   │   ├── settingsStorage.ts     # User preferences
-│   │   │   └── secureStorage.ts       # WiFi credentials
-│   │   └── playback/
-│   │       ├── NMEAPlayback.ts        # File-based playback mode
-│   │       └── sampleData.ts          # Demo mode data
-│   │
-│   ├── store/                    # Zustand state management
-│   │   ├── nmeaStore.ts          # Real-time NMEA data stream
-│   │   ├── widgetStore.ts        # Widget configurations & layout
-│   │   ├── settingsStore.ts      # App settings (units, display mode)
-│   │   ├── alarmStore.ts         # Alarm configurations & history
-│   │   └── connectionStore.ts    # WiFi bridge connection state
-│   │
-│   ├── hooks/                    # Custom React hooks
-│   │   ├── useNMEAData.ts        # Subscribe to specific NMEA parameters
-│   │   ├── useTheme.ts           # Access current theme (Day/Night/Red)
-│   │   ├── useConnection.ts      # Monitor connection status
-│   │   ├── useWidgetConfig.ts    # Widget configuration helper
-│   │   └── index.ts
-│   │
-│   ├── theme/                    # Design system implementation
-│   │   ├── colors.ts             # Color palette (Day/Night/Red-Night)
-│   │   ├── typography.ts         # Font sizes, weights, families
-│   │   ├── spacing.ts            # 8pt grid spacing scale
-│   │   ├── ThemeProvider.tsx     # React Context provider
-│   │   └── index.ts
-│   │
-│   ├── utils/                    # Helper functions
-│   │   ├── unitConversion.ts     # ft↔m, kts↔mph, etc.
-│   │   ├── validation.ts         # IP address, form validation
-│   │   ├── formatters.ts         # Number formatting, date/time
-│   │   └── index.ts
-│   │
-│   └── types/                    # Shared TypeScript types
-│       ├── widget.types.ts       # Widget props, config interfaces
-│       ├── nmea.types.ts         # NMEA data structures
-│       ├── navigation.types.ts   # Expo Router navigation types
-│       └── index.ts
+├── store/                       # State management bridge (service↔UI)
+│   ├── nmeaStore.ts            # Real-time NMEA data state
+│   ├── connectionStore.ts       # WiFi bridge connection state
+│   ├── settingsStore.ts        # System settings state
+│   └── types.ts                # State type definitions
 │
-├── assets/                       # Static assets
-│   ├── fonts/
-│   ├── icons/
-│   │   ├── compass.svg
-│   │   ├── rudder.svg
-│   │   └── depth-sounder.svg
-│   └── images/
-│       ├── icon.png
-│       ├── splash.png
-│       └── adaptive-icon.png
+├── types/                       # Shared system type definitions
+│   ├── nmea.types.ts           # NMEA protocol data structures
+│   ├── connection.types.ts      # Network connection interfaces
+│   └── system.types.ts         # Core system type definitions
 │
-├── __tests__/                    # Test files (mirrors src structure)
-│   ├── components/
-│   ├── widgets/
-│   ├── services/
-│   └── store/
+└── utils/                      # System utility functions
+    ├── unitConversion.ts       # Marine unit conversions
+    ├── validation.ts           # IP/network validation
+    ├── checksumCalc.ts        # NMEA checksum calculation
+    └── protocolUtils.ts       # Marine protocol utilities
+```
+
+### System Architecture Files
+
+**Development Infrastructure:**
+```
+├── server/                     # Development & testing services
+│   └── nmea-websocket-bridge.js   # TCP-to-WebSocket bridge for web development
 │
-├── docs/                         # Documentation
-│   ├── prd.md
-│   ├── front-end-spec.md
-│   ├── ui-architecture.md
-│   └── architecture.md (this file)
+├── __mocks__/                  # Native module mocks for web testing
+│   ├── TcpSocket.js           # Mock TCP (not used when bridge proxy active)
+│   ├── AsyncStorage.js        # localStorage-based storage mock
+│   ├── FileSystem.js          # File operations mock
+│   └── Sound.js               # Audio alerts mock
 │
-├── .expo/                        # Expo build artifacts (gitignored)
-├── node_modules/                 # Dependencies (gitignored)
-│
-├── app.json                      # Expo configuration
-├── eas.json                      # EAS Build configuration
-├── babel.config.js               # Babel configuration
-├── tsconfig.json                 # TypeScript configuration
-├── jest.config.js                # Jest testing configuration
-├── package.json                  # Dependencies and scripts
-├── .eslintrc.js                  # ESLint rules
-├── .prettierrc                   # Prettier formatting
-├── .gitignore
-└── README.md
+└── vendor/
+    └── sample-data/           # NMEA test files for bridge proxy playback
+        ├── basic-instruments.nmea     # Basic depth/speed/wind data
+        ├── autopilot-session.nmea     # Autopilot engagement test data
+        └── multi-engine.nmea          # Multi-engine boat data
+```
+
+**Configuration & Build:**
+```
+├── app.json                     # Expo system configuration
+├── eas.json                     # Build and deployment configuration
+├── tsconfig.json               # TypeScript system configuration
+├── jest.config.js              # Testing framework configuration
+└── package.json                # System dependencies and scripts
+```
+
+**Documentation:**
+```
+├── docs/
+│   ├── architecture.md         # Core system architecture (this file)
+│   ├── ui-architecture.md      # Frontend architecture specifications
+│   ├── prd.md                 # Product requirements
+│   └── deployment.md          # System deployment guides
 ```
 
 ---
@@ -644,11 +1205,12 @@ const config = {
 
 ### Environments
 
-| Environment | Purpose | NMEA Bridge | Sentry Enabled |
-|-------------|---------|-------------|----------------|
-| **Development** | Local development with Expo Go | 192.168.1.10:10110 or Playback Mode | No |
-| **Staging** | Pre-production testing on devices | Test boat WiFi bridge | Yes |
-| **Production** | Live app store releases | User's boat WiFi bridge | Yes |
+| Environment | Purpose | NMEA Bridge | WebSocket Proxy | Sentry Enabled |
+|-------------|---------|-------------|----------------|-----------------|
+| **Web Development** | UI development with webpack | WebSocket Bridge Proxy | `ws://localhost:8080` | No |
+| **Development** | Local development with Expo Go | 192.168.1.10:10110 or Playback Mode | Not used (native TCP) | No |
+| **Staging** | Pre-production testing on devices | Test boat WiFi bridge | Not used (native TCP) | Yes |
+| **Production** | Live app store releases | User's boat WiFi bridge | Not used (native TCP) | Yes |
 
 ---
 
@@ -661,7 +1223,7 @@ const config = {
 3. **Memoize expensive calculations** - Use `useMemo()` for NMEA data transformations and widget rendering logic
 4. **Handle null NMEA data** - All widgets must gracefully display "--" when data unavailable or stale (>5s old)
 5. **Use theme context for colors** - Never hardcode color values in components; always use `useTheme()` hook
-6. **Follow accessibility guidelines** - All interactive elements must be ≥44pt touch targets; provide labels for screen readers
+6. **Follow touch interaction standards** - All interactive elements must be ≥44pt touch targets (full accessibility with screen reader support deferred to Phase 2)
 7. **Test with stale data** - Widgets must indicate stale data (>5 seconds old) with visual cues
 8. **Throttle widget updates** - Max 1 update/second per widget (users can't perceive faster updates)
 9. **Clean up subscriptions** - Use `useEffect` cleanup for Zustand subscriptions and TCP socket listeners
@@ -798,14 +1360,60 @@ describe('NMEAParser', () => {
 
 **NMEA Service Performance:**
 - **Response Time Target:** <100ms from NMEA sentence arrival to widget update
+
+---
+
+## Frontend Integration
+
+This application uses a React Native frontend layer with comprehensive UI architecture patterns detailed in [docs/ui-architecture.md](ui-architecture.md). The frontend layer consumes real-time NMEA data via Zustand stores and renders marine instrument widgets according to established design system specifications.
+
+### System-to-UI Data Flow
+
+The frontend integrates with the NMEA service architecture through the following data flow:
+
+```
+NMEA Service Layer → Zustand Stores → UI Components
+    ↓                     ↓              ↓
+TCP Socket          nmeaStore        Widgets
+NMEAParser       widgetStore      Dashboard
+AutopilotCmds    settingsStore    Controls
+```
+
+**Key Integration Points:**
+- **Data Ingestion:** NMEA services update Zustand stores with parsed sensor data
+- **State Management:** UI components subscribe to specific data slices for optimal performance  
+- **Command Execution:** UI components invoke service layer methods for autopilot control
+- **Error Handling:** Service layer errors propagate to UI through connection store
+
+**Performance Characteristics:**
+- **Data Latency:** <100ms from NMEA sentence arrival to widget update
+- **Render Performance:** 60 FPS maintained with 10+ simultaneous widget updates
+- **Memory Management:** UI layer limited to 60-second NMEA history buffer
+
+For complete frontend architecture specifications including component organization, state management patterns, routing, styling, and UI design systems, see [docs/ui-architecture.md](ui-architecture.md).
+````
 - **Throughput:** Handle 500+ NMEA messages/second without blocking UI thread
 - **Memory Management:** Limit NMEA history buffer to last 60 seconds of data
 
 ---
 
-**Document Complete - Full-Stack Architecture v1.0**
+---
 
-This architecture document provides developers and AI agents with complete technical specifications for building the Boating Instruments App. All patterns, conventions, and code templates are production-ready and aligned with the PRD and UI/UX specifications.
+---
 
-For detailed frontend implementation patterns, see [docs/ui-architecture.md](docs/ui-architecture.md).
+## Related Architecture Documents
+
+- **[NMEA Bridge Simulator Architecture](nmea-bridge-simulator-architecture.md)** - Comprehensive multi-platform testing infrastructure with standardized marine scenarios, BMAD agent integration, and performance testing capabilities
+- **[UI Architecture](ui-architecture.md)** - Complete React Native frontend specifications including cross-platform patterns and web development workflow
+- **[Testing Strategy](../TESTING-STRATEGY.md)** - Full testing methodology integrating unit tests, simulator-based integration tests, and cross-platform validation
+
+---
+
+**Document Complete - Core System Architecture v2.0**
+
+This architecture document provides developers and AI agents with complete **core system architecture** specifications for the Boating Instruments App. It covers NMEA services, data models, deployment infrastructure, and system integration patterns.
+
+**Frontend Architecture:** For complete React Native UI specifications, component organization, routing, state management, and design systems, see [docs/ui-architecture.md](ui-architecture.md).
+
+**Together:** These complementary documents provide comprehensive full-stack architectural guidance with clear separation of concerns between system architecture and frontend implementation.
 

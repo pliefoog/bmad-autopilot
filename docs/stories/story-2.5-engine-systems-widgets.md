@@ -2,7 +2,7 @@
 
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite  
 **Story ID:** 2.5  
-**Status:** Ready for Review
+**Status:** Done
 
 ---
 
@@ -88,6 +88,24 @@
 - Widget framework integration for consistent UI
 - Configurable thresholds stored in settings
 - Multi-instance support for engines/batteries/tanks
+
+### UI Architecture v2.1 Enhancement Integration
+
+**⚠️ AUTOMATED ENHANCEMENT:** This story's multi-instance support is significantly enhanced by **Story 6.10: Multi-Instance NMEA Widget Detection** which adds:
+
+**Automatic Detection:**
+- Automatic detection of NMEA engine instances (creates Engine #1, #2, etc. widgets)
+- Battery instance mapping to descriptive names (House, Thruster, Generator)
+- Tank instance detection with fluid type identification (Fuel Port, Water Fresh)
+- Dynamic widget titles based on NMEA instance data
+
+**Runtime Management:**
+- Graceful handling of instance additions/removals during runtime
+- Instance detection service that scans NMEA data streams
+- Memory-efficient scaling with instance count
+- No manual configuration required for multi-engine boats
+
+**Integration Note:** Story 6.10 automates what was previously manual multi-instance widget creation in this story, making the app truly plug-and-play for complex boat configurations.
 
 ---
 

@@ -180,6 +180,8 @@ This story exemplifies production-ready marine software development:
 - **Error Handling:** Try-catch around parsing with warning logs for invalid sentences
 
 ### Architecture Decisions
+**Technical Reference:** See [System Architecture - Data Models](../architecture/data-models.md) for NMEA sentence parsing patterns and [System Architecture - High Level Architecture](../architecture/high-level-architecture.md) for service layer organization.
+
 - Parsing happens in handleData() method of NmeaConnectionManager
 - Each sentence type updates specific fields in nmeaStore
 - Type guards used to safely access parsed sentence fields

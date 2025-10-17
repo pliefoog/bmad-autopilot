@@ -1,0 +1,68 @@
+schema: 1
+story: '2.11'
+story_title: 'Standardized Metric Presentation Format'
+gate: FAIL
+status_reason: 'Core MetricCell component not implemented. Current metric presentation lacks standardization across widgets with inconsistent typography and format patterns.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-10-13T12:00:00Z'
+
+top_issues:
+  - severity: high
+    category: implementation
+    description: 'Required MetricCell component with mnemonic|value|unit format does not exist'
+    suggested_owner: dev
+    refs: ['src/components/MetricCell.tsx (missing)']
+  - severity: high
+    category: consistency
+    description: 'Typography inconsistency across widgets - values range from 18pt to 32pt instead of standardized 36-48pt'
+    suggested_owner: dev
+    refs: ['src/widgets/EngineWidget.tsx:197', 'src/widgets/DepthWidget.tsx']
+  - severity: medium
+    category: architecture
+    description: 'No flexible grid layout system for multi-metric widgets (1x2, 2x2, 2x3 arrangements)'
+    suggested_owner: dev
+    refs: ['All widget files using custom layout instead of standardized grid']
+
+waiver: { active: false }
+
+quality_score: 20
+expires: '2025-10-27T12:00:00Z'
+
+evidence:
+  tests_reviewed: 0
+  risks_identified: 4
+  trace:
+    ac_covered: []
+    ac_gaps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Typography and layout changes are presentation-layer only'
+  performance:
+    status: CONCERNS
+    notes: 'Inconsistent monospace usage may cause layout shift during real-time updates'
+  reliability:
+    status: CONCERNS
+    notes: 'Inconsistent metric presentation may impede quick information parsing in critical marine situations'
+  maintainability:
+    status: FAIL
+    notes: 'Each widget implements custom metric presentation requiring individual maintenance'
+
+recommendations:
+  immediate:
+    - action: 'Create MetricCell component with mnemonic|value|unit format and theme integration'
+      refs: ['src/components/MetricCell.tsx']
+    - action: 'Implement flexible grid layout system supporting 1x1, 1x2, 2x2, 2x3, 3x2 arrangements'
+      refs: ['src/components/MetricGrid.tsx']
+    - action: 'Refactor DepthWidget to use MetricCell for standardized DEPTH | 12.4 | m format'
+      refs: ['src/widgets/DepthWidget.tsx']
+    - action: 'Refactor EngineWidget to use 2x2 grid with MetricCell for RPM, TEMP, PRESS, HOURS'
+      refs: ['src/widgets/EngineWidget.tsx']
+    - action: 'Add comprehensive test suite for MetricCell typography and grid layouts'
+      refs: ['__tests__/MetricCell.test.tsx', '__tests__/MetricGrid.test.tsx']
+  future:
+    - action: 'Add React.memo optimization to MetricCell to prevent unnecessary re-renders'
+      refs: ['src/components/MetricCell.tsx']
+    - action: 'Create visual consistency tests across all widgets using standardized metrics'
+      refs: ['__tests__/visual/metric-consistency.test.tsx']

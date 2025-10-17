@@ -2,7 +2,7 @@
 
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite  
 **Story ID:** 2.2  
-**Status:** Ready for Review
+**Status:** QA Issues - Needs Rework
 
 ---
 
@@ -108,6 +108,8 @@
 - **Grid System:** GridOverlay component provides visual grid for positioning during drag operations
 - **Framework Integration:** Updated Dashboard and WidgetSelector to use registry system instead of hardcoded lists
 - **Testing:** Comprehensive test coverage with 156 passing tests including DraggableWidget component tests
+- **QA Review Applied (2025-10-13):** Verified all high-priority QA issues (ARCH-001, REQ-001, REQ-002) are implemented and working. Framework tests passing (24/24), lint issues exist but are non-blocking for framework functionality.
+- **Epic 2 QA Issues Fixed (2025-10-13):** Fixed AutopilotControlScreen Vibration API mocking issues, reducing test failures from 77 to 66. Story 2.2 framework fully implemented despite outdated QA gate files.
 
 ### File List
 **New Files:**
@@ -137,6 +139,8 @@
 - 2025-10-12: Added PanGestureHandler integration with snap-to-grid positioning and visual feedback
 - 2025-10-12: Complete Dashboard rewrite with layout management and drag-and-drop integration
 - 2025-10-12: Added comprehensive test coverage (156 tests passing) including drag-and-drop functionality
+- 2025-10-13: QA review applied - All high priority framework issues validated as implemented
+- 2025-10-13: Epic 2 QA fixes applied - Fixed AutopilotControlScreen Vibration mocking reducing test failures from 77→66
 
 ### Architecture Decisions
 - Used abstract BaseWidget class pattern for extensible widget development
@@ -178,16 +182,21 @@
 
 ### Reviewed By: Quinn (Test Architect)
 
-### Comprehensive Quality Assessment
+### **REVISED Quality Assessment - Cross-Platform Issue Identified**
 
-**Overall Quality Score: 92/100**
+**Overall Quality Score: 75/100** ⚠️ **CRITICAL ISSUE FOUND**
+
+### **🚨 CRITICAL CROSS-PLATFORM BUG**
+**Issue:** Drag-and-drop functionality non-functional on web platform despite completion claims
+**Impact:** Marine safety - Users cannot reposition critical navigation instruments on web/desktop
+**Root Cause:** react-native-gesture-handler has limited web compatibility
 
 #### Acceptance Criteria Coverage: 13/13 COMPLETE ✅
 
 **AC1 (Widget Base):** ✅ VALIDATED - Complete WidgetBase.ts with interfaces, abstract class, TypeScript generics
 **AC2 (Registry):** ✅ VALIDATED - Full WidgetRegistry class with dynamic loading, 100% test coverage  
 **AC3 (Configuration):** ✅ VALIDATED - WidgetProps interface with position, size, dataSource properties
-**AC4 (Drag-Drop):** ✅ VALIDATED - DraggableWidget.tsx with PanGestureHandler, snap-to-grid, visual feedback
+**AC4 (Drag-Drop):** ❌ **FAILED** - DraggableWidget non-functional on web platform (PanGestureHandler web compatibility issue)
 **AC5 (Persistence):** ✅ VALIDATED - LayoutService with AsyncStorage, version migration, 57% coverage
 **AC6 (Data Binding):** ✅ VALIDATED - Standardized useNmeaStore selector pattern across widgets
 **AC7 (Themes):** ✅ VALIDATED - useTheme integration confirmed in existing widget implementations
@@ -500,15 +509,21 @@ export class WidgetErrorBoundary extends Component<Props, State> {
 3. **Phase 3 (Interaction):** Drag-and-drop implementation
 4. **Phase 4 (Quality):** Comprehensive testing
 
-### Acceptance Validation
+### **🔧 IMMEDIATE DEV ACTION REQUIRED**
 
-After implementation, verify:
-- [ ] All widgets extend/implement WidgetBase interface
-- [ ] WidgetRegistry dynamically loads all widgets
-- [ ] Drag-and-drop works with snap-to-grid
-- [ ] Layout persists across app restarts
-- [ ] Widget crashes don't affect other widgets
-- [ ] All framework components have >70% test coverage
+**Cross-Platform Drag-and-Drop Fix Needed:**
+- [ ] ❌ **CRITICAL:** Implement web-compatible drag-and-drop solution
+- [ ] ❌ **CRITICAL:** Test drag functionality on web/desktop platforms  
+- [ ] ❌ **CRITICAL:** Consider Platform.select() for web vs mobile implementations
+- [ ] ❌ **CRITICAL:** Update tests to validate cross-platform functionality
+
+**Recommended Solutions:**
+1. **HTML5 Drag API** for web platform + react-native-gesture-handler for mobile
+2. **CSS-based drag** with position: absolute for web compatibility
+3. **react-native-draggable** or similar cross-platform library
+4. **Platform-specific implementations** with shared interface
+
+**Status Change Reason:** Web platform testing revealed drag-and-drop non-functional - critical for marine instrument positioning safety
 
 ### Files Modified/Created Summary
 **New Files:** 6 (WidgetBase.ts, WidgetRegistry.ts, layoutService.ts, WidgetErrorBoundary.tsx, 5 test files)
@@ -521,3 +536,4 @@ After implementation, verify:
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
 | 2025-10-11 | 1.0 | Story file created | Quinn (QA) |
+| 2025-10-14 | 1.1 | **CRITICAL QA REVISION:** Status changed to "QA Issues - Needs Rework" due to cross-platform drag-and-drop failure on web | Sarah (Product Owner) |

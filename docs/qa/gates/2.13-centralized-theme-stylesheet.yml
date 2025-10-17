@@ -1,0 +1,74 @@
+schema: 1
+story: '2.13'
+story_title: 'Centralized Theme Stylesheet'
+gate: FAIL
+status_reason: 'Core theme.stylesheet.ts with createThemedStyles function completely unimplemented. Current anti-pattern of individual widget StyleSheets blocks developer efficiency and Epic 2 consistency.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-10-13T12:00:00Z'
+
+top_issues:
+  - severity: high
+    category: architecture
+    description: 'Required theme.stylesheet.ts with createThemedStyles function does not exist'
+    suggested_owner: dev
+    refs: ['src/styles/theme.stylesheet.ts (missing)']
+  - severity: high
+    category: maintainability
+    description: 'All widgets use anti-pattern of individual StyleSheet.create() calls instead of centralized styling'
+    suggested_owner: dev
+    refs: ['src/widgets/AutopilotControlScreen.tsx:29', 'src/widgets/WidgetCard.tsx:94', 'src/widgets/WidgetErrorBoundary.tsx:94']
+  - severity: medium
+    category: duplication
+    description: 'Typography and layout styles redefined across 9+ widget files with inconsistencies'
+    suggested_owner: dev
+    refs: ['All widget files defining custom title, header, container styles']
+
+waiver: { active: false }
+
+quality_score: 10
+expires: '2025-10-27T12:00:00Z'
+
+evidence:
+  tests_reviewed: 0
+  risks_identified: 4
+  trace:
+    ac_covered: []
+    ac_gaps: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Stylesheet centralization is presentation-layer optimization with no security implications'
+  performance:
+    status: CONCERNS
+    notes: 'Current style duplication increases bundle size and prevents proper memoization'
+  reliability:
+    status: FAIL
+    notes: 'Inconsistent styling patterns lead to visual inconsistencies and maintenance issues'
+  maintainability:
+    status: FAIL
+    notes: 'Anti-pattern of individual StyleSheets severely violates DRY principle and blocks Epic 2 goals'
+
+recommendations:
+  immediate:
+    - action: 'Create theme.stylesheet.ts with createThemedStyles function and complete style definitions'
+      refs: ['src/styles/theme.stylesheet.ts']
+    - action: 'Define typography system (title, mnemonic, valueMonospace, unit, secondary) with theme integration'
+      refs: ['src/styles/theme.stylesheet.ts']
+    - action: 'Implement standardized widget styles (container, header, metric, grid, button, status)'
+      refs: ['src/styles/theme.stylesheet.ts']
+    - action: 'Refactor AutopilotControlScreen to use themedStyles instead of individual StyleSheet.create()'
+      refs: ['src/widgets/AutopilotControlScreen.tsx:29']
+    - action: 'Refactor WidgetCard to use themedStyles eliminating hardcoded color StyleSheet'
+      refs: ['src/widgets/WidgetCard.tsx:94-180']
+    - action: 'Create example widget demonstrating complete themedStyles usage pattern'
+      refs: ['src/widgets/ExampleThemedWidget.tsx']
+    - action: 'Add developer documentation with themedStyles usage guide and JSDoc comments'
+      refs: ['docs/development/theming-guide.md']
+  future:
+    - action: 'Add memoization to createThemedStyles for performance optimization'
+      refs: ['src/styles/theme.stylesheet.ts']
+    - action: 'Create comprehensive test suite for themedStyles across all theme modes'
+      refs: ['__tests__/theme-stylesheet.test.tsx']
+    - action: 'Add visual consistency tests validating typography and spacing standards'
+      refs: ['__tests__/visual/style-consistency.test.tsx']

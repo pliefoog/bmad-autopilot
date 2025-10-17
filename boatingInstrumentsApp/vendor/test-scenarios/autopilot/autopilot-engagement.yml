@@ -1,0 +1,237 @@
+# Autopilot Engagement Scenario
+# Tests autopilot engagement, heading changes, and status responses
+# Duration: 5 minutes with distinct phases
+# Critical for Epic 3 autopilot development testing
+
+metadata:
+  name: "Autopilot Engagement"
+  description: "Full autopilot engagement cycle with heading changes and status monitoring"
+  version: "1.0"
+  duration_minutes: 5
+  loop_enabled: false
+  bridge_mode: "nmea0183"  # Uses $PCDIN encapsulation for autopilot commands
+  epic_target: "Epic 3"   # Specifically for autopilot development
+
+# Timing configuration for autopilot testing
+timing:
+  base_frequency_hz: 2.0     # Higher frequency for autopilot responsiveness
+  autopilot_status_hz: 4.0   # 4 updates per second for status
+  command_response_ms: 250   # 250ms response to commands
+  
+# Phase-based scenario progression
+phases:
+  
+  # Phase 1: Manual Navigation (0-1 minutes)
+  manual_navigation:
+    start_time: 0
+    duration_minutes: 1
+    description: "Manual helm control - autopilot disengaged"
+    autopilot_mode: "STANDBY"
+    
+    data_sources:
+      compass:
+        sentence_type: "HDT"
+        pattern_type: "manual_steering"
+        base_value: 180.0
+        variation: 8.0      # ±8° manual steering variation
+        
+      speed:
+        sentence_type: "VTG"
+        base_value: 7.0
+        variation: 0.8      # More variation under manual control
+        
+      autopilot_status:
+        sentence_type: "PCDIN"  # $PCDIN encapsulated PGN 65379
+        pgn: "01FF03"          # Autopilot Status PGN
+        data: "00,00,FF,00,00,00,00,FF"  # Standby mode
+        frequency_hz: 2.0
+        
+  # Phase 2: Autopilot Engagement (1-2 minutes)
+  autopilot_engagement:
+    start_time: 60
+    duration_minutes: 1
+    description: "Autopilot engagement sequence"
+    autopilot_mode: "AUTO"
+    
+    events:
+      - time_seconds: 5
+        description: "Autopilot engagement command received"
+        command_type: "engage"
+        expected_command: "$PCDIN,01F112,00,01,FF,B4,00,00,00,FF*5A"  # Engage autopilot
+        
+      - time_seconds: 10
+        description: "Autopilot confirms engagement"
+        response_type: "status_update"
+        
+    data_sources:
+      compass:
+        sentence_type: "HDT"
+        pattern_type: "autopilot_stabilization"
+        target_heading: 180.0
+        stabilization_time: 15  # 15 seconds to stabilize
+        precision: 1.0          # ±1° precision under autopilot
+        
+      autopilot_status:
+        sentence_type: "PCDIN"
+        pgn: "01FF03"
+        data: "00,01,FF,B4,00,00,00,FF"  # Auto mode, heading 180°
+        frequency_hz: 4.0
+        
+  # Phase 3: Heading Changes (2-4 minutes)
+  heading_changes:
+    start_time: 120
+    duration_minutes: 2
+    description: "Test autopilot heading adjustments"
+    autopilot_mode: "AUTO"
+    
+    heading_sequence:
+      - time_seconds: 0
+        target_heading: 200.0
+        description: "Turn to port 20°"
+        expected_command: "$PCDIN,01F112,00,01,FF,C8,00,00,00,FF*1C"
+        
+      - time_seconds: 30
+        target_heading: 160.0
+        description: "Turn to starboard 40°"
+        expected_command: "$PCDIN,01F112,00,01,FF,A0,00,00,00,FF*2A"
+        
+      - time_seconds: 60
+        target_heading: 180.0
+        description: "Return to original heading"
+        expected_command: "$PCDIN,01F112,00,01,FF,B4,00,00,00,FF*5A"
+        
+    data_sources:
+      compass:
+        sentence_type: "HDT"
+        pattern_type: "autopilot_turns"
+        turn_rate: 3.0      # 3°/second turn rate
+        overshoot: 2.0      # 2° overshoot then correction
+        
+  # Phase 4: Autopilot Disengagement (4-5 minutes)
+  autopilot_disengagement:
+    start_time: 240
+    duration_minutes: 1
+    description: "Autopilot disengagement and return to manual"
+    
+    events:
+      - time_seconds: 10
+        description: "Disengagement command received"
+        command_type: "disengage"
+        expected_command: "$PCDIN,01F112,00,00,FF,00,00,00,00,FF*59"
+        
+      - time_seconds: 15
+        description: "Return to manual control"
+        response_type: "standby_mode"
+        
+    data_sources:
+      compass:
+        sentence_type: "HDT"
+        pattern_type: "manual_steering"
+        base_value: 180.0
+        variation: 8.0      # Return to manual variation
+        
+      autopilot_status:
+        sentence_type: "PCDIN"
+        pgn: "01FF03"
+        data: "00,00,FF,00,00,00,00,FF"  # Return to standby
+        frequency_hz: 2.0
+
+# Bidirectional Command Processing
+command_handling:
+  enabled: true
+  timeout_ms: 1000
+  validation:
+    checksum_required: true
+    pgn_validation: true
+    
+  # Expected autopilot commands (NMEA 0183 bridge mode)
+  expected_commands:
+    engage_autopilot:
+      pattern: "$PCDIN,01F112,00,01,FF,*,00,00,00,FF*"
+      description: "Autopilot engagement command"
+      response_pgn: "01FF03"
+      
+    set_heading:
+      pattern: "$PCDIN,01F112,00,01,FF,*,00,00,00,FF*"
+      description: "Set target heading command"  
+      response_pgn: "01FF03"
+      
+    disengage_autopilot:
+      pattern: "$PCDIN,01F112,00,00,FF,00,00,00,00,FF*"
+      description: "Autopilot disengagement command"
+      response_pgn: "01FF03"
+
+# Standard instrument data (continues throughout all phases)
+background_data:
+  depth:
+    sentence_type: "DBT"
+    base_value: 20.0
+    variation: 2.0
+    
+  speed:
+    sentence_type: "VTG"
+    base_value: 7.0
+    variation: 0.5
+    
+  wind:
+    sentence_type: "MWV"
+    speed: 12.0
+    direction: 90.0      # Beam wind
+    variation: 15.0
+    
+  gps:
+    sentence_type: "GGA"
+    start_position:
+      latitude: 37.8044
+      longitude: -122.2712
+    course: 180.0        # Matches compass heading
+
+# Validation and Testing
+validation:
+  required_sentences: ["HDT", "VTG", "DBT", "MWV", "GGA"]
+  required_pgns: ["01FF03", "01F112"]  # Status and command PGNs
+  autopilot_response_time_ms: 500
+  heading_accuracy_degrees: 2.0
+  
+test_cases:
+  - name: "Autopilot Engagement"
+    phase: "autopilot_engagement"
+    validate_engagement: true
+    
+  - name: "Heading Change Response"
+    phase: "heading_changes"
+    validate_turn_execution: true
+    
+  - name: "Command Parsing"
+    validate_command_checksum: true
+    validate_pgn_structure: true
+    
+  - name: "Status Broadcasting"
+    validate_status_frequency: true
+    validate_status_accuracy: true
+
+# Sample NMEA 2000 PGN Messages (for reference)
+sample_pgns:
+  autopilot_status:
+    pgn: "01FF03"
+    description: "Autopilot Status"
+    fields:
+      - "Mode (0=Standby, 1=Auto)"
+      - "Sub-mode"
+      - "Reserved"
+      - "Target Heading LSB"
+      - "Target Heading MSB"
+      - "Reserved fields"
+    example: "$PCDIN,01FF03,00,01,FF,B4,00,00,00,FF*2C"
+    
+  autopilot_command:
+    pgn: "01F112"
+    description: "Autopilot Command"
+    fields:
+      - "Command Type"
+      - "Mode Setting"
+      - "Reserved"
+      - "Heading LSB"
+      - "Heading MSB"
+      - "Reserved fields"
+    example: "$PCDIN,01F112,00,01,FF,B4,00,00,00,FF*5A"

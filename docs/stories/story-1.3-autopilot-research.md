@@ -118,7 +118,7 @@ Based on research of matztam/raymarine-evo repository and NMEA2000 specification
 
 ### File List
 - `docs/nmea-research-findings.md` - Complete protocol research and findings
-- `docs/architecture.md` - Updated with autopilot integration approach
+- `docs/architecture/high-level-architecture.md` - Updated with autopilot integration approach
 - `docs/prd/risk-management-by-epic.md` - Updated with autopilot technical risks
 
 ### Change Log
@@ -126,7 +126,7 @@ Based on research of matztam/raymarine-evo repository and NMEA2000 specification
 |------|--------|----------------|
 | 2025-10-10 | Story file created | story-1.3-autopilot-research.md |
 | 2025-10-10 | Protocol research completed | nmea-research-findings.md |
-| 2025-10-10 | Architecture updated with autopilot approach | architecture.md |
+| 2025-10-10 | Architecture updated with autopilot approach | architecture/high-level-architecture.md |
 | 2025-10-10 | Risk assessment completed | risk-management-by-epic.md |
 | 2025-10-10 | GO/NO-GO recommendation finalized | All files |
 

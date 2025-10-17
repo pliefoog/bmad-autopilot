@@ -42,7 +42,7 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 
 ## **Epic 2: NMEA2000, Widget Framework & Complete Instrument Suite**
 
-**Goal:** Add NMEA2000 support (including PGN encapsulation), build extensible widget framework, and implement all 10 core instrument widgets. Deliver a comprehensive instrument display app that boaters can use to monitor all boat parameters from their phone/tablet.
+**Goal:** Add NMEA2000 support (including PGN encapsulation), build extensible widget framework, and implement all 10 core instrument widgets. Deliver a comprehensive, professional-grade instrument display app with consistent UX and polished navigation that boaters can use to monitor all boat parameters from their phone/tablet.
 
 **Timeline:** Month 2-3 (Checkpoint Gate at Month 3)
 
@@ -51,6 +51,10 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 - Dashboard customization enables personalized layouts
 - Replaces need to check 10 physical instruments
 - Widget framework architecture supports Phase 1.5 custom widgets (NFR17)
+- **Professional mobile navigation** with clean header design and intuitive settings access
+- **Consistent widget presentation** with standardized metric formatting across all instruments
+- **Theme system integration** enabling seamless day/night/red-night mode switching
+- **Collapsed/expanded widget states** for efficient dashboard space management
 
 **Requirements Covered:**
 - FR2 (NMEA2000 PGN parsing, $PCDIN encapsulation/de-encapsulation)
@@ -73,6 +77,12 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 - Responsive design: Phone (1-2 widgets visible), Tablet (4-9 widgets), smooth scrolling
 - Widget framework architecture documented with extensibility points for Phase 1.5
 - Test coverage ≥70% for widget framework and NMEA parsing
+- **Professional header** with hamburger menu (left), app title (center), connection LED only (right) - no status text (Story 2.9)
+- **Zero hardcoded colors** in widgets - all use centralized theme system (Story 2.10)
+- **Consistent metric format** across all widgets using MNEMONIC + VALUE + UNIT pattern (Story 2.11)
+- **Collapsed/expanded widget states** implemented with 180×180pt collapsed, 180×280pt expanded (Story 2.12)
+- **Centralized theme stylesheet** created enabling rapid widget development (Story 2.13)
+- Theme switching (day/night/red-night) updates all widgets instantly with no visual artifacts
 
 **Parallel Track:** Begin beta tester recruitment (target 50 users by Month 6)
 
@@ -87,13 +97,15 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 
 **Goal:** Implement Raymarine Evolution autopilot control with bi-directional communication, enabling solo sailors to control autopilot from cockpit. Begin closed beta testing with early adopters to get real-world feedback.
 
-**Timeline:** Month 4-5 (Checkpoint Gate at Month 5)
+**Timeline:** Month 4-5 (Checkpoint Gate at Month 5)  
+**Prerequisites:** Epic 7.1 Core Multi-Protocol Simulator (hardware access mitigation)
 
 **Value Delivered:**
 - Solo sailors can control autopilot from phone/tablet without going below deck
-- P70 autopilot controller replacement functionality (key differentiator)
+- P70 autopilot controller replacement functionality (key differentiator)  
 - Safety features (5-second countdown for tack/gybe) demonstrate responsible design
 - Real-world beta feedback identifies issues before public launch
+- **Hardware Mitigation:** Development and testing possible without physical WiFi bridge access
 
 **Requirements Covered:**
 - FR17, FR18, FR19, FR20, FR21, FR37
@@ -210,5 +222,100 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 - **If quality gates not met:** Extend beta period by 2-4 weeks, delay public launch
 - **If App Store rejection:** Address review feedback within 3-5 days, resubmit
 - **If critical bug discovered in Month 7:** Emergency fix, re-test with beta users before launch
+
+---
+
+## **Epic 6: UI Architecture Alignment & Framework Modernization**
+
+**Goal:** Transform the existing React Native implementation to align with the UI Architecture specification, improving maintainability, developer experience, and code quality through proper architectural patterns.
+
+**Timeline:** Month 6-7 (6-8 weeks parallel to Epic 4-5)
+
+**Value Delivered:**
+- Framework foundation enables rapid Epic 3 autopilot feature development
+- Atomic Design architecture reduces component duplication by 60%
+- Type safety improvements reduce marine safety-related runtime errors by 80%
+- Developer onboarding time reduced from 5 days to 2 days
+- Maintainable codebase supports long-term feature evolution
+
+**Requirements Covered:**
+- NFR17 (widget architecture extensibility), NFR18 (continuous test coverage)
+- Architecture alignment with UI Architecture specification
+- Technical debt resolution for framework foundation
+- Developer experience improvements
+
+**Success Criteria:**
+- Expo Router 3.5+ file-based navigation replaces manual App.tsx routing
+- Atomic Design component architecture implemented with 95% type coverage
+- Multi-domain Zustand store architecture replacing single store
+- React Context ThemeProvider system enabling instant theme switching
+- Custom React hooks infrastructure reducing code duplication
+- Domain-organized service architecture replacing flat structure
+- Centralized TypeScript type system with 100% IntelliSense coverage
+- Project structure aligned with UI Architecture specification
+
+**Key Architecture Deliverables:**
+- **Story 6.1:** Atomic Design Component Architecture (atoms, molecules, organisms)
+- **Story 6.2:** Multi-Store Zustand Architecture Implementation
+- **Story 6.3:** ThemeProvider Context System Implementation
+- **Story 6.4:** Custom React Hooks Infrastructure
+- **Story 6.5:** Service Layer Organization & Architecture
+- **Story 6.6:** Shared TypeScript Types System
+- **Story 6.7:** Expo Router Migration & File-Based Navigation
+- **Story 6.8:** Project Structure Alignment
+
+**Risk Mitigation:**
+- **If framework migration causes regressions:** Maintain parallel routing system until migration complete
+- **If atomic design complexity delays Epic 3:** Prioritize autopilot-related components first
+- **If type system overhaul breaks existing code:** Incremental migration with comprehensive testing
+
+**Strategic Context:** This epic addresses technical debt accumulated during Epic 2 implementation and provides the architectural foundation required for Epic 3's complex autopilot features. Essential for marine safety due to improved type safety and maintainability.
+
+---
+
+## **Epic 7: NMEA Bridge Simulator Testing Infrastructure**
+
+**Goal:** Develop comprehensive NMEA Bridge Simulator with multi-protocol support, standardized test scenario library, and BMAD agent integration to enable hardware-independent development and automated testing of marine instrument functionality and autopilot control systems.
+
+**Timeline:** Month 6-7 (Supporting Development & QA Infrastructure)
+
+**Value Delivered:**
+- Hardware mitigation enables Epic 3 autopilot development without physical WiFi bridge access
+- Standardized test scenarios provide comprehensive QA validation across all user stories
+- BMAD agent integration enables automated testing workflows and performance validation
+- Cross-platform testing infrastructure supports web, iOS, and Android development
+- Realistic marine data simulation for comprehensive feature testing
+
+**Requirements Covered:**
+- FR31 (Enhanced playbook mode with autopilot simulation)
+- NFR18 (continuous testing infrastructure)
+- Hardware dependency mitigation for development teams
+- Automated testing infrastructure for BMAD agent workflows
+
+**Success Criteria:**
+- Enhanced Multi-Protocol NMEA Bridge Simulator operational (TCP port 2000, WebSocket port 8080)
+- NMEA 0183 and NMEA 2000 bridge mode support with bidirectional autopilot command simulation
+- Standardized test scenario library covering navigation, autopilot, safety alarms, and performance testing
+- YAML-based scenario configuration with algorithmic NMEA data generation
+- BMAD agent integration supporting Dev, QA, and Architect automated workflows
+- Cross-platform compatibility validation (web/iOS/Android identical behavior)
+- Performance targets: 50+ concurrent connections, 500+ NMEA sentences/second, <100MB RAM usage
+
+**Key Infrastructure Deliverables:**
+- **Story 7.1:** Core Multi-Protocol Simulator (Hardware Mitigation Priority)
+- **Story 7.2:** Standardized Test Scenario Library  
+- **Story 7.3:** BMAD Agent Integration & Testing Infrastructure
+
+**Strategic Dependencies:**
+- **Blocks:** Epic 3 (Autopilot Control) - Story 3.1 requires simulator for development without hardware
+- **Supports:** Epic 4 (Alarms & Polish), Epic 5 (Launch Preparation) - QA scenarios for comprehensive testing
+- **Integrates:** Existing WebSocket bridge, Sample NMEA data, Testing infrastructure
+
+**Risk Mitigation:**
+- **If simulator development delays Epic 3:** Prioritize autopilot command simulation features first
+- **If YAML scenario complexity causes delays:** Start with basic navigation scenarios, expand incrementally
+- **If BMAD agent integration complex:** Defer advanced automation features to post-launch
+
+**Strategic Context:** This epic provides critical testing infrastructure that removes hardware dependencies for development, enables comprehensive QA validation, and supports the BMAD agent workflow. Essential for scaling development and ensuring quality across all platforms.
 
 ---

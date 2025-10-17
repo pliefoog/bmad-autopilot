@@ -1,0 +1,139 @@
+name: "Autopilot Engagement Scenario"
+description: "Testing autopilot control and command processing"
+duration: 1800  # 30 minutes
+version: "1.0"
+
+# Data generation parameters
+data:
+  depth:
+    type: "sine_wave"
+    base: 20      # feet
+    amplitude: 3  # ±3 feet (calmer waters)
+    frequency: 0.05 # Hz (slower variation)
+    unit: "feet"
+  
+  speed:
+    type: "constant_with_variation"
+    base: 7.0     # knots (autopilot maintains steady speed)
+    variation: 0.2 # ±0.2 knots
+    unit: "knots"
+  
+  wind:
+    angle:
+      type: "constant_with_drift"
+      start: 30    # degrees
+      drift_rate: 0.1 # degrees per minute
+    speed:
+      type: "gaussian"
+      mean: 12     # knots (moderate wind)
+      std_dev: 1.5
+      min: 8
+      max: 18
+      unit: "knots"
+  
+  gps:
+    type: "autopilot_track"
+    start_position:
+      latitude: 41.4200
+      longitude: -81.8500
+    initial_heading: 180
+    track_precision: 1  # degrees (autopilot precision)
+
+# NMEA sentence configuration
+sentences:
+  - type: "DBT"    # Depth Below Transducer
+    frequency: 1   # Hz
+  - type: "VTG"    # Track Made Good and Ground Speed
+    frequency: 1
+  - type: "MWV"    # Wind Speed and Angle
+    frequency: 2
+  - type: "GGA"    # Global Positioning System Fix Data
+    frequency: 1
+  - type: "PCDIN"  # Autopilot status/control (NMEA 0183 bridge mode)
+    frequency: 0.5 # Every 2 seconds
+
+# Autopilot configuration
+autopilot:
+  enabled: true
+  initial_state:
+    mode: "STANDBY"
+    engaged: false
+    target_heading: 180
+    current_heading: 179
+  
+  # Autopilot behavior parameters
+  behavior:
+    heading_tolerance: 2    # degrees
+    response_time: 5        # seconds to adjust heading
+    overshoot_factor: 0.1   # slight overshoot simulation
+
+# Phase progression
+phases:
+  - name: "manual_mode"
+    duration: 300   # 5 minutes
+    description: "Manual navigation before autopilot engagement"
+    autopilot:
+      mode: "STANDBY"
+      engaged: false
+  
+  - name: "autopilot_engagement"
+    duration: 60    # 1 minute
+    description: "Autopilot engagement and stabilization"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 180
+  
+  - name: "steady_autopilot"
+    duration: 900   # 15 minutes
+    description: "Steady autopilot operation"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+  
+  - name: "heading_adjustments"
+    duration: 300   # 5 minutes
+    description: "Various heading adjustments"
+    commands:
+      - time: 60
+        type: "heading_adjust"
+        value: +10  # +10 degrees
+      - time: 120
+        type: "heading_adjust"
+        value: -5   # -5 degrees
+      - time: 180
+        type: "heading_adjust"
+        value: +15  # +15 degrees
+  
+  - name: "autopilot_disengagement"
+    duration: 120   # 2 minutes
+    description: "Return to manual mode"
+    autopilot:
+      mode: "STANDBY"
+      engaged: false
+  
+  - name: "manual_finish"
+    duration: 315   # Remaining time
+    description: "Manual navigation to end scenario"
+
+# Test commands to verify autopilot processing
+test_commands:
+  - type: "engage"
+    nmea0183: "$PCDIN,01F112,00,00,FF,00,00,00,00,FF*59"
+    nmea2000: "PGN:126208,Data:1"
+    description: "Engage autopilot in compass mode"
+  
+  - type: "disengage"
+    nmea0183: "$PCDIN,01F112,00,00,00,00,00,00,00,00*5A"
+    nmea2000: "PGN:126208,Data:0"
+    description: "Disengage autopilot"
+  
+  - type: "heading_adjust_plus_1"
+    nmea0183: "$PCDIN,01F113,00,01,00,00,00,00,00,00*5B"
+    nmea2000: "PGN:126208,Data:+1"
+    description: "Adjust heading +1 degree"
+  
+  - type: "heading_adjust_minus_10"
+    nmea0183: "$PCDIN,01F113,00,F6,00,00,00,00,00,00*5C"
+    nmea2000: "PGN:126208,Data:-10"
+    description: "Adjust heading -10 degrees"

@@ -39,6 +39,10 @@
 
 ---
 
+## Technical Implementation
+
+**Architecture Reference:** See [System Architecture - Deployment Architecture](../architecture/deployment-architecture.md) for complete production infrastructure patterns, multi-cloud deployment strategies, and scalability guidelines.
+
 ## Tasks/Subtasks
 
 - [ ] **App Store Account Setup**

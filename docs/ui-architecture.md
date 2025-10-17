@@ -5,6 +5,31 @@
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
 | 2025-10-10 | 1.0 | Initial frontend architecture document | Winston (Architect) |
+| 2025-10-14 | 1.1 | Established as definitive frontend authority, added system integration cross-refs | Winston (Architect) |
+| 2025-10-16 | 2.0 | Complete clean dashboard specification, responsive layout system, grid-based widget architecture, multi-instance NMEA widget support | Sally (UX Expert) |
+| 2025-10-16 | 2.1 | **CRITICAL MARINE SAFETY UPDATE:** Marine-compliant red-night theme system, comprehensive widget state management with caret/pin controls, native brightness integration, theme compliance validation, complete UI component coverage | Sally (UX Expert) |
+| 2025-10-16 | 2.2 | **WIDGET STATE CLARIFICATION:** Simplified widget state system to 2-state (collapsed/expanded) with pin persistence, removed complex contextual intelligence, clarified alert integration as visual-only feedback | Sarah (PO) |
+| 2025-10-16 | 2.3 | **MVP DESCOPING:** Removed marine safety compliance complexity, automated UI testing, and risk mitigation - focused on recreational boating MVP with traditional marine equipment design language | Sarah (PO) |
+
+---
+
+## Document Scope
+
+This document serves as the **definitive authority** for all frontend architecture decisions including React Native framework selection, component organization, state management patterns, routing, styling, and UI design systems.
+
+**Document Focus:** Complete React Native UI layer architecture and clean navigation dashboard implementation  
+**System Integration:** Interfaces with core system architecture detailed in [docs/architecture.md](architecture.md)  
+**Authority:** This document governs all frontend technology decisions and clean dashboard UI specifications
+
+## Executive Summary
+
+The Boating Instruments App implements a **clean, intuitive recreational boating dashboard** with familiar marine equipment design language. The design emphasizes:
+
+- **Familiar Navigation Focus:** Traditional marine instrument appearance for intuitive use
+- **Responsive Layout System:** Dynamic widget placement based on screen size and orientation 
+- **Grid-Based Widget Architecture:** Consistent 1×1 to 2×3 grid layouts with simple metric display
+- **Multi-Instance NMEA Support:** Dynamic widget creation for multiple engines, batteries, and tanks
+- **Clean Interface:** Simplified navigation, self-explanatory UX, quick value delivery
 
 ---
 
@@ -57,6 +82,250 @@ npx create-expo-app boating-instruments --template blank-typescript
 
 ---
 
+## Clean Navigation Dashboard Architecture
+
+### **Dashboard Layout Hierarchy**
+
+```
+┌─────────────────────────────────────────────┐ ← Screen/Window Top
+│              HEADER BAR                     │ ← Fixed: Connection, Status, Menu
+├─────────────────────────────────────────────┤
+│                                             │
+│            DASHBOARD AREA                   │ ← Flex: Fills remaining space
+│        (Responsive Widget Grid)             │ ← Dynamic layout based on screen
+│                                             │
+│  [Widgets flow top-left → bottom-right]    │
+│  [Multiple pages with pagination dots]     │
+│  [Blue + button at end of widget flow]     │
+│                                             │
+├─────────────────────────────────────────────┤
+│         AUTOPILOT CONTROL                   │ ← Fixed: Always at bottom
+│          [Full Width Button]                │ ← Quick access from any page
+└─────────────────────────────────────────────┘ ← Screen/Window Bottom
+```
+
+### **Responsive Layout System**
+
+**Platform-Specific Widget Density:**
+
+| Platform | Portrait Layout | Landscape Layout | Widgets Per Page |
+|----------|----------------|------------------|------------------|
+| **Phone (≤480px)** | 1×1 grid | 2×1 grid | 1-2 widgets |
+| **Tablet (≤1024px)** | 2×2 grid | 3×2 grid | 4-6 widgets |
+| **Desktop (>1024px)** | 3×3 grid | 4×3 grid | 9-12 widgets |
+
+**Dynamic Layout Algorithm:**
+- Widgets flow from top-left to bottom-right
+- New page created when current page full
+- Widget expansion considered in layout calculations
+- Blue + button positioned at end of final page
+- Real-time adaptation to screen rotation and window resize
+
+### **Essential vs. Contextual Widget Classification**
+
+**Always Visible (Essential Navigation):**
+- ✅ **Depth Widget** - Water depth sounder
+- ✅ **Speed Widget** - STW/SOG metrics with trends
+- ✅ **Wind Widget** - Apparent/True wind with gusts
+- ✅ **GPS Widget** - Coordinates with UTC date/time
+- ✅ **Compass Widget** - Interactive True/Magnetic heading
+- ✅ **Autopilot Status Widget** - Mode, engagement, target
+- ✅ **Rudder Position Widget** - Current angle with warnings
+
+**Multi-Instance Detection (Dynamic Creation):**
+- 🔧 **Engine Widgets** - Per NMEA engine instance (Engine #1, #2, etc.)
+- 🔋 **Battery Widgets** - Per battery bank (House, Thruster, Generator, etc.)
+- 🛢️ **Tank Widgets** - Per fluid type and position (Fuel Port, Water Fresh, etc.)
+
+**Removed Elements (Development Clutter):**
+- ❌ **PlaybackFilePicker** - Testing only
+- ❌ **GridOverlay** - Layout debugging
+- ❌ **ExampleWidget** - Development template
+- ❌ **Demo controls** - Bottom navigation removed
+- ❌ **Theme switcher** - Moved to hamburger menu
+
+### **Navigation Interface Simplification**
+
+**Header Bar (Fixed Top):**
+- Connection status LED with session controls
+- Hamburger menu access (≡)
+- Navigation session recording indicator
+
+**Dashboard Area (Flex Fill):**
+- Responsive widget grid with pagination
+- Blue + circle for adding widgets (end of flow)
+- Page indicator dots below widgets
+
+**Footer Area (Fixed Bottom):**
+- **ONLY** Autopilot Control button (full screen width)
+- Always accessible from any dashboard page
+- No other navigation elements
+
+**Hamburger Menu (Consolidated Settings):**
+- Connection Settings
+- Theme Mode Selection (Day/Night/Red-Night)
+- Layout Management
+- Alarm Configuration
+- About Information
+
+## Grid-Based Widget Architecture
+
+### **Widget Layout System**
+
+All widgets conform to a **consistent grid-based layout** using standardized MetricCell components:
+
+**Grid Size Options:**
+- **1×1 Grid:** Single metric or graphic element
+- **1×2 Grid:** Two metrics side by side
+- **2×1 Grid:** Two metrics stacked vertically  
+- **1×3 Grid:** Three metrics in a row
+- **2×2 Grid:** Four metrics in square formation
+- **2×3 Grid:** Six metrics (maximum density)
+
+**Widget State Management System:**
+
+**Two-State Widget System:**
+- **COLLAPSED (Primary View):** Shows essential metrics only - default state
+- **EXPANDED (Secondary View):** Shows primary + additional secondary metrics
+
+**Widget Persistence (Pin Functionality):**
+- **Unpinned Widgets:** Return to collapsed state on app restart
+- **Pinned Widgets:** Maintain expanded state across app restarts
+- **Visual Indicators:** 
+  - Caret icons (⌄ collapsed, ⌃ expanded) for unpinned widgets
+  - Pin icon (📌) for pinned widgets in expanded state
+- **Pin Toggle:** Long press on caret toggles pin state (unpinned ↔ pinned)
+
+**Alert Integration (Visual Feedback Only):**
+- Alerts change MetricCell colors or graphical element appearance
+- **NO automatic widget expansion** - alerts are visual feedback within current state
+- Threshold violations handled at MetricCell/component level, not widget container level
+- Alert colors follow marine-compliant theme requirements (Day/Night/Red-Night modes)
+
+**Basic Widget Interactions:**
+```typescript
+interface WidgetGestureHandlers {
+  onPress: () => void;           // Toggle COLLAPSED ↔ EXPANDED state
+  onLongPressOnCaret: () => void; // Toggle pin state (unpinned ↔ pinned)
+  onLongPress: () => void;       // Show widget context menu (configure, remove)
+}
+```
+
+**State Persistence:**
+- Widget expanded/collapsed state stored per widget ID in widget store
+- Pinned state persists across app restarts via AsyncStorage
+- Unpinned widgets always start collapsed regardless of last state
+
+### **MetricCell Component Architecture**
+
+**PrimaryMetricCell (Renamed from MetricCell):**
+```typescript
+interface PrimaryMetricCellProps {
+  mnemonic: string;              // "DEPTH", "SPEED" (12pt, semibold, uppercase)
+  value: string | number | null; // "42.5", "6.2", null (36pt, monospace, bold)
+  unit?: string;                 // "ft", "kts", "°T" (12pt, in parentheses)
+  trend?: 'rising' | 'falling' | 'stable'; // Optional trend arrow indicator
+  precision?: number;            // Decimal places (default: 1)
+  state?: 'normal' | 'warning' | 'critical'; // Alert state affects color/animation
+  timestamp?: Date;              // Data age for staleness detection (>5s = dim)
+  onPress?: () => void;          // Tap handler for widget expansion
+  testID?: string;               // Accessibility identifier
+}
+```
+
+**SecondaryMetricCell (New Component):**
+```typescript
+interface SecondaryMetricCellProps {
+  mnemonic: string;              // "AVG", "MAX", "MIN" (10pt, semibold, uppercase)
+  value: string | number | null; // Secondary value (24pt, monospace, bold)
+  unit?: string;                 // Unit label (10pt, regular, light gray)
+  precision?: number;            // Decimal places (default: 1)  
+  state?: 'normal' | 'warning' | 'critical'; // Inherits from parent widget
+  compact?: boolean;             // Use minimal spacing for dense 2×3 layouts
+  testID?: string;               // Accessibility identifier
+}
+```
+
+### **Widget Specifications**
+
+#### **Speed Widget (STW/SOG Focus)**
+**Primary Grid (1×2):** STW + SOG with large values
+**Secondary Grid (2×2):** AVG and MAX for both STW/SOG in columns
+**Interactive Chart:** STW trend (tap to switch to SOG)
+
+#### **Wind Widget (Apparent/True)**
+**Primary Grid (2×2):** AWA, AWS, Gust (apparent wind)
+**Secondary Grid (2×2):** TWA, TWS, True Gust (calculated true wind)
+
+#### **GPS Widget (Custom Coordinate Display)**
+**Primary Grid (1×1):** Custom coordinate component with format options
+- **DMS:** 41°24'12.3"N (default)
+- **DDM:** 41°24.205'N  
+- **DD:** 41.40342°N
+**Secondary Grid (2×1):** UTC Date with day of week + UTC Time
+
+#### **Compass Widget (Interactive)**
+**Primary Grid (1×1):** SVG compass rose with digital heading
+- **Mode Toggle:** Tap to switch TRUE ↔ MAGNETIC
+- **Mode Indicator:** Clear display of current mode
+**Secondary Grid (1×2):** Variation and Deviation (if available)
+
+#### **Engine Widgets (Multi-Instance)**
+**Dynamic Detection:** Scan NMEA engine instances, create dedicated widgets
+**Title Format:** "⚙️ ENGINE #1", "⚙️ ENGINE #2"
+**Primary Grid (2×2):** RPM, TEMP, OIL, VOLT
+**Secondary Grid (1×2):** Fuel Rate, Engine Hours
+
+#### **Battery Widgets (Multi-Instance with NMEA Mapping)**
+**Instance Detection:** Use NMEA battery instance numbers
+**Title Mapping:**
+- Instance 0: "🔋 HOUSE"
+- Instance 1: "🔋 ENGINE"  
+- Instance 2: "🔋 THRUSTER"
+- Instance 3: "🔋 GENERATOR"
+**Primary Grid (2×2):** VOLT, CURR, TEMP, SOC
+**Secondary Grid (1×3):** Nominal Voltage, Capacity, Chemistry
+
+#### **Tank Widgets (Multi-Instance with Fluid Types)**
+**Instance Detection:** Use NMEA tank instance numbers and fluid types
+**Title Examples:**
+- "🛢️ FUEL PORT", "🛢️ FUEL STBD"
+- "💧 WATER FRESH", "💧 WATER GRAY"
+**Primary Grid (1×1):** Level percentage
+**Secondary Grid (1×2):** Capacity, Temperature (if available)
+
+### **Custom Components**
+
+**GPSCoordinateDisplay:**
+```typescript
+interface GPSCoordinateDisplayProps {
+  lat: number;
+  lon: number;  
+  format: 'DMS' | 'DDM' | 'DD';  // User configurable
+}
+```
+
+**DateTimeDisplay:**
+```typescript
+interface DateTimeDisplayProps {
+  utcTime: Date;
+  showDayOfWeek: boolean;        // "Wed 16-OCT-25"
+  boatTimeOffset?: number;       // Future: configurable offset
+  showBoatTime?: boolean;        // Default: false (UTC)
+}
+```
+
+**CompassRose:**
+```typescript
+interface CompassRoseProps {
+  heading: number;
+  mode: 'TRUE' | 'MAG';
+  onModeToggle: () => void;      // Tap to switch modes
+}
+```
+
+---
+
 ## Frontend Tech Stack
 
 ### **Technology Stack Table**
@@ -71,7 +340,7 @@ npx create-expo-app boating-instruments --template blank-typescript
 | **Routing** | Expo Router | 3.5+ | File-based navigation (screens, modals) | Built on React Navigation; file-system routing reduces boilerplate; deep linking support for future desktop features |
 | **Build Tool** | Metro (Expo) | Built-in | JavaScript bundler and dev server | Optimized for React Native; fast refresh; source maps; integrated with Expo workflow |
 | **Styling** | StyleSheet API + Theme Context | Built-in | Component styling with Day/Night/Red-Night mode support | Native to React Native; performant; no CSS-in-JS overhead; custom theme provider for display modes |
-| **Testing** | Jest + React Native Testing Library | 29.7+ / 12.4+ | Unit and integration testing | Industry standard; works with Expo; snapshot testing for widgets; async utilities for NMEA data flows |
+| **Testing** | Jest (Unit Tests Only) | 29.7+ | Backend logic and service testing | Unit testing for NMEA parsing, data processing, and business logic only - no UI testing for MVP |
 | **Component Library** | Custom (No external library) | N/A | Marine-specific widgets (compass rose, analog gauges) | Existing libraries (Material, NativeBase) don't match Raymarine aesthetic; custom SVG components provide exact control |
 | **Form Handling** | React Hook Form | 7.51+ | Settings forms, alarm configuration, WiFi connection input | Minimal re-renders; excellent performance; built-in validation; TypeScript support |
 | **Animation** | React Native Reanimated | 3.8+ | Smooth 60-120 FPS animations, compass rotation, button feedback | Runs on UI thread (not JS thread); supports ProMotion displays; critical for performance goals |
@@ -640,25 +909,76 @@ export type WidgetType =
   | 'alarm';
 
 export interface WidgetConfig {
-  id: string; // Unique ID (UUID)
-  type: WidgetType;
+  id: string;                    // Unique ID (UUID)
+  type: WidgetType;              // Widget type (depth, speed, engine, etc.)
   position: { x: number; y: number }; // Grid position (Epic 2)
   size: { width: number; height: number }; // Widget dimensions
+  
+  // *** NEW: Widget State Management ***
+  viewState: 'collapsed' | 'expanded' | 'fullscreen'; // Current view state
+  isPinned: boolean;             // Whether widget maintains state across restarts
+  lastInteraction: Date;         // Timestamp of last user interaction
+  
+  // Enhanced configuration
   config: {
-    dataSource?: string; // For multi-sensor boats (e.g., 'port-engine')
-    unit?: string; // Unit override (e.g., 'meters' instead of default 'feet')
+    dataSource?: string;         // For multi-sensor boats (e.g., 'port-engine')
+    unit?: string;              // Unit override (e.g., 'meters' instead of default 'feet')
     visualizationStyle?: 'digital' | 'analog' | 'bar'; // Widget display style
+    
+    // Alert thresholds
+    thresholds?: {
+      warning?: number;
+      critical?: number;
+    };
+    
+    // Display preferences
+    precision?: number;          // Decimal places (default: 1)
+    displayFormat?: 'DMS' | 'DDM' | 'DD'; // For GPS coordinates
+    showTrends?: boolean;        // Show historical trend indicators
+    compactMode?: boolean;       // Use minimal spacing for dense layouts
+  };
+  
+  // NMEA data source (for multi-instance widgets)
+  nmeaSource?: {
+    instance?: number;           // NMEA instance (engine #1, battery #2)
+    pgn?: number;               // Specific PGN to monitor
+    sourceAddress?: number;      // NMEA source address
   };
 }
 
 interface WidgetStoreState {
   widgets: WidgetConfig[];
-  addWidget: (type: WidgetType) => void;
+  currentPage: number;           // Current dashboard page
+  
+  // Basic widget management
+  addWidget: (type: WidgetType) => string; // Returns widget ID
   removeWidget: (id: string) => void;
   updateWidgetConfig: (id: string, config: Partial<WidgetConfig['config']>) => void;
   updateWidgetPosition: (id: string, position: { x: number; y: number }) => void;
   updateWidgetSize: (id: string, size: { width: number; height: number }) => void;
-  clearDashboard: () => void;
+  
+  // *** NEW: Widget State Management Actions ***
+  expandWidget: (id: string, isPermanent?: boolean) => void;     // Expand to secondary view
+  collapseWidget: (id: string) => void;                          // Collapse to primary view
+  toggleWidgetExpansion: (id: string) => void;                   // Toggle expanded/collapsed
+  pinWidget: (id: string) => void;                               // Pin widget to persist state across restarts
+  unpinWidget: (id: string) => void;                             // Unpin widget (reverts to collapsed on restart)
+  setFullscreenWidget: (id: string | null) => void;              // Show widget in fullscreen mode
+  
+  // State persistence management
+  persistWidgetStates: () => void;                               // Save pinned states to AsyncStorage
+  restoreWidgetStates: () => void;                               // Restore pinned states from AsyncStorage
+  collapseAllUnpinned: () => void;                               // Collapse all non-pinned widgets
+  
+  // Context-aware expansion
+  expandRelatedWidgets: (widgetType: WidgetType) => void;        // Expand related widgets (e.g., engine + oil)
+  handleCriticalAlert: (widgetId: string) => void;               // Auto-expand on critical alerts
+  
+  // Utility functions
+  getExpandedWidgets: () => WidgetConfig[];                      // Get all currently expanded widgets
+  getPinnedWidgets: () => WidgetConfig[];                        // Get all pinned widgets
+  updateWidgetInteraction: (id: string) => void;                 // Update last interaction timestamp
+  clearDashboard: () => void;                                    // Reset dashboard to default state
 }
 
 export const useWidgetStore = create<WidgetStoreState>()(
@@ -1134,16 +1454,95 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setMode] = useState<DisplayMode>('day');
-
+  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
+  
+  // Auto-switch theme based on time (can be enhanced with GPS sunset/sunrise)
+  React.useEffect(() => {
+    if (!autoSwitchEnabled) return;
+    
+    const checkTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      
+      // Automatically switch to marine-safe modes during night hours
+      if (hour >= 22 || hour <= 5) {
+        if (mode !== 'red-night') setMode('red-night');
+      } else if (hour >= 19 || hour <= 7) {
+        if (mode !== 'night') setMode('night');
+      } else {
+        if (mode !== 'day') setMode('day');
+      }
+    };
+    
+    // Check every minute
+    const interval = setInterval(checkTime, 60000);
+    checkTime(); // Check immediately
+    
+    return () => clearInterval(interval);
+  }, [mode, autoSwitchEnabled]);
+  
+  // Apply native brightness control when theme changes
+  React.useEffect(() => {
+    applyDisplayMode(mode);
+    
+    // Apply theme to React Native status bar
+    if (Platform.OS === 'ios') {
+      StatusBar.setBarStyle(
+        mode === 'day' ? 'dark-content' : 'light-content', 
+        true
+      );
+    }
+  }, [mode]);
+  
   const value = {
     mode,
     colors: colors[mode],
     typography,
     spacing,
     setMode,
+    autoSwitchEnabled,
+    setAutoSwitchEnabled,
+    // Utility functions for theme validation
+    validateThemeCompliance: () => validateThemeCompliance(mode),
+    getRecommendedMode: () => BRIGHTNESS_CONTROL.getRecommendedMode(new Date()),
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+};
+
+// Theme compliance validation (ensures no bright colors in red-night mode)
+const validateThemeCompliance = (mode: DisplayMode): { isCompliant: boolean; violations: string[] } => {
+  if (mode !== 'red-night') return { isCompliant: true, violations: [] };
+  
+  const violations: string[] = [];
+  const themeColors = colors[mode];
+  
+  // Check all color values for red-night compliance
+  Object.entries(themeColors).forEach(([key, color]) => {
+    if (typeof color === 'string') {
+      const rgb = hexToRgb(color);
+      if (rgb) {
+        // Red-night compliance: R < 70, G = 0, B = 0
+        if (rgb.g > 0 || rgb.b > 0 || rgb.r > 70) {
+          violations.push(`${key}: ${color} violates red-night safety (R=${rgb.r}, G=${rgb.g}, B=${rgb.b})`);
+        }
+      }
+    }
+  });
+  
+  return {
+    isCompliant: violations.length === 0,
+    violations,
+  };
+};
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16),
+  } : null;
 };
 
 export const useTheme = () => {
@@ -1158,41 +1557,107 @@ export const useTheme = () => {
 While React Native doesn't use CSS, we define theme constants in TypeScript:
 
 ```typescript
-// src/theme/colors.ts
+// src/theme/colors.ts - MARINE SAFETY COMPLIANT
 export const colors = {
   day: {
-    primary: '#0284C7',
-    secondary: '#0EA5E9',
-    accent: '#06B6D4',
-    success: '#10B981',
-    warning: '#F59E0B',
-    error: '#EF4444',
-    backgroundDark: '#0A1929',
-    backgroundMedium: '#1E293B',
-    borderGray: '#334155',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#CBD5E1',
-    textTertiary: '#94A3B8',
+    // Monochromatic base with selective color alerts
+    background: '#FFFFFF',
+    surface: '#F8FAFC',
+    text: '#0F172A',
+    textSecondary: '#475569',
+    textTertiary: '#64748B',
+    border: '#CBD5E1',
+    icon: '#64748B',
+    
+    // Alert colors (override monochrome for critical safety information)
+    warning: '#EA580C',    // Orange for approaching thresholds
+    critical: '#DC2626',   // Red for dangerous conditions  
+    success: '#16A34A',    // Green for normal operations
   },
+  
   night: {
-    // Same colors but with 40% reduced brightness
-    primary: '#015A89',
-    // ... (similar adjustments)
+    // Reduced brightness while maintaining readability
+    background: '#0A0A0A', // Very dark gray (not pure black for OLED burn-in)
+    surface: '#1A1A1A',
+    text: '#A0A0A0',       // Dim but readable gray
+    textSecondary: '#606060',
+    textTertiary: '#404040',
+    border: '#404040',
+    icon: '#606060',
+    
+    // Dimmed alert colors
+    warning: '#B8860B',    // Dark gold
+    critical: '#8B0000',   // Dark red  
+    success: '#006400',    // Dark green
   },
+  
   'red-night': {
-    primary: '#DC2626',
-    secondary: '#DC2626',
-    accent: '#DC2626',
-    success: '#DC2626',
-    warning: '#DC2626',
-    error: '#DC2626',
-    backgroundDark: '#1A0000',
-    backgroundMedium: '#2A0000',
-    borderGray: '#4A0000',
-    textPrimary: '#DC2626',
-    textSecondary: '#B91C1C',
-    textTertiary: '#991B1B',
+    // CRITICAL MARINE SAFETY MODE - All colors must be dim red variations
+    // RGB values kept low (0-68 range) to preserve night vision
+    background: '#0A0000', // RGB(10,0,0) - Nearly black with red tint
+    surface: '#1A0000',    // RGB(26,0,0) - Slightly lighter surface
+    text: '#440000',       // RGB(68,0,0) - Primary text (brightest allowed)
+    textSecondary: '#330000', // RGB(51,0,0) - Secondary text
+    textTertiary: '#220000',  // RGB(34,0,0) - Tertiary text  
+    border: '#220000',     // RGB(34,0,0) - Borders barely visible
+    icon: '#330000',       // RGB(51,0,0) - Icons subtle
+    
+    // ALL alerts use same color - differentiated by animation only
+    warning: '#440000',    // Same as primary text
+    critical: '#440000',   // Differentiated by flicker animation
+    success: '#440000',    // All feedback uses same dim red
+    
+    // Animation definitions for red-night mode
+    animations: {
+      pulse: {
+        duration: 1500,
+        easing: 'ease-in-out',
+        loop: true,
+        keyframes: {
+          '0%': { opacity: 0.6 },
+          '50%': { opacity: 1.0 },
+          '100%': { opacity: 0.6 },
+        },
+      },
+      flicker: {
+        duration: 300,
+        easing: 'linear', 
+        loop: true,
+        keyframes: {
+          '0%': { opacity: 1.0 },
+          '10%': { opacity: 0.2 },
+          '20%': { opacity: 1.0 },
+          '30%': { opacity: 0.2 },
+          '40%': { opacity: 1.0 },
+          '100%': { opacity: 1.0 },
+        },
+      },
+    },
   },
+} as const;
+
+// Brightness integration with native APIs
+import { Brightness } from 'expo-brightness';
+import { Platform } from 'react-native';
+
+export const applyDisplayMode = async (mode: DisplayMode) => {
+  const modeConfig = colors[mode];
+  
+  // Apply native screen brightness
+  try {
+    if (mode === 'red-night') {
+      await Brightness.setBrightnessAsync(0.05); // 5% - Critical for marine safety
+    } else if (mode === 'night') {
+      await Brightness.setBrightnessAsync(0.30); // 30% - Comfortable night viewing
+    } else {
+      await Brightness.setBrightnessAsync(1.0);  // 100% - Full daylight
+    }
+  } catch (error) {
+    console.warn('Native brightness control unavailable:', error);
+    // App will rely on theme colors for dimming effect
+  }
+  
+  return modeConfig;
 };
 ```
 
@@ -1333,12 +1798,189 @@ export default {
 2. **Use Zustand selectors** - Subscribe to specific state slices, not entire store
 3. **Memoize expensive calculations** - Use `useMemo()` for NMEA data transformations
 4. **Handle null NMEA data** - All widgets must gracefully display "--" when data unavailable
-5. **Use theme context for colors** - Never hardcode color values in components
-6. **Follow accessibility guidelines** - All interactive elements ≥44pt touch targets
+5. **MANDATORY theme context usage** - Never hardcode color values in components
+6. **Follow touch interaction standards** - All interactive elements ≥44pt touch targets (full accessibility deferred to Phase 2)
 7. **Test with stale data** - Widgets must indicate stale data (>5s old)
-8. **Throttle widget updates** - Max 1 update/second per widget (users can't see faster)
+8. **Smart update throttling** - Widget-specific update rates based on human perception:
+   - **Depth:** 2Hz (critical for safety, user notices 0.5s changes)
+   - **Speed:** 1Hz (standard navigation update rate)  
+   - **Engine RPM:** 2Hz (rapid changes need quick feedback)
+   - **GPS Coordinates:** 0.5Hz (position changes slowly)
+   - **Battery Voltage:** 0.1Hz (changes very slowly)
 9. **Clean up subscriptions** - Use `useEffect` cleanup for Zustand subscriptions
 10. **Error boundaries** - Wrap widget rendering in error boundaries (prevent single widget crash from breaking dashboard)
+
+### **🚨 CRITICAL: Marine Theme Compliance Rules**
+
+**RED-NIGHT MODE SAFETY REQUIREMENTS:**
+```typescript
+// MANDATORY: All components must use theme context
+const Component: React.FC = () => {
+  const theme = useTheme(); // REQUIRED - never skip this
+  
+  // ✅ CORRECT: Use theme colors
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: theme.colors.background, // ✅ Theme-compliant
+      borderColor: theme.colors.border,
+    },
+  });
+  
+  // ❌ FORBIDDEN: Hardcoded colors
+  const badStyles = StyleSheet.create({
+    container: {
+      backgroundColor: '#FFFFFF', // ❌ DANGEROUS - bright white in red-night mode
+      color: '#000000',           // ❌ DANGEROUS - black text unreadable
+    },
+  });
+};
+
+// MANDATORY: Theme validation in development
+if (__DEV__) {
+  const themeValidation = theme.validateThemeCompliance();
+  if (!themeValidation.isCompliant) {
+    console.error('THEME VIOLATION:', themeValidation.violations);
+    // In red-night mode violations are SAFETY CRITICAL
+  }
+}
+```
+
+**COMPREHENSIVE COMPONENT COVERAGE:**
+All UI elements MUST use theme context:
+- ✅ **StatusBar:** Use theme-appropriate bar style
+- ✅ **Modal backgrounds:** Use theme.colors.surface
+- ✅ **Text inputs:** Use theme.colors.text for text, theme.colors.border for borders
+- ✅ **Loading spinners:** Use theme.colors.textSecondary  
+- ✅ **Alert/Toast messages:** Use theme alert colors with animation in red-night mode
+- ✅ **Navigation elements:** Header bars, tab bars, buttons all theme-compliant
+- ✅ **Splash screens:** Must support all three theme modes
+- ✅ **Error boundaries:** Use theme colors for error display
+
+**THEME TESTING REQUIREMENTS:**
+```typescript
+// MANDATORY: Test all components in all three modes
+describe('ComponentName Theme Compliance', () => {
+  ['day', 'night', 'red-night'].forEach(mode => {
+    it(`should be theme compliant in ${mode} mode`, () => {
+      const { getByTestId } = renderWithTheme(<Component />, mode);
+      
+      // Red-night mode: verify no bright colors
+      if (mode === 'red-night') {
+        const validation = validateComponentColors(getByTestId('component'));
+        expect(validation.violations).toEqual([]);
+      }
+    });
+  });
+});
+```
+
+### **Widget State Persistence Rules**
+
+**MANDATORY: All widget state changes must persist:**
+```typescript
+// ✅ CORRECT: Use store actions for state changes
+const handleExpandWidget = () => {
+  widgetStore.expandWidget(widgetId, false); // Persists automatically
+  widgetStore.updateWidgetInteraction(widgetId); // Updates timestamp
+};
+
+// ✅ CORRECT: Pin state persistence
+const handlePinWidget = () => {
+  widgetStore.pinWidget(widgetId); // Persists to AsyncStorage
+};
+
+// ❌ FORBIDDEN: Local state for widget expansion
+const [isExpanded, setIsExpanded] = useState(false); // ❌ Lost on app restart
+```
+
+**WIDGET STATE PERSISTENCE:**
+- Pinned widgets maintain their expanded/collapsed state across app restarts
+- Unpinned widgets always start collapsed after app restart
+- No automatic state changes - widgets only change through user interaction
+- Related widgets expand together during engine/electrical alerts
+
+### **Accessibility & Touch Interaction Standards** *(Deferred to Phase 2)*
+
+**NOTE: Accessibility features including screen reader support, ARIA labels, and keyboard navigation have been deferred to Phase 2 to reduce MVP complexity. MVP will focus on core marine navigation functionality with basic touch interactions.**
+
+**Touch Target Requirements:**
+- **Minimum size:** 44×44pt (iOS) / 48×48dp (Android) for all interactive elements
+- **Widget tap areas:** Entire widget surface (including margins) is tappable
+- **Button spacing:** Minimum 8pt between adjacent touch targets
+- **Long press detection:** 500ms duration, haptic feedback on trigger
+
+**Screen Reader Support:** *(Deferred to Phase 2)*
+```typescript
+// Required accessibility props for all interactive widgets (Phase 2)
+const accessibilityProps = {
+  accessible: true,
+  accessibilityRole: 'button' | 'text' | 'header',
+  accessibilityLabel: 'Depth widget, 42.5 feet', // Descriptive label
+  accessibilityValue: { text: '42.5 feet, normal' }, // Current state
+  accessibilityHint: 'Double tap to expand, long press for options',
+  accessibilityLiveRegion: 'polite', // For real-time data updates
+};
+```
+
+**Visual Accessibility:** *(Deferred to Phase 2)*
+- **Color contrast:** Minimum 4.5:1 for normal text, 7:1 for critical alerts
+- **Focus indicators:** 2pt border with theme accent color
+- **Text scaling:** Support Dynamic Type (iOS) / Font Scale (Android) up to 200%
+- **Motion sensitivity:** Respect `prefers-reduced-motion` for animations
+
+**Data Staleness Indicators:**
+```typescript
+const getStalenessState = (timestamp: Date) => {
+  const age = Date.now() - timestamp.getTime();
+  if (age > 10000) return 'stale'; // >10s = clearly stale
+  if (age > 5000) return 'aging';  // 5-10s = aging data
+  return 'fresh';                  // <5s = fresh data
+};
+
+// Visual indicators:
+// fresh: normal colors
+// aging: 70% opacity
+// stale: 40% opacity + "stale" indicator
+```
+
+### **Real-Time Performance Optimization**
+
+**NMEA Data Stream Management:**
+```typescript
+// Widget-specific update rate configuration
+const WIDGET_UPDATE_RATES = {
+  depth: { maxHz: 2, priority: 'critical' },     // Safety-critical: 500ms max delay
+  speed: { maxHz: 1, priority: 'high' },         // Navigation: 1s updates sufficient
+  engineRPM: { maxHz: 2, priority: 'high' },     // Engine monitoring: 500ms
+  gps: { maxHz: 0.5, priority: 'medium' },       // Position: 2s updates fine
+  batteryVoltage: { maxHz: 0.1, priority: 'low' }, // Slow changes: 10s updates
+  compass: { maxHz: 10, priority: 'critical' },   // Steering feedback: 100ms
+} as const;
+
+// Adaptive performance based on device capabilities
+const getOptimalUpdateRate = (widgetType: string, devicePerformance: 'low' | 'medium' | 'high') => {
+  const baseRate = WIDGET_UPDATE_RATES[widgetType];
+  const performanceMultipliers = { low: 0.5, medium: 0.8, high: 1.0 };
+  
+  return {
+    maxHz: baseRate.maxHz * performanceMultipliers[devicePerformance],
+    throttleMs: 1000 / (baseRate.maxHz * performanceMultipliers[devicePerformance]),
+    priority: baseRate.priority,
+  };
+};
+```
+
+**Memory-Efficient Data Management:**
+- **Circular buffers:** Store only last 100 samples per metric (not infinite history)
+- **Lazy computation:** Calculate trends/averages only when widgets expanded
+- **Background processing:** Use WorkManager for non-critical calculations
+- **Memory pressure handling:** Reduce update rates automatically when memory <100MB
+
+**Battery Life Optimization:**
+- **Screen-off behavior:** Reduce NMEA processing to critical alerts only
+- **Background mode:** Maintain depth/engine alarms but pause GPS/speed updates
+- **Low battery mode:** Automatically reduce widget update rates by 50% when <20% battery
+- **Adaptive brightness:** Reduce screen brightness in bright sunlight (marine use case)
 
 ### **Quick Reference**
 
@@ -1398,6 +2040,681 @@ import type { WidgetConfig } from '@/types/widget.types';
 - Hooks: `camelCase.ts` (e.g., `useNMEAData.ts`)
 - Stores: `camelCase.ts` ending with `Store` (e.g., `nmeaStore.ts`)
 - Tests: `ComponentName.test.tsx` (mirrors source structure)
+
+---
+
+## UI Consistency & Design System Standards
+
+### **Responsive Widget Layout System**
+
+**Dynamic Grid Sizing:**
+Widget dimensions adapt to screen size and platform:
+
+```typescript
+interface ResponsiveLayoutConfig {
+  screenWidth: number;
+  screenHeight: number; 
+  orientation: 'portrait' | 'landscape';
+  platform: 'phone' | 'tablet' | 'desktop';
+}
+
+const WIDGET_CONSTRAINTS = {
+  minSize: { width: 140, height: 140 },
+  maxSize: { width: 220, height: 220 },
+  expandedMultiplier: 1.5,  // Expanded widgets 1.5x larger
+  margin: 8,                // 8pt spacing between widgets
+} as const;
+
+// Platform-specific grid calculations  
+const calculateOptimalLayout = (config: ResponsiveLayoutConfig) => {
+  const { screenWidth, screenHeight, orientation, platform } = config;
+  
+  if (platform === 'phone') {
+    return orientation === 'portrait' 
+      ? { widgetsPerRow: 1, widgetRows: 3, widgetsPerPage: 3 }
+      : { widgetsPerRow: 2, widgetRows: 1, widgetsPerPage: 2 };
+  } else if (platform === 'tablet') {
+    return orientation === 'portrait'
+      ? { widgetsPerRow: 2, widgetRows: 2, widgetsPerPage: 4 }
+      : { widgetsPerRow: 3, widgetRows: 2, widgetsPerPage: 6 };
+  } else { // desktop
+    return { widgetsPerRow: 4, widgetRows: 3, widgetsPerPage: 12 };
+  }
+};
+```
+
+**Widget Flow Rules:**
+- Widgets flow top-left → bottom-right
+- New page created when current page capacity reached
+- Expanded widgets receive priority placement (avoid partial visibility)
+- Blue + button positioned at end of final page
+- Real-time re-layout on screen rotation/resize
+
+### **Internal Widget Grid Architecture**
+
+**MetricCell Grid Options:**
+- **1×1:** Single metric (Depth: 42.5 ft)
+- **1×2:** Two metrics side by side (STW | SOG)
+- **2×1:** Two metrics stacked (RPM over TEMP)
+- **1×3:** Three metrics in row (AWS | AWA | GUST)
+- **2×2:** Four metrics in square (VOLT, CURR, TEMP, SOC)
+- **2×3:** Six metrics maximum density
+
+### **MetricCell Component Standards**
+
+**PrimaryMetricCell Typography:**
+```typescript
+interface PrimaryMetricCellProps {
+  mnemonic: string;    // 12pt, semibold, uppercase (e.g., "DEPTH")
+  value: string;       // 36pt, monospace, bold (e.g., "42.5")  
+  unit: string;        // 12pt, regular, in parentheses (e.g., "(ft)")
+  state?: 'normal' | 'warning' | 'alarm';
+}
+
+// Current implementation format:
+// MNEMONIC (unit)
+//      VALUE
+```
+
+**SecondaryMetricCell (New Component):**
+```typescript
+interface SecondaryMetricCellProps {
+  mnemonic: string;    // 10pt, semibold, uppercase
+  value: string;       // 24pt, monospace, bold (smaller than primary)
+  unit: string;        // 10pt, regular, lighter color
+  state?: 'normal' | 'warning' | 'alarm';
+}
+```
+
+### **Multi-Instance NMEA Widget Detection**
+
+**Battery Instance Mapping (PGN 127508/127513):**
+```typescript
+const NMEA_BATTERY_INSTANCES = {
+  0: { title: 'HOUSE', icon: '🔋', priority: 1, type: 'House Bank' },
+  1: { title: 'ENGINE', icon: '⚡', priority: 2, type: 'Engine Start' },
+  2: { title: 'THRUSTER', icon: '🌀', priority: 4, type: 'Bow Thruster' },
+  3: { title: 'GENERATOR', icon: '🔌', priority: 5, type: 'Generator Start' },
+  4: { title: 'A/C', icon: '❄️', priority: 6, type: 'Air Conditioning' },
+  9: { title: 'WINDLASS', icon: '⚓', priority: 7, type: 'Anchor Windlass' },
+  10: { title: 'INVERTER', icon: '🔄', priority: 3, type: 'Inverter Bank' },
+} as const;
+
+// Smart labeling: Show descriptive names for critical systems
+const generateBatteryWidgetTitle = (instance: number, batteryData: any): string => {
+  const config = NMEA_BATTERY_INSTANCES[instance];
+  if (!config) return `BATTERY #${instance}`;
+  
+  // Critical systems get full descriptive names
+  if (config.priority <= 3) {
+    return `${config.icon} ${config.title}`;
+  }
+  
+  // Non-critical systems use compact format
+  return `${config.icon} BATT ${config.title}`;
+};
+```
+
+**Tank Instance Mapping (PGN 127505):**
+```typescript
+const NMEA_TANK_INSTANCES = {
+  0: { title: '🛢️ FUEL PORT', fluidType: 'Fuel', position: 'Port' },
+  1: { title: '🛢️ FUEL STBD', fluidType: 'Fuel', position: 'Starboard' },
+  2: { title: '💧 WATER FRESH', fluidType: 'Fresh Water' },
+  3: { title: '💧 WATER GRAY', fluidType: 'Gray Water' },
+  4: { title: '💧 WATER BLACK', fluidType: 'Black Water' },
+  6: { title: '🐟 LIVE WELL', fluidType: 'Live Well' },
+  9: { title: '🛢️ OIL', fluidType: 'Engine Oil' },
+} as const;
+```
+
+**Dynamic Widget Creation:**
+```typescript
+// Scan NMEA data for active instances
+const detectBatteryInstances = (nmeaData: any): BatteryInstance[] => {
+  return Object.keys(nmeaData.batteries || {})
+    .map(instanceKey => {
+      const instance = parseInt(instanceKey);
+      const config = NMEA_BATTERY_INSTANCES[instance];
+      return {
+        instance,
+        title: config?.title || `🔋 BATTERY #${instance}`,
+        data: nmeaData.batteries[instanceKey]
+      };
+    });
+};
+
+// Result: Multiple dedicated widgets per detected instance
+// - 🔋 HOUSE Widget (Instance 0)
+// - 🔋 THRUSTER Widget (Instance 2)  
+// - 🛢️ FUEL PORT Widget (Instance 0)
+// - 💧 WATER FRESH Widget (Instance 2)
+```
+
+### **Monochromatic Design with Alert Colors**
+
+**Base Monochromatic Palette:**
+```typescript
+export const MONOCHROME_PALETTE = {
+  // Primary content (PrimaryMetricCell)
+  text: '#0F172A',          // Primary values (36pt)
+  textSecondary: '#475569', // Labels, units, secondary metrics (24pt)
+  
+  // Interface elements
+  background: '#FFFFFF',    // Widget backgrounds
+  surface: '#F8FAFC',      // Dashboard background
+  border: '#CBD5E1',       // Widget borders
+  iconSecondary: '#64748B', // Icons, indicators
+} as const;
+```
+
+**Marine-Safe Display Mode System (Critical for Night Vision):**
+```typescript
+export const MARINE_DISPLAY_MODES = {
+  day: {
+    name: 'Day Mode',
+    description: 'Full brightness, monochromatic design with selective color alerts',
+    screenBrightness: 1.0, // 100% - use device maximum
+    colors: {
+      background: '#FFFFFF',
+      surface: '#F8FAFC', 
+      text: '#0F172A',
+      textSecondary: '#475569',
+      border: '#CBD5E1',
+      // Alert colors (override monochrome for safety)
+      warning: '#EA580C',
+      critical: '#DC2626',
+      success: '#16A34A',
+    },
+  },
+  night: {
+    name: 'Night Mode', 
+    description: 'Reduced brightness, maintains readability without destroying night vision',
+    screenBrightness: 0.3, // 30% - significant reduction
+    colors: {
+      background: '#0A0A0A', // Very dark gray, not pure black
+      surface: '#1A1A1A',
+      text: '#A0A0A0',      // Dim gray text
+      textSecondary: '#606060',
+      border: '#404040',
+      // Dimmed alert colors
+      warning: '#B8860B',   // Dark gold
+      critical: '#8B0000',  // Dark red
+      success: '#006400',   // Dark green
+    },
+  },
+  'red-night': {
+    name: 'Red Night Mode',
+    description: 'CRITICAL: Marine night navigation mode - preserves night vision completely',
+    screenBrightness: 0.05, // 5% - MAXIMUM for marine safety
+    colors: {
+      background: '#0A0000', // Very dark red-black
+      surface: '#1A0000',    // Slightly lighter red-black
+      text: '#440000',       // Dim red text (RGB: 68,0,0)
+      textSecondary: '#330000', // Darker red secondary text
+      border: '#220000',     // Very dark red borders
+      // ALL alerts use same dim red - no bright colors allowed
+      warning: '#440000',    // Same as text - no differentiation by brightness
+      critical: '#440000',   // Differentiated by animation, not color
+      success: '#440000',    // All feedback uses dim red
+    },
+    animations: {
+      // Critical alerts use animation since color differentiation unavailable
+      warning: 'pulse',      // 1.5s gentle pulse
+      critical: 'flicker',   // 300ms quick flicker
+      normal: 'none',
+    },
+  },
+} as const;
+
+// Native brightness integration
+export const BRIGHTNESS_CONTROL = {
+  // Use native APIs when available
+  setBrightness: async (mode: DisplayMode) => {
+    const targetBrightness = MARINE_DISPLAY_MODES[mode].screenBrightness;
+    
+    try {
+      // iOS/Android native brightness control
+      if (Platform.OS === 'ios') {
+        await Brightness.setBrightnessAsync(targetBrightness);
+      } else if (Platform.OS === 'android') {
+        await Brightness.setSystemBrightnessAsync(targetBrightness);
+      }
+    } catch (error) {
+      // Fallback: Theme-based dimming if native control unavailable
+      console.warn('Native brightness control unavailable, using theme-based dimming');
+    }
+  },
+  
+  // Automatic theme switching based on time/GPS
+  getRecommendedMode: (currentTime: Date, location?: { lat: number; lon: number }) => {
+    const hour = currentTime.getHours();
+    
+    // Basic time-based switching (can be enhanced with sunset/sunrise calculation)
+    if (hour >= 22 || hour <= 5) {
+      return 'red-night'; // Critical night navigation hours
+    } else if (hour >= 19 || hour <= 7) {
+      return 'night'; // Twilight hours
+    } else {
+      return 'day'; // Daylight hours
+    }
+  },
+} as const;
+```
+
+### **Alert Threshold Color System**
+
+**Day Mode Alert Colors:**
+```typescript
+export const ALERT_COLORS_DAY = {
+  normal: '#0F172A',      // Standard monochrome text
+  warning: '#EA580C',     // Orange - approaching threshold
+  critical: '#DC2626',    // Red - exceeding threshold
+  
+  // Background tints for severe alerts
+  warningBg: '#FFF7ED',   // Light orange background
+  criticalBg: '#FEF2F2',  // Light red background
+} as const;
+```
+
+**Night/Red Mode Alert Behavior:**
+```typescript
+export const ALERT_BEHAVIORS_NIGHT = {
+  normal: {
+    color: '#DC2626',     // Standard red night mode color
+    animation: 'none',
+  },
+  warning: {
+    color: '#DC2626',     // Same red color
+    animation: 'pulse',   // 1.5s pulse animation
+    timing: '1500ms ease-in-out infinite',
+  },
+  critical: {
+    color: '#DC2626',     // Same red color  
+    animation: 'flicker', // 200ms quick flicker
+    timing: '200ms linear infinite',
+  },
+} as const;
+```
+
+**Alert Animation Specifications:**
+```typescript
+// Pulse animation for warning state (Night/Red mode)
+const pulseAnimation = {
+  '0%': { opacity: 0.7 },
+  '50%': { opacity: 1.0 },
+  '100%': { opacity: 0.7 },
+};
+
+// Flicker animation for critical state (Night/Red mode)
+const flickerAnimation = {
+  '0%': { opacity: 1.0 },
+  '10%': { opacity: 0.3 },
+  '20%': { opacity: 1.0 },
+  '30%': { opacity: 0.3 },
+  '40%': { opacity: 1.0 },
+  '100%': { opacity: 1.0 },
+};
+```
+
+**Alert Application Rules:**
+- **Values:** Apply alert colors to metric values and graph lines
+- **Icons:** Apply alert colors to relevant status icons
+- **Backgrounds:** Use tinted backgrounds only for critical marine safety alerts (depth, engine)
+- **Consistency:** All widgets with same data type use identical thresholds (e.g., all engine RPM widgets)
+
+### **Typography Hierarchy**
+
+**Standardized Font Specifications:**
+```typescript
+export const TYPOGRAPHY_SCALE = {
+  // Widget headers
+  widgetTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: 'textSecondary', // Always secondary gray
+  },
+  
+  // Primary metric values
+  metricValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    fontFamily: 'monospace', // Ensures consistent number width
+    letterSpacing: 0.5,
+    color: 'text', // Primary black (with alert overrides)
+  },
+  
+  // Metric units
+  metricUnit: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    color: 'textSecondary',
+  },
+  
+  // Secondary information
+  metricLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: 'textSecondary',
+  },
+} as const;
+```
+
+### **Widget Title Display Standards**
+
+**Title Requirements:**
+- All widgets MUST display descriptive titles in header section
+- Titles use `widgetTitle` typography (11pt, bold, uppercase, gray)
+- Title should be descriptive enough for screen readers
+- Multi-word titles use spaces, not underscores (e.g., "WATER TEMP", not "WATER_TEMP")
+
+**Common Widget Titles:**
+```typescript
+export const STANDARD_WIDGET_TITLES = {
+  depth: 'DEPTH',
+  speed: 'SPEED', // or 'COG / SOG' for combined display
+  wind: 'WIND',
+  compass: 'COMPASS', 
+  engine: 'ENGINE', // or 'ENGINE PORT', 'ENGINE STBD'
+  battery: 'BATTERY',
+  gps: 'GPS POSITION',
+  temperature: 'WATER TEMP',
+  autopilot: 'AUTOPILOT',
+  tanks: 'TANKS',
+} as const;
+```
+
+### **Content Hierarchy Standards**
+
+**Widget Content Priority:**
+1. **Primary Value:** Largest, monospace font, center-aligned (PrimaryMetricCell)
+2. **Secondary Metrics:** Smaller, lighter color (SecondaryMetricCell)
+3. **Graphics/Charts:** Integrated within grid system
+4. **Status Indicators:** Subtle, non-intrusive
+
+---
+
+## Clean Dashboard Implementation Guide
+
+### **Development Cleanup Tasks**
+
+**Immediate Removals:**
+1. **Remove PlaybackFilePicker component** - Development testing only
+2. **Remove GridOverlay component** - Layout debugging tool
+3. **Remove ExampleWidget component** - Development template
+4. **Clean bottom navigation** - Remove all buttons except autopilot
+5. **Remove demo/stress test controls** - Development clutter
+
+**Component Updates:**
+1. **Rename MetricCell → PrimaryMetricCell**
+2. **Create SecondaryMetricCell component** (smaller, lighter)
+3. **Create GPSCoordinateDisplay component** (DMS/DDM/DD formats)
+4. **Create DateTimeDisplay component** (UTC with day of week)
+5. **Create interactive CompassRose component** (TRUE/MAG toggle)
+
+**Layout System Implementation:**
+1. **Replace fixed widget sizing** with responsive calculations
+2. **Implement dynamic widget flow** algorithm (top-left → bottom-right)
+3. **Add pagination system** with page indicator dots
+4. **Position blue + button** at end of widget flow
+5. **Ensure autopilot button** fixed at screen bottom
+
+### **Widget Migration Checklist**
+
+**Per Widget Updates:**
+- [ ] Convert to grid-based layout (1×1 to 2×3)
+- [ ] Implement PrimaryMetricCell for main metrics
+- [ ] Add SecondaryMetricCell for expanded view
+- [ ] Define clear PRIMARY/SECONDARY views
+- [ ] Handle tap (expand/collapse) and long press (options)
+- [ ] Apply responsive sizing logic
+- [ ] Test on phone/tablet/desktop layouts
+
+**Multi-Instance Widget Implementation:**
+- [ ] **Engine Widgets:** Scan NMEA engine instances → create Engine #1, #2, etc.
+- [ ] **Battery Widgets:** Map NMEA battery instances → House, Thruster, Generator
+- [ ] **Tank Widgets:** Map NMEA tank instances → Fuel Port, Water Fresh, etc.
+
+### **Final Dashboard Architecture**
+
+```
+Dashboard Structure:
+├── HeaderBar (connection, hamburger menu)
+├── DashboardArea (responsive widget grid)
+│   ├── Page 1: Essential Navigation Widgets
+│   ├── Page 2: Engine/Battery/Tank Widgets  
+│   ├── Page N: [Blue + Button]
+│   └── PageIndicators (dots)
+└── AutopilotControl (fixed bottom, full width)
+
+Widget Categories:
+├── Essential (always available)
+│   ├── Depth, Speed, Wind, GPS, Compass
+│   └── Autopilot Status, Rudder Position
+├── Multi-Instance (dynamically created)  
+│   ├── Engine #1, #2, #3...
+│   ├── Battery House, Thruster, Generator...
+│   └── Tank Fuel Port, Water Fresh...
+└── Interaction Elements
+    ├── Blue + Button (add widgets)
+    └── Hamburger Menu (settings, theme, connection)
+```
+
+This architecture creates a **clean, focused navigation dashboard** with essential marine instruments always accessible while keeping system monitoring organized and removing all development clutter.
+3. **Mnemonic Label:** Small, uppercase, above value
+4. **Secondary Info:** Smallest, below primary value (trends, status)
+5. **Icon:** Header only, visual mnemonic, never decorative
+
+**Information Density Guidelines:**
+- **1×1 widgets:** Single primary metric only
+- **1×2 widgets:** Primary metric + 1-2 secondary values
+- **2×1 widgets:** Primary metric + analog visualization (gauge, compass)
+- **2×2 widgets:** Multiple related metrics (engine dashboard, autopilot controls)
+
+### **Implementation Requirements**
+
+**Enhanced Widget Template with State Management:**
+```typescript
+// All widgets must follow this structure with state management
+export const StandardWidget: React.FC<Props> = ({ widgetId, ...props }) => {
+  const theme = useTheme();
+  const widgetStore = useWidgetStore();
+  const widget = widgetStore.widgets.find(w => w.id === widgetId);
+  
+  if (!widget) return null;
+  
+  const alertState = calculateAlertState(props.value, widget.config.thresholds);
+  const isExpanded = widget.viewState === 'expanded' || widget.viewState === 'fullscreen';
+  
+  const handleCaretPress = () => {
+    widgetStore.toggleWidgetExpansion(widgetId);
+    widgetStore.updateWidgetInteraction(widgetId);
+  };
+  
+  const handlePinToggle = () => {
+    if (widget.isPinned) {
+      widgetStore.unpinWidget(widgetId);
+    } else {
+      widgetStore.pinWidget(widgetId);
+    }
+  };
+  
+  const handleLongPress = () => {
+    // Show widget configuration menu
+    showWidgetMenu(widgetId);
+  };
+  
+  return (
+    <WidgetCard
+      title={STANDARD_WIDGET_TITLES.depth}
+      icon="water-outline"
+      state={alertState}
+      expanded={isExpanded}
+      isPinned={widget.isPinned}
+      onLongPress={handleLongPress}
+      testID={`widget-${widget.type}-${widgetId}`}
+    >
+      {/* Widget Header with Controls */}
+      <WidgetHeader>
+        <WidgetTitle>{STANDARD_WIDGET_TITLES.depth}</WidgetTitle>
+        <WidgetControls>
+          {/* Pin Button (only show when expanded) */}
+          {isExpanded && (
+            <PinButton
+              isPinned={widget.isPinned}
+              onPress={handlePinToggle}
+              testID="widget-pin-button"
+            />
+          )}
+          
+          {/* Expansion Caret */}
+          <ExpansionCaret
+            isExpanded={isExpanded}
+            onPress={handleCaretPress}
+            testID="widget-expansion-caret"
+          />
+        </WidgetControls>
+      </WidgetHeader>
+      
+      {/* Primary Content (Always Visible) */}
+      <PrimaryContent>
+        <PrimaryMetricCell
+          mnemonic="DEPTH"
+          value={formatValue(props.value)}
+          unit={widget.config.unit || 'ft'}
+          state={alertState}
+          precision={widget.config.precision}
+          onPress={handleCaretPress} // Entire cell clickable for expansion
+        />
+      </PrimaryContent>
+      
+      {/* Secondary Content (Shown When Expanded) */}
+      {isExpanded && (
+        <SecondaryContent>
+          <SecondaryMetricCell
+            mnemonic="AVG"
+            value={formatValue(props.averageValue)}
+            unit={widget.config.unit || 'ft'}
+            compact={widget.config.compactMode}
+          />
+          <SecondaryMetricCell
+            mnemonic="MAX"
+            value={formatValue(props.maxValue)}
+            unit={widget.config.unit || 'ft'}
+            compact={widget.config.compactMode}
+          />
+          {/* Historical trend chart, additional metrics, etc. */}
+        </SecondaryContent>
+      )}
+    </WidgetCard>
+  );
+};
+
+// Supporting Components
+
+interface ExpansionCaretProps {
+  isExpanded: boolean;
+  onPress: () => void;
+  testID?: string;
+}
+
+const ExpansionCaret: React.FC<ExpansionCaretProps> = ({ isExpanded, onPress, testID }) => {
+  const theme = useTheme();
+  const rotation = useSharedValue(isExpanded ? 180 : 0);
+  
+  // Animate caret rotation
+  React.useEffect(() => {
+    rotation.value = withTiming(isExpanded ? 180 : 0, { duration: 200 });
+  }, [isExpanded]);
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+  
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.caretButton, { borderColor: theme.colors.border }]}
+      testID={testID}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={isExpanded ? 'Collapse widget' : 'Expand widget'}
+    >
+      <Animated.View style={animatedStyle}>
+        <ChevronIcon
+          name="chevron-down" 
+          size={14}
+          color={theme.colors.textSecondary}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+interface PinButtonProps {
+  isPinned: boolean;
+  onPress: () => void;
+  testID?: string;
+}
+
+const PinButton: React.FC<PinButtonProps> = ({ isPinned, onPress, testID }) => {
+  const theme = useTheme();
+  
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.pinButton, { borderColor: theme.colors.border }]}
+      testID={testID}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={isPinned ? 'Unpin widget' : 'Pin widget expanded'}
+    >
+      <PinIcon
+        name={isPinned ? 'pin-filled' : 'pin-outline'}
+        size={12}
+        color={isPinned ? theme.colors.warning : theme.colors.textSecondary}
+      />
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  caretButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  pinButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+});
+```
+```
+
+**Developer Checklist:**
+- [ ] Widget displays descriptive title in header
+- [ ] All colors use monochromatic palette (except alerts)
+- [ ] Icons are outline-style, secondary gray color
+- [ ] Alert thresholds implement color+animation system
+- [ ] Typography follows standardized scale
+- [ ] Widget conforms to grid size constraints
+- [ ] Night mode uses red-only palette with animations
+````
 
 **Project-Specific Patterns:**
 - **Widget HOC:** All widgets wrapped with `WidgetCard` for consistent styling

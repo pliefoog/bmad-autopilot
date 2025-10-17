@@ -1,0 +1,134 @@
+schema: 2
+gate: MISSING
+gate_date: "2025-10-14"
+epic_id: "4"
+epic_slug: "alarms-display-modes-ux-polish-beta-expansion"
+reviewed_by: "Quinn (Test Architect)"
+quality_score: 0
+
+summary: |
+  Epic 4 Alarms & Polish has not been started. This epic is SAFETY-CRITICAL for marine
+  environments as it implements alarm systems that match physical instrument capabilities.
+  No stories have been initiated, no QA gates exist. Immediate attention required to
+  establish alarm reliability testing framework before development begins.
+
+# NEW: Epic risk traceability
+risk_assessment:
+  primary_risks:
+    - risk_id: "EPIC-4-001"
+      description: "Alarm reliability - false positive/negative rates, threshold accuracy"
+      mitigation_status: MISSING
+      test_evidence: "No alarm testing framework exists - SAFETY CRITICAL GAP"
+  
+  secondary_risks:
+    - risk_id: "EPIC-4-002"
+      description: "Battery life (NFR5) - 8+ hour continuous use validation"
+      mitigation_status: MISSING
+      test_evidence: "No performance testing framework for battery validation"
+    - risk_id: "EPIC-4-003"
+      description: "Night mode effectiveness - red-night vision preservation"
+      mitigation_status: MISSING
+      test_evidence: "No UX validation testing for night sailing scenarios"
+    - risk_id: "EPIC-4-004"
+      description: "Onboarding success - first-run completion rate tracking"
+      mitigation_status: MISSING
+      test_evidence: "No UX metrics collection framework"
+
+# NEW: Marine safety categories
+marine_safety_validation:
+  autopilot_control: N/A
+  alarm_systems: FAIL        # NO TESTING FRAMEWORK - SAFETY CRITICAL
+  emergency_systems: MISSING # Not yet implemented
+  data_accuracy: MISSING     # Alarm threshold accuracy not validated
+
+epic_objectives_status:
+  - id: 1
+    objective: "Implement safety-critical alarms (depth, wind shift, engine temp, battery voltage)"
+    status: NOT_STARTED
+  - id: 2
+    objective: "Grouped alarm widgets with at-a-glance status for multiple related alarms"
+    status: NOT_STARTED
+  - id: 3
+    objective: "Night sailing support with red-night mode for overnight passages"
+    status: NOT_STARTED
+  - id: 4
+    objective: "First-run wizard reduces setup friction for new users"
+    status: NOT_STARTED
+  - id: 5
+    objective: "Alarm history provides situational awareness"
+    status: NOT_STARTED
+  - id: 6
+    objective: "50 beta users provide comprehensive feedback across diverse boat configurations"
+    status: BLOCKED  # Cannot expand beta without working features from Epic 3
+
+# Enhanced NFR validation
+nfr_validation:
+  performance_targets: MISSING   # NFR5 - 8+ hour battery life not validated
+  reliability_gates: MISSING     # Alarm reliability not tested
+  marine_safety: FAIL          # SAFETY CRITICAL - No alarm testing
+  cross_platform: MISSING      # Not yet implemented
+
+story_gates_summary:
+  - story_id: "4.1"
+    title: "Critical Safety Alarms"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: CRITICAL_MISSING
+  - story_id: "4.2"
+    title: "Grouped Alarm Management"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: CRITICAL_MISSING
+  - story_id: "4.3"
+    title: "Notification System"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: PENDING
+  - story_id: "4.4"
+    title: "UX Polish & Accessibility"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: PENDING
+  - story_id: "4.5"
+    title: "Performance Optimization"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: PENDING
+  - story_id: "4.6"
+    title: "Help System"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: N/A
+  - story_id: "4.7"
+    title: "Launch Preparation"
+    gate: NOT_STARTED
+    quality_score: 0
+    marine_safety: PENDING
+
+required_testing_framework:
+  - framework: "Alarm Reliability Testing"
+    priority: CRITICAL
+    description: "Threshold accuracy, false positive/negative detection, audio/visual alert validation"
+    acceptance_criteria: "≥99% alarm accuracy, <1% false positive rate, audio alerts at 85dB+"
+  - framework: "Battery Performance Testing"
+    priority: HIGH
+    description: "8+ hour continuous use validation across iOS/Android devices"
+    acceptance_criteria: "iPhone 13/Pixel 6 baseline, background optimization, screen dimming validation"
+  - framework: "Night Mode UX Testing"
+    priority: MEDIUM
+    description: "Red-night vision preservation, WCAG AA contrast in low-light conditions"
+    acceptance_criteria: "Preserve night vision, maintain readability, user feedback validation"
+
+immediate_actions_required:
+  - action: "CREATE Epic 4 Alarm Reliability Testing Framework"
+    priority: CRITICAL
+    timeline: "THIS WEEK"
+    description: "Establish testing infrastructure for safety-critical alarm systems before development starts"
+  - action: "Design alarm threshold accuracy test scenarios"
+    priority: CRITICAL
+    timeline: "THIS WEEK"
+    description: "Define Given-When-Then scenarios for depth, wind, engine, battery alarms"
+  - action: "Establish marine safety QA requirements"
+    priority: CRITICAL
+    timeline: "THIS WEEK"
+    description: "Document marine safety validation requirements matching physical instrument standards"

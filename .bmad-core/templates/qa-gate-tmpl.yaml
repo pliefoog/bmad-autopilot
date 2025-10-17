@@ -1,27 +1,51 @@
 # <!-- Powered by BMAD™ Core -->
 template:
-  id: qa-gate-template-v1
-  name: Quality Gate Decision
-  version: 1.0
+  id: qa-gate-template-v2
+  name: Enhanced Quality Gate with Marine Safety Classification
+  version: 2.0
   output:
     format: yaml
     filename: qa.qaLocation/gates/{{epic_num}}.{{story_num}}-{{story_slug}}.yml
     title: "Quality Gate: {{epic_num}}.{{story_num}}"
 
 # Required fields (keep these first)
-schema: 1
+schema: 2  # Enhanced schema with marine safety and risk traceability
 story: "{{epic_num}}.{{story_num}}"
 story_title: "{{story_title}}"
-gate: "{{gate_status}}" # PASS|CONCERNS|FAIL|WAIVED
+gate: "{{gate_status}}" # PASS|CONCERNS|FAIL|WAIVED|CRITICAL_BLOCKER
 status_reason: "{{status_reason}}" # 1-2 sentence summary of why this gate decision
 reviewer: "Quinn (Test Architect)"
 updated: "{{iso_timestamp}}"
 
+# NEW: Marine Safety Classification (CRITICAL for boating safety)
+marine_safety_classification:
+  category: "{{safety_category}}" # SAFETY_CRITICAL|PERFORMANCE_CRITICAL|FUNCTIONAL|INFRASTRUCTURE
+  impact_level: "{{impact_level}}" # HIGH|MEDIUM|LOW
+  systems_affected: "{{affected_systems}}" # autopilot_control|alarm_systems|emergency_systems|data_accuracy|navigation_display
+  validation_required: "{{validation_required}}" # Specific validation requirements for marine safety
+
+# NEW: Epic Risk Traceability  
+epic_risk_coverage:
+  primary_risk_id: "{{primary_risk_id}}" # e.g., "EPIC-3-001"
+  primary_risk_status: "{{risk_status}}" # VALIDATED|CONCERNS|FAIL|BLOCKED|N/A
+  secondary_risks: # Array of additional risks this story addresses
+    - risk_id: "{{secondary_risk_id}}"
+      status: "{{secondary_risk_status}}"
+
 # Always present but only active when WAIVED
 waiver: { active: false }
 
-# Issues (if any) - Use fixed severity: low | medium | high
+# Issues (if any) - Enhanced severity with marine safety context
 top_issues: []
+# Enhanced severity levels: resolved|low|medium|high|critical_safety
+
+# NEW: Marine Safety Validation Results
+marine_safety_validation:
+  autopilot_control: "{{autopilot_safety_status}}" # PASS|CONCERNS|FAIL|N/A
+  alarm_systems: "{{alarm_safety_status}}" # PASS|CONCERNS|FAIL|N/A
+  emergency_systems: "{{emergency_safety_status}}" # PASS|CONCERNS|FAIL|N/A
+  data_accuracy: "{{data_accuracy_status}}" # PASS|CONCERNS|FAIL|N/A
+  marine_environment_ready: "{{marine_env_status}}" # PASS|CONCERNS|FAIL - Overall marine readiness
 
 # Risk summary (from risk-profile task if run)
 risk_summary:
@@ -32,22 +56,44 @@ risk_summary:
 
 # Examples section using block scalars for clarity
 examples:
-  with_issues: |
+  marine_safety_critical: |
+    marine_safety_classification:
+      category: SAFETY_CRITICAL
+      impact_level: HIGH
+      systems_affected: ["autopilot_control", "alarm_systems"]
+      validation_required: "Command accuracy ≥99%, emergency systems, timeout handling, marine environment testing"
+    
+    epic_risk_coverage:
+      primary_risk_id: "EPIC-3-001"
+      primary_risk_status: VALIDATED
+      secondary_risks:
+        - risk_id: "EPIC-3-002" 
+          status: CONCERNS
+    
+    marine_safety_validation:
+      autopilot_control: PASS
+      alarm_systems: CONCERNS
+      emergency_systems: PASS
+      data_accuracy: PASS
+      marine_environment_ready: CONCERNS
+
+  with_marine_safety_issues: |
     top_issues:
-      - id: "SEC-001"
-        severity: high  # ONLY: low|medium|high
-        finding: "No rate limiting on login endpoint"
-        suggested_action: "Add rate limiting middleware before production"
-      - id: "TEST-001"  
-        severity: medium
-        finding: "Missing integration tests for auth flow"
-        suggested_action: "Add test coverage for critical paths"
+      - id: "MARINE-001"
+        severity: critical_safety
+        finding: "Autopilot emergency disengage timeout exceeds 3 seconds"
+        suggested_action: "CRITICAL: Reduce timeout to <1 second for marine safety compliance"
+      - id: "TEST-001"
+        severity: high
+        finding: "Missing marine environment testing (boat motion, spray, night conditions)"
+        suggested_action: "Add marine-specific test scenarios and validation"
 
   when_waived: |
     waiver:
       active: true
-      reason: "Accepted for MVP release - will address in next sprint"
+      reason: "Non-marine-safety issue accepted for MVP release - will address in Phase 1.5"
       approved_by: "Product Owner"
+      marine_safety_impact: false
 
 # ============ Optional Extended Fields ============
 # Uncomment and use if your team wants more detail

@@ -33,6 +33,9 @@ export interface NmeaData {
   speed?: number;
   windAngle?: number;
   windSpeed?: number;
+  relativeWindAngle?: number;  // From $IIVWR
+  relativeWindSpeed?: number;  // From $IIVWR
+  rateOfTurn?: number;         // From $TIROT
   waterTemperature?: number;
   gpsPosition?: { lat: number; lon: number };
   gpsQuality?: { 
@@ -60,6 +63,7 @@ export interface NmeaData {
   autopilot?: {
     mode?: string;
     targetHeading?: number;
+    actualHeading?: number;
     rudderPosition?: number;
     rateOfTurn?: number;
     active?: boolean;
@@ -123,36 +127,36 @@ function evaluateAlarms(nmeaData: NmeaData): Alarm[] {
 export const useNmeaStore = create<NmeaStore>((set) => ({
   connectionStatus: 'disconnected',
   nmeaData: {
-    // Sample data for development/testing
-    depth: 12.4,
-    speed: 6.8,
-    windAngle: 45,
-    windSpeed: 15.2,
-    waterTemperature: 18.5,
-    gpsPosition: { lat: 37.7749, lon: -122.4194 },
-    gpsQuality: { fixType: 2, satellites: 8, hdop: 1.2 },
-    cog: 280,
-    sog: 6.8,
-    heading: 285,
+    // Start with undefined values - widgets will show "--" until real data arrives
+    depth: undefined,
+    speed: undefined,
+    windAngle: undefined,
+    windSpeed: undefined,
+    waterTemperature: undefined,
+    gpsPosition: undefined,
+    gpsQuality: undefined,
+    cog: undefined,
+    sog: undefined,
+    heading: undefined,
     engine: {
-      rpm: 1800,
-      coolantTemp: 85,
-      oilPressure: 45,
+      rpm: undefined,
+      coolantTemp: undefined,
+      oilPressure: undefined,
     },
     battery: {
-      house: 12.8,
-      engine: 13.2,
+      house: undefined,
+      engine: undefined,
     },
     tanks: {
-      fuel: 75,
-      water: 60,
-      waste: 25,
+      fuel: undefined,
+      water: undefined,
+      waste: undefined,
     },
     autopilot: {
-      mode: 'COMPASS',
-      targetHeading: 285,
-      rudderPosition: 2,
-      rateOfTurn: 0.5,
+      mode: undefined,
+      targetHeading: undefined,
+      rudderPosition: undefined,
+      rateOfTurn: undefined,
       active: false,
     },
   },

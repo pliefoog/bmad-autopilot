@@ -2,7 +2,7 @@
 
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite  
 **Story ID:** 2.1  
-**Status:** Ready for Review
+**Status:** Done
 
 ---
 
@@ -71,6 +71,8 @@
 ## Dev Notes
 
 ### Technical Implementation
+**Architecture Reference:** See [System Architecture - Tech Stack](../architecture/tech-stack.md) for NMEA 2000 integration patterns and [System Architecture - Data Models](../architecture/data-models.md) for PGN data structures.
+
 **Data Sources:** Dual protocol support (TCP for 0183, UDP for 2000)
 **Library:** @canboat/canboatjs for PGN parsing and encoding
 **State Management:** Unified data model for both NMEA protocols

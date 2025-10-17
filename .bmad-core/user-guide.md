@@ -234,6 +234,138 @@ BMAD integrates with OpenCode via a project-level `opencode.jsonc`/`opencode.jso
     }
     ```
 
+### VS Code Integration & MCP Tools
+
+VS Code provides comprehensive support for BMAD agents through Model Context Protocol (MCP) tools. These tools enable AI agents to interact directly with your project files, run tasks, execute tests, and manage development workflows programmatically.
+
+#### Available VS Code Tasks
+
+The following tasks are available via `Ctrl+Shift+P` → `Tasks: Run Task`:
+
+**Development Tasks:**
+- `Start Web Dev Server` - Launch React Native web development server
+- `Stop Web Dev Server` - Stop the web development server
+- `Start NMEA Bridge Simulator` - Start simulator for NMEA data testing
+- `Stop NMEA Bridge Simulator` - Stop the NMEA simulator
+- `Start NMEA Bridge Simulator (Recording)` - Start simulator with recorded data playback
+- `Start Full Web Development Stack` - Launch both web server and NMEA simulator
+
+**Testing Tasks:**
+- `Create test file for NmeaConnectionManager` - Generate test file template
+
+#### MCP Tools for BMAD Agents
+
+When working with AI agents in VS Code, the following MCP tools enable sophisticated project interaction:
+
+##### File Operations
+- **`read_file`** - Read specific line ranges from files (supports large context reads)
+- **`create_file`** - Create new files with content (auto-creates directories)
+- **`replace_string_in_file`** - Precise string replacement with context matching
+- **`list_dir`** - List directory contents and structure
+
+##### Search & Discovery
+- **`file_search`** - Find files by glob patterns (`**/*.{js,ts}`, `src/**`, etc.)
+- **`grep_search`** - Fast text search with regex support and file filtering
+- **`semantic_search`** - Natural language search across codebase content
+- **`list_code_usages`** - Find all references/implementations of functions, classes, methods
+
+##### Task & Process Management
+- **`run_task`** - Execute VS Code tasks programmatically
+- **`create_and_run_task`** - Create new tasks and execute them
+- **`get_task_output`** - Retrieve task execution results
+- **`run_in_terminal`** - Execute shell commands with persistent context
+- **`get_terminal_output`** - Get command execution results
+
+##### Testing & Quality
+- **`runTests`** - Execute unit tests with coverage collection
+- **`get_errors`** - Retrieve compile/lint errors from specific files or all files
+- **`test_failure`** - Access test failure information for debugging
+
+##### Development Workflow
+- **`get_changed_files`** - Get git diff information for staged/unstaged changes
+- **`configure_python_environment`** - Set up Python environments (when applicable)
+- **`install_python_packages`** - Install dependencies in configured environments
+
+##### Specialized Tools
+- **`get_vscode_api`** - Access VS Code extension development documentation
+- **`open_simple_browser`** - Preview websites/demos within VS Code
+- **`manage_todo_list`** - Track development tasks and progress
+- **`mermaid-diagram-validator`** & **`mermaid-diagram-preview`** - Create and validate diagrams
+
+#### MCP Best Practices for BMAD Agents
+
+**File Reading Strategy:**
+```bash
+# Prefer large context reads over multiple small reads
+read_file src/components/Widget.tsx 1 100  # Good
+# vs multiple small reads                   # Avoid
+```
+
+**Search Patterns:**
+```bash
+# Use semantic search for concept discovery
+semantic_search "authentication logic"
+
+# Use grep for specific patterns  
+grep_search "useNmeaStore|useState" --regex
+
+# Use file_search for structural discovery
+file_search "**/*.test.{js,ts,tsx}"
+```
+
+**Task Execution:**
+```bash
+# Execute existing tasks
+run_task "Start Web Dev Server" /workspace/path
+
+# Create custom tasks for repetitive operations
+create_and_run_task custom-build-command /workspace/path
+```
+
+**Quality Assurance:**
+```bash
+# Check for errors before committing
+get_errors  # All files
+get_errors ["/path/to/specific/file.ts"]  # Specific files
+
+# Run tests with coverage
+runTests --mode=coverage --files=["/path/to/test.ts"]
+```
+
+#### Agent-Specific MCP Usage Patterns
+
+**Dev Agent (`#dev`):**
+- Primary tools: `read_file`, `replace_string_in_file`, `runTests`, `get_errors`
+- Workflow: Read → Implement → Test → Validate → Commit
+
+**QA Agent (`#qa`):**
+- Primary tools: `runTests`, `get_errors`, `list_code_usages`, `semantic_search`
+- Workflow: Analyze → Test → Assess → Report → Gate Decision
+
+**Architect Agent (`#architect`):**
+- Primary tools: `semantic_search`, `file_search`, `grep_search`, `list_dir`  
+- Workflow: Discover → Analyze → Design → Document → Validate
+
+**SM Agent (`#sm`):**
+- Primary tools: `file_search`, `semantic_search`, `manage_todo_list`
+- Workflow: Plan → Track → Prioritize → Validate → Update
+
+#### MCP Integration with Story Development
+
+When executing `*develop-story`, agents use MCP tools in sequence:
+
+1. **Discovery Phase**: `file_search`, `semantic_search` to understand existing code
+2. **Implementation Phase**: `read_file`, `replace_string_in_file`, `create_file` for changes
+3. **Testing Phase**: `runTests`, `get_errors` for validation
+4. **Verification Phase**: `get_changed_files`, `list_code_usages` for impact analysis
+
+#### Performance Considerations
+
+- **Context Management**: Use `read_file` with appropriate line ranges to avoid context overflow
+- **Parallel Operations**: Run independent searches in parallel, but avoid parallel terminal commands  
+- **Output Filtering**: Use grep/head/tail to limit large outputs (60KB limit)
+- **Incremental Development**: Frequent small changes vs large batch operations
+
 ### Codex (CLI & Web)
 
 BMAD integrates with OpenAI Codex via `AGENTS.md` and committed core agent files.

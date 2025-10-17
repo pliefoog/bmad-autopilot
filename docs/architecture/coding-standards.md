@@ -7,7 +7,7 @@
 3. **Memoize expensive calculations** - Use `useMemo()` for NMEA data transformations and widget rendering logic
 4. **Handle null NMEA data** - All widgets must gracefully display "--" when data unavailable or stale (>5s old)
 5. **Use theme context for colors** - Never hardcode color values in components; always use `useTheme()` hook
-6. **Follow accessibility guidelines** - All interactive elements must be ≥44pt touch targets; provide labels for screen readers
+6. **Follow touch interaction standards** - All interactive elements must be ≥44pt touch targets (full accessibility with screen reader support deferred to Phase 2)
 7. **Test with stale data** - Widgets must indicate stale data (>5 seconds old) with visual cues
 8. **Throttle widget updates** - Max 1 update/second per widget (users can't perceive faster updates)
 9. **Clean up subscriptions** - Use `useEffect` cleanup for Zustand subscriptions and TCP socket listeners

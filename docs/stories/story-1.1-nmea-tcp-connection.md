@@ -45,6 +45,8 @@
 - **Settings Persistence:** AsyncStorage for IP/port configuration
 
 ### Architecture Decisions
+**Technical Reference:** See [System Architecture - Tech Stack](../architecture/tech-stack.md) and [System Architecture - High Level Architecture](../architecture/high-level-architecture.md) for NMEA service layer patterns and TCP socket architecture.
+
 - Centralized NmeaConnectionManager class handles all TCP socket operations
 - Connection status tracked in nmeaStore (Zustand) accessible throughout app
 - Error messages stored in lastError field for UI display

@@ -2,7 +2,7 @@
 
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite  
 **Story ID:** 2.7  
-**Status:** Ready for Done
+**Status:** Done
 
 ---
 

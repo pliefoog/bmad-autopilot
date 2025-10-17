@@ -1,0 +1,357 @@
+# Quality Gate: Story 2.9 - Professional Mobile Header & Navigation
+
+story_id: "2.9"
+story_title: "Professional Mobile Header & Navigation"
+epic: "Epic 2 - Widget Framework"
+gate_version: "1.0"
+created_date: "2025-10-13"
+reviewed_by: "Quinn (QA Agent)"
+
+## Gate Decision
+decision: "PENDING"
+# Options: PASS | CONCERNS | FAIL | WAIVED | PENDING
+status: "Not yet implemented"
+decision_date: null
+decision_rationale: "Story implementation not yet started. This gate defines quality criteria for implementation."
+
+## Risk Assessment
+risk_level: "MEDIUM"
+risk_factors:
+  - factor: "Cross-device header layout"
+    probability: "MEDIUM"
+    impact: "HIGH"
+    mitigation: "Test on iPhone notch, Android hole-punch, tablets with various aspect ratios"
+
+  - factor: "Toast message timing and dismissal"
+    probability: "LOW"
+    impact: "MEDIUM"
+    mitigation: "Automated timing tests, manual swipe gesture verification"
+
+  - factor: "Hamburger menu drawer performance"
+    probability: "LOW"
+    impact: "MEDIUM"
+    mitigation: "Performance profiling during slide animation"
+
+  - factor: "Accessibility - Connection LED without text"
+    probability: "MEDIUM"
+    impact: "HIGH"
+    mitigation: "Screen reader testing, WCAG AA compliance verification"
+
+## Test Scenarios
+
+### Scenario 1: Header Layout Verification
+**Given** the app is launched on a mobile device
+**When** the user views the main dashboard
+**Then** the header should display:
+  - Hamburger menu icon (24×24pt) at left with 44×44pt touch target
+  - App title "BMad Instruments" centered (16pt, semibold, theme.text)
+  - Connection status LED only at right (12pt diameter, NO text)
+  - Header height exactly 60pt
+  - Background uses theme.surface with 1pt bottom border (theme.border)
+
+**Test Method:** Visual regression testing + manual inspection
+**Devices:** iPhone SE, iPhone 14 Pro (notch), iPad Air, Samsung Galaxy (hole-punch)
+
+---
+
+### Scenario 2: Connection LED Behavior
+**Given** the app is running with various connection states
+**When** the connection state changes
+**Then** the LED should display the correct color:
+  - Red: Disconnected
+  - Orange: Connected but no data
+  - Green: Active data flowing
+**And** when connecting, LED should pulse at 1s interval
+**And** tapping LED should open connection settings modal
+**And** screen reader should announce "Connection status: [state]"
+
+**Test Method:** State transition testing + accessibility audit
+**Pass Criteria:**
+  - All 3 colors display correctly
+  - Pulsing animation smooth at 1s interval
+  - Tap opens connection settings
+  - Screen reader announces status correctly
+
+---
+
+### Scenario 3: Toast Message System
+**Given** an error, warning, or success condition occurs
+**When** the toast message is triggered
+**Then** it should:
+  - Overlay the center of header (replace title temporarily)
+  - Display correct background: Red (error), Orange (warning), Green (success)
+  - Display correct text color: White (error/success), Dark (warning)
+  - Auto-dismiss after correct duration: 5s (error/warning), 3s (success)
+  - Support swipe-up gesture for early dismissal
+  - Queue multiple messages (don't overlap)
+
+**Test Method:** Automated toast timing tests + manual gesture testing
+**Pass Criteria:**
+  - Auto-dismiss timing accurate within ±200ms
+  - Swipe gesture dismisses immediately
+  - No overlapping toasts
+  - Title returns after dismissal
+
+---
+
+### Scenario 4: Hamburger Menu Functionality
+**Given** the user is on the dashboard
+**When** the user taps the hamburger icon
+**Then** the settings drawer should:
+  - Slide in from left
+  - Cover 80% of screen width
+  - Display menu items: Settings, Layouts, Alarms, Connection, About
+  - Show theme switcher toggle at bottom
+  - Allow closure via: swipe left, tap backdrop, back button
+  - Animation duration 300ms ease-out
+
+**Test Method:** Manual interaction testing + performance profiling
+**Pass Criteria:**
+  - Drawer opens smoothly without jank
+  - All menu items functional
+  - Theme switcher works
+  - All closure methods work
+  - Animation maintains 60 FPS
+
+---
+
+### Scenario 5: Cross-Device Compatibility
+**Given** the app is installed on various devices
+**When** the user views the header
+**Then** it should adapt correctly to:
+  - iPhone SE (small screen, no notch)
+  - iPhone 14 Pro (notch)
+  - iPhone 14 Pro Max (large notch)
+  - iPad Air (no notch, large screen)
+  - Samsung Galaxy S23 (hole-punch camera)
+  - Various Android tablets
+
+**Test Method:** Device lab testing + emulator verification
+**Pass Criteria:**
+  - Header elements never overlap notch/hole-punch
+  - Spacing adjusts for safe areas
+  - Title truncates gracefully on small screens
+  - Touch targets maintain 44×44pt minimum
+
+---
+
+### Scenario 6: Theme Integration
+**Given** the user switches between day/night/red-night modes
+**When** the theme changes
+**Then** the header should:
+  - Update background to theme.surface instantly
+  - Update text to theme.text
+  - Update border to theme.border
+  - Maintain LED colors (red/orange/green) - no theme override
+  - No visual artifacts or flashing
+
+**Test Method:** Theme switching automation + visual regression
+**Pass Criteria:**
+  - Theme switch completes in <300ms
+  - No hardcoded colors detected
+  - LED colors remain consistent across themes
+  - Visual regression tests pass
+
+---
+
+## Accessibility Requirements (WCAG 2.1 Level AA)
+
+### Visual
+- [ ] Connection LED has accessible label "Connection status: [state]"
+- [ ] Hamburger icon has label "Open settings menu"
+- [ ] Toast messages announced by screen reader
+- [ ] Minimum touch targets: 44×44pt (hamburger, LED)
+- [ ] Color contrast: LED colors meet 3:1 against background
+
+### Interaction
+- [ ] All interactive elements reachable via keyboard (tablet/desktop)
+- [ ] Focus indicators visible on hamburger and LED
+- [ ] Swipe gestures have alternative (tap outside to dismiss)
+- [ ] Toast auto-dismiss doesn't trap focus
+
+### Content
+- [ ] Screen reader announces toast message content
+- [ ] Screen reader announces connection state changes
+- [ ] Menu items have clear labels
+
+---
+
+## Performance Criteria
+
+### Metrics
+- Header render time: <50ms
+- Drawer animation: 60 FPS (no dropped frames)
+- Theme switch: <300ms to update header
+- Toast display latency: <100ms from trigger
+- LED color change: <50ms
+
+### Profiling Requirements
+- React DevTools Profiler: No excessive re-renders
+- Chrome DevTools: No layout thrashing
+- Memory: No memory leaks from toast queue
+
+---
+
+## Non-Functional Requirements
+
+### NFR-UX-2.9-1: Responsiveness
+**Requirement:** Header adapts to all screen sizes without layout breaks
+**Test:** Visual regression suite on 10+ device profiles
+**Pass Criteria:** Zero layout breaks, safe area violations, or overlaps
+
+### NFR-UX-2.9-2: Accessibility
+**Requirement:** WCAG 2.1 Level AA compliance
+**Test:** Automated accessibility audit + manual screen reader testing
+**Pass Criteria:** Zero critical violations, all interactive elements accessible
+
+### NFR-UX-2.9-3: Performance
+**Requirement:** Header operations maintain 60 FPS
+**Test:** Performance profiling during drawer animation and toast display
+**Pass Criteria:** <5% dropped frames, <300ms latency
+
+### NFR-UX-2.9-4: Reliability
+**Requirement:** Toast queue handles rapid message triggering without crash
+**Test:** Stress test with 20 rapid toast messages
+**Pass Criteria:** All messages display in order, no crashes, queue drains properly
+
+---
+
+## Implementation Checklist
+
+### Files to Create
+- [ ] `src/components/HeaderBar.tsx` - Main header component
+- [ ] `src/components/ToastMessage.tsx` - Toast message system
+- [ ] `src/components/SettingsDrawer.tsx` - Hamburger menu drawer
+- [ ] `src/components/ConnectionLED.tsx` - Status LED component
+
+### Files to Update
+- [ ] `src/mobile/App.tsx` - Replace current header (lines 124-136)
+- [ ] Remove status text from line 128
+- [ ] Integrate new HeaderBar component
+
+### Theme Integration
+- [ ] All new components use `useTheme()` hook
+- [ ] Zero hardcoded colors
+- [ ] Verify with theme switching tests
+
+---
+
+## Manual Testing Checklist
+
+### Day-of-Implementation Testing
+- [ ] Header displays correctly on phone (portrait)
+- [ ] Header displays correctly on phone (landscape)
+- [ ] Header displays correctly on tablet
+- [ ] Hamburger menu opens and closes smoothly
+- [ ] All menu items functional
+- [ ] Connection LED shows correct colors
+- [ ] Tapping LED opens connection settings
+- [ ] Toast messages display and auto-dismiss
+- [ ] Swipe gesture dismisses toasts early
+- [ ] Screen reader announces connection status
+- [ ] Theme switching updates header instantly
+- [ ] No hardcoded colors detected (grep verification)
+
+### Cross-Device Testing
+- [ ] iPhone SE (small screen)
+- [ ] iPhone 14 Pro (notch)
+- [ ] iPad Air (tablet)
+- [ ] Samsung Galaxy S23 (Android hole-punch)
+- [ ] At least 2 additional Android devices
+
+### Edge Case Testing
+- [ ] Rapid theme switching (no visual artifacts)
+- [ ] Multiple toasts queued rapidly (no overlap)
+- [ ] Very long error messages (truncation graceful)
+- [ ] Drawer open during orientation change
+- [ ] Toast active during theme switch
+
+---
+
+## Acceptance Criteria Traceability
+
+### From Story 2.9
+1. ✅ Header height: 60pt → **Scenario 1**
+2. ✅ Left: Hamburger menu (44×44pt) → **Scenario 1, 4**
+3. ✅ Center: App title → **Scenario 1**
+4. ✅ Right: LED only (no text) → **Scenario 1, 2**
+5. ✅ Background: theme.surface → **Scenario 6**
+6. ✅ LED colors: Red/Orange/Green → **Scenario 2**
+7. ✅ Pulsing animation (1s) → **Scenario 2**
+8. ✅ Tap LED → connection settings → **Scenario 2**
+9. ✅ Accessible label → **Scenario 2, Accessibility**
+10. ✅ Toast overlays title → **Scenario 3**
+11. ✅ Error: Red bg, white text, 5s → **Scenario 3**
+12. ✅ Warning: Orange bg, dark text, 5s → **Scenario 3**
+13. ✅ Success: Green bg, white text, 3s → **Scenario 3**
+14. ✅ Swipe up dismisses → **Scenario 3**
+15. ✅ Drawer from left (80% width) → **Scenario 4**
+16. ✅ Menu items listed → **Scenario 4**
+17. ✅ Theme switcher at bottom → **Scenario 4**
+18. ✅ Close: swipe/tap/back → **Scenario 4**
+
+**Coverage:** 18/18 acceptance criteria mapped to test scenarios (100%)
+
+---
+
+## Gate Approval Criteria
+
+### PASS Requirements
+- [ ] All 6 test scenarios pass
+- [ ] Accessibility audit: 0 critical violations
+- [ ] Performance: All metrics within targets
+- [ ] Cross-device: Tested on 5+ devices, all pass
+- [ ] Theme integration: 0 hardcoded colors detected
+- [ ] Code review: Approved by UX Expert (Sally)
+
+### CONCERNS Allowable
+- Minor visual inconsistencies on edge case devices (document workaround)
+- Performance slightly below target on low-end devices (document limitation)
+- Non-critical accessibility improvements identified (track as tech debt)
+
+### FAIL Triggers
+- Header layout breaks on any mainstream device
+- Toast messages overlap or crash
+- Connection LED missing or non-functional
+- Hamburger menu doesn't open/close
+- Hardcoded colors detected
+- Critical accessibility violations
+
+---
+
+## Risk Mitigation Plan
+
+### Risk: Header breaks on iPhone notch
+**Mitigation:** Test early with SafeAreaView, adjust padding dynamically
+**Fallback:** Increase header height to 70pt if needed
+
+### Risk: Toast queue causes memory leak
+**Mitigation:** Implement max queue size (10), auto-clear after 60s
+**Fallback:** Single toast display (no queue) if leaks persist
+
+### Risk: Drawer animation jank on low-end devices
+**Mitigation:** Use React Native Reanimated, optimize render tree
+**Fallback:** Reduce animation duration to 200ms or instant (no animation)
+
+---
+
+## Post-Implementation Review
+
+### Success Metrics
+- Manual testing checklist: 100% pass rate
+- Automated test coverage: ≥80% for new components
+- Accessibility audit: 0 critical, <5 minor issues
+- Performance profiling: All targets met
+- Cross-device testing: 0 layout breaks
+
+### Documentation Requirements
+- [ ] Component usage docs added to README
+- [ ] Toast message API documented
+- [ ] Accessibility testing guide updated
+- [ ] Cross-device test matrix documented
+
+---
+
+**Gate Status:** PENDING (awaiting implementation)
+**Next Review:** After Story 2.9 implementation complete
+**Reviewer:** Quinn (QA Agent)

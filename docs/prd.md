@@ -6,11 +6,11 @@
 
 ### Goals
 
-- Launch a functional MVP of the Boating Instruments App within 7 months that transforms smartphones, tablets, and desktop devices into comprehensive marine instrument displays and autopilot controllers
+- Launch a functional MVP of the Boating Instruments App within 8-9 months that transforms smartphones, tablets, and desktop devices into comprehensive marine instrument displays and autopilot controllers
 - Enable solo/short-handed sailors to safely monitor all critical boat parameters and control autopilot from any location on the vessel without requiring additional hardware beyond existing WiFi bridges
 - Provide powerboaters with comprehensive engine and systems monitoring through customizable widget-based dashboards that adapt to any screen size
 - Achieve 99.5% crash-free session rate and 98%+ NMEA connection success rate across multiple WiFi bridge models, establishing reliability standards matching physical marine instruments
-- Acquire 50 beta users (Month 6-7) and 150 paying users by Month 12 at $79.99 one-time purchase pricing, generating $12,000 revenue
+- Acquire 50 beta users (Month 6-8) and 150 paying users by Month 12 at $79.99 one-time purchase pricing, generating $12,000 revenue
 - Establish credibility through 10+ documented successful Raymarine Evolution autopilot control sessions with video proof before public launch
 
 ### Background Context
@@ -327,7 +327,7 @@ This Requirements section defines the functional and non-functional capabilities
 
 **NFR6:** The system shall function fully offline (no internet connection required) using only local WiFi connection to NMEA bridge.
 
-**NFR7:** The system shall use a single codebase to deploy native apps on **iOS 15+ and Android 10+ for MVP launch (Month 7)**. Windows 10/11 and macOS 11+ (Intel and Apple Silicon) platform support shall be delivered in **Phase 1.5 (Month 8-9)** using React Native for Windows and React Native for macOS.
+**NFR7:** The system shall use a single codebase to deploy native apps on **iOS 15+ and Android 10+ for MVP launch (Month 8-9)**. Windows 10/11 and macOS 11+ (Intel and Apple Silicon) platform support shall be delivered in **Phase 1.5 (Month 10-12)** using React Native for Windows and React Native for macOS.
 
 **NFR8:** The system shall adapt UI responsively across device sizes from 5" phone screens to 27" desktop monitors.
 
@@ -413,7 +413,7 @@ Requirements are mapped to Project Brief checkpoint gates to support iterative d
 
 ---
 
-### **Month 7: Beta Testing + Launch Prep**
+### **Month 8-9: Beta Testing + Launch Prep**
 
 **Objective:** 50 beta users, achieve quality gates, prepare app store submissions.
 
@@ -445,7 +445,7 @@ Requirements are mapped to Project Brief checkpoint gates to support iterative d
 
 ---
 
-### **Must-Have for MVP Launch (Month 7):**
+### **Must-Have for MVP Launch (Month 8-9):**
 - All FR1-FR44 (with FR43 limited to parameter browsing, full custom composition deferred)
 - NFR1-NFR6, NFR8-NFR11, NFR13-NFR16, NFR18
 - NFR7 (iOS/Android only)
@@ -460,6 +460,7 @@ Requirements are mapped to Project Brief checkpoint gates to support iterative d
 - Autopilot session logging/export (descoped)
 - Trip logging to GPX (deferred to Phase 2 per Brief)
 - Voice commands (deferred to Phase 2 per Brief)
+- Accessibility features (ARIA labels, keyboard navigation, screen reader support) (deferred to Phase 2 to reduce MVP complexity)
 
 ---
 
@@ -666,7 +667,7 @@ The app must handle three NMEA data format variations per FR2:
 - **Android Beta:** Google Play Internal/Closed Testing (no public review required)
 - **Desktop (Phase 1.5):** Direct installation of unsigned builds for development
 
-**Public Launch (Month 7-8):**
+**Public Launch (Month 8-9):**
 - **iOS App Store** (requires App Store review, but only for public launch)
 - **Google Play Store** (requires Play Store review, but only for public launch)
 - **Microsoft Store** (Phase 1.5)
@@ -817,13 +818,15 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 
 **Goal:** Implement Raymarine Evolution autopilot control with bi-directional communication, enabling solo sailors to control autopilot from cockpit. Begin closed beta testing with early adopters to get real-world feedback.
 
-**Timeline:** Month 4-5 (Checkpoint Gate at Month 5)
+**Timeline:** Month 4-5 (Checkpoint Gate at Month 5)  
+**Prerequisites:** Epic 7.1 Core Multi-Protocol Simulator (hardware access mitigation)
 
 **Value Delivered:**
 - Solo sailors can control autopilot from phone/tablet without going below deck
 - P70 autopilot controller replacement functionality (key differentiator)
 - Safety features (5-second countdown for tack/gybe) demonstrate responsible design
 - Real-world beta feedback identifies issues before public launch
+- **Hardware Mitigation:** Development and testing possible without physical WiFi bridge access
 
 **Requirements Covered:**
 - FR17, FR18, FR19, FR20, FR21, FR37
@@ -888,7 +891,7 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 **Risk Mitigation:**
 - **If grouped alarm widget UX complex:** Ship with simple threshold alarms, defer grouped alarms to Phase 1.5
 - **If battery life falls short:** Optimize rendering pipeline, reduce update frequency
-- **If beta feedback reveals major issues:** Allocate first 2 weeks of Month 7 for critical fixes
+- **If beta feedback reveals major issues:** Allocate first 2 weeks of Month 8 for critical fixes
 
 ---
 
@@ -896,7 +899,7 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 
 **Goal:** Achieve all quality gates from Project Brief, fix beta-identified bugs, optimize performance, ensure App Store compliance, and launch publicly on iOS App Store and Google Play Store.
 
-**Timeline:** Month 7
+**Timeline:** Month 8-9
 
 **Value Delivered:**
 - 99.5% crash-free rate sustained (safety-critical standard)
@@ -939,7 +942,84 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 **Risk Mitigation:**
 - **If quality gates not met:** Extend beta period by 2-4 weeks, delay public launch
 - **If App Store rejection:** Address review feedback within 3-5 days, resubmit
-- **If critical bug discovered in Month 7:** Emergency fix, re-test with beta users before launch
+- **If critical bug discovered in Month 8-9:** Emergency fix, re-test with beta users before launch
+
+---
+
+### **Epic 6: UI Architecture Alignment & Framework Modernization**
+
+**Goal:** Transform the existing React Native implementation to align with the UI Architecture specification, improving maintainability, developer experience, and code quality through proper architectural patterns.
+
+**Timeline:** Month 6-7 (6-8 weeks parallel to Epic 4-5)
+
+**Value Delivered:**
+- Framework foundation enables rapid Epic 3 autopilot feature development
+- Atomic Design architecture reduces component duplication by 60%
+- Type safety improvements reduce marine safety-related runtime errors by 80%
+- Developer onboarding time reduced from 5 days to 2 days
+- Maintainable codebase supports long-term feature evolution
+
+**Requirements Covered:**
+- NFR17 (widget architecture extensibility), NFR18 (continuous test coverage)
+- Architecture alignment with UI Architecture specification
+- Technical debt resolution for framework foundation
+
+**Success Criteria:**
+- Expo Router 3.5+ file-based navigation replaces manual App.tsx routing
+- Atomic Design component architecture implemented with 95% type coverage
+- Multi-domain Zustand store architecture replacing single store
+- React Context ThemeProvider system enabling instant theme switching
+- Custom React hooks infrastructure reducing code duplication
+- Domain-organized service architecture replacing flat structure
+- Centralized TypeScript type system with 100% IntelliSense coverage
+- Project structure aligned with UI Architecture specification
+
+**Risk Mitigation:**
+- **If framework migration causes regressions:** Maintain parallel routing system until migration complete
+- **If atomic design complexity delays Epic 3:** Prioritize autopilot-related components first
+- **If type system overhaul breaks existing code:** Incremental migration with comprehensive testing
+
+**Strategic Context:** This epic addresses technical debt accumulated during Epic 2 implementation and provides the architectural foundation required for Epic 3's complex autopilot features. Essential for marine safety due to improved type safety and maintainability.
+
+---
+
+### **Epic 7: NMEA Bridge Simulator Testing Infrastructure**
+
+**Goal:** Develop comprehensive NMEA Bridge Simulator with multi-protocol support, standardized test scenario library, and BMAD agent integration to enable hardware-independent development and automated testing of marine instrument functionality and autopilot control systems.
+
+**Timeline:** Month 6-7 (Supporting Development & QA Infrastructure)
+
+**Value Delivered:**
+- Hardware mitigation enables Epic 3 autopilot development without physical WiFi bridge access
+- Standardized test scenarios provide comprehensive QA validation across all user stories
+- BMAD agent integration enables automated testing workflows and performance validation
+- Cross-platform testing infrastructure supports web, iOS, and Android development
+- Realistic marine data simulation for comprehensive feature testing
+
+**Requirements Covered:**
+- FR31 (Enhanced playbook mode with autopilot simulation)
+- NFR18 (continuous testing infrastructure)
+- Hardware dependency mitigation for development teams
+
+**Success Criteria:**
+- Enhanced Multi-Protocol NMEA Bridge Simulator operational (TCP port 2000, WebSocket port 8080)
+- NMEA 0183 and NMEA 2000 bridge mode support with bidirectional autopilot command simulation
+- Standardized test scenario library covering navigation, autopilot, safety alarms, and performance testing
+- YAML-based scenario configuration with algorithmic NMEA data generation
+- BMAD agent integration supporting Dev, QA, and Architect automated workflows
+- Cross-platform compatibility validation (web/iOS/Android identical behavior)
+- Performance targets: 50+ concurrent connections, 500+ NMEA sentences/second, <100MB RAM usage
+
+**Strategic Dependencies:**
+- **Blocks:** Epic 3 (Autopilot Control) - Story 3.1 requires simulator for development without hardware
+- **Supports:** Epic 4 (Alarms & Polish), Epic 5 (Launch Preparation) - QA scenarios for comprehensive testing
+
+**Risk Mitigation:**
+- **If simulator development delays Epic 3:** Prioritize autopilot command simulation features first
+- **If YAML scenario complexity causes delays:** Start with basic navigation scenarios, expand incrementally
+- **If BMAD agent integration complex:** Defer advanced automation features to post-launch
+
+**Strategic Context:** This epic provides critical testing infrastructure that removes hardware dependencies for development, enables comprehensive QA validation, and supports the BMAD agent workflow. Essential for scaling development and ensuring quality across all platforms.
 
 ---
 
@@ -951,8 +1031,10 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 | 2: Widgets & NMEA2000 | Month 2-3 | 18 | 4 | Complete instrument suite | Widget complexity | Reduce widget count if needed |
 | 3: Autopilot & Beta | Month 4-5 | 7 | 2 | Autopilot control (differentiator) | Raymarine EVO protocol | Pivot to instruments-only if fails |
 | 4: Alarms & Polish | Month 6 | 9 | 1 | Safety features + UX polish | Alarm reliability | Simplify grouped alarms if needed |
-| 5: Quality & Launch | Month 7 | 0 | 3 | Public release | Quality gates | Extend beta if quality gates not met |
-| **Total** | **7 months** | **42** | **15** | **Comprehensive MVP** | **Timeline pressure** | **Continuous testing + early de-risking** |
+| 5: Quality & Launch | Month 8-9 | 0 | 3 | Public release | Quality gates | Extend beta if quality gates not met |
+| 6: UI Architecture | Month 6-7 | 0 | 2 | Framework foundation + Technical debt | Architecture migration complexity | Incremental migration with testing |
+| 7: Simulator Infrastructure | Month 6-7 | 1 | 1 | Hardware mitigation + QA infrastructure | Simulator complexity | Prioritize autopilot features first |
+| **Total** | **8-9 months** | **43** | **18** | **Comprehensive MVP + Infrastructure** | **Timeline + Architecture complexity** | **Parallel execution + early de-risking** |
 
 ---
 
@@ -970,14 +1052,20 @@ Based on the phased delivery milestones and agile team perspective analysis, the
 
 5. **Epic 4: Alarms + UX polish in Month 6** - Complete feature set before public launch. Beta expands to 50 users for comprehensive feedback.
 
-6. **Epic 5: Quality gates + Launch in Month 7** - Focus solely on achieving quality standards and App Store compliance. No new features.
+6. **Epic 5: Quality gates + Launch in Month 8-9** - Focus solely on achieving quality standards and App Store compliance. No new features.
+
+7. **Epic 6: UI Architecture alignment (Month 6-7, parallel)** - Addresses technical debt accumulated during Epic 2 implementation. Framework foundation required for Epic 3's complex autopilot features. Runs parallel to Epic 4.
+
+8. **Epic 7: Simulator infrastructure (Month 6-7, parallel)** - Hardware mitigation enabling Epic 3 autopilot development without physical WiFi bridge access. QA infrastructure supporting comprehensive testing. Runs parallel to Epic 4.
 
 **Key Improvements Over Original:**
 - ✅ Autopilot risk de-risked 3 months earlier
 - ✅ Testing infrastructure built in Month 1 (not Month 3)
 - ✅ All 10 widgets delivered 2.5 months earlier
-- ✅ Beta testing starts Month 4 (not Month 7) - 3 months more feedback
+- ✅ Beta testing starts Month 4 (not Month 8-9) - 4+ months more feedback
 - ✅ Continuous testing from Epic 2 onward (not back-loaded to Epic 6)
+- ✅ Hardware dependencies removed via Epic 7 simulator infrastructure
+- ✅ Architecture foundation established via Epic 6 for marine safety requirements
 
 ---
 

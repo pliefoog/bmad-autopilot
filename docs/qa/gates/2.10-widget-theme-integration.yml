@@ -1,0 +1,66 @@
+schema: 1
+story: '2.10'
+story_title: 'Widget Theme Integration & Color Consistency'
+gate: CONCERNS
+status_reason: 'Partial theme implementation with architectural inconsistencies. WidgetCard.tsx contains 15+ hardcoded colors blocking unified theme switching.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-10-13T12:00:00Z'
+
+top_issues:
+  - severity: medium
+    category: architecture
+    description: 'WidgetCard.tsx contains all hardcoded colors specified for removal (#e3fbfbff, #020202ff, etc.)'
+    suggested_owner: dev
+    refs: ['src/widgets/WidgetCard.tsx:98-171']
+  - severity: medium
+    category: implementation
+    description: 'Required widgetStyles.ts standardized stylesheet does not exist'
+    suggested_owner: dev
+    refs: ['src/styles/widgetStyles.ts (missing)']
+  - severity: low
+    category: consistency
+    description: 'Status dot system present in WidgetCard header contradicts expand/collapse design'
+    suggested_owner: dev
+    refs: ['src/widgets/WidgetCard.tsx:72']
+
+waiver: { active: false }
+
+quality_score: 60
+expires: '2025-10-27T12:00:00Z'
+
+evidence:
+  tests_reviewed: 1
+  risks_identified: 3
+  trace:
+    ac_covered: [1]
+    ac_gaps: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Theme changes are presentation-layer only with no security implications'
+  performance:
+    status: CONCERNS
+    notes: 'Mixed theme implementation may cause partial updates during theme switching'
+  reliability:
+    status: CONCERNS
+    notes: 'Inconsistent theme usage could cause visual artifacts during mode changes'
+  maintainability:
+    status: CONCERNS
+    notes: 'Hardcoded colors in core WidgetCard component affects maintenance of all widgets'
+
+recommendations:
+  immediate:
+    - action: 'Replace all hardcoded colors in WidgetCard.tsx with theme properties'
+      refs: ['src/widgets/WidgetCard.tsx:29-57', 'src/widgets/WidgetCard.tsx:98-171']
+    - action: 'Create widgetStyles.ts with standardized StyleSheet definitions'
+      refs: ['src/styles/widgetStyles.ts']
+    - action: 'Remove status dot system from WidgetCard header, add chevron for expand/collapse'
+      refs: ['src/widgets/WidgetCard.tsx:72']
+    - action: 'Add theme switching tests covering all widgets'
+      refs: ['__tests__/themeIntegration.test.tsx']
+  future:
+    - action: 'Add memoization to widgetStyles creation for performance optimization'
+      refs: ['src/styles/widgetStyles.ts']
+    - action: 'Create visual regression tests for theme switching across all modes'
+      refs: ['__tests__/visual/theme-switching.test.tsx']

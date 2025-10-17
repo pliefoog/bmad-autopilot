@@ -3,7 +3,10 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "jsx": "react-native",
     "moduleResolution": "node",
     "allowJs": false,
@@ -14,16 +17,39 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["jest", "react-native"],
+    "types": [
+      "jest",
+      "react-native"
+    ],
     "baseUrl": "./src",
     "paths": {
-      "@core/*": ["core/*"],
-      "@mobile/*": ["mobile/*"],
-      "@desktop/*": ["desktop/*"],
-      "@widgets/*": ["widgets/*"],
-      "@services/*": ["services/*"]
+      "@core/*": [
+        "core/*"
+      ],
+      "@mobile/*": [
+        "mobile/*"
+      ],
+      "@desktop/*": [
+        "desktop/*"
+      ],
+      "@widgets/*": [
+        "widgets/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ]
     }
   },
-  "include": ["src/**/*", "__tests__/**/*"],
-  "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js"]
+  "include": [
+    "src/**/*",
+    "__tests__/**/*",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js"
+  ]
 }

@@ -11,13 +11,15 @@
 1. **NMEA 0183 Specifications:** Complete format documentation obtained for all 12 required sentences (DBT, DPT, VHW, VTG, MWV, MWD, GGA, RMC, GLL, HDG, HDM, HDT)
 2. **NMEA 2000 PGNs:** Identified critical PGNs for engine monitoring (127488, 127489), battery voltage (127508), and standard autopilot control (127237)
 3. **Raymarine Proprietary Commands:** Raymarine Evolution autopilots use **proprietary PGN 126208** for heading control in addition to standard NMEA 2000
-4. **WiFi Bridge Recommendation:** **Yacht Devices YDWG-02** or **Actisense W2K-1** both support bidirectional NMEA 2000 with confirmed Raymarine autopilot support
+4. **CRITICAL WiFi Bridge Mode Behavior:** Bridge operating mode determines transport format only - autopilot control always requires NMEA 2000 PGNs (embedded in $PCDIN for NMEA 0183 bridge mode)
+5. **WiFi Bridge Recommendation:** **Yacht Devices YDWG-02** or **Actisense W2K-1** both support bidirectional NMEA 2000 with confirmed Raymarine autopilot support
 
 ### Critical Implications
 
 - **Custom parser required:** Existing NMEA libraries lack Raymarine proprietary PGN support
+- **Bridge mode compatibility:** Must support both $PCDIN-encapsulated (NMEA 0183 bridge mode) and native PGN (NMEA 2000 bridge mode) autopilot commands
 - **Reverse engineering necessary:** PGN 126208 structure documented via open-source projects (canboat, SignalK)
-- **WiFi bridge choice matters:** Not all bridges support bidirectional NMEA 2000; must verify autopilot command capability
+- **WiFi bridge choice matters:** Not all bridges support bidirectional NMEA 2000; must verify autopilot command capability and $PCDIN encapsulation support
 - **Third-party control flag:** Raymarine autopilots must be configured to accept "Third Party" control commands
 
 ### Recommended Actions
@@ -548,6 +550,60 @@ This means:
 
 ---
 
+### $PCDIN Encapsulation for NMEA 0183 Bridge Mode
+
+**Critical for NMEA 0183 Bridge Mode Autopilot Control:**
+
+When a WiFi bridge operates in NMEA 0183 mode, autopilot control commands (which are always NMEA 2000 PGNs) must be embedded in **$PCDIN sentences**.
+
+**$PCDIN Sentence Format:**
+```
+$PCDIN,<PGN_hex>,<data_bytes>*<checksum>
+```
+
+**Field Structure:**
+- **$PCDIN** - Sentence identifier (Proprietary CAN Data INput)
+- **PGN_hex** - NMEA 2000 PGN in hexadecimal (e.g., "01F112" for PGN 126208)
+- **data_bytes** - PGN data payload in comma-separated hex bytes
+- **checksum** - Standard NMEA 0183 checksum
+
+**Example - Raymarine Heading Command (270°) in $PCDIN:**
+```
+$PCDIN,01F112,B3,01,00,00,03,FF,FF,FF,FF,FF,FF,68,12,00*3E
+│      │      └─────────── PGN 126208 data payload ─────────────┘
+│      └─ PGN 126208 in hex (0x1F112)
+└─ $PCDIN sentence header
+```
+
+**Parsing $PCDIN in Code:**
+```typescript
+function parsePCDIN(sentence: string): NMEA2000PGN | null {
+  const fields = sentence.split(',');
+  if (fields[0] !== '$PCDIN') return null;
+  
+  const pgn = parseInt(fields[1], 16);
+  const dataBytes = fields.slice(2, -1).map(hex => parseInt(hex, 16));
+  
+  return { pgn, data: Buffer.from(dataBytes) };
+}
+
+function generatePCDIN(pgn: number, data: Buffer): string {
+  const pgnHex = pgn.toString(16).toUpperCase().padStart(6, '0');
+  const dataHex = Array.from(data).map(b => b.toString(16).toUpperCase().padStart(2, '0'));
+  
+  const sentence = `$PCDIN,${pgnHex},${dataHex.join(',')}`;
+  const checksum = calculateNMEAChecksum(sentence);
+  return `${sentence}*${checksum}`;
+}
+```
+
+**Bridge Mode Detection Strategy:**
+1. **Monitor incoming data format:** Native PGNs = NMEA 2000 mode, $PCDIN presence = NMEA 0183 mode
+2. **User configuration:** Allow manual bridge mode selection in app settings
+3. **Bridge interrogation:** Some bridges respond to specific query commands with mode information
+
+---
+
 ### PGN 126208 - Raymarine Proprietary Heading Command
 
 **Source:** Reverse-engineered via canboat, SignalK, and OpenCPN projects
@@ -661,6 +717,35 @@ Body: { "value": 4.71239 } // 270° in radians
 
 ## Section 4: WiFi Bridge Comparison & Recommendations
 
+### **CRITICAL: WiFi Bridge Operating Mode Understanding**
+
+**Essential Marine Network Architecture:**
+
+**Physical Network Reality:**
+- **All modern autopilots** (Raymarine Evolution, B&G, Garmin, etc.) are connected to **NMEA 2000/STng physical bus** on the boat
+- **WiFi Bridge Operating Mode** determines **message transport format**, not the underlying autopilot protocol requirements
+
+**Bridge Operating Modes:**
+
+#### **NMEA 0183 Bridge Mode**
+- **Instrument Data:** NMEA 2000 PGNs automatically mapped to equivalent NMEA 0183 sentences
+  - Example: Engine temperature PGN 127489 → `$IIMTA,35.5,C*hh` (engine temperature sentence)
+  - Example: Battery voltage PGN 127508 → `$IIXDR,V,13.2,V,BATT*hh` (transducer data sentence)
+- **Autopilot Control:** NMEA 2000 autopilot PGNs **embedded in $PCDIN sentences**
+  - Example: `$PCDIN,01F112,00,00,FF,00,00,00,00,FF*59` (contains Raymarine heading command PGN)
+  - **$PCDIN Format:** `$PCDIN,<PGN_hex>,<data_bytes>*<checksum>`
+
+#### **NMEA 2000 Bridge Mode**
+- **All Data:** Native NMEA 2000 PGNs transmitted directly
+- **Autopilot Control:** Direct NMEA 2000 PGN transmission (no encapsulation needed)
+- **Format:** Binary or ASCII-hex encoded PGN messages
+
+**Application Implications:**
+- **Parser Requirements:** Must handle both $PCDIN encapsulated and native PGN formats
+- **Command Generation:** Must support both bridge modes for autopilot control
+- **Bridge Detection:** App should detect bridge mode or allow user configuration
+- **Testing Requirements:** Simulator must support both bridge mode scenarios
+
 ### Comparison Matrix
 
 | Feature | Yacht Devices YDWG-02 | Actisense W2K-1 | Digital Yacht WLN10 |
@@ -694,7 +779,7 @@ Body: { "value": 4.71239 } // 270° in radians
 **Configuration Required:**
 1. Enable "Third Party" autopilot control in gateway settings
 2. Set Raymarine autopilot ACU to accept third-party commands (CONTROL/BANK = "Third Party")
-3. Configure TCP port (default 10110)
+3. Configure TCP port (default 2000 - established project standard)
 
 **Weaknesses:**
 - Slightly less range than enterprise options

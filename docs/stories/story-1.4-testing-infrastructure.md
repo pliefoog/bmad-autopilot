@@ -46,6 +46,8 @@
 - Performance monitoring utilities
 
 ### Architecture Decisions
+**Technical Reference:** See [System Architecture - Testing Strategy](../architecture/testing-strategy.md) for comprehensive testing patterns and mock service architectures.
+
 - Abstract data source interface (live vs playback vs synthetic)
 - File format: Standard NMEA log files with timestamps
 - Performance monitoring integrated with development tools

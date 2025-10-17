@@ -9,14 +9,26 @@ prd:
   epicFilePattern: epic-{n}*.md
 architecture:
   architectureFile: docs/architecture.md
-  architectureVersion: v4
+  architectureVersion: v2
   architectureSharded: true
   architectureShardedLocation: docs/architecture
+  scope: "Core system architecture, NMEA services, deployment, data models"
+ui:
+  uiArchitectureFile: docs/ui-architecture.md
+  uiArchitectureVersion: v2.3
+  uiArchitectureSharded: true
+  uiArchitectureShardedLocation: docs/ui-architecture
+  scope: "Frontend architecture authority - React Native, components, routing, state, styling"
+  authority: "Definitive source for all frontend technology decisions"
 customTechnicalDocuments: null
 devLoadAlwaysFiles:
   - docs/architecture/coding-standards.md
   - docs/architecture/tech-stack.md
   - docs/architecture/source-tree.md
+  - docs/ui-architecture/index.md
+  - docs/ui-architecture/component-standards.md
+  - docs/ui-architecture/state-management.md
+  - docs/ui-architecture/framework-selection.md
 devDebugLog: .ai/debug-log.md
 devStoryLocation: docs/stories
 slashPrefix: BMad

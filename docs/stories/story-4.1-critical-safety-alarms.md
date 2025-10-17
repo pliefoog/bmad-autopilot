@@ -78,6 +78,7 @@
 ## Dev Notes
 
 ### Technical Implementation
+**Architecture Reference:** See [System Architecture - Security and Performance](../architecture/security-and-performance.md) for safety-critical systems patterns and marine alarm architecture guidelines.
 - **Priority System:** Critical alarms override all other UI elements
 - **Audio System:** Platform-specific audio implementation for reliability (iOS AVAudioSession, Android AudioManager)
 - **Persistence:** Alarms survive app backgrounding and device sleep
