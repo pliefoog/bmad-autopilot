@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Brightness from 'expo-brightness';
+// Theme compliance validation moved to development-only environment
 
 // Theme types for marine display modes
 export type ThemeMode = 'day' | 'night' | 'red-night' | 'auto';
@@ -8,8 +10,9 @@ export type ThemeMode = 'day' | 'night' | 'red-night' | 'auto';
 export interface ThemeColors {
   primary: string;
   secondary: string;
-  background: string;
-  surface: string;
+  background: string;      // Widget headers
+  surface: string;         // Widget content
+  appBackground: string;   // Main dashboard background
   text: string;
   textSecondary: string;
   accent: string;
@@ -18,14 +21,20 @@ export interface ThemeColors {
   success: string;
   border: string;
   shadow: string;
+  // Icon-specific colors for theme compliance
+  iconPrimary: string;     // Primary icon color (theme-aware)
+  iconSecondary: string;   // Secondary icon color (muted)
+  iconAccent: string;      // Accent icon color for important elements
+  iconDisabled: string;    // Disabled/inactive icon color
 }
 
 // Day theme - bright, high contrast for daylight use
 const dayTheme: ThemeColors = {
   primary: '#0284C7',      // Sky blue
   secondary: '#0891B2',    // Cyan
-  background: '#F8FAFC',   // Light gray
-  surface: '#FFFFFF',      // White
+  background: '#D1D5DB',   // Medium gray for widget headers (darker than before)
+  surface: '#FFFFFF',      // White for widget content
+  appBackground: '#F3F4F6', // Very light gray for dashboard background
   text: '#0F172A',         // Dark slate
   textSecondary: '#475569', // Medium slate
   accent: '#059669',       // Emerald
@@ -33,7 +42,12 @@ const dayTheme: ThemeColors = {
   error: '#DC2626',        // Red
   success: '#059669',      // Green
   border: '#CBD5E1',       // Light slate
-  shadow: '#00000020'      // Subtle shadow
+  shadow: '#00000020',     // Subtle shadow
+  // Icon colors for day theme
+  iconPrimary: '#0F172A',  // Dark text for visibility
+  iconSecondary: '#64748B', // Medium gray for secondary icons
+  iconAccent: '#0284C7',   // Primary blue for accent icons
+  iconDisabled: '#CBD5E1'  // Light gray for disabled state
 };
 
 // Night theme - dark background, reduced brightness for night use
@@ -42,6 +56,7 @@ const nightTheme: ThemeColors = {
   secondary: '#22D3EE',    // Cyan
   background: '#0F172A',   // Dark slate
   surface: '#1E293B',      // Darker slate
+  appBackground: '#000000', // Pure black for dashboard background
   text: '#F1F5F9',         // Light text
   textSecondary: '#94A3B8', // Medium gray
   accent: '#34D399',       // Light green
@@ -49,23 +64,34 @@ const nightTheme: ThemeColors = {
   error: '#F87171',        // Light red
   success: '#34D399',      // Light green
   border: '#334155',       // Dark border
-  shadow: '#00000040'      // Darker shadow
+  shadow: '#00000040',     // Darker shadow
+  // Icon colors for night theme
+  iconPrimary: '#F1F5F9',  // Light text for visibility on dark background
+  iconSecondary: '#94A3B8', // Medium gray for secondary icons
+  iconAccent: '#38BDF8',   // Light blue for accent icons
+  iconDisabled: '#64748B'  // Dark gray for disabled state
 };
 
 // Red-night theme - red/black only for night vision preservation
 const redNightTheme: ThemeColors = {
-  primary: '#DC2626',      // Red
-  secondary: '#B91C1C',    // Dark red
+  primary: '#FF0000',      // Pure red
+  secondary: '#CC0000',    // Dark red
   background: '#000000',   // Pure black
-  surface: '#1F1F1F',      // Very dark gray
-  text: '#FCA5A5',         // Light red
-  textSecondary: '#EF4444', // Medium red
-  accent: '#F87171',       // Light red accent
-  warning: '#DC2626',      // Red warning
-  error: '#B91C1C',        // Dark red error
-  success: '#DC2626',      // Red success (no green)
-  border: '#404040',       // Dark gray border
-  shadow: '#00000060'      // Black shadow
+  surface: '#330000',      // Very dark red
+  appBackground: '#000000', // Pure black for dashboard background
+  text: '#FF0000',         // Pure red
+  textSecondary: '#CC0000', // Dark red
+  accent: '#FF0000',       // Pure red accent
+  warning: '#FF0000',      // Red warning
+  error: '#CC0000',        // Dark red error
+  success: '#FF0000',      // Red success (no green)
+  border: '#660000',       // Dark red border
+  shadow: '#00000060',     // Black shadow
+  // Icon colors for red-night theme (marine night vision compliance)
+  iconPrimary: '#FF0000',  // Pure red for primary icons
+  iconSecondary: '#CC0000', // Dark red for secondary icons
+  iconAccent: '#FF0000',   // Red accent for important icons
+  iconDisabled: '#330000'  // Dark red for disabled icons
 };
 
 const themes = {
@@ -74,18 +100,39 @@ const themes = {
   'red-night': redNightTheme
 };
 
+// Theme compliance validation disabled for runtime performance
+// Validation should only be done during theme development with VALIDATE_THEMES=true
+
 export interface ThemeStore {
   mode: ThemeMode;
   colors: ThemeColors;
   brightness: number;
   autoMode: boolean;
+  nativeBrightnessControl: boolean;
   setMode: (mode: ThemeMode) => void;
   setBrightness: (brightness: number) => void;
   toggleAutoMode: () => void;
   applyAutoMode: () => void;
+  toggleNativeBrightnessControl: () => void;
+  applyNativeBrightness: () => void;
 }
 
 const getAutoThemeMode = (): Exclude<ThemeMode, 'auto'> => {
+  try {
+    // Try to get GPS position from NMEA store for solar-based calculation
+    const nmeaStore = require('./nmeaStore').useNmeaStore;
+    const gpsPosition = nmeaStore.getState().nmeaData.gpsPosition;
+    
+    if (gpsPosition && gpsPosition.lat && gpsPosition.lon) {
+      // Use GPS-based solar calculation
+      const { getSolarBasedThemeMode } = require('../utils/solarCalculator');
+      return getSolarBasedThemeMode(gpsPosition.lat, gpsPosition.lon);
+    }
+  } catch (error) {
+    console.warn('GPS-based theme calculation failed:', error);
+  }
+  
+  // Fallback to time-based mode if GPS unavailable
   const hour = new Date().getHours();
   // Auto mode: day 6AM-8PM, night 8PM-6AM
   return (hour >= 6 && hour < 20) ? 'day' : 'night';
@@ -95,24 +142,61 @@ const getEffectiveMode = (mode: ThemeMode): Exclude<ThemeMode, 'auto'> => {
   return mode === 'auto' ? getAutoThemeMode() : mode;
 };
 
+// Native brightness control functions
+const applyNativeBrightness = async (brightness: number, mode: ThemeMode) => {
+  try {
+    const { status } = await Brightness.requestPermissionsAsync();
+    if (status === 'granted') {
+      // Apply different brightness levels based on marine theme mode
+      let adjustedBrightness = brightness;
+      if (mode === 'night') {
+        adjustedBrightness = Math.min(brightness * 0.4, 0.4); // Max 40% for night mode
+      } else if (mode === 'red-night') {
+        adjustedBrightness = Math.min(brightness * 0.2, 0.2); // Max 20% for red-night mode
+      }
+      
+      await Brightness.setBrightnessAsync(adjustedBrightness);
+    }
+  } catch (error) {
+    console.warn('Native brightness control failed:', error);
+  }
+};
+
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
       mode: 'day',
       brightness: 1.0,
       autoMode: false,
+      nativeBrightnessControl: false,
       colors: dayTheme,
 
       setMode: (mode: ThemeMode) => {
         const effectiveMode = getEffectiveMode(mode);
+        const { nativeBrightnessControl, brightness } = get();
+        
         set({
           mode,
           colors: themes[effectiveMode]
         });
+
+        // Apply native brightness if enabled
+        if (nativeBrightnessControl) {
+          applyNativeBrightness(brightness, effectiveMode);
+        }
       },
 
       setBrightness: (brightness: number) => {
-        set({ brightness: Math.max(0.1, Math.min(1.0, brightness)) });
+        const newBrightness = Math.max(0.1, Math.min(1.0, brightness));
+        const { nativeBrightnessControl, mode } = get();
+        
+        set({ brightness: newBrightness });
+
+        // Apply native brightness if enabled
+        if (nativeBrightnessControl) {
+          const effectiveMode = getEffectiveMode(mode);
+          applyNativeBrightness(newBrightness, effectiveMode);
+        }
       },
 
       toggleAutoMode: () => {
@@ -129,6 +213,27 @@ export const useThemeStore = create<ThemeStore>()(
         if (mode === 'auto') {
           setMode('auto'); // Trigger recalculation
         }
+      },
+
+      toggleNativeBrightnessControl: () => {
+        const { nativeBrightnessControl, brightness, mode } = get();
+        const newNativeBrightnessControl = !nativeBrightnessControl;
+        
+        set({ nativeBrightnessControl: newNativeBrightnessControl });
+
+        // Apply current brightness if enabling native control
+        if (newNativeBrightnessControl) {
+          const effectiveMode = getEffectiveMode(mode);
+          applyNativeBrightness(brightness, effectiveMode);
+        }
+      },
+
+      applyNativeBrightness: () => {
+        const { nativeBrightnessControl, brightness, mode } = get();
+        if (nativeBrightnessControl) {
+          const effectiveMode = getEffectiveMode(mode);
+          applyNativeBrightness(brightness, effectiveMode);
+        }
       }
     }),
     {
@@ -137,7 +242,8 @@ export const useThemeStore = create<ThemeStore>()(
       partialize: (state) => ({
         mode: state.mode,
         brightness: state.brightness,
-        autoMode: state.autoMode
+        autoMode: state.autoMode,
+        nativeBrightnessControl: state.nativeBrightnessControl
       })
     }
   )
