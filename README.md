@@ -73,8 +73,9 @@ Or launch the app and skip the setup wizard to enter **Demo Mode** with syntheti
 ### Development
 
 - **[Testing Strategy](TESTING-STRATEGY.md)** - Comprehensive testing approach and coverage goals
-- **[Architecture Documentation](docs/architecture.md)** - Full-stack technical architecture
+- **[Architecture Documentation](docs/architecture.md)** - Full-stack technical architecture including Epic 6 foundation updates
 - **[Product Requirements](docs/prd.md)** - Complete PRD with epic breakdown
+- **[Testing Infrastructure](boatingInstrumentsApp/src/testing/README.md)** - Epic 6 enhanced testing framework and utilities
 
 ### Testing
 
@@ -215,6 +216,13 @@ bmad-autopilot/
 - Playback mode for testing
 - Comprehensive test suite (70%+ coverage)
 - Theme system (Day/Night/Red-Night)
+- **Epic 6 Foundation (October 2025):**
+  - Domain-separated service architecture
+  - Enhanced custom hooks with performance monitoring
+  - Centralized TypeScript type system
+  - Comprehensive testing infrastructure with marine-specific utilities
+  - Error boundary system for graceful failure handling
+  - React.memo optimization patterns for widget rendering
 
 ### 🚧 In Progress (Epic 3 - Month 4-5)
 - Raymarine Evolution autopilot control
@@ -247,6 +255,7 @@ bmad-autopilot/
 - Trip logging to GPX
 - Cloud sync (optional)
 - Additional autopilot system support
+- Accessibility features (ARIA labels, keyboard navigation, screen reader support)
 
 ---
 

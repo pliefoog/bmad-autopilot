@@ -38,6 +38,10 @@ This document outlines the comprehensive testing strategy for the Boating Instru
 
 Test individual components, functions, and modules in isolation.
 
+**Mock Strategy:** All native dependencies mocked (no WebSocket bridge required)
+**Speed:** Fast execution with complete isolation
+**Scope:** Component logic, state management, utility functions
+
 #### Widget Tests
 
 **Coverage Target:** 75%+
@@ -235,9 +239,22 @@ Test multiple components working together and realistic workflows.
 
 **Coverage Target:** Integration tests cover ~15% of codebase
 
+**WebSocket Bridge Integration:** Integration tests use the WebSocket bridge proxy to provide real NMEA data streams for comprehensive testing.
+
+**Bridge Setup for Integration Tests:**
+```bash
+# Start bridge with deterministic test data
+node server/nmea-websocket-bridge.js --file __tests__/fixtures/integration-test.nmea
+
+# Run integration tests with real NMEA parsing
+npm run test:integration
+```
+
 **Files:**
 ```
 __tests__/integration/
+├── webSocketBridge.test.ts         # Bridge proxy connection testing
+├── nmeaDataFlow.test.ts            # End-to-end NMEA → UI data flow
 ├── connectionResilience.test.ts    # Connection failure recovery
 ├── malformedStress.test.ts         # Malformed NMEA handling
 ├── playbackUi.test.tsx             # Playback mode UI integration
@@ -478,9 +495,61 @@ Real boat integration testing with physical hardware.
 
 ### Local Development
 
-**Run before every commit:**
+**Unit Tests (Fast - No Bridge Required):**
 ```bash
-npm test
+npm test                    # All unit tests with mocks
+npm test -- --watch        # Watch mode for active development
+```
+
+**Integration Tests (Requires NMEA Bridge Simulator):**
+```bash
+# Terminal 1: Start comprehensive NMEA Bridge Simulator
+node server/nmea-bridge-simulator.js --scenario basic-navigation --api-port 9090
+
+# Terminal 2: Run integration tests
+npm run test:integration
+```
+
+**Cross-Platform Testing:**
+```bash
+# Web browser testing
+node server/nmea-bridge-simulator.js --scenario autopilot-engagement
+npm run web
+
+# iOS/Android native testing (same simulator, different protocol)
+node server/nmea-bridge-simulator.js --scenario shallow-water-alarm  
+npm run ios    # Connects via TCP to same simulator
+npm run android # Connects via TCP to same simulator
+```
+
+**Manual Testing with NMEA Bridge Simulator:**
+```bash
+# Option 1: Use standardized test scenarios
+node server/nmea-bridge-simulator.js --scenario coastal-sailing
+npm run web
+
+# Option 2: Use recorded real-world data  
+node server/nmea-bridge-simulator.js --scenario recorded-regatta
+npm run web
+
+# Option 3: Connect to real WiFi bridge (legacy mode)
+node server/nmea-websocket-bridge.js 192.168.1.10 10110  
+npm run web
+```
+
+**Scenario-Based Testing:**
+```bash
+# Autopilot testing
+node server/nmea-bridge-simulator.js --scenario autopilot-engagement
+npm run web  # Test autopilot UI behavior
+
+# Alarm testing
+node server/nmea-bridge-simulator.js --scenario shallow-water-alarm
+npm run ios  # Test native alarm notifications
+
+# Performance testing  
+node server/nmea-bridge-simulator.js --scenario high-frequency-data
+npm run test:performance  # Validate 500+ msg/sec handling
 ```
 
 **Check coverage:**
@@ -495,19 +564,29 @@ npm test -- --coverage
 **Fast CI Checks (PR validation):**
 ```bash
 npm run test:ci-fast
-# Runs critical tests in <5 minutes
-# - Playback tests
-# - Mode toggle tests
-# - Service tests
+# Runs critical unit tests in <5 minutes
+# - Service layer tests
+# - State management tests  
+# - Widget component tests
+# No bridge proxy required (uses mocks)
 ```
 
 **Full CI Suite (pre-merge):**
 ```bash
-npm test
-npm run test:integration
-# Runs all tests
+npm test                              # Unit tests
+npm run test:integration:ci           # Integration tests with embedded bridge
+# Runs all tests including bridge proxy integration
 # Time: 10-15 minutes
 ```
+
+**CI NMEA Bridge Simulator Integration:**
+- CI environment includes comprehensive NMEA Bridge Simulator
+- Standardized test scenarios provide consistent test conditions
+- Multi-protocol support (TCP/UDP/WebSocket) for all platform testing
+- Performance and stress testing scenarios for load validation
+- No external dependencies on physical marine hardware
+
+**Simulator Architecture:** See [docs/nmea-bridge-simulator-architecture.md](docs/nmea-bridge-simulator-architecture.md) for complete simulator design, test scenario library, and BMAD agent integration patterns.
 
 ### Pre-Release Testing
 

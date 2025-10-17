@@ -10,6 +10,137 @@
 				"$tsc"
 			],
 			"group": "test"
+		},
+		{
+			"label": "Start NMEA Bridge Simulator",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Stop NMEA Bridge Simulator",
+			"type": "shell",
+			"command": "pkill",
+			"args": [
+				"-f",
+				"nmea-bridge-simulator.js"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Web Dev Server",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"@expo/cli",
+				"start",
+				"--web",
+				"--port",
+				"8082",
+				"--clear"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"env": {
+					"EXPO_ROUTER_APP_ROOT": "./app",
+					"EXPO_PLATFORM": "web"
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Full Web Development Stack",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start NMEA Bridge Simulator",
+				"Start Web Dev Server"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge Simulator (Recording)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--recording",
+				"server/recordings/nmea_recording_20250720_003925.json",
+				"--loop"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Stop Web Dev Server",
+			"type": "shell",
+			"command": "pkill",
+			"args": [
+				"-f",
+				"@expo/cli start --web"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			}
 		}
 	]
 }

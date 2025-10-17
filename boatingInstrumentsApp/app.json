@@ -2,10 +2,26 @@
   "expo": {
     "name": "Boating Instruments App",
     "slug": "boating-instruments-app",
+    "scheme": "boating-instruments",
     "version": "0.0.1",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "web": {
       "bundler": "metro"
-    }
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "root": "./app"
+        }
+      ]
+    ]
   }
 }

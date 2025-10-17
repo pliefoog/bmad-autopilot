@@ -20,6 +20,121 @@
 				"$tsc"
 			],
 			"group": "test"
+		},
+		{
+			"label": "Start NMEA Bridge Simulator",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "Start NMEA Bridge Simulator with Recording",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--recording",
+				"${workspaceFolder}/vendor/test-scenarios/recordings/nmea_recording_20250720_003925.json",
+				"--speed",
+				"5",
+				"--loop",
+				"true",
+				"--playback-mode",
+				"global"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Start NMEA Bridge Simulator with Per-Client Recording",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--recording",
+				"${workspaceFolder}/vendor/test-scenarios/recordings/nmea_recording_20250720_003925.json",
+				"--speed",
+				"1",
+				"--loop",
+				"true",
+				"--playback-mode",
+				"per-client"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Start Web Development Server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"web"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Start Full Web Development Stack",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start NMEA Bridge Simulator with Recording",
+				"Start Web Development Server"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			}
 		}
 	]
 }

@@ -1,24 +1,60 @@
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 /**
- * Metro configuration
+ * Metro configuration for Expo Router and path aliases
  * https://reactnative.dev/docs/metro
+ * https://docs.expo.dev/router/installation/
  *
- * @type {import('@react-native/metro-config').MetroConfig}
+ * @type {import('expo/metro-config').MetroConfig}
  */
-const config = {
-  resolver: {
-    extraNodeModules: {
-      '@': path.resolve(__dirname, 'src'),
-      '@core': path.resolve(__dirname, 'src/core'),
-      '@mobile': path.resolve(__dirname, 'src/mobile'),
-      '@desktop': path.resolve(__dirname, 'src/desktop'),
-      '@widgets': path.resolve(__dirname, 'src/widgets'),
-      '@services': path.resolve(__dirname, 'src/services'),
-      '@utils': path.resolve(__dirname, 'src/utils'),
-    },
-  },
+const config = getDefaultConfig(__dirname);
+
+// Configure path aliases for clean imports
+config.resolver.alias = {
+  '@': path.resolve(__dirname, 'src'),
+  '@components': path.resolve(__dirname, 'src/components'),
+  '@hooks': path.resolve(__dirname, 'src/hooks'),
+  '@stores': path.resolve(__dirname, 'src/stores'),
+  '@services': path.resolve(__dirname, 'src/services'),
+  '@types': path.resolve(__dirname, 'src/types'),
+  '@theme': path.resolve(__dirname, 'src/theme'),
+  '@utils': path.resolve(__dirname, 'src/utils'),
+  '@widgets': path.resolve(__dirname, 'src/widgets'),
+
+  // Fix for Expo Router web build: Metro can't resolve process.env in require.context
+  // Redirect to our local version with hardcoded values
+  'expo-router/_ctx.web': path.resolve(__dirname, 'expo-router-ctx.web.js'),
+
+  // Web compatibility: Mock native modules that don't work in web environment
+  'react-native-sound': path.resolve(__dirname, '__mocks__/Sound.js'),
 };
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+// Configure for web compatibility
+config.resolver.platforms = ['native', 'web', 'ios', 'android'];
+
+// Configure transformer to handle ESM and import.meta for web builds
+config.transformer = {
+  ...config.transformer,
+  unstable_allowRequireContext: true,
+  // Force all modules to be transformed through Babel
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: false,
+    },
+  }),
+};
+
+// Exclude problematic modules that use import.meta from transformation
+config.resolver = {
+  ...config.resolver,
+  blockList: [
+    // Add patterns for modules that cause import.meta issues
+    /.*\/node_modules\/.*\.mjs$/,
+  ],
+};
+
+
+
+module.exports = config;
