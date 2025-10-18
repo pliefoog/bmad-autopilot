@@ -8,6 +8,7 @@ import { useThemeStore, useTheme } from '../core/themeStore';
 import { PlaybackService } from '../services/playbackService';
 import { StressTestService } from '../services/stressTestService';
 import { PlatformStyles } from '../utils/animationUtils';
+import { TextNodeCatcher } from '../debug/TextNodeCatcher';
 import { DepthWidget } from '../widgets/DepthWidget';
 import { SpeedWidget } from '../widgets/SpeedWidget';
 import { WindWidget } from '../widgets/WindWidget';
@@ -527,94 +528,112 @@ const App = () => {
 
   const widgetMap: { [key: string]: () => React.ReactNode } = {
     depth: () => (
-      <WidgetShell
-        expanded={expandedWidgets.depth}
-        onToggle={() => toggleWidgetExpanded('depth')}
-        onLongPress={() => lockWidgetExpanded('depth')}
-        testID="depth-shell"
-      >
-        <DepthWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="DepthWidget">
+        <WidgetShell
+          expanded={expandedWidgets.depth}
+          onToggle={() => toggleWidgetExpanded('depth')}
+          onLongPress={() => lockWidgetExpanded('depth')}
+          testID="depth-shell"
+        >
+          <DepthWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     speed: () => (
-      <WidgetShell
-        expanded={expandedWidgets.speed}
-        onToggle={() => toggleWidgetExpanded('speed')}
-        onLongPress={() => lockWidgetExpanded('speed')}
-        testID="speed-shell"
-      >
-        <SpeedWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="SpeedWidget">
+        <WidgetShell
+          expanded={expandedWidgets.speed}
+          onToggle={() => toggleWidgetExpanded('speed')}
+          onLongPress={() => lockWidgetExpanded('speed')}
+          testID="speed-shell"
+        >
+          <SpeedWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     wind: () => (
-      <WidgetShell
-        expanded={expandedWidgets.wind}
-        onToggle={() => toggleWidgetExpanded('wind')}
-        onLongPress={() => lockWidgetExpanded('wind')}
-        testID="wind-shell"
-      >
-        <WindWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="WindWidget">
+        <WidgetShell
+          expanded={expandedWidgets.wind}
+          onToggle={() => toggleWidgetExpanded('wind')}
+          onLongPress={() => lockWidgetExpanded('wind')}
+          testID="wind-shell"
+        >
+          <WindWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     gps: () => (
-      <WidgetShell
-        expanded={expandedWidgets.gps}
-        onToggle={() => toggleWidgetExpanded('gps')}
-        onLongPress={() => lockWidgetExpanded('gps')}
-        testID="gps-shell"
-      >
-        <GPSWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="GPSWidget">
+        <WidgetShell
+          expanded={expandedWidgets.gps}
+          onToggle={() => toggleWidgetExpanded('gps')}
+          onLongPress={() => lockWidgetExpanded('gps')}
+          testID="gps-shell"
+        >
+          <GPSWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     compass: () => (
-      <WidgetShell
-        expanded={expandedWidgets.compass}
-        onToggle={() => toggleWidgetExpanded('compass')}
-        onLongPress={() => lockWidgetExpanded('compass')}
-        testID="compass-shell"
-      >
-        <CompassWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="CompassWidget">
+        <WidgetShell
+          expanded={expandedWidgets.compass}
+          onToggle={() => toggleWidgetExpanded('compass')}
+          onLongPress={() => lockWidgetExpanded('compass')}
+          testID="compass-shell"
+        >
+          <CompassWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     engine: () => (
-      <WidgetShell
-        expanded={expandedWidgets.engine}
-        onToggle={() => toggleWidgetExpanded('engine')}
-        onLongPress={() => lockWidgetExpanded('engine')}
-        testID="engine-shell"
-      >
-        <EngineWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="EngineWidget">
+        <WidgetShell
+          expanded={expandedWidgets.engine}
+          onToggle={() => toggleWidgetExpanded('engine')}
+          onLongPress={() => lockWidgetExpanded('engine')}
+          testID="engine-shell"
+        >
+          <EngineWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     battery: () => (
-      <WidgetShell
-        expanded={expandedWidgets.battery}
-        onToggle={() => toggleWidgetExpanded('battery')}
-        onLongPress={() => lockWidgetExpanded('battery')}
-        testID="battery-shell"
-      >
-        <BatteryWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="BatteryWidget">
+        <WidgetShell
+          expanded={expandedWidgets.battery}
+          onToggle={() => toggleWidgetExpanded('battery')}
+          onLongPress={() => lockWidgetExpanded('battery')}
+          testID="battery-shell"
+        >
+          <BatteryWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     tanks: () => (
-      <WidgetShell
-        expanded={expandedWidgets.tanks}
-        onToggle={() => toggleWidgetExpanded('tanks')}
-        onLongPress={() => lockWidgetExpanded('tanks')}
-        testID="tanks-shell"
-      >
-        <TanksWidget />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="TanksWidget">
+        <WidgetShell
+          expanded={expandedWidgets.tanks}
+          onToggle={() => toggleWidgetExpanded('tanks')}
+          onLongPress={() => lockWidgetExpanded('tanks')}
+          testID="tanks-shell"
+        >
+          <TanksWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
     autopilot: () => (
-      <WidgetShell
-        expanded={expandedWidgets.autopilot}
-        onToggle={() => toggleWidgetExpanded('autopilot')}
-        onLongPress={() => lockWidgetExpanded('autopilot')}
-        testID="autopilot-shell"
-      >
-        <AutopilotStatusWidget showControls={true} />
-      </WidgetShell>
+      <TextNodeCatcher widgetName="AutopilotStatusWidget">
+        <WidgetShell
+          expanded={expandedWidgets.autopilot}
+          onToggle={() => toggleWidgetExpanded('autopilot')}
+          onLongPress={() => lockWidgetExpanded('autopilot')}
+          testID="autopilot-shell"
+        >
+          <AutopilotStatusWidget />
+        </WidgetShell>
+      </TextNodeCatcher>
     ),
   };
 
@@ -671,18 +690,25 @@ const App = () => {
     setProtocol(config.protocol as 'tcp' | 'udp');
     
     try {
-      // Update connection using global service (handles graceful disconnect/reconnect)
-      await globalConnectionService.updateConnection({
+      // Use the new unified connect method
+      const success = await globalConnectionService.connect({
         ip: config.ip,
         port: config.port,
         protocol: config.protocol as 'tcp' | 'udp' | 'websocket'
       });
       
-      showSuccessToast(`Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`);
+      if (success) {
+        showSuccessToast(`Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`);
+      }
     } catch (error) {
       console.error('Failed to connect:', error);
       showErrorToast('Failed to establish connection');
     }
+  };
+
+  // Check if connect button should be enabled (config different from current)
+  const shouldEnableConnectButton = (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
+    return globalConnectionService.shouldEnableConnectButton(config);
   };
 
   const handleConnectionDisconnect = async () => {
@@ -817,11 +843,15 @@ const App = () => {
 
           {/* Widgets Flow Layout - Auto-sizing */}
           <View style={styles.widgetsFlow}>
-            {selectedWidgets.map(key => (
-              <View key={key} style={styles.widgetWrapper}>
-                {widgetMap[key] && widgetMap[key]()}
-              </View>
-            ))}
+            {selectedWidgets.map(key => {
+              const WidgetComponent = widgetMap[key];
+              if (!WidgetComponent) return <React.Fragment key={key} />;
+              return (
+                <View key={key} style={styles.widgetWrapper}>
+                  {WidgetComponent()}
+                </View>
+              );
+            })}
           </View>
         </View>
       </View>
@@ -874,6 +904,7 @@ const App = () => {
           port: parseInt(port, 10), 
           protocol: protocol as 'tcp' | 'udp' | 'websocket'
         }}
+        shouldEnableConnectButton={shouldEnableConnectButton}
       />
     </View>
   );
@@ -1145,9 +1176,7 @@ const styles = StyleSheet.create({
     padding: 8,
     minHeight: '100%', // Ensure widgets fill available height
   },
-  widgetWrapper: {
-    // Removed - widgets now handle their own sizing via WidgetShell
-  },
+  widgetWrapper: {},
   autopilotAccess: {
     backgroundColor: '#1e40af',
     marginHorizontal: 0,

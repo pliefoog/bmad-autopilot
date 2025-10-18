@@ -17,58 +17,96 @@ interface ConnectionConfigDialogProps {
   visible: boolean;
   onClose: () => void;
   onConnect: (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => void;
-  onDisconnect: () => void;
+  onDisconnect: () => void; // Keep for backward compatibility but won't be used
   currentConfig?: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' };
+  shouldEnableConnectButton?: (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => boolean;
 }
 
 export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   visible,
   onClose,
   onConnect,
-  onDisconnect,
+  onDisconnect, // Keep for compatibility
   currentConfig,
+  shouldEnableConnectButton,
 }) => {
   const defaults = getConnectionDefaults();
   const connectionStatus = useNmeaStore(state => state.connectionStatus);
   const isConnected = connectionStatus === 'connected';
   const isWeb = Platform.OS === 'web';
   
+  // Use defaults initially, but don't override user input
   const [ip, setIp] = useState(currentConfig?.ip || defaults.ip);
   const [port, setPort] = useState(currentConfig?.port.toString() || defaults.port.toString());
   const [useTcp, setUseTcp] = useState(true); // true = TCP, false = UDP
+  const [hasUserInput, setHasUserInput] = useState(false); // Track if user has made changes
 
+  // Only update form when dialog opens (visible changes from false to true)
+  // Don't reset while user is typing
   useEffect(() => {
-    if (currentConfig) {
+    if (visible && currentConfig && !hasUserInput) {
       setIp(currentConfig.ip);
       setPort(currentConfig.port.toString());
       setUseTcp(currentConfig.protocol === 'tcp');
     }
-  }, [currentConfig]);
+  }, [visible, currentConfig, hasUserInput]);
+
+  // Reset user input tracking when dialog closes
+  useEffect(() => {
+    if (!visible) {
+      setHasUserInput(false);
+    }
+  }, [visible]);
+
+  // Handle IP changes and mark as user input
+  const handleIpChange = (value: string) => {
+    setIp(value);
+    setHasUserInput(true);
+  };
+
+  // Handle port changes and mark as user input  
+  const handlePortChange = (value: string) => {
+    setPort(value);
+    setHasUserInput(true);
+  };
+
+  const getCurrentConfig = () => ({
+    ip: ip.trim(),
+    port: parseInt(port, 10),
+    protocol: isWeb ? 'websocket' : (useTcp ? 'tcp' : 'udp') as 'tcp' | 'udp' | 'websocket',
+  });
+
+  const isConnectButtonEnabled = () => {
+    const portNumber = parseInt(port, 10);
+    
+    // Basic validation
+    if (!ip.trim() || isNaN(portNumber) || portNumber < 1 || portNumber > 65535) {
+      return false;
+    }
+    
+    // Check if configuration has changed using the callback
+    if (shouldEnableConnectButton) {
+      return shouldEnableConnectButton(getCurrentConfig());
+    }
+    
+    // Fallback - always enabled if no callback provided
+    return true;
+  };
 
   const handleConnect = () => {
-    const portNumber = parseInt(port, 10);
+    const config = getCurrentConfig();
     
     if (!ip.trim()) {
       Alert.alert('Error', 'IP address is required');
       return;
     }
     
-    if (isNaN(portNumber) || portNumber < 1 || portNumber > 65535) {
+    if (isNaN(config.port) || config.port < 1 || config.port > 65535) {
       Alert.alert('Error', 'Port must be a number between 1 and 65535');
       return;
     }
 
-    onConnect({
-      ip: ip.trim(),
-      port: portNumber,
-      protocol: isWeb ? 'websocket' : (useTcp ? 'tcp' : 'udp'),
-    });
-    
-    onClose();
-  };
-
-  const handleDisconnect = () => {
-    onDisconnect();
+    onConnect(config);
     onClose();
   };
 
@@ -76,6 +114,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
     setIp(defaults.ip);
     setPort(defaults.port.toString());
     setUseTcp(defaults.protocol === 'tcp');
+    setHasUserInput(true); // Mark as user action to prevent override
   };
 
   return (
@@ -94,22 +133,21 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
         </View>
 
         <View style={styles.content}>
-          {!isWeb && (
-            <Text style={styles.description}>
-              Connect to NMEA data source via TCP or UDP
-            </Text>
-          )}
+          <Text style={styles.description}>
+            NMEA Bridge Details
+          </Text>
 
           <View style={styles.section}>
-            <Text style={styles.label}>IP Address</Text>
+            <Text style={styles.label}>Host (IP or DNS name)</Text>
             <TextInput
               style={styles.input}
               value={ip}
-              onChangeText={setIp}
-              placeholder="Enter IP address"
-              keyboardType="numeric"
+              onChangeText={handleIpChange}
+              placeholder="e.g. 192.168.1.100 or bridge.local"
+              keyboardType="default"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="off"
             />
           </View>
 
@@ -118,7 +156,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
             <TextInput
               style={styles.input}
               value={port}
-              onChangeText={setPort}
+              onChangeText={handlePortChange}
               placeholder="Enter port number"
               keyboardType="numeric"
             />
@@ -145,7 +183,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
 
         <View style={styles.footer}>
           <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Reset to Default</Text>
+            <Text style={styles.resetButtonText}>Reset to Suggested</Text>
           </TouchableOpacity>
           
           <View style={styles.actionButtons}>
@@ -153,15 +191,21 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             
-            {isConnected ? (
-              <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
-                <Text style={styles.disconnectButtonText}>Disconnect</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.connectButton} onPress={handleConnect}>
-                <Text style={styles.connectButtonText}>Connect</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity 
+              style={[
+                styles.connectButton,
+                !isConnectButtonEnabled() && styles.connectButtonDisabled
+              ]} 
+              onPress={handleConnect}
+              disabled={!isConnectButtonEnabled()}
+            >
+              <Text style={[
+                styles.connectButtonText,
+                !isConnectButtonEnabled() && styles.connectButtonTextDisabled
+              ]}>
+                Connect
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -285,21 +329,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     alignItems: 'center',
   },
+  connectButtonDisabled: {
+    backgroundColor: '#333',
+    opacity: 0.5,
+  },
   connectButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  disconnectButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 8,
-    backgroundColor: '#FF6B35',
-    alignItems: 'center',
-  },
-  disconnectButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  connectButtonTextDisabled: {
+    color: '#888',
   },
 });

@@ -1,0 +1,88 @@
+# Basic Navigation Scenario
+# For Dev Agent development workflow testing
+
+name: "Basic Navigation"
+description: "Standard marine navigation data for UI widget development"
+category: "development"
+version: "1.0"
+
+# Configuration
+duration: 300000  # 5 minutes default
+bridge_mode: "nmea0183"
+message_rate: 10  # 10 Hz (10 messages per second)
+
+# Navigation parameters
+navigation:
+  starting_position:
+    latitude: 41.4142  # Cleveland, OH area
+    longitude: -81.8607
+    
+  course_data:
+    speed_over_ground: 6.5  # knots
+    course_over_ground: 180  # degrees
+    magnetic_variation: -8.0  # degrees west
+    
+  depth_data:
+    depth_feet: 20.0
+    depth_variation: 5.0  # +/- feet
+    
+  wind_data:
+    apparent_wind_speed: 15  # knots
+    apparent_wind_angle: 45  # degrees relative
+    true_wind_speed: 12  # knots
+    true_wind_direction: 210  # degrees
+    
+  engine_data:
+    rpm: 1800
+    coolant_temp: 180  # fahrenheit
+    oil_pressure: 45  # psi
+    fuel_level: 75  # percent
+
+# NMEA sentence configuration
+nmea_sentences:
+  - type: "GGA"  # GPS Fix Data
+    interval_ms: 1000
+    enabled: true
+    
+  - type: "VTG"  # Track Made Good and Ground Speed
+    interval_ms: 1000
+    enabled: true
+    
+  - type: "DBT"  # Depth Below Transducer
+    interval_ms: 500
+    enabled: true
+    
+  - type: "MWV"  # Wind Speed and Angle
+    interval_ms: 1000
+    enabled: true
+    
+  - type: "RPM"  # Engine RPM
+    interval_ms: 2000
+    enabled: true
+    
+  - type: "XDR"  # Transducer Measurement (temperature, pressure)
+    interval_ms: 5000
+    enabled: true
+
+# Test phases
+phases:
+  1:
+    name: "Startup"
+    duration: 30000
+    description: "Initialize basic navigation data"
+    
+  2:
+    name: "Steady State"
+    duration: 240000
+    description: "Consistent navigation data for development"
+    
+  3:
+    name: "Shutdown"
+    duration: 30000
+    description: "Graceful data stream conclusion"
+
+# Performance expectations
+performance:
+  target_message_rate: 10
+  max_latency_ms: 50
+  max_memory_mb: 50

@@ -322,7 +322,7 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
           <Text style={[styles.detailValue, { 
             color: Math.abs(crossTrackError) > 50 ? theme.warning : theme.text 
           }]}>
-            {crossTrackError > 0 ? 'STB' : 'PORT'} {Math.abs(crossTrackError).toFixed(1)}m
+            {`${crossTrackError > 0 ? 'STB' : 'PORT'} ${Math.abs(crossTrackError).toFixed(1)}m`}
           </Text>
         </View>
       )}
@@ -331,7 +331,7 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Turn Rate:</Text>
           <Text style={[styles.detailValue, { color: theme.text }]}>
-            {turnRate > 0 ? '+' : ''}{turnRate.toFixed(1)}°/min
+            {`${turnRate > 0 ? '+' : ''}${turnRate.toFixed(1)}°/min`}
           </Text>
         </View>
       )}

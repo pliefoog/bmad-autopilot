@@ -1,0 +1,128 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.5</storyId>
+    <title>Performance Optimization & Resource Management</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-4.5-performance-optimization.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boater running the app for extended periods</asA>
+    <iWant>efficient performance that doesn't drain my device</iWant>
+    <soThat>I can use the app for long passages without battery concerns</soThat>
+    <tasks>
+      - Performance Profiling & Benchmarking (monitoring tools, benchmarks, regression testing, memory analysis)
+      - UI Performance Optimization (widget rendering, list virtualization, animation optimization, state management)
+      - Background Processing Optimization (NMEA algorithms, data structures, CPU scheduling, alarm detection)
+      - Battery & Power Management (screen dimming, background processing, power-aware features, usage monitoring)
+      - Memory & Storage Management (memory patterns, log rotation, data structures, storage monitoring)
+      - Platform-Specific Optimizations (iOS background modes, Android doze mode, desktop power management, thermal management)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <performance_optimization>
+      <item id="1">Smooth 60fps UI performance with full dashboard</item>
+      <item id="2">Memory usage remains stable during extended operation</item>
+      <item id="3">CPU usage optimized for background NMEA processing</item>
+      <item id="4">Efficient rendering of widget updates</item>
+      <item id="5">Fast app startup and resume times</item>
+    </performance_optimization>
+    <battery_resource_management>
+      <item id="6">Optimized power consumption for marine use</item>
+      <item id="7">Intelligent screen dimming based on usage patterns</item>
+      <item id="8">Background processing efficiency</item>
+      <item id="9">Network usage optimization for cellular data</item>
+      <item id="10">Storage management for logs and recorded data</item>
+    </battery_resource_management>
+    <platform_optimizations>
+      <item id="11">iOS background app refresh optimization</item>
+      <item id="12">Android doze mode and app standby handling</item>
+      <item id="13">Desktop power management integration</item>
+      <item id="14">Memory management appropriate for each platform</item>
+      <item id="15">Thermal management for extended outdoor use</item>
+    </platform_optimizations>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/stories/epic-4-alarms-stories.md" title="Epic 4: Alarms & Polish" section="Story 4.5: Performance Optimization & Resource Management" snippet="Performance targets: UI 60fps, Memory <100MB baseline <200MB with full dashboard, Battery <5% drain per hour, Startup <3s cold start <1s resume. Platform optimizations for iOS/Android/Desktop."/>
+      <item path="docs/stories/story-4.5-performance-optimization.md" title="Performance Optimization & Resource Management" section="Performance Targets" snippet="UI Performance: 60fps normal operation, 30fps minimum under load. Memory Usage: <100MB baseline, <200MB with full widget dashboard. Battery Life: <5% battery drain per hour during background monitoring. Startup Time: <3 seconds cold start, <1 second resume."/>
+      <item path="boatingInstrumentsApp/server/performance-monitor.js" title="BMAD Performance Monitor" section="Real-time Metrics Collection" snippet="Performance monitoring system with memory tracking (heap, RSS, external), CPU usage monitoring, alert thresholds, regression detection, and marine-specific performance baselines."/>
+      <item path="boatingInstrumentsApp/__tests__/performanceOptimization.test.tsx" title="Performance Optimization Tests" section="Performance Testing Framework" snippet="Comprehensive test suite with usePerformanceMonitor hook, marine optimization utilities, throttled callbacks, debounced callbacks, cached calculations, and performance measurement tools."/>
+      <item path="docs/research/nmea-calculated-metrics.md" title="NMEA Performance Research" section="Background Processing Architecture" snippet="Three-layer integration for efficient NMEA data processing: Layer 1 real-time parsing, Layer 2 state store enhancement with calculated metrics, Layer 3 dashboard integration with optimized rendering."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/services/nmea/nmeaParser.ts" title="NMEA Parser Service" snippet="Singleton pattern parser with message counters, optimized parsing algorithms, error handling, and performance validation. Processes NMEA sentences with minimal CPU overhead for background operation."/>
+      <item path="boatingInstrumentsApp/src/services/nmea/pgnParser.ts" title="PGN Parser Service" snippet="Marine-specific PGN data parsing with efficient instance detection for engines, batteries, tanks. Optimized data structures for background processing with minimal memory allocation."/>
+      <item path="boatingInstrumentsApp/src/core/nmeaStore.ts" title="NMEA Store Architecture" snippet="Zustand-based state management with alarm evaluation, battery monitoring, and efficient data updates. Optimized for frequent updates without performance degradation."/>
+      <item path="boatingInstrumentsApp/src/services/nmea/instanceDetection.ts" title="Instance Detection Service" snippet="Background service for detecting NMEA device instances (batteries, engines, tanks) with intelligent scanning, priority mapping, and performance-optimized data structures."/>
+      <item path="src/types/service.types.ts" kind="types" symbol="ServiceTypes" lines="120-200" reason="Service interfaces and types - foundation for notification service architecture"/>
+    </code>
+    <dependencies>
+      <framework>
+        <item type="performance-api" name="React Native Performance APIs" description="Built-in performance monitoring including Performance Timeline, Long Task Detection (50ms threshold), Resource Timing, and Memory Management APIs for cross-platform optimization"/>
+        <item type="profiling" name="Native Profiling Tools" description="Platform-specific profiling: React Native Flipper, Xcode Instruments, Android Studio Profiler, Sentry performance monitoring for comprehensive analysis"/>
+      </framework>
+      <monitoring>
+        <item type="custom-monitor" name="BMAD Performance Monitor" file="server/performance-monitor.js" description="Custom performance monitoring system with marine-specific metrics, alerting thresholds, regression detection, and battery/CPU/memory tracking"/>
+        <item type="optimization" name="Marine Processing Engine" description="Optimized NMEA parsing and PGN processing with singleton patterns, efficient data structures, and background task scheduling for extended operation"/>
+      </monitoring>
+      <platform>
+        <item type="ios" name="iOS Background Modes" description="Background App Refresh, Background Processing, Location Updates for continuous NMEA monitoring and performance optimization"/>
+        <item type="android" name="Android Battery Optimization" description="Doze mode handling, App Standby management, Battery optimization whitelist, Foreground service for background processing"/>
+        <item type="desktop" name="Desktop Power Management" description="Sleep mode integration, screen dimming control, system power state monitoring for extended marine use"/>
+      </platform>
+      <performance>
+        <package name="zustand" version="^5.0.8" usage="State management for notification system"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <item type="marine-performance" priority="critical" description="Performance targets for marine environment: 60fps UI during normal operation, 30fps minimum under load. Extended operation capability for long passages (24+ hours continuous)."/>
+    <item type="battery-management" priority="critical" description="Battery optimization mandatory for marine use: <5% drain per hour during background monitoring. Intelligent power management for devices without shore power access."/>
+    <item type="memory-efficiency" priority="high" description="Memory constraints for marine devices: <100MB baseline memory usage, <200MB with full widget dashboard. Stable memory usage during extended operation without leaks."/>
+    <item type="thermal-management" priority="high" description="Thermal optimization for extended outdoor marine use: Thermal throttling detection and adaptation, performance scaling under high temperature conditions."/>
+    <item type="platform-optimization" priority="medium" description="Platform-specific optimizations required: iOS background modes, Android doze mode handling, desktop power management integration. Native performance API utilization."/>
+    <item type="background-processing" priority="medium" description="Efficient background NMEA processing: Optimized algorithms for continuous data parsing, intelligent task scheduling, minimal CPU overhead for background operation."/>
+  </constraints>
+  
+  <interfaces>
+    <item type="react-hook" name="usePerformanceMonitor" file="src/hooks/usePerformanceMonitor.ts" snippet="Hook returns performance monitoring instance with metrics tracking, render measurement, memory profiling, and performance report generation for marine components"/>
+    <item type="service-class" name="BMADPerformanceMonitor" file="server/performance-monitor.js" snippet="Performance monitoring service with real-time metrics collection (memory, CPU, NMEA throughput), alert thresholds, regression detection, and marine-specific baselines"/>
+    <item type="parser-service" name="NmeaParser" file="src/services/nmea/nmeaParser.ts" snippet="Singleton NMEA parser with optimized algorithms, message counters, error handling, and performance validation for efficient background processing"/>
+    <item type="optimization-utils" name="PerformanceUtils" file="src/utils/performanceOptimization.ts" snippet="Marine optimization utilities including withMarineOptimization HOC, throttled callbacks, debounced callbacks, cached calculations, and performance comparison functions"/>
+    <item type="store-interface" name="NmeaStore" file="src/core/nmeaStore.ts" snippet="Zustand store interface with alarm evaluation, battery monitoring, efficient data updates, and optimized state management for frequent NMEA data updates"/>
+    <item type="react-native-api" name="Performance Timeline API" description="React Native performance APIs including PerformanceMark, PerformanceMeasure, PerformanceEventTiming, LongTask detection (50ms threshold), and Resource Timing"/>
+    <item type="platform-api" name="Background Processing APIs" description="Platform-specific background processing: iOS Background App Refresh, Android Doze Mode, Foreground Services, Desktop Power Management APIs"/>
+    <item name="NmeaParser" kind="service_class" signature="class NmeaParser { static getInstance(): NmeaParser; parseNmeaSentence(sentence: string): ParsedNmeaData | null; }" path="src/services/nmea/nmeaParser.ts"/>
+    <item name="GlobalConnectionService" kind="service_class" signature="class GlobalConnectionService { static getInstance(): GlobalConnectionService; connect(config: NmeaConnectionConfig): Promise<boolean>; }" path="src/services/connection/globalConnectionService.ts"/>
+  </interfaces>
+  
+  <tests>
+    <standards>
+      <standard name="Jest Performance Testing" description="Jest framework with performance measurement utilities, memory leak detection, CPU usage profiling, and performance regression testing"/>
+      <standard name="React Native Testing Library" description="Component performance testing with render timing measurement, UI responsiveness validation, and animation performance testing"/>
+      <standard name="Platform Profiling Tools" description="Native profiling integration: Xcode Instruments (iOS), Android Studio Profiler, React Native Flipper performance monitoring"/>
+      <standard name="Marine Performance Standards" description="Marine-specific performance requirements: 60fps UI, <100MB memory baseline, <5% battery drain per hour, thermal management validation"/>
+    </standards>
+    <locations>
+      - __tests__/services/ (service layer tests)
+      - __tests__/performance/ (performance optimization tests)
+      - __tests__/integration/performance.test.tsx (performance integration tests)
+      - server/performance-monitor.js (performance monitoring testing)
+      - __tests__/platform/ (platform-specific performance tests)
+    </locations>
+    <ideas>
+      <item ac="1-5">Performance benchmarking tests: UI 60fps validation, memory stability during extended operation, CPU usage optimization testing, widget rendering efficiency, app startup/resume timing measurement</item>
+      <item ac="6-10">Battery and resource management tests: Power consumption measurement, intelligent screen dimming validation, background processing efficiency, network usage optimization, storage management testing</item>
+      <item ac="11-15">Platform optimization testing: iOS background modes validation, Android doze mode compatibility, desktop power management integration, memory management platform differences, thermal behavior testing</item>
+      <item type="stress-testing">Extended operation testing (24+ hours), high NMEA data rate performance, multiple alarm performance impact, memory leak detection, thermal throttling behavior</item>
+      <item type="marine-scenarios">Marine environment simulation: Device motion testing, sunlight readability validation, wet conditions usability, extended outdoor use thermal testing</item>
+    </ideas>
+  </tests>
+</story-context>

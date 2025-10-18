@@ -24,7 +24,7 @@ describe('NMEA Bridge Simulator - Real Network Integration', () => {
     console.log('🚀 Starting NMEA Bridge Simulator process...');
     simulatorProcess = spawn('node', [
       simulatorPath, 
-      '--recording', 'nmea_recording_20250720_003925.json',
+      '--recording', 'recordings/nmea_recording_20250720_003925.json',
       '--speed', '5.0'
     ], {
       stdio: ['pipe', 'pipe', 'pipe'],

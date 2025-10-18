@@ -8,19 +8,25 @@ This is a **React Native cross-platform marine instrument display** that connect
 
 ### BMAD Method Workflow
 
-This project uses the **BMAD Method** with specialized AI agents. Before making changes:
+This project uses the **BMAD Method v6** with specialized AI agents. Before making changes:
 
-1. **Agent Personas:** Use GitHub Copilot chat modes defined in `.github/chatmodes/`:
+1. **Agent Personas:** Use BMAD agent commands:
    - `#bmad-master` - Universal task executor (🧙 BMad Master)
-   - `#qa` - Test architect & quality advisor (🧪 Quinn)
-   - `#dev` - Full stack developer (💻 James)
-   - `#architect` - Architecture & design decisions
-   - `#pm`, `#po`, `#sm` - Management personas
+   - `#tea` - Master Test Architect & quality advisor (🧪 Murat)
+   - `#dev` - Full stack developer (💻 Amelia)
+   - `#architect` - Architecture & design decisions (🏗️ Winston)
+   - `#analyst` - Business analysis & requirements (📊 Mary)
+   - `#pm` - Product management (📋 John)
+   - `#sm` - Scrum Master & story preparation (🏃 Bob)
+   - `#ux-expert` - UI/UX design specialist (🎨 Sally)
+   - `#game-architect` - Performance & systems architecture (🏛️ Cloud Dragonborn)
+   - `#game-designer` - User experience & interaction design (🎲 Samus Shepard)
+   - `#game-dev` - Real-time performance optimization (🕹️ Link Freeman)
 2. **Story-Driven Development:** All work tracks to user stories in `docs/stories/`. Stories follow format: `story-{epic}.{number}-{slug}.md`
-3. **Quality Gates:** Use `#qa` agent with `*review {story}` command to perform comprehensive quality reviews before marking stories done
-4. **Configuration:** Project config in `.bmad-core/core-config.yaml` defines doc locations, patterns, QA workflow
+3. **Quality Gates:** Use `#tea` agent with test architecture review and `#sm` agent with `*story-ready` workflow to validate completion before marking stories done
+4. **Configuration:** Project config in `bmad/bmm/config.yaml` defines doc locations, patterns, and workflow paths
 
-**Always read and action `.bmad-core/core-config.yaml` before making any changes. Ensure your workflow and decisions are aligned with the latest configuration.**
+**Always read and action `bmad/bmm/config.yaml` before making any changes. Ensure your workflow and decisions are aligned with the latest configuration.**
 
 ### File Structure (MCP Tool Usage Required)
 

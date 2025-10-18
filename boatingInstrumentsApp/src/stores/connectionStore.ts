@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'no-data' | 'error' | 'reconnecting';
 
@@ -151,6 +152,7 @@ export const useConnectionStore = create<ConnectionStore>()(
     }),
     {
       name: 'connection-store',
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         config: state.config,
         debugMode: state.debugMode,

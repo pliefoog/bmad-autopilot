@@ -22,6 +22,12 @@
           "root": "./app"
         }
       ]
-    ]
+    ],
+    "android": {
+      "package": "com.anonymous.boatinginstrumentsapp"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.boatinginstrumentsapp"
+    }
   }
 }

@@ -7,12 +7,16 @@ interface InstrumentWidgetProps {
   unit?: string;
 }
 
-export const InstrumentWidget: React.FC<InstrumentWidgetProps> = ({ title, value, unit }) => (
-  <View style={styles.container}>
-    <Text style={styles.title}>{title}</Text>
-    <Text style={styles.value}>{value !== undefined ? value : '--'} {unit}</Text>
-  </View>
-);
+export const InstrumentWidget: React.FC<InstrumentWidgetProps> = ({ title, value, unit }) => {
+  const displayText = value !== undefined ? `${value}${unit ? ` ${unit}` : ''}` : '--';
+  
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.value}>{displayText}</Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

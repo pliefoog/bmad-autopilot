@@ -1,0 +1,188 @@
+name: "Battery Drain Scenario"
+description: "Electrical system monitoring with voltage decline simulation"
+duration: 900  # 15 minutes
+version: "1.0"
+category: "safety"
+
+# Electrical system parameters
+parameters:
+  electrical_system:
+    battery_capacity: 100    # amp hours
+    solar_panels: true
+    alternator: true
+    load_profile: "sailing"  # vs "motoring"
+  alarm_thresholds:
+    voltage_warning: 12.0    # volts
+    voltage_critical: 11.5   # volts
+    voltage_emergency: 11.0  # volts
+
+# Battery drain phases
+phases:
+  - phase: "full_charge"
+    duration: 180  # 3 minutes
+    description: "Battery at full charge with float charging"
+    battery_voltage: [12.6, 12.8]
+    charging_status: "FLOAT"
+    solar_output: [2, 4]      # amps (maintenance charging)
+    alarm_status: "NORMAL"
+    
+  - phase: "normal_discharge"
+    duration: 240  # 4 minutes
+    description: "Normal electrical load discharge"
+    battery_voltage: [12.2, 12.4]
+    charging_status: "DISCHARGING"
+    solar_output: [0, 2]      # amps (low solar)
+    load_current: [8, 12]     # amps (normal load)
+    alarm_status: "NORMAL"
+    
+  - phase: "low_battery_warning"
+    duration: 180  # 3 minutes
+    description: "Low battery voltage warning triggered"
+    battery_voltage: [11.8, 12.0]
+    charging_status: "LOW"
+    solar_output: [0, 1]      # amps (minimal solar)
+    load_current: [10, 15]    # amps (increased load)
+    alarm_status: "WARNING"
+    alarm_triggers:
+      - time: 0
+        type: "BATTERY_WARNING"
+        message: "Low battery voltage - 12.0V"
+        
+  - phase: "critical_battery"
+    duration: 120  # 2 minutes
+    description: "Critical battery voltage - load shedding recommended"
+    battery_voltage: [11.4, 11.6]
+    charging_status: "CRITICAL"
+    solar_output: [0, 0.5]    # amps (very low solar)
+    load_current: [12, 18]    # amps (high load)
+    alarm_status: "CRITICAL"
+    alarm_triggers:
+      - time: 0
+        type: "BATTERY_CRITICAL"
+        message: "Critical battery voltage - 11.5V"
+      - time: 60
+        type: "LOAD_SHEDDING"
+        message: "Recommend load shedding"
+        
+  - phase: "solar_recovery"
+    duration: 180  # 3 minutes
+    description: "Solar charging recovery phase"
+    battery_voltage: [11.6, 12.2]
+    charging_status: "CHARGING"
+    solar_output: [5, 15]     # amps (good solar charging)
+    load_current: [6, 10]     # amps (reduced load)
+    alarm_status: "RECOVERING"
+    alarm_triggers:
+      - time: 90
+        type: "BATTERY_WARNING_CLEAR"
+        message: "Battery voltage recovering - 12.1V"
+      - time: 150
+        type: "BATTERY_NORMAL"
+        message: "Battery voltage normal - 12.2V"
+
+# Data generation with electrical focus
+data:
+  battery_voltage:
+    type: "voltage_profile"
+    unit: "volts"
+    
+  solar_output:
+    type: "solar_simulation" 
+    unit: "amps"
+    time_of_day_effect: true
+    cloud_cover_simulation: true
+    
+  alternator_output:
+    type: "alternator_simulation"
+    unit: "amps"
+    engine_dependent: true
+    
+  load_current:
+    type: "electrical_load"
+    unit: "amps"
+    equipment_cycling: true
+
+# Solar panel and alternator charging patterns
+charging_patterns:
+  solar:
+    peak_hours: [10, 16]      # 10 AM to 4 PM
+    peak_output: 15           # amps
+    cloud_factor: 0.3         # 30% reduction during clouds
+    
+  alternator:
+    output_curve: "rpm_dependent"
+    idle_output: 5            # amps at idle
+    cruise_output: 25         # amps at cruise RPM
+    
+# Multi-engine support
+multi_engine_config:
+  enabled: false  # Set true for twin-engine boats
+  alternators:
+    port_engine: 25     # amps max
+    starboard_engine: 25 # amps max
+
+# NMEA sentence timing
+timing:
+  electrical: 0.2   # Hz (every 5 seconds)
+  alarms: 1        # Hz (alarm broadcasting)
+
+# Electrical system functions
+functions:
+  voltage_profile: |
+    // Battery voltage based on charge state and load
+    const currentPhase = getCurrentPhase(currentTime);
+    const phaseConfig = phases[currentPhase];
+    const [minV, maxV] = phaseConfig.battery_voltage;
+    const baseVoltage = (minV + maxV) / 2;
+    
+    // Add load-dependent voltage drop
+    const loadCurrent = getCurrentLoad(currentTime);
+    const voltageDrop = loadCurrent * 0.01; // Voltage drop under load
+    
+    return Math.max(10.5, baseVoltage - voltageDrop);
+    
+  solar_simulation: |
+    // Solar output based on time of day and weather
+    const hour = (currentTime / 3600) % 24;
+    const solarFactor = Math.max(0, Math.sin((hour - 6) * Math.PI / 12));
+    const cloudFactor = Math.random() > 0.7 ? 0.3 : 1.0; // 30% chance of clouds
+    const maxOutput = getCurrentPhase(currentTime).solar_output[1];
+    
+    return maxOutput * solarFactor * cloudFactor;
+
+# Battery alarm configuration
+battery_alarms:
+  - threshold: 12.0
+    type: "WARNING"
+    color: "YELLOW"
+    message: "Low battery voltage"
+    audio: "single_beep"
+    frequency: 10  # seconds between beeps
+    
+  - threshold: 11.5
+    type: "CRITICAL"
+    color: "RED" 
+    message: "Critical battery voltage"
+    audio: "double_beep"
+    frequency: 5   # seconds between beeps
+    
+  - threshold: 11.0
+    type: "EMERGENCY"
+    color: "FLASHING_RED"
+    message: "EMERGENCY - Battery voltage critical"
+    audio: "continuous_tone"
+    frequency: 1   # continuous
+
+# Use cases
+use_cases:
+  - "Battery voltage monitoring and alarming"
+  - "Solar panel charging pattern simulation"
+  - "Alternator charging behavior validation"
+  - "Electrical load management testing"
+  - "Multi-engine electrical system simulation"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC3: Electrical system monitoring with voltage decline simulation"
+  - "AC3: Solar panel and alternator charging pattern simulation"
+  - "AC3: Multi-engine support for twin-engine boat scenarios"

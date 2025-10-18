@@ -31,6 +31,19 @@ export * from './autopilot.types';
  */
 export * from './service.types';
 
+// Story 6.6 specific exports
+export type { 
+  StoryConnectionState, 
+  StorageService, 
+  PlaybackService 
+} from './service.types';
+
+export type { 
+  StoryThemeColors, 
+  StoryThemeSpacing, 
+  StoryThemeTypography 
+} from './theme.types';
+
 /**
  * Store and state management types (with renamed exports to avoid conflicts)
  */
@@ -82,6 +95,11 @@ export type {
  * Navigation types (existing)
  */
 export * from './navigation.types';
+
+/**
+ * Utility types and generic helpers
+ */
+export * from './util.types';
 
 /**
  * Common utility types
@@ -392,4 +410,4 @@ export type { NmeaData as NMEAData } from './nmea.types';
 export type { ConnectionConfig as Connection } from './connection.types';
 export type { Theme } from './theme.types';
 export type { AutopilotCommand as APCommand } from './autopilot.types';
-export type { Alarm as AlarmData } from './store.types';
+export type { Alarm as AlarmData, GenericStoreState, NMEAStoreActions, WidgetStoreActions } from './store.types';

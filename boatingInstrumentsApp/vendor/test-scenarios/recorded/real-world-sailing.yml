@@ -1,0 +1,212 @@
+# Real-World Sailing Recording Integration
+# AC6: Real-World Recorded Scenario Integration
+# AC9: Recorded NMEA Data Integration Support
+
+name: "Real-World Sailing Recording"
+description: "Integration with recorded NMEA data from actual sailing conditions"
+duration: 1800  # 30 minutes
+version: "1.0"
+category: "recorded"
+
+# Integration parameters for recorded data
+parameters:
+  recording_file: "server/recordings/nmea_recording_20250720_003925.json"
+  playback_mode: "enhanced"  # "raw", "enhanced", or "hybrid"
+  synchronization: "real_time"  # "real_time" or "accelerated"
+  interpolation: "enabled"  # Fill gaps in recorded data
+  validation: "strict"  # Validate recorded NMEA sentences
+
+# Phases define how recorded data is processed and enhanced
+phases:
+  - phase: "initialization"
+    duration: 30
+    description: "Initialize recording playback and validate data integrity"
+    recording_mode: "validate"
+    enhanced_data:
+      - "depth_interpolation"
+      - "gps_smoothing"
+      - "compass_stabilization"
+    
+  - phase: "recorded_playback"
+    duration: 1620  # 27 minutes of recorded data
+    description: "Play back recorded NMEA data with enhancements"
+    recording_mode: "playback"
+    enhancements:
+      fill_gaps: true
+      smooth_transitions: true
+      add_synthetic_sensors: ["wind_direction_true", "battery_voltage"]
+      error_correction: "enabled"
+    
+  - phase: "synthetic_extension" 
+    duration: 150
+    description: "Extend recording with synthetic data maintaining continuity"
+    recording_mode: "synthetic"
+    continuity_parameters:
+      match_final_conditions: true
+      maintain_trends: true
+      realistic_variations: true
+
+# Enhanced data configuration combining recorded + synthetic
+data:
+  # Primary data from recording
+  depth:
+    type: "recorded"
+    unit: "feet"
+    source: "DBT"
+    fallback: 
+      type: "sine_wave"
+      base: 25
+      amplitude: 8
+      frequency: 0.02
+    validation:
+      min: 3.0
+      max: 200.0
+      
+  speed:
+    type: "recorded" 
+    unit: "knots"
+    source: "VHW"
+    fallback:
+      type: "gaussian"
+      mean: 6.5
+      std_dev: 0.8
+      min: 0.0
+      max: 15.0
+      
+  gps:
+    type: "recorded"
+    unit: "degrees"
+    source: "GGA"
+    enhancement:
+      smooth_track: true
+      fill_position_gaps: true
+      calculate_cog_sog: true
+      
+  # Synthetic enhancement sensors
+  wind:
+    angle:
+      type: "recorded_enhanced"
+      unit: "degrees"
+      source: "MWV"  
+      enhancement:
+        calculate_true_wind: true
+        smooth_apparent_wind: true
+        add_gusts: true
+        gust_probability: 0.15
+        gust_strength: 1.2
+        
+    speed:
+      type: "recorded_enhanced" 
+      unit: "knots"
+      source: "MWV"
+      enhancement:
+        realistic_variations: true
+        correlation_with_angle: true
+        
+  # Additional synthetic sensors not in recording
+  battery_voltage:
+    type: "synthetic"
+    unit: "volts"
+    base: 12.6
+    trend: "declining"  # Realistic battery discharge
+    rate: -0.1  # Volts per hour
+    noise: 0.05
+    
+  engine_temperature:
+    type: "synthetic"
+    unit: "celsius" 
+    base: 85
+    operating_range: [75, 95]
+    correlation_with_load: true
+
+# Timing configuration with recording synchronization  
+timing:
+  depth: 2     # 2 second intervals (from recording)
+  speed: 1     # 1 second intervals (from recording) 
+  gps: 10      # 10 second intervals (from recording)
+  wind: 3      # 3 second intervals (enhanced)
+  battery: 30  # 30 second intervals (synthetic)
+  engine: 5    # 5 second intervals (synthetic)
+
+# Recording-specific configuration
+recording:
+  source_file: "server/recordings/nmea_recording_20250720_003925.json"
+  format: "json_timestamped"  # Format of the recording file
+  checksum_validation: true   # Validate NMEA checksums
+  time_synchronization: "preserve_gaps"  # How to handle timing
+  loop_mode: false           # Don't loop the recording
+  
+  # Data quality parameters
+  quality:
+    ignore_malformed: true   # Skip sentences with invalid checksums
+    interpolate_gaps: true   # Fill missing data points
+    max_gap_duration: 10     # Maximum seconds to interpolate across
+    outlier_detection: true  # Remove unrealistic values
+    
+  # Enhancement algorithms
+  enhancements:
+    position_smoothing:
+      enabled: true
+      algorithm: "kalman_filter"
+      accuracy_weight: 0.7
+      
+    velocity_calculation:
+      enabled: true
+      method: "gps_derived"
+      smoothing_window: 5
+      
+    heading_stabilization:
+      enabled: true
+      compass_variation: -12  # Local magnetic variation
+      gyro_compensation: true
+
+# Functions for data processing and enhancement
+functions:
+  interpolate_depth: |
+    # Linear interpolation for missing depth readings
+    function(prev_value, next_value, time_fraction) {
+      return prev_value + (next_value - prev_value) * time_fraction;
+    }
+    
+  calculate_true_wind: |
+    # Calculate true wind from apparent wind and boat speed/heading
+    function(apparent_angle, apparent_speed, boat_speed, boat_heading) {
+      // Vector calculation for true wind
+      const boat_x = boat_speed * Math.cos(boat_heading * Math.PI / 180);
+      const boat_y = boat_speed * Math.sin(boat_heading * Math.PI / 180);
+      const app_x = apparent_speed * Math.cos(apparent_angle * Math.PI / 180);
+      const app_y = apparent_speed * Math.sin(apparent_angle * Math.PI / 180);
+      const true_x = app_x + boat_x;
+      const true_y = app_y + boat_y;
+      return {
+        angle: Math.atan2(true_y, true_x) * 180 / Math.PI,
+        speed: Math.sqrt(true_x * true_x + true_y * true_y)
+      };
+    }
+    
+  detect_outliers: |
+    # Detect and filter outlier sensor readings
+    function(value, history, threshold = 2.0) {
+      if (history.length < 3) return false;
+      const mean = history.reduce((sum, v) => sum + v, 0) / history.length;
+      const variance = history.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / history.length;
+      const stdDev = Math.sqrt(variance);
+      return Math.abs(value - mean) > threshold * stdDev;
+    }
+
+# Use cases this scenario addresses
+use_cases:
+  - "Validate app behavior against real sailing conditions"
+  - "Test data continuity across recording gaps"
+  - "Verify synthetic sensor integration"
+  - "Validate NMEA data processing accuracy"
+  - "Test performance with extended data streams"
+  - "Verify wind calculation algorithms"
+  - "Test position tracking and GPS smoothing"
+
+# Acceptance criteria mapping
+acceptance_criteria:
+  - "AC6: Real-World Recorded Scenario Integration"
+  - "AC9: Recorded NMEA Data Integration Support"
+  - "AC1: 5-minute Basic Navigation Scenario (extended to 30 min)"
+  - "AC5: YAML Configuration Schema and Validation"

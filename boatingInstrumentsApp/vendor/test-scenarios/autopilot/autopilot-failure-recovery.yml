@@ -1,0 +1,278 @@
+name: "Autopilot Failure Recovery Scenario"
+description: "Error conditions with emergency disengagement simulation"
+duration: 480  # 8 minutes including failure scenarios
+version: "1.0"
+category: "autopilot"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: 40  # feet
+    type: "sailboat"
+  conditions:
+    wind_speed: 20              # knots (stronger conditions)
+    sea_state: 4               # moderate seas
+    initial_heading: 180       # degrees
+
+# Failure recovery phases
+phases:
+  - phase: "normal_operation"
+    duration: 90  # 1.5 minutes
+    description: "Normal autopilot operation before failure"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 180
+      status: "NORMAL"
+      
+  - phase: "sensor_drift_warning"
+    duration: 60  # 1 minute
+    description: "Compass sensor drift warning condition"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 180
+      status: "WARNING"
+      error_code: "COMPASS_DRIFT"
+    events:
+      - time: 10
+        command: "sensor_warning"
+        description: "Compass drift warning message"
+      - time: 30
+        command: "drift_compensation"
+        description: "Attempt automatic drift compensation"
+        
+  - phase: "compass_failure"
+    duration: 45  # 45 seconds
+    description: "Compass failure - autopilot attempts recovery"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 180
+      status: "ERROR"
+      error_code: "COMPASS_FAILURE"
+    events:
+      - time: 0
+        command: "compass_failure"
+        description: "Compass failure detected"
+      - time: 15
+        command: "fallback_gps_course"
+        description: "Attempt fallback to GPS course tracking"
+      - time: 30
+        command: "recovery_failed"
+        description: "Automatic recovery failed"
+        
+  - phase: "emergency_disengagement"
+    duration: 30  # 30 seconds
+    description: "Emergency autopilot disengagement sequence"
+    autopilot_mode: "emergency_standby"
+    autopilot:
+      mode: "EMERGENCY_STANDBY"
+      engaged: false
+      status: "EMERGENCY_DISENGAGED"
+      error_code: "SYSTEM_FAILURE"
+    events:
+      - time: 0
+        command: "emergency_disengage"
+        description: "Emergency disengagement triggered"
+      - time: 5
+        command: "audible_alarm"
+        description: "Emergency alarm activation"
+      - time: 10
+        command: "helm_release"
+        description: "Hydraulic helm release"
+        
+  - phase: "manual_override"
+    duration: 75  # 1.25 minutes
+    description: "Manual helm control during emergency"
+    autopilot_mode: "manual"
+    autopilot:
+      mode: "STANDBY"
+      engaged: false
+      status: "MANUAL_OVERRIDE"
+    wind_effects:
+      increased_helm_load: true  # Simulate manual steering difficulty
+      
+  - phase: "system_reset_attempt"
+    duration: 60  # 1 minute
+    description: "Attempt to reset autopilot system"
+    autopilot_mode: "reset"
+    autopilot:
+      mode: "RESET"
+      engaged: false
+      status: "RESETTING"
+    events:
+      - time: 0
+        command: "system_reset"
+        description: "Initiate system reset"
+      - time: 20
+        command: "self_test"
+        description: "System self-test sequence"
+      - time: 40
+        command: "calibration_check"
+        description: "Compass calibration verification"
+      - time: 55
+        command: "reset_failed"
+        description: "Reset unsuccessful - manual operation required"
+        
+  - phase: "degraded_operation"
+    duration: 120  # 2 minutes
+    description: "Continued manual operation with degraded systems"
+    autopilot_mode: "manual"
+    autopilot:
+      mode: "STANDBY"
+      engaged: false
+      status: "DEGRADED"
+      error_code: "COMPASS_FAILURE"
+
+# Data generation with failure effects
+data:
+  depth:
+    type: "constant"
+    value: 35     # feet
+    unit: "feet"
+  
+  speed:
+    type: "failure_speed_profile"
+    base_speed: 7.5           # knots
+    manual_steering_variation: 1.0  # ±1 knot during manual steering
+    unit: "knots"
+    phases:
+      normal_operation: 7.5
+      sensor_drift_warning: 7.3      # Slight performance degradation
+      compass_failure: 7.0           # Autopilot struggling
+      emergency_disengagement: 6.5   # Speed drops during emergency
+      manual_override: 6.8           # Manual steering less efficient
+      system_reset_attempt: 7.0      # Steady manual steering
+      degraded_operation: 7.2        # Improved manual technique
+  
+  wind:
+    type: "challenging_conditions"
+    true_direction: 135       # degrees (beam reach)
+    true_speed: 20           # knots (challenging conditions)
+    gust_factor: 0.4         # 40% gusting (difficult conditions)
+    unit: "knots"
+    
+  compass:
+    type: "failure_simulation"
+    phases:
+      normal_operation: "stable"
+      sensor_drift_warning: "drift"     # ±3 degree drift
+      compass_failure: "erratic"       # Random readings
+      emergency_disengagement: "failed" # No valid readings
+      manual_override: "failed"
+      system_reset_attempt: "failed"
+      degraded_operation: "failed"
+  
+  gps:
+    type: "backup_navigation"
+    start_position:
+      latitude: 41.4300
+      longitude: -81.7200
+    track_type: "emergency_course"     # GPS provides heading reference
+    accuracy_degraded: false          # GPS remains reliable
+
+# NMEA sentence timing (emergency frequencies)
+timing:
+  depth: 1        # Hz
+  speed: 2        # Hz (monitor performance)
+  wind: 3         # Hz (challenging conditions)
+  gps: 2          # Hz (backup navigation)
+  compass: 10     # Hz (until failure, then 0)
+  autopilot: 5    # Hz (status and error reporting)
+  alarms: 2       # Hz (emergency alarm messages)
+
+# Failure simulation functions
+functions:
+  failure_speed_profile: |
+    // Speed varies based on autopilot status and manual steering efficiency
+    const currentPhase = getCurrentPhase(currentTime);
+    const baseForPhase = phases[currentPhase] || baseSpeed;
+    
+    if (currentPhase.includes('manual')) {
+      // Add manual steering variation
+      const variation = (Math.random() - 0.5) * 2 * manualSteeringVariation;
+      return Math.max(4.0, baseForPhase + variation);
+    }
+    return baseForPhase;
+    
+  challenging_conditions: |
+    // Wind with significant gusting in challenging conditions
+    const gustEffect = (Math.random() - 0.5) * 2 * gustFactor * trueSpeed;
+    const windSpeed = trueSpeed + gustEffect;
+    return Math.max(15, Math.min(30, windSpeed));
+    
+  failure_simulation: |
+    // Compass behavior based on failure phase
+    const currentPhase = getCurrentPhase(currentTime);
+    const baseHeading = getTargetHeading(currentTime);
+    
+    switch(phases[currentPhase]) {
+      case 'drift':
+        return baseHeading + Math.sin(currentTime / 30) * 3;  // ±3° drift
+      case 'erratic':
+        return baseHeading + (Math.random() - 0.5) * 60;      // ±30° random
+      case 'failed':
+        return null;  // No valid reading
+      default:
+        return baseHeading;
+    }
+
+# Emergency command sequences
+emergency_commands:
+  - type: "emergency_disengage"
+    nmea0183: "$PCDIN,01F112,00,00,00,00,00,00,00,00*5A"
+    priority: "EMERGENCY"
+    description: "Emergency autopilot disengagement"
+    
+  - type: "system_reset"
+    nmea0183: "$PCDIN,01F120,00,FF,00,00,00,00,00,00*60"
+    description: "System reset command"
+    
+  - type: "compass_failure_alert"
+    nmea0183: "$PCDIN,01F121,00,01,00,00,00,00,00,00*61"
+    description: "Compass failure alert message"
+    
+  - type: "manual_override_confirm"
+    nmea0183: "$PCDIN,01F122,00,01,00,00,00,00,00,00*62"
+    description: "Confirm manual override active"
+
+# Alarm sequences
+alarm_sequences:
+  - phase: "sensor_drift_warning"
+    alarms:
+      - type: "WARNING"
+        message: "Compass drift detected"
+        frequency: 0.1  # Every 10 seconds
+        
+  - phase: "compass_failure"
+    alarms:
+      - type: "ERROR"
+        message: "Compass failure"
+        frequency: 0.2  # Every 5 seconds
+        
+  - phase: "emergency_disengagement"
+    alarms:
+      - type: "CRITICAL"
+        message: "Emergency disengagement"
+        frequency: 1    # Every second
+        duration: 30    # 30 seconds
+
+# Use cases
+use_cases:
+  - "Autopilot failure detection and response testing"
+  - "Emergency disengagement sequence validation"
+  - "Manual override capability verification"
+  - "System reset and recovery procedure testing"
+  - "Alarm and notification system validation"
+  - "Degraded operation mode testing"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC2: Error conditions with emergency disengagement simulation"
+  - "AC2: Progressive phase management"
+  - "AC2: Timed event triggers"
+  - "AC2: Bidirectional command/response validation"

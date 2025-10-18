@@ -336,3 +336,26 @@ export interface StoreSubscription {
 export type StoreState = ConnectionState | NmeaState | AlarmState | WidgetState | SettingsState;
 export type StoreActions = ConnectionActions | NmeaActions | AlarmActions | WidgetActions | SettingsActions;
 export type Store = ConnectionStore | NmeaStore | AlarmStore | WidgetStore | SettingsStore;
+
+/**
+ * Story 6.6 Specific Store Interfaces
+ */
+export interface GenericStoreState<T> {
+  data: T;
+  loading: boolean;
+  error: string | null;
+}
+
+export interface NMEAStoreActions {
+  updateDepth: (value: number, unit: string) => void;
+  updateSpeed: (sog: number | null, stw: number | null, unit: string) => void;
+  updateWind: (awa: number, aws: number, twa?: number, tws?: number) => void;
+  resetAllData: () => void;
+}
+
+export interface WidgetStoreActions {
+  addWidget: (type: import('./widget.types').WidgetType) => void;
+  removeWidget: (id: string) => void;
+  updateWidgetConfig: (id: string, config: Partial<Record<string, any>>) => void;
+  updateWidgetPosition: (id: string, position: { x: number; y: number }) => void;
+}

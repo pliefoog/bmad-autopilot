@@ -128,19 +128,6 @@ export const WidgetShell: React.FC<WidgetShellProps> = ({
         <View style={styles.content}>
           {children}
         </View>
-        
-        {/* AC 17: Chevron indicator in widget header (positioned absolutely) */}
-        <Animated.View
-          style={[
-            styles.chevronContainer,
-            {
-              transform: [{ rotate: chevronRotation }],
-            },
-          ]}
-          testID={`${testID}-chevron`}
-        >
-          {/* Chevron will be provided by the child component (WidgetCard) */}
-        </Animated.View>
       </TouchableOpacity>
     </Animated.View>
   );

@@ -1,0 +1,272 @@
+# Synthetic Enhancement of Recorded Data
+# AC9: Recorded NMEA Data Integration Support with Synthetic Enhancements
+
+name: "Synthetic Enhanced Recording"
+description: "Combines recorded NMEA data with synthetic sensor additions and enhancements"
+duration: 900  # 15 minutes
+version: "1.0"  
+category: "recorded"
+
+parameters:
+  base_recording: "server/recordings/nmea_recording_20250720_003925.json"
+  enhancement_level: "full"  # "minimal", "moderate", "full"
+  synthetic_ratio: 0.3      # 30% synthetic data, 70% recorded
+  continuity_matching: true  # Match synthetic data to recorded trends
+
+phases:
+  - phase: "recording_analysis"
+    duration: 60
+    description: "Analyze recorded data patterns and establish baselines"
+    mode: "analysis"
+    analysis_tasks:
+      - "extract_data_patterns"
+      - "identify_sensor_gaps" 
+      - "calculate_trend_vectors"
+      - "establish_correlation_matrix"
+    
+  - phase: "hybrid_generation"
+    duration: 720  # 12 minutes
+    description: "Generate hybrid recorded + synthetic data stream"
+    mode: "hybrid"
+    mixing:
+      primary_sensors: "recorded"      # Use recorded for primary navigation
+      secondary_sensors: "synthetic"   # Add synthetic for missing sensors
+      enhancement_sensors: "calculated" # Derive additional data
+      
+  - phase: "synthetic_continuation"
+    duration: 120  # 2 minutes 
+    description: "Continue with pure synthetic data matching recorded patterns"
+    mode: "synthetic"
+    pattern_matching:
+      maintain_velocity_trends: true
+      preserve_heading_changes: true
+      continue_environmental_conditions: true
+
+# Hybrid data configuration
+data:
+  # Core navigation from recording
+  depth:
+    type: "recorded"
+    unit: "feet"
+    source: "DBT"
+    enhancement:
+      smooth_transitions: true
+      outlier_removal: true
+      confidence_weighting: 0.95
+      
+  speed:
+    type: "recorded"
+    unit: "knots" 
+    source: "VHW"
+    enhancement:
+      velocity_smoothing: true
+      acceleration_limits: [-0.5, 2.0]  # Realistic acceleration bounds
+      
+  heading:
+    type: "recorded"
+    unit: "degrees"
+    source: "HDG"
+    enhancement:
+      compass_stabilization: true
+      rate_limiting: 5  # Max 5°/second heading change
+      
+  position:
+    type: "recorded"
+    unit: "degrees"
+    source: "GGA"
+    enhancement:
+      track_smoothing: true
+      position_accuracy_weighting: true
+      
+  # Synthetic additions not in recording
+  heel_angle:
+    type: "synthetic_correlated"
+    unit: "degrees"
+    correlation_source: "wind_speed"
+    base: 0
+    max_heel: 25
+    correlation_factor: 0.6
+    noise: 0.5
+    
+  pitch_angle:
+    type: "synthetic_correlated" 
+    unit: "degrees"
+    correlation_source: "boat_speed"
+    base: 0
+    max_pitch: 8
+    correlation_factor: 0.4
+    wave_influence: true
+    
+  apparent_wind:
+    angle:
+      type: "synthetic_realistic"
+      unit: "degrees"
+      base_range: [30, 150]  # Sailing upwind to broad reach
+      variation: 15          # ±15° variations
+      gust_frequency: 0.1    # 10% chance of gust per update
+      
+    speed:
+      type: "synthetic_realistic"
+      unit: "knots"
+      base_range: [8, 18]
+      correlation_with_angle: true  # Higher speed off the wind
+      gust_multiplier: 1.4
+      lull_multiplier: 0.7
+      
+  # Calculated/derived sensors
+  true_wind:
+    angle:
+      type: "calculated"
+      unit: "degrees"
+      calculation: "true_wind_from_apparent"
+      inputs: ["apparent_wind_angle", "apparent_wind_speed", "boat_speed", "heading"]
+      
+    speed:
+      type: "calculated" 
+      unit: "knots"
+      calculation: "true_wind_from_apparent"
+      inputs: ["apparent_wind_angle", "apparent_wind_speed", "boat_speed", "heading"]
+      
+  current:
+    set:
+      type: "synthetic_environmental"
+      unit: "degrees"
+      tidal_influence: true
+      coastal_effects: true
+      base_direction: 270  # Westerly current
+      
+    drift:
+      type: "synthetic_environmental"
+      unit: "knots"
+      tidal_cycle: 12.5    # Hours
+      max_current: 2.5     # Knots
+      correlation_with_set: true
+      
+  # Engine/electrical systems
+  engine_rpm:
+    type: "synthetic_operational"
+    unit: "rpm"
+    operational_states: ["off", "idle", "cruise", "full"]
+    state_transitions: "realistic"
+    idle_rpm: 800
+    cruise_rpm: 2200
+    max_rpm: 3600
+    
+  alternator_output:
+    type: "synthetic_correlated"
+    unit: "amps" 
+    correlation_source: "engine_rpm"
+    base_load: 5         # House loads
+    charging_curve: "realistic"
+    battery_state_influence: true
+    
+  fuel_flow:
+    type: "synthetic_correlated"
+    unit: "gph"
+    correlation_source: "engine_rpm"
+    efficiency_curve: "realistic"
+    sea_state_influence: true
+
+# Advanced timing with correlation management
+timing:
+  # Primary navigation (from recording)
+  depth: 2
+  speed: 1
+  heading: 1
+  position: 10
+  
+  # Synthetic additions
+  heel_angle: 0.5      # High frequency for sailing dynamics
+  pitch_angle: 0.5
+  apparent_wind: 1     # Wind updates every second
+  true_wind: 1         # Calculated from apparent
+  
+  # Environmental 
+  current: 60          # Current updates every minute
+  
+  # Engine/electrical
+  engine_rpm: 2        # Engine monitoring
+  alternator_output: 5 # Electrical system monitoring  
+  fuel_flow: 10        # Fuel consumption tracking
+
+# Synthetic generation algorithms
+synthesis:
+  correlation_engine:
+    enabled: true
+    correlation_matrix:
+      - [heel_angle, apparent_wind_speed, 0.7]
+      - [pitch_angle, boat_speed, 0.5] 
+      - [alternator_output, engine_rpm, 0.9]
+      - [fuel_flow, engine_rpm, 0.8]
+      
+  pattern_matching:
+    velocity_profiles: true    # Match recorded velocity changes
+    heading_patterns: true     # Preserve recorded course changes
+    environmental_continuity: true # Maintain weather conditions
+    
+  noise_modeling:
+    sensor_accuracy: "realistic"  # Add appropriate sensor noise
+    environmental_effects: true   # Wind/sea state influence
+    electrical_interference: false # No EMI simulation needed
+
+# Mathematical functions for synthetic data generation
+functions:
+  heel_from_wind: |
+    # Calculate heel angle based on apparent wind
+    function(wind_speed, wind_angle, boat_speed) {
+      const apparent_force = wind_speed * wind_speed;
+      const angle_factor = Math.sin(wind_angle * Math.PI / 180);
+      const speed_factor = 1 + (boat_speed / 10);  // More heel at higher speeds
+      return Math.min(25, apparent_force * angle_factor * speed_factor * 0.1);
+    }
+    
+  alternator_curve: |
+    # Realistic alternator output curve
+    function(engine_rpm, battery_voltage) {
+      if (engine_rpm < 1000) return 0;
+      const base_output = Math.min(60, (engine_rpm - 1000) * 0.02);
+      const voltage_factor = battery_voltage < 12.0 ? 1.2 : 
+                            battery_voltage > 13.5 ? 0.8 : 1.0;
+      return base_output * voltage_factor;
+    }
+    
+  tidal_current: |
+    # Tidal current calculation
+    function(time_hours, tidal_phase = 0) {
+      const tidal_period = 12.42; // Lunar tidal cycle
+      const cycle_position = ((time_hours + tidal_phase) % tidal_period) / tidal_period;
+      return 2.5 * Math.sin(2 * Math.PI * cycle_position);
+    }
+
+# Enhanced validation for synthetic data
+validation:
+  correlation_checks: true      # Verify correlations are maintained
+  realism_bounds: true         # Check values stay within realistic ranges
+  continuity_verification: true # Ensure smooth transitions
+  physics_validation: true     # Basic physics sanity checks
+  
+  bounds_checking:
+    heel_angle: [-30, 30]      # Degrees
+    apparent_wind_speed: [0, 50] # Knots
+    engine_rpm: [0, 4000]      # RPM
+    alternator_output: [0, 80]  # Amps
+    
+  rate_limiting:
+    heel_angle: 10             # Max change per second (degrees)
+    apparent_wind_angle: 20    # Max change per second (degrees)
+    engine_rpm: 200           # Max change per second
+
+use_cases:
+  - "Test app with comprehensive sensor suite"
+  - "Validate correlation-based data relationships"
+  - "Test synthetic sensor integration accuracy"
+  - "Verify realistic sailing dynamics simulation"
+  - "Test electrical system monitoring"
+  - "Validate environmental condition modeling"
+  - "Test data fusion algorithms"
+
+acceptance_criteria:
+  - "AC9: Recorded NMEA Data Integration Support" 
+  - "AC6: Real-World Recorded Scenario Integration"
+  - "AC5: YAML Configuration Schema and Validation"
+  - "AC7: Scenario Engine with Progressive State Management"

@@ -1,0 +1,215 @@
+name: "Malformed Data Stress Scenario"
+description: "Error resilience testing with invalid checksums, truncated sentences, binary garbage"
+duration: 480  # 8 minutes
+version: "1.0"
+category: "performance"
+
+# Error injection parameters
+parameters:
+  error_injection:
+    enabled: true
+    error_rate: 0.15          # 15% of messages will have errors
+    recovery_testing: true
+    graceful_degradation: true
+  error_types:
+    invalid_checksums: true
+    truncated_sentences: true
+    binary_garbage: true
+    malformed_fields: true
+    out_of_range_values: true
+
+# Error resilience testing phases
+phases:
+  - phase: "baseline_normal"
+    duration: 60  # 1 minute
+    description: "Normal operation for baseline comparison"
+    error_rate: 0.0
+    monitoring_active: true
+    
+  - phase: "low_error_rate"
+    duration: 90  # 1.5 minutes
+    description: "Low error rate (5%) - normal resilience"
+    error_rate: 0.05
+    error_types: ["invalid_checksums"]
+    
+  - phase: "moderate_error_rate" 
+    duration: 120  # 2 minutes
+    description: "Moderate error rate (15%) - mixed error types"
+    error_rate: 0.15
+    error_types: ["invalid_checksums", "truncated_sentences", "malformed_fields"]
+    
+  - phase: "high_error_rate"
+    duration: 90   # 1.5 minutes
+    description: "High error rate (30%) - stress testing"
+    error_rate: 0.30
+    error_types: ["invalid_checksums", "truncated_sentences", "binary_garbage"]
+    
+  - phase: "extreme_garbage"
+    duration: 60   # 1 minute
+    description: "Extreme error conditions - binary garbage flood"
+    error_rate: 0.50
+    error_types: ["binary_garbage", "out_of_range_values"]
+    
+  - phase: "recovery_testing"
+    duration: 60   # 1 minute
+    description: "Return to normal - test recovery capabilities"
+    error_rate: 0.0
+    recovery_validation: true
+
+# Malformed data generation
+data:
+  navigation_base:
+    type: "standard_marine_data"
+    depth: 20     # feet
+    speed: 6.0    # knots
+    heading: 180  # degrees
+    wind_angle: 45    # degrees
+    wind_speed: 15    # knots
+    
+  error_injection:
+    type: "malformed_generator"
+    error_patterns: "comprehensive"
+
+# Error injection patterns
+error_patterns:
+  invalid_checksums:
+    pattern: "corrupt_checksum"
+    frequency: 0.2    # 20% of checksum errors
+    examples:
+      - original: "$SDDBT,20.0,f,6.1,M,3.3,F*7A"
+        corrupted: "$SDDBT,20.0,f,6.1,M,3.3,F*FF"  # Invalid checksum
+        
+  truncated_sentences:
+    pattern: "incomplete_sentence"
+    frequency: 0.25   # 25% of truncation errors
+    examples:
+      - original: "$SDDBT,20.0,f,6.1,M,3.3,F*7A"
+        corrupted: "$SDDBT,20.0,f,6.1,M"            # Truncated
+      - original: "$SDVHW,180.0,T,180.0,M,6.0,N,11.1,K*"
+        corrupted: "$SDVHW,180.0,T,180.0,M,6."       # Mid-field truncation
+        
+  binary_garbage:
+    pattern: "random_binary"
+    frequency: 0.15   # 15% of binary errors
+    examples:
+      - "\xFF\xFE\x00\x01\x80\x7F\xAA\x55"         # Random binary
+      - "$\x00\x00DBT,20.0,f\xFF\xFF"              # Mixed binary/text
+      - "ÿþ€∟ªU"                                   # UTF-8 garbage
+      
+  malformed_fields:
+    pattern: "invalid_field_data"
+    frequency: 0.25   # 25% of field errors
+    examples:
+      - "$SDDBT,INVALID,f,6.1,M,3.3,F*XX"          # Non-numeric depth
+      - "$SDVHW,999.9,T,180.0,M,6.0,N,11.1,K*7A"   # Out-of-range heading
+      - "$SDMWV,,R,,N,A*XX"                         # Missing values
+      
+  out_of_range_values:
+    pattern: "extreme_values"
+    frequency: 0.15   # 15% of range errors
+    examples:
+      - "$SDDBT,999999.0,f,304799.4,M,164041.7,F*XX" # Extreme depth
+      - "$SDVHW,999.9,T,999.9,M,999.9,N,1851.8,K*XX" # Invalid heading/speed
+      - "$SDMWV,999.9,R,999.9,N,A*XX"                # Extreme wind values
+
+# Error resilience monitoring
+error_monitoring:
+  message_parsing:
+    successful_parses: 0      # Count
+    failed_parses: 0          # Count
+    recovery_attempts: 0      # Count
+    
+  data_integrity:
+    valid_data_points: 0      # Count
+    corrupted_data_points: 0  # Count
+    interpolated_values: 0    # Count
+    
+  system_stability:
+    crashes: 0                # Count (should remain 0)
+    memory_leaks: false       # Boolean
+    performance_degradation: 0 # Percentage
+
+# NMEA sentence timing with errors
+timing:
+  base_frequency: 2    # Hz (normal message rate)
+  error_injection: 2   # Hz (error injection rate)
+  monitoring: 1        # Hz (error monitoring)
+
+# Error handling validation
+error_handling_tests:
+  checksum_validation:
+    test: "invalid_checksum_rejection"
+    expected: "message_discarded"
+    fallback: "use_previous_valid_value"
+    
+  truncation_handling:
+    test: "incomplete_sentence_detection"
+    expected: "parse_failure_graceful"
+    fallback: "continue_processing_next_message"
+    
+  garbage_filtering:
+    test: "binary_data_rejection"
+    expected: "filter_non_ascii_sentences"
+    fallback: "maintain_normal_operation"
+    
+  range_validation:
+    test: "out_of_range_value_detection"
+    expected: "value_clamping_or_rejection"
+    fallback: "use_reasonable_defaults"
+
+# Recovery mechanisms
+recovery_mechanisms:
+  message_level:
+    - "Checksum validation and rejection"
+    - "Field format validation"
+    - "Range checking and clamping"
+    - "Graceful parse failure handling"
+    
+  system_level:
+    - "Message buffer overflow protection"
+    - "Error rate monitoring and throttling"
+    - "Automatic fallback to last known good values"
+    - "System stability maintenance under stress"
+
+# Performance impact measurement
+performance_impact:
+  baseline_metrics:
+    cpu_usage: 0         # Percent (measured during baseline)
+    memory_usage: 0      # MB (measured during baseline)
+    parse_time: 0        # Microseconds average
+    
+  stress_metrics:
+    cpu_overhead: 0      # Percent increase during errors
+    memory_overhead: 0   # MB increase during errors
+    parse_time_increase: 0 # Microseconds increase
+
+# Graceful degradation testing
+degradation_scenarios:
+  - condition: "50% message corruption"
+    expected_behavior: "Continue operation with interpolated values"
+    acceptable_performance: ">70% normal operation"
+    
+  - condition: "Complete garbage flood"
+    expected_behavior: "Reject all garbage, maintain system stability"
+    acceptable_performance: "No crashes, minimal memory impact"
+    
+  - condition: "Mixed valid/invalid sentences"
+    expected_behavior: "Process valid messages, reject invalid cleanly"
+    acceptable_performance: ">90% processing efficiency"
+
+# Use cases
+use_cases:
+  - "Error resilience testing with various malformed data types"
+  - "Invalid checksum detection and handling"
+  - "Truncated sentence recovery mechanisms"
+  - "Binary garbage filtering and rejection"
+  - "System stability under extreme error conditions"
+  - "Performance impact measurement during stress"
+  - "Graceful degradation validation"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC4: Malformed-data stress testing with error resilience"
+  - "AC4: Invalid checksums, truncated sentences, binary garbage testing"
+  - "AC4: Performance and stress testing scenarios"
+  - "AC8: Cross-platform behavior validation (identical error handling)"

@@ -1,9 +1,6 @@
 // NMEA Parser Service
 // Enhanced NMEA sentence parsing with validation and error handling
 
-import { useNmeaStore } from '../../stores/nmeaStore';
-import { useConnectionStore } from '../../stores/connectionStore';
-
 export interface ParsedNmeaData {
   messageType: string;
   talker: string;
@@ -27,8 +24,6 @@ export class NmeaParser {
 
   parseNmeaSentence(sentence: string): ParsedNmeaData | null {
     const timestamp = Date.now();
-    const connectionStore = useConnectionStore.getState();
-    const nmeaStore = useNmeaStore.getState();
 
     try {
       // Basic NMEA validation
@@ -48,11 +43,9 @@ export class NmeaParser {
 
       // Parse based on message type
       const parsedData = this.parseByMessageType(messageType, parts);
-      
-      // Update metrics
+
+      // Update internal metrics only
       this.updateMessageMetrics(messageType);
-      connectionStore.incrementPacketsReceived();
-      nmeaStore.incrementMessageType(messageType);
 
       return {
         messageType,
@@ -64,7 +57,6 @@ export class NmeaParser {
       };
 
     } catch (error) {
-      connectionStore.incrementPacketsDropped();
       const errorMessage = error instanceof Error ? error.message : 'Unknown parsing error';
       return this.createErrorResult(sentence, timestamp, [errorMessage]);
     }
@@ -78,6 +70,7 @@ export class NmeaParser {
       case 'DPT': return this.parseDPT(parts);
       case 'HDG': return this.parseHDG(parts);
       case 'RPM': return this.parseRPM(parts);
+      case 'ROT': return this.parseROT(parts);
       default: return this.parseGeneric(parts);
     }
   }
@@ -141,6 +134,17 @@ export class NmeaParser {
       rpm: parseFloat(parts[3]) || 0,
       pitch: parseFloat(parts[4]) || 0,
       status: parts[5] || '',
+    };
+  }
+
+  private parseROT(parts: string[]): Record<string, any> {
+    // ROT - Rate of Turn
+    // $--ROT,x.x,A*hh
+    // Field 1: Rate of turn, degrees per minute, "-" indicates bow turns to port
+    // Field 2: Status: A = data valid, V = data invalid
+    return {
+      rateOfTurn: parseFloat(parts[1]) || 0,
+      status: parts[2] || 'V',
     };
   }
 

@@ -1,0 +1,42 @@
+# NMEA Bridge Simulator - Docker Container
+# Provides containerized simulator for CI/CD environments
+
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    bash \
+    curl \
+    jq
+
+# Copy package files
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm ci --only=production
+
+# Copy application files
+COPY server/ ./server/
+COPY vendor/ ./vendor/
+COPY src/types/ ./src/types/
+
+# Create non-root user
+RUN addgroup -g 1001 -S simulator && \
+    adduser -S simulator -u 1001 -G simulator
+
+# Change ownership
+RUN chown -R simulator:simulator /app
+USER simulator
+
+# Expose ports
+EXPOSE 2000 8080 9090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:9090/api/health || exit 1
+
+# Default command
+CMD ["node", "server/nmea-bridge-simulator.js", "--scenario", "basic-navigation"]

@@ -329,6 +329,38 @@ export interface ServiceResilience {
 }
 
 /**
+ * Story 6.6 Specific Service Interfaces
+ */
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+export interface StoryConnectionState {
+  status: ConnectionStatus;
+  wifiBridge: {
+    host: string;
+    port: number;
+    lastConnected?: number;
+  };
+  retryState: {
+    attempts: number;
+    nextRetryAt?: number;
+  };
+}
+
+export interface StorageService<T> {
+  save(data: T): Promise<void>;
+  load(): Promise<T | null>;
+  clear(): Promise<void>;
+}
+
+export interface PlaybackService {
+  loadFile(filename: string): Promise<void>;
+  startPlayback(speed?: number): void;
+  pausePlayback(): void;
+  stopPlayback(): void;
+  getAvailableFiles(): string[];
+}
+
+/**
  * Export utility types
  */
 export type ServiceId = string;

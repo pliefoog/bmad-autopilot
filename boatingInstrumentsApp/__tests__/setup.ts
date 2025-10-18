@@ -1,6 +1,14 @@
 // Jest setup file for React Native testing
 // This file is loaded before all tests via setupFilesAfterEnv in jest.config.js
 
+// Mock expo-brightness
+jest.mock('expo-brightness', () => ({
+  setBrightnessAsync: jest.fn(() => Promise.resolve()),
+  getBrightnessAsync: jest.fn(() => Promise.resolve(1.0)),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  usePermissions: jest.fn(() => [{ status: 'granted' }, jest.fn()]),
+}));
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),

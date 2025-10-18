@@ -1,6 +1,9 @@
 // Service Layer Architecture - Domain-Separated Services
 // Centralized exports for all service domains with clean separation of concerns
 
+// Service Registry
+export * from './registry';
+
 // Domain-specific service exports
 export * as NmeaServices from './nmea';
 export * as ConnectionServices from './connection';
@@ -28,11 +31,13 @@ export * from './webNmeaInit';
 export * from './mockServer';
 export * from './stressTestService';
 
-// Service initialization
-export const initServices = () => {
-  console.log('Domain-separated services initialized');
+// Service initialization with registry
+export const initServices = async () => {
+  const { serviceRegistry } = await import('./registry');
+  await serviceRegistry.initialize();
+  console.log('Domain-separated services initialized with service registry');
   console.log('Available domains: NMEA, Connection, Autopilot, Playback, Storage, UI');
-  return 'Services initialized';
+  return 'Services initialized with registry';
 };
 
 // Service domain utilities

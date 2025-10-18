@@ -121,9 +121,11 @@ const CompassRose: React.FC<CompassRoseProps> = memo(({ heading }) => {
   const cardinalPositions = useMemo(() => {
     const getCardinalPosition = (angle: number) => {
       const adjustedAngle = (angle - normalizedHeading) * (Math.PI / 180);
+      const x = center + radius * Math.sin(adjustedAngle);
+      const y = center - radius * Math.cos(adjustedAngle);
       return {
-        x: center + radius * Math.sin(adjustedAngle),
-        y: center - radius * Math.cos(adjustedAngle),
+        x: isNaN(x) ? center : x,
+        y: isNaN(y) ? center : y,
       };
     };
 
@@ -141,33 +143,24 @@ const CompassRose: React.FC<CompassRoseProps> = memo(({ heading }) => {
       const isCardinal = angle % 90 === 0;
       const tickLength = isCardinal ? 8 : 4;
       const adjustedAngle = (angle - normalizedHeading) * (Math.PI / 180);
-      const x1 = center + (radius - tickLength) * Math.sin(adjustedAngle);
-      const y1 = center - (radius - tickLength) * Math.cos(adjustedAngle);
-      const x2 = center + radius * Math.sin(adjustedAngle);
-      const y2 = center - radius * Math.cos(adjustedAngle);
+      const x1_calc = center + (radius - tickLength) * Math.sin(adjustedAngle);
+      const y1_calc = center - (radius - tickLength) * Math.cos(adjustedAngle);
+      const x2_calc = center + radius * Math.sin(adjustedAngle);
+      const y2_calc = center - radius * Math.cos(adjustedAngle);
       
       return {
         angle,
         isCardinal,
-        x1,
-        y1,
-        x2,
-        y2,
+        x1: isNaN(x1_calc) ? center : x1_calc,
+        y1: isNaN(y1_calc) ? center : y1_calc,
+        x2: isNaN(x2_calc) ? center : x2_calc,
+        y2: isNaN(y2_calc) ? center : y2_calc,
       };
     });
   }, [normalizedHeading, center, radius]);
   
   return (
     <Svg height={size} width={size}>
-      {/* Compass rose background circle */}
-      <Circle
-        cx={center}
-        cy={center}
-        r={radius}
-        fill="transparent"
-        stroke={theme.border}
-        strokeWidth="1"
-      />
       <G>
         {/* Outer circle */}
         <Circle

@@ -7,28 +7,74 @@ This directory contains YAML configuration files for the NMEA Bridge Simulator t
 ```
 test-scenarios/
 ├── basic/
-│   └── basic-navigation.yml     # Standard navigation scenario
+│   ├── basic-navigation.yml     # Standard navigation scenario  
+│   ├── coastal-sailing.yml      # Variable depth with tidal effects
+│   └── deep-water-passage.yml   # Ocean conditions, deep water
 ├── autopilot/
-│   └── autopilot-engagement.yml # Autopilot testing scenario
+│   ├── autopilot-engagement.yml # Basic autopilot testing scenario
+│   ├── autopilot-tack-sequence.yml # Sailing tack maneuver
+│   └── autopilot-failure-recovery.yml # Error conditions and recovery
+├── safety/
+│   ├── shallow-water-alarm.yml  # Progressive depth decrease
+│   ├── engine-temperature-alarm.yml # Engine monitoring scenario
+│   └── battery-drain-scenario.yml # Electrical system monitoring
+├── performance/
+│   ├── high-frequency-data.yml  # High message rate testing
+│   ├── malformed-data-stress.yml # Error resilience testing
+│   └── multi-protocol-scenario.yml # NMEA 0183 ↔ 2000 transitions
+├── recorded/
+│   └── recorded-regatta.nmea    # Real-world racing data
 └── README.md                    # This file
 ```
 
 ## Scenario Files
 
-### basic-navigation.yml
-- **Purpose**: Standard sailing conditions with realistic marine instrument data
-- **Duration**: 10 minutes (looped)
-- **Data**: Depth, speed, wind, GPS, compass
+### Basic Navigation Scenarios
+
+**basic-navigation.yml**
+- **Purpose**: Standard depth, speed, wind, GPS data for fundamental testing
+- **Duration**: 5 minutes (as per AC1)
+- **Data**: Depth (15±5 feet), Speed (6±0.5 knots), Wind, GPS, Compass
 - **Use Case**: General widget testing and development
 - **Bridge Mode**: NMEA 0183 (traditional sentences)
 
-### autopilot-engagement.yml  
-- **Purpose**: Full autopilot engagement cycle with bidirectional commands
+**coastal-sailing.yml**
+- **Purpose**: Variable depth (5-100 feet) with tidal effects simulation
+- **Duration**: 10 minutes with depth profile
+- **Data**: Tidal depth variations, coastal wind patterns, GPS track
+- **Use Case**: Depth alarm testing, tidal calculations
+- **Bridge Mode**: NMEA 0183 with depth focus
+
+**deep-water-passage.yml**  
+- **Purpose**: Ocean conditions with consistent deep water (>1000 feet)
+- **Duration**: 15 minutes ocean passage simulation
+- **Data**: Deep water (1000+ feet), ocean swells, steady conditions
+- **Use Case**: Ocean passage widgets, steady-state testing
+- **Bridge Mode**: NMEA 0183, minimal depth variation
+
+### Autopilot Control Scenarios
+
+**autopilot-engagement.yml**  
+- **Purpose**: Complete engagement sequence (manual → auto → heading adjustments → disengagement)
 - **Duration**: 5 minutes (phase-based, no loop)
 - **Data**: All navigation data + autopilot commands and status
 - **Use Case**: Epic 3 autopilot development and testing
 - **Bridge Mode**: NMEA 0183 with $PCDIN encapsulation for NMEA 2000 PGNs
-- **Critical Features**: Bidirectional command processing, phase transitions
+- **Phases**: manual_steering → engagement → heading_adjustments → disengagement
+
+**autopilot-tack-sequence.yml**
+- **Purpose**: Sailing tack maneuver with 5-second countdown and wind transition
+- **Duration**: 3 minutes per tack sequence
+- **Data**: Wind shift simulation, heading changes, boat speed variations
+- **Use Case**: Sailing autopilot testing, tacking maneuvers
+- **Bridge Mode**: NMEA 0183 with autopilot PGNs
+
+**autopilot-failure-recovery.yml**
+- **Purpose**: Error conditions with emergency disengagement simulation
+- **Duration**: 8 minutes including failure scenarios
+- **Data**: Autopilot error states, manual override sequences
+- **Use Case**: Safety testing, failure recovery procedures
+- **Bridge Mode**: NMEA 0183 with error message simulation
 
 ## Scenario Usage
 

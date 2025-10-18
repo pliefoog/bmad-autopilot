@@ -54,6 +54,16 @@ export const createWidgetStyles = (theme: ThemeColors) =>
       marginLeft: 8,
     },
 
+    // Caret container for touch handling (Story 2.15)
+    caretContainer: {
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+      marginLeft: 8,
+      minWidth: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
     // Icon in header
     widgetIcon: {
       marginRight: 6,
@@ -212,7 +222,7 @@ export const getStateColor = (
       return theme.textSecondary;
     case 'normal':
     default:
-      return theme.text; // Normal state uses monochrome text color, not green
+      return theme.success; // Normal state indicates good/functioning status
   }
 };
 

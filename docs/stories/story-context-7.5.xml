@@ -1,0 +1,354 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>7.5</storyId>
+    <title>NMEA Protocol Conversion Engine</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-10-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-7.5-nmea-protocol-conversion.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>marine app developer testing with the NMEA Bridge Simulator</asA>
+    <iWant>accurate NMEA 2000 ↔ NMEA 0183 protocol conversion that mirrors physical WiFi bridge behavior</iWant>
+    <soThat>I can validate widget functionality against both protocol formats with semantically equivalent data, matching how real Actisense, Yacht Devices, and other commercial bridges operate</soThat>
+    <tasks>
+      <phase name="Phase 1: Core Conversion Architecture" hours="8">
+        <task id="A" description="Design NMEAProtocolConverter class interface" hours="2"/>
+        <task id="B" description="Implement $PCDIN encapsulation function" hours="2"/>
+        <task id="C" description="Create conversion rules configuration structure" hours="2"/>
+        <task id="D" description="Implement checksum calculation utilities" hours="2"/>
+      </phase>
+      <phase name="Phase 2: Native Conversion Implementations" hours="12">
+        <task id="E" description="PGN 128267 → DBT/DPT (Depth)" hours="2"/>
+        <task id="F" description="PGN 128259 → VHW (Speed)" hours="2"/>
+        <task id="G" description="PGN 130306 → MWV (Wind)" hours="2"/>
+        <task id="H" description="PGN 129029 → GGA/RMC (GPS)" hours="2"/>
+        <task id="I" description="PGN 127250 → HDG (Heading)" hours="2"/>
+        <task id="J" description="PGN 127488 → RPM (Engine)" hours="2"/>
+      </phase>
+      <phase name="Phase 3: Simulator Integration" hours="6">
+        <task id="K" description="Integrate converter into simulator data generation" hours="3"/>
+        <task id="L" description="Update simulator to use PGNs as internal format" hours="3"/>
+      </phase>
+      <phase name="Phase 4: Testing and Validation" hours="8">
+        <task id="M" description="Unit tests for all conversion functions" hours="4"/>
+        <task id="N" description="Create comparison recordings (NMEA 0183 vs NMEA 2000)" hours="2"/>
+        <task id="O" description="Validation against Actisense reference behavior" hours="2"/>
+      </phase>
+      <phase name="Phase 5: Documentation" hours="6">
+        <task id="P" description="Document conversion rules and mappings" hours="3"/>
+        <task id="Q" description="Create PGN mapping table reference" hours="2"/>
+        <task id="R" description="Update simulator documentation" hours="1"/>
+      </phase>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC1" title="Core Protocol Conversion Architecture">
+      Generate NMEA 2000 PGNs internally as single source of truth, Convert PGNs to NMEA 0183 sentences using NMEAProtocolConverter class, Use native NMEA 0183 sentences where direct mappings exist, Use $PCDIN encapsulation for PGNs without NMEA 0183 equivalents, Maintain semantic equivalence between protocols
+    </ac>
+    <ac id="AC2" title="Native Sentence Conversion Mappings">
+      PGN 128267 → DBT/DPT (Depth), PGN 128259 → VHW (Speed), PGN 130306 → MWV (Wind), PGN 129029 → GGA/RMC (GPS), PGN 127250 → HDG (Heading), PGN 127488 → RPM (Engine), PGN 130310 → MTW (Water Temp), PGN 130311 → MTA (Air Temp)
+    </ac>
+    <ac id="AC3" title="$PCDIN Encapsulation for Unmapped PGNs">
+      Encapsulate in $PCDIN format with correct checksum, Apply to PGN 127505 (Fluid Level - tanks), Apply to PGN 127508 (Battery Status - optionally or XDR), Preserve source address and instance information
+    </ac>
+    <ac id="AC4" title="Bidirectional Conversion Support">
+      DBT/DPT → PGN 128267, VHW → PGN 128259, MWV → PGN 130306, Extensible architecture for additional conversions
+    </ac>
+    <ac id="AC5" title="Conversion Validation and Testing">
+      Unit tests for each PGN → sentence mapping, Validation against Actisense NGW-1 conversion table, Comparison recordings (same scenario both protocols), Semantic equivalence verification tests
+    </ac>
+    <ac id="AC6" title="Physical Bridge Behavior Compliance">
+      Match Actisense W2K-1/NGW-1 conversion patterns, Match Yacht Devices YBWN-02 protocol handling, Standard $PCDIN encapsulation format, Message timing and frequency characteristics
+    </ac>
+    <ac id="AC7" title="Device-Specific Mapping Configuration">
+      Device profile configuration for Actisense W2K-1/NGW-1/Yacht Devices/QK-A032, Selectable mapping profiles via command-line (--bridge-profile actisense-ngw1), Device-specific PGN → sentence mappings matching exact bridge behavior, Configurable $PCDIN usage per device, Per-device conversion rules loaded from config/bridge-profiles/[device].yaml, Default profile (Actisense NGW-1)
+    </ac>
+    <ac id="AC8" title="Conversion Configuration and Documentation">
+      Device-specific conversion profiles (YAML configuration), PGN mapping table documentation per device profile, $PCDIN format specification, Extension guide for adding new device profiles
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/stories/story-7.4-synthetic-nmea-recordings.md" title="Story 7.4 - Synthetic Recordings" section="Protocol Conversion Notes">
+        NMEA 2000 → NMEA 0183 mapping table, $PCDIN encapsulation format examples. Story 7.4 recordings depend on accurate protocol conversion from this story.
+      </doc>
+      <doc path="docs/stories/story-7.1-core-multi-protocol-simulator.md" title="Story 7.1 - Multi-Protocol Simulator" section="Bidirectional Communication Support">
+        Existing autopilot command processing in both NMEA 0183 and NMEA 2000 modes. Protocol converter must integrate with this bidirectional architecture.
+      </doc>
+      <doc path="docs/research/NMEA2000_0183 conversion table.pdf" title="NMEA Conversion Reference" section="Complete Document">
+        Physical reference document for NMEA 2000/0183 conversion tables. Use for validation of conversion accuracy.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/server/nmea-bridge-simulator.js" kind="simulator" symbol="NMEABridgeSimulator" lines="1-500" reason="Core simulator that needs integration with NMEAProtocolConverter. Currently generates different data per bridge mode - should use PGNs as single source of truth with conversion"/>
+      <artifact path="boatingInstrumentsApp/src/services/nmea/pgnParser.ts" kind="service" symbol="PGNParser" lines="1-200" reason="Existing PGN parsing logic. Conversion engine needs to generate PGN data structures compatible with this parser"/>
+      <artifact path="boatingInstrumentsApp/src/services/globalConnectionService.ts" kind="service" symbol="GlobalConnectionService" lines="1-300" reason="Connection service that handles NMEA message processing. Protocol converter output must be compatible with connection service expectations"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="nmea-simple" version="^3.2.0" reason="NMEA 0183 sentence parsing and validation - use for checksum validation"/>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>NMEAProtocolConverter class MUST be implemented in src/services/nmea/protocolConverter.ts following existing service patterns</constraint>
+    <constraint>All conversion functions MUST maintain semantic equivalence - same data values in both protocol formats</constraint>
+    <constraint>Checksum calculation MUST use XOR algorithm for NMEA 0183 sentences: XOR all characters between $ and * (exclusive), format as 2-digit uppercase hex</constraint>
+    <constraint>$PCDIN encapsulation MUST follow format: $PCDIN,PGNhex,src,dst,databytes*checksum where PGNhex is 6-digit uppercase hex</constraint>
+    <constraint>Unit conversion MUST be accurate: meters to feet (×3.28084), meters to fathoms (×0.546807), m/s to knots (×1.94384)</constraint>
+    <constraint>Device profiles MUST be stored in config/bridge-profiles/ directory as YAML files</constraint>
+    <constraint>Default profile MUST be Actisense NGW-1 (most common recreational WiFi bridge)</constraint>
+    <constraint>Command-line flag --bridge-profile MUST select device-specific conversion profile</constraint>
+    <constraint>PGN source address and instance information MUST be preserved through conversion for multi-instance detection</constraint>
+    <constraint>Conversion implementation MUST not break existing simulator functionality or recording playback</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="NMEAProtocolConverter Class" kind="typescript-class">
+      <signature>
+export class NMEAProtocolConverter {
+  constructor(profileName?: string);  // Load device profile
+
+  convertPGNToSentences(pgn: number, data: PGNData): string[];
+  convertSentenceToPGN(sentence: string): PGNData | null;
+
+  private performNativeConversion(pgn: number, data: PGNData): string[];
+  private encapsulatePCDIN(pgn: number, data: PGNData): string;
+  private addChecksum(sentence: string): string;
+  private calculateXORChecksum(data: string): string;
+}
+
+interface PGNData {
+  pgn: number;
+  sourceAddress: number;
+  data: any;  // PGN-specific data structure
+}
+      </signature>
+      <path>src/services/nmea/protocolConverter.ts</path>
+    </interface>
+
+    <interface name="Device Profile Configuration" kind="yaml-config">
+      <signature>
+device:
+  manufacturer: "Actisense"
+  model: "NGW-1"
+  description: "NMEA 2000 to NMEA 0183 Gateway"
+  reference_url: "https://actisense.com/products/nmea-2000-gateway-ngw-1/"
+
+conversion_strategy:
+  prefer_native: true
+  pcdin_fallback: true
+  unknown_pgn_behavior: "drop" | "pcdin" | "log"
+
+pgn_mappings:
+  128267:
+    priority: "native" | "pcdin" | "drop" | "xdr"
+    nmea0183: ["DBT", "DPT"]
+    notes: "Device-specific conversion notes"
+      </signature>
+      <path>config/bridge-profiles/actisense-ngw1.yaml</path>
+    </interface>
+
+    <interface name="Checksum Calculation" kind="algorithm">
+      <signature>
+// XOR Checksum for NMEA 0183
+function calculateChecksum(sentence: string): string {
+  // Input: "$IIDBT,15.2,f,4.6,M,2.5,F" (without checksum)
+  // Extract: "IIDBT,15.2,f,4.6,M,2.5,F" (between $ and * or end)
+  let checksum = 0;
+  for (let i = 1; i &lt; sentence.length; i++) {  // Start after $
+    checksum ^= sentence.charCodeAt(i);
+  }
+  return checksum.toString(16).toUpperCase().padStart(2, '0');
+  // Output: "3C" → Full sentence: "$IIDBT,15.2,f,4.6,M,2.5,F*3C"
+}
+      </signature>
+      <path>src/services/nmea/protocolConverter.ts</path>
+    </interface>
+
+    <interface name="Unit Conversion Formulas" kind="calculations">
+      <signature>
+// Depth conversions
+meters_to_feet = meters × 3.28084
+meters_to_fathoms = meters × 0.546807
+
+// Speed conversions
+m_per_sec_to_knots = m/s × 1.94384
+knots_to_m_per_sec = knots × 0.514444
+
+// Temperature conversions
+celsius_to_fahrenheit = (celsius × 9/5) + 32
+fahrenheit_to_celsius = (fahrenheit - 32) × 5/9
+
+// Pressure conversions
+pascals_to_psi = pascals × 0.000145038
+psi_to_pascals = psi × 6894.76
+      </signature>
+      <path>Unit Conversion Reference</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Manual testing for recreational boating app. Unit tests required for conversion functions (>90% coverage). Test each PGN → sentence conversion with known input/output pairs. Validate checksums match expected values. Create comparison recordings in both NMEA 0183 and NMEA 2000 modes to verify semantic equivalence.
+    </standards>
+
+    <locations>
+      src/services/nmea/protocolConverter.ts - Conversion implementation
+      __tests__/services/nmea/protocolConverter.test.ts - Unit tests
+      config/bridge-profiles/ - Device profile configurations
+      recordings/protocols/ - Comparison recordings for validation
+    </locations>
+
+    <ideas>
+      <test-idea ac="AC1">
+        Test core architecture: 1) Generate sample PGN data internally, 2) Convert to NMEA 0183 via converter, 3) Verify native conversion used for supported PGNs, 4) Verify $PCDIN used for unsupported PGNs, 5) Validate semantic equivalence of converted data
+      </test-idea>
+
+      <test-idea ac="AC2">
+        Test native conversions: 1) PGN 128267 (depth 15.2m) → DBT sentence with feet/meters/fathoms, 2) PGN 128259 (speed 6.2 m/s) → VHW with knots conversion, 3) PGN 130306 (wind 12.5 m/s at 45°) → MWV sentence, 4) Validate all unit conversions accurate to 0.1% tolerance
+      </test-idea>
+
+      <test-idea ac="AC3">
+        Test $PCDIN encapsulation: 1) PGN 127505 (tank level 80%) → $PCDIN sentence, 2) Validate 6-digit hex PGN format, 3) Validate source/dest addresses preserved, 4) Validate checksum calculation correct, 5) Test multiple instances with different source addresses
+      </test-idea>
+
+      <test-idea ac="AC4">
+        Test bidirectional conversion: 1) DBT sentence → PGN 128267 with depth value, 2) VHW sentence → PGN 128259 with speed value, 3) MWV sentence → PGN 130306 with wind data, 4) Verify round-trip conversion accuracy (PGN → sentence → PGN preserves values)
+      </test-idea>
+
+      <test-idea ac="AC5">
+        Validation testing: 1) Compare converter output to Actisense NGW-1 conversion table, 2) Create same scenario recording in both protocols, 3) Verify semantic equivalence (depth values match, speed values match, etc.), 4) Unit test coverage >90%
+      </test-idea>
+
+      <test-idea ac="AC6">
+        Physical bridge compliance: 1) Study Actisense NGW-1 documentation for conversion patterns, 2) Study Yacht Devices YBWN-02 protocol handling, 3) Implement device-specific behavior differences, 4) Validate message timing matches physical bridge behavior
+      </test-idea>
+
+      <test-idea ac="AC7">
+        Device profile testing: 1) Create Actisense NGW-1 profile (prefer native, drop tanks), 2) Create Yacht Devices profile (use $PCDIN for tanks/batteries), 3) Test command-line selection --bridge-profile yacht-devices-ybwn, 4) Verify default profile is NGW-1, 5) Validate profile-specific PGN mappings applied correctly
+      </test-idea>
+
+      <test-idea ac="AC8">
+        Documentation validation: 1) Document all PGN mappings per device profile, 2) Create extension guide for new profiles, 3) Document $PCDIN format with examples, 4) Test documentation clarity by having another developer add new profile
+      </test-idea>
+    </ideas>
+  </tests>
+
+  <domainExpertise>
+    <expertise domain="NMEA 0183 Checksum Calculation">
+      <principle>XOR (exclusive OR) algorithm: Start with checksum = 0, XOR each character code between $ and * (exclusive)</principle>
+      <principle>Convert result to 2-digit uppercase hexadecimal string, pad with leading zero if needed</principle>
+      <principle>Append to sentence with asterisk: "$IIDBT,15.2,f,4.6,M,2.5,F*3C"</principle>
+      <example>
+        Input: "IIDBT,15.2,f,4.6,M,2.5,F"
+        Calculation: 'I'^'I'^'D'^'B'^'T'^','... (XOR all character codes)
+        Result: 0x3C → "*3C"
+      </example>
+    </expertise>
+
+    <expertise domain="PGN to Sentence Conversion Algorithms">
+      <principle>Depth (PGN 128267 → DBT/DPT): Convert meters to feet (×3.28084), fathoms (×0.546807). DBT format: $IIDBT,feet,f,meters,M,fathoms,F*checksum</principle>
+      <principle>Speed (PGN 128259 → VHW): Convert m/s to knots (×1.94384). VHW format: $IIVHW,heading,T,,M,speed_knots,N,speed_kmh,K*checksum</principle>
+      <principle>Wind (PGN 130306 → MWV): Convert m/s to knots. MWV format: $IIMWV,angle,R,speed,N,A*checksum where R=relative, A=status valid</principle>
+      <principle>GPS (PGN 129029 → GGA/RMC): Convert decimal degrees to degrees-minutes format. GGA format: $IIGGA,time,lat,N,lon,E,quality,sats,hdop,alt,M,geoid,M,,*checksum</principle>
+      <principle>Engine (PGN 127488 → RPM): Extract RPM value directly. RPM format: $IIRPM,S,engine_id,rpm,pitch,A*checksum</principle>
+      <example>
+        PGN 128267: {depth: 15.2 meters}
+        → DBT: "$IIDBT,49.9,f,15.2,M,8.3,F*3C"
+        Calculation: 15.2×3.28084=49.9 feet, 15.2×0.546807=8.3 fathoms
+      </example>
+    </expertise>
+
+    <expertise domain="$PCDIN Encapsulation Algorithm">
+      <principle>Format: $PCDIN,PGNhex,src,dst,databytes*checksum</principle>
+      <principle>PGNhex: Convert PGN number to 6-digit uppercase hex (e.g., 127505 → 01F505)</principle>
+      <principle>src/dst: 2-digit uppercase hex for source/destination addresses (00-FF)</principle>
+      <principle>databytes: Comma-separated hex pairs representing PGN data field bytes</principle>
+      <principle>Calculate checksum on complete sentence (excluding $) using XOR algorithm</principle>
+      <example>
+        PGN 127505 (Tank): {instance: 1, fluidType: 0 (fuel), level: 80%, capacity: 250L}
+        → Encode: instance=01, type=00, level=200 (80% of 250 scale), capacity bytes
+        → $PCDIN,01F505,00,FF,01,00,C8,00,FA,00,00,00*3A
+        PGNhex=01F505, src=00, dst=FF, data=01,00,C8,00,FA,00,00,00
+      </example>
+    </expertise>
+
+    <expertise domain="Device-Specific Bridge Behavior">
+      <principle>Actisense NGW-1: Prefers native conversion, drops unmapped PGNs by default (tanks/batteries not converted unless configured)</principle>
+      <principle>Actisense W2K-1: Similar to NGW-1 but may convert batteries to XDR format</principle>
+      <principle>Yacht Devices YBWN-02: More permissive with $PCDIN, encapsulates tanks and batteries by default</principle>
+      <principle>QK-A032: Intelligent gateway with configurable conversion rules, can mimic other bridges</principle>
+      <principle>Default recreational configuration: Use Actisense NGW-1 profile (most common consumer bridge)</principle>
+      <example>
+        Same tank data, different devices:
+        NGW-1: No output (dropped)
+        YBWN-02: $PCDIN,01F505,00,FF,01,00,C8,00,FA,00,00,00*3A
+        W2K-1 (configured): $PCDIN,01F505,00,FF,01,00,C8,00,FA,00,00,00*3A
+      </example>
+    </expertise>
+
+    <expertise domain="Unit Conversion Accuracy">
+      <principle>Depth: meters to feet = meters × 3.28084 (exactly), meters to fathoms = meters × 0.546807</principle>
+      <principle>Speed: m/s to knots = m/s × 1.94384449, knots to m/s = knots × 0.51444444</principle>
+      <principle>Temperature: Celsius to Fahrenheit = (C × 9/5) + 32, Fahrenheit to Celsius = (F - 32) × 5/9</principle>
+      <principle>Pressure: Pascals to PSI = Pa × 0.000145038, PSI to Pascals = PSI × 6894.76</principle>
+      <principle>Precision: Use floating point arithmetic, round to appropriate decimal places for display (depth 0.1m, speed 0.1 knots)</principle>
+      <example>
+        Depth conversion: 15.2 meters
+        → Feet: 15.2 × 3.28084 = 49.868768 → Display: 49.9 feet
+        → Fathoms: 15.2 × 0.546807 = 8.3114664 → Display: 8.3 fathoms
+      </example>
+    </expertise>
+
+    <expertise domain="Multi-Instance Source Address Preservation">
+      <principle>NMEA 2000 source address identifies device instance (0-253)</principle>
+      <principle>Source address MUST be preserved through conversion for multi-instance detection</principle>
+      <principle>$PCDIN src field carries source address from original PGN</principle>
+      <principle>Native conversions: Embed instance identifier in sentence if supported (e.g., RPM engine_id field)</principle>
+      <principle>Multiple instances: Generate separate sentences for each source address (e.g., 2 engines = 2 RPM sentences)</principle>
+      <example>
+        Engine #1 (source 0): PGN 127488 → $IIRPM,S,0,2400,0.0,A*checksum
+        Engine #2 (source 1): PGN 127488 → $IIRPM,S,1,2600,0.0,A*checksum
+        Tank #3 (source 0, instance 3): PGN 127505 → $PCDIN,01F505,00,FF,03,00,C8,00,FA,00,00,00*checksum
+      </example>
+    </expertise>
+
+    <expertise domain="Semantic Equivalence Validation">
+      <principle>Semantic equivalence: Same data values in different protocol formats must match within tolerance</principle>
+      <principle>Depth: PGN 128267 depth value = DBT meters field (exact match)</principle>
+      <principle>Speed: PGN 128259 speed value (m/s) = VHW speed (knots) × 0.51444444 (within 0.1% tolerance)</principle>
+      <principle>Wind: PGN 130306 angle/speed = MWV angle/speed (exact match for angle, 0.1% for speed)</principle>
+      <principle>Validation method: Convert PGN → sentence, extract value from sentence, compare to original PGN value</principle>
+      <example>
+        Original PGN 128267: {depth: 15.2 meters}
+        → Convert to DBT: "$IIDBT,49.9,f,15.2,M,8.3,F*3C"
+        → Extract meters field: 15.2
+        → Validation: 15.2 == 15.2 ✓ (exact match)
+      </example>
+    </expertise>
+
+    <expertise domain="Integration with Existing Simulator">
+      <principle>Simulator currently generates different data per bridge mode - REFACTOR to use PGNs as single source of truth</principle>
+      <principle>Architecture: Generate PGNs internally → Convert via NMEAProtocolConverter → Output sentences or native PGNs</principle>
+      <principle>Backward compatibility: Maintain existing recording playback and scenario execution</principle>
+      <principle>Command-line integration: Add --bridge-profile flag to select device-specific conversion</principle>
+      <principle>Default behavior: Use Actisense NGW-1 profile if no profile specified</principle>
+      <example>
+        OLD: if (bridgeMode === 'nmea0183') { generateNMEA0183Sentences(); }
+        NEW:
+          const pgns = generatePGNs();  // Single source of truth
+          if (bridgeMode === 'nmea0183') {
+            const sentences = converter.convertPGNToSentences(pgns);
+            broadcast(sentences);
+          }
+      </example>
+    </expertise>
+  </domainExpertise>
+</story-context>

@@ -1,126 +1,74 @@
-# Basic Navigation Scenario
-# Standard sailing conditions with realistic marine instrument data
-# Duration: 10 minutes continuous loop
-# Update Rate: 1 Hz for most instruments, 0.1 Hz for GPS
+name: "Basic Navigation Scenario"
+description: "Standard depth, speed, wind, GPS data (5-minute duration)"
+duration: 300  # 5 minutes as per AC1
+version: "1.0"
+category: "basic"
 
-metadata:
-  name: "Basic Navigation"
-  description: "Standard sailing conditions with depth, speed, wind, and GPS data"
-  version: "1.0"
-  duration_minutes: 10
-  loop_enabled: true
-  bridge_mode: "nmea0183"  # Can be "nmea0183" or "nmea2000"
-
-# Global timing configuration
-timing:
-  base_frequency_hz: 1.0
-  gps_frequency_hz: 0.1
-  depth_frequency_hz: 1.0
-  speed_frequency_hz: 1.0
-  wind_frequency_hz: 1.0
-  
-# NMEA sentence generation patterns
-data_sources:
-  
-  # Depth Below Transducer (DBT)
+# Data generation parameters
+data:
   depth:
-    sentence_type: "DBT"
-    enabled: true
-    pattern_type: "sine_wave"
-    base_value: 15.0      # 15 feet base depth
-    variation: 5.0        # ±5 feet variation
-    period_seconds: 60    # 1 minute cycle
-    units: "feet"
-    precision: 1
-    
-  # Speed over Ground (VTG)  
-  speed:
-    sentence_type: "VTG"
-    enabled: true
-    pattern_type: "gaussian_noise"
-    base_value: 6.0       # 6 knots average speed
-    std_deviation: 0.5    # ±0.5 knot variation
-    min_value: 4.0
-    max_value: 8.0
-    units: "knots"
-    precision: 1
-    
-  # Wind Speed and Direction (MWV)
-  wind:
-    sentence_type: "MWV"
-    enabled: true
-    speed:
-      pattern_type: "gaussian_noise"
-      base_value: 15.0    # 15 knots average
-      std_deviation: 2.0  # ±2 knot variation
-      min_value: 10.0
-      max_value: 25.0
-      precision: 1
-    direction:
-      pattern_type: "random_walk"
-      start_value: 45.0   # Start at 45° relative
-      step_size: 10.0     # ±10° steps
-      min_value: 0.0
-      max_value: 360.0
-      precision: 0
-    reference: "R"        # Relative to bow
-    
-  # GPS Position (GGA, RMC)
-  gps:
-    sentence_type: "GGA"
-    enabled: true
-    pattern_type: "track_simulation"
-    start_position:
-      latitude: 37.8044    # San Francisco Bay
-      longitude: -122.2712
-    course: 120.0         # Southeast heading
-    speed_knots: 6.0      # Matches VTG speed
-    variation_meters: 5   # ±5 meter GPS accuracy
-    
-  # Compass heading (HDT)
-  compass:
-    sentence_type: "HDT"
-    enabled: true
-    pattern_type: "linear_drift"
-    base_value: 120.0     # Southeast heading
-    drift_rate: 2.0       # 2° per minute drift
-    variation: 3.0        # ±3° compass variation
-    precision: 1
-
-# Event sequence (optional - for timed scenario changes)
-events:
-  - time_minutes: 0
-    description: "Scenario start - steady sailing conditions"
-    changes: {}
-    
-  - time_minutes: 3
-    description: "Wind shift - increase speed slightly"
-    changes:
-      wind.direction.base_value: 30.0
-      speed.base_value: 6.5
-      
-  - time_minutes: 6
-    description: "Deeper water"
-    changes:
-      depth.base_value: 25.0
-      
-  - time_minutes: 8
-    description: "Return to original conditions"
-    changes:
-      wind.direction.base_value: 45.0
-      speed.base_value: 6.0
-      depth.base_value: 15.0
-
-# Validation rules (for testing)
-validation:
-  required_sentences: ["DBT", "VTG", "MWV", "GGA", "HDT"]
-  checksum_validation: true
-  sentence_rate_tolerance: 0.1  # ±10% timing tolerance
+    type: "sine_wave"
+    base: 15      # feet
+    amplitude: 5  # ±5 feet
+    frequency: 0.1 # Hz
+    unit: "feet"
   
-# Sample generated sentences (for reference)
-sample_output:
-  - "$GPGGA,123456.00,3748.26,N,12216.27,W,1,08,0.9,10.5,M,-32.8,M,,*6D"
-  - "$GPVTG,120.0,T,116.5,M,6.0,N,11.1,K,A*2E"
-  - "$WIMWV,045,R,15.0,N,A*2B"
-  - "$SDDBT,15.0,f,4.6,M,2.5,F*1A"
-  - "$GPHDT,120.0,T*0E"
+  speed:
+    type: "gaussian"
+    mean: 6.0     # knots
+    std_dev: 0.5
+    min: 4.0
+    max: 8.0
+    unit: "knots"
+  
+  wind:
+    angle:
+      type: "random_walk"
+      start: 45    # degrees
+      step_size: 10
+      bounds: [0, 360]
+    speed:
+      type: "gaussian"
+      mean: 15     # knots
+      std_dev: 2
+      min: 5
+      max: 25
+      unit: "knots"
+  
+  gps:
+    type: "boat_movement"
+    start_position:
+      latitude: 41.4145
+      longitude: -81.8610
+    speed_range: [4, 8]  # knots
+    heading_variance: 5   # degrees
+
+# NMEA sentence configuration
+sentences:
+  - type: "DBT"    # Depth Below Transducer
+    frequency: 1   # Hz
+  - type: "VTG"    # Track Made Good and Ground Speed
+    frequency: 1
+  - type: "MWV"    # Wind Speed and Angle
+    frequency: 2
+  - type: "GGA"    # Global Positioning System Fix Data
+    frequency: 1
+
+# Autopilot configuration
+autopilot:
+  enabled: false
+  initial_state:
+    mode: "STANDBY"
+    engaged: false
+    target_heading: 180
+    current_heading: 175
+
+# Phase progression (optional)
+phases:
+  - name: "startup"
+    duration: 60    # seconds
+    description: "Initial data stabilization"
+  
+  - name: "steady_cruise"
+    duration: 3540  # remaining time
+    description: "Steady cruising with normal variations"

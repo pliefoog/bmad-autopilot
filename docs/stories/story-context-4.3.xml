@@ -1,0 +1,117 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.3</storyId>
+    <title>Notification System & Background Alerts</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-10-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-4.3-notification-system.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boater with the app running in background</asA>
+    <iWant>to receive critical alerts even when using other apps</iWant>
+    <soThat>I don't miss important safety information while multitasking</soThat>
+    <tasks>
+      - Background Processing System (NMEA monitoring, alarm detection, state management, battery optimization)
+      - Platform-Specific Notifications (iOS permissions, Android channels, desktop system, cross-platform behavior)
+      - Notification Content & Actions (templates, actions, rich content, persistence)
+      - Smart Notification Management (batching, urgency levels, custom sounds, do-not-disturb override)
+      - Geofencing & Context (boat location, context-aware filtering, location rules, manual override)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <background_notifications>
+      <item id="1">Push notifications for critical alarms when app is backgrounded</item>
+      <item id="2">Lock screen notifications with alarm details</item>
+      <item id="3">Notification sounds override device silent mode for critical alarms</item>
+      <item id="4">Notification actions (acknowledge, snooze, open app)</item>
+      <item id="5">Notification persistence until acknowledged</item>
+    </background_notifications>
+    <cross_platform>
+      <item id="6">iOS notification integration with proper permissions</item>
+      <item id="7">Android notification system with priority channels</item>
+      <item id="8">Desktop notification system (Windows/macOS)</item>
+      <item id="9">Consistent behavior across all platforms</item>
+      <item id="10">Respect user notification preferences per platform</item>
+    </cross_platform>
+    <smart_management>
+      <item id="11">Avoid notification spam with intelligent batching</item>
+      <item id="12">Different notification urgency levels</item>
+      <item id="13">Customizable notification sounds per alarm type</item>
+      <item id="14">Geofencing integration (no alarms when away from boat)</item>
+      <item id="15">Do-not-disturb integration with override for critical alarms</item>
+    </smart_management>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd/requirements.md" title="Product Requirements" section="User Value Theme 5: Safety-Critical Alarms and Monitoring" snippet="System shall trigger visual and audio alerts when alarm thresholds are met. Maintain alarm state until explicitly acknowledged by user."/>
+      <item path="docs/stories/story-4.1-critical-safety-alarms.md" title="Critical Safety Alarms System" section="Architecture Decisions" snippet="AlarmManager class as central coordinator. Priority-based alarm queue with escalation system. Platform-specific implementations for audio and visual alerts."/>
+      <item path="docs/stories/epic-4-alarms-stories.md" title="Epic 4 Stories" section="Story 4.3 Technical Notes" snippet="Platform Integration: Native notification APIs for each platform. Background Processing: Maintain NMEA monitoring when backgrounded. Power Management: Efficient background operation to preserve battery"/>
+    </docs>
+    <code>
+      <item path="src/stores/alarmStore.ts" kind="store" symbol="AlarmStore" lines="1-120" reason="Existing alarm system with thresholds, settings, and state management - foundation for notification system"/>
+      <item path="src/services/unifiedConnectionManager.ts" kind="service" symbol="UnifiedConnectionManager" lines="1-200" reason="NMEA connection management - needs background monitoring capabilities for notifications"/>
+      <item path="src/services/nmea/nmeaParser.ts" kind="service" symbol="NmeaParser" lines="1-50" reason="NMEA parsing service - data source for alarm detection in background"/>
+      <item path="src/services/connection/globalConnectionService.ts" kind="service" symbol="GlobalConnectionService" lines="1-150" reason="Global connection manager - needs background service integration"/>
+      <item path="src/types/service.types.ts" kind="types" symbol="ServiceTypes" lines="120-200" reason="Service interfaces and types - foundation for notification service architecture"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with background modes"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Notification preferences storage"/>
+        <package name="react-native-sound" version="^0.12.0" usage="Custom notification sounds"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework with notification APIs"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation for notification actions"/>
+      </expo>
+      <nmea>
+        <package name="nmea-simple" version="^3.3.0" usage="NMEA parsing for alarm detection"/>
+        <package name="react-native-tcp-socket" version="^6.3.0" usage="Background NMEA monitoring"/>
+        <package name="react-native-udp" version="^4.1.7" usage="Background NMEA monitoring"/>
+      </nmea>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for notification system"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Platform Integration: Use native notification APIs (iOS UserNotifications, Android NotificationManager, Desktop native APIs)
+    - Background Processing: Maintain NMEA monitoring when backgrounded using platform background modes
+    - Power Management: Efficient background operation to preserve battery life
+    - Architecture: NotificationManager as platform abstraction layer
+    - Background Service: For NMEA monitoring and alarm detection
+    - Geofencing: Using device location services
+    - Smart Batching: To prevent notification spam
+    - iOS Requirements: Background App Refresh, Critical Alerts capability, UserNotifications framework
+    - Android Requirements: Foreground service for background monitoring, notification channels, battery optimization whitelist
+    - Desktop Requirements: Native notification systems, system tray integration
+  </constraints>
+  
+  <interfaces>
+    <item name="AlarmStore" kind="zustand_store" signature="interface AlarmStore { activeAlarms: Alarm[]; settings: AlarmSettings; addAlarm: (alarm) => void; acknowledgeAlarm: (id: string) => void; }" path="src/stores/alarmStore.ts"/>
+    <item name="UnifiedConnectionManager" kind="service_class" signature="class UnifiedConnectionManager { connect(config: NmeaConnectionConfig): Promise<boolean>; disconnect(): void; getStatus(): ConnectionStatus; }" path="src/services/unifiedConnectionManager.ts"/>
+    <item name="NmeaParser" kind="service_class" signature="class NmeaParser { static getInstance(): NmeaParser; parseNmeaSentence(sentence: string): ParsedNmeaData | null; }" path="src/services/nmea/nmeaParser.ts"/>
+    <item name="GlobalConnectionService" kind="service_class" signature="class GlobalConnectionService { static getInstance(): GlobalConnectionService; connect(config: NmeaConnectionConfig): Promise<boolean>; }" path="src/services/connection/globalConnectionService.ts"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library. Platform-specific testing using device simulators. Background processing testing with app state transitions. Cross-platform consistency validation.</standards>
+    <locations>
+      - __tests__/services/ (service layer tests)
+      - __tests__/stores/ (state management tests)  
+      - __tests__/integration/ (integration tests)
+      - __tests__/platform/ (platform-specific tests)
+    </locations>
+    <ideas>
+      <item ac="1-5">Background notification delivery tests with app backgrounded, notification persistence testing, notification action handling tests</item>
+      <item ac="6-10">Platform-specific notification API integration tests, iOS UserNotifications framework tests, Android notification channel tests, desktop notification system tests</item>
+      <item ac="11-15">Notification batching effectiveness tests, do-not-disturb override validation, geofencing accuracy tests, custom notification sound functionality tests</item>
+    </ideas>
+  </tests>
+</story-context>

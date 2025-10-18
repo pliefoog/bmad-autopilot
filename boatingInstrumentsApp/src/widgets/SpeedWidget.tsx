@@ -101,7 +101,7 @@ export const SpeedWidget: React.FC = React.memo(() => {
               <Text style={[styles.trendLabel, { color: theme.textSecondary }]}>5-Min Trend</Text>
               <SpeedTrendChart history={speedHistory} theme={theme} />
               <Text style={[styles.trendValue, { color: theme.success }]}>
-                {speedTrend > 0 ? '↑' : speedTrend < 0 ? '↓' : '→'} {Math.abs(speedTrend).toFixed(1)} kn
+                {`${speedTrend > 0 ? '↑' : speedTrend < 0 ? '↓' : '→'} ${Math.abs(speedTrend).toFixed(1)} kn`}
               </Text>
             </View>
           )}

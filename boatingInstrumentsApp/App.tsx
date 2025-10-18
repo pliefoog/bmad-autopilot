@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Text, 
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
   Dimensions,
-  SafeAreaView,
   StatusBar,
   Button
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNmeaStore } from './src/core/nmeaStore';
 import { useThemeStore, useTheme } from './src/core/themeStore';
+import { useWidgetStore } from './src/stores/widgetStore';
 import { PaginatedDashboard } from './src/components/PaginatedDashboard';
 import { DynamicDashboard } from './src/widgets/DynamicDashboard';
 import { WidgetSelector } from './src/widgets/WidgetSelector';
@@ -37,6 +38,7 @@ const THEME_PREFERENCE_KEY = 'theme-preference';
 const App = () => {
   const { connectionStatus, nmeaData, alarms, lastError } = useNmeaStore();
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
+  const { initializeWidgetStatesOnAppStart } = useWidgetStore();
   const theme = useTheme();
 
   // Connection settings
@@ -80,13 +82,16 @@ const App = () => {
         if (savedTheme) {
           setThemeMode(savedTheme as 'day' | 'night' | 'red-night' | 'auto');
         }
+
+        // Story 2.15: Initialize widget states on app start
+        initializeWidgetStatesOnAppStart();
       } catch (error) {
         console.error('Failed to load persisted data:', error);
       }
     };
 
     loadPersistedData();
-  }, []); // Remove setThemeMode dependency to prevent loop
+  }, [initializeWidgetStatesOnAppStart]); // Remove setThemeMode dependency to prevent loop
 
   // Save selected widgets when changed
   useEffect(() => {
@@ -236,18 +241,20 @@ const App = () => {
     setProtocol(config.protocol);
     
     try {
-      // Update connection using global service (handles graceful disconnect/reconnect)
-      await globalConnectionService.updateConnection({
+      // Use the new unified connect method
+      const success = await globalConnectionService.connect({
         ip: config.ip,
         port: config.port,
         protocol: config.protocol
       });
       
-      setToastMessage({
-        message: `Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`,
-        type: 'success',
-        duration: 3000,
-      });
+      if (success) {
+        setToastMessage({
+          message: `Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`,
+          type: 'success',
+          duration: 3000,
+        });
+      }
     } catch (error) {
       console.error('Failed to connect:', error);
       setToastMessage({
@@ -258,14 +265,15 @@ const App = () => {
     }
   }, []);
 
+  // Check if connect button should be enabled (config different from current)
+  const shouldEnableConnectButton = useCallback((config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
+    return globalConnectionService.shouldEnableConnectButton(config);
+  }, []);
+
   const handleConnectionDisconnect = useCallback(async () => {
     try {
       // Disconnect using global service
-      await globalConnectionService.updateConnection({
-        ip: '0.0.0.0',
-        port: 0,
-        protocol: 'tcp'
-      }, false); // Don't save this dummy config
+      globalConnectionService.disconnect();
       
       setToastMessage({
         message: 'Disconnected from NMEA source',
@@ -449,6 +457,7 @@ const App = () => {
           port: parseInt(port, 10), 
           protocol: protocol as 'tcp' | 'udp' | 'websocket'
         }}
+        shouldEnableConnectButton={shouldEnableConnectButton}
       />
 
       {/* Playback File Picker - TODO: Create modal wrapper */}

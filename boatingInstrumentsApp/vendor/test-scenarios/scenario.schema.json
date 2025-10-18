@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bmad-autopilot.com/schemas/test-scenario.json",
+  "title": "NMEA Bridge Simulator Test Scenario",
+  "description": "JSON Schema for YAML test scenario configuration files",
+  "type": "object",
+  "required": ["name", "description", "duration", "version", "category"],
+  
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable scenario name",
+      "minLength": 3,
+      "maxLength": 100
+    },
+    
+    "description": {
+      "type": "string", 
+      "description": "Detailed scenario description",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    
+    "duration": {
+      "type": "integer",
+      "description": "Scenario duration in seconds",
+      "minimum": 30,
+      "maximum": 7200
+    },
+    
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Scenario version (semantic versioning)"
+    },
+    
+    "category": {
+      "type": "string",
+      "enum": ["basic", "autopilot", "safety", "performance", "recorded"],
+      "description": "Scenario category for organization"
+    },
+    
+    "parameters": {
+      "type": "object",
+      "description": "Configurable scenario parameters",
+      "properties": {
+        "vessel": {
+          "type": "object",
+          "properties": {
+            "length": {
+              "oneOf": [
+                {"type": "number", "minimum": 10, "maximum": 200},
+                {"type": "string", "pattern": "^\\$\\{[A-Z_]+:[0-9]+\\}$"}
+              ],
+              "description": "Vessel length in feet (or env var)"
+            },
+            "beam": {"type": "number", "minimum": 3, "maximum": 50},
+            "draft": {"type": "number", "minimum": 1, "maximum": 20},
+            "type": {
+              "type": "string",
+              "enum": ["sailboat", "powerboat", "motoryacht", "catamaran"]
+            }
+          }
+        },
+        "conditions": {
+          "type": "object",
+          "description": "Environmental conditions"
+        },
+        "alarm_thresholds": {
+          "type": "object",
+          "description": "Configurable alarm thresholds"
+        }
+      }
+    },
+    
+    "phases": {
+      "type": "array",
+      "description": "Progressive scenario phases",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["phase", "duration", "description"],
+        "properties": {
+          "phase": {
+            "type": "string",
+            "description": "Phase identifier"
+          },
+          "duration": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Phase duration in seconds"
+          },
+          "description": {
+            "type": "string",
+            "description": "Phase description"
+          },
+          "autopilot_mode": {
+            "type": "string",
+            "enum": ["standby", "auto", "manual", "emergency_standby", "reset"]
+          },
+          "alarm_status": {
+            "type": "string",
+            "enum": ["NORMAL", "WARNING", "CRITICAL", "EMERGENCY", "RECOVERING"]
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["time", "command", "description"],
+              "properties": {
+                "time": {"type": "integer", "minimum": 0},
+                "command": {"type": "string"},
+                "value": {"type": "string"},
+                "description": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "data": {
+      "type": "object",
+      "description": "Data generation configuration",
+      "properties": {
+        "depth": {
+          "$ref": "#/definitions/dataSource"
+        },
+        "speed": {
+          "$ref": "#/definitions/dataSource"
+        },
+        "wind": {
+          "type": "object",
+          "properties": {
+            "angle": {"$ref": "#/definitions/dataSource"},
+            "speed": {"$ref": "#/definitions/dataSource"}
+          }
+        },
+        "gps": {
+          "$ref": "#/definitions/dataSource"
+        }
+      }
+    },
+    
+    "timing": {
+      "type": "object",
+      "description": "NMEA sentence timing configuration",
+      "properties": {
+        "depth": {"type": "number", "minimum": 0.1, "maximum": 100},
+        "speed": {"type": "number", "minimum": 0.1, "maximum": 100},
+        "wind": {"type": "number", "minimum": 0.1, "maximum": 100},
+        "gps": {"type": "number", "minimum": 0.1, "maximum": 100},
+        "compass": {"type": "number", "minimum": 0.1, "maximum": 100},
+        "autopilot": {"type": "number", "minimum": 0.1, "maximum": 100}
+      }
+    },
+    
+    "functions": {
+      "type": "object",
+      "description": "Mathematical data generation functions",
+      "patternProperties": {
+        "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+          "type": "string",
+          "description": "JavaScript function for data generation"
+        }
+      }
+    },
+    
+    "use_cases": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Scenario use cases"
+    },
+    
+    "acceptance_criteria": {
+      "type": "array", 
+      "items": {"type": "string"},
+      "description": "Related acceptance criteria"
+    }
+  },
+  
+  "definitions": {
+    "dataSource": {
+      "type": "object",
+      "required": ["type", "unit"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "sine_wave", "gaussian", "random_walk", "constant",
+            "tidal_cycle", "coastal_sailing", "ocean_passage",
+            "autopilot_track", "progressive_shallow", "failure_simulation"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["feet", "meters", "knots", "mph", "degrees", "volts", "amps", "psi", "rpm"]
+        },
+        "base": {"type": "number"},
+        "amplitude": {"type": "number"},
+        "frequency": {"type": "number", "minimum": 0},
+        "mean": {"type": "number"},
+        "std_dev": {"type": "number", "minimum": 0},
+        "min": {"type": "number"},
+        "max": {"type": "number"},
+        "start": {"type": "number"},
+        "step_size": {"type": "number"},
+        "bounds": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  },
+  
+  "additionalProperties": true,
+  
+  "examples": [
+    {
+      "name": "Basic Navigation Test",
+      "description": "Standard marine navigation scenario",
+      "duration": 300,
+      "version": "1.0",
+      "category": "basic",
+      "parameters": {
+        "vessel": {
+          "length": 40,
+          "type": "sailboat"
+        }
+      },
+      "phases": [
+        {
+          "phase": "normal_navigation",
+          "duration": 300,
+          "description": "Standard navigation conditions"
+        }
+      ],
+      "data": {
+        "depth": {
+          "type": "sine_wave",
+          "base": 15,
+          "amplitude": 5,
+          "frequency": 0.1,
+          "unit": "feet"
+        }
+      },
+      "timing": {
+        "depth": 2,
+        "speed": 1,
+        "wind": 2,
+        "gps": 1
+      }
+    }
+  ]
+}

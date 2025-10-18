@@ -1,0 +1,130 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.6</storyId>
+    <title>Help System & User Documentation</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-4.6-help-system.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>new user learning to use the app</asA>
+    <iWant>comprehensive but accessible help and documentation</iWant>
+    <soThat>I can quickly become proficient with all features</soThat>
+    <tasks>
+      - In-App Help System (interactive tutorials, contextual help/tooltips, searchable content, quick start guide)
+      - Interactive Tutorials (NMEA connection setup, widget configuration, autopilot control with safety emphasis, alarm configuration)
+      - Troubleshooting Integration (diagnostic tool integration, step-by-step guides, connection diagnostics, performance diagnostic tools)
+      - Documentation Suite Creation (comprehensive user manual with screenshots, video tutorials, FAQ system, equipment compatibility database)
+      - Support System Integration (easy support access, automatic diagnostic collection, feedback system, community forum integration)
+      - Multilingual Support (internationalization framework, key market translations, language-specific content, multilingual video tutorials)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <in_app_help_system>
+      <item id="1">Interactive tutorials for key features (connection, widgets, autopilot)</item>
+      <item id="2">Contextual help bubbles and tooltips</item>
+      <item id="3">Searchable help content within the app</item>
+      <item id="4">Quick start guide for immediate productivity</item>
+      <item id="5">Troubleshooting guides with diagnostic tools</item>
+    </in_app_help_system>
+    <documentation_suite>
+      <item id="6">Complete user manual with screenshots</item>
+      <item id="7">Video tutorials for complex features</item>
+      <item id="8">FAQ covering common issues and questions</item>
+      <item id="9">Equipment compatibility guide</item>
+      <item id="10">Best practices guide for marine use</item>
+    </documentation_suite>
+    <support_integration>
+      <item id="11">Easy access to support from within the app</item>
+      <item id="12">Automatic diagnostic information collection</item>
+      <item id="13">Community forum integration</item>
+      <item id="14">Feedback system for documentation improvements</item>
+      <item id="15">Multilingual support for key markets</item>
+    </support_integration>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/stories/epic-4-alarms-stories.md" title="Epic 4: Alarms & Polish" section="Story 4.6: Help System & User Documentation" snippet="In-App Help System: Interactive tutorials for key features, contextual help bubbles and tooltips, searchable help content, quick start guide. Documentation Suite: Complete user manual with screenshots, video tutorials, FAQ covering common issues. Support Integration: Easy access to support, automatic diagnostic information collection, community forum integration, multilingual support."/>
+      <item path="docs/stories/story-3.4-beta-user-recruitment.md" title="Beta User Recruitment & Onboarding System" section="Onboarding Process" snippet="Welcome email with setup instructions, Equipment compatibility checklist, Step-by-step connection guide, Test data verification process, Direct feedback channel setup. Beta user dashboard for progress tracking, Feedback collection system (in-app + external), Issue reporting with automatic log collection."/>
+      <item path="docs/stories/story-5.3-customer-support-system.md" title="Customer Support System & Knowledge Base" section="Support Infrastructure Setup" snippet="Deploy customer support portal and ticket management system, Create knowledge base platform with search functionality, Set up video hosting and tutorial delivery system, Implement remote diagnostic tools for app troubleshooting. Build comprehensive FAQ system, Create equipment compatibility database."/>
+      <item path="docs/front-end-spec.md" title="Boating Instruments App UI/UX Specification" section="Navigation Structure" snippet="Hamburger menu (top-right status bar) provides access to Settings and secondary screens. Context-sensitive FABs - Floating Action Button for 'Add Widget' when on Dashboard. Settings screen - Modal overlay or full-screen push from hamburger menu. Widget Configuration - Modal panel triggered by long-press on any widget."/>
+      <item path="docs/ui-architecture/mob-detection-ux.md" title="Man Overboard (MOB) Detection - User Experience Design" section="Implementation Priority" snippet="Phase 3: Production Polish (4-6 weeks): Add onboarding tutorials, In-app help and tooltips, MOB event history viewer, Test MOB alert button, Accessibility refinements, Animation polish and microinteractions."/>
+      <item path="PLATFORM-TROUBLESHOOTING.md" title="Platform-Specific Troubleshooting Guide" section="Getting Additional Help" snippet="Documentation: Main Setup Guide, Quick Start, Architecture. Online Resources: React Native Troubleshooting, Jest Troubleshooting, Metro Troubleshooting. Community: React Native GitHub Issues, Stack Overflow - React Native."/>
+    </docs>
+    <code>
+      <item type="react-component" name="HamburgerMenu" file="src/components/HamburgerMenu.tsx" snippet="Complete hamburger menu drawer component with slide-in animation, menu items (Settings, Layouts, Alarms, Connection, About), theme switcher at bottom, 80% screen width, backdrop tap to close, proper accessibility support"/>
+      <item type="react-component" name="HeaderBar" file="src/components/HeaderBar.tsx" snippet="Professional mobile header component with hamburger menu button, app title display, toast message system, connection status LED, theme integration, proper touch targets (44×44pt)"/>
+      <item type="react-component" name="ToastMessage" file="src/components/ToastMessage.tsx" snippet="Toast overlay system with auto-dismiss functionality, error/warning/success variants, theme-aware styling, accessibility support for screen readers"/>
+      <item type="react-component" name="Tooltip" file="src/components/atoms/Tooltip.tsx" snippet="Atomic tooltip component with default/dark/light variants, small/medium/large sizes, positioned overlay with z-index 1000, theme-aware styling for contextual help"/>
+      <item type="react-component" name="Modal" file="React Native Core" snippet="Built-in Modal component for overlay presentations, supports transparent/fade/slide animations, onRequestClose for Android back button, accessibility support"/>
+      <item type="react-component" name="Button" file="src/components/atoms/Button.tsx" snippet="Atomic button component with primary/secondary/outline/ghost variants, accessibility support (44pt touch targets), disabled states, proper testID attributes for interactive tutorials"/>
+      <item type="navigation-system" name="Menu Navigation" file="src/components/HamburgerMenu.tsx" snippet="Complete navigation system with Settings, Layouts, Alarms, Connection, About menu items. Icons from Ionicons, proper accessibility labels, navigation intent logging for future router integration"/>
+      <item type="theme-system" name="ThemeProvider" file="src/theme/ThemeProvider.tsx" snippet="Comprehensive theme system with day/night/red-night modes, useTheme hook providing colors, typography, spacing. Marine-compliant color palettes with accessibility contrast ratios"/>
+      <item type="diagnostic-tools" name="Connection Diagnostics" file="boatingInstrumentsApp/server/" snippet="NMEA bridge simulator and diagnostic tools for connection troubleshooting, automatic log collection, performance monitoring for support integration"/>
+      <item type="storage-system" name="AsyncStorage" file="@react-native-async-storage/async-storage" snippet="Persistent storage for user preferences, help progress tracking, tutorial completion states, language preferences, and diagnostic data collection"/>
+    </code>
+    <dependencies>
+      <item type="framework" name="React Native" version="0.75.0" description="Core mobile framework with Modal, Text, ScrollView components for tutorial overlays, help screens, and contextual assistance"/>
+      <item type="navigation" name="React Navigation" version="6.x" description="Navigation library for help screen routing, tutorial flows, modal presentations, and deep linking to specific help sections"/>
+      <item type="animation" name="React Native Reanimated" version="3.x" description="Animation library for smooth tutorial transitions, help overlay animations, tooltip animations, and interactive tutorial elements"/>
+      <item type="storage" name="AsyncStorage" package="@react-native-async-storage/async-storage" description="Local storage for tutorial progress, help preferences, user onboarding state, and offline help content caching"/>
+      <item type="internationalization" name="React Native Localize" package="react-native-localize" description="Internationalization framework for multilingual help content, region-specific tutorials, and language detection"/>
+      <item type="video" name="React Native Video" package="react-native-video" description="Video playback component for tutorial videos, feature demonstrations, and interactive help content"/>
+      <item type="web-content" name="React Native WebView" package="react-native-webview" description="WebView component for displaying rich help content, online documentation, community forum integration, and remote help updates"/>
+      <item type="networking" name="React Native NetInfo" package="@react-native-community/netinfo" description="Network connectivity detection for online/offline help content management and remote documentation updates"/>
+      <item type="icons" name="Ionicons" package="react-native-vector-icons" description="Icon library for help interface elements, tutorial navigation, contextual help buttons, and menu items"/>
+      <item type="existing-components" name="Theme & Navigation System" file="src/components/" description="Existing HamburgerMenu, HeaderBar, Tooltip components provide foundation for help system integration with consistent theming and navigation patterns"/>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <item type="user-experience" priority="critical" description="Help system must reduce support burden while enabling rapid user proficiency. Interactive tutorials must have >85% completion rates with clear progression indicators"/>
+    <item type="marine-safety" priority="critical" description="Autopilot control tutorials must emphasize safety protocols and emergency procedures. All tutorial content must include marine-specific safety considerations and best practices"/>
+    <item type="offline-capability" priority="high" description="Core help content must be available offline for marine environments with limited connectivity. Essential tutorials and troubleshooting guides cached locally"/>
+    <item type="accessibility" priority="high" description="Help system must be fully accessible to screen readers, support large text scaling, and provide alternative interaction methods for users with motor impairments"/>
+    <item type="performance" priority="high" description="Help overlays and tutorials must not impact app performance. Interactive elements must maintain <16ms frame time, tutorial videos optimized for mobile bandwidth"/>
+    <item type="content-management" priority="medium" description="Help content must be updateable without app updates using remote configuration. Support versioning for different app versions and feature sets"/>
+    <item type="multilingual" priority="medium" description="Initial support for English with framework for key market languages (Spanish, French, German, Italian). Text expansion considerations for UI layout"/>
+    <item type="analytics" priority="medium" description="Tutorial completion tracking, help usage analytics, and user feedback collection must respect privacy while providing actionable insights for content improvement"/>
+  </constraints>
+  
+  <interfaces>
+    <item type="tutorial-system" name="TutorialManager" signature="{ startTutorial: (tutorialId: string) => void; completeTutorial: (tutorialId: string) => void; getTutorialProgress: (tutorialId: string) => TutorialProgress; resetTutorial: (tutorialId: string) => void; isTutorialCompleted: (tutorialId: string) => boolean }" path="src/systems/help/TutorialManager.ts"/>
+    <item type="help-content" name="HelpContentProvider" signature="{ getHelpContent: (contentId: string, language?: string) => Promise<HelpContent>; searchHelpContent: (query: string) => Promise<HelpSearchResult[]>; updateHelpContent: () => Promise<void>; cacheHelpContent: (content: HelpContent[]) => void }" path="src/systems/help/HelpContentProvider.ts"/>
+    <item type="diagnostic-tools" name="DiagnosticCollector" signature="{ collectSystemInfo: () => SystemDiagnostics; collectConnectionLogs: () => ConnectionLog[]; generateSupportReport: () => SupportReport; exportDiagnostics: () => Promise<string>; clearDiagnosticData: () => void }" path="src/systems/help/DiagnosticCollector.ts"/>
+    <item type="tutorial-component" name="InteractiveTutorial" signature="{ tutorialId: string; steps: TutorialStep[]; onComplete: () => void; onSkip: () => void; overlay?: boolean; highlightTargets?: boolean }" path="src/components/help/InteractiveTutorial.tsx"/>
+    <item type="help-overlay" name="ContextualHelp" signature="{ content: string | HelpContent; position: 'top' | 'bottom' | 'left' | 'right' | 'center'; target?: React.RefObject<View>; visible: boolean; onDismiss: () => void }" path="src/components/help/ContextualHelp.tsx"/>
+    <item type="search-interface" name="HelpSearch" signature="{ placeholder?: string; onSearch: (query: string) => void; results: HelpSearchResult[]; loading: boolean; onResultSelect: (result: HelpSearchResult) => void }" path="src/components/help/HelpSearch.tsx"/>
+    <item type="react-navigation" name="Navigation Routes" signature="{ HelpHome: undefined; Tutorial: { tutorialId: string }; FAQ: { categoryId?: string }; Troubleshooting: { issueId?: string }; Support: { reportType?: string } }" path="src/navigation/HelpNavigator.tsx"/>
+    <item type="internationalization" name="i18n Support" signature="{ t: (key: string, params?: object) => string; changeLanguage: (language: string) => Promise<void>; getCurrentLanguage: () => string; getSupportedLanguages: () => Language[] }" path="src/systems/i18n/HelpTranslations.ts"/>
+    <item type="video-tutorial" name="VideoTutorial" signature="{ videoUri: string; title: string; description?: string; chapters?: VideoChapter[]; onComplete: () => void; autoPlay?: boolean; showControls?: boolean }" path="src/components/help/VideoTutorial.tsx"/>
+    <item type="feedback-system" name="HelpFeedback" signature="{ contentId: string; rating: number; feedback?: string; category: 'helpful' | 'confusing' | 'outdated' | 'missing'; onSubmit: (feedback: FeedbackData) => Promise<void> }" path="src/components/help/HelpFeedback.tsx"/>
+  </interfaces>
+  
+  <tests>
+    <standards>
+      <standard name="Jest" version="30.2.0" config="jest.config.js" description="Primary test runner for help system components, tutorial flows, and content management testing with React Native preset"/>
+      <standard name="React Native Testing Library" version="13.3.3" description="Component testing utilities for help UI components, tutorial interactions, modal presentations, and accessibility testing"/>
+      <standard name="Help System Testing" description="Specialized testing for tutorial completion flows, help content delivery, search functionality, and user onboarding experience validation"/>
+    </standards>
+    <locations>
+      <location path="__tests__/help/" description="Help system component tests including TutorialManager, HelpContentProvider, InteractiveTutorial, and ContextualHelp components"/>
+      <location path="__tests__/integration/onboarding.test.tsx" description="Integration tests for complete onboarding and tutorial flows, testing user journey from first launch to proficiency"/>
+      <location path="__tests__/components/help/" description="Individual help component tests for tooltips, modals, video tutorials, search interface, and feedback systems"/>
+      <location path="__tests__/systems/help/" description="Help system service tests for content management, diagnostic collection, internationalization, and offline functionality"/>
+    </locations>
+    <ideas>
+      <idea type="tutorial-completion" description="Test interactive tutorial flows: step progression, completion tracking, skip functionality, progress persistence, and tutorial restart capabilities"/>
+      <idea type="content-management" description="Test help content delivery: remote content updates, offline caching, search functionality, multilingual content switching, and content versioning"/>
+      <idea type="diagnostic-integration" description="Test diagnostic collection: system info gathering, log collection accuracy, support report generation, and privacy-compliant data handling"/>
+      <idea type="accessibility-help" description="Test help system accessibility: screen reader compatibility for tutorials, keyboard navigation through help content, voice control support, and motor accessibility alternatives"/>
+      <idea type="marine-context" description="Test marine-specific help content: offline functionality validation, safety protocol emphasis in tutorials, equipment compatibility guidance accuracy, and emergency help access"/>
+      <idea type="user-journey" description="Test complete user onboarding: first-time user tutorial completion, feature discovery guidance, troubleshooting effectiveness, and support system integration"/>
+    </ideas>
+  </tests>
+</story-context>

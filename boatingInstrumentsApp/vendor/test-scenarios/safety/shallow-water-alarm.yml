@@ -1,0 +1,248 @@
+name: "Shallow Water Alarm Scenario"
+description: "Progressive depth decrease (50ft → 15ft → 8ft → 5ft → recovery)"
+duration: 420  # 7 minutes
+version: "1.0"
+category: "safety"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: 40  # feet
+    draft: 6    # feet (important for shallow water)
+    type: "sailboat"
+  alarm_thresholds:
+    depth_warning: 10    # feet (yellow alarm)
+    depth_critical: 6    # feet (red alarm) 
+    depth_emergency: 4   # feet (emergency alarm)
+
+# Depth progression phases
+phases:
+  - phase: "safe_depth"
+    duration: 60  # 1 minute
+    description: "Safe water navigation, no alarms"
+    depth_range: [45, 55]   # 50±5 feet
+    alarm_status: "NORMAL"
+    
+  - phase: "approaching_shallow"
+    duration: 90  # 1.5 minutes
+    description: "Gradual depth decrease toward warning threshold"
+    depth_profile: "linear_decrease"
+    start_depth: 50
+    end_depth: 15
+    alarm_status: "NORMAL"
+    
+  - phase: "warning_depth"
+    duration: 45  # 45 seconds
+    description: "Depth warning threshold triggered (8-10 feet)"
+    depth_range: [8, 10]
+    alarm_status: "WARNING"
+    alarm_triggers:
+      - time: 0
+        type: "DEPTH_WARNING"
+        message: "Shallow water warning - 8 feet"
+        
+  - phase: "critical_depth"
+    duration: 30  # 30 seconds
+    description: "Critical depth alarm (5-6 feet)"
+    depth_range: [5, 6] 
+    alarm_status: "CRITICAL"
+    alarm_triggers:
+      - time: 0
+        type: "DEPTH_CRITICAL"
+        message: "Shallow water critical - 5 feet"
+      - time: 15
+        type: "DEPTH_CRITICAL"
+        message: "Shallow water critical - maintain depth"
+        
+  - phase: "emergency_depth"
+    duration: 15  # 15 seconds
+    description: "Emergency depth - immediate action required"
+    depth_range: [4, 5]
+    alarm_status: "EMERGENCY"
+    alarm_triggers:
+      - time: 0
+        type: "DEPTH_EMERGENCY"
+        message: "EMERGENCY - Shallow water 4 feet"
+        priority: "CRITICAL"
+        
+  - phase: "recovery_maneuver"
+    duration: 90  # 1.5 minutes
+    description: "Recovery to safe water"
+    depth_profile: "recovery_curve"
+    start_depth: 4
+    end_depth: 20
+    alarm_status: "RECOVERING"
+    alarm_triggers:
+      - time: 30
+        type: "DEPTH_WARNING_CLEAR"
+        message: "Depth warning cleared - 12 feet"
+      - time: 60
+        type: "DEPTH_NORMAL"
+        message: "Returned to safe water - 20 feet"
+        
+  - phase: "safe_water_restored"
+    duration: 90  # 1.5 minutes
+    description: "Back in safe water, alarms cleared"
+    depth_range: [18, 25]
+    alarm_status: "NORMAL"
+
+# Data generation with depth focus
+data:
+  depth:
+    type: "progressive_shallow"
+    unit: "feet"
+    # Depth controlled by phase progression
+    
+  speed:
+    type: "cautious_navigation"
+    base_speed: 5.0      # knots (reduced speed in shallow water)
+    shallow_speed: 3.0   # knots (very slow in critical depth)
+    unit: "knots"
+    phases:
+      safe_depth: 5.5
+      approaching_shallow: 4.5      # Slowing down
+      warning_depth: 3.5           # Cautious speed
+      critical_depth: 2.5          # Very slow
+      emergency_depth: 1.5         # Barely moving
+      recovery_maneuver: 3.0       # Careful recovery
+      safe_water_restored: 5.0     # Normal speed resumed
+      
+  wind:
+    type: "steady_conditions"
+    direction: 90        # degrees (beam wind)
+    speed: 12           # knots (moderate conditions)
+    variation: 2        # ±2 knots
+    unit: "knots"
+    
+  gps:
+    type: "shallow_water_navigation"
+    start_position:
+      latitude: 41.5200  # Shallow area approach
+      longitude: -81.6500
+    track_type: "shoaling_approach"
+    course: 270         # degrees (heading toward shallow water)
+    recovery_course: 90  # degrees (heading back to deep water)
+
+# NMEA sentence timing (high frequency for safety)
+timing:
+  depth: 5        # Hz (critical for shallow water)
+  speed: 2        # Hz
+  wind: 1         # Hz
+  gps: 2          # Hz
+  compass: 5      # Hz
+  alarms: 1       # Hz (alarm message broadcasting)
+
+# Mathematical depth functions
+functions:
+  progressive_shallow: |
+    // Depth based on current phase
+    const currentPhase = getCurrentPhase(currentTime);
+    const phaseConfig = phases[currentPhase];
+    
+    if (phaseConfig.depth_range) {
+      const [min, max] = phaseConfig.depth_range;
+      const variation = (Math.random() - 0.5) * (max - min) * 0.3;
+      return (min + max) / 2 + variation;
+    }
+    
+    if (phaseConfig.depth_profile === 'linear_decrease') {
+      const progress = getPhaseProgress(currentTime);
+      const depth = phaseConfig.start_depth - 
+        (phaseConfig.start_depth - phaseConfig.end_depth) * progress;
+      return Math.max(phaseConfig.end_depth, depth);
+    }
+    
+    if (phaseConfig.depth_profile === 'recovery_curve') {
+      const progress = getPhaseProgress(currentTime);
+      // Exponential recovery curve
+      const depth = phaseConfig.start_depth + 
+        (phaseConfig.end_depth - phaseConfig.start_depth) * 
+        (1 - Math.exp(-3 * progress));
+      return Math.min(phaseConfig.end_depth, depth);
+    }
+    
+    return 20; // Default safe depth
+    
+  cautious_navigation: |
+    // Speed adjusts based on depth conditions
+    const currentPhase = getCurrentPhase(currentTime);
+    const currentDepth = getCurrentDepth(currentTime);
+    
+    // Speed reduces as depth decreases
+    if (currentDepth < 6) return 1.5;      // Emergency slow
+    if (currentDepth < 8) return 2.5;      // Critical slow
+    if (currentDepth < 10) return 3.5;     // Warning slow
+    if (currentDepth < 15) return 4.5;     // Cautious
+    return 5.5;                            // Normal
+
+# Depth alarm configuration
+depth_alarms:
+  - threshold: 10
+    type: "WARNING"
+    color: "YELLOW"
+    message: "Shallow water warning"
+    audio: "single_beep"
+    frequency: 5  # seconds between beeps
+    
+  - threshold: 6
+    type: "CRITICAL" 
+    color: "RED"
+    message: "Shallow water critical"
+    audio: "double_beep"
+    frequency: 2  # seconds between beeps
+    
+  - threshold: 4
+    type: "EMERGENCY"
+    color: "FLASHING_RED"
+    message: "EMERGENCY - Shallow water"
+    audio: "continuous_tone"
+    frequency: 0.5  # continuous
+
+# NMEA alarm sentences
+alarm_sentences:
+  - sentence: "ALR"  # Alert sentence
+    parameters:
+      - alert_id: "100"  # Depth alarm ID
+      - alert_state: "A"  # Active
+      - alert_text: "SHALLOW WATER"
+      
+  - sentence: "XDR"  # Transducer (depth with alarm flag)
+    parameters:
+      - transducer_type: "D"  # Depth
+      - measurement: "{current_depth}"
+      - units: "F"  # Feet
+      - transducer_name: "DEPTH_ALARM"
+
+# Testing validation points
+validation_points:
+  - depth: 10
+    expected_alarm: "WARNING"
+    expected_color: "YELLOW"
+    
+  - depth: 6
+    expected_alarm: "CRITICAL"
+    expected_color: "RED"
+    
+  - depth: 4
+    expected_alarm: "EMERGENCY" 
+    expected_color: "FLASHING_RED"
+    
+  - depth: 12
+    expected_alarm: "CLEARED"
+    expected_color: "NORMAL"
+
+# Use cases
+use_cases:
+  - "Depth alarm system testing with configurable thresholds"
+  - "Progressive alarm escalation validation"
+  - "Shallow water navigation behavior"
+  - "Alarm clearing sequence verification"
+  - "Visual and audio alarm coordination"
+  - "Speed reduction in shallow water"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC3: Progressive depth decrease (50ft → 15ft → 8ft → 5ft → recovery)"
+  - "AC3: Configurable alarm thresholds (depth warning: 10ft, critical: 6ft)"
+  - "AC3: Multi-engine support for twin-engine boat scenarios"
+  - "AC3: Safety alarm scenarios"

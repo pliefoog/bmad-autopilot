@@ -270,7 +270,7 @@ describe('Theme Integration', () => {
       
       // Should show depth value
       expect(getByText('5.2')).toBeTruthy();
-      expect(getByText('m')).toBeTruthy();
+      expect(getByText('(m)')).toBeTruthy();
     });
 
     test('should use theme colors for trend graph', () => {

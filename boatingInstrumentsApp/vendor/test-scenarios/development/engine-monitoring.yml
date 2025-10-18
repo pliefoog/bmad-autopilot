@@ -1,0 +1,99 @@
+# Engine Monitoring Scenario
+# For testing engine-related widgets and displays
+
+name: "Engine Monitoring"
+description: "Comprehensive engine data simulation for testing engine widgets"
+category: "development" 
+version: "1.0"
+
+duration: 600000  # 10 minutes
+bridge_mode: "nmea0183"
+message_rate: 5  # 5 Hz for engine data
+
+# Engine parameters
+engine:
+  main_engine:
+    rpm_range: [800, 3200]
+    rpm_normal: 1800
+    coolant_temp_range: [160, 220]  # fahrenheit
+    coolant_normal: 180
+    oil_pressure_range: [25, 65]   # psi  
+    oil_normal: 45
+    fuel_flow_range: [2.5, 15.0]   # gph
+    fuel_flow_normal: 6.5
+    
+  alternator:
+    voltage_range: [12.8, 14.4]    # volts
+    voltage_normal: 13.8
+    current_range: [5, 45]         # amps
+    current_normal: 15
+    
+  fuel_system:
+    fuel_level: 75                 # percent
+    fuel_rate_consumption: 0.1     # percent per minute
+
+# Test scenarios within the engine monitoring
+test_scenarios:
+  normal_operation:
+    duration: 300000  # 5 minutes
+    description: "Normal engine operation parameters"
+    
+  high_load:
+    duration: 120000  # 2 minutes  
+    description: "High engine load conditions"
+    parameters:
+      rpm: 2800
+      coolant_temp: 200
+      oil_pressure: 60
+      fuel_flow: 12.0
+      
+  idle_conditions:
+    duration: 180000  # 3 minutes
+    description: "Engine idle conditions"
+    parameters:
+      rpm: 850
+      coolant_temp: 165
+      oil_pressure: 30
+      fuel_flow: 3.0
+
+# NMEA sentences for engine data
+nmea_sentences:
+  - type: "RPM"     # Engine RPM
+    interval_ms: 1000
+    enabled: true
+    
+  - type: "XDR"     # Temperature/Pressure sensors
+    interval_ms: 2000
+    enabled: true
+    subtypes:
+      - coolant_temperature
+      - oil_pressure
+      - alternator_voltage
+      
+  - type: "RSA"     # Rudder Sensor Angle (for engine load correlation)
+    interval_ms: 1000
+    enabled: true
+
+# Performance monitoring
+performance:
+  target_message_rate: 5
+  max_latency_ms: 100
+  max_memory_mb: 30
+
+# Widget testing scenarios
+widget_tests:
+  rpm_gauge:
+    test_ranges: [800, 1200, 1800, 2400, 3200]
+    alert_thresholds: [3000, 3200]
+    
+  temperature_gauge:
+    test_ranges: [160, 175, 185, 200, 215]
+    alert_thresholds: [210, 220]
+    
+  pressure_gauge:
+    test_ranges: [25, 35, 45, 55, 65]
+    alert_thresholds: [25, 65]
+    
+  fuel_gauge:
+    test_levels: [10, 25, 50, 75, 90]
+    alert_thresholds: [15, 95]

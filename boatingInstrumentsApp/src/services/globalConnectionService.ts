@@ -1,19 +1,25 @@
 /**
- * Global NMEA Connection Manager Service
- * Provides unified connection management across web and mobile platforms
+ * Simplified Global Connection Service
+ * Uses the unified connection manager for consistent behavior across platforms
  */
 
-import { NmeaConnectionManager, NmeaConnectionOptions } from './nmeaConnection';
+import { UnifiedConnectionManager, NmeaConnectionConfig, ConnectionStatus } from './unifiedConnectionManager';
 import { getConnectionDefaults } from './connectionDefaults';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Legacy interface compatibility
+export interface NmeaConnectionOptions {
+  ip: string;
+  port: number;
+  protocol: 'tcp' | 'udp' | 'websocket';
+}
 
 export class GlobalConnectionService {
   private static instance: GlobalConnectionService | null = null;
-  private connectionManager: NmeaConnectionManager | null = null;
-  private currentOptions: NmeaConnectionOptions | null = null;
-  private isWeb: boolean;
+  private connectionManager: UnifiedConnectionManager;
 
   private constructor() {
-    this.isWeb = typeof window !== 'undefined';
+    this.connectionManager = new UnifiedConnectionManager();
   }
 
   /**
@@ -27,151 +33,139 @@ export class GlobalConnectionService {
   }
 
   /**
-   * Initialize connection with default settings
+   * Initialize with saved settings or defaults
    */
   async initialize(): Promise<void> {
-    // Prevent double initialization (React StrictMode protection)
-    if (this.connectionManager) {
-      console.log('[Global Connection] Already initialized, skipping...');
-      return;
-    }
+    console.log('[Global Connection] Initializing...');
+    
     const defaults = getConnectionDefaults();
+    let savedConfig: NmeaConnectionConfig | null = null;
     
-    // Try to load saved settings from storage
-    let savedOptions: NmeaConnectionOptions | null = null;
-    
-    if (this.isWeb) {
-      // For web, use localStorage
-      try {
-        const saved = localStorage.getItem('nmea-connection-config');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          savedOptions = {
-            ip: parsed.ip || defaults.ip,
-            port: parseInt(parsed.port) || defaults.port,
-            protocol: parsed.protocol || defaults.protocol
-          };
-        }
-      } catch (error) {
-        console.warn('[Global Connection] Failed to load web settings:', error);
+    // Try to load saved settings
+    try {
+      const saved = await AsyncStorage.getItem('nmea-connection-config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        savedConfig = {
+          ip: parsed.ip || defaults.ip,
+          port: parseInt(parsed.port) || defaults.port,
+          protocol: parsed.protocol || defaults.protocol
+        };
       }
-    } else {
-      // For mobile, use AsyncStorage
-      try {
-        const AsyncStorage = await import('@react-native-async-storage/async-storage');
-        const saved = await AsyncStorage.default.getItem('nmea-connection-config');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          savedOptions = {
-            ip: parsed.ip || defaults.ip,
-            port: parseInt(parsed.port) || defaults.port,
-            protocol: parsed.protocol || defaults.protocol
-          };
-        }
-      } catch (error) {
-        console.warn('[Global Connection] Failed to load mobile settings:', error);
-      }
+    } catch (error) {
+      console.warn('[Global Connection] Failed to load saved settings:', error);
     }
 
-    const options = savedOptions || defaults;
-    await this.updateConnection(options, false); // Don't save during initialization
+    const config = savedConfig || defaults;
+    
+    // Attempt to connect with saved/default configuration
+    // Don't await - let it connect in background
+    this.connect(config, false); // Don't save during initialization
   }
 
   /**
-   * Update connection settings and reconnect
-   * @param newOptions New connection options
-   * @param saveSettings Whether to persist settings to storage (default: true)
+   * Connect with configuration
+   * @param config Connection configuration
+   * @param saveSettings Whether to save settings (default: true)
    */
-  async updateConnection(newOptions: NmeaConnectionOptions, saveSettings: boolean = true): Promise<void> {
+  async connect(config: NmeaConnectionConfig, saveSettings: boolean = true): Promise<boolean> {
+    console.log(`[Global Connection] Connect request: ${config.protocol}://${config.ip}:${config.port}`);
     
-    // Gracefully disconnect existing connection
-    if (this.connectionManager) {
-      console.log('[Global Connection] Disconnecting existing connection...');
-      this.connectionManager.disconnect();
-      this.connectionManager = null;
-    }
-
     // Save settings if requested
     if (saveSettings) {
-      await this.saveSettings(newOptions);
+      await this.saveSettings(config);
     }
-
-    this.currentOptions = newOptions;
-
-    // Disconnect existing connection if any
-    if (this.connectionManager) {
-      console.log('[Global Connection] Disconnecting existing connection...');
-      (this.connectionManager as NmeaConnectionManager).disconnect();
-      this.connectionManager = null;
-    }
-
-    // Create new connection manager (unified for both web and mobile)
-    this.connectionManager = new NmeaConnectionManager(newOptions);
     
-    // Connect after a brief delay to ensure clean state
-    setTimeout(() => {
-      if (this.connectionManager) {
-        console.log('[Global Connection] Connecting with new settings...');
-        this.connectionManager.connect();
-      }
-    }, 500);
+    // Attempt connection
+    return await this.connectionManager.connect(config);
   }
 
   /**
-   * Save connection settings to appropriate storage
+   * Legacy method for backward compatibility
    */
-  private async saveSettings(options: NmeaConnectionOptions): Promise<void> {
-    const settingsData = {
-      ip: options.ip,
-      port: options.port.toString(),
-      protocol: options.protocol
-    };
-
-    try {
-      if (this.isWeb) {
-        localStorage.setItem('nmea-connection-config', JSON.stringify(settingsData));
-      } else {
-        const AsyncStorage = await import('@react-native-async-storage/async-storage');
-        await AsyncStorage.default.setItem('nmea-connection-config', JSON.stringify(settingsData));
-      }
-      console.log('[Global Connection] Settings saved successfully');
-    } catch (error) {
-      console.error('[Global Connection] Failed to save settings:', error);
-    }
+  async updateConnection(newOptions: NmeaConnectionOptions, saveSettings: boolean = true): Promise<void> {
+    await this.connect(newOptions, saveSettings);
   }
 
   /**
-   * Get current connection options
+   * Disconnect current connection
    */
-  getCurrentOptions(): NmeaConnectionOptions | null {
-    return this.currentOptions;
+  disconnect(): void {
+    console.log('[Global Connection] Disconnect requested');
+    this.connectionManager.disconnect();
   }
 
   /**
-   * Get current connection manager
+   * Get current connection status
    */
-  getConnectionManager(): NmeaConnectionManager | null {
-    return this.connectionManager;
+  getStatus(): ConnectionStatus {
+    return this.connectionManager.getStatus();
+  }
+
+  /**
+   * Check if connect button should be enabled
+   * (disabled when config is same as current)
+   */
+  shouldEnableConnectButton(config: NmeaConnectionConfig): boolean {
+    return !this.connectionManager.isConfigSameAsCurrent(config);
   }
 
   /**
    * Check if currently connected
    */
   isConnected(): boolean {
-    return this.connectionManager !== null;
+    return this.connectionManager.isConnected();
   }
 
   /**
-   * Disconnect and cleanup
+   * Check if receiving data
    */
-  disconnect(): void {
-    if (this.connectionManager) {
-      console.log('[Global Connection] Disconnecting...');
-      this.connectionManager.disconnect();
-      this.connectionManager = null;
+  isReceivingData(): boolean {
+    return this.connectionManager.isReceivingData();
+  }
+
+  /**
+   * Get current configuration (for UI display)
+   */
+  getCurrentConfig(): NmeaConnectionConfig | null {
+    return this.getStatus().currentConfig;
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  getCurrentOptions(): NmeaConnectionOptions | null {
+    return this.getCurrentConfig();
+  }
+
+  /**
+   * Legacy method for backward compatibility  
+   */
+  getConnectionManager(): UnifiedConnectionManager | null {
+    return this.connectionManager;
+  }
+
+  /**
+   * Save connection settings to storage
+   */
+  private async saveSettings(config: NmeaConnectionConfig): Promise<void> {
+    const settingsData = {
+      ip: config.ip,
+      port: config.port.toString(),
+      protocol: config.protocol
+    };
+
+    try {
+      await AsyncStorage.setItem('nmea-connection-config', JSON.stringify(settingsData));
+      console.log('[Global Connection] Settings saved');
+    } catch (error) {
+      console.error('[Global Connection] Failed to save settings:', error);
     }
   }
 }
 
 // Export singleton instance
 export const globalConnectionService = GlobalConnectionService.getInstance();
+
+// Re-export types for convenience
+export type { NmeaConnectionConfig, ConnectionStatus, ConnectionState } from './unifiedConnectionManager';

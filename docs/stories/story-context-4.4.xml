@@ -1,0 +1,130 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.4</storyId>
+    <title>User Experience Polish & Accessibility</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-4.4-ux-polish-accessibility.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boater using the app in various conditions</asA>
+    <iWant>a polished, accessible interface that works reliably</iWant>
+    <soThat>I can use the app confidently in all marine environments</soThat>
+    <tasks>
+      - Visual Design System (comprehensive design system, typography/color schemes, professional icon set, visual hierarchy)
+      - Animation & Interaction Polish (smooth transitions, loading states, progress indicators, micro-interactions)
+      - Accessibility Implementation (VoiceOver/TalkBack support, high contrast mode, large text scaling, touch target sizing)
+      - Accessibility for Alarms (screen reader compatible alarms, haptic feedback, high contrast indicators, audio cues)
+      - Usability Enhancements (onboarding flow, contextual help, undo/redo, keyboard navigation)
+      - Marine Environment Optimization (wet hands/gloves support, marine contrast ratios, sunlight readability, emergency access)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <visual_polish>
+      <item id="1">Consistent visual design across all screens and widgets</item>
+      <item id="2">Smooth animations and transitions throughout the app</item>
+      <item id="3">Loading states and progress indicators for all operations</item>
+      <item id="4">Empty states with helpful guidance</item>
+      <item id="5">Professional icon design and visual hierarchy</item>
+    </visual_polish>
+    <accessibility_features>
+      <item id="6">VoiceOver/TalkBack support for vision-impaired users</item>
+      <item id="7">High contrast mode support</item>
+      <item id="8">Large text support for readability</item>
+      <item id="9">Motor accessibility (large touch targets, gesture alternatives)</item>
+      <item id="10">Screen reader compatible alarm announcements</item>
+    </accessibility_features>
+    <usability_improvements>
+      <item id="11">Intuitive onboarding flow for new users</item>
+      <item id="12">Contextual help and tooltips throughout the app</item>
+      <item id="13">Undo/redo capabilities for configuration changes</item>
+      <item id="14">Keyboard navigation support for desktop platforms</item>
+      <item id="15">Touch gesture optimization for marine conditions (wet hands, gloves)</item>
+    </usability_improvements>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/stories/epic-4-alarms-stories.md" title="Epic 4: Alarms & Polish" section="Story 4.4: User Experience Polish & Accessibility" snippet="Visual design meets professional app standards. Accessibility compliance verified on all platforms. Design System: Consistent component library across all platforms. Accessibility: Platform-specific accessibility API integration. Marine UX: Interface optimized for challenging marine conditions."/>
+      <item path="docs/prd/user-interface-design-goals.md" title="User Interface Design Goals" section="Accessibility: WCAG AA" snippet="Target WCAG AA compliance to ensure usability for recreational boaters with vision or motor impairments: Minimum 4.5:1 color contrast ratios for text/data, Touch targets minimum 44x44pt for marine environment use (boat motion, gloves, wet hands), Support platform accessibility features (VoiceOver, TalkBack, Windows Narrator, macOS accessibility)"/>
+      <item path="docs/prd/user-interface-design-goals.md" title="User Interface Design Goals" section="Branding: Marine Instrument Aesthetic" snippet="Clean, professional design inspired by Raymarine instrument styling: High contrast displays with bold typography, Analog gauge aesthetics where appropriate (compass roses, bar graphs, needle indicators), Nautical color palette: blues, whites, blacks with accent colors for warnings (yellow) and alarms (red), Ensure accessible color palette meets WCAG AA contrast requirements"/>
+      <item path="docs/front-end-spec.md" title="Boating Instruments App UI/UX Specification" section="Component Library / Design System" snippet="Custom lightweight design system tailored to marine instrument aesthetics. Atomic Design structure: Atoms → Molecules → Organisms. Theming via React Context for Day/Night/Red-Night modes. React Native SVG for custom gauges and instrument graphics. Reanimated for smooth transitions and micro-interactions."/>
+      <item path="docs/ui-architecture/index.md" title="Boating Instruments App Frontend Architecture Document" section="UI Design System" snippet="Widget Grid System, Monochromatic Design Language, Alert Threshold Color System, Typography Hierarchy, Widget Title Display Standards - comprehensive design system architecture for consistent marine instrument interface"/>
+      <item path="docs/stories/story-6.1-atomic-design-structure.md" title="Atomic Design Component Architecture" section="Target Architecture" snippet="Atomic Design organization: atoms/ (pure UI primitives), molecules/ (composed components), organisms/ (complex UI sections). Barrel exports provide clean import paths. Component props fully typed with TypeScript interfaces. All atomic components include comprehensive unit tests."/>
+      <item path="docs/ui-architecture/mob-detection-ux.md" title="Man Overboard (MOB) Detection - User Experience Design" section="Accessibility Specifications" snippet="Accessibility specifications for critical safety features including screen reader compatibility, high contrast modes, and emergency interaction patterns for marine environments"/>
+    </docs>
+    <code>
+      <item type="react-component" name="Button" file="src/components/atoms/Button.tsx" snippet="Complete atomic Button component with primary/secondary/outline/ghost variants, small/medium/large sizes, accessibility support (44px minimum touch target), disabled states, and testID props for marine environment use"/>
+      <item type="react-component" name="StatusIndicator" file="src/components/atoms/StatusIndicator.tsx" snippet="Status indicator component with connected/connecting/disconnected/error/warning states, small/medium/large sizes, circular design with semantic colors for marine connection status"/>
+      <item type="react-component" name="LoadingSpinner" file="src/components/atoms/LoadingSpinner.tsx" snippet="Loading spinner atomic component for async operations and connection states"/>
+      <item type="react-component" name="ThemeProvider" file="src/theme/ThemeProvider.tsx" snippet="Complete theme context system with colors, typography, spacing, and mode switching. Provides useTheme hook with ThemeContextValue interface including colors, mode, isDark, spacing, fontSize, fontWeight, borderRadius, shadows, animations"/>
+      <item type="react-hook" name="useTheme" file="src/theme/ThemeProvider.tsx" snippet="Hook returns ThemeContextValue with colors: ThemeColors, mode: ThemeMode, isDark: boolean, setMode, toggleTheme, fontSize: number, fontWeight: string, borderRadius: number, spacing: {xs,sm,md,lg,xl}, shadows: boolean, animations: boolean"/>
+      <item type="react-component" name="ThemeToggle" file="src/components/molecules/ThemeToggle.tsx" snippet="Molecule component for theme switching between day/night/red-night modes with marine-appropriate styling"/>
+      <item type="react-component" name="FormField" file="src/components/molecules/FormField.tsx" snippet="Accessible form field molecule with label, input validation, and error states for consistent form UX"/>
+      <item type="react-component" name="ConnectionStatus" file="src/components/molecules/ConnectionStatus.tsx" snippet="Connection status display molecule combining StatusIndicator with connection state text and accessibility labels"/>
+      <item type="react-component" name="WidgetShell" file="src/components/WidgetShell.tsx" snippet="Container component for all marine widgets with consistent theming, error boundaries, and marine-specific styling"/>
+      <item type="component-library" name="Atomic Design System" file="src/components/atoms/" snippet="Button, StatusIndicator, LoadingSpinner components with TypeScript interfaces. Barrel exports via index.ts. All components use useTheme hook for marine-compliant styling"/>
+      <item type="typescript-interface" name="ButtonProps" file="src/components/atoms/Button.tsx" snippet="variant: 'primary'|'secondary'|'outline'|'ghost', size: 'small'|'medium'|'large', onPress: () => void, disabled?: boolean, title: string. Minimum 44pt touch targets for marine use"/>
+      <item type="typescript-interface" name="StatusIndicatorProps" file="src/components/atoms/StatusIndicator.tsx" snippet="status: 'connected'|'connecting'|'disconnected'|'error'|'warning', size?: 'small'|'medium'|'large', style?: ViewStyle, testID?: string"/>
+      <item type="typescript-interface" name="ThemeContextValue" file="src/theme/ThemeProvider.tsx" snippet="Interface defining theme context structure with colors, mode switching, typography settings, and accessibility properties for marine display requirements"/>
+      <item type="accessibility-api" name="React Native AccessibilityProps" file="React Native Core" snippet="accessible, accessibilityLabel, accessibilityRole, accessibilityHint, accessibilityState, accessibilityActions, importantForAccessibility, role, accessibilityValue for comprehensive screen reader support"/>
+      <item type="test-setup" name="Accessibility Testing" file="__tests__/" snippet="Jest + React Native Testing Library setup with accessibility testing utilities, screen reader mocks, and WCAG compliance validation patterns"/>
+    </code>
+    <dependencies>
+      <item type="framework" name="React Native" version="0.75.0" description="Core mobile framework with built-in accessibility APIs: AccessibilityInfo, AccessibilityProps, VoiceOver/TalkBack support, screen reader integration"/>
+      <item type="animation" name="React Native Reanimated" version="3.x" description="Performance-optimized animation library for smooth micro-interactions, layout animations, and theme transitions without blocking JavaScript thread"/>
+      <item type="testing" name="Jest + React Native Testing Library" version="30.2.0 + 13.3.3" description="Testing framework with accessibility testing utilities, screen reader mocks, and component testing for WCAG compliance validation"/>
+      <item type="theme" name="Existing Theme System" file="src/theme/ThemeProvider.tsx" description="Current ThemeProvider implementation with marine-compliant color palettes, day/night/red-night modes, and useTheme hook integration"/>
+      <item type="components" name="Atomic Design System" file="src/components/atoms/" description="Existing component library with Button, StatusIndicator, LoadingSpinner components following atomic design patterns and TypeScript interfaces"/>
+      <item type="typescript" name="TypeScript" version="5.0+" description="Strict typing system for accessibility prop interfaces, theme context types, and component interface definitions ensuring type safety"/>
+      <item type="storage" name="AsyncStorage" package="@react-native-async-storage/async-storage" description="Persistence for accessibility preferences, theme settings, and user customization options across app sessions"/>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <item type="marine-safety" priority="critical" description="WCAG AA compliance mandatory for marine night vision safety. Color contrast ratios minimum 4.5:1 for text/data displays to ensure readability in challenging marine conditions"/>
+    <item type="accessibility" priority="critical" description="Touch targets minimum 44pt for marine environment use (boat motion, gloves, wet hands). Screen reader support required for VoiceOver, TalkBack, and Windows Narrator"/>
+    <item type="performance" priority="high" description="Animation performance <16ms frame time to maintain 60fps. React Native Reanimated used for smooth transitions without blocking JavaScript thread"/>
+    <item type="compatibility" priority="high" description="Existing ThemeProvider functionality must continue unchanged. All components must migrate from direct theme imports to useTheme hook without breaking current implementations"/>
+    <item type="framework" priority="medium" description="React Native 0.75.0 accessibility APIs and TypeScript 5.0+ strict typing required. Atomic design component architecture must follow established patterns"/>
+    <item type="testing" priority="medium" description="Jest + React Native Testing Library for accessibility compliance testing. All components require unit tests with proper accessibility mock setup"/>
+  </constraints>
+  
+  <interfaces>
+    <item type="react-component" name="ThemeProvider" file="src/theme/ThemeProvider.tsx" snippet="Complete theme context system with colors, typography, spacing, and mode switching. Provides useTheme hook with ThemeContextValue interface including colors, mode, isDark, spacing, fontSize, fontWeight, borderRadius, shadows, animations"/>
+    <item type="react-hook" name="useTheme" file="src/theme/ThemeProvider.tsx" snippet="Hook returns ThemeContextValue with colors: ThemeColors, mode: ThemeMode, isDark: boolean, setMode, toggleTheme, fontSize: number, fontWeight: string, borderRadius: number, spacing: {xs,sm,md,lg,xl}, shadows: boolean, animations: boolean"/>
+    <item type="typescript-interface" name="ThemeContextValue" file="src/theme/ThemeProvider.tsx" snippet="Interface defining theme context structure with colors, mode switching, typography settings, and accessibility properties for marine display requirements"/>
+    <item type="react-native-api" name="Accessibility Props" file="React Native Core" snippet="AccessibilityProps with accessible, accessibilityLabel, accessibilityRole, accessibilityHint, accessibilityState, accessibilityActions, importantForAccessibility, role, accessibilityValue for screen reader support"/>
+    <item type="component-library" name="Atomic Design System" file="src/components/atoms/" snippet="Button, StatusIndicator, LoadingSpinner components with TypeScript interfaces. Barrel exports via index.ts. All components use useTheme hook for marine-compliant styling"/>
+    <item type="typescript-interface" name="ButtonProps" file="src/components/atoms/Button.tsx" snippet="variant: 'primary'|'secondary'|'destructive', size: 'small'|'medium'|'large', onPress: () => void, disabled?: boolean, children: React.ReactNode. Minimum 44pt touch targets for marine use"/>
+    <item type="error-boundary" name="WidgetErrorBoundary" file="src/components/errorBoundaries/WidgetErrorBoundary.tsx" snippet="Specialized error boundary for marine widgets with recovery strategies, widget replacement, and marine-specific error handling patterns"/>
+    <item type="typescript-interface" name="StatusIndicatorProps" file="src/components/atoms/StatusIndicator.tsx" snippet="status: 'connected'|'connecting'|'disconnected'|'error'|'warning', size?: 'small'|'medium'|'large', style?: ViewStyle, testID?: string for marine connection status indication"/>
+    <item type="accessibility-standard" name="WCAG 2.1 AA Compliance" file="W3C Guidelines" snippet="Minimum contrast ratio 4.5:1, touch targets ≥44pt, keyboard navigation, screen reader compatibility, focus management, reduced motion support for marine accessibility requirements"/>
+    <item type="animation-framework" name="React Native Reanimated" version="3.x" snippet="useSharedValue, useAnimatedStyle, withTiming, withSpring for performance-optimized animations that maintain accessibility and don't block JavaScript thread"/>
+  </interfaces>
+  
+  <tests>
+    <standards>
+      <standard name="Jest" version="30.2.0" config="jest.config.js" description="Primary test runner with React Native preset for component testing, accessibility testing, and theme compliance validation"/>
+      <standard name="React Native Testing Library" version="13.3.3" description="Component testing utilities with accessibility-focused testing methods: render, fireEvent, waitFor, screen queries for accessibility elements"/>
+      <standard name="Accessibility Testing" description="WCAG AA compliance testing with screen reader compatibility validation, color contrast testing, and marine environment usability verification"/>
+    </standards>
+    <locations>
+      <location path="__tests__/components/accessibility/" description="Accessibility-focused component tests for screen reader compatibility and WCAG compliance"/>
+      <location path="__tests__/theme/accessibility.test.tsx" description="Theme system accessibility testing including contrast ratios and display mode validation"/>
+      <location path="__tests__/setup.ts" description="Global test setup with accessibility API mocks and theme context providers"/>
+      <location path="__tests__/integration/ux-polish.test.tsx" description="Integration tests for complete UX polish and accessibility user flows"/>
+    </locations>
+    <ideas>
+      <idea type="accessibility-compliance" description="Test all components with screen reader simulation: VoiceOver navigation, TalkBack announcements, and accessibility label verification"/>
+      <idea type="marine-environment" description="Test touch targets ≥44pt, wet-hand usability simulation, high-contrast mode verification, and sunlight readability validation"/>
+      <idea type="theme-accessibility" description="Test theme switching maintains accessibility: contrast ratios preserved, focus indicators visible, color-blind friendly palettes"/>
+      <idea type="performance-accessibility" description="Test animation performance doesn't impact accessibility: reduced motion support, screen reader announcement timing, focus management"/>
+      <idea type="error-handling" description="Test accessibility error recovery: fallback content for screen readers, graceful degradation, error boundary accessibility"/>
+    </ideas>
+  </tests>
+</story-context>

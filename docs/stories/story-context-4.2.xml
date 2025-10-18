@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Story Context: Grouped & Smart Alarm Management -->
+<!-- Generated: 2025-10-18T10:30:00.000Z -->
+<!-- Epic: 4 | Story: 4.2 | Status: Ready for Development -->
+
+<story-context>
+  <story id="4.2" epic="4" status="Ready for Development">
+    <title>Grouped & Smart Alarm Management</title>
+    <summary>
+      As a boater dealing with multiple simultaneous alarms, I want intelligent alarm grouping and prioritization
+      so that I can focus on the most critical issues first without alarm fatigue
+    </summary>
+    <tasks>
+      - Alarm Grouping System (relationship mapping, smart algorithms, grouped display, expandable UI)
+      - Priority Management (hierarchy system, critical overlay, alarm queue, time-based escalation)
+      - Context Awareness (vessel state detection, context-aware filtering, operating conditions, weather integration)
+      - Smart Learning Features (transient detection, adaptive thresholds, pattern recognition, false alarm learning)
+      - Maintenance Integration (engine hours tracking, reminder scheduling, usage alerts, history tracking)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <alarm_grouping>
+      <item id="1">Group related alarms (e.g., engine temperature + oil pressure)</item>
+      <item id="2">Display highest priority alarm prominently</item>
+      <item id="3">Show grouped alarm count and summary</item>
+      <item id="4">Allow expanding groups to see individual alarms</item>
+      <item id="5">Smart grouping based on alarm relationships</item>
+    </alarm_grouping>
+    <priority_management>
+      <item id="6">Clear priority hierarchy (Critical > Warning > Info)</item>
+      <item id="7">Critical alarms always visible regardless of screen</item>
+      <item id="8">Lower priority alarms queue behind critical ones</item>
+      <item id="9">Time-based alarm escalation (warning → critical after delay)</item>
+      <item id="10">Context-aware alarm relevance (anchor alarms only when anchored)</item>
+    </priority_management>
+    <smart_features>
+      <item id="11">Automatic alarm acknowledgment for transient conditions</item>
+      <item id="12">Adaptive thresholds based on operating conditions</item>
+      <item id="13">Alarm pattern recognition (repeated false alarms)</item>
+      <item id="14">Maintenance reminders based on engine hours/usage</item>
+      <item id="15">Weather-related alarm adjustments</item>
+    </smart_features>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd/requirements.md" title="Product Requirements" section="FR42 & FR44 - Grouped Alarm Widgets" snippet="FR42: Provide grouped alarm widgets displaying multiple related conditions with color coding. FR44: Allow users to configure thresholds and group alarms into Motor/Sailing templates or custom groups."/>
+      <item path="docs/stories/epic-4-alarms-stories.md" title="Epic 4 Stories" section="Story 4.2 Grouped & Smart Alarm Management" snippet="Intelligence: Rule-based system for relationships. Adaptation: Learning system for false positives. Context Awareness: Integration with vessel state detection."/>
+      <item path="docs/stories/story-4.2-grouped-alarm-management.md" title="Story 4.2 Full Specification" section="Architecture Decisions" snippet="SmartAlarmManager extending basic AlarmManager. Rule engine for alarm relationships. Context detection using NMEA data patterns. Adaptive threshold system."/>
+      <item path="docs/qa/Epic4-Marine-Safety-Alarm-Testing-Framework.md" title="Marine Safety Testing Framework" section="Story 4.2 QA Gate Criteria" snippet="Performance Critical classification with medium impact. Group aggregation accuracy, visual hierarchy clarity validation required."/>
+      <item path="base44-mvp-full-prompt.txt" title="Implementation Requirements" section="STEP 36: Alarm Configuration Templates" snippet="Pre-defined templates: Motor Alarms (engine temp, oil pressure, coolant), Sailing Alarms (depth, wind shift, speed). Grouped alarms display all in single widget."/>
+    </docs>
+    <code>
+      <item path="src/stores/alarmStore.ts" kind="store" symbol="AlarmStore" lines="44-300" reason="Foundation alarm system with AlarmState, AlarmActions, and evaluateThresholds - base to extend with smart grouping and context awareness"/>
+      <item path="src/hooks/useAlarmThreshold.ts" kind="hook" symbol="useAlarmThreshold" lines="1-679" reason="Alarm threshold management with real-time monitoring - pattern for smart learning features and adaptive thresholds"/>
+      <item path="src/services/unifiedConnectionManager.ts" kind="service" symbol="UnifiedConnectionManager" lines="30-100" reason="NMEA data connection and flow management - data source for vessel state detection and context awareness"/>
+      <item path="src/services/autopilotSafetyManager.ts" kind="service" symbol="AutopilotSafetyManager" lines="1-350" reason="Safety event patterns and coordination - architecture reference for smart alarm management and priority systems"/>
+    </code>
+  </artifacts>
+
+  <dependencies>
+    <internal>
+      <item type="store" path="src/stores/alarmStore.ts" reason="Base alarm system infrastructure to extend with grouping, prioritization, and smart features - core foundation for grouped alarm management"/>
+      <item type="store" path="src/stores/nmeaStore.ts" reason="Real-time NMEA data for vessel state detection, operating condition analysis, and context-aware alarm filtering"/>
+      <item type="hook" path="src/hooks/useAlarmThreshold.ts" reason="Threshold management system to extend with adaptive learning, pattern recognition, and context-aware adjustment capabilities"/>
+      <item type="service" path="src/services/unifiedConnectionManager.ts" reason="NMEA connection monitoring for real-time vessel state detection and operating condition analysis"/>
+      <item type="service" path="src/services/autopilotSafetyManager.ts" reason="Safety system coordination patterns - reference architecture for smart alarm prioritization and context integration"/>
+    </internal>
+    <platform>
+      <item api="React Native AsyncStorage" reason="Persistent storage for alarm grouping preferences, learned patterns, adaptive thresholds, and maintenance schedules"/>
+      <item api="React Native Performance" reason="Real-time alarm processing optimization to handle grouped evaluation without performance impact"/>
+      <item api="React Native Animated" reason="Smooth UI animations for expandable alarm groups, priority transitions, and visual hierarchy indicators"/>
+      <item api="Machine Learning Algorithms" reason="Pattern recognition for false alarm detection, adaptive threshold adjustment, and maintenance prediction"/>
+    </platform>
+  </dependencies>
+
+  <constraints>
+    - Marine Safety Compliance: Grouped alarms must not obscure critical safety alerts - critical alarms always bypass grouping for immediate visibility
+    - Performance Requirements: Smart processing must maintain <100ms alarm evaluation latency with real-time NMEA data streams and multiple active alarms
+    - Context Detection: Vessel state detection must be reliable with graceful degradation when NMEA data incomplete (anchored/sailing/motoring states)
+    - Learning System: Adaptive features must not compromise safety - critical alarms immune to threshold adjustment, user override always available
+    - Priority Hierarchy: Strict enforcement of Critical > Warning > Info with time-based escalation system and context-aware relevance filtering
+    - Grouping Intelligence: Smart grouping based on marine system relationships (Engine: temp+oil+RPM, Electrical: battery+charging+power, Navigation: GPS+depth+collision)
+    - User Control: Complete user override capability for all smart features while maintaining fail-safe defaults and marine safety compliance
+    - Backwards Compatibility: Full compatibility with existing AlarmStore, preserving all current alarm functionality while adding smart features
+    - Marine Environment: Context detection must handle boat motion, weather changes, and operational state transitions with confidence scoring
+    - Battery Efficiency: Smart learning algorithms optimized for mobile device constraints with background processing efficiency
+  </constraints>
+  
+  <interfaces>
+    <creates>
+      <item name="SmartAlarmManager" type="class" reason="Extended alarm coordinator with grouping intelligence, priority management, context awareness, and adaptive learning capabilities"/>
+      <item name="AlarmGroupingEngine" type="service" reason="Rule-based system for detecting alarm relationships and creating intelligent groups based on marine system categories"/>
+      <item name="VesselContextDetector" type="service" reason="NMEA data analysis for vessel state detection (anchored/sailing/motoring) with confidence scoring and graceful degradation"/>
+      <item name="AdaptiveLearningEngine" type="service" reason="Pattern recognition system for false alarm detection, threshold adaptation, and maintenance prediction with safety constraints"/>
+      <item name="PriorityQueueManager" type="service" reason="Multi-level alarm queue with escalation timers, context filtering, and critical alarm bypass for marine safety compliance"/>
+      <item name="GroupedAlarmDisplay" type="component" reason="Expandable alarm group UI with priority-based visual hierarchy, individual alarm details, and batch acknowledgment controls"/>
+      <item name="MaintenanceScheduler" type="service" reason="Engine hours tracking, usage-based maintenance reminders, and predictive maintenance alerts integrated with alarm patterns"/>
+    </creates>
+    <extends>
+      <item name="AlarmStore" type="store" reason="Enhanced with alarm grouping state, priority queues, learned patterns, context awareness, and smart feature settings"/>
+      <item name="useAlarmThreshold" type="hook" reason="Extended with adaptive threshold capabilities, pattern learning integration, and context-aware adjustment features"/>
+      <item name="NmeaStore" type="store" reason="Integration with vessel context detection, operating condition analysis, and smart alarm system coordination"/>
+    </extends>
+    <integrates>
+      <item name="UnifiedConnectionManager" type="service" reason="Real-time NMEA monitoring for vessel state detection, context analysis, and smart alarm system data integration"/>
+      <item name="AutopilotSafetyManager" type="service" reason="Safety system coordination for priority management, critical alarm handling, and emergency response integration"/>
+      <item name="ThemeProvider" type="context" reason="Visual hierarchy styling for grouped alarms, priority indicators, marine color schemes, and accessibility compliance"/>
+    </integrates>
+  </interfaces>
+  
+  <tests>
+    <categories>
+      <item name="Smart Grouping Logic" reason="Alarm relationship detection for marine systems, priority hierarchy enforcement, critical alarm bypass validation, group aggregation accuracy"/>
+      <item name="Context Detection & Awareness" reason="Vessel state detection with NMEA data patterns, confidence scoring validation, graceful degradation testing, context-aware alarm filtering"/>
+      <item name="Adaptive Learning System" reason="False alarm pattern recognition, threshold adaptation algorithms, user behavior analysis, learning data persistence and safety constraints"/>
+      <item name="Priority Management" reason="Multi-level queue functionality, escalation timing accuracy, critical alarm visibility enforcement, context-aware relevance filtering"/>
+      <item name="Performance & Integration" reason="Real-time processing validation, existing alarm store compatibility, NMEA data pipeline integration, UI responsiveness under load"/>
+    </categories>
+    <scenarios>
+      <item name="Multi-System Alarm Cascade" reason="Engine overheating + low oil pressure + high RPM simultaneous alarms with proper grouping, priority display, and expandable details"/>
+      <item name="Context-Aware Filtering" reason="Anchored vessel with engine alarms suppressed, anchor drag detection prioritized, sailing alarm relevance based on vessel state"/>
+      <item name="Adaptive Learning Workflow" reason="Repeated false alarms for specific conditions, user dismissal pattern detection, threshold adaptation with safety constraints"/>
+      <item name="Critical Alarm Override" reason="Critical safety alarms bypassing grouping system, immediate visibility regardless of context, priority enforcement validation"/>
+      <item name="Marine Operating Conditions" reason="State transitions (anchored→sailing→motoring), weather condition changes, alarm relevance adjustment, context confidence scoring"/>
+    </scenarios>
+    <locations>
+      - __tests__/alarms/smart/ (SmartAlarmManager, grouping logic, priority management, context detection)
+      - __tests__/alarms/learning/ (AdaptiveLearningEngine, pattern recognition, threshold adaptation, safety constraints)
+      - __tests__/alarms/context/ (VesselContextDetector, state detection, confidence scoring, graceful degradation)
+      - __tests__/alarms/grouping/ (AlarmGroupingEngine, marine system relationships, visual hierarchy, expandable UI)
+      - __tests__/integration/smartAlarmFlow.test.ts (end-to-end grouped alarm processing from NMEA data to display)
+      - __tests__/performance/smartProcessing.test.ts (real-time performance under multiple alarms, learning algorithm efficiency)
+      - __tests__/compatibility/ (existing alarm store integration, backwards compatibility, feature preservation)
+    </locations>
+    <ideas>
+      <item ac="1-5">Alarm grouping implementation with marine system relationship detection, priority-based display hierarchy, expandable group UI, smart algorithms validation</item>
+      <item ac="6-10">Priority management testing with escalation timing, critical alarm bypass, context-aware relevance filtering, queue management under load</item>
+      <item ac="11-15">Smart learning features with pattern recognition accuracy, adaptive threshold safety constraints, maintenance integration, weather condition handling</item>
+    </ideas>
+  </tests>
+</story-context>

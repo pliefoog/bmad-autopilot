@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../core/themeStore';
 import { createWidgetStyles, getStateColor } from '../styles/widgetStyles';
@@ -13,6 +13,9 @@ type WidgetCardProps = {
   secondary?: string;
   children?: React.ReactNode;
   expanded?: boolean; // AC 17: Add expanded prop for chevron display
+  isPinned?: boolean; // Story 2.15: Pin state for visual indicator
+  onExpandToggle?: () => void; // Story 2.15: Handle tap to expand/collapse
+  onPinToggle?: () => void; // Story 2.15: Handle long-press to pin/unpin
   testID?: string;
 };
 
@@ -29,16 +32,27 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   secondary,
   children,
   expanded = false,
+  isPinned = false,
+  onExpandToggle,
+  onPinToggle,
   testID = 'widget-card',
 }) => {
   const theme = useTheme();
   const widgetStyles = createWidgetStyles(theme);
   const displayColor = getStateColor(state, theme);
+
+  const handleCaretPress = () => {
+    onExpandToggle?.();
+  };
+
+  const handleCaretLongPress = () => {
+    onPinToggle?.();
+  };
   
   return (
     <View style={widgetStyles.widgetContainer} testID={testID}>
       
-      {/* Widget Header with Chevron */}
+      {/* Widget Header with Chevron/Pin Indicator */}
       <View style={widgetStyles.widgetHeader}>
         <Ionicons 
           name={icon} 
@@ -49,13 +63,30 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
         <Text style={widgetStyles.widgetTitle} testID={`${testID}-title`}>
           {title.toUpperCase()}
         </Text>
-        {/* AC 17: Show chevron (⌄ collapsed, ⌃ expanded) */}
-        <Text 
-          style={widgetStyles.widgetChevron}
-          testID={`${testID}-chevron`}
+        
+        {/* Story 2.15: Pin indicator or chevron */}
+        <TouchableOpacity
+          onPress={handleCaretPress}
+          onLongPress={handleCaretLongPress}
+          style={widgetStyles.caretContainer}
+          testID={`${testID}-caret`}
+          delayLongPress={500}
         >
-          {expanded ? '⌃' : '⌄'}
-        </Text>
+          {isPinned ? (
+            <Ionicons 
+              name="pin" 
+              size={12} 
+              color={theme.accent}
+            />
+          ) : (
+            <Text 
+              style={widgetStyles.widgetChevron}
+              testID={`${testID}-chevron`}
+            >
+              {expanded ? '⌃' : '⌄'}
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
       
       {/* Widget Content */}

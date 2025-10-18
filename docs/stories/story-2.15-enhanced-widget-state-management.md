@@ -1,6 +1,6 @@
 # Story 2.15: Widget Pin Functionality & State Persistence - Brownfield Addition
 
-**Status:** Ready for Development
+**Status:** Done
 
 ## Story
 

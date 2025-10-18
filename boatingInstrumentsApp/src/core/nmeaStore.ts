@@ -28,6 +28,9 @@ export interface Alarm {
 }
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'no-data';
 
+// Import PGN data types
+import type { PgnData, EnginePgnData, BatteryPgnData, TankPgnData } from '../services/nmea/pgnParser';
+
 export interface NmeaData {
   depth?: number;
   speed?: number;
@@ -71,6 +74,10 @@ export interface NmeaData {
     commandMessage?: string;
     lastCommandTime?: number;
   };
+  // PGN data for instance detection
+  pgnData?: {
+    [pgnNumber: string]: PgnData | PgnData[];
+  };
   // Add more fields as needed
 }
 
@@ -89,6 +96,7 @@ interface NmeaStore {
   setDebugMode: (enabled: boolean) => void;
   addRawSentence: (sentence: string) => void;
   clearRawSentences: () => void;
+  addPgnData: (pgnData: PgnData) => void;
   reset: () => void;
 }
 
@@ -197,6 +205,34 @@ export const useNmeaStore = create<NmeaStore>((set) => ({
     return { rawSentences: newSentences };
   }),
   clearRawSentences: () => set(() => ({ rawSentences: [] })),
+  addPgnData: (pgnData: PgnData) => set((state: NmeaStore) => {
+    const currentPgnData = state.nmeaData.pgnData || {};
+    const pgnNumber = pgnData.pgn.toString();
+    
+    // Store PGN data, handling multiple instances
+    if (currentPgnData[pgnNumber]) {
+      // If existing data exists, convert to array or add to array
+      if (Array.isArray(currentPgnData[pgnNumber])) {
+        // Add to existing array, but limit to 16 instances for performance
+        const existingArray = currentPgnData[pgnNumber] as PgnData[];
+        const updatedArray = [...existingArray.slice(-15), pgnData];
+        currentPgnData[pgnNumber] = updatedArray;
+      } else {
+        // Convert single item to array
+        currentPgnData[pgnNumber] = [currentPgnData[pgnNumber] as PgnData, pgnData];
+      }
+    } else {
+      // First instance of this PGN
+      currentPgnData[pgnNumber] = pgnData;
+    }
+    
+    return {
+      nmeaData: {
+        ...state.nmeaData,
+        pgnData: currentPgnData,
+      }
+    };
+  }),
   reset: () => set(() => ({ 
     connectionStatus: 'disconnected', 
     nmeaData: {}, 

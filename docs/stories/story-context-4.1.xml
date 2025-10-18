@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Story Context: Critical Safety Alarms System -->
+<!-- Generated: 2025-01-27T10:30:00.000Z -->
+<!-- Epic: 4 | Story: 4.1 | Status: Ready for Development -->
+
+<story-context>
+  <story id="4.1" epic="4" status="Ready for Development">
+    <title>Critical Safety Alarms System</title>
+    <summary>
+      As a boater monitoring my vessel, I want immediate alerts for dangerous conditions
+      so that I can respond quickly to prevent damage or unsafe situations
+    </summary>
+    <tasks>
+      - Alarm System Architecture (AlarmManager design, type definitions, state management, configuration system)
+      - Critical Alarm Implementation (shallow water, engine overheat, battery voltage, autopilot failure, GPS loss)  
+      - Visual Alert System (high-contrast indicators, flashing displays, overlay system, escalation differentiation)
+      - Audio Alert System (platform-specific audio, distinct sounds, escalation, persistence, volume controls)
+      - Configuration & Management (thresholds, enable/disable, test function, history logging, snooze)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <critical_alarm_types>
+      <item id="1">Shallow water alarm (depth below configured threshold)</item>
+      <item id="2">Engine overheat alarm (temperature above safe limits)</item>
+      <item id="3">Low battery voltage alarm (below safe operating level)</item>
+      <item id="4">Autopilot failure/disconnect alarm</item>
+      <item id="5">GPS signal loss alarm</item>
+    </critical_alarm_types>
+    <alarm_behavior>
+      <item id="6">Visual alerts with high-contrast colors and flashing</item>
+      <item id="7">Audio alerts with distinct sounds for different alarm types</item>
+      <item id="8">Persistent alerts until acknowledged by user</item>
+      <item id="9">Multiple escalation levels (warning → caution → alarm)</item>
+      <item id="10">Override capability for non-critical situations</item>
+    </alarm_behavior>
+    <configuration_management>
+      <item id="11">User-configurable thresholds for all alarm types</item>
+      <item id="12">Enable/disable individual alarm types</item>
+      <item id="13">Test alarm function to verify audio/visual systems</item>
+      <item id="14">Alarm history log with timestamps</item>
+      <item id="15">Snooze functionality for appropriate alarm types</item>
+    </configuration_management>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd/requirements.md" title="Product Requirements" section="User Value Theme 5: Safety-Critical Alarms and Monitoring" snippet="FR22: Allow users to configure threshold alarms for depth, wind shift, speed, battery voltage. FR23: Trigger visual and audio alerts when thresholds met. FR24-25: Allow acknowledgment and maintain state until acknowledged."/>
+      <item path="docs/stories/epic-4-alarms-stories.md" title="Epic 4 Stories" section="Story 4.1 Critical Safety Alarms" snippet="Critical alarm types: shallow water, engine overheat, low battery, autopilot failure, GPS loss. Alarm behavior: visual high-contrast flashing alerts, distinct audio sounds, persistent until acknowledged."/>
+      <item path="docs/stories/story-4.1-critical-safety-alarms.md" title="Story 4.1 Full Specification" section="Dev Notes & Architecture" snippet="AlarmManager class as central coordinator. Priority-based alarm queue with escalation. Platform-specific audio (iOS AVAudioSession, Android AudioManager). Fail-safe design, redundant alert methods."/>
+      <item path="docs/qa/Epic4-Marine-Safety-Alarm-Testing-Framework.md" title="Marine Safety Testing Framework" section="Industry Standards Compliance" snippet="False Positive Rate: <1%, False Negative Rate: <0.1%, Threshold Accuracy: ±5%, Audio Alert Level: 85dB+ at 1 meter, Response Time: <500ms"/>
+      <item path="base44-mvp-full-prompt.txt" title="Implementation Requirements" section="STEP 37: Alarm triggering and alerts" snippet="Monitor NMEA data, trigger when threshold crossed with hysteresis. Visual: red border, pulsing animation. Audio: expo-av alarm sounds. Toast notification with alarm details. Persist until acknowledged."/>
+      <item path="docs/qa/gates/epic-4-completion.yml" title="QA Gate Criteria" section="Story 4.1 Requirements" snippet="All 4 alarm types functional, threshold accuracy ±5%, audio alerts >85dB, response time <500ms, marine environment testing, no false positives during 8-hour testing."/>
+      <item path="vendor/test-scenarios/safety/shallow-water-alarm.yml" title="Test Scenario" section="Validation Points" snippet="Progressive alarm escalation with depth thresholds: WARNING at 10ft, CRITICAL at 6ft, EMERGENCY at 4ft with flashing red visual indicators."/>
+    </docs>
+    <code>
+      <item path="src/stores/alarmStore.ts" kind="store" symbol="AlarmStore" lines="1-300" reason="Complete alarm system foundation with AlarmThreshold[], AlarmSettings, state management, and evaluateThresholds() method - core for critical alarms"/>
+      <item path="src/hooks/useAlarmThreshold.ts" kind="hook" symbol="useAlarmThreshold" lines="1-679" reason="Comprehensive alarm threshold management with real-time monitoring, configuration, validation, and callbacks - key integration point for critical alarm system"/>
+      <item path="src/services/unifiedConnectionManager.ts" kind="service" symbol="UnifiedConnectionManager" lines="30-100" reason="NMEA connection status and data flow management - real-time data source for alarm threshold monitoring and evaluation"/>
+      <item path="src/services/autopilotSafetyManager.ts" kind="service" symbol="AutopilotSafetyManager" lines="1-350" reason="Safety event management, alarm coordination patterns, and integration with NMEA store alarm system - architecture reference for critical safety systems"/>
+    </code>
+  </artifacts>
+
+  <dependencies>
+    <internal>
+      <item type="store" path="src/stores/nmeaStore.ts" reason="Real-time NMEA data source for depth, engine temp, battery voltage, GPS status, autopilot state - core data for all critical alarm evaluations"/>
+      <item type="store" path="src/stores/alarmStore.ts" reason="Existing alarm infrastructure with thresholds, settings, evaluation logic - foundation to extend with critical alarm types and marine safety requirements"/>
+      <item type="hook" path="src/hooks/useAlarmThreshold.ts" reason="Alarm threshold management, real-time monitoring, configuration interface - handles user-configurable thresholds for all critical alarm types"/>
+      <item type="service" path="src/services/unifiedConnectionManager.ts" reason="NMEA connection management and data flow - ensures reliable data stream for continuous alarm monitoring"/>
+      <item type="service" path="src/services/autopilotSafetyManager.ts" reason="Safety system architecture patterns, alarm coordination, NMEA store integration - reference for critical safety system design"/>
+    </internal>
+    <platform>
+      <item api="iOS AVAudioSession" reason="iOS platform-specific audio system for reliable alarm sound playback with category override and volume control"/>
+      <item api="Android AudioManager" reason="Android audio system management for alarm sound playback, volume control, and audio focus handling"/>
+      <item api="React Native Sound / Expo AV" reason="Cross-platform audio playback library for alarm sound implementation with distinct sounds per alarm type"/>
+      <item api="Expo Notifications" reason="Platform notification system for background alarm alerts and lock screen notifications"/>
+      <item api="React Native AsyncStorage" reason="Persistent storage for alarm configuration, user thresholds, alarm history, and enable/disable settings"/>
+      <item api="React Native Vibration" reason="Haptic feedback system for additional alarm alert methods and accessibility"/>
+    </platform>
+  </dependencies>
+
+  <constraints>
+    - Marine Safety Standards: Must exceed physical marine instrument reliability (false positive <1%, false negative <0.1%, threshold accuracy ±5%)
+    - Performance Requirements: <500ms alarm response time, >85dB audio alerts audible over engine/wind noise, visual alerts visible in direct sunlight and red-night mode
+    - Priority System: Critical alarms override ALL other UI elements with immediate escalation, modal overlay system for safety-critical alerts
+    - Audio System: Platform-specific implementation for maximum reliability (iOS AVAudioSession with AVAudioSessionCategoryPlayback, Android AudioManager with STREAM_ALARM)
+    - Persistence: Alarms survive app backgrounding, device sleep, app restart - continue alerting until explicitly acknowledged by user action
+    - State Management: Centralized alarm state with immediate real-time NMEA data evaluation, sub-500ms threshold breach detection
+    - Architecture: AlarmManager class as single point of coordination, priority-based queue, escalation system (info → warning → critical → emergency)
+    - Configuration: User-configurable thresholds with marine safety validation, enable/disable per alarm type, persistent storage
+    - Fail-Safe Design: System defaults to alerting when in doubt, multiple alert redundancy (visual + audio + vibration + notification)
+    - Testing: Built-in test mode for all alert systems, marine environment simulation, 8+ hour continuous reliability testing
+    - Visual Requirements: High-contrast colors (red/yellow/green), flashing animations, full-screen overlay capability, marine lighting compatibility
+    - Audio Requirements: Distinct sound patterns per alarm type, volume override capability, background audio capability
+    - Marine Environment: IP65 equivalent operation, -10°C to +60°C range, boat motion tolerance (±30° roll/pitch), night vision preservation
+    - Battery Efficiency: Real-time monitoring without significant battery drain, background processing optimization
+  </constraints>
+  
+  <interfaces>
+    <creates>
+      <item name="AlarmManager" type="class" reason="Central coordinator for all critical alarm functionality - manages priority queue, escalation system, audio/visual coordination, and platform-specific alert delivery"/>
+      <item name="CriticalAlarmType" type="enum" reason="Standardized critical alarm type definitions: SHALLOW_WATER, ENGINE_OVERHEAT, LOW_BATTERY, AUTOPILOT_FAILURE, GPS_LOSS with marine safety classifications"/>
+      <item name="AlarmEscalationLevel" type="enum" reason="Marine-grade escalation system: INFO, WARNING, CAUTION, CRITICAL, EMERGENCY with visual/audio differentiation"/>
+      <item name="CriticalAlarmOverlay" type="component" reason="Full-screen visual alert overlay with high-contrast marine colors, flashing animations, and emergency acknowledgment interface"/>
+      <item name="MarineAudioAlertManager" type="service" reason="Platform-specific audio system with distinct alarm sounds, volume override, marine noise penetration (>85dB), and background audio capability"/>
+      <item name="CriticalAlarmConfiguration" type="service" reason="User threshold configuration with marine safety validation, enable/disable controls, test function, and persistent storage"/>
+      <item name="AlarmHistoryLogger" type="service" reason="Critical alarm event logging with timestamps, parameter values, acknowledgment tracking, and marine incident documentation"/>
+    </creates>
+    <extends>
+      <item name="AlarmStore" type="store" reason="Enhanced with critical alarm priorities, marine safety requirements, escalation logic, and fail-safe default behaviors"/>
+      <item name="useAlarmThreshold" type="hook" reason="Extended with critical alarm threshold validation, marine environment considerations, and real-time monitoring optimization"/>
+      <item name="NmeaStore" type="store" reason="Integration with critical alarm system for immediate threshold evaluation, alarm state updates, and safety event coordination"/>
+    </extends>
+    <integrates>
+      <item name="UnifiedConnectionManager" type="service" reason="Real-time NMEA data monitoring for critical alarm threshold evaluation - depth, engine temp, battery voltage, GPS status, autopilot state"/>
+      <item name="AutopilotSafetyManager" type="service" reason="Safety system coordination for autopilot failure/disconnect alarms and emergency autopilot disengagement scenarios"/>
+      <item name="ThemeProvider" type="context" reason="Marine-compatible alarm colors, red-night mode preservation, high-contrast visual requirements, and scotopic vision considerations"/>
+    </integrates>
+  </interfaces>
+  
+  <tests>
+    <categories>
+      <item name="Critical Alarm Reliability" reason="Each alarm type triggering accuracy, threshold crossing detection, false positive/negative validation, marine safety standard compliance"/>
+      <item name="Marine Environment Testing" reason="Device motion simulation (±30° roll/pitch), temperature range (-10°C to +60°C), night vision preservation, 8+ hour continuous operation"/>
+      <item name="Platform Audio Systems" reason="iOS AVAudioSession reliability, Android AudioManager integration, >85dB audio level validation, background audio capability"/>
+      <item name="Alarm Persistence & Recovery" reason="App backgrounding behavior, device sleep/wake continuation, alarm state recovery, acknowledgment persistence"/>
+      <item name="Configuration & Management" reason="User threshold configuration, enable/disable functionality, test mode validation, alarm history accuracy"/>
+    </categories>
+    <scenarios>
+      <item name="Multi-Alarm Cascade" reason="Simultaneous shallow water + engine overheat + low battery scenarios with proper priority handling and escalation management"/>
+      <item name="Marine Safety Simulation" reason="Boat motion effects, spray/moisture conditions, direct sunlight visibility, night sailing alarm reliability"/>
+      <item name="Emergency Response Testing" reason="Critical alarm acknowledgment under stress, manual override functionality, fail-safe behavior validation"/>
+      <item name="Background Reliability" reason="App backgrounded during alarm state, device sleep with active alarms, alarm continuation until user acknowledgment"/>
+      <item name="Audio System Penetration" reason="Alarm audio over engine noise, wind noise, cabin conditions - >85dB validation in marine environment simulation"/>
+    </scenarios>
+    <locations>
+      - __tests__/alarms/critical/ (CriticalAlarmType tests, AlarmManager functionality, marine safety compliance)
+      - __tests__/alarms/audio/ (MarineAudioAlertManager, platform-specific audio, volume override, background capability)
+      - __tests__/alarms/visual/ (CriticalAlarmOverlay, high-contrast display, flashing animations, marine lighting)
+      - __tests__/alarms/persistence/ (alarm state across app lifecycle, device sleep, acknowledgment tracking)
+      - __tests__/integration/criticalAlarmFlow.test.ts (end-to-end NMEA data to alarm alert flow)
+      - __tests__/marine-environment/ (device motion, temperature, lighting, 8-hour reliability testing)
+      - __tests__/platform-specific/ (iOS/Android/Desktop audio/visual implementation validation)
+    </locations>
+    <ideas>
+      <item ac="1-5">Critical alarm type implementation with mock NMEA data streams, threshold breach detection, alarm state persistence, multi-alarm priority handling, fail-safe behavior validation</item>
+      <item ac="6-10">Visual alert overlay testing with high-contrast colors, flashing animation performance, escalation level differentiation, audio alert distinct sounds validation, override capability testing</item>
+      <item ac="11-15">Configuration interface testing with threshold validation, enable/disable persistence, test mode functionality, alarm history logging accuracy, snooze feature timeout handling</item>
+    </ideas>
+  </tests>
+</story-context>

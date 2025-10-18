@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { AlarmManager, CriticalAlarmType, CriticalAlarmMonitors } from '../services/alarms';
 
 export type AlarmLevel = 'info' | 'warning' | 'critical';
 
@@ -47,6 +48,10 @@ interface AlarmState {
   thresholds: AlarmThreshold[];
   settings: AlarmSettings;
   maxHistorySize: number;
+  // Critical alarm system integration
+  criticalAlarmManager?: AlarmManager;
+  criticalAlarmMonitors?: CriticalAlarmMonitors;
+  criticalAlarmsEnabled: boolean;
 }
 
 interface AlarmActions {
@@ -62,6 +67,13 @@ interface AlarmActions {
   evaluateThresholds: (data: any) => void;
   getUnacknowledgedAlarms: () => Alarm[];
   reset: () => void;
+  // Critical alarm system actions
+  initializeCriticalAlarmSystem: () => Promise<void>;
+  triggerCriticalAlarm: (type: CriticalAlarmType, data: { value: number; threshold: number; message?: string }) => Promise<void>;
+  enableCriticalAlarms: (enabled: boolean) => void;
+  // GPS and Autopilot monitoring actions
+  updateGPSStatus: (gpsData: { fixType?: number; satellites?: number; lastUpdate?: number }) => void;
+  updateAutopilotStatus: (autopilotData: { engaged?: boolean; status?: 'active' | 'standby' | 'failed' | 'disconnected'; lastHeartbeat?: number; mode?: string }) => void;
 }
 
 type AlarmStore = AlarmState & AlarmActions;
@@ -119,11 +131,47 @@ const defaultThresholds: AlarmThreshold[] = [
     enabled: true,
     hysteresis: 2,
   },
+  // Battery voltage monitoring
+  {
+    id: 'battery-low-warning',
+    name: 'Low Battery Voltage',
+    dataPath: 'electrical.batteryVoltage',
+    type: 'min',
+    value: 12.0,
+    level: 'warning',
+    enabled: true,
+    hysteresis: 0.2,
+  },
+  {
+    id: 'battery-low-critical',
+    name: 'Critical Battery Voltage',
+    dataPath: 'electrical.batteryVoltage',
+    type: 'min',
+    value: 11.0,
+    level: 'critical',
+    enabled: true,
+    hysteresis: 0.2,
+  },
 ];
 
 // Utility to get nested object value by path
 const getNestedValue = (obj: any, path: string): number | undefined => {
   return path.split('.').reduce((current, key) => current?.[key], obj);
+};
+
+// Map threshold IDs to critical alarm types for marine safety system integration
+const mapThresholdToCriticalAlarmType = (thresholdId: string): CriticalAlarmType | null => {
+  if (thresholdId.includes('shallow-water') || thresholdId.includes('critical-depth')) {
+    return CriticalAlarmType.SHALLOW_WATER;
+  }
+  if (thresholdId.includes('engine-temp') && thresholdId.includes('critical')) {
+    return CriticalAlarmType.ENGINE_OVERHEAT;
+  }
+  if (thresholdId.includes('battery') && thresholdId.includes('critical')) {
+    return CriticalAlarmType.LOW_BATTERY;
+  }
+  // GPS and autopilot failures would be detected differently - not from thresholds
+  return null;
 };
 
 export const useAlarmStore = create<AlarmStore>()(
@@ -135,6 +183,10 @@ export const useAlarmStore = create<AlarmStore>()(
       thresholds: defaultThresholds,
       settings: defaultSettings,
       maxHistorySize: 1000,
+      // Critical alarm system state
+      criticalAlarmManager: undefined,
+      criticalAlarmMonitors: undefined,
+      criticalAlarmsEnabled: true,
 
       // Actions
       addAlarm: (alarmData) => {
@@ -225,7 +277,7 @@ export const useAlarmStore = create<AlarmStore>()(
           return;
         }
 
-        state.thresholds.forEach((threshold) => {
+        state.thresholds.forEach(async (threshold) => {
           if (!threshold.enabled) return;
 
           const value = getNestedValue(data, threshold.dataPath);
@@ -257,14 +309,38 @@ export const useAlarmStore = create<AlarmStore>()(
           );
 
           if (shouldAlarm && !existingAlarm) {
-            // Add new alarm
-            get().addAlarm({
-              message,
-              level: threshold.level,
-              source: threshold.id,
-              value,
-              threshold: threshold.value,
-            });
+            // Check if this is a critical alarm type and trigger through critical alarm system
+            const criticalAlarmType = mapThresholdToCriticalAlarmType(threshold.id);
+            
+            if (criticalAlarmType && state.criticalAlarmsEnabled) {
+              // Trigger critical alarm through marine safety system
+              try {
+                await get().triggerCriticalAlarm(criticalAlarmType, {
+                  value,
+                  threshold: threshold.value,
+                  message,
+                });
+              } catch (error) {
+                console.error('AlarmStore: Failed to trigger critical alarm, falling back to regular alarm', error);
+                // Fallback to regular alarm system
+                get().addAlarm({
+                  message,
+                  level: threshold.level,
+                  source: threshold.id,
+                  value,
+                  threshold: threshold.value,
+                });
+              }
+            } else {
+              // Regular alarm
+              get().addAlarm({
+                message,
+                level: threshold.level,
+                source: threshold.id,
+                value,
+                threshold: threshold.value,
+              });
+            }
           } else if (!shouldAlarm && existingAlarm) {
             // Clear alarm (value returned to normal)
             get().clearAlarm(existingAlarm.id);
@@ -282,6 +358,81 @@ export const useAlarmStore = create<AlarmStore>()(
           activeAlarms: [],
           alarmHistory: [],
         }),
+
+      // Critical alarm system actions
+      initializeCriticalAlarmSystem: async () => {
+        try {
+          const { AlarmManager, CriticalAlarmMonitors, DEFAULT_MARINE_ALARM_CONFIG } = await import('../services/alarms');
+          const alarmManager = AlarmManager.getInstance(DEFAULT_MARINE_ALARM_CONFIG);
+          
+          // Create monitors with callback to trigger critical alarms
+          const monitors = new CriticalAlarmMonitors(
+            {
+              gpsTimeoutMs: 60000, // 1 minute
+              autopilotHeartbeatTimeoutMs: 10000, // 10 seconds
+              monitoringIntervalMs: 5000, // 5 seconds
+            },
+            async (type, data) => {
+              // Callback to trigger critical alarms through AlarmManager
+              await get().triggerCriticalAlarm(type, data);
+            }
+          );
+          
+          set((state) => ({
+            criticalAlarmManager: alarmManager,
+            criticalAlarmMonitors: monitors,
+          }));
+          
+          // Start monitoring GPS and autopilot systems
+          monitors.startMonitoring();
+          
+          console.log('AlarmStore: Critical alarm system and monitors initialized');
+        } catch (error) {
+          console.error('AlarmStore: Failed to initialize critical alarm system', error);
+        }
+      },
+
+      triggerCriticalAlarm: async (type: CriticalAlarmType, data: { value: number; threshold: number; message?: string }) => {
+        const state = get();
+        
+        if (!state.criticalAlarmsEnabled) {
+          console.warn('AlarmStore: Critical alarms are disabled');
+          return;
+        }
+        
+        if (!state.criticalAlarmManager) {
+          console.warn('AlarmStore: Critical alarm system not initialized, initializing now...');
+          await get().initializeCriticalAlarmSystem();
+        }
+        
+        const alarmManager = get().criticalAlarmManager;
+        if (alarmManager) {
+          await alarmManager.triggerCriticalAlarm(type, data);
+        }
+      },
+
+      enableCriticalAlarms: (enabled: boolean) => {
+        set((state) => ({
+          criticalAlarmsEnabled: enabled,
+        }));
+        
+        console.log(`AlarmStore: Critical alarms ${enabled ? 'enabled' : 'disabled'}`);
+      },
+
+      // GPS and Autopilot monitoring actions
+      updateGPSStatus: (gpsData) => {
+        const state = get();
+        if (state.criticalAlarmMonitors) {
+          state.criticalAlarmMonitors.updateGPSStatus(gpsData);
+        }
+      },
+
+      updateAutopilotStatus: (autopilotData) => {
+        const state = get();
+        if (state.criticalAlarmMonitors) {
+          state.criticalAlarmMonitors.updateAutopilotStatus(autopilotData);
+        }
+      },
     }),
     {
       name: 'alarm-store',

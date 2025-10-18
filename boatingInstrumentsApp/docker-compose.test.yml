@@ -1,0 +1,54 @@
+# Docker Compose for BMAD Testing Infrastructure
+version: '3.8'
+
+services:
+  nmea-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    container_name: bmad-nmea-simulator
+    ports:
+      - "2000:2000"     # NMEA TCP/UDP
+      - "8080:8080"     # WebSocket
+      - "9090:9090"     # BMAD API
+    environment:
+      - NODE_ENV=test
+      - SIMULATOR_MODE=ci
+    volumes:
+      - ./server/recordings:/app/server/recordings:ro
+      - ./vendor/test-scenarios:/app/vendor/test-scenarios:ro
+    command: ["node", "server/nmea-bridge-simulator.js", "--scenario", "basic-navigation", "--duration", "300000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - bmad-test
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: bmad-test-runner
+    depends_on:
+      nmea-simulator:
+        condition: service_healthy
+    environment:
+      - SIMULATOR_HOST=nmea-simulator
+      - SIMULATOR_PORT=9090
+      - TEST_TIMEOUT=300000
+    volumes:
+      - ./test-results:/app/test-results
+      - ./__tests__:/app/__tests__:ro
+    command: ["npm", "run", "test:ci"]
+    networks:
+      - bmad-test
+
+networks:
+  bmad-test:
+    driver: bridge
+
+volumes:
+  test-results:

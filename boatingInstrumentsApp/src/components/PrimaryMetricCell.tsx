@@ -95,7 +95,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
       {/* First line: Mnemonic and Unit */}
       <View style={styles.mnemonicUnitRow}>
         <Text style={styles.mnemonic} testID="metric-mnemonic">{mnemonic.toUpperCase()}</Text>
-        <Text style={styles.unit} testID="metric-unit">({unit})</Text>
+        <Text style={styles.unit} testID="metric-unit">({unit || ''})</Text>
       </View>
       {/* Second line: Value */}
       <View style={styles.valueContainer}>

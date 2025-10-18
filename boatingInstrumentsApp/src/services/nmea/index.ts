@@ -7,17 +7,33 @@ export type { NmeaConnectionOptions } from './nmeaConnection';
 
 // NMEA parsing services
 export * from './nmeaParser';
+export * from './pgnParser';
+
+// Autopilot command services
+export * from './AutopilotCommands';
 
 // Web initialization utilities
 export * from './webNmeaInit';
 
-// NMEA data processing (to be created)
-// export * from './nmeaParser';
-// export * from './nmeaValidator';
-// export * from './dataProcessor';
+// Instance detection utilities
+export * from './instanceDetection';
 
-// Domain types (to be created)
-// export type {
+// NMEA data types
+export * from './types';
+
+// Re-export commonly used types for convenience
+export type { 
+  NMEAParseResult, 
+  PGNDecodeResult, 
+  AutopilotCommand, 
+  AutopilotState,
+  NavigationData,
+  EngineData,
+  BatteryData,
+  TankData,
+  ConnectionStatus,
+  NMEAError
+} from './types';
 //   NmeaMessage,
 //   SentenceType,
 //   ParsedData,

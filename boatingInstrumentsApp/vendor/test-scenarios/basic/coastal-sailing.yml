@@ -1,0 +1,117 @@
+name: "Coastal Sailing Scenario"
+description: "Variable depth (5-100 feet) with tidal effects simulation"
+duration: 600  # 10 minutes
+version: "1.0"
+category: "basic"
+
+# Vessel parameters (configurable)
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:40}  # feet, with environment variable override
+    beam: ${VESSEL_BEAM:12}      # feet
+    draft: ${VESSEL_DRAFT:6}     # feet
+    type: "sailboat"
+  conditions:
+    tidal_range: 8  # feet
+    tidal_period: 21600  # 6 hours (compressed to scenario duration)
+    wind_direction_base: 120  # degrees
+    wind_speed_base: 14  # knots
+
+# Tidal depth profile with mathematical progression
+data:
+  depth:
+    type: "tidal_cycle"
+    base_depth: 30      # Mean depth in feet
+    tidal_range: 25     # ±25 feet variation (5-55 feet range)
+    tidal_period: 600   # Full tidal cycle over scenario duration
+    unit: "feet"
+    min_depth: 5        # Shallow water limit
+    max_depth: 100      # Deep water limit
+  
+  speed:
+    type: "coastal_sailing"
+    base_speed: 5.5     # knots
+    tidal_current: 1.2  # knots current effect
+    wind_dependency: 0.8  # speed varies with wind
+    unit: "knots"
+    min: 2.0
+    max: 8.5
+  
+  wind:
+    angle:
+      type: "coastal_variation"
+      base: 120         # degrees (from shore effects)
+      thermal_shift: 30 # degrees (sea breeze effects)
+      variation_period: 300  # 5-minute thermal cycles
+    speed:
+      type: "coastal_wind"
+      base: 14          # knots
+      thermal_effect: 4  # ±4 knots thermal variation
+      gusts: 0.3        # 30% gust factor
+      unit: "knots"
+      min: 8
+      max: 22
+  
+  gps:
+    type: "coastal_track"
+    start_position:
+      latitude: 41.4800   # Lake Erie coastal area
+      longitude: -81.6900
+    track_type: "coastal_navigation"
+    waypoints:
+      - {lat: 41.4800, lon: -81.6900, time: 0}      # Start
+      - {lat: 41.4850, lon: -81.6800, time: 150}    # 2.5 min
+      - {lat: 41.4900, lon: -81.6750, time: 300}    # 5 min
+      - {lat: 41.4950, lon: -81.6700, time: 450}    # 7.5 min
+      - {lat: 41.5000, lon: -81.6650, time: 600}    # 10 min end
+    speed_over_ground: "calculated"  # Based on speed data
+
+# NMEA sentence generation timing (realistic marine instrument frequencies)
+timing:
+  depth: 2      # Hz (every 0.5 seconds) - depth sounder typical
+  speed: 1      # Hz (every 1 second) - speed log typical
+  wind: 2       # Hz (every 0.5 seconds) - wind instrument typical
+  gps: 1        # Hz (every 1 second) - GPS typical
+  compass: 10   # Hz (every 0.1 seconds) - compass rapid updates
+
+# Mathematical data generation functions
+functions:
+  tidal_cycle: |
+    // Sinusoidal tidal variation over scenario duration
+    const phase = (currentTime / tidalPeriod) * 2 * Math.PI;
+    const tidalHeight = Math.sin(phase) * (tidalRange / 2);
+    return Math.max(minDepth, Math.min(maxDepth, baseDepth + tidalHeight));
+  
+  coastal_sailing: |
+    // Speed affected by tidal current and wind
+    const tidalEffect = Math.sin((currentTime / 600) * 2 * Math.PI) * tidalCurrent;
+    const windEffect = (windSpeed - 14) * windDependency * 0.1;
+    const baseWithEffects = baseSpeed + tidalEffect + windEffect;
+    return Math.max(min, Math.min(max, baseWithEffects));
+    
+  coastal_variation: |
+    // Wind direction with thermal and coastal effects
+    const thermalCycle = Math.sin((currentTime / variationPeriod) * 2 * Math.PI);
+    const thermalShift = thermalCycle * thermalShift;
+    return (base + thermalShift) % 360;
+    
+  coastal_wind: |
+    // Wind speed with thermal effects and gusts
+    const thermalEffect = Math.sin((currentTime / 300) * 2 * Math.PI) * thermalEffect;
+    const gustFactor = (Math.random() - 0.5) * 2 * gusts * base;
+    const windWithEffects = base + thermalEffect + gustFactor;
+    return Math.max(min, Math.min(max, windWithEffects));
+
+# Use case documentation
+use_cases:
+  - "Depth alarm testing with tidal variations"
+  - "Coastal navigation widget validation"
+  - "Tidal current effect simulation"
+  - "Shallow water approach scenarios"
+  - "Wind pattern coastal effects testing"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC1: Variable depth (5-100 feet) with tidal effects"
+  - "AC1: Realistic timing between related instruments"
+  - "AC1: Parameterizable vessel characteristics"

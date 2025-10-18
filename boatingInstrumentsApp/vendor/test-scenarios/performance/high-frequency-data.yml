@@ -1,0 +1,199 @@
+name: "High Frequency Data Scenario"
+description: "500+ messages/second for 10+ minutes (50Hz depth, 100Hz heading, 25Hz speed, 50Hz wind)"
+duration: 720  # 12 minutes
+version: "1.0"
+category: "performance"
+
+# Performance testing parameters
+parameters:
+  message_rates:
+    depth: 50        # Hz (50 messages/second)
+    heading: 100     # Hz (100 messages/second) 
+    speed: 25        # Hz (25 messages/second)
+    wind: 50         # Hz (50 messages/second)
+    gps: 10          # Hz (10 messages/second)
+    total_target: 500  # messages/second minimum
+  monitoring:
+    memory_leak_detection: true
+    cpu_utilization: true
+    bandwidth_monitoring: true
+    message_queue_depth: true
+
+# Performance stress phases
+phases:
+  - phase: "baseline"
+    duration: 60  # 1 minute
+    description: "Normal message rates for baseline comparison"
+    frequency_multiplier: 1.0
+    monitoring_active: true
+    
+  - phase: "ramp_up"
+    duration: 120  # 2 minutes
+    description: "Gradually increase message frequency to target"
+    frequency_multiplier: [1.0, 10.0]  # Ramp from 1x to 10x
+    monitoring_active: true
+    
+  - phase: "sustained_high_frequency" 
+    duration: 480  # 8 minutes of sustained load
+    description: "Maintain 500+ messages/second for stress testing"
+    frequency_multiplier: 10.0
+    monitoring_active: true
+    stress_conditions:
+      - memory_pressure: true
+      - cpu_stress: true
+      - network_saturation: true
+    
+  - phase: "peak_burst"
+    duration: 60   # 1 minute
+    description: "Peak burst testing at maximum rates"
+    frequency_multiplier: 15.0  # 750+ messages/second
+    monitoring_active: true
+    
+  - phase: "ramp_down"
+    duration: 60   # 1 minute
+    description: "Return to normal frequencies and measure recovery"
+    frequency_multiplier: [15.0, 1.0]  # Ramp down to normal
+    monitoring_active: true
+
+# High-frequency data generation
+data:
+  depth:
+    type: "high_frequency_depth"
+    base: 20      # feet
+    amplitude: 2  # ±2 feet (smaller variation for high frequency)
+    frequency: 50 # Hz
+    unit: "feet"
+    
+  heading:
+    type: "high_frequency_heading"
+    base: 180     # degrees
+    variation: 1  # ±1 degree (tight heading control)
+    frequency: 100 # Hz
+    unit: "degrees"
+    
+  speed:
+    type: "high_frequency_speed"
+    base: 6.5     # knots
+    variation: 0.1 # ±0.1 knots (very stable)
+    frequency: 25  # Hz
+    unit: "knots"
+    
+  wind:
+    angle:
+      type: "high_frequency_wind_angle"
+      base: 45    # degrees
+      variation: 2 # ±2 degrees
+      frequency: 50 # Hz
+    speed:
+      type: "high_frequency_wind_speed"
+      base: 15    # knots
+      variation: 0.5 # ±0.5 knots
+      frequency: 50  # Hz
+      unit: "knots"
+      
+  gps:
+    type: "high_frequency_gps"
+    frequency: 10  # Hz
+    precision: "high"  # Increased precision for high-frequency updates
+
+# System monitoring during stress test
+system_monitoring:
+  memory_usage:
+    baseline_threshold: 100   # MB
+    warning_threshold: 500    # MB
+    critical_threshold: 1000  # MB
+    
+  cpu_utilization:
+    baseline_threshold: 10    # percent
+    warning_threshold: 70     # percent
+    critical_threshold: 90    # percent
+    
+  message_queue:
+    baseline_depth: 10        # messages
+    warning_depth: 1000       # messages
+    critical_depth: 10000     # messages
+    
+  network_bandwidth:
+    baseline_mbps: 1          # Mbps
+    warning_mbps: 50          # Mbps
+    critical_mbps: 100        # Mbps
+
+# NMEA sentence timing (high frequency)
+timing:
+  depth: 50      # Hz (50 messages/second)
+  heading: 100   # Hz (100 messages/second)
+  speed: 25      # Hz (25 messages/second)
+  wind: 50       # Hz (50 messages/second) 
+  gps: 10        # Hz (10 messages/second)
+  monitoring: 1  # Hz (system monitoring data)
+
+# Performance monitoring functions
+functions:
+  high_frequency_depth: |
+    // High-frequency depth with minimal variation
+    const microVariation = Math.sin(currentTime * frequency * 2 * Math.PI) * amplitude;
+    return base + microVariation;
+    
+  high_frequency_heading: |
+    // Very stable heading with micro-variations
+    const noise = (Math.random() - 0.5) * 2 * variation;
+    return (base + noise + 360) % 360;
+    
+  high_frequency_speed: |
+    // Stable speed with minimal fluctuation
+    const microChange = Math.sin(currentTime * 0.1) * variation;
+    return Math.max(0, base + microChange);
+    
+  high_frequency_wind_angle: |
+    // Wind angle with high-frequency updates
+    const rapidChange = Math.sin(currentTime * 0.5) * variation;
+    return (base + rapidChange + 360) % 360;
+    
+  high_frequency_wind_speed: |
+    // Wind speed with micro-gusts
+    const microGust = Math.sin(currentTime * 2) * variation;
+    return Math.max(0, base + microGust);
+
+# Performance benchmarks
+performance_benchmarks:
+  target_metrics:
+    messages_per_second: 500   # Minimum sustained rate
+    memory_growth_rate: 1      # MB/minute maximum
+    cpu_usage_average: 50      # Percent maximum
+    message_latency: 10        # Milliseconds maximum
+    
+  success_criteria:
+    sustained_duration: 480    # Seconds (8 minutes)
+    memory_leak_detected: false
+    cpu_overload_detected: false
+    message_loss_percentage: 0.1  # Maximum 0.1% message loss
+
+# Stress testing scenarios
+stress_scenarios:
+  - name: "memory_pressure"
+    description: "Generate large message buffers to test memory handling"
+    buffer_size_multiplier: 10
+    
+  - name: "cpu_intensive"
+    description: "Add CPU-intensive calculations to message processing"
+    calculation_complexity: "high"
+    
+  - name: "network_saturation"
+    description: "Push network bandwidth to limits"
+    concurrent_connections: 50
+
+# Use cases
+use_cases:
+  - "High message rate stress testing (500+ messages/second)"
+  - "Memory leak detection for long-running scenarios (12+ minutes)"
+  - "CPU utilization monitoring during stress conditions"
+  - "Network bandwidth validation under load"
+  - "Message queue depth and overflow testing"
+  - "Performance benchmark baseline establishment"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC4: 500+ messages/second for 10+ minutes (50Hz depth, 100Hz heading, 25Hz speed, 50Hz wind)"
+  - "AC4: Memory leak detection for long-running scenarios (1+ hour duration)"
+  - "AC4: CPU and bandwidth utilization monitoring during stress conditions"
+  - "AC4: Performance and stress testing scenarios"

@@ -1,0 +1,226 @@
+name: "Multi-Protocol Scenario"
+description: "NMEA 0183 ↔ NMEA 2000 transitions with PGN format validation"
+duration: 600  # 10 minutes
+version: "1.0"
+category: "performance"
+
+# Multi-protocol parameters
+parameters:
+  protocols:
+    nmea0183: true
+    nmea2000: true
+    transitions: 5           # Number of protocol switches
+    validation_enabled: true
+  bridge_modes:
+    nmea0183_native: true
+    nmea2000_pgn: true
+    pcdin_encapsulation: true
+    dual_output: true
+
+# Protocol transition phases
+phases:
+  - phase: "nmea0183_mode"
+    duration: 90  # 1.5 minutes
+    description: "Pure NMEA 0183 sentence mode"
+    protocol: "NMEA_0183"
+    validation_active: true
+    message_format: "standard_sentences"
+    
+  - phase: "protocol_transition_1"
+    duration: 30  # 30 seconds
+    description: "Transition from NMEA 0183 to NMEA 2000"
+    protocol: "TRANSITIONING"
+    conversion_active: true
+    
+  - phase: "nmea2000_mode"
+    duration: 90  # 1.5 minutes
+    description: "Native NMEA 2000 PGN mode"
+    protocol: "NMEA_2000"
+    message_format: "pgn_messages"
+    pgn_validation: true
+    
+  - phase: "protocol_transition_2"
+    duration: 30  # 30 seconds
+    description: "Transition to dual protocol mode"
+    protocol: "TRANSITIONING"
+    
+  - phase: "dual_protocol_mode"
+    duration: 180  # 3 minutes
+    description: "Simultaneous NMEA 0183 and NMEA 2000 output"
+    protocol: "DUAL"
+    message_format: "both"
+    cross_validation: true
+    
+  - phase: "pcdin_encapsulation_mode"
+    duration: 90   # 1.5 minutes
+    description: "NMEA 2000 PGNs encapsulated in $PCDIN sentences"
+    protocol: "PCDIN_ENCAPSULATED"
+    message_format: "pcdin_wrapped_pgns"
+    
+  - phase: "validation_phase"
+    duration: 90   # 1.5 minutes
+    description: "Comprehensive protocol validation and testing"
+    protocol: "VALIDATION"
+    checksum_validation: true
+    format_validation: true
+    timing_validation: true
+
+# Data with protocol-specific formatting
+data:
+  navigation_data:
+    type: "multi_protocol"
+    depth: 25     # feet
+    speed: 6.5    # knots
+    heading: 180  # degrees
+    wind_angle: 45    # degrees
+    wind_speed: 15    # knots
+    
+  protocol_messages:
+    type: "protocol_conversion"
+    pgn_validation: true
+    checksum_validation: true
+    timing_validation: true
+
+# Protocol-specific message definitions
+message_formats:
+  nmea0183:
+    depth: "$SDDBT,{depth_feet},f,{depth_meters},M,{depth_fathoms},F*{checksum}"
+    speed: "$SDVHW,{heading_true},T,{heading_mag},M,{speed_knots},N,{speed_kmh},K*{checksum}"
+    wind: "$SDMWV,{wind_angle},R,{wind_speed},N,A*{checksum}"
+    gps: "$SDGGA,{time},{lat},{lat_ns},{lon},{lon_ew},{quality},{satellites},{hdop},{altitude},M,{geoid},M,,*{checksum}"
+    
+  nmea2000_pgns:
+    depth: "PGN:128267,Data:{depth_mm:4},{offset_mm:4},{range_mm:4}"
+    speed: "PGN:128259,Data:{speed_ms:2},{heading_rad:2},{speed_type:1}"
+    wind: "PGN:130306,Data:{wind_speed_ms:2},{wind_angle_rad:2},{reference:1}"
+    position: "PGN:129025,Data:{latitude_deg:4},{longitude_deg:4}"
+    
+  pcdin_encapsulated:
+    depth: "$PCDIN,01F113,{pgn_hex},*{checksum}"  # PGN 128267 encapsulated
+    speed: "$PCDIN,01F50B,{pgn_hex},*{checksum}"  # PGN 128259 encapsulated
+    wind: "$PCDIN,01FD0A,{pgn_hex},*{checksum}"   # PGN 130306 encapsulated
+
+# Protocol conversion validation
+conversion_validation:
+  depth_conversion:
+    nmea0183_to_2000: "feet_to_millimeters"
+    nmea2000_to_0183: "millimeters_to_feet"
+    precision_loss: "acceptable"
+    
+  speed_conversion:
+    nmea0183_to_2000: "knots_to_meters_per_second"
+    nmea2000_to_0183: "meters_per_second_to_knots"
+    precision_loss: "minimal"
+    
+  wind_conversion:
+    nmea0183_to_2000: "degrees_to_radians"
+    nmea2000_to_0183: "radians_to_degrees"
+    precision_loss: "acceptable"
+
+# NMEA sentence timing (protocol-dependent)
+timing:
+  nmea0183_mode:
+    depth: 2      # Hz
+    speed: 1      # Hz
+    wind: 2       # Hz
+    gps: 1        # Hz
+    
+  nmea2000_mode:
+    depth: 5      # Hz (higher frequency for PGNs)
+    speed: 10     # Hz 
+    wind: 5       # Hz
+    gps: 1        # Hz
+    
+  dual_protocol_mode:
+    nmea0183: 2   # Hz (combined frequency)
+    nmea2000: 5   # Hz
+
+# Protocol validation functions
+functions:
+  multi_protocol: |
+    // Generate data in appropriate protocol format
+    const currentProtocol = getCurrentProtocol(currentTime);
+    const baseData = getNavigationData(currentTime);
+    
+    switch(currentProtocol) {
+      case 'NMEA_0183':
+        return formatNMEA0183(baseData);
+      case 'NMEA_2000':
+        return formatNMEA2000PGN(baseData);
+      case 'DUAL':
+        return {
+          nmea0183: formatNMEA0183(baseData),
+          nmea2000: formatNMEA2000PGN(baseData)
+        };
+      case 'PCDIN_ENCAPSULATED':
+        return formatPCDINEncapsulated(baseData);
+    }
+    
+  protocol_conversion: |
+    // Validate protocol conversions maintain data integrity
+    const originalData = getSourceData(currentTime);
+    const convertedData = convertProtocol(originalData, targetProtocol);
+    
+    return validateConversion(originalData, convertedData);
+
+# Network failure simulation
+network_simulation:
+  connection_drops:
+    frequency: 0.1        # 10% chance per minute
+    duration: [5, 15]     # 5-15 second outages
+    
+  reconnection_sequence:
+    protocol_negotiation: 3  # seconds
+    data_resync: 2          # seconds
+    
+  timeout_testing:
+    tcp_timeout: 30      # seconds
+    udp_retry: 3         # attempts
+    websocket_ping: 10   # seconds
+
+# Cross-platform validation
+cross_platform_tests:
+  - platform: "web"
+    validation: "protocol_parsing"
+    expected_behavior: "identical"
+    
+  - platform: "ios"
+    validation: "message_interpretation"
+    expected_behavior: "identical"
+    
+  - platform: "android"
+    validation: "data_conversion"
+    expected_behavior: "identical"
+
+# PGN validation rules
+pgn_validation_rules:
+  - pgn: 128267  # Water depth
+    required_fields: ["depth", "offset", "range"]
+    data_length: 8
+    frequency_max: 10  # Hz
+    
+  - pgn: 128259  # Boat speed
+    required_fields: ["speed", "heading", "speed_type"]
+    data_length: 8
+    frequency_max: 20  # Hz
+    
+  - pgn: 130306  # Wind data
+    required_fields: ["wind_speed", "wind_angle", "reference"]
+    data_length: 8
+    frequency_max: 10  # Hz
+
+# Use cases
+use_cases:
+  - "Protocol conversion testing (NMEA 0183 ↔ NMEA 2000)"
+  - "PGN format validation and parsing"
+  - "Dual protocol operation verification"
+  - "Cross-platform behavior validation (identical results web/iOS/Android)"
+  - "Network failure and reconnection testing"
+  - "$PCDIN encapsulation validation"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC4: NMEA 0183 ↔ NMEA 2000 transitions with PGN format validation"
+  - "AC4: Multi-protocol scenario"
+  - "AC8: Cross-platform behavior validation (identical results web/iOS/Android)"
+  - "AC4: Network failure simulation (disconnections, timeouts, reconnection sequences)"

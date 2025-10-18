@@ -232,6 +232,62 @@ export interface NmeaConnectionStatus {
 }
 
 /**
+ * Story 6.6 Required Interfaces - Consolidated NMEA data state
+ */
+export interface NMEADataState {
+  // Navigation data
+  depth?: number;
+  speedOverGround?: number;
+  speedThroughWater?: number;
+  heading?: number;
+  latitude?: number;
+  longitude?: number;
+  cog?: number; // Course over ground
+
+  // Environmental data  
+  apparentWindAngle?: number;
+  apparentWindSpeed?: number;
+  trueWindAngle?: number;
+  trueWindSpeed?: number;
+  waterTemperature?: number;
+  
+  // Electrical systems
+  batteryVoltage?: number;
+  
+  // Engine data (multi-engine support)
+  engines: {
+    [id: string]: EngineData;
+  };
+  
+  // Autopilot data
+  autopilotMode?: AutopilotMode;
+  targetHeading?: number;
+  rudderPosition?: number;
+  
+  // Timestamps for staleness detection
+  timestamps: {
+    [key: string]: number;
+  };
+}
+
+export interface EngineData {
+  rpm?: number;
+  temperature?: number;
+  oilPressure?: number;
+  fuelRate?: number;
+  timestamp?: number;
+}
+
+export type AutopilotMode = 'standby' | 'auto' | 'wind' | 'track' | 'power_steer';
+
+export interface NMEAParseResult {
+  type: string;
+  data: Record<string, any>;
+  timestamp: number;
+  checksum?: string;
+}
+
+/**
  * Export utility types
  */
 export type NmeaFieldValue = string | number | null | undefined;

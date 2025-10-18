@@ -38,12 +38,15 @@ export interface DataErrorInfo extends CustomErrorInfo {
 }
 
 export class DataErrorBoundary extends BaseErrorBoundary {
-  declare props: DataErrorBoundaryProps;
   private parsingErrorCount = 0;
   private lastErrorTime = 0;
 
   constructor(props: DataErrorBoundaryProps) {
     super({ ...props, category: 'data' });
+  }
+
+  private get dataProps(): DataErrorBoundaryProps {
+    return this.props as DataErrorBoundaryProps;
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -58,15 +61,15 @@ export class DataErrorBoundary extends BaseErrorBoundary {
       timestamp: Date.now(),
       severity: this.determineDataErrorSeverity(error),
       category: 'data',
-      dataType: this.props.dataType,
-      sourceId: this.props.sourceId,
+      dataType: this.dataProps.dataType,
+      sourceId: this.dataProps.sourceId,
       parsingDetails: this.extractParsingDetails(error),
       statistics: this.generateStatistics(),
       suggestions: this.generateSuggestions(error),
       context: {
-        enableDataValidation: this.props.enableDataValidation,
-        maxParsingErrors: this.props.maxParsingErrors,
-        dataType: this.props.dataType,
+        enableDataValidation: this.dataProps.enableDataValidation,
+        maxParsingErrors: this.dataProps.maxParsingErrors,
+        dataType: this.dataProps.dataType,
       },
     };
 
@@ -78,7 +81,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
 
     // Call both error handlers
     this.props.onError?.(dataErrorInfo, errorInfo);
-    this.props.onDataError?.(dataErrorInfo);
+    this.dataProps.onDataError?.(dataErrorInfo);
 
     // Log data-specific error details
     this.logDataError(dataErrorInfo, error);
@@ -96,7 +99,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
     if (message.includes('corrupted') || 
         message.includes('invalid format') ||
         message.includes('malformed') ||
-        this.parsingErrorCount > (this.props.maxParsingErrors || 10)) {
+        this.parsingErrorCount > (this.dataProps.maxParsingErrors || 10)) {
       return 'high';
     }
     
@@ -129,7 +132,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
 
     return {
       rawData: rawDataMatch?.[1]?.substring(0, 200), // Limit raw data length
-      expectedFormat: formatMatch?.[1] || this.props.dataType || 'unknown',
+      expectedFormat: formatMatch?.[1] || this.dataProps.dataType || 'unknown',
       parsePosition: positionMatch ? parseInt(positionMatch[1], 10) : undefined,
       lastValidData: this.getLastValidData(),
       errorPattern: this.identifyErrorPattern(message),
@@ -202,7 +205,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
   }
 
   private shouldResetParser(error: DataErrorInfo): boolean {
-    const maxErrors = this.props.maxParsingErrors || 10;
+    const maxErrors = this.dataProps.maxParsingErrors || 10;
     return this.parsingErrorCount >= maxErrors || error.severity === 'high';
   }
 
@@ -227,26 +230,26 @@ export class DataErrorBoundary extends BaseErrorBoundary {
   }
 
   private handleDataRecovery = () => {
-    this.props.onDataRecovery?.();
+    this.dataProps.onDataRecovery?.();
     this.parsingErrorCount = Math.max(0, this.parsingErrorCount - 2); // Reduce error count
     this.handleRetry();
   };
 
   private handleParsingReset = () => {
-    this.props.onParsingReset?.();
+    this.dataProps.onParsingReset?.();
     this.parsingErrorCount = 0;
     this.lastErrorTime = 0;
     setTimeout(() => this.handleRetry(), 500);
   };
 
   private handleFallbackParser = () => {
-    this.props.onFallbackParser?.();
+    this.dataProps.onFallbackParser?.();
     this.parsingErrorCount = 0;
     // Don't automatically retry in fallback mode
   };
 
   private renderDataFallback = (error: DataErrorInfo, retry: () => void): ReactNode => {
-    const { dataType = 'unknown' } = this.props;
+    const { dataType = 'unknown' } = this.dataProps;
     const { parsingDetails, statistics, suggestions } = error;
 
     return (

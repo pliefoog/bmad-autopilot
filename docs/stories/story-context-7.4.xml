@@ -1,0 +1,291 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>7.4</storyId>
+    <title>Synthetic NMEA Test Recordings Library</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-10-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-7.4-synthetic-nmea-recordings.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer and QA engineer testing marine widgets and autopilot functionality</asA>
+    <iWant>a comprehensive library of pre-built synthetic NMEA test recordings organized by use case and widget type</iWant>
+    <soThat>I can test widgets in isolation with predictable, repeatable data and validate behavior across NMEA 0183 and NMEA 2000 bridge modes without physical hardware</soThat>
+    <tasks>
+      <phase name="Phase 1: Recording Infrastructure" hours="8">
+        <task id="A" description="Define recording file format standard" hours="2"/>
+        <task id="B" description="Create recording metadata schema" hours="2"/>
+        <task id="C" description="Set up recording directory structure" hours="1"/>
+        <task id="D" description="Create recording catalog template" hours="1"/>
+        <task id="E" description="Document file naming conventions" hours="2"/>
+      </phase>
+      <phase name="Phase 2: Widget Recording Creation" hours="16">
+        <task id="F" description="Navigation widget recordings" hours="3"/>
+        <task id="G" description="Environmental widget recordings" hours="2"/>
+        <task id="H" description="Engine system recordings" hours="3"/>
+        <task id="I" description="Battery system recordings" hours="3"/>
+        <task id="J" description="Tank system recordings" hours="3"/>
+        <task id="K" description="Multi-instance detection recordings" hours="2"/>
+      </phase>
+      <phase name="Phase 3: Autopilot & Scenario Recordings" hours="10">
+        <task id="L" description="Autopilot engagement recordings" hours="3"/>
+        <task id="M" description="Autopilot control recordings" hours="3"/>
+        <task id="N" description="Performance stress recordings" hours="4"/>
+      </phase>
+      <phase name="Phase 4: Dual-Mode Protocol Recordings" hours="12">
+        <task id="O" description="NMEA 0183 mode recordings" hours="6"/>
+        <task id="P" description="NMEA 2000 mode recordings" hours="6"/>
+      </phase>
+      <phase name="Phase 5: Documentation" hours="8">
+        <task id="Q" description="Create testing-strategy.md" hours="4"/>
+        <task id="R" description="Update README-SIMULATOR.md" hours="2"/>
+        <task id="S" description="Create recordings/README.md catalog" hours="2"/>
+      </phase>
+      <phase name="Phase 6: Story 7.2 Integration" hours="4">
+        <task id="T" description="Update Story 7.2 acceptance criteria" hours="2"/>
+        <task id="U" description="Update Story 7.2 definition of done" hours="2"/>
+      </phase>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC1" title="Widget-Specific Recording Library">
+      Navigation widget recordings (basic-navigation, coastal-sailing, deep-water), Environmental widget recordings (weather-conditions), Engine system recordings (single-engine, twin-engines), Battery system recordings (single-battery, multi-battery), Tank system recordings (fuel-tanks, all-tanks), Each recording contains semantically correct NMEA data, Recording metadata includes duration, message count, scenario description
+    </ac>
+    <ac id="AC2" title="Autopilot Testing Recording Suite">
+      Autopilot engagement sequence recording, Heading adjustment recording with command/response patterns, Sailing tack sequence recording, Failure and emergency disengagement recording, Bidirectional command validation data
+    </ac>
+    <ac id="AC3" title="Multi-Instance Detection Recordings">
+      Progressive instance discovery recording (systems coming online gradually), Instance removal and timeout recording (equipment shutdown scenarios), Maximum configuration stress test (16 instances per type), Instance mapping table validation data, Support for engines, batteries, and tanks detection scenarios
+    </ac>
+    <ac id="AC4" title="Dual-Mode Protocol Support">
+      Equivalent recordings in both NMEA 0183 and NMEA 2000 formats, NMEA 0183 recordings use native sentences where available, NMEA 0183 recordings use $PCDIN encapsulation where no native sentence exists, Semantically identical data between protocol versions, Protocol conversion validation recordings
+    </ac>
+    <ac id="AC5" title="Performance and Stress Testing Recordings">
+      High-frequency data recording (500+ messages/second, 10+ minutes), Malformed data stress recording with error patterns, Protocol switching recording (NMEA 0183 ↔ NMEA 2000 transitions), Intermittent connection recording (disconnect/reconnect patterns)
+    </ac>
+    <ac id="AC6" title="Developer and QA Workflow Documentation">
+      Testing strategy documentation (/docs/testing-strategy.md), Simulator recording workflow guide (updated README-SIMULATOR.md), Recording library catalog (/recordings/README.md), Clear instructions for starting/stopping simulator with recordings, Recording selection guidance based on widget/scenario, Troubleshooting guide for common recording playback issues
+    </ac>
+    <ac id="AC7" title="Recording File Format and Standards">
+      Standardized JSON format with metadata block, Message array with timestamp and relative_time fields, Compression support (.json.gz) for large recordings, Semantic descriptions for each message, Version tracking in metadata, File naming conventions documented
+    </ac>
+    <ac id="AC8" title="Cross-Platform Validation Support">
+      Platform validation recording with deterministic output, Identical behavior verification data, Known expected outputs for automated testing, CI/CD integration test fixtures
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PM-HANDOFF-Story-7.4-Synthetic-Recordings.md" title="PM Handoff Document" section="Complete Story Analysis">
+        Comprehensive analysis from Business Analyst including 30+ recording use cases, detailed scope breakdown, acceptance criteria, task breakdown, risks and mitigations. Provides foundational understanding of recording requirements.
+      </doc>
+      <doc path="docs/stories/story-7.2-standardized-test-scenario-library.md" title="Story 7.2 - Test Scenario Library" section="Scenario Engine Architecture">
+        YAML configuration for test scenarios, scenario engine design patterns, mathematical data generation functions. Recording library extends scenario system with replayable data files.
+      </doc>
+      <doc path="docs/stories/story-7.5-nmea-protocol-conversion.md" title="Story 7.5 - Protocol Conversion Engine" section="PGN Mapping Tables">
+        NMEA 2000 PGN to NMEA 0183 sentence conversion mappings, $PCDIN encapsulation format, device-specific bridge profiles. Critical for creating accurate dual-mode recordings.
+      </doc>
+      <doc path="docs/stories/story-6.10-multi-instance-nmea-widget-detection.md" title="Story 6.10 - Multi-Instance Detection" section="Instance Detection Logic">
+        Multi-instance detection requirements for engines, batteries, tanks. Recording library must provide test data for progressive discovery, instance removal, and maximum configuration scenarios.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/server/nmea-bridge-simulator.js" kind="simulator" symbol="NMEABridgeSimulator" lines="1-500" reason="Core simulator that will play back recording files. Understand existing recording playback capabilities (--recording flag, .json.gz support, playback speed control)"/>
+      <artifact path="boatingInstrumentsApp/src/services/nmea/pgnParser.ts" kind="service" symbol="PGNParser" lines="1-200" reason="NMEA 2000 PGN parsing logic. Use to validate semantic correctness of PGN data in recordings"/>
+      <artifact path="boatingInstrumentsApp/src/services/nmea/instanceDetection.ts" kind="service" symbol="InstanceDetection" lines="1-150" reason="Multi-instance detection logic for Story 6.10. Recording library must provide test data matching this detection pattern"/>
+      <artifact path="boatingInstrumentsApp/server/README-SIMULATOR.md" kind="documentation" symbol="N/A" lines="N/A" reason="Simulator documentation that needs updating with recording playback workflows per AC6"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="nmea-simple" version="^3.2.0" reason="NMEA 0183 sentence parsing and validation"/>
+        <package name="zlib" version="built-in" reason="Gzip compression for .json.gz recording files"/>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>All recordings must use PROJECT-RELATIVE paths only (e.g., recordings/widgets/depth/basic-navigation.json not absolute paths)</constraint>
+    <constraint>Recording file format MUST match Story 7.1 playback expectations: JSON with metadata object and messages array</constraint>
+    <constraint>Each message in recording MUST include: timestamp, relative_time, message (NMEA sentence or PGN), sentence_type/pgn_type, description, sequence</constraint>
+    <constraint>NMEA 0183 sentences MUST have valid checksums calculated using XOR algorithm</constraint>
+    <constraint>NMEA 2000 PGNs MUST be semantically correct according to NMEA 2000 specification</constraint>
+    <constraint>Dual-mode recordings (NMEA 0183 vs NMEA 2000) MUST be semantically equivalent - same data values in different protocol formats</constraint>
+    <constraint>Widget-specific recordings MUST align with existing widget data requirements from Epic 2 stories</constraint>
+    <constraint>Multi-instance recordings MUST follow instance detection patterns from Story 6.10</constraint>
+    <constraint>Documentation (testing-strategy.md, README-SIMULATOR.md, recordings/README.md) MUST use clear, practical language appropriate for recreational boating app developers</constraint>
+    <constraint>Recording organization MUST follow directory structure specified in story technical notes</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Recording File Format (JSON)" kind="data-format">
+      <signature>
+{
+  "metadata": {
+    "name": "string",
+    "description": "string",
+    "duration": number,
+    "message_count": number,
+    "created": "ISO8601 timestamp",
+    "vessel_type": "string",
+    "scenario_type": "string",
+    "version": "string",
+    "bridge_mode": "nmea0183" | "nmea2000"
+  },
+  "messages": [
+    {
+      "timestamp": number,
+      "relative_time": number,
+      "message": "string",
+      "sentence_type": "string" | "pgn_type": "string",
+      "description": "string",
+      "sequence": number
+    }
+  ]
+}
+      </signature>
+      <path>docs/stories/story-7.4-synthetic-nmea-recordings.md</path>
+    </interface>
+
+    <interface name="Simulator Recording Playback" kind="command-line">
+      <signature>
+node server/nmea-bridge-simulator.js --recording recordings/path/to/file.json [--speed 1.0] [--loop]
+      </signature>
+      <path>boatingInstrumentsApp/server/nmea-bridge-simulator.js</path>
+    </interface>
+
+    <interface name="NMEA 0183 Sentence Format" kind="protocol">
+      <signature>
+$IIDBT,,f,15.2,M,8.3,F*3C  (Depth)
+$IIVTG,270.5,T,,M,6.2,N,11.5,K,A*25  (Speed)
+$IIMWV,045.0,R,12.5,N,A*2F  (Wind)
+$IIGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47  (GPS)
+      </signature>
+      <path>NMEA 0183 Standard</path>
+    </interface>
+
+    <interface name="NMEA 2000 PGN Format" kind="protocol">
+      <signature>
+PGN 128267: Water Depth - {depth: float meters}
+PGN 128259: Speed Through Water - {speed: float m/s}
+PGN 130306: Wind Data - {angle: float degrees, speed: float m/s, reference: 'true'|'apparent'}
+PGN 129029: GNSS Position - {latitude: float, longitude: float, altitude: float}
+PGN 127488: Engine Parameters - {instance: int, rpm: int, temperature: float, pressure: float}
+PGN 127508: Battery Status - {instance: int, voltage: float, current: float}
+PGN 127505: Fluid Level - {instance: int, fluidType: int, level: float percent, capacity: float liters}
+      </signature>
+      <path>NMEA 2000 Standard</path>
+    </interface>
+
+    <interface name="$PCDIN Encapsulation" kind="protocol">
+      <signature>
+$PCDIN,&lt;PGN hex&gt;,&lt;src&gt;,&lt;dst&gt;,&lt;data bytes&gt;*checksum
+Example: $PCDIN,01F505,00,FF,01,C8,00,00,00,00*3A
+Used for NMEA 2000 PGNs that have no direct NMEA 0183 equivalent (tanks, batteries)
+      </signature>
+      <path>Chetco Proprietary Format</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Manual testing for recreational boating app. No automated test framework required for recording file creation. Validation focuses on: 1) Semantic correctness of NMEA data, 2) Playback consistency across 10 cycles, 3) Cross-platform manual validation (web, iOS, Android), 4) Documentation clarity for developer/QA workflows.
+    </standards>
+
+    <locations>
+      recordings/ - All synthetic recording files organized by category
+      docs/testing-strategy.md - Testing methodology documentation
+      boatingInstrumentsApp/server/README-SIMULATOR.md - Simulator usage guide
+    </locations>
+
+    <ideas>
+      <test-idea ac="AC1">
+        Create and validate widget-specific recordings: 1) Generate navigation recording with depth/speed/wind/GPS data, 2) Play back via simulator, 3) Manually verify widgets display correct values, 4) Repeat for environmental, engine, battery, tank recordings
+      </test-idea>
+
+      <test-idea ac="AC2">
+        Create and validate autopilot recordings: 1) Generate autopilot engagement sequence with $PCDIN commands, 2) Play back and verify command/response pattern, 3) Create tack sequence with heading transitions, 4) Validate failure scenario recording
+      </test-idea>
+
+      <test-idea ac="AC3">
+        Create and validate multi-instance recordings: 1) Progressive discovery - systems coming online gradually (0, 1, 2 engines over time), 2) Instance removal - equipment shutdown with 30s timeout, 3) Maximum config - 16 instances stress test, 4) Verify instance detection logic matches Story 6.10 patterns
+      </test-idea>
+
+      <test-idea ac="AC4">
+        Create and validate dual-mode recordings: 1) Generate same scenario in NMEA 0183 and NMEA 2000 formats, 2) Verify semantic equivalence (same depth value in DBT vs PGN 128267), 3) Test $PCDIN encapsulation for tanks/batteries in NMEA 0183 mode, 4) Validate protocol conversion accuracy if Story 7.5 is completed
+      </test-idea>
+
+      <test-idea ac="AC5">
+        Create and validate performance recordings: 1) High-frequency recording with 500+ msg/sec for 10 minutes, 2) Malformed data recording with invalid checksums/truncated sentences, 3) Protocol switching recording with NMEA 0183 → NMEA 2000 transition, 4) Intermittent connection recording with gaps
+      </test-idea>
+
+      <test-idea ac="AC6">
+        Create and validate documentation: 1) Write testing-strategy.md with developer/QA workflows, 2) Update README-SIMULATOR.md with recording playback instructions, 3) Create recordings/README.md catalog with use case mapping, 4) Test documentation clarity by having another developer follow instructions
+      </test-idea>
+
+      <test-idea ac="AC7">
+        Validate recording file format: 1) Create JSON schema for recording format, 2) Validate all recordings against schema, 3) Test gzip compression for large files, 4) Verify metadata fields (duration, message_count, version), 5) Check file naming conventions are followed
+      </test-idea>
+
+      <test-idea ac="AC8">
+        Cross-platform validation: 1) Load same recording on web browser, 2) Load on iOS simulator, 3) Load on Android emulator, 4) Manually verify identical widget behavior across platforms, 5) Document any platform-specific differences
+      </test-idea>
+    </ideas>
+  </tests>
+
+  <domainExpertise>
+    <expertise domain="NMEA 0183 Protocol">
+      <principle>NMEA 0183 uses ASCII sentence format starting with $ followed by talker ID (II=Integrated Instrumentation) and sentence type (DBT, VTG, MWV, GGA, etc.)</principle>
+      <principle>Checksum calculation: XOR all characters between $ and * (exclusive), format as 2-digit hex</principle>
+      <principle>Common sentences: DBT (depth), DPT (depth with offset), VTG (track and speed), VHW (speed through water), MWV (wind), GGA (GPS fix), RMC (recommended minimum)</principle>
+      <principle>Field separator is comma, empty fields represented by consecutive commas</principle>
+      <example>$IIDBT,15.2,f,4.6,M,2.5,F*3C = Depth 15.2 feet, 4.6 meters, 2.5 fathoms, checksum 3C</example>
+    </expertise>
+
+    <expertise domain="NMEA 2000 Protocol (PGNs)">
+      <principle>NMEA 2000 uses Parameter Group Numbers (PGNs) to identify message types</principle>
+      <principle>PGNs are 29-bit identifiers transmitted on CAN bus, each PGN has defined data field structure</principle>
+      <principle>Source address identifies device instance (0-253), used for multi-instance detection</principle>
+      <principle>Common PGNs: 128267 (depth), 128259 (speed), 130306 (wind), 129029 (GPS), 127488 (engine), 127508 (battery), 127505 (tanks)</principle>
+      <principle>Multi-instance: Multiple devices of same type use different source addresses (e.g., Engine #1 = address 0, Engine #2 = address 1)</principle>
+      <example>PGN 127488 from source 0: {rpm: 2400, temperature: 85C, oilPressure: 45psi} = Engine #1 running at 2400 RPM</example>
+    </expertise>
+
+    <expertise domain="$PCDIN Encapsulation">
+      <principle>$PCDIN is proprietary format used to encapsulate NMEA 2000 PGNs within NMEA 0183 stream</principle>
+      <principle>Format: $PCDIN,PGNhex,src,dst,databytes*checksum where PGNhex is 6-digit hex PGN, src/dst are 2-digit hex addresses</principle>
+      <principle>Used when NMEA 2000 PGN has no direct NMEA 0183 equivalent (e.g., tanks PGN 127505, battery PGN 127508)</principle>
+      <principle>Data bytes are comma-separated hex pairs representing PGN data field</principle>
+      <example>$PCDIN,01F505,00,FF,01,C8,00,00,00,00*3A = Tank instance 1, fluid type fuel (0), level 200 (80% of 250), capacity unknown</example>
+    </expertise>
+
+    <expertise domain="Marine Instrument Data">
+      <principle>Depth: Typically measured in feet for US recreational boating, meters internationally. Range 0-200 feet coastal, 200+ offshore</principle>
+      <principle>Speed: Knots (nautical miles per hour). Recreational sailing: 5-8 knots, powerboat: 15-30 knots</principle>
+      <principle>Wind: Direction in degrees (0-359), speed in knots. Apparent wind (relative to boat) vs true wind (relative to ground)</principle>
+      <principle>GPS: Latitude/longitude in degrees decimal minutes format, altitude in meters</principle>
+      <principle>Engine: RPM 800-3200 typical, temperature 160-200F normal, oil pressure 20-60 psi</principle>
+      <principle>Battery: 12V system typical (11.8V discharged, 12.8V charged, 14.2V charging), capacity in Ah</principle>
+      <principle>Tanks: Fuel, fresh water, gray water, black water. Levels in percentage 0-100%, capacity in liters/gallons</principle>
+    </expertise>
+
+    <expertise domain="Recording File Best Practices">
+      <principle>Duration: 5 minutes minimum for widget testing, 10+ minutes for performance/stress testing</principle>
+      <principle>Message frequency: Depth/wind every 1-2 seconds, GPS every 1 second, engine every 0.5 seconds for responsive display</principle>
+      <principle>Timing accuracy: relative_time field critical for precise playback, use microsecond precision</principle>
+      <principle>Compression: Use .json.gz for recordings >1MB or >10 minutes duration</principle>
+      <principle>Metadata: Always include vessel_type, scenario_type, bridge_mode for recording catalog searchability</principle>
+      <principle>Version tracking: Use semantic versioning (1.0, 1.1, 2.0) in metadata for recording format changes</principle>
+    </expertise>
+
+    <expertise domain="Multi-Instance Test Data">
+      <principle>Progressive discovery: Start recording with 0 instances, add instance every 30-60 seconds (simulates equipment power-on sequence)</principle>
+      <principle>Instance removal: Include 30+ second gaps in PGN messages to trigger instance timeout logic</principle>
+      <principle>Maximum configuration: Use 16 different source addresses (0-15) for stress testing instance detection</principle>
+      <principle>Instance mapping: Battery instance 0=House, 1=Engine, 2=Thruster, 3=Generator follows common marine conventions</principle>
+      <principle>Tank instances: 0-3 fuel tanks, 4-7 water tanks, 8-11 gray water, 12-15 black water per NMEA 2000 fluid type codes</principle>
+    </expertise>
+  </domainExpertise>
+</story-context>

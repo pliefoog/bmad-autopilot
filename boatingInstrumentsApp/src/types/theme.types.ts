@@ -6,7 +6,9 @@
  */
 export type ThemeMode = 'day' | 'night' | 'red-night' | 'auto';
 
-export type DisplayMode = 'marine' | 'aviation' | 'automotive' | 'standard';
+export type DisplayMode = 'day' | 'night' | 'red-night';
+
+export type AlertState = 'normal' | 'warning' | 'critical';
 
 export type ColorScheme = 'light' | 'dark' | 'high-contrast' | 'custom';
 
@@ -382,6 +384,39 @@ export interface AccessibilityTheme {
   // Text scaling
   supportTextScaling: boolean;
   maxTextScale: number;
+}
+
+/**
+ * Story 6.6 Specific Interfaces - Simplified theme interfaces
+ */
+export interface StoryThemeColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  success: string;
+  warning: string;
+  error: string;
+  backgroundDark: string;
+  backgroundMedium: string;
+  borderGray: string;
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+}
+
+export interface StoryThemeTypography {
+  widgetTitle: import('react-native').TextStyle;
+  metricValue: import('react-native').TextStyle;
+  metricUnit: import('react-native').TextStyle;
+  metricLabel: import('react-native').TextStyle;
+}
+
+export interface StoryThemeSpacing {
+  xs: number;
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
 }
 
 /**

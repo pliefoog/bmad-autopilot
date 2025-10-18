@@ -31,6 +31,7 @@ const yaml = require('js-yaml');
 const TCP_PORT = 2000;
 const UDP_PORT = 2000;
 const WS_PORT = 8080; // WebSocket on separate port (can't share with TCP)
+const BIND_HOST = '0.0.0.0'; // Bind to all network interfaces
 
 class NMEABridgeSimulator {
   constructor() {
@@ -77,10 +78,40 @@ class NMEABridgeSimulator {
     
     console.log('🌐 Enhanced NMEA Bridge Simulator');
     console.log('=================================');
-    console.log(`TCP Server: localhost:${TCP_PORT}`);
-    console.log(`UDP Server: localhost:${UDP_PORT}`);
-    console.log(`WebSocket Server: ws://localhost:${WS_PORT}`);
+    console.log(`TCP Server: ${BIND_HOST}:${TCP_PORT} (accessible from all network interfaces)`);
+    console.log(`UDP Server: ${BIND_HOST}:${UDP_PORT} (accessible from all network interfaces)`);
+    console.log(`WebSocket Server: ws://${BIND_HOST}:${WS_PORT} (accessible from all network interfaces)`);
     console.log(`Bridge Mode: ${this.bridgeMode.toUpperCase()}`);
+    console.log('');
+  }
+  
+  /**
+   * Display network connection information for all network interfaces
+   */
+  displayNetworkInfo() {
+    const os = require('os');
+    const networkInterfaces = os.networkInterfaces();
+    
+    console.log('🔗 Network Connection Information:');
+    console.log('=================================');
+    console.log('Localhost connections:');
+    console.log(`  TCP: localhost:${TCP_PORT}`);
+    console.log(`  UDP: localhost:${UDP_PORT}`);
+    console.log(`  WebSocket: ws://localhost:${WS_PORT}`);
+    console.log('');
+    
+    console.log('Network interface connections:');
+    Object.keys(networkInterfaces).forEach(interfaceName => {
+      const interfaces = networkInterfaces[interfaceName];
+      interfaces.forEach(iface => {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          console.log(`  ${interfaceName} (${iface.address}):`);
+          console.log(`    TCP: ${iface.address}:${TCP_PORT}`);
+          console.log(`    UDP: ${iface.address}:${UDP_PORT}`);
+          console.log(`    WebSocket: ws://${iface.address}:${WS_PORT}`);
+        }
+      });
+    });
     console.log('');
   }
   
@@ -99,6 +130,9 @@ class NMEABridgeSimulator {
       
       // Start WebSocket server on port 2000 (unified port)
       await this.startWebSocketServer();
+      
+      // Display network connection information
+      this.displayNetworkInfo();
       
       // Load scenario if specified
       if (config.scenario) {
@@ -164,8 +198,8 @@ class NMEABridgeSimulator {
         });
       });
       
-      this.tcpServer.listen(TCP_PORT, () => {
-        console.log(`✅ TCP server listening on port ${TCP_PORT}`);
+      this.tcpServer.listen(TCP_PORT, BIND_HOST, () => {
+        console.log(`✅ TCP server listening on ${BIND_HOST}:${TCP_PORT} (all network interfaces)`);
         resolve();
       });
       
@@ -204,7 +238,7 @@ class NMEABridgeSimulator {
       });
       
       this.udpServer.on('listening', () => {
-        console.log(`✅ UDP server listening on port ${UDP_PORT}`);
+        console.log(`✅ UDP server listening on ${BIND_HOST}:${UDP_PORT} (all network interfaces)`);
         resolve();
       });
       
@@ -213,7 +247,7 @@ class NMEABridgeSimulator {
         reject(err);
       });
       
-      this.udpServer.bind(UDP_PORT);
+      this.udpServer.bind(UDP_PORT, BIND_HOST);
     });
   }
   
@@ -222,10 +256,10 @@ class NMEABridgeSimulator {
    */
   async startWebSocketServer() {
     return new Promise((resolve, reject) => {
-      this.wsServer = new WebSocket.Server({ port: WS_PORT });
+      this.wsServer = new WebSocket.Server({ port: WS_PORT, host: BIND_HOST });
       
       this.wsServer.on('listening', () => {
-        console.log(`✅ WebSocket server listening on port ${WS_PORT}`);
+        console.log(`✅ WebSocket server listening on ${BIND_HOST}:${WS_PORT} (all network interfaces)`);
         resolve();
       });
       
@@ -925,12 +959,34 @@ if (require.main === module) {
   const config = parseArguments();
   const simulator = new NMEABridgeSimulator();
   
+  // Initialize and start BMAD Integration API
+  let bmadApi = null;
+  try {
+    const { BMADIntegrationAPI } = require('./bmad-integration-api');
+    bmadApi = new BMADIntegrationAPI(simulator);
+    
+    // Start BMAD API server
+    bmadApi.start().then(() => {
+      console.log('🔗 BMAD Agent Integration API ready');
+    }).catch((error) => {
+      console.error('❌ Failed to start BMAD API:', error.message);
+    });
+  } catch (error) {
+    console.warn('⚠️  BMAD Integration API not available:', error.message);
+  }
+  
   // Graceful shutdown handling
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
+    if (bmadApi) {
+      await bmadApi.stop();
+    }
     simulator.shutdown();
   });
   
-  process.on('SIGTERM', () => {
+  process.on('SIGTERM', async () => {
+    if (bmadApi) {
+      await bmadApi.stop();
+    }
     simulator.shutdown();
   });
   

@@ -2,23 +2,9 @@
 
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite  
 **Story ID:** 2.8  
-**Status:** Superseded
+**Status:** Done
 
-## ⚠️ STORY SUPERSEDED NOTICE
 
-**This story has been superseded by Story 2.14: Marine-Compliant Theme System**
-
-**Reason for Superseding:** Story 2.14 provides a complete, marine-safety-compliant implementation of the theme system requirements originally specified in this story, with enhanced features including:
-- RGB wavelength validation for red-night mode marine compliance
-- Native brightness control integration via Expo Brightness API  
-- Enhanced theme validation system with development-time warnings
-- Comprehensive testing framework for marine safety requirements
-
-**Migration Path:** All development work should focus on Story 2.14. This story remains for historical reference only.
-
-**Redirect:** → [Story 2.14: Marine-Compliant Theme System](story-2.14-marine-compliant-theme-system.md)
-
----
 
 ## Story
 

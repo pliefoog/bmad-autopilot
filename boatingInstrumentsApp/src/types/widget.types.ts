@@ -197,8 +197,35 @@ export interface WidgetEvent {
 }
 
 /**
+ * Specific widget types supported by the marine instrument system
+ */
+export type WidgetType =
+  | 'depth' | 'speed' | 'wind' | 'compass' | 'autopilot'
+  | 'gps' | 'temperature' | 'voltage' | 'engine' | 'alarm'
+  | 'battery' | 'tanks' | 'rudder';
+
+/**
+ * Base props for widget components as specified in Story 6.6
+ */
+export interface BaseWidgetProps {
+  widgetId: string;
+  expanded?: boolean;
+  onToggleExpanded?: () => void;
+  onLongPress?: () => void;
+}
+
+/**
+ * Widget card props for consistent card interface
+ */
+export interface WidgetCardProps {
+  title: string;
+  icon?: string;
+  state?: 'normal' | 'warning' | 'critical';
+  children: React.ReactNode;
+}
+
+/**
  * Export utility types
  */
-export type WidgetType = string;
 export type WidgetId = string;
 export type DashboardId = string;

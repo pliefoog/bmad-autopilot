@@ -1048,6 +1048,47 @@ src/
     └── protocolUtils.ts       # Marine protocol utilities
 ```
 
+### Enhanced Widget Management Architecture (Story 2.15)
+
+The widget system has been enhanced with persistent state management and pin functionality, building on the extensible widget framework from Story 2.2.
+
+**Key Components:**
+
+```
+src/
+├── widgets/
+│   ├── WidgetWrapper.tsx        # Enhanced state management wrapper
+│   ├── WidgetCard.tsx          # Base widget UI component
+│   ├── WidgetBase.tsx          # Cross-platform widget foundation
+│   └── WidgetRegistry.ts       # Dynamic widget registration system
+│
+├── stores/
+│   └── widgetStore.ts          # Enhanced state management with pin functionality
+│
+├── hooks/
+│   └── useWidgetState.ts       # Widget state management hooks
+│
+└── services/
+    └── widgetPersistence.ts    # AsyncStorage persistence for widget states
+```
+
+**Enhanced State Management Features:**
+
+- **Pin Functionality:** Persistent widget pin states with visual indicators
+- **Auto-Collapse Logic:** 30-second timeout for unpinned expanded widgets  
+- **State Persistence:** AsyncStorage integration for cross-session state retention
+- **Performance Optimization:** <50ms pin operations, <16ms state updates
+- **Gesture Integration:** Long-press pin toggle, tap expand/collapse
+- **Backward Compatibility:** Non-breaking enhancement to existing widget system
+
+**Architecture Benefits:**
+- **Progressive Enhancement:** Existing widgets work unchanged, new features opt-in
+- **Cross-Platform Persistence:** Platform.select() storage abstraction
+- **Memory Efficient:** Lazy loading of pin states, efficient timer management
+- **Developer Experience:** Simple migration path, comprehensive TypeScript support
+
+For complete implementation details, see [docs/enhanced-widget-state-management.md](enhanced-widget-state-management.md).
+
 ### System Architecture Files
 
 **Development Infrastructure:**

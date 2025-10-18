@@ -1,0 +1,204 @@
+name: "Autopilot Tack Sequence Scenario"
+description: "Sailing tack maneuver with 5-second countdown and wind transition"
+duration: 280  # ~4.7 minutes (3 minutes per tack + setup)
+version: "1.0"
+category: "autopilot"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: 40  # feet
+    type: "sailboat"
+  conditions:
+    initial_wind_direction: 45   # degrees
+    wind_speed: 16              # knots
+    initial_heading: 60         # degrees (close-hauled on starboard)
+
+# Tack sequence phases
+phases:
+  - phase: "starboard_tack"
+    duration: 90  # 1.5 minutes
+    description: "Close-hauled on starboard tack, setup phase"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 60
+    wind:
+      apparent_angle: 45        # degrees off bow
+      direction: 45             # true wind direction
+      
+  - phase: "pre_tack_countdown"
+    duration: 10   # 10 seconds
+    description: "5-second countdown preparation for tack"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS" 
+      engaged: true
+      target_heading: 60
+    events:
+      - time: 5    # T+5s
+        command: "prepare_tack"
+        description: "Ready to tack command"
+        
+  - phase: "tacking_maneuver"
+    duration: 30  # 30 seconds
+    description: "Active tacking maneuver through wind"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 120       # New heading on port tack
+    events:
+      - time: 0
+        command: "initiate_tack"
+        description: "Begin tack maneuver"
+      - time: 15
+        command: "through_wind"
+        description: "Passing through wind"
+    wind_transition:
+      start_angle: 45           # Starting apparent wind angle
+      end_angle: 315            # Ending apparent wind angle (45° off other bow)
+      transition_period: 30     # seconds for wind to shift relative to boat
+      
+  - phase: "port_tack"
+    duration: 90  # 1.5 minutes  
+    description: "Close-hauled on port tack, settled phase"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 120
+    wind:
+      apparent_angle: 315       # degrees off bow (45° on new side)
+      direction: 45             # true wind direction unchanged
+      
+  - phase: "return_tack_prep"
+    duration: 10   # 10 seconds
+    description: "Preparation for return tack"
+    autopilot_mode: "auto"
+    events:
+      - time: 5
+        command: "prepare_return_tack"
+        description: "Ready for return tack"
+        
+  - phase: "return_tack_maneuver" 
+    duration: 30  # 30 seconds
+    description: "Return tack back to starboard"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 60        # Back to original heading
+    wind_transition:
+      start_angle: 315
+      end_angle: 45
+      transition_period: 30
+      
+  - phase: "final_starboard_tack"
+    duration: 20  # 20 seconds
+    description: "Settled back on starboard tack"
+    autopilot_mode: "auto"
+    autopilot:
+      mode: "COMPASS"
+      engaged: true
+      target_heading: 60
+
+# Data generation with tacking effects
+data:
+  depth:
+    type: "constant"
+    value: 25     # feet (stable depth during tacking)
+    unit: "feet"
+  
+  speed:
+    type: "tacking_speed_profile"
+    base_speed: 6.5           # knots (close-hauled speed)
+    tack_speed_loss: 2.0      # knots lost during tack 
+    recovery_time: 20         # seconds to recover speed
+    unit: "knots"
+    phases:
+      starboard_tack: 6.5
+      pre_tack_countdown: 6.5
+      tacking_maneuver: 4.5   # Speed drops during tack
+      port_tack: 6.5
+      return_tack_prep: 6.5
+      return_tack_maneuver: 4.5
+      final_starboard_tack: 6.5
+  
+  wind:
+    type: "tacking_wind_profile"
+    true_direction: 45        # degrees (constant true wind)
+    true_speed: 16           # knots (constant)
+    apparent_calculation: true  # Calculate apparent wind from boat movement
+    unit: "knots"
+  
+  gps:
+    type: "tacking_track"
+    start_position:
+      latitude: 41.4500
+      longitude: -81.7000
+    tacking_pattern: "zigzag"
+    track_precision: 2        # degrees (looser during tacking)
+
+# NMEA sentence timing (higher frequency during tacking)
+timing:
+  depth: 1        # Hz (less critical during tacking)
+  speed: 2        # Hz (monitor speed changes)
+  wind: 5         # Hz (critical during wind transitions)
+  gps: 2          # Hz (track the tacking pattern)
+  compass: 20     # Hz (critical heading monitoring)
+  autopilot: 10   # Hz (high frequency during maneuvers)
+
+# Tacking-specific functions
+functions:
+  tacking_speed_profile: |
+    // Speed varies during tacking phases
+    const currentPhase = getCurrentPhase(currentTime);
+    if (currentPhase.includes('tacking') || currentPhase.includes('maneuver')) {
+      const progressInTack = (currentTime % 30) / 30;  // 30-second tacks
+      const speedLoss = tackSpeedLoss * Math.sin(progressInTack * Math.PI);
+      return Math.max(3.0, baseSpeed - speedLoss);
+    }
+    return baseSpeed;
+    
+  tacking_wind_profile: |
+    // Apparent wind calculation during tacking
+    const boatHeading = getCurrentHeading(currentTime);
+    const boatSpeed = getCurrentSpeed(currentTime);
+    // Vector calculation for apparent wind
+    const apparentWind = calculateApparentWind(trueDirection, trueSpeed, boatHeading, boatSpeed);
+    return apparentWind;
+
+# Tack sequence validation commands
+tack_commands:
+  - type: "prepare_tack"
+    nmea0183: "$PCDIN,01F114,00,01,00,00,00,00,00,00*5C"
+    description: "Prepare for tack command"
+    
+  - type: "initiate_tack" 
+    nmea0183: "$PCDIN,01F115,00,78,00,00,00,00,00,00*5D"  # Turn to 120°
+    description: "Execute tack to port"
+    
+  - type: "prepare_return_tack"
+    nmea0183: "$PCDIN,01F114,00,01,00,00,00,00,00,00*5C"
+    description: "Prepare for return tack"
+    
+  - type: "return_tack"
+    nmea0183: "$PCDIN,01F115,00,3C,00,00,00,00,00,00*5E"  # Turn to 60°
+    description: "Execute return tack to starboard"
+
+# Use cases
+use_cases:
+  - "Sailing tack maneuver testing with wind transitions"
+  - "Autopilot behavior during course changes"
+  - "Speed profile validation during tacks"
+  - "Wind angle calculation verification"
+  - "Compass heading accuracy during turns"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC2: Sailing tack maneuver with 5-second countdown and wind transition"
+  - "AC2: Progressive phase management with phase transitions"
+  - "AC2: Timed event triggers"
+  - "AC2: Bidirectional command/response validation"

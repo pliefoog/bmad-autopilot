@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  SafeAreaView,
   Switch,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme, useThemeStore } from '../core/themeStore';
 import { PlatformStyles } from '../utils/animationUtils';
