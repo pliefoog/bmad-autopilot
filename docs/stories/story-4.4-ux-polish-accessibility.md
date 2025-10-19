@@ -68,7 +68,7 @@
 
 - [ ] **Usability Enhancements**
   - [ ] Design intuitive onboarding flow
-  - [ ] Add contextual help and tooltip system
+  - [x] Add contextual help and tooltip system
   - [ ] Implement undo/redo for configuration changes
   - [ ] Create keyboard navigation for desktop
 
@@ -191,6 +191,10 @@
 29. **[AC10 - Haptic Feedback]** Added haptic vibration patterns for critical alarms: triple pulse for CRITICAL/EMERGENCY, double pulse for WARNING/CAUTION
 30. **[AC10 - Alarm Acknowledgment]** Screen reader announcements when alarms are acknowledged, providing confirmation feedback to users
 31. **[AC10 - Alarm Type Names]** Human-readable alarm type mapping (Shallow Water, Engine Overheat, Low Battery, Autopilot Failure, GPS Signal Loss)
+32. **[AC12 - Help System Foundation]** Created HelpButton atom component (24px icon, hitSlop for marine touch, accessibility support)
+33. **[AC12 - Help Display]** Created Tooltip molecule component (Modal overlay, ScrollView for long content, tips section, related topics navigation)
+34. **[AC12 - Help Content Database]** Centralized help-content.ts with 15+ marine-specific topics: connection setup, NMEA data, widgets, alarms, autopilot, accessibility, themes, marine optimization
+35. **[AC12 - ConnectionConfig Integration]** Integrated help system into ConnectionConfigDialog with connection-setup help topic and related topic navigation
 
 ### Completion Notes List
 **Iteration 0 — Critical Architecture Consolidation:**
@@ -280,6 +284,40 @@ Iteration 5 — Alarm Accessibility Integration:
 - **Test Integration:** All announcements integrate with existing alarm flow without breaking tests
 - **Status:** Critical alarm accessibility complete, screen reader users can now receive and acknowledge all marine safety alarms
 
+Iteration 6 — Contextual Help System (AC12):
+
+- **AC12 IMPLEMENTED:** Contextual help and tooltip system
+- Created HelpButton atom component:
+  * 24px icon button with help-circle-outline from Ionicons
+  * 12px hitSlop expansion for marine-appropriate touch targets (56px total)
+  * Pressed state visual feedback (opacity 0.6)
+  * Comprehensive accessibility props (role, label, hint)
+  * Theme integration for consistent styling
+- Created Tooltip molecule component:
+  * Modal overlay with transparent background (60% black)
+  * ScrollView for long help content (maxHeight 400px)
+  * Header with information icon, title, and close button
+  * Tips section with warning color accent and bullet points
+  * Related topics as navigable links with chevron icons
+  * Screen reader announcements on open (polite priority)
+  * Responsive sizing (90% width, max 500px, 80% height)
+  * Platform-specific shadows and elevation
+- Created centralized help-content.ts database:
+  * 15+ marine-specific help topics with accurate terminology
+  * Coverage: connection setup, NMEA data types, troubleshooting, widgets, alarms, autopilot, accessibility, themes, marine optimization
+  * HelpContent interface with title, content, tips, relatedTopics
+  * getHelpContent() and getRelatedTopics() utilities
+  * Supports both string and array content formats
+- Integrated into ConnectionConfigDialog:
+  * Help button in header next to close button
+  * Connection setup help with WiFi bridge guidance
+  * Related topics navigation (NMEA data, troubleshooting)
+  * Help state management (show/close/navigate)
+- **Marine Accuracy:** All help content uses proper marine terminology and safety considerations
+- **Accessibility:** Help system fully accessible with screen reader announcements and keyboard navigation ready
+- **Status:** Contextual help foundation complete, ready for integration into additional screens (AlarmSettings, WidgetSelector, AutopilotControl)
+- **Git Commit:** `bc12954` - "feat(story-4.4): Implement contextual help system (AC12)"
+
 ### File List
 **Architecture Consolidation:**
 - **REMOVED (git rm):** `boatingInstrumentsApp/src/services/nmeaConnection.ts` (duplicate OLD location)
@@ -329,3 +367,9 @@ Iteration 5 — Alarm Accessibility Integration:
 
 **Alarm Accessibility Integration (Iteration 5):**
   - Modified: `boatingInstrumentsApp/src/services/alarms/AlarmManager.ts` (integrated AccessibilityService announcements, haptic feedback, alarm type name mapping)
+
+**Contextual Help System (Iteration 6):**
+  - Added: `boatingInstrumentsApp/src/components/atoms/HelpButton.tsx` (24px icon button with hitSlop, accessibility support, theme integration)
+  - Added: `boatingInstrumentsApp/src/components/molecules/Tooltip.tsx` (Modal overlay with ScrollView, tips section, related topics, screen reader announcements)
+  - Added: `boatingInstrumentsApp/src/content/help-content.ts` (centralized help database with 15+ marine topics, getHelpContent/getRelatedTopics utilities)
+  - Modified: `boatingInstrumentsApp/src/widgets/ConnectionConfigDialog.tsx` (integrated HelpButton and Tooltip with connection setup help)
