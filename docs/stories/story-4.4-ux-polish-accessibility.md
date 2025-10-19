@@ -195,6 +195,8 @@
 33. **[AC12 - Help Display]** Created Tooltip molecule component (Modal overlay, ScrollView for long content, tips section, related topics navigation)
 34. **[AC12 - Help Content Database]** Centralized help-content.ts with 15+ marine-specific topics: connection setup, NMEA data, widgets, alarms, autopilot, accessibility, themes, marine optimization
 35. **[AC12 - ConnectionConfig Integration]** Integrated help system into ConnectionConfigDialog with connection-setup help topic and related topic navigation
+36. **[AC12 - WidgetSelector Integration]** Integrated help system into WidgetSelector with widget-customization help topic
+37. **[AC12 - AutopilotControl Integration]** Integrated help system into AutopilotControlScreen with autopilot-modes help topic and safety guidance
 
 ### Completion Notes List
 **Iteration 0 — Critical Architecture Consolidation:**
@@ -313,10 +315,22 @@ Iteration 6 — Contextual Help System (AC12):
   * Connection setup help with WiFi bridge guidance
   * Related topics navigation (NMEA data, troubleshooting)
   * Help state management (show/close/navigate)
+- Integrated into WidgetSelector:
+  * Help button in header with widget customization guidance
+  * Explains widget types, arrangement, expansion, pinning
+  * Related topics navigation (widget-data, alarm-configuration)
+- Integrated into AutopilotControlScreen:
+  * Help button in header with autopilot mode explanations
+  * STANDBY/AUTO/WIND/TRACK mode documentation
+  * Marine safety considerations and operation guidelines
+  * Related topics navigation (autopilot-control, alarm-types)
 - **Marine Accuracy:** All help content uses proper marine terminology and safety considerations
 - **Accessibility:** Help system fully accessible with screen reader announcements and keyboard navigation ready
-- **Status:** Contextual help foundation complete, ready for integration into additional screens (AlarmSettings, WidgetSelector, AutopilotControl)
-- **Git Commit:** `bc12954` - "feat(story-4.4): Implement contextual help system (AC12)"
+- **Status:** Contextual help foundation complete with 3 major screens integrated (ConnectionConfig, WidgetSelector, AutopilotControl)
+- **Git Commits:** 
+  * `bc12954` - Initial help system (HelpButton, Tooltip, help-content.ts, ConnectionConfigDialog)
+  * `4410ac3` - WidgetSelector integration
+  * `46e95dc` - AutopilotControlScreen integration
 
 ### File List
 **Architecture Consolidation:**
@@ -373,3 +387,5 @@ Iteration 6 — Contextual Help System (AC12):
   - Added: `boatingInstrumentsApp/src/components/molecules/Tooltip.tsx` (Modal overlay with ScrollView, tips section, related topics, screen reader announcements)
   - Added: `boatingInstrumentsApp/src/content/help-content.ts` (centralized help database with 15+ marine topics, getHelpContent/getRelatedTopics utilities)
   - Modified: `boatingInstrumentsApp/src/widgets/ConnectionConfigDialog.tsx` (integrated HelpButton and Tooltip with connection setup help)
+  - Modified: `boatingInstrumentsApp/src/widgets/WidgetSelector.tsx` (integrated HelpButton and Tooltip with widget customization help)
+  - Modified: `boatingInstrumentsApp/src/widgets/AutopilotControlScreen.tsx` (integrated HelpButton and Tooltip with autopilot modes help)
