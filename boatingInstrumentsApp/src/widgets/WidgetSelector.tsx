@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WidgetRegistry } from './WidgetRegistry';
 import { PlatformStyles } from '../utils/animationUtils';
+import { HelpButton } from '../components/atoms/HelpButton';
+import { Tooltip } from '../components/molecules/Tooltip';
+import { getHelpContent, getRelatedTopics } from '../content/help-content';
 
 interface WidgetListItem {
   key: string;
@@ -19,6 +22,7 @@ export const WidgetSelector: React.FC<{
 }> = ({ selected, onChange, visible, onClose }) => {
   const [localSelected, setLocalSelected] = useState<string[]>(selected);
   const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
 
   // Get widget list from registry
   const widgetList: WidgetListItem[] = useMemo(() => {
@@ -38,6 +42,22 @@ export const WidgetSelector: React.FC<{
     setTimeout(() => setHighlighted(null), 600);
     onClose();
   };
+
+  const showHelp = (helpId: string) => {
+    setActiveHelpId(helpId);
+  };
+
+  const closeHelp = () => {
+    setActiveHelpId(null);
+  };
+
+  const navigateToRelatedTopic = (helpId: string) => {
+    setActiveHelpId(helpId);
+  };
+
+  // Get current help content
+  const helpContent = activeHelpId ? getHelpContent(activeHelpId) : null;
+  const relatedTopics = activeHelpId ? getRelatedTopics(activeHelpId) : [];
 
   const renderItem = ({ item }: { item: WidgetListItem }) => {
     const alreadyAdded = localSelected.includes(item.key);
@@ -63,9 +83,17 @@ export const WidgetSelector: React.FC<{
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Add Instrument</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close-outline" size={28} color="#CBD5E1" />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <HelpButton 
+                helpId="widget-customization" 
+                onPress={() => showHelp('widget-customization')}
+                size={24}
+                style={styles.helpButton}
+              />
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <Ionicons name="close-outline" size={28} color="#CBD5E1" />
+              </TouchableOpacity>
+            </View>
           </View>
           <FlatList
             data={widgetList}
@@ -74,6 +102,21 @@ export const WidgetSelector: React.FC<{
             numColumns={2}
             contentContainerStyle={styles.grid}
           />
+          
+          {/* Help Tooltip */}
+          {helpContent && (
+            <Tooltip
+              visible={!!activeHelpId}
+              onDismiss={closeHelp}
+              title={helpContent.title}
+              content={helpContent.content}
+              tips={helpContent.tips}
+              relatedTopics={relatedTopics.map(t => ({
+                title: t.title,
+                onPress: () => navigateToRelatedTopic(t.id),
+              }))}
+            />
+          )}
         </View>
       </View>
     </Modal>
@@ -101,6 +144,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  helpButton: {
+    marginRight: 4,
   },
   title: {
     fontSize: 18,
