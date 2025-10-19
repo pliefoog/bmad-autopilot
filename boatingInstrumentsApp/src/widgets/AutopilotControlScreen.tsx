@@ -13,6 +13,9 @@ import Sound from 'react-native-sound';
 import { useNmeaStore } from '../core/nmeaStore';
 import { AutopilotCommandManager } from '../services/autopilotService';
 import Svg, { Circle, Line, Text as SvgText, Path } from 'react-native-svg';
+import { HelpButton } from '../components/atoms/HelpButton';
+import { Tooltip } from '../components/molecules/Tooltip';
+import { getHelpContent, getRelatedTopics } from '../content/help-content';
 
 interface AutopilotControlScreenProps {
   visible: boolean;
@@ -81,6 +84,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const [showEngageConfirmation, setShowEngageConfirmation] = useState(false);
   const [isCommandPending, setIsCommandPending] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
 
   // Autopilot data with defaults
   const {
@@ -213,6 +217,23 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
     return 'OFF';
   };
 
+  // Help system handlers
+  const showHelp = (helpId: string) => {
+    setActiveHelpId(helpId);
+  };
+
+  const closeHelp = () => {
+    setActiveHelpId(null);
+  };
+
+  const navigateToRelatedTopic = (helpId: string) => {
+    setActiveHelpId(helpId);
+  };
+
+  // Get current help content
+  const helpContent = activeHelpId ? getHelpContent(activeHelpId) : null;
+  const relatedTopics = activeHelpId ? getRelatedTopics(activeHelpId) : [];
+
   return (
     <Modal
       visible={visible}
@@ -224,9 +245,17 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>AUTOPILOT CONTROL</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <HelpButton 
+              helpId="autopilot-modes" 
+              onPress={() => showHelp('autopilot-modes')}
+              size={24}
+              style={styles.helpButton}
+            />
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -426,6 +455,21 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
             </View>
           </View>
         </Modal>
+
+        {/* Help Tooltip */}
+        {helpContent && (
+          <Tooltip
+            visible={!!activeHelpId}
+            onDismiss={closeHelp}
+            title={helpContent.title}
+            content={helpContent.content}
+            tips={helpContent.tips}
+            relatedTopics={relatedTopics.map(t => ({
+              title: t.title,
+              onPress: () => navigateToRelatedTopic(t.id),
+            }))}
+          />
+        )}
       </View>
     </Modal>
   );
@@ -443,6 +487,14 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  helpButton: {
+    marginRight: 4,
   },
   title: {
     fontSize: 20,
