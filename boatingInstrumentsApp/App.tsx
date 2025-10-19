@@ -29,6 +29,9 @@ import { globalConnectionService } from './src/services/globalConnectionService'
 import { NotificationIntegrationService } from './src/services/integration/NotificationIntegrationService';
 import { OnboardingScreen } from './src/components/onboarding/OnboardingScreen';
 import { useOnboarding } from './src/hooks/useOnboarding';
+import { UndoRedoControls } from './src/components/undo/UndoRedoControls';
+import { useUndoRedo } from './src/hooks/useUndoRedo';
+import { ThemeChangeCommand } from './src/services/undo/Commands';
 
 // Constants for layout calculations
 const { height: screenHeight } = Dimensions.get('window');
@@ -45,6 +48,9 @@ const App = () => {
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
   const { initializeWidgetStatesOnAppStart } = useWidgetStore();
   const theme = useTheme();
+  
+  // AC13: Undo/Redo integration
+  const { executeCommand } = useUndoRedo();
 
   // Onboarding state (Story 4.4 AC11)
   const { 
@@ -224,12 +230,14 @@ const App = () => {
     };
   }, [showSuccessToast, showErrorToast]);
 
-  // Theme cycling
+  // Theme cycling (AC13: Using Command pattern for undo/redo)
   const cycleTheme = useCallback(() => {
     const modes: ('day' | 'night' | 'red-night' | 'auto')[] = ['day', 'night', 'red-night', 'auto'];
     const currentIndex = modes.indexOf(themeMode);
     const nextMode = modes[(currentIndex + 1) % modes.length];
-    setThemeMode(nextMode);
+    
+    // Execute as command for undo/redo support
+    executeCommand(new ThemeChangeCommand(nextMode));
     
     // Persist theme preference
     AsyncStorage.setItem(THEME_PREFERENCE_KEY, nextMode);
@@ -239,7 +247,7 @@ const App = () => {
       type: 'success',
       duration: 2000,
     });
-  }, [themeMode, setThemeMode]);
+  }, [themeMode, executeCommand]);
 
   // Widget management
   const handleWidgetSelectionChange = useCallback((newSelection: string[]) => {

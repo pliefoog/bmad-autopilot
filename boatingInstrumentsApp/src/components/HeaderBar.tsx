@@ -10,6 +10,7 @@ import {
 import { useTheme } from '../core/themeStore';
 import { useNmeaStore, ConnectionStatus } from '../core/nmeaStore';
 import HamburgerMenu from './HamburgerMenu';
+import { UndoRedoControls } from './undo/UndoRedoControls';
 
 interface HeaderBarProps {
   onShowConnectionSettings?: () => void;
@@ -151,11 +152,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </TouchableOpacity>
         )}
 
-        {/* Right: Combined Status + Navigation Control */}
+        {/* Right: Combined Status + Navigation Control + Undo/Redo */}
         <View style={styles.rightContent}>
+          {/* AC13: Undo/Redo Controls */}
+          <UndoRedoControls compact showShortcutHints={false} />
+          
           {/* Combined Connection Status + Navigation Session Button */}
           <TouchableOpacity
-            style={styles.combinedStatusButton}
+            style={[styles.combinedStatusButton, { marginLeft: 12 }]}
             onPress={handleCombinedButtonPress}
             onLongPress={handleConnectionLEDPress}
             accessibilityRole="button"
