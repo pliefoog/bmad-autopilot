@@ -27,6 +27,8 @@ import { PlaybackFilePicker } from './src/widgets/PlaybackFilePicker';
 import { getConnectionDefaults } from './src/services/connectionDefaults';
 import { globalConnectionService } from './src/services/globalConnectionService';
 import { NotificationIntegrationService } from './src/services/integration/NotificationIntegrationService';
+import { OnboardingScreen } from './src/components/onboarding/OnboardingScreen';
+import { useOnboarding } from './src/hooks/useOnboarding';
 
 // Constants for layout calculations
 const { height: screenHeight } = Dimensions.get('window');
@@ -43,6 +45,14 @@ const App = () => {
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
   const { initializeWidgetStatesOnAppStart } = useWidgetStore();
   const theme = useTheme();
+
+  // Onboarding state (Story 4.4 AC11)
+  const { 
+    isOnboardingVisible, 
+    isLoading: isOnboardingLoading, 
+    completeOnboarding, 
+    skipOnboarding 
+  } = useOnboarding();
 
   // Connection settings
   const defaults = getConnectionDefaults();
@@ -505,6 +515,13 @@ const App = () => {
           onDismiss={() => setToastMessage(null)}
         />
         <LoadingOverlay />
+
+      {/* Onboarding Screen (Story 4.4 AC11) */}
+      <OnboardingScreen
+        visible={isOnboardingVisible}
+        onComplete={completeOnboarding}
+        onSkip={skipOnboarding}
+      />
       </View>
     </LoadingProvider>
   );
