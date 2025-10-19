@@ -3,8 +3,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '../src/theme';
 import { LoadingProvider } from '../src/services/loading/LoadingContext';
 import LoadingOverlay from '../src/components/molecules/LoadingOverlay';
+import { useEffect } from 'react';
+import { AccessibilityService } from '../src/services/accessibility/AccessibilityService';
 
 export default function RootLayout() {
+  // Initialize accessibility service on app mount
+  useEffect(() => {
+    AccessibilityService.initialize();
+    
+    return () => {
+      AccessibilityService.cleanup();
+    };
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>
