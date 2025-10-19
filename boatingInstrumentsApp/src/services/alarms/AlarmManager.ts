@@ -15,6 +15,8 @@ import { useAlarmStore } from '../../stores/alarmStore';
 import { CriticalAlarmType, AlarmEscalationLevel, CriticalAlarmEvent, CriticalAlarmConfig } from './types';
 import { MarineAudioAlertManager } from './MarineAudioAlertManager';
 import { AlarmHistoryLogger } from './AlarmHistoryLogger';
+import { AccessibilityService } from '../accessibility/AccessibilityService';
+import { vibratePattern } from '../haptics/Haptics';
 
 export interface AlarmManagerConfig {
   // Marine safety settings
@@ -227,6 +229,16 @@ export class AlarmManager extends EventEmitter {
       // Stop audio alerts
       await this.audioManager.stopAlarmSound(alarmEvent.type);
       
+      // Story 4.4 AC10: Announce alarm acknowledgment to screen readers
+      try {
+        await AccessibilityService.announce(
+          `${this.getAlarmTypeName(alarmEvent.type)} alarm acknowledged`,
+          'polite'
+        );
+      } catch (error) {
+        console.warn('AlarmManager: Failed to announce acknowledgment', error);
+      }
+      
       // Update alarm store
       this.alarmStore.acknowledgeAlarm(alarmId, acknowledgedBy);
       
@@ -419,6 +431,24 @@ export class AlarmManager extends EventEmitter {
         return `CRITICAL ALARM: ${type}`;
     }
   }
+
+  // Story 4.4 AC10: Convert alarm type to human-readable name for accessibility
+  private getAlarmTypeName(type: CriticalAlarmType): string {
+    switch (type) {
+      case CriticalAlarmType.SHALLOW_WATER:
+        return 'Shallow Water';
+      case CriticalAlarmType.ENGINE_OVERHEAT:
+        return 'Engine Overheat';
+      case CriticalAlarmType.LOW_BATTERY:
+        return 'Low Battery';
+      case CriticalAlarmType.AUTOPILOT_FAILURE:
+        return 'Autopilot Failure';
+      case CriticalAlarmType.GPS_LOSS:
+        return 'GPS Signal Loss';
+      default:
+        return 'Critical Alarm';
+    }
+  }
   
   private mapEscalationToAlarmLevel(escalation: AlarmEscalationLevel): 'info' | 'warning' | 'critical' {
     switch (escalation) {
@@ -438,6 +468,36 @@ export class AlarmManager extends EventEmitter {
   private async triggerImmediateAlerts(alarmEvent: CriticalAlarmEvent): Promise<void> {
     // Audio alert (marine requirement: >85dB)
     await this.audioManager.playAlarmSound(alarmEvent.type, alarmEvent.escalationLevel);
+    
+    // Story 4.4 AC10: Haptic feedback for critical alarms (accessibility feature)
+    try {
+      const hapticPattern = alarmEvent.escalationLevel === AlarmEscalationLevel.CRITICAL || 
+                          alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY
+        ? [300, 150, 300, 150, 300] // Strong triple pulse for critical
+        : [200, 100, 200]; // Double pulse for warning/caution
+      
+      vibratePattern(hapticPattern);
+    } catch (error) {
+      console.warn('AlarmManager: Failed to trigger haptic feedback', error);
+      // Don't fail alarm trigger if haptic feedback fails
+    }
+    
+    // Story 4.4 AC10: Screen reader accessibility announcement for critical alarms
+    try {
+      const severity = alarmEvent.escalationLevel === AlarmEscalationLevel.CRITICAL || 
+                      alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY
+        ? 'critical'
+        : 'warning';
+      
+      await AccessibilityService.announceAlarm(
+        this.getAlarmTypeName(alarmEvent.type),
+        severity,
+        alarmEvent.message
+      );
+    } catch (error) {
+      console.warn('AlarmManager: Failed to announce alarm via accessibility service', error);
+      // Don't fail alarm trigger if accessibility announcement fails
+    }
     
     // Visual alert handled by UI components listening to alarmTriggered event
     
