@@ -61,8 +61,8 @@
   - [x] Add accessibility props to marine widgets (WidgetCard, Depth, Speed, Wind, GPS, Compass)
 
 - [ ] **Accessibility for Alarms**
-  - [ ] Make alarm announcements screen reader compatible
-  - [ ] Add haptic feedback for accessibility
+  - [x] Make alarm announcements screen reader compatible
+  - [x] Add haptic feedback for accessibility
   - [ ] Create high contrast alarm indicators
   - [ ] Implement audio cues for visual-only elements
 
@@ -187,6 +187,10 @@
 25. **[Widget Accessibility]** Added WindWidget accessibility: wind speed/direction with cardinal names, Beaufort scale descriptions, 10-min averages, high wind warnings
 26. **[Widget Accessibility]** Added GPSWidget accessibility: lat/lon coordinates, fix status, satellite count, weak signal warnings
 27. **[Widget Accessibility]** Added CompassWidget accessibility: heading with cardinals (N/NE/E/SE/S/SW/W/NW), rate of turn (starboard/port), fast turn warnings
+28. **[AC10 - Alarm Accessibility]** Integrated AccessibilityService announcements into AlarmManager for screen reader compatible alarm triggers
+29. **[AC10 - Haptic Feedback]** Added haptic vibration patterns for critical alarms: triple pulse for CRITICAL/EMERGENCY, double pulse for WARNING/CAUTION
+30. **[AC10 - Alarm Acknowledgment]** Screen reader announcements when alarms are acknowledged, providing confirmation feedback to users
+31. **[AC10 - Alarm Type Names]** Human-readable alarm type mapping (Shallow Water, Engine Overheat, Low Battery, Autopilot Failure, GPS Signal Loss)
 
 ### Completion Notes List
 **Iteration 0 — Critical Architecture Consolidation:**
@@ -259,6 +263,23 @@ Iteration 4 — Widget Accessibility Integration:
 - **Marine-Specific Context:** All widgets provide marine navigation context appropriate for VoiceOver/TalkBack users, including safety-critical information prioritization
 - **Status:** 6 core marine widgets now fully accessible with comprehensive screen reader support meeting AC6-9 requirements
 
+Iteration 5 — Alarm Accessibility Integration:
+
+- **AC10 IMPLEMENTED:** Screen reader compatible alarm announcements
+- Integrated AccessibilityService into AlarmManager for real-time alarm announcements
+- Critical alarms use 'assertive' priority (interrupt screen reader immediately)
+- Warning alarms use 'polite' priority (queue after current announcement)
+- Human-readable alarm type names: Shallow Water, Engine Overheat, Low Battery, Autopilot Failure, GPS Signal Loss
+- Haptic feedback patterns for accessibility:
+  * Critical/Emergency: Triple pulse (300ms-150ms-300ms-150ms-300ms)
+  * Warning/Caution: Double pulse (200ms-100ms-200ms)
+- Haptic feedback respects user settings via settings store
+- Alarm acknowledgment announcements provide confirmation feedback
+- Graceful degradation: accessibility failures don't block alarm triggers
+- Preserves marine safety requirements (<500ms response time, >85dB audio)
+- **Test Integration:** All announcements integrate with existing alarm flow without breaking tests
+- **Status:** Critical alarm accessibility complete, screen reader users can now receive and acknowledge all marine safety alarms
+
 ### File List
 **Architecture Consolidation:**
 - **REMOVED (git rm):** `boatingInstrumentsApp/src/services/nmeaConnection.ts` (duplicate OLD location)
@@ -304,3 +325,7 @@ Iteration 4 — Widget Accessibility Integration:
   - Modified: `boatingInstrumentsApp/src/widgets/WindWidget.tsx` (wind accessibility with cardinal directions, Beaufort scale, averages, warnings)
   - Modified: `boatingInstrumentsApp/src/widgets/GPSWidget.tsx` (GPS position accessibility with fix status, satellite count, signal quality)
   - Modified: `boatingInstrumentsApp/src/widgets/CompassWidget.tsx` (compass accessibility with cardinals, rate of turn, turn warnings)
+  - Added: `boatingInstrumentsApp/__tests__/components/accessibility/WidgetAccessibility.test.tsx` (comprehensive test suite with 20+ test cases)
+
+**Alarm Accessibility Integration (Iteration 5):**
+  - Modified: `boatingInstrumentsApp/src/services/alarms/AlarmManager.ts` (integrated AccessibilityService announcements, haptic feedback, alarm type name mapping)
