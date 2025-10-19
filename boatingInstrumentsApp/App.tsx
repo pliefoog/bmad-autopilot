@@ -32,6 +32,7 @@ import { useOnboarding } from './src/hooks/useOnboarding';
 import { UndoRedoControls } from './src/components/undo/UndoRedoControls';
 import { useUndoRedo } from './src/hooks/useUndoRedo';
 import { ThemeChangeCommand } from './src/services/undo/Commands';
+import { useKeyboardNavigation, useKeyboardShortcut } from './src/hooks/useKeyboardNavigation';
 
 // Constants for layout calculations
 const { height: screenHeight } = Dimensions.get('window');
@@ -51,6 +52,9 @@ const App = () => {
   
   // AC13: Undo/Redo integration
   const { executeCommand } = useUndoRedo();
+  
+  // AC14: Keyboard navigation integration
+  useKeyboardNavigation();
 
   // Onboarding state (Story 4.4 AC11)
   const { 
@@ -263,6 +267,36 @@ const App = () => {
       duration: 3000,
     });
   }, []);
+
+  // AC14: Global keyboard shortcuts (after all callbacks are defined)
+  useKeyboardShortcut([
+    {
+      key: 't',
+      action: cycleTheme,
+      description: 'Cycle theme (Day → Night → Red Night → Auto)',
+    },
+    {
+      key: 's',
+      action: () => setShowConnectionDialog(true),
+      description: 'Open connection settings',
+    },
+    {
+      key: 'w',
+      action: () => setShowWidgetSelector(true),
+      description: 'Open widget selector',
+    },
+    {
+      key: 'Escape',
+      action: () => {
+        // Close any open modals
+        setShowConnectionDialog(false);
+        setShowWidgetSelector(false);
+        setShowPlaybackPicker(false);
+        setShowAutopilotControl(false);
+      },
+      description: 'Close modals',
+    },
+  ]);
 
   // Connection handling
   const handleConnectionConnect = useCallback(async (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
