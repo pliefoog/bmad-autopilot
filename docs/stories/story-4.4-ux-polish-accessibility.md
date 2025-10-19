@@ -58,6 +58,7 @@
   - [x] Add high contrast mode support
   - [x] Create large text scaling support
   - [x] Ensure adequate touch target sizes (44px minimum)
+  - [x] Add accessibility props to marine widgets (WidgetCard, Depth, Speed, Wind, GPS, Compass)
 
 - [ ] **Accessibility for Alarms**
   - [ ] Make alarm announcements screen reader compatible
@@ -180,6 +181,12 @@
 19. **[AC7 - High Contrast]** Auto-detection of iOS grayscale and invert colors modes, automatic high contrast mode activation
 20. **[AC8 - Large Text]** Font scale multiplier combining system accessibility settings with user preferences (+20% scaling)
 21. Added marine-specific accessibility announcements: alarms, connection status, data updates with priority levels (polite/assertive)
+22. **[Widget Accessibility Integration]** Enhanced WidgetCard base component with comprehensive accessibility props (accessibilityLabel, accessibilityHint, accessibilityRole, accessibilityValue)
+23. **[Widget Accessibility]** Added context-aware accessibility to DepthWidget: depth trend (deepening/shoaling), critical alarms, shallow warnings, unit cycling hints
+24. **[Widget Accessibility]** Added SpeedWidget accessibility: SOG with trend, COG with cardinal directions, comprehensive navigation context
+25. **[Widget Accessibility]** Added WindWidget accessibility: wind speed/direction with cardinal names, Beaufort scale descriptions, 10-min averages, high wind warnings
+26. **[Widget Accessibility]** Added GPSWidget accessibility: lat/lon coordinates, fix status, satellite count, weak signal warnings
+27. **[Widget Accessibility]** Added CompassWidget accessibility: heading with cardinals (N/NE/E/SE/S/SW/W/NW), rate of turn (starboard/port), fast turn warnings
 
 ### Completion Notes List
 **Iteration 0 — Critical Architecture Consolidation:**
@@ -234,6 +241,24 @@ Iteration 3 — Accessibility Implementation (Screen Reader & System Integration
 - Test coverage: 22 comprehensive tests for all accessibility features (tests require mock infrastructure fixes)
 - **Status:** Core accessibility detection and announcement system complete, ready for component integration
 
+Iteration 4 — Widget Accessibility Integration:
+
+- **AC9 ENHANCED:** Widget accessibility labels, hints, and roles for screen reader support
+- Enhanced WidgetCard base component with comprehensive accessibility API:
+  * AccessibilityRole prop for semantic element types
+  * AccessibilityLabel with auto-generation from widget state
+  * AccessibilityHint for contextual usage information
+  * AccessibilityValue with min/max/now ranges for numeric data
+  * AccessibilityState tracking (disabled for no-data, selected for expanded)
+  * Live region support: 'assertive' for alarms, 'polite' for warnings, 'none' for normal
+- **DepthWidget Accessibility:** Depth value with trend (deepening/shoaling/steady), critical depth alarms, shallow water warnings, unit cycling hints with current unit announcement
+- **SpeedWidget Accessibility:** Speed over ground with trend (increasing/decreasing/steady), course over ground with comprehensive navigation context, waiting state hints
+- **WindWidget Accessibility:** Wind speed/direction with cardinal names (ahead/starboard bow/beam/quarter/astern/port), Beaufort scale strength descriptions, 10-minute average reporting, high wind warnings and cautions
+- **GPSWidget Accessibility:** Latitude/longitude coordinates with degrees, fix status announcements, satellite count reporting, weak signal warnings for <4 satellites, positioning accuracy context
+- **CompassWidget Accessibility:** Heading with 8-point cardinal directions (N/NE/E/SE/S/SW/W/NW), rate of turn with starboard/port turn descriptions, fast turn warnings (>10°/min), steady course indicators
+- **Marine-Specific Context:** All widgets provide marine navigation context appropriate for VoiceOver/TalkBack users, including safety-critical information prioritization
+- **Status:** 6 core marine widgets now fully accessible with comprehensive screen reader support meeting AC6-9 requirements
+
 ### File List
 **Architecture Consolidation:**
 - **REMOVED (git rm):** `boatingInstrumentsApp/src/services/nmeaConnection.ts` (duplicate OLD location)
@@ -271,3 +296,11 @@ Iteration 3 — Accessibility Implementation (Screen Reader & System Integration
   - Added: `boatingInstrumentsApp/src/services/accessibility/AccessibilityService.ts` (comprehensive React Native AccessibilityInfo integration)
   - Modified: `boatingInstrumentsApp/app/_layout.tsx` (initialize AccessibilityService on app mount)
   - Added: `boatingInstrumentsApp/__tests__/services/accessibility/AccessibilityService.test.ts` (22 tests for screen reader, announcements, system integration - requires mock fixes)
+
+**Widget Accessibility Integration (Iteration 4):**
+  - Modified: `boatingInstrumentsApp/src/widgets/WidgetCard.tsx` (comprehensive accessibility props API, auto-generated labels, live regions)
+  - Modified: `boatingInstrumentsApp/src/widgets/DepthWidget.tsx` (depth accessibility with trend context, critical alarms, unit cycling)
+  - Modified: `boatingInstrumentsApp/src/widgets/SpeedWidget.tsx` (speed/COG accessibility with navigation context, trend information)
+  - Modified: `boatingInstrumentsApp/src/widgets/WindWidget.tsx` (wind accessibility with cardinal directions, Beaufort scale, averages, warnings)
+  - Modified: `boatingInstrumentsApp/src/widgets/GPSWidget.tsx` (GPS position accessibility with fix status, satellite count, signal quality)
+  - Modified: `boatingInstrumentsApp/src/widgets/CompassWidget.tsx` (compass accessibility with cardinals, rate of turn, turn warnings)
