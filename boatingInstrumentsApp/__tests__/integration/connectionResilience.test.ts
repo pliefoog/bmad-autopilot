@@ -1,5 +1,5 @@
 import MockServer from '@/services/mockServer';
-import { NmeaConnectionManager } from '@/services/nmeaConnection';
+import { NmeaConnectionManager } from '@/services/nmea/nmeaConnection';
 import { useNmeaStore } from '@/core/nmeaStore';
 
 // The project mocks 'react-native-tcp-socket' in jest.setup. For this integration test

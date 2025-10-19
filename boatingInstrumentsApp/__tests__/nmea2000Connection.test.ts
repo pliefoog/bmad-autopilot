@@ -1,4 +1,4 @@
-import { NmeaConnectionManager } from '../src/services/nmeaConnection';
+import { NmeaConnectionManager } from '../src/services/nmea/nmeaConnection';
 import UdpSocket from 'react-native-udp';
 
 // Mock UDP socket

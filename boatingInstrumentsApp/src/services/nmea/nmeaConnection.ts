@@ -2,6 +2,7 @@ import TcpSocket from 'react-native-tcp-socket';
 import UdpSocket from 'react-native-udp';
 import { parseNmeaSentence } from 'nmea-simple';
 import { useNmeaStore } from '../../core/nmeaStore';
+import { FromPgn } from '@canboat/canboatjs';
 import { useConnectionStore } from '../../stores/connectionStore';
 
 export interface NmeaConnectionOptions {
@@ -10,24 +11,103 @@ export interface NmeaConnectionOptions {
   protocol: 'tcp' | 'udp' | 'websocket';
 }
 
+export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'receiving_data';
+
+export interface ConnectionStatus {
+  state: ConnectionState;
+  hasDataFlow: boolean;
+  lastDataReceived?: Date;
+  currentConfig: NmeaConnectionOptions | null;
+}
+
 export class NmeaConnectionManager {
+  // Unified connection handling - only one active at a time
+  private activeConnection: any = null;
+  private connectionType: 'tcp' | 'udp' | 'websocket' | null = null;
   private tcpSocket: any = undefined;
   private udpSocket: any = undefined;
   private webSocket: WebSocket | undefined = undefined;
   private timeoutHandle: any = null;
   private reconnectHandle: any = null;
-  private options: NmeaConnectionOptions;
-  private setConnectionStatus = useConnectionStore.getState().setStatus;
+  private options!: NmeaConnectionOptions;
+  private reconnectAttempts: number = 0;
+  private hasEverConnected: boolean = false;
+  private maxReconnectAttempts: number = 10;
+  private maxReconnectAttemptsAfterSuccess: number = 3;
+  
+  // Timers and state
+  private connectionTimeout: any = null;
+  private dataFlowTimeout: any = null;
+  private lastDataTime: Date | null = null;
+  
+  // Current configuration and status
+  private currentConfig: NmeaConnectionOptions | null = null;
+  private connectionStatus: ConnectionStatus = {
+    state: 'disconnected',
+    hasDataFlow: false,
+    currentConfig: null
+  };
+  
+  // Store bindings - Use ConnectionStore for connection status, but also update NmeaStore for backward compatibility
+  private setConnectionStatusStore = useConnectionStore.getState().setStatus;
+  private setConnectionStatusLegacy = useNmeaStore.getState().setConnectionStatus;
   private setNmeaData = useNmeaStore.getState().setNmeaData;
   private setLastError = useConnectionStore.getState().setLastError;
+  private setLastErrorLegacy = useNmeaStore.getState().setLastError;
   private addRawSentence = useNmeaStore.getState().addRawSentence;
   
-  // Throttling: Track last update time per data field
+  // Data processing
   private lastUpdateTimes: Map<string, number> = new Map();
   private throttleInterval = 1000; // 1 second throttle per field
 
-  constructor(options: NmeaConnectionOptions) {
-    this.options = options;
+  constructor(options?: NmeaConnectionOptions) {
+    // Allow passing configuration at construction time for convenience (tests, DI)
+    if (options) {
+      this.options = options;
+      this.currentConfig = options;
+      this.connectionStatus.currentConfig = options;
+    }
+  }
+
+  /**
+   * Get current connection status
+   */
+  getStatus(): ConnectionStatus {
+    return { ...this.connectionStatus };
+  }
+
+  /**
+   * Check if connection parameters have changed
+   */
+  private hasConfigChanged(newConfig: NmeaConnectionOptions): boolean {
+    if (!this.currentConfig) return true;
+    return (
+      this.currentConfig.ip !== newConfig.ip ||
+      this.currentConfig.port !== newConfig.port ||
+      this.currentConfig.protocol !== newConfig.protocol
+    );
+  }
+
+  /**
+   * Update connection status and notify store
+   */
+  private updateConnectionStatus(state: ConnectionState, error?: string) {
+    this.connectionStatus.state = state;
+    
+    // Map to store connection status
+    const storeStatus = state === 'disconnected' ? 'disconnected' :
+                        state === 'connecting' ? 'connecting' : 'connected';
+    
+    // Update both stores using helper
+    this.setConnectionStatus(storeStatus as any);
+    
+    if (error) {
+      this.setLastError(error);
+      this.setLastErrorLegacy(error); // Backward compatibility
+    } else if (state === 'connected' || state === 'receiving_data') {
+      this.setLastError(undefined); // Clear errors on successful connection
+      this.setLastErrorLegacy(undefined);
+    }
   }
 
   /**
@@ -41,6 +121,14 @@ export class NmeaConnectionManager {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Helper to set connection status in both stores for backward compatibility
+   */
+  private setConnectionStatus(status: any): void {
+    this.setConnectionStatusStore(status);
+    this.setConnectionStatusLegacy(status);
   }
 
   connect() {
@@ -61,13 +149,23 @@ export class NmeaConnectionManager {
         this.tcpSocket.on('data', this.handleData);
         this.tcpSocket.on('error', this.handleError);
         this.tcpSocket.on('close', () => {
-          if (this.timeoutHandle) { clearTimeout(this.timeoutHandle); this.timeoutHandle = null; }
           this.setConnectionStatus('disconnected');
+        });
+        this.tcpSocket.on('connect', () => {
+          if (this.timeoutHandle) { clearTimeout(this.timeoutHandle); this.timeoutHandle = null; }
+          this.setConnectionStatus('connected');
+          this.hasEverConnected = true;
+          this.reconnectAttempts = 0; // Reset retry counter on successful connection
+          this.setLastError(undefined); // Clear any existing errors
+          this.setLastErrorLegacy(undefined); // Backward compatibility
         });
         // Timeout after 10 seconds if not connected
         this.timeoutHandle = setTimeout(() => {
-          this.setLastError('Connection timed out after 10 seconds');
+          const errorMsg = 'Connection timed out after 10 seconds';
           this.disconnect();
+          // Set error AFTER disconnect so it's not cleared
+          this.setLastError(errorMsg);
+          this.setLastErrorLegacy(errorMsg);
           this.timeoutHandle = null;
         }, 10000);
         try {
@@ -86,15 +184,19 @@ export class NmeaConnectionManager {
           console.log('[NMEA Connection] WebSocket connected');
           if (this.timeoutHandle) { clearTimeout(this.timeoutHandle); this.timeoutHandle = null; }
           this.setConnectionStatus('connected');
+          this.hasEverConnected = true;
+          this.reconnectAttempts = 0; // Reset retry counter on successful connection
+          this.setLastError(undefined); // Clear any existing errors
+          this.setLastErrorLegacy(undefined); // Backward compatibility
         };
         
-        this.webSocket.onmessage = (event) => {
+        this.webSocket.onmessage = (event: MessageEvent) => {
           // Physical WiFi bridges send raw NMEA strings, not JSON
           // Pass the data directly as a string to maintain consistency across transports
           this.handleData(event.data);
         };
         
-        this.webSocket.onerror = (error) => {
+        this.webSocket.onerror = (error: Event) => {
           console.error('[NMEA Connection] WebSocket error:', error);
           this.handleError(error);
         };
@@ -107,8 +209,11 @@ export class NmeaConnectionManager {
         
         // Timeout after 10 seconds if not connected
         this.timeoutHandle = setTimeout(() => {
-          this.setLastError('WebSocket connection timed out after 10 seconds');
+          const errorMsg = 'WebSocket connection timed out after 10 seconds';
           this.disconnect();
+          // Set error AFTER disconnect so it's not cleared
+          this.setLastError(errorMsg);
+          this.setLastErrorLegacy(errorMsg);
           this.timeoutHandle = null;
         }, 10000);
       } else {
@@ -139,7 +244,12 @@ export class NmeaConnectionManager {
     }
     if (this.timeoutHandle) { clearTimeout(this.timeoutHandle); this.timeoutHandle = null; }
     if (this.reconnectHandle) { clearTimeout(this.reconnectHandle); this.reconnectHandle = null; }
+    
+    // Reset retry attempts on manual disconnect
+    this.reconnectAttempts = 0;
     this.setConnectionStatus('disconnected');
+    this.setLastError(undefined); // Clear errors on manual disconnect
+    this.setLastErrorLegacy(undefined); // Backward compatibility
   }
 
   private handleData = (data: any) => {
@@ -158,7 +268,7 @@ export class NmeaConnectionManager {
       }
       
       // Capture raw data for debugging (AC3)
-      const debugMode = useConnectionStore.getState().debugMode;
+      const debugMode = useNmeaStore.getState().debugMode;
       if (debugMode) {
         this.addRawSentence(rawData.trim());
       }
@@ -194,7 +304,7 @@ export class NmeaConnectionManager {
           }
           
           // Unknown format - log but don't try to parse
-          console.warn('Unknown NMEA format:', rawData.substring(0, 20));
+          console.warn('NMEA parse error:', 'Unknown format', 'Sentence:', rawData);
           return;
         }
         this.setConnectionStatus('connected');
@@ -206,8 +316,9 @@ export class NmeaConnectionManager {
         } else {
           const errorMsg = e && e.message ? e.message : String(e);
           this.setLastError(`Parse error: ${errorMsg}`);
+          this.setLastErrorLegacy(`Parse error: ${errorMsg}`); // Backward compatibility
           this.setConnectionStatus('no-data');
-          console.warn('NMEA parse error:', errorMsg, 'Data:', rawData.substring(0, 50));
+          console.warn('NMEA parse error:', errorMsg, 'Sentence:', rawData);
         }
       }
   };
@@ -440,7 +551,6 @@ export class NmeaConnectionManager {
     };
 
     private handleCanboatPgn = (pgn: any) => {
-      // Deprecated - canboat parsing not currently used
       // Handle PGN using canboatjs parsed data
       switch (pgn.pgn) {
         case 127245: // Rudder
@@ -562,14 +672,74 @@ export class NmeaConnectionManager {
 
   private handleError = (err: any) => {
     console.error('NMEA Connection Error:', err);
-    this.setLastError(err?.message || String(err));
+    
+    // Extract meaningful error message
+    let errorMessage = 'Connection failed';
+    if (err?.message) {
+      errorMessage = err.message;
+    } else if (err?.code) {
+      // Network error codes
+      switch (err.code) {
+        case 'ECONNREFUSED':
+          errorMessage = `No NMEA bridge found at ${this.options.ip}:${this.options.port}`;
+          break;
+        case 'ENOTFOUND':
+          errorMessage = `Host ${this.options.ip} not found`;
+          break;
+        case 'ETIMEDOUT':
+          errorMessage = `Connection timeout to ${this.options.ip}:${this.options.port}`;
+          break;
+        case 'ENETUNREACH':
+          errorMessage = `Network unreachable: ${this.options.ip}`;
+          break;
+        default:
+          errorMessage = `Network error: ${err.code}`;
+      }
+    } else if (err instanceof Event) {
+      // WebSocket error events don't have useful error info
+      errorMessage = `WebSocket connection failed to ${this.options.ip}:${this.options.port}`;
+    } else if (typeof err === 'string') {
+      errorMessage = err;
+    }
+
     this.setConnectionStatus('disconnected');
-    // Auto-reconnect logic (simple): try to reconnect after delay
-    if (this.reconnectHandle) { clearTimeout(this.reconnectHandle); this.reconnectHandle = null; }
+    this.reconnectAttempts++;
+
+    // Determine max attempts based on whether we've ever connected
+    const maxAttempts = this.hasEverConnected ? this.maxReconnectAttemptsAfterSuccess : this.maxReconnectAttempts;
+    
+    if (this.reconnectAttempts >= maxAttempts) {
+      // Give up retrying
+      const finalMessage = this.hasEverConnected 
+        ? `Connection lost to NMEA bridge. Please check your WiFi bridge or network connection.`
+        : `Unable to connect to NMEA bridge at ${this.options.ip}:${this.options.port}. Please check the IP address and ensure the bridge is running.`;
+      
+      this.setLastError(finalMessage);
+      this.setLastErrorLegacy(finalMessage); // Backward compatibility
+      console.warn(`[NMEA Connection] Giving up after ${this.reconnectAttempts} attempts: ${finalMessage}`);
+      return;
+    }
+
+    // Set error message with retry info
+    const retryMessage = `${errorMessage} (attempt ${this.reconnectAttempts}/${maxAttempts})`;
+    this.setLastError(retryMessage);
+    this.setLastErrorLegacy(retryMessage); // Backward compatibility
+
+    // Schedule reconnection with exponential backoff
+    const baseDelay = this.hasEverConnected ? 2000 : 5000; // Faster retry if we had connection before
+    const delay = Math.min(baseDelay * Math.pow(1.5, this.reconnectAttempts - 1), 30000); // Cap at 30 seconds
+
+    if (this.reconnectHandle) { 
+      clearTimeout(this.reconnectHandle); 
+      this.reconnectHandle = null; 
+    }
+    
+    console.log(`[NMEA Connection] Retrying in ${delay}ms (attempt ${this.reconnectAttempts}/${maxAttempts})`);
     this.reconnectHandle = setTimeout(() => {
       this.reconnectHandle = null;
       this.connect();
-    }, 3000);
+    }, delay);
+
     try {
       if (typeof (this.reconnectHandle as any).unref === 'function') {
         (this.reconnectHandle as any).unref();

@@ -43,6 +43,12 @@ export interface ThemeSettings {
   autoTheme: boolean;
   autoThemeLatitude?: number;
   autoThemeLongitude?: number;
+  // Enhanced accessibility options
+  reducedMotion: boolean; // Respect reduced motion accessibility preference
+  largeText: boolean; // Enable larger text sizes across the app
+  marineMode: boolean; // Toggle marine-optimized contrast & touch targets
+  voiceOverAnnouncements: boolean; // Enable in-app announcement helpers for screen readers
+  hapticFeedback: boolean; // Device vibration/haptic feedback for important actions
 }
 
 interface SettingsState {
@@ -117,6 +123,12 @@ const defaultSettings: SettingsState = {
     highContrast: false,
     colorBlindFriendly: false,
     autoTheme: true,
+    // Accessibility defaults
+    reducedMotion: false,
+    largeText: false,
+    marineMode: false,
+    voiceOverAnnouncements: false,
+    hapticFeedback: true,
   },
   units: {
     depth: 'meters',
@@ -322,6 +334,29 @@ export const useSettingsStore = create<SettingsStore>()(
             ...baseTheme,
             text: state.themeMode === 'day' ? '#000000' : '#FFFFFF',
             background: state.themeMode === 'day' ? '#FFFFFF' : '#000000',
+          };
+        }
+
+        // Color-blind friendly adjustments (opt-in)
+        if (state.themeSettings.colorBlindFriendly) {
+          baseTheme = {
+            ...baseTheme,
+            // Use high-contrast, color-blind friendly variants for critical markers
+            warning: '#FFD166', // warm yellow for warnings
+            error: '#D00000', // strong red for errors
+            success: '#007A33', // green for success where applicable
+            accent: '#FFD166',
+          };
+        }
+
+        // Marine mode: optimize contrast and critical UI colors for marine environments
+        if (state.themeSettings.marineMode) {
+          baseTheme = {
+            ...baseTheme,
+            // Slightly amplify primary/button colors for better visibility in sun/glare
+            buttonPrimary: '#FF2D2D',
+            // Ensure text/backdrop maintain contrast
+            text: state.themeMode === 'day' ? '#000000' : '#FFFFFF',
           };
         }
 

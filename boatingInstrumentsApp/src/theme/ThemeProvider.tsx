@@ -20,6 +20,12 @@ interface ThemeContextValue {
   };
   shadows: boolean;
   animations: boolean;
+  // Accessibility flags
+  reducedMotion: boolean;
+  largeText: boolean;
+  marineMode: boolean;
+  voiceOverAnnouncements: boolean;
+  hapticFeedback: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -62,13 +68,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   ]);
 
   const fontSize = useMemo(() => {
+    let baseSize;
     switch (themeSettings.fontSize) {
-      case 'small': return 12;
-      case 'medium': return 14;
-      case 'large': return 16;
-      case 'extra-large': return 18;
-      default: return 14;
+      case 'small': baseSize = 12; break;
+      case 'medium': baseSize = 14; break;
+      case 'large': baseSize = 16; break;
+      case 'extra-large': baseSize = 18; break;
+      default: baseSize = 14;
     }
+
+    // Respect user preference for large text when enabled
+    if (themeSettings.largeText) {
+      return baseSize + 2; // small bump for readability
+    }
+
+    return baseSize;
   }, [themeSettings.fontSize]);
 
   const fontWeight = useMemo(() => {
@@ -120,7 +134,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     borderRadius,
     spacing,
     shadows: themeSettings.shadows,
-    animations: themeSettings.animations,
+    // Animations should be disabled when reduced motion is requested
+    animations: themeSettings.animations && !themeSettings.reducedMotion,
+    reducedMotion: themeSettings.reducedMotion,
+    largeText: themeSettings.largeText,
+    marineMode: themeSettings.marineMode,
+    voiceOverAnnouncements: themeSettings.voiceOverAnnouncements,
+    hapticFeedback: themeSettings.hapticFeedback,
   }), [
     colors,
     effectiveMode,
@@ -133,6 +153,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     spacing,
     themeSettings.shadows,
     themeSettings.animations,
+    themeSettings.reducedMotion,
+    themeSettings.largeText,
+    themeSettings.marineMode,
+    themeSettings.voiceOverAnnouncements,
+    themeSettings.hapticFeedback,
   ]);
 
   return (

@@ -3,7 +3,7 @@
  * Provides unified connection management across web and mobile platforms
  */
 
-import { NmeaConnectionManager, NmeaConnectionOptions } from './nmeaConnection';
+import { NmeaConnectionManager, NmeaConnectionOptions } from '../nmea/nmeaConnection';
 import { getConnectionDefaults } from './connectionDefaults';
 
 export class GlobalConnectionService {

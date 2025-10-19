@@ -3,7 +3,7 @@
  * Auto-connects to local NMEA Bridge Simulator for web testing
  */
 
-import { NmeaConnectionManager, NmeaConnectionOptions } from './nmeaConnection';
+import { NmeaConnectionManager, NmeaConnectionOptions } from './nmea/nmeaConnection';
 import { getConnectionDefaults } from './connectionDefaults';
 
 export class WebNmeaInit {

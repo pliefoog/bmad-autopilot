@@ -1,12 +1,15 @@
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '@/theme';
+import { ThemeProvider } from '../src/theme';
+import { LoadingProvider } from '../src/services/loading/LoadingContext';
+import LoadingOverlay from '../src/components/molecules/LoadingOverlay';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <Stack screenOptions={{ 
+        <LoadingProvider>
+          <Stack screenOptions={{ 
           headerShown: false, // Custom header in each screen
           animation: 'slide_from_right',
         }}>
@@ -34,7 +37,9 @@ export default function RootLayout() {
             title: 'Page Not Found',
           }}
         />
-      </Stack>
+    </Stack>
+          <LoadingOverlay />
+        </LoadingProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

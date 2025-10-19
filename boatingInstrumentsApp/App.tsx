@@ -19,11 +19,14 @@ import { WidgetSelector } from './src/widgets/WidgetSelector';
 import { AutopilotControlScreen } from './src/widgets/AutopilotControlScreen';
 import { AlarmBanner } from './src/widgets/AlarmBanner';
 import HeaderBar from './src/components/HeaderBar';
+import { LoadingProvider } from './src/services/loading/LoadingContext';
+import LoadingOverlay from './src/components/molecules/LoadingOverlay';
 import ToastMessage, { ToastMessageData } from './src/components/ToastMessage';
 import { ConnectionConfigDialog } from './src/widgets/ConnectionConfigDialog';
 import { PlaybackFilePicker } from './src/widgets/PlaybackFilePicker';
 import { getConnectionDefaults } from './src/services/connectionDefaults';
 import { globalConnectionService } from './src/services/globalConnectionService';
+import { NotificationIntegrationService } from './src/services/integration/NotificationIntegrationService';
 
 // Constants for layout calculations
 const { height: screenHeight } = Dimensions.get('window');
@@ -67,7 +70,7 @@ const App = () => {
     isRecording: false
   });
 
-  // Load persisted data
+  // Load persisted data and initialize notification system
   useEffect(() => {
     const loadPersistedData = async () => {
       try {
@@ -85,6 +88,15 @@ const App = () => {
 
         // Story 2.15: Initialize widget states on app start
         initializeWidgetStatesOnAppStart();
+
+        // Story 4.3: Initialize notification system
+        try {
+          const notificationIntegration = NotificationIntegrationService.getInstance();
+          await notificationIntegration.initialize();
+          console.log('[App] Notification system initialized successfully');
+        } catch (error) {
+          console.error('[App] Failed to initialize notification system:', error);
+        }
       } catch (error) {
         console.error('Failed to load persisted data:', error);
       }
@@ -338,7 +350,8 @@ const App = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <LoadingProvider>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={{ backgroundColor: theme.surface }}>
         <StatusBar 
           backgroundColor={theme.surface} 
@@ -487,11 +500,13 @@ const App = () => {
       )}
 
       {/* Toast Messages */}
-      <ToastMessage
-        toast={toastMessage}
-        onDismiss={() => setToastMessage(null)}
-      />
-    </View>
+        <ToastMessage
+          toast={toastMessage}
+          onDismiss={() => setToastMessage(null)}
+        />
+        <LoadingOverlay />
+      </View>
+    </LoadingProvider>
   );
 };
 

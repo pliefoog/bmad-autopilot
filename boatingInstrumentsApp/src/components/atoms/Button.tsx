@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Pressable, Text, StyleSheet, ViewStyle, TextStyle, Animated } from 'react-native';
+import { useTheme } from '../../theme/ThemeProvider';
+import { useHaptics } from '../../services/haptics/Haptics';
 
 interface ButtonProps {
   title: string;
@@ -10,6 +12,8 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   testID?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -21,6 +25,8 @@ const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   testID,
+  accessibilityLabel,
+  accessibilityHint,
 }) => {
   const buttonStyle = [
     styles.button,
@@ -38,17 +44,48 @@ const Button: React.FC<ButtonProps> = ({
     textStyle,
   ];
 
+  const theme = useTheme();
+
+  // Micro-interaction: press scale
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const animateTo = (toValue: number) => {
+    if (!theme.animations || theme.reducedMotion) return;
+    Animated.spring(scaleAnim, {
+      toValue,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handlePressIn = () => animateTo(0.97);
+  const handlePressOut = () => animateTo(1);
+
+  const { vibrate } = useHaptics();
+
+  const handlePress = () => {
+    vibrate('light');
+    onPress && onPress();
+  };
+
   return (
     <Pressable
-      style={({ pressed }) => [
-        buttonStyle,
-        pressed && !disabled && styles.button_pressed,
-      ]}
-      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
       disabled={disabled}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       testID={testID}
     >
-      <Text style={buttonTextStyle}>{title}</Text>
+      <Animated.View style={[buttonStyle, { transform: [{ scale: scaleAnim }] }]}> 
+        <Text style={buttonTextStyle}>{title}</Text>
+      </Animated.View>
     </Pressable>
   );
 };
@@ -78,18 +115,18 @@ const styles = StyleSheet.create({
   },
   button_small: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    minHeight: 32,
+    paddingVertical: 8,
+    minHeight: 44, // Ensure minimum 44pt touch target for marine use
   },
   button_medium: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    minHeight: 40,
+    paddingVertical: 12,
+    minHeight: 44, // Ensure minimum 44pt touch target for marine use
   },
   button_large: {
     paddingHorizontal: 20,
     paddingVertical: 14,
-    minHeight: 48,
+    minHeight: 56,
   },
   button_disabled: {
     opacity: 0.5,

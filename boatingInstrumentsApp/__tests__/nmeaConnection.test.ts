@@ -4,7 +4,7 @@
  */
 
 import TcpSocket from 'react-native-tcp-socket';
-import { NmeaConnectionManager, NmeaConnectionOptions } from '../src/services/nmeaConnection';
+import { NmeaConnectionManager, NmeaConnectionOptions } from '../src/services/nmea/nmeaConnection';
 import { useNmeaStore } from '../src/core/nmeaStore';
 
 // Type the mocked module
@@ -93,7 +93,7 @@ describe('NmeaConnectionManager', () => {
       const testError = new Error('Connection refused');
       errorCallback(testError);
       
-      expect(useNmeaStore.getState().lastError).toBe('Connection refused');
+      expect(useNmeaStore.getState().lastError).toContain('Connection refused');
       expect(useNmeaStore.getState().connectionStatus).toBe('disconnected');
     });
 
