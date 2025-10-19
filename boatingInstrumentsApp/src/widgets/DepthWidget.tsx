@@ -172,6 +172,43 @@ export const DepthWidget: React.FC<DepthWidgetProps> = memo(({
     setUnit(units[(currentIndex + 1) % units.length]);
   };
 
+  // Story 4.4 AC6-10: Build comprehensive accessibility label for depth data
+  const depthAccessibilityLabel = useMemo(() => {
+    if (depth === undefined || depth === null) {
+      return 'Depth: No data available';
+    }
+    
+    const parts: string[] = ['Depth'];
+    parts.push(`${value} ${unitStr}`);
+    
+    // Add trend information for screen readers
+    if (trend === 'up') {
+      parts.push('depth increasing');
+    } else if (trend === 'down') {
+      parts.push('depth decreasing, shoaling');
+    } else if (trend === 'stable') {
+      parts.push('depth steady');
+    }
+    
+    // Add critical state information
+    if (widgetState === 'alarm') {
+      parts.push('CRITICAL DEPTH ALARM');
+    } else if (widgetState === 'highlighted') {
+      parts.push('Shallow water warning');
+    }
+    
+    return parts.join(', ');
+  }, [depth, value, unitStr, trend, widgetState]);
+
+  const depthAccessibilityHint = useMemo(() => {
+    if (widgetState === 'alarm') {
+      return 'Critical depth - immediate action required';
+    } else if (widgetState === 'highlighted') {
+      return 'Approaching shallow water - monitor carefully';
+    }
+    return 'Tap to expand for depth trend graph';
+  }, [widgetState]);
+
   // AC 2: Handle tap to toggle expanded state
   const handleToggleExpanded = () => {
     toggleExpanded();
@@ -195,6 +232,15 @@ export const DepthWidget: React.FC<DepthWidgetProps> = memo(({
         secondary={trendDescription}
         expanded={expanded}
         testID={widgetId}
+        accessibilityLabel={depthAccessibilityLabel}
+        accessibilityHint={depthAccessibilityHint}
+        accessibilityRole="text"
+        accessibilityValue={depth !== undefined && depth !== null ? {
+          text: `${value} ${unitStr}`,
+          now: depth,
+          min: 0,
+          max: 100,
+        } : undefined}
       >
         {/* AC 8: DepthWidget collapsed shows depth value only */}
         <PrimaryMetricCell
@@ -213,6 +259,10 @@ export const DepthWidget: React.FC<DepthWidgetProps> = memo(({
             style={createDepthStyles(theme).unitButton}
             onPress={handleUnitCycle}
             testID={`${widgetId}-unit-cycle`}
+            accessible={true}
+            accessibilityLabel={`Change depth unit, currently ${unitStr}`}
+            accessibilityHint="Tap to cycle between meters, feet, and fathoms"
+            accessibilityRole="button"
           >
             <Text style={[createDepthStyles(theme).unitButtonText, { color: theme.textSecondary }]}>
               Tap to change units

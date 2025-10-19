@@ -49,11 +49,69 @@ export const CompassWidget: React.FC = memo(() => {
     shouldRender: heading !== undefined && heading !== null,
   }), [heading]);
 
+  // Story 4.4 AC6-10: Build comprehensive accessibility label for compass data
+  const compassAccessibilityLabel = useMemo(() => {
+    if (heading === undefined || heading === null) {
+      return 'Compass: No heading data available';
+    }
+    
+    const parts: string[] = ['Compass'];
+    
+    // Add heading with cardinal direction
+    const getCardinalDirection = (hdg: number): string => {
+      if (hdg < 22.5 || hdg >= 337.5) return 'North';
+      if (hdg < 67.5) return 'North East';
+      if (hdg < 112.5) return 'East';
+      if (hdg < 157.5) return 'South East';
+      if (hdg < 202.5) return 'South';
+      if (hdg < 247.5) return 'South West';
+      if (hdg < 292.5) return 'West';
+      return 'North West';
+    };
+    
+    parts.push(`Heading ${Math.round(heading)} degrees, ${getCardinalDirection(heading)}`);
+    
+    // Add rate of turn information
+    if (rateOfTurn !== undefined && rateOfTurn !== null) {
+      const absROT = Math.abs(rateOfTurn);
+      if (absROT < 0.5) {
+        parts.push('steady course');
+      } else if (rateOfTurn > 0) {
+        parts.push(`turning starboard, ${absROT.toFixed(1)} degrees per minute`);
+        if (absROT > 10) parts.push('fast turn');
+      } else {
+        parts.push(`turning port, ${absROT.toFixed(1)} degrees per minute`);
+        if (absROT > 10) parts.push('fast turn');
+      }
+    }
+    
+    return parts.join(', ');
+  }, [heading, rateOfTurn]);
+
+  const compassAccessibilityHint = useMemo(() => {
+    if (heading === undefined || heading === null) {
+      return 'Waiting for compass heading data';
+    }
+    if (rateOfTurn && Math.abs(rateOfTurn) > 10) {
+      return 'Rapid turn in progress';
+    }
+    return 'Shows vessel heading and rate of turn';
+  }, [heading, rateOfTurn]);
+
   return (
     <WidgetCard
       title="COMPASS"
       icon="navigate"
       state={displayValues.state}
+      accessibilityLabel={compassAccessibilityLabel}
+      accessibilityHint={compassAccessibilityHint}
+      accessibilityRole="text"
+      accessibilityValue={heading !== undefined && heading !== null ? {
+        text: `${Math.round(heading)} degrees`,
+        now: heading,
+        min: 0,
+        max: 360,
+      } : undefined}
     >
       <View style={styles.metricGrid}>
         <PrimaryMetricCell

@@ -58,12 +58,53 @@ export const SpeedWidget: React.FC = React.memo(() => {
   );
   
   const { displaySpeed, displayCOG, state } = displayValues;
+
+  // Story 4.4 AC6-10: Build comprehensive accessibility label
+  const speedAccessibilityLabel = useMemo(() => {
+    if (sog === undefined || sog === null) {
+      return 'Speed: No data available';
+    }
+    
+    const parts: string[] = ['Speed'];
+    parts.push(`${displaySpeed} knots`);
+    
+    if (cog !== undefined && cog !== null) {
+      parts.push(`Course over ground ${Math.round(cog)} degrees`);
+    }
+    
+    // Add trend information
+    if (speedTrend > 0.5) {
+      parts.push('speed increasing');
+    } else if (speedTrend < -0.5) {
+      parts.push('speed decreasing');
+    } else if (speedHistory.length > 1) {
+      parts.push('speed steady');
+    }
+    
+    return parts.join(', ');
+  }, [sog, displaySpeed, cog, speedTrend, speedHistory]);
+
+  const speedAccessibilityHint = useMemo(() => {
+    if (state === 'no-data') {
+      return 'Waiting for GPS speed data';
+    }
+    return 'Shows vessel speed over ground and course';
+  }, [state]);
   
   return (
     <WidgetCard
       title="SPEED"
       icon="speedometer"
       state={state}
+      accessibilityLabel={speedAccessibilityLabel}
+      accessibilityHint={speedAccessibilityHint}
+      accessibilityRole="text"
+      accessibilityValue={sog !== undefined && sog !== null ? {
+        text: `${displaySpeed} knots`,
+        now: sog,
+        min: 0,
+        max: 50,
+      } : undefined}
     >
       {/* PrimaryMetricCell Grid - 2x1 layout */}
       <View style={styles.metricGrid}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, AccessibilityRole } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../core/themeStore';
 import { createWidgetStyles, getStateColor } from '../styles/widgetStyles';
@@ -17,11 +17,17 @@ type WidgetCardProps = {
   onExpandToggle?: () => void; // Story 2.15: Handle tap to expand/collapse
   onPinToggle?: () => void; // Story 2.15: Handle long-press to pin/unpin
   testID?: string;
+  // Story 4.4 AC6-10: Accessibility props
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityValue?: { text: string; now?: number; min?: number; max?: number };
 };
 
 /**
  * WidgetCard - Pure presentational component for widget content
  * Now designed to work inside WidgetShell wrapper
+ * Story 4.4 AC6-10: Full accessibility support for screen readers
  */
 export const WidgetCard: React.FC<WidgetCardProps> = ({
   title,
@@ -36,10 +42,40 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   onExpandToggle,
   onPinToggle,
   testID = 'widget-card',
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityRole = 'text',
+  accessibilityValue,
 }) => {
   const theme = useTheme();
   const widgetStyles = createWidgetStyles(theme);
   const displayColor = getStateColor(state, theme);
+
+  // Build comprehensive accessibility label if not provided
+  const defaultAccessibilityLabel = React.useMemo(() => {
+    if (accessibilityLabel) return accessibilityLabel;
+    
+    const parts: string[] = [title];
+    
+    if (value !== undefined && value !== null && value !== '---' && value !== '--') {
+      parts.push(`${value} ${unit || ''}`);
+    } else if (state === 'no-data') {
+      parts.push('no data available');
+    }
+    
+    if (secondary) {
+      parts.push(secondary);
+    }
+    
+    // Add state information for critical states
+    if (state === 'alarm') {
+      parts.push('ALARM');
+    } else if (state === 'highlighted') {
+      parts.push('WARNING');
+    }
+    
+    return parts.join(', ');
+  }, [accessibilityLabel, title, value, unit, secondary, state]);
 
   const handleCaretPress = () => {
     onExpandToggle?.();
@@ -50,7 +86,20 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   };
   
   return (
-    <View style={widgetStyles.widgetContainer} testID={testID}>
+    <View 
+      style={widgetStyles.widgetContainer} 
+      testID={testID}
+      accessible={true}
+      accessibilityLabel={defaultAccessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityRole={accessibilityRole}
+      accessibilityValue={accessibilityValue}
+      accessibilityState={{
+        disabled: state === 'no-data',
+        selected: expanded,
+      }}
+      accessibilityLiveRegion={state === 'alarm' ? 'assertive' : state === 'highlighted' ? 'polite' : 'none'}
+    >
       
       {/* Widget Header with Chevron/Pin Indicator */}
       <View style={widgetStyles.widgetHeader}>
@@ -71,6 +120,10 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
           style={widgetStyles.caretContainer}
           testID={`${testID}-caret`}
           delayLongPress={500}
+          accessible={true}
+          accessibilityLabel={isPinned ? 'Pinned' : (expanded ? 'Collapse widget' : 'Expand widget')}
+          accessibilityHint={isPinned ? 'Long press to unpin this widget' : 'Long press to pin this widget in expanded state'}
+          accessibilityRole="button"
         >
           {isPinned ? (
             <Ionicons 

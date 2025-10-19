@@ -109,12 +109,78 @@ export const WindWidget: React.FC = React.memo(() => {
     ? windHistory.reduce((sum, reading) => sum + reading.speed, 0) / windHistory.length
     : windSpeed;
 
+  // Story 4.4 AC6-10: Build comprehensive accessibility label for wind data
+  const windAccessibilityLabel = useMemo(() => {
+    if (windSpeed === undefined || windAngle === undefined) {
+      return 'Wind: No data available';
+    }
+    
+    const parts: string[] = ['Wind'];
+    parts.push(`speed ${value} ${unitStr}`);
+    
+    if (relativeAngle !== undefined) {
+      // Convert angle to cardinal direction for screen reader
+      const getCardinalDirection = (angle: number): string => {
+        if (angle < 22.5 || angle >= 337.5) return 'from ahead';
+        if (angle < 67.5) return 'from starboard bow';
+        if (angle < 112.5) return 'from starboard beam';
+        if (angle < 157.5) return 'from starboard quarter';
+        if (angle < 202.5) return 'from astern';
+        if (angle < 247.5) return 'from port quarter';
+        if (angle < 292.5) return 'from port beam';
+        return 'from port bow';
+      };
+      parts.push(`direction ${Math.round(relativeAngle)} degrees, ${getCardinalDirection(relativeAngle)}`);
+    }
+    
+    // Add wind strength description
+    parts.push(windStrength.level);
+    
+    // Add average if available
+    if (averageWindSpeed !== undefined && windHistory.length > 0) {
+      parts.push(`10-minute average ${averageWindSpeed.toFixed(1)} knots`);
+    }
+    
+    // Add warning states
+    if (state === 'alarm') {
+      parts.push('HIGH WIND WARNING');
+    } else if (state === 'highlighted') {
+      parts.push('Strong wind caution');
+    }
+    
+    return parts.join(', ');
+  }, [windSpeed, windAngle, value, unitStr, relativeAngle, windStrength, averageWindSpeed, windHistory, state]);
+
+  const windAccessibilityHint = useMemo(() => {
+    if (state === 'alarm') {
+      return 'High wind conditions - take precautions';
+    } else if (state === 'highlighted') {
+      return 'Strong wind - monitor conditions';
+    }
+    return 'Tap to change wind speed units';
+  }, [state]);
+
   return (
-    <TouchableOpacity onPress={cycleUnit}>
+    <TouchableOpacity 
+      onPress={cycleUnit}
+      accessible={true}
+      accessibilityLabel={windAccessibilityLabel}
+      accessibilityHint={windAccessibilityHint}
+      accessibilityRole="button"
+    >
       <WidgetCard
         title="WIND"
         icon="leaf"
         state={state}
+        accessibilityLabel={windAccessibilityLabel}
+        accessibilityHint={windAccessibilityHint}
+        accessibilityRole="text"
+        accessibilityValue={windSpeed !== undefined ? {
+          text: `${value} ${unitStr}`,
+          now: windSpeed,
+          min: 0,
+          max: 50,
+        } : undefined}
       >
         {/* PrimaryMetricCell Grid - 2x1 layout */}
         <View style={styles.metricGrid}>

@@ -91,12 +91,54 @@ export const GPSWidget: React.FC = React.memo(() => {
   };
   
   const metricState = getMetricState();
+
+  // Story 4.4 AC6-10: Build comprehensive accessibility label for GPS data
+  const gpsAccessibilityLabel = useMemo(() => {
+    if (!gps) {
+      return 'GPS Position: No fix available';
+    }
+    
+    const parts: string[] = ['GPS Position'];
+    
+    if (gps.latitude !== undefined && gps.longitude !== undefined) {
+      parts.push(`Latitude ${gps.latitude.toFixed(5)} degrees`);
+      parts.push(`Longitude ${gps.longitude.toFixed(5)} degrees`);
+    }
+    
+    parts.push(`Fix status: ${fixStatus}`);
+    parts.push(`${satellites} satellites`);
+    
+    if (gpsQuality?.hdop) {
+      parts.push(`HDOP ${gpsQuality.hdop.toFixed(1)}`);
+    }
+    
+    // Add quality warnings
+    if (fixStatus === 'NO FIX') {
+      parts.push('No GPS fix - position unavailable');
+    } else if (satellites < 4) {
+      parts.push('Weak GPS signal - position may be inaccurate');
+    }
+    
+    return parts.join(', ');
+  }, [gps, fixStatus, satellites, gpsQuality]);
+
+  const gpsAccessibilityHint = useMemo(() => {
+    if (fixStatus === 'NO FIX') {
+      return 'GPS is acquiring satellites - move to clear area';
+    } else if (satellites < 4) {
+      return 'GPS signal weak - position accuracy limited';
+    }
+    return 'Shows current vessel position from GPS';
+  }, [fixStatus, satellites]);
   
   return (
     <WidgetCard
       title="GPS POSITION"
       icon="location"
       state={state}
+      accessibilityLabel={gpsAccessibilityLabel}
+      accessibilityHint={gpsAccessibilityHint}
+      accessibilityRole="text"
     >
       <View style={styles.metricGrid}>
         <PrimaryMetricCell 
