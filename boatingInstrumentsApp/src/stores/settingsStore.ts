@@ -49,6 +49,7 @@ export interface ThemeSettings {
   marineMode: boolean; // Toggle marine-optimized contrast & touch targets
   voiceOverAnnouncements: boolean; // Enable in-app announcement helpers for screen readers
   hapticFeedback: boolean; // Device vibration/haptic feedback for important actions
+  gloveMode: boolean; // AC15: Enhanced touch targets and gesture tolerances for wearing gloves
 }
 
 interface SettingsState {
@@ -129,6 +130,7 @@ const defaultSettings: SettingsState = {
     marineMode: false,
     voiceOverAnnouncements: false,
     hapticFeedback: true,
+    gloveMode: false, // AC15: Glove mode disabled by default
   },
   units: {
     depth: 'meters',

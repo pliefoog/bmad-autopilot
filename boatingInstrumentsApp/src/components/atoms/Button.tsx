@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, StyleSheet, ViewStyle, TextStyle, Animated } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
 import { useHaptics } from '../../services/haptics/Haptics';
+import { useMarineTouch } from '../../services/marine/MarineTouchService';
 
 interface ButtonProps {
   title: string;
@@ -46,6 +47,9 @@ const Button: React.FC<ButtonProps> = ({
 
   const theme = useTheme();
 
+  // AC15: Marine touch optimization
+  const { getMarineHitSlop, getLongPressDuration } = useMarineTouch();
+
   // Micro-interaction: press scale
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -80,7 +84,8 @@ const Button: React.FC<ButtonProps> = ({
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      hitSlop={getMarineHitSlop()} // AC15: Marine-optimized hit slop
+      delayLongPress={getLongPressDuration()} // AC15: Marine-optimized long press
       testID={testID}
     >
       <Animated.View style={[buttonStyle, { transform: [{ scale: scaleAnim }] }]}> 
