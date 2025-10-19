@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import { getConnectionDefaults } from '../services/connectionDefaults';
 import { useNmeaStore } from '../core/nmeaStore';
+import { HelpButton } from '../components/atoms/HelpButton';
+import { Tooltip } from '../components/molecules/Tooltip';
+import { getHelpContent, getRelatedTopics } from '../content/help-content';
 
 interface ConnectionConfigDialogProps {
   visible: boolean;
@@ -40,6 +43,9 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   const [port, setPort] = useState(currentConfig?.port.toString() || defaults.port.toString());
   const [useTcp, setUseTcp] = useState(true); // true = TCP, false = UDP
   const [hasUserInput, setHasUserInput] = useState(false); // Track if user has made changes
+  
+  // Help system state
+  const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
 
   // Only update form when dialog opens (visible changes from false to true)
   // Don't reset while user is typing
@@ -117,6 +123,22 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
     setHasUserInput(true); // Mark as user action to prevent override
   };
 
+  const showHelp = (helpId: string) => {
+    setActiveHelpId(helpId);
+  };
+
+  const closeHelp = () => {
+    setActiveHelpId(null);
+  };
+
+  const navigateToRelatedTopic = (helpId: string) => {
+    setActiveHelpId(helpId);
+  };
+
+  // Get current help content
+  const helpContent = activeHelpId ? getHelpContent(activeHelpId) : null;
+  const relatedTopics = activeHelpId ? getRelatedTopics(activeHelpId) : [];
+
   return (
     <Modal
       visible={visible}
@@ -127,9 +149,17 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Connection Settings</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <HelpButton 
+              helpId="connection-setup" 
+              onPress={() => showHelp('connection-setup')}
+              size={24}
+              style={styles.helpButton}
+            />
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -208,6 +238,21 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Help Tooltip */}
+        {helpContent && (
+          <Tooltip
+            visible={!!activeHelpId}
+            onDismiss={closeHelp}
+            title={helpContent.title}
+            content={helpContent.content}
+            tips={helpContent.tips}
+            relatedTopics={relatedTopics.map(t => ({
+              title: t.title,
+              onPress: () => navigateToRelatedTopic(t.id),
+            }))}
+          />
+        )}
       </View>
     </Modal>
   );
@@ -225,6 +270,14 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  helpButton: {
+    marginRight: 4,
   },
   title: {
     fontSize: 20,
