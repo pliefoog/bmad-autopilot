@@ -1,0 +1,101 @@
+{
+  "help": {
+    "title": "Help & Documentation",
+    "search": {
+      "placeholder": "Search help articles...",
+      "noResults": "No results found for \"{{query}}\"",
+      "searching": "Searching...",
+      "suggestions": "Try searching for: connection, widgets, autopilot, alarms"
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "subtitle": "Get started with BMad Autopilot in a few simple steps",
+      "complete": "You're all set! Start using BMad Autopilot.",
+      "restart": "Restart Guide",
+      "dismiss": "Dismiss",
+      "steps": {
+        "connect": "Connect to your boat's NMEA network",
+        "configure": "Configure your dashboard widgets",
+        "test": "Test autopilot connection (if available)",
+        "safety": "Review safety guidelines",
+        "done": "Explore advanced features"
+      }
+    },
+    "tutorial": {
+      "skip": "Skip Tutorial",
+      "previous": "Previous",
+      "next": "Next",
+      "complete": "Complete",
+      "stepOf": "Step {{current}} of {{total}}",
+      "safetyWarning": "⚠️ Safety Warning",
+      "tapToContinue": "Tap to continue"
+    },
+    "troubleshooting": {
+      "title": "Troubleshooting",
+      "selectIssue": "Select the issue you're experiencing:",
+      "runDiagnostic": "Run Diagnostic",
+      "diagnosticRunning": "Running diagnostics...",
+      "tryStep": "Try this step:",
+      "success": "Issue resolved!",
+      "stillNotWorking": "Still not working? Contact support.",
+      "categories": {
+        "connection": "Connection Issues",
+        "performance": "Performance Problems",
+        "display": "Display Issues",
+        "autopilot": "Autopilot Problems",
+        "alarms": "Alarm Issues"
+      }
+    },
+    "contextual": {
+      "gotIt": "Got it",
+      "learnMore": "Learn More"
+    },
+    "categories": {
+      "gettingStarted": "Getting Started",
+      "connection": "Connection",
+      "widgets": "Widgets",
+      "autopilot": "Autopilot",
+      "alarms": "Alarms",
+      "settings": "Settings",
+      "troubleshooting": "Troubleshooting"
+    },
+    "contentTypes": {
+      "guide": "Guide",
+      "tutorial": "Tutorial",
+      "faq": "FAQ",
+      "reference": "Reference"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "done": "Done",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search"
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "notFound": "Content not found.",
+    "loadFailed": "Failed to load content."
+  },
+  "settings": {
+    "language": {
+      "title": "Language",
+      "select": "Select Language",
+      "current": "Current language: {{language}}",
+      "restart": "App will restart to apply language changes"
+    }
+  }
+}

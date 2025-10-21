@@ -34,7 +34,8 @@
       "Read(//Library/Developer/**)",
       "Bash(awk 'NR==2 {print \"\"\"\"Free space: \"\"\"\" $4 \"\"\"\"\\nUsed space: \"\"\"\" $3 \"\"\"\"\\nCapacity: \"\"\"\" $5}')",
       "Bash(awk 'NR==2 {print \"\"\"\"   Free space: \"\"\"\" $4 \"\"\"\"\\n   Used space: \"\"\"\" $3 \"\"\"\"\\n   Capacity: \"\"\"\" $5}')",
-      "Bash(xcrun simctl list devices available)"
+      "Bash(xcrun simctl list devices available)",
+      "Bash(mkdir -p \"/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/docs\")"
     ],
     "deny": [],
     "ask": []

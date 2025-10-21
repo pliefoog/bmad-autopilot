@@ -1,240 +1,301 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { WidgetCard } from './WidgetCard';
-import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
-import { useNmeaStore } from '../core/nmeaStore';
-import { useTheme } from '../core/themeStore';
-import { useCachedMarineCalculation } from '../utils/performanceOptimization';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useTheme } from '../store/themeStore';
+import { useWidgetStore } from '../store/widgetStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { useUnitConversion } from '../hooks/useUnitConversion';
+import PrimaryMetricCell from '../components/PrimaryMetricCell';
+import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
-// GPS coordinate format converters
-export const formatLatLon = (lat: number, lon: number, format: 'DD' | 'DMS' = 'DD'): string => {
-  if (format === 'DD') {
-    return `${lat.toFixed(5)}°, ${lon.toFixed(5)}°`;
-  }
-  // DMS format
-  const latDMS = decimalToDMS(lat, 'lat');
-  const lonDMS = decimalToDMS(lon, 'lon');
-  return `${latDMS}\n${lonDMS}`;
-};
+interface GPSWidgetProps {
+  id: string;
+  title: string;
+}
 
-const decimalToDMS = (decimal: number, type: 'lat' | 'lon'): string => {
-  const absolute = Math.abs(decimal);
-  const degrees = Math.floor(absolute);
-  const minutesDecimal = (absolute - degrees) * 60;
-  const minutes = Math.floor(minutesDecimal);
-  const seconds = ((minutesDecimal - minutes) * 60).toFixed(1);
-  
-  let direction = '';
-  if (type === 'lat') {
-    direction = decimal >= 0 ? 'N' : 'S';
-  } else {
-    direction = decimal >= 0 ? 'E' : 'W';
-  }
-  
-  return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
-};
-
-export const GPSWidget: React.FC = React.memo(() => {
-  // Optimized store selectors
-  const gps = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsPosition, []));
-  const gpsQuality = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsQuality, []));
+/**
+ * GPS Widget - GPS Position Display per ui-architecture.md v2.3
+ * Primary Grid (2×1): Latitude and Longitude coordinates using unit conversion system
+ * Secondary Grid (2×1): UTC Date with day of week + UTC Time
+ */
+export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title }) => {
   const theme = useTheme();
   
-  // Memoized GPS status calculation
-  const gpsStatus = useMemo(() => {
-    const getFixStatus = (): string => {
-      if (!gps) return 'NO FIX';
-      if (gpsQuality?.fixType === 3) return '3D FIX';
-      if (gpsQuality?.fixType === 2) return '2D FIX';
-      return 'ACQUIRING';
-    };
-    
-    const fixStatus = getFixStatus();
-    const satellites = gpsQuality?.satellites || 0;
-    
-    return { fixStatus, satellites };
-  }, [gps, gpsQuality]);
+  // Unit conversion system - consistent with other widgets
+  const { getFormattedValueWithUnit, getPreferredUnit, convertToPreferred, getGpsFormattedDateTime } = useUnitConversion();
+
+  // GPS settings for coordinate format and date/time formatting
+  // These subscriptions ensure the widget re-renders when GPS settings change
+  const gpsCoordinateFormat = useSettingsStore((state) => state.gps.coordinateFormat);
+  const gpsDateFormat = useSettingsStore((state) => state.gps.dateFormat); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const gpsTimeFormat = useSettingsStore((state) => state.gps.timeFormat); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const gpsTimezone = useSettingsStore((state) => state.gps.timezone); // eslint-disable-line @typescript-eslint/no-unused-vars
   
-  // Cached coordinate formatting
-  const formattedCoordinates = useCachedMarineCalculation(
-    'gps-coordinates',
-    () => {
-      if (!gps || typeof gps.latitude !== 'number' || typeof gps.longitude !== 'number') {
-        return { dd: '--', dms: '--' };
-      }
-      
-      return {
-        dd: formatLatLon(gps.latitude, gps.longitude, 'DD'),
-        dms: formatLatLon(gps.latitude, gps.longitude, 'DMS'),
+  // Widget state management per ui-architecture.md v2.3
+  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
+  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
+  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
+  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
+  
+  // NMEA data selectors - GPS Position and Time
+  const gpsPosition = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsPosition, []));
+  const gpsQuality = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsQuality, []));
+  const utcTime = useNmeaStore(useCallback((state: any) => state.nmeaData.utcTime, []));
+  const gpsTimestamp = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsTimestamp, []));
+  
+  // Widget interaction handlers per ui-architecture.md v2.3
+  const handlePress = useCallback(() => {
+    toggleWidgetExpansion(id);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetExpansion, updateWidgetInteraction]);
+
+  const handleLongPressOnCaret = useCallback(() => {
+    toggleWidgetPin(id);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
+
+  // GPS coordinate formatting with proper hemisphere indicators
+  const formatGPSCoordinate = useCallback((value: number | null | undefined, isLatitude: boolean): { value: string; unit: string } => {
+    if (value === null || value === undefined) {
+      return { value: '---', unit: 'DD' };
+    }
+
+    // Use GPS-specific coordinate format from settings
+    const coordinateFormat = gpsCoordinateFormat;
+    
+    const absValue = Math.abs(value);
+    const direction = value >= 0 ? (isLatitude ? 'N' : 'E') : (isLatitude ? 'S' : 'W');
+
+    switch (coordinateFormat) {
+      case 'degrees_minutes_seconds': // DMS: 51° 21′ 31.4″ N
+        const degreesDMS = Math.floor(absValue);
+        const minutesFloatDMS = (absValue - degreesDMS) * 60;
+        const minutesDMS = Math.floor(minutesFloatDMS);
+        const secondsDMS = (minutesFloatDMS - minutesDMS) * 60;
+        return {
+          value: `${degreesDMS}° ${minutesDMS.toString().padStart(2, '0')}′ ${secondsDMS.toFixed(1).padStart(4, '0')}″ ${direction}`,
+          unit: 'DMS'
+        };
+        
+      case 'degrees_minutes': // DDM: 51° 21.523′ N (default for nautical)
+        const degreesDDM = Math.floor(absValue);
+        const minutesDDM = (absValue - degreesDDM) * 60;
+        return {
+          value: `${degreesDDM}° ${minutesDDM.toFixed(3).padStart(6, '0')}′ ${direction}`,
+          unit: 'DDM'
+        };
+        
+      case 'decimal_degrees': // DD: 51.35872° N
+        return {
+          value: `${absValue.toFixed(5)}° ${direction}`,
+          unit: 'DD'
+        };
+        
+      case 'utm': // UTM format
+        // TODO: Implement proper UTM conversion
+        return {
+          value: `UTM ${absValue.toFixed(0)}`,
+          unit: 'UTM'
+        };
+        
+      default: // Fallback to DDM (standard for nautical charts)
+        const degrees = Math.floor(absValue);
+        const minutes = (absValue - degrees) * 60;
+        return {
+          value: `${degrees}° ${minutes.toFixed(3).padStart(6, '0')}′ ${direction}`,
+          unit: 'DDM'
+        };
+    }
+  }, [gpsCoordinateFormat]);
+
+
+
+  // Date and Time formatting with GPS-specific preferences and timezone
+  const dateTimeFormatted = useMemo(() => {
+    if (!utcTime) {
+      return { 
+        date: '--- ---, ----', 
+        time: '--:--:--',
+        timezone: 'UTC'
       };
-    },
-    [gps?.latitude, gps?.longitude]
-  );
-  
-  const { fixStatus, satellites } = gpsStatus;
-  const hdop = gpsQuality?.hdop?.toFixed(1) || '--';
-  
-  // Determine widget state
-  const state = !gps ? 'no-data' : 'normal';
-  
-  // Format individual coordinates
-  const latitude = gps ? `${gps.lat.toFixed(5)}°` : '--';
-  const longitude = gps ? `${gps.lon.toFixed(5)}°` : '--';
-  
-  // Determine metric states based on GPS quality
-  const getMetricState = (): 'normal' | 'warning' | 'alarm' | undefined => {
-    if (!gps) return undefined; // Will show as no-data in the widget
-    if (fixStatus === 'NO FIX') return 'alarm';
-    if (satellites < 4) return 'warning';
-    return 'normal';
-  };
-  
-  const metricState = getMetricState();
+    }
 
-  // Story 4.4 AC6-10: Build comprehensive accessibility label for GPS data
-  const gpsAccessibilityLabel = useMemo(() => {
-    if (!gps) {
-      return 'GPS Position: No fix available';
-    }
-    
-    const parts: string[] = ['GPS Position'];
-    
-    if (gps.latitude !== undefined && gps.longitude !== undefined) {
-      parts.push(`Latitude ${gps.latitude.toFixed(5)} degrees`);
-      parts.push(`Longitude ${gps.longitude.toFixed(5)} degrees`);
-    }
-    
-    parts.push(`Fix status: ${fixStatus}`);
-    parts.push(`${satellites} satellites`);
-    
-    if (gpsQuality?.hdop) {
-      parts.push(`HDOP ${gpsQuality.hdop.toFixed(1)}`);
-    }
-    
-    // Add quality warnings
-    if (fixStatus === 'NO FIX') {
-      parts.push('No GPS fix - position unavailable');
-    } else if (satellites < 4) {
-      parts.push('Weak GPS signal - position may be inaccurate');
-    }
-    
-    return parts.join(', ');
-  }, [gps, fixStatus, satellites, gpsQuality]);
+    const date = new Date(utcTime);
+    return getGpsFormattedDateTime(date);
+  }, [utcTime, getGpsFormattedDateTime]);
 
-  const gpsAccessibilityHint = useMemo(() => {
-    if (fixStatus === 'NO FIX') {
-      return 'GPS is acquiring satellites - move to clear area';
-    } else if (satellites < 4) {
-      return 'GPS signal weak - position accuracy limited';
-    }
-    return 'Shows current vessel position from GPS';
-  }, [fixStatus, satellites]);
-  
+  // Data staleness detection (>10s = stale for GPS)
+  const isStale = gpsTimestamp ? (Date.now() - gpsTimestamp) > 10000 : true;
+
   return (
-    <WidgetCard
-      title="GPS POSITION"
-      icon="location"
-      state={state}
-      accessibilityLabel={gpsAccessibilityLabel}
-      accessibilityHint={gpsAccessibilityHint}
-      accessibilityRole="text"
+    <TouchableOpacity
+      style={[styles.container, { backgroundColor: theme.surface }]}
+      onPress={handlePress}
+      activeOpacity={0.8}
+      testID={`gps-widget-${id}`}
     >
-      <View style={styles.metricGrid}>
-        <PrimaryMetricCell 
-          mnemonic="LAT"
-          value={latitude}
-          unit=""
-          state={metricState}
-          style={styles.metricCell}
-        />
-        <PrimaryMetricCell 
-          mnemonic="LON" 
-          value={longitude}
-          unit=""
-          state={metricState}
-          style={styles.metricCell}
-        />
-      </View>
-      <View style={styles.statusContainer}>
-        <View style={styles.statusRow}>
-          <Text 
-            style={[styles.statusLabel, { color: theme.textSecondary }]}
-            accessibilityLabel="GPS Fix Status Label"
-          >
-            Fix:
-          </Text>
-          <Text
-            style={[
-              styles.statusValue,
-              {
-                color: fixStatus === 'NO FIX' ? theme.error : theme.text,
-              }
-            ]}
-            accessibilityLabel={`GPS fix status: ${fixStatus}`}
-            accessibilityRole="text"
-          >
-            {fixStatus}
-          </Text>
-        </View>
-        <View style={styles.statusRow}>
-          <Text 
-            style={[styles.statusLabel, { color: theme.textSecondary }]}
-            accessibilityLabel="Satellite Count Label"
-          >
-            Satellites:
-          </Text>
-          <Text 
-            style={[styles.statusValue, { color: theme.text }]}
-            accessibilityLabel={`${satellites} satellites in view`}
-            accessibilityRole="text"
-          >
-            {satellites}
-          </Text>
-        </View>
-        <View style={styles.statusRow}>
-          <Text 
-            style={[styles.statusLabel, { color: theme.textSecondary }]}
-            accessibilityLabel="HDOP Accuracy Label"
-          >
-            HDOP:
-          </Text>
-          <Text 
-            style={[styles.statusValue, { color: theme.text }]}
-            accessibilityLabel={`HDOP accuracy: ${hdop}`}
-            accessibilityRole="text"
-          >
-            {hdop}
-          </Text>
+      {/* Widget Header with Title and Controls */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.textSecondary }]}>
+          {title.toUpperCase()}
+        </Text>
+        
+        {/* Expansion Caret and Pin Controls */}
+        <View style={styles.controls}>
+          {pinned ? (
+            <TouchableOpacity
+              onLongPress={handleLongPressOnCaret}
+              style={styles.controlButton}
+              testID={`pin-button-${id}`}
+            >
+              <Text style={[styles.pinIcon, { color: theme.primary }]}>📌</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={handlePress}
+              onLongPress={handleLongPressOnCaret}
+              style={styles.controlButton}
+              testID={`caret-button-${id}`}
+            >
+              <Text style={[styles.caret, { color: theme.textSecondary }]}>
+                {expanded ? '⌃' : '⌄'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-    </WidgetCard>
+
+      {/* PRIMARY GRID (2×1): Latitude and Longitude using unit conversion system */}
+      <View style={styles.primaryContainer}>
+        <View style={styles.coordinateRow}>
+          <View style={styles.gridCell}>
+            <PrimaryMetricCell
+              mnemonic="LAT"
+              {...formatGPSCoordinate(gpsPosition?.latitude, true)}
+              state="normal"
+              category="coordinates"
+            />
+          </View>
+        </View>
+        <View style={styles.coordinateRow}>
+          <View style={styles.gridCell}>
+            <PrimaryMetricCell
+              mnemonic="LON"
+              {...formatGPSCoordinate(gpsPosition?.longitude, false)}
+              state="normal"
+              category="coordinates"
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* SECONDARY GRID (2×1): Date with day of week + Time with timezone */}
+      {expanded && (
+        <View style={styles.secondaryContainer}>
+          <View style={styles.secondaryRow}>
+            <View style={styles.secondaryCell}>
+              <SecondaryMetricCell
+                mnemonic="DATE"
+                value={dateTimeFormatted.date}
+                state="normal"
+                compact={true}
+                align="right"
+              />
+            </View>
+          </View>
+          <View style={styles.secondaryRow}>
+            <View style={styles.secondaryCell}>
+              <SecondaryMetricCell
+                mnemonic="TIME"
+                value={`${dateTimeFormatted.time} ${dateTimeFormatted.timezone}`}
+                state="normal"
+                compact={true}
+                align="right"
+              />
+            </View>
+          </View>
+        </View>
+      )}
+    </TouchableOpacity>
   );
 });
 
+GPSWidget.displayName = 'GPSWidget';
+
 const styles = StyleSheet.create({
-  metricGrid: {
-    flexDirection: 'row',
-    flex: 1,
+  container: {
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  metricCell: {
-    flex: 1,
-  },
-  statusContainer: {
-    marginTop: 8,
-    gap: 4,
-  },
-  statusRow: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  statusLabel: {
-    fontSize: 12,
-    textTransform: 'uppercase',
+  title: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
-  statusValue: {
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  controlButton: {
+    padding: 4,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  caret: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+  pinIcon: {
+    fontSize: 12,
+  },
+
+  // Primary Container for coordinate grid
+  primaryContainer: {
+    marginBottom: 8,
+  },
+  // Coordinate Row for individual lat/lon alignment
+  coordinateRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  // Grid cell wrapper for proper alignment within grid (matches WindWidget)
+  gridCell: {
+    flex: 1,
+    alignItems: 'flex-end', // Right-align the metric cell within its grid space
+  },
+
+
+  // Secondary Container for expanded view
+  secondaryContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  // Secondary Row for individual date/time alignment
+  secondaryRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  // Secondary Cell wrapper for proper alignment (right-aligned like coordinates)
+  secondaryCell: {
+    flex: 1,
+    alignItems: 'flex-end', // Right-align the metric cell within its grid space
+  },
+  // Secondary Grid (2×1): Date and Time (legacy - replaced by secondaryRow/secondaryCell)
+  secondaryGrid: {
+    marginBottom: 8,
   },
 });
+
+export default GPSWidget;

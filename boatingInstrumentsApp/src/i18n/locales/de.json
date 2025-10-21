@@ -1,0 +1,101 @@
+{
+  "help": {
+    "title": "Hilfe und Dokumentation",
+    "search": {
+      "placeholder": "Hilfeartikel durchsuchen...",
+      "noResults": "Keine Ergebnisse für \"{{query}}\" gefunden",
+      "searching": "Suche läuft...",
+      "suggestions": "Versuchen Sie zu suchen: Verbindung, Widgets, Autopilot, Alarme"
+    },
+    "quickStart": {
+      "title": "Schnellstartanleitung",
+      "subtitle": "Beginnen Sie mit BMad Autopilot in wenigen einfachen Schritten",
+      "complete": "Alles bereit! Beginnen Sie mit BMad Autopilot.",
+      "restart": "Anleitung neu starten",
+      "dismiss": "Schließen",
+      "steps": {
+        "connect": "Verbinden Sie sich mit dem NMEA-Netzwerk Ihres Bootes",
+        "configure": "Konfigurieren Sie Ihre Dashboard-Widgets",
+        "test": "Autopilot-Verbindung testen (falls verfügbar)",
+        "safety": "Sicherheitsrichtlinien überprüfen",
+        "done": "Erweiterte Funktionen erkunden"
+      }
+    },
+    "tutorial": {
+      "skip": "Tutorial überspringen",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "complete": "Abschließen",
+      "stepOf": "Schritt {{current}} von {{total}}",
+      "safetyWarning": "⚠️ Sicherheitswarnung",
+      "tapToContinue": "Tippen Sie zum Fortfahren"
+    },
+    "troubleshooting": {
+      "title": "Fehlerbehebung",
+      "selectIssue": "Wählen Sie das Problem aus, das Sie haben:",
+      "runDiagnostic": "Diagnose ausführen",
+      "diagnosticRunning": "Diagnose läuft...",
+      "tryStep": "Versuchen Sie diesen Schritt:",
+      "success": "Problem gelöst!",
+      "stillNotWorking": "Funktioniert immer noch nicht? Kontaktieren Sie den Support.",
+      "categories": {
+        "connection": "Verbindungsprobleme",
+        "performance": "Leistungsprobleme",
+        "display": "Anzeigeprobleme",
+        "autopilot": "Autopilot-Probleme",
+        "alarms": "Alarmprobleme"
+      }
+    },
+    "contextual": {
+      "gotIt": "Verstanden",
+      "learnMore": "Mehr erfahren"
+    },
+    "categories": {
+      "gettingStarted": "Erste Schritte",
+      "connection": "Verbindung",
+      "widgets": "Widgets",
+      "autopilot": "Autopilot",
+      "alarms": "Alarme",
+      "settings": "Einstellungen",
+      "troubleshooting": "Fehlerbehebung"
+    },
+    "contentTypes": {
+      "guide": "Anleitung",
+      "tutorial": "Tutorial",
+      "faq": "Häufig gestellte Fragen",
+      "reference": "Referenz"
+    }
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Fehler",
+    "retry": "Wiederholen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "close": "Schließen",
+    "ok": "OK",
+    "yes": "Ja",
+    "no": "Nein",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "done": "Fertig",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "search": "Suchen"
+  },
+  "errors": {
+    "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "network": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+    "notFound": "Inhalt nicht gefunden.",
+    "loadFailed": "Inhalt konnte nicht geladen werden."
+  },
+  "settings": {
+    "language": {
+      "title": "Sprache",
+      "select": "Sprache auswählen",
+      "current": "Aktuelle Sprache: {{language}}",
+      "restart": "Die App wird neu gestartet, um die Sprachänderungen anzuwenden"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 **Epic:** Epic 4 - Alarms & Polish  
 **Story ID:** 4.4  
-**Status:** Ready for Development
+**Status:** Done
 
 ---
 

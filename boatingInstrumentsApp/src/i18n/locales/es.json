@@ -1,0 +1,101 @@
+{
+  "help": {
+    "title": "Ayuda y Documentación",
+    "search": {
+      "placeholder": "Buscar artículos de ayuda...",
+      "noResults": "No se encontraron resultados para \"{{query}}\"",
+      "searching": "Buscando...",
+      "suggestions": "Intenta buscar: conexión, widgets, piloto automático, alarmas"
+    },
+    "quickStart": {
+      "title": "Guía de Inicio Rápido",
+      "subtitle": "Comienza con BMad Autopilot en unos simples pasos",
+      "complete": "¡Todo listo! Comienza a usar BMad Autopilot.",
+      "restart": "Reiniciar Guía",
+      "dismiss": "Cerrar",
+      "steps": {
+        "connect": "Conectar a la red NMEA de tu embarcación",
+        "configure": "Configurar los widgets del panel",
+        "test": "Probar conexión con piloto automático (si está disponible)",
+        "safety": "Revisar directrices de seguridad",
+        "done": "Explorar funciones avanzadas"
+      }
+    },
+    "tutorial": {
+      "skip": "Saltar Tutorial",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "complete": "Completar",
+      "stepOf": "Paso {{current}} de {{total}}",
+      "safetyWarning": "⚠️ Advertencia de Seguridad",
+      "tapToContinue": "Toca para continuar"
+    },
+    "troubleshooting": {
+      "title": "Solución de Problemas",
+      "selectIssue": "Selecciona el problema que estás experimentando:",
+      "runDiagnostic": "Ejecutar Diagnóstico",
+      "diagnosticRunning": "Ejecutando diagnósticos...",
+      "tryStep": "Prueba este paso:",
+      "success": "¡Problema resuelto!",
+      "stillNotWorking": "¿Aún no funciona? Contacta con soporte.",
+      "categories": {
+        "connection": "Problemas de Conexión",
+        "performance": "Problemas de Rendimiento",
+        "display": "Problemas de Visualización",
+        "autopilot": "Problemas del Piloto Automático",
+        "alarms": "Problemas de Alarmas"
+      }
+    },
+    "contextual": {
+      "gotIt": "Entendido",
+      "learnMore": "Saber Más"
+    },
+    "categories": {
+      "gettingStarted": "Comenzando",
+      "connection": "Conexión",
+      "widgets": "Widgets",
+      "autopilot": "Piloto Automático",
+      "alarms": "Alarmas",
+      "settings": "Configuración",
+      "troubleshooting": "Solución de Problemas"
+    },
+    "contentTypes": {
+      "guide": "Guía",
+      "tutorial": "Tutorial",
+      "faq": "Preguntas Frecuentes",
+      "reference": "Referencia"
+    }
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "ok": "OK",
+    "yes": "Sí",
+    "no": "No",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "done": "Hecho",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "search": "Buscar"
+  },
+  "errors": {
+    "generic": "Ocurrió un error. Por favor, inténtalo de nuevo.",
+    "network": "Error de red. Por favor, verifica tu conexión.",
+    "notFound": "Contenido no encontrado.",
+    "loadFailed": "Error al cargar el contenido."
+  },
+  "settings": {
+    "language": {
+      "title": "Idioma",
+      "select": "Seleccionar Idioma",
+      "current": "Idioma actual: {{language}}",
+      "restart": "La aplicación se reiniciará para aplicar los cambios de idioma"
+    }
+  }
+}
