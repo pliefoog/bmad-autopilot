@@ -124,6 +124,167 @@
 			}
 		},
 		{
+			"label": "Start Scenario: Basic Navigation",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"basic/basic-navigation"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Scenario: Coastal Sailing (Comprehensive)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"basic/coastal-sailing"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Scenario: Deep Water Passage",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"basic/deep-water-passage"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Scenario: Autopilot Engagement",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"autopilot/autopilot-engagement"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Scenario: Engine Monitoring",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"development/engine-monitoring"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Full Dev Stack + Comprehensive Scenario",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start Scenario: Coastal Sailing (Comprehensive)",
+				"Start Web Dev Server"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Scenario: Real-World Sailing Recording",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"vendor/test-scenarios/recorded/real-world-sailing.yml"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Stop Web Dev Server",
 			"type": "shell",
 			"command": "pkill",
