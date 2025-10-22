@@ -133,15 +133,77 @@ class ScenarioEngine {
   }
   
   /**
-   * List all scenarios
+   * List all available scenarios from filesystem
    */
   listScenarios() {
-    return Array.from(this.activeScenarios.values()).map(scenario => ({
-      id: scenario.id,
-      name: scenario.name,
-      description: scenario.description,
-      state: scenario.state
-    }));
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const yaml = require('js-yaml');
+      
+      const scenariosPath = path.join(__dirname, '..', 'vendor', 'test-scenarios');
+      const availableScenarios = [];
+      
+      // Scan scenario directories
+      const categories = ['basic', 'autopilot', 'development', 'performance', 'safety', 'recorded', 'story-validation'];
+      
+      for (const category of categories) {
+        const categoryPath = path.join(scenariosPath, category);
+        
+        if (fs.existsSync(categoryPath) && fs.statSync(categoryPath).isDirectory()) {
+          const files = fs.readdirSync(categoryPath);
+          
+          for (const file of files) {
+            if (file.endsWith('.yml') || file.endsWith('.yaml')) {
+              try {
+                const filePath = path.join(categoryPath, file);
+                const yamlContent = fs.readFileSync(filePath, 'utf8');
+                const config = yaml.load(yamlContent);
+                
+                const scenarioId = path.basename(file, '.yml').replace('.yaml', '');
+                const loadedScenario = this.activeScenarios.get(scenarioId);
+                
+                availableScenarios.push({
+                  id: scenarioId,
+                  name: config.name || scenarioId,
+                  description: config.description || 'No description available',
+                  category: category,
+                  duration: config.duration || 0,
+                  state: loadedScenario ? loadedScenario.state : 'available',
+                  filepath: `${category}/${file}`
+                });
+              } catch (error) {
+                console.warn(`⚠️  Failed to parse scenario file ${file}:`, error.message);
+                // Add basic entry for unparseable files
+                const scenarioId = path.basename(file, '.yml').replace('.yaml', '');
+                availableScenarios.push({
+                  id: scenarioId,
+                  name: scenarioId,
+                  description: 'Failed to parse scenario file',
+                  category: category,
+                  duration: 0,
+                  state: 'error',
+                  filepath: `${category}/${file}`
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      console.log(`📋 Found ${availableScenarios.length} scenarios across ${categories.length} categories`);
+      return availableScenarios;
+      
+    } catch (error) {
+      console.error('❌ Failed to list scenarios:', error.message);
+      // Fallback to loaded scenarios only
+      return Array.from(this.activeScenarios.values()).map(scenario => ({
+        id: scenario.id,
+        name: scenario.name,
+        description: scenario.description,
+        state: scenario.state
+      }));
+    }
   }
   
   /**
