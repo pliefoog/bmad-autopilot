@@ -633,34 +633,41 @@ class BMADIntegrationAPI {
   // === Helper Methods ===
 
   /**
-   * Determine scenario category from name
+   * Determine scenario category from name using filesystem lookup
    */
   getScenarioCategory(scenarioName) {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Try to find the scenario file in the filesystem
+    const categories = ['basic', 'autopilot', 'development', 'performance', 'safety', 'recorded', 'story-validation'];
+    const scenariosBasePath = path.join(__dirname, '..', 'vendor', 'test-scenarios');
+    
+    for (const category of categories) {
+      const categoryPath = path.join(scenariosBasePath, category);
+      if (fs.existsSync(categoryPath)) {
+        const files = fs.readdirSync(categoryPath);
+        const matchingFile = files.find(file => {
+          const fileBaseName = path.basename(file, '.yml').replace('.yaml', '');
+          return fileBaseName === scenarioName;
+        });
+        
+        if (matchingFile) {
+          return category;
+        }
+      }
+    }
+    
+    // Fallback to heuristic-based category detection
     if (scenarioName.includes('basic') || scenarioName.includes('navigation')) return 'basic';
     if (scenarioName.includes('autopilot')) return 'autopilot';
-    if (scenarioName.includes('alarm') || scenarioName.includes('safety')) return 'safety';
-    if (scenarioName.includes('performance') || scenarioName.includes('stress')) return 'performance';
-    if (scenarioName.includes('recorded')) return 'recorded';
-    return 'basic'; // Default category
-  }
-
-  /**
-   * Get scenario category based on scenario name
-   */
-  getScenarioCategory(scenarioName) {
-    // Map scenario names to categories
-    const categoryMap = {
-      'basic-navigation': 'development',
-      'engine-monitoring': 'development',
-      'autopilot-engagement': 'development',
-      'story-7.3-bmad-integration': 'story-validation',
-      'widget-drag-drop-test': 'story-validation',
-      'performance-test': 'performance',
-      'high-throughput': 'performance',
-      'regression-test': 'testing'
-    };
+    if (scenarioName.includes('engine') || scenarioName.includes('monitoring')) return 'development';
+    if (scenarioName.includes('alarm') || scenarioName.includes('safety') || scenarioName.includes('battery') || scenarioName.includes('shallow')) return 'safety';
+    if (scenarioName.includes('performance') || scenarioName.includes('stress') || scenarioName.includes('frequency') || scenarioName.includes('malformed')) return 'performance';
+    if (scenarioName.includes('recorded') || scenarioName.includes('real-world') || scenarioName.includes('synthetic')) return 'recorded';
+    if (scenarioName.includes('story-') || scenarioName.includes('validation')) return 'story-validation';
     
-    return categoryMap[scenarioName] || 'development';
+    return 'basic'; // Default category
   }
 
   /**
