@@ -1,10 +1,20 @@
 # Boating Instruments App Frontend Architecture Document
 
+*Updated with BMAD BMM Framework Integration Patterns*
+
 ## Table of Contents
 
 - [Boating Instruments App Frontend Architecture Document](#boating-instruments-app-frontend-architecture-document)
   - [Change Log](./change-log.md)
   - [Document Scope](#document-scope)
+  - [AI Agent Development Framework](./ai-agent-development-framework.md) ⭐ **NEW**
+    - [Quick Reference for AI Agents](./ai-agent-development-framework.md#quick-reference-for-ai-agents)
+    - [Widget Development Checklist](./ai-agent-development-framework.md#widget-development-checklist)
+    - [Critical Implementation Patterns](./ai-agent-development-framework.md#critical-implementation-patterns)
+  - [Storybook Integration Patterns](./storybook-integration-patterns.md) ⭐ **NEW**
+    - [MockStoreProvider Pattern](./storybook-integration-patterns.md#mockstorerovider-pattern)
+    - [Essential Story Types](./storybook-integration-patterns.md#essential-story-types)
+    - [Maritime Settings Integration](./storybook-integration-patterns.md#maritime-settings-integration-pattern)
   - [Framework & Technology Selection](./framework-selection.md)
     - [Framework Decision: React Native](./framework-selection.md#framework-decision-react-native)
     - [Starter Template: Expo (Managed Workflow)](./framework-selection.md#starter-template-expo-managed-workflow)
@@ -14,8 +24,9 @@
   - [Project Structure](./project-structure.md)
     - [Directory Organization](./project-structure.md#directory-organization)
     - [Structure Rationale](./project-structure.md#structure-rationale)
-  - [Component Standards](./component-standards.md)
+  - [Component Standards](./component-standards.md) ⭐ **UPDATED**
     - [Component Template](./component-standards.md#component-template)
+    - [Storybook Integration Requirements](./component-standards.md#storybook-integration-requirements)
     - [Naming Conventions](./component-standards.md#naming-conventions)
     - [Atomic Design Organization](./component-standards.md#atomic-design-organization)
   - [State Management](./state-management.md)
@@ -29,7 +40,9 @@
     - [Styling Approach](./styling-guidelines.md#styling-approach)
     - [Theme Provider](./styling-guidelines.md#theme-provider)
     - [Global Theme Variables](./styling-guidelines.md#global-theme-variables)
-  - [UI Design System](./design-system.md)
+  - [UI Design System](./design-system.md) ⭐ **UPDATED**
+    - [Maritime Settings Framework](./design-system.md#maritime-settings-framework)
+    - [Settings Component Patterns](./design-system.md#settings-component-patterns)
     - [Widget Grid System](./design-system.md#widget-grid-system)
     - [Monochromatic Design Language](./design-system.md#monochromatic-design-language)
     - [Alert Threshold Color System](./design-system.md#alert-threshold-color-system)
