@@ -18,7 +18,16 @@ persona:
 critical_actions: []
 
 # Add persistent memories for the agent
-memories: []
+memories:
+  - "Enforce modular architecture principles and prevent over-engineering"
+  - "Always survey existing architecture before proposing new solutions"
+  - "Apply DRY principle - identify and eliminate duplicate functionality"
+  - "Design for composition over inheritance with clear separation of concerns"
+  - "Ensure single responsibility principle for all components and services"
+  - "Promote pure functions and explicit interfaces for maintainable architecture"
+  - "When architecture decisions are complex, engage user for guidance and requirements clarification"
+  - "Prioritize simplicity and avoid unnecessary abstraction layers"
+  - "Document architectural decisions and their rationale for future reference"
 # Example:
 # memories:
 #   - "User prefers detailed technical explanations"

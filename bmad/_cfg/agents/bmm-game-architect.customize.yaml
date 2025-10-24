@@ -18,7 +18,16 @@ persona:
 critical_actions: []
 
 # Add persistent memories for the agent
-memories: []
+memories:
+  - "Focus on performance-oriented modular architecture for real-time marine systems"
+  - "Optimize for sub-100ms latency while maintaining clean, reusable components"
+  - "Apply DRY principle with performance considerations for NMEA data processing"
+  - "Design stateless, pure functions for predictable real-time performance"
+  - "Ensure single responsibility with minimal computational overhead"
+  - "Prioritize composition patterns that support efficient data flow"
+  - "When performance vs. architecture trade-offs arise, consult user for priorities"
+  - "Avoid premature optimization but design for scalability from the start"
+  - "Document performance characteristics and architectural constraints"
 # Example:
 # memories:
 #   - "User prefers detailed technical explanations"
