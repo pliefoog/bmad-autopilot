@@ -1,0 +1,141 @@
+<story-context id="epic-8/story-8.2" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>8.2</storyId>
+    <title>Glove Mode System</title>
+    <status>BLOCKED (Waiting for Story 8.1 completion)</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow (Bob - Scrum Master)</generator>
+    <sourceStoryPath>docs/stories/story-8.2-glove-mode-system.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>sailor using the app with sailing gloves</asA>
+    <iWant>automatic UI density adaptation with larger touch targets and fonts when actively navigating</iWant>
+    <soThat>I can interact with the app without removing gloves or struggling with small buttons</soThat>
+    <tasks>
+      - UI Density Configuration (glove vs native mode parameters)
+      - useUIDensity Hook (returns current density based on navigation session)
+      - AutopilotFooter Refactor (reference implementation for density adaptation)
+      - Metric Cell Density Awareness (PrimaryMetricCell, SecondaryMetricCell)
+      - Visual Glove Mode Indicator (glove icon in HeaderBar when active)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <density_config>
+      <item id="1.1">Density config file created (src/config/density.ts)</item>
+      <item id="1.2">Glove mode config: touchTargetSize 64pt, swipeThreshold 120px, fontSize.value 48pt, spacing 16pt</item>
+      <item id="1.3">Native mode config: touchTargetSize 44pt, swipeThreshold 50px, fontSize.value 36pt, spacing 8pt</item>
+      <item id="1.4">Haptic feedback levels: Heavy (glove), Medium (native)</item>
+      <item id="1.5">TypeScript types exported</item>
+    </density_config>
+    <use_ui_density_hook>
+      <item id="2.1">Hook created (src/hooks/useUIDensity.ts)</item>
+      <item id="2.2">Reads navigationSession.gloveModeActive</item>
+      <item id="2.3">Returns DENSITY_CONFIGS['glove'] when session active</item>
+      <item id="2.4">Returns DENSITY_CONFIGS['native'] when session inactive</item>
+      <item id="2.5">Hook memoized for performance</item>
+      <item id="2.6">TypeScript types exported</item>
+      <item id="2.7">JSDoc documentation with examples</item>
+    </use_ui_density_hook>
+    <autopilot_footer_refactor>
+      <item id="3.1">AutopilotFooter imports useUIDensity()</item>
+      <item id="3.2">Button sizes adapt: 44pt → 64pt based on glove mode</item>
+      <item id="3.3">Spacing adapts: 8pt → 16pt padding</item>
+      <item id="3.4">Font sizes adapt: body 16pt → 18pt, heading 20pt → 24pt</item>
+      <item id="3.5">Haptic feedback adapts: Medium native, Heavy glove</item>
+      <item id="3.6">Component re-renders when navigation session changes</item>
+      <item id="3.7">Storybook story with 3 variants (Native, Glove, Interactive)</item>
+    </autopilot_footer_refactor>
+    <metric_cells>
+      <item id="4.1">PrimaryMetricCell imports useUIDensity()</item>
+      <item id="4.2">PrimaryMetricCell value font: 36pt → 48pt</item>
+      <item id="4.3">PrimaryMetricCell label font: 16pt → 18pt</item>
+      <item id="4.4">PrimaryMetricCell padding: 8pt → 16pt</item>
+      <item id="4.5">SecondaryMetricCell imports useUIDensity()</item>
+      <item id="4.6">SecondaryMetricCell value font: 36pt → 48pt</item>
+      <item id="4.7">SecondaryMetricCell label font: 16pt → 18pt</item>
+      <item id="4.8">SecondaryMetricCell padding: 8pt → 16pt</item>
+      <item id="4.9">Storybook stories for both components</item>
+    </metric_cells>
+    <glove_indicator>
+      <item id="5.1">Glove icon (🧤) added to HeaderBar</item>
+      <item id="5.2">Icon visible when gloveModeActive === true</item>
+      <item id="5.3">Icon hidden when session inactive</item>
+      <item id="5.4">Icon positioned top-right of header</item>
+      <item id="5.5">Icon size adapts to density (24pt → 28pt)</item>
+      <item id="5.6">Tooltip on long-press/hover: "Glove Mode - Large touch targets"</item>
+      <item id="5.7">Icon color matches theme.primary</item>
+      <item id="5.8">Smooth fade-in/fade-out animation (300ms)</item>
+    </glove_indicator>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/VIP-UX-IMPLEMENTATION-GUIDE.md" title="VIP UX Implementation Guide" section="Density Adaptation" snippet="Touch targets 44pt → 64pt (45% larger). Swipe threshold 50px → 120px (140% increase). Font sizes 36pt → 48pt (33% larger). Grid spacing 8pt → 16pt (100% increase)."/>
+      <item path="docs/REFACTORING-PLAN-VIP-PLATFORM.md" title="VIP Platform Refactoring Plan" section="Sprint 2-3: Glove Mode" snippet="Density configuration system. useUIDensity hook for all components. AutopilotFooter as reference implementation. Visual glove mode indicator."/>
+      <item path="docs/stories/story-8.1-foundation-store-consolidation.md" title="Story 8.1" section="Navigation Session Store" snippet="navigationSessionStore provides gloveModeActive computed property based on isActive state."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/store/navigationSessionStore.ts" kind="store" symbol="useNavigationSession" lines="1-50" reason="Created in Story 8.1 - provides gloveModeActive that triggers density changes"/>
+      <item path="boatingInstrumentsApp/src/components/organisms/AutopilotFooter.tsx" kind="component" symbol="AutopilotFooter" lines="1-120" reason="Reference implementation for density adaptation - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" lines="1-80" reason="Metric cell component - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx" kind="component" symbol="SecondaryMetricCell" lines="1-80" reason="Metric cell component - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/components/HeaderBar.tsx" kind="component" symbol="HeaderBar" lines="1-60" reason="Header component - will add glove mode indicator"/>
+      <item path="boatingInstrumentsApp/src/hooks/useResponsiveGrid.ts" kind="hook" symbol="useResponsiveGrid" lines="1-80" reason="Existing responsive pattern - similar pattern for useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="useTheme" lines="1-80" reason="Theme store for accessing theme.primary color for glove icon"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with Animated API for glove indicator"/>
+      </react_native>
+      <expo>
+        <package name="expo-haptics" version="TBD" usage="Haptic feedback adaptation - TO BE INSTALLED"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="Navigation session store (already installed in 8.1)"/>
+      </state>
+      <storybook>
+        <package name="@storybook/react-native" version="TBD" usage="Visual component development (already installed in 8.1)"/>
+      </storybook>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Density Values: Must match VIP UX specification exactly (64pt glove, 44pt native)
+    - Hook Pattern: Must use useMemo for performance (no unnecessary re-renders)
+    - AutopilotFooter: Reference implementation - all future components follow this pattern
+    - Haptic Feedback: iOS only (Platform.OS === 'ios') - no-op on Android/Web
+    - Animation: Use React Native Animated API (not CSS) for glove indicator fade
+    - Theme Integration: Glove icon color must respect theme.primary (Day/Night/Red Night)
+    - Storybook: Must show both native and glove mode variants for visual comparison
+    - No Breaking Changes: Components must work in both modes without errors
+  </constraints>
+
+  <interfaces>
+    <item name="DensityConfig" kind="interface" signature="interface DensityConfig { touchTargetSize: number; swipeThreshold: number; fontSize: { value: number; label: number; body: number; heading: number; }; spacing: number; hapticFeedback: ImpactFeedbackStyle; }" path="src/config/density.ts (TO BE CREATED)"/>
+    <item name="DENSITY_CONFIGS" kind="config_object" signature="const DENSITY_CONFIGS: Record<'native' | 'glove', DensityConfig>" path="src/config/density.ts (TO BE CREATED)"/>
+    <item name="useUIDensity" kind="hook" signature="function useUIDensity(): DensityConfig" path="src/hooks/useUIDensity.ts (TO BE CREATED)"/>
+    <item name="useNavigationSession" kind="zustand_store" signature="interface NavigationSessionState { gloveModeActive: boolean; }" path="src/store/navigationSessionStore.ts (FROM STORY 8.1)"/>
+    <item name="useTheme" kind="zustand_store" signature="interface ThemeState { theme: Theme; }" path="src/store/themeStore.ts"/>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with React Native Testing Library. Unit tests for hook logic. Integration tests with WiFi Bridge scenarios. Storybook for visual regression testing.</standards>
+    <locations>
+      - __tests__/hooks/ (hook tests)
+      - __tests__/components/ (component tests)
+      - __tests__/integration/ (WiFi Bridge scenario tests)
+      - src/components/**/*.stories.tsx (Storybook stories)
+    </locations>
+    <ideas>
+      <item ac="1.1-1.5">Density config tests: verify glove mode values (64pt, 120px, 48pt), verify native mode values (44pt, 50px, 36pt)</item>
+      <item ac="2.1-2.7">useUIDensity hook tests: returns glove config when session active, returns native config when inactive, re-renders on session change</item>
+      <item ac="3.1-3.7">AutopilotFooter tests: buttons 44pt → 64pt, haptic feedback adapts, Storybook variants render correctly</item>
+      <item ac="4.1-4.9">Metric cell tests: fonts adapt (36pt → 48pt, 16pt → 18pt), padding adapts (8pt → 16pt)</item>
+      <item ac="5.1-5.8">Glove indicator tests: appears when session starts, disappears when session ends, fade animation works</item>
+      <item>WiFi Bridge scenario test: Load "underway-manual" → verify 64pt buttons, Load "idle-at-marina" → verify 44pt buttons</item>
+    </ideas>
+  </tests>
+</story-context>

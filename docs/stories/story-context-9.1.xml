@@ -1,0 +1,83 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9.0</epicId>
+    <storyId>9.1</storyId>
+    <title>Enhanced Presentation System Foundation</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-9.1-enhanced-presentation-foundation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>marine instrument user</asA>
+    <iWant>unit settings changes to immediately propagate to all widgets without layout jumping</iWant>
+    <soThat>I can rely on consistent, professional marine precision displays during navigation</soThat>
+    <tasks>
+      - Enhanced Presentation Definitions: Add format field to all speed presentations, create unique wind presentation IDs, implement Beaufort scale format
+      - Font Measurement Service Implementation: Create FontMeasurementService class, implement Canvas API measurement, add platform-specific measurement
+      - Unified Metric Hook Creation: Create useMetricDisplay hook, implement MetricDisplayData interface, connect to settings store
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Enhanced Presentation Definitions: All presentation objects include format field with marine-specific patterns (speed xxx.x, wind unique IDs, Beaufort scale x Bf Description)
+    2. Font Measurement Service: Platform-specific text measurement with aggressive caching using Canvas API measureText() for web, native APIs for mobile
+    3. Unified Metric Hook: Create useMetricDisplay replacing both legacy systems with single hook interface returning MetricDisplayData
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/ui-architecture.md" title="UI Architecture v3.0" section="Enhanced Presentation System Architecture" snippet="Unified metric display architecture eliminating dual-system conflicts between legacy useUnitConversion and new presentation system, with real font measurement for layout stability"/>
+      <item path="docs/stories/epic-9-enhanced-presentation-system.md" title="Epic 9 Enhanced Presentation System" section="Technical Architecture" snippet="Core principle: Single source of truth - Settings → useMetricDisplay → Pre-formatted MetricDisplayData → Pure Components. Eliminates legacy useUnitConversion (1800+ lines) and bridge pattern complexity"/>
+      <item path="boatingInstrumentsApp/DATA-PRESENTATION-REWORK-PLAN.md" title="Data Presentation Rework Plan" section="Phase 4 Cleanup" snippet="Remove old useUnitConversion hook (1800+ lines), remove complex unit definition files, remove legacy bridge (legacyBridge.ts), update tests to use new system"/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/hooks/useUnitConversion.ts" kind="legacy_hook" symbol="useUnitConversion" lines="785-1400" reason="Legacy 1800+ line hook to be replaced by unified useMetricDisplay system"/>
+      <item path="boatingInstrumentsApp/src/presentation/presentations.ts" kind="presentation_data" symbol="PRESENTATIONS, SPEED_PRESENTATIONS, WIND_PRESENTATIONS" lines="109-288" reason="Current presentation definitions that need format field enhancement"/>
+      <item path="boatingInstrumentsApp/src/presentation/useDataPresentation.ts" kind="current_hook" symbol="useDataPresentation" lines="1-180" reason="Current presentation system architecture to be enhanced with font measurement"/>
+      <item path="boatingInstrumentsApp/src/presentation/legacyBridge.ts" kind="bridge_system" symbol="useLegacyUnitBridge, syncLegacyUnitChange" lines="32-90" reason="Bridge system that will be eliminated by unified architecture"/>
+      <item path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" lines="1-143" reason="Component that handles font sizing and layout - needs font measurement service integration"/>
+      <item path="boatingInstrumentsApp/src/utils/performanceOptimization.ts" kind="performance_utils" symbol="MarineDataCache, useCachedMarineCalculation" lines="198-236" reason="Existing caching patterns for font measurement service implementation"/>
+    </code>
+    <dependencies>
+      <react-native>@react-native-async-storage/async-storage@1.19.3, zustand@4.4.1</react-native>
+      <react>react@18.2.0, react-native@0.73.2</react>
+      <expo>expo@50.0.0, @expo/cli</expo>
+      <testing>jest@29.6.3, @testing-library/react-native@12.3.2</testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Architecture Pattern: Single source of truth eliminates dual-system complexity
+    - Performance: Aggressive caching prevents layout recalculations during real-time updates  
+    - Marine Standards: xxx.x format patterns ensure professional instrument precision
+    - Platform Compatibility: Must support Canvas API (web) and native text measurement APIs
+    - Backward Compatibility: Maintain existing presentation API during transition
+    - Testing Requirements: Unit tests for font measurement accuracy and hook reactivity
+  </constraints>
+
+  <interfaces>
+    <item name="MetricDisplayData" kind="typescript_interface" signature="interface MetricDisplayData { mnemonic: string; value: string; unit: string; rawValue: number; layout: { minWidth: number; alignment: string; }; presentation: { id: string; name: string; }; }" path="src/types/MetricDisplayData.ts"/>
+    <item name="FontMeasurementService" kind="service_class" signature="class FontMeasurementService { static measureText(text: string, fontSize: number, fontFamily: string, fontWeight: string): number; static calculateOptimalWidth(format: PresentationFormat): number; }" path="src/services/FontMeasurementService.ts"/>
+    <item name="useMetricDisplay" kind="custom_hook" signature="function useMetricDisplay(category: string, rawValue: number, mnemonic: string): MetricDisplayData" path="src/hooks/useMetricDisplay.ts"/>
+    <item name="EnhancedPresentation" kind="typescript_interface" signature="interface EnhancedPresentation extends Presentation { format: { pattern: string; decimals: number; minWidth: number; testCases: { min: number; max: number; typical: number; }; }; }" path="src/types/EnhancedPresentation.ts"/>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest framework with React Native Testing Library for component testing, performance measurement utilities for font measurement accuracy validation, marine precision standards testing for format patterns, platform-specific testing for Canvas API (web) and native measurement APIs
+    </standards>
+    <locations>
+      - __tests__/services/FontMeasurementService.test.ts (font measurement accuracy tests)
+      - __tests__/hooks/useMetricDisplay.test.ts (unified hook functionality tests)  
+      - __tests__/presentation/enhancedPresentations.test.ts (format field and marine pattern tests)
+      - __tests__/integration/presentationSystem.test.ts (end-to-end presentation system tests)
+    </locations>
+    <ideas>
+      AC1: Test enhanced presentation definitions with format field validation, marine pattern compliance (xxx.x for speed, x Bf Description for Beaufort), unique ID validation (wind_kts_1 vs kts_1)
+      AC2: Font measurement service accuracy testing across platforms, caching performance validation, optimal width calculation with test cases
+      AC3: useMetricDisplay hook integration testing, MetricDisplayData interface validation, settings store reactivity testing, performance benchmarking vs legacy system
+    </ideas>
+  </tests>
+</story-context>

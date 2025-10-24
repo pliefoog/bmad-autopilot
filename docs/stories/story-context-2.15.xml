@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Story Context 2.15: Enhanced Widget State Management -->
+<!-- Generated: 2025-01-21 -->
+<!-- BMM Story-Context Workflow v4.0 -->
+
+<story-context id="story-2.15" epic="2" version="1.0">
+  <!-- Metadata -->
+  <metadata>
+    <title>Enhanced Widget State Management</title>
+    <epic>Epic 2: Instrument Widget System & Layout</epic>
+    <status>ContextReadyDraft</status>
+    <created>2025-01-21</created>
+    <updated>2025-01-21</updated>
+    <priority>high</priority>
+    <effort>8</effort>
+    <complexity>medium</complexity>
+    <dependencies>
+      <story>2.12</story>
+      <story>2.2</story>
+    </dependencies>
+  </metadata>
+
+  <!-- Story Definition -->
+  <story>
+    <title>Widget Pin Functionality &amp; State Persistence - Brownfield Addition</title>
+    <status>Done</status>
+    <user-story>
+      As a marine navigator with specific monitoring preferences,
+      I want to pin important widgets so they stay expanded across app restarts,
+      so that critical information I need is always visible without manual reconfiguration.
+    </user-story>
+    <existing-system-integration>
+      Integrates with current widget framework from Epic 2 (story-2.2).
+      Technology: Zustand store + React Native gesture handling.
+      Follows pattern: Existing widget configuration pattern.
+      Touch points: Widget store, all instrument widgets, dashboard layout.
+    </existing-system-integration>
+  </story>
+
+  <!-- Acceptance Criteria -->
+  <acceptance-criteria>
+    <section name="Pin Functionality Requirements">
+      <criterion id="AC1">Widgets can be pinned to maintain expanded state across app restarts</criterion>
+      <criterion id="AC2">Long press on widget caret toggles pin state (unpinned ↔ pinned)</criterion>
+      <criterion id="AC3">Visual indicators: Caret (⌄/⌃) for unpinned, Pin icon (📌) for pinned widgets</criterion>
+      <criterion id="AC4">Pinned widgets start in expanded state when app launches</criterion>
+      <criterion id="AC5">Unpinned widgets always start in collapsed state regardless of last session</criterion>
+    </section>
+    <section name="State Persistence Requirements">
+      <criterion id="AC6">Pin state stored per widget ID in widget store with AsyncStorage persistence</criterion>
+      <criterion id="AC7">Widget expanded/collapsed state tracked but only persists for pinned widgets</criterion>
+      <criterion id="AC8">Unpinned widget state resets to collapsed on app restart</criterion>
+      <criterion id="AC9">Pin state survives app updates and data migrations</criterion>
+    </section>
+    <section name="Integration Requirements">
+      <criterion id="AC10">Builds on Story 2.12 basic two-state widget system foundation</criterion>
+      <criterion id="AC11">Maintains existing Zustand store pattern for widget configuration</criterion>
+      <criterion id="AC12">Compatible with existing gesture handling - no conflicts with tap-to-expand</criterion>
+      <criterion id="AC13">Works with existing WidgetCard component structure</criterion>
+    </section>
+    <section name="Performance Requirements">
+      <criterion id="AC14">Pin state changes complete instantly (&lt;50ms)</criterion>
+      <criterion id="AC15">App startup time unaffected by pin state restoration</criterion>
+      <criterion id="AC16">Memory usage scales appropriately with number of pinned widgets</criterion>
+    </section>
+  </acceptance-criteria>
+
+  <!-- Technical Artifacts -->
+  <artifacts>
+    <category name="Store Management">
+      <artifact path="src/stores/widgetStore.ts" type="store" status="implemented">
+        <description>Enhanced widget store with pin functionality (788 lines)</description>
+        <functionality>
+          - WidgetConfig interface with isPinned, isExpanded, lastInteraction properties
+          - pinWidget(), unpinWidget(), toggleWidgetPin() actions
+          - isWidgetPinned() selector function
+          - initializeWidgetStatesOnAppStart() for state restoration
+          - AsyncStorage persistence with Zustand persist middleware
+        </functionality>
+        <key-implementations>
+          - Pin state management with timestamp tracking
+          - Expanded state tracking separate from pin state
+          - App startup state initialization logic
+          - Backward compatibility for widgets without pin state
+        </key-implementations>
+      </artifact>
+      <artifact path="src/hooks/useWidgetConfig.ts" type="hook" status="implemented">
+        <description>Widget configuration management hook (147 lines)</description>
+        <functionality>
+          - Widget lifecycle management with enhanced state support
+          - Configuration updates and layout management
+          - Integration with store pin functionality
+        </functionality>
+      </artifact>
+    </category>
+
+    <category name="Widget Components">
+      <artifact path="src/widgets/WidgetWrapper.tsx" type="component" status="implemented">
+        <description>Enhanced wrapper with pin functionality and auto-collapse (82 lines)</description>
+        <functionality>
+          - Pin toggle handling on long-press gesture
+          - Auto-collapse logic for unpinned widgets (30 second timeout)
+          - State management integration
+          - Gesture conflict prevention
+        </functionality>
+        <key-implementations>
+          - useEffect for auto-collapse timer management
+          - Pin state visual indicator handling
+          - Interaction timestamp updates
+        </key-implementations>
+      </artifact>
+      <artifact path="src/widgets/WidgetCard.tsx" type="component" status="implemented">
+        <description>Presentational widget component with pin visual indicators (169 lines)</description>
+        <functionality>
+          - Pin icon vs chevron display logic
+          - Long-press and tap gesture handling
+          - Accessibility support for pin states
+          - Visual state transitions
+        </functionality>
+        <key-implementations>
+          - Conditional rendering: pin icon (📌) vs chevron (⌄/⌃)
+          - Gesture handler integration for onPinToggle
+          - Accessibility labels for screen readers
+        </key-implementations>
+      </artifact>
+    </category>
+
+    <category name="Testing Infrastructure">
+      <artifact path="__tests__/stores/enhancedWidgetStore.test.ts" type="test" status="comprehensive">
+        <description>Comprehensive pin functionality tests (200+ lines)</description>
+        <test-coverage>
+          - Pin/unpin/toggle operations (AC1-2)
+          - State persistence and restoration (AC4-8)
+          - Auto-collapse behavior testing
+          - Performance validation (AC14-16)
+          - Backward compatibility (AC9)
+        </test-coverage>
+      </artifact>
+      <artifact path="__tests__/widgets/WidgetWrapper.test.tsx" type="test" status="comprehensive">
+        <description>Widget wrapper integration tests with pin functionality</description>
+        <test-coverage>
+          - Pin UI state management
+          - Auto-collapse timer behavior
+          - Gesture handling integration
+          - Pin state change effects
+        </test-coverage>
+      </artifact>
+      <artifact path="__tests__/factories/widgetFactory.ts" type="test-utility" status="implemented">
+        <description>Test factories for pin state variations</description>
+        <functionality>
+          - createPinnedTestWidget() factory
+          - createUnpinnedTestWidget() factory
+          - createMixedStateWidgets() for state persistence testing
+        </functionality>
+      </artifact>
+    </category>
+
+    <category name="Documentation">
+      <artifact path="docs/enhanced-widget-state-management.md" type="documentation" status="comprehensive">
+        <description>Complete implementation documentation (157 lines)</description>
+        <content>
+          - Technical implementation details
+          - Usage patterns and examples
+          - State persistence architecture
+          - Performance characteristics
+        </content>
+      </artifact>
+    </category>
+  </artifacts>
+
+  <!-- Design Constraints -->
+  <constraints>
+    <technical>
+      <constraint>Must integrate with existing Zustand store pattern without breaking changes</constraint>
+      <constraint>Pin state storage in AsyncStorage must be efficient and not impact app performance</constraint>
+      <constraint>Gesture handling must not conflict with existing tap-to-expand behavior</constraint>
+      <constraint>Auto-collapse timer must be properly cleaned up to prevent memory leaks</constraint>
+    </technical>
+    <performance>
+      <constraint>Pin state changes must complete in &lt;50ms for responsive UX</constraint>
+      <constraint>App startup initialization must not delay app launch</constraint>
+      <constraint>Memory usage must scale linearly with number of pinned widgets</constraint>
+    </performance>
+    <compatibility>
+      <constraint>Must maintain backward compatibility with widgets created before pin feature</constraint>
+      <constraint>Must work with existing WidgetCard component structure</constraint>
+      <constraint>Must integrate with existing theme system and visual indicators</constraint>
+    </compatibility>
+  </constraints>
+
+  <!-- System Interfaces -->
+  <interfaces>
+    <store-interface name="WidgetStore Pin Functions">
+      <method>pinWidget(widgetId: string) → void</method>
+      <method>unpinWidget(widgetId: string) → void</method>
+      <method>toggleWidgetPin(widgetId: string) → void</method>
+      <method>isWidgetPinned(widgetId: string) → boolean</method>
+      <method>updateWidgetInteraction(widgetId: string) → void</method>
+      <method>initializeWidgetStatesOnAppStart() → void</method>
+    </store-interface>
+    <component-interface name="WidgetWrapper Props">
+      <prop>widgetId: string - unique widget identifier</prop>
+      <prop>onPinToggle?: () =&gt; void - long-press pin toggle handler</prop>
+      <prop>isPinned?: boolean - current pin state</prop>
+    </component-interface>
+    <component-interface name="WidgetCard Props">
+      <prop>isPinned?: boolean - pin state for visual indicator</prop>
+      <prop>onPinToggle?: () =&gt; void - pin toggle callback</prop>
+      <prop>expanded?: boolean - expansion state for icon selection</prop>
+    </component-interface>
+    <gesture-interface name="Pin Interaction">
+      <gesture>Long press on widget caret → toggles pin state</gesture>
+      <gesture>Tap on widget caret → toggles expansion (existing)</gesture>
+    </gesture-interface>
+  </interfaces>
+
+  <!-- Testing Strategy -->
+  <testing>
+    <unit-tests>
+      <test-group name="Pin Functionality" coverage="100%">
+        <test>Pin widget sets isPinned=true and expands widget</test>
+        <test>Unpin widget sets isPinned=false, maintains expansion state</test>
+        <test>Toggle pin correctly switches between pinned/unpinned states</test>
+        <test>Pin state query returns correct boolean value</test>
+      </test-group>
+      <test-group name="State Persistence" coverage="100%">
+        <test>Pinned widgets restore to expanded state on app start</test>
+        <test>Unpinned widgets restore to collapsed state on app start</test>
+        <test>Pin states survive AsyncStorage persistence cycle</test>
+        <test>Widgets without pin state default to unpinned (backward compatibility)</test>
+      </test-group>
+      <test-group name="Auto-Collapse Behavior" coverage="100%">
+        <test>Unpinned expanded widgets auto-collapse after 30 seconds</test>
+        <test>Pinned widgets never auto-collapse regardless of timeout</test>
+        <test>User interaction resets auto-collapse timer</test>
+        <test>Timer cleanup prevents memory leaks on component unmount</test>
+      </test-group>
+    </unit-tests>
+    <integration-tests>
+      <test-group name="Widget Wrapper Integration" coverage="95%">
+        <test>Pin toggle integrates correctly with store actions</test>
+        <test>Visual indicators update correctly on pin state changes</test>
+        <test>Gesture handling doesn't conflict between tap and long-press</test>
+        <test>Auto-collapse behavior works with pin state changes</test>
+      </test-group>
+    </integration-tests>
+    <performance-tests>
+      <test-group name="Pin Performance" coverage="90%">
+        <test>Pin state changes complete within 50ms performance threshold</test>
+        <test>App startup time unaffected by pin state restoration</test>
+        <test>Memory usage scales appropriately with pinned widget count</test>
+      </test-group>
+    </performance-tests>
+  </testing>
+
+  <!-- Implementation Status -->
+  <implementation-status>
+    <task name="WidgetConfig schema with pin functionality" status="complete">
+      <details>
+        ✅ Added isPinned, isExpanded, lastInteraction properties to WidgetConfig
+        ✅ Implemented pinWidget, unpinWidget, toggleWidgetPin store actions
+        ✅ AsyncStorage persistence updated with new properties
+        ✅ Backward compatibility maintained for existing widgets
+      </details>
+    </task>
+    <task name="Pin toggle interaction" status="complete">
+      <details>
+        ✅ Long-press gesture handler added to widget caret in WidgetWrapper
+        ✅ Pin state toggle on long-press implemented
+        ✅ Visual indicator logic: caret vs pin icon in WidgetCard
+        ✅ Gesture conflict prevention with existing tap-to-expand
+      </details>
+    </task>
+    <task name="Pin state restoration" status="complete">
+      <details>
+        ✅ initializeWidgetStatesOnAppStart() function implemented
+        ✅ Pinned widgets restore to expanded state on app startup
+        ✅ Unpinned widgets reset to collapsed state on app startup
+        ✅ AsyncStorage persistence and hydration working correctly
+      </details>
+    </task>
+    <task name="Auto-collapse functionality" status="complete">
+      <details>
+        ✅ 30-second auto-collapse timer for unpinned widgets
+        ✅ Pin state override prevents auto-collapse
+        ✅ User interaction resets timer
+        ✅ Proper timer cleanup on component unmount
+      </details>
+    </task>
+    <overall-completion>100%</overall-completion>
+    <quality-status>Production Ready</quality-status>
+  </implementation-status>
+
+  <!-- Development Guidance -->
+  <development-notes>
+    <architecture-pattern>
+      The implementation follows the established Zustand store pattern with persist middleware.
+      Pin functionality is added as an enhancement layer over the existing widget configuration system.
+      Auto-collapse behavior is implemented at the component level using useEffect hooks.
+    </architecture-pattern>
+    <key-design-decisions>
+      - Pin state stored as part of WidgetConfig for centralized management
+      - Visual indicators handled at presentation layer (WidgetCard)
+      - Auto-collapse logic in WidgetWrapper for behavior encapsulation
+      - Gesture handling integrated without conflicts using separate event handlers
+    </key-design-decisions>
+    <integration-points>
+      - Store actions integrate with existing widget management functions
+      - Component props extend existing WidgetCard and WidgetWrapper interfaces
+      - Testing infrastructure builds on existing widget test patterns
+      - Documentation follows established project documentation structure
+    </integration-points>
+  </development-notes>
+</story-context>

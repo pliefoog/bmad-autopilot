@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/2.13" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.13</storyId>
+    <title>Centralized Theme Stylesheet</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-2.13-centralized-stylesheet.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer adding new widgets</asA>
+    <iWant>a centralized stylesheet with all theme-aware styles</iWant>
+    <soThat>I don't have to redefine common patterns in every widget</soThat>
+    <tasks>
+      - Create Theme Stylesheet (Create src/styles/theme.stylesheet.ts with createThemedStyles function)
+      - Typography System (Define standard text styles with theme colors)
+      - Usage Pattern (Widgets call createThemedStyles with theme switching support)
+      - Documentation (Add JSDoc comments and usage guide)
+      - UI Consistency Updates (Monochromatic palette, alert system, grid styles, animations)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <create_theme_stylesheet>
+      <item id="1">Create src/styles/theme.stylesheet.ts</item>
+      <item id="2">Export createThemedStyles(theme: ThemeColors) function</item>
+      <item id="3">Includes common widget styles: Widget container, Header styles, Metric styles, Grid layouts, Button styles, Status indicator styles</item>
+    </create_theme_stylesheet>
+    <typography_system>
+      <item id="4">Define standard text styles: title (16pt semibold), mnemonic (12pt uppercase bold), valueMonospace (36pt monospace bold), unit (14pt regular), secondary (12pt regular)</item>
+      <item id="5">All styles use theme colors (no hardcoded values)</item>
+    </typography_system>
+    <usage_pattern>
+      <item id="6">Widgets call const themedStyles = createThemedStyles(useTheme())</item>
+      <item id="7">Apply styles: style={themedStyles.metricValue}</item>
+      <item id="8">Dynamic theme switching updates all widgets automatically</item>
+    </usage_pattern>
+    <documentation>
+      <item id="9">Add inline JSDoc comments for each style</item>
+      <item id="10">Create example widget showing all style patterns</item>
+      <item id="11">Update developer documentation with stylesheet usage guide</item>
+    </documentation>
+    <ui_consistency_updates>
+      <item id="12">Monochromatic Palette: Define standardized black/gray color constants</item>
+      <item id="13">Alert Color System: Implement Day/Night mode alert color architecture</item>
+      <item id="14">Grid System Styles: Add fixed grid size constraints (1×1, 1×2, 2×1, 2×2)</item>
+      <item id="15">Animation Patterns: Define pulse and flicker animations for Night mode alerts</item>
+      <item id="16">Icon Standardization: Standard outline icons, 12pt size, secondary gray color</item>
+      <item id="17">Typography Hierarchy: Enforce consistent font scales and monospace for values</item>
+      <item id="18">Widget Title Styles: Standardized header typography for all widgets</item>
+    </ui_consistency_updates>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd.md" title="Product Requirements Document" section="Widget System" snippet="Component-based architecture where each widget is a self-contained React component. Widget framework shall be designed with extensibility to support custom user-defined widgets with consistent styling."/>
+      <item path="docs/ui-architecture.md" title="UI Architecture Document" section="Styling System" snippet="StyleSheet API + Theme Context for component styling with Day/Night/Red-Night mode support. Native to React Native; performant; no CSS-in-JS overhead; custom theme provider for display modes."/>
+      <item path="docs/front-end-spec.md" title="Frontend Specification" section="Typography" snippet="Grid System: 8pt baseline grid for all spacing and sizing. Reliability: High contrast, clear typography, no playful consumer app aesthetics. Typography Usage Notes for consistent font scales."/>
+      <item path="docs/stories/story-2.10-theme-integration.md" title="Story 2.10: Theme Integration" section="Implementation Pattern" snippet="Widget component pattern using useTheme hook with createWidgetStyles function for theme-aware styling system."/>
+      <item path="docs/stories/story-2.13-centralized-stylesheet.md" title="Story 2.13: Centralized Stylesheet" section="Technical Notes" snippet="Implementation Pattern with createThemedStyles function, widget container styles, header styles, typography styles, grid layouts, button styles, state indicators."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/theme/styles/theme.stylesheet.ts" kind="styles" symbol="createThemedStyles" lines="1-501" reason="Centralized theme stylesheet system - already implements AC 1-3, 12-18 with comprehensive styling categories and theme awareness"/>
+      <item path="boatingInstrumentsApp/src/components/ExampleWidget.tsx" kind="component" symbol="ExampleWidget" lines="1-338" reason="Interactive reference implementation - already implements AC 10 demonstrating all style patterns and usage examples"/>
+      <item path="boatingInstrumentsApp/src/theme/styles/README.md" kind="documentation" symbol="README" lines="1-373" reason="Complete developer documentation - already implements AC 11 with usage guide, best practices, and migration instructions"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="ThemeColors" reason="Theme system providing color definitions for stylesheet integration - foundation for AC 5, 8"/>
+      <item path="boatingInstrumentsApp/src/theme/styles/widgetStyles.ts" kind="styles" symbol="createWidgetStyles" reason="Legacy widget styling system being superseded by centralized stylesheet"/>
+      <item path="boatingInstrumentsApp/src/widgets/EngineWidget.tsx" kind="widget" symbol="EngineWidget" reason="Successfully refactored widget using centralized styles - demonstrates AC 6-8 migration pattern"/>
+      <item path="boatingInstrumentsApp/src/utils/animationUtils.ts" kind="utility" symbol="PlatformStyles" reason="Cross-platform styling utilities used by centralized stylesheet for consistent behavior"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with StyleSheet API for centralized theme-aware styling system"/>
+        <package name="react-native-vector-icons" version="^10.3.0" usage="Icon system integration for standardized 12pt outline icons with theme colors"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework with cross-platform font rendering for consistent typography across themes"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation framework integration with centralized styling"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for theme store integration with centralized stylesheet"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Persistent storage for theme preferences affecting stylesheet generation"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Theme Integration: All styles must be theme-aware using ThemeColors interface with no hardcoded color values
+    - Performance Requirements: Memoized style creation with useMemo pattern to prevent unnecessary re-renders
+    - Typography Standards: Exact specifications (16pt title, 12pt mnemonic, 36pt monospace values, 14pt units)
+    - Grid System Compliance: Fixed grid layouts (1×1, 1×2, 2×1, 2×2, 2×3) with 8pt baseline grid spacing
+    - Marine Standards: Professional marine instrument aesthetic with high contrast and monochromatic design
+    - Cross-Platform Compatibility: Consistent behavior across iOS, Android, and Web platforms
+    - Animation Integration: Pulse and flicker patterns for Night mode alerts using platform-specific utilities
+    - Component Consistency: Single usage pattern across all widgets with createThemedStyles function
+    - Documentation Standards: Comprehensive JSDoc comments for all exported styles and functions
+    - Migration Strategy: Backward compatibility during transition from legacy widgetStyles system
+  </constraints>
+  
+  <interfaces>
+    <item name="createThemedStyles" kind="function" signature="function createThemedStyles(theme: ThemeColors): StyleSheet" path="boatingInstrumentsApp/src/theme/styles/theme.stylesheet.ts"/>
+    <item name="ThemeColors" kind="interface" signature="interface ThemeColors { primary: string; secondary: string; background: string; surface: string; text: string; textSecondary: string; accent: string; warning: string; error: string; success: string; border: string; shadow: string; }" path="boatingInstrumentsApp/src/store/themeStore.ts"/>
+    <item name="getStateColor" kind="function" signature="function getStateColor(state: 'normal' | 'warning' | 'error' | 'success', theme: ThemeColors): string" path="boatingInstrumentsApp/src/theme/styles/theme.stylesheet.ts"/>
+    <item name="useTheme" kind="hook" signature="function useTheme(): ThemeColors" path="boatingInstrumentsApp/src/store/themeStore.ts"/>
+    <item name="PlatformStyles" kind="utility" signature="object PlatformStyles { boxShadow: (color: string, offset: {x: number, y: number}, radius: number, opacity: number) => ViewStyle }" path="boatingInstrumentsApp/src/utils/animationUtils.ts"/>
+    <item name="ExampleWidget" kind="component" signature="React.FC" path="boatingInstrumentsApp/src/components/ExampleWidget.tsx"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library. Style consistency testing across all theme modes (Day/Night/Red-Night). Performance testing for memoized style creation. Visual regression testing for widget migration. Typography precision testing with exact measurements.</standards>
+    <locations>
+      - __tests__/styles/theme.stylesheet.test.ts (centralized stylesheet testing)
+      - __tests__/components/ExampleWidget.test.tsx (example widget functionality tests)
+      - __tests__/integration/styleMigration.test.tsx (widget migration validation)
+      - __tests__/performance/styleCreation.test.ts (memoization and performance tests)
+      - __tests__/visual/ (theme mode visual regression tests)
+    </locations>
+    <ideas>
+      <item ac="1-3">Stylesheet creation validation, createThemedStyles function testing, style category completeness verification</item>
+      <item ac="4-5">Typography system tests (font sizes, weights, theme color integration), hardcoded value detection</item>
+      <item ac="6-8">Usage pattern validation, dynamic theme switching tests, widget integration verification</item>
+      <item ac="9-11">Documentation completeness tests, JSDoc validation, example widget functionality</item>
+      <item ac="12-18">UI consistency validation (monochromatic design, alert colors, grid constraints, animations, icons, typography hierarchy, widget titles)</item>
+    </ideas>
+  </tests>
+</story-context>

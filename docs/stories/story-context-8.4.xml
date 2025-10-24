@@ -1,0 +1,147 @@
+<story-context id="epic-8/story-8.4" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>8.4</storyId>
+    <title>Platform Navigation - Android & Web</title>
+    <status>BLOCKED (Waiting for Story 8.3 completion)</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow (Bob - Scrum Master)</generator>
+    <sourceStoryPath>docs/stories/story-8.4-platform-navigation-android-web.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Android/Web user of the boating app</asA>
+    <iWant>platform-native navigation (Android drawer, Web responsive) with Material Icons</iWant>
+    <soThat>navigation feels natural on my platform while marine widgets stay consistent</soThat>
+    <tasks>
+      - Android Navigation Drawer (side drawer with hamburger menu)
+      - Material Icons Integration (Google's icon system for Android/Web)
+      - Floating Action Button (FAB for primary action - Add Widget)
+      - Web Responsive Navigation (drawer mobile, tabs tablet, sidebar desktop)
+      - Platform Icon Abstraction (unified API, SF Symbols on iOS, Material on Android/Web)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <android_drawer>
+      <item id="1.1">@react-navigation/drawer installed</item>
+      <item id="1.2">Drawer with 5 items: Dashboard, Autopilot, Alarms, Settings, Help</item>
+      <item id="1.3">Hamburger icon (☰) in top-left</item>
+      <item id="1.4">Drawer slides from left (Android convention)</item>
+      <item id="1.5">Drawer styling matches theme</item>
+      <item id="1.6">Active item highlighted with theme.primary</item>
+      <item id="1.7">Drawer backdrop darkens (opacity 0.5)</item>
+      <item id="1.8">Tap outside drawer → closes</item>
+      <item id="1.9">Swipe from left edge → opens drawer</item>
+    </android_drawer>
+    <material_icons>
+      <item id="2.1">react-native-vector-icons installed</item>
+      <item id="2.2">Material Icons used: Dashboard (dashboard), Autopilot (my-location), Alarms (notifications), Settings (settings), Help (help), Add (add)</item>
+      <item id="2.3">Icon size: 24pt standard (Material spec)</item>
+      <item id="2.4">Icon color: theme.textSecondary inactive, theme.primary active</item>
+      <item id="2.5">Icons render in all themes</item>
+      <item id="2.6">Icons load on Android and Web</item>
+      <item id="2.7">iOS uses SF Symbols (from Story 8.3)</item>
+    </material_icons>
+    <fab>
+      <item id="3.1">FAB component created (src/components/atoms/FAB.tsx)</item>
+      <item id="3.2">FAB positioned bottom-right (Android convention)</item>
+      <item id="3.3">FAB icon: Material Icon "add"</item>
+      <item id="3.4">FAB color: theme.primary</item>
+      <item id="3.5">Tap FAB → opens WidgetSelector</item>
+      <item id="3.6">FAB has elevation shadow (8dp)</item>
+      <item id="3.7">FAB size: 56dp × 56dp (Material spec)</item>
+      <item id="3.8">FAB respects safe area</item>
+      <item id="3.9">FAB visible on Dashboard screen only</item>
+      <item id="3.10">FAB animates on press (scale 0.9, spring back)</item>
+    </fab>
+    <web_responsive>
+      <item id="4.1">WebNavigation component created (src/navigation/WebNavigation.tsx)</item>
+      <item id="4.2">Mobile web (<768px): Drawer navigation</item>
+      <item id="4.3">Tablet web (768-1024px): Bottom tab bar</item>
+      <item id="4.4">Desktop web (>1024px): Permanent sidebar</item>
+      <item id="4.5">Resize window → navigation adapts smoothly</item>
+      <item id="4.6">Sidebar styling matches theme</item>
+      <item id="4.7">Sidebar items highlighted on active route</item>
+      <item id="4.8">Sidebar collapsible on desktop (toggle button)</item>
+      <item id="4.9">Navigation state persists (localStorage)</item>
+    </web_responsive>
+    <platform_icon>
+      <item id="5.1">PlatformIcon component created (src/platform/icons/PlatformIcon.tsx)</item>
+      <item id="5.2">Accepts icon name: dashboard, settings, autopilot, alarms, help, add, close, menu</item>
+      <item id="5.3">iOS: Returns SF Symbol via expo-symbols</item>
+      <item id="5.4">Android: Returns Material Icon</item>
+      <item id="5.5">Web: Returns Material Icon</item>
+      <item id="5.6">Marine icons use custom SVG (same everywhere): Compass, Wind, Depth, Speed, GPS, Battery, Tanks, Engine</item>
+      <item id="5.7">Icon size prop (default 24pt)</item>
+      <item id="5.8">Icon color prop (default theme.text)</item>
+      <item id="5.9">TypeScript types enforce valid icon names</item>
+    </platform_icon>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/VIP-PLATFORM-UX-STRATEGY.md" title="VIP Platform UX Strategy" section="Platform Chrome" snippet="Android drawer navigation (hamburger), Material Icons. Web responsive navigation (drawer, tabs, sidebar). Marine core stays consistent."/>
+      <item path="docs/VIP-UX-IMPLEMENTATION-GUIDE.md" title="VIP UX Implementation Guide" section="Android/Web Navigation" snippet="Drawer for Android, FAB for primary action. Web responsive breakpoints: <768px drawer, 768-1024px tabs, >1024px sidebar."/>
+      <item path="docs/stories/story-8.3-platform-navigation-ios.md" title="Story 8.3" section="iOS Navigation" snippet="Tab bar pattern established for iOS - replicate drawer pattern for Android."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/navigation/IOSNavigation.tsx" kind="component" symbol="IOSNavigation" lines="1-80" reason="iOS navigation from Story 8.3 - reference pattern for AndroidNavigation"/>
+      <item path="boatingInstrumentsApp/src/screens/DashboardScreen.tsx" kind="component" symbol="DashboardScreen" lines="1-100" reason="Dashboard screen from Story 8.3 - will add FAB for Android"/>
+      <item path="boatingInstrumentsApp/App.tsx" kind="component" symbol="App" lines="1-650" reason="Will add platform detection: iOS → IOSNavigation, Android → AndroidNavigation, Web → WebNavigation"/>
+      <item path="boatingInstrumentsApp/src/config/features.ts" kind="config" symbol="FEATURE_FLAGS" lines="1-20" reason="Feature flags from Story 8.1 - USE_PLATFORM_NAVIGATION controls new navigation"/>
+      <item path="boatingInstrumentsApp/src/utils/haptics.ts" kind="utility" symbol="haptics" lines="1-50" reason="Haptics utility from Story 8.3 - iOS only, no-op on Android/Web"/>
+    </code>
+    <dependencies>
+      <react_navigation>
+        <package name="@react-navigation/native" version="TBD" usage="Navigation container (INSTALLED IN 8.3)"/>
+        <package name="@react-navigation/drawer" version="TBD" usage="Android drawer navigation - TO BE INSTALLED"/>
+        <package name="@react-navigation/bottom-tabs" version="TBD" usage="Web tablet tabs (INSTALLED IN 8.3)"/>
+      </react_navigation>
+      <icons>
+        <package name="react-native-vector-icons" version="TBD" usage="Material Icons for Android/Web - TO BE INSTALLED"/>
+      </icons>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management (ALREADY INSTALLED)"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Android Drawer: Must slide from LEFT (not right) - Material Design spec
+    - FAB: Android only - iOS uses long-press, Web uses drawer/menu
+    - Material Icons: Use "react-native-vector-icons/MaterialIcons" specifically
+    - Web Responsive: Must use useWindowDimensions hook for breakpoints
+    - Platform Detection: Use Platform.OS to route to correct navigation component
+    - Icon Abstraction: PlatformIcon must handle all 3 platforms (iOS/Android/Web)
+    - Marine Icons: Custom SVG must render identically on all platforms
+    - Feature Flags: Still respect FEATURE_FLAGS.USE_PLATFORM_NAVIGATION
+    - Glove Mode Compatibility: All navigation must work with density from Story 8.2
+  </constraints>
+
+  <interfaces>
+    <item name="AndroidNavigation" kind="component" signature="export const AndroidNavigation: React.FC = () => <Drawer.Navigator>...</Drawer.Navigator>" path="src/navigation/AndroidNavigation.tsx (TO BE CREATED)"/>
+    <item name="WebNavigation" kind="component" signature="export const WebNavigation: React.FC = () => { const { width } = useWindowDimensions(); return width < 768 ? <DrawerNav /> : width < 1024 ? <TabNav /> : <SidebarNav />; }" path="src/navigation/WebNavigation.tsx (TO BE CREATED)"/>
+    <item name="FAB" kind="component" signature="export const FAB: React.FC<{ onPress: () => void; icon?: string }>" path="src/components/atoms/FAB.tsx (TO BE CREATED)"/>
+    <item name="PlatformIcon" kind="component" signature="export const PlatformIcon: React.FC<{ name: IconName; size?: number; color?: string; weight?: SymbolWeight }>" path="src/platform/icons/PlatformIcon.tsx (TO BE CREATED)"/>
+    <item name="MaterialIcon" kind="component" signature="export const MaterialIcon: React.FC<{ name: string; size?: number; color?: string }>" path="src/platform/icons/MaterialIcon.tsx (TO BE CREATED)"/>
+    <item name="ICON_MAP" kind="constant" signature="const ICON_MAP: Record<IconName, { sf: string; material: string }>" path="src/platform/icons/PlatformIcon.tsx (TO BE CREATED)"/>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with React Native Testing Library. Android emulator testing. Web browser testing (Chrome, Firefox, Safari). Responsive breakpoint testing.</standards>
+    <locations>
+      - __tests__/navigation/ (navigation tests)
+      - __tests__/components/atoms/ (FAB tests)
+      - __tests__/platform/ (platform-specific tests)
+    </locations>
+    <ideas>
+      <item ac="1.1-1.9">Android drawer tests: hamburger opens drawer, tap item navigates, swipe from left opens, backdrop tap closes</item>
+      <item ac="2.1-2.7">Material Icons tests: icons render on Android/Web, iOS uses SF Symbols, icon styling correct</item>
+      <item ac="3.1-3.10">FAB tests: positioned bottom-right, tap opens WidgetSelector, elevation shadow, scale animation</item>
+      <item ac="4.1-4.9">Web responsive tests: <768px uses drawer, 768-1024px uses tabs, >1024px uses sidebar, resize transitions smoothly</item>
+      <item ac="5.1-5.9">PlatformIcon tests: iOS returns SF Symbol, Android returns Material, Web returns Material, marine icons use SVG</item>
+      <item>Cross-platform test: Same component code works on iOS (tab bar), Android (drawer), Web (responsive)</item>
+    </ideas>
+  </tests>
+</story-context>

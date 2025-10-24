@@ -1,0 +1,140 @@
+<story-context id="epic-8/story-8.1" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>8.1</storyId>
+    <title>Foundation & Store Consolidation</title>
+    <status>BLOCKED (Waiting for v2.3 completion)</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow (Bob - Scrum Master)</generator>
+    <sourceStoryPath>docs/stories/story-8.1-foundation-store-consolidation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer refactoring the codebase for VIP Platform</asA>
+    <iWant>foundational infrastructure (feature flags, Storybook, navigation session store, WiFi Bridge scenarios)</iWant>
+    <soThat>I can safely implement incremental changes with rollback capability and comprehensive testing</soThat>
+    <tasks>
+      - Feature Flag System (toggle new vs old behavior, safe deployment)
+      - Storybook Setup (visual component development, native vs glove mode testing)
+      - Store Consolidation (merge src/store/ and src/stores/, fix duplicate stores)
+      - Navigation Session Store (auto-detect sailing, persist session state)
+      - WiFi Bridge Scenario Loading (test without sailing, 5 predefined scenarios)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <feature_flags>
+      <item id="1.1">Feature flags config file created (src/config/features.ts)</item>
+      <item id="1.2">Flags defined: USE_PLATFORM_NAVIGATION, USE_GLOVE_MODE, USE_NEW_STORES (all default false)</item>
+      <item id="1.3">App.tsx checks flags and routes to old vs new code paths</item>
+      <item id="1.4">Flag toggle works in dev tools (Settings → Developer → Feature Flags)</item>
+      <item id="1.5">Documentation created for flag usage</item>
+    </feature_flags>
+    <storybook>
+      <item id="2.1">Storybook installed (@storybook/react-native)</item>
+      <item id="2.2">Storybook runs on web (npm run storybook)</item>
+      <item id="2.3">Storybook runs on iOS/Android via Expo</item>
+      <item id="2.4">First story: AutopilotFooter.stories.tsx with 3 variants (Native, Glove, Interactive)</item>
+      <item id="2.5">Screenshot capability for visual regression testing</item>
+    </storybook>
+    <store_consolidation>
+      <item id="3.1">Duplicate src/stores/ directory removed</item>
+      <item id="3.2">All stores consolidated into src/store/ (nmeaStore, themeStore, widgetStore, alarmStore, settingsStore)</item>
+      <item id="3.3">All imports updated (src/stores/ → src/store/)</item>
+      <item id="3.4">No broken references (TypeScript compiles without errors)</item>
+      <item id="3.5">All tests still passing</item>
+    </store_consolidation>
+    <navigation_session>
+      <item id="4.1">Navigation session store created (src/store/navigationSessionStore.ts)</item>
+      <item id="4.2">Store tracks: isActive, startTime, sessionId, gloveModeActive</item>
+      <item id="4.3">Actions: startSession(), endSession()</item>
+      <item id="4.4">State persists across restarts (AsyncStorage)</item>
+      <item id="4.5">Auto-start: SOG > 2.0 knots for >5s OR autopilot engagement</item>
+      <item id="4.6">Auto-end: SOG < 0.5 knots for >10 minutes</item>
+      <item id="4.7">Integrated with App.tsx</item>
+    </navigation_session>
+    <wifi_bridge>
+      <item id="5.1">WiFi Bridge scenario definitions exist (wifiBridgeScenarios.ts)</item>
+      <item id="5.2">Scenario loading function in playbackService</item>
+      <item id="5.3">UI to load scenarios (Settings → Developer Tools → Load Scenario)</item>
+      <item id="5.4">All 5 scenarios loadable (idle-at-marina, underway-manual, underway-autopilot, shallow-water-alarm, end-navigation)</item>
+      <item id="5.5">Loaded scenario sets NMEA data correctly</item>
+      <item id="5.6">Scenario duration respected (auto-ends after duration)</item>
+    </wifi_bridge>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/VIP-PLATFORM-UX-STRATEGY.md" title="VIP Platform UX Strategy" section="Multi-Device Coordination" snippet="Navigation session as automatic trigger for glove mode. Platform Chrome vs Marine Core separation for native feel with consistent marine UX."/>
+      <item path="docs/VIP-UX-IMPLEMENTATION-GUIDE.md" title="VIP UX Implementation Guide" section="Navigation Session Store" snippet="Navigation session store implementation with auto-start (SOG > 2.0) and auto-end (SOG < 0.5 for 10min). Zustand with AsyncStorage persistence."/>
+      <item path="docs/REFACTORING-PLAN-VIP-PLATFORM.md" title="VIP Platform Refactoring Plan" section="Sprint 1: Foundation" snippet="Feature flags for incremental migration. Storybook for visual development. Store consolidation to eliminate duplication. Navigation session store as core infrastructure."/>
+      <item path="docs/V2.3-COMPLETION-HANDOFF.md" title="v2.3 Completion Handoff" section="Blocking Checklist" snippet="Story 8.1 BLOCKED until v2.3 is 100% complete. Must complete all core features, document known bugs, establish baseline metrics, and clean up code before starting Epic 8."/>
+      <item path="boatingInstrumentsApp/src/services/playback/wifiBridgeScenarios.ts" title="WiFi Bridge Scenarios" section="Scenario Definitions" snippet="5 predefined scenarios with complete NMEA data and expected UI states for glove mode validation without sailing."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/App.tsx" kind="component" symbol="App" lines="1-650" reason="Current monolithic app - will add feature flag checks and navigation session integration"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="useTheme" lines="1-80" reason="Existing store in src/store/ - correct location, keep as-is"/>
+      <item path="boatingInstrumentsApp/src/store/nmeaStore.ts" kind="store" symbol="useNmeaStore" lines="1-120" reason="Existing store in src/store/ - correct location, provides NMEA data for navigation session"/>
+      <item path="boatingInstrumentsApp/src/stores/alarmStore.ts" kind="store" symbol="useAlarmStore" lines="1-150" reason="DUPLICATE in src/stores/ - needs to be moved to src/store/"/>
+      <item path="boatingInstrumentsApp/src/stores/widgetStore.ts" kind="store" symbol="useWidgetStore" lines="1-200" reason="DUPLICATE in src/stores/ - needs to be moved to src/store/"/>
+      <item path="boatingInstrumentsApp/src/stores/settingsStore.ts" kind="store" symbol="useSettingsStore" lines="1-100" reason="DUPLICATE in src/stores/ - needs to be moved to src/store/"/>
+      <item path="boatingInstrumentsApp/src/stores/connectionStore.ts" kind="store" symbol="useConnectionStore" lines="1-80" reason="DUPLICATE in src/stores/ - needs to be moved to src/store/"/>
+      <item path="boatingInstrumentsApp/src/services/playback/playbackService.ts" kind="service" symbol="playbackService" lines="1-300" reason="Playback service - will add scenario loading functionality"/>
+      <item path="boatingInstrumentsApp/src/services/playback/wifiBridgeScenarios.ts" kind="service" symbol="WiFiBridgeScenario" lines="1-150" reason="Scenario definitions already exist - needs UI integration"/>
+      <item path="boatingInstrumentsApp/src/components/organisms/AutopilotFooter.tsx" kind="component" symbol="AutopilotFooter" lines="1-120" reason="Reference implementation for first Storybook story"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Navigation session persistence"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation (future stories)"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for navigation session store"/>
+      </state>
+      <storybook>
+        <package name="@storybook/react-native" version="TBD" usage="Visual component development - TO BE INSTALLED"/>
+      </storybook>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Feature Flags: Must be false by default to avoid breaking production until Epic 8 complete
+    - Store Migration: Use Edit tool to update imports (not Write) - preserve existing code
+    - Navigation Session: Must use Zustand + AsyncStorage pattern (consistent with existing stores)
+    - WiFi Bridge: Leverage existing wifiBridgeScenarios.ts - don't recreate, just add UI
+    - Storybook: Install for React Native (not web Storybook) - use @storybook/react-native
+    - Dependencies: Check package.json before installing - some packages may already exist
+    - TypeScript: Must compile without errors after store consolidation
+    - Tests: All existing tests must still pass after changes
+    - Backward Compatibility: Old code paths must still work when flags disabled
+  </constraints>
+
+  <interfaces>
+    <item name="FEATURE_FLAGS" kind="config_object" signature="export const FEATURE_FLAGS = { USE_PLATFORM_NAVIGATION: boolean; USE_GLOVE_MODE: boolean; USE_NEW_STORES: boolean; get: (flagName) => boolean; }" path="src/config/features.ts (TO BE CREATED)"/>
+    <item name="useNavigationSession" kind="zustand_store" signature="interface NavigationSessionState { isActive: boolean; startTime: Date | null; sessionId: string | null; gloveModeActive: boolean; startSession: (sessionId?: string) => void; endSession: () => void; }" path="src/store/navigationSessionStore.ts (TO BE CREATED)"/>
+    <item name="useNmeaStore" kind="zustand_store" signature="interface NmeaStore { nmeaData: NmeaData | null; connectionStatus: ConnectionStatus; }" path="src/store/nmeaStore.ts"/>
+    <item name="WiFiBridgeScenario" kind="interface" signature="interface WiFiBridgeScenario { id: string; name: string; duration: number; nmeaData: NmeaData; expectedUI: UIState; }" path="src/services/playback/wifiBridgeScenarios.ts"/>
+    <item name="loadScenario" kind="function" signature="function loadScenario(scenarioId: string): boolean" path="src/services/playback/playbackService.ts (TO BE ADDED)"/>
+  </interfaces>
+
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library. Unit tests for stores and utilities. Integration tests for navigation session auto-start/end logic. Manual testing with WiFi Bridge scenarios.</standards>
+    <locations>
+      - __tests__/services/ (service layer tests)
+      - __tests__/stores/ (state management tests)
+      - __tests__/integration/ (integration tests)
+      - __tests__/setup.ts (test configuration)
+    </locations>
+    <ideas>
+      <item ac="1.1-1.5">Feature flag system tests: toggle flags, verify code path routing, test dev tools UI</item>
+      <item ac="2.1-2.5">Storybook setup tests: verify installation, test story rendering, screenshot capability</item>
+      <item ac="3.1-3.5">Store consolidation tests: verify all imports resolve, no TypeScript errors, existing tests pass</item>
+      <item ac="4.1-4.7">Navigation session tests: auto-start logic (SOG > 2.0), auto-end logic (SOG < 0.5 for 10min), persistence with AsyncStorage</item>
+      <item ac="5.1-5.6">WiFi Bridge scenario tests: load all 5 scenarios, verify NMEA data set correctly, verify scenario duration</item>
+    </ideas>
+  </tests>
+</story-context>

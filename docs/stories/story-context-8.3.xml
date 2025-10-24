@@ -1,0 +1,147 @@
+<story-context id="epic-8/story-8.3" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>8.3</storyId>
+    <title>Platform Navigation - iOS</title>
+    <status>BLOCKED (Waiting for Story 8.2 completion)</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow (Bob - Scrum Master)</generator>
+    <sourceStoryPath>docs/stories/story-8.3-platform-navigation-ios.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>iOS user of the boating app</asA>
+    <iWant>bottom tab bar navigation with SF Symbols like other iOS apps</iWant>
+    <soThat>navigation feels natural, familiar, and follows iOS Human Interface Guidelines</soThat>
+    <tasks>
+      - iOS Tab Bar Navigation (bottom tab bar, 5 tabs: Dashboard/Autopilot/Alarms/Settings/Help)
+      - SF Symbols Integration (Apple's native icon system)
+      - DashboardScreen Extraction (extract from App.tsx into proper screen)
+      - iOS-Specific Modals (sheet presentation, swipe-to-dismiss)
+      - Haptic Feedback (iOS haptic integration for interactions)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <tab_bar>
+      <item id="1.1">@react-navigation/bottom-tabs installed</item>
+      <item id="1.2">Tab bar with 5 tabs: Dashboard, Autopilot, Alarms, Settings, Help</item>
+      <item id="1.3">Tab bar positioned at bottom (iOS convention)</item>
+      <item id="1.4">Tab bar styling matches theme (Day/Night/Red Night)</item>
+      <item id="1.5">Active tab highlighted with theme.primary</item>
+      <item id="1.6">Tab bar respects safe area insets (notch support)</item>
+      <item id="1.7">Tab bar visible on all screens (persistent)</item>
+      <item id="1.8">Haptic feedback on tab press (Medium impact)</item>
+    </tab_bar>
+    <sf_symbols>
+      <item id="2.1">expo-symbols installed</item>
+      <item id="2.2">SF Symbols used: Dashboard (gauge), Autopilot (location.circle), Alarms (bell), Settings (gearshape), Help (questionmark.circle)</item>
+      <item id="2.3">Icon size: 24pt standard, 28pt selected</item>
+      <item id="2.4">Icon weight: regular inactive, semibold active</item>
+      <item id="2.5">Icon color: theme.textSecondary inactive, theme.primary active</item>
+      <item id="2.6">Icons render in all themes</item>
+      <item id="2.7">Fallback for non-iOS platforms</item>
+    </sf_symbols>
+    <dashboard_screen>
+      <item id="3.1">DashboardScreen created (src/screens/DashboardScreen.tsx)</item>
+      <item id="3.2">Contains: HeaderBar, AlarmBanner, PaginatedDashboard, AutopilotFooter</item>
+      <item id="3.3">Accessible via Dashboard tab</item>
+      <item id="3.4">Widget pagination works (swipe left/right)</item>
+      <item id="3.5">Widget add/remove/edit works</item>
+      <item id="3.6">Layout adapts to glove mode (spacing 8pt → 16pt)</item>
+      <item id="3.7">Respects safe area insets</item>
+    </dashboard_screen>
+    <ios_modals>
+      <item id="4.1">WidgetSelector uses iOS sheet presentation</item>
+      <item id="4.2">Sheet has drag indicator (handle bar)</item>
+      <item id="4.3">Sheet swipe-to-dismiss works</item>
+      <item id="4.4">Sheet respects safe area</item>
+      <item id="4.5">Sheet backdrop darkens (opacity 0.5)</item>
+      <item id="4.6">Sheet animates from bottom (300ms spring)</item>
+      <item id="4.7">ConnectionConfigDialog uses full-screen modal</item>
+      <item id="4.8">Modal backdrop tap-to-dismiss (WidgetSelector only)</item>
+    </ios_modals>
+    <haptics>
+      <item id="5.1">expo-haptics installed</item>
+      <item id="5.2">Tab press → .impactAsync(Medium)</item>
+      <item id="5.3">Autopilot button → density-aware (Medium native, Heavy glove)</item>
+      <item id="5.4">Widget add → .notificationAsync(Success)</item>
+      <item id="5.5">Widget remove → .impactAsync(Light)</item>
+      <item id="5.6">Alarm trigger → .notificationAsync(Error)</item>
+      <item id="5.7">Navigation session start → .notificationAsync(Success)</item>
+      <item id="5.8">Navigation session end → .impactAsync(Medium)</item>
+      <item id="5.9">Haptics only on iOS (no-op on other platforms)</item>
+    </haptics>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/VIP-PLATFORM-UX-STRATEGY.md" title="VIP Platform UX Strategy" section="Platform Chrome vs Marine Core" snippet="iOS tab bar navigation (bottom), SF Symbols for native feel. Marine widgets maintain consistent UX across platforms."/>
+      <item path="docs/VIP-UX-IMPLEMENTATION-GUIDE.md" title="VIP UX Implementation Guide" section="iOS Navigation" snippet="Tab bar with 5 tabs (Dashboard, Autopilot, Alarms, Settings, Help), SF Symbols icons, iOS sheet modals, haptic feedback integration."/>
+      <item path="docs/stories/story-8.2-glove-mode-system.md" title="Story 8.2" section="Glove Mode" snippet="Components use useUIDensity() hook for automatic density adaptation."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/App.tsx" kind="component" symbol="App" lines="1-650" reason="Current monolithic app - will extract DashboardScreen logic, add platform detection for IOSNavigation"/>
+      <item path="boatingInstrumentsApp/src/components/PaginatedDashboard.tsx" kind="component" symbol="PaginatedDashboard" lines="1-200" reason="Dashboard component - will be used in DashboardScreen"/>
+      <item path="boatingInstrumentsApp/src/components/HeaderBar.tsx" kind="component" symbol="HeaderBar" lines="1-60" reason="Header component with glove indicator (from Story 8.2)"/>
+      <item path="boatingInstrumentsApp/src/widgets/AlarmBanner.tsx" kind="component" symbol="AlarmBanner" lines="1-80" reason="Alarm banner component - will be used in DashboardScreen"/>
+      <item path="boatingInstrumentsApp/src/components/organisms/AutopilotFooter.tsx" kind="component" symbol="AutopilotFooter" lines="1-120" reason="Autopilot footer with density awareness (from Story 8.2)"/>
+      <item path="boatingInstrumentsApp/src/hooks/useUIDensity.ts" kind="hook" symbol="useUIDensity" lines="1-30" reason="Density hook created in Story 8.2 - used in DashboardScreen"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="useTheme" lines="1-80" reason="Theme store for tab bar and icon styling"/>
+    </code>
+    <dependencies>
+      <react_navigation>
+        <package name="@react-navigation/native" version="TBD" usage="Navigation container - TO BE INSTALLED"/>
+        <package name="@react-navigation/bottom-tabs" version="TBD" usage="iOS tab bar navigation - TO BE INSTALLED"/>
+        <package name="react-native-safe-area-context" version="~5.6.0" usage="Safe area handling (ALREADY INSTALLED)"/>
+        <package name="react-native-screens" version="~4.16.0" usage="Native screens (ALREADY INSTALLED)"/>
+      </react_navigation>
+      <expo>
+        <package name="expo-symbols" version="TBD" usage="SF Symbols for iOS - TO BE INSTALLED"/>
+        <package name="expo-haptics" version="TBD" usage="Haptic feedback (may be installed in 8.2)"/>
+        <package name="expo-blur" version="TBD" usage="Sheet modal backdrop blur - TO BE INSTALLED"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management (ALREADY INSTALLED)"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - iOS Only: This story implements iOS-specific navigation (Android/Web in Story 8.4)
+    - Tab Bar: Must be at bottom (iOS HIG requirement) - NOT top
+    - SF Symbols: Only available on iOS - must have fallback for other platforms
+    - Screen Architecture: Extract from App.tsx (not delete) - keep old code for rollback
+    - Safe Area: Must respect notch, tab bar, home indicator on all iPhone models
+    - Haptic Feedback: iOS only (Platform.OS === 'ios') - graceful no-op on Android/Web
+    - Glove Mode Compatibility: All screens must work with density adaptation from Story 8.2
+    - Feature Flags: Use FEATURE_FLAGS.USE_PLATFORM_NAVIGATION from Story 8.1
+    - Backward Compatibility: Old App.tsx must still work when flag disabled
+  </constraints>
+
+  <interfaces>
+    <item name="IOSNavigation" kind="component" signature="export const IOSNavigation: React.FC = () => <Tab.Navigator>...</Tab.Navigator>" path="src/navigation/IOSNavigation.tsx (TO BE CREATED)"/>
+    <item name="DashboardScreen" kind="component" signature="export const DashboardScreen: React.FC = () => <SafeAreaView>...</SafeAreaView>" path="src/screens/DashboardScreen.tsx (TO BE CREATED)"/>
+    <item name="AutopilotScreen" kind="component" signature="export const AutopilotScreen: React.FC" path="src/screens/AutopilotScreen.tsx (TO BE CREATED IN 8.5)"/>
+    <item name="SettingsScreen" kind="component" signature="export const SettingsScreen: React.FC" path="src/screens/SettingsScreen.tsx (TO BE CREATED IN 8.5)"/>
+    <item name="SFSymbol" kind="component" signature="const SFSymbol: React.FC<{ name: string; size?: number; color?: string; weight?: SymbolWeight }>" path="src/platform/icons/SFSymbol.tsx (TO BE CREATED)"/>
+    <item name="haptics" kind="utility" signature="{ light: () => Promise<void>; medium: () => Promise<void>; heavy: () => Promise<void>; success: () => Promise<void>; error: () => Promise<void>; warning: () => Promise<void>; }" path="src/utils/haptics.ts (TO BE CREATED)"/>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with React Native Testing Library. iOS simulator testing for platform-specific features. Manual testing on physical iOS devices for haptics.</standards>
+    <locations>
+      - __tests__/navigation/ (navigation tests)
+      - __tests__/screens/ (screen component tests)
+      - __tests__/platform/ (platform-specific tests)
+    </locations>
+    <ideas>
+      <item ac="1.1-1.8">Tab bar tests: 3 tabs render, tab press navigates, active tab highlighted, haptic feedback fires</item>
+      <item ac="2.1-2.7">SF Symbols tests: icons render on iOS, fallback works on Android/Web, icon styling correct</item>
+      <item ac="3.1-3.7">DashboardScreen tests: all components present, widget pagination works, glove mode spacing adapts</item>
+      <item ac="4.1-4.8">iOS modal tests: sheet swipe-to-dismiss, backdrop tap-to-dismiss, drag indicator present</item>
+      <item ac="5.1-5.9">Haptic tests: all haptic types fire on iOS, no errors on Android/Web, density-aware haptics work</item>
+      <item>WiFi Bridge test: Load "underway-manual" on iOS → tab bar + glove mode (64pt buttons) work together</item>
+    </ideas>
+  </tests>
+</story-context>

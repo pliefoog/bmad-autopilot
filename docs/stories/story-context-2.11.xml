@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/2.11" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.11</storyId>
+    <title>Standardized Metric Presentation Format</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-2.11-metric-presentation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>skipper glancing at the dashboard</asA>
+    <iWant>all metrics to follow a consistent visual format</iWant>
+    <soThat>I can quickly parse information without cognitive load</soThat>
+    <tasks>
+      - Primary Metric Format (PrimaryMetricCell) - Consistent [MNEMONIC] [VALUE] [UNIT] format with precise typography
+      - Secondary Metric Format (SecondaryMetricCell) - Compact typography for secondary information in expanded views
+      - Grid Layout System - 1×1, 1×2, 2×2, 2×3 grid options with equal-sized cells and 8pt gaps
+      - Component Implementation Strategy - Create reusable components with alert state support
+      - Widget Implementation Examples - Apply standardized format across all numeric widgets
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <primary_metric_format>
+      <item id="1">Every primary metric displays as: [MNEMONIC] [VALUE] [UNIT]</item>
+      <item id="2">Typography: Mnemonic (12pt, uppercase, semibold, theme.textSecondary), Value (36pt, monospace, bold, theme.text), Unit (16pt, regular, theme.textSecondary)</item>
+      <item id="3">Alignment: left-aligned in metric cell</item>
+      <item id="4">Spacing: 4pt between mnemonic and value, 2pt between value and unit</item>
+    </primary_metric_format>
+    <secondary_metric_format>
+      <item id="5">Secondary metrics for expanded views: [MNEMONIC] [VALUE] [UNIT]</item>
+      <item id="6">Compact typography: Mnemonic (10pt, uppercase, semibold, theme.textSecondary), Value (24pt, monospace, bold, theme.text), Unit (14pt, regular, theme.textSecondary)</item>
+    </secondary_metric_format>
+    <grid_layout_system>
+      <item id="7">Grid layout options: 1×1 (single PrimaryMetricCell), 1×2 (two metrics), 2×2 (four metrics), 2×3 (six metrics maximum)</item>
+      <item id="8">Grid cells equal-sized with 8pt gap between cells</item>
+      <item id="9">MetricCell components auto-size within assigned grid space</item>
+    </grid_layout_system>
+    <component_implementation>
+      <item id="10">Create PrimaryMetricCell component for primary metrics in collapsed widgets</item>
+      <item id="11">Create SecondaryMetricCell component for additional metrics in expanded widgets</item>
+      <item id="12">Both components accept {mnemonic, value, unit, alertState?} props</item>
+      <item id="13">Alert state colors: normal → theme.text, warning → theme.warning, critical → theme.error</item>
+      <item id="14">Value uses monospace font to prevent jitter during real-time NMEA updates</item>
+      <item id="15">Components follow marine-compliant theme system (Day/Night/Red-Night modes)</item>
+    </component_implementation>
+    <widget_examples>
+      <item id="16">DepthWidget collapsed (1×1): Single PrimaryMetricCell showing DEPTH | 12.4 | m</item>
+      <item id="17">EngineWidget collapsed (2×2): Four PrimaryMetricCells with RPM, TEMP, OIL, VOLT</item>
+      <item id="18">BatteryWidget expanded (2×3): PrimaryMetricCells + SecondaryMetricCells for detailed view</item>
+      <item id="19">WindWidget expanded (2×2): Apparent wind (Primary) + True wind (Secondary)</item>
+    </widget_examples>
+    <ui_consistency>
+      <item id="20">All widgets MUST display descriptive titles in header section</item>
+      <item id="21">Monochromatic design: All elements use monochromatic black/gray palette by default</item>
+      <item id="22">Alert Color System: Day mode (Orange warning, Red critical), Night/Red mode (Red with pulse warning, Red with flicker critical)</item>
+      <item id="23">Grid System Compliance: Widgets must conform to fixed grid sizes (1×1, 1×2, 2×1, 2×2)</item>
+      <item id="24">Icon Standardization: All icons monochromatic gray, outline style, 12pt size</item>
+      <item id="25">Typography Hierarchy: Consistent font scales across all widgets</item>
+      <item id="26">Content Density: Adapt metric display based on widget grid size</item>
+    </ui_consistency>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd.md" title="Product Requirements Document" section="Widget System" snippet="Component-based architecture where each widget is a self-contained React component. The MVP focuses on 10 core instrument widgets (depth, speed, wind, GPS, compass, engine, battery, tanks, autopilot status, rudder) with display modes."/>
+      <item path="docs/ui-architecture.md" title="UI Architecture Document" section="Grid-Based Widget Architecture" snippet="Consistent 1×1 to 2×3 grid layouts with simple metric display. Multi-Instance NMEA Support: Dynamic widget creation for multiple engines, batteries, and tanks. Clean Interface: Simplified navigation, self-explanatory UX."/>
+      <item path="docs/front-end-spec.md" title="Frontend Specification" section="Typography" snippet="Grid System: 8pt baseline grid for all spacing and sizing. Reliability: High contrast, clear typography, no playful consumer app aesthetics. Typography Usage Notes for consistent font scales."/>
+      <item path="docs/stories/story-2.10-theme-integration.md" title="Story 2.10: Theme Integration" section="Design Specifications" snippet="Theme Color Mapping with background colors (theme.background, theme.surface), text colors (theme.text, theme.textSecondary), state colors (theme.error, theme.warning, theme.success)."/>
+      <item path="docs/stories/story-2.11-metric-presentation.md" title="Story 2.11: Metric Presentation" section="Technical Notes" snippet="MetricCell component interface with mnemonic, value, unit, state props. Implementation Priority: Create MetricCell, refactor DepthWidget, EngineWidget, remaining widgets."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" lines="1-166" reason="Core primary metric display component - already implements AC 1-4, 10, 12-15 with precise typography and dynamic sizing"/>
+      <item path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx" kind="component" symbol="SecondaryMetricCell" lines="1-132" reason="Core secondary metric display component - already implements AC 5-6, 11-15 with compact typography for expanded views"/>
+      <item path="boatingInstrumentsApp/src/widgets/DepthWidget.tsx" kind="widget" symbol="DepthWidget" reason="Single metric widget example - uses PrimaryMetricCell for 1×1 grid layout (AC 16)"/>
+      <item path="boatingInstrumentsApp/src/widgets/EngineWidget.tsx" kind="widget" symbol="EngineWidget" reason="Multi-metric widget example - uses 2×2 grid layout with PrimaryMetricCells for RPM, TEMP, OIL, VOLT (AC 17)"/>
+      <item path="boatingInstrumentsApp/src/widgets/WindWidget.tsx" kind="widget" symbol="WindWidget" reason="Widget using PrimaryMetricCell in 2×1 layout - demonstrates grid system implementation"/>
+      <item path="boatingInstrumentsApp/src/widgets/TanksWidget.tsx" kind="widget" symbol="TanksWidget" reason="Widget using PrimaryMetricCell - demonstrates standardized metric format"/>
+      <item path="boatingInstrumentsApp/src/widgets/BatteryWidget.tsx" kind="widget" symbol="BatteryWidget" reason="Widget requiring PrimaryMetricCell + SecondaryMetricCell integration for expanded 2×3 layout (AC 18)"/>
+      <item path="boatingInstrumentsApp/src/theme/styles/widgetStyles.ts" kind="styles" symbol="createWidgetStyles" reason="Theme-aware widget styling system providing grid layout styles and spacing constants"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with StyleSheet API for metric cell styling and grid layouts"/>
+        <package name="react-native-vector-icons" version="^10.3.0" usage="Standardized icon system for widget headers (12pt, monochromatic gray)"/>
+        <package name="react-native-svg" version="^15.12.1" usage="Vector graphics for advanced metric visualizations"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework with cross-platform font rendering for consistent typography"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation framework for metric drill-down views"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for metric data and alert states"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Persistent storage for metric display preferences"/>
+      </state>
+      <nmea>
+        <package name="nmea-simple" version="^3.3.0" usage="NMEA parsing for real-time metric values"/>
+        <package name="@canboat/canboatjs" version="^3.11.0" usage="NMEA 2000 data parsing for engine and systems metrics"/>
+      </nmea>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Typography Standards: Exact font specifications (12pt/10pt mnemonic, 36pt/24pt values, 16pt/14pt units) must be maintained across all components
+    - Monospace Requirement: All numeric values must use monospace font to prevent layout jitter during real-time NMEA updates
+    - Grid System Compliance: Components must auto-size within 1×1, 1×2, 2×2, 2×3 grid layouts with 8pt gaps
+    - Performance Requirements: No layout thrashing or jitter during rapid data updates (critical for marine safety)
+    - Theme Integration: Full compatibility with Day/Night/Red-Night marine themes from Story 2.10
+    - Alert State System: Proper color coding (normal/warning/critical) while maintaining readability in all lighting conditions
+    - Marine Standards: Professional marine instrument aesthetic with high contrast and clear typography
+    - Accessibility: Proper contrast ratios and semantic structure for screen readers
+    - Component Reusability: PrimaryMetricCell and SecondaryMetricCell must work across all widget types
+    - Spacing Consistency: 4pt mnemonic-value gap, 2pt value-unit gap, 8pt grid cell gaps throughout system
+  </constraints>
+  
+  <interfaces>
+    <item name="PrimaryMetricCellProps" kind="interface" signature="interface PrimaryMetricCellProps { mnemonic: string; value: string | number; unit: string; state?: 'normal' | 'warning' | 'alarm'; style?: any; maxWidth?: number; minWidth?: number; }" path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx"/>
+    <item name="SecondaryMetricCellProps" kind="interface" signature="interface SecondaryMetricCellProps { mnemonic: string; value: string | number | null; unit?: string; precision?: number; state?: 'normal' | 'warning' | 'alarm'; compact?: boolean; style?: any; testID?: string; }" path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx"/>
+    <item name="PrimaryMetricCell" kind="component" signature="React.FC<PrimaryMetricCellProps>" path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx"/>
+    <item name="SecondaryMetricCell" kind="component" signature="React.FC<SecondaryMetricCellProps>" path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx"/>
+    <item name="createWidgetStyles" kind="function" signature="function createWidgetStyles(theme: ThemeColors): StyleSheet" path="boatingInstrumentsApp/src/theme/styles/widgetStyles.ts"/>
+    <item name="useTheme" kind="hook" signature="function useTheme(): ThemeColors" path="boatingInstrumentsApp/src/store/themeStore.ts"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library. Typography precision testing with exact font size and spacing measurements. Grid layout testing with multiple screen sizes and orientations. Performance testing for layout stability during rapid data updates. Visual regression testing across all theme modes.</standards>
+    <locations>
+      - __tests__/components/MetricCell.test.tsx (comprehensive metric cell testing)
+      - __tests__/components/PrimaryMetricCell.test.tsx (primary metric component tests)
+      - __tests__/components/SecondaryMetricCell.test.tsx (secondary metric component tests)
+      - __tests__/widgets/ (widget-specific metric integration tests)
+      - __tests__/integration/ (cross-widget consistency tests)
+    </locations>
+    <ideas>
+      <item ac="1-4">Typography precision tests (exact font sizes, weights, spacing), alignment verification, mnemonic-value-unit format validation</item>
+      <item ac="5-6">Secondary metric compact typography tests, size comparison with primary metrics</item>
+      <item ac="7-9">Grid layout system tests (1×1, 1×2, 2×2, 2×3), equal cell sizing, 8pt gap measurements, auto-sizing behavior</item>
+      <item ac="10-15">Component creation validation, props interface testing, alert state color verification, monospace font confirmation, theme compatibility</item>
+      <item ac="16-19">Widget example implementation tests, specific layout verification (DepthWidget 1×1, EngineWidget 2×2, etc.)</item>
+      <item ac="20-26">UI consistency validation, title display verification, monochromatic design checks, grid compliance, icon standardization</item>
+    </ideas>
+  </tests>
+</story-context>

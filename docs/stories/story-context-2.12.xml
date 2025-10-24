@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/2.12" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.12</storyId>
+    <title>Two-State Widget System (Collapsed/Expanded)</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-2.12-widget-states.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boater customizing my dashboard</asA>
+    <iWant>widgets to start compact but expand to show details when needed</iWant>
+    <soThat>I can see more data without cluttering the dashboard by default</soThat>
+    <tasks>
+      - Basic Two-State Widget System (All widgets have collapsed/expanded states with tap toggle)
+      - Collapsed State (Primary View) (Shows primary metrics only using PrimaryMetricCell components)
+      - Expanded State (Secondary View) (Shows primary + secondary metrics with additional information)
+      - Visual State Indicators (Caret icon animation, 300ms transitions, no automatic expansion)
+      - Basic State Management Foundation (Establishes foundation for enhanced widget state management)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <basic_two_state_system>
+      <item id="1">All widgets have two states: Collapsed (default) and Expanded</item>
+      <item id="2">Tap widget body toggles between collapsed ↔ expanded states</item>
+      <item id="3">Smooth animation (300ms ease-out) when transitioning between states</item>
+      <item id="4">Widget state is managed independently per widget instance</item>
+    </basic_two_state_system>
+    <collapsed_state>
+      <item id="5">Shows primary metrics only - essential information always visible</item>
+      <item id="6">Uses PrimaryMetricCell components for key values</item>
+      <item id="7">Minimal grid space utilization (1×1 or 1×2 grids typically)</item>
+      <item id="8">DepthWidget: shows depth value with unit</item>
+      <item id="9">EngineWidget: shows RPM, temp, oil pressure (primary metrics)</item>
+      <item id="10">BatteryWidget: shows voltage and current (essential metrics)</item>
+    </collapsed_state>
+    <expanded_state>
+      <item id="11">Shows primary metrics PLUS secondary metrics and additional information</item>
+      <item id="12">Uses both PrimaryMetricCell and SecondaryMetricCell components</item>
+      <item id="13">May include simple trend indicators or additional data points</item>
+      <item id="14">DepthWidget: adds min/max depth, alarm settings</item>
+      <item id="15">WindWidget: adds true wind calculations, gust information</item>
+      <item id="16">EngineWidget: adds fuel flow, alternator output, engine hours</item>
+    </expanded_state>
+    <visual_state_indicators>
+      <item id="17">Caret icon in widget header indicates current state (⌄ collapsed, ⌃ expanded)</item>
+      <item id="18">Caret animates rotation (180°) during state transitions</item>
+      <item id="19">No automatic expansion - user-initiated state changes only</item>
+      <item id="20">Alert states change MetricCell colors, not widget expansion state</item>
+    </visual_state_indicators>
+    <sizing_consistency>
+      <item id="21">Consistent dimensions: 180×180pt collapsed, 180×280pt expanded</item>
+      <item id="22">Dashboard automatically adjusts for expanded widgets</item>
+    </sizing_consistency>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd.md" title="Product Requirements Document" section="Widget System" snippet="Component-based architecture where each widget is a self-contained React component that subscribes to relevant NMEA data streams. Widget framework designed with extensibility for custom user-defined widgets."/>
+      <item path="docs/ui-architecture.md" title="UI Architecture Document" section="Widget State Management" snippet="Comprehensive widget state management with caret/pin controls, native brightness integration, complete UI component coverage. Grid-based widget architecture with consistent layouts."/>
+      <item path="docs/stories/story-2.10-theme-integration.md" title="Story 2.10: Theme Integration" section="WidgetCard Refactor" snippet="WidgetCard accepts expanded: boolean prop, shows chevron in header (⌄ collapsed, ⌃ expanded), background uses theme.surface, border uses theme.border."/>
+      <item path="docs/stories/story-2.11-metric-presentation.md" title="Story 2.11: Metric Presentation" section="Grid Layout System" snippet="Grid layout options: 1×1 (single PrimaryMetricCell), 1×2 (two metrics), 2×2 (four metrics), 2×3 (six metrics maximum). Grid cells equal-sized with 8pt gap between cells."/>
+      <item path="docs/stories/story-2.12-widget-states.md" title="Story 2.12: Widget States" section="Technical Notes" snippet="WidgetShell component handles tap-to-expand logic, animates size changes, renders chevron indicator. WidgetLayout interface updated to include expanded property."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/components/WidgetShell.tsx" kind="component" symbol="WidgetShell" lines="1-180" reason="Universal widget wrapper component - already implements AC 1-4, 17-19 with tap-to-expand logic, 300ms animation, and chevron indicator"/>
+      <item path="boatingInstrumentsApp/src/hooks/useWidgetExpanded.ts" kind="hook" symbol="useWidgetExpanded" lines="1-51" reason="Custom hook for persistent expanded state management - implements AC 3-4 with layoutService integration"/>
+      <item path="boatingInstrumentsApp/src/services/layoutService.ts" kind="service" symbol="LayoutService" lines="1-443" reason="Layout persistence service with expanded property support - enables state persistence across app restarts"/>
+      <item path="boatingInstrumentsApp/src/widgets/WidgetCard.tsx" kind="component" symbol="WidgetCard" reason="Pure presentation component refactored to work as child of WidgetShell - implements visual indicators and state display"/>
+      <item path="boatingInstrumentsApp/src/widgets/DepthWidget.tsx" kind="widget" symbol="DepthWidget" reason="Reference implementation of collapsed/expanded pattern with 60-second trend graph (AC 8, 14)"/>
+      <item path="boatingInstrumentsApp/src/widgets/EngineWidget.tsx" kind="widget" symbol="EngineWidget" reason="Multi-metric widget with 3 metrics collapsed, 7 metrics expanded pattern (AC 9, 16)"/>
+      <item path="boatingInstrumentsApp/src/utils/animationUtils.ts" kind="utility" symbol="AnimationConfig" lines="1-92" reason="Cross-platform animation configuration providing 300ms timing and native driver settings"/>
+      <item path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" reason="Primary metric display component used in collapsed state (AC 6)"/>
+      <item path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx" kind="component" symbol="SecondaryMetricCell" reason="Secondary metric display component used in expanded state (AC 12)"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with Animated API for 300ms ease-out transitions and TouchableOpacity for tap handling"/>
+        <package name="react-native-reanimated" version="^4.1.3" usage="Advanced animation library for smooth chevron rotation and height transitions"/>
+        <package name="react-native-gesture-handler" version="^2.28.0" usage="Enhanced touch handling for widget tap-to-expand functionality"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework with cross-platform animation support"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation framework for widget state management"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for widget expansion states and dashboard layout"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Persistent storage for widget expanded state across app restarts"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Animation Standards: Exact 300ms ease-out transitions for all state changes with chevron rotation (180°)
+    - Sizing Consistency: Fixed dimensions (180×180pt collapsed, 180×280pt expanded) must be maintained across all widgets
+    - Performance Requirements: Smooth animations without layout thrashing or jumps during expansion
+    - State Persistence: Widget expanded states must persist across app restarts using layoutService
+    - Touch Handling: Independent tap-to-expand functionality per widget instance without interference
+    - Visual Indicators: Consistent chevron icons (⌄ collapsed, ⌃ expanded) with animated rotation
+    - Component Architecture: WidgetShell (wrapper) → WidgetCard (presentation) → MetricCell pattern
+    - Marine Standards: No automatic expansion - user-initiated state changes only for marine safety
+    - Alert Integration: Alert states affect MetricCell colors, not widget expansion behavior
+    - Layout Management: Dashboard must automatically adjust spacing for expanded widgets
+  </constraints>
+  
+  <interfaces>
+    <item name="WidgetShellProps" kind="interface" signature="interface WidgetShellProps { children: React.ReactNode; expanded: boolean; width?: number; onToggle: () => void; disableTouch?: boolean; onLongPress?: () => void; }" path="boatingInstrumentsApp/src/components/WidgetShell.tsx"/>
+    <item name="WidgetLayout" kind="interface" signature="interface WidgetLayout { id: string; position: { x: number; y: number }; size: { width: number; height: number }; visible: boolean; order?: number; expanded?: boolean; }" path="boatingInstrumentsApp/src/services/layoutService.ts"/>
+    <item name="useWidgetExpanded" kind="hook" signature="function useWidgetExpanded(widgetId: string): [boolean, () => void]" path="boatingInstrumentsApp/src/hooks/useWidgetExpanded.ts"/>
+    <item name="WidgetShell" kind="component" signature="React.FC<WidgetShellProps>" path="boatingInstrumentsApp/src/components/WidgetShell.tsx"/>
+    <item name="LayoutService.updateWidgetExpanded" kind="method" signature="static async updateWidgetExpanded(widgetId: string, expanded: boolean): Promise<void>" path="boatingInstrumentsApp/src/services/layoutService.ts"/>
+    <item name="AnimationConfig" kind="object" signature="const AnimationConfig: { timing: { duration: number; useNativeDriver: boolean }; timingFast: { duration: number; useNativeDriver: boolean }; }" path="boatingInstrumentsApp/src/utils/animationUtils.ts"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library. Animation testing with timing verification and state transition validation. Touch event simulation for tap-to-expand functionality. Persistence testing with AsyncStorage mocking. Visual regression testing for consistent dimensions.</standards>
+    <locations>
+      - __tests__/components/WidgetShell.test.tsx (comprehensive widget shell animation and interaction tests)
+      - __tests__/hooks/useWidgetExpanded.test.ts (state persistence and hook behavior tests)
+      - __tests__/widgets/DepthWidget.test.tsx (widget-specific expansion behavior tests)
+      - __tests__/services/layoutService.test.ts (layout persistence and expanded state management tests)
+      - __tests__/integration/ (cross-widget expansion consistency tests)
+    </locations>
+    <ideas>
+      <item ac="1-4">Two-state system validation (collapsed/expanded states), tap toggle functionality, 300ms animation timing verification, independent widget state management</item>
+      <item ac="5-10">Collapsed state testing (primary metrics only, PrimaryMetricCell usage, minimal grid utilization, widget-specific content validation)</item>
+      <item ac="11-16">Expanded state testing (primary + secondary metrics, additional information display, trend indicators, widget-specific expansions)</item>
+      <item ac="17-20">Visual indicator testing (chevron state display, 180° rotation animation, manual expansion only, alert state separation)</item>
+      <item ac="21-22">Sizing consistency validation (180×180 collapsed, 180×280 expanded), dashboard layout adjustment testing</item>
+    </ideas>
+  </tests>
+</story-context>

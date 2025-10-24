@@ -1,0 +1,217 @@
+<story-context id="epic-8/story-8.5" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>8.5</storyId>
+    <title>Dashboard & Widget Integration</title>
+    <status>BLOCKED (Waiting for Stories 8.3 & 8.4 completion)</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow (Bob - Scrum Master)</generator>
+    <sourceStoryPath>docs/stories/story-8.5-dashboard-widget-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>sailor viewing critical marine data</asA>
+    <iWant>all 9 widgets to adapt to glove mode with large readable values, and all navigation screens accessible</iWant>
+    <soThat>I can monitor depth, speed, wind, and other metrics at a glance with gloves on, and access all app functionality through platform-native navigation</soThat>
+    <tasks>
+      - PaginatedDashboard Glove Mode Integration (grid spacing, swipe threshold adaptation)
+      - All Widgets Density-Aware (9 widgets: Depth, Speed, Wind, GPS, Compass, Engine, Battery, Tanks, AutopilotStatus)
+      - Modular Widget Architecture Refactor (hooks + compound components, 85% code reduction)
+      - Settings Screen in Navigation (accessible via iOS tab bar, Android drawer, Web sidebar)
+      - Autopilot Screen in Navigation (full-screen controls with density awareness)
+      - Alarms Screen in Navigation (active alarms, history, configuration - integrates with alarmStore)
+      - Help Screen in Navigation (integrates Story 4.6 help components: QuickStart, Tutorials, Troubleshooting, Search)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <paginated_dashboard>
+      <item id="1.1">PaginatedDashboard imports useUIDensity()</item>
+      <item id="1.2">Grid spacing adapts: 8pt → 16pt in glove mode</item>
+      <item id="1.3">Widget cell sizes adapt to density</item>
+      <item id="1.4">Page swipe threshold: 50px → 120px in glove mode</item>
+      <item id="1.5">Page indicator dots: 8pt → 12pt diameter in glove mode</item>
+      <item id="1.6">Pagination still works (swipe left/right)</item>
+      <item id="1.7">Widget add/remove/reorder still works</item>
+      <item id="1.8">Layout doesn't break when toggling glove mode</item>
+    </paginated_dashboard>
+    <all_widgets>
+      <item id="2.1">All widgets import useUIDensity()</item>
+      <item id="2.2">Value font adapts: 36pt → 48pt</item>
+      <item id="2.3">Label font adapts: 16pt → 18pt</item>
+      <item id="2.4">Widget padding adapts: 8pt → 16pt</item>
+      <item id="2.5">Storybook story for each widget (native vs glove)</item>
+      <item id="2.6">DepthWidget adapted</item>
+      <item id="2.7">SpeedWidget adapted</item>
+      <item id="2.8">WindWidget adapted</item>
+      <item id="2.9">GPSWidget adapted</item>
+      <item id="2.10">CompassWidget adapted</item>
+      <item id="2.11">EngineWidget adapted</item>
+      <item id="2.12">BatteryWidget adapted</item>
+      <item id="2.13">TanksWidget adapted</item>
+      <item id="2.14">AutopilotStatusWidget adapted</item>
+    </all_widgets>
+    <settings_screen>
+      <item id="3.1">SettingsScreen created (src/screens/SettingsScreen.tsx)</item>
+      <item id="3.2">Accessible via iOS tab bar, Android drawer, Web sidebar</item>
+      <item id="3.3">Sections: Connection, Widgets, Alarms, Display, About</item>
+      <item id="3.4">All settings work (same as v2.3): Connection, Theme, Alarms</item>
+      <item id="3.5">Settings screen respects theme</item>
+      <item id="3.6">Settings has proper navigation header</item>
+      <item id="3.7">Glove mode doesn't affect settings (always native density)</item>
+    </settings_screen>
+    <autopilot_screen>
+      <item id="4.1">AutopilotScreen created (src/screens/AutopilotScreen.tsx)</item>
+      <item id="4.2">Accessible via iOS tab bar, Android drawer, Web sidebar</item>
+      <item id="4.3">Shows: Current heading, Target heading, Course adjustment buttons (-1°, -10°, +1°, +10°), Engage/Disengage button</item>
+      <item id="4.4">All controls density-aware: 44pt native → 64pt glove</item>
+      <item id="4.5">Haptic feedback on button press (Medium native, Heavy glove)</item>
+      <item id="4.6">Respects safe area insets</item>
+      <item id="4.7">AutopilotFooter still exists (quick controls from Dashboard)</item>
+    </autopilot_screen>
+    <alarms_screen>
+      <item id="5.1">AlarmsScreen created (src/screens/AlarmsScreen.tsx)</item>
+      <item id="5.2">Accessible via iOS tab bar (if 5-tab design), Android drawer, Web sidebar</item>
+      <item id="5.3">Sections: Active Alarms, Alarm History (24h), Alarm Configuration, Alarm Settings</item>
+      <item id="5.4">Active alarms show: type, current value vs threshold, time triggered, Acknowledge button</item>
+      <item id="5.5">Acknowledge button density-aware: 44pt → 64pt</item>
+      <item id="5.6">Alarm configuration uses existing alarmStore</item>
+      <item id="5.7">Screen respects theme (Day/Night/Red Night)</item>
+      <item id="5.8">Glove mode affects buttons only (not text input)</item>
+    </alarms_screen>
+    <help_screen>
+      <item id="6.1">HelpScreen created (src/screens/HelpScreen.tsx)</item>
+      <item id="6.2">Accessible via iOS Settings→Help or 5th tab, Android drawer, Web sidebar</item>
+      <item id="6.3">Integrates Story 4.6 help components: QuickStartGuide, ContextualHelp, InteractiveTutorial, TroubleshootingGuide, HelpSearch</item>
+      <item id="6.4">Help sections: Getting Started, Features & Tutorials, Troubleshooting, Search Help</item>
+      <item id="6.5">Help content accessible offline (bundled with app)</item>
+      <item id="6.6">Screen respects theme</item>
+      <item id="6.7">Always native density (no glove mode for reading text)</item>
+    </help_screen>
+    <widget_architecture>
+      <item id="7.1">Core infrastructure created: useWidgetCore, useWidgetData, useMarineSafety, WidgetShell</item>
+      <item id="7.2">WidgetShell compound components: Header, Primary, Secondary</item>
+      <item id="7.3">All widget boilerplate eliminated (no repeated state management, hooks, styling)</item>
+      <item id="7.4">At least 3 widgets refactored: RudderPositionWidget (230→40 lines), BatteryWidget (330→35 lines), DepthWidget (250→40 lines)</item>
+      <item id="7.5">useWidgetCore hook provides: expanded, pinned, handlers (onPress, onLongPress)</item>
+      <item id="7.6">useWidgetData hook provides: typed data access, automatic staleness detection</item>
+      <item id="7.7">useMarineSafety hook evaluates safety state (normal/warning/alarm/critical) based on thresholds</item>
+      <item id="7.8">WidgetShell handles common UI: container, theme-aware borders, touch handlers, context injection</item>
+      <item id="7.9">Optional widget factory pattern: createNumericWidget for simple widgets</item>
+      <item id="7.10">Refactored widgets maintain: same appearance, behavior, performance, accessibility</item>
+      <item id="7.11">Widget architecture documented: docs/WIDGET-ARCHITECTURE.md with patterns and migration guide</item>
+      <item id="7.12">Migration benefits measured: 85% code reduction, 540 lines saved, 15min vs 2hr to create new widget</item>
+    </widget_architecture>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/stories/story-8.2-glove-mode-system.md" title="Story 8.2" section="useUIDensity Pattern" snippet="Standard density-aware component pattern: const density = useUIDensity(); use density.fontSize.value, density.spacing, density.touchTargetSize"/>
+      <item path="docs/stories/story-8.3-platform-navigation-ios.md" title="Story 8.3" section="DashboardScreen" snippet="DashboardScreen contains HeaderBar, AlarmBanner, PaginatedDashboard, AutopilotFooter - all accessible via tab bar"/>
+      <item path="docs/stories/story-8.4-platform-navigation-android-web.md" title="Story 8.4" section="Platform Navigation" snippet="Android drawer and Web responsive navigation provide access to Dashboard, Autopilot, Settings screens"/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/components/PaginatedDashboard.tsx" kind="component" symbol="PaginatedDashboard" lines="1-200" reason="Dashboard component - will add useUIDensity for grid spacing and swipe threshold"/>
+      <item path="boatingInstrumentsApp/src/widgets/DepthWidget.tsx" kind="widget" symbol="DepthWidget" lines="1-80" reason="Depth widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/SpeedWidget.tsx" kind="widget" symbol="SpeedWidget" lines="1-80" reason="Speed widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/WindWidget.tsx" kind="widget" symbol="WindWidget" lines="1-100" reason="Wind widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/GPSWidget.tsx" kind="widget" symbol="GPSWidget" lines="1-90" reason="GPS widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/CompassWidget.tsx" kind="widget" symbol="CompassWidget" lines="1-100" reason="Compass widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/EngineWidget.tsx" kind="widget" symbol="EngineWidget" lines="1-90" reason="Engine widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/BatteryWidget.tsx" kind="widget" symbol="BatteryWidget" lines="1-80" reason="Battery widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/TanksWidget.tsx" kind="widget" symbol="TanksWidget" lines="1-100" reason="Tanks widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/widgets/AutopilotStatusWidget.tsx" kind="widget" symbol="AutopilotStatusWidget" lines="1-70" reason="Autopilot status widget - will refactor to use useUIDensity"/>
+      <item path="boatingInstrumentsApp/src/hooks/useUIDensity.ts" kind="hook" symbol="useUIDensity" lines="1-30" reason="Density hook from Story 8.2 - will be used in all widgets"/>
+      <item path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" lines="1-80" reason="Metric cell with density awareness (from Story 8.2) - pattern for widgets"/>
+      <item path="boatingInstrumentsApp/src/components/organisms/AutopilotFooter.tsx" kind="component" symbol="AutopilotFooter" lines="1-120" reason="Density-aware footer (from Story 8.2) - pattern for AutopilotScreen"/>
+      <item path="boatingInstrumentsApp/src/store/alarmStore.ts" kind="store" symbol="useAlarmStore" lines="1-150" reason="Alarm store - will be used by AlarmsScreen for active alarms, history, configuration"/>
+      <item path="boatingInstrumentsApp/src/components/help/QuickStartGuide.tsx" kind="component" symbol="QuickStartGuide" lines="1-100" reason="Help component from Story 4.6 - will be integrated into HelpScreen"/>
+      <item path="boatingInstrumentsApp/src/components/help/ContextualHelp.tsx" kind="component" symbol="ContextualHelp" lines="1-80" reason="Help component from Story 4.6 - will be integrated into HelpScreen"/>
+      <item path="boatingInstrumentsApp/src/components/help/InteractiveTutorial.tsx" kind="component" symbol="InteractiveTutorial" lines="1-120" reason="Help component from Story 4.6 - will be integrated into HelpScreen"/>
+      <item path="boatingInstrumentsApp/src/components/help/TroubleshootingGuide.tsx" kind="component" symbol="TroubleshootingGuide" lines="1-100" reason="Help component from Story 4.6 - will be integrated into HelpScreen"/>
+      <item path="boatingInstrumentsApp/src/components/help/HelpSearch.tsx" kind="component" symbol="HelpSearch" lines="1-90" reason="Help component from Story 4.6 - will be integrated into HelpScreen"/>
+      <item path="boatingInstrumentsApp/src/widgets/core/useWidgetCore.ts" kind="hook" symbol="useWidgetCore" lines="TO BE CREATED" reason="Core widget behavior hook - expansion, pinning, interaction tracking (eliminates 20 lines boilerplate)"/>
+      <item path="boatingInstrumentsApp/src/widgets/core/useWidgetData.ts" kind="hook" symbol="useWidgetData" lines="TO BE CREATED" reason="Typed NMEA data access with staleness detection (eliminates useCallback boilerplate)"/>
+      <item path="boatingInstrumentsApp/src/widgets/core/useMarineSafety.ts" kind="hook" symbol="useMarineSafety" lines="TO BE CREATED" reason="Marine safety state evaluation hook (normal/warning/alarm/critical)"/>
+      <item path="boatingInstrumentsApp/src/widgets/core/WidgetShell.tsx" kind="component" symbol="WidgetShell" lines="TO BE CREATED" reason="Compound component for widget container - eliminates 60 lines styling/structure boilerplate per widget"/>
+      <item path="boatingInstrumentsApp/src/widgets/core/createNumericWidget.ts" kind="factory" symbol="createNumericWidget" lines="TO BE CREATED" reason="Optional widget factory pattern - reduces simple widgets to 10-line config objects"/>
+      <item path="boatingInstrumentsApp/src/widgets/RudderPositionWidget.tsx" kind="widget" symbol="RudderPositionWidget" lines="1-230" reason="Rudder widget - will refactor from 230 lines to ~40 lines using new architecture (82% reduction)"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework (ALREADY INSTALLED)"/>
+        <package name="react-native-safe-area-context" version="~5.6.0" usage="Safe area for screens (ALREADY INSTALLED)"/>
+      </react_native>
+      <expo>
+        <package name="expo-haptics" version="TBD" usage="Haptic feedback (INSTALLED IN 8.3)"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management (ALREADY INSTALLED)"/>
+      </state>
+      <storybook>
+        <package name="@storybook/react-native" version="TBD" usage="Widget stories (INSTALLED IN 8.1)"/>
+      </storybook>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Widget Pattern: All 9 widgets must follow same pattern (import useUIDensity, replace hardcoded sizes)
+    - PrimaryMetricCell: Already density-aware from Story 8.2 - widgets using it get adaptation free
+    - AutopilotScreen vs Footer: Screen is full controls, Footer is quick controls (both density-aware)
+    - Settings Screen: Always native density (no glove mode) - text input requires precision
+    - Storybook Stories: MUST create for all widgets - visual regression testing requirement
+    - Backward Compatibility: Widgets must work in both old App.tsx (v2.3) and new navigation (v3.0)
+    - No Breaking Changes: Widget API must not change - only internal density adaptation
+    - Testing: WiFi Bridge scenarios must validate all widgets adapt correctly
+  </constraints>
+
+  <interfaces>
+    <item name="useUIDensity" kind="hook" signature="function useUIDensity(): DensityConfig" path="src/hooks/useUIDensity.ts (FROM STORY 8.2)"/>
+    <item name="PaginatedDashboard" kind="component" signature="export const PaginatedDashboard: React.FC" path="src/components/PaginatedDashboard.tsx"/>
+    <item name="DepthWidget" kind="component" signature="export const DepthWidget: React.FC" path="src/widgets/DepthWidget.tsx"/>
+    <item name="SpeedWidget" kind="component" signature="export const SpeedWidget: React.FC" path="src/widgets/SpeedWidget.tsx"/>
+    <item name="WindWidget" kind="component" signature="export const WindWidget: React.FC" path="src/widgets/WindWidget.tsx"/>
+    <item name="GPSWidget" kind="component" signature="export const GPSWidget: React.FC" path="src/widgets/GPSWidget.tsx"/>
+    <item name="CompassWidget" kind="component" signature="export const CompassWidget: React.FC" path="src/widgets/CompassWidget.tsx"/>
+    <item name="EngineWidget" kind="component" signature="export const EngineWidget: React.FC" path="src/widgets/EngineWidget.tsx"/>
+    <item name="BatteryWidget" kind="component" signature="export const BatteryWidget: React.FC" path="src/widgets/BatteryWidget.tsx"/>
+    <item name="TanksWidget" kind="component" signature="export const TanksWidget: React.FC" path="src/widgets/TanksWidget.tsx"/>
+    <item name="AutopilotStatusWidget" kind="component" signature="export const AutopilotStatusWidget: React.FC" path="src/widgets/AutopilotStatusWidget.tsx"/>
+    <item name="SettingsScreen" kind="component" signature="export const SettingsScreen: React.FC" path="src/screens/SettingsScreen.tsx (TO BE CREATED)"/>
+    <item name="AutopilotScreen" kind="component" signature="export const AutopilotScreen: React.FC" path="src/screens/AutopilotScreen.tsx (TO BE CREATED)"/>
+    <item name="AlarmsScreen" kind="component" signature="export const AlarmsScreen: React.FC" path="src/screens/AlarmsScreen.tsx (TO BE CREATED)"/>
+    <item name="HelpScreen" kind="component" signature="export const HelpScreen: React.FC" path="src/screens/HelpScreen.tsx (TO BE CREATED)"/>
+    <item name="useWidgetCore" kind="hook" signature="function useWidgetCore(widgetId: string): { expanded, pinned, handlers }" path="src/widgets/core/useWidgetCore.ts (TO BE CREATED)"/>
+    <item name="useWidgetData" kind="hook" signature="function useWidgetData<T>(selector, timeout): { data: T, isStale: boolean }" path="src/widgets/core/useWidgetData.ts (TO BE CREATED)"/>
+    <item name="useMarineSafety" kind="hook" signature="function useMarineSafety(value, thresholds): SafetyState" path="src/widgets/core/useMarineSafety.ts (TO BE CREATED)"/>
+    <item name="WidgetShell" kind="component" signature="export const WidgetShell: React.FC & { Header, Primary, Secondary }" path="src/widgets/core/WidgetShell.tsx (TO BE CREATED)"/>
+    <item name="createNumericWidget" kind="factory" signature="function createNumericWidget(config): React.FC" path="src/widgets/core/createNumericWidget.ts (TO BE CREATED)"/>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with React Native Testing Library. WiFi Bridge scenario testing for all widgets. Storybook visual regression testing. Manual testing on all platforms (iOS, Android, Web).</standards>
+    <locations>
+      - __tests__/components/ (PaginatedDashboard tests)
+      - __tests__/widgets/ (individual widget tests)
+      - __tests__/widgets/core/ (widget architecture hook tests)
+      - __tests__/screens/ (SettingsScreen, AutopilotScreen, AlarmsScreen, HelpScreen tests)
+      - src/widgets/**/*.stories.tsx (Storybook stories for each widget)
+    </locations>
+    <ideas>
+      <item ac="1.1-1.8">PaginatedDashboard tests: grid spacing 8pt → 16pt, swipe threshold 50px → 120px, page dots 8pt → 12pt</item>
+      <item ac="2.1-2.14">Widget tests: Each widget adapts fonts (36pt → 48pt, 16pt → 18pt), padding (8pt → 16pt), Storybook stories render</item>
+      <item ac="3.1-3.7">SettingsScreen tests: all sections present, accessible from all navigation types, settings persist, always native density</item>
+      <item ac="4.1-4.7">AutopilotScreen tests: controls density-aware (44pt → 64pt), haptic feedback works, accessible from all navigation types</item>
+      <item ac="5.1-5.8">AlarmsScreen tests: active alarms render, alarm history shows 24h, acknowledge button 44pt → 64pt, integrates with alarmStore, accessible from all navigation types</item>
+      <item ac="6.1-6.7">HelpScreen tests: all 4 sections render (Getting Started, Features, Troubleshooting, Search), integrates Story 4.6 help components, always native density, accessible offline</item>
+      <item ac="7.1-7.12">Widget architecture tests: useWidgetCore returns expanded/pinned/handlers, useWidgetData returns typed data/staleness, useMarineSafety evaluates thresholds correctly, WidgetShell renders header/primary/secondary, refactored widgets pixel-perfect match originals</item>
+      <item>useWidgetCore hook: Returns correct expanded/pinned state from widgetStore, onPress triggers both trackInteraction and toggleExpansion, onLongPress triggers togglePin</item>
+      <item>useWidgetData hook: Returns typed data from selector, calculates isStale based on timestamp and timeout, defaults to 10s staleness timeout</item>
+      <item>useMarineSafety hook: Returns 'critical' when value below critical.min or above critical.max, returns 'warning' when value in warning range, returns 'normal' otherwise, returns 'warning' for null/undefined values</item>
+      <item>WidgetShell component: Border color adapts (pinned=accent, alarm=error, warning=warning, normal=border), injects expanded/pinned/theme/state to children, wires touch handlers to useWidgetCore</item>
+      <item>Refactored widgets: RudderPositionWidget maintains same visual appearance and behavior, BatteryWidget maintains same appearance/behavior, DepthWidget maintains same appearance/behavior</item>
+      <item>WiFi Bridge "underway-manual": Load scenario → verify all 9 widgets show 48pt values, 16pt spacing</item>
+      <item>WiFi Bridge "idle-at-marina": Load scenario → verify all 9 widgets show 36pt values, 8pt spacing</item>
+    </ideas>
+  </tests>
+</story-context>

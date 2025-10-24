@@ -1,0 +1,156 @@
+<story-context id="story-6.15-custom-marine-components" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>6.15</storyId>
+    <title>Custom Marine Widget Components</title>
+    <status>Complete</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-6.15-custom-marine-components.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>marine equipment operator familiar with professional instruments</asA>
+    <iWant>the dashboard widgets to use marine-specific UI components that match professional equipment aesthetics</iWant>
+    <soThat>the interface feels familiar and trustworthy like the physical instruments I use on the bridge</soThat>
+    <tasks>
+      - Marine-Specific Components (Digital display, analog gauge, linear bar, status indicator, marine button)
+      - Digital Display Specifications (7-segment LED style, monospace integration, size variants, alert states, high contrast)
+      - Analog Gauge Implementation (customizable scales, marine color coding, needle animation, tick marks, digital integration)
+      - Linear Progress Indicators (fluid level bars, battery indicators, progress variants, threshold markers, animations)
+      - Professional Aesthetics (matte black finish, minimal bezels, LED indicators, tactile buttons, equipment typography)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <marine_components>
+      <item id="1">Digital Display Component: LED-style numeric display with segmented appearance for primary readings</item>
+      <item id="2">Analog Gauge Component: Circular gauge with marine-standard scales and needle indicators</item>
+      <item id="3">Linear Bar Component: Horizontal/vertical bar graphs for fluid levels and progressive readings</item>
+      <item id="4">Status Indicator Component: Multi-state LED-style indicators (green/amber/red) for system status</item>
+      <item id="5">Marine Button Component: Professional tactile-style buttons with clear pressed states</item>
+    </marine_components>
+    <digital_displays>
+      <item id="6">Segmented Numeric Display: 7-segment LED-style appearance for depth, speed, RPM readings</item>
+      <item id="7">Monospace Font Integration: Seamless integration with existing monospace typography system</item>
+      <item id="8">Size Variants: Support for large (primary) and small (secondary) display sizes</item>
+      <item id="9">Alert State Styling: Red glow effect for critical values, amber for warnings</item>
+      <item id="10">High Contrast Mode: Enhanced visibility for bright sunlight conditions</item>
+    </digital_displays>
+    <analog_gauges>
+      <item id="11">Customizable Scale Ranges: Configurable min/max values with automatic scale calculation</item>
+      <item id="12">Marine Color Coding: Green normal range, amber caution range, red danger range on gauge face</item>
+      <item id="13">Needle Animation: Smooth needle movement with realistic damping for natural motion</item>
+      <item id="14">Tick Mark System: Major and minor tick marks with appropriate value labels</item>
+      <item id="15">Digital Readout Integration: Digital value display within analog gauge center</item>
+    </analog_gauges>
+    <linear_progress>
+      <item id="16">Fluid Level Bars: Tank level indicators with realistic fluid appearance and wave motion</item>
+      <item id="17">Battery Charge Indicators: Multi-segment battery icons with charge level visualization</item>
+      <item id="18">Progress Bar Variants: Horizontal and vertical orientations for different widget layouts</item>
+      <item id="19">Threshold Markers: Visual indicators for low/high thresholds on progress bars</item>
+      <item id="20">Animation Effects: Smooth transitions and subtle animations for value changes</item>
+    </linear_progress>
+    <professional_aesthetics>
+      <item id="21">Matte Black Finish: Non-reflective dark surfaces matching marine equipment design</item>
+      <item id="22">Minimal Bezels: Thin borders with subtle raised appearance like physical instruments</item>
+      <item id="23">LED-Style Indicators: Realistic LED appearance for status lights and warnings</item>
+      <item id="24">Tactile Button Design: Raised button appearance with clear pressed/unpressed states</item>
+      <item id="25">Equipment Typography: Font choices that match professional marine instrument displays</item>
+    </professional_aesthetics>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/ui-architecture.md" title="Boating Instruments App Frontend Architecture Document" section="Component Library / Design System" snippet="Custom lightweight design system tailored to marine instrument aesthetics. Atomic Design structure: Atoms → Molecules → Organisms. Theming via React Context for Day/Night/Red-Night modes. React Native SVG for custom gauges and instrument graphics. Reanimated for smooth transitions and micro-interactions."/>
+      <item path="docs/front-end-spec.md" title="Boating Instruments App UI/UX Specification" section="Component Library / Design System" snippet="Create a custom lightweight design system tailored to marine instrument aesthetics rather than adopting an existing UI library. Custom system enables unique marine-specific components (compass roses, angle indicators, analog gauges). React Native SVG for custom gauges and instrument graphics. Reanimated for smooth transitions."/>
+      <item path="docs/stories/story-6.1-atomic-design-structure.md" title="Atomic Design Component Architecture" section="Target Architecture" snippet="Atomic Design organization: atoms/ (pure UI primitives), molecules/ (composed components), organisms/ (complex UI sections). Barrel exports provide clean import paths. All atomic components include comprehensive unit tests."/>
+      <item path="docs/stories/story-6.3-theme-provider-context.md" title="ThemeProvider Context System Implementation" section="Integration Requirements" snippet="All components migrate from direct theme imports to useTheme hook. Widget components maintain marine-specific styling with new theme system. Theme switching provides immediate visual feedback across all components."/>
+      <item path="docs/stories/story-2.10-theme-integration.md" title="Widget Theme Integration & Color Consistency" section="Implementation Pattern" snippet="useTheme hook with createWidgetStyles function pattern for consistent styling across components. Zero hardcoded colors allowed - all colors via theme properties."/>
+      <item path="docs/stories/story-2.8-display-modes-themes.md" title="Display Modes & Visual Themes" section="Implementation" snippet="Complete theme system with Day/Night/Red-Night modes. Marine-compliant color palettes for professional instrument aesthetic. Theme integration via themeStore with instant switching."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/components/atoms/Button.tsx" kind="component" symbol="Button" lines="1-172" reason="Existing atomic button component with marine styling - foundation for MarineButton component"/>
+      <item path="boatingInstrumentsApp/src/components/atoms/StatusIndicator.tsx" kind="component" symbol="StatusIndicator" lines="1-98" reason="Existing status indicator atom with LED-style appearance - foundation for enhanced marine status indicators"/>
+      <item path="boatingInstrumentsApp/src/components/molecules/MetricDisplay.tsx" kind="component" symbol="MetricDisplay" lines="1-197" reason="Marine metric display molecule with typography and theming - foundation for DigitalDisplay component"/>
+      <item path="boatingInstrumentsApp/src/theme/ThemeProvider.tsx" kind="provider" symbol="ThemeProvider" lines="1-280" reason="Complete theme context system with marine colors, typography, and mode switching - required for all marine components"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="ThemeColors" lines="1-281" reason="Centralized theme system with Day/Night/Red-Night modes - provides marine color palette for LED displays and gauges"/>
+      <item path="boatingInstrumentsApp/src/utils/animationOptimization.ts" kind="utility" symbol="ANIMATION_DURATIONS" lines="25-50" reason="Performance-optimized animation patterns for marine widgets - required for smooth gauge needle animations"/>
+      <item path="boatingInstrumentsApp/src/widgets/DepthWidgetAtomic.tsx" kind="widget" symbol="DepthWidgetAtomic" lines="1-100" reason="Example widget using atomic design with theme integration - pattern for marine component integration"/>
+      <item path="boatingInstrumentsApp/src/components/molecules/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" reason="Primary metric display component - integration point for DigitalDisplay enhancement"/>
+      <item path="boatingInstrumentsApp/src/components/molecules/SecondaryMetricCell.tsx" kind="component" symbol="SecondaryMetricCell" reason="Secondary metric display component - integration point for smaller DigitalDisplay variants"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with StyleSheet API and View components for marine widget structure"/>
+        <package name="react-native-svg" version="^15.12.1" usage="SVG graphics for analog gauge needles, LED effects, and custom marine instrument graphics"/>
+        <package name="react-native-reanimated" version="^4.1.3" usage="High-performance animations for smooth gauge needle movement and LED effects"/>
+        <package name="react-native-gesture-handler" version="^2.28.0" usage="Touch gesture handling for interactive marine components and widgets"/>
+        <package name="react-native-vector-icons" version="^10.3.0" usage="Icon system for marine component indicators and status symbols"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework providing cross-platform support for marine components"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation and routing system for marine component integration"/>
+        <package name="expo-brightness" version="^14.0.7" usage="Native brightness control for marine theme mode adjustments"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for theme integration and marine component configuration"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Persistent storage for marine component settings and preferences"/>
+      </state>
+      <typescript>
+        <package name="typescript" version="^5.8.3" usage="Type safety for marine component interfaces and prop definitions"/>
+        <package name="@types/react" version="~19.1.10" usage="React TypeScript definitions for component development"/>
+        <package name="@types/react-native" version="builtin" usage="React Native TypeScript definitions for platform-specific styling"/>
+      </typescript>
+      <testing>
+        <package name="jest" version="^29.7.0" usage="Testing framework for marine component unit and integration tests"/>
+        <package name="@testing-library/react-native" version="^13.3.3" usage="Component testing utilities for marine widget interaction testing"/>
+        <package name="react-test-renderer" version="^19.1.0" usage="React component rendering for marine component snapshot testing"/>
+      </testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Atomic Design Pattern: Marine components must follow atoms/molecules/organisms structure and integrate with existing component hierarchy
+    - Theme System Integration: All marine components must use useTheme hook from themeStore for Day/Night/Red-Night mode compatibility
+    - Performance Requirements: Gauge needle animations must maintain 60fps using native drivers, LED effects must be battery-efficient
+    - Marine Standards: Components must match professional marine equipment aesthetic (Raymarine, Garmin, Simrad styling)
+    - Typography Consistency: Marine components must integrate with existing PrimaryMetricCell/SecondaryMetricCell monospace system
+    - Color Compliance: LED and gauge colors must follow marine safety standards (green=normal, amber=warning, red=alarm)
+    - Component Integration: Marine components must work within existing widget framework and grid layout system
+    - Cross-Platform Support: Components must render consistently on iOS, Android, and web platforms
+    - Accessibility: Touch targets must be 44pt minimum for marine glove operation, proper contrast ratios maintained
+    - Animation Standards: Use animationOptimization.ts utilities for consistent timing and native driver usage
+  </constraints>
+  
+  <interfaces>
+    <item name="PrimaryMetricCellProps" kind="interface" signature="interface PrimaryMetricCellProps { mnemonic: string; value: string | number; unit: string; state?: 'normal' | 'warning' | 'alarm'; style?: any; maxWidth?: number; minWidth?: number; }" path="src/components/PrimaryMetricCell.tsx"/>
+    <item name="SecondaryMetricCellProps" kind="interface" signature="interface SecondaryMetricCellProps { mnemonic: string; value: string | number | null; unit?: string; precision?: number; state?: 'normal' | 'warning' | 'alarm'; compact?: boolean; style?: any; testID?: string; }" path="src/components/SecondaryMetricCell.tsx"/>
+    <item name="ThemeColors" kind="interface" signature="interface ThemeColors { primary: string; secondary: string; background: string; surface: string; text: string; textSecondary: string; accent: string; warning: string; error: string; success: string; border: string; shadow: string; }" path="src/store/themeStore.ts"/>
+    <item name="useTheme" kind="hook" signature="function useTheme(): ThemeColors" path="src/store/themeStore.ts"/>
+    <item name="ANIMATION_DURATIONS" kind="constants" signature="{ FAST: 150; NORMAL: 300; SLOW: 500; FADE: 200; }" path="src/utils/animationOptimization.ts"/>
+    <item name="Button" kind="component" signature="React.FC<ButtonProps>" path="src/components/atoms/Button.tsx"/>
+    <item name="StatusIndicator" kind="component" signature="React.FC<StatusIndicatorProps>" path="src/components/atoms/StatusIndicator.tsx"/>
+    <item name="MetricDisplay" kind="component" signature="React.FC<MetricDisplayProps>" path="src/components/molecules/MetricDisplay.tsx"/>
+    <item name="MarineWidget" kind="component" signature="React.FC<MarineWidgetProps>" path="src/components/organisms/MarineWidget.tsx"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework (v29.7.0) with React Native Testing Library (v13.3.3) for comprehensive marine component testing. SVG component testing using react-native-svg mocks. Animation testing with Reanimated gesture and timing validation. Performance testing for 60fps gauge animations. Theme compliance testing across Day/Night/Red-Night modes. Marine safety standard validation for LED indicators and gauge accuracy.</standards>
+    <locations>
+      - __tests__/components/marine/ (marine-specific component tests)
+      - __tests__/components/atoms/ (atomic component integration tests)  
+      - __tests__/components/molecules/ (molecular component integration tests)
+      - __tests__/integration/marineComponents.test.tsx (cross-component integration tests)
+      - __tests__/platform/ (platform-specific marine component tests)
+      - __tests__/accessibility/ (marine glove accessibility tests)
+    </locations>
+    <ideas>
+      <item ac="1-5">Marine component creation tests: DigitalDisplay LED appearance validation, AnalogGauge needle animation accuracy, LinearBar progress indicator functionality, StatusIndicator multi-state LED behavior, MarineButton tactile response testing</item>
+      <item ac="6-10">Digital display specification tests: 7-segment LED styling verification, monospace font integration compatibility, size variant rendering, alert state glow effects, high contrast mode visibility validation</item>
+      <item ac="11-15">Analog gauge implementation tests: Scale range calculation accuracy, marine color coding compliance, needle animation smoothness and damping, tick mark precision, digital readout integration within gauge center</item>
+      <item ac="16-20">Linear progress indicator tests: Fluid level bar wave motion animation, battery charge visualization accuracy, horizontal/vertical orientation layouts, threshold marker positioning, smooth value change animations</item>
+      <item ac="21-25">Professional aesthetics tests: Matte black finish appearance, minimal bezel styling validation, LED indicator realism, tactile button pressed/unpressed states, equipment typography rendering consistency</item>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/2.10" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.10</storyId>
+    <title>Widget Theme Integration & Color Consistency</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-01-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-2.10-theme-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer maintaining the dashboard</asA>
+    <iWant>all widgets to use the centralized theme system</iWant>
+    <soThat>theme switching (day/night/red-night) works consistently across all widgets</soThat>
+    <tasks>
+      - Remove Hardcoded Colors (Audit all widget files for hardcoded hex colors, replace WidgetCard hardcoded colors, remove color functions)
+      - Create Widget Stylesheet (Create src/styles/widgetStyles.ts, define reusable styles, all widgets import and use widgetStyles)
+      - WidgetCard Refactor (Accept expanded prop, show chevron in header, remove per-widget status dot, use theme colors)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <remove_hardcoded_colors>
+      <item id="1">Audit all widget files for hardcoded hex colors</item>
+      <item id="2">Replace WidgetCard hardcoded colors: #e3fbfbff → theme.surface, #020202ff → theme.background, #ffffffff → theme.border, All inline colors → theme properties</item>
+      <item id="3">Remove getDisplayColor(), getBorderColor(), getBackgroundGlow() functions</item>
+      <item id="4">State colors use theme: theme.error, theme.warning, theme.success</item>
+    </remove_hardcoded_colors>
+    <create_widget_stylesheet>
+      <item id="5">Create src/styles/widgetStyles.ts exporting standardized StyleSheet</item>
+      <item id="6">Define reusable styles: widgetContainer, widgetHeader, metricLabel (12pt, uppercase, theme.textSecondary), metricValue (36pt, monospace, theme.text), metricUnit (16pt, theme.textSecondary)</item>
+      <item id="7">All widgets import and use widgetStyles</item>
+    </create_widget_stylesheet>
+    <widgetcard_refactor>
+      <item id="8">WidgetCard accepts expanded: boolean prop</item>
+      <item id="9">WidgetCard shows chevron in header (⌄ collapsed, ⌃ expanded)</item>
+      <item id="10">Remove per-widget status dot from header (line 72)</item>
+      <item id="11">Background uses theme.surface, border uses theme.border</item>
+    </widgetcard_refactor>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/prd.md" title="Product Requirements Document" section="Widget System Architecture" snippet="Component-based architecture where each widget is a self-contained React component that subscribes to relevant NMEA data streams via context/state management. The MVP focuses on 10 core instrument widgets with display modes (day/night/red-night)."/>
+      <item path="docs/ui-architecture.md" title="UI Architecture Document" section="Theme System" snippet="Marine-compliant red-night theme system, comprehensive widget state management with caret/pin controls, native brightness integration, theme compliance validation, complete UI component coverage."/>
+      <item path="docs/stories/story-2.10-theme-integration.md" title="Story 2.10: Widget Theme Integration" section="Technical Notes" snippet="Files to Update: WidgetCard.tsx - Remove hardcoded colors, DepthWidget.tsx, EngineWidget.tsx, BatteryWidget.tsx, WindWidget.tsx. Implementation Pattern: useTheme hook with createWidgetStyles function."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/widgets/WidgetCard.tsx" kind="component" symbol="WidgetCard" lines="1-169" reason="Core widget wrapper component already refactored with theme integration - foundation for story completion"/>
+      <item path="boatingInstrumentsApp/src/theme/styles/widgetStyles.ts" kind="styles" symbol="createWidgetStyles" lines="1-250" reason="Existing centralized widget styling system with theme-aware styles - already implements AC 5-7"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="ThemeColors" lines="1-281" reason="Centralized theme system with day/night/red-night modes - provides theme properties for widget integration"/>
+      <item path="boatingInstrumentsApp/src/widgets/DepthWidget.tsx" kind="component" symbol="DepthWidget" reason="Widget component requiring theme integration - needs hardcoded color removal"/>
+      <item path="boatingInstrumentsApp/src/widgets/EngineWidget.tsx" kind="component" symbol="EngineWidget" reason="Widget component requiring theme integration - needs hardcoded color removal"/>
+      <item path="boatingInstrumentsApp/src/widgets/BatteryWidget.tsx" kind="component" symbol="BatteryWidget" reason="Widget component requiring theme integration - needs hardcoded color removal"/>
+      <item path="boatingInstrumentsApp/src/widgets/WindWidget.tsx" kind="component" symbol="WindWidget" reason="Widget component requiring theme integration - needs hardcoded color removal"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package name="react-native" version="^0.81.4" usage="Core framework with StyleSheet API for theme-aware styling"/>
+        <package name="react-native-vector-icons" version="^10.3.0" usage="Icon system for widget headers and chevrons"/>
+        <package name="react-native-svg" version="^15.12.1" usage="SVG graphics requiring theme color integration"/>
+      </react_native>
+      <expo>
+        <package name="expo" version="^54.0.13" usage="Expo framework with brightness integration for theme switching"/>
+        <package name="expo-brightness" version="^14.0.7" usage="Native brightness integration for automatic theme switching"/>
+        <package name="expo-router" version="^6.0.12" usage="Navigation framework with theme provider integration"/>
+      </expo>
+      <state>
+        <package name="zustand" version="^5.0.8" usage="State management for theme store with persistence"/>
+        <package name="@react-native-async-storage/async-storage" version="^2.2.0" usage="Persistent storage for theme preferences"/>
+      </state>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Theme System Integration: All widgets must use centralized theme system via useTheme hook from themeStore
+    - Color Consistency: Zero hardcoded hex colors allowed in widget files - all colors via theme properties
+    - Performance Requirements: Theme switching must complete in <300ms across all widgets
+    - Accessibility Compliance: Theme colors must maintain proper contrast ratios for marine safety
+    - Architecture Pattern: createWidgetStyles function pattern for consistent styling across components
+    - Marine Standards: Day/Night/Red-Night theme modes must comply with marine instrument design standards
+    - Widget Standards: Standardized typography (12pt labels, 36pt values, 16pt units) across all widgets
+    - Component Architecture: WidgetCard component supports expansion states with chevron indicators
+    - Code Quality: Comprehensive test coverage for theme integration scenarios
+  </constraints>
+  
+  <interfaces>
+    <item name="ThemeColors" kind="interface" signature="interface ThemeColors { primary: string; secondary: string; background: string; surface: string; text: string; textSecondary: string; accent: string; warning: string; error: string; success: string; border: string; shadow: string; iconPrimary: string; iconSecondary: string; iconAccent: string; iconDisabled: string; }" path="boatingInstrumentsApp/src/store/themeStore.ts"/>
+    <item name="useTheme" kind="hook" signature="function useTheme(): ThemeColors" path="boatingInstrumentsApp/src/store/themeStore.ts"/>
+    <item name="createWidgetStyles" kind="function" signature="function createWidgetStyles(theme: ThemeColors): StyleSheet" path="boatingInstrumentsApp/src/theme/styles/widgetStyles.ts"/>
+    <item name="WidgetCard" kind="component" signature="React.FC<{ title: string; icon: string; value?: string | number; unit?: string; state?: 'normal' | 'alarm' | 'no-data' | 'highlighted'; expanded?: boolean; children?: React.ReactNode; }>" path="boatingInstrumentsApp/src/widgets/WidgetCard.tsx"/>
+    <item name="getStateColor" kind="function" signature="function getStateColor(state: string, theme: ThemeColors): string" path="boatingInstrumentsApp/src/theme/styles/widgetStyles.ts"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library. Theme switching performance testing with timing measurements. Visual consistency validation across all three theme modes. Hardcoded color detection via grep pattern matching.</standards>
+    <locations>
+      - __tests__/themeIntegration.test.tsx (existing theme integration tests)
+      - __tests__/themeStore.test.ts (existing theme store tests)
+      - __tests__/themeCompliance.test.ts (existing theme compliance tests)
+      - __tests__/widgets/ (widget-specific theme integration tests)
+    </locations>
+    <ideas>
+      <item ac="1-4">Hardcoded color audit tests using grep pattern matching, state color theme integration validation, performance testing for theme switching under 300ms</item>
+      <item ac="5-7">Widget stylesheet creation validation, style consistency tests across all widgets, proper theme property usage verification</item>
+      <item ac="8-11">WidgetCard expanded prop functionality tests, chevron display state tests, status dot removal verification, theme color application tests</item>
+    </ideas>
+  </tests>
+</story-context>

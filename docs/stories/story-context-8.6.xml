@@ -1,0 +1,156 @@
+<story-context id="epic-8/story-8.6" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>8.6</storyId>
+    <title>Final Migration & Production Release</title>
+    <status>BLOCKED (Waiting for Stories 8.1-8.5 completion)</status>
+    <generatedAt>2025-10-20</generatedAt>
+    <generator>BMAD Story Context Workflow (Bob - Scrum Master)</generator>
+    <sourceStoryPath>docs/stories/story-8.6-final-migration-release.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>product owner releasing VIP Platform to production</asA>
+    <iWant>all feature flags enabled, old code removed, comprehensive testing complete, and v3.0 released</iWant>
+    <soThat>users get stable, production-ready VIP Platform with glove mode and cross-platform navigation</soThat>
+    <tasks>
+      - Enable All Feature Flags (default true for production, dev override available)
+      - Remove Old Code (move legacy to src/legacy/, delete replaced components)
+      - Full WiFi Bridge Test Suite (5 scenarios × 3 platforms = 15 tests)
+      - Performance Benchmarking (meet or exceed v2.3 baseline)
+      - Documentation Updates (README, ui-architecture.md, migration guide, changelog)
+      - v3.0 Release (git tag, build all platforms, deploy to stores)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <enable_flags>
+      <item id="1.1">USE_PLATFORM_NAVIGATION = true (default)</item>
+      <item id="1.2">USE_GLOVE_MODE = true (default)</item>
+      <item id="1.3">USE_NEW_STORES = true (default)</item>
+      <item id="1.4">All new code paths active</item>
+      <item id="1.5">Developer override available (Settings → Developer)</item>
+    </enable_flags>
+    <remove_old_code>
+      <item id="2.1">Old App.tsx → src/legacy/CurrentApp.tsx (rollback only)</item>
+      <item id="2.2">AutopilotControlScreen deleted (replaced by AutopilotScreen)</item>
+      <item id="2.3">ConnectionConfigDialog deleted (moved to SettingsScreen)</item>
+      <item id="2.4">Feature flag checks removed from components</item>
+      <item id="2.5">Dead code removed (unused imports, comments)</item>
+      <item id="2.6">src/stores/ confirmed deleted (from Story 8.1)</item>
+      <item id="2.7">No TypeScript errors</item>
+      <item id="2.8">No broken imports</item>
+      <item id="2.9">All tests pass</item>
+    </remove_old_code>
+    <full_test_suite>
+      <item id="3.1">iOS: All 5 scenarios pass</item>
+      <item id="3.2">Android: All 5 scenarios pass</item>
+      <item id="3.3">Web: All 5 scenarios pass</item>
+      <item id="3.4">Glove mode activates/deactivates correctly</item>
+      <item id="3.5">Navigation session persists across restarts</item>
+      <item id="3.6">All widgets adapt correctly</item>
+      <item id="3.7">No platform-specific regressions</item>
+    </full_test_suite>
+    <performance>
+      <item id="4.1">Initial load ≤ v2.3 baseline (target <2s)</item>
+      <item id="4.2">Dashboard render ≤ v2.3 baseline (target <500ms)</item>
+      <item id="4.3">Page navigation ≤ v2.3 baseline (target <200ms)</item>
+      <item id="4.4">Widget update ≤ 16ms (60fps)</item>
+      <item id="4.5">Memory ≤ v2.3 + 20%</item>
+      <item id="4.6">Bundle size ≤ v2.3 + 15%</item>
+      <item id="4.7">No frame drops during glove mode toggle</item>
+      <item id="4.8">Smooth animations (60fps)</item>
+    </performance>
+    <documentation>
+      <item id="5.1">README.md updated with v3.0 features</item>
+      <item id="5.2">ui-architecture.md updated to v3.0</item>
+      <item id="5.3">Migration guide created (MIGRATION-v2.3-to-v3.0.md)</item>
+      <item id="5.4">API docs updated (new hooks, stores, config)</item>
+      <item id="5.5">Changelog updated (CHANGELOG.md)</item>
+    </documentation>
+    <release>
+      <item id="6.1">Git tag: v3.0.0-vip-platform</item>
+      <item id="6.2">Release notes written</item>
+      <item id="6.3">iOS build successful (IPA)</item>
+      <item id="6.4">Android build successful (APK/AAB)</item>
+      <item id="6.5">Web build successful (static files)</item>
+      <item id="6.6">App stores updated (if applicable)</item>
+    </release>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/stories/story-8.1-foundation-store-consolidation.md" title="Story 8.1" section="Feature Flags" snippet="FEATURE_FLAGS control new vs old code paths. Enable all for v3.0 production release."/>
+      <item path="docs/stories/story-8.2-glove-mode-system.md" title="Story 8.2" section="Glove Mode" snippet="Automatic UI density adaptation based on navigation session - core v3.0 feature."/>
+      <item path="docs/stories/story-8.3-platform-navigation-ios.md" title="Story 8.3" section="iOS Navigation" snippet="iOS tab bar with SF Symbols - Platform Chrome pattern."/>
+      <item path="docs/stories/story-8.4-platform-navigation-android-web.md" title="Story 8.4" section="Android/Web Navigation" snippet="Android drawer, Web responsive, Material Icons - Platform Chrome completion."/>
+      <item path="docs/stories/story-8.5-dashboard-widget-integration.md" title="Story 8.5" section="Widgets" snippet="All 9 widgets density-aware - Marine Core consistent across platforms."/>
+      <item path="docs/VIP-PLATFORM-UX-STRATEGY.md" title="VIP Platform UX Strategy" section="Complete Vision" snippet="Platform Chrome (native navigation) + Marine Core (consistent widgets) = VIP Platform."/>
+      <item path="docs/V2.3-COMPLETION-HANDOFF.md" title="v2.3 Handoff" section="Baseline" snippet="v2.3 performance baseline for comparison with v3.0."/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/config/features.ts" kind="config" symbol="FEATURE_FLAGS" lines="1-30" reason="Will enable all flags by default for v3.0 production"/>
+      <item path="boatingInstrumentsApp/App.tsx" kind="component" symbol="App" lines="1-650" reason="Will simplify to ~50 lines (platform detection only), move old code to legacy/"/>
+      <item path="boatingInstrumentsApp/src/navigation/IOSNavigation.tsx" kind="component" symbol="IOSNavigation" lines="1-80" reason="iOS navigation (from Story 8.3) - production ready"/>
+      <item path="boatingInstrumentsApp/src/navigation/AndroidNavigation.tsx" kind="component" symbol="AndroidNavigation" lines="1-80" reason="Android navigation (from Story 8.4) - production ready"/>
+      <item path="boatingInstrumentsApp/src/navigation/WebNavigation.tsx" kind="component" symbol="WebNavigation" lines="1-100" reason="Web navigation (from Story 8.4) - production ready"/>
+      <item path="boatingInstrumentsApp/src/services/playback/wifiBridgeScenarios.ts" kind="service" symbol="WiFiBridgeScenario" lines="1-150" reason="5 test scenarios for full test suite validation"/>
+      <item path="boatingInstrumentsApp/package.json" kind="config" symbol="package.json" lines="1-100" reason="Will bump version to 3.0.0"/>
+    </code>
+    <dependencies>
+      <all_from_previous_stories>
+        <note>All dependencies already installed in Stories 8.1-8.5</note>
+        <note>No new dependencies needed for Story 8.6</note>
+      </all_from_previous_stories>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Feature Flags: Must be true by default - no accidental rollback to v2.3
+    - Legacy Code: Keep in src/legacy/ for emergency rollback - do NOT delete completely
+    - Performance: MUST meet baseline - regression testing critical
+    - Breaking Changes: NONE allowed - v3.0 must be drop-in replacement for v2.3
+    - Rollback Plan: Document clearly - disable flags → v2.3 behavior
+    - Git Tag: Use semantic versioning - v3.0.0 (major version bump)
+    - Changelog: Must include ALL Epic 8 changes (Stories 8.1-8.6)
+    - Migration Guide: Must be clear - assume intermediate developer skill level
+    - Testing: 15 WiFi Bridge tests (5 scenarios × 3 platforms) ALL must pass
+    - Release Notes: Highlight glove mode, platform navigation, cross-platform support
+  </constraints>
+
+  <interfaces>
+    <item name="FEATURE_FLAGS" kind="config_object" signature="export const FEATURE_FLAGS = { USE_PLATFORM_NAVIGATION: true; USE_GLOVE_MODE: true; USE_NEW_STORES: true; get: (flagName) => boolean; }" path="src/config/features.ts (UPDATED FROM STORY 8.1)"/>
+    <item name="App" kind="component" signature="export default function App() { if (Platform.OS === 'ios') return <IOSNavigation />; if (Platform.OS === 'android') return <AndroidNavigation />; return <WebNavigation />; }" path="App.tsx (SIMPLIFIED FROM 650 → 50 LINES)"/>
+    <item name="CurrentApp" kind="component" signature="export const CurrentApp: React.FC (original 650-line App.tsx)" path="src/legacy/CurrentApp.tsx (MOVED FROM App.tsx)"/>
+  </interfaces>
+
+  <tests>
+    <standards>Comprehensive regression testing. WiFi Bridge scenario testing (all platforms). Performance benchmarking. Manual testing on physical devices. Cross-platform validation (iOS, Android, Web).</standards>
+    <locations>
+      - __tests__/ (all existing tests must pass)
+      - WiFi Bridge scenarios (15 tests: 5 scenarios × 3 platforms)
+      - Performance benchmarks (initial load, render, navigation, widget update)
+    </locations>
+    <ideas>
+      <item ac="1.1-1.5">Feature flag tests: verify all flags true by default, dev override works, code paths correct</item>
+      <item ac="2.1-2.9">Code cleanup tests: TypeScript compiles, no broken imports, all tests pass after cleanup</item>
+      <item ac="3.1-3.7">Full test suite: 15 WiFi Bridge tests (idle-at-marina, underway-manual, underway-autopilot, shallow-water-alarm, end-navigation × iOS/Android/Web)</item>
+      <item ac="4.1-4.8">Performance tests: initial load <2s, dashboard render <500ms, widget update <16ms, 60fps animations</item>
+      <item ac="5.1-5.5">Documentation review: README accurate, ui-architecture v3.0, migration guide complete, changelog updated</item>
+      <item ac="6.1-6.6">Release validation: tag created, all builds successful, release notes published</item>
+      <item>Rollback test: Disable USE_PLATFORM_NAVIGATION → verify v2.3 behavior (legacy code works)</item>
+    </ideas>
+  </tests>
+
+  <rollback_plan>
+    <emergency_rollback>
+      If critical issues found in production v3.0:
+      1. Settings → Developer → Toggle Feature Flags
+      2. Disable USE_PLATFORM_NAVIGATION
+      3. App falls back to CurrentApp.tsx (v2.3 code in legacy/)
+      4. Fix issue in VIP Platform code
+      5. Test fix with WiFi Bridge scenarios
+      6. Re-enable flag once validated
+    </emergency_rollback>
+  </rollback_plan>
+</story-context>

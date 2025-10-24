@@ -1,0 +1,87 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9.0</epicId>
+    <storyId>9.2</storyId>
+    <title>Enhanced Presentation Component Migration</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-9.2-component-migration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>marine instrument user</asA>
+    <iWant>widgets to display marine data with stable layouts and immediate reactivity</iWant>
+    <soThat>I can trust the instrument readings without visual jumping during navigation</soThat>
+    <tasks>
+      - Pure Presentation Components: Update PrimaryMetricCell/SecondaryMetricCell to accept MetricDisplayData with pre-formatted values
+      - Widget Migration: Convert SpeedWidget and WindWidget to use useMetricDisplay hook for all metrics
+      - Layout Stability Validation: Verify no jumping as values change with rapid updates and performance testing
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Pure Presentation Components: Update MetricCell components to accept MetricDisplayData with stable minWidth from layout information
+    2. Widget Simplification: Convert SpeedWidget and WindWidget to use useMetricDisplay for STW/SOG/AWS/AWA/TWS/TWA display  
+    3. Layout Stability Testing: Verify no jumping as values change with consistent text width during rapid value updates
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/ui-architecture.md" title="UI Architecture v3.0" section="Enhanced Presentation System Implementation Strategy" snippet="Phase 2: Component Migration - Update PrimaryMetricCell/SecondaryMetricCell to accept MetricDisplayData, convert SpeedWidget and WindWidget to use useMetricDisplay, verify no jumping as values change"/>
+      <item path="docs/stories/epic-9-enhanced-presentation-system.md" title="Epic 9 Enhanced Presentation System" section="Story 9.2 Component Migration" snippet="Update components to use unified system with PrimaryMetricCell/SecondaryMetricCell accepting MetricDisplayData, SpeedWidget and WindWidget converted to useMetricDisplay, layout stability testing and validation"/>
+      <item path="docs/stories/story-context-9.1.xml" title="Story 9.1 Context" section="MetricDisplayData Interface" snippet="Core interface for unified metric display with mnemonic, value, unit, rawValue, layout minWidth, and presentation information"/>
+      <item path="docs/stories/story-2.16-primary-secondary-metric-cells.md" title="Story 2.16 Metric Cell Components" section="Component Architecture" snippet="Existing PrimaryMetricCell and SecondaryMetricCell components with standardized typography and grid layout integration"/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" kind="component" symbol="PrimaryMetricCell" lines="1-143" reason="Primary metric display component that needs MetricDisplayData interface update with font measurement integration"/>
+      <item path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx" kind="component" symbol="SecondaryMetricCell" lines="1-132" reason="Secondary metric display component requiring same MetricDisplayData interface update"/>
+      <item path="boatingInstrumentsApp/src/widgets/SpeedWidget.tsx" kind="widget" symbol="SpeedWidget" lines="1-300" reason="Speed widget currently using useSpeedPresentation, needs migration to useMetricDisplay for STW/SOG metrics"/>
+      <item path="boatingInstrumentsApp/src/widgets/WindWidget.tsx" kind="widget" symbol="WindWidget" lines="1-400" reason="Wind widget currently using useWindPresentation, needs migration to useMetricDisplay for AWS/AWA/TWS/TWA metrics"/>
+      <item path="boatingInstrumentsApp/src/presentation/useDataPresentation.ts" kind="current_hook" symbol="useDataPresentation, useSpeedPresentation, useWindPresentation" lines="1-180" reason="Current presentation hooks to be enhanced by unified useMetricDisplay system"/>
+      <item path="boatingInstrumentsApp/src/utils/performanceOptimization.ts" kind="performance_utils" symbol="PerformanceProfiler, MarineDataCache" lines="87-236" reason="Performance measurement utilities for layout stability validation and benchmarking"/>
+    </code>
+    <dependencies>
+      <react-native>@react-native-async-storage/async-storage@1.19.3, zustand@4.4.1</react-native>
+      <react>react@18.2.0, react-native@0.73.2</react>
+      <expo>expo@50.0.0, @expo/cli</expo>
+      <testing>jest@29.6.3, @testing-library/react-native@12.3.2</testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Data Flow: Widgets → useMetricDisplay → FontMeasurement → PresentationSystem → Settings
+    - Performance: Pre-formatted strings eliminate widget-level calculations during real-time updates
+    - Stability: Measured font widths prevent layout jumping during value changes (10.5 → 15.2 kts)
+    - Migration: Gradual widget conversion with fallback support to maintain existing functionality
+    - Testing: Layout stability tests and performance benchmarks for multiple widgets updating simultaneously
+    - Marine Standards: Ensure professional instrument behavior with consistent formatting patterns
+  </constraints>
+
+  <interfaces>
+    <item name="MetricDisplayData" kind="typescript_interface" signature="interface MetricDisplayData { mnemonic: string; value: string; unit: string; rawValue: number; layout: { minWidth: number; alignment: string; }; presentation: { id: string; name: string; }; }" path="src/types/MetricDisplayData.ts"/>
+    <item name="PrimaryMetricCellProps" kind="component_interface" signature="interface PrimaryMetricCellProps { data: MetricDisplayData; state?: 'normal' | 'warning' | 'alarm'; style?: any; testID?: string; }" path="src/components/PrimaryMetricCell.tsx"/>
+    <item name="SecondaryMetricCellProps" kind="component_interface" signature="interface SecondaryMetricCellProps { data: MetricDisplayData; compact?: boolean; state?: 'normal' | 'warning' | 'alarm'; style?: any; testID?: string; }" path="src/components/SecondaryMetricCell.tsx"/>
+    <item name="useMetricDisplay" kind="custom_hook" signature="function useMetricDisplay(category: string, rawValue: number, mnemonic: string): MetricDisplayData" path="src/hooks/useMetricDisplay.ts"/>
+    <item name="PerformanceProfiler" kind="performance_class" signature="class PerformanceProfiler { start(): void; mark(label: string): void; getStats(label: string): { avg: number; min: number; max: number; count: number } | null; }" path="src/utils/performanceOptimization.ts"/>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest framework with React Native Testing Library for component testing, layout stability testing with rapid value changes, performance measurement utilities for widget update benchmarking, visual regression testing for font measurement accuracy validation across platforms
+    </standards>
+    <locations>
+      - __tests__/components/PrimaryMetricCell.test.tsx (MetricDisplayData interface integration tests)
+      - __tests__/components/SecondaryMetricCell.test.tsx (compact option and layout stability tests)
+      - __tests__/widgets/SpeedWidget.test.tsx (useMetricDisplay migration and STW/SOG display tests)
+      - __tests__/widgets/WindWidget.test.tsx (useMetricDisplay migration and wind metrics display tests)
+      - __tests__/integration/layoutStability.test.tsx (widget layout stability during rapid updates)
+      - __tests__/performance/widgetPerformance.test.tsx (multiple widgets updating simultaneously benchmarks)
+    </locations>
+    <ideas>
+      AC1: Test PrimaryMetricCell and SecondaryMetricCell accepting MetricDisplayData interface, validate stable minWidth application, verify alert state handling through props
+      AC2: Test SpeedWidget migration to useMetricDisplay for STW/SOG metrics, WindWidget migration for AWS/AWA/TWS/TWA display, unit change propagation without widget restarts
+      AC3: Layout stability testing with rapid value changes (10.5 → 15.2 kts), consistent text width validation, performance testing with multiple widgets updating simultaneously, font measurement accuracy validation
+    </ideas>
+  </tests>
+</story-context>
