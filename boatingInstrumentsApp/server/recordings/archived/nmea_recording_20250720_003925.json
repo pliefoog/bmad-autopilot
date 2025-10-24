@@ -1,0 +1,4806 @@
+{
+  "metadata": {
+    "start_time": 1752964773.0942159,
+    "end_time": 1752964823.527086,
+    "duration": 50.43287014961243,
+    "message_count": 799,
+    "created": "2025-07-20T00:40:23.527089",
+    "version": "1.0"
+  },
+  "messages": [
+    {
+      "timestamp": 1752964773.131632,
+      "relative_time": 0.03741621971130371,
+      "message": "$IIMWV,345.0,R,11.25,N,A*38",
+      "sequence": 0
+    },
+    {
+      "timestamp": 1752964773.194226,
+      "relative_time": 0.10001015663146973,
+      "message": "$IIVHW,,T,170.44,M,,N,,K*4D",
+      "sequence": 1
+    },
+    {
+      "timestamp": 1752964773.252534,
+      "relative_time": 0.15831804275512695,
+      "message": "$IIVHW,,T,170.43,M,,N,,K*4A",
+      "sequence": 2
+    },
+    {
+      "timestamp": 1752964773.3156412,
+      "relative_time": 0.22142529487609863,
+      "message": "$IIMWV,359.0,R,11.06,N,A*34",
+      "sequence": 3
+    },
+    {
+      "timestamp": 1752964773.372882,
+      "relative_time": 0.27866601943969727,
+      "message": "$IIVHW,,T,170.43,M,,N,,K*4A",
+      "sequence": 4
+    },
+    {
+      "timestamp": 1752964773.4711812,
+      "relative_time": 0.3769652843475342,
+      "message": "$HCHDG,170.43,,,,*73",
+      "sequence": 5
+    },
+    {
+      "timestamp": 1752964773.516076,
+      "relative_time": 0.4218602180480957,
+      "message": "$IIVHW,,T,170.43,M,,N,,K*4A",
+      "sequence": 6
+    },
+    {
+      "timestamp": 1752964773.574091,
+      "relative_time": 0.4798750877380371,
+      "message": "$IIMWV,359.0,R,10.96,N,A*3C",
+      "sequence": 7
+    },
+    {
+      "timestamp": 1752964773.638623,
+      "relative_time": 0.5444071292877197,
+      "message": "$IIVHW,,T,170.43,M,,N,,K*4A",
+      "sequence": 8
+    },
+    {
+      "timestamp": 1752964773.6936011,
+      "relative_time": 0.5993852615356445,
+      "message": "$HCHDG,170.43,,,,*73",
+      "sequence": 9
+    },
+    {
+      "timestamp": 1752964773.7438662,
+      "relative_time": 0.6496503353118896,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 10
+    },
+    {
+      "timestamp": 1752964773.787881,
+      "relative_time": 0.6936650276184082,
+      "message": "$IIMWV,358.5,R,11.06,N,A*30",
+      "sequence": 11
+    },
+    {
+      "timestamp": 1752964773.852056,
+      "relative_time": 0.7578401565551758,
+      "message": "$IIVHW,,T,170.43,M,,N,,K*4A",
+      "sequence": 12
+    },
+    {
+      "timestamp": 1752964773.9112508,
+      "relative_time": 0.8170349597930908,
+      "message": "$IIVHW,,T,170.44,M,,N,,K*4D",
+      "sequence": 13
+    },
+    {
+      "timestamp": 1752964773.971426,
+      "relative_time": 0.8772101402282715,
+      "message": "$HCHDG,170.44,,,,*74",
+      "sequence": 14
+    },
+    {
+      "timestamp": 1752964774.016761,
+      "relative_time": 0.9225451946258545,
+      "message": "$IIMWV,1.0,R,10.75,N,A*3F",
+      "sequence": 15
+    },
+    {
+      "timestamp": 1752964774.0723672,
+      "relative_time": 0.9781513214111328,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 16
+    },
+    {
+      "timestamp": 1752964774.110006,
+      "relative_time": 1.0157902240753174,
+      "message": "$IIMWV,8.5,R,11.25,N,A*37",
+      "sequence": 17
+    },
+    {
+      "timestamp": 1752964774.166008,
+      "relative_time": 1.0717921257019043,
+      "message": "$IIVHW,,T,170.44,M,,N,,K*4D",
+      "sequence": 18
+    },
+    {
+      "timestamp": 1752964774.226662,
+      "relative_time": 1.132446050643921,
+      "message": "$IIMWV,15.5,R,11.35,N,A*0A",
+      "sequence": 19
+    },
+    {
+      "timestamp": 1752964774.307435,
+      "relative_time": 1.213219165802002,
+      "message": "$IIVHW,,T,170.45,M,,N,,K*4C",
+      "sequence": 20
+    },
+    {
+      "timestamp": 1752964774.3516102,
+      "relative_time": 1.2573943138122559,
+      "message": "$GPZDA,223932,19,07,2025,,*49",
+      "sequence": 21
+    },
+    {
+      "timestamp": 1752964774.420667,
+      "relative_time": 1.326451063156128,
+      "message": "$IIVHW,,T,170.44,M,,N,,K*4D",
+      "sequence": 22
+    },
+    {
+      "timestamp": 1752964774.485164,
+      "relative_time": 1.3909480571746826,
+      "message": "$IIMWV,14.5,R,11.16,N,A*0A",
+      "sequence": 23
+    },
+    {
+      "timestamp": 1752964774.545974,
+      "relative_time": 1.4517581462860107,
+      "message": "$IIMWV,16.5,R,11.76,N,A*0E",
+      "sequence": 24
+    },
+    {
+      "timestamp": 1752964774.6039739,
+      "relative_time": 1.5097579956054688,
+      "message": "$IIVWR,16.5,R,11.76,N,,,,*7C",
+      "sequence": 25
+    },
+    {
+      "timestamp": 1752964774.6665878,
+      "relative_time": 1.5723719596862793,
+      "message": "$IIMWV,31.0,R,11.95,N,A*03",
+      "sequence": 26
+    },
+    {
+      "timestamp": 1752964774.727475,
+      "relative_time": 1.6332590579986572,
+      "message": "$IIVHW,,T,170.45,M,,N,,K*4C",
+      "sequence": 27
+    },
+    {
+      "timestamp": 1752964774.792417,
+      "relative_time": 1.6982011795043945,
+      "message": "$IIMWV,29.0,R,12.05,N,A*00",
+      "sequence": 28
+    },
+    {
+      "timestamp": 1752964774.8536162,
+      "relative_time": 1.7594003677368164,
+      "message": "$HCHDG,170.44,,,,*74",
+      "sequence": 29
+    },
+    {
+      "timestamp": 1752964774.89969,
+      "relative_time": 1.805474042892456,
+      "message": "!AIVDM,1,1,,B,B33jcSP007uckT6uB2cQ3wh5kP06,0*56",
+      "sequence": 30
+    },
+    {
+      "timestamp": 1752964775.007029,
+      "relative_time": 1.9128131866455078,
+      "message": "$IIMWV,25.5,R,12.15,N,A*08",
+      "sequence": 31
+    },
+    {
+      "timestamp": 1752964775.0609322,
+      "relative_time": 1.9667162895202637,
+      "message": "$IIVHW,,T,170.45,M,,N,,K*4C",
+      "sequence": 32
+    },
+    {
+      "timestamp": 1752964775.120738,
+      "relative_time": 2.026522159576416,
+      "message": "$IIVHW,,T,170.46,M,,N,,K*4F",
+      "sequence": 33
+    },
+    {
+      "timestamp": 1752964775.189916,
+      "relative_time": 2.0957000255584717,
+      "message": "$GPGLL,4838.1994,N,00201.4008,W,,A,A*58",
+      "sequence": 34
+    },
+    {
+      "timestamp": 1752964775.276802,
+      "relative_time": 2.182586193084717,
+      "message": "$IIVHW,,T,170.45,M,,N,,K*4C",
+      "sequence": 35
+    },
+    {
+      "timestamp": 1752964775.338615,
+      "relative_time": 2.244399070739746,
+      "message": "$IIMWV,36.0,R,12.56,N,A*08",
+      "sequence": 36
+    },
+    {
+      "timestamp": 1752964775.396205,
+      "relative_time": 2.3019890785217285,
+      "message": "$GPZDA,223933,19,07,2025,,*48",
+      "sequence": 37
+    },
+    {
+      "timestamp": 1752964775.468123,
+      "relative_time": 2.3739070892333984,
+      "message": "$IIMWV,33.5,R,12.85,N,A*06",
+      "sequence": 38
+    },
+    {
+      "timestamp": 1752964775.529213,
+      "relative_time": 2.434997081756592,
+      "message": "$IIMWV,25.0,R,12.95,N,A*05",
+      "sequence": 39
+    },
+    {
+      "timestamp": 1752964775.5878332,
+      "relative_time": 2.493617296218872,
+      "message": "$IIVHW,,T,170.47,M,,N,,K*4E",
+      "sequence": 40
+    },
+    {
+      "timestamp": 1752964775.64902,
+      "relative_time": 2.5548040866851807,
+      "message": "$IIMWV,20.0,R,12.95,N,A*00",
+      "sequence": 41
+    },
+    {
+      "timestamp": 1752964775.708578,
+      "relative_time": 2.6143622398376465,
+      "message": "$IIVHW,,T,170.47,M,,N,,K*4E",
+      "sequence": 42
+    },
+    {
+      "timestamp": 1752964775.7727082,
+      "relative_time": 2.678492307662964,
+      "message": "$HCHDG,170.47,,,,*77",
+      "sequence": 43
+    },
+    {
+      "timestamp": 1752964775.814933,
+      "relative_time": 2.720717191696167,
+      "message": "$IIMWV,12.5,R,13.04,N,A*0D",
+      "sequence": 44
+    },
+    {
+      "timestamp": 1752964775.877812,
+      "relative_time": 2.7835960388183594,
+      "message": "$IIMWV,13.5,R,13.14,N,A*0D",
+      "sequence": 45
+    },
+    {
+      "timestamp": 1752964775.931047,
+      "relative_time": 2.8368310928344727,
+      "message": "$IIVHW,,T,170.46,M,,N,,K*4F",
+      "sequence": 46
+    },
+    {
+      "timestamp": 1752964775.993546,
+      "relative_time": 2.8993301391601562,
+      "message": "$IIMWV,15.0,R,13.26,N,A*0F",
+      "sequence": 47
+    },
+    {
+      "timestamp": 1752964776.050105,
+      "relative_time": 2.9558892250061035,
+      "message": "$IIMWV,18.0,R,13.74,N,A*05",
+      "sequence": 48
+    },
+    {
+      "timestamp": 1752964776.108554,
+      "relative_time": 3.0143380165100098,
+      "message": "$GPGLL,4838.1993,N,00201.4009,W,,A,A*5E",
+      "sequence": 49
+    },
+    {
+      "timestamp": 1752964776.194525,
+      "relative_time": 3.100309133529663,
+      "message": "$IIVHW,,T,170.45,M,,N,,K*4C",
+      "sequence": 50
+    },
+    {
+      "timestamp": 1752964776.2765481,
+      "relative_time": 3.1823322772979736,
+      "message": "$IIMWV,18.5,R,12.95,N,A*0E",
+      "sequence": 51
+    },
+    {
+      "timestamp": 1752964776.3122911,
+      "relative_time": 3.2180752754211426,
+      "message": "$IIVHW,,T,170.45,M,,N,,K*4C",
+      "sequence": 52
+    },
+    {
+      "timestamp": 1752964776.374439,
+      "relative_time": 3.2802231311798096,
+      "message": "$IIMWV,23.0,R,13.45,N,A*0F",
+      "sequence": 53
+    },
+    {
+      "timestamp": 1752964776.438165,
+      "relative_time": 3.34394907951355,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 54
+    },
+    {
+      "timestamp": 1752964776.486552,
+      "relative_time": 3.392336130142212,
+      "message": "$IIVHW,,T,170.47,M,,N,,K*4E",
+      "sequence": 55
+    },
+    {
+      "timestamp": 1752964776.5466182,
+      "relative_time": 3.452402353286743,
+      "message": "$HCHDG,170.47,,,,*77",
+      "sequence": 56
+    },
+    {
+      "timestamp": 1752964776.593579,
+      "relative_time": 3.4993631839752197,
+      "message": "$IIMWV,16.0,R,12.65,N,A*0A",
+      "sequence": 57
+    },
+    {
+      "timestamp": 1752964776.650311,
+      "relative_time": 3.5560951232910156,
+      "message": "$IIMWV,6.0,R,12.56,N,A*3B",
+      "sequence": 58
+    },
+    {
+      "timestamp": 1752964776.706479,
+      "relative_time": 3.6122632026672363,
+      "message": "$IIVHW,,T,170.48,M,,N,,K*41",
+      "sequence": 59
+    },
+    {
+      "timestamp": 1752964776.775241,
+      "relative_time": 3.6810250282287598,
+      "message": "$IIMWV,357.5,R,12.34,N,A*3D",
+      "sequence": 60
+    },
+    {
+      "timestamp": 1752964776.8364182,
+      "relative_time": 3.7422022819519043,
+      "message": "$IIVWR,2.5,L,12.34,N,,,,*52",
+      "sequence": 61
+    },
+    {
+      "timestamp": 1752964776.899754,
+      "relative_time": 3.8055381774902344,
+      "message": "$IIMWV,4.5,R,12.25,N,A*38",
+      "sequence": 62
+    },
+    {
+      "timestamp": 1752964776.953336,
+      "relative_time": 3.8591201305389404,
+      "message": "$IIVHW,,T,170.48,M,,N,,K*41",
+      "sequence": 63
+    },
+    {
+      "timestamp": 1752964777.0132291,
+      "relative_time": 3.919013261795044,
+      "message": "$HCHDG,170.48,,,,*78",
+      "sequence": 64
+    },
+    {
+      "timestamp": 1752964777.058316,
+      "relative_time": 3.9641001224517822,
+      "message": "$GPGLL,4838.1993,N,00201.4009,W,,A,A*5E",
+      "sequence": 65
+    },
+    {
+      "timestamp": 1752964777.1529331,
+      "relative_time": 4.058717250823975,
+      "message": "$IIMWV,12.5,R,12.05,N,A*0D",
+      "sequence": 66
+    },
+    {
+      "timestamp": 1752964777.209023,
+      "relative_time": 4.11480712890625,
+      "message": "$IIVHW,,T,170.49,M,,N,,K*40",
+      "sequence": 67
+    },
+    {
+      "timestamp": 1752964777.270345,
+      "relative_time": 4.176129102706909,
+      "message": "$GPZDA,223935,19,07,2025,,*4E",
+      "sequence": 68
+    },
+    {
+      "timestamp": 1752964777.332256,
+      "relative_time": 4.238040208816528,
+      "message": "$GPGLL,4838.1993,N,00201.4009,W,,A,A*5E",
+      "sequence": 69
+    },
+    {
+      "timestamp": 1752964777.4178402,
+      "relative_time": 4.3236243724823,
+      "message": "$IIVHW,,T,170.50,M,,N,,K*48",
+      "sequence": 70
+    },
+    {
+      "timestamp": 1752964777.52969,
+      "relative_time": 4.435474157333374,
+      "message": "$IIMWV,26.0,R,11.95,N,A*05",
+      "sequence": 71
+    },
+    {
+      "timestamp": 1752964777.5898612,
+      "relative_time": 4.49564528465271,
+      "message": "$GPRMC,223935.00,A,4838.2031,N,00201.4024,W,0.019,,190725,,,A*68",
+      "sequence": 72
+    },
+    {
+      "timestamp": 1752964777.7327769,
+      "relative_time": 4.638561010360718,
+      "message": "$IIMWV,20.0,R,11.86,N,A*01",
+      "sequence": 73
+    },
+    {
+      "timestamp": 1752964777.7954712,
+      "relative_time": 4.7012553215026855,
+      "message": "$GPGLL,4838.1993,N,00201.4009,W,,A,A*5E",
+      "sequence": 74
+    },
+    {
+      "timestamp": 1752964777.885718,
+      "relative_time": 4.791502237319946,
+      "message": "$IIVHW,,T,170.51,M,,N,,K*49",
+      "sequence": 75
+    },
+    {
+      "timestamp": 1752964777.942836,
+      "relative_time": 4.848620176315308,
+      "message": "$IIMWV,9.5,R,11.55,N,A*31",
+      "sequence": 76
+    },
+    {
+      "timestamp": 1752964778.000355,
+      "relative_time": 4.906139135360718,
+      "message": "$IIVHW,,T,170.52,M,,N,,K*4A",
+      "sequence": 77
+    },
+    {
+      "timestamp": 1752964778.061376,
+      "relative_time": 4.967160224914551,
+      "message": "$IIMWV,15.5,R,11.35,N,A*0A",
+      "sequence": 78
+    },
+    {
+      "timestamp": 1752964778.118446,
+      "relative_time": 5.024230241775513,
+      "message": "$IIMWV,18.0,R,10.75,N,A*07",
+      "sequence": 79
+    },
+    {
+      "timestamp": 1752964778.179808,
+      "relative_time": 5.085592031478882,
+      "message": "$IIVHW,,T,170.55,M,,N,,K*4D",
+      "sequence": 80
+    },
+    {
+      "timestamp": 1752964778.246636,
+      "relative_time": 5.1524200439453125,
+      "message": "$IIMWV,18.0,R,10.65,N,A*06",
+      "sequence": 81
+    },
+    {
+      "timestamp": 1752964778.301913,
+      "relative_time": 5.207697153091431,
+      "message": "$IIVHW,,T,170.56,M,,N,,K*4E",
+      "sequence": 82
+    },
+    {
+      "timestamp": 1752964778.364414,
+      "relative_time": 5.270198106765747,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 83
+    },
+    {
+      "timestamp": 1752964778.3993979,
+      "relative_time": 5.305181980133057,
+      "message": "$IIMWV,23.0,R,10.56,N,A*0E",
+      "sequence": 84
+    },
+    {
+      "timestamp": 1752964778.473323,
+      "relative_time": 5.379107236862183,
+      "message": "$IIVHW,,T,170.57,M,,N,,K*4F",
+      "sequence": 85
+    },
+    {
+      "timestamp": 1752964778.532792,
+      "relative_time": 5.4385762214660645,
+      "message": "$HCHDG,170.57,,,,*76",
+      "sequence": 86
+    },
+    {
+      "timestamp": 1752964778.580719,
+      "relative_time": 5.4865031242370605,
+      "message": "$GPGLL,4838.1993,N,00201.4009,W,,A,A*5E",
+      "sequence": 87
+    },
+    {
+      "timestamp": 1752964778.667783,
+      "relative_time": 5.573567152023315,
+      "message": "$IIMWV,17.5,R,10.65,N,A*0C",
+      "sequence": 88
+    },
+    {
+      "timestamp": 1752964778.7420118,
+      "relative_time": 5.647795915603638,
+      "message": "$IIVWR,17.5,R,10.65,N,,,,*7E",
+      "sequence": 89
+    },
+    {
+      "timestamp": 1752964778.792866,
+      "relative_time": 5.698650121688843,
+      "message": "$IIMWV,25.0,R,10.75,N,A*09",
+      "sequence": 90
+    },
+    {
+      "timestamp": 1752964778.850084,
+      "relative_time": 5.755868196487427,
+      "message": "$IIVWR,25.0,R,10.75,N,,,,*7B",
+      "sequence": 91
+    },
+    {
+      "timestamp": 1752964778.912034,
+      "relative_time": 5.8178181648254395,
+      "message": "$IIMWV,32.0,R,10.46,N,A*0F",
+      "sequence": 92
+    },
+    {
+      "timestamp": 1752964778.970227,
+      "relative_time": 5.87601113319397,
+      "message": "$IIVWR,32.0,R,10.46,N,,,,*7D",
+      "sequence": 93
+    },
+    {
+      "timestamp": 1752964779.032066,
+      "relative_time": 5.9378502368927,
+      "message": "$HCHDG,170.57,,,,*76",
+      "sequence": 94
+    },
+    {
+      "timestamp": 1752964779.088716,
+      "relative_time": 5.994500160217285,
+      "message": "$GPGLL,4838.1992,N,00201.4009,W,,A,A*5F",
+      "sequence": 95
+    },
+    {
+      "timestamp": 1752964779.1731431,
+      "relative_time": 6.078927278518677,
+      "message": "$GPGLL,4838.1992,N,00201.4009,W,,A,A*5F",
+      "sequence": 96
+    },
+    {
+      "timestamp": 1752964779.2577658,
+      "relative_time": 6.163549900054932,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 97
+    },
+    {
+      "timestamp": 1752964779.3480792,
+      "relative_time": 6.253863334655762,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 98
+    },
+    {
+      "timestamp": 1752964779.358855,
+      "relative_time": 6.264639139175415,
+      "message": "$GPGLL,4838.1992,N,00201.4009,W,,A,A*5F",
+      "sequence": 99
+    },
+    {
+      "timestamp": 1752964779.442393,
+      "relative_time": 6.348177194595337,
+      "message": "$HCHDG,170.61,,,,*73",
+      "sequence": 100
+    },
+    {
+      "timestamp": 1752964779.5258582,
+      "relative_time": 6.431642293930054,
+      "message": "$GPGLL,4838.1992,N,00201.4009,W,,A,A*5F",
+      "sequence": 101
+    },
+    {
+      "timestamp": 1752964779.704243,
+      "relative_time": 6.610027074813843,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 102
+    },
+    {
+      "timestamp": 1752964779.758089,
+      "relative_time": 6.663873195648193,
+      "message": "$IIVHW,,T,170.61,M,,N,,K*4A",
+      "sequence": 103
+    },
+    {
+      "timestamp": 1752964779.758101,
+      "relative_time": 6.663885116577148,
+      "message": "$GPGLL,4838.1992,N,00201.4009,W,,A,A*5F",
+      "sequence": 104
+    },
+    {
+      "timestamp": 1752964779.797214,
+      "relative_time": 6.702998161315918,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 105
+    },
+    {
+      "timestamp": 1752964779.988363,
+      "relative_time": 6.894147157669067,
+      "message": "$GPZDA,223938,19,07,2025,,*43",
+      "sequence": 106
+    },
+    {
+      "timestamp": 1752964780.1693351,
+      "relative_time": 7.075119256973267,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 107
+    },
+    {
+      "timestamp": 1752964780.169348,
+      "relative_time": 7.075132131576538,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 108
+    },
+    {
+      "timestamp": 1752964780.16935,
+      "relative_time": 7.075134038925171,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 109
+    },
+    {
+      "timestamp": 1752964780.169352,
+      "relative_time": 7.075136184692383,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 110
+    },
+    {
+      "timestamp": 1752964780.19236,
+      "relative_time": 7.098144054412842,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 111
+    },
+    {
+      "timestamp": 1752964780.231777,
+      "relative_time": 7.137561082839966,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 112
+    },
+    {
+      "timestamp": 1752964780.317493,
+      "relative_time": 7.2232770919799805,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 113
+    },
+    {
+      "timestamp": 1752964780.354639,
+      "relative_time": 7.260423183441162,
+      "message": "$HCHDG,170.62,,,,*70",
+      "sequence": 114
+    },
+    {
+      "timestamp": 1752964780.400322,
+      "relative_time": 7.306106090545654,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 115
+    },
+    {
+      "timestamp": 1752964780.44211,
+      "relative_time": 7.347894191741943,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 116
+    },
+    {
+      "timestamp": 1752964780.5217228,
+      "relative_time": 7.427506923675537,
+      "message": "$HCHDG,170.63,,,,*71",
+      "sequence": 117
+    },
+    {
+      "timestamp": 1752964780.5672781,
+      "relative_time": 7.47306227684021,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 118
+    },
+    {
+      "timestamp": 1752964780.6259751,
+      "relative_time": 7.531759262084961,
+      "message": "$IIMWV,346.5,R,11.66,N,A*39",
+      "sequence": 119
+    },
+    {
+      "timestamp": 1752964780.689767,
+      "relative_time": 7.595551013946533,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 120
+    },
+    {
+      "timestamp": 1752964780.753043,
+      "relative_time": 7.658827066421509,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 121
+    },
+    {
+      "timestamp": 1752964780.837848,
+      "relative_time": 7.743632078170776,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 122
+    },
+    {
+      "timestamp": 1752964780.875059,
+      "relative_time": 7.780843019485474,
+      "message": "$HCHDG,170.67,,,,*75",
+      "sequence": 123
+    },
+    {
+      "timestamp": 1752964780.921105,
+      "relative_time": 7.8268890380859375,
+      "message": "$IIMWV,354.5,R,11.76,N,A*3B",
+      "sequence": 124
+    },
+    {
+      "timestamp": 1752964780.996724,
+      "relative_time": 7.902508020401001,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 125
+    },
+    {
+      "timestamp": 1752964781.0566158,
+      "relative_time": 7.962399959564209,
+      "message": "$IIVHW,,T,170.68,M,,N,,K*43",
+      "sequence": 126
+    },
+    {
+      "timestamp": 1752964781.115053,
+      "relative_time": 8.02083706855774,
+      "message": "$HCHDG,170.68,,,,*7A",
+      "sequence": 127
+    },
+    {
+      "timestamp": 1752964781.160903,
+      "relative_time": 8.066687107086182,
+      "message": "$GPRMC,223939.00,A,4838.2028,N,00201.4023,W,0.019,,190725,,,A*6B",
+      "sequence": 128
+    },
+    {
+      "timestamp": 1752964781.301554,
+      "relative_time": 8.207338094711304,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 129
+    },
+    {
+      "timestamp": 1752964781.357028,
+      "relative_time": 8.26281213760376,
+      "message": "$HCHDG,170.67,,,,*75",
+      "sequence": 130
+    },
+    {
+      "timestamp": 1752964781.4064891,
+      "relative_time": 8.312273263931274,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 131
+    },
+    {
+      "timestamp": 1752964781.5260968,
+      "relative_time": 8.431880950927734,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 132
+    },
+    {
+      "timestamp": 1752964781.61114,
+      "relative_time": 8.516924142837524,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 133
+    },
+    {
+      "timestamp": 1752964781.697582,
+      "relative_time": 8.603366136550903,
+      "message": "$GPZDA,223940,19,07,2025,,*4C",
+      "sequence": 134
+    },
+    {
+      "timestamp": 1752964781.739937,
+      "relative_time": 8.645721197128296,
+      "message": "$IIMWV,341.5,R,11.95,N,A*32",
+      "sequence": 135
+    },
+    {
+      "timestamp": 1752964781.8013499,
+      "relative_time": 8.707134008407593,
+      "message": "$GPGLL,4838.1991,N,00201.4008,W,,A,A*5D",
+      "sequence": 136
+    },
+    {
+      "timestamp": 1752964781.89244,
+      "relative_time": 8.798224210739136,
+      "message": "$GPGLL,4838.1991,N,00201.4008,W,,A,A*5D",
+      "sequence": 137
+    },
+    {
+      "timestamp": 1752964781.989609,
+      "relative_time": 8.895393133163452,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 138
+    },
+    {
+      "timestamp": 1752964782.049479,
+      "relative_time": 8.955263137817383,
+      "message": "$HCHDG,170.67,,,,*75",
+      "sequence": 139
+    },
+    {
+      "timestamp": 1752964782.097013,
+      "relative_time": 9.00279712677002,
+      "message": "$GPRMC,223940.00,A,4838.2029,N,00201.4024,W,0.019,,190725,,,A*63",
+      "sequence": 140
+    },
+    {
+      "timestamp": 1752964782.286647,
+      "relative_time": 9.192431211471558,
+      "message": "$GPVTG,,,,,0.019,N,0.036,K,A*37",
+      "sequence": 141
+    },
+    {
+      "timestamp": 1752964782.301908,
+      "relative_time": 9.20769214630127,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 142
+    },
+    {
+      "timestamp": 1752964782.463074,
+      "relative_time": 9.368858098983765,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 143
+    },
+    {
+      "timestamp": 1752964782.46926,
+      "relative_time": 9.375044107437134,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 144
+    },
+    {
+      "timestamp": 1752964782.469265,
+      "relative_time": 9.375049114227295,
+      "message": "$IIMWV,343.5,R,11.35,N,A*3A",
+      "sequence": 145
+    },
+    {
+      "timestamp": 1752964782.640617,
+      "relative_time": 9.546401023864746,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 146
+    },
+    {
+      "timestamp": 1752964782.647557,
+      "relative_time": 9.553341150283813,
+      "message": "$GPGLL,4838.1991,N,00201.4008,W,,A,A*5D",
+      "sequence": 147
+    },
+    {
+      "timestamp": 1752964782.68666,
+      "relative_time": 9.59244418144226,
+      "message": "$IIMWV,346.5,R,11.55,N,A*39",
+      "sequence": 148
+    },
+    {
+      "timestamp": 1752964782.820054,
+      "relative_time": 9.72583818435669,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 149
+    },
+    {
+      "timestamp": 1752964782.820065,
+      "relative_time": 9.725849151611328,
+      "message": "$HCHDG,170.64,,,,*76",
+      "sequence": 150
+    },
+    {
+      "timestamp": 1752964782.856672,
+      "relative_time": 9.762456178665161,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 151
+    },
+    {
+      "timestamp": 1752964782.990495,
+      "relative_time": 9.896279096603394,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 152
+    },
+    {
+      "timestamp": 1752964782.996154,
+      "relative_time": 9.901938199996948,
+      "message": "$HCHDG,170.64,,,,*76",
+      "sequence": 153
+    },
+    {
+      "timestamp": 1752964783.001278,
+      "relative_time": 9.90706205368042,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 154
+    },
+    {
+      "timestamp": 1752964783.168158,
+      "relative_time": 10.073942184448242,
+      "message": "$HCHDG,170.64,,,,*76",
+      "sequence": 155
+    },
+    {
+      "timestamp": 1752964783.176977,
+      "relative_time": 10.08276104927063,
+      "message": "$IIMWV,352.5,R,11.86,N,A*32",
+      "sequence": 156
+    },
+    {
+      "timestamp": 1752964783.176985,
+      "relative_time": 10.08276915550232,
+      "message": "$IIVWR,7.5,L,11.86,N,,,,*5D",
+      "sequence": 157
+    },
+    {
+      "timestamp": 1752964783.212024,
+      "relative_time": 10.117808103561401,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 158
+    },
+    {
+      "timestamp": 1752964783.29703,
+      "relative_time": 10.202814102172852,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 159
+    },
+    {
+      "timestamp": 1752964783.391357,
+      "relative_time": 10.297141075134277,
+      "message": "$IIMWV,354.5,R,11.95,N,A*36",
+      "sequence": 160
+    },
+    {
+      "timestamp": 1752964783.455734,
+      "relative_time": 10.361518144607544,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 161
+    },
+    {
+      "timestamp": 1752964783.524607,
+      "relative_time": 10.430391073226929,
+      "message": "$IIMWV,354.5,R,11.76,N,A*3B",
+      "sequence": 162
+    },
+    {
+      "timestamp": 1752964783.595906,
+      "relative_time": 10.501690149307251,
+      "message": "$IIMWV,356.5,R,12.34,N,A*3C",
+      "sequence": 163
+    },
+    {
+      "timestamp": 1752964783.659183,
+      "relative_time": 10.564967155456543,
+      "message": "$IIVHW,,T,170.59,M,,N,,K*41",
+      "sequence": 164
+    },
+    {
+      "timestamp": 1752964783.7130182,
+      "relative_time": 10.618802309036255,
+      "message": "$IIVHW,,T,170.59,M,,N,,K*41",
+      "sequence": 165
+    },
+    {
+      "timestamp": 1752964783.772016,
+      "relative_time": 10.677800178527832,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 166
+    },
+    {
+      "timestamp": 1752964783.809193,
+      "relative_time": 10.714977025985718,
+      "message": "$IIMWV,354.5,R,12.15,N,A*3D",
+      "sequence": 167
+    },
+    {
+      "timestamp": 1752964783.869324,
+      "relative_time": 10.775108098983765,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 168
+    },
+    {
+      "timestamp": 1752964783.9296849,
+      "relative_time": 10.835469007492065,
+      "message": "$IIMWV,350.5,R,12.34,N,A*3A",
+      "sequence": 169
+    },
+    {
+      "timestamp": 1752964783.99293,
+      "relative_time": 10.898714065551758,
+      "message": "$IIVWR,9.5,L,12.34,N,,,,*59",
+      "sequence": 170
+    },
+    {
+      "timestamp": 1752964784.055346,
+      "relative_time": 10.961130142211914,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 171
+    },
+    {
+      "timestamp": 1752964784.113285,
+      "relative_time": 11.019069194793701,
+      "message": "$IIMWV,351.0,R,11.76,N,A*3B",
+      "sequence": 172
+    },
+    {
+      "timestamp": 1752964784.172208,
+      "relative_time": 11.07799220085144,
+      "message": "$IIVWR,9.0,L,11.76,N,,,,*59",
+      "sequence": 173
+    },
+    {
+      "timestamp": 1752964784.2322829,
+      "relative_time": 11.13806700706482,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 174
+    },
+    {
+      "timestamp": 1752964784.292002,
+      "relative_time": 11.197786092758179,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 175
+    },
+    {
+      "timestamp": 1752964784.329383,
+      "relative_time": 11.235167026519775,
+      "message": "$IIVHW,,T,170.61,M,,N,,K*4A",
+      "sequence": 176
+    },
+    {
+      "timestamp": 1752964784.392063,
+      "relative_time": 11.297847032546997,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 177
+    },
+    {
+      "timestamp": 1752964784.452249,
+      "relative_time": 11.358033180236816,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 178
+    },
+    {
+      "timestamp": 1752964784.5256488,
+      "relative_time": 11.431432962417603,
+      "message": "$IIMWV,349.0,R,11.06,N,A*35",
+      "sequence": 179
+    },
+    {
+      "timestamp": 1752964784.589953,
+      "relative_time": 11.495737075805664,
+      "message": "$IIVWR,11.0,L,11.06,N,,,,*67",
+      "sequence": 180
+    },
+    {
+      "timestamp": 1752964784.651856,
+      "relative_time": 11.557640075683594,
+      "message": "$GPZDA,223943,19,07,2025,,*4F",
+      "sequence": 181
+    },
+    {
+      "timestamp": 1752964784.716088,
+      "relative_time": 11.621872186660767,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 182
+    },
+    {
+      "timestamp": 1752964784.784836,
+      "relative_time": 11.690620183944702,
+      "message": "$IIMWV,350.0,R,11.45,N,A*3A",
+      "sequence": 183
+    },
+    {
+      "timestamp": 1752964784.846199,
+      "relative_time": 11.751983165740967,
+      "message": "$IIMWV,351.0,R,10.56,N,A*38",
+      "sequence": 184
+    },
+    {
+      "timestamp": 1752964784.906229,
+      "relative_time": 11.812013149261475,
+      "message": "$HCHDG,170.62,,,,*70",
+      "sequence": 185
+    },
+    {
+      "timestamp": 1752964784.9557388,
+      "relative_time": 11.861522912979126,
+      "message": "$IIMWV,353.5,R,10.96,N,A*33",
+      "sequence": 186
+    },
+    {
+      "timestamp": 1752964785.015002,
+      "relative_time": 11.920786142349243,
+      "message": "$GPGSA,A,3,,,,,,,,,,,,,,7.90,8.00*1A",
+      "sequence": 187
+    },
+    {
+      "timestamp": 1752964785.093361,
+      "relative_time": 11.999145030975342,
+      "message": "$IIMWV,352.0,R,10.96,N,A*37",
+      "sequence": 188
+    },
+    {
+      "timestamp": 1752964785.1602209,
+      "relative_time": 12.066004991531372,
+      "message": "$IIMWV,352.0,R,10.96,N,A*37",
+      "sequence": 189
+    },
+    {
+      "timestamp": 1752964785.2132502,
+      "relative_time": 12.11903429031372,
+      "message": "$IIVWR,8.0,L,10.96,N,,,,*57",
+      "sequence": 190
+    },
+    {
+      "timestamp": 1752964785.4044642,
+      "relative_time": 12.310248374938965,
+      "message": "$IIMWV,356.5,R,11.06,N,A*3E",
+      "sequence": 191
+    },
+    {
+      "timestamp": 1752964785.4096022,
+      "relative_time": 12.315386295318604,
+      "message": "$IIVWR,3.5,L,11.06,N,,,,*51",
+      "sequence": 192
+    },
+    {
+      "timestamp": 1752964785.409608,
+      "relative_time": 12.315392017364502,
+      "message": "$IIMWV,1.5,R,10.65,N,A*3B",
+      "sequence": 193
+    },
+    {
+      "timestamp": 1752964785.581954,
+      "relative_time": 12.487738132476807,
+      "message": "$IIVHW,,T,170.61,M,,N,,K*4A",
+      "sequence": 194
+    },
+    {
+      "timestamp": 1752964785.587075,
+      "relative_time": 12.492859125137329,
+      "message": "$HCHDG,170.61,,,,*73",
+      "sequence": 195
+    },
+    {
+      "timestamp": 1752964785.5920498,
+      "relative_time": 12.497833967208862,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 196
+    },
+    {
+      "timestamp": 1752964785.757631,
+      "relative_time": 12.66341519355774,
+      "message": "$IIMWV,2.5,R,11.16,N,A*3D",
+      "sequence": 197
+    },
+    {
+      "timestamp": 1752964785.763288,
+      "relative_time": 12.669072151184082,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 198
+    },
+    {
+      "timestamp": 1752964785.792651,
+      "relative_time": 12.698435068130493,
+      "message": "$IIMWV,0.0,R,10.96,N,A*33",
+      "sequence": 199
+    },
+    {
+      "timestamp": 1752964785.935306,
+      "relative_time": 12.841090202331543,
+      "message": "$IIVWR,0.0,R,10.96,N,,,,*41",
+      "sequence": 200
+    },
+    {
+      "timestamp": 1752964785.943208,
+      "relative_time": 12.848992109298706,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 201
+    },
+    {
+      "timestamp": 1752964785.972669,
+      "relative_time": 12.878453016281128,
+      "message": "$IIMWV,359.5,R,11.16,N,A*30",
+      "sequence": 202
+    },
+    {
+      "timestamp": 1752964786.032777,
+      "relative_time": 12.938561201095581,
+      "message": "$IIMWV,3.0,R,11.76,N,A*3F",
+      "sequence": 203
+    },
+    {
+      "timestamp": 1752964786.0957031,
+      "relative_time": 13.001487255096436,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 204
+    },
+    {
+      "timestamp": 1752964786.1545742,
+      "relative_time": 13.06035828590393,
+      "message": "$IIMWV,5.0,R,11.86,N,A*36",
+      "sequence": 205
+    },
+    {
+      "timestamp": 1752964786.208825,
+      "relative_time": 13.114609241485596,
+      "message": "$IIMWV,5.5,R,11.95,N,A*31",
+      "sequence": 206
+    },
+    {
+      "timestamp": 1752964786.264983,
+      "relative_time": 13.170767068862915,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 207
+    },
+    {
+      "timestamp": 1752964786.327749,
+      "relative_time": 13.233533143997192,
+      "message": "$HCHDG,170.63,,,,*71",
+      "sequence": 208
+    },
+    {
+      "timestamp": 1752964786.373388,
+      "relative_time": 13.27917218208313,
+      "message": "$IIMWV,3.5,R,12.25,N,A*3F",
+      "sequence": 209
+    },
+    {
+      "timestamp": 1752964786.429492,
+      "relative_time": 13.335276126861572,
+      "message": "$IIVWR,3.5,R,12.25,N,,,,*4D",
+      "sequence": 210
+    },
+    {
+      "timestamp": 1752964786.4895308,
+      "relative_time": 13.395314931869507,
+      "message": "$IIMWV,3.5,R,12.46,N,A*3A",
+      "sequence": 211
+    },
+    {
+      "timestamp": 1752964786.548856,
+      "relative_time": 13.45464015007019,
+      "message": "!AIVDM,1,1,,B,13Hp<27P00OnjP0Km@De1gwL2@JO,0*00",
+      "sequence": 212
+    },
+    {
+      "timestamp": 1752964786.651422,
+      "relative_time": 13.557206153869629,
+      "message": "$IIMWV,5.0,R,12.05,N,A*3E",
+      "sequence": 213
+    },
+    {
+      "timestamp": 1752964786.707742,
+      "relative_time": 13.613526105880737,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 214
+    },
+    {
+      "timestamp": 1752964786.7683089,
+      "relative_time": 13.674093008041382,
+      "message": "$HCHDG,170.62,,,,*70",
+      "sequence": 215
+    },
+    {
+      "timestamp": 1752964786.815883,
+      "relative_time": 13.721667051315308,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 216
+    },
+    {
+      "timestamp": 1752964786.852181,
+      "relative_time": 13.757965087890625,
+      "message": "$IIVHW,,T,170.61,M,,N,,K*4A",
+      "sequence": 217
+    },
+    {
+      "timestamp": 1752964786.913044,
+      "relative_time": 13.818828105926514,
+      "message": "$IIMWV,12.0,R,12.56,N,A*0E",
+      "sequence": 218
+    },
+    {
+      "timestamp": 1752964786.973017,
+      "relative_time": 13.878801107406616,
+      "message": "$IIVWR,12.0,R,12.56,N,,,,*7C",
+      "sequence": 219
+    },
+    {
+      "timestamp": 1752964787.038317,
+      "relative_time": 13.944101095199585,
+      "message": "$GPRMC,223945.00,A,4838.2024,N,00201.4020,W,0.039,,190725,,,A*6D",
+      "sequence": 220
+    },
+    {
+      "timestamp": 1752964787.171523,
+      "relative_time": 14.077307224273682,
+      "message": "$GPVTG,,,,,0.039,N,0.072,K,A*35",
+      "sequence": 221
+    },
+    {
+      "timestamp": 1752964787.243348,
+      "relative_time": 14.149132013320923,
+      "message": "$IIMWV,10.5,R,12.56,N,A*09",
+      "sequence": 222
+    },
+    {
+      "timestamp": 1752964787.2985039,
+      "relative_time": 14.204288005828857,
+      "message": "$HCHDG,170.61,,,,*73",
+      "sequence": 223
+    },
+    {
+      "timestamp": 1752964787.350116,
+      "relative_time": 14.255900144577026,
+      "message": "$IIMWV,355.5,R,12.34,N,A*3F",
+      "sequence": 224
+    },
+    {
+      "timestamp": 1752964787.410068,
+      "relative_time": 14.315852165222168,
+      "message": "$IIMWV,355.0,R,12.25,N,A*3A",
+      "sequence": 225
+    },
+    {
+      "timestamp": 1752964787.470753,
+      "relative_time": 14.376537084579468,
+      "message": "$IIVHW,,T,170.61,M,,N,,K*4A",
+      "sequence": 226
+    },
+    {
+      "timestamp": 1752964787.550582,
+      "relative_time": 14.456366062164307,
+      "message": "$IIMWV,7.0,R,12.15,N,A*3D",
+      "sequence": 227
+    },
+    {
+      "timestamp": 1752964787.6042838,
+      "relative_time": 14.5100679397583,
+      "message": "$IIVWR,7.0,R,12.15,N,,,,*4F",
+      "sequence": 228
+    },
+    {
+      "timestamp": 1752964787.667989,
+      "relative_time": 14.57377314567566,
+      "message": "!AIVDM,1,1,,B,402:oVB0=MA00OpWJjKtGrg00L0G,0*4D",
+      "sequence": 229
+    },
+    {
+      "timestamp": 1752964787.7658508,
+      "relative_time": 14.671634912490845,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 230
+    },
+    {
+      "timestamp": 1752964787.825619,
+      "relative_time": 14.731403112411499,
+      "message": "$HCHDG,170.62,,,,*70",
+      "sequence": 231
+    },
+    {
+      "timestamp": 1752964787.872098,
+      "relative_time": 14.777882099151611,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 232
+    },
+    {
+      "timestamp": 1752964787.910192,
+      "relative_time": 14.8159761428833,
+      "message": "$GPZDA,223946,19,07,2025,,*4A",
+      "sequence": 233
+    },
+    {
+      "timestamp": 1752964787.974489,
+      "relative_time": 14.88027310371399,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 234
+    },
+    {
+      "timestamp": 1752964788.034827,
+      "relative_time": 14.940611124038696,
+      "message": "!AIVDM,1,1,,B,B3Hp2CP00OucOqVuD3ek;wo5oP06,0*5F",
+      "sequence": 235
+    },
+    {
+      "timestamp": 1752964788.1387699,
+      "relative_time": 15.044553995132446,
+      "message": "$IIMWV,1.5,R,12.25,N,A*3D",
+      "sequence": 236
+    },
+    {
+      "timestamp": 1752964788.1948001,
+      "relative_time": 15.100584268569946,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 237
+    },
+    {
+      "timestamp": 1752964788.2578418,
+      "relative_time": 15.163625955581665,
+      "message": "$HCHDG,170.63,,,,*71",
+      "sequence": 238
+    },
+    {
+      "timestamp": 1752964788.3054268,
+      "relative_time": 15.21121096611023,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 239
+    },
+    {
+      "timestamp": 1752964788.347316,
+      "relative_time": 15.253100156784058,
+      "message": "$IIVHW,,T,170.63,M,,N,,K*48",
+      "sequence": 240
+    },
+    {
+      "timestamp": 1752964788.4093041,
+      "relative_time": 15.315088272094727,
+      "message": "$HCHDG,170.63,,,,*71",
+      "sequence": 241
+    },
+    {
+      "timestamp": 1752964788.453832,
+      "relative_time": 15.359616041183472,
+      "message": "$IIMWV,7.5,R,12.25,N,A*3B",
+      "sequence": 242
+    },
+    {
+      "timestamp": 1752964788.519658,
+      "relative_time": 15.425442218780518,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 243
+    },
+    {
+      "timestamp": 1752964788.585334,
+      "relative_time": 15.49111819267273,
+      "message": "$HCHDG,170.64,,,,*76",
+      "sequence": 244
+    },
+    {
+      "timestamp": 1752964788.63034,
+      "relative_time": 15.536124229431152,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 245
+    },
+    {
+      "timestamp": 1752964788.667674,
+      "relative_time": 15.573458194732666,
+      "message": "$IIVHW,,T,170.65,M,,N,,K*4E",
+      "sequence": 246
+    },
+    {
+      "timestamp": 1752964788.727433,
+      "relative_time": 15.633217096328735,
+      "message": "$HCHDG,170.65,,,,*77",
+      "sequence": 247
+    },
+    {
+      "timestamp": 1752964788.779105,
+      "relative_time": 15.684889078140259,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 248
+    },
+    {
+      "timestamp": 1752964788.811132,
+      "relative_time": 15.71691608428955,
+      "message": "$IIMWV,5.0,R,12.46,N,A*39",
+      "sequence": 249
+    },
+    {
+      "timestamp": 1752964788.866198,
+      "relative_time": 15.771982192993164,
+      "message": "$HCHDG,170.66,,,,*74",
+      "sequence": 250
+    },
+    {
+      "timestamp": 1752964788.9119859,
+      "relative_time": 15.817770004272461,
+      "message": "$IIMWV,4.0,R,12.75,N,A*38",
+      "sequence": 251
+    },
+    {
+      "timestamp": 1752964788.980791,
+      "relative_time": 15.88657522201538,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 252
+    },
+    {
+      "timestamp": 1752964789.028061,
+      "relative_time": 15.933845043182373,
+      "message": "$IIMWV,4.5,R,12.65,N,A*3C",
+      "sequence": 253
+    },
+    {
+      "timestamp": 1752964789.086921,
+      "relative_time": 15.99270510673523,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 254
+    },
+    {
+      "timestamp": 1752964789.149607,
+      "relative_time": 16.05539107322693,
+      "message": "$IIMWV,1.0,R,13.26,N,A*3A",
+      "sequence": 255
+    },
+    {
+      "timestamp": 1752964789.2057889,
+      "relative_time": 16.111572980880737,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 256
+    },
+    {
+      "timestamp": 1752964789.2916899,
+      "relative_time": 16.197474002838135,
+      "message": "$IIMWV,1.5,R,12.75,N,A*38",
+      "sequence": 257
+    },
+    {
+      "timestamp": 1752964789.347344,
+      "relative_time": 16.253128051757812,
+      "message": "$IIMWV,1.0,R,12.85,N,A*32",
+      "sequence": 258
+    },
+    {
+      "timestamp": 1752964789.4035661,
+      "relative_time": 16.30935025215149,
+      "message": "$IIMWV,359.0,R,12.85,N,A*3C",
+      "sequence": 259
+    },
+    {
+      "timestamp": 1752964789.471039,
+      "relative_time": 16.37682318687439,
+      "message": "$IIMWV,358.5,R,12.85,N,A*38",
+      "sequence": 260
+    },
+    {
+      "timestamp": 1752964789.58287,
+      "relative_time": 16.488654136657715,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 261
+    },
+    {
+      "timestamp": 1752964789.646261,
+      "relative_time": 16.552045106887817,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 262
+    },
+    {
+      "timestamp": 1752964789.708043,
+      "relative_time": 16.613827228546143,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 263
+    },
+    {
+      "timestamp": 1752964789.792208,
+      "relative_time": 16.697992086410522,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 264
+    },
+    {
+      "timestamp": 1752964789.830623,
+      "relative_time": 16.736407041549683,
+      "message": "$IIMWV,358.5,R,12.34,N,A*32",
+      "sequence": 265
+    },
+    {
+      "timestamp": 1752964789.894089,
+      "relative_time": 16.799873113632202,
+      "message": "$IIMWV,356.5,R,12.15,N,A*3F",
+      "sequence": 266
+    },
+    {
+      "timestamp": 1752964789.9559119,
+      "relative_time": 16.861696004867554,
+      "message": "$HCHDG,170.73,,,,*70",
+      "sequence": 267
+    },
+    {
+      "timestamp": 1752964790.002957,
+      "relative_time": 16.908741235733032,
+      "message": "$IIMWV,355.5,R,11.86,N,A*35",
+      "sequence": 268
+    },
+    {
+      "timestamp": 1752964790.061485,
+      "relative_time": 16.9672691822052,
+      "message": "$IIVWR,4.5,L,11.86,N,,,,*5E",
+      "sequence": 269
+    },
+    {
+      "timestamp": 1752964790.122912,
+      "relative_time": 17.028696060180664,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 270
+    },
+    {
+      "timestamp": 1752964790.192991,
+      "relative_time": 17.098775148391724,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 271
+    },
+    {
+      "timestamp": 1752964790.259555,
+      "relative_time": 17.16533923149109,
+      "message": "$IIMWV,6.0,R,11.66,N,A*3B",
+      "sequence": 272
+    },
+    {
+      "timestamp": 1752964790.316055,
+      "relative_time": 17.22183918952942,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 273
+    },
+    {
+      "timestamp": 1752964790.346806,
+      "relative_time": 17.25259017944336,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 274
+    },
+    {
+      "timestamp": 1752964790.433202,
+      "relative_time": 17.33898615837097,
+      "message": "$IIMWV,14.5,R,11.06,N,A*0B",
+      "sequence": 275
+    },
+    {
+      "timestamp": 1752964790.497084,
+      "relative_time": 17.402868032455444,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 276
+    },
+    {
+      "timestamp": 1752964790.5779681,
+      "relative_time": 17.483752250671387,
+      "message": "!AIVDM,1,1,,B,B33jcSP00GuckT6uB2SQ3wp5kP06,0*0E",
+      "sequence": 277
+    },
+    {
+      "timestamp": 1752964790.682385,
+      "relative_time": 17.58816909790039,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 278
+    },
+    {
+      "timestamp": 1752964790.766896,
+      "relative_time": 17.672680139541626,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 279
+    },
+    {
+      "timestamp": 1752964790.8275928,
+      "relative_time": 17.73337697982788,
+      "message": "$GPZDA,223949,19,07,2025,,*45",
+      "sequence": 280
+    },
+    {
+      "timestamp": 1752964790.891582,
+      "relative_time": 17.79736614227295,
+      "message": "$IIMWV,5.5,R,10.96,N,A*33",
+      "sequence": 281
+    },
+    {
+      "timestamp": 1752964790.948013,
+      "relative_time": 17.85379719734192,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 282
+    },
+    {
+      "timestamp": 1752964791.0334039,
+      "relative_time": 17.93918800354004,
+      "message": "$IIMWV,14.0,R,10.75,N,A*0B",
+      "sequence": 283
+    },
+    {
+      "timestamp": 1752964791.0928042,
+      "relative_time": 17.99858832359314,
+      "message": "$IIVWR,14.0,R,10.75,N,,,,*79",
+      "sequence": 284
+    },
+    {
+      "timestamp": 1752964791.155307,
+      "relative_time": 18.06109118461609,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 285
+    },
+    {
+      "timestamp": 1752964791.246649,
+      "relative_time": 18.152433156967163,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 286
+    },
+    {
+      "timestamp": 1752964791.2915158,
+      "relative_time": 18.19729995727539,
+      "message": "$IIMWV,25.0,R,11.35,N,A*0C",
+      "sequence": 287
+    },
+    {
+      "timestamp": 1752964791.3540301,
+      "relative_time": 18.259814262390137,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 288
+    },
+    {
+      "timestamp": 1752964791.44208,
+      "relative_time": 18.347864151000977,
+      "message": "$IIMWV,16.5,R,10.96,N,A*01",
+      "sequence": 289
+    },
+    {
+      "timestamp": 1752964791.496154,
+      "relative_time": 18.40193819999695,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 290
+    },
+    {
+      "timestamp": 1752964791.595306,
+      "relative_time": 18.501090049743652,
+      "message": "$GPGLL,4838.1992,N,00201.4008,W,,A,A*5E",
+      "sequence": 291
+    },
+    {
+      "timestamp": 1752964791.6886861,
+      "relative_time": 18.594470262527466,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 292
+    },
+    {
+      "timestamp": 1752964791.729253,
+      "relative_time": 18.635037183761597,
+      "message": "$GPZDA,223950,19,07,2025,,*4D",
+      "sequence": 293
+    },
+    {
+      "timestamp": 1752964791.795584,
+      "relative_time": 18.7013680934906,
+      "message": "!AIVDM,1,1,,B,H3HfJJ0lttpTD00000000000000,2*4E",
+      "sequence": 294
+    },
+    {
+      "timestamp": 1752964791.899979,
+      "relative_time": 18.805763244628906,
+      "message": "$IIMWV,333.5,R,11.16,N,A*3C",
+      "sequence": 295
+    },
+    {
+      "timestamp": 1752964791.961013,
+      "relative_time": 18.86679720878601,
+      "message": "$IIVWR,26.5,L,11.16,N,,,,*67",
+      "sequence": 296
+    },
+    {
+      "timestamp": 1752964792.022089,
+      "relative_time": 18.927873134613037,
+      "message": "$IIMWV,338.5,R,11.06,N,A*36",
+      "sequence": 297
+    },
+    {
+      "timestamp": 1752964792.098909,
+      "relative_time": 19.004693031311035,
+      "message": "$IIMWV,353.0,R,10.46,N,A*3B",
+      "sequence": 298
+    },
+    {
+      "timestamp": 1752964792.1592672,
+      "relative_time": 19.065051317214966,
+      "message": "$IIVHW,,T,170.73,M,,N,,K*49",
+      "sequence": 299
+    },
+    {
+      "timestamp": 1752964792.215009,
+      "relative_time": 19.120793104171753,
+      "message": "$IIMWV,352.5,R,9.95,N,A*09",
+      "sequence": 300
+    },
+    {
+      "timestamp": 1752964792.276795,
+      "relative_time": 19.182579040527344,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 301
+    },
+    {
+      "timestamp": 1752964792.361742,
+      "relative_time": 19.267526149749756,
+      "message": "$GPZDA,223951,19,07,2025,,*4C",
+      "sequence": 302
+    },
+    {
+      "timestamp": 1752964792.4223402,
+      "relative_time": 19.328124284744263,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 303
+    },
+    {
+      "timestamp": 1752964792.485057,
+      "relative_time": 19.390841245651245,
+      "message": "$HCHDG,170.71,,,,*72",
+      "sequence": 304
+    },
+    {
+      "timestamp": 1752964792.533086,
+      "relative_time": 19.438870191574097,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 305
+    },
+    {
+      "timestamp": 1752964792.572608,
+      "relative_time": 19.478392124176025,
+      "message": "$IIMWV,337.5,R,9.47,N,A*05",
+      "sequence": 306
+    },
+    {
+      "timestamp": 1752964792.630532,
+      "relative_time": 19.53631615638733,
+      "message": "$IIVWR,22.5,L,9.47,N,,,,*5E",
+      "sequence": 307
+    },
+    {
+      "timestamp": 1752964792.6959722,
+      "relative_time": 19.60175633430481,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 308
+    },
+    {
+      "timestamp": 1752964792.757527,
+      "relative_time": 19.66331124305725,
+      "message": "$IIMWV,347.5,R,9.76,N,A*00",
+      "sequence": 309
+    },
+    {
+      "timestamp": 1752964792.813251,
+      "relative_time": 19.719035148620605,
+      "message": "$IIVWR,12.5,L,9.76,N,,,,*5F",
+      "sequence": 310
+    },
+    {
+      "timestamp": 1752964792.879786,
+      "relative_time": 19.78557014465332,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 311
+    },
+    {
+      "timestamp": 1752964792.934088,
+      "relative_time": 19.839872121810913,
+      "message": "$GPRMC,223951.00,A,4838.2025,N,00201.4020,W,0.000,154.767,190725,,,A*4B",
+      "sequence": 312
+    },
+    {
+      "timestamp": 1752964793.0885031,
+      "relative_time": 19.994287252426147,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 313
+    },
+    {
+      "timestamp": 1752964793.150031,
+      "relative_time": 20.05581521987915,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 314
+    },
+    {
+      "timestamp": 1752964793.238936,
+      "relative_time": 20.14472007751465,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 315
+    },
+    {
+      "timestamp": 1752964793.323275,
+      "relative_time": 20.22905921936035,
+      "message": "$IIVHW,,T,170.73,M,,N,,K*49",
+      "sequence": 316
+    },
+    {
+      "timestamp": 1752964793.391705,
+      "relative_time": 20.297489166259766,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 317
+    },
+    {
+      "timestamp": 1752964793.48985,
+      "relative_time": 20.395634174346924,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 318
+    },
+    {
+      "timestamp": 1752964793.573885,
+      "relative_time": 20.479669094085693,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 319
+    },
+    {
+      "timestamp": 1752964793.63188,
+      "relative_time": 20.53766417503357,
+      "message": "!AIVDM,1,1,,B,13cIjt0000Onhq>KmQArWE9`08NT,0*08",
+      "sequence": 320
+    },
+    {
+      "timestamp": 1752964793.732973,
+      "relative_time": 20.63875722885132,
+      "message": "$GPZDA,223952,19,07,2025,,*4F",
+      "sequence": 321
+    },
+    {
+      "timestamp": 1752964793.799309,
+      "relative_time": 20.705093145370483,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 322
+    },
+    {
+      "timestamp": 1752964793.859884,
+      "relative_time": 20.765668153762817,
+      "message": "$IIVHW,,T,170.73,M,,N,,K*49",
+      "sequence": 323
+    },
+    {
+      "timestamp": 1752964793.9196422,
+      "relative_time": 20.82542634010315,
+      "message": "$HCHDG,170.73,,,,*70",
+      "sequence": 324
+    },
+    {
+      "timestamp": 1752964793.9653382,
+      "relative_time": 20.871122360229492,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 325
+    },
+    {
+      "timestamp": 1752964794.004999,
+      "relative_time": 20.910783052444458,
+      "message": "$IIMWV,358.5,R,10.46,N,A*35",
+      "sequence": 326
+    },
+    {
+      "timestamp": 1752964794.0648162,
+      "relative_time": 20.970600366592407,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 327
+    },
+    {
+      "timestamp": 1752964794.124853,
+      "relative_time": 21.03063702583313,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 328
+    },
+    {
+      "timestamp": 1752964794.190061,
+      "relative_time": 21.095845222473145,
+      "message": "$IIMWV,353.5,R,10.65,N,A*3F",
+      "sequence": 329
+    },
+    {
+      "timestamp": 1752964794.249095,
+      "relative_time": 21.154879093170166,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 330
+    },
+    {
+      "timestamp": 1752964794.309508,
+      "relative_time": 21.21529221534729,
+      "message": "$HCHDG,170.72,,,,*71",
+      "sequence": 331
+    },
+    {
+      "timestamp": 1752964794.354789,
+      "relative_time": 21.260573148727417,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 332
+    },
+    {
+      "timestamp": 1752964794.4148219,
+      "relative_time": 21.320605993270874,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 333
+    },
+    {
+      "timestamp": 1752964794.4746501,
+      "relative_time": 21.380434274673462,
+      "message": "$HCHDG,170.72,,,,*71",
+      "sequence": 334
+    },
+    {
+      "timestamp": 1752964794.520687,
+      "relative_time": 21.42647123336792,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 335
+    },
+    {
+      "timestamp": 1752964794.617144,
+      "relative_time": 21.52292823791504,
+      "message": "$IIMWV,346.0,R,11.66,N,A*3C",
+      "sequence": 336
+    },
+    {
+      "timestamp": 1752964794.6873221,
+      "relative_time": 21.593106269836426,
+      "message": "!AIVDM,1,1,,B,4@2:owB0=Ma`0OmHd>KnoWO02000,0*22",
+      "sequence": 337
+    },
+    {
+      "timestamp": 1752964794.79325,
+      "relative_time": 21.699034214019775,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 338
+    },
+    {
+      "timestamp": 1752964794.852246,
+      "relative_time": 21.75803017616272,
+      "message": "$HCHDG,170.74,,,,*77",
+      "sequence": 339
+    },
+    {
+      "timestamp": 1752964794.896689,
+      "relative_time": 21.802473068237305,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 340
+    },
+    {
+      "timestamp": 1752964794.938252,
+      "relative_time": 21.844036102294922,
+      "message": "$IIMWV,359.0,R,11.76,N,A*33",
+      "sequence": 341
+    },
+    {
+      "timestamp": 1752964794.998098,
+      "relative_time": 21.903882026672363,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 342
+    },
+    {
+      "timestamp": 1752964795.0582778,
+      "relative_time": 21.964061975479126,
+      "message": "$IIMWV,6.5,R,11.76,N,A*3F",
+      "sequence": 343
+    },
+    {
+      "timestamp": 1752964795.1139681,
+      "relative_time": 22.019752264022827,
+      "message": "$IIMWV,357.0,R,11.86,N,A*32",
+      "sequence": 344
+    },
+    {
+      "timestamp": 1752964795.173933,
+      "relative_time": 22.07971715927124,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 345
+    },
+    {
+      "timestamp": 1752964795.2343721,
+      "relative_time": 22.140156269073486,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 346
+    },
+    {
+      "timestamp": 1752964795.31879,
+      "relative_time": 22.224574089050293,
+      "message": "$HCHDG,170.75,,,,*76",
+      "sequence": 347
+    },
+    {
+      "timestamp": 1752964795.364554,
+      "relative_time": 22.27033805847168,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 348
+    },
+    {
+      "timestamp": 1752964795.424602,
+      "relative_time": 22.3303861618042,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 349
+    },
+    {
+      "timestamp": 1752964795.4884758,
+      "relative_time": 22.394259929656982,
+      "message": "$HCHDG,170.75,,,,*76",
+      "sequence": 350
+    },
+    {
+      "timestamp": 1752964795.538486,
+      "relative_time": 22.444270133972168,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 351
+    },
+    {
+      "timestamp": 1752964795.624286,
+      "relative_time": 22.530070066452026,
+      "message": "$HCHDG,170.75,,,,*76",
+      "sequence": 352
+    },
+    {
+      "timestamp": 1752964795.6705742,
+      "relative_time": 22.576358318328857,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 353
+    },
+    {
+      "timestamp": 1752964795.741536,
+      "relative_time": 22.64732003211975,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 354
+    },
+    {
+      "timestamp": 1752964795.798357,
+      "relative_time": 22.70414113998413,
+      "message": "$IIMWV,335.0,R,12.15,N,A*3F",
+      "sequence": 355
+    },
+    {
+      "timestamp": 1752964795.862994,
+      "relative_time": 22.768778085708618,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 356
+    },
+    {
+      "timestamp": 1752964795.919761,
+      "relative_time": 22.825545072555542,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 357
+    },
+    {
+      "timestamp": 1752964796.0040152,
+      "relative_time": 22.909799337387085,
+      "message": "$HCHDG,170.75,,,,*76",
+      "sequence": 358
+    },
+    {
+      "timestamp": 1752964796.05278,
+      "relative_time": 22.958564043045044,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 359
+    },
+    {
+      "timestamp": 1752964796.152519,
+      "relative_time": 23.058303117752075,
+      "message": "$GPVTG,149.066,T,,M,0.389,N,0.720,K,A*06",
+      "sequence": 360
+    },
+    {
+      "timestamp": 1752964796.2347221,
+      "relative_time": 23.140506267547607,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 361
+    },
+    {
+      "timestamp": 1752964796.272681,
+      "relative_time": 23.178465127944946,
+      "message": "$IIMWV,330.5,R,12.25,N,A*3C",
+      "sequence": 362
+    },
+    {
+      "timestamp": 1752964796.3378,
+      "relative_time": 23.243584156036377,
+      "message": "$IIMWV,333.5,R,12.25,N,A*3F",
+      "sequence": 363
+    },
+    {
+      "timestamp": 1752964796.394007,
+      "relative_time": 23.29979109764099,
+      "message": "$IIVWR,26.5,L,12.25,N,,,,*64",
+      "sequence": 364
+    },
+    {
+      "timestamp": 1752964796.4592252,
+      "relative_time": 23.365009307861328,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 365
+    },
+    {
+      "timestamp": 1752964796.5180538,
+      "relative_time": 23.423837900161743,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 366
+    },
+    {
+      "timestamp": 1752964796.5636108,
+      "relative_time": 23.46939492225647,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 367
+    },
+    {
+      "timestamp": 1752964796.610962,
+      "relative_time": 23.516746044158936,
+      "message": "$GPZDA,223955,19,07,2025,,*48",
+      "sequence": 368
+    },
+    {
+      "timestamp": 1752964796.679265,
+      "relative_time": 23.585049152374268,
+      "message": "$IIVHW,,T,170.69,M,,N,,K*42",
+      "sequence": 369
+    },
+    {
+      "timestamp": 1752964796.744757,
+      "relative_time": 23.650541067123413,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 370
+    },
+    {
+      "timestamp": 1752964796.829442,
+      "relative_time": 23.735226154327393,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 371
+    },
+    {
+      "timestamp": 1752964796.914582,
+      "relative_time": 23.820366144180298,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 372
+    },
+    {
+      "timestamp": 1752964797.001803,
+      "relative_time": 23.9075870513916,
+      "message": "$GPVTG,332.436,T,,M,183.343,N,339.552,K,A*0B",
+      "sequence": 373
+    },
+    {
+      "timestamp": 1752964797.094103,
+      "relative_time": 23.999887228012085,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 374
+    },
+    {
+      "timestamp": 1752964797.131315,
+      "relative_time": 24.0370991230011,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 375
+    },
+    {
+      "timestamp": 1752964797.1918569,
+      "relative_time": 24.097640991210938,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 376
+    },
+    {
+      "timestamp": 1752964797.240392,
+      "relative_time": 24.14617609977722,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 377
+    },
+    {
+      "timestamp": 1752964797.2836428,
+      "relative_time": 24.1894268989563,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 378
+    },
+    {
+      "timestamp": 1752964797.346774,
+      "relative_time": 24.25255823135376,
+      "message": "$IIMWV,353.5,R,13.26,N,A*3B",
+      "sequence": 379
+    },
+    {
+      "timestamp": 1752964797.40666,
+      "relative_time": 24.31244421005249,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 380
+    },
+    {
+      "timestamp": 1752964797.4664278,
+      "relative_time": 24.372211933135986,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 381
+    },
+    {
+      "timestamp": 1752964797.553306,
+      "relative_time": 24.45909023284912,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 382
+    },
+    {
+      "timestamp": 1752964797.622967,
+      "relative_time": 24.528751134872437,
+      "message": "$IIMWV,356.5,R,13.26,N,A*3E",
+      "sequence": 383
+    },
+    {
+      "timestamp": 1752964797.6893702,
+      "relative_time": 24.595154285430908,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 384
+    },
+    {
+      "timestamp": 1752964797.748975,
+      "relative_time": 24.654759168624878,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 385
+    },
+    {
+      "timestamp": 1752964797.808796,
+      "relative_time": 24.714580059051514,
+      "message": "$HCHDG,170.71,,,,*72",
+      "sequence": 386
+    },
+    {
+      "timestamp": 1752964797.854246,
+      "relative_time": 24.760030031204224,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 387
+    },
+    {
+      "timestamp": 1752964797.894258,
+      "relative_time": 24.800042152404785,
+      "message": "$IIMWV,357.5,R,13.04,N,A*3F",
+      "sequence": 388
+    },
+    {
+      "timestamp": 1752964797.95521,
+      "relative_time": 24.86099410057068,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 389
+    },
+    {
+      "timestamp": 1752964798.015211,
+      "relative_time": 24.920995235443115,
+      "message": "$IIMWV,358.5,R,13.04,N,A*30",
+      "sequence": 390
+    },
+    {
+      "timestamp": 1752964798.0830998,
+      "relative_time": 24.98888397216797,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 391
+    },
+    {
+      "timestamp": 1752964798.1471848,
+      "relative_time": 25.052968978881836,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 392
+    },
+    {
+      "timestamp": 1752964798.1931741,
+      "relative_time": 25.098958253860474,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 393
+    },
+    {
+      "timestamp": 1752964798.231498,
+      "relative_time": 25.137282133102417,
+      "message": "$IIMWV,359.0,R,12.85,N,A*3C",
+      "sequence": 394
+    },
+    {
+      "timestamp": 1752964798.292285,
+      "relative_time": 25.198069095611572,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 395
+    },
+    {
+      "timestamp": 1752964798.382684,
+      "relative_time": 25.2884681224823,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 396
+    },
+    {
+      "timestamp": 1752964798.4195662,
+      "relative_time": 25.325350284576416,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 397
+    },
+    {
+      "timestamp": 1752964798.455128,
+      "relative_time": 25.360912084579468,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 398
+    },
+    {
+      "timestamp": 1752964798.516465,
+      "relative_time": 25.42224907875061,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 399
+    },
+    {
+      "timestamp": 1752964798.561044,
+      "relative_time": 25.466828107833862,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 400
+    },
+    {
+      "timestamp": 1752964798.685109,
+      "relative_time": 25.590893030166626,
+      "message": "$IIMWV,4.5,R,12.25,N,A*38",
+      "sequence": 401
+    },
+    {
+      "timestamp": 1752964798.747042,
+      "relative_time": 25.652826070785522,
+      "message": "$IIVWR,4.5,R,12.25,N,,,,*4A",
+      "sequence": 402
+    },
+    {
+      "timestamp": 1752964798.806337,
+      "relative_time": 25.71212124824524,
+      "message": "$IIVHW,,T,170.69,M,,N,,K*42",
+      "sequence": 403
+    },
+    {
+      "timestamp": 1752964798.8660202,
+      "relative_time": 25.771804332733154,
+      "message": "$IIMWV,7.5,R,12.05,N,A*39",
+      "sequence": 404
+    },
+    {
+      "timestamp": 1752964798.922428,
+      "relative_time": 25.828212022781372,
+      "message": "$IIVWR,7.5,R,12.05,N,,,,*4B",
+      "sequence": 405
+    },
+    {
+      "timestamp": 1752964798.984524,
+      "relative_time": 25.890308141708374,
+      "message": "$GPGLL,4838.1993,N,00201.4007,W,,A,A*50",
+      "sequence": 406
+    },
+    {
+      "timestamp": 1752964799.069371,
+      "relative_time": 25.975155115127563,
+      "message": "$GPZDA,223957,19,07,2025,,*4A",
+      "sequence": 407
+    },
+    {
+      "timestamp": 1752964799.137025,
+      "relative_time": 26.04280924797058,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 408
+    },
+    {
+      "timestamp": 1752964799.17411,
+      "relative_time": 26.079894065856934,
+      "message": "$IIVHW,,T,170.69,M,,N,,K*42",
+      "sequence": 409
+    },
+    {
+      "timestamp": 1752964799.2434509,
+      "relative_time": 26.149235010147095,
+      "message": "$IIMWV,10.0,R,11.35,N,A*0A",
+      "sequence": 410
+    },
+    {
+      "timestamp": 1752964799.303504,
+      "relative_time": 26.209288120269775,
+      "message": "$IIVHW,,T,170.69,M,,N,,K*42",
+      "sequence": 411
+    },
+    {
+      "timestamp": 1752964799.36525,
+      "relative_time": 26.271034240722656,
+      "message": "$IIMWV,10.5,R,11.16,N,A*0E",
+      "sequence": 412
+    },
+    {
+      "timestamp": 1752964799.4194078,
+      "relative_time": 26.325191974639893,
+      "message": "$IIVHW,,T,170.69,M,,N,,K*42",
+      "sequence": 413
+    },
+    {
+      "timestamp": 1752964799.48577,
+      "relative_time": 26.39155411720276,
+      "message": "$HCHDG,170.69,,,,*7B",
+      "sequence": 414
+    },
+    {
+      "timestamp": 1752964799.5314078,
+      "relative_time": 26.4371919631958,
+      "message": "$IIVHW,,T,170.68,M,,N,,K*43",
+      "sequence": 415
+    },
+    {
+      "timestamp": 1752964799.59108,
+      "relative_time": 26.496864080429077,
+      "message": "$IIMWV,2.5,R,10.65,N,A*38",
+      "sequence": 416
+    },
+    {
+      "timestamp": 1752964799.676942,
+      "relative_time": 26.58272624015808,
+      "message": "$IIVHW,,T,170.68,M,,N,,K*43",
+      "sequence": 417
+    },
+    {
+      "timestamp": 1752964799.7411819,
+      "relative_time": 26.646965980529785,
+      "message": "$HCHDG,170.68,,,,*7A",
+      "sequence": 418
+    },
+    {
+      "timestamp": 1752964799.792227,
+      "relative_time": 26.69801115989685,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 419
+    },
+    {
+      "timestamp": 1752964799.8304598,
+      "relative_time": 26.736243963241577,
+      "message": "$IIMWV,359.5,R,10.46,N,A*34",
+      "sequence": 420
+    },
+    {
+      "timestamp": 1752964799.8931131,
+      "relative_time": 26.79889726638794,
+      "message": "$HCHDG,170.68,,,,*7A",
+      "sequence": 421
+    },
+    {
+      "timestamp": 1752964799.941924,
+      "relative_time": 26.847708225250244,
+      "message": "$IIMWV,351.5,R,10.26,N,A*3A",
+      "sequence": 422
+    },
+    {
+      "timestamp": 1752964800.002114,
+      "relative_time": 26.90789818763733,
+      "message": "$IIVHW,,T,170.68,M,,N,,K*43",
+      "sequence": 423
+    },
+    {
+      "timestamp": 1752964800.0641558,
+      "relative_time": 26.969939947128296,
+      "message": "$IIMWV,353.5,R,9.66,N,A*04",
+      "sequence": 424
+    },
+    {
+      "timestamp": 1752964800.12012,
+      "relative_time": 27.025904178619385,
+      "message": "$IIMWV,357.0,R,9.95,N,A*09",
+      "sequence": 425
+    },
+    {
+      "timestamp": 1752964800.1824331,
+      "relative_time": 27.08821725845337,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 426
+    },
+    {
+      "timestamp": 1752964800.22979,
+      "relative_time": 27.135574102401733,
+      "message": "$GPGLL,4838.1994,N,00201.4008,W,,A,A*58",
+      "sequence": 427
+    },
+    {
+      "timestamp": 1752964800.317217,
+      "relative_time": 27.22300124168396,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 428
+    },
+    {
+      "timestamp": 1752964800.351922,
+      "relative_time": 27.25770616531372,
+      "message": "$IIMWV,7.5,R,9.47,N,A*05",
+      "sequence": 429
+    },
+    {
+      "timestamp": 1752964800.4079611,
+      "relative_time": 27.313745260238647,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 430
+    },
+    {
+      "timestamp": 1752964800.4672902,
+      "relative_time": 27.373074293136597,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 431
+    },
+    {
+      "timestamp": 1752964800.509258,
+      "relative_time": 27.41504216194153,
+      "message": "$IIVHW,,T,170.68,M,,N,,K*43",
+      "sequence": 432
+    },
+    {
+      "timestamp": 1752964800.5699048,
+      "relative_time": 27.475688934326172,
+      "message": "$HCHDG,170.68,,,,*7A",
+      "sequence": 433
+    },
+    {
+      "timestamp": 1752964800.619532,
+      "relative_time": 27.52531623840332,
+      "message": "$IIVHW,,T,170.68,M,,N,,K*43",
+      "sequence": 434
+    },
+    {
+      "timestamp": 1752964800.685575,
+      "relative_time": 27.59135913848877,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 435
+    },
+    {
+      "timestamp": 1752964800.74995,
+      "relative_time": 27.655734062194824,
+      "message": "$IIMWV,3.5,R,8.77,N,A*03",
+      "sequence": 436
+    },
+    {
+      "timestamp": 1752964800.8039172,
+      "relative_time": 27.70970129966736,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 437
+    },
+    {
+      "timestamp": 1752964800.8639328,
+      "relative_time": 27.76971697807312,
+      "message": "$IIMWV,6.0,R,8.77,N,A*03",
+      "sequence": 438
+    },
+    {
+      "timestamp": 1752964800.9177,
+      "relative_time": 27.823484182357788,
+      "message": "$IIVHW,,T,170.67,M,,N,,K*4C",
+      "sequence": 439
+    },
+    {
+      "timestamp": 1752964800.983488,
+      "relative_time": 27.889272212982178,
+      "message": "$IIVHW,,T,170.65,M,,N,,K*4E",
+      "sequence": 440
+    },
+    {
+      "timestamp": 1752964801.04911,
+      "relative_time": 27.954894065856934,
+      "message": "$IIMWV,343.5,R,8.26,N,A*00",
+      "sequence": 441
+    },
+    {
+      "timestamp": 1752964801.111905,
+      "relative_time": 28.01768922805786,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 442
+    },
+    {
+      "timestamp": 1752964801.169696,
+      "relative_time": 28.075480222702026,
+      "message": "$IIMWV,348.5,R,8.57,N,A*0D",
+      "sequence": 443
+    },
+    {
+      "timestamp": 1752964801.22524,
+      "relative_time": 28.13102412223816,
+      "message": "$IIMWV,354.5,R,8.07,N,A*05",
+      "sequence": 444
+    },
+    {
+      "timestamp": 1752964801.287238,
+      "relative_time": 28.19302201271057,
+      "message": "$IIVWR,5.5,L,8.07,N,,,,*6E",
+      "sequence": 445
+    },
+    {
+      "timestamp": 1752964801.347341,
+      "relative_time": 28.253125190734863,
+      "message": "$GPRMC,223959.00,A,4838.2028,N,00201.4027,W,0.039,,190725,,,A*6B",
+      "sequence": 446
+    },
+    {
+      "timestamp": 1752964801.486913,
+      "relative_time": 28.39269709587097,
+      "message": "$GPVTG,,,,,0.039,N,0.072,K,A*35",
+      "sequence": 447
+    },
+    {
+      "timestamp": 1752964801.556751,
+      "relative_time": 28.46253514289856,
+      "message": "$IIMWV,357.5,R,8.36,N,A*04",
+      "sequence": 448
+    },
+    {
+      "timestamp": 1752964801.620718,
+      "relative_time": 28.52650213241577,
+      "message": "$IIMWV,2.5,R,8.36,N,A*07",
+      "sequence": 449
+    },
+    {
+      "timestamp": 1752964801.687285,
+      "relative_time": 28.593069076538086,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 450
+    },
+    {
+      "timestamp": 1752964801.781513,
+      "relative_time": 28.687297105789185,
+      "message": "$IIVHW,,T,170.64,M,,N,,K*4F",
+      "sequence": 451
+    },
+    {
+      "timestamp": 1752964801.831899,
+      "relative_time": 28.737683057785034,
+      "message": "$IIMWV,330.0,R,8.86,N,A*0B",
+      "sequence": 452
+    },
+    {
+      "timestamp": 1752964801.8906639,
+      "relative_time": 28.79644799232483,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 453
+    },
+    {
+      "timestamp": 1752964801.9292722,
+      "relative_time": 28.83505630493164,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 454
+    },
+    {
+      "timestamp": 1752964802.0132759,
+      "relative_time": 28.919059991836548,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 455
+    },
+    {
+      "timestamp": 1752964802.09816,
+      "relative_time": 29.003944158554077,
+      "message": "$IIMWV,340.0,R,9.16,N,A*04",
+      "sequence": 456
+    },
+    {
+      "timestamp": 1752964802.166259,
+      "relative_time": 29.0720431804657,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 457
+    },
+    {
+      "timestamp": 1752964802.22601,
+      "relative_time": 29.131794214248657,
+      "message": "$IIMWV,358.0,R,9.16,N,A*0D",
+      "sequence": 458
+    },
+    {
+      "timestamp": 1752964802.286151,
+      "relative_time": 29.191935062408447,
+      "message": "$HCHDG,170.61,,,,*73",
+      "sequence": 459
+    },
+    {
+      "timestamp": 1752964802.3338702,
+      "relative_time": 29.239654302597046,
+      "message": "$IIMWV,0.0,R,9.16,N,A*03",
+      "sequence": 460
+    },
+    {
+      "timestamp": 1752964802.397386,
+      "relative_time": 29.303170204162598,
+      "message": "$HCHDG,170.60,,,,*72",
+      "sequence": 461
+    },
+    {
+      "timestamp": 1752964802.4355981,
+      "relative_time": 29.341382265090942,
+      "message": "$IIMWV,332.5,R,9.06,N,A*05",
+      "sequence": 462
+    },
+    {
+      "timestamp": 1752964802.497112,
+      "relative_time": 29.40289616584778,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 463
+    },
+    {
+      "timestamp": 1752964802.5520508,
+      "relative_time": 29.45783495903015,
+      "message": "$IIMWV,322.0,R,8.96,N,A*09",
+      "sequence": 464
+    },
+    {
+      "timestamp": 1752964802.610225,
+      "relative_time": 29.516009092330933,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 465
+    },
+    {
+      "timestamp": 1752964802.696873,
+      "relative_time": 29.602657079696655,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 466
+    },
+    {
+      "timestamp": 1752964802.785224,
+      "relative_time": 29.6910080909729,
+      "message": "$IIMWV,308.5,R,9.25,N,A*0D",
+      "sequence": 467
+    },
+    {
+      "timestamp": 1752964802.8449988,
+      "relative_time": 29.75078296661377,
+      "message": "$IIMWV,328.5,R,8.86,N,A*07",
+      "sequence": 468
+    },
+    {
+      "timestamp": 1752964802.902432,
+      "relative_time": 29.808216094970703,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 469
+    },
+    {
+      "timestamp": 1752964802.965078,
+      "relative_time": 29.870862245559692,
+      "message": "$GPZDA,224001,19,07,2025,,*47",
+      "sequence": 470
+    },
+    {
+      "timestamp": 1752964803.0278962,
+      "relative_time": 29.933680295944214,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 471
+    },
+    {
+      "timestamp": 1752964803.097334,
+      "relative_time": 30.00311803817749,
+      "message": "$IIMWV,22.0,R,8.86,N,A*3B",
+      "sequence": 472
+    },
+    {
+      "timestamp": 1752964803.15274,
+      "relative_time": 30.058524131774902,
+      "message": "$IIMWV,22.0,R,9.76,N,A*35",
+      "sequence": 473
+    },
+    {
+      "timestamp": 1752964803.2054,
+      "relative_time": 30.111184120178223,
+      "message": "$HCHDG,170.59,,,,*78",
+      "sequence": 474
+    },
+    {
+      "timestamp": 1752964803.256587,
+      "relative_time": 30.162371158599854,
+      "message": "$IIMWV,349.0,R,9.56,N,A*09",
+      "sequence": 475
+    },
+    {
+      "timestamp": 1752964803.3111491,
+      "relative_time": 30.216933250427246,
+      "message": "$IIVHW,,T,170.61,M,,N,,K*4A",
+      "sequence": 476
+    },
+    {
+      "timestamp": 1752964803.37199,
+      "relative_time": 30.27777409553528,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 477
+    },
+    {
+      "timestamp": 1752964803.459897,
+      "relative_time": 30.365681171417236,
+      "message": "$IIVHW,,T,170.60,M,,N,,K*4B",
+      "sequence": 478
+    },
+    {
+      "timestamp": 1752964803.5166452,
+      "relative_time": 30.42242932319641,
+      "message": "$IIMWV,28.0,R,10.36,N,A*03",
+      "sequence": 479
+    },
+    {
+      "timestamp": 1752964803.584824,
+      "relative_time": 30.49060821533203,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 480
+    },
+    {
+      "timestamp": 1752964803.6695309,
+      "relative_time": 30.57531499862671,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 481
+    },
+    {
+      "timestamp": 1752964803.7074711,
+      "relative_time": 30.613255262374878,
+      "message": "$GPGLL,4838.1994,N,00201.4009,W,,A,A*59",
+      "sequence": 482
+    },
+    {
+      "timestamp": 1752964803.792613,
+      "relative_time": 30.698397159576416,
+      "message": "$IIMWV,2.5,R,11.25,N,A*3D",
+      "sequence": 483
+    },
+    {
+      "timestamp": 1752964803.8478878,
+      "relative_time": 30.753671884536743,
+      "message": "$IIVHW,,T,170.62,M,,N,,K*49",
+      "sequence": 484
+    },
+    {
+      "timestamp": 1752964803.907812,
+      "relative_time": 30.81359624862671,
+      "message": "$IIMWV,0.0,R,11.35,N,A*3B",
+      "sequence": 485
+    },
+    {
+      "timestamp": 1752964803.9655528,
+      "relative_time": 30.871336936950684,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 486
+    },
+    {
+      "timestamp": 1752964804.052924,
+      "relative_time": 30.95870804786682,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 487
+    },
+    {
+      "timestamp": 1752964804.149224,
+      "relative_time": 31.05500817298889,
+      "message": "$IIMWV,36.0,R,11.86,N,A*06",
+      "sequence": 488
+    },
+    {
+      "timestamp": 1752964804.208354,
+      "relative_time": 31.11413812637329,
+      "message": "$IIVWR,36.0,R,11.86,N,,,,*74",
+      "sequence": 489
+    },
+    {
+      "timestamp": 1752964804.2988732,
+      "relative_time": 31.204657316207886,
+      "message": "$IIMWV,33.5,R,11.86,N,A*06",
+      "sequence": 490
+    },
+    {
+      "timestamp": 1752964804.3416908,
+      "relative_time": 31.247474908828735,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 491
+    },
+    {
+      "timestamp": 1752964804.365906,
+      "relative_time": 31.271690130233765,
+      "message": "$HCHDG,170.64,,,,*76",
+      "sequence": 492
+    },
+    {
+      "timestamp": 1752964804.413353,
+      "relative_time": 31.31913709640503,
+      "message": "$IIMWV,21.5,R,11.66,N,A*0B",
+      "sequence": 493
+    },
+    {
+      "timestamp": 1752964804.469787,
+      "relative_time": 31.37557101249695,
+      "message": "$IIVWR,21.5,R,11.66,N,,,,*79",
+      "sequence": 494
+    },
+    {
+      "timestamp": 1752964804.5317812,
+      "relative_time": 31.437565326690674,
+      "message": "$IIVHW,,T,170.65,M,,N,,K*4E",
+      "sequence": 495
+    },
+    {
+      "timestamp": 1752964804.5923998,
+      "relative_time": 31.498183965682983,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 496
+    },
+    {
+      "timestamp": 1752964804.631892,
+      "relative_time": 31.537676095962524,
+      "message": "$IIMWV,22.5,R,11.45,N,A*09",
+      "sequence": 497
+    },
+    {
+      "timestamp": 1752964804.721746,
+      "relative_time": 31.627530097961426,
+      "message": "$IIVWR,22.5,R,11.45,N,,,,*7B",
+      "sequence": 498
+    },
+    {
+      "timestamp": 1752964804.790715,
+      "relative_time": 31.69649910926819,
+      "message": "$IIMWV,21.5,R,11.35,N,A*0D",
+      "sequence": 499
+    },
+    {
+      "timestamp": 1752964804.849314,
+      "relative_time": 31.75509810447693,
+      "message": "!AIVDM,1,1,,B,B33jcSP007uckS6uB2cQ3wQUkP06,0*08",
+      "sequence": 500
+    },
+    {
+      "timestamp": 1752964804.953282,
+      "relative_time": 31.859066247940063,
+      "message": "$GPZDA,224003,19,07,2025,,*45",
+      "sequence": 501
+    },
+    {
+      "timestamp": 1752964805.021787,
+      "relative_time": 31.927571058273315,
+      "message": "$HCHDG,170.66,,,,*74",
+      "sequence": 502
+    },
+    {
+      "timestamp": 1752964805.0680509,
+      "relative_time": 31.973834991455078,
+      "message": "$IIMWV,0.0,R,10.75,N,A*3E",
+      "sequence": 503
+    },
+    {
+      "timestamp": 1752964805.125025,
+      "relative_time": 32.03080916404724,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 504
+    },
+    {
+      "timestamp": 1752964805.186363,
+      "relative_time": 32.0921471118927,
+      "message": "$HCHDG,170.66,,,,*74",
+      "sequence": 505
+    },
+    {
+      "timestamp": 1752964805.231942,
+      "relative_time": 32.137726068496704,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 506
+    },
+    {
+      "timestamp": 1752964805.269734,
+      "relative_time": 32.17551803588867,
+      "message": "$IIMWV,0.5,R,11.16,N,A*3F",
+      "sequence": 507
+    },
+    {
+      "timestamp": 1752964805.324951,
+      "relative_time": 32.230735063552856,
+      "message": "$IIMWV,3.5,R,10.96,N,A*35",
+      "sequence": 508
+    },
+    {
+      "timestamp": 1752964805.390522,
+      "relative_time": 32.296306133270264,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 509
+    },
+    {
+      "timestamp": 1752964805.428491,
+      "relative_time": 32.334275245666504,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 510
+    },
+    {
+      "timestamp": 1752964805.513206,
+      "relative_time": 32.41899013519287,
+      "message": "$IIMWV,24.5,R,10.36,N,A*0A",
+      "sequence": 511
+    },
+    {
+      "timestamp": 1752964805.573031,
+      "relative_time": 32.47881507873535,
+      "message": "$IIVWR,24.5,R,10.36,N,,,,*78",
+      "sequence": 512
+    },
+    {
+      "timestamp": 1752964805.633707,
+      "relative_time": 32.539491176605225,
+      "message": "$IIMWV,37.5,R,10.65,N,A*0E",
+      "sequence": 513
+    },
+    {
+      "timestamp": 1752964805.724808,
+      "relative_time": 32.63059210777283,
+      "message": "$IIVWR,37.5,R,10.65,N,,,,*7C",
+      "sequence": 514
+    },
+    {
+      "timestamp": 1752964805.7924302,
+      "relative_time": 32.698214292526245,
+      "message": "$IIMWV,32.5,R,10.46,N,A*0A",
+      "sequence": 515
+    },
+    {
+      "timestamp": 1752964805.852557,
+      "relative_time": 32.75834107398987,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 516
+    },
+    {
+      "timestamp": 1752964805.896353,
+      "relative_time": 32.80213713645935,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 517
+    },
+    {
+      "timestamp": 1752964805.956544,
+      "relative_time": 32.86232805252075,
+      "message": "$IIMWV,13.5,R,9.86,N,A*3D",
+      "sequence": 518
+    },
+    {
+      "timestamp": 1752964806.012608,
+      "relative_time": 32.918392181396484,
+      "message": "$IIVWR,13.5,R,9.86,N,,,,*4F",
+      "sequence": 519
+    },
+    {
+      "timestamp": 1752964806.07249,
+      "relative_time": 32.97827410697937,
+      "message": "$IIMWV,18.5,R,10.56,N,A*03",
+      "sequence": 520
+    },
+    {
+      "timestamp": 1752964806.1307268,
+      "relative_time": 33.036510944366455,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 521
+    },
+    {
+      "timestamp": 1752964806.217024,
+      "relative_time": 33.12280821800232,
+      "message": "$IIVHW,,T,170.65,M,,N,,K*4E",
+      "sequence": 522
+    },
+    {
+      "timestamp": 1752964806.278614,
+      "relative_time": 33.18439817428589,
+      "message": "$IIMWV,19.0,R,10.05,N,A*01",
+      "sequence": 523
+    },
+    {
+      "timestamp": 1752964806.342873,
+      "relative_time": 33.2486572265625,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 524
+    },
+    {
+      "timestamp": 1752964806.429041,
+      "relative_time": 33.33482503890991,
+      "message": "$IIVHW,,T,170.65,M,,N,,K*4E",
+      "sequence": 525
+    },
+    {
+      "timestamp": 1752964806.494509,
+      "relative_time": 33.40029311180115,
+      "message": "$IIMWV,16.5,R,10.36,N,A*0B",
+      "sequence": 526
+    },
+    {
+      "timestamp": 1752964806.552808,
+      "relative_time": 33.45859217643738,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 527
+    },
+    {
+      "timestamp": 1752964806.612472,
+      "relative_time": 33.518256187438965,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 528
+    },
+    {
+      "timestamp": 1752964806.672392,
+      "relative_time": 33.57817602157593,
+      "message": "$HCHDG,170.66,,,,*74",
+      "sequence": 529
+    },
+    {
+      "timestamp": 1752964806.7180748,
+      "relative_time": 33.62385892868042,
+      "message": "$IIMWV,19.5,R,10.56,N,A*02",
+      "sequence": 530
+    },
+    {
+      "timestamp": 1752964806.786247,
+      "relative_time": 33.692031145095825,
+      "message": "$IIVHW,,T,170.66,M,,N,,K*4D",
+      "sequence": 531
+    },
+    {
+      "timestamp": 1752964806.8480809,
+      "relative_time": 33.753865003585815,
+      "message": "$HCHDG,170.66,,,,*74",
+      "sequence": 532
+    },
+    {
+      "timestamp": 1752964806.901712,
+      "relative_time": 33.807496070861816,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 533
+    },
+    {
+      "timestamp": 1752964806.934486,
+      "relative_time": 33.840270042419434,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 534
+    },
+    {
+      "timestamp": 1752964807.020509,
+      "relative_time": 33.92629313468933,
+      "message": "$IIMWV,27.0,R,10.56,N,A*0A",
+      "sequence": 535
+    },
+    {
+      "timestamp": 1752964807.084414,
+      "relative_time": 33.99019813537598,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 536
+    },
+    {
+      "timestamp": 1752964807.1701388,
+      "relative_time": 34.07592296600342,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 537
+    },
+    {
+      "timestamp": 1752964807.254442,
+      "relative_time": 34.16022610664368,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 538
+    },
+    {
+      "timestamp": 1752964807.2950451,
+      "relative_time": 34.20082926750183,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 539
+    },
+    {
+      "timestamp": 1752964807.383219,
+      "relative_time": 34.289003133773804,
+      "message": "$GPVTG,,,,,0.019,N,0.036,K,A*37",
+      "sequence": 540
+    },
+    {
+      "timestamp": 1752964807.453244,
+      "relative_time": 34.35902810096741,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 541
+    },
+    {
+      "timestamp": 1752964807.491462,
+      "relative_time": 34.39724612236023,
+      "message": "$IIMWV,22.5,R,11.16,N,A*0F",
+      "sequence": 542
+    },
+    {
+      "timestamp": 1752964807.5486982,
+      "relative_time": 34.454482316970825,
+      "message": "$IIVHW,,T,170.69,M,,N,,K*42",
+      "sequence": 543
+    },
+    {
+      "timestamp": 1752964807.608853,
+      "relative_time": 34.51463723182678,
+      "message": "$HCHDG,170.70,,,,*73",
+      "sequence": 544
+    },
+    {
+      "timestamp": 1752964807.668879,
+      "relative_time": 34.574663162231445,
+      "message": "$GPZDA,224006,19,07,2025,,*40",
+      "sequence": 545
+    },
+    {
+      "timestamp": 1752964807.7330189,
+      "relative_time": 34.638803005218506,
+      "message": "$HCHDG,170.71,,,,*72",
+      "sequence": 546
+    },
+    {
+      "timestamp": 1752964807.784082,
+      "relative_time": 34.689866065979004,
+      "message": "$IIVHW,,T,170.70,M,,N,,K*4A",
+      "sequence": 547
+    },
+    {
+      "timestamp": 1752964807.8452852,
+      "relative_time": 34.75106930732727,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 548
+    },
+    {
+      "timestamp": 1752964807.893047,
+      "relative_time": 34.79883122444153,
+      "message": "$IIVHW,,T,170.71,M,,N,,K*4B",
+      "sequence": 549
+    },
+    {
+      "timestamp": 1752964807.956532,
+      "relative_time": 34.8623161315918,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 550
+    },
+    {
+      "timestamp": 1752964808.014602,
+      "relative_time": 34.92038607597351,
+      "message": "$HCHDG,170.72,,,,*71",
+      "sequence": 551
+    },
+    {
+      "timestamp": 1752964808.062725,
+      "relative_time": 34.96850919723511,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 552
+    },
+    {
+      "timestamp": 1752964808.147778,
+      "relative_time": 35.05356216430664,
+      "message": "$GPVTG,,,,,0.039,N,0.072,K,A*35",
+      "sequence": 553
+    },
+    {
+      "timestamp": 1752964808.216351,
+      "relative_time": 35.122135162353516,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 554
+    },
+    {
+      "timestamp": 1752964808.304048,
+      "relative_time": 35.209832191467285,
+      "message": "$HCHDG,170.72,,,,*71",
+      "sequence": 555
+    },
+    {
+      "timestamp": 1752964808.352797,
+      "relative_time": 35.25858116149902,
+      "message": "$IIMWV,17.0,R,10.96,N,A*05",
+      "sequence": 556
+    },
+    {
+      "timestamp": 1752964808.413714,
+      "relative_time": 35.31949806213379,
+      "message": "$HCHDG,170.72,,,,*71",
+      "sequence": 557
+    },
+    {
+      "timestamp": 1752964808.4596102,
+      "relative_time": 35.36539435386658,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 558
+    },
+    {
+      "timestamp": 1752964808.545098,
+      "relative_time": 35.45088219642639,
+      "message": "$HCHDG,170.71,,,,*72",
+      "sequence": 559
+    },
+    {
+      "timestamp": 1752964808.591913,
+      "relative_time": 35.49769711494446,
+      "message": "$IIVHW,,T,170.73,M,,N,,K*49",
+      "sequence": 560
+    },
+    {
+      "timestamp": 1752964808.651042,
+      "relative_time": 35.55682611465454,
+      "message": "$IIVHW,,T,170.72,M,,N,,K*48",
+      "sequence": 561
+    },
+    {
+      "timestamp": 1752964808.736973,
+      "relative_time": 35.642757177352905,
+      "message": "$IIMWV,356.5,R,11.55,N,A*38",
+      "sequence": 562
+    },
+    {
+      "timestamp": 1752964808.80606,
+      "relative_time": 35.71184420585632,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 563
+    },
+    {
+      "timestamp": 1752964808.843223,
+      "relative_time": 35.74900722503662,
+      "message": "$IIMWV,358.5,R,11.55,N,A*36",
+      "sequence": 564
+    },
+    {
+      "timestamp": 1752964808.902189,
+      "relative_time": 35.8079731464386,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 565
+    },
+    {
+      "timestamp": 1752964808.9626281,
+      "relative_time": 35.868412256240845,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 566
+    },
+    {
+      "timestamp": 1752964809.054435,
+      "relative_time": 35.96021914482117,
+      "message": "$IIVHW,,T,170.74,M,,N,,K*4E",
+      "sequence": 567
+    },
+    {
+      "timestamp": 1752964809.110603,
+      "relative_time": 36.01638722419739,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 568
+    },
+    {
+      "timestamp": 1752964809.156863,
+      "relative_time": 36.062647104263306,
+      "message": "$HCHDG,170.74,,,,*77",
+      "sequence": 569
+    },
+    {
+      "timestamp": 1752964809.196415,
+      "relative_time": 36.1021990776062,
+      "message": "$IIMWV,0.5,R,11.66,N,A*38",
+      "sequence": 570
+    },
+    {
+      "timestamp": 1752964809.2547772,
+      "relative_time": 36.160561323165894,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 571
+    },
+    {
+      "timestamp": 1752964809.291842,
+      "relative_time": 36.1976261138916,
+      "message": "$IIMWV,7.5,R,11.66,N,A*3F",
+      "sequence": 572
+    },
+    {
+      "timestamp": 1752964809.348017,
+      "relative_time": 36.253801107406616,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 573
+    },
+    {
+      "timestamp": 1752964809.4144042,
+      "relative_time": 36.32018828392029,
+      "message": "$HCHDG,170.75,,,,*76",
+      "sequence": 574
+    },
+    {
+      "timestamp": 1752964809.464175,
+      "relative_time": 36.369959115982056,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 575
+    },
+    {
+      "timestamp": 1752964809.4958389,
+      "relative_time": 36.401623010635376,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 576
+    },
+    {
+      "timestamp": 1752964809.5552971,
+      "relative_time": 36.4610812664032,
+      "message": "$HCHDG,170.75,,,,*76",
+      "sequence": 577
+    },
+    {
+      "timestamp": 1752964809.603394,
+      "relative_time": 36.509178161621094,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 578
+    },
+    {
+      "timestamp": 1752964809.6443572,
+      "relative_time": 36.55014133453369,
+      "message": "$IIVHW,,T,170.75,M,,N,,K*4F",
+      "sequence": 579
+    },
+    {
+      "timestamp": 1752964809.726657,
+      "relative_time": 36.63244104385376,
+      "message": "$GPGLL,4838.1993,N,00201.4010,W,,A,A*56",
+      "sequence": 580
+    },
+    {
+      "timestamp": 1752964809.8113742,
+      "relative_time": 36.71715831756592,
+      "message": "$IIVHW,,T,170.76,M,,N,,K*4C",
+      "sequence": 581
+    },
+    {
+      "timestamp": 1752964809.874242,
+      "relative_time": 36.78002619743347,
+      "message": "$IIVHW,,T,170.76,M,,N,,K*4C",
+      "sequence": 582
+    },
+    {
+      "timestamp": 1752964809.930722,
+      "relative_time": 36.83650612831116,
+      "message": "$HCHDG,170.76,,,,*75",
+      "sequence": 583
+    },
+    {
+      "timestamp": 1752964809.986024,
+      "relative_time": 36.8918080329895,
+      "message": "$IIVHW,,T,170.78,M,,N,,K*42",
+      "sequence": 584
+    },
+    {
+      "timestamp": 1752964810.0452921,
+      "relative_time": 36.95107626914978,
+      "message": "$HCHDG,170.78,,,,*7B",
+      "sequence": 585
+    },
+    {
+      "timestamp": 1752964810.0932758,
+      "relative_time": 36.9990599155426,
+      "message": "$IIVHW,,T,170.79,M,,N,,K*43",
+      "sequence": 586
+    },
+    {
+      "timestamp": 1752964810.154434,
+      "relative_time": 37.06021809577942,
+      "message": "$IIMWV,347.0,R,11.06,N,A*3B",
+      "sequence": 587
+    },
+    {
+      "timestamp": 1752964810.2124002,
+      "relative_time": 37.118184328079224,
+      "message": "$IIVWR,13.0,L,11.06,N,,,,*65",
+      "sequence": 588
+    },
+    {
+      "timestamp": 1752964810.274519,
+      "relative_time": 37.18030309677124,
+      "message": "$GPGLL,4838.1993,N,00201.4010,W,,A,A*56",
+      "sequence": 589
+    },
+    {
+      "timestamp": 1752964810.360097,
+      "relative_time": 37.265881061553955,
+      "message": "$GPRMC,224008.00,A,4838.2030,N,00201.4022,W,0.019,,190725,,,A*6F",
+      "sequence": 590
+    },
+    {
+      "timestamp": 1752964810.5000992,
+      "relative_time": 37.40588331222534,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 591
+    },
+    {
+      "timestamp": 1752964810.533238,
+      "relative_time": 37.439022064208984,
+      "message": "$IIMWV,346.5,R,10.85,N,A*35",
+      "sequence": 592
+    },
+    {
+      "timestamp": 1752964810.593073,
+      "relative_time": 37.49885702133179,
+      "message": "$IIMWV,337.0,R,10.17,N,A*3D",
+      "sequence": 593
+    },
+    {
+      "timestamp": 1752964810.655531,
+      "relative_time": 37.561315059661865,
+      "message": "$IIVHW,,T,170.80,M,,N,,K*45",
+      "sequence": 594
+    },
+    {
+      "timestamp": 1752964810.726282,
+      "relative_time": 37.63206601142883,
+      "message": "$IIVHW,,T,170.81,M,,N,,K*44",
+      "sequence": 595
+    },
+    {
+      "timestamp": 1752964810.7952378,
+      "relative_time": 37.701021909713745,
+      "message": "$HCHDG,170.81,,,,*7D",
+      "sequence": 596
+    },
+    {
+      "timestamp": 1752964810.841763,
+      "relative_time": 37.7475471496582,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 597
+    },
+    {
+      "timestamp": 1752964810.8882828,
+      "relative_time": 37.79406690597534,
+      "message": "$GPZDA,224009,19,07,2025,,*4F",
+      "sequence": 598
+    },
+    {
+      "timestamp": 1752964810.955646,
+      "relative_time": 37.861430168151855,
+      "message": "$IIVHW,,T,170.82,M,,N,,K*47",
+      "sequence": 599
+    },
+    {
+      "timestamp": 1752964811.015595,
+      "relative_time": 37.92137908935547,
+      "message": "$IIMWV,351.0,R,9.56,N,A*00",
+      "sequence": 600
+    },
+    {
+      "timestamp": 1752964811.0771132,
+      "relative_time": 37.98289728164673,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 601
+    },
+    {
+      "timestamp": 1752964811.1132338,
+      "relative_time": 38.019017934799194,
+      "message": "$IIMWV,355.0,R,9.25,N,A*00",
+      "sequence": 602
+    },
+    {
+      "timestamp": 1752964811.169392,
+      "relative_time": 38.07517623901367,
+      "message": "$IIVWR,5.0,L,9.25,N,,,,*6A",
+      "sequence": 603
+    },
+    {
+      "timestamp": 1752964811.228704,
+      "relative_time": 38.134488105773926,
+      "message": "$IIVHW,,T,170.83,M,,N,,K*46",
+      "sequence": 604
+    },
+    {
+      "timestamp": 1752964811.290402,
+      "relative_time": 38.19618606567383,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 605
+    },
+    {
+      "timestamp": 1752964811.3292701,
+      "relative_time": 38.23505425453186,
+      "message": "$IIVHW,,T,170.83,M,,N,,K*46",
+      "sequence": 606
+    },
+    {
+      "timestamp": 1752964811.3929741,
+      "relative_time": 38.29875826835632,
+      "message": "$IIMWV,6.5,R,8.67,N,A*07",
+      "sequence": 607
+    },
+    {
+      "timestamp": 1752964811.446647,
+      "relative_time": 38.35243105888367,
+      "message": "$IIVHW,,T,170.83,M,,N,,K*46",
+      "sequence": 608
+    },
+    {
+      "timestamp": 1752964811.504748,
+      "relative_time": 38.41053223609924,
+      "message": "$IIMWV,8.0,R,8.26,N,A*09",
+      "sequence": 609
+    },
+    {
+      "timestamp": 1752964811.558979,
+      "relative_time": 38.464763164520264,
+      "message": "$GPVTG,,,,,0.039,N,0.072,K,A*35",
+      "sequence": 610
+    },
+    {
+      "timestamp": 1752964811.630097,
+      "relative_time": 38.53588104248047,
+      "message": "$IIMWV,10.5,R,7.97,N,A*30",
+      "sequence": 611
+    },
+    {
+      "timestamp": 1752964811.723392,
+      "relative_time": 38.62917613983154,
+      "message": "$IIMWV,8.5,R,8.07,N,A*0F",
+      "sequence": 612
+    },
+    {
+      "timestamp": 1752964811.783135,
+      "relative_time": 38.68891906738281,
+      "message": "$IIVHW,,T,170.83,M,,N,,K*46",
+      "sequence": 613
+    },
+    {
+      "timestamp": 1752964811.845004,
+      "relative_time": 38.75078821182251,
+      "message": "$HCHDG,170.83,,,,*7F",
+      "sequence": 614
+    },
+    {
+      "timestamp": 1752964811.892204,
+      "relative_time": 38.797988176345825,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 615
+    },
+    {
+      "timestamp": 1752964811.936654,
+      "relative_time": 38.84243822097778,
+      "message": "$GPGLL,4838.1994,N,00201.4010,W,,A,A*51",
+      "sequence": 616
+    },
+    {
+      "timestamp": 1752964812.0213919,
+      "relative_time": 38.927175998687744,
+      "message": "!AIVDM,1,1,,B,H3IJMlTU6534000617oqnq000000,0*78",
+      "sequence": 617
+    },
+    {
+      "timestamp": 1752964812.1218612,
+      "relative_time": 39.02764534950256,
+      "message": "$IIMWV,357.0,R,7.37,N,A*0F",
+      "sequence": 618
+    },
+    {
+      "timestamp": 1752964812.1859682,
+      "relative_time": 39.09175229072571,
+      "message": "$IIMWV,350.5,R,7.08,N,A*01",
+      "sequence": 619
+    },
+    {
+      "timestamp": 1752964812.245839,
+      "relative_time": 39.151623249053955,
+      "message": "$IIVHW,,T,170.84,M,,N,,K*41",
+      "sequence": 620
+    },
+    {
+      "timestamp": 1752964812.3081589,
+      "relative_time": 39.213943004608154,
+      "message": "$IIMWV,346.0,R,7.17,N,A*0D",
+      "sequence": 621
+    },
+    {
+      "timestamp": 1752964812.368356,
+      "relative_time": 39.27414011955261,
+      "message": "$IIVHW,,T,170.84,M,,N,,K*41",
+      "sequence": 622
+    },
+    {
+      "timestamp": 1752964812.428376,
+      "relative_time": 39.3341600894928,
+      "message": "!AIVDM,1,1,,B,3CHR=PPP0FOlOJTKn6p6bgv:0000,0*3A",
+      "sequence": 623
+    },
+    {
+      "timestamp": 1752964812.5271978,
+      "relative_time": 39.432981967926025,
+      "message": "$IIVHW,,T,170.85,M,,N,,K*40",
+      "sequence": 624
+    },
+    {
+      "timestamp": 1752964812.5902011,
+      "relative_time": 39.49598526954651,
+      "message": "$IIMWV,344.0,R,6.76,N,A*09",
+      "sequence": 625
+    },
+    {
+      "timestamp": 1752964812.653187,
+      "relative_time": 39.55897116661072,
+      "message": "$IIVHW,,T,170.85,M,,N,,K*40",
+      "sequence": 626
+    },
+    {
+      "timestamp": 1752964812.726634,
+      "relative_time": 39.632418155670166,
+      "message": "$IIMWV,349.5,R,6.67,N,A*01",
+      "sequence": 627
+    },
+    {
+      "timestamp": 1752964812.7881541,
+      "relative_time": 39.69393825531006,
+      "message": "$IIVWR,10.5,L,6.67,N,,,,*52",
+      "sequence": 628
+    },
+    {
+      "timestamp": 1752964812.8485398,
+      "relative_time": 39.754323959350586,
+      "message": "$GPGSA,A,3,,,,,,,,,,,,,9.70,6.50,7.20*0A",
+      "sequence": 629
+    },
+    {
+      "timestamp": 1752964812.944608,
+      "relative_time": 39.85039210319519,
+      "message": "$IIMWV,352.5,R,6.38,N,A*01",
+      "sequence": 630
+    },
+    {
+      "timestamp": 1752964812.99739,
+      "relative_time": 39.90317416191101,
+      "message": "$IIMWV,353.5,R,6.47,N,A*08",
+      "sequence": 631
+    },
+    {
+      "timestamp": 1752964813.0603101,
+      "relative_time": 39.96609425544739,
+      "message": "$HCHDG,170.85,,,,*79",
+      "sequence": 632
+    },
+    {
+      "timestamp": 1752964813.102581,
+      "relative_time": 40.00836515426636,
+      "message": "$IIMWV,351.0,R,6.38,N,A*07",
+      "sequence": 633
+    },
+    {
+      "timestamp": 1752964813.161294,
+      "relative_time": 40.06707811355591,
+      "message": "$IIVHW,,T,170.84,M,,N,,K*41",
+      "sequence": 634
+    },
+    {
+      "timestamp": 1752964813.220511,
+      "relative_time": 40.12629508972168,
+      "message": "$IIMWV,342.5,R,6.57,N,A*09",
+      "sequence": 635
+    },
+    {
+      "timestamp": 1752964813.2843258,
+      "relative_time": 40.190109968185425,
+      "message": "$HCHDG,170.85,,,,*79",
+      "sequence": 636
+    },
+    {
+      "timestamp": 1752964813.329464,
+      "relative_time": 40.23524808883667,
+      "message": "$IIMWV,338.5,R,6.28,N,A*0C",
+      "sequence": 637
+    },
+    {
+      "timestamp": 1752964813.393226,
+      "relative_time": 40.299010038375854,
+      "message": "$IIVHW,,T,170.85,M,,N,,K*40",
+      "sequence": 638
+    },
+    {
+      "timestamp": 1752964813.457673,
+      "relative_time": 40.36345720291138,
+      "message": "$IIVHW,,T,170.85,M,,N,,K*40",
+      "sequence": 639
+    },
+    {
+      "timestamp": 1752964813.512938,
+      "relative_time": 40.41872215270996,
+      "message": "$IIMWV,336.5,R,6.96,N,A*07",
+      "sequence": 640
+    },
+    {
+      "timestamp": 1752964813.57181,
+      "relative_time": 40.47759413719177,
+      "message": "$IIVHW,,T,170.85,M,,N,,K*40",
+      "sequence": 641
+    },
+    {
+      "timestamp": 1752964813.6307561,
+      "relative_time": 40.536540269851685,
+      "message": "$GPVTG,,,,,0.019,N,0.036,K,A*37",
+      "sequence": 642
+    },
+    {
+      "timestamp": 1752964813.722336,
+      "relative_time": 40.6281201839447,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 643
+    },
+    {
+      "timestamp": 1752964813.764951,
+      "relative_time": 40.670735120773315,
+      "message": "$IIMWV,346.5,R,7.27,N,A*0B",
+      "sequence": 644
+    },
+    {
+      "timestamp": 1752964813.8203032,
+      "relative_time": 40.72608733177185,
+      "message": "$IIVHW,,T,170.86,M,,N,,K*43",
+      "sequence": 645
+    },
+    {
+      "timestamp": 1752964813.8911932,
+      "relative_time": 40.796977281570435,
+      "message": "$IIMWV,346.5,R,7.37,N,A*0A",
+      "sequence": 646
+    },
+    {
+      "timestamp": 1752964813.9515479,
+      "relative_time": 40.85733199119568,
+      "message": "$IIVWR,13.5,L,7.37,N,,,,*55",
+      "sequence": 647
+    },
+    {
+      "timestamp": 1752964814.011678,
+      "relative_time": 40.91746211051941,
+      "message": "$IIMWV,354.5,R,7.66,N,A*0D",
+      "sequence": 648
+    },
+    {
+      "timestamp": 1752964814.0724878,
+      "relative_time": 40.97827196121216,
+      "message": "$IIMWV,8.0,R,7.78,N,A*0D",
+      "sequence": 649
+    },
+    {
+      "timestamp": 1752964814.123748,
+      "relative_time": 41.02953219413757,
+      "message": "$IIVHW,,T,170.87,M,,N,,K*42",
+      "sequence": 650
+    },
+    {
+      "timestamp": 1752964814.189766,
+      "relative_time": 41.09555006027222,
+      "message": "$IIMWV,13.5,R,7.78,N,A*32",
+      "sequence": 651
+    },
+    {
+      "timestamp": 1752964814.249571,
+      "relative_time": 41.15535521507263,
+      "message": "$IIVHW,,T,170.87,M,,N,,K*42",
+      "sequence": 652
+    },
+    {
+      "timestamp": 1752964814.3082979,
+      "relative_time": 41.21408200263977,
+      "message": "$IIMWV,18.5,R,7.87,N,A*39",
+      "sequence": 653
+    },
+    {
+      "timestamp": 1752964814.36404,
+      "relative_time": 41.26982402801514,
+      "message": "$IIVWR,18.5,R,7.87,N,,,,*4B",
+      "sequence": 654
+    },
+    {
+      "timestamp": 1752964814.42418,
+      "relative_time": 41.32996416091919,
+      "message": "$IIVHW,,T,170.87,M,,N,,K*42",
+      "sequence": 655
+    },
+    {
+      "timestamp": 1752964814.4881458,
+      "relative_time": 41.393929958343506,
+      "message": "$IIMWV,15.0,R,7.66,N,A*3E",
+      "sequence": 656
+    },
+    {
+      "timestamp": 1752964814.545103,
+      "relative_time": 41.45088720321655,
+      "message": "$IIMWV,15.0,R,8.36,N,A*34",
+      "sequence": 657
+    },
+    {
+      "timestamp": 1752964814.601535,
+      "relative_time": 41.50731921195984,
+      "message": "$GPRMC,224012.00,A,4838.2026,N,00201.4011,W,0.039,,190725,,,A*61",
+      "sequence": 658
+    },
+    {
+      "timestamp": 1752964814.7430458,
+      "relative_time": 41.6488299369812,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 659
+    },
+    {
+      "timestamp": 1752964814.788286,
+      "relative_time": 41.6940701007843,
+      "message": "$IIMWV,22.5,R,8.26,N,A*34",
+      "sequence": 660
+    },
+    {
+      "timestamp": 1752964814.845149,
+      "relative_time": 41.7509331703186,
+      "message": "$IIMWV,31.0,R,8.16,N,A*30",
+      "sequence": 661
+    },
+    {
+      "timestamp": 1752964814.901163,
+      "relative_time": 41.806947231292725,
+      "message": "$IIVHW,,T,170.84,M,,N,,K*41",
+      "sequence": 662
+    },
+    {
+      "timestamp": 1752964814.96012,
+      "relative_time": 41.865904092788696,
+      "message": "$HCHDG,170.84,,,,*78",
+      "sequence": 663
+    },
+    {
+      "timestamp": 1752964815.0090199,
+      "relative_time": 41.914803981781006,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 664
+    },
+    {
+      "timestamp": 1752964815.0483499,
+      "relative_time": 41.95413398742676,
+      "message": "$IIMWV,31.5,R,8.67,N,A*33",
+      "sequence": 665
+    },
+    {
+      "timestamp": 1752964815.103571,
+      "relative_time": 42.00935506820679,
+      "message": "$HCHDG,170.86,,,,*7A",
+      "sequence": 666
+    },
+    {
+      "timestamp": 1752964815.149786,
+      "relative_time": 42.055570125579834,
+      "message": "$IIMWV,20.0,R,8.46,N,A*35",
+      "sequence": 667
+    },
+    {
+      "timestamp": 1752964815.2072399,
+      "relative_time": 42.11302399635315,
+      "message": "!AIVDM,1,1,,B,H3HWmqTUDBE58476<njmh0000000,0*2A",
+      "sequence": 668
+    },
+    {
+      "timestamp": 1752964815.307081,
+      "relative_time": 42.212865114212036,
+      "message": "$HCHDG,170.86,,,,*7A",
+      "sequence": 669
+    },
+    {
+      "timestamp": 1752964815.352725,
+      "relative_time": 42.258509159088135,
+      "message": "$IIMWV,10.0,R,8.57,N,A*36",
+      "sequence": 670
+    },
+    {
+      "timestamp": 1752964815.4180539,
+      "relative_time": 42.323837995529175,
+      "message": "$IIVHW,,T,170.86,M,,N,,K*43",
+      "sequence": 671
+    },
+    {
+      "timestamp": 1752964815.4686148,
+      "relative_time": 42.374398946762085,
+      "message": "$IIMWV,7.5,R,8.96,N,A*08",
+      "sequence": 672
+    },
+    {
+      "timestamp": 1752964815.522801,
+      "relative_time": 42.428585052490234,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 673
+    },
+    {
+      "timestamp": 1752964815.608104,
+      "relative_time": 42.513888120651245,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 674
+    },
+    {
+      "timestamp": 1752964815.692672,
+      "relative_time": 42.598456144332886,
+      "message": "!AIVDM,1,1,,B,B3MAHA005?ucu@VuGU9dswiUoP06,0*15",
+      "sequence": 675
+    },
+    {
+      "timestamp": 1752964815.7937841,
+      "relative_time": 42.69956827163696,
+      "message": "$IIVHW,,T,170.87,M,,N,,K*42",
+      "sequence": 676
+    },
+    {
+      "timestamp": 1752964815.85962,
+      "relative_time": 42.76540422439575,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 677
+    },
+    {
+      "timestamp": 1752964815.9422238,
+      "relative_time": 42.848007917404175,
+      "message": "$IIMWV,14.5,R,8.77,N,A*35",
+      "sequence": 678
+    },
+    {
+      "timestamp": 1752964815.998264,
+      "relative_time": 42.904048204422,
+      "message": "$IIVHW,,T,170.88,M,,N,,K*4D",
+      "sequence": 679
+    },
+    {
+      "timestamp": 1752964816.0617778,
+      "relative_time": 42.96756196022034,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 680
+    },
+    {
+      "timestamp": 1752964816.150799,
+      "relative_time": 43.05658316612244,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 681
+    },
+    {
+      "timestamp": 1752964816.190042,
+      "relative_time": 43.095826148986816,
+      "message": "$IIVHW,,T,170.87,M,,N,,K*42",
+      "sequence": 682
+    },
+    {
+      "timestamp": 1752964816.251929,
+      "relative_time": 43.157713174819946,
+      "message": "$IIMWV,34.0,R,8.86,N,A*3C",
+      "sequence": 683
+    },
+    {
+      "timestamp": 1752964816.3059258,
+      "relative_time": 43.21170997619629,
+      "message": "$IIMWV,33.0,R,8.46,N,A*37",
+      "sequence": 684
+    },
+    {
+      "timestamp": 1752964816.3651462,
+      "relative_time": 43.27093029022217,
+      "message": "$IIVHW,,T,170.88,M,,N,,K*4D",
+      "sequence": 685
+    },
+    {
+      "timestamp": 1752964816.427222,
+      "relative_time": 43.333006143569946,
+      "message": "$IIVHW,,T,170.88,M,,N,,K*4D",
+      "sequence": 686
+    },
+    {
+      "timestamp": 1752964816.487593,
+      "relative_time": 43.39337706565857,
+      "message": "$HCHDG,170.88,,,,*74",
+      "sequence": 687
+    },
+    {
+      "timestamp": 1752964816.533385,
+      "relative_time": 43.43916916847229,
+      "message": "$GPZDA,224014,19,07,2025,,*43",
+      "sequence": 688
+    },
+    {
+      "timestamp": 1752964816.5976589,
+      "relative_time": 43.503443002700806,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 689
+    },
+    {
+      "timestamp": 1752964816.687019,
+      "relative_time": 43.59280323982239,
+      "message": "!AIVDM,1,1,,B,B33jcSP007uckRVuB2WQ3wW5kP06,0*3B",
+      "sequence": 690
+    },
+    {
+      "timestamp": 1752964816.790313,
+      "relative_time": 43.69609713554382,
+      "message": "$IIVHW,,T,170.88,M,,N,,K*4D",
+      "sequence": 691
+    },
+    {
+      "timestamp": 1752964816.851976,
+      "relative_time": 43.7577600479126,
+      "message": "$IIMWV,23.0,R,7.97,N,A*35",
+      "sequence": 692
+    },
+    {
+      "timestamp": 1752964816.9061792,
+      "relative_time": 43.81196331977844,
+      "message": "$IIVHW,,T,170.88,M,,N,,K*4D",
+      "sequence": 693
+    },
+    {
+      "timestamp": 1752964816.9698749,
+      "relative_time": 43.87565898895264,
+      "message": "$IIMWV,25.0,R,7.78,N,A*32",
+      "sequence": 694
+    },
+    {
+      "timestamp": 1752964817.025397,
+      "relative_time": 43.93118119239807,
+      "message": "$HCHDG,170.90,,,,*7D",
+      "sequence": 695
+    },
+    {
+      "timestamp": 1752964817.072065,
+      "relative_time": 43.97784924507141,
+      "message": "$HCHDG,170.90,,,,*7D",
+      "sequence": 696
+    },
+    {
+      "timestamp": 1752964817.117325,
+      "relative_time": 44.02310919761658,
+      "message": "$IIMWV,20.0,R,7.56,N,A*3B",
+      "sequence": 697
+    },
+    {
+      "timestamp": 1752964817.176793,
+      "relative_time": 44.08257722854614,
+      "message": "$IIVHW,,T,170.90,M,,N,,K*44",
+      "sequence": 698
+    },
+    {
+      "timestamp": 1752964817.246738,
+      "relative_time": 44.15252208709717,
+      "message": "$IIMWV,11.5,R,7.27,N,A*3A",
+      "sequence": 699
+    },
+    {
+      "timestamp": 1752964817.303016,
+      "relative_time": 44.208800077438354,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 700
+    },
+    {
+      "timestamp": 1752964817.349068,
+      "relative_time": 44.254852056503296,
+      "message": "$IIMWV,343.5,R,7.46,N,A*09",
+      "sequence": 701
+    },
+    {
+      "timestamp": 1752964817.402957,
+      "relative_time": 44.308741092681885,
+      "message": "$HCHDG,170.91,,,,*7C",
+      "sequence": 702
+    },
+    {
+      "timestamp": 1752964817.45162,
+      "relative_time": 44.35740423202515,
+      "message": "$IIMWV,339.0,R,7.37,N,A*07",
+      "sequence": 703
+    },
+    {
+      "timestamp": 1752964817.508427,
+      "relative_time": 44.41421103477478,
+      "message": "$HCHDG,170.91,,,,*7C",
+      "sequence": 704
+    },
+    {
+      "timestamp": 1752964817.5556219,
+      "relative_time": 44.461405992507935,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 705
+    },
+    {
+      "timestamp": 1752964817.645094,
+      "relative_time": 44.550878047943115,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 706
+    },
+    {
+      "timestamp": 1752964817.7772312,
+      "relative_time": 44.6830153465271,
+      "message": "$HCHDG,170.92,,,,*7F",
+      "sequence": 707
+    },
+    {
+      "timestamp": 1752964817.823057,
+      "relative_time": 44.728841066360474,
+      "message": "$IIMWV,349.0,R,7.17,N,A*02",
+      "sequence": 708
+    },
+    {
+      "timestamp": 1752964817.884267,
+      "relative_time": 44.790051221847534,
+      "message": "$IIVWR,11.0,L,7.17,N,,,,*50",
+      "sequence": 709
+    },
+    {
+      "timestamp": 1752964817.944179,
+      "relative_time": 44.84996318817139,
+      "message": "$IIMWV,352.0,R,6.96,N,A*00",
+      "sequence": 710
+    },
+    {
+      "timestamp": 1752964818.002578,
+      "relative_time": 44.90836215019226,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 711
+    },
+    {
+      "timestamp": 1752964818.093597,
+      "relative_time": 44.99938106536865,
+      "message": "$IIVHW,,T,170.94,M,,N,,K*40",
+      "sequence": 712
+    },
+    {
+      "timestamp": 1752964818.1534138,
+      "relative_time": 45.05919790267944,
+      "message": "$IIMWV,0.0,R,6.67,N,A*0A",
+      "sequence": 713
+    },
+    {
+      "timestamp": 1752964818.2078762,
+      "relative_time": 45.11366033554077,
+      "message": "!AIVDM,1,1,,B,13P=;?000OOnohvL4hKc1HJN089Q,0*44",
+      "sequence": 714
+    },
+    {
+      "timestamp": 1752964818.3099551,
+      "relative_time": 45.215739250183105,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 715
+    },
+    {
+      "timestamp": 1752964818.39572,
+      "relative_time": 45.301504135131836,
+      "message": "$IIVHW,,T,170.94,M,,N,,K*40",
+      "sequence": 716
+    },
+    {
+      "timestamp": 1752964818.4563122,
+      "relative_time": 45.362096309661865,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 717
+    },
+    {
+      "timestamp": 1752964818.550882,
+      "relative_time": 45.456666231155396,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 718
+    },
+    {
+      "timestamp": 1752964818.592614,
+      "relative_time": 45.49839806556702,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 719
+    },
+    {
+      "timestamp": 1752964818.690817,
+      "relative_time": 45.596601247787476,
+      "message": "$IIMWV,350.0,R,7.08,N,A*04",
+      "sequence": 720
+    },
+    {
+      "timestamp": 1752964818.771588,
+      "relative_time": 45.677372217178345,
+      "message": "$IIVWR,10.0,L,7.08,N,,,,*5F",
+      "sequence": 721
+    },
+    {
+      "timestamp": 1752964818.831404,
+      "relative_time": 45.73718810081482,
+      "message": "$IIMWV,351.5,R,7.17,N,A*0E",
+      "sequence": 722
+    },
+    {
+      "timestamp": 1752964818.890041,
+      "relative_time": 45.795825242996216,
+      "message": "$IIVHW,,T,170.96,M,,N,,K*42",
+      "sequence": 723
+    },
+    {
+      "timestamp": 1752964818.953286,
+      "relative_time": 45.85907006263733,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 724
+    },
+    {
+      "timestamp": 1752964819.051296,
+      "relative_time": 45.957080125808716,
+      "message": "$IIMWV,347.5,R,7.37,N,A*0B",
+      "sequence": 725
+    },
+    {
+      "timestamp": 1752964819.1112719,
+      "relative_time": 46.01705598831177,
+      "message": "$HCHDG,170.96,,,,*7B",
+      "sequence": 726
+    },
+    {
+      "timestamp": 1752964819.1499882,
+      "relative_time": 46.05577230453491,
+      "message": "$GPZDA,224017,19,07,2025,,*40",
+      "sequence": 727
+    },
+    {
+      "timestamp": 1752964819.214201,
+      "relative_time": 46.11998510360718,
+      "message": "$IIVHW,,T,170.96,M,,N,,K*42",
+      "sequence": 728
+    },
+    {
+      "timestamp": 1752964819.2841852,
+      "relative_time": 46.189969301223755,
+      "message": "$IIMWV,333.5,R,7.56,N,A*0F",
+      "sequence": 729
+    },
+    {
+      "timestamp": 1752964819.344813,
+      "relative_time": 46.25059723854065,
+      "message": "$IIMWV,323.5,R,7.56,N,A*0E",
+      "sequence": 730
+    },
+    {
+      "timestamp": 1752964819.410141,
+      "relative_time": 46.31592512130737,
+      "message": "$IIVWR,36.5,L,7.56,N,,,,*55",
+      "sequence": 731
+    },
+    {
+      "timestamp": 1752964819.462581,
+      "relative_time": 46.36836504936218,
+      "message": "$IIVHW,,T,170.97,M,,N,,K*43",
+      "sequence": 732
+    },
+    {
+      "timestamp": 1752964819.522723,
+      "relative_time": 46.42850708961487,
+      "message": "$IIMWV,321.5,R,7.46,N,A*0D",
+      "sequence": 733
+    },
+    {
+      "timestamp": 1752964819.584243,
+      "relative_time": 46.49002718925476,
+      "message": "$IIVWR,38.5,L,7.46,N,,,,*5A",
+      "sequence": 734
+    },
+    {
+      "timestamp": 1752964819.649531,
+      "relative_time": 46.555315017700195,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 735
+    },
+    {
+      "timestamp": 1752964819.702592,
+      "relative_time": 46.608376026153564,
+      "message": "$IIMWV,328.5,R,7.56,N,A*05",
+      "sequence": 736
+    },
+    {
+      "timestamp": 1752964819.7833521,
+      "relative_time": 46.689136266708374,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 737
+    },
+    {
+      "timestamp": 1752964819.871329,
+      "relative_time": 46.77711319923401,
+      "message": "$HCHDG,170.99,,,,*74",
+      "sequence": 738
+    },
+    {
+      "timestamp": 1752964819.911694,
+      "relative_time": 46.81747817993164,
+      "message": "$IIMWV,340.0,R,7.56,N,A*0E",
+      "sequence": 739
+    },
+    {
+      "timestamp": 1752964819.9737248,
+      "relative_time": 46.87950897216797,
+      "message": "$GPGLL,4838.1994,N,00201.4012,W,,A,A*53",
+      "sequence": 740
+    },
+    {
+      "timestamp": 1752964820.0634298,
+      "relative_time": 46.96921396255493,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 741
+    },
+    {
+      "timestamp": 1752964820.113753,
+      "relative_time": 47.01953721046448,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 742
+    },
+    {
+      "timestamp": 1752964820.1657689,
+      "relative_time": 47.071552991867065,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 743
+    },
+    {
+      "timestamp": 1752964820.2162051,
+      "relative_time": 47.121989250183105,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 744
+    },
+    {
+      "timestamp": 1752964820.2465699,
+      "relative_time": 47.1523540019989,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 745
+    },
+    {
+      "timestamp": 1752964820.291323,
+      "relative_time": 47.1971070766449,
+      "message": "$IIMWV,2.5,R,7.46,N,A*0F",
+      "sequence": 746
+    },
+    {
+      "timestamp": 1752964820.356197,
+      "relative_time": 47.26198124885559,
+      "message": "$GPVTG,,,,,0.039,N,0.072,K,A*35",
+      "sequence": 747
+    },
+    {
+      "timestamp": 1752964820.420987,
+      "relative_time": 47.32677102088928,
+      "message": "$GPGLL,4838.1994,N,00201.4012,W,,A,A*53",
+      "sequence": 748
+    },
+    {
+      "timestamp": 1752964820.5041878,
+      "relative_time": 47.409971952438354,
+      "message": "$IIVHW,,T,171.01,M,,N,,K*4D",
+      "sequence": 749
+    },
+    {
+      "timestamp": 1752964820.5635169,
+      "relative_time": 47.469300985336304,
+      "message": "$IIMWV,347.5,R,8.16,N,A*07",
+      "sequence": 750
+    },
+    {
+      "timestamp": 1752964820.625864,
+      "relative_time": 47.5316481590271,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 751
+    },
+    {
+      "timestamp": 1752964820.69045,
+      "relative_time": 47.59623408317566,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 752
+    },
+    {
+      "timestamp": 1752964820.791229,
+      "relative_time": 47.69701313972473,
+      "message": "$IIMWV,343.0,R,9.06,N,A*06",
+      "sequence": 753
+    },
+    {
+      "timestamp": 1752964820.8459399,
+      "relative_time": 47.75172400474548,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 754
+    },
+    {
+      "timestamp": 1752964820.906729,
+      "relative_time": 47.81251311302185,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 755
+    },
+    {
+      "timestamp": 1752964820.971589,
+      "relative_time": 47.87737321853638,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 756
+    },
+    {
+      "timestamp": 1752964821.015856,
+      "relative_time": 47.921640157699585,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 757
+    },
+    {
+      "timestamp": 1752964821.0962188,
+      "relative_time": 48.00200295448303,
+      "message": "$IIMWV,351.0,R,9.37,N,A*07",
+      "sequence": 758
+    },
+    {
+      "timestamp": 1752964821.154012,
+      "relative_time": 48.05979609489441,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 759
+    },
+    {
+      "timestamp": 1752964821.200782,
+      "relative_time": 48.106566190719604,
+      "message": "$IIMWV,355.5,R,9.47,N,A*01",
+      "sequence": 760
+    },
+    {
+      "timestamp": 1752964821.258805,
+      "relative_time": 48.164589166641235,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 761
+    },
+    {
+      "timestamp": 1752964821.343689,
+      "relative_time": 48.249473094940186,
+      "message": "$HCHDG,170.99,,,,*74",
+      "sequence": 762
+    },
+    {
+      "timestamp": 1752964821.3921652,
+      "relative_time": 48.29794931411743,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 763
+    },
+    {
+      "timestamp": 1752964821.454419,
+      "relative_time": 48.36020302772522,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 764
+    },
+    {
+      "timestamp": 1752964821.5027552,
+      "relative_time": 48.40853929519653,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 765
+    },
+    {
+      "timestamp": 1752964821.547657,
+      "relative_time": 48.45344114303589,
+      "message": "$IIMWV,341.0,R,10.05,N,A*3F",
+      "sequence": 766
+    },
+    {
+      "timestamp": 1752964821.604678,
+      "relative_time": 48.510462045669556,
+      "message": "$IIVWR,19.0,L,10.05,N,,,,*6D",
+      "sequence": 767
+    },
+    {
+      "timestamp": 1752964821.666761,
+      "relative_time": 48.57254505157471,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 768
+    },
+    {
+      "timestamp": 1752964821.7284439,
+      "relative_time": 48.634227991104126,
+      "message": "$GPZDA,224020,19,07,2025,,*44",
+      "sequence": 769
+    },
+    {
+      "timestamp": 1752964821.8204522,
+      "relative_time": 48.72623634338379,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 770
+    },
+    {
+      "timestamp": 1752964821.8860679,
+      "relative_time": 48.79185199737549,
+      "message": "$IIVHW,,T,171.01,M,,N,,K*4D",
+      "sequence": 771
+    },
+    {
+      "timestamp": 1752964821.943455,
+      "relative_time": 48.849239110946655,
+      "message": "$IIMWV,348.5,R,9.76,N,A*0F",
+      "sequence": 772
+    },
+    {
+      "timestamp": 1752964822.002537,
+      "relative_time": 48.908321142196655,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 773
+    },
+    {
+      "timestamp": 1752964822.062602,
+      "relative_time": 48.96838617324829,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 774
+    },
+    {
+      "timestamp": 1752964822.108,
+      "relative_time": 49.01378417015076,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 775
+    },
+    {
+      "timestamp": 1752964822.150723,
+      "relative_time": 49.0565071105957,
+      "message": "$GPGLL,4838.1993,N,00201.4012,W,,A,A*54",
+      "sequence": 776
+    },
+    {
+      "timestamp": 1752964822.238475,
+      "relative_time": 49.144259214401245,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 777
+    },
+    {
+      "timestamp": 1752964822.3012989,
+      "relative_time": 49.207082986831665,
+      "message": "$IIMWV,349.5,R,10.17,N,A*31",
+      "sequence": 778
+    },
+    {
+      "timestamp": 1752964822.366394,
+      "relative_time": 49.272178173065186,
+      "message": "$IIVWR,10.5,L,10.17,N,,,,*62",
+      "sequence": 779
+    },
+    {
+      "timestamp": 1752964822.420706,
+      "relative_time": 49.3264901638031,
+      "message": "$GPVTG,,,,,0.058,N,0.108,K,A*3E",
+      "sequence": 780
+    },
+    {
+      "timestamp": 1752964822.489887,
+      "relative_time": 49.395671129226685,
+      "message": "$HCHDG,171.01,,,,*74",
+      "sequence": 781
+    },
+    {
+      "timestamp": 1752964822.541216,
+      "relative_time": 49.44700002670288,
+      "message": "$IIVHW,,T,171.02,M,,N,,K*4E",
+      "sequence": 782
+    },
+    {
+      "timestamp": 1752964822.6028259,
+      "relative_time": 49.508610010147095,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 783
+    },
+    {
+      "timestamp": 1752964822.689875,
+      "relative_time": 49.595659017562866,
+      "message": "$IIMWV,350.0,R,10.75,N,A*38",
+      "sequence": 784
+    },
+    {
+      "timestamp": 1752964822.749977,
+      "relative_time": 49.65576124191284,
+      "message": "$IIVHW,,T,171.02,M,,N,,K*4E",
+      "sequence": 785
+    },
+    {
+      "timestamp": 1752964822.826277,
+      "relative_time": 49.73206114768982,
+      "message": "$TIROT,0.00,A*0B",
+      "sequence": 786
+    },
+    {
+      "timestamp": 1752964822.8633611,
+      "relative_time": 49.769145250320435,
+      "message": "$HCHDG,171.01,,,,*74",
+      "sequence": 787
+    },
+    {
+      "timestamp": 1752964822.9093518,
+      "relative_time": 49.81513595581055,
+      "message": "$IIMWV,338.5,R,11.16,N,A*37",
+      "sequence": 788
+    },
+    {
+      "timestamp": 1752964822.9698932,
+      "relative_time": 49.87567734718323,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 789
+    },
+    {
+      "timestamp": 1752964823.014891,
+      "relative_time": 49.92067503929138,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 790
+    },
+    {
+      "timestamp": 1752964823.078511,
+      "relative_time": 49.984295129776,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 791
+    },
+    {
+      "timestamp": 1752964823.125034,
+      "relative_time": 50.03081822395325,
+      "message": "$TIROT,-0.00,A*26",
+      "sequence": 792
+    },
+    {
+      "timestamp": 1752964823.163389,
+      "relative_time": 50.069173097610474,
+      "message": "$IIVHW,,T,171.00,M,,N,,K*4C",
+      "sequence": 793
+    },
+    {
+      "timestamp": 1752964823.224525,
+      "relative_time": 50.130309104919434,
+      "message": "$GPGLL,4838.1993,N,00201.4011,W,,A,A*57",
+      "sequence": 794
+    },
+    {
+      "timestamp": 1752964823.3093278,
+      "relative_time": 50.21511197090149,
+      "message": "$IIMWV,1.0,R,10.75,N,A*3F",
+      "sequence": 795
+    },
+    {
+      "timestamp": 1752964823.364745,
+      "relative_time": 50.27052903175354,
+      "message": "$IIMWV,4.0,R,10.56,N,A*3B",
+      "sequence": 796
+    },
+    {
+      "timestamp": 1752964823.420931,
+      "relative_time": 50.32671523094177,
+      "message": "$IIVHW,,T,170.99,M,,N,,K*4D",
+      "sequence": 797
+    },
+    {
+      "timestamp": 1752964823.492911,
+      "relative_time": 50.39869523048401,
+      "message": "$HCHDG,171.00,,,,*75",
+      "sequence": 798
+    }
+  ]
+}

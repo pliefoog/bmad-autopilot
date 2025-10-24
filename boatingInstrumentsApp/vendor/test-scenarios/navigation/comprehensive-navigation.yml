@@ -1,0 +1,116 @@
+name: "Comprehensive Navigation Test"
+description: "Complete navigation widget test recording with GPS, depth, speed, wind, and compass data"
+duration: 300
+bridge_mode: "nmea0183"
+messageRate: 2.0
+scenario_type: "navigation"
+vessel_type: "40ft Test Sailboat"
+test_coverage: ["gps", "depth", "speed", "wind", "compass"]
+
+conditions:
+  wind_speed: "12-15 knots"
+  sea_state: "moderate"
+  weather: "clear"
+
+equipment:
+  engines: 1
+  batteries: 2
+  tanks: 2
+
+tags: ["navigation", "comprehensive", "widgets"]
+related_stories: ["story-7.4", "story-2.3"]
+
+nmea_sentences:
+  - sentence: "$GPGGA,{time},{lat},{lat_ns},{lon},{lon_ew},1,08,1.0,{altitude},M,-34.0,M,,*XX"
+    sentence_type: "GGA"
+    description: "GPS Fix Data with dynamic position"
+    source: "GPS_MAIN"
+    parameters:
+      time:
+        type: "constant"
+        value: "120000.00"
+      lat:
+        type: "linear"
+        start: 4030.1234
+        rate: 0.0001
+        format: "4030.0000"
+      lat_ns:
+        type: "constant"
+        value: "N"
+      lon:
+        type: "linear" 
+        start: 7430.5678
+        rate: -0.0002
+        format: "7430.0000"
+      lon_ew:
+        type: "constant"
+        value: "W"
+      altitude:
+        type: "sine"
+        start: 10.5
+        amplitude: 2.0
+        frequency: 0.1
+        format: "00.0"
+
+  - sentence: "$IIDBT,,f,{depth_m},M,{depth_f},F*XX"
+    sentence_type: "DBT"
+    description: "Depth Below Transducer with variation"
+    source: "DEPTH_MAIN"
+    parameters:
+      depth_m:
+        type: "sine"
+        start: 15.2
+        amplitude: 3.0
+        frequency: 0.05
+        format: "00.0"
+      depth_f:
+        type: "sine"
+        start: 8.3
+        amplitude: 1.6
+        frequency: 0.05
+        format: "0.0"
+
+  - sentence: "$IIVHW,,,{heading_m},M,{speed_knots},N,,K*XX"
+    sentence_type: "VHW"
+    description: "Water Speed and Heading with dynamic values"
+    source: "SPEED_LOG"
+    parameters:
+      heading_m:
+        type: "linear"
+        start: 180.0
+        rate: 0.1
+        format: "000.0"
+      speed_knots:
+        type: "sine"
+        start: 6.0
+        amplitude: 1.5
+        frequency: 0.08
+        format: "0.0"
+
+  - sentence: "$IIMWV,{wind_angle},R,{wind_speed},N,A*XX"
+    sentence_type: "MWV" 
+    description: "Wind Speed and Angle with realistic variation"
+    source: "WIND_MAIN"
+    parameters:
+      wind_angle:
+        type: "sine"
+        start: 45.0
+        amplitude: 15.0
+        frequency: 0.03
+        format: "000.0"
+      wind_speed:
+        type: "random"
+        min: 10.0
+        max: 18.0
+        format: "00.0"
+
+  - sentence: "$IIHDM,{heading_m},M*XX"
+    sentence_type: "HDM"
+    description: "Magnetic Heading"
+    source: "COMPASS_MAIN"
+    parameters:
+      heading_m:
+        type: "linear"
+        start: 180.0
+        rate: 0.1
+        format: "000.0"

@@ -1,5 +1,5 @@
 name: "Deep Water Passage Scenario"
-description: "Ocean conditions with consistent deep water (>1000 feet)"
+description: "Ocean conditions with consistent deep water (>305 meters)"
 duration: 900  # 15 minutes
 version: "1.0"
 category: "basic"
@@ -7,12 +7,12 @@ category: "basic"
 # Vessel parameters (configurable)
 parameters:
   vessel:
-    length: ${VESSEL_LENGTH:40}  # feet
-    beam: ${VESSEL_BEAM:12}      # feet  
-    draft: ${VESSEL_DRAFT:6}     # feet
+    length: ${VESSEL_LENGTH:12.2}  # meters
+    beam: ${VESSEL_BEAM:3.7}      # meters  
+    draft: ${VESSEL_DRAFT:1.8}     # meters
     type: "sailboat"
   conditions:
-    ocean_depth_base: 2000    # feet (deep ocean)
+    ocean_depth_base: 609.6    # meters (deep ocean)
     ocean_swell_period: 8     # seconds
     trade_wind_direction: 60  # degrees (typical trade winds)
     trade_wind_speed: 18      # knots
@@ -21,13 +21,13 @@ parameters:
 data:
   depth:
     type: "deep_ocean"
-    base_depth: 2000      # Deep ocean baseline
-    variation: 200        # ±200 feet (seafloor topology)
-    swell_effect: 3       # ±3 feet from wave action
+    base_depth: 609.6      # Deep ocean baseline
+    variation: 61.0        # ±61 meters (seafloor topology)
+    swell_effect: 0.9      # ±0.9 meters from wave action
     frequency: 0.02       # Very slow variation (deep ocean)
-    unit: "feet"
-    min: 1000             # Always >1000 feet as per AC1
-    max: 3000
+    unit: "meters"
+    min: 305.0             # Always >305 meters as per AC1
+    max: 914.4
   
   speed:
     type: "ocean_passage"
@@ -114,7 +114,7 @@ functions:
 # Use case documentation
 use_cases:
   - "Ocean passage navigation testing"
-  - "Deep water widgets validation (>1000 feet always)"
+  - "Deep water widgets validation (>305 meters always)"
   - "Steady-state performance testing"
   - "Long-range GPS track validation"
   - "Stable wind condition testing"
@@ -122,7 +122,7 @@ use_cases:
 
 # Related acceptance criteria  
 acceptance_criteria:
-  - "AC1: Ocean conditions with consistent deep water (>1000 feet)"
+  - "AC1: Ocean conditions with consistent deep water (>305 meters)"
   - "AC1: Mathematically coherent NMEA data streams"
   - "AC1: Realistic timing between related instruments"
   - "AC1: Parameterizable vessel characteristics"

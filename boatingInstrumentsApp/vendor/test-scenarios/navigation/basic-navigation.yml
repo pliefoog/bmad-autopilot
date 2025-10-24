@@ -8,10 +8,10 @@ category: "basic"
 data:
   depth:
     type: "sine_wave"
-    base: 15      # feet
-    amplitude: 5  # ±5 feet
+    base: 4.6      # meters
+    amplitude: 1.5  # ±1.5 meters
     frequency: 0.1 # Hz
-    unit: "feet"
+    unit: "meters"
   
   speed:
     type: "gaussian"

@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "name": "Sample Navigation Test Recording",
+    "description": "Example recording demonstrating the v1.0 format specification with GPS, depth, speed, and wind data for widget testing",
+    "duration": 10.0,
+    "message_count": 5,
+    "created": "2025-10-24T10:30:00Z",
+    "vessel_type": "40ft Test Sailboat",
+    "scenario_type": "navigation",
+    "version": "1.0",
+    "bridge_mode": "nmea0183",
+    "test_coverage": ["gps", "depth", "speed", "wind", "compass"],
+    "conditions": {
+      "wind_speed": "15 knots",
+      "sea_state": "moderate",
+      "weather": "clear"
+    },
+    "equipment": {
+      "engines": 1,
+      "batteries": 2,
+      "tanks": 2
+    },
+    "author": "BMad Test Suite v1.0",
+    "tags": ["navigation", "sample", "validation", "widgets"],
+    "related_stories": ["story-7.4"]
+  },
+  "messages": [
+    {
+      "timestamp": 1729764773.131632,
+      "relative_time": 0.0,
+      "sentence": "$GPGGA,103000.00,4030.1234,N,07430.5678,W,1,08,1.0,10.5,M,-34.0,M,,*64",
+      "sentence_type": "GGA",
+      "description": "GPS Fix Data - Lat: 40°30.1234'N, Lon: 74°30.5678'W, Alt: 10.5m",
+      "sequence": 0,
+      "checksum_valid": true,
+      "source": "GPS_MAIN",
+      "parsed_data": {
+        "latitude": 40.502056,
+        "longitude": -74.511296,
+        "altitude": 10.5,
+        "fix_quality": 1,
+        "satellites": 8,
+        "hdop": 1.0
+      }
+    },
+    {
+      "timestamp": 1729764775.194205,
+      "relative_time": 2.063,
+      "sentence": "$IIDBT,,f,15.2,M,8.3,F*02",
+      "sentence_type": "DBT",
+      "description": "Depth Below Transducer - 15.2 meters / 8.3 fathoms",
+      "sequence": 1,
+      "checksum_valid": true,
+      "source": "DEPTH_MAIN",
+      "parsed_data": {
+        "depth_meters": 15.2,
+        "depth_fathoms": 8.3
+      }
+    },
+    {
+      "timestamp": 1729764777.256778,
+      "relative_time": 4.125,
+      "sentence": "$IIVHW,,,123.4,M,5.2,N,,K*02",
+      "sentence_type": "VHW",
+      "description": "Water Speed and Heading - 123.4° magnetic, 5.2 knots",
+      "sequence": 2,
+      "checksum_valid": true,
+      "source": "SPEED_LOG",
+      "parsed_data": {
+        "heading_magnetic": 123.4,
+        "speed_knots": 5.2
+      }
+    },
+    {
+      "timestamp": 1729764779.319341,
+      "relative_time": 6.188,
+      "sentence": "$IIMWV,045.0,R,12.5,N,A*0A",
+      "sentence_type": "MWV",
+      "description": "Wind Speed and Angle - 45° relative, 12.5 knots",
+      "sequence": 3,
+      "checksum_valid": true,
+      "source": "WIND_MAIN",
+      "parsed_data": {
+        "wind_angle": 45.0,
+        "wind_angle_reference": "R",
+        "wind_speed": 12.5,
+        "wind_speed_units": "N",
+        "status": "A"
+      }
+    },
+    {
+      "timestamp": 1729764783.381904,
+      "relative_time": 10.0,
+      "sentence": "$IIHDM,124.5,M*20",
+      "sentence_type": "HDM",
+      "description": "Heading Magnetic - 124.5° magnetic",
+      "sequence": 4,
+      "checksum_valid": true,
+      "source": "COMPASS_MAIN",
+      "parsed_data": {
+        "heading_magnetic": 124.5
+      }
+    }
+  ]
+}

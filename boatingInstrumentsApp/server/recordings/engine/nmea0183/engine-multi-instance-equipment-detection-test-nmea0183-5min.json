@@ -1,0 +1,3042 @@
+{
+  "metadata": {
+    "name": "Multi-Instance Equipment Detection Test",
+    "description": "Progressive detection of multiple engines, batteries, and tanks with instance handling validation",
+    "duration": 300,
+    "message_count": 300,
+    "created": "2025-10-24T20:56:33.906Z",
+    "version": "1.0",
+    "bridge_mode": "nmea0183",
+    "vessel_type": "Large Motor Yacht - Multi System",
+    "scenario_type": "multi-instance",
+    "test_coverage": [
+      "multi-instance",
+      "engine",
+      "battery",
+      "tank",
+      "detection"
+    ],
+    "conditions": {
+      "scenario": "system startup with progressive equipment detection",
+      "complexity": "maximum instances"
+    },
+    "equipment": {
+      "engines": 3,
+      "batteries": 4,
+      "tanks": 6
+    },
+    "author": "BMad Recording Generator v1.0",
+    "tags": [
+      "multi-instance",
+      "progressive",
+      "detection",
+      "validation"
+    ],
+    "related_stories": [
+      "story-7.4",
+      "story-6.10"
+    ]
+  },
+  "messages": [
+    {
+      "timestamp": 1761339393.908,
+      "relative_time": 0,
+      "sentence": "$IIRPM,E,0,0,A,*67",
+      "sentence_type": "RPM",
+      "sequence": 0,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.908,
+      "relative_time": 1,
+      "sentence": "$IIRPM,E,1,9,A,*6F",
+      "sentence_type": "RPM",
+      "sequence": 1,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339395.908,
+      "relative_time": 2,
+      "sentence": "$IIRPM,E,2,22,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 2,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.908,
+      "relative_time": 3,
+      "sentence": "$IIXDR,U,12.9,V,BAT_0*61",
+      "sentence_type": "XDR",
+      "sequence": 3,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339397.908,
+      "relative_time": 4,
+      "sentence": "$IIXDR,U,12.7,V,BAT_1*6E",
+      "sentence_type": "XDR",
+      "sequence": 4,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.908,
+      "relative_time": 5,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 5,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339399.908,
+      "relative_time": 6,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 6,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.908,
+      "relative_time": 7,
+      "sentence": "$IIXDR,V,84.9,P,FUEL_0*26",
+      "sentence_type": "XDR",
+      "sequence": 7,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339401.908,
+      "relative_time": 8,
+      "sentence": "$IIXDR,V,77.9,P,FUEL_1*2B",
+      "sentence_type": "XDR",
+      "sequence": 8,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.908,
+      "relative_time": 9,
+      "sentence": "$IIXDR,V,92.0,P,WATR_0*22",
+      "sentence_type": "XDR",
+      "sequence": 9,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339403.908,
+      "relative_time": 10,
+      "sentence": "$IIXDR,V,87.9,P,WATR_1*2E",
+      "sentence_type": "XDR",
+      "sequence": 10,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.908,
+      "relative_time": 11,
+      "sentence": "$IIXDR,V,25.0,P,WAST_0*2F",
+      "sentence_type": "XDR",
+      "sequence": 11,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339405.908,
+      "relative_time": 12,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 12,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.908,
+      "relative_time": 13,
+      "sentence": "$IIRPM,E,0,130,A,*65",
+      "sentence_type": "RPM",
+      "sequence": 13,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339407.908,
+      "relative_time": 14,
+      "sentence": "$IIRPM,E,1,126,A,*63",
+      "sentence_type": "RPM",
+      "sequence": 14,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.908,
+      "relative_time": 15,
+      "sentence": "$IIRPM,E,2,165,A,*67",
+      "sentence_type": "RPM",
+      "sequence": 15,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339409.908,
+      "relative_time": 16,
+      "sentence": "$IIXDR,U,13.0,V,BAT_0*69",
+      "sentence_type": "XDR",
+      "sequence": 16,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.908,
+      "relative_time": 17,
+      "sentence": "$IIXDR,U,13.0,V,BAT_1*68",
+      "sentence_type": "XDR",
+      "sequence": 17,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339411.908,
+      "relative_time": 18,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 18,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.908,
+      "relative_time": 19,
+      "sentence": "$IIXDR,U,12.9,V,BAT_3*62",
+      "sentence_type": "XDR",
+      "sequence": 19,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339413.908,
+      "relative_time": 20,
+      "sentence": "$IIXDR,V,84.6,P,FUEL_0*29",
+      "sentence_type": "XDR",
+      "sequence": 20,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.908,
+      "relative_time": 21,
+      "sentence": "$IIXDR,V,77.6,P,FUEL_1*24",
+      "sentence_type": "XDR",
+      "sequence": 21,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339415.908,
+      "relative_time": 22,
+      "sentence": "$IIXDR,V,91.9,P,WATR_0*28",
+      "sentence_type": "XDR",
+      "sequence": 22,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.908,
+      "relative_time": 23,
+      "sentence": "$IIXDR,V,87.8,P,WATR_1*2F",
+      "sentence_type": "XDR",
+      "sequence": 23,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339417.908,
+      "relative_time": 24,
+      "sentence": "$IIXDR,V,25.1,P,WAST_0*2E",
+      "sentence_type": "XDR",
+      "sequence": 24,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.908,
+      "relative_time": 25,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 25,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339419.908,
+      "relative_time": 26,
+      "sentence": "$IIRPM,E,0,260,A,*63",
+      "sentence_type": "RPM",
+      "sequence": 26,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.908,
+      "relative_time": 27,
+      "sentence": "$IIRPM,E,1,243,A,*63",
+      "sentence_type": "RPM",
+      "sequence": 27,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339421.908,
+      "relative_time": 28,
+      "sentence": "$IIRPM,E,2,308,A,*6E",
+      "sentence_type": "RPM",
+      "sequence": 28,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.908,
+      "relative_time": 29,
+      "sentence": "$IIXDR,U,13.1,V,BAT_0*68",
+      "sentence_type": "XDR",
+      "sequence": 29,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339423.908,
+      "relative_time": 30,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 30,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.908,
+      "relative_time": 31,
+      "sentence": "$IIXDR,U,12.8,V,BAT_2*62",
+      "sentence_type": "XDR",
+      "sequence": 31,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339425.908,
+      "relative_time": 32,
+      "sentence": "$IIXDR,U,13.2,V,BAT_3*68",
+      "sentence_type": "XDR",
+      "sequence": 32,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.908,
+      "relative_time": 33,
+      "sentence": "$IIXDR,V,84.3,P,FUEL_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 33,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.908,
+      "relative_time": 34,
+      "sentence": "$IIXDR,V,77.4,P,FUEL_1*26",
+      "sentence_type": "XDR",
+      "sequence": 34,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.908,
+      "relative_time": 35,
+      "sentence": "$IIXDR,V,91.8,P,WATR_0*29",
+      "sentence_type": "XDR",
+      "sequence": 35,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.908,
+      "relative_time": 36,
+      "sentence": "$IIXDR,V,87.7,P,WATR_1*20",
+      "sentence_type": "XDR",
+      "sequence": 36,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.908,
+      "relative_time": 37,
+      "sentence": "$IIXDR,V,25.1,P,WAST_0*2E",
+      "sentence_type": "XDR",
+      "sequence": 37,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.908,
+      "relative_time": 38,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 38,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.908,
+      "relative_time": 39,
+      "sentence": "$IIRPM,E,0,390,A,*6D",
+      "sentence_type": "RPM",
+      "sequence": 39,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.908,
+      "relative_time": 40,
+      "sentence": "$IIRPM,E,1,360,A,*63",
+      "sentence_type": "RPM",
+      "sequence": 40,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.908,
+      "relative_time": 41,
+      "sentence": "$IIRPM,E,2,451,A,*65",
+      "sentence_type": "RPM",
+      "sequence": 41,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.908,
+      "relative_time": 42,
+      "sentence": "$IIXDR,U,13.0,V,BAT_0*69",
+      "sentence_type": "XDR",
+      "sequence": 42,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.908,
+      "relative_time": 43,
+      "sentence": "$IIXDR,U,12.7,V,BAT_1*6E",
+      "sentence_type": "XDR",
+      "sequence": 43,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.908,
+      "relative_time": 44,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 44,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.908,
+      "relative_time": 45,
+      "sentence": "$IIXDR,U,12.9,V,BAT_3*62",
+      "sentence_type": "XDR",
+      "sequence": 45,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.908,
+      "relative_time": 46,
+      "sentence": "$IIXDR,V,84.1,P,FUEL_0*2E",
+      "sentence_type": "XDR",
+      "sequence": 46,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.908,
+      "relative_time": 47,
+      "sentence": "$IIXDR,V,77.2,P,FUEL_1*20",
+      "sentence_type": "XDR",
+      "sequence": 47,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.908,
+      "relative_time": 48,
+      "sentence": "$IIXDR,V,91.8,P,WATR_0*29",
+      "sentence_type": "XDR",
+      "sequence": 48,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.908,
+      "relative_time": 49,
+      "sentence": "$IIXDR,V,87.7,P,WATR_1*20",
+      "sentence_type": "XDR",
+      "sequence": 49,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.908,
+      "relative_time": 50,
+      "sentence": "$IIXDR,V,25.1,P,WAST_0*2E",
+      "sentence_type": "XDR",
+      "sequence": 50,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.908,
+      "relative_time": 51,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 51,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.908,
+      "relative_time": 52,
+      "sentence": "$IIRPM,E,0,520,A,*60",
+      "sentence_type": "RPM",
+      "sequence": 52,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.908,
+      "relative_time": 53,
+      "sentence": "$IIRPM,E,1,477,A,*62",
+      "sentence_type": "RPM",
+      "sequence": 53,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.908,
+      "relative_time": 54,
+      "sentence": "$IIRPM,E,2,594,A,*6D",
+      "sentence_type": "RPM",
+      "sequence": 54,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.908,
+      "relative_time": 55,
+      "sentence": "$IIXDR,U,12.8,V,BAT_0*60",
+      "sentence_type": "XDR",
+      "sequence": 55,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.908,
+      "relative_time": 56,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 56,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.908,
+      "relative_time": 57,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 57,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.908,
+      "relative_time": 58,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 58,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.908,
+      "relative_time": 59,
+      "sentence": "$IIXDR,V,83.8,P,FUEL_0*20",
+      "sentence_type": "XDR",
+      "sequence": 59,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.908,
+      "relative_time": 60,
+      "sentence": "$IIXDR,V,76.9,P,FUEL_1*2A",
+      "sentence_type": "XDR",
+      "sequence": 60,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.908,
+      "relative_time": 61,
+      "sentence": "$IIXDR,V,91.7,P,WATR_0*26",
+      "sentence_type": "XDR",
+      "sequence": 61,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.908,
+      "relative_time": 62,
+      "sentence": "$IIXDR,V,87.6,P,WATR_1*21",
+      "sentence_type": "XDR",
+      "sequence": 62,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.908,
+      "relative_time": 63,
+      "sentence": "$IIXDR,V,25.2,P,WAST_0*2D",
+      "sentence_type": "XDR",
+      "sequence": 63,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.908,
+      "relative_time": 64,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 64,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.908,
+      "relative_time": 65,
+      "sentence": "$IIRPM,E,0,650,A,*64",
+      "sentence_type": "RPM",
+      "sequence": 65,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.908,
+      "relative_time": 66,
+      "sentence": "$IIRPM,E,1,594,A,*6E",
+      "sentence_type": "RPM",
+      "sequence": 66,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.908,
+      "relative_time": 67,
+      "sentence": "$IIRPM,E,2,737,A,*66",
+      "sentence_type": "RPM",
+      "sequence": 67,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.908,
+      "relative_time": 68,
+      "sentence": "$IIXDR,U,12.9,V,BAT_0*61",
+      "sentence_type": "XDR",
+      "sequence": 68,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.908,
+      "relative_time": 69,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 69,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.908,
+      "relative_time": 70,
+      "sentence": "$IIXDR,U,12.8,V,BAT_2*62",
+      "sentence_type": "XDR",
+      "sequence": 70,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.908,
+      "relative_time": 71,
+      "sentence": "$IIXDR,U,13.1,V,BAT_3*6B",
+      "sentence_type": "XDR",
+      "sequence": 71,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.908,
+      "relative_time": 72,
+      "sentence": "$IIXDR,V,83.6,P,FUEL_0*2E",
+      "sentence_type": "XDR",
+      "sequence": 72,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.908,
+      "relative_time": 73,
+      "sentence": "$IIXDR,V,76.7,P,FUEL_1*24",
+      "sentence_type": "XDR",
+      "sequence": 73,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.908,
+      "relative_time": 74,
+      "sentence": "$IIXDR,V,91.6,P,WATR_0*27",
+      "sentence_type": "XDR",
+      "sequence": 74,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.908,
+      "relative_time": 75,
+      "sentence": "$IIXDR,V,87.5,P,WATR_1*22",
+      "sentence_type": "XDR",
+      "sequence": 75,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.908,
+      "relative_time": 76,
+      "sentence": "$IIXDR,V,25.2,P,WAST_0*2D",
+      "sentence_type": "XDR",
+      "sequence": 76,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.908,
+      "relative_time": 77,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 77,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.908,
+      "relative_time": 78,
+      "sentence": "$IIRPM,E,0,780,A,*68",
+      "sentence_type": "RPM",
+      "sequence": 78,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.908,
+      "relative_time": 79,
+      "sentence": "$IIRPM,E,1,711,A,*61",
+      "sentence_type": "RPM",
+      "sequence": 79,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.908,
+      "relative_time": 80,
+      "sentence": "$IIRPM,E,2,880,A,*65",
+      "sentence_type": "RPM",
+      "sequence": 80,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.908,
+      "relative_time": 81,
+      "sentence": "$IIXDR,U,13.0,V,BAT_0*69",
+      "sentence_type": "XDR",
+      "sequence": 81,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.908,
+      "relative_time": 82,
+      "sentence": "$IIXDR,U,12.9,V,BAT_1*60",
+      "sentence_type": "XDR",
+      "sequence": 82,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.908,
+      "relative_time": 83,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 83,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.908,
+      "relative_time": 84,
+      "sentence": "$IIXDR,U,13.3,V,BAT_3*69",
+      "sentence_type": "XDR",
+      "sequence": 84,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.908,
+      "relative_time": 85,
+      "sentence": "$IIXDR,V,83.3,P,FUEL_0*2B",
+      "sentence_type": "XDR",
+      "sequence": 85,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.908,
+      "relative_time": 86,
+      "sentence": "$IIXDR,V,76.5,P,FUEL_1*26",
+      "sentence_type": "XDR",
+      "sequence": 86,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.908,
+      "relative_time": 87,
+      "sentence": "$IIXDR,V,91.6,P,WATR_0*27",
+      "sentence_type": "XDR",
+      "sequence": 87,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.908,
+      "relative_time": 88,
+      "sentence": "$IIXDR,V,87.4,P,WATR_1*23",
+      "sentence_type": "XDR",
+      "sequence": 88,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.908,
+      "relative_time": 89,
+      "sentence": "$IIXDR,V,25.3,P,WAST_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 89,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.908,
+      "relative_time": 90,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 90,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.908,
+      "relative_time": 91,
+      "sentence": "$IIRPM,E,0,910,A,*6F",
+      "sentence_type": "RPM",
+      "sequence": 91,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.908,
+      "relative_time": 92,
+      "sentence": "$IIRPM,E,1,828,A,*64",
+      "sentence_type": "RPM",
+      "sequence": 92,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.908,
+      "relative_time": 93,
+      "sentence": "$IIRPM,E,2,1023,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 93,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.908,
+      "relative_time": 94,
+      "sentence": "$IIXDR,U,13.0,V,BAT_0*69",
+      "sentence_type": "XDR",
+      "sequence": 94,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.908,
+      "relative_time": 95,
+      "sentence": "$IIXDR,U,12.6,V,BAT_1*6F",
+      "sentence_type": "XDR",
+      "sequence": 95,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.908,
+      "relative_time": 96,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 96,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.908,
+      "relative_time": 97,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 97,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.908,
+      "relative_time": 98,
+      "sentence": "$IIXDR,V,83.0,P,FUEL_0*28",
+      "sentence_type": "XDR",
+      "sequence": 98,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.908,
+      "relative_time": 99,
+      "sentence": "$IIXDR,V,76.2,P,FUEL_1*21",
+      "sentence_type": "XDR",
+      "sequence": 99,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.908,
+      "relative_time": 100,
+      "sentence": "$IIXDR,V,91.5,P,WATR_0*24",
+      "sentence_type": "XDR",
+      "sequence": 100,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.908,
+      "relative_time": 101,
+      "sentence": "$IIXDR,V,87.3,P,WATR_1*24",
+      "sentence_type": "XDR",
+      "sequence": 101,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.908,
+      "relative_time": 102,
+      "sentence": "$IIXDR,V,25.3,P,WAST_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 102,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.908,
+      "relative_time": 103,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 103,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.908,
+      "relative_time": 104,
+      "sentence": "$IIRPM,E,0,1040,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 104,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.908,
+      "relative_time": 105,
+      "sentence": "$IIRPM,E,1,945,A,*6E",
+      "sentence_type": "RPM",
+      "sequence": 105,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.908,
+      "relative_time": 106,
+      "sentence": "$IIRPM,E,2,1166,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 106,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.908,
+      "relative_time": 107,
+      "sentence": "$IIXDR,U,13.2,V,BAT_0*6B",
+      "sentence_type": "XDR",
+      "sequence": 107,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.908,
+      "relative_time": 108,
+      "sentence": "$IIXDR,U,12.9,V,BAT_1*60",
+      "sentence_type": "XDR",
+      "sequence": 108,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.908,
+      "relative_time": 109,
+      "sentence": "$IIXDR,U,13.1,V,BAT_2*6A",
+      "sentence_type": "XDR",
+      "sequence": 109,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.908,
+      "relative_time": 110,
+      "sentence": "$IIXDR,U,13.1,V,BAT_3*6B",
+      "sentence_type": "XDR",
+      "sequence": 110,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.908,
+      "relative_time": 111,
+      "sentence": "$IIXDR,V,82.8,P,FUEL_0*21",
+      "sentence_type": "XDR",
+      "sequence": 111,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.908,
+      "relative_time": 112,
+      "sentence": "$IIXDR,V,76.0,P,FUEL_1*23",
+      "sentence_type": "XDR",
+      "sequence": 112,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.908,
+      "relative_time": 113,
+      "sentence": "$IIXDR,V,91.4,P,WATR_0*25",
+      "sentence_type": "XDR",
+      "sequence": 113,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.908,
+      "relative_time": 114,
+      "sentence": "$IIXDR,V,87.2,P,WATR_1*25",
+      "sentence_type": "XDR",
+      "sequence": 114,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.908,
+      "relative_time": 115,
+      "sentence": "$IIXDR,V,25.3,P,WAST_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 115,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.908,
+      "relative_time": 116,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 116,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.908,
+      "relative_time": 117,
+      "sentence": "$IIRPM,E,0,1170,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 117,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.908,
+      "relative_time": 118,
+      "sentence": "$IIRPM,E,1,1062,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 118,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.908,
+      "relative_time": 119,
+      "sentence": "$IIRPM,E,2,1309,A,*5E",
+      "sentence_type": "RPM",
+      "sequence": 119,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.908,
+      "relative_time": 120,
+      "sentence": "$IIXDR,U,12.9,V,BAT_0*61",
+      "sentence_type": "XDR",
+      "sequence": 120,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.908,
+      "relative_time": 121,
+      "sentence": "$IIXDR,U,12.7,V,BAT_1*6E",
+      "sentence_type": "XDR",
+      "sequence": 121,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.908,
+      "relative_time": 122,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 122,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.908,
+      "relative_time": 123,
+      "sentence": "$IIXDR,U,13.2,V,BAT_3*68",
+      "sentence_type": "XDR",
+      "sequence": 123,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.908,
+      "relative_time": 124,
+      "sentence": "$IIXDR,V,82.5,P,FUEL_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 124,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.908,
+      "relative_time": 125,
+      "sentence": "$IIXDR,V,75.8,P,FUEL_1*28",
+      "sentence_type": "XDR",
+      "sequence": 125,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.908,
+      "relative_time": 126,
+      "sentence": "$IIXDR,V,91.4,P,WATR_0*25",
+      "sentence_type": "XDR",
+      "sequence": 126,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.908,
+      "relative_time": 127,
+      "sentence": "$IIXDR,V,87.1,P,WATR_1*26",
+      "sentence_type": "XDR",
+      "sequence": 127,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339521.908,
+      "relative_time": 128,
+      "sentence": "$IIXDR,V,25.4,P,WAST_0*2B",
+      "sentence_type": "XDR",
+      "sequence": 128,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.908,
+      "relative_time": 129,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 129,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339523.908,
+      "relative_time": 130,
+      "sentence": "$IIRPM,E,0,1300,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 130,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.908,
+      "relative_time": 131,
+      "sentence": "$IIRPM,E,1,1179,A,*58",
+      "sentence_type": "RPM",
+      "sequence": 131,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339525.908,
+      "relative_time": 132,
+      "sentence": "$IIRPM,E,2,1452,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 132,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.908,
+      "relative_time": 133,
+      "sentence": "$IIXDR,U,13.0,V,BAT_0*69",
+      "sentence_type": "XDR",
+      "sequence": 133,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339527.908,
+      "relative_time": 134,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 134,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.908,
+      "relative_time": 135,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 135,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339529.908,
+      "relative_time": 136,
+      "sentence": "$IIXDR,U,13.3,V,BAT_3*69",
+      "sentence_type": "XDR",
+      "sequence": 136,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.908,
+      "relative_time": 137,
+      "sentence": "$IIXDR,V,82.3,P,FUEL_0*2A",
+      "sentence_type": "XDR",
+      "sequence": 137,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339531.908,
+      "relative_time": 138,
+      "sentence": "$IIXDR,V,75.5,P,FUEL_1*25",
+      "sentence_type": "XDR",
+      "sequence": 138,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.908,
+      "relative_time": 139,
+      "sentence": "$IIXDR,V,91.3,P,WATR_0*22",
+      "sentence_type": "XDR",
+      "sequence": 139,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339533.908,
+      "relative_time": 140,
+      "sentence": "$IIXDR,V,87.0,P,WATR_1*27",
+      "sentence_type": "XDR",
+      "sequence": 140,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.908,
+      "relative_time": 141,
+      "sentence": "$IIXDR,V,25.4,P,WAST_0*2B",
+      "sentence_type": "XDR",
+      "sequence": 141,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339535.908,
+      "relative_time": 142,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 142,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.908,
+      "relative_time": 143,
+      "sentence": "$IIRPM,E,0,1430,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 143,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339537.908,
+      "relative_time": 144,
+      "sentence": "$IIRPM,E,1,1296,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 144,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.908,
+      "relative_time": 145,
+      "sentence": "$IIRPM,E,2,1595,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 145,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339539.908,
+      "relative_time": 146,
+      "sentence": "$IIXDR,U,12.8,V,BAT_0*60",
+      "sentence_type": "XDR",
+      "sequence": 146,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.908,
+      "relative_time": 147,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 147,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339541.908,
+      "relative_time": 148,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 148,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.908,
+      "relative_time": 149,
+      "sentence": "$IIXDR,U,13.2,V,BAT_3*68",
+      "sentence_type": "XDR",
+      "sequence": 149,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339543.908,
+      "relative_time": 150,
+      "sentence": "$IIXDR,V,82.0,P,FUEL_0*29",
+      "sentence_type": "XDR",
+      "sequence": 150,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.908,
+      "relative_time": 151,
+      "sentence": "$IIXDR,V,75.3,P,FUEL_1*23",
+      "sentence_type": "XDR",
+      "sequence": 151,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339545.908,
+      "relative_time": 152,
+      "sentence": "$IIXDR,V,91.2,P,WATR_0*23",
+      "sentence_type": "XDR",
+      "sequence": 152,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.908,
+      "relative_time": 153,
+      "sentence": "$IIXDR,V,86.9,P,WATR_1*2F",
+      "sentence_type": "XDR",
+      "sequence": 153,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339547.908,
+      "relative_time": 154,
+      "sentence": "$IIXDR,V,25.5,P,WAST_0*2A",
+      "sentence_type": "XDR",
+      "sequence": 154,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.908,
+      "relative_time": 155,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 155,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339549.908,
+      "relative_time": 156,
+      "sentence": "$IIRPM,E,0,1560,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 156,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.908,
+      "relative_time": 157,
+      "sentence": "$IIRPM,E,1,1413,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 157,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339551.908,
+      "relative_time": 158,
+      "sentence": "$IIRPM,E,2,1738,A,*58",
+      "sentence_type": "RPM",
+      "sequence": 158,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.908,
+      "relative_time": 159,
+      "sentence": "$IIXDR,U,13.2,V,BAT_0*6B",
+      "sentence_type": "XDR",
+      "sequence": 159,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339553.908,
+      "relative_time": 160,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 160,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.908,
+      "relative_time": 161,
+      "sentence": "$IIXDR,U,12.7,V,BAT_2*6D",
+      "sentence_type": "XDR",
+      "sequence": 161,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339555.908,
+      "relative_time": 162,
+      "sentence": "$IIXDR,U,12.9,V,BAT_3*62",
+      "sentence_type": "XDR",
+      "sequence": 162,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.908,
+      "relative_time": 163,
+      "sentence": "$IIXDR,V,81.7,P,FUEL_0*2D",
+      "sentence_type": "XDR",
+      "sequence": 163,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339557.908,
+      "relative_time": 164,
+      "sentence": "$IIXDR,V,75.0,P,FUEL_1*20",
+      "sentence_type": "XDR",
+      "sequence": 164,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.908,
+      "relative_time": 165,
+      "sentence": "$IIXDR,V,91.2,P,WATR_0*23",
+      "sentence_type": "XDR",
+      "sequence": 165,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339559.908,
+      "relative_time": 166,
+      "sentence": "$IIXDR,V,86.8,P,WATR_1*2E",
+      "sentence_type": "XDR",
+      "sequence": 166,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.908,
+      "relative_time": 167,
+      "sentence": "$IIXDR,V,25.5,P,WAST_0*2A",
+      "sentence_type": "XDR",
+      "sequence": 167,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339561.908,
+      "relative_time": 168,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 168,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.908,
+      "relative_time": 169,
+      "sentence": "$IIRPM,E,0,1690,A,*59",
+      "sentence_type": "RPM",
+      "sequence": 169,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339563.908,
+      "relative_time": 170,
+      "sentence": "$IIRPM,E,1,1530,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 170,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339564.908,
+      "relative_time": 171,
+      "sentence": "$IIRPM,E,2,1881,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 171,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339565.908,
+      "relative_time": 172,
+      "sentence": "$IIXDR,U,13.1,V,BAT_0*68",
+      "sentence_type": "XDR",
+      "sequence": 172,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339566.908,
+      "relative_time": 173,
+      "sentence": "$IIXDR,U,12.6,V,BAT_1*6F",
+      "sentence_type": "XDR",
+      "sequence": 173,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339567.908,
+      "relative_time": 174,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 174,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339568.908,
+      "relative_time": 175,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 175,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339569.908,
+      "relative_time": 176,
+      "sentence": "$IIXDR,V,81.5,P,FUEL_0*2F",
+      "sentence_type": "XDR",
+      "sequence": 176,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339570.908,
+      "relative_time": 177,
+      "sentence": "$IIXDR,V,74.8,P,FUEL_1*29",
+      "sentence_type": "XDR",
+      "sequence": 177,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339571.908,
+      "relative_time": 178,
+      "sentence": "$IIXDR,V,91.1,P,WATR_0*20",
+      "sentence_type": "XDR",
+      "sequence": 178,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339572.908,
+      "relative_time": 179,
+      "sentence": "$IIXDR,V,86.7,P,WATR_1*21",
+      "sentence_type": "XDR",
+      "sequence": 179,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339573.908,
+      "relative_time": 180,
+      "sentence": "$IIXDR,V,25.5,P,WAST_0*2A",
+      "sentence_type": "XDR",
+      "sequence": 180,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339574.908,
+      "relative_time": 181,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 181,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339575.908,
+      "relative_time": 182,
+      "sentence": "$IIRPM,E,0,1820,A,*5C",
+      "sentence_type": "RPM",
+      "sequence": 182,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339576.908,
+      "relative_time": 183,
+      "sentence": "$IIRPM,E,1,1647,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 183,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339577.908,
+      "relative_time": 184,
+      "sentence": "$IIRPM,E,2,2024,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 184,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339578.908,
+      "relative_time": 185,
+      "sentence": "$IIXDR,U,13.1,V,BAT_0*68",
+      "sentence_type": "XDR",
+      "sequence": 185,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339579.908,
+      "relative_time": 186,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 186,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339580.908,
+      "relative_time": 187,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 187,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339581.908,
+      "relative_time": 188,
+      "sentence": "$IIXDR,U,13.2,V,BAT_3*68",
+      "sentence_type": "XDR",
+      "sequence": 188,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339582.908,
+      "relative_time": 189,
+      "sentence": "$IIXDR,V,81.2,P,FUEL_0*28",
+      "sentence_type": "XDR",
+      "sequence": 189,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339583.908,
+      "relative_time": 190,
+      "sentence": "$IIXDR,V,74.6,P,FUEL_1*27",
+      "sentence_type": "XDR",
+      "sequence": 190,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339584.908,
+      "relative_time": 191,
+      "sentence": "$IIXDR,V,91.0,P,WATR_0*21",
+      "sentence_type": "XDR",
+      "sequence": 191,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339585.908,
+      "relative_time": 192,
+      "sentence": "$IIXDR,V,86.7,P,WATR_1*21",
+      "sentence_type": "XDR",
+      "sequence": 192,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339586.908,
+      "relative_time": 193,
+      "sentence": "$IIXDR,V,25.6,P,WAST_0*29",
+      "sentence_type": "XDR",
+      "sequence": 193,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339587.908,
+      "relative_time": 194,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 194,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339588.908,
+      "relative_time": 195,
+      "sentence": "$IIRPM,E,0,1950,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 195,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339589.908,
+      "relative_time": 196,
+      "sentence": "$IIRPM,E,1,1764,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 196,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339590.908,
+      "relative_time": 197,
+      "sentence": "$IIRPM,E,2,2167,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 197,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339591.908,
+      "relative_time": 198,
+      "sentence": "$IIXDR,U,12.9,V,BAT_0*61",
+      "sentence_type": "XDR",
+      "sequence": 198,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339592.908,
+      "relative_time": 199,
+      "sentence": "$IIXDR,U,12.9,V,BAT_1*60",
+      "sentence_type": "XDR",
+      "sequence": 199,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339593.908,
+      "relative_time": 200,
+      "sentence": "$IIXDR,U,13.0,V,BAT_2*6B",
+      "sentence_type": "XDR",
+      "sequence": 200,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339594.908,
+      "relative_time": 201,
+      "sentence": "$IIXDR,U,13.1,V,BAT_3*6B",
+      "sentence_type": "XDR",
+      "sequence": 201,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339595.908,
+      "relative_time": 202,
+      "sentence": "$IIXDR,V,81.0,P,FUEL_0*2A",
+      "sentence_type": "XDR",
+      "sequence": 202,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339596.908,
+      "relative_time": 203,
+      "sentence": "$IIXDR,V,74.3,P,FUEL_1*22",
+      "sentence_type": "XDR",
+      "sequence": 203,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339597.908,
+      "relative_time": 204,
+      "sentence": "$IIXDR,V,91.0,P,WATR_0*21",
+      "sentence_type": "XDR",
+      "sequence": 204,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339598.908,
+      "relative_time": 205,
+      "sentence": "$IIXDR,V,86.6,P,WATR_1*20",
+      "sentence_type": "XDR",
+      "sequence": 205,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339599.908,
+      "relative_time": 206,
+      "sentence": "$IIXDR,V,25.6,P,WAST_0*29",
+      "sentence_type": "XDR",
+      "sequence": 206,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339600.908,
+      "relative_time": 207,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 207,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339601.908,
+      "relative_time": 208,
+      "sentence": "$IIRPM,E,0,2080,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 208,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339602.908,
+      "relative_time": 209,
+      "sentence": "$IIRPM,E,1,1881,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 209,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339603.908,
+      "relative_time": 210,
+      "sentence": "$IIRPM,E,2,2310,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 210,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339604.908,
+      "relative_time": 211,
+      "sentence": "$IIXDR,U,12.8,V,BAT_0*60",
+      "sentence_type": "XDR",
+      "sequence": 211,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339605.908,
+      "relative_time": 212,
+      "sentence": "$IIXDR,U,12.7,V,BAT_1*6E",
+      "sentence_type": "XDR",
+      "sequence": 212,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339606.908,
+      "relative_time": 213,
+      "sentence": "$IIXDR,U,12.7,V,BAT_2*6D",
+      "sentence_type": "XDR",
+      "sequence": 213,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339607.908,
+      "relative_time": 214,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 214,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339608.908,
+      "relative_time": 215,
+      "sentence": "$IIXDR,V,80.7,P,FUEL_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 215,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339609.908,
+      "relative_time": 216,
+      "sentence": "$IIXDR,V,74.1,P,FUEL_1*20",
+      "sentence_type": "XDR",
+      "sequence": 216,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339610.908,
+      "relative_time": 217,
+      "sentence": "$IIXDR,V,90.9,P,WATR_0*29",
+      "sentence_type": "XDR",
+      "sequence": 217,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339611.908,
+      "relative_time": 218,
+      "sentence": "$IIXDR,V,86.5,P,WATR_1*23",
+      "sentence_type": "XDR",
+      "sequence": 218,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339612.908,
+      "relative_time": 219,
+      "sentence": "$IIXDR,V,25.7,P,WAST_0*28",
+      "sentence_type": "XDR",
+      "sequence": 219,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339613.908,
+      "relative_time": 220,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 220,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339614.908,
+      "relative_time": 221,
+      "sentence": "$IIRPM,E,0,2210,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 221,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339615.908,
+      "relative_time": 222,
+      "sentence": "$IIRPM,E,1,1998,A,*5F",
+      "sentence_type": "RPM",
+      "sequence": 222,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339616.908,
+      "relative_time": 223,
+      "sentence": "$IIRPM,E,2,2453,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 223,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339617.908,
+      "relative_time": 224,
+      "sentence": "$IIXDR,U,13.1,V,BAT_0*68",
+      "sentence_type": "XDR",
+      "sequence": 224,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339618.908,
+      "relative_time": 225,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 225,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339619.908,
+      "relative_time": 226,
+      "sentence": "$IIXDR,U,13.1,V,BAT_2*6A",
+      "sentence_type": "XDR",
+      "sequence": 226,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339620.908,
+      "relative_time": 227,
+      "sentence": "$IIXDR,U,13.3,V,BAT_3*69",
+      "sentence_type": "XDR",
+      "sequence": 227,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339621.908,
+      "relative_time": 228,
+      "sentence": "$IIXDR,V,80.4,P,FUEL_0*2F",
+      "sentence_type": "XDR",
+      "sequence": 228,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339622.908,
+      "relative_time": 229,
+      "sentence": "$IIXDR,V,73.9,P,FUEL_1*2F",
+      "sentence_type": "XDR",
+      "sequence": 229,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339623.908,
+      "relative_time": 230,
+      "sentence": "$IIXDR,V,90.8,P,WATR_0*28",
+      "sentence_type": "XDR",
+      "sequence": 230,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339624.908,
+      "relative_time": 231,
+      "sentence": "$IIXDR,V,86.4,P,WATR_1*22",
+      "sentence_type": "XDR",
+      "sequence": 231,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339625.908,
+      "relative_time": 232,
+      "sentence": "$IIXDR,V,25.7,P,WAST_0*28",
+      "sentence_type": "XDR",
+      "sequence": 232,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339626.908,
+      "relative_time": 233,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 233,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339627.908,
+      "relative_time": 234,
+      "sentence": "$IIRPM,E,0,2340,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 234,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339628.908,
+      "relative_time": 235,
+      "sentence": "$IIRPM,E,1,2115,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 235,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339629.908,
+      "relative_time": 236,
+      "sentence": "$IIRPM,E,2,2596,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 236,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339630.908,
+      "relative_time": 237,
+      "sentence": "$IIXDR,U,13.1,V,BAT_0*68",
+      "sentence_type": "XDR",
+      "sequence": 237,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339631.908,
+      "relative_time": 238,
+      "sentence": "$IIXDR,U,12.9,V,BAT_1*60",
+      "sentence_type": "XDR",
+      "sequence": 238,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339632.908,
+      "relative_time": 239,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 239,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339633.908,
+      "relative_time": 240,
+      "sentence": "$IIXDR,U,13.1,V,BAT_3*6B",
+      "sentence_type": "XDR",
+      "sequence": 240,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339634.908,
+      "relative_time": 241,
+      "sentence": "$IIXDR,V,80.2,P,FUEL_0*29",
+      "sentence_type": "XDR",
+      "sequence": 241,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339635.908,
+      "relative_time": 242,
+      "sentence": "$IIXDR,V,73.6,P,FUEL_1*20",
+      "sentence_type": "XDR",
+      "sequence": 242,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339636.908,
+      "relative_time": 243,
+      "sentence": "$IIXDR,V,90.8,P,WATR_0*28",
+      "sentence_type": "XDR",
+      "sequence": 243,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339637.908,
+      "relative_time": 244,
+      "sentence": "$IIXDR,V,86.3,P,WATR_1*25",
+      "sentence_type": "XDR",
+      "sequence": 244,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339638.908,
+      "relative_time": 245,
+      "sentence": "$IIXDR,V,25.7,P,WAST_0*28",
+      "sentence_type": "XDR",
+      "sequence": 245,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339639.908,
+      "relative_time": 246,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 246,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339640.908,
+      "relative_time": 247,
+      "sentence": "$IIRPM,E,0,2470,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 247,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339641.908,
+      "relative_time": 248,
+      "sentence": "$IIRPM,E,1,2232,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 248,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339642.908,
+      "relative_time": 249,
+      "sentence": "$IIRPM,E,2,2739,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 249,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339643.908,
+      "relative_time": 250,
+      "sentence": "$IIXDR,U,13.1,V,BAT_0*68",
+      "sentence_type": "XDR",
+      "sequence": 250,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339644.908,
+      "relative_time": 251,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 251,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339645.908,
+      "relative_time": 252,
+      "sentence": "$IIXDR,U,12.8,V,BAT_2*62",
+      "sentence_type": "XDR",
+      "sequence": 252,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339646.908,
+      "relative_time": 253,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 253,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339647.908,
+      "relative_time": 254,
+      "sentence": "$IIXDR,V,79.9,P,FUEL_0*24",
+      "sentence_type": "XDR",
+      "sequence": 254,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339648.908,
+      "relative_time": 255,
+      "sentence": "$IIXDR,V,73.4,P,FUEL_1*22",
+      "sentence_type": "XDR",
+      "sequence": 255,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339649.908,
+      "relative_time": 256,
+      "sentence": "$IIXDR,V,90.7,P,WATR_0*27",
+      "sentence_type": "XDR",
+      "sequence": 256,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339650.908,
+      "relative_time": 257,
+      "sentence": "$IIXDR,V,86.2,P,WATR_1*24",
+      "sentence_type": "XDR",
+      "sequence": 257,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339651.908,
+      "relative_time": 258,
+      "sentence": "$IIXDR,V,25.8,P,WAST_0*27",
+      "sentence_type": "XDR",
+      "sequence": 258,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339652.908,
+      "relative_time": 259,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 259,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339653.908,
+      "relative_time": 260,
+      "sentence": "$IIRPM,E,0,2600,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 260,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339654.908,
+      "relative_time": 261,
+      "sentence": "$IIRPM,E,1,2349,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 261,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339655.908,
+      "relative_time": 262,
+      "sentence": "$IIRPM,E,2,2882,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 262,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339656.908,
+      "relative_time": 263,
+      "sentence": "$IIXDR,U,13.2,V,BAT_0*6B",
+      "sentence_type": "XDR",
+      "sequence": 263,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339657.908,
+      "relative_time": 264,
+      "sentence": "$IIXDR,U,12.8,V,BAT_1*61",
+      "sentence_type": "XDR",
+      "sequence": 264,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339658.908,
+      "relative_time": 265,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 265,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339659.908,
+      "relative_time": 266,
+      "sentence": "$IIXDR,U,12.9,V,BAT_3*62",
+      "sentence_type": "XDR",
+      "sequence": 266,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339660.908,
+      "relative_time": 267,
+      "sentence": "$IIXDR,V,79.7,P,FUEL_0*2A",
+      "sentence_type": "XDR",
+      "sequence": 267,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339661.908,
+      "relative_time": 268,
+      "sentence": "$IIXDR,V,73.2,P,FUEL_1*24",
+      "sentence_type": "XDR",
+      "sequence": 268,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339662.908,
+      "relative_time": 269,
+      "sentence": "$IIXDR,V,90.7,P,WATR_0*27",
+      "sentence_type": "XDR",
+      "sequence": 269,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339663.908,
+      "relative_time": 270,
+      "sentence": "$IIXDR,V,86.1,P,WATR_1*27",
+      "sentence_type": "XDR",
+      "sequence": 270,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339664.908,
+      "relative_time": 271,
+      "sentence": "$IIXDR,V,25.8,P,WAST_0*27",
+      "sentence_type": "XDR",
+      "sequence": 271,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339665.908,
+      "relative_time": 272,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 272,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339666.908,
+      "relative_time": 273,
+      "sentence": "$IIRPM,E,0,2730,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 273,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339667.908,
+      "relative_time": 274,
+      "sentence": "$IIRPM,E,1,2466,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 274,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339668.908,
+      "relative_time": 275,
+      "sentence": "$IIRPM,E,2,3025,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 275,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339669.908,
+      "relative_time": 276,
+      "sentence": "$IIXDR,U,12.9,V,BAT_0*61",
+      "sentence_type": "XDR",
+      "sequence": 276,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339670.908,
+      "relative_time": 277,
+      "sentence": "$IIXDR,U,12.9,V,BAT_1*60",
+      "sentence_type": "XDR",
+      "sequence": 277,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339671.908,
+      "relative_time": 278,
+      "sentence": "$IIXDR,U,12.9,V,BAT_2*63",
+      "sentence_type": "XDR",
+      "sequence": 278,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339672.908,
+      "relative_time": 279,
+      "sentence": "$IIXDR,U,13.0,V,BAT_3*6A",
+      "sentence_type": "XDR",
+      "sequence": 279,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339673.908,
+      "relative_time": 280,
+      "sentence": "$IIXDR,V,79.4,P,FUEL_0*29",
+      "sentence_type": "XDR",
+      "sequence": 280,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339674.908,
+      "relative_time": 281,
+      "sentence": "$IIXDR,V,72.9,P,FUEL_1*2E",
+      "sentence_type": "XDR",
+      "sequence": 281,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339675.908,
+      "relative_time": 282,
+      "sentence": "$IIXDR,V,90.6,P,WATR_0*26",
+      "sentence_type": "XDR",
+      "sequence": 282,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339676.908,
+      "relative_time": 283,
+      "sentence": "$IIXDR,V,86.0,P,WATR_1*26",
+      "sentence_type": "XDR",
+      "sequence": 283,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339677.908,
+      "relative_time": 284,
+      "sentence": "$IIXDR,V,25.9,P,WAST_0*26",
+      "sentence_type": "XDR",
+      "sequence": 284,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339678.908,
+      "relative_time": 285,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 285,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339679.908,
+      "relative_time": 286,
+      "sentence": "$IIRPM,E,0,2860,A,*5B",
+      "sentence_type": "RPM",
+      "sequence": 286,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339680.908,
+      "relative_time": 287,
+      "sentence": "$IIRPM,E,1,2583,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 287,
+      "description": "Engine 1 RPM",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339681.908,
+      "relative_time": 288,
+      "sentence": "$IIRPM,E,2,3168,A,*59",
+      "sentence_type": "RPM",
+      "sequence": 288,
+      "description": "Engine 2 RPM",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339682.908,
+      "relative_time": 289,
+      "sentence": "$IIXDR,U,12.8,V,BAT_0*60",
+      "sentence_type": "XDR",
+      "sequence": 289,
+      "description": "Battery 0 Voltage",
+      "source": "BATTERY_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339683.908,
+      "relative_time": 290,
+      "sentence": "$IIXDR,U,13.0,V,BAT_1*68",
+      "sentence_type": "XDR",
+      "sequence": 290,
+      "description": "Battery 1 Voltage",
+      "source": "BATTERY_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339684.908,
+      "relative_time": 291,
+      "sentence": "$IIXDR,U,12.8,V,BAT_2*62",
+      "sentence_type": "XDR",
+      "sequence": 291,
+      "description": "Battery 2 Voltage",
+      "source": "BATTERY_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339685.908,
+      "relative_time": 292,
+      "sentence": "$IIXDR,U,13.3,V,BAT_3*69",
+      "sentence_type": "XDR",
+      "sequence": 292,
+      "description": "Battery 3 Voltage",
+      "source": "BATTERY_3",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339686.908,
+      "relative_time": 293,
+      "sentence": "$IIXDR,V,79.1,P,FUEL_0*2C",
+      "sentence_type": "XDR",
+      "sequence": 293,
+      "description": "Fuel Tank 0 Level",
+      "source": "TANK_FUEL_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339687.908,
+      "relative_time": 294,
+      "sentence": "$IIXDR,V,72.7,P,FUEL_1*20",
+      "sentence_type": "XDR",
+      "sequence": 294,
+      "description": "Fuel Tank 1 Level",
+      "source": "TANK_FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339688.908,
+      "relative_time": 295,
+      "sentence": "$IIXDR,V,90.5,P,WATR_0*25",
+      "sentence_type": "XDR",
+      "sequence": 295,
+      "description": "Fresh Water Tank 0 Level",
+      "source": "TANK_WATER_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339689.908,
+      "relative_time": 296,
+      "sentence": "$IIXDR,V,85.9,P,WATR_1*2C",
+      "sentence_type": "XDR",
+      "sequence": 296,
+      "description": "Fresh Water Tank 1 Level",
+      "source": "TANK_WATER_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339690.908,
+      "relative_time": 297,
+      "sentence": "$IIXDR,V,25.9,P,WAST_0*26",
+      "sentence_type": "XDR",
+      "sequence": 297,
+      "description": "Waste Tank 0 Level",
+      "source": "TANK_WASTE_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339691.908,
+      "relative_time": 298,
+      "sentence": "$IIXDR,V,50.0,P,BALL_0*3F",
+      "sentence_type": "XDR",
+      "sequence": 298,
+      "description": "Ballast Tank 0 Level",
+      "source": "TANK_BALLAST_0",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339692.908,
+      "relative_time": 299,
+      "sentence": "$IIRPM,E,0,2990,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 299,
+      "description": "Engine 0 RPM",
+      "source": "ENGINE_0",
+      "checksum_valid": true
+    }
+  ]
+}

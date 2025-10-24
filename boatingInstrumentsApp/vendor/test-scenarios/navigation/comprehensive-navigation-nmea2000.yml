@@ -1,0 +1,137 @@
+name: "Comprehensive Navigation Test NMEA 2000"
+description: "Complete navigation widget test recording with GPS, depth, speed, wind, and compass data using NMEA 2000 PGNs"
+duration: 300
+bridge_mode: "nmea2000"
+messageRate: 2.0
+scenario_type: "navigation"
+vessel_type: "40ft Test Sailboat NMEA 2000"
+test_coverage: ["gps", "depth", "speed", "wind", "compass"]
+
+conditions:
+  wind_speed: "12-15 knots"
+  sea_state: "moderate"
+  weather: "clear"
+
+equipment:
+  engines: 1
+  batteries: 2
+  tanks: 2
+
+tags: ["navigation", "comprehensive", "nmea2000", "widgets"]
+related_stories: ["story-7.4", "story-2.3"]
+
+nmea_sentences:
+  # PGN 129025 - Position Rapid Update
+  - sentence: "$PCDIN,01F801,00,FF,{lat_b0},{lat_b1},{lat_b2},{lat_b3},{lon_b0},{lon_b1},{lon_b2},{lon_b3}*XX"
+    sentence_type: "PGN"
+    description: "Position Rapid Update (PGN 129025)"
+    source: "GPS_MAIN"
+    parameters:
+      lat_b0:
+        type: "constant"
+        value: "A0"
+      lat_b1:
+        type: "constant" 
+        value: "0F"
+      lat_b2:
+        type: "constant"
+        value: "12"
+      lat_b3:
+        type: "constant"
+        value: "34"
+      lon_b0:
+        type: "constant"
+        value: "B5"
+      lon_b1:
+        type: "constant"
+        value: "1E"
+      lon_b2:
+        type: "constant"
+        value: "56"
+      lon_b3:
+        type: "constant"
+        value: "78"
+
+  # PGN 128267 - Water Depth
+  - sentence: "$PCDIN,01F50B,00,FF,{depth_b0},{depth_b1},{depth_b2},{depth_b3},FF,FF,FF,FF*XX"
+    sentence_type: "PGN"
+    description: "Water Depth (PGN 128267)"
+    source: "DEPTH_MAIN"
+    parameters:
+      depth_b0:
+        type: "constant"
+        value: "C8"
+      depth_b1:
+        type: "constant"
+        value: "00"
+      depth_b2:
+        type: "constant"
+        value: "00"
+      depth_b3:
+        type: "constant"
+        value: "00"
+
+  # PGN 128259 - Boat Speed
+  - sentence: "$PCDIN,01F503,00,FF,{speed_b0},{speed_b1},FF,FF,{heading_b0},{heading_b1},FF,FF*XX"
+    sentence_type: "PGN"
+    description: "Boat Speed (PGN 128259)"
+    source: "SPEED_LOG"
+    parameters:
+      speed_b0:
+        type: "constant"
+        value: "E6"
+      speed_b1:
+        type: "constant"
+        value: "02"
+      heading_b0:
+        type: "constant"
+        value: "B4"
+      heading_b1:
+        type: "constant"
+        value: "C4"
+
+  # PGN 130306 - Wind Data
+  - sentence: "$PCDIN,01FD02,00,FF,{wind_speed_b0},{wind_speed_b1},{wind_angle_b0},{wind_angle_b1},00,FF,FF,FF*XX"
+    sentence_type: "PGN"
+    description: "Wind Data (PGN 130306)"
+    source: "WIND_MAIN"
+    parameters:
+      wind_speed_b0:
+        type: "random"
+        min: 180
+        max: 220
+        format: "02X"
+      wind_speed_b1:
+        type: "constant"
+        value: "00"
+      wind_angle_b0:
+        type: "constant"
+        value: "2D"
+      wind_angle_b1:
+        type: "constant"
+        value: "00"
+
+  # PGN 127250 - Vessel Heading
+  - sentence: "$PCDIN,01F112,00,FF,{heading_b0},{heading_b1},{deviation_b0},{deviation_b1},{variation_b0},{variation_b1},FF,FF*XX"
+    sentence_type: "PGN"
+    description: "Vessel Heading (PGN 127250)"
+    source: "COMPASS_MAIN"
+    parameters:
+      heading_b0:
+        type: "constant"
+        value: "B4"
+      heading_b1:
+        type: "constant"
+        value: "C4"
+      deviation_b0:
+        type: "constant"
+        value: "00"
+      deviation_b1:
+        type: "constant"
+        value: "00"
+      variation_b0:
+        type: "constant"
+        value: "F0"
+      variation_b1:
+        type: "constant"
+        value: "FF"

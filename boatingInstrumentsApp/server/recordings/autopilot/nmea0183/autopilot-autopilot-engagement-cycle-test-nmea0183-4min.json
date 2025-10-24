@@ -1,0 +1,4842 @@
+{
+  "metadata": {
+    "name": "Autopilot Engagement Cycle Test",
+    "description": "Complete autopilot engagement, parameter adjustment, and disengagement test sequence",
+    "duration": 240,
+    "message_count": 480,
+    "created": "2025-10-24T20:56:29.495Z",
+    "version": "1.0",
+    "bridge_mode": "nmea0183",
+    "vessel_type": "40ft Sailboat with Raymarine Autopilot",
+    "scenario_type": "autopilot",
+    "test_coverage": [
+      "autopilot",
+      "heading",
+      "wind",
+      "navigation"
+    ],
+    "conditions": {
+      "wind_speed": "18-22 knots",
+      "sea_state": "moderate",
+      "visibility": "good"
+    },
+    "equipment": {
+      "autopilot": "Raymarine",
+      "engines": 1,
+      "batteries": 2
+    },
+    "author": "BMad Recording Generator v1.0",
+    "tags": [
+      "autopilot",
+      "engagement",
+      "raymarine",
+      "control"
+    ],
+    "related_stories": [
+      "story-7.4",
+      "story-3.2"
+    ]
+  },
+  "messages": [
+    {
+      "timestamp": 1761339389.497,
+      "relative_time": 0,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 0,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339389.997,
+      "relative_time": 0.5,
+      "sentence": "$IIHDM,180.0,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 1,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339390.497,
+      "relative_time": 1,
+      "sentence": "$IIMWV,45.2,R,21.0,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 2,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339390.997,
+      "relative_time": 1.5,
+      "sentence": "$RAAPH,180.1,M,A*4C",
+      "sentence_type": "APH",
+      "sequence": 3,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339391.497,
+      "relative_time": 2,
+      "sentence": "$RAAPB,A,A,0.028,L,N,A,A,182.0,M,WPT001,A,*2D",
+      "sentence_type": "APB",
+      "sequence": 4,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339391.997,
+      "relative_time": 2.5,
+      "sentence": "$RAXTE,A,A,0.027,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 5,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339392.497,
+      "relative_time": 3,
+      "sentence": "$RARSA,2.2,A,*10",
+      "sentence_type": "RSA",
+      "sequence": 6,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339392.997,
+      "relative_time": 3.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 7,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339393.497,
+      "relative_time": 4,
+      "sentence": "$IIHDM,180.2,M*29",
+      "sentence_type": "HDM",
+      "sequence": 8,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339393.997,
+      "relative_time": 4.5,
+      "sentence": "$IIMWV,45.7,R,20.2,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 9,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.497,
+      "relative_time": 5,
+      "sentence": "$RAAPH,180.3,M,A*4E",
+      "sentence_type": "APH",
+      "sequence": 10,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.997,
+      "relative_time": 5.5,
+      "sentence": "$RAAPB,A,A,0.041,L,N,A,A,181.9,M,WPT001,A,*28",
+      "sentence_type": "APB",
+      "sequence": 11,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339395.497,
+      "relative_time": 6,
+      "sentence": "$RAXTE,A,A,0.037,L,N*5E",
+      "sentence_type": "XTE",
+      "sequence": 12,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339395.997,
+      "relative_time": 6.5,
+      "sentence": "$RARSA,4.1,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 13,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.497,
+      "relative_time": 7,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 14,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.997,
+      "relative_time": 7.5,
+      "sentence": "$IIHDM,180.4,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 15,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339397.497,
+      "relative_time": 8,
+      "sentence": "$IIMWV,46.3,R,20.8,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 16,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339397.997,
+      "relative_time": 8.5,
+      "sentence": "$RAAPH,180.4,M,A*49",
+      "sentence_type": "APH",
+      "sequence": 17,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.497,
+      "relative_time": 9,
+      "sentence": "$RAAPB,A,A,0.053,L,N,A,A,181.8,M,WPT001,A,*2A",
+      "sentence_type": "APB",
+      "sequence": 18,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.997,
+      "relative_time": 9.5,
+      "sentence": "$RAXTE,A,A,0.044,L,N*5A",
+      "sentence_type": "XTE",
+      "sequence": 19,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339399.497,
+      "relative_time": 10,
+      "sentence": "$RARSA,5.0,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 20,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339399.997,
+      "relative_time": 10.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 21,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.497,
+      "relative_time": 11,
+      "sentence": "$IIHDM,180.6,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 22,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.997,
+      "relative_time": 11.5,
+      "sentence": "$IIMWV,46.8,R,18.4,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 23,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339401.497,
+      "relative_time": 12,
+      "sentence": "$RAAPH,180.6,M,A*4B",
+      "sentence_type": "APH",
+      "sequence": 24,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339401.997,
+      "relative_time": 12.5,
+      "sentence": "$RAAPB,A,A,0.062,L,N,A,A,181.8,M,WPT001,A,*28",
+      "sentence_type": "APB",
+      "sequence": 25,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.497,
+      "relative_time": 13,
+      "sentence": "$RAXTE,A,A,0.049,L,N*57",
+      "sentence_type": "XTE",
+      "sequence": 26,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.997,
+      "relative_time": 13.5,
+      "sentence": "$RARSA,4.5,A,*11",
+      "sentence_type": "RSA",
+      "sequence": 27,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339403.497,
+      "relative_time": 14,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 28,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339403.997,
+      "relative_time": 14.5,
+      "sentence": "$IIHDM,180.7,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 29,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.497,
+      "relative_time": 15,
+      "sentence": "$IIMWV,47.4,R,20.9,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 30,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.997,
+      "relative_time": 15.5,
+      "sentence": "$RAAPH,180.8,M,A*45",
+      "sentence_type": "APH",
+      "sequence": 31,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339405.497,
+      "relative_time": 16,
+      "sentence": "$RAAPB,A,A,0.068,L,N,A,A,181.7,M,WPT001,A,*2D",
+      "sentence_type": "APB",
+      "sequence": 32,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339405.997,
+      "relative_time": 16.5,
+      "sentence": "$RAXTE,A,A,0.050,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 33,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.497,
+      "relative_time": 17,
+      "sentence": "$RARSA,2.8,A,*1A",
+      "sentence_type": "RSA",
+      "sequence": 34,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.997,
+      "relative_time": 17.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 35,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339407.497,
+      "relative_time": 18,
+      "sentence": "$IIHDM,180.9,M*22",
+      "sentence_type": "HDM",
+      "sequence": 36,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339407.997,
+      "relative_time": 18.5,
+      "sentence": "$IIMWV,47.9,R,20.7,N,A*32",
+      "sentence_type": "MWV",
+      "sequence": 37,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.497,
+      "relative_time": 19,
+      "sentence": "$RAAPH,180.9,M,A*44",
+      "sentence_type": "APH",
+      "sequence": 38,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.997,
+      "relative_time": 19.5,
+      "sentence": "$RAAPB,A,A,0.070,L,N,A,A,181.6,M,WPT001,A,*25",
+      "sentence_type": "APB",
+      "sequence": 39,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339409.497,
+      "relative_time": 20,
+      "sentence": "$RAXTE,A,A,0.047,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 40,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339409.997,
+      "relative_time": 20.5,
+      "sentence": "$RARSA,0.3,A,*13",
+      "sentence_type": "RSA",
+      "sequence": 41,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.497,
+      "relative_time": 21,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 42,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.997,
+      "relative_time": 21.5,
+      "sentence": "$IIHDM,181.1,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 43,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339411.497,
+      "relative_time": 22,
+      "sentence": "$IIMWV,48.4,R,21.9,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 44,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339411.997,
+      "relative_time": 22.5,
+      "sentence": "$RAAPH,181.1,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 45,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.497,
+      "relative_time": 23,
+      "sentence": "$RAAPB,A,A,0.068,L,N,A,A,181.5,M,WPT001,A,*2F",
+      "sentence_type": "APB",
+      "sequence": 46,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.997,
+      "relative_time": 23.5,
+      "sentence": "$RAXTE,A,A,0.041,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 47,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339413.497,
+      "relative_time": 24,
+      "sentence": "$RARSA,-2.2,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 48,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339413.997,
+      "relative_time": 24.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 49,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.497,
+      "relative_time": 25,
+      "sentence": "$IIHDM,181.3,M*29",
+      "sentence_type": "HDM",
+      "sequence": 50,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.997,
+      "relative_time": 25.5,
+      "sentence": "$IIMWV,48.9,R,18.9,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 51,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339415.497,
+      "relative_time": 26,
+      "sentence": "$RAAPH,181.3,M,A*4F",
+      "sentence_type": "APH",
+      "sequence": 52,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339415.997,
+      "relative_time": 26.5,
+      "sentence": "$RAAPB,A,A,0.063,L,N,A,A,181.5,M,WPT001,A,*24",
+      "sentence_type": "APB",
+      "sequence": 53,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.497,
+      "relative_time": 27,
+      "sentence": "$RAXTE,A,A,0.033,L,N*5A",
+      "sentence_type": "XTE",
+      "sequence": 54,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.997,
+      "relative_time": 27.5,
+      "sentence": "$RARSA,-4.2,A,*3B",
+      "sentence_type": "RSA",
+      "sequence": 55,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339417.497,
+      "relative_time": 28,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 56,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339417.997,
+      "relative_time": 28.5,
+      "sentence": "$IIHDM,181.4,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 57,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.497,
+      "relative_time": 29,
+      "sentence": "$IIMWV,49.4,R,20.8,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 58,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.997,
+      "relative_time": 29.5,
+      "sentence": "$RAAPH,181.5,M,A*49",
+      "sentence_type": "APH",
+      "sequence": 59,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339419.497,
+      "relative_time": 30,
+      "sentence": "$RAAPB,A,A,0.054,L,N,A,A,181.4,M,WPT001,A,*21",
+      "sentence_type": "APB",
+      "sequence": 60,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339419.997,
+      "relative_time": 30.5,
+      "sentence": "$RAXTE,A,A,0.023,L,N*5B",
+      "sentence_type": "XTE",
+      "sequence": 61,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.497,
+      "relative_time": 31,
+      "sentence": "$RARSA,-5.0,A,*38",
+      "sentence_type": "RSA",
+      "sequence": 62,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.997,
+      "relative_time": 31.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 63,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339421.497,
+      "relative_time": 32,
+      "sentence": "$IIHDM,181.6,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 64,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339421.997,
+      "relative_time": 32.5,
+      "sentence": "$IIMWV,49.8,R,21.9,N,A*32",
+      "sentence_type": "MWV",
+      "sequence": 65,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.497,
+      "relative_time": 33,
+      "sentence": "$RAAPH,181.7,M,A*4B",
+      "sentence_type": "APH",
+      "sequence": 66,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.997,
+      "relative_time": 33.5,
+      "sentence": "$RAAPB,A,A,0.042,L,N,A,A,181.3,M,WPT001,A,*21",
+      "sentence_type": "APB",
+      "sequence": 67,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339423.497,
+      "relative_time": 34,
+      "sentence": "$RAXTE,A,A,0.012,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 68,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339423.997,
+      "relative_time": 34.5,
+      "sentence": "$RARSA,-4.5,A,*3C",
+      "sentence_type": "RSA",
+      "sequence": 69,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.497,
+      "relative_time": 35,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 70,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.997,
+      "relative_time": 35.5,
+      "sentence": "$IIHDM,181.8,M*22",
+      "sentence_type": "HDM",
+      "sequence": 71,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339425.497,
+      "relative_time": 36,
+      "sentence": "$IIMWV,50.3,R,18.1,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 72,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339425.997,
+      "relative_time": 36.5,
+      "sentence": "$RAAPH,181.8,M,A*44",
+      "sentence_type": "APH",
+      "sequence": 73,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.497,
+      "relative_time": 37,
+      "sentence": "$RAAPB,A,A,0.029,L,N,A,A,181.3,M,WPT001,A,*2C",
+      "sentence_type": "APB",
+      "sequence": 74,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.997,
+      "relative_time": 37.5,
+      "sentence": "$RAXTE,A,A,0.003,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 75,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.497,
+      "relative_time": 38,
+      "sentence": "$RARSA,-2.8,A,*37",
+      "sentence_type": "RSA",
+      "sequence": 76,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.997,
+      "relative_time": 38.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 77,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.497,
+      "relative_time": 39,
+      "sentence": "$IIHDM,181.9,M*23",
+      "sentence_type": "HDM",
+      "sequence": 78,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.997,
+      "relative_time": 39.5,
+      "sentence": "$IIMWV,50.7,R,18.9,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 79,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.497,
+      "relative_time": 40,
+      "sentence": "$RAAPH,182.0,M,A*4F",
+      "sentence_type": "APH",
+      "sequence": 80,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.997,
+      "relative_time": 40.5,
+      "sentence": "$RAAPB,A,A,0.015,L,N,A,A,181.2,M,WPT001,A,*22",
+      "sentence_type": "APB",
+      "sequence": 81,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.497,
+      "relative_time": 41,
+      "sentence": "$RAXTE,A,A,-0.005,L,N*72",
+      "sentence_type": "XTE",
+      "sequence": 82,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.997,
+      "relative_time": 41.5,
+      "sentence": "$RARSA,-0.3,A,*3E",
+      "sentence_type": "RSA",
+      "sequence": 83,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.497,
+      "relative_time": 42,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 84,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.997,
+      "relative_time": 42.5,
+      "sentence": "$IIHDM,182.1,M*28",
+      "sentence_type": "HDM",
+      "sequence": 85,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.497,
+      "relative_time": 43,
+      "sentence": "$IIMWV,51.1,R,18.1,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 86,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.997,
+      "relative_time": 43.5,
+      "sentence": "$RAAPH,182.2,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 87,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.497,
+      "relative_time": 44,
+      "sentence": "$RAAPB,A,A,0.002,L,N,A,A,181.1,M,WPT001,A,*27",
+      "sentence_type": "APB",
+      "sequence": 88,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.997,
+      "relative_time": 44.5,
+      "sentence": "$RAXTE,A,A,-0.009,L,N*7E",
+      "sentence_type": "XTE",
+      "sequence": 89,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.497,
+      "relative_time": 45,
+      "sentence": "$RARSA,2.3,A,*11",
+      "sentence_type": "RSA",
+      "sequence": 90,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.997,
+      "relative_time": 45.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 91,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.497,
+      "relative_time": 46,
+      "sentence": "$IIHDM,182.3,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 92,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.997,
+      "relative_time": 46.5,
+      "sentence": "$IIMWV,51.4,R,20.2,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 93,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.497,
+      "relative_time": 47,
+      "sentence": "$RAAPH,182.3,M,A*4C",
+      "sentence_type": "APH",
+      "sequence": 94,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.997,
+      "relative_time": 47.5,
+      "sentence": "$RAAPB,A,A,-0.011,L,N,A,A,181.1,M,WPT001,A,*08",
+      "sentence_type": "APB",
+      "sequence": 95,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.497,
+      "relative_time": 48,
+      "sentence": "$RAXTE,A,A,-0.010,L,N*76",
+      "sentence_type": "XTE",
+      "sequence": 96,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.997,
+      "relative_time": 48.5,
+      "sentence": "$RARSA,4.2,A,*16",
+      "sentence_type": "RSA",
+      "sequence": 97,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.497,
+      "relative_time": 49,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 98,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.997,
+      "relative_time": 49.5,
+      "sentence": "$IIHDM,182.5,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 99,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.497,
+      "relative_time": 50,
+      "sentence": "$IIMWV,51.7,R,20.9,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 100,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.997,
+      "relative_time": 50.5,
+      "sentence": "$RAAPH,182.5,M,A*4A",
+      "sentence_type": "APH",
+      "sequence": 101,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.497,
+      "relative_time": 51,
+      "sentence": "$RAAPB,A,A,-0.020,L,N,A,A,181.0,M,WPT001,A,*0B",
+      "sentence_type": "APB",
+      "sequence": 102,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.997,
+      "relative_time": 51.5,
+      "sentence": "$RAXTE,A,A,-0.007,L,N*70",
+      "sentence_type": "XTE",
+      "sequence": 103,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.497,
+      "relative_time": 52,
+      "sentence": "$RARSA,5.0,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 104,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.997,
+      "relative_time": 52.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 105,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.497,
+      "relative_time": 53,
+      "sentence": "$IIHDM,182.7,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 106,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.997,
+      "relative_time": 53.5,
+      "sentence": "$IIMWV,52.0,R,18.9,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 107,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.497,
+      "relative_time": 54,
+      "sentence": "$RAAPH,182.7,M,A*48",
+      "sentence_type": "APH",
+      "sequence": 108,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.997,
+      "relative_time": 54.5,
+      "sentence": "$RAAPB,A,A,-0.027,L,N,A,A,180.9,M,WPT001,A,*04",
+      "sentence_type": "APB",
+      "sequence": 109,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.497,
+      "relative_time": 55,
+      "sentence": "$RAXTE,A,A,-0.001,L,N*76",
+      "sentence_type": "XTE",
+      "sequence": 110,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.997,
+      "relative_time": 55.5,
+      "sentence": "$RARSA,4.5,A,*11",
+      "sentence_type": "RSA",
+      "sequence": 111,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.497,
+      "relative_time": 56,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 112,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.997,
+      "relative_time": 56.5,
+      "sentence": "$IIHDM,182.8,M*21",
+      "sentence_type": "HDM",
+      "sequence": 113,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.497,
+      "relative_time": 57,
+      "sentence": "$IIMWV,52.3,R,20.2,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 114,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.997,
+      "relative_time": 57.5,
+      "sentence": "$RAAPH,182.9,M,A*46",
+      "sentence_type": "APH",
+      "sequence": 115,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.497,
+      "relative_time": 58,
+      "sentence": "$RAAPB,A,A,-0.030,L,N,A,A,180.8,M,WPT001,A,*03",
+      "sentence_type": "APB",
+      "sequence": 116,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.997,
+      "relative_time": 58.5,
+      "sentence": "$RAXTE,A,A,0.007,L,N*5D",
+      "sentence_type": "XTE",
+      "sequence": 117,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.497,
+      "relative_time": 59,
+      "sentence": "$RARSA,2.7,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 118,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.997,
+      "relative_time": 59.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 119,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.497,
+      "relative_time": 60,
+      "sentence": "$IIHDM,183.0,M*28",
+      "sentence_type": "HDM",
+      "sequence": 120,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.997,
+      "relative_time": 60.5,
+      "sentence": "$IIMWV,52.5,R,19.0,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 121,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.497,
+      "relative_time": 61,
+      "sentence": "$RAAPH,183.1,M,A*4F",
+      "sentence_type": "APH",
+      "sequence": 122,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.997,
+      "relative_time": 61.5,
+      "sentence": "$RAAPB,A,A,-0.029,L,N,A,A,180.8,M,WPT001,A,*0B",
+      "sentence_type": "APB",
+      "sequence": 123,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.497,
+      "relative_time": 62,
+      "sentence": "$RAXTE,A,A,0.018,L,N*53",
+      "sentence_type": "XTE",
+      "sequence": 124,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.997,
+      "relative_time": 62.5,
+      "sentence": "$RARSA,0.2,A,*12",
+      "sentence_type": "RSA",
+      "sequence": 125,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.497,
+      "relative_time": 63,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 126,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.997,
+      "relative_time": 63.5,
+      "sentence": "$IIHDM,183.2,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 127,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.497,
+      "relative_time": 64,
+      "sentence": "$IIMWV,52.7,R,20.0,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 128,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.997,
+      "relative_time": 64.5,
+      "sentence": "$RAAPH,183.2,M,A*4C",
+      "sentence_type": "APH",
+      "sequence": 129,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.497,
+      "relative_time": 65,
+      "sentence": "$RAAPB,A,A,-0.024,L,N,A,A,180.7,M,WPT001,A,*09",
+      "sentence_type": "APB",
+      "sequence": 130,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.997,
+      "relative_time": 65.5,
+      "sentence": "$RAXTE,A,A,0.028,L,N*50",
+      "sentence_type": "XTE",
+      "sequence": 131,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.497,
+      "relative_time": 66,
+      "sentence": "$RARSA,-2.3,A,*3C",
+      "sentence_type": "RSA",
+      "sequence": 132,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.997,
+      "relative_time": 66.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 133,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.497,
+      "relative_time": 67,
+      "sentence": "$IIHDM,183.3,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 134,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.997,
+      "relative_time": 67.5,
+      "sentence": "$IIMWV,52.8,R,18.5,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 135,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.497,
+      "relative_time": 68,
+      "sentence": "$RAAPH,183.4,M,A*4A",
+      "sentence_type": "APH",
+      "sequence": 136,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.997,
+      "relative_time": 68.5,
+      "sentence": "$RAAPB,A,A,-0.016,L,N,A,A,180.6,M,WPT001,A,*09",
+      "sentence_type": "APB",
+      "sequence": 137,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.497,
+      "relative_time": 69,
+      "sentence": "$RAXTE,A,A,0.037,L,N*5E",
+      "sentence_type": "XTE",
+      "sequence": 138,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.997,
+      "relative_time": 69.5,
+      "sentence": "$RARSA,-4.2,A,*3B",
+      "sentence_type": "RSA",
+      "sequence": 139,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.497,
+      "relative_time": 70,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 140,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.997,
+      "relative_time": 70.5,
+      "sentence": "$IIHDM,183.5,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 141,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.497,
+      "relative_time": 71,
+      "sentence": "$IIMWV,52.9,R,21.9,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 142,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.997,
+      "relative_time": 71.5,
+      "sentence": "$RAAPH,183.6,M,A*48",
+      "sentence_type": "APH",
+      "sequence": 143,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.497,
+      "relative_time": 72,
+      "sentence": "$RAAPB,A,A,-0.005,L,N,A,A,180.6,M,WPT001,A,*0B",
+      "sentence_type": "APB",
+      "sequence": 144,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.997,
+      "relative_time": 72.5,
+      "sentence": "$RAXTE,A,A,0.045,L,N*5B",
+      "sentence_type": "XTE",
+      "sequence": 145,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.497,
+      "relative_time": 73,
+      "sentence": "$RARSA,-5.0,A,*38",
+      "sentence_type": "RSA",
+      "sequence": 146,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.997,
+      "relative_time": 73.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 147,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.497,
+      "relative_time": 74,
+      "sentence": "$IIHDM,183.7,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 148,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.997,
+      "relative_time": 74.5,
+      "sentence": "$IIMWV,53.0,R,19.0,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 149,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.497,
+      "relative_time": 75,
+      "sentence": "$RAAPH,183.8,M,A*46",
+      "sentence_type": "APH",
+      "sequence": 150,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.997,
+      "relative_time": 75.5,
+      "sentence": "$RAAPB,A,A,0.008,L,N,A,A,180.5,M,WPT001,A,*28",
+      "sentence_type": "APB",
+      "sequence": 151,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.497,
+      "relative_time": 76,
+      "sentence": "$RAXTE,A,A,0.049,L,N*57",
+      "sentence_type": "XTE",
+      "sequence": 152,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.997,
+      "relative_time": 76.5,
+      "sentence": "$RARSA,-4.4,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 153,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.497,
+      "relative_time": 77,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 154,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.997,
+      "relative_time": 77.5,
+      "sentence": "$IIHDM,183.9,M*21",
+      "sentence_type": "HDM",
+      "sequence": 155,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.497,
+      "relative_time": 78,
+      "sentence": "$IIMWV,53.0,R,18.3,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 156,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.997,
+      "relative_time": 78.5,
+      "sentence": "$RAAPH,183.9,M,A*47",
+      "sentence_type": "APH",
+      "sequence": 157,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.497,
+      "relative_time": 79,
+      "sentence": "$RAAPB,A,A,0.022,L,N,A,A,180.4,M,WPT001,A,*21",
+      "sentence_type": "APB",
+      "sequence": 158,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.997,
+      "relative_time": 79.5,
+      "sentence": "$RAXTE,A,A,0.050,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 159,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.497,
+      "relative_time": 80,
+      "sentence": "$RARSA,-2.7,A,*38",
+      "sentence_type": "RSA",
+      "sequence": 160,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.997,
+      "relative_time": 80.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 161,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.497,
+      "relative_time": 81,
+      "sentence": "$IIHDM,184.1,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 162,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.997,
+      "relative_time": 81.5,
+      "sentence": "$IIMWV,53.0,R,19.3,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 163,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.497,
+      "relative_time": 82,
+      "sentence": "$RAAPH,184.1,M,A*48",
+      "sentence_type": "APH",
+      "sequence": 164,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.997,
+      "relative_time": 82.5,
+      "sentence": "$RAAPB,A,A,0.036,L,N,A,A,180.3,M,WPT001,A,*23",
+      "sentence_type": "APB",
+      "sequence": 165,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.497,
+      "relative_time": 83,
+      "sentence": "$RAXTE,A,A,0.047,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 166,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.997,
+      "relative_time": 83.5,
+      "sentence": "$RARSA,-0.2,A,*3F",
+      "sentence_type": "RSA",
+      "sequence": 167,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.497,
+      "relative_time": 84,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 168,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.997,
+      "relative_time": 84.5,
+      "sentence": "$IIHDM,184.2,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 169,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.497,
+      "relative_time": 85,
+      "sentence": "$IIMWV,52.9,R,20.2,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 170,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.997,
+      "relative_time": 85.5,
+      "sentence": "$RAAPH,184.3,M,A*4A",
+      "sentence_type": "APH",
+      "sequence": 171,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.497,
+      "relative_time": 86,
+      "sentence": "$RAAPB,A,A,0.048,L,N,A,A,180.3,M,WPT001,A,*2A",
+      "sentence_type": "APB",
+      "sequence": 172,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.997,
+      "relative_time": 86.5,
+      "sentence": "$RAXTE,A,A,0.041,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 173,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.497,
+      "relative_time": 87,
+      "sentence": "$RARSA,2.3,A,*11",
+      "sentence_type": "RSA",
+      "sequence": 174,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.997,
+      "relative_time": 87.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 175,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.497,
+      "relative_time": 88,
+      "sentence": "$IIHDM,184.4,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 176,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.997,
+      "relative_time": 88.5,
+      "sentence": "$IIMWV,52.8,R,19.7,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 177,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.497,
+      "relative_time": 89,
+      "sentence": "$RAAPH,184.4,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 178,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.997,
+      "relative_time": 89.5,
+      "sentence": "$RAAPB,A,A,0.058,L,N,A,A,180.2,M,WPT001,A,*2A",
+      "sentence_type": "APB",
+      "sequence": 179,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.497,
+      "relative_time": 90,
+      "sentence": "$RAXTE,A,A,0.032,L,N*5B",
+      "sentence_type": "XTE",
+      "sequence": 180,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.997,
+      "relative_time": 90.5,
+      "sentence": "$RARSA,4.2,A,*16",
+      "sentence_type": "RSA",
+      "sequence": 181,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.497,
+      "relative_time": 91,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 182,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.997,
+      "relative_time": 91.5,
+      "sentence": "$IIHDM,184.6,M*29",
+      "sentence_type": "HDM",
+      "sequence": 183,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.497,
+      "relative_time": 92,
+      "sentence": "$IIMWV,52.7,R,21.7,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 184,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.997,
+      "relative_time": 92.5,
+      "sentence": "$RAAPH,184.6,M,A*4F",
+      "sentence_type": "APH",
+      "sequence": 185,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.497,
+      "relative_time": 93,
+      "sentence": "$RAAPB,A,A,0.066,L,N,A,A,180.1,M,WPT001,A,*24",
+      "sentence_type": "APB",
+      "sequence": 186,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.997,
+      "relative_time": 93.5,
+      "sentence": "$RAXTE,A,A,0.022,L,N*5A",
+      "sentence_type": "XTE",
+      "sequence": 187,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.497,
+      "relative_time": 94,
+      "sentence": "$RARSA,5.0,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 188,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.997,
+      "relative_time": 94.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 189,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.497,
+      "relative_time": 95,
+      "sentence": "$IIHDM,184.8,M*27",
+      "sentence_type": "HDM",
+      "sequence": 190,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.997,
+      "relative_time": 95.5,
+      "sentence": "$IIMWV,52.5,R,18.5,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 191,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.497,
+      "relative_time": 96,
+      "sentence": "$RAAPH,184.8,M,A*41",
+      "sentence_type": "APH",
+      "sequence": 192,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.997,
+      "relative_time": 96.5,
+      "sentence": "$RAAPB,A,A,0.070,L,N,A,A,180.1,M,WPT001,A,*23",
+      "sentence_type": "APB",
+      "sequence": 193,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.497,
+      "relative_time": 97,
+      "sentence": "$RAXTE,A,A,0.012,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 194,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.997,
+      "relative_time": 97.5,
+      "sentence": "$RARSA,4.4,A,*10",
+      "sentence_type": "RSA",
+      "sequence": 195,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.497,
+      "relative_time": 98,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 196,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.997,
+      "relative_time": 98.5,
+      "sentence": "$IIHDM,184.9,M*26",
+      "sentence_type": "HDM",
+      "sequence": 197,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.497,
+      "relative_time": 99,
+      "sentence": "$IIMWV,52.3,R,21.2,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 198,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.997,
+      "relative_time": 99.5,
+      "sentence": "$RAAPH,185.0,M,A*48",
+      "sentence_type": "APH",
+      "sequence": 199,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.497,
+      "relative_time": 100,
+      "sentence": "$RAAPB,A,A,0.069,L,N,A,A,180.0,M,WPT001,A,*2A",
+      "sentence_type": "APB",
+      "sequence": 200,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.997,
+      "relative_time": 100.5,
+      "sentence": "$RAXTE,A,A,0.002,L,N*58",
+      "sentence_type": "XTE",
+      "sequence": 201,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.497,
+      "relative_time": 101,
+      "sentence": "$RARSA,2.6,A,*14",
+      "sentence_type": "RSA",
+      "sequence": 202,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.997,
+      "relative_time": 101.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 203,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.497,
+      "relative_time": 102,
+      "sentence": "$IIHDM,185.1,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 204,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.997,
+      "relative_time": 102.5,
+      "sentence": "$IIMWV,52.1,R,19.9,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 205,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.497,
+      "relative_time": 103,
+      "sentence": "$RAAPH,185.2,M,A*4A",
+      "sentence_type": "APH",
+      "sequence": 206,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.997,
+      "relative_time": 103.5,
+      "sentence": "$RAAPB,A,A,0.066,L,N,A,A,179.9,M,WPT001,A,*2A",
+      "sentence_type": "APB",
+      "sequence": 207,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.497,
+      "relative_time": 104,
+      "sentence": "$RAXTE,A,A,-0.005,L,N*72",
+      "sentence_type": "XTE",
+      "sequence": 208,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.997,
+      "relative_time": 104.5,
+      "sentence": "$RARSA,0.2,A,*12",
+      "sentence_type": "RSA",
+      "sequence": 209,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.497,
+      "relative_time": 105,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 210,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.997,
+      "relative_time": 105.5,
+      "sentence": "$IIHDM,185.3,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 211,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.497,
+      "relative_time": 106,
+      "sentence": "$IIMWV,51.8,R,21.1,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 212,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.997,
+      "relative_time": 106.5,
+      "sentence": "$RAAPH,185.3,M,A*4B",
+      "sentence_type": "APH",
+      "sequence": 213,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.497,
+      "relative_time": 107,
+      "sentence": "$RAAPB,A,A,0.058,L,N,A,A,179.9,M,WPT001,A,*27",
+      "sentence_type": "APB",
+      "sequence": 214,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.997,
+      "relative_time": 107.5,
+      "sentence": "$RAXTE,A,A,-0.009,L,N*7E",
+      "sentence_type": "XTE",
+      "sequence": 215,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.497,
+      "relative_time": 108,
+      "sentence": "$RARSA,-2.4,A,*3B",
+      "sentence_type": "RSA",
+      "sequence": 216,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.997,
+      "relative_time": 108.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 217,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.497,
+      "relative_time": 109,
+      "sentence": "$IIHDM,185.4,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 218,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.997,
+      "relative_time": 109.5,
+      "sentence": "$IIMWV,51.5,R,18.1,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 219,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.497,
+      "relative_time": 110,
+      "sentence": "$RAAPH,185.5,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 220,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.997,
+      "relative_time": 110.5,
+      "sentence": "$RAAPB,A,A,0.048,L,N,A,A,179.8,M,WPT001,A,*27",
+      "sentence_type": "APB",
+      "sequence": 221,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.497,
+      "relative_time": 111,
+      "sentence": "$RAXTE,A,A,-0.010,L,N*76",
+      "sentence_type": "XTE",
+      "sequence": 222,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.997,
+      "relative_time": 111.5,
+      "sentence": "$RARSA,-4.3,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 223,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.497,
+      "relative_time": 112,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 224,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.997,
+      "relative_time": 112.5,
+      "sentence": "$IIHDM,185.6,M*28",
+      "sentence_type": "HDM",
+      "sequence": 225,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.497,
+      "relative_time": 113,
+      "sentence": "$IIMWV,51.2,R,18.7,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 226,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.997,
+      "relative_time": 113.5,
+      "sentence": "$RAAPH,185.7,M,A*4F",
+      "sentence_type": "APH",
+      "sequence": 227,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.497,
+      "relative_time": 114,
+      "sentence": "$RAAPB,A,A,0.035,L,N,A,A,179.7,M,WPT001,A,*22",
+      "sentence_type": "APB",
+      "sequence": 228,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.997,
+      "relative_time": 114.5,
+      "sentence": "$RAXTE,A,A,-0.007,L,N*70",
+      "sentence_type": "XTE",
+      "sequence": 229,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.497,
+      "relative_time": 115,
+      "sentence": "$RARSA,-5.0,A,*38",
+      "sentence_type": "RSA",
+      "sequence": 230,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.997,
+      "relative_time": 115.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 231,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.497,
+      "relative_time": 116,
+      "sentence": "$IIHDM,185.8,M*26",
+      "sentence_type": "HDM",
+      "sequence": 232,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.997,
+      "relative_time": 116.5,
+      "sentence": "$IIMWV,50.8,R,19.3,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 233,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.497,
+      "relative_time": 117,
+      "sentence": "$RAAPH,185.8,M,A*40",
+      "sentence_type": "APH",
+      "sequence": 234,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.997,
+      "relative_time": 117.5,
+      "sentence": "$RAAPB,A,A,0.021,L,N,A,A,179.7,M,WPT001,A,*27",
+      "sentence_type": "APB",
+      "sequence": 235,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.497,
+      "relative_time": 118,
+      "sentence": "$RAXTE,A,A,-0.001,L,N*76",
+      "sentence_type": "XTE",
+      "sequence": 236,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.997,
+      "relative_time": 118.5,
+      "sentence": "$RARSA,-4.4,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 237,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.497,
+      "relative_time": 119,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 238,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.997,
+      "relative_time": 119.5,
+      "sentence": "$IIHDM,186.0,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 239,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.497,
+      "relative_time": 120,
+      "sentence": "$IIMWV,50.4,R,20.1,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 240,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.997,
+      "relative_time": 120.5,
+      "sentence": "$RAAPH,186.0,M,A*4B",
+      "sentence_type": "APH",
+      "sequence": 241,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.497,
+      "relative_time": 121,
+      "sentence": "$RAAPB,A,A,0.007,L,N,A,A,179.6,M,WPT001,A,*22",
+      "sentence_type": "APB",
+      "sequence": 242,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.997,
+      "relative_time": 121.5,
+      "sentence": "$RAXTE,A,A,0.008,L,N*52",
+      "sentence_type": "XTE",
+      "sequence": 243,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.497,
+      "relative_time": 122,
+      "sentence": "$RARSA,-2.6,A,*39",
+      "sentence_type": "RSA",
+      "sequence": 244,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.997,
+      "relative_time": 122.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 245,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.497,
+      "relative_time": 123,
+      "sentence": "$IIHDM,186.2,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 246,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.997,
+      "relative_time": 123.5,
+      "sentence": "$IIMWV,50.0,R,18.7,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 247,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.497,
+      "relative_time": 124,
+      "sentence": "$RAAPH,186.2,M,A*49",
+      "sentence_type": "APH",
+      "sequence": 248,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.997,
+      "relative_time": 124.5,
+      "sentence": "$RAAPB,A,A,-0.006,L,N,A,A,179.5,M,WPT001,A,*0D",
+      "sentence_type": "APB",
+      "sequence": 249,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.497,
+      "relative_time": 125,
+      "sentence": "$RAXTE,A,A,0.018,L,N*53",
+      "sentence_type": "XTE",
+      "sequence": 250,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.997,
+      "relative_time": 125.5,
+      "sentence": "$RARSA,-0.1,A,*3C",
+      "sentence_type": "RSA",
+      "sequence": 251,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.497,
+      "relative_time": 126,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 252,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.997,
+      "relative_time": 126.5,
+      "sentence": "$IIHDM,186.3,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 253,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.497,
+      "relative_time": 127,
+      "sentence": "$IIMWV,49.5,R,18.2,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 254,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.997,
+      "relative_time": 127.5,
+      "sentence": "$RAAPH,186.4,M,A*4F",
+      "sentence_type": "APH",
+      "sequence": 255,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.497,
+      "relative_time": 128,
+      "sentence": "$RAAPB,A,A,-0.016,L,N,A,A,179.4,M,WPT001,A,*0D",
+      "sentence_type": "APB",
+      "sequence": 256,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.997,
+      "relative_time": 128.5,
+      "sentence": "$RAXTE,A,A,0.028,L,N*50",
+      "sentence_type": "XTE",
+      "sequence": 257,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.497,
+      "relative_time": 129,
+      "sentence": "$RARSA,2.4,A,*16",
+      "sentence_type": "RSA",
+      "sequence": 258,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.997,
+      "relative_time": 129.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 259,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.497,
+      "relative_time": 130,
+      "sentence": "$IIHDM,186.5,M*28",
+      "sentence_type": "HDM",
+      "sequence": 260,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.997,
+      "relative_time": 130.5,
+      "sentence": "$IIMWV,49.1,R,21.4,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 261,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.497,
+      "relative_time": 131,
+      "sentence": "$RAAPH,186.6,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 262,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.997,
+      "relative_time": 131.5,
+      "sentence": "$RAAPB,A,A,-0.024,L,N,A,A,179.4,M,WPT001,A,*0C",
+      "sentence_type": "APB",
+      "sequence": 263,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339521.497,
+      "relative_time": 132,
+      "sentence": "$RAXTE,A,A,0.038,L,N*51",
+      "sentence_type": "XTE",
+      "sequence": 264,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339521.997,
+      "relative_time": 132.5,
+      "sentence": "$RARSA,4.3,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 265,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.497,
+      "relative_time": 133,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 266,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.997,
+      "relative_time": 133.5,
+      "sentence": "$IIHDM,186.7,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 267,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339523.497,
+      "relative_time": 134,
+      "sentence": "$IIMWV,48.6,R,18.3,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 268,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339523.997,
+      "relative_time": 134.5,
+      "sentence": "$RAAPH,186.7,M,A*4C",
+      "sentence_type": "APH",
+      "sequence": 269,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.497,
+      "relative_time": 135,
+      "sentence": "$RAAPB,A,A,-0.029,L,N,A,A,179.3,M,WPT001,A,*06",
+      "sentence_type": "APB",
+      "sequence": 270,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.997,
+      "relative_time": 135.5,
+      "sentence": "$RAXTE,A,A,0.045,L,N*5B",
+      "sentence_type": "XTE",
+      "sequence": 271,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339525.497,
+      "relative_time": 136,
+      "sentence": "$RARSA,5.0,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 272,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339525.997,
+      "relative_time": 136.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 273,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.497,
+      "relative_time": 137,
+      "sentence": "$IIHDM,186.8,M*25",
+      "sentence_type": "HDM",
+      "sequence": 274,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.997,
+      "relative_time": 137.5,
+      "sentence": "$IIMWV,48.1,R,18.5,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 275,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339527.497,
+      "relative_time": 138,
+      "sentence": "$RAAPH,186.9,M,A*42",
+      "sentence_type": "APH",
+      "sequence": 276,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339527.997,
+      "relative_time": 138.5,
+      "sentence": "$RAAPB,A,A,-0.030,L,N,A,A,179.2,M,WPT001,A,*0F",
+      "sentence_type": "APB",
+      "sequence": 277,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.497,
+      "relative_time": 139,
+      "sentence": "$RAXTE,A,A,0.049,L,N*57",
+      "sentence_type": "XTE",
+      "sequence": 278,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.997,
+      "relative_time": 139.5,
+      "sentence": "$RARSA,4.4,A,*10",
+      "sentence_type": "RSA",
+      "sequence": 279,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339529.497,
+      "relative_time": 140,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 280,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339529.997,
+      "relative_time": 140.5,
+      "sentence": "$IIHDM,187.0,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 281,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.497,
+      "relative_time": 141,
+      "sentence": "$IIMWV,47.5,R,20.1,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 282,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.997,
+      "relative_time": 141.5,
+      "sentence": "$RAAPH,187.1,M,A*4B",
+      "sentence_type": "APH",
+      "sequence": 283,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339531.497,
+      "relative_time": 142,
+      "sentence": "$RAAPB,A,A,-0.027,L,N,A,A,179.2,M,WPT001,A,*09",
+      "sentence_type": "APB",
+      "sequence": 284,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339531.997,
+      "relative_time": 142.5,
+      "sentence": "$RAXTE,A,A,0.050,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 285,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.497,
+      "relative_time": 143,
+      "sentence": "$RARSA,2.6,A,*14",
+      "sentence_type": "RSA",
+      "sequence": 286,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.997,
+      "relative_time": 143.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 287,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339533.497,
+      "relative_time": 144,
+      "sentence": "$IIHDM,187.2,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 288,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339533.997,
+      "relative_time": 144.5,
+      "sentence": "$IIMWV,47.0,R,20.1,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 289,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.497,
+      "relative_time": 145,
+      "sentence": "$RAAPH,187.3,M,A*49",
+      "sentence_type": "APH",
+      "sequence": 290,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.997,
+      "relative_time": 145.5,
+      "sentence": "$RAAPB,A,A,-0.020,L,N,A,A,179.1,M,WPT001,A,*0D",
+      "sentence_type": "APB",
+      "sequence": 291,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339535.497,
+      "relative_time": 146,
+      "sentence": "$RAXTE,A,A,0.047,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 292,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339535.997,
+      "relative_time": 146.5,
+      "sentence": "$RARSA,0.1,A,*11",
+      "sentence_type": "RSA",
+      "sequence": 293,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.497,
+      "relative_time": 147,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 294,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.997,
+      "relative_time": 147.5,
+      "sentence": "$IIHDM,187.4,M*28",
+      "sentence_type": "HDM",
+      "sequence": 295,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339537.497,
+      "relative_time": 148,
+      "sentence": "$IIMWV,46.4,R,21.5,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 296,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339537.997,
+      "relative_time": 148.5,
+      "sentence": "$RAAPH,187.4,M,A*4E",
+      "sentence_type": "APH",
+      "sequence": 297,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.497,
+      "relative_time": 149,
+      "sentence": "$RAAPB,A,A,-0.010,L,N,A,A,179.0,M,WPT001,A,*0F",
+      "sentence_type": "APB",
+      "sequence": 298,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.997,
+      "relative_time": 149.5,
+      "sentence": "$RAXTE,A,A,0.041,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 299,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339539.497,
+      "relative_time": 150,
+      "sentence": "$RARSA,-2.4,A,*3B",
+      "sentence_type": "RSA",
+      "sequence": 300,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339539.997,
+      "relative_time": 150.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 301,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.497,
+      "relative_time": 151,
+      "sentence": "$IIHDM,187.6,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 302,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.997,
+      "relative_time": 151.5,
+      "sentence": "$IIMWV,45.9,R,19.4,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 303,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339541.497,
+      "relative_time": 152,
+      "sentence": "$RAAPH,187.6,M,A*4C",
+      "sentence_type": "APH",
+      "sequence": 304,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339541.997,
+      "relative_time": 152.5,
+      "sentence": "$RAAPB,A,A,0.002,L,N,A,A,178.9,M,WPT001,A,*29",
+      "sentence_type": "APB",
+      "sequence": 305,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.497,
+      "relative_time": 153,
+      "sentence": "$RAXTE,A,A,0.032,L,N*5B",
+      "sentence_type": "XTE",
+      "sequence": 306,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.997,
+      "relative_time": 153.5,
+      "sentence": "$RARSA,-4.3,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 307,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339543.497,
+      "relative_time": 154,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 308,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339543.997,
+      "relative_time": 154.5,
+      "sentence": "$IIHDM,187.7,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 309,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.497,
+      "relative_time": 155,
+      "sentence": "$IIMWV,45.3,R,19.8,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 310,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.997,
+      "relative_time": 155.5,
+      "sentence": "$RAAPH,187.8,M,A*42",
+      "sentence_type": "APH",
+      "sequence": 311,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339545.497,
+      "relative_time": 156,
+      "sentence": "$RAAPB,A,A,0.016,L,N,A,A,178.9,M,WPT001,A,*2C",
+      "sentence_type": "APB",
+      "sequence": 312,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339545.997,
+      "relative_time": 156.5,
+      "sentence": "$RAXTE,A,A,0.022,L,N*5A",
+      "sentence_type": "XTE",
+      "sequence": 313,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.497,
+      "relative_time": 157,
+      "sentence": "$RARSA,-5.0,A,*38",
+      "sentence_type": "RSA",
+      "sequence": 314,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.997,
+      "relative_time": 157.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 315,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339547.497,
+      "relative_time": 158,
+      "sentence": "$IIHDM,187.9,M*25",
+      "sentence_type": "HDM",
+      "sequence": 316,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339547.997,
+      "relative_time": 158.5,
+      "sentence": "$IIMWV,44.8,R,19.8,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 317,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.497,
+      "relative_time": 159,
+      "sentence": "$RAAPH,187.9,M,A*43",
+      "sentence_type": "APH",
+      "sequence": 318,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.997,
+      "relative_time": 159.5,
+      "sentence": "$RAAPB,A,A,0.030,L,N,A,A,178.8,M,WPT001,A,*29",
+      "sentence_type": "APB",
+      "sequence": 319,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339549.497,
+      "relative_time": 160,
+      "sentence": "$RAXTE,A,A,0.011,L,N*5A",
+      "sentence_type": "XTE",
+      "sequence": 320,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339549.997,
+      "relative_time": 160.5,
+      "sentence": "$RARSA,-4.4,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 321,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.497,
+      "relative_time": 161,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 322,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.997,
+      "relative_time": 161.5,
+      "sentence": "$IIHDM,188.1,M*22",
+      "sentence_type": "HDM",
+      "sequence": 323,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339551.497,
+      "relative_time": 162,
+      "sentence": "$IIMWV,44.2,R,19.5,N,A*32",
+      "sentence_type": "MWV",
+      "sequence": 324,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339551.997,
+      "relative_time": 162.5,
+      "sentence": "$RAAPH,188.1,M,A*44",
+      "sentence_type": "APH",
+      "sequence": 325,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.497,
+      "relative_time": 163,
+      "sentence": "$RAAPB,A,A,0.043,L,N,A,A,178.7,M,WPT001,A,*22",
+      "sentence_type": "APB",
+      "sequence": 326,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.997,
+      "relative_time": 163.5,
+      "sentence": "$RAXTE,A,A,0.002,L,N*58",
+      "sentence_type": "XTE",
+      "sequence": 327,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339553.497,
+      "relative_time": 164,
+      "sentence": "$RARSA,-2.5,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 328,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339553.997,
+      "relative_time": 164.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 329,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.497,
+      "relative_time": 165,
+      "sentence": "$IIHDM,188.3,M*20",
+      "sentence_type": "HDM",
+      "sequence": 330,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.997,
+      "relative_time": 165.5,
+      "sentence": "$IIMWV,43.7,R,18.1,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 331,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339555.497,
+      "relative_time": 166,
+      "sentence": "$RAAPH,188.3,M,A*46",
+      "sentence_type": "APH",
+      "sequence": 332,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339555.997,
+      "relative_time": 166.5,
+      "sentence": "$RAAPB,A,A,0.054,L,N,A,A,178.7,M,WPT001,A,*24",
+      "sentence_type": "APB",
+      "sequence": 333,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.497,
+      "relative_time": 167,
+      "sentence": "$RAXTE,A,A,-0.005,L,N*72",
+      "sentence_type": "XTE",
+      "sequence": 334,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.997,
+      "relative_time": 167.5,
+      "sentence": "$RARSA,-0.0,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 335,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339557.497,
+      "relative_time": 168,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 336,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339557.997,
+      "relative_time": 168.5,
+      "sentence": "$IIHDM,188.4,M*27",
+      "sentence_type": "HDM",
+      "sequence": 337,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.497,
+      "relative_time": 169,
+      "sentence": "$IIMWV,43.1,R,19.7,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 338,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.997,
+      "relative_time": 169.5,
+      "sentence": "$RAAPH,188.5,M,A*40",
+      "sentence_type": "APH",
+      "sequence": 339,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339559.497,
+      "relative_time": 170,
+      "sentence": "$RAAPB,A,A,0.063,L,N,A,A,178.6,M,WPT001,A,*21",
+      "sentence_type": "APB",
+      "sequence": 340,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339559.997,
+      "relative_time": 170.5,
+      "sentence": "$RAXTE,A,A,-0.009,L,N*7E",
+      "sentence_type": "XTE",
+      "sequence": 341,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.497,
+      "relative_time": 171,
+      "sentence": "$RARSA,2.5,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 342,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.997,
+      "relative_time": 171.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 343,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339561.497,
+      "relative_time": 172,
+      "sentence": "$IIHDM,188.6,M*25",
+      "sentence_type": "HDM",
+      "sequence": 344,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339561.997,
+      "relative_time": 172.5,
+      "sentence": "$IIMWV,42.6,R,21.8,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 345,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.497,
+      "relative_time": 173,
+      "sentence": "$RAAPH,188.7,M,A*42",
+      "sentence_type": "APH",
+      "sequence": 346,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.997,
+      "relative_time": 173.5,
+      "sentence": "$RAAPB,A,A,0.068,L,N,A,A,178.5,M,WPT001,A,*29",
+      "sentence_type": "APB",
+      "sequence": 347,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339563.497,
+      "relative_time": 174,
+      "sentence": "$RAXTE,A,A,-0.010,L,N*76",
+      "sentence_type": "XTE",
+      "sequence": 348,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339563.997,
+      "relative_time": 174.5,
+      "sentence": "$RARSA,4.3,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 349,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339564.497,
+      "relative_time": 175,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 350,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339564.997,
+      "relative_time": 175.5,
+      "sentence": "$IIHDM,188.8,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 351,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339565.497,
+      "relative_time": 176,
+      "sentence": "$IIMWV,42.0,R,20.0,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 352,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339565.997,
+      "relative_time": 176.5,
+      "sentence": "$RAAPH,188.8,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 353,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339566.497,
+      "relative_time": 177,
+      "sentence": "$RAAPB,A,A,0.070,L,N,A,A,178.5,M,WPT001,A,*20",
+      "sentence_type": "APB",
+      "sequence": 354,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339566.997,
+      "relative_time": 177.5,
+      "sentence": "$RAXTE,A,A,-0.007,L,N*70",
+      "sentence_type": "XTE",
+      "sequence": 355,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339567.497,
+      "relative_time": 178,
+      "sentence": "$RARSA,5.0,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 356,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339567.997,
+      "relative_time": 178.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 357,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339568.497,
+      "relative_time": 179,
+      "sentence": "$IIHDM,188.9,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 358,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339568.997,
+      "relative_time": 179.5,
+      "sentence": "$IIMWV,41.5,R,19.0,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 359,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339569.497,
+      "relative_time": 180,
+      "sentence": "$RAAPH,189.0,M,A*44",
+      "sentence_type": "APH",
+      "sequence": 360,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339569.997,
+      "relative_time": 180.5,
+      "sentence": "$RAAPB,A,A,0.068,L,N,A,A,178.4,M,WPT001,A,*28",
+      "sentence_type": "APB",
+      "sequence": 361,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339570.497,
+      "relative_time": 181,
+      "sentence": "$RAXTE,A,A,-0.000,L,N*77",
+      "sentence_type": "XTE",
+      "sequence": 362,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339570.997,
+      "relative_time": 181.5,
+      "sentence": "$RARSA,4.3,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 363,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339571.497,
+      "relative_time": 182,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 364,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339571.997,
+      "relative_time": 182.5,
+      "sentence": "$IIHDM,189.1,M*23",
+      "sentence_type": "HDM",
+      "sequence": 365,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339572.497,
+      "relative_time": 183,
+      "sentence": "$IIMWV,41.0,R,21.5,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 366,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339572.997,
+      "relative_time": 183.5,
+      "sentence": "$RAAPH,189.2,M,A*46",
+      "sentence_type": "APH",
+      "sequence": 367,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339573.497,
+      "relative_time": 184,
+      "sentence": "$RAAPB,A,A,0.062,L,N,A,A,178.3,M,WPT001,A,*25",
+      "sentence_type": "APB",
+      "sequence": 368,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339573.997,
+      "relative_time": 184.5,
+      "sentence": "$RAXTE,A,A,0.008,L,N*52",
+      "sentence_type": "XTE",
+      "sequence": 369,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339574.497,
+      "relative_time": 185,
+      "sentence": "$RARSA,2.5,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 370,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339574.997,
+      "relative_time": 185.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 371,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339575.497,
+      "relative_time": 186,
+      "sentence": "$IIHDM,189.3,M*21",
+      "sentence_type": "HDM",
+      "sequence": 372,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339575.997,
+      "relative_time": 186.5,
+      "sentence": "$IIMWV,40.6,R,21.5,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 373,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339576.497,
+      "relative_time": 187,
+      "sentence": "$RAAPH,189.3,M,A*47",
+      "sentence_type": "APH",
+      "sequence": 374,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339576.997,
+      "relative_time": 187.5,
+      "sentence": "$RAAPB,A,A,0.053,L,N,A,A,178.3,M,WPT001,A,*27",
+      "sentence_type": "APB",
+      "sequence": 375,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339577.497,
+      "relative_time": 188,
+      "sentence": "$RAXTE,A,A,0.019,L,N*52",
+      "sentence_type": "XTE",
+      "sequence": 376,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339577.997,
+      "relative_time": 188.5,
+      "sentence": "$RARSA,-0.0,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 377,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339578.497,
+      "relative_time": 189,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 378,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339578.997,
+      "relative_time": 189.5,
+      "sentence": "$IIHDM,189.5,M*27",
+      "sentence_type": "HDM",
+      "sequence": 379,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339579.497,
+      "relative_time": 190,
+      "sentence": "$IIMWV,40.1,R,20.9,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 380,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339579.997,
+      "relative_time": 190.5,
+      "sentence": "$RAAPH,189.5,M,A*41",
+      "sentence_type": "APH",
+      "sequence": 381,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339580.497,
+      "relative_time": 191,
+      "sentence": "$RAAPB,A,A,0.041,L,N,A,A,178.2,M,WPT001,A,*25",
+      "sentence_type": "APB",
+      "sequence": 382,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339580.997,
+      "relative_time": 191.5,
+      "sentence": "$RAXTE,A,A,0.029,L,N*51",
+      "sentence_type": "XTE",
+      "sequence": 383,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339581.497,
+      "relative_time": 192,
+      "sentence": "$RARSA,-2.5,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 384,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339581.997,
+      "relative_time": 192.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 385,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339582.497,
+      "relative_time": 193,
+      "sentence": "$IIHDM,189.7,M*25",
+      "sentence_type": "HDM",
+      "sequence": 386,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339582.997,
+      "relative_time": 193.5,
+      "sentence": "$IIMWV,39.7,R,19.4,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 387,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339583.497,
+      "relative_time": 194,
+      "sentence": "$RAAPH,189.7,M,A*43",
+      "sentence_type": "APH",
+      "sequence": 388,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339583.997,
+      "relative_time": 194.5,
+      "sentence": "$RAAPB,A,A,0.027,L,N,A,A,178.1,M,WPT001,A,*26",
+      "sentence_type": "APB",
+      "sequence": 389,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339584.497,
+      "relative_time": 195,
+      "sentence": "$RAXTE,A,A,0.038,L,N*51",
+      "sentence_type": "XTE",
+      "sequence": 390,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339584.997,
+      "relative_time": 195.5,
+      "sentence": "$RARSA,-4.3,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 391,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339585.497,
+      "relative_time": 196,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 392,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339585.997,
+      "relative_time": 196.5,
+      "sentence": "$IIHDM,189.8,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 393,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339586.497,
+      "relative_time": 197,
+      "sentence": "$IIMWV,39.3,R,21.8,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 394,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339586.997,
+      "relative_time": 197.5,
+      "sentence": "$RAAPH,189.9,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 395,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339587.497,
+      "relative_time": 198,
+      "sentence": "$RAAPB,A,A,0.013,L,N,A,A,178.0,M,WPT001,A,*20",
+      "sentence_type": "APB",
+      "sequence": 396,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339587.997,
+      "relative_time": 198.5,
+      "sentence": "$RAXTE,A,A,0.045,L,N*5B",
+      "sentence_type": "XTE",
+      "sequence": 397,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339588.497,
+      "relative_time": 199,
+      "sentence": "$RARSA,-5.0,A,*38",
+      "sentence_type": "RSA",
+      "sequence": 398,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339588.997,
+      "relative_time": 199.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 399,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339589.497,
+      "relative_time": 200,
+      "sentence": "$IIHDM,190.0,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 400,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339589.997,
+      "relative_time": 200.5,
+      "sentence": "$IIMWV,38.9,R,18.6,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 401,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339590.497,
+      "relative_time": 201,
+      "sentence": "$RAAPH,190.1,M,A*4D",
+      "sentence_type": "APH",
+      "sequence": 402,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339590.997,
+      "relative_time": 201.5,
+      "sentence": "$RAAPB,A,A,-0.000,L,N,A,A,178.0,M,WPT001,A,*0F",
+      "sentence_type": "APB",
+      "sequence": 403,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339591.497,
+      "relative_time": 202,
+      "sentence": "$RAXTE,A,A,0.049,L,N*57",
+      "sentence_type": "XTE",
+      "sequence": 404,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339591.997,
+      "relative_time": 202.5,
+      "sentence": "$RARSA,-4.3,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 405,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339592.497,
+      "relative_time": 203,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 406,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339592.997,
+      "relative_time": 203.5,
+      "sentence": "$IIHDM,190.2,M*28",
+      "sentence_type": "HDM",
+      "sequence": 407,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339593.497,
+      "relative_time": 204,
+      "sentence": "$IIMWV,38.5,R,18.2,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 408,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339593.997,
+      "relative_time": 204.5,
+      "sentence": "$RAAPH,190.2,M,A*4E",
+      "sentence_type": "APH",
+      "sequence": 409,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339594.497,
+      "relative_time": 205,
+      "sentence": "$RAAPB,A,A,-0.012,L,N,A,A,177.9,M,WPT001,A,*0A",
+      "sentence_type": "APB",
+      "sequence": 410,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339594.997,
+      "relative_time": 205.5,
+      "sentence": "$RAXTE,A,A,0.050,L,N*5F",
+      "sentence_type": "XTE",
+      "sequence": 411,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339595.497,
+      "relative_time": 206,
+      "sentence": "$RARSA,-2.5,A,*3A",
+      "sentence_type": "RSA",
+      "sequence": 412,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339595.997,
+      "relative_time": 206.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 413,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339596.497,
+      "relative_time": 207,
+      "sentence": "$IIHDM,190.3,M*29",
+      "sentence_type": "HDM",
+      "sequence": 414,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339596.997,
+      "relative_time": 207.5,
+      "sentence": "$IIMWV,38.2,R,19.8,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 415,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339597.497,
+      "relative_time": 208,
+      "sentence": "$RAAPH,190.4,M,A*48",
+      "sentence_type": "APH",
+      "sequence": 416,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339597.997,
+      "relative_time": 208.5,
+      "sentence": "$RAAPB,A,A,-0.021,L,N,A,A,177.8,M,WPT001,A,*0B",
+      "sentence_type": "APB",
+      "sequence": 417,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339598.497,
+      "relative_time": 209,
+      "sentence": "$RAXTE,A,A,0.047,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 418,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339598.997,
+      "relative_time": 209.5,
+      "sentence": "$RARSA,0.0,A,*10",
+      "sentence_type": "RSA",
+      "sequence": 419,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339599.497,
+      "relative_time": 210,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 420,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339599.997,
+      "relative_time": 210.5,
+      "sentence": "$IIHDM,190.5,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 421,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339600.497,
+      "relative_time": 211,
+      "sentence": "$IIMWV,38.0,R,20.4,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 422,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339600.997,
+      "relative_time": 211.5,
+      "sentence": "$RAAPH,190.6,M,A*4A",
+      "sentence_type": "APH",
+      "sequence": 423,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339601.497,
+      "relative_time": 212,
+      "sentence": "$RAAPB,A,A,-0.027,L,N,A,A,177.8,M,WPT001,A,*0D",
+      "sentence_type": "APB",
+      "sequence": 424,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339601.997,
+      "relative_time": 212.5,
+      "sentence": "$RAXTE,A,A,0.040,L,N*5E",
+      "sentence_type": "XTE",
+      "sequence": 425,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339602.497,
+      "relative_time": 213,
+      "sentence": "$RARSA,2.5,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 426,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339602.997,
+      "relative_time": 213.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 427,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339603.497,
+      "relative_time": 214,
+      "sentence": "$IIHDM,190.7,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 428,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339603.997,
+      "relative_time": 214.5,
+      "sentence": "$IIMWV,37.7,R,19.9,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 429,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339604.497,
+      "relative_time": 215,
+      "sentence": "$RAAPH,190.8,M,A*44",
+      "sentence_type": "APH",
+      "sequence": 430,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339604.997,
+      "relative_time": 215.5,
+      "sentence": "$RAAPB,A,A,-0.030,L,N,A,A,177.7,M,WPT001,A,*04",
+      "sentence_type": "APB",
+      "sequence": 431,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339605.497,
+      "relative_time": 216,
+      "sentence": "$RAXTE,A,A,0.031,L,N*58",
+      "sentence_type": "XTE",
+      "sequence": 432,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339605.997,
+      "relative_time": 216.5,
+      "sentence": "$RARSA,4.4,A,*10",
+      "sentence_type": "RSA",
+      "sequence": 433,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339606.497,
+      "relative_time": 217,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 434,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339606.997,
+      "relative_time": 217.5,
+      "sentence": "$IIHDM,190.9,M*23",
+      "sentence_type": "HDM",
+      "sequence": 435,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339607.497,
+      "relative_time": 218,
+      "sentence": "$IIMWV,37.5,R,20.7,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 436,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339607.997,
+      "relative_time": 218.5,
+      "sentence": "$RAAPH,190.9,M,A*45",
+      "sentence_type": "APH",
+      "sequence": 437,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339608.497,
+      "relative_time": 219,
+      "sentence": "$RAAPB,A,A,-0.029,L,N,A,A,177.6,M,WPT001,A,*0D",
+      "sentence_type": "APB",
+      "sequence": 438,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339608.997,
+      "relative_time": 219.5,
+      "sentence": "$RAXTE,A,A,0.021,L,N*59",
+      "sentence_type": "XTE",
+      "sequence": 439,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339609.497,
+      "relative_time": 220,
+      "sentence": "$RARSA,5.0,A,*15",
+      "sentence_type": "RSA",
+      "sequence": 440,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339609.997,
+      "relative_time": 220.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 441,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339610.497,
+      "relative_time": 221,
+      "sentence": "$IIHDM,191.1,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 442,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339610.997,
+      "relative_time": 221.5,
+      "sentence": "$IIMWV,37.3,R,20.5,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 443,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339611.497,
+      "relative_time": 222,
+      "sentence": "$RAAPH,191.1,M,A*4C",
+      "sentence_type": "APH",
+      "sequence": 444,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339611.997,
+      "relative_time": 222.5,
+      "sentence": "$RAAPB,A,A,-0.023,L,N,A,A,177.6,M,WPT001,A,*07",
+      "sentence_type": "APB",
+      "sequence": 445,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339612.497,
+      "relative_time": 223,
+      "sentence": "$RAXTE,A,A,0.011,L,N*5A",
+      "sentence_type": "XTE",
+      "sequence": 446,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339612.997,
+      "relative_time": 223.5,
+      "sentence": "$RARSA,4.3,A,*17",
+      "sentence_type": "RSA",
+      "sequence": 447,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339613.497,
+      "relative_time": 224,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 448,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339613.997,
+      "relative_time": 224.5,
+      "sentence": "$IIHDM,191.2,M*29",
+      "sentence_type": "HDM",
+      "sequence": 449,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339614.497,
+      "relative_time": 225,
+      "sentence": "$IIMWV,37.2,R,19.4,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 450,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339614.997,
+      "relative_time": 225.5,
+      "sentence": "$RAAPH,191.3,M,A*4E",
+      "sentence_type": "APH",
+      "sequence": 451,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339615.497,
+      "relative_time": 226,
+      "sentence": "$RAAPB,A,A,-0.015,L,N,A,A,177.5,M,WPT001,A,*01",
+      "sentence_type": "APB",
+      "sequence": 452,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339615.997,
+      "relative_time": 226.5,
+      "sentence": "$RAXTE,A,A,0.002,L,N*58",
+      "sentence_type": "XTE",
+      "sequence": 453,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339616.497,
+      "relative_time": 227,
+      "sentence": "$RARSA,2.4,A,*16",
+      "sentence_type": "RSA",
+      "sequence": 454,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339616.997,
+      "relative_time": 227.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 455,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339617.497,
+      "relative_time": 228,
+      "sentence": "$IIHDM,191.4,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 456,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339617.997,
+      "relative_time": 228.5,
+      "sentence": "$IIMWV,37.1,R,19.4,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 457,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339618.497,
+      "relative_time": 229,
+      "sentence": "$RAAPH,191.4,M,A*49",
+      "sentence_type": "APH",
+      "sequence": 458,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339618.997,
+      "relative_time": 229.5,
+      "sentence": "$RAAPB,A,A,-0.004,L,N,A,A,177.4,M,WPT001,A,*00",
+      "sentence_type": "APB",
+      "sequence": 459,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339619.497,
+      "relative_time": 230,
+      "sentence": "$RAXTE,A,A,-0.005,L,N*72",
+      "sentence_type": "XTE",
+      "sequence": 460,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339619.997,
+      "relative_time": 230.5,
+      "sentence": "$RARSA,-0.1,A,*3C",
+      "sentence_type": "RSA",
+      "sequence": 461,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339620.497,
+      "relative_time": 231,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 462,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339620.997,
+      "relative_time": 231.5,
+      "sentence": "$IIHDM,191.6,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 463,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339621.497,
+      "relative_time": 232,
+      "sentence": "$IIMWV,37.0,R,21.2,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 464,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339621.997,
+      "relative_time": 232.5,
+      "sentence": "$RAAPH,191.6,M,A*4B",
+      "sentence_type": "APH",
+      "sequence": 465,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339622.497,
+      "relative_time": 233,
+      "sentence": "$RAAPB,A,A,0.010,L,N,A,A,177.3,M,WPT001,A,*2F",
+      "sentence_type": "APB",
+      "sequence": 466,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339622.997,
+      "relative_time": 233.5,
+      "sentence": "$RAXTE,A,A,-0.009,L,N*7E",
+      "sentence_type": "XTE",
+      "sequence": 467,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339623.497,
+      "relative_time": 234,
+      "sentence": "$RARSA,-2.6,A,*39",
+      "sentence_type": "RSA",
+      "sequence": 468,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339623.997,
+      "relative_time": 234.5,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 469,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339624.497,
+      "relative_time": 235,
+      "sentence": "$IIHDM,191.8,M*23",
+      "sentence_type": "HDM",
+      "sequence": 470,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339624.997,
+      "relative_time": 235.5,
+      "sentence": "$IIMWV,37.0,R,20.1,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 471,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339625.497,
+      "relative_time": 236,
+      "sentence": "$RAAPH,191.8,M,A*45",
+      "sentence_type": "APH",
+      "sequence": 472,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339625.997,
+      "relative_time": 236.5,
+      "sentence": "$RAAPB,A,A,0.024,L,N,A,A,177.3,M,WPT001,A,*28",
+      "sentence_type": "APB",
+      "sequence": 473,
+      "description": "Autopilot Cross Track Error",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339626.497,
+      "relative_time": 237,
+      "sentence": "$RAXTE,A,A,-0.010,L,N*76",
+      "sentence_type": "XTE",
+      "sequence": 474,
+      "description": "Cross Track Error Magnitude",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339626.997,
+      "relative_time": 237.5,
+      "sentence": "$RARSA,-4.4,A,*3D",
+      "sentence_type": "RSA",
+      "sequence": 475,
+      "description": "Rudder Sensor Angle",
+      "source": "RUDDER",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339627.497,
+      "relative_time": 238,
+      "sentence": "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*70",
+      "sentence_type": "GGA",
+      "sequence": 476,
+      "description": "GPS Position Data",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339627.997,
+      "relative_time": 238.5,
+      "sentence": "$IIHDM,191.9,M*22",
+      "sentence_type": "HDM",
+      "sequence": 477,
+      "description": "Current Magnetic Heading",
+      "source": "COMPASS",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339628.497,
+      "relative_time": 239,
+      "sentence": "$IIMWV,37.0,R,18.2,N,A*32",
+      "sentence_type": "MWV",
+      "sequence": 478,
+      "description": "Apparent Wind Data",
+      "source": "WIND",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339628.997,
+      "relative_time": 239.5,
+      "sentence": "$RAAPH,192.0,M,A*4E",
+      "sentence_type": "APH",
+      "sequence": 479,
+      "description": "Autopilot Heading Command",
+      "source": "AUTOPILOT",
+      "checksum_valid": true
+    }
+  ]
+}

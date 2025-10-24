@@ -1,0 +1,325 @@
+name: "Coastal Sailing Scenario"
+description: "Variable depth (1.5-30.5 meters) with tidal effects simulation"
+duration: 600  # 10 minutes
+version: "1.0"
+category: "basic"
+
+# Vessel parameters (configurable)
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:12.2}  # meters, with environment variable override
+    beam: ${VESSEL_BEAM:3.7}      # meters
+    draft: ${VESSEL_DRAFT:1.8}     # meters
+    keel_offset: 1.8              # meters below transducer to keel (for DBK calculations)
+    type: "sailboat"
+    polar_file: "vendor/polars/j35-polar.csv"  # Path to polar diagram CSV
+    displacement: 5900             # kg (for realistic sailing calculations)
+    sail_area: 45.5               # m² (main + jib area)
+  sonar:
+    max_range: 100.0              # meters (for DPT sentence max range field)
+  depth_format: "DPT"             # Options: DBT, DPT, DBK (depth sentence type to generate)
+  conditions:
+    tidal_range: 2.4  # meters
+    tidal_period: 21600  # 6 hours (compressed to scenario duration)
+    wind_direction_base: 120  # degrees
+    wind_speed_base: 14  # knots
+
+# Tidal depth profile with mathematical progression
+data:
+  depth:
+    type: "tidal_cycle"
+    base_depth: 9.1      # Mean depth in meters
+    tidal_range: 7.6     # ±7.6 meters variation (1.5-16.7 meters range)
+    tidal_period: 600   # Full tidal cycle over scenario duration
+    unit: "meters"
+    min_depth: 1.5        # Shallow water limit
+    max_depth: 30.5      # Deep water limit
+  
+  speed:
+    type: "polar_sailing"           # New polar-based speed calculation
+    base_speed: 5.5                 # Fallback speed if polar lookup fails
+    tidal_current: 1.2              # knots current effect (added to polar speed)
+    leeway_factor: 0.95             # Speed reduction due to leeway (0.9-1.0)
+    heel_speed_loss: 0.02           # Speed loss per degree of heel
+    current_efficiency: 1.0         # Current assistance/resistance factor
+    unit: "knots"
+    min: 0.5                        # Minimum possible speed (near zero wind)
+    max: 9.5                        # Maximum possible speed (storm conditions)
+  
+  wind:
+    angle:
+      type: "coastal_variation"
+      base: 120         # degrees (from shore effects)
+      thermal_shift: 30 # degrees (sea breeze effects)
+      variation_period: 300  # 5-minute thermal cycles
+    speed:
+      type: "coastal_wind"
+      base: 14          # knots
+      thermal_effect: 4  # ±4 knots thermal variation
+      gusts: 0.3        # 30% gust factor
+      unit: "knots"
+      min: 8
+      max: 22
+  
+  gps:
+    type: "coastal_track"
+    start_position:
+      latitude: 41.4800   # Lake Erie coastal area
+      longitude: -81.6900
+    track_type: "coastal_navigation"
+    waypoints:
+      - {lat: 41.4800, lon: -81.6900, time: 0}      # Start
+      - {lat: 41.4850, lon: -81.6800, time: 150}    # 2.5 min
+      - {lat: 41.4900, lon: -81.6750, time: 300}    # 5 min
+      - {lat: 41.4950, lon: -81.6700, time: 450}    # 7.5 min
+      - {lat: 41.5000, lon: -81.6650, time: 600}    # 10 min end
+    speed_over_ground: "calculated"  # Based on speed data
+
+# NMEA sentence generation timing (realistic marine instrument frequencies)
+timing:
+  depth: 2      # Hz (every 0.5 seconds) - depth sounder typical
+  water_temp: 0.2  # Hz (every 5 seconds) - water temperature sensor typical  
+  speed: 1      # Hz (every 1 second) - speed log typical
+  wind: 2       # Hz (every 0.5 seconds) - wind instrument typical
+  gps: 5        # Hz (every 0.2 seconds) - GPS rapid updates for smooth movement
+  compass: 10   # Hz (every 0.1 seconds) - compass rapid updates
+
+# Mathematical data generation functions
+functions:
+  tidal_cycle: |
+    // Sinusoidal tidal variation over scenario duration
+    const phase = (currentTime / tidalPeriod) * 2 * Math.PI;
+    const tidalHeight = Math.sin(phase) * (tidalRange / 2);
+    return Math.max(minDepth, Math.min(maxDepth, baseDepth + tidalHeight));
+  
+  polar_sailing: |
+    // Polar-based sailboat speed calculation using true wind data
+    // Calculates speed through water from polar diagram + environmental factors
+    
+    // Get current wind data (use available wind data with fallbacks)
+    const trueWindSpeed = (typeof windSpeed === 'number') ? windSpeed : 10; // Default to 10 knots if missing
+    const windAngleValue = (typeof windAngle === 'number') ? windAngle : 120; // Default wind direction
+    
+    // Calculate vessel heading (interpolated from GPS track progression)
+    // For now, use a realistic sailing heading based on waypoint progression
+    let vesselHeading = 45; // Default heading (degrees)
+    
+    // Calculate True Wind Angle (TWA) relative to bow
+    let twa = Math.abs(windAngleValue - vesselHeading);
+    if (twa > 180) twa = 360 - twa; // Normalize to 0-180 degrees
+    
+    // Polar lookup function - interpolates speed from CSV data
+    const polarLookup = (twa, tws) => {
+      // J/35 polar data (embedded for performance)
+      const polarData = {
+        twa: [0, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
+        tws: [6, 8, 10, 12, 14, 16, 18, 20, 25, 30],
+        speeds: [
+          [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0], // TWA 0
+          [3.2,4.1,4.8,5.3,5.7,6.0,6.2,6.3,6.5,6.6], // TWA 30
+          [3.8,4.9,5.7,6.3,6.8,7.1,7.3,7.4,7.6,7.7], // TWA 35
+          [4.2,5.4,6.3,7.0,7.5,7.8,8.0,8.1,8.3,8.4], // TWA 40
+          [4.5,5.7,6.6,7.3,7.8,8.1,8.3,8.4,8.6,8.7], // TWA 45
+          [4.6,5.8,6.7,7.4,7.9,8.2,8.4,8.5,8.7,8.8], // TWA 50
+          [4.5,5.6,6.5,7.1,7.6,7.9,8.1,8.2,8.4,8.5], // TWA 60
+          [4.2,5.3,6.1,6.7,7.2,7.5,7.7,7.8,8.0,8.1], // TWA 70
+          [3.8,4.8,5.6,6.2,6.7,7.0,7.2,7.3,7.5,7.6], // TWA 80
+          [3.4,4.3,5.0,5.6,6.1,6.4,6.6,6.7,6.9,7.0], // TWA 90
+          [3.2,4.1,4.8,5.4,5.9,6.2,6.4,6.5,6.7,6.8], // TWA 100
+          [3.4,4.3,5.0,5.6,6.1,6.4,6.6,6.7,6.9,7.0], // TWA 110
+          [3.7,4.7,5.4,6.0,6.5,6.8,7.0,7.1,7.3,7.4], // TWA 120
+          [4.1,5.1,5.9,6.5,7.0,7.3,7.5,7.6,7.8,7.9], // TWA 130
+          [4.5,5.6,6.4,7.0,7.5,7.8,8.0,8.1,8.3,8.4], // TWA 140
+          [4.8,5.9,6.7,7.3,7.8,8.1,8.3,8.4,8.6,8.7], // TWA 150
+          [5.0,6.1,6.9,7.5,8.0,8.3,8.5,8.6,8.8,8.9], // TWA 160
+          [5.1,6.2,7.0,7.6,8.1,8.4,8.6,8.7,8.9,9.0], // TWA 170
+          [5.2,6.3,7.1,7.7,8.2,8.5,8.7,8.8,9.0,9.1]  // TWA 180
+        ]
+      };
+      
+      // Find TWA indices for interpolation
+      let twaIdx1 = 0, twaIdx2 = 0;
+      for (let i = 0; i < polarData.twa.length - 1; i++) {
+        if (twa >= polarData.twa[i] && twa <= polarData.twa[i + 1]) {
+          twaIdx1 = i;
+          twaIdx2 = i + 1;
+          break;
+        }
+      }
+      
+      // Find TWS indices for interpolation
+      let twsIdx1 = 0, twsIdx2 = 0;
+      for (let i = 0; i < polarData.tws.length - 1; i++) {
+        if (tws >= polarData.tws[i] && tws <= polarData.tws[i + 1]) {
+          twsIdx1 = i;
+          twsIdx2 = i + 1;
+          break;
+        }
+      }
+      
+      // Handle edge cases
+      if (tws <= polarData.tws[0]) {
+        twsIdx1 = twsIdx2 = 0;
+      } else if (tws >= polarData.tws[polarData.tws.length - 1]) {
+        twsIdx1 = twsIdx2 = polarData.tws.length - 1;
+      }
+      
+      // Bilinear interpolation
+      const twaRatio = twaIdx1 === twaIdx2 ? 0 : (twa - polarData.twa[twaIdx1]) / (polarData.twa[twaIdx2] - polarData.twa[twaIdx1]);
+      const twsRatio = twsIdx1 === twsIdx2 ? 0 : (tws - polarData.tws[twsIdx1]) / (polarData.tws[twsIdx2] - polarData.tws[twsIdx1]);
+      
+      const speed11 = polarData.speeds[twaIdx1][twsIdx1];
+      const speed12 = polarData.speeds[twaIdx1][twsIdx2];
+      const speed21 = polarData.speeds[twaIdx2][twsIdx1];
+      const speed22 = polarData.speeds[twaIdx2][twsIdx2];
+      
+      const speed1 = speed11 + (speed12 - speed11) * twsRatio;
+      const speed2 = speed21 + (speed22 - speed21) * twsRatio;
+      
+      return speed1 + (speed2 - speed1) * twaRatio;
+    };
+    
+    // Get polar speed through water
+    let polarSpeed = polarLookup(twa, trueWindSpeed);
+    
+    // Apply environmental factors
+    // 1. Leeway effect (sailing efficiency)
+    polarSpeed *= (typeof leewayFactor === 'number') ? leewayFactor : 0.95;
+    
+    // 2. Heel angle effect (assume moderate heel in fresh wind)
+    const estimatedHeel = Math.max(0, (trueWindSpeed - 10) * 2); // Degrees
+    const heelLoss = (typeof heelSpeedLoss === 'number') ? heelSpeedLoss : 0.02;
+    polarSpeed *= Math.max(0.8, 1 - (estimatedHeel * heelLoss));
+    
+    // 3. Tidal current effect (same as before)
+    const tidalCurrentVal = (typeof tidalCurrent === 'number') ? tidalCurrent : 1.2;
+    const tidalEffect = Math.sin((currentTime / 600) * 2 * Math.PI) * tidalCurrentVal;
+    
+    // 4. Current efficiency (how well boat handles current)
+    const currentEff = (typeof currentEfficiency === 'number') ? currentEfficiency : 1.0;
+    const currentSpeed = polarSpeed + (tidalEffect * currentEff);
+    
+    // Apply limits and return
+    const minSpeed = (typeof min === 'number') ? min : 0.5;
+    const maxSpeed = (typeof max === 'number') ? max : 9.5;
+    const finalSpeed = Math.max(minSpeed, Math.min(maxSpeed, currentSpeed));
+    
+    // Debug logging every 5 seconds
+    if (Math.floor(currentTime * 10) % 50 === 0) {
+      console.log(`[POLAR] TWA: ${twa.toFixed(1)}°, TWS: ${trueWindSpeed.toFixed(1)}kn, Polar: ${polarSpeed.toFixed(1)}kn, Final: ${finalSpeed.toFixed(1)}kn`);
+    }
+    
+    return finalSpeed;
+    
+  coastal_variation: |
+    // Wind direction with thermal and coastal effects
+    const thermalCycle = Math.sin((currentTime / variationPeriod) * 2 * Math.PI);
+    const thermalShiftDeg = thermalCycle * thermalShift; // avoid shadowing
+    const dir = (base + thermalShiftDeg) % 360;
+    return dir < 0 ? dir + 360 : dir;
+    
+  coastal_wind: |
+    // Wind speed with thermal effects and gusts
+    const thermalComponent = Math.sin((currentTime / 300) * 2 * Math.PI) * thermalEffect; // avoid shadowing
+    const gustFactor = (Math.random() - 0.5) * 2 * gusts * base;
+    const windWithEffects = base + thermalComponent + gustFactor;
+    return Math.max(min, Math.min(max, windWithEffects));
+
+  coastal_track: |
+    // Dynamic GPS track: interpolate along waypoints by time and emit valid GGA fields
+    // currentTime is simulation time - advances based on scenario speed
+    // At 1x speed: increments ~0.2s per call (5Hz), at 5x speed: increments ~1.0s per call
+    
+    // DEBUG: Log currentTime to understand progression
+    if (Math.floor(currentTime * 10) % 50 === 0) { // Log every 5 seconds
+      console.log(`[GPS] currentTime: ${currentTime.toFixed(2)}s`);
+    }
+    
+    // Convert currentTime (simulation seconds) directly to GPS time format (HHMMSS.ss)
+    // Include sub-second precision for smooth progression at 5Hz
+    const totalSeconds = currentTime;
+    const hours = Math.floor(totalSeconds / 3600) % 24;
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    const subseconds = Math.floor((totalSeconds % 1) * 100); // Two decimal places
+    const time = `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}${String(seconds).padStart(2, '0')}.${String(subseconds).padStart(2, '0')}`;
+
+    // Generate a consistent date (fixed for scenario)
+    const date = '221025'; // 22-Oct-2025
+
+    // Use currentTime directly for waypoint interpolation (no conversion needed)
+    // currentTime represents simulation elapsed seconds, matching waypoint time values
+    const t = typeof currentTime === 'number' ? currentTime : 0;
+    let latVal = 0;
+    let lonVal = 0;
+    const sp = startPosition || {};
+    const wps = Array.isArray(waypoints) ? waypoints : [];
+    
+    // DEBUG: Log waypoint data every 5 seconds
+    if (Math.floor(currentTime * 10) % 50 === 0) {
+      console.log(`[GPS] Waypoints: ${wps.length}, t=${t.toFixed(2)}, first=${wps[0]?.time}, last=${wps[wps.length-1]?.time}`);
+    }
+    
+    if (wps.length === 0) {
+      latVal = typeof sp.latitude === 'number' ? sp.latitude : 0;
+      lonVal = typeof sp.longitude === 'number' ? sp.longitude : 0;
+    } else {
+      // Clamp before first or after last
+      if (t <= wps[0].time) {
+        latVal = wps[0].lat;
+        lonVal = wps[0].lon;
+        if (Math.floor(currentTime * 10) % 50 === 0) {
+          console.log(`[GPS] At start waypoint: ${latVal}, ${lonVal}`);
+        }
+      } else if (t >= wps[wps.length - 1].time) {
+        latVal = wps[wps.length - 1].lat;
+        lonVal = wps[wps.length - 1].lon;
+        if (Math.floor(currentTime * 10) % 50 === 0) {
+          console.log(`[GPS] At end waypoint: ${latVal}, ${lonVal}`);
+        }
+      } else {
+        // Find segment and interpolate
+        for (let i = 0; i < wps.length - 1; i++) {
+          const a = wps[i];
+          const b = wps[i + 1];
+          if (t >= a.time && t <= b.time) {
+            const r = (t - a.time) / (b.time - a.time);
+            latVal = a.lat + (b.lat - a.lat) * r;
+            lonVal = a.lon + (b.lon - a.lon) * r;
+            if (Math.floor(currentTime * 10) % 50 === 0) {
+              console.log(`[GPS] Interpolating segment ${i}-${i+1}: r=${r.toFixed(3)}, lat=${latVal.toFixed(6)}, lon=${lonVal.toFixed(6)}`);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    const latHemisphere = latVal >= 0 ? 'N' : 'S';
+    const lonHemisphere = lonVal >= 0 ? 'E' : 'W';
+
+    const absLat = Math.abs(latVal);
+    const latDeg = Math.floor(absLat);
+    const latMin = (absLat - latDeg) * 60;
+    const latitude = `${String(latDeg).padStart(2, '0')}${String(latMin.toFixed(4)).padStart(7, '0')}`;
+
+    const absLon = Math.abs(lonVal);
+    const lonDeg = Math.floor(absLon);
+    const lonMin = (absLon - lonDeg) * 60;
+    const longitude = `${String(lonDeg).padStart(3, '0')}${String(lonMin.toFixed(4)).padStart(7, '0')}`;
+
+    return { time, date, latitude, latHemisphere, longitude, lonHemisphere };
+
+# Use case documentation
+use_cases:
+  - "Depth alarm testing with tidal variations"
+  - "Coastal navigation widget validation"
+  - "Tidal current effect simulation"
+  - "Shallow water approach scenarios"
+  - "Wind pattern coastal effects testing"
+
+# Related acceptance criteria
+acceptance_criteria:
+  - "AC1: Variable depth (1.5-30.5 meters) with tidal effects"
+  - "AC1: Realistic timing between related instruments"
+  - "AC1: Parameterizable vessel characteristics"

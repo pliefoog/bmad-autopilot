@@ -1,0 +1,6043 @@
+{
+  "metadata": {
+    "name": "Comprehensive Navigation Test NMEA 2000",
+    "description": "Complete navigation widget test recording with GPS, depth, speed, wind, and compass data using NMEA 2000 PGNs",
+    "duration": 300,
+    "message_count": 600,
+    "created": "2025-10-24T20:57:07.054Z",
+    "version": "1.0",
+    "bridge_mode": "nmea2000",
+    "vessel_type": "40ft Test Sailboat NMEA 2000",
+    "scenario_type": "navigation",
+    "test_coverage": [
+      "gps",
+      "depth",
+      "speed",
+      "wind",
+      "compass"
+    ],
+    "conditions": {
+      "wind_speed": "12-15 knots",
+      "sea_state": "moderate",
+      "weather": "clear"
+    },
+    "equipment": {
+      "engines": 1,
+      "batteries": 2,
+      "tanks": 2
+    },
+    "author": "BMad Recording Generator v1.0",
+    "tags": [
+      "navigation",
+      "comprehensive",
+      "nmea2000",
+      "widgets"
+    ],
+    "related_stories": [
+      "story-7.4",
+      "story-2.3"
+    ]
+  },
+  "messages": [
+    {
+      "timestamp": 1761339427.057,
+      "relative_time": 0,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 0,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.557,
+      "relative_time": 0.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 1,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.057,
+      "relative_time": 1,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 2,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.557,
+      "relative_time": 1.5,
+      "sentence": "$PCDIN,01FD02,00,FF,217,00,2D,00,00,FF,FF,FF*3F",
+      "sentence_type": "PGN",
+      "sequence": 3,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.057,
+      "relative_time": 2,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 4,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.557,
+      "relative_time": 2.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 5,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.057,
+      "relative_time": 3,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 6,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.557,
+      "relative_time": 3.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 7,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.057,
+      "relative_time": 4,
+      "sentence": "$PCDIN,01FD02,00,FF,216,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 8,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.557,
+      "relative_time": 4.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 9,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.057,
+      "relative_time": 5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 10,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.557,
+      "relative_time": 5.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 11,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.057,
+      "relative_time": 6,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 12,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.557,
+      "relative_time": 6.5,
+      "sentence": "$PCDIN,01FD02,00,FF,198,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 13,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.057,
+      "relative_time": 7,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 14,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.557,
+      "relative_time": 7.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 15,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.057,
+      "relative_time": 8,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 16,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.557,
+      "relative_time": 8.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 17,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.057,
+      "relative_time": 9,
+      "sentence": "$PCDIN,01FD02,00,FF,181,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 18,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.557,
+      "relative_time": 9.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 19,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.057,
+      "relative_time": 10,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 20,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.557,
+      "relative_time": 10.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 21,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.057,
+      "relative_time": 11,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 22,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.557,
+      "relative_time": 11.5,
+      "sentence": "$PCDIN,01FD02,00,FF,185,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 23,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.057,
+      "relative_time": 12,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 24,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.557,
+      "relative_time": 12.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 25,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.057,
+      "relative_time": 13,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 26,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.557,
+      "relative_time": 13.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 27,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.057,
+      "relative_time": 14,
+      "sentence": "$PCDIN,01FD02,00,FF,199,00,2D,00,00,FF,FF,FF*3A",
+      "sentence_type": "PGN",
+      "sequence": 28,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.557,
+      "relative_time": 14.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 29,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.057,
+      "relative_time": 15,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 30,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.557,
+      "relative_time": 15.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 31,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.057,
+      "relative_time": 16,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 32,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.557,
+      "relative_time": 16.5,
+      "sentence": "$PCDIN,01FD02,00,FF,220,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 33,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.057,
+      "relative_time": 17,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 34,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.557,
+      "relative_time": 17.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 35,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.057,
+      "relative_time": 18,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 36,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.557,
+      "relative_time": 18.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 37,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.057,
+      "relative_time": 19,
+      "sentence": "$PCDIN,01FD02,00,FF,194,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 38,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.557,
+      "relative_time": 19.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 39,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.057,
+      "relative_time": 20,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 40,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.557,
+      "relative_time": 20.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 41,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.057,
+      "relative_time": 21,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 42,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.557,
+      "relative_time": 21.5,
+      "sentence": "$PCDIN,01FD02,00,FF,210,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 43,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.057,
+      "relative_time": 22,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 44,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.557,
+      "relative_time": 22.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 45,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.057,
+      "relative_time": 23,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 46,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.557,
+      "relative_time": 23.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 47,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.057,
+      "relative_time": 24,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 48,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.557,
+      "relative_time": 24.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 49,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.057,
+      "relative_time": 25,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 50,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.557,
+      "relative_time": 25.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 51,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.057,
+      "relative_time": 26,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 52,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.557,
+      "relative_time": 26.5,
+      "sentence": "$PCDIN,01FD02,00,FF,214,00,2D,00,00,FF,FF,FF*3C",
+      "sentence_type": "PGN",
+      "sequence": 53,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.057,
+      "relative_time": 27,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 54,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.557,
+      "relative_time": 27.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 55,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.057,
+      "relative_time": 28,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 56,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.557,
+      "relative_time": 28.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 57,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.057,
+      "relative_time": 29,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 58,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.557,
+      "relative_time": 29.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 59,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.057,
+      "relative_time": 30,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 60,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.557,
+      "relative_time": 30.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 61,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.057,
+      "relative_time": 31,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 62,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.557,
+      "relative_time": 31.5,
+      "sentence": "$PCDIN,01FD02,00,FF,192,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 63,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.057,
+      "relative_time": 32,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 64,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.557,
+      "relative_time": 32.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 65,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.057,
+      "relative_time": 33,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 66,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.557,
+      "relative_time": 33.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 67,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.057,
+      "relative_time": 34,
+      "sentence": "$PCDIN,01FD02,00,FF,182,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 68,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.557,
+      "relative_time": 34.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 69,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.057,
+      "relative_time": 35,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 70,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.557,
+      "relative_time": 35.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 71,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.057,
+      "relative_time": 36,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 72,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.557,
+      "relative_time": 36.5,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 73,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.057,
+      "relative_time": 37,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 74,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.557,
+      "relative_time": 37.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 75,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.057,
+      "relative_time": 38,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 76,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.557,
+      "relative_time": 38.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 77,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.057,
+      "relative_time": 39,
+      "sentence": "$PCDIN,01FD02,00,FF,193,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 78,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.557,
+      "relative_time": 39.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 79,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.057,
+      "relative_time": 40,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 80,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.557,
+      "relative_time": 40.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 81,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.057,
+      "relative_time": 41,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 82,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.557,
+      "relative_time": 41.5,
+      "sentence": "$PCDIN,01FD02,00,FF,201,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 83,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.057,
+      "relative_time": 42,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 84,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.557,
+      "relative_time": 42.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 85,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.057,
+      "relative_time": 43,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 86,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.557,
+      "relative_time": 43.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 87,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.057,
+      "relative_time": 44,
+      "sentence": "$PCDIN,01FD02,00,FF,214,00,2D,00,00,FF,FF,FF*3C",
+      "sentence_type": "PGN",
+      "sequence": 88,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.557,
+      "relative_time": 44.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 89,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.057,
+      "relative_time": 45,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 90,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.557,
+      "relative_time": 45.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 91,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.057,
+      "relative_time": 46,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 92,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.557,
+      "relative_time": 46.5,
+      "sentence": "$PCDIN,01FD02,00,FF,186,00,2D,00,00,FF,FF,FF*34",
+      "sentence_type": "PGN",
+      "sequence": 93,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.057,
+      "relative_time": 47,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 94,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.557,
+      "relative_time": 47.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 95,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.057,
+      "relative_time": 48,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 96,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.557,
+      "relative_time": 48.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 97,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.057,
+      "relative_time": 49,
+      "sentence": "$PCDIN,01FD02,00,FF,217,00,2D,00,00,FF,FF,FF*3F",
+      "sentence_type": "PGN",
+      "sequence": 98,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.557,
+      "relative_time": 49.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 99,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.057,
+      "relative_time": 50,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 100,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.557,
+      "relative_time": 50.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 101,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.057,
+      "relative_time": 51,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 102,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.557,
+      "relative_time": 51.5,
+      "sentence": "$PCDIN,01FD02,00,FF,191,00,2D,00,00,FF,FF,FF*32",
+      "sentence_type": "PGN",
+      "sequence": 103,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.057,
+      "relative_time": 52,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 104,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.557,
+      "relative_time": 52.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 105,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.057,
+      "relative_time": 53,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 106,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.557,
+      "relative_time": 53.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 107,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.057,
+      "relative_time": 54,
+      "sentence": "$PCDIN,01FD02,00,FF,186,00,2D,00,00,FF,FF,FF*34",
+      "sentence_type": "PGN",
+      "sequence": 108,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.557,
+      "relative_time": 54.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 109,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.057,
+      "relative_time": 55,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 110,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.557,
+      "relative_time": 55.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 111,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.057,
+      "relative_time": 56,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 112,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.557,
+      "relative_time": 56.5,
+      "sentence": "$PCDIN,01FD02,00,FF,217,00,2D,00,00,FF,FF,FF*3F",
+      "sentence_type": "PGN",
+      "sequence": 113,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.057,
+      "relative_time": 57,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 114,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.557,
+      "relative_time": 57.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 115,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.057,
+      "relative_time": 58,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 116,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.557,
+      "relative_time": 58.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 117,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.057,
+      "relative_time": 59,
+      "sentence": "$PCDIN,01FD02,00,FF,192,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 118,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.557,
+      "relative_time": 59.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 119,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.057,
+      "relative_time": 60,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 120,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.557,
+      "relative_time": 60.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 121,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.057,
+      "relative_time": 61,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 122,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.557,
+      "relative_time": 61.5,
+      "sentence": "$PCDIN,01FD02,00,FF,204,00,2D,00,00,FF,FF,FF*3D",
+      "sentence_type": "PGN",
+      "sequence": 123,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.057,
+      "relative_time": 62,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 124,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.557,
+      "relative_time": 62.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 125,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.057,
+      "relative_time": 63,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 126,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.557,
+      "relative_time": 63.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 127,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.057,
+      "relative_time": 64,
+      "sentence": "$PCDIN,01FD02,00,FF,194,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 128,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.557,
+      "relative_time": 64.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 129,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.057,
+      "relative_time": 65,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 130,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.557,
+      "relative_time": 65.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 131,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.057,
+      "relative_time": 66,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 132,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.557,
+      "relative_time": 66.5,
+      "sentence": "$PCDIN,01FD02,00,FF,220,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 133,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.057,
+      "relative_time": 67,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 134,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.557,
+      "relative_time": 67.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 135,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.057,
+      "relative_time": 68,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 136,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.557,
+      "relative_time": 68.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 137,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.057,
+      "relative_time": 69,
+      "sentence": "$PCDIN,01FD02,00,FF,190,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 138,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.557,
+      "relative_time": 69.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 139,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.057,
+      "relative_time": 70,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 140,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.557,
+      "relative_time": 70.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 141,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.057,
+      "relative_time": 71,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 142,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.557,
+      "relative_time": 71.5,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 143,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.057,
+      "relative_time": 72,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 144,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.557,
+      "relative_time": 72.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 145,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.057,
+      "relative_time": 73,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 146,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.557,
+      "relative_time": 73.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 147,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.057,
+      "relative_time": 74,
+      "sentence": "$PCDIN,01FD02,00,FF,190,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 148,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.557,
+      "relative_time": 74.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 149,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.057,
+      "relative_time": 75,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 150,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.557,
+      "relative_time": 75.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 151,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.057,
+      "relative_time": 76,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 152,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.557,
+      "relative_time": 76.5,
+      "sentence": "$PCDIN,01FD02,00,FF,200,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 153,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.057,
+      "relative_time": 77,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 154,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.557,
+      "relative_time": 77.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 155,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.057,
+      "relative_time": 78,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 156,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.557,
+      "relative_time": 78.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 157,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.057,
+      "relative_time": 79,
+      "sentence": "$PCDIN,01FD02,00,FF,195,00,2D,00,00,FF,FF,FF*36",
+      "sentence_type": "PGN",
+      "sequence": 158,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.557,
+      "relative_time": 79.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 159,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.057,
+      "relative_time": 80,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 160,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.557,
+      "relative_time": 80.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 161,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.057,
+      "relative_time": 81,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 162,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.557,
+      "relative_time": 81.5,
+      "sentence": "$PCDIN,01FD02,00,FF,216,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 163,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.057,
+      "relative_time": 82,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 164,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.557,
+      "relative_time": 82.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 165,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.057,
+      "relative_time": 83,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 166,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.557,
+      "relative_time": 83.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 167,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.057,
+      "relative_time": 84,
+      "sentence": "$PCDIN,01FD02,00,FF,194,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 168,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.557,
+      "relative_time": 84.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 169,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.057,
+      "relative_time": 85,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 170,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.557,
+      "relative_time": 85.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 171,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.057,
+      "relative_time": 86,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 172,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.557,
+      "relative_time": 86.5,
+      "sentence": "$PCDIN,01FD02,00,FF,218,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 173,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.057,
+      "relative_time": 87,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 174,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.557,
+      "relative_time": 87.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 175,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.057,
+      "relative_time": 88,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 176,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.557,
+      "relative_time": 88.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 177,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.057,
+      "relative_time": 89,
+      "sentence": "$PCDIN,01FD02,00,FF,207,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 178,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.557,
+      "relative_time": 89.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 179,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.057,
+      "relative_time": 90,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 180,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.557,
+      "relative_time": 90.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 181,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.057,
+      "relative_time": 91,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 182,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.557,
+      "relative_time": 91.5,
+      "sentence": "$PCDIN,01FD02,00,FF,197,00,2D,00,00,FF,FF,FF*34",
+      "sentence_type": "PGN",
+      "sequence": 183,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.057,
+      "relative_time": 92,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 184,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.557,
+      "relative_time": 92.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 185,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.057,
+      "relative_time": 93,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 186,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.557,
+      "relative_time": 93.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 187,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339521.057,
+      "relative_time": 94,
+      "sentence": "$PCDIN,01FD02,00,FF,182,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 188,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339521.557,
+      "relative_time": 94.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 189,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.057,
+      "relative_time": 95,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 190,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.557,
+      "relative_time": 95.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 191,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339523.057,
+      "relative_time": 96,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 192,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339523.557,
+      "relative_time": 96.5,
+      "sentence": "$PCDIN,01FD02,00,FF,183,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 193,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.057,
+      "relative_time": 97,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 194,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.557,
+      "relative_time": 97.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 195,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339525.057,
+      "relative_time": 98,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 196,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339525.557,
+      "relative_time": 98.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 197,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.057,
+      "relative_time": 99,
+      "sentence": "$PCDIN,01FD02,00,FF,219,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 198,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.557,
+      "relative_time": 99.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 199,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339527.057,
+      "relative_time": 100,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 200,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339527.557,
+      "relative_time": 100.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 201,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.057,
+      "relative_time": 101,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 202,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.557,
+      "relative_time": 101.5,
+      "sentence": "$PCDIN,01FD02,00,FF,188,00,2D,00,00,FF,FF,FF*3A",
+      "sentence_type": "PGN",
+      "sequence": 203,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339529.057,
+      "relative_time": 102,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 204,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339529.557,
+      "relative_time": 102.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 205,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.057,
+      "relative_time": 103,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 206,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.557,
+      "relative_time": 103.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 207,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339531.057,
+      "relative_time": 104,
+      "sentence": "$PCDIN,01FD02,00,FF,215,00,2D,00,00,FF,FF,FF*3D",
+      "sentence_type": "PGN",
+      "sequence": 208,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339531.557,
+      "relative_time": 104.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 209,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.057,
+      "relative_time": 105,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 210,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.557,
+      "relative_time": 105.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 211,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339533.057,
+      "relative_time": 106,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 212,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339533.557,
+      "relative_time": 106.5,
+      "sentence": "$PCDIN,01FD02,00,FF,213,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 213,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.057,
+      "relative_time": 107,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 214,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.557,
+      "relative_time": 107.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 215,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339535.057,
+      "relative_time": 108,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 216,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339535.557,
+      "relative_time": 108.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 217,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.057,
+      "relative_time": 109,
+      "sentence": "$PCDIN,01FD02,00,FF,205,00,2D,00,00,FF,FF,FF*3C",
+      "sentence_type": "PGN",
+      "sequence": 218,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.557,
+      "relative_time": 109.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 219,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339537.057,
+      "relative_time": 110,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 220,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339537.557,
+      "relative_time": 110.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 221,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.057,
+      "relative_time": 111,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 222,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.557,
+      "relative_time": 111.5,
+      "sentence": "$PCDIN,01FD02,00,FF,214,00,2D,00,00,FF,FF,FF*3C",
+      "sentence_type": "PGN",
+      "sequence": 223,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339539.057,
+      "relative_time": 112,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 224,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339539.557,
+      "relative_time": 112.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 225,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.057,
+      "relative_time": 113,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 226,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.557,
+      "relative_time": 113.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 227,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339541.057,
+      "relative_time": 114,
+      "sentence": "$PCDIN,01FD02,00,FF,205,00,2D,00,00,FF,FF,FF*3C",
+      "sentence_type": "PGN",
+      "sequence": 228,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339541.557,
+      "relative_time": 114.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 229,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.057,
+      "relative_time": 115,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 230,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.557,
+      "relative_time": 115.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 231,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339543.057,
+      "relative_time": 116,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 232,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339543.557,
+      "relative_time": 116.5,
+      "sentence": "$PCDIN,01FD02,00,FF,187,00,2D,00,00,FF,FF,FF*35",
+      "sentence_type": "PGN",
+      "sequence": 233,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.057,
+      "relative_time": 117,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 234,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.557,
+      "relative_time": 117.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 235,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339545.057,
+      "relative_time": 118,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 236,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339545.557,
+      "relative_time": 118.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 237,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.057,
+      "relative_time": 119,
+      "sentence": "$PCDIN,01FD02,00,FF,194,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 238,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.557,
+      "relative_time": 119.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 239,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339547.057,
+      "relative_time": 120,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 240,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339547.557,
+      "relative_time": 120.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 241,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.057,
+      "relative_time": 121,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 242,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.557,
+      "relative_time": 121.5,
+      "sentence": "$PCDIN,01FD02,00,FF,217,00,2D,00,00,FF,FF,FF*3F",
+      "sentence_type": "PGN",
+      "sequence": 243,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339549.057,
+      "relative_time": 122,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 244,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339549.557,
+      "relative_time": 122.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 245,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.057,
+      "relative_time": 123,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 246,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.557,
+      "relative_time": 123.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 247,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339551.057,
+      "relative_time": 124,
+      "sentence": "$PCDIN,01FD02,00,FF,187,00,2D,00,00,FF,FF,FF*35",
+      "sentence_type": "PGN",
+      "sequence": 248,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339551.557,
+      "relative_time": 124.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 249,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.057,
+      "relative_time": 125,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 250,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.557,
+      "relative_time": 125.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 251,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339553.057,
+      "relative_time": 126,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 252,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339553.557,
+      "relative_time": 126.5,
+      "sentence": "$PCDIN,01FD02,00,FF,187,00,2D,00,00,FF,FF,FF*35",
+      "sentence_type": "PGN",
+      "sequence": 253,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.057,
+      "relative_time": 127,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 254,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.557,
+      "relative_time": 127.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 255,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339555.057,
+      "relative_time": 128,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 256,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339555.557,
+      "relative_time": 128.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 257,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.057,
+      "relative_time": 129,
+      "sentence": "$PCDIN,01FD02,00,FF,210,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 258,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.557,
+      "relative_time": 129.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 259,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339557.057,
+      "relative_time": 130,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 260,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339557.557,
+      "relative_time": 130.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 261,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.057,
+      "relative_time": 131,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 262,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.557,
+      "relative_time": 131.5,
+      "sentence": "$PCDIN,01FD02,00,FF,207,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 263,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339559.057,
+      "relative_time": 132,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 264,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339559.557,
+      "relative_time": 132.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 265,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.057,
+      "relative_time": 133,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 266,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.557,
+      "relative_time": 133.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 267,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339561.057,
+      "relative_time": 134,
+      "sentence": "$PCDIN,01FD02,00,FF,190,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 268,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339561.557,
+      "relative_time": 134.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 269,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.057,
+      "relative_time": 135,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 270,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.557,
+      "relative_time": 135.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 271,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339563.057,
+      "relative_time": 136,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 272,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339563.557,
+      "relative_time": 136.5,
+      "sentence": "$PCDIN,01FD02,00,FF,189,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 273,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339564.057,
+      "relative_time": 137,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 274,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339564.557,
+      "relative_time": 137.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 275,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339565.057,
+      "relative_time": 138,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 276,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339565.557,
+      "relative_time": 138.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 277,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339566.057,
+      "relative_time": 139,
+      "sentence": "$PCDIN,01FD02,00,FF,220,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 278,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339566.557,
+      "relative_time": 139.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 279,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339567.057,
+      "relative_time": 140,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 280,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339567.557,
+      "relative_time": 140.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 281,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339568.057,
+      "relative_time": 141,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 282,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339568.557,
+      "relative_time": 141.5,
+      "sentence": "$PCDIN,01FD02,00,FF,208,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 283,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339569.057,
+      "relative_time": 142,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 284,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339569.557,
+      "relative_time": 142.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 285,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339570.057,
+      "relative_time": 143,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 286,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339570.557,
+      "relative_time": 143.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 287,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339571.057,
+      "relative_time": 144,
+      "sentence": "$PCDIN,01FD02,00,FF,195,00,2D,00,00,FF,FF,FF*36",
+      "sentence_type": "PGN",
+      "sequence": 288,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339571.557,
+      "relative_time": 144.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 289,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339572.057,
+      "relative_time": 145,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 290,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339572.557,
+      "relative_time": 145.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 291,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339573.057,
+      "relative_time": 146,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 292,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339573.557,
+      "relative_time": 146.5,
+      "sentence": "$PCDIN,01FD02,00,FF,188,00,2D,00,00,FF,FF,FF*3A",
+      "sentence_type": "PGN",
+      "sequence": 293,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339574.057,
+      "relative_time": 147,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 294,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339574.557,
+      "relative_time": 147.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 295,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339575.057,
+      "relative_time": 148,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 296,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339575.557,
+      "relative_time": 148.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 297,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339576.057,
+      "relative_time": 149,
+      "sentence": "$PCDIN,01FD02,00,FF,201,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 298,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339576.557,
+      "relative_time": 149.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 299,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339577.057,
+      "relative_time": 150,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 300,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339577.557,
+      "relative_time": 150.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 301,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339578.057,
+      "relative_time": 151,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 302,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339578.557,
+      "relative_time": 151.5,
+      "sentence": "$PCDIN,01FD02,00,FF,192,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 303,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339579.057,
+      "relative_time": 152,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 304,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339579.557,
+      "relative_time": 152.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 305,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339580.057,
+      "relative_time": 153,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 306,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339580.557,
+      "relative_time": 153.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 307,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339581.057,
+      "relative_time": 154,
+      "sentence": "$PCDIN,01FD02,00,FF,213,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 308,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339581.557,
+      "relative_time": 154.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 309,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339582.057,
+      "relative_time": 155,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 310,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339582.557,
+      "relative_time": 155.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 311,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339583.057,
+      "relative_time": 156,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 312,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339583.557,
+      "relative_time": 156.5,
+      "sentence": "$PCDIN,01FD02,00,FF,204,00,2D,00,00,FF,FF,FF*3D",
+      "sentence_type": "PGN",
+      "sequence": 313,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339584.057,
+      "relative_time": 157,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 314,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339584.557,
+      "relative_time": 157.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 315,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339585.057,
+      "relative_time": 158,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 316,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339585.557,
+      "relative_time": 158.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 317,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339586.057,
+      "relative_time": 159,
+      "sentence": "$PCDIN,01FD02,00,FF,181,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 318,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339586.557,
+      "relative_time": 159.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 319,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339587.057,
+      "relative_time": 160,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 320,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339587.557,
+      "relative_time": 160.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 321,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339588.057,
+      "relative_time": 161,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 322,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339588.557,
+      "relative_time": 161.5,
+      "sentence": "$PCDIN,01FD02,00,FF,198,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 323,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339589.057,
+      "relative_time": 162,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 324,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339589.557,
+      "relative_time": 162.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 325,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339590.057,
+      "relative_time": 163,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 326,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339590.557,
+      "relative_time": 163.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 327,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339591.057,
+      "relative_time": 164,
+      "sentence": "$PCDIN,01FD02,00,FF,207,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 328,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339591.557,
+      "relative_time": 164.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 329,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339592.057,
+      "relative_time": 165,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 330,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339592.557,
+      "relative_time": 165.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 331,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339593.057,
+      "relative_time": 166,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 332,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339593.557,
+      "relative_time": 166.5,
+      "sentence": "$PCDIN,01FD02,00,FF,213,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 333,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339594.057,
+      "relative_time": 167,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 334,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339594.557,
+      "relative_time": 167.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 335,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339595.057,
+      "relative_time": 168,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 336,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339595.557,
+      "relative_time": 168.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 337,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339596.057,
+      "relative_time": 169,
+      "sentence": "$PCDIN,01FD02,00,FF,207,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 338,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339596.557,
+      "relative_time": 169.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 339,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339597.057,
+      "relative_time": 170,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 340,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339597.557,
+      "relative_time": 170.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 341,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339598.057,
+      "relative_time": 171,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 342,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339598.557,
+      "relative_time": 171.5,
+      "sentence": "$PCDIN,01FD02,00,FF,187,00,2D,00,00,FF,FF,FF*35",
+      "sentence_type": "PGN",
+      "sequence": 343,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339599.057,
+      "relative_time": 172,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 344,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339599.557,
+      "relative_time": 172.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 345,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339600.057,
+      "relative_time": 173,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 346,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339600.557,
+      "relative_time": 173.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 347,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339601.057,
+      "relative_time": 174,
+      "sentence": "$PCDIN,01FD02,00,FF,216,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 348,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339601.557,
+      "relative_time": 174.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 349,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339602.057,
+      "relative_time": 175,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 350,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339602.557,
+      "relative_time": 175.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 351,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339603.057,
+      "relative_time": 176,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 352,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339603.557,
+      "relative_time": 176.5,
+      "sentence": "$PCDIN,01FD02,00,FF,190,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 353,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339604.057,
+      "relative_time": 177,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 354,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339604.557,
+      "relative_time": 177.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 355,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339605.057,
+      "relative_time": 178,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 356,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339605.557,
+      "relative_time": 178.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 357,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339606.057,
+      "relative_time": 179,
+      "sentence": "$PCDIN,01FD02,00,FF,210,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 358,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339606.557,
+      "relative_time": 179.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 359,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339607.057,
+      "relative_time": 180,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 360,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339607.557,
+      "relative_time": 180.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 361,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339608.057,
+      "relative_time": 181,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 362,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339608.557,
+      "relative_time": 181.5,
+      "sentence": "$PCDIN,01FD02,00,FF,191,00,2D,00,00,FF,FF,FF*32",
+      "sentence_type": "PGN",
+      "sequence": 363,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339609.057,
+      "relative_time": 182,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 364,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339609.557,
+      "relative_time": 182.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 365,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339610.057,
+      "relative_time": 183,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 366,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339610.557,
+      "relative_time": 183.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 367,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339611.057,
+      "relative_time": 184,
+      "sentence": "$PCDIN,01FD02,00,FF,206,00,2D,00,00,FF,FF,FF*3F",
+      "sentence_type": "PGN",
+      "sequence": 368,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339611.557,
+      "relative_time": 184.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 369,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339612.057,
+      "relative_time": 185,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 370,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339612.557,
+      "relative_time": 185.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 371,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339613.057,
+      "relative_time": 186,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 372,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339613.557,
+      "relative_time": 186.5,
+      "sentence": "$PCDIN,01FD02,00,FF,201,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 373,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339614.057,
+      "relative_time": 187,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 374,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339614.557,
+      "relative_time": 187.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 375,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339615.057,
+      "relative_time": 188,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 376,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339615.557,
+      "relative_time": 188.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 377,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339616.057,
+      "relative_time": 189,
+      "sentence": "$PCDIN,01FD02,00,FF,193,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 378,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339616.557,
+      "relative_time": 189.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 379,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339617.057,
+      "relative_time": 190,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 380,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339617.557,
+      "relative_time": 190.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 381,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339618.057,
+      "relative_time": 191,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 382,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339618.557,
+      "relative_time": 191.5,
+      "sentence": "$PCDIN,01FD02,00,FF,188,00,2D,00,00,FF,FF,FF*3A",
+      "sentence_type": "PGN",
+      "sequence": 383,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339619.057,
+      "relative_time": 192,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 384,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339619.557,
+      "relative_time": 192.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 385,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339620.057,
+      "relative_time": 193,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 386,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339620.557,
+      "relative_time": 193.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 387,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339621.057,
+      "relative_time": 194,
+      "sentence": "$PCDIN,01FD02,00,FF,186,00,2D,00,00,FF,FF,FF*34",
+      "sentence_type": "PGN",
+      "sequence": 388,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339621.557,
+      "relative_time": 194.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 389,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339622.057,
+      "relative_time": 195,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 390,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339622.557,
+      "relative_time": 195.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 391,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339623.057,
+      "relative_time": 196,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 392,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339623.557,
+      "relative_time": 196.5,
+      "sentence": "$PCDIN,01FD02,00,FF,215,00,2D,00,00,FF,FF,FF*3D",
+      "sentence_type": "PGN",
+      "sequence": 393,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339624.057,
+      "relative_time": 197,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 394,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339624.557,
+      "relative_time": 197.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 395,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339625.057,
+      "relative_time": 198,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 396,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339625.557,
+      "relative_time": 198.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 397,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339626.057,
+      "relative_time": 199,
+      "sentence": "$PCDIN,01FD02,00,FF,198,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 398,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339626.557,
+      "relative_time": 199.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 399,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339627.057,
+      "relative_time": 200,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 400,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339627.557,
+      "relative_time": 200.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 401,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339628.057,
+      "relative_time": 201,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 402,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339628.557,
+      "relative_time": 201.5,
+      "sentence": "$PCDIN,01FD02,00,FF,195,00,2D,00,00,FF,FF,FF*36",
+      "sentence_type": "PGN",
+      "sequence": 403,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339629.057,
+      "relative_time": 202,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 404,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339629.557,
+      "relative_time": 202.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 405,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339630.057,
+      "relative_time": 203,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 406,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339630.557,
+      "relative_time": 203.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 407,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339631.057,
+      "relative_time": 204,
+      "sentence": "$PCDIN,01FD02,00,FF,198,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 408,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339631.557,
+      "relative_time": 204.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 409,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339632.057,
+      "relative_time": 205,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 410,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339632.557,
+      "relative_time": 205.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 411,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339633.057,
+      "relative_time": 206,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 412,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339633.557,
+      "relative_time": 206.5,
+      "sentence": "$PCDIN,01FD02,00,FF,220,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 413,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339634.057,
+      "relative_time": 207,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 414,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339634.557,
+      "relative_time": 207.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 415,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339635.057,
+      "relative_time": 208,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 416,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339635.557,
+      "relative_time": 208.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 417,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339636.057,
+      "relative_time": 209,
+      "sentence": "$PCDIN,01FD02,00,FF,184,00,2D,00,00,FF,FF,FF*36",
+      "sentence_type": "PGN",
+      "sequence": 418,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339636.557,
+      "relative_time": 209.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 419,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339637.057,
+      "relative_time": 210,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 420,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339637.557,
+      "relative_time": 210.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 421,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339638.057,
+      "relative_time": 211,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 422,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339638.557,
+      "relative_time": 211.5,
+      "sentence": "$PCDIN,01FD02,00,FF,219,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 423,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339639.057,
+      "relative_time": 212,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 424,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339639.557,
+      "relative_time": 212.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 425,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339640.057,
+      "relative_time": 213,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 426,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339640.557,
+      "relative_time": 213.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 427,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339641.057,
+      "relative_time": 214,
+      "sentence": "$PCDIN,01FD02,00,FF,194,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 428,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339641.557,
+      "relative_time": 214.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 429,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339642.057,
+      "relative_time": 215,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 430,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339642.557,
+      "relative_time": 215.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 431,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339643.057,
+      "relative_time": 216,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 432,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339643.557,
+      "relative_time": 216.5,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 433,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339644.057,
+      "relative_time": 217,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 434,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339644.557,
+      "relative_time": 217.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 435,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339645.057,
+      "relative_time": 218,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 436,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339645.557,
+      "relative_time": 218.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 437,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339646.057,
+      "relative_time": 219,
+      "sentence": "$PCDIN,01FD02,00,FF,207,00,2D,00,00,FF,FF,FF*3E",
+      "sentence_type": "PGN",
+      "sequence": 438,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339646.557,
+      "relative_time": 219.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 439,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339647.057,
+      "relative_time": 220,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 440,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339647.557,
+      "relative_time": 220.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 441,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339648.057,
+      "relative_time": 221,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 442,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339648.557,
+      "relative_time": 221.5,
+      "sentence": "$PCDIN,01FD02,00,FF,191,00,2D,00,00,FF,FF,FF*32",
+      "sentence_type": "PGN",
+      "sequence": 443,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339649.057,
+      "relative_time": 222,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 444,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339649.557,
+      "relative_time": 222.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 445,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339650.057,
+      "relative_time": 223,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 446,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339650.557,
+      "relative_time": 223.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 447,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339651.057,
+      "relative_time": 224,
+      "sentence": "$PCDIN,01FD02,00,FF,185,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 448,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339651.557,
+      "relative_time": 224.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 449,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339652.057,
+      "relative_time": 225,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 450,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339652.557,
+      "relative_time": 225.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 451,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339653.057,
+      "relative_time": 226,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 452,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339653.557,
+      "relative_time": 226.5,
+      "sentence": "$PCDIN,01FD02,00,FF,213,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 453,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339654.057,
+      "relative_time": 227,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 454,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339654.557,
+      "relative_time": 227.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 455,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339655.057,
+      "relative_time": 228,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 456,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339655.557,
+      "relative_time": 228.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 457,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339656.057,
+      "relative_time": 229,
+      "sentence": "$PCDIN,01FD02,00,FF,200,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 458,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339656.557,
+      "relative_time": 229.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 459,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339657.057,
+      "relative_time": 230,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 460,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339657.557,
+      "relative_time": 230.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 461,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339658.057,
+      "relative_time": 231,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 462,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339658.557,
+      "relative_time": 231.5,
+      "sentence": "$PCDIN,01FD02,00,FF,185,00,2D,00,00,FF,FF,FF*37",
+      "sentence_type": "PGN",
+      "sequence": 463,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339659.057,
+      "relative_time": 232,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 464,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339659.557,
+      "relative_time": 232.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 465,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339660.057,
+      "relative_time": 233,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 466,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339660.557,
+      "relative_time": 233.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 467,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339661.057,
+      "relative_time": 234,
+      "sentence": "$PCDIN,01FD02,00,FF,186,00,2D,00,00,FF,FF,FF*34",
+      "sentence_type": "PGN",
+      "sequence": 468,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339661.557,
+      "relative_time": 234.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 469,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339662.057,
+      "relative_time": 235,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 470,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339662.557,
+      "relative_time": 235.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 471,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339663.057,
+      "relative_time": 236,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 472,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339663.557,
+      "relative_time": 236.5,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 473,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339664.057,
+      "relative_time": 237,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 474,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339664.557,
+      "relative_time": 237.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 475,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339665.057,
+      "relative_time": 238,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 476,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339665.557,
+      "relative_time": 238.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 477,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339666.057,
+      "relative_time": 239,
+      "sentence": "$PCDIN,01FD02,00,FF,191,00,2D,00,00,FF,FF,FF*32",
+      "sentence_type": "PGN",
+      "sequence": 478,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339666.557,
+      "relative_time": 239.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 479,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339667.057,
+      "relative_time": 240,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 480,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339667.557,
+      "relative_time": 240.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 481,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339668.057,
+      "relative_time": 241,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 482,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339668.557,
+      "relative_time": 241.5,
+      "sentence": "$PCDIN,01FD02,00,FF,191,00,2D,00,00,FF,FF,FF*32",
+      "sentence_type": "PGN",
+      "sequence": 483,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339669.057,
+      "relative_time": 242,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 484,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339669.557,
+      "relative_time": 242.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 485,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339670.057,
+      "relative_time": 243,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 486,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339670.557,
+      "relative_time": 243.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 487,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339671.057,
+      "relative_time": 244,
+      "sentence": "$PCDIN,01FD02,00,FF,201,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 488,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339671.557,
+      "relative_time": 244.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 489,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339672.057,
+      "relative_time": 245,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 490,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339672.557,
+      "relative_time": 245.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 491,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339673.057,
+      "relative_time": 246,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 492,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339673.557,
+      "relative_time": 246.5,
+      "sentence": "$PCDIN,01FD02,00,FF,196,00,2D,00,00,FF,FF,FF*35",
+      "sentence_type": "PGN",
+      "sequence": 493,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339674.057,
+      "relative_time": 247,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 494,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339674.557,
+      "relative_time": 247.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 495,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339675.057,
+      "relative_time": 248,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 496,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339675.557,
+      "relative_time": 248.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 497,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339676.057,
+      "relative_time": 249,
+      "sentence": "$PCDIN,01FD02,00,FF,189,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 498,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339676.557,
+      "relative_time": 249.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 499,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339677.057,
+      "relative_time": 250,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 500,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339677.557,
+      "relative_time": 250.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 501,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339678.057,
+      "relative_time": 251,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 502,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339678.557,
+      "relative_time": 251.5,
+      "sentence": "$PCDIN,01FD02,00,FF,209,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 503,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339679.057,
+      "relative_time": 252,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 504,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339679.557,
+      "relative_time": 252.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 505,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339680.057,
+      "relative_time": 253,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 506,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339680.557,
+      "relative_time": 253.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 507,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339681.057,
+      "relative_time": 254,
+      "sentence": "$PCDIN,01FD02,00,FF,200,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 508,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339681.557,
+      "relative_time": 254.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 509,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339682.057,
+      "relative_time": 255,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 510,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339682.557,
+      "relative_time": 255.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 511,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339683.057,
+      "relative_time": 256,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 512,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339683.557,
+      "relative_time": 256.5,
+      "sentence": "$PCDIN,01FD02,00,FF,214,00,2D,00,00,FF,FF,FF*3C",
+      "sentence_type": "PGN",
+      "sequence": 513,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339684.057,
+      "relative_time": 257,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 514,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339684.557,
+      "relative_time": 257.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 515,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339685.057,
+      "relative_time": 258,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 516,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339685.557,
+      "relative_time": 258.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 517,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339686.057,
+      "relative_time": 259,
+      "sentence": "$PCDIN,01FD02,00,FF,195,00,2D,00,00,FF,FF,FF*36",
+      "sentence_type": "PGN",
+      "sequence": 518,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339686.557,
+      "relative_time": 259.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 519,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339687.057,
+      "relative_time": 260,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 520,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339687.557,
+      "relative_time": 260.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 521,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339688.057,
+      "relative_time": 261,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 522,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339688.557,
+      "relative_time": 261.5,
+      "sentence": "$PCDIN,01FD02,00,FF,201,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 523,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339689.057,
+      "relative_time": 262,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 524,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339689.557,
+      "relative_time": 262.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 525,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339690.057,
+      "relative_time": 263,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 526,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339690.557,
+      "relative_time": 263.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 527,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339691.057,
+      "relative_time": 264,
+      "sentence": "$PCDIN,01FD02,00,FF,218,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 528,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339691.557,
+      "relative_time": 264.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 529,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339692.057,
+      "relative_time": 265,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 530,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339692.557,
+      "relative_time": 265.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 531,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339693.057,
+      "relative_time": 266,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 532,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339693.557,
+      "relative_time": 266.5,
+      "sentence": "$PCDIN,01FD02,00,FF,204,00,2D,00,00,FF,FF,FF*3D",
+      "sentence_type": "PGN",
+      "sequence": 533,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339694.057,
+      "relative_time": 267,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 534,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339694.557,
+      "relative_time": 267.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 535,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339695.057,
+      "relative_time": 268,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 536,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339695.557,
+      "relative_time": 268.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 537,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339696.057,
+      "relative_time": 269,
+      "sentence": "$PCDIN,01FD02,00,FF,202,00,2D,00,00,FF,FF,FF*3B",
+      "sentence_type": "PGN",
+      "sequence": 538,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339696.557,
+      "relative_time": 269.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 539,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339697.057,
+      "relative_time": 270,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 540,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339697.557,
+      "relative_time": 270.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 541,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339698.057,
+      "relative_time": 271,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 542,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339698.557,
+      "relative_time": 271.5,
+      "sentence": "$PCDIN,01FD02,00,FF,218,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 543,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339699.057,
+      "relative_time": 272,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 544,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339699.557,
+      "relative_time": 272.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 545,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339700.057,
+      "relative_time": 273,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 546,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339700.557,
+      "relative_time": 273.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 547,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339701.057,
+      "relative_time": 274,
+      "sentence": "$PCDIN,01FD02,00,FF,208,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 548,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339701.557,
+      "relative_time": 274.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 549,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339702.057,
+      "relative_time": 275,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 550,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339702.557,
+      "relative_time": 275.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 551,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339703.057,
+      "relative_time": 276,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 552,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339703.557,
+      "relative_time": 276.5,
+      "sentence": "$PCDIN,01FD02,00,FF,183,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 553,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339704.057,
+      "relative_time": 277,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 554,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339704.557,
+      "relative_time": 277.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 555,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339705.057,
+      "relative_time": 278,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 556,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339705.557,
+      "relative_time": 278.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 557,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339706.057,
+      "relative_time": 279,
+      "sentence": "$PCDIN,01FD02,00,FF,183,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 558,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339706.557,
+      "relative_time": 279.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 559,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339707.057,
+      "relative_time": 280,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 560,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339707.557,
+      "relative_time": 280.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 561,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339708.057,
+      "relative_time": 281,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 562,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339708.557,
+      "relative_time": 281.5,
+      "sentence": "$PCDIN,01FD02,00,FF,211,00,2D,00,00,FF,FF,FF*39",
+      "sentence_type": "PGN",
+      "sequence": 563,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339709.057,
+      "relative_time": 282,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 564,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339709.557,
+      "relative_time": 282.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 565,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339710.057,
+      "relative_time": 283,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 566,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339710.557,
+      "relative_time": 283.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 567,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339711.057,
+      "relative_time": 284,
+      "sentence": "$PCDIN,01FD02,00,FF,190,00,2D,00,00,FF,FF,FF*33",
+      "sentence_type": "PGN",
+      "sequence": 568,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339711.557,
+      "relative_time": 284.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 569,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339712.057,
+      "relative_time": 285,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 570,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339712.557,
+      "relative_time": 285.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 571,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339713.057,
+      "relative_time": 286,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 572,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339713.557,
+      "relative_time": 286.5,
+      "sentence": "$PCDIN,01FD02,00,FF,208,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 573,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339714.057,
+      "relative_time": 287,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 574,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339714.557,
+      "relative_time": 287.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 575,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339715.057,
+      "relative_time": 288,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 576,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339715.557,
+      "relative_time": 288.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 577,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339716.057,
+      "relative_time": 289,
+      "sentence": "$PCDIN,01FD02,00,FF,193,00,2D,00,00,FF,FF,FF*30",
+      "sentence_type": "PGN",
+      "sequence": 578,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339716.557,
+      "relative_time": 289.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 579,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339717.057,
+      "relative_time": 290,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 580,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339717.557,
+      "relative_time": 290.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 581,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339718.057,
+      "relative_time": 291,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 582,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339718.557,
+      "relative_time": 291.5,
+      "sentence": "$PCDIN,01FD02,00,FF,206,00,2D,00,00,FF,FF,FF*3F",
+      "sentence_type": "PGN",
+      "sequence": 583,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339719.057,
+      "relative_time": 292,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 584,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339719.557,
+      "relative_time": 292.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 585,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339720.057,
+      "relative_time": 293,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 586,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339720.557,
+      "relative_time": 293.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 587,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339721.057,
+      "relative_time": 294,
+      "sentence": "$PCDIN,01FD02,00,FF,219,00,2D,00,00,FF,FF,FF*31",
+      "sentence_type": "PGN",
+      "sequence": 588,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339721.557,
+      "relative_time": 294.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 589,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339722.057,
+      "relative_time": 295,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 590,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339722.557,
+      "relative_time": 295.5,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 591,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339723.057,
+      "relative_time": 296,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 592,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339723.557,
+      "relative_time": 296.5,
+      "sentence": "$PCDIN,01FD02,00,FF,201,00,2D,00,00,FF,FF,FF*38",
+      "sentence_type": "PGN",
+      "sequence": 593,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339724.057,
+      "relative_time": 297,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 594,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339724.557,
+      "relative_time": 297.5,
+      "sentence": "$PCDIN,01F801,00,FF,A0,0F,12,34,B5,1E,56,78*0E",
+      "sentence_type": "PGN",
+      "sequence": 595,
+      "description": "Position Rapid Update (PGN 129025)",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339725.057,
+      "relative_time": 298,
+      "sentence": "$PCDIN,01F50B,00,FF,C8,00,00,00,FF,FF,FF,FF*07",
+      "sentence_type": "PGN",
+      "sequence": 596,
+      "description": "Water Depth (PGN 128267)",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339725.557,
+      "relative_time": 298.5,
+      "sentence": "$PCDIN,01F503,00,FF,E6,02,FF,FF,B4,C4,FF,FF*7D",
+      "sentence_type": "PGN",
+      "sequence": 597,
+      "description": "Boat Speed (PGN 128259)",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339726.057,
+      "relative_time": 299,
+      "sentence": "$PCDIN,01FD02,00,FF,196,00,2D,00,00,FF,FF,FF*35",
+      "sentence_type": "PGN",
+      "sequence": 598,
+      "description": "Wind Data (PGN 130306)",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339726.557,
+      "relative_time": 299.5,
+      "sentence": "$PCDIN,01F112,00,FF,B4,C4,00,00,F0,FF,FF,FF*7E",
+      "sentence_type": "PGN",
+      "sequence": 599,
+      "description": "Vessel Heading (PGN 127250)",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    }
+  ]
+}

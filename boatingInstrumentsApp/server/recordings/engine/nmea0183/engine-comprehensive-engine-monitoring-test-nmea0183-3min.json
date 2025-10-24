@@ -1,0 +1,2743 @@
+{
+  "metadata": {
+    "name": "Comprehensive Engine Monitoring Test",
+    "description": "Complete engine monitoring with RPM, temperature, pressure, fuel consumption and alarm conditions",
+    "duration": 180,
+    "message_count": 270,
+    "created": "2025-10-24T20:56:24.811Z",
+    "version": "1.0",
+    "bridge_mode": "nmea0183",
+    "vessel_type": "Motor Yacht Twin Engine",
+    "scenario_type": "engine",
+    "test_coverage": [
+      "engine",
+      "rpm",
+      "temperature",
+      "pressure",
+      "fuel"
+    ],
+    "conditions": {
+      "engine_load": "75% cruise",
+      "sea_state": "moderate",
+      "temperature": "normal operating"
+    },
+    "equipment": {
+      "engines": 2,
+      "batteries": 3,
+      "tanks": 4
+    },
+    "author": "BMad Recording Generator v1.0",
+    "tags": [
+      "engine",
+      "monitoring",
+      "dual",
+      "alarms"
+    ],
+    "related_stories": [
+      "story-7.4",
+      "story-2.5"
+    ]
+  },
+  "messages": [
+    {
+      "timestamp": 1761339384.817,
+      "relative_time": 0,
+      "sentence": "$IIRPM,E,1,2200,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 0,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339385.4836667,
+      "relative_time": 0.6666666666666666,
+      "sentence": "$IIRPM,E,2,2183,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 1,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339386.1503332,
+      "relative_time": 1.3333333333333333,
+      "sentence": "$IIXDR,C,85.5,C,TMPE_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 2,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339386.817,
+      "relative_time": 2,
+      "sentence": "$IIXDR,C,87.2,C,TMPE_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 3,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339387.4836667,
+      "relative_time": 2.6666666666666665,
+      "sentence": "$IIXDR,P,3.99,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 4,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339388.1503332,
+      "relative_time": 3.333333333333333,
+      "sentence": "$IIXDR,P,4.02,B,PRES_2*3D",
+      "sentence_type": "XDR",
+      "sequence": 5,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339388.817,
+      "relative_time": 4,
+      "sentence": "$IIXDR,V,28.6,L,FUEL_1*32",
+      "sentence_type": "XDR",
+      "sequence": 6,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339389.4836667,
+      "relative_time": 4.666666666666666,
+      "sentence": "$IIXDR,V,29.4,L,FUEL_2*32",
+      "sentence_type": "XDR",
+      "sequence": 7,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339390.1503332,
+      "relative_time": 5.333333333333333,
+      "sentence": "$IIRPM,E,1,2221,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 8,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339390.817,
+      "relative_time": 6,
+      "sentence": "$IIRPM,E,2,2207,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 9,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339391.4836667,
+      "relative_time": 6.666666666666666,
+      "sentence": "$IIXDR,C,85.6,C,TMPE_1*39",
+      "sentence_type": "XDR",
+      "sequence": 10,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339392.1503332,
+      "relative_time": 7.333333333333333,
+      "sentence": "$IIXDR,C,87.3,C,TMPE_2*3D",
+      "sentence_type": "XDR",
+      "sequence": 11,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339392.817,
+      "relative_time": 8,
+      "sentence": "$IIXDR,P,4.07,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 12,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339393.4836667,
+      "relative_time": 8.666666666666666,
+      "sentence": "$IIXDR,P,4.07,B,PRES_2*38",
+      "sentence_type": "XDR",
+      "sequence": 13,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.1503332,
+      "relative_time": 9.333333333333332,
+      "sentence": "$IIXDR,V,28.8,L,FUEL_1*3C",
+      "sentence_type": "XDR",
+      "sequence": 14,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.817,
+      "relative_time": 10,
+      "sentence": "$IIXDR,V,29.5,L,FUEL_2*33",
+      "sentence_type": "XDR",
+      "sequence": 15,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339395.4836667,
+      "relative_time": 10.666666666666666,
+      "sentence": "$IIRPM,E,1,2242,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 16,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.1503332,
+      "relative_time": 11.333333333333332,
+      "sentence": "$IIRPM,E,2,2230,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 17,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.817,
+      "relative_time": 12,
+      "sentence": "$IIXDR,C,85.7,C,TMPE_1*38",
+      "sentence_type": "XDR",
+      "sequence": 18,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339397.4836667,
+      "relative_time": 12.666666666666666,
+      "sentence": "$IIXDR,C,87.4,C,TMPE_2*3A",
+      "sentence_type": "XDR",
+      "sequence": 19,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.1503332,
+      "relative_time": 13.333333333333332,
+      "sentence": "$IIXDR,P,4.13,B,PRES_1*3E",
+      "sentence_type": "XDR",
+      "sequence": 20,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.817,
+      "relative_time": 14,
+      "sentence": "$IIXDR,P,3.77,B,PRES_2*38",
+      "sentence_type": "XDR",
+      "sequence": 21,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339399.4836667,
+      "relative_time": 14.666666666666666,
+      "sentence": "$IIXDR,V,28.9,L,FUEL_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 22,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.1503332,
+      "relative_time": 15.333333333333332,
+      "sentence": "$IIXDR,V,29.7,L,FUEL_2*31",
+      "sentence_type": "XDR",
+      "sequence": 23,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.817,
+      "relative_time": 16,
+      "sentence": "$IIRPM,E,1,2263,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 24,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339401.4836667,
+      "relative_time": 16.666666666666664,
+      "sentence": "$IIRPM,E,2,2253,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 25,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.1503332,
+      "relative_time": 17.333333333333332,
+      "sentence": "$IIXDR,C,85.8,C,TMPE_1*37",
+      "sentence_type": "XDR",
+      "sequence": 26,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.817,
+      "relative_time": 18,
+      "sentence": "$IIXDR,C,87.5,C,TMPE_2*3B",
+      "sentence_type": "XDR",
+      "sequence": 27,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339403.4836667,
+      "relative_time": 18.666666666666664,
+      "sentence": "$IIXDR,P,3.96,B,PRES_1*34",
+      "sentence_type": "XDR",
+      "sequence": 28,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.1503332,
+      "relative_time": 19.333333333333332,
+      "sentence": "$IIXDR,P,3.85,B,PRES_2*35",
+      "sentence_type": "XDR",
+      "sequence": 29,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.817,
+      "relative_time": 20,
+      "sentence": "$IIXDR,V,29.1,L,FUEL_1*34",
+      "sentence_type": "XDR",
+      "sequence": 30,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339405.4836667,
+      "relative_time": 20.666666666666664,
+      "sentence": "$IIXDR,V,29.9,L,FUEL_2*3F",
+      "sentence_type": "XDR",
+      "sequence": 31,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.1503332,
+      "relative_time": 21.333333333333332,
+      "sentence": "$IIRPM,E,1,2283,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 32,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.817,
+      "relative_time": 22,
+      "sentence": "$IIRPM,E,2,2274,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 33,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339407.4836667,
+      "relative_time": 22.666666666666664,
+      "sentence": "$IIXDR,C,86.0,C,TMPE_1*3C",
+      "sentence_type": "XDR",
+      "sequence": 34,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.1503332,
+      "relative_time": 23.333333333333332,
+      "sentence": "$IIXDR,C,87.6,C,TMPE_2*38",
+      "sentence_type": "XDR",
+      "sequence": 35,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.817,
+      "relative_time": 24,
+      "sentence": "$IIXDR,P,4.19,B,PRES_1*34",
+      "sentence_type": "XDR",
+      "sequence": 36,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339409.4836667,
+      "relative_time": 24.666666666666664,
+      "sentence": "$IIXDR,P,3.78,B,PRES_2*37",
+      "sentence_type": "XDR",
+      "sequence": 37,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.1503332,
+      "relative_time": 25.333333333333332,
+      "sentence": "$IIXDR,V,29.3,L,FUEL_1*36",
+      "sentence_type": "XDR",
+      "sequence": 38,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.817,
+      "relative_time": 26,
+      "sentence": "$IIXDR,V,30.1,L,FUEL_2*3F",
+      "sentence_type": "XDR",
+      "sequence": 39,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339411.4836667,
+      "relative_time": 26.666666666666664,
+      "sentence": "$IIRPM,E,1,2302,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 40,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.1503332,
+      "relative_time": 27.333333333333332,
+      "sentence": "$IIRPM,E,2,2294,A,*58",
+      "sentence_type": "RPM",
+      "sequence": 41,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.817,
+      "relative_time": 28,
+      "sentence": "$IIXDR,C,86.1,C,TMPE_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 42,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339413.4836667,
+      "relative_time": 28.666666666666664,
+      "sentence": "$IIXDR,C,87.7,C,TMPE_2*39",
+      "sentence_type": "XDR",
+      "sequence": 43,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.1503332,
+      "relative_time": 29.333333333333332,
+      "sentence": "$IIXDR,P,4.03,B,PRES_1*3F",
+      "sentence_type": "XDR",
+      "sequence": 44,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.817,
+      "relative_time": 30,
+      "sentence": "$IIXDR,P,3.91,B,PRES_2*30",
+      "sentence_type": "XDR",
+      "sequence": 45,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339415.4836667,
+      "relative_time": 30.666666666666664,
+      "sentence": "$IIXDR,V,29.4,L,FUEL_1*31",
+      "sentence_type": "XDR",
+      "sequence": 46,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.1503332,
+      "relative_time": 31.333333333333332,
+      "sentence": "$IIXDR,V,30.2,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 47,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.817,
+      "relative_time": 32,
+      "sentence": "$IIRPM,E,1,2319,A,*5F",
+      "sentence_type": "RPM",
+      "sequence": 48,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339417.4836667,
+      "relative_time": 32.666666666666664,
+      "sentence": "$IIRPM,E,2,2311,A,*54",
+      "sentence_type": "RPM",
+      "sequence": 49,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.1503332,
+      "relative_time": 33.33333333333333,
+      "sentence": "$IIXDR,C,86.2,C,TMPE_1*3E",
+      "sentence_type": "XDR",
+      "sequence": 50,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.817,
+      "relative_time": 34,
+      "sentence": "$IIXDR,C,87.8,C,TMPE_2*36",
+      "sentence_type": "XDR",
+      "sequence": 51,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339419.4836667,
+      "relative_time": 34.666666666666664,
+      "sentence": "$IIXDR,P,4.16,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 52,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.1503332,
+      "relative_time": 35.33333333333333,
+      "sentence": "$IIXDR,P,4.00,B,PRES_2*3F",
+      "sentence_type": "XDR",
+      "sequence": 53,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.817,
+      "relative_time": 36,
+      "sentence": "$IIXDR,V,29.6,L,FUEL_1*33",
+      "sentence_type": "XDR",
+      "sequence": 54,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339421.4836667,
+      "relative_time": 36.666666666666664,
+      "sentence": "$IIXDR,V,30.4,L,FUEL_2*3A",
+      "sentence_type": "XDR",
+      "sequence": 55,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.1503332,
+      "relative_time": 37.33333333333333,
+      "sentence": "$IIRPM,E,1,2336,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 56,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.817,
+      "relative_time": 38,
+      "sentence": "$IIRPM,E,2,2326,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 57,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339423.4836667,
+      "relative_time": 38.666666666666664,
+      "sentence": "$IIXDR,C,86.3,C,TMPE_1*3F",
+      "sentence_type": "XDR",
+      "sequence": 58,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.1503332,
+      "relative_time": 39.33333333333333,
+      "sentence": "$IIXDR,C,87.9,C,TMPE_2*37",
+      "sentence_type": "XDR",
+      "sequence": 59,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.817,
+      "relative_time": 40,
+      "sentence": "$IIXDR,P,3.86,B,PRES_1*35",
+      "sentence_type": "XDR",
+      "sequence": 60,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339425.4836667,
+      "relative_time": 40.666666666666664,
+      "sentence": "$IIXDR,P,3.99,B,PRES_2*38",
+      "sentence_type": "XDR",
+      "sequence": 61,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.1503332,
+      "relative_time": 41.33333333333333,
+      "sentence": "$IIXDR,V,29.7,L,FUEL_1*32",
+      "sentence_type": "XDR",
+      "sequence": 62,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.817,
+      "relative_time": 42,
+      "sentence": "$IIXDR,V,30.6,L,FUEL_2*38",
+      "sentence_type": "XDR",
+      "sequence": 63,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.4836667,
+      "relative_time": 42.666666666666664,
+      "sentence": "$IIRPM,E,1,2351,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 64,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.1503332,
+      "relative_time": 43.33333333333333,
+      "sentence": "$IIRPM,E,2,2339,A,*5E",
+      "sentence_type": "RPM",
+      "sequence": 65,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.817,
+      "relative_time": 44,
+      "sentence": "$IIXDR,C,86.4,C,TMPE_1*38",
+      "sentence_type": "XDR",
+      "sequence": 66,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.4836667,
+      "relative_time": 44.666666666666664,
+      "sentence": "$IIXDR,C,88.0,C,TMPE_2*31",
+      "sentence_type": "XDR",
+      "sequence": 67,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.1503332,
+      "relative_time": 45.33333333333333,
+      "sentence": "$IIXDR,P,3.95,B,PRES_1*37",
+      "sentence_type": "XDR",
+      "sequence": 68,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.817,
+      "relative_time": 46,
+      "sentence": "$IIXDR,P,3.77,B,PRES_2*38",
+      "sentence_type": "XDR",
+      "sequence": 69,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.4836667,
+      "relative_time": 46.666666666666664,
+      "sentence": "$IIXDR,V,29.8,L,FUEL_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 70,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.1503332,
+      "relative_time": 47.33333333333333,
+      "sentence": "$IIXDR,V,30.7,L,FUEL_2*39",
+      "sentence_type": "XDR",
+      "sequence": 71,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.817,
+      "relative_time": 48,
+      "sentence": "$IIRPM,E,1,2364,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 72,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.4836667,
+      "relative_time": 48.666666666666664,
+      "sentence": "$IIRPM,E,2,2349,A,*59",
+      "sentence_type": "RPM",
+      "sequence": 73,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.1503332,
+      "relative_time": 49.33333333333333,
+      "sentence": "$IIXDR,C,86.5,C,TMPE_1*39",
+      "sentence_type": "XDR",
+      "sequence": 74,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.817,
+      "relative_time": 50,
+      "sentence": "$IIXDR,C,88.1,C,TMPE_2*30",
+      "sentence_type": "XDR",
+      "sequence": 75,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.4836667,
+      "relative_time": 50.666666666666664,
+      "sentence": "$IIXDR,P,4.16,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 76,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.1503332,
+      "relative_time": 51.33333333333333,
+      "sentence": "$IIXDR,P,3.74,B,PRES_2*3B",
+      "sentence_type": "XDR",
+      "sequence": 77,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.817,
+      "relative_time": 52,
+      "sentence": "$IIXDR,V,30.0,L,FUEL_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 78,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.4836667,
+      "relative_time": 52.666666666666664,
+      "sentence": "$IIXDR,V,30.9,L,FUEL_2*37",
+      "sentence_type": "XDR",
+      "sequence": 79,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.1503332,
+      "relative_time": 53.33333333333333,
+      "sentence": "$IIRPM,E,1,2375,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 80,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.817,
+      "relative_time": 54,
+      "sentence": "$IIRPM,E,2,2356,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 81,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.4836667,
+      "relative_time": 54.666666666666664,
+      "sentence": "$IIXDR,C,86.6,C,TMPE_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 82,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.1503332,
+      "relative_time": 55.33333333333333,
+      "sentence": "$IIXDR,C,88.2,C,TMPE_2*33",
+      "sentence_type": "XDR",
+      "sequence": 83,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.817,
+      "relative_time": 56,
+      "sentence": "$IIXDR,P,4.07,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 84,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.4836667,
+      "relative_time": 56.666666666666664,
+      "sentence": "$IIXDR,P,3.93,B,PRES_2*32",
+      "sentence_type": "XDR",
+      "sequence": 85,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.1503332,
+      "relative_time": 57.33333333333333,
+      "sentence": "$IIXDR,V,30.1,L,FUEL_1*3C",
+      "sentence_type": "XDR",
+      "sequence": 86,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.817,
+      "relative_time": 58,
+      "sentence": "$IIXDR,V,31.0,L,FUEL_2*3F",
+      "sentence_type": "XDR",
+      "sequence": 87,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.4836667,
+      "relative_time": 58.666666666666664,
+      "sentence": "$IIRPM,E,1,2384,A,*5B",
+      "sentence_type": "RPM",
+      "sequence": 88,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.1503332,
+      "relative_time": 59.33333333333333,
+      "sentence": "$IIRPM,E,2,2359,A,*58",
+      "sentence_type": "RPM",
+      "sequence": 89,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.817,
+      "relative_time": 60,
+      "sentence": "$IIXDR,C,86.7,C,TMPE_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 90,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.4836667,
+      "relative_time": 60.666666666666664,
+      "sentence": "$IIXDR,C,88.3,C,TMPE_2*32",
+      "sentence_type": "XDR",
+      "sequence": 91,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.1503332,
+      "relative_time": 61.33333333333333,
+      "sentence": "$IIXDR,P,3.92,B,PRES_1*30",
+      "sentence_type": "XDR",
+      "sequence": 92,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.817,
+      "relative_time": 62,
+      "sentence": "$IIXDR,P,3.92,B,PRES_2*33",
+      "sentence_type": "XDR",
+      "sequence": 93,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.4836667,
+      "relative_time": 62.666666666666664,
+      "sentence": "$IIXDR,V,30.3,L,FUEL_1*3E",
+      "sentence_type": "XDR",
+      "sequence": 94,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.1503332,
+      "relative_time": 63.33333333333333,
+      "sentence": "$IIXDR,V,31.1,L,FUEL_2*3E",
+      "sentence_type": "XDR",
+      "sequence": 95,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.817,
+      "relative_time": 64,
+      "sentence": "$IIRPM,E,1,2392,A,*5C",
+      "sentence_type": "RPM",
+      "sequence": 96,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.4836667,
+      "relative_time": 64.66666666666666,
+      "sentence": "$IIRPM,E,2,2360,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 97,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.1503332,
+      "relative_time": 65.33333333333333,
+      "sentence": "$IIXDR,C,86.8,C,TMPE_1*34",
+      "sentence_type": "XDR",
+      "sequence": 98,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.817,
+      "relative_time": 66,
+      "sentence": "$IIXDR,C,88.4,C,TMPE_2*35",
+      "sentence_type": "XDR",
+      "sequence": 99,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.4836667,
+      "relative_time": 66.66666666666666,
+      "sentence": "$IIXDR,P,3.81,B,PRES_1*32",
+      "sentence_type": "XDR",
+      "sequence": 100,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.1503332,
+      "relative_time": 67.33333333333333,
+      "sentence": "$IIXDR,P,4.05,B,PRES_2*3A",
+      "sentence_type": "XDR",
+      "sequence": 101,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.817,
+      "relative_time": 68,
+      "sentence": "$IIXDR,V,30.4,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 102,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.4836667,
+      "relative_time": 68.66666666666666,
+      "sentence": "$IIXDR,V,31.3,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 103,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.1503332,
+      "relative_time": 69.33333333333333,
+      "sentence": "$IIRPM,E,1,2397,A,*59",
+      "sentence_type": "RPM",
+      "sequence": 104,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.817,
+      "relative_time": 70,
+      "sentence": "$IIRPM,E,2,2357,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 105,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.4836667,
+      "relative_time": 70.66666666666666,
+      "sentence": "$IIXDR,C,86.9,C,TMPE_1*35",
+      "sentence_type": "XDR",
+      "sequence": 106,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.1503332,
+      "relative_time": 71.33333333333333,
+      "sentence": "$IIXDR,C,88.5,C,TMPE_2*34",
+      "sentence_type": "XDR",
+      "sequence": 107,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.817,
+      "relative_time": 72,
+      "sentence": "$IIXDR,P,4.17,B,PRES_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 108,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.4836667,
+      "relative_time": 72.66666666666666,
+      "sentence": "$IIXDR,P,3.75,B,PRES_2*3A",
+      "sentence_type": "XDR",
+      "sequence": 109,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.1503332,
+      "relative_time": 73.33333333333333,
+      "sentence": "$IIXDR,V,30.5,L,FUEL_1*38",
+      "sentence_type": "XDR",
+      "sequence": 110,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.817,
+      "relative_time": 74,
+      "sentence": "$IIXDR,V,31.4,L,FUEL_2*3B",
+      "sentence_type": "XDR",
+      "sequence": 111,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.4836667,
+      "relative_time": 74.66666666666666,
+      "sentence": "$IIRPM,E,1,2399,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 112,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.1503332,
+      "relative_time": 75.33333333333333,
+      "sentence": "$IIRPM,E,2,2351,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 113,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.817,
+      "relative_time": 76,
+      "sentence": "$IIXDR,C,87.0,C,TMPE_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 114,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.4836667,
+      "relative_time": 76.66666666666666,
+      "sentence": "$IIXDR,C,88.6,C,TMPE_2*37",
+      "sentence_type": "XDR",
+      "sequence": 115,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.1503332,
+      "relative_time": 77.33333333333333,
+      "sentence": "$IIXDR,P,4.06,B,PRES_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 116,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.817,
+      "relative_time": 78,
+      "sentence": "$IIXDR,P,3.85,B,PRES_2*35",
+      "sentence_type": "XDR",
+      "sequence": 117,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.4836667,
+      "relative_time": 78.66666666666666,
+      "sentence": "$IIXDR,V,30.6,L,FUEL_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 118,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.1503332,
+      "relative_time": 79.33333333333333,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_2*3A",
+      "sentence_type": "XDR",
+      "sequence": 119,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.817,
+      "relative_time": 80,
+      "sentence": "$IIRPM,E,1,2400,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 120,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.4836667,
+      "relative_time": 80.66666666666666,
+      "sentence": "$IIRPM,E,2,2342,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 121,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.1503332,
+      "relative_time": 81.33333333333333,
+      "sentence": "$IIXDR,C,87.1,C,TMPE_1*3C",
+      "sentence_type": "XDR",
+      "sequence": 122,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.817,
+      "relative_time": 82,
+      "sentence": "$IIXDR,C,88.7,C,TMPE_2*36",
+      "sentence_type": "XDR",
+      "sequence": 123,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.4836667,
+      "relative_time": 82.66666666666666,
+      "sentence": "$IIXDR,P,4.04,B,PRES_1*38",
+      "sentence_type": "XDR",
+      "sequence": 124,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.1503332,
+      "relative_time": 83.33333333333333,
+      "sentence": "$IIXDR,P,4.06,B,PRES_2*39",
+      "sentence_type": "XDR",
+      "sequence": 125,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.817,
+      "relative_time": 84,
+      "sentence": "$IIXDR,V,30.7,L,FUEL_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 126,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.4836667,
+      "relative_time": 84.66666666666666,
+      "sentence": "$IIXDR,V,31.6,L,FUEL_2*39",
+      "sentence_type": "XDR",
+      "sequence": 127,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.1503332,
+      "relative_time": 85.33333333333333,
+      "sentence": "$IIRPM,E,1,2398,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 128,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.817,
+      "relative_time": 86,
+      "sentence": "$IIRPM,E,2,2331,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 129,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.4836667,
+      "relative_time": 86.66666666666666,
+      "sentence": "$IIXDR,C,87.2,C,TMPE_1*3F",
+      "sentence_type": "XDR",
+      "sequence": 130,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.1503332,
+      "relative_time": 87.33333333333333,
+      "sentence": "$IIXDR,C,88.8,C,TMPE_2*39",
+      "sentence_type": "XDR",
+      "sequence": 131,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.817,
+      "relative_time": 88,
+      "sentence": "$IIXDR,P,3.95,B,PRES_1*37",
+      "sentence_type": "XDR",
+      "sequence": 132,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.4836667,
+      "relative_time": 88.66666666666666,
+      "sentence": "$IIXDR,P,3.80,B,PRES_2*30",
+      "sentence_type": "XDR",
+      "sequence": 133,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.1503332,
+      "relative_time": 89.33333333333333,
+      "sentence": "$IIXDR,V,30.8,L,FUEL_1*35",
+      "sentence_type": "XDR",
+      "sequence": 134,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.817,
+      "relative_time": 90,
+      "sentence": "$IIXDR,V,31.7,L,FUEL_2*38",
+      "sentence_type": "XDR",
+      "sequence": 135,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.4836667,
+      "relative_time": 90.66666666666666,
+      "sentence": "$IIRPM,E,1,2394,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 136,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.1503332,
+      "relative_time": 91.33333333333333,
+      "sentence": "$IIRPM,E,2,2316,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 137,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.817,
+      "relative_time": 92,
+      "sentence": "$IIXDR,C,87.3,C,TMPE_1*3E",
+      "sentence_type": "XDR",
+      "sequence": 138,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.4836667,
+      "relative_time": 92.66666666666666,
+      "sentence": "$IIXDR,C,88.9,C,TMPE_2*38",
+      "sentence_type": "XDR",
+      "sequence": 139,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.1503332,
+      "relative_time": 93.33333333333333,
+      "sentence": "$IIXDR,P,4.08,B,PRES_1*34",
+      "sentence_type": "XDR",
+      "sequence": 140,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.817,
+      "relative_time": 94,
+      "sentence": "$IIXDR,P,3.99,B,PRES_2*38",
+      "sentence_type": "XDR",
+      "sequence": 141,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.4836667,
+      "relative_time": 94.66666666666666,
+      "sentence": "$IIXDR,V,30.9,L,FUEL_1*34",
+      "sentence_type": "XDR",
+      "sequence": 142,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.1503332,
+      "relative_time": 95.33333333333333,
+      "sentence": "$IIXDR,V,31.7,L,FUEL_2*38",
+      "sentence_type": "XDR",
+      "sequence": 143,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.817,
+      "relative_time": 96,
+      "sentence": "$IIRPM,E,1,2388,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 144,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.4836667,
+      "relative_time": 96.66666666666666,
+      "sentence": "$IIRPM,E,2,2299,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 145,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.1503332,
+      "relative_time": 97.33333333333333,
+      "sentence": "$IIXDR,C,87.4,C,TMPE_1*39",
+      "sentence_type": "XDR",
+      "sequence": 146,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.817,
+      "relative_time": 98,
+      "sentence": "$IIXDR,C,89.0,C,TMPE_2*30",
+      "sentence_type": "XDR",
+      "sequence": 147,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.4836667,
+      "relative_time": 98.66666666666666,
+      "sentence": "$IIXDR,P,4.13,B,PRES_1*3E",
+      "sentence_type": "XDR",
+      "sequence": 148,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.1503332,
+      "relative_time": 99.33333333333333,
+      "sentence": "$IIXDR,P,3.83,B,PRES_2*33",
+      "sentence_type": "XDR",
+      "sequence": 149,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.817,
+      "relative_time": 100,
+      "sentence": "$IIXDR,V,31.0,L,FUEL_1*3C",
+      "sentence_type": "XDR",
+      "sequence": 150,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.4836667,
+      "relative_time": 100.66666666666666,
+      "sentence": "$IIXDR,V,31.8,L,FUEL_2*37",
+      "sentence_type": "XDR",
+      "sequence": 151,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.1503332,
+      "relative_time": 101.33333333333333,
+      "sentence": "$IIRPM,E,1,2380,A,*5F",
+      "sentence_type": "RPM",
+      "sequence": 152,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.817,
+      "relative_time": 102,
+      "sentence": "$IIRPM,E,2,2280,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 153,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.4836667,
+      "relative_time": 102.66666666666666,
+      "sentence": "$IIXDR,C,87.6,C,TMPE_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 154,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.1503332,
+      "relative_time": 103.33333333333333,
+      "sentence": "$IIXDR,C,89.1,C,TMPE_2*31",
+      "sentence_type": "XDR",
+      "sequence": 155,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.817,
+      "relative_time": 104,
+      "sentence": "$IIXDR,P,3.98,B,PRES_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 156,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.4836667,
+      "relative_time": 104.66666666666666,
+      "sentence": "$IIXDR,P,3.81,B,PRES_2*31",
+      "sentence_type": "XDR",
+      "sequence": 157,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.1503332,
+      "relative_time": 105.33333333333333,
+      "sentence": "$IIXDR,V,31.1,L,FUEL_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 158,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.817,
+      "relative_time": 106,
+      "sentence": "$IIXDR,V,31.9,L,FUEL_2*36",
+      "sentence_type": "XDR",
+      "sequence": 159,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.4836667,
+      "relative_time": 106.66666666666666,
+      "sentence": "$IIRPM,E,1,2369,A,*58",
+      "sentence_type": "RPM",
+      "sequence": 160,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.1503332,
+      "relative_time": 107.33333333333333,
+      "sentence": "$IIRPM,E,2,2260,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 161,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.817,
+      "relative_time": 108,
+      "sentence": "$IIXDR,C,87.7,C,TMPE_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 162,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.4836667,
+      "relative_time": 108.66666666666666,
+      "sentence": "$IIXDR,C,89.2,C,TMPE_2*32",
+      "sentence_type": "XDR",
+      "sequence": 163,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.1503332,
+      "relative_time": 109.33333333333333,
+      "sentence": "$IIXDR,P,4.07,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 164,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.817,
+      "relative_time": 110,
+      "sentence": "$IIXDR,P,3.92,B,PRES_2*33",
+      "sentence_type": "XDR",
+      "sequence": 165,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.4836667,
+      "relative_time": 110.66666666666666,
+      "sentence": "$IIXDR,V,31.2,L,FUEL_1*3E",
+      "sentence_type": "XDR",
+      "sequence": 166,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.1503332,
+      "relative_time": 111.33333333333333,
+      "sentence": "$IIXDR,V,31.9,L,FUEL_2*36",
+      "sentence_type": "XDR",
+      "sequence": 167,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.817,
+      "relative_time": 112,
+      "sentence": "$IIRPM,E,1,2357,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 168,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.4836667,
+      "relative_time": 112.66666666666666,
+      "sentence": "$IIRPM,E,2,2237,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 169,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.1503332,
+      "relative_time": 113.33333333333333,
+      "sentence": "$IIXDR,C,87.8,C,TMPE_1*35",
+      "sentence_type": "XDR",
+      "sequence": 170,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.817,
+      "relative_time": 114,
+      "sentence": "$IIXDR,C,89.3,C,TMPE_2*33",
+      "sentence_type": "XDR",
+      "sequence": 171,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.4836667,
+      "relative_time": 114.66666666666666,
+      "sentence": "$IIXDR,P,3.99,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 172,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.1503332,
+      "relative_time": 115.33333333333333,
+      "sentence": "$IIXDR,P,4.00,B,PRES_2*3F",
+      "sentence_type": "XDR",
+      "sequence": 173,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.817,
+      "relative_time": 116,
+      "sentence": "$IIXDR,V,31.3,L,FUEL_1*3F",
+      "sentence_type": "XDR",
+      "sequence": 174,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.4836667,
+      "relative_time": 116.66666666666666,
+      "sentence": "$IIXDR,V,32.0,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 175,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.1503332,
+      "relative_time": 117.33333333333333,
+      "sentence": "$IIRPM,E,1,2343,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 176,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.817,
+      "relative_time": 118,
+      "sentence": "$IIRPM,E,2,2214,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 177,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.4836667,
+      "relative_time": 118.66666666666666,
+      "sentence": "$IIXDR,C,87.9,C,TMPE_1*34",
+      "sentence_type": "XDR",
+      "sequence": 178,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.1503332,
+      "relative_time": 119.33333333333333,
+      "sentence": "$IIXDR,C,89.3,C,TMPE_2*33",
+      "sentence_type": "XDR",
+      "sequence": 179,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.817,
+      "relative_time": 120,
+      "sentence": "$IIXDR,P,4.16,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 180,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.4836667,
+      "relative_time": 120.66666666666666,
+      "sentence": "$IIXDR,P,3.92,B,PRES_2*33",
+      "sentence_type": "XDR",
+      "sequence": 181,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.1503332,
+      "relative_time": 121.33333333333333,
+      "sentence": "$IIXDR,V,31.3,L,FUEL_1*3F",
+      "sentence_type": "XDR",
+      "sequence": 182,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.817,
+      "relative_time": 122,
+      "sentence": "$IIXDR,V,32.0,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 183,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.4836667,
+      "relative_time": 122.66666666666666,
+      "sentence": "$IIRPM,E,1,2327,A,*52",
+      "sentence_type": "RPM",
+      "sequence": 184,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.1503332,
+      "relative_time": 123.33333333333333,
+      "sentence": "$IIRPM,E,2,2190,A,*5F",
+      "sentence_type": "RPM",
+      "sequence": 185,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.817,
+      "relative_time": 124,
+      "sentence": "$IIXDR,C,88.0,C,TMPE_1*32",
+      "sentence_type": "XDR",
+      "sequence": 186,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.4836667,
+      "relative_time": 124.66666666666666,
+      "sentence": "$IIXDR,C,89.4,C,TMPE_2*34",
+      "sentence_type": "XDR",
+      "sequence": 187,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.1503332,
+      "relative_time": 125.33333333333333,
+      "sentence": "$IIXDR,P,3.98,B,PRES_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 188,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.817,
+      "relative_time": 126,
+      "sentence": "$IIXDR,P,3.96,B,PRES_2*37",
+      "sentence_type": "XDR",
+      "sequence": 189,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.4836667,
+      "relative_time": 126.66666666666666,
+      "sentence": "$IIXDR,V,31.4,L,FUEL_1*38",
+      "sentence_type": "XDR",
+      "sequence": 190,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.1503332,
+      "relative_time": 127.33333333333333,
+      "sentence": "$IIXDR,V,32.0,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 191,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.817,
+      "relative_time": 128,
+      "sentence": "$IIRPM,E,1,2310,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 192,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.4836667,
+      "relative_time": 128.66666666666666,
+      "sentence": "$IIRPM,E,2,2166,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 193,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.1503332,
+      "relative_time": 129.33333333333331,
+      "sentence": "$IIXDR,C,88.1,C,TMPE_1*33",
+      "sentence_type": "XDR",
+      "sequence": 194,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.817,
+      "relative_time": 130,
+      "sentence": "$IIXDR,C,89.5,C,TMPE_2*35",
+      "sentence_type": "XDR",
+      "sequence": 195,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.4836667,
+      "relative_time": 130.66666666666666,
+      "sentence": "$IIXDR,P,3.89,B,PRES_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 196,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.1503332,
+      "relative_time": 131.33333333333331,
+      "sentence": "$IIXDR,P,4.02,B,PRES_2*3D",
+      "sentence_type": "XDR",
+      "sequence": 197,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.817,
+      "relative_time": 132,
+      "sentence": "$IIXDR,V,31.4,L,FUEL_1*38",
+      "sentence_type": "XDR",
+      "sequence": 198,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.4836667,
+      "relative_time": 132.66666666666666,
+      "sentence": "$IIXDR,V,32.0,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 199,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.1503332,
+      "relative_time": 133.33333333333331,
+      "sentence": "$IIRPM,E,1,2291,A,*5E",
+      "sentence_type": "RPM",
+      "sequence": 200,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.817,
+      "relative_time": 134,
+      "sentence": "$IIRPM,E,2,2143,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 201,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.4836667,
+      "relative_time": 134.66666666666666,
+      "sentence": "$IIXDR,C,88.2,C,TMPE_1*30",
+      "sentence_type": "XDR",
+      "sequence": 202,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.1503332,
+      "relative_time": 135.33333333333331,
+      "sentence": "$IIXDR,C,89.6,C,TMPE_2*36",
+      "sentence_type": "XDR",
+      "sequence": 203,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339520.817,
+      "relative_time": 136,
+      "sentence": "$IIXDR,P,3.81,B,PRES_1*32",
+      "sentence_type": "XDR",
+      "sequence": 204,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339521.4836667,
+      "relative_time": 136.66666666666666,
+      "sentence": "$IIXDR,P,3.87,B,PRES_2*37",
+      "sentence_type": "XDR",
+      "sequence": 205,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.1503332,
+      "relative_time": 137.33333333333331,
+      "sentence": "$IIXDR,V,31.4,L,FUEL_1*38",
+      "sentence_type": "XDR",
+      "sequence": 206,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339522.817,
+      "relative_time": 138,
+      "sentence": "$IIXDR,V,32.0,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 207,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339523.4836667,
+      "relative_time": 138.66666666666666,
+      "sentence": "$IIRPM,E,1,2272,A,*53",
+      "sentence_type": "RPM",
+      "sequence": 208,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.1503332,
+      "relative_time": 139.33333333333331,
+      "sentence": "$IIRPM,E,2,2120,A,*54",
+      "sentence_type": "RPM",
+      "sequence": 209,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339524.817,
+      "relative_time": 140,
+      "sentence": "$IIXDR,C,88.3,C,TMPE_1*31",
+      "sentence_type": "XDR",
+      "sequence": 210,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339525.4836667,
+      "relative_time": 140.66666666666666,
+      "sentence": "$IIXDR,C,89.7,C,TMPE_2*37",
+      "sentence_type": "XDR",
+      "sequence": 211,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.1503332,
+      "relative_time": 141.33333333333331,
+      "sentence": "$IIXDR,P,3.99,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 212,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339526.817,
+      "relative_time": 142,
+      "sentence": "$IIXDR,P,4.04,B,PRES_2*3B",
+      "sentence_type": "XDR",
+      "sequence": 213,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339527.4836667,
+      "relative_time": 142.66666666666666,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 214,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.1503332,
+      "relative_time": 143.33333333333331,
+      "sentence": "$IIXDR,V,32.0,L,FUEL_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 215,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339528.817,
+      "relative_time": 144,
+      "sentence": "$IIRPM,E,1,2252,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 216,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339529.4836667,
+      "relative_time": 144.66666666666666,
+      "sentence": "$IIRPM,E,2,2098,A,*56",
+      "sentence_type": "RPM",
+      "sequence": 217,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.1503332,
+      "relative_time": 145.33333333333331,
+      "sentence": "$IIXDR,C,88.4,C,TMPE_1*36",
+      "sentence_type": "XDR",
+      "sequence": 218,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339530.817,
+      "relative_time": 146,
+      "sentence": "$IIXDR,C,89.8,C,TMPE_2*38",
+      "sentence_type": "XDR",
+      "sequence": 219,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339531.4836667,
+      "relative_time": 146.66666666666666,
+      "sentence": "$IIXDR,P,3.99,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 220,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.1503332,
+      "relative_time": 147.33333333333331,
+      "sentence": "$IIXDR,P,3.95,B,PRES_2*34",
+      "sentence_type": "XDR",
+      "sequence": 221,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339532.817,
+      "relative_time": 148,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 222,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339533.4836667,
+      "relative_time": 148.66666666666666,
+      "sentence": "$IIXDR,V,31.9,L,FUEL_2*36",
+      "sentence_type": "XDR",
+      "sequence": 223,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.1503332,
+      "relative_time": 149.33333333333331,
+      "sentence": "$IIRPM,E,1,2231,A,*54",
+      "sentence_type": "RPM",
+      "sequence": 224,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339534.817,
+      "relative_time": 150,
+      "sentence": "$IIRPM,E,2,2077,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 225,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339535.4836667,
+      "relative_time": 150.66666666666666,
+      "sentence": "$IIXDR,C,88.5,C,TMPE_1*37",
+      "sentence_type": "XDR",
+      "sequence": 226,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.1503332,
+      "relative_time": 151.33333333333331,
+      "sentence": "$IIXDR,C,89.9,C,TMPE_2*39",
+      "sentence_type": "XDR",
+      "sequence": 227,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339536.817,
+      "relative_time": 152,
+      "sentence": "$IIXDR,P,4.10,B,PRES_1*3D",
+      "sentence_type": "XDR",
+      "sequence": 228,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339537.4836667,
+      "relative_time": 152.66666666666666,
+      "sentence": "$IIXDR,P,3.73,B,PRES_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 229,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.1503332,
+      "relative_time": 153.33333333333331,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 230,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339538.817,
+      "relative_time": 154,
+      "sentence": "$IIXDR,V,31.9,L,FUEL_2*36",
+      "sentence_type": "XDR",
+      "sequence": 231,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339539.4836667,
+      "relative_time": 154.66666666666666,
+      "sentence": "$IIRPM,E,1,2210,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 232,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.1503332,
+      "relative_time": 155.33333333333331,
+      "sentence": "$IIRPM,E,2,2058,A,*5A",
+      "sentence_type": "RPM",
+      "sequence": 233,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339540.817,
+      "relative_time": 156,
+      "sentence": "$IIXDR,C,88.6,C,TMPE_1*34",
+      "sentence_type": "XDR",
+      "sequence": 234,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339541.4836667,
+      "relative_time": 156.66666666666666,
+      "sentence": "$IIXDR,C,90.0,C,TMPE_2*38",
+      "sentence_type": "XDR",
+      "sequence": 235,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.1503332,
+      "relative_time": 157.33333333333331,
+      "sentence": "$IIXDR,P,4.12,B,PRES_1*3F",
+      "sentence_type": "XDR",
+      "sequence": 236,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339542.817,
+      "relative_time": 158,
+      "sentence": "$IIXDR,P,3.82,B,PRES_2*32",
+      "sentence_type": "XDR",
+      "sequence": 237,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339543.4836667,
+      "relative_time": 158.66666666666666,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 238,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.1503332,
+      "relative_time": 159.33333333333331,
+      "sentence": "$IIXDR,V,31.8,L,FUEL_2*37",
+      "sentence_type": "XDR",
+      "sequence": 239,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339544.817,
+      "relative_time": 160,
+      "sentence": "$IIRPM,E,1,2188,A,*55",
+      "sentence_type": "RPM",
+      "sequence": 240,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339545.4836667,
+      "relative_time": 160.66666666666666,
+      "sentence": "$IIRPM,E,2,2042,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 241,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.1503332,
+      "relative_time": 161.33333333333331,
+      "sentence": "$IIXDR,C,88.7,C,TMPE_1*35",
+      "sentence_type": "XDR",
+      "sequence": 242,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339546.817,
+      "relative_time": 162,
+      "sentence": "$IIXDR,C,90.1,C,TMPE_2*39",
+      "sentence_type": "XDR",
+      "sequence": 243,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339547.4836667,
+      "relative_time": 162.66666666666666,
+      "sentence": "$IIXDR,P,4.16,B,PRES_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 244,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.1503332,
+      "relative_time": 163.33333333333331,
+      "sentence": "$IIXDR,P,3.79,B,PRES_2*36",
+      "sentence_type": "XDR",
+      "sequence": 245,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339548.817,
+      "relative_time": 164,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 246,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339549.4836667,
+      "relative_time": 164.66666666666666,
+      "sentence": "$IIXDR,V,31.8,L,FUEL_2*37",
+      "sentence_type": "XDR",
+      "sequence": 247,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.1503332,
+      "relative_time": 165.33333333333331,
+      "sentence": "$IIRPM,E,1,2167,A,*54",
+      "sentence_type": "RPM",
+      "sequence": 248,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339550.817,
+      "relative_time": 166,
+      "sentence": "$IIRPM,E,2,2028,A,*5D",
+      "sentence_type": "RPM",
+      "sequence": 249,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339551.4836667,
+      "relative_time": 166.66666666666666,
+      "sentence": "$IIXDR,C,88.8,C,TMPE_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 250,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.1503332,
+      "relative_time": 167.33333333333331,
+      "sentence": "$IIXDR,C,90.2,C,TMPE_2*3A",
+      "sentence_type": "XDR",
+      "sequence": 251,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339552.817,
+      "relative_time": 168,
+      "sentence": "$IIXDR,P,4.06,B,PRES_1*3A",
+      "sentence_type": "XDR",
+      "sequence": 252,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339553.4836667,
+      "relative_time": 168.66666666666666,
+      "sentence": "$IIXDR,P,3.87,B,PRES_2*37",
+      "sentence_type": "XDR",
+      "sequence": 253,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.1503332,
+      "relative_time": 169.33333333333331,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 254,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339554.817,
+      "relative_time": 170,
+      "sentence": "$IIXDR,V,31.7,L,FUEL_2*38",
+      "sentence_type": "XDR",
+      "sequence": 255,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339555.4836667,
+      "relative_time": 170.66666666666666,
+      "sentence": "$IIRPM,E,1,2146,A,*57",
+      "sentence_type": "RPM",
+      "sequence": 256,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.1503332,
+      "relative_time": 171.33333333333331,
+      "sentence": "$IIRPM,E,2,2016,A,*50",
+      "sentence_type": "RPM",
+      "sequence": 257,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339556.817,
+      "relative_time": 172,
+      "sentence": "$IIXDR,C,88.9,C,TMPE_1*3B",
+      "sentence_type": "XDR",
+      "sequence": 258,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339557.4836667,
+      "relative_time": 172.66666666666666,
+      "sentence": "$IIXDR,C,90.3,C,TMPE_2*3B",
+      "sentence_type": "XDR",
+      "sequence": 259,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.1503332,
+      "relative_time": 173.33333333333331,
+      "sentence": "$IIXDR,P,4.11,B,PRES_1*3C",
+      "sentence_type": "XDR",
+      "sequence": 260,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339558.817,
+      "relative_time": 174,
+      "sentence": "$IIXDR,P,3.93,B,PRES_2*32",
+      "sentence_type": "XDR",
+      "sequence": 261,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339559.4836667,
+      "relative_time": 174.66666666666666,
+      "sentence": "$IIXDR,V,31.5,L,FUEL_1*39",
+      "sentence_type": "XDR",
+      "sequence": 262,
+      "description": "Engine 1 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.1503332,
+      "relative_time": 175.33333333333331,
+      "sentence": "$IIXDR,V,31.6,L,FUEL_2*39",
+      "sentence_type": "XDR",
+      "sequence": 263,
+      "description": "Engine 2 Fuel Flow Rate (L/hr)",
+      "source": "FUEL_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339560.817,
+      "relative_time": 176,
+      "sentence": "$IIRPM,E,1,2126,A,*51",
+      "sentence_type": "RPM",
+      "sequence": 264,
+      "description": "Engine 1 RPM with load variations",
+      "source": "ENGINE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339561.4836667,
+      "relative_time": 176.66666666666666,
+      "sentence": "$IIRPM,E,2,2008,A,*5F",
+      "sentence_type": "RPM",
+      "sequence": 265,
+      "description": "Engine 2 RPM with slight offset",
+      "source": "ENGINE_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.1503332,
+      "relative_time": 177.33333333333331,
+      "sentence": "$IIXDR,C,89.0,C,TMPE_1*33",
+      "sentence_type": "XDR",
+      "sequence": 266,
+      "description": "Engine 1 Temperature (Celsius)",
+      "source": "TEMP_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339562.817,
+      "relative_time": 178,
+      "sentence": "$IIXDR,C,90.4,C,TMPE_2*3C",
+      "sentence_type": "XDR",
+      "sequence": 267,
+      "description": "Engine 2 Temperature (Celsius)",
+      "source": "TEMP_2",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339563.4836667,
+      "relative_time": 178.66666666666666,
+      "sentence": "$IIXDR,P,3.94,B,PRES_1*36",
+      "sentence_type": "XDR",
+      "sequence": 268,
+      "description": "Engine 1 Oil Pressure (Bar)",
+      "source": "PRESSURE_1",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339564.1503332,
+      "relative_time": 179.33333333333331,
+      "sentence": "$IIXDR,P,3.93,B,PRES_2*32",
+      "sentence_type": "XDR",
+      "sequence": 269,
+      "description": "Engine 2 Oil Pressure (Bar)",
+      "source": "PRESSURE_2",
+      "checksum_valid": true
+    }
+  ]
+}

@@ -1,0 +1,6042 @@
+{
+  "metadata": {
+    "name": "Comprehensive Navigation Test",
+    "description": "Complete navigation widget test recording with GPS, depth, speed, wind, and compass data",
+    "duration": 300,
+    "message_count": 600,
+    "created": "2025-10-24T20:53:39.519Z",
+    "version": "1.0",
+    "bridge_mode": "nmea0183",
+    "vessel_type": "40ft Test Sailboat",
+    "scenario_type": "navigation",
+    "test_coverage": [
+      "gps",
+      "depth",
+      "speed",
+      "wind",
+      "compass"
+    ],
+    "conditions": {
+      "wind_speed": "12-15 knots",
+      "sea_state": "moderate",
+      "weather": "clear"
+    },
+    "equipment": {
+      "engines": 1,
+      "batteries": 2,
+      "tanks": 2
+    },
+    "author": "BMad Recording Generator v1.0",
+    "tags": [
+      "navigation",
+      "comprehensive",
+      "widgets"
+    ],
+    "related_stories": [
+      "story-7.4",
+      "story-2.3"
+    ]
+  },
+  "messages": [
+    {
+      "timestamp": 1761339219.521,
+      "relative_time": 0,
+      "sentence": "$GPGGA,120000.00,4030.1234,N,7430.5678,W,1,08,1.0,10.5,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 0,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339220.021,
+      "relative_time": 0.5,
+      "sentence": "$IIDBT,,f,15.3,M,8.3,F*03",
+      "sentence_type": "DBT",
+      "sequence": 1,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339220.521,
+      "relative_time": 1,
+      "sentence": "$IIVHW,,,180.1,M,6.1,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 2,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339221.021,
+      "relative_time": 1.5,
+      "sentence": "$IIMWV,45.7,R,13.1,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 3,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339221.521,
+      "relative_time": 2,
+      "sentence": "$IIHDM,180.2,M*29",
+      "sentence_type": "HDM",
+      "sequence": 4,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339222.021,
+      "relative_time": 2.5,
+      "sentence": "$GPGGA,120000.00,4030.1236,N,7430.5673,W,1,08,1.0,11.0,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 5,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339222.521,
+      "relative_time": 3,
+      "sentence": "$IIDBT,,f,15.6,M,8.5,F*00",
+      "sentence_type": "DBT",
+      "sequence": 6,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339223.021,
+      "relative_time": 3.5,
+      "sentence": "$IIVHW,,,180.3,M,6.4,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 7,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339223.521,
+      "relative_time": 4,
+      "sentence": "$IIMWV,46.8,R,11.6,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 8,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339224.021,
+      "relative_time": 4.5,
+      "sentence": "$IIHDM,180.4,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 9,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339224.521,
+      "relative_time": 5,
+      "sentence": "$GPGGA,120000.00,4030.1239,N,7430.5668,W,1,08,1.0,11.5,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 10,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339225.021,
+      "relative_time": 5.5,
+      "sentence": "$IIDBT,,f,16.0,M,8.7,F*07",
+      "sentence_type": "DBT",
+      "sequence": 11,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339225.521,
+      "relative_time": 6,
+      "sentence": "$IIVHW,,,180.6,M,6.7,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 12,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339226.021,
+      "relative_time": 6.5,
+      "sentence": "$IIMWV,47.9,R,13.8,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 13,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339226.521,
+      "relative_time": 7,
+      "sentence": "$IIHDM,180.7,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 14,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339227.021,
+      "relative_time": 7.5,
+      "sentence": "$GPGGA,120000.00,4030.1242,N,7430.5663,W,1,08,1.0,11.9,M,-34.0,M,,*53",
+      "sentence_type": "GGA",
+      "sequence": 15,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339227.521,
+      "relative_time": 8,
+      "sentence": "$IIDBT,,f,16.4,M,8.9,F*0D",
+      "sentence_type": "DBT",
+      "sequence": 16,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339228.021,
+      "relative_time": 8.5,
+      "sentence": "$IIVHW,,,180.8,M,6.9,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 17,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339228.521,
+      "relative_time": 9,
+      "sentence": "$IIMWV,49.0,R,11.6,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 18,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339229.021,
+      "relative_time": 9.5,
+      "sentence": "$IIHDM,180.9,M*22",
+      "sentence_type": "HDM",
+      "sequence": 19,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339229.521,
+      "relative_time": 10,
+      "sentence": "$GPGGA,120000.00,4030.1244,N,7430.5658,W,1,08,1.0,12.2,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 20,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339230.021,
+      "relative_time": 10.5,
+      "sentence": "$IIDBT,,f,16.7,M,9.1,F*07",
+      "sentence_type": "DBT",
+      "sequence": 21,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339230.521,
+      "relative_time": 11,
+      "sentence": "$IIVHW,,,181.1,M,7.2,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 22,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339231.021,
+      "relative_time": 11.5,
+      "sentence": "$IIMWV,50.1,R,10.3,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 23,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339231.521,
+      "relative_time": 12,
+      "sentence": "$IIHDM,181.2,M*28",
+      "sentence_type": "HDM",
+      "sequence": 24,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339232.021,
+      "relative_time": 12.5,
+      "sentence": "$GPGGA,120000.00,4030.1246,N,7430.5653,W,1,08,1.0,12.4,M,-34.0,M,,*5A",
+      "sentence_type": "GGA",
+      "sequence": 25,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339232.521,
+      "relative_time": 13,
+      "sentence": "$IIDBT,,f,17.0,M,9.3,F*03",
+      "sentence_type": "DBT",
+      "sequence": 26,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339233.021,
+      "relative_time": 13.5,
+      "sentence": "$IIVHW,,,181.3,M,7.3,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 27,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339233.521,
+      "relative_time": 14,
+      "sentence": "$IIMWV,51.1,R,15.4,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 28,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339234.021,
+      "relative_time": 14.5,
+      "sentence": "$IIHDM,181.4,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 29,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339234.521,
+      "relative_time": 15,
+      "sentence": "$GPGGA,120000.00,4030.1249,N,7430.5648,W,1,08,1.0,12.5,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 30,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339235.021,
+      "relative_time": 15.5,
+      "sentence": "$IIDBT,,f,17.3,M,9.4,F*07",
+      "sentence_type": "DBT",
+      "sequence": 31,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339235.521,
+      "relative_time": 16,
+      "sentence": "$IIVHW,,,181.6,M,7.4,N,,K*0C",
+      "sentence_type": "VHW",
+      "sequence": 32,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339236.021,
+      "relative_time": 16.5,
+      "sentence": "$IIMWV,52.1,R,12.4,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 33,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339236.521,
+      "relative_time": 17,
+      "sentence": "$IIHDM,181.7,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 34,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339237.021,
+      "relative_time": 17.5,
+      "sentence": "$GPGGA,120000.00,4030.1251,N,7430.5643,W,1,08,1.0,12.5,M,-34.0,M,,*5C",
+      "sentence_type": "GGA",
+      "sequence": 35,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339237.521,
+      "relative_time": 18,
+      "sentence": "$IIDBT,,f,17.5,M,9.6,F*03",
+      "sentence_type": "DBT",
+      "sequence": 36,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339238.021,
+      "relative_time": 18.5,
+      "sentence": "$IIVHW,,,181.8,M,7.5,N,,K*03",
+      "sentence_type": "VHW",
+      "sequence": 37,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339238.521,
+      "relative_time": 19,
+      "sentence": "$IIMWV,53.1,R,14.5,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 38,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339239.021,
+      "relative_time": 19.5,
+      "sentence": "$IIHDM,181.9,M*23",
+      "sentence_type": "HDM",
+      "sequence": 39,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339239.521,
+      "relative_time": 20,
+      "sentence": "$GPGGA,120000.00,4030.1254,N,7430.5638,W,1,08,1.0,12.3,M,-34.0,M,,*53",
+      "sentence_type": "GGA",
+      "sequence": 40,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339240.021,
+      "relative_time": 20.5,
+      "sentence": "$IIDBT,,f,17.8,M,9.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 41,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339240.521,
+      "relative_time": 21,
+      "sentence": "$IIVHW,,,182.1,M,7.5,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 42,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339241.021,
+      "relative_time": 21.5,
+      "sentence": "$IIMWV,54.0,R,14.6,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 43,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339241.521,
+      "relative_time": 22,
+      "sentence": "$IIHDM,182.2,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 44,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339242.021,
+      "relative_time": 22.5,
+      "sentence": "$GPGGA,120000.00,4030.1256,N,7430.5633,W,1,08,1.0,12.1,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 45,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339242.521,
+      "relative_time": 23,
+      "sentence": "$IIDBT,,f,17.9,M,9.8,F*01",
+      "sentence_type": "DBT",
+      "sequence": 46,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339243.021,
+      "relative_time": 23.5,
+      "sentence": "$IIVHW,,,182.3,M,7.4,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 47,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339243.521,
+      "relative_time": 24,
+      "sentence": "$IIMWV,54.9,R,10.2,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 48,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339244.021,
+      "relative_time": 24.5,
+      "sentence": "$IIHDM,182.4,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 49,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339244.521,
+      "relative_time": 25,
+      "sentence": "$GPGGA,120000.00,4030.1259,N,7430.5628,W,1,08,1.0,11.7,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 50,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339245.021,
+      "relative_time": 25.5,
+      "sentence": "$IIDBT,,f,18.1,M,9.8,F*06",
+      "sentence_type": "DBT",
+      "sequence": 51,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339245.521,
+      "relative_time": 26,
+      "sentence": "$IIVHW,,,182.6,M,7.3,N,,K*08",
+      "sentence_type": "VHW",
+      "sequence": 52,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339246.021,
+      "relative_time": 26.5,
+      "sentence": "$IIMWV,55.7,R,12.6,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 53,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339246.521,
+      "relative_time": 27,
+      "sentence": "$IIHDM,182.7,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 54,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339247.021,
+      "relative_time": 27.5,
+      "sentence": "$GPGGA,120000.00,4030.1262,N,7430.5623,W,1,08,1.0,11.3,M,-34.0,M,,*5F",
+      "sentence_type": "GGA",
+      "sequence": 55,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339247.521,
+      "relative_time": 28,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 56,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339248.021,
+      "relative_time": 28.5,
+      "sentence": "$IIVHW,,,182.8,M,7.1,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 57,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339248.521,
+      "relative_time": 29,
+      "sentence": "$IIMWV,56.5,R,16.5,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 58,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339249.021,
+      "relative_time": 29.5,
+      "sentence": "$IIHDM,182.9,M*20",
+      "sentence_type": "HDM",
+      "sequence": 59,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339249.521,
+      "relative_time": 30,
+      "sentence": "$GPGGA,120000.00,4030.1264,N,7430.5618,W,1,08,1.0,10.8,M,-34.0,M,,*5B",
+      "sentence_type": "GGA",
+      "sequence": 60,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339250.021,
+      "relative_time": 30.5,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 61,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339250.521,
+      "relative_time": 31,
+      "sentence": "$IIVHW,,,183.1,M,6.9,N,,K*05",
+      "sentence_type": "VHW",
+      "sequence": 62,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339251.021,
+      "relative_time": 31.5,
+      "sentence": "$IIMWV,57.2,R,14.3,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 63,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339251.521,
+      "relative_time": 32,
+      "sentence": "$IIHDM,183.2,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 64,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339252.021,
+      "relative_time": 32.5,
+      "sentence": "$GPGGA,120000.00,4030.1267,N,7430.5613,W,1,08,1.0,10.3,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 65,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339252.521,
+      "relative_time": 33,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 66,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339253.021,
+      "relative_time": 33.5,
+      "sentence": "$IIVHW,,,183.3,M,6.7,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 67,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339253.521,
+      "relative_time": 34,
+      "sentence": "$IIMWV,57.8,R,11.8,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 68,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339254.021,
+      "relative_time": 34.5,
+      "sentence": "$IIHDM,183.4,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 69,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339254.521,
+      "relative_time": 35,
+      "sentence": "$GPGGA,120000.00,4030.1269,N,7430.5608,W,1,08,1.0,9.8,M,-34.0,M,,*6F",
+      "sentence_type": "GGA",
+      "sequence": 70,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339255.021,
+      "relative_time": 35.5,
+      "sentence": "$IIDBT,,f,18.1,M,9.9,F*07",
+      "sentence_type": "DBT",
+      "sequence": 71,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339255.521,
+      "relative_time": 36,
+      "sentence": "$IIVHW,,,183.6,M,6.4,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 72,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339256.021,
+      "relative_time": 36.5,
+      "sentence": "$IIMWV,58.3,R,11.7,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 73,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339256.521,
+      "relative_time": 37,
+      "sentence": "$IIHDM,183.7,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 74,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339257.021,
+      "relative_time": 37.5,
+      "sentence": "$GPGGA,120000.00,4030.1271,N,7430.5603,W,1,08,1.0,9.4,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 75,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339257.521,
+      "relative_time": 38,
+      "sentence": "$IIDBT,,f,18.0,M,9.8,F*07",
+      "sentence_type": "DBT",
+      "sequence": 76,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339258.021,
+      "relative_time": 38.5,
+      "sentence": "$IIVHW,,,183.8,M,6.1,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 77,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339258.521,
+      "relative_time": 39,
+      "sentence": "$IIMWV,58.8,R,17.6,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 78,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339259.021,
+      "relative_time": 39.5,
+      "sentence": "$IIHDM,183.9,M*21",
+      "sentence_type": "HDM",
+      "sequence": 79,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339259.521,
+      "relative_time": 40,
+      "sentence": "$GPGGA,120000.00,4030.1274,N,7430.5598,W,1,08,1.0,9.0,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 80,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339260.021,
+      "relative_time": 40.5,
+      "sentence": "$IIDBT,,f,17.9,M,9.7,F*0E",
+      "sentence_type": "DBT",
+      "sequence": 81,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339260.521,
+      "relative_time": 41,
+      "sentence": "$IIVHW,,,184.1,M,5.8,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 82,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339261.021,
+      "relative_time": 41.5,
+      "sentence": "$IIMWV,59.2,R,17.3,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 83,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339261.521,
+      "relative_time": 42,
+      "sentence": "$IIHDM,184.2,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 84,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339262.021,
+      "relative_time": 42.5,
+      "sentence": "$GPGGA,120000.00,4030.1276,N,7430.5593,W,1,08,1.0,8.7,M,-34.0,M,,*6E",
+      "sentence_type": "GGA",
+      "sequence": 85,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339262.521,
+      "relative_time": 43,
+      "sentence": "$IIDBT,,f,17.7,M,9.6,F*01",
+      "sentence_type": "DBT",
+      "sequence": 86,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339263.021,
+      "relative_time": 43.5,
+      "sentence": "$IIVHW,,,184.3,M,5.5,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 87,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339263.521,
+      "relative_time": 44,
+      "sentence": "$IIMWV,59.5,R,17.3,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 88,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339264.021,
+      "relative_time": 44.5,
+      "sentence": "$IIHDM,184.4,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 89,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339264.521,
+      "relative_time": 45,
+      "sentence": "$GPGGA,120000.00,4030.1279,N,7430.5588,W,1,08,1.0,8.5,M,-34.0,M,,*69",
+      "sentence_type": "GGA",
+      "sequence": 90,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339265.021,
+      "relative_time": 45.5,
+      "sentence": "$IIDBT,,f,17.5,M,9.5,F*00",
+      "sentence_type": "DBT",
+      "sequence": 91,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339265.521,
+      "relative_time": 46,
+      "sentence": "$IIVHW,,,184.6,M,5.2,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 92,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339266.021,
+      "relative_time": 46.5,
+      "sentence": "$IIMWV,59.8,R,13.2,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 93,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339266.521,
+      "relative_time": 47,
+      "sentence": "$IIHDM,184.7,M*28",
+      "sentence_type": "HDM",
+      "sequence": 94,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339267.021,
+      "relative_time": 47.5,
+      "sentence": "$GPGGA,120000.00,4030.1282,N,7430.5583,W,1,08,1.0,8.5,M,-34.0,M,,*66",
+      "sentence_type": "GGA",
+      "sequence": 95,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339267.521,
+      "relative_time": 48,
+      "sentence": "$IIDBT,,f,17.2,M,9.4,F*06",
+      "sentence_type": "DBT",
+      "sequence": 96,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339268.021,
+      "relative_time": 48.5,
+      "sentence": "$IIVHW,,,184.8,M,5.0,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 97,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339268.521,
+      "relative_time": 49,
+      "sentence": "$IIMWV,59.9,R,10.8,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 98,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339269.021,
+      "relative_time": 49.5,
+      "sentence": "$IIHDM,184.9,M*26",
+      "sentence_type": "HDM",
+      "sequence": 99,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339269.521,
+      "relative_time": 50,
+      "sentence": "$GPGGA,120000.00,4030.1284,N,7430.5578,W,1,08,1.0,8.6,M,-34.0,M,,*67",
+      "sentence_type": "GGA",
+      "sequence": 100,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339270.021,
+      "relative_time": 50.5,
+      "sentence": "$IIDBT,,f,16.9,M,9.2,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 101,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339270.521,
+      "relative_time": 51,
+      "sentence": "$IIVHW,,,185.1,M,4.8,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 102,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339271.021,
+      "relative_time": 51.5,
+      "sentence": "$IIMWV,60.0,R,14.5,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 103,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339271.521,
+      "relative_time": 52,
+      "sentence": "$IIHDM,185.2,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 104,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339272.021,
+      "relative_time": 52.5,
+      "sentence": "$GPGGA,120000.00,4030.1287,N,7430.5573,W,1,08,1.0,8.8,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 105,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339272.521,
+      "relative_time": 53,
+      "sentence": "$IIDBT,,f,16.6,M,9.1,F*06",
+      "sentence_type": "DBT",
+      "sequence": 106,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339273.021,
+      "relative_time": 53.5,
+      "sentence": "$IIVHW,,,185.3,M,4.6,N,,K*0C",
+      "sentence_type": "VHW",
+      "sequence": 107,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339273.521,
+      "relative_time": 54,
+      "sentence": "$IIMWV,60.0,R,11.9,N,A*32",
+      "sentence_type": "MWV",
+      "sequence": 108,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339274.021,
+      "relative_time": 54.5,
+      "sentence": "$IIHDM,185.4,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 109,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339274.521,
+      "relative_time": 55,
+      "sentence": "$GPGGA,120000.00,4030.1289,N,7430.5568,W,1,08,1.0,9.1,M,-34.0,M,,*6D",
+      "sentence_type": "GGA",
+      "sequence": 110,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339275.021,
+      "relative_time": 55.5,
+      "sentence": "$IIDBT,,f,16.3,M,8.9,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 111,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339275.521,
+      "relative_time": 56,
+      "sentence": "$IIVHW,,,185.6,M,4.5,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 112,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339276.021,
+      "relative_time": 56.5,
+      "sentence": "$IIMWV,59.9,R,10.8,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 113,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339276.521,
+      "relative_time": 57,
+      "sentence": "$IIHDM,185.7,M*29",
+      "sentence_type": "HDM",
+      "sequence": 114,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339277.021,
+      "relative_time": 57.5,
+      "sentence": "$GPGGA,120000.00,4030.1291,N,7430.5563,W,1,08,1.0,9.5,M,-34.0,M,,*6B",
+      "sentence_type": "GGA",
+      "sequence": 115,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339277.521,
+      "relative_time": 58,
+      "sentence": "$IIDBT,,f,15.9,M,8.7,F*0D",
+      "sentence_type": "DBT",
+      "sequence": 116,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339278.021,
+      "relative_time": 58.5,
+      "sentence": "$IIVHW,,,185.8,M,4.5,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 117,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339278.521,
+      "relative_time": 59,
+      "sentence": "$IIMWV,59.7,R,12.2,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 118,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339279.021,
+      "relative_time": 59.5,
+      "sentence": "$IIHDM,185.9,M*27",
+      "sentence_type": "HDM",
+      "sequence": 119,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339279.521,
+      "relative_time": 60,
+      "sentence": "$GPGGA,120000.00,4030.1294,N,7430.5558,W,1,08,1.0,9.9,M,-34.0,M,,*6A",
+      "sentence_type": "GGA",
+      "sequence": 120,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339280.021,
+      "relative_time": 60.5,
+      "sentence": "$IIDBT,,f,15.5,M,8.5,F*03",
+      "sentence_type": "DBT",
+      "sequence": 121,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339280.521,
+      "relative_time": 61,
+      "sentence": "$IIVHW,,,186.1,M,4.5,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 122,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339281.021,
+      "relative_time": 61.5,
+      "sentence": "$IIMWV,59.4,R,10.0,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 123,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339281.521,
+      "relative_time": 62,
+      "sentence": "$IIHDM,186.2,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 124,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339282.021,
+      "relative_time": 62.5,
+      "sentence": "$GPGGA,120000.00,4030.1296,N,7430.5553,W,1,08,1.0,10.4,M,-34.0,M,,*56",
+      "sentence_type": "GGA",
+      "sequence": 125,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339282.521,
+      "relative_time": 63,
+      "sentence": "$IIDBT,,f,15.2,M,8.3,F*02",
+      "sentence_type": "DBT",
+      "sequence": 126,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339283.021,
+      "relative_time": 63.5,
+      "sentence": "$IIVHW,,,186.3,M,4.6,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 127,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339283.521,
+      "relative_time": 64,
+      "sentence": "$IIMWV,59.1,R,15.8,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 128,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339284.021,
+      "relative_time": 64.5,
+      "sentence": "$IIHDM,186.4,M*29",
+      "sentence_type": "HDM",
+      "sequence": 129,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339284.521,
+      "relative_time": 65,
+      "sentence": "$GPGGA,120000.00,4030.1299,N,7430.5548,W,1,08,1.0,10.9,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 130,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339285.021,
+      "relative_time": 65.5,
+      "sentence": "$IIDBT,,f,14.8,M,8.1,F*0B",
+      "sentence_type": "DBT",
+      "sequence": 131,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339285.521,
+      "relative_time": 66,
+      "sentence": "$IIVHW,,,186.6,M,4.7,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 132,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339286.021,
+      "relative_time": 66.5,
+      "sentence": "$IIMWV,58.7,R,11.3,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 133,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339286.521,
+      "relative_time": 67,
+      "sentence": "$IIHDM,186.7,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 134,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339287.021,
+      "relative_time": 67.5,
+      "sentence": "$GPGGA,120000.00,4030.1301,N,7430.5543,W,1,08,1.0,11.4,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 135,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339287.521,
+      "relative_time": 68,
+      "sentence": "$IIDBT,,f,14.4,M,7.9,F*00",
+      "sentence_type": "DBT",
+      "sequence": 136,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339288.021,
+      "relative_time": 68.5,
+      "sentence": "$IIVHW,,,186.8,M,4.9,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 137,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339288.521,
+      "relative_time": 69,
+      "sentence": "$IIMWV,58.2,R,11.3,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 138,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339289.021,
+      "relative_time": 69.5,
+      "sentence": "$IIHDM,186.9,M*24",
+      "sentence_type": "HDM",
+      "sequence": 139,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339289.521,
+      "relative_time": 70,
+      "sentence": "$GPGGA,120000.00,4030.1304,N,7430.5538,W,1,08,1.0,11.8,M,-34.0,M,,*5C",
+      "sentence_type": "GGA",
+      "sequence": 140,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339290.021,
+      "relative_time": 70.5,
+      "sentence": "$IIDBT,,f,14.1,M,7.7,F*0B",
+      "sentence_type": "DBT",
+      "sequence": 141,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339290.521,
+      "relative_time": 71,
+      "sentence": "$IIVHW,,,187.1,M,5.1,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 142,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339291.021,
+      "relative_time": 71.5,
+      "sentence": "$IIMWV,57.6,R,11.5,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 143,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339291.521,
+      "relative_time": 72,
+      "sentence": "$IIHDM,187.2,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 144,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339292.021,
+      "relative_time": 72.5,
+      "sentence": "$GPGGA,120000.00,4030.1307,N,7430.5533,W,1,08,1.0,12.1,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 145,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339292.521,
+      "relative_time": 73,
+      "sentence": "$IIDBT,,f,13.7,M,7.5,F*08",
+      "sentence_type": "DBT",
+      "sequence": 146,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339293.021,
+      "relative_time": 73.5,
+      "sentence": "$IIVHW,,,187.3,M,5.4,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 147,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339293.521,
+      "relative_time": 74,
+      "sentence": "$IIMWV,56.9,R,11.0,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 148,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339294.021,
+      "relative_time": 74.5,
+      "sentence": "$IIHDM,187.4,M*28",
+      "sentence_type": "HDM",
+      "sequence": 149,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339294.521,
+      "relative_time": 75,
+      "sentence": "$GPGGA,120000.00,4030.1309,N,7430.5528,W,1,08,1.0,12.4,M,-34.0,M,,*5F",
+      "sentence_type": "GGA",
+      "sequence": 150,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339295.021,
+      "relative_time": 75.5,
+      "sentence": "$IIDBT,,f,13.4,M,7.4,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 151,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339295.521,
+      "relative_time": 76,
+      "sentence": "$IIVHW,,,187.6,M,5.7,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 152,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339296.021,
+      "relative_time": 76.5,
+      "sentence": "$IIMWV,56.2,R,13.2,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 153,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339296.521,
+      "relative_time": 77,
+      "sentence": "$IIHDM,187.7,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 154,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339297.021,
+      "relative_time": 77.5,
+      "sentence": "$GPGGA,120000.00,4030.1312,N,7430.5523,W,1,08,1.0,12.5,M,-34.0,M,,*5F",
+      "sentence_type": "GGA",
+      "sequence": 155,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339297.521,
+      "relative_time": 78,
+      "sentence": "$IIDBT,,f,13.1,M,7.2,F*09",
+      "sentence_type": "DBT",
+      "sequence": 156,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339298.021,
+      "relative_time": 78.5,
+      "sentence": "$IIVHW,,,187.8,M,6.0,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 157,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339298.521,
+      "relative_time": 79,
+      "sentence": "$IIMWV,55.5,R,10.0,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 158,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339299.021,
+      "relative_time": 79.5,
+      "sentence": "$IIHDM,187.9,M*25",
+      "sentence_type": "HDM",
+      "sequence": 159,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339299.521,
+      "relative_time": 80,
+      "sentence": "$GPGGA,120000.00,4030.1314,N,7430.5518,W,1,08,1.0,12.5,M,-34.0,M,,*51",
+      "sentence_type": "GGA",
+      "sequence": 160,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339300.021,
+      "relative_time": 80.5,
+      "sentence": "$IIDBT,,f,12.9,M,7.1,F*03",
+      "sentence_type": "DBT",
+      "sequence": 161,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339300.521,
+      "relative_time": 81,
+      "sentence": "$IIVHW,,,188.1,M,6.3,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 162,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339301.021,
+      "relative_time": 81.5,
+      "sentence": "$IIMWV,54.6,R,16.4,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 163,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339301.521,
+      "relative_time": 82,
+      "sentence": "$IIHDM,188.2,M*21",
+      "sentence_type": "HDM",
+      "sequence": 164,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339302.021,
+      "relative_time": 82.5,
+      "sentence": "$GPGGA,120000.00,4030.1316,N,7430.5513,W,1,08,1.0,12.3,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 165,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339302.521,
+      "relative_time": 83,
+      "sentence": "$IIDBT,,f,12.7,M,6.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 166,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339303.021,
+      "relative_time": 83.5,
+      "sentence": "$IIVHW,,,188.3,M,6.6,N,,K*03",
+      "sentence_type": "VHW",
+      "sequence": 167,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339303.521,
+      "relative_time": 84,
+      "sentence": "$IIMWV,53.7,R,11.3,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 168,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339304.021,
+      "relative_time": 84.5,
+      "sentence": "$IIHDM,188.4,M*27",
+      "sentence_type": "HDM",
+      "sequence": 169,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339304.521,
+      "relative_time": 85,
+      "sentence": "$GPGGA,120000.00,4030.1319,N,7430.5508,W,1,08,1.0,12.1,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 170,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339305.021,
+      "relative_time": 85.5,
+      "sentence": "$IIDBT,,f,12.5,M,6.9,F*06",
+      "sentence_type": "DBT",
+      "sequence": 171,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339305.521,
+      "relative_time": 86,
+      "sentence": "$IIVHW,,,188.6,M,6.8,N,,K*08",
+      "sentence_type": "VHW",
+      "sequence": 172,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339306.021,
+      "relative_time": 86.5,
+      "sentence": "$IIMWV,52.8,R,11.1,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 173,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339306.521,
+      "relative_time": 87,
+      "sentence": "$IIHDM,188.7,M*24",
+      "sentence_type": "HDM",
+      "sequence": 174,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339307.021,
+      "relative_time": 87.5,
+      "sentence": "$GPGGA,120000.00,4030.1321,N,7430.5503,W,1,08,1.0,11.7,M,-34.0,M,,*5C",
+      "sentence_type": "GGA",
+      "sequence": 175,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339307.521,
+      "relative_time": 88,
+      "sentence": "$IIDBT,,f,12.3,M,6.8,F*01",
+      "sentence_type": "DBT",
+      "sequence": 176,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339308.021,
+      "relative_time": 88.5,
+      "sentence": "$IIVHW,,,188.8,M,7.1,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 177,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339308.521,
+      "relative_time": 89,
+      "sentence": "$IIMWV,51.8,R,11.4,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 178,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339309.021,
+      "relative_time": 89.5,
+      "sentence": "$IIHDM,188.9,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 179,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339309.521,
+      "relative_time": 90,
+      "sentence": "$GPGGA,120000.00,4030.1324,N,7430.5498,W,1,08,1.0,11.3,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 180,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339310.021,
+      "relative_time": 90.5,
+      "sentence": "$IIDBT,,f,12.3,M,6.7,F*0E",
+      "sentence_type": "DBT",
+      "sequence": 181,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339310.521,
+      "relative_time": 91,
+      "sentence": "$IIVHW,,,189.1,M,7.3,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 182,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339311.021,
+      "relative_time": 91.5,
+      "sentence": "$IIMWV,50.8,R,13.2,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 183,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339311.521,
+      "relative_time": 92,
+      "sentence": "$IIHDM,189.2,M*20",
+      "sentence_type": "HDM",
+      "sequence": 184,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339312.021,
+      "relative_time": 92.5,
+      "sentence": "$GPGGA,120000.00,4030.1327,N,7430.5493,W,1,08,1.0,10.8,M,-34.0,M,,*5C",
+      "sentence_type": "GGA",
+      "sequence": 185,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339312.521,
+      "relative_time": 93,
+      "sentence": "$IIDBT,,f,12.2,M,6.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 186,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339313.021,
+      "relative_time": 93.5,
+      "sentence": "$IIVHW,,,189.3,M,7.4,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 187,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339313.521,
+      "relative_time": 94,
+      "sentence": "$IIMWV,49.7,R,11.0,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 188,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339314.021,
+      "relative_time": 94.5,
+      "sentence": "$IIHDM,189.4,M*26",
+      "sentence_type": "HDM",
+      "sequence": 189,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339314.521,
+      "relative_time": 95,
+      "sentence": "$GPGGA,120000.00,4030.1329,N,7430.5488,W,1,08,1.0,10.3,M,-34.0,M,,*53",
+      "sentence_type": "GGA",
+      "sequence": 190,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339315.021,
+      "relative_time": 95.5,
+      "sentence": "$IIDBT,,f,12.2,M,6.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 191,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339315.521,
+      "relative_time": 96,
+      "sentence": "$IIVHW,,,189.6,M,7.5,N,,K*05",
+      "sentence_type": "VHW",
+      "sequence": 192,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339316.021,
+      "relative_time": 96.5,
+      "sentence": "$IIMWV,48.7,R,15.0,N,A*32",
+      "sentence_type": "MWV",
+      "sequence": 193,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339316.521,
+      "relative_time": 97,
+      "sentence": "$IIHDM,189.7,M*25",
+      "sentence_type": "HDM",
+      "sequence": 194,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339317.021,
+      "relative_time": 97.5,
+      "sentence": "$GPGGA,120000.00,4030.1332,N,7430.5483,W,1,08,1.0,9.9,M,-34.0,M,,*60",
+      "sentence_type": "GGA",
+      "sequence": 195,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339317.521,
+      "relative_time": 98,
+      "sentence": "$IIDBT,,f,12.3,M,6.7,F*0E",
+      "sentence_type": "DBT",
+      "sequence": 196,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339318.021,
+      "relative_time": 98.5,
+      "sentence": "$IIVHW,,,189.8,M,7.5,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 197,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339318.521,
+      "relative_time": 99,
+      "sentence": "$IIMWV,47.6,R,16.7,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 198,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339319.021,
+      "relative_time": 99.5,
+      "sentence": "$IIHDM,189.9,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 199,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339319.521,
+      "relative_time": 100,
+      "sentence": "$GPGGA,120000.00,4030.1334,N,7430.5478,W,1,08,1.0,9.4,M,-34.0,M,,*6F",
+      "sentence_type": "GGA",
+      "sequence": 200,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339320.021,
+      "relative_time": 100.5,
+      "sentence": "$IIDBT,,f,12.3,M,6.8,F*01",
+      "sentence_type": "DBT",
+      "sequence": 201,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339320.521,
+      "relative_time": 101,
+      "sentence": "$IIVHW,,,190.1,M,7.5,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 202,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339321.021,
+      "relative_time": 101.5,
+      "sentence": "$IIMWV,46.4,R,11.0,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 203,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339321.521,
+      "relative_time": 102,
+      "sentence": "$IIHDM,190.2,M*28",
+      "sentence_type": "HDM",
+      "sequence": 204,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339322.021,
+      "relative_time": 102.5,
+      "sentence": "$GPGGA,120000.00,4030.1336,N,7430.5473,W,1,08,1.0,9.0,M,-34.0,M,,*62",
+      "sentence_type": "GGA",
+      "sequence": 205,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339322.521,
+      "relative_time": 103,
+      "sentence": "$IIDBT,,f,12.5,M,6.9,F*06",
+      "sentence_type": "DBT",
+      "sequence": 206,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339323.021,
+      "relative_time": 103.5,
+      "sentence": "$IIVHW,,,190.3,M,7.4,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 207,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339323.521,
+      "relative_time": 104,
+      "sentence": "$IIMWV,45.3,R,10.1,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 208,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339324.021,
+      "relative_time": 104.5,
+      "sentence": "$IIHDM,190.4,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 209,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339324.521,
+      "relative_time": 105,
+      "sentence": "$GPGGA,120000.00,4030.1339,N,7430.5468,W,1,08,1.0,8.7,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 210,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339325.021,
+      "relative_time": 105.5,
+      "sentence": "$IIDBT,,f,12.7,M,6.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 211,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339325.521,
+      "relative_time": 106,
+      "sentence": "$IIVHW,,,190.6,M,7.2,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 212,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339326.021,
+      "relative_time": 106.5,
+      "sentence": "$IIMWV,44.2,R,13.1,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 213,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339326.521,
+      "relative_time": 107,
+      "sentence": "$IIHDM,190.7,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 214,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339327.021,
+      "relative_time": 107.5,
+      "sentence": "$GPGGA,120000.00,4030.1341,N,7430.5463,W,1,08,1.0,8.6,M,-34.0,M,,*64",
+      "sentence_type": "GGA",
+      "sequence": 215,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339327.521,
+      "relative_time": 108,
+      "sentence": "$IIDBT,,f,12.9,M,7.1,F*03",
+      "sentence_type": "DBT",
+      "sequence": 216,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339328.021,
+      "relative_time": 108.5,
+      "sentence": "$IIVHW,,,190.8,M,7.0,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 217,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339328.521,
+      "relative_time": 109,
+      "sentence": "$IIMWV,43.1,R,14.8,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 218,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339329.021,
+      "relative_time": 109.5,
+      "sentence": "$IIHDM,190.9,M*23",
+      "sentence_type": "HDM",
+      "sequence": 219,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339329.521,
+      "relative_time": 110,
+      "sentence": "$GPGGA,120000.00,4030.1344,N,7430.5458,W,1,08,1.0,8.5,M,-34.0,M,,*6A",
+      "sentence_type": "GGA",
+      "sequence": 220,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339330.021,
+      "relative_time": 110.5,
+      "sentence": "$IIDBT,,f,13.1,M,7.2,F*09",
+      "sentence_type": "DBT",
+      "sequence": 221,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339330.521,
+      "relative_time": 111,
+      "sentence": "$IIVHW,,,191.1,M,6.8,N,,K*07",
+      "sentence_type": "VHW",
+      "sequence": 222,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339331.021,
+      "relative_time": 111.5,
+      "sentence": "$IIMWV,42.0,R,14.1,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 223,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339331.521,
+      "relative_time": 112,
+      "sentence": "$IIHDM,191.2,M*29",
+      "sentence_type": "HDM",
+      "sequence": 224,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339332.021,
+      "relative_time": 112.5,
+      "sentence": "$GPGGA,120000.00,4030.1346,N,7430.5453,W,1,08,1.0,8.6,M,-34.0,M,,*60",
+      "sentence_type": "GGA",
+      "sequence": 225,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339332.521,
+      "relative_time": 113,
+      "sentence": "$IIDBT,,f,13.4,M,7.4,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 226,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339333.021,
+      "relative_time": 113.5,
+      "sentence": "$IIVHW,,,191.3,M,6.5,N,,K*08",
+      "sentence_type": "VHW",
+      "sequence": 227,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339333.521,
+      "relative_time": 114,
+      "sentence": "$IIMWV,40.9,R,11.6,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 228,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339334.021,
+      "relative_time": 114.5,
+      "sentence": "$IIHDM,191.4,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 229,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339334.521,
+      "relative_time": 115,
+      "sentence": "$GPGGA,120000.00,4030.1349,N,7430.5448,W,1,08,1.0,8.7,M,-34.0,M,,*64",
+      "sentence_type": "GGA",
+      "sequence": 230,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339335.021,
+      "relative_time": 115.5,
+      "sentence": "$IIDBT,,f,13.7,M,7.5,F*08",
+      "sentence_type": "DBT",
+      "sequence": 231,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339335.521,
+      "relative_time": 116,
+      "sentence": "$IIVHW,,,191.6,M,6.2,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 232,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339336.021,
+      "relative_time": 116.5,
+      "sentence": "$IIMWV,39.8,R,18.0,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 233,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339336.521,
+      "relative_time": 117,
+      "sentence": "$IIHDM,191.7,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 234,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339337.021,
+      "relative_time": 117.5,
+      "sentence": "$GPGGA,120000.00,4030.1352,N,7430.5443,W,1,08,1.0,9.0,M,-34.0,M,,*63",
+      "sentence_type": "GGA",
+      "sequence": 235,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339337.521,
+      "relative_time": 118,
+      "sentence": "$IIDBT,,f,14.1,M,7.7,F*0B",
+      "sentence_type": "DBT",
+      "sequence": 236,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339338.021,
+      "relative_time": 118.5,
+      "sentence": "$IIVHW,,,191.8,M,5.9,N,,K*0C",
+      "sentence_type": "VHW",
+      "sequence": 237,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339338.521,
+      "relative_time": 119,
+      "sentence": "$IIMWV,38.8,R,13.0,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 238,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339339.021,
+      "relative_time": 119.5,
+      "sentence": "$IIHDM,191.9,M*22",
+      "sentence_type": "HDM",
+      "sequence": 239,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339339.521,
+      "relative_time": 120,
+      "sentence": "$GPGGA,120000.00,4030.1354,N,7430.5438,W,1,08,1.0,9.4,M,-34.0,M,,*6D",
+      "sentence_type": "GGA",
+      "sequence": 240,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339340.021,
+      "relative_time": 120.5,
+      "sentence": "$IIDBT,,f,14.4,M,7.9,F*00",
+      "sentence_type": "DBT",
+      "sequence": 241,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339340.521,
+      "relative_time": 121,
+      "sentence": "$IIVHW,,,192.1,M,5.6,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 242,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339341.021,
+      "relative_time": 121.5,
+      "sentence": "$IIMWV,37.8,R,13.0,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 243,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339341.521,
+      "relative_time": 122,
+      "sentence": "$IIHDM,192.2,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 244,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339342.021,
+      "relative_time": 122.5,
+      "sentence": "$GPGGA,120000.00,4030.1357,N,7430.5433,W,1,08,1.0,9.9,M,-34.0,M,,*68",
+      "sentence_type": "GGA",
+      "sequence": 245,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339342.521,
+      "relative_time": 123,
+      "sentence": "$IIDBT,,f,14.8,M,8.1,F*0B",
+      "sentence_type": "DBT",
+      "sequence": 246,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339343.021,
+      "relative_time": 123.5,
+      "sentence": "$IIVHW,,,192.3,M,5.3,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 247,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339343.521,
+      "relative_time": 124,
+      "sentence": "$IIMWV,36.8,R,17.6,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 248,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339344.021,
+      "relative_time": 124.5,
+      "sentence": "$IIHDM,192.4,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 249,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339344.521,
+      "relative_time": 125,
+      "sentence": "$GPGGA,120000.00,4030.1359,N,7430.5428,W,1,08,1.0,10.4,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 250,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339345.021,
+      "relative_time": 125.5,
+      "sentence": "$IIDBT,,f,15.2,M,8.3,F*02",
+      "sentence_type": "DBT",
+      "sequence": 251,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339345.521,
+      "relative_time": 126,
+      "sentence": "$IIVHW,,,192.6,M,5.1,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 252,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339346.021,
+      "relative_time": 126.5,
+      "sentence": "$IIMWV,35.9,R,16.9,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 253,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339346.521,
+      "relative_time": 127,
+      "sentence": "$IIHDM,192.7,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 254,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339347.021,
+      "relative_time": 127.5,
+      "sentence": "$GPGGA,120000.00,4030.1361,N,7430.5423,W,1,08,1.0,10.9,M,-34.0,M,,*54",
+      "sentence_type": "GGA",
+      "sequence": 255,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339347.521,
+      "relative_time": 128,
+      "sentence": "$IIDBT,,f,15.5,M,8.5,F*03",
+      "sentence_type": "DBT",
+      "sequence": 256,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339348.021,
+      "relative_time": 128.5,
+      "sentence": "$IIVHW,,,192.8,M,4.9,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 257,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339348.521,
+      "relative_time": 129,
+      "sentence": "$IIMWV,35.0,R,10.5,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 258,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339349.021,
+      "relative_time": 129.5,
+      "sentence": "$IIHDM,192.9,M*21",
+      "sentence_type": "HDM",
+      "sequence": 259,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339349.521,
+      "relative_time": 130,
+      "sentence": "$GPGGA,120000.00,4030.1364,N,7430.5418,W,1,08,1.0,11.3,M,-34.0,M,,*52",
+      "sentence_type": "GGA",
+      "sequence": 260,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339350.021,
+      "relative_time": 130.5,
+      "sentence": "$IIDBT,,f,15.9,M,8.7,F*0D",
+      "sentence_type": "DBT",
+      "sequence": 261,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339350.521,
+      "relative_time": 131,
+      "sentence": "$IIVHW,,,193.1,M,4.7,N,,K*08",
+      "sentence_type": "VHW",
+      "sequence": 262,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339351.021,
+      "relative_time": 131.5,
+      "sentence": "$IIMWV,34.2,R,11.2,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 263,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339351.521,
+      "relative_time": 132,
+      "sentence": "$IIHDM,193.2,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 264,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339352.021,
+      "relative_time": 132.5,
+      "sentence": "$GPGGA,120000.00,4030.1366,N,7430.5413,W,1,08,1.0,11.8,M,-34.0,M,,*50",
+      "sentence_type": "GGA",
+      "sequence": 265,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339352.521,
+      "relative_time": 133,
+      "sentence": "$IIDBT,,f,16.3,M,8.9,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 266,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339353.021,
+      "relative_time": 133.5,
+      "sentence": "$IIVHW,,,193.3,M,4.6,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 267,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339353.521,
+      "relative_time": 134,
+      "sentence": "$IIMWV,33.5,R,16.8,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 268,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339354.021,
+      "relative_time": 134.5,
+      "sentence": "$IIHDM,193.4,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 269,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339354.521,
+      "relative_time": 135,
+      "sentence": "$GPGGA,120000.00,4030.1369,N,7430.5408,W,1,08,1.0,12.1,M,-34.0,M,,*5F",
+      "sentence_type": "GGA",
+      "sequence": 270,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339355.021,
+      "relative_time": 135.5,
+      "sentence": "$IIDBT,,f,16.6,M,9.1,F*06",
+      "sentence_type": "DBT",
+      "sequence": 271,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339355.521,
+      "relative_time": 136,
+      "sentence": "$IIVHW,,,193.6,M,4.5,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 272,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339356.021,
+      "relative_time": 136.5,
+      "sentence": "$IIMWV,32.8,R,15.4,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 273,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339356.521,
+      "relative_time": 137,
+      "sentence": "$IIHDM,193.7,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 274,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339357.021,
+      "relative_time": 137.5,
+      "sentence": "$GPGGA,120000.00,4030.1372,N,7430.5403,W,1,08,1.0,12.4,M,-34.0,M,,*5B",
+      "sentence_type": "GGA",
+      "sequence": 275,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339357.521,
+      "relative_time": 138,
+      "sentence": "$IIDBT,,f,16.9,M,9.2,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 276,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339358.021,
+      "relative_time": 138.5,
+      "sentence": "$IIVHW,,,193.8,M,4.5,N,,K*03",
+      "sentence_type": "VHW",
+      "sequence": 277,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339358.521,
+      "relative_time": 139,
+      "sentence": "$IIMWV,32.2,R,13.8,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 278,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339359.021,
+      "relative_time": 139.5,
+      "sentence": "$IIHDM,193.9,M*20",
+      "sentence_type": "HDM",
+      "sequence": 279,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339359.521,
+      "relative_time": 140,
+      "sentence": "$GPGGA,120000.00,4030.1374,N,7430.5398,W,1,08,1.0,12.5,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 280,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339360.021,
+      "relative_time": 140.5,
+      "sentence": "$IIDBT,,f,17.2,M,9.4,F*06",
+      "sentence_type": "DBT",
+      "sequence": 281,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339360.521,
+      "relative_time": 141,
+      "sentence": "$IIVHW,,,194.1,M,4.6,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 282,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339361.021,
+      "relative_time": 141.5,
+      "sentence": "$IIMWV,31.6,R,17.2,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 283,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339361.521,
+      "relative_time": 142,
+      "sentence": "$IIHDM,194.2,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 284,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339362.021,
+      "relative_time": 142.5,
+      "sentence": "$GPGGA,120000.00,4030.1377,N,7430.5393,W,1,08,1.0,12.5,M,-34.0,M,,*51",
+      "sentence_type": "GGA",
+      "sequence": 285,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339362.521,
+      "relative_time": 143,
+      "sentence": "$IIDBT,,f,17.5,M,9.5,F*00",
+      "sentence_type": "DBT",
+      "sequence": 286,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339363.021,
+      "relative_time": 143.5,
+      "sentence": "$IIVHW,,,194.3,M,4.7,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 287,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339363.521,
+      "relative_time": 144,
+      "sentence": "$IIMWV,31.1,R,11.1,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 288,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339364.021,
+      "relative_time": 144.5,
+      "sentence": "$IIHDM,194.4,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 289,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339364.521,
+      "relative_time": 145,
+      "sentence": "$GPGGA,120000.00,4030.1379,N,7430.5388,W,1,08,1.0,12.4,M,-34.0,M,,*54",
+      "sentence_type": "GGA",
+      "sequence": 290,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339365.021,
+      "relative_time": 145.5,
+      "sentence": "$IIDBT,,f,17.7,M,9.6,F*01",
+      "sentence_type": "DBT",
+      "sequence": 291,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339365.521,
+      "relative_time": 146,
+      "sentence": "$IIVHW,,,194.6,M,4.8,N,,K*07",
+      "sentence_type": "VHW",
+      "sequence": 292,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339366.021,
+      "relative_time": 146.5,
+      "sentence": "$IIMWV,30.7,R,16.1,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 293,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339366.521,
+      "relative_time": 147,
+      "sentence": "$IIHDM,194.7,M*29",
+      "sentence_type": "HDM",
+      "sequence": 294,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339367.021,
+      "relative_time": 147.5,
+      "sentence": "$GPGGA,120000.00,4030.1381,N,7430.5383,W,1,08,1.0,12.1,M,-34.0,M,,*5D",
+      "sentence_type": "GGA",
+      "sequence": 295,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339367.521,
+      "relative_time": 148,
+      "sentence": "$IIDBT,,f,17.9,M,9.7,F*0E",
+      "sentence_type": "DBT",
+      "sequence": 296,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339368.021,
+      "relative_time": 148.5,
+      "sentence": "$IIVHW,,,194.8,M,5.0,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 297,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339368.521,
+      "relative_time": 149,
+      "sentence": "$IIMWV,30.4,R,16.6,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 298,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339369.021,
+      "relative_time": 149.5,
+      "sentence": "$IIHDM,194.9,M*27",
+      "sentence_type": "HDM",
+      "sequence": 299,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339369.521,
+      "relative_time": 150,
+      "sentence": "$GPGGA,120000.00,4030.1384,N,7430.5378,W,1,08,1.0,11.8,M,-34.0,M,,*56",
+      "sentence_type": "GGA",
+      "sequence": 300,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339370.021,
+      "relative_time": 150.5,
+      "sentence": "$IIDBT,,f,18.0,M,9.8,F*07",
+      "sentence_type": "DBT",
+      "sequence": 301,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339370.521,
+      "relative_time": 151,
+      "sentence": "$IIVHW,,,195.1,M,5.3,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 302,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339371.021,
+      "relative_time": 151.5,
+      "sentence": "$IIMWV,30.2,R,13.1,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 303,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339371.521,
+      "relative_time": 152,
+      "sentence": "$IIHDM,195.2,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 304,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339372.021,
+      "relative_time": 152.5,
+      "sentence": "$GPGGA,120000.00,4030.1386,N,7430.5373,W,1,08,1.0,11.4,M,-34.0,M,,*53",
+      "sentence_type": "GGA",
+      "sequence": 305,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339372.521,
+      "relative_time": 153,
+      "sentence": "$IIDBT,,f,18.1,M,9.9,F*07",
+      "sentence_type": "DBT",
+      "sequence": 306,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339373.021,
+      "relative_time": 153.5,
+      "sentence": "$IIVHW,,,195.3,M,5.6,N,,K*0C",
+      "sentence_type": "VHW",
+      "sequence": 307,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339373.521,
+      "relative_time": 154,
+      "sentence": "$IIMWV,30.1,R,13.8,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 308,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339374.021,
+      "relative_time": 154.5,
+      "sentence": "$IIHDM,195.4,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 309,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339374.521,
+      "relative_time": 155,
+      "sentence": "$GPGGA,120000.00,4030.1389,N,7430.5368,W,1,08,1.0,10.9,M,-34.0,M,,*5A",
+      "sentence_type": "GGA",
+      "sequence": 310,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339375.021,
+      "relative_time": 155.5,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 311,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339375.521,
+      "relative_time": 156,
+      "sentence": "$IIVHW,,,195.6,M,5.9,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 312,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339376.021,
+      "relative_time": 156.5,
+      "sentence": "$IIMWV,30.0,R,15.2,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 313,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339376.521,
+      "relative_time": 157,
+      "sentence": "$IIHDM,195.7,M*28",
+      "sentence_type": "HDM",
+      "sequence": 314,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339377.021,
+      "relative_time": 157.5,
+      "sentence": "$GPGGA,120000.00,4030.1391,N,7430.5363,W,1,08,1.0,10.4,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 315,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339377.521,
+      "relative_time": 158,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 316,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339378.021,
+      "relative_time": 158.5,
+      "sentence": "$IIVHW,,,195.8,M,6.2,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 317,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339378.521,
+      "relative_time": 159,
+      "sentence": "$IIMWV,30.0,R,10.1,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 318,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339379.021,
+      "relative_time": 159.5,
+      "sentence": "$IIHDM,195.9,M*26",
+      "sentence_type": "HDM",
+      "sequence": 319,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339379.521,
+      "relative_time": 160,
+      "sentence": "$GPGGA,120000.00,4030.1394,N,7430.5358,W,1,08,1.0,9.9,M,-34.0,M,,*6D",
+      "sentence_type": "GGA",
+      "sequence": 320,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339380.021,
+      "relative_time": 160.5,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 321,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339380.521,
+      "relative_time": 161,
+      "sentence": "$IIVHW,,,196.1,M,6.5,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 322,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339381.021,
+      "relative_time": 161.5,
+      "sentence": "$IIMWV,30.1,R,17.3,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 323,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339381.521,
+      "relative_time": 162,
+      "sentence": "$IIHDM,196.2,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 324,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339382.021,
+      "relative_time": 162.5,
+      "sentence": "$GPGGA,120000.00,4030.1397,N,7430.5353,W,1,08,1.0,9.5,M,-34.0,M,,*69",
+      "sentence_type": "GGA",
+      "sequence": 325,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339382.521,
+      "relative_time": 163,
+      "sentence": "$IIDBT,,f,18.1,M,9.8,F*06",
+      "sentence_type": "DBT",
+      "sequence": 326,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339383.021,
+      "relative_time": 163.5,
+      "sentence": "$IIVHW,,,196.3,M,6.7,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 327,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339383.521,
+      "relative_time": 164,
+      "sentence": "$IIMWV,30.3,R,16.6,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 328,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339384.021,
+      "relative_time": 164.5,
+      "sentence": "$IIHDM,196.4,M*28",
+      "sentence_type": "HDM",
+      "sequence": 329,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339384.521,
+      "relative_time": 165,
+      "sentence": "$GPGGA,120000.00,4030.1399,N,7430.5348,W,1,08,1.0,9.1,M,-34.0,M,,*69",
+      "sentence_type": "GGA",
+      "sequence": 330,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339385.021,
+      "relative_time": 165.5,
+      "sentence": "$IIDBT,,f,17.9,M,9.8,F*01",
+      "sentence_type": "DBT",
+      "sequence": 331,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339385.521,
+      "relative_time": 166,
+      "sentence": "$IIVHW,,,196.6,M,7.0,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 332,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339386.021,
+      "relative_time": 166.5,
+      "sentence": "$IIMWV,30.6,R,13.1,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 333,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339386.521,
+      "relative_time": 167,
+      "sentence": "$IIHDM,196.7,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 334,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339387.021,
+      "relative_time": 167.5,
+      "sentence": "$GPGGA,120000.00,4030.1401,N,7430.5343,W,1,08,1.0,8.8,M,-34.0,M,,*6C",
+      "sentence_type": "GGA",
+      "sequence": 335,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339387.521,
+      "relative_time": 168,
+      "sentence": "$IIDBT,,f,17.8,M,9.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 336,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339388.021,
+      "relative_time": 168.5,
+      "sentence": "$IIVHW,,,196.8,M,7.2,N,,K*02",
+      "sentence_type": "VHW",
+      "sequence": 337,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339388.521,
+      "relative_time": 169,
+      "sentence": "$IIMWV,30.9,R,16.9,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 338,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339389.021,
+      "relative_time": 169.5,
+      "sentence": "$IIHDM,196.9,M*25",
+      "sentence_type": "HDM",
+      "sequence": 339,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339389.521,
+      "relative_time": 170,
+      "sentence": "$GPGGA,120000.00,4030.1404,N,7430.5338,W,1,08,1.0,8.6,M,-34.0,M,,*6B",
+      "sentence_type": "GGA",
+      "sequence": 340,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339390.021,
+      "relative_time": 170.5,
+      "sentence": "$IIDBT,,f,17.5,M,9.6,F*03",
+      "sentence_type": "DBT",
+      "sequence": 341,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339390.521,
+      "relative_time": 171,
+      "sentence": "$IIVHW,,,197.1,M,7.3,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 342,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339391.021,
+      "relative_time": 171.5,
+      "sentence": "$IIMWV,31.4,R,10.3,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 343,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339391.521,
+      "relative_time": 172,
+      "sentence": "$IIHDM,197.2,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 344,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339392.021,
+      "relative_time": 172.5,
+      "sentence": "$GPGGA,120000.00,4030.1406,N,7430.5333,W,1,08,1.0,8.5,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 345,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339392.521,
+      "relative_time": 173,
+      "sentence": "$IIDBT,,f,17.3,M,9.4,F*07",
+      "sentence_type": "DBT",
+      "sequence": 346,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339393.021,
+      "relative_time": 173.5,
+      "sentence": "$IIVHW,,,197.3,M,7.5,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 347,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339393.521,
+      "relative_time": 174,
+      "sentence": "$IIMWV,31.9,R,12.4,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 348,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.021,
+      "relative_time": 174.5,
+      "sentence": "$IIHDM,197.4,M*29",
+      "sentence_type": "HDM",
+      "sequence": 349,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339394.521,
+      "relative_time": 175,
+      "sentence": "$GPGGA,120000.00,4030.1409,N,7430.5328,W,1,08,1.0,8.5,M,-34.0,M,,*64",
+      "sentence_type": "GGA",
+      "sequence": 350,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339395.021,
+      "relative_time": 175.5,
+      "sentence": "$IIDBT,,f,17.0,M,9.3,F*03",
+      "sentence_type": "DBT",
+      "sequence": 351,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339395.521,
+      "relative_time": 176,
+      "sentence": "$IIVHW,,,197.6,M,7.5,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 352,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.021,
+      "relative_time": 176.5,
+      "sentence": "$IIMWV,32.5,R,15.6,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 353,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339396.521,
+      "relative_time": 177,
+      "sentence": "$IIHDM,197.7,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 354,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339397.021,
+      "relative_time": 177.5,
+      "sentence": "$GPGGA,120000.00,4030.1411,N,7430.5323,W,1,08,1.0,8.7,M,-34.0,M,,*64",
+      "sentence_type": "GGA",
+      "sequence": 355,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339397.521,
+      "relative_time": 178,
+      "sentence": "$IIDBT,,f,16.7,M,9.1,F*07",
+      "sentence_type": "DBT",
+      "sequence": 356,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.021,
+      "relative_time": 178.5,
+      "sentence": "$IIVHW,,,197.8,M,7.5,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 357,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339398.521,
+      "relative_time": 179,
+      "sentence": "$IIMWV,33.1,R,10.8,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 358,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339399.021,
+      "relative_time": 179.5,
+      "sentence": "$IIHDM,197.9,M*24",
+      "sentence_type": "HDM",
+      "sequence": 359,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339399.521,
+      "relative_time": 180,
+      "sentence": "$GPGGA,120000.00,4030.1414,N,7430.5318,W,1,08,1.0,9.0,M,-34.0,M,,*6F",
+      "sentence_type": "GGA",
+      "sequence": 360,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.021,
+      "relative_time": 180.5,
+      "sentence": "$IIDBT,,f,16.4,M,8.9,F*0D",
+      "sentence_type": "DBT",
+      "sequence": 361,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339400.521,
+      "relative_time": 181,
+      "sentence": "$IIVHW,,,198.1,M,7.4,N,,K*03",
+      "sentence_type": "VHW",
+      "sequence": 362,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339401.021,
+      "relative_time": 181.5,
+      "sentence": "$IIMWV,33.8,R,11.2,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 363,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339401.521,
+      "relative_time": 182,
+      "sentence": "$IIHDM,198.2,M*20",
+      "sentence_type": "HDM",
+      "sequence": 364,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.021,
+      "relative_time": 182.5,
+      "sentence": "$GPGGA,120000.00,4030.1417,N,7430.5313,W,1,08,1.0,9.4,M,-34.0,M,,*63",
+      "sentence_type": "GGA",
+      "sequence": 365,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339402.521,
+      "relative_time": 183,
+      "sentence": "$IIDBT,,f,16.0,M,8.7,F*07",
+      "sentence_type": "DBT",
+      "sequence": 366,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339403.021,
+      "relative_time": 183.5,
+      "sentence": "$IIVHW,,,198.3,M,7.3,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 367,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339403.521,
+      "relative_time": 184,
+      "sentence": "$IIMWV,34.6,R,10.6,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 368,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.021,
+      "relative_time": 184.5,
+      "sentence": "$IIHDM,198.4,M*26",
+      "sentence_type": "HDM",
+      "sequence": 369,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339404.521,
+      "relative_time": 185,
+      "sentence": "$GPGGA,120000.00,4030.1419,N,7430.5308,W,1,08,1.0,9.8,M,-34.0,M,,*6B",
+      "sentence_type": "GGA",
+      "sequence": 370,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339405.021,
+      "relative_time": 185.5,
+      "sentence": "$IIDBT,,f,15.6,M,8.5,F*00",
+      "sentence_type": "DBT",
+      "sequence": 371,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339405.521,
+      "relative_time": 186,
+      "sentence": "$IIVHW,,,198.6,M,7.1,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 372,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.021,
+      "relative_time": 186.5,
+      "sentence": "$IIMWV,35.5,R,10.0,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 373,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339406.521,
+      "relative_time": 187,
+      "sentence": "$IIHDM,198.7,M*25",
+      "sentence_type": "HDM",
+      "sequence": 374,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339407.021,
+      "relative_time": 187.5,
+      "sentence": "$GPGGA,120000.00,4030.1422,N,7430.5303,W,1,08,1.0,10.3,M,-34.0,M,,*5B",
+      "sentence_type": "GGA",
+      "sequence": 375,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339407.521,
+      "relative_time": 188,
+      "sentence": "$IIDBT,,f,15.3,M,8.3,F*03",
+      "sentence_type": "DBT",
+      "sequence": 376,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.021,
+      "relative_time": 188.5,
+      "sentence": "$IIVHW,,,198.8,M,6.9,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 377,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339408.521,
+      "relative_time": 189,
+      "sentence": "$IIMWV,36.4,R,12.3,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 378,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339409.021,
+      "relative_time": 189.5,
+      "sentence": "$IIHDM,198.9,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 379,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339409.521,
+      "relative_time": 190,
+      "sentence": "$GPGGA,120000.00,4030.1424,N,7430.5298,W,1,08,1.0,10.8,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 380,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.021,
+      "relative_time": 190.5,
+      "sentence": "$IIDBT,,f,14.9,M,8.1,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 381,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339410.521,
+      "relative_time": 191,
+      "sentence": "$IIVHW,,,199.1,M,6.6,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 382,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339411.021,
+      "relative_time": 191.5,
+      "sentence": "$IIMWV,37.3,R,15.7,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 383,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339411.521,
+      "relative_time": 192,
+      "sentence": "$IIHDM,199.2,M*21",
+      "sentence_type": "HDM",
+      "sequence": 384,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.021,
+      "relative_time": 192.5,
+      "sentence": "$GPGGA,120000.00,4030.1426,N,7430.5293,W,1,08,1.0,11.3,M,-34.0,M,,*56",
+      "sentence_type": "GGA",
+      "sequence": 385,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339412.521,
+      "relative_time": 193,
+      "sentence": "$IIDBT,,f,14.5,M,7.9,F*01",
+      "sentence_type": "DBT",
+      "sequence": 386,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339413.021,
+      "relative_time": 193.5,
+      "sentence": "$IIVHW,,,199.3,M,6.3,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 387,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339413.521,
+      "relative_time": 194,
+      "sentence": "$IIMWV,38.3,R,10.5,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 388,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.021,
+      "relative_time": 194.5,
+      "sentence": "$IIHDM,199.4,M*27",
+      "sentence_type": "HDM",
+      "sequence": 389,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339414.521,
+      "relative_time": 195,
+      "sentence": "$GPGGA,120000.00,4030.1429,N,7430.5288,W,1,08,1.0,11.7,M,-34.0,M,,*57",
+      "sentence_type": "GGA",
+      "sequence": 390,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339415.021,
+      "relative_time": 195.5,
+      "sentence": "$IIDBT,,f,14.2,M,7.8,F*07",
+      "sentence_type": "DBT",
+      "sequence": 391,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339415.521,
+      "relative_time": 196,
+      "sentence": "$IIVHW,,,199.6,M,6.0,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 392,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.021,
+      "relative_time": 196.5,
+      "sentence": "$IIMWV,39.3,R,13.3,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 393,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339416.521,
+      "relative_time": 197,
+      "sentence": "$IIHDM,199.7,M*24",
+      "sentence_type": "HDM",
+      "sequence": 394,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339417.021,
+      "relative_time": 197.5,
+      "sentence": "$GPGGA,120000.00,4030.1431,N,7430.5283,W,1,08,1.0,12.1,M,-34.0,M,,*50",
+      "sentence_type": "GGA",
+      "sequence": 395,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339417.521,
+      "relative_time": 198,
+      "sentence": "$IIDBT,,f,13.8,M,7.6,F*04",
+      "sentence_type": "DBT",
+      "sequence": 396,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.021,
+      "relative_time": 198.5,
+      "sentence": "$IIVHW,,,199.8,M,5.7,N,,K*0A",
+      "sentence_type": "VHW",
+      "sequence": 397,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339418.521,
+      "relative_time": 199,
+      "sentence": "$IIMWV,40.4,R,16.0,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 398,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339419.021,
+      "relative_time": 199.5,
+      "sentence": "$IIHDM,199.9,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 399,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339419.521,
+      "relative_time": 200,
+      "sentence": "$GPGGA,120000.00,4030.1434,N,7430.5278,W,1,08,1.0,12.3,M,-34.0,M,,*53",
+      "sentence_type": "GGA",
+      "sequence": 400,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.021,
+      "relative_time": 200.5,
+      "sentence": "$IIDBT,,f,13.5,M,7.4,F*0B",
+      "sentence_type": "DBT",
+      "sequence": 401,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339420.521,
+      "relative_time": 201,
+      "sentence": "$IIVHW,,,200.1,M,5.5,N,,K*02",
+      "sentence_type": "VHW",
+      "sequence": 402,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339421.021,
+      "relative_time": 201.5,
+      "sentence": "$IIMWV,41.5,R,17.0,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 403,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339421.521,
+      "relative_time": 202,
+      "sentence": "$IIHDM,200.2,M*22",
+      "sentence_type": "HDM",
+      "sequence": 404,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.021,
+      "relative_time": 202.5,
+      "sentence": "$GPGGA,120000.00,4030.1436,N,7430.5273,W,1,08,1.0,12.5,M,-34.0,M,,*5C",
+      "sentence_type": "GGA",
+      "sequence": 405,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339422.521,
+      "relative_time": 203,
+      "sentence": "$IIDBT,,f,13.2,M,7.2,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 406,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339423.021,
+      "relative_time": 203.5,
+      "sentence": "$IIVHW,,,200.3,M,5.2,N,,K*07",
+      "sentence_type": "VHW",
+      "sequence": 407,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339423.521,
+      "relative_time": 204,
+      "sentence": "$IIMWV,42.6,R,14.5,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 408,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.021,
+      "relative_time": 204.5,
+      "sentence": "$IIHDM,200.4,M*24",
+      "sentence_type": "HDM",
+      "sequence": 409,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339424.521,
+      "relative_time": 205,
+      "sentence": "$GPGGA,120000.00,4030.1439,N,7430.5268,W,1,08,1.0,12.5,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 410,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339425.021,
+      "relative_time": 205.5,
+      "sentence": "$IIDBT,,f,12.9,M,7.1,F*03",
+      "sentence_type": "DBT",
+      "sequence": 411,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339425.521,
+      "relative_time": 206,
+      "sentence": "$IIVHW,,,200.6,M,5.0,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 412,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.021,
+      "relative_time": 206.5,
+      "sentence": "$IIMWV,43.7,R,11.5,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 413,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339426.521,
+      "relative_time": 207,
+      "sentence": "$IIHDM,200.7,M*27",
+      "sentence_type": "HDM",
+      "sequence": 414,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.021,
+      "relative_time": 207.5,
+      "sentence": "$GPGGA,120000.00,4030.1442,N,7430.5263,W,1,08,1.0,12.4,M,-34.0,M,,*5F",
+      "sentence_type": "GGA",
+      "sequence": 415,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339427.521,
+      "relative_time": 208,
+      "sentence": "$IIDBT,,f,12.7,M,7.0,F*0C",
+      "sentence_type": "DBT",
+      "sequence": 416,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.021,
+      "relative_time": 208.5,
+      "sentence": "$IIVHW,,,200.8,M,4.8,N,,K*07",
+      "sentence_type": "VHW",
+      "sequence": 417,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339428.521,
+      "relative_time": 209,
+      "sentence": "$IIMWV,44.8,R,16.9,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 418,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.021,
+      "relative_time": 209.5,
+      "sentence": "$IIHDM,200.9,M*29",
+      "sentence_type": "HDM",
+      "sequence": 419,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339429.521,
+      "relative_time": 210,
+      "sentence": "$GPGGA,120000.00,4030.1444,N,7430.5258,W,1,08,1.0,12.2,M,-34.0,M,,*57",
+      "sentence_type": "GGA",
+      "sequence": 420,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.021,
+      "relative_time": 210.5,
+      "sentence": "$IIDBT,,f,12.5,M,6.9,F*06",
+      "sentence_type": "DBT",
+      "sequence": 421,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339430.521,
+      "relative_time": 211,
+      "sentence": "$IIVHW,,,201.1,M,4.6,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 422,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.021,
+      "relative_time": 211.5,
+      "sentence": "$IIMWV,45.9,R,11.0,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 423,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339431.521,
+      "relative_time": 212,
+      "sentence": "$IIHDM,201.2,M*23",
+      "sentence_type": "HDM",
+      "sequence": 424,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.021,
+      "relative_time": 212.5,
+      "sentence": "$GPGGA,120000.00,4030.1446,N,7430.5253,W,1,08,1.0,11.9,M,-34.0,M,,*56",
+      "sentence_type": "GGA",
+      "sequence": 425,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339432.521,
+      "relative_time": 213,
+      "sentence": "$IIDBT,,f,12.4,M,6.8,F*06",
+      "sentence_type": "DBT",
+      "sequence": 426,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.021,
+      "relative_time": 213.5,
+      "sentence": "$IIVHW,,,201.3,M,4.5,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 427,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339433.521,
+      "relative_time": 214,
+      "sentence": "$IIMWV,47.0,R,17.6,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 428,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.021,
+      "relative_time": 214.5,
+      "sentence": "$IIHDM,201.4,M*25",
+      "sentence_type": "HDM",
+      "sequence": 429,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339434.521,
+      "relative_time": 215,
+      "sentence": "$GPGGA,120000.00,4030.1449,N,7430.5248,W,1,08,1.0,11.4,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 430,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.021,
+      "relative_time": 215.5,
+      "sentence": "$IIDBT,,f,12.3,M,6.7,F*0E",
+      "sentence_type": "DBT",
+      "sequence": 431,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339435.521,
+      "relative_time": 216,
+      "sentence": "$IIVHW,,,201.6,M,4.5,N,,K*05",
+      "sentence_type": "VHW",
+      "sequence": 432,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.021,
+      "relative_time": 216.5,
+      "sentence": "$IIMWV,48.2,R,15.4,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 433,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339436.521,
+      "relative_time": 217,
+      "sentence": "$IIHDM,201.7,M*26",
+      "sentence_type": "HDM",
+      "sequence": 434,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.021,
+      "relative_time": 217.5,
+      "sentence": "$GPGGA,120000.00,4030.1451,N,7430.5243,W,1,08,1.0,11.0,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 435,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339437.521,
+      "relative_time": 218,
+      "sentence": "$IIDBT,,f,12.2,M,6.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 436,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.021,
+      "relative_time": 218.5,
+      "sentence": "$IIVHW,,,201.8,M,4.5,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 437,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339438.521,
+      "relative_time": 219,
+      "sentence": "$IIMWV,49.2,R,17.0,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 438,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.021,
+      "relative_time": 219.5,
+      "sentence": "$IIHDM,201.9,M*28",
+      "sentence_type": "HDM",
+      "sequence": 439,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339439.521,
+      "relative_time": 220,
+      "sentence": "$GPGGA,120000.00,4030.1454,N,7430.5238,W,1,08,1.0,10.5,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 440,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.021,
+      "relative_time": 220.5,
+      "sentence": "$IIDBT,,f,12.2,M,6.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 441,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339440.521,
+      "relative_time": 221,
+      "sentence": "$IIVHW,,,202.1,M,4.6,N,,K*02",
+      "sentence_type": "VHW",
+      "sequence": 442,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.021,
+      "relative_time": 221.5,
+      "sentence": "$IIMWV,50.3,R,13.9,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 443,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339441.521,
+      "relative_time": 222,
+      "sentence": "$IIHDM,202.2,M*20",
+      "sentence_type": "HDM",
+      "sequence": 444,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.021,
+      "relative_time": 222.5,
+      "sentence": "$GPGGA,120000.00,4030.1456,N,7430.5233,W,1,08,1.0,10.0,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 445,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339442.521,
+      "relative_time": 223,
+      "sentence": "$IIDBT,,f,12.2,M,6.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 446,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.021,
+      "relative_time": 223.5,
+      "sentence": "$IIVHW,,,202.3,M,4.8,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 447,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339443.521,
+      "relative_time": 224,
+      "sentence": "$IIMWV,51.3,R,17.3,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 448,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.021,
+      "relative_time": 224.5,
+      "sentence": "$IIHDM,202.4,M*26",
+      "sentence_type": "HDM",
+      "sequence": 449,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339444.521,
+      "relative_time": 225,
+      "sentence": "$GPGGA,120000.00,4030.1459,N,7430.5228,W,1,08,1.0,9.5,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 450,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.021,
+      "relative_time": 225.5,
+      "sentence": "$IIDBT,,f,12.3,M,6.8,F*01",
+      "sentence_type": "DBT",
+      "sequence": 451,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339445.521,
+      "relative_time": 226,
+      "sentence": "$IIVHW,,,202.6,M,5.0,N,,K*02",
+      "sentence_type": "VHW",
+      "sequence": 452,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.021,
+      "relative_time": 226.5,
+      "sentence": "$IIMWV,52.3,R,12.6,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 453,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339446.521,
+      "relative_time": 227,
+      "sentence": "$IIHDM,202.7,M*25",
+      "sentence_type": "HDM",
+      "sequence": 454,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.021,
+      "relative_time": 227.5,
+      "sentence": "$GPGGA,120000.00,4030.1462,N,7430.5223,W,1,08,1.0,9.1,M,-34.0,M,,*66",
+      "sentence_type": "GGA",
+      "sequence": 455,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339447.521,
+      "relative_time": 228,
+      "sentence": "$IIDBT,,f,12.4,M,6.8,F*06",
+      "sentence_type": "DBT",
+      "sequence": 456,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.021,
+      "relative_time": 228.5,
+      "sentence": "$IIVHW,,,202.8,M,5.2,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 457,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339448.521,
+      "relative_time": 229,
+      "sentence": "$IIMWV,53.3,R,16.4,N,A*3B",
+      "sentence_type": "MWV",
+      "sequence": 458,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.021,
+      "relative_time": 229.5,
+      "sentence": "$IIHDM,202.9,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 459,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339449.521,
+      "relative_time": 230,
+      "sentence": "$GPGGA,120000.00,4030.1464,N,7430.5218,W,1,08,1.0,8.8,M,-34.0,M,,*60",
+      "sentence_type": "GGA",
+      "sequence": 460,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.021,
+      "relative_time": 230.5,
+      "sentence": "$IIDBT,,f,12.6,M,6.9,F*05",
+      "sentence_type": "DBT",
+      "sequence": 461,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339450.521,
+      "relative_time": 231,
+      "sentence": "$IIVHW,,,203.1,M,5.5,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 462,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.021,
+      "relative_time": 231.5,
+      "sentence": "$IIMWV,54.2,R,15.6,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 463,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339451.521,
+      "relative_time": 232,
+      "sentence": "$IIHDM,203.2,M*21",
+      "sentence_type": "HDM",
+      "sequence": 464,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.021,
+      "relative_time": 232.5,
+      "sentence": "$GPGGA,120000.00,4030.1467,N,7430.5213,W,1,08,1.0,8.6,M,-34.0,M,,*66",
+      "sentence_type": "GGA",
+      "sequence": 465,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339452.521,
+      "relative_time": 233,
+      "sentence": "$IIDBT,,f,12.8,M,7.0,F*03",
+      "sentence_type": "DBT",
+      "sequence": 466,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.021,
+      "relative_time": 233.5,
+      "sentence": "$IIVHW,,,203.3,M,5.7,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 467,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339453.521,
+      "relative_time": 234,
+      "sentence": "$IIMWV,55.1,R,13.6,N,A*38",
+      "sentence_type": "MWV",
+      "sequence": 468,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.021,
+      "relative_time": 234.5,
+      "sentence": "$IIHDM,203.4,M*27",
+      "sentence_type": "HDM",
+      "sequence": 469,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339454.521,
+      "relative_time": 235,
+      "sentence": "$GPGGA,120000.00,4030.1469,N,7430.5208,W,1,08,1.0,8.5,M,-34.0,M,,*61",
+      "sentence_type": "GGA",
+      "sequence": 470,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.021,
+      "relative_time": 235.5,
+      "sentence": "$IIDBT,,f,13.1,M,7.2,F*09",
+      "sentence_type": "DBT",
+      "sequence": 471,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339455.521,
+      "relative_time": 236,
+      "sentence": "$IIVHW,,,203.6,M,6.0,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 472,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.021,
+      "relative_time": 236.5,
+      "sentence": "$IIMWV,55.9,R,17.6,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 473,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339456.521,
+      "relative_time": 237,
+      "sentence": "$IIHDM,203.7,M*24",
+      "sentence_type": "HDM",
+      "sequence": 474,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.021,
+      "relative_time": 237.5,
+      "sentence": "$GPGGA,120000.00,4030.1471,N,7430.5203,W,1,08,1.0,8.5,M,-34.0,M,,*63",
+      "sentence_type": "GGA",
+      "sequence": 475,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339457.521,
+      "relative_time": 238,
+      "sentence": "$IIDBT,,f,13.3,M,7.3,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 476,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.021,
+      "relative_time": 238.5,
+      "sentence": "$IIVHW,,,203.8,M,6.3,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 477,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339458.521,
+      "relative_time": 239,
+      "sentence": "$IIMWV,56.6,R,13.4,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 478,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.021,
+      "relative_time": 239.5,
+      "sentence": "$IIHDM,203.9,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 479,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339459.521,
+      "relative_time": 240,
+      "sentence": "$GPGGA,120000.00,4030.1474,N,7430.5198,W,1,08,1.0,8.7,M,-34.0,M,,*65",
+      "sentence_type": "GGA",
+      "sequence": 480,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.021,
+      "relative_time": 240.5,
+      "sentence": "$IIDBT,,f,13.7,M,7.5,F*08",
+      "sentence_type": "DBT",
+      "sequence": 481,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339460.521,
+      "relative_time": 241,
+      "sentence": "$IIVHW,,,204.1,M,6.6,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 482,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.021,
+      "relative_time": 241.5,
+      "sentence": "$IIMWV,57.3,R,14.8,N,A*31",
+      "sentence_type": "MWV",
+      "sequence": 483,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339461.521,
+      "relative_time": 242,
+      "sentence": "$IIHDM,204.2,M*26",
+      "sentence_type": "HDM",
+      "sequence": 484,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.021,
+      "relative_time": 242.5,
+      "sentence": "$GPGGA,120000.00,4030.1476,N,7430.5193,W,1,08,1.0,9.0,M,-34.0,M,,*6A",
+      "sentence_type": "GGA",
+      "sequence": 485,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339462.521,
+      "relative_time": 243,
+      "sentence": "$IIDBT,,f,14.0,M,7.7,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 486,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.021,
+      "relative_time": 243.5,
+      "sentence": "$IIVHW,,,204.3,M,6.9,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 487,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339463.521,
+      "relative_time": 244,
+      "sentence": "$IIMWV,57.9,R,12.2,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 488,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.021,
+      "relative_time": 244.5,
+      "sentence": "$IIHDM,204.4,M*20",
+      "sentence_type": "HDM",
+      "sequence": 489,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339464.521,
+      "relative_time": 245,
+      "sentence": "$GPGGA,120000.00,4030.1479,N,7430.5188,W,1,08,1.0,9.3,M,-34.0,M,,*6C",
+      "sentence_type": "GGA",
+      "sequence": 490,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.021,
+      "relative_time": 245.5,
+      "sentence": "$IIDBT,,f,14.3,M,7.8,F*06",
+      "sentence_type": "DBT",
+      "sequence": 491,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339465.521,
+      "relative_time": 246,
+      "sentence": "$IIVHW,,,204.6,M,7.1,N,,K*07",
+      "sentence_type": "VHW",
+      "sequence": 492,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.021,
+      "relative_time": 246.5,
+      "sentence": "$IIMWV,58.4,R,11.2,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 493,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339466.521,
+      "relative_time": 247,
+      "sentence": "$IIHDM,204.7,M*23",
+      "sentence_type": "HDM",
+      "sequence": 494,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.021,
+      "relative_time": 247.5,
+      "sentence": "$GPGGA,120000.00,4030.1481,N,7430.5183,W,1,08,1.0,9.8,M,-34.0,M,,*6B",
+      "sentence_type": "GGA",
+      "sequence": 495,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339467.521,
+      "relative_time": 248,
+      "sentence": "$IIDBT,,f,14.7,M,8.0,F*05",
+      "sentence_type": "DBT",
+      "sequence": 496,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.021,
+      "relative_time": 248.5,
+      "sentence": "$IIVHW,,,204.8,M,7.3,N,,K*0B",
+      "sentence_type": "VHW",
+      "sequence": 497,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339468.521,
+      "relative_time": 249,
+      "sentence": "$IIMWV,58.9,R,16.7,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 498,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.021,
+      "relative_time": 249.5,
+      "sentence": "$IIHDM,204.9,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 499,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339469.521,
+      "relative_time": 250,
+      "sentence": "$GPGGA,120000.00,4030.1484,N,7430.5178,W,1,08,1.0,10.2,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 500,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.021,
+      "relative_time": 250.5,
+      "sentence": "$IIDBT,,f,15.1,M,8.2,F*00",
+      "sentence_type": "DBT",
+      "sequence": 501,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339470.521,
+      "relative_time": 251,
+      "sentence": "$IIVHW,,,205.1,M,7.4,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 502,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.021,
+      "relative_time": 251.5,
+      "sentence": "$IIMWV,59.3,R,12.6,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 503,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339471.521,
+      "relative_time": 252,
+      "sentence": "$IIHDM,205.2,M*27",
+      "sentence_type": "HDM",
+      "sequence": 504,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.021,
+      "relative_time": 252.5,
+      "sentence": "$GPGGA,120000.00,4030.1487,N,7430.5173,W,1,08,1.0,10.7,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 505,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339472.521,
+      "relative_time": 253,
+      "sentence": "$IIDBT,,f,15.5,M,8.4,F*02",
+      "sentence_type": "DBT",
+      "sequence": 506,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.021,
+      "relative_time": 253.5,
+      "sentence": "$IIVHW,,,205.3,M,7.5,N,,K*07",
+      "sentence_type": "VHW",
+      "sequence": 507,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339473.521,
+      "relative_time": 254,
+      "sentence": "$IIMWV,59.6,R,13.5,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 508,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.021,
+      "relative_time": 254.5,
+      "sentence": "$IIHDM,205.4,M*21",
+      "sentence_type": "HDM",
+      "sequence": 509,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339474.521,
+      "relative_time": 255,
+      "sentence": "$GPGGA,120000.00,4030.1489,N,7430.5168,W,1,08,1.0,11.2,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 510,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.021,
+      "relative_time": 255.5,
+      "sentence": "$IIDBT,,f,15.8,M,8.6,F*0D",
+      "sentence_type": "DBT",
+      "sequence": 511,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339475.521,
+      "relative_time": 256,
+      "sentence": "$IIVHW,,,205.6,M,7.5,N,,K*02",
+      "sentence_type": "VHW",
+      "sequence": 512,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.021,
+      "relative_time": 256.5,
+      "sentence": "$IIMWV,59.8,R,14.8,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 513,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339476.521,
+      "relative_time": 257,
+      "sentence": "$IIHDM,205.7,M*22",
+      "sentence_type": "HDM",
+      "sequence": 514,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.021,
+      "relative_time": 257.5,
+      "sentence": "$GPGGA,120000.00,4030.1491,N,7430.5163,W,1,08,1.0,11.7,M,-34.0,M,,*52",
+      "sentence_type": "GGA",
+      "sequence": 515,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339477.521,
+      "relative_time": 258,
+      "sentence": "$IIDBT,,f,16.2,M,8.8,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 516,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.021,
+      "relative_time": 258.5,
+      "sentence": "$IIVHW,,,205.8,M,7.4,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 517,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339478.521,
+      "relative_time": 259,
+      "sentence": "$IIMWV,59.9,R,12.5,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 518,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.021,
+      "relative_time": 259.5,
+      "sentence": "$IIHDM,205.9,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 519,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339479.521,
+      "relative_time": 260,
+      "sentence": "$GPGGA,120000.00,4030.1494,N,7430.5158,W,1,08,1.0,12.0,M,-34.0,M,,*5B",
+      "sentence_type": "GGA",
+      "sequence": 520,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.021,
+      "relative_time": 260.5,
+      "sentence": "$IIDBT,,f,16.5,M,9.0,F*04",
+      "sentence_type": "DBT",
+      "sequence": 521,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339480.521,
+      "relative_time": 261,
+      "sentence": "$IIVHW,,,206.1,M,7.3,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 522,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.021,
+      "relative_time": 261.5,
+      "sentence": "$IIMWV,60.0,R,12.5,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 523,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339481.521,
+      "relative_time": 262,
+      "sentence": "$IIHDM,206.2,M*24",
+      "sentence_type": "HDM",
+      "sequence": 524,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.021,
+      "relative_time": 262.5,
+      "sentence": "$GPGGA,120000.00,4030.1496,N,7430.5153,W,1,08,1.0,12.3,M,-34.0,M,,*51",
+      "sentence_type": "GGA",
+      "sequence": 525,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339482.521,
+      "relative_time": 263,
+      "sentence": "$IIDBT,,f,16.9,M,9.2,F*0A",
+      "sentence_type": "DBT",
+      "sequence": 526,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.021,
+      "relative_time": 263.5,
+      "sentence": "$IIVHW,,,206.3,M,7.2,N,,K*03",
+      "sentence_type": "VHW",
+      "sequence": 527,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339483.521,
+      "relative_time": 264,
+      "sentence": "$IIMWV,60.0,R,16.5,N,A*39",
+      "sentence_type": "MWV",
+      "sequence": 528,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.021,
+      "relative_time": 264.5,
+      "sentence": "$IIHDM,206.4,M*22",
+      "sentence_type": "HDM",
+      "sequence": 529,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339484.521,
+      "relative_time": 265,
+      "sentence": "$GPGGA,120000.00,4030.1499,N,7430.5148,W,1,08,1.0,12.5,M,-34.0,M,,*52",
+      "sentence_type": "GGA",
+      "sequence": 530,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.021,
+      "relative_time": 265.5,
+      "sentence": "$IIDBT,,f,17.2,M,9.3,F*01",
+      "sentence_type": "DBT",
+      "sequence": 531,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339485.521,
+      "relative_time": 266,
+      "sentence": "$IIVHW,,,206.6,M,7.0,N,,K*04",
+      "sentence_type": "VHW",
+      "sequence": 532,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.021,
+      "relative_time": 266.5,
+      "sentence": "$IIMWV,59.9,R,10.9,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 533,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339486.521,
+      "relative_time": 267,
+      "sentence": "$IIHDM,206.7,M*21",
+      "sentence_type": "HDM",
+      "sequence": 534,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.021,
+      "relative_time": 267.5,
+      "sentence": "$GPGGA,120000.00,4030.1501,N,7430.5143,W,1,08,1.0,12.5,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 535,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339487.521,
+      "relative_time": 268,
+      "sentence": "$IIDBT,,f,17.4,M,9.5,F*01",
+      "sentence_type": "DBT",
+      "sequence": 536,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.021,
+      "relative_time": 268.5,
+      "sentence": "$IIVHW,,,206.8,M,6.7,N,,K*0C",
+      "sentence_type": "VHW",
+      "sequence": 537,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339488.521,
+      "relative_time": 269,
+      "sentence": "$IIMWV,59.7,R,13.3,N,A*37",
+      "sentence_type": "MWV",
+      "sequence": 538,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.021,
+      "relative_time": 269.5,
+      "sentence": "$IIHDM,206.9,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 539,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339489.521,
+      "relative_time": 270,
+      "sentence": "$GPGGA,120000.00,4030.1504,N,7430.5138,W,1,08,1.0,12.4,M,-34.0,M,,*51",
+      "sentence_type": "GGA",
+      "sequence": 540,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.021,
+      "relative_time": 270.5,
+      "sentence": "$IIDBT,,f,17.7,M,9.6,F*01",
+      "sentence_type": "DBT",
+      "sequence": 541,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339490.521,
+      "relative_time": 271,
+      "sentence": "$IIVHW,,,207.1,M,6.5,N,,K*06",
+      "sentence_type": "VHW",
+      "sequence": 542,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.021,
+      "relative_time": 271.5,
+      "sentence": "$IIMWV,59.4,R,10.7,N,A*33",
+      "sentence_type": "MWV",
+      "sequence": 543,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339491.521,
+      "relative_time": 272,
+      "sentence": "$IIHDM,207.2,M*25",
+      "sentence_type": "HDM",
+      "sequence": 544,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.021,
+      "relative_time": 272.5,
+      "sentence": "$GPGGA,120000.00,4030.1507,N,7430.5133,W,1,08,1.0,12.2,M,-34.0,M,,*5F",
+      "sentence_type": "GGA",
+      "sequence": 545,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339492.521,
+      "relative_time": 273,
+      "sentence": "$IIDBT,,f,17.9,M,9.7,F*0E",
+      "sentence_type": "DBT",
+      "sequence": 546,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.021,
+      "relative_time": 273.5,
+      "sentence": "$IIVHW,,,207.3,M,6.2,N,,K*03",
+      "sentence_type": "VHW",
+      "sequence": 547,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339493.521,
+      "relative_time": 274,
+      "sentence": "$IIMWV,59.0,R,12.6,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 548,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.021,
+      "relative_time": 274.5,
+      "sentence": "$IIHDM,207.4,M*23",
+      "sentence_type": "HDM",
+      "sequence": 549,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339494.521,
+      "relative_time": 275,
+      "sentence": "$GPGGA,120000.00,4030.1509,N,7430.5128,W,1,08,1.0,11.9,M,-34.0,M,,*53",
+      "sentence_type": "GGA",
+      "sequence": 550,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.021,
+      "relative_time": 275.5,
+      "sentence": "$IIDBT,,f,18.0,M,9.8,F*07",
+      "sentence_type": "DBT",
+      "sequence": 551,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339495.521,
+      "relative_time": 276,
+      "sentence": "$IIVHW,,,207.6,M,5.9,N,,K*0E",
+      "sentence_type": "VHW",
+      "sequence": 552,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.021,
+      "relative_time": 276.5,
+      "sentence": "$IIMWV,58.6,R,11.0,N,A*36",
+      "sentence_type": "MWV",
+      "sequence": 553,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339496.521,
+      "relative_time": 277,
+      "sentence": "$IIHDM,207.7,M*20",
+      "sentence_type": "HDM",
+      "sequence": 554,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.021,
+      "relative_time": 277.5,
+      "sentence": "$GPGGA,120000.00,4030.1512,N,7430.5123,W,1,08,1.0,11.5,M,-34.0,M,,*5E",
+      "sentence_type": "GGA",
+      "sequence": 555,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339497.521,
+      "relative_time": 278,
+      "sentence": "$IIDBT,,f,18.1,M,9.9,F*07",
+      "sentence_type": "DBT",
+      "sequence": 556,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.021,
+      "relative_time": 278.5,
+      "sentence": "$IIVHW,,,207.8,M,5.6,N,,K*0F",
+      "sentence_type": "VHW",
+      "sequence": 557,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339498.521,
+      "relative_time": 279,
+      "sentence": "$IIMWV,58.0,R,10.1,N,A*30",
+      "sentence_type": "MWV",
+      "sequence": 558,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.021,
+      "relative_time": 279.5,
+      "sentence": "$IIHDM,207.9,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 559,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339499.521,
+      "relative_time": 280,
+      "sentence": "$GPGGA,120000.00,4030.1514,N,7430.5118,W,1,08,1.0,11.0,M,-34.0,M,,*55",
+      "sentence_type": "GGA",
+      "sequence": 560,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.021,
+      "relative_time": 280.5,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 561,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339500.521,
+      "relative_time": 281,
+      "sentence": "$IIVHW,,,208.1,M,5.3,N,,K*0C",
+      "sentence_type": "VHW",
+      "sequence": 562,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.021,
+      "relative_time": 281.5,
+      "sentence": "$IIMWV,57.5,R,17.3,N,A*3F",
+      "sentence_type": "MWV",
+      "sequence": 563,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339501.521,
+      "relative_time": 282,
+      "sentence": "$IIHDM,208.2,M*2A",
+      "sentence_type": "HDM",
+      "sequence": 564,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.021,
+      "relative_time": 282.5,
+      "sentence": "$GPGGA,120000.00,4030.1516,N,7430.5113,W,1,08,1.0,10.5,M,-34.0,M,,*58",
+      "sentence_type": "GGA",
+      "sequence": 565,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339502.521,
+      "relative_time": 283,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 566,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.021,
+      "relative_time": 283.5,
+      "sentence": "$IIVHW,,,208.3,M,5.0,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 567,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339503.521,
+      "relative_time": 284,
+      "sentence": "$IIMWV,56.8,R,16.4,N,A*35",
+      "sentence_type": "MWV",
+      "sequence": 568,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.021,
+      "relative_time": 284.5,
+      "sentence": "$IIHDM,208.4,M*2C",
+      "sentence_type": "HDM",
+      "sequence": 569,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339504.521,
+      "relative_time": 285,
+      "sentence": "$GPGGA,120000.00,4030.1519,N,7430.5108,W,1,08,1.0,10.1,M,-34.0,M,,*59",
+      "sentence_type": "GGA",
+      "sequence": 570,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.021,
+      "relative_time": 285.5,
+      "sentence": "$IIDBT,,f,18.2,M,9.9,F*04",
+      "sentence_type": "DBT",
+      "sequence": 571,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339505.521,
+      "relative_time": 286,
+      "sentence": "$IIVHW,,,208.6,M,4.8,N,,K*01",
+      "sentence_type": "VHW",
+      "sequence": 572,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.021,
+      "relative_time": 286.5,
+      "sentence": "$IIMWV,56.1,R,11.2,N,A*3D",
+      "sentence_type": "MWV",
+      "sequence": 573,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339506.521,
+      "relative_time": 287,
+      "sentence": "$IIHDM,208.7,M*2F",
+      "sentence_type": "HDM",
+      "sequence": 574,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.021,
+      "relative_time": 287.5,
+      "sentence": "$GPGGA,120000.00,4030.1521,N,7430.5103,W,1,08,1.0,9.6,M,-34.0,M,,*66",
+      "sentence_type": "GGA",
+      "sequence": 575,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339507.521,
+      "relative_time": 288,
+      "sentence": "$IIDBT,,f,18.1,M,9.8,F*06",
+      "sentence_type": "DBT",
+      "sequence": 576,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.021,
+      "relative_time": 288.5,
+      "sentence": "$IIVHW,,,208.8,M,4.7,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 577,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339508.521,
+      "relative_time": 289,
+      "sentence": "$IIMWV,55.3,R,16.7,N,A*3E",
+      "sentence_type": "MWV",
+      "sequence": 578,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.021,
+      "relative_time": 289.5,
+      "sentence": "$IIHDM,208.9,M*21",
+      "sentence_type": "HDM",
+      "sequence": 579,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339509.521,
+      "relative_time": 290,
+      "sentence": "$GPGGA,120000.00,4030.1524,N,7430.5098,W,1,08,1.0,9.2,M,-34.0,M,,*64",
+      "sentence_type": "GGA",
+      "sequence": 580,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.021,
+      "relative_time": 290.5,
+      "sentence": "$IIDBT,,f,18.0,M,9.8,F*07",
+      "sentence_type": "DBT",
+      "sequence": 581,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339510.521,
+      "relative_time": 291,
+      "sentence": "$IIVHW,,,209.1,M,4.6,N,,K*09",
+      "sentence_type": "VHW",
+      "sequence": 582,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.021,
+      "relative_time": 291.5,
+      "sentence": "$IIMWV,54.4,R,14.7,N,A*3A",
+      "sentence_type": "MWV",
+      "sequence": 583,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339511.521,
+      "relative_time": 292,
+      "sentence": "$IIHDM,209.2,M*2B",
+      "sentence_type": "HDM",
+      "sequence": 584,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.021,
+      "relative_time": 292.5,
+      "sentence": "$GPGGA,120000.00,4030.1526,N,7430.5093,W,1,08,1.0,8.8,M,-34.0,M,,*66",
+      "sentence_type": "GGA",
+      "sequence": 585,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339512.521,
+      "relative_time": 293,
+      "sentence": "$IIDBT,,f,17.8,M,9.7,F*0F",
+      "sentence_type": "DBT",
+      "sequence": 586,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.021,
+      "relative_time": 293.5,
+      "sentence": "$IIVHW,,,209.3,M,4.5,N,,K*08",
+      "sentence_type": "VHW",
+      "sequence": 587,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339513.521,
+      "relative_time": 294,
+      "sentence": "$IIMWV,53.5,R,12.9,N,A*34",
+      "sentence_type": "MWV",
+      "sequence": 588,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.021,
+      "relative_time": 294.5,
+      "sentence": "$IIHDM,209.4,M*2D",
+      "sentence_type": "HDM",
+      "sequence": 589,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339514.521,
+      "relative_time": 295,
+      "sentence": "$GPGGA,120000.00,4030.1529,N,7430.5088,W,1,08,1.0,8.6,M,-34.0,M,,*6D",
+      "sentence_type": "GGA",
+      "sequence": 590,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.021,
+      "relative_time": 295.5,
+      "sentence": "$IIDBT,,f,17.6,M,9.6,F*00",
+      "sentence_type": "DBT",
+      "sequence": 591,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339515.521,
+      "relative_time": 296,
+      "sentence": "$IIVHW,,,209.6,M,4.5,N,,K*0D",
+      "sentence_type": "VHW",
+      "sequence": 592,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.021,
+      "relative_time": 296.5,
+      "sentence": "$IIMWV,52.6,R,11.0,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 593,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339516.521,
+      "relative_time": 297,
+      "sentence": "$IIHDM,209.7,M*2E",
+      "sentence_type": "HDM",
+      "sequence": 594,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.021,
+      "relative_time": 297.5,
+      "sentence": "$GPGGA,120000.00,4030.1532,N,7430.5083,W,1,08,1.0,8.5,M,-34.0,M,,*6F",
+      "sentence_type": "GGA",
+      "sequence": 595,
+      "description": "GPS Fix Data with dynamic position",
+      "source": "GPS_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339517.521,
+      "relative_time": 298,
+      "sentence": "$IIDBT,,f,17.4,M,9.5,F*01",
+      "sentence_type": "DBT",
+      "sequence": 596,
+      "description": "Depth Below Transducer with variation",
+      "source": "DEPTH_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.021,
+      "relative_time": 298.5,
+      "sentence": "$IIVHW,,,209.8,M,4.6,N,,K*00",
+      "sentence_type": "VHW",
+      "sequence": 597,
+      "description": "Water Speed and Heading with dynamic values",
+      "source": "SPEED_LOG",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339518.521,
+      "relative_time": 299,
+      "sentence": "$IIMWV,51.6,R,13.1,N,A*3C",
+      "sentence_type": "MWV",
+      "sequence": 598,
+      "description": "Wind Speed and Angle with realistic variation",
+      "source": "WIND_MAIN",
+      "checksum_valid": true
+    },
+    {
+      "timestamp": 1761339519.021,
+      "relative_time": 299.5,
+      "sentence": "$IIHDM,209.9,M*20",
+      "sentence_type": "HDM",
+      "sequence": 599,
+      "description": "Magnetic Heading",
+      "source": "COMPASS_MAIN",
+      "checksum_valid": true
+    }
+  ]
+}
