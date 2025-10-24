@@ -1,0 +1,146 @@
+# generated: 2025-10-24
+# project: bmad-autopilot
+# project_key: bmad-autopilot
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via review-story workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-10-24
+project: bmad-autopilot
+project_key: bmad-autopilot
+tracking_system: file-system
+story_location: "{project-root}/docs/stories"
+
+development_status:
+  # Epic 1: Foundation, NMEA0183 & Autopilot Spike - COMPLETE
+  epic-1: done
+  1-1-nmea-tcp-connection: done
+  1-2-nmea-parsing: done
+  1-3-autopilot-research: done
+  1-4-testing-infrastructure: done
+  1-5-cross-platform-foundation: done
+  epic-1-retrospective: optional
+
+  # Epic 2: NMEA2000, Widget Framework & Complete Instrument Suite - COMPLETE ✅ (16/16 stories)
+  epic-2: done
+  2-1-nmea2000-connection: done
+  2-2-widget-framework: done
+  2-3-navigation-widgets: done
+  2-4-environmental-widgets: done
+  2-5-engine-systems-widgets: done
+  2-6-autopilot-status-widgets: done
+  2-7-dashboard-customization: done
+  2-8-display-modes-themes: done
+  2-9-mobile-header-navigation: done
+  2-10-theme-integration: done  # Superseded by Story 9.1 Enhanced Presentation System
+  2-11-metric-presentation: done  # Superseded by Story 9.1 Enhanced Presentation System
+  2-12-widget-states: done  # Verified: isPinned/isExpanded in widgetStore + WidgetCard caret icons
+  2-13-centralized-stylesheet: done  # Obsolete - Modern theme context approach adopted
+  2-14-marine-compliant-theme-system: done  # Verified: red-night mode + themeCompliance.ts validation
+  2-15-enhanced-widget-state-management: done
+  2-16-primary-secondary-metric-cells: done
+  epic-2-retrospective: optional
+
+  # Epic 3: Autopilot Control & Beta Launch - Core Complete (2/3 stories - MVP scope reduced)
+  epic-3: backlog
+  3-1-autopilot-command-interface: backlog  # BLOCKED - Hardware mitigation simulator dependency (Story 7.1)
+  3-2-autopilot-control-ui: done
+  3-3-autopilot-safety-systems: done
+  3-4-beta-user-recruitment: done  # CLOSED - Post-MVP (moved to Epic 5 planning)
+  3-5-beta-testing-program: done  # CLOSED - Post-MVP (moved to Epic 5 planning)
+  3-6-autopilot-protocol-validation: done  # CLOSED - Post-MVP (moved to Epic 5 planning)
+  3-7-beta-launch-readiness: done  # CLOSED - Duplicate of Epic 5.6 Launch Execution
+  epic-3-retrospective: optional
+
+  # Epic 4: Alarms & Polish - COMPLETE ✅ (6/6 stories - MVP scope)
+  epic-4: done
+  4-1-critical-safety-alarms: done
+  4-2-grouped-alarm-management: done
+  4-3-notification-system: done
+  4-4-ux-polish-accessibility: done
+  4-5-performance-optimization: done
+  4-6-help-system: done
+  4-6-1-support-platform-integration: backlog  # Post-MVP roadmap
+  4-7-launch-preparation: done  # CLOSED - Duplicate of Epic 5.6 Launch Execution
+  epic-4-retrospective: optional
+
+  # Epic 5: Quality & Launch - Not Started (0/7 stories)
+  epic-5: backlog
+  5-1-production-infrastructure: backlog
+  5-2-app-store-optimization: backlog
+  5-3-customer-support-system: backlog
+  5-4-security-audit-privacy: backlog
+  5-5-performance-validation: backlog
+  5-6-launch-execution: backlog
+  5-7-post-launch-monitoring: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: UI Architecture Alignment & Framework Modernization - COMPLETE (15/15 stories)
+  epic-6: done
+  6-1-atomic-design-structure: done
+  6-2-multi-store-architecture: done
+  6-3-theme-provider-context: done
+  6-4-custom-hooks-infrastructure: done
+  6-5-service-layer-organization: done
+  6-6-shared-typescript-types: done
+  6-7-expo-router-migration: done
+  6-8-project-structure-alignment: done
+  6-9-theme-provider-context-enhancement: done
+  6-10-multi-instance-nmea-widget-detection: done
+  6-11-dashboard-pagination-responsive-grid: done
+  6-12-clean-dashboard-interface: done
+  6-13-fixed-autopilot-footer: done
+  6-14-hamburger-menu-consolidation: done
+  6-15-custom-marine-components: done
+  epic-6-retrospective: optional
+
+  # Epic 7: NMEA Bridge Simulator Testing Infrastructure - 60% Complete (3/5 stories)
+  epic-7: done
+  7-1-core-multi-protocol-simulator: done
+  7-2-standardized-test-scenario-library: done
+  7-3-bmad-agent-integration-testing: done
+  7-4-synthetic-nmea-recordings: done
+  7-5-nmea-protocol-conversion: done
+  epic-7-retrospective: completed
+
+  # Epic 8: VIP Platform UI Refactor - DEFERRED to Phase 1.5 (1/7 stories retained)
+  epic-8: backlog
+  8-1-foundation-store-consolidation: done  # CLOSED - Phase 1.5+ VIP Platform architecture (not MVP)
+  8-2-glove-mode-system: done  # CLOSED - Phase 1.5+ VIP Platform architecture (not MVP)
+  8-3-platform-navigation-ios: done  # CLOSED - Phase 1.5+ platform-specific navigation (not MVP)
+  8-4-platform-navigation-android-web: done  # CLOSED - Phase 1.5+ platform-specific navigation (not MVP)
+  8-5-dashboard-widget-integration: done  # CLOSED - Phase 1.5+ VIP Platform integration (not MVP)
+  8-6-final-migration-release: done  # CLOSED - Phase 1.5+ VIP Platform release (not MVP)
+  8-7-interactive-dashboard-drag-drop: backlog  # RETAINED - May enhance current MVP dashboard
+  epic-8-retrospective: optional
+
+  # Epic 9: Enhanced Presentation System - COMPLETE ✅ (3/3 stories)
+  epic-9: done
+  9-1-enhanced-presentation-foundation: done
+  9-2-component-migration: done
+  9-3-system-cleanup: done
+  epic-9-retrospective: optional
