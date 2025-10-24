@@ -2,16 +2,6 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Create test file for NmeaConnectionManager",
-			"type": "shell",
-			"command": "touch boatingInstrumentsApp/__tests__/nmeaConnection.test.ts",
-			"args": [],
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "test"
-		},
-		{
 			"label": "Start NMEA Bridge Simulator",
 			"type": "shell",
 			"command": "node",
@@ -105,7 +95,7 @@
 			"args": [
 				"server/nmea-bridge-simulator.js",
 				"--recording",
-				"server/recordings/nmea_recording_20250720_003925.json",
+				"server/recordings/archived/nmea_recording_20250720_003925.json",
 				"--loop"
 			],
 			"options": {
@@ -130,7 +120,7 @@
 			"args": [
 				"server/nmea-bridge-simulator.js",
 				"--scenario",
-				"basic/basic-navigation"
+				"navigation/basic-navigation"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -154,7 +144,8 @@
 			"args": [
 				"server/nmea-bridge-simulator.js",
 				"--scenario",
-				"basic/coastal-sailing"
+				"navigation/coastal-sailing",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -178,7 +169,7 @@
 			"args": [
 				"server/nmea-bridge-simulator.js",
 				"--scenario",
-				"basic/deep-water-passage"
+				"navigation/deep-water-passage"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -226,7 +217,7 @@
 			"args": [
 				"server/nmea-bridge-simulator.js",
 				"--scenario",
-				"development/engine-monitoring"
+				"engine/engine-monitoring"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"

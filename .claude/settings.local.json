@@ -35,7 +35,21 @@
       "Bash(awk 'NR==2 {print \"\"\"\"Free space: \"\"\"\" $4 \"\"\"\"\\nUsed space: \"\"\"\" $3 \"\"\"\"\\nCapacity: \"\"\"\" $5}')",
       "Bash(awk 'NR==2 {print \"\"\"\"   Free space: \"\"\"\" $4 \"\"\"\"\\n   Used space: \"\"\"\" $3 \"\"\"\"\\n   Capacity: \"\"\"\" $5}')",
       "Bash(xcrun simctl list devices available)",
-      "Bash(mkdir -p \"/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/docs\")"
+      "Bash(mkdir -p \"/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/docs\")",
+      "Bash(find /Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec grep -l \"from [''\"\"].*\\/core\\/\\(themeStore\\|nmeaStore\\)\" {} ;)",
+      "Bash(find src -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec sed -i '' \"s|from ''\\(.*\\)/core/themeStore''|from ''\\1/store/themeStore''|g\" {} ;)",
+      "Bash(find src -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec sed -i '' 's|from \"\"\\(.*\\)/core/themeStore\"\"|from \"\"\\1/store/themeStore\"\"|g' {} ;)",
+      "Bash(find src -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec sed -i '' \"s|from ''\\(.*\\)/core/nmeaStore''|from ''\\1/store/nmeaStore''|g\" {} ;)",
+      "Bash(find src -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec sed -i '' 's|from \"\"\\(.*\\)/core/nmeaStore\"\"|from \"\"\\1/store/nmeaStore\"\"|g' {} ;)",
+      "Bash(npm cache clean --force)",
+      "Bash(test:*)",
+      "Bash(for file in /Volumes/SSD_I/Dev/JSDev/bmad-autopilot/docs/stories/story-*.md)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(then basename \"$file\")",
+      "Bash(fi)",
+      "Bash(paste:*)",
+      "Bash(for f in story-*.md)",
+      "Bash(do echo \"FILE: $f\")"
     ],
     "deny": [],
     "ask": []
