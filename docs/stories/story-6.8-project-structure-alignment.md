@@ -11,21 +11,29 @@
 ## Story Description
 
 **As a** development team  
-**I want** to align the project directory structure with the UI Architecture specification  
-**So that** the codebase follows established patterns, uses clean imports via barrel exports, and provides a consistent developer experience.
+**I want** to align the project directory structure with the UI Architecture specification and simplify the overly complex widget architecture  
+**So that** the codebase follows established patterns, uses clean imports via barrel exports, eliminates component nesting issues, and provides a consistent developer experience with maintainable widgets.
 
 ## Business Context
 
-**Current State Gap:** The project uses a mixed directory structure that partially aligns with UI Architecture but lacks proper atomic design organization, consistent barrel exports, and some architectural components.
+**Current State Gap:** The project uses a mixed directory structure that partially aligns with UI Architecture but lacks proper atomic design organization, consistent barrel exports, and has an overly complex widget architecture that creates nested TouchableOpacity issues and maintainability problems.
 
 **UI Architecture Requirement:**
 > Project structure should follow atomic design principles with clean barrel exports, organized service layers, and standardized component hierarchy.
+
+**Widget Architecture Issues:**
+- Complex component hierarchy: WidgetShell → WidgetCard → PrimaryMetricCell → TouchableOpacity
+- Nested TouchableOpacity elements creating HTML validation errors on web
+- Overlapping responsibilities between wrapper components
+- Difficult to maintain and debug widget interactions
 
 **Impact of Misalignment:**
 - Inconsistent import patterns across the codebase
 - Missing atomic design component organization
 - Developer onboarding complexity due to non-standard structure
+- Console warnings and HTML validation errors from nested components
 - Difficult to locate and maintain components as project scales
+- Widget development complexity hindering new marine instrument creation
 
 ## Acceptance Criteria
 
@@ -48,6 +56,14 @@
 12. Ensure consistent naming conventions throughout directory structure
 13. Verify all imports resolve correctly after reorganization
 14. Maintain webpack alias support for `@/` imports
+
+**Widget Architecture Simplification:**
+15. Replace complex WidgetShell + WidgetCard + PrimaryMetricCell hierarchy with single SimpleWidget component
+16. Eliminate nested TouchableOpacity issues preventing HTML validation errors
+17. Maintain all existing widget functionality (expand/collapse, theming, animations)
+18. Remove unused wrapper components after migration (WidgetShell, WidgetCard, PrimaryMetricCell)
+19. Update all existing widgets (DepthWidget, EngineWidget, ThemeSwitcher) to use SimpleWidget
+20. Ensure clean console output with no HTML validation warnings
 
 ## Current State Analysis
 
@@ -385,14 +401,23 @@ export * from './theme.types';
 - [ ] **Task 6.8.19:** Update theme imports to new `src/theme/` structure
 - [ ] **Task 6.8.20:** Validate all TypeScript imports resolve correctly
 
+### Widget Architecture Simplification
+- [ ] **Task 6.8.21:** Create SimpleWidget component to replace WidgetShell + WidgetCard + PrimaryMetricCell hierarchy
+- [ ] **Task 6.8.22:** Migrate DepthWidget to use SimpleWidget component
+- [ ] **Task 6.8.23:** Migrate EngineWidget to use SimpleWidget component  
+- [ ] **Task 6.8.24:** Migrate ThemeSwitcher widget to use SimpleWidget component
+- [ ] **Task 6.8.25:** Test all widget functionality (expand/collapse, interactions, theming)
+- [ ] **Task 6.8.26:** Verify elimination of nested TouchableOpacity console warnings
+- [ ] **Task 6.8.27:** Remove unused WidgetShell, WidgetCard, and PrimaryMetricCell components
+
 ### Validation & Cleanup
-- [ ] **Task 6.8.21:** Test all functionality works after reorganization
-- [ ] **Task 6.8.22:** Update Jest test suite imports to use new barrel export paths
-- [ ] **Task 6.8.23:** Verify bundle size impact within acceptable limits
-- [ ] **Task 6.8.24:** Confirm hot reload performance maintained  
-- [ ] **Task 6.8.25:** Update webpack configuration for new alias patterns
-- [ ] **Task 6.8.26:** Remove old/unused directories and files
-- [ ] **Task 6.8.27:** Update development documentation with new structure
+- [ ] **Task 6.8.28:** Test all functionality works after reorganization
+- [ ] **Task 6.8.29:** Update Jest test suite imports to use new barrel export paths
+- [ ] **Task 6.8.30:** Verify bundle size impact within acceptable limits
+- [ ] **Task 6.8.31:** Confirm hot reload performance maintained  
+- [ ] **Task 6.8.32:** Update webpack configuration for new alias patterns
+- [ ] **Task 6.8.33:** Remove old/unused directories and files after widget migration
+- [ ] **Task 6.8.34:** Update development documentation with new structure and simplified widget architecture
 
 ## Success Metrics
 

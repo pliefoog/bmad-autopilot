@@ -1,6 +1,6 @@
 # Story 2.13: Centralized Theme Stylesheet
 
-**Status:** InProgress  
+**Status:** ContextReadyDraft  
 **Epic:** Epic 2 - NMEA2000, Widget Framework & Complete Instrument Suite
 **Story ID:** 2.13
 **Priority:** High (UI Consistency Critical)  
@@ -307,6 +307,9 @@ export const createThemedStyles = (theme: ThemeColors) => {
 ---
 
 ## Dev Agent Record
+
+### Context Reference
+- `docs/stories/story-context-2.13.xml` - Comprehensive story context with centralized stylesheet specifications, usage patterns, and implementation guidance
 
 ### Completion Notes
 ✅ **Story 2.13 COMPLETED** - Centralized Theme Stylesheet System Implementation

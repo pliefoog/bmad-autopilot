@@ -4,7 +4,7 @@
 **Story ID:** 2.11
 **Priority:** High
 **Sprint:** UX Polish Phase 2
-**Status:** InProgress
+**Status:** ContextReadyDraft
 
 ---
 
@@ -234,6 +234,9 @@ export const MetricCell: React.FC<MetricCellProps> = ({
 ---
 
 ## Dev Agent Record
+
+### Context Reference
+- `docs/stories/story-context-2.11.xml` - Comprehensive story context with metric component specifications, grid layouts, and implementation guidance
 
 ### Agent Model Used
 GitHub Copilot (Claude 3.5 Sonnet via dev assistant)

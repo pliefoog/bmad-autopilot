@@ -1,6 +1,6 @@
 # Story 2.16: PrimaryMetricCell & SecondaryMetricCell Components - Brownfield Addition
 
-**Status:** Ready for Development
+**Status:** ContextReadyDraft
 
 ## Story
 

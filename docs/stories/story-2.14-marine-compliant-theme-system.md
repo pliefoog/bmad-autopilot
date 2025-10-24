@@ -1,6 +1,6 @@
 # Story 2.14: Simple Theme System - Brownfield Addition
 
-**Status:** Ready for Review
+**Status:** ContextReadyDraft
 
 ## Story
 
@@ -174,6 +174,9 @@ Before dev pickup, verify:
 | 2025-10-16 | 1.2 | Added story dependencies, Definition of Ready checklist, and enhanced testable ACs | Sarah (PO) |
 
 ## Dev Agent Record
+
+### Context Reference
+- `docs/stories/story-context-2.14.xml` - Comprehensive story context with marine-compliant theme specifications, brightness control integration, and safety validation guidance
 
 ### Agent Model Used
 James (Full Stack Developer) - Story 2.14 implementation completed on October 17, 2025

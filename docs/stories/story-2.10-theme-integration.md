@@ -4,7 +4,7 @@
 **Story ID:** 2.10
 **Priority:** Critical (Foundation for other UX stories)
 **Sprint:** UX Polish Phase 1
-**Status:** Review
+**Status:** ContextReadyDraft
 
 ---
 
@@ -145,6 +145,9 @@ Remove from WidgetCard.tsx line 72:
 ---
 
 ## Dev Agent Record
+
+### Context Reference
+- `docs/stories/story-context-2.10.xml` - Comprehensive story context with dependencies, interfaces, and implementation guidance
 
 ### Agent Model Used
 GitHub Copilot (Claude 3.5 Sonnet via dev assistant)
