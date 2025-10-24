@@ -9,7 +9,7 @@
  */
 
 import { AccessibilityService, useAccessibility } from '../../../src/services/accessibility/AccessibilityService';
-import { useSettingsStore } from '../../../src/stores/settingsStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import { AccessibilityInfo, Platform } from 'react-native';
 
 // Mock AccessibilityInfo methods

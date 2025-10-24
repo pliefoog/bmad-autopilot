@@ -43,13 +43,21 @@ export const createConnection = (options, connectListener) => {
         
         this._ws.onmessage = (event) => {
           try {
+            // Try to parse as JSON first (for compatibility with older bridge servers)
             const message = JSON.parse(event.data);
             if (message.type === 'nmea' && message.data) {
               // Emit raw NMEA data to match TCP behavior
               this._emit('data', message.data);
             }
-          } catch (error) {
-            console.error('[Web WebSocket TCP] Failed to parse message:', error);
+          } catch (jsonError) {
+            // If not JSON, treat as raw NMEA data (unified connection manager expects this)
+            const rawData = event.data;
+            if (typeof rawData === 'string' && rawData.startsWith('$')) {
+              // This is raw NMEA data from the simulator
+              this._emit('data', rawData);
+            } else {
+              console.error('[Web WebSocket TCP] Received unknown data format:', rawData);
+            }
           }
         };
         

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,10 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNmeaStore } from './src/core/nmeaStore';
-import { useThemeStore, useTheme } from './src/core/themeStore';
-import { useWidgetStore } from './src/stores/widgetStore';
-import { PaginatedDashboard } from './src/components/PaginatedDashboard';
+import { useNmeaStore } from './src/store/nmeaStore';
+import { useThemeStore, useTheme } from './src/store/themeStore';
+import { useWidgetStore } from './src/store/widgetStore';
 import { DynamicDashboard } from './src/widgets/DynamicDashboard';
 import { WidgetSelector } from './src/widgets/WidgetSelector';
 import { AutopilotControlScreen } from './src/widgets/AutopilotControlScreen';
@@ -23,9 +22,16 @@ import { LoadingProvider } from './src/services/loading/LoadingContext';
 import LoadingOverlay from './src/components/molecules/LoadingOverlay';
 import ToastMessage, { ToastMessageData } from './src/components/ToastMessage';
 import { ConnectionConfigDialog } from './src/widgets/ConnectionConfigDialog';
-import { PlaybackFilePicker } from './src/widgets/PlaybackFilePicker';
-import { getConnectionDefaults } from './src/services/connectionDefaults';
-import { globalConnectionService } from './src/services/globalConnectionService';
+import { 
+  getConnectionDefaults, 
+  loadConnectionSettings, 
+  connectNmea, 
+  disconnectNmea, 
+  shouldEnableConnectButton, 
+  getCurrentConnectionConfig, 
+  initializeConnection,
+  type ConnectionConfig 
+} from './src/services/connectionDefaults';
 import { NotificationIntegrationService } from './src/services/integration/NotificationIntegrationService';
 import { OnboardingScreen } from './src/components/onboarding/OnboardingScreen';
 import { useOnboarding } from './src/hooks/useOnboarding';
@@ -33,6 +39,22 @@ import { UndoRedoControls } from './src/components/undo/UndoRedoControls';
 import { useUndoRedo } from './src/hooks/useUndoRedo';
 import { ThemeChangeCommand } from './src/services/undo/Commands';
 import { useKeyboardNavigation, useKeyboardShortcut } from './src/hooks/useKeyboardNavigation';
+import { AutopilotFooter } from './src/components/organisms/AutopilotFooter';
+import { UnitsConfigDialog } from './src/components/dialogs/UnitsConfigDialog';
+import { useLegacyUnitBridge } from './src/presentation/legacyBridge';
+
+// Developer services (only loaded in development)
+let playbackService: any = null;
+let stressTestService: any = null;
+
+if (__DEV__ || process.env.NODE_ENV === 'development') {
+  try {
+    playbackService = require('./src/services/playbackService').playbackService;
+    stressTestService = require('./src/services/stressTestService').stressTestService;
+  } catch (e) {
+    console.warn('Developer services not available:', e);
+  }
+}
 
 // Constants for layout calculations
 const { height: screenHeight } = Dimensions.get('window');
@@ -56,6 +78,10 @@ const App = () => {
   // AC14: Keyboard navigation integration
   useKeyboardNavigation();
 
+  // TEMPORARY: Bridge legacy unit settings to new presentation system
+  // TODO: Remove when Phase 3 (new settings UI) is complete
+  useLegacyUnitBridge();
+
   // Onboarding state (Story 4.4 AC11)
   const { 
     isOnboardingVisible, 
@@ -77,9 +103,8 @@ const App = () => {
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
   const [showAutopilotControl, setShowAutopilotControl] = useState(false);
   const [showConnectionDialog, setShowConnectionDialog] = useState(false);
-  const [showPlaybackPicker, setShowPlaybackPicker] = useState(false);
+  const [showUnitsDialog, setShowUnitsDialog] = useState(false);
   const [toastMessage, setToastMessage] = useState<ToastMessageData | null>(null);
-  const [useDynamicLayout, setUseDynamicLayout] = useState(true); // Toggle for new layout system
 
   // Navigation session state
   const [navigationSession, setNavigationSession] = useState<{
@@ -194,22 +219,29 @@ const App = () => {
   // Auto-connection initialization
   useEffect(() => {
     console.log('[App] useEffect for connection initialization triggered');
+    console.log('[App] isOnboardingVisible:', isOnboardingVisible, 'isOnboardingLoading:', isOnboardingLoading);
     
-    // Initialize global connection service with auto-connect
-    const initializeConnection = async () => {
+    // Skip connection initialization if onboarding is visible or still loading
+    if (isOnboardingVisible || isOnboardingLoading) {
+      console.log('[App] Onboarding is visible or loading, skipping auto-connection');
+      return;
+    }
+    
+    // Initialize connection service with auto-connect
+    const initializeConnectionService = async () => {
       console.log('[App] Starting auto-connection initialization...');
       
       try {
-        await globalConnectionService.initialize();
-        console.log('[App] Global connection service initialized successfully');
+        await initializeConnection();
+        console.log('[App] Connection service initialized successfully');
         
         // Update local state with current connection options
-        const currentOptions = globalConnectionService.getCurrentOptions();
-        if (currentOptions) {
-          console.log('[App] Using connection options:', currentOptions);
-          setIp(currentOptions.ip);
-          setPort(currentOptions.port.toString());
-          setProtocol(currentOptions.protocol);
+        const currentConfig = getCurrentConnectionConfig();
+        if (currentConfig) {
+          console.log('[App] Using connection config:', currentConfig);
+          setIp(currentConfig.ip);
+          setPort(currentConfig.port.toString());
+          setProtocol(currentConfig.protocol);
         }
 
         // Show success toast to indicate auto-connection attempt
@@ -224,15 +256,15 @@ const App = () => {
     console.log('[App] Setting up initialization timer...');
     // Small delay to ensure component is fully mounted
     const timer = setTimeout(() => {
-      console.log('[App] Timer fired, calling initializeConnection...');
-      initializeConnection();
+      console.log('[App] Timer fired, calling initializeConnectionService...');
+      initializeConnectionService();
     }, 1000);
 
     return () => {
       console.log('[App] Cleaning up connection initialization timer');
       clearTimeout(timer);
     };
-  }, [showSuccessToast, showErrorToast]);
+  }, [isOnboardingVisible, isOnboardingLoading, showSuccessToast, showErrorToast]);
 
   // Theme cycling (AC13: Using Command pattern for undo/redo)
   const cycleTheme = useCallback(() => {
@@ -259,17 +291,8 @@ const App = () => {
     setShowWidgetSelector(false);
   }, []);
 
-  const handleWidgetRemove = useCallback((widgetId: string) => {
-    setSelectedWidgets(prev => prev.filter(id => id !== widgetId));
-    setToastMessage({
-      message: `${widgetId.toUpperCase()} widget removed`,
-      type: 'success',
-      duration: 3000,
-    });
-  }, []);
-
-  // AC14: Global keyboard shortcuts (after all callbacks are defined)
-  useKeyboardShortcut([
+  // AC14: Global keyboard shortcuts - memoized to prevent re-registration
+  const keyboardShortcuts = useMemo(() => [
     {
       key: 't',
       action: cycleTheme,
@@ -291,22 +314,37 @@ const App = () => {
         // Close any open modals
         setShowConnectionDialog(false);
         setShowWidgetSelector(false);
-        setShowPlaybackPicker(false);
         setShowAutopilotControl(false);
       },
       description: 'Close modals',
     },
-  ]);
+  ], [cycleTheme]);
 
-  // Connection handling
+  // AC14: Register keyboard shortcuts (after all callbacks are defined)
+  useKeyboardShortcut(keyboardShortcuts);
+
+  // Handle onboarding completion - open connection dialog as final step
+  const handleOnboardingComplete = useCallback(() => {
+    completeOnboarding();
+    // Show connection dialog as the final step of onboarding
+    setTimeout(() => {
+      setShowConnectionDialog(true);
+    }, 500); // Small delay for smooth transition
+  }, [completeOnboarding]);
+
+  // Handle onboarding skip - still trigger connection initialization
+  const handleOnboardingSkip = useCallback(() => {
+    skipOnboarding();
+    // Allow normal auto-connection after skipping
+  }, [skipOnboarding]);
   const handleConnectionConnect = useCallback(async (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
     setIp(config.ip);
     setPort(config.port.toString());
     setProtocol(config.protocol);
     
     try {
-      // Use the new unified connect method
-      const success = await globalConnectionService.connect({
+      // Use the new connection utility
+      const success = await connectNmea({
         ip: config.ip,
         port: config.port,
         protocol: config.protocol
@@ -330,14 +368,14 @@ const App = () => {
   }, []);
 
   // Check if connect button should be enabled (config different from current)
-  const shouldEnableConnectButton = useCallback((config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
-    return globalConnectionService.shouldEnableConnectButton(config);
+  const isConnectButtonEnabled = useCallback((config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
+    return shouldEnableConnectButton(config);
   }, []);
 
   const handleConnectionDisconnect = useCallback(async () => {
     try {
-      // Disconnect using global service
-      globalConnectionService.disconnect();
+      // Disconnect using utility function
+      disconnectNmea();
       
       setToastMessage({
         message: 'Disconnected from NMEA source',
@@ -380,6 +418,83 @@ const App = () => {
     }
   }, [navigationSession.isRecording]);
 
+  // Developer tool handlers (only available in development)
+  const handleStartPlayback = useCallback(() => {
+    if (playbackService) {
+      try {
+        playbackService.startPlayback('demo.nmea');
+        setToastMessage({
+          message: 'NMEA playback started',
+          type: 'success',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to start playback',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
+  const handleStopPlayback = useCallback(() => {
+    if (playbackService) {
+      try {
+        playbackService.stopPlayback();
+        setToastMessage({
+          message: 'NMEA playback stopped',
+          type: 'success',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to stop playback',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
+  const handleStartStressTest = useCallback(() => {
+    if (stressTestService) {
+      try {
+        stressTestService.start(500); // 500ms interval
+        setToastMessage({
+          message: 'Stress test started',
+          type: 'warning',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to start stress test',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
+  const handleStopStressTest = useCallback(() => {
+    if (stressTestService) {
+      try {
+        stressTestService.stop();
+        setToastMessage({
+          message: 'Stress test stopped',
+          type: 'success',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to stop stress test',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
   // Theme helpers
   const getThemeIcon = () => {
     switch (themeMode) {
@@ -414,11 +529,14 @@ const App = () => {
       {/* Header */}
       <HeaderBar
         onShowConnectionSettings={() => setShowConnectionDialog(true)}
+        onShowUnitsDialog={() => setShowUnitsDialog(true)}
         navigationSession={navigationSession}
         onToggleNavigationSession={handleNavigationSessionToggle}
         toastMessage={toastMessage}
-        useDynamicLayout={useDynamicLayout}
-        onToggleLayout={() => setUseDynamicLayout(!useDynamicLayout)}
+        onStartPlayback={handleStartPlayback}
+        onStopPlayback={handleStopPlayback}
+        onStartStressTest={handleStartStressTest}
+        onStopStressTest={handleStopStressTest}
       />
 
       {/* Alarm Banner */}
@@ -428,75 +546,13 @@ const App = () => {
 
       {/* Main Dashboard - Takes remaining space */}
       <View style={styles.dashboardArea}>
-        {useDynamicLayout ? (
-          <DynamicDashboard />
-        ) : (
-          <PaginatedDashboard
-            selectedWidgets={selectedWidgets}
-            onWidgetRemove={handleWidgetRemove}
-            headerHeight={HEADER_HEIGHT + (alarms?.length > 0 ? ALARM_BANNER_HEIGHT : 0)}
-            footerHeight={FOOTER_HEIGHT}
-          />
-        )}
+        <DynamicDashboard />
       </View>
 
-      {/* Footer - Fixed at bottom */}
-      <View style={styles.footerArea}>
-        {/* Autopilot Control Access */}
-        {selectedWidgets.includes('autopilot') && (
-          <TouchableOpacity
-            style={[styles.autopilotAccess, { backgroundColor: theme.primary }]}
-            onPress={() => setShowAutopilotControl(true)}
-          >
-            <Text style={[styles.autopilotAccessText, { color: theme.surface }]}>
-              AUTOPILOT CONTROL
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Bottom Navigation */}
-        <View style={[styles.bottomNav, { backgroundColor: theme.surface }]}>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => setShowWidgetSelector(true)}
-          >
-            <Text style={[styles.navButtonIcon, { color: theme.primary }]}>+</Text>
-            <Text style={[styles.navButtonText, { color: theme.textSecondary }]}>ADD</Text>
-          </TouchableOpacity>
-
-          <View style={[styles.navDivider, { backgroundColor: theme.border }]} />
-
-          <TouchableOpacity 
-            style={styles.navButton}
-            onPress={cycleTheme}
-          >
-            <Text style={styles.navButtonIcon}>{getThemeIcon()}</Text>
-            <Text style={[styles.navButtonText, { color: theme.textSecondary }]}>
-              {getThemeLabel()}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={[styles.navDivider, { backgroundColor: theme.border }]} />
-
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => setShowConnectionDialog(true)}
-          >
-            <Text style={[styles.navButtonIcon, { color: theme.primary }]}>🔗</Text>
-            <Text style={[styles.navButtonText, { color: theme.textSecondary }]}>CONN</Text>
-          </TouchableOpacity>
-
-          <View style={[styles.navDivider, { backgroundColor: theme.border }]} />
-
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => setShowPlaybackPicker(true)}
-          >
-            <Text style={[styles.navButtonIcon, { color: theme.primary }]}>▶</Text>
-            <Text style={[styles.navButtonText, { color: theme.textSecondary }]}>DEMO</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Fixed Autopilot Footer */}
+      <AutopilotFooter
+        onOpenAutopilotControl={() => setShowAutopilotControl(true)}
+      />
 
       {/* Modals */}
       <WidgetSelector
@@ -522,34 +578,14 @@ const App = () => {
           port: parseInt(port, 10), 
           protocol: protocol as 'tcp' | 'udp' | 'websocket'
         }}
-        shouldEnableConnectButton={shouldEnableConnectButton}
+        shouldEnableConnectButton={isConnectButtonEnabled}
       />
 
-      {/* Playback File Picker - TODO: Create modal wrapper */}
-      {showPlaybackPicker && (
-        <View style={{
-          position: 'absolute',
-          top: 100,
-          left: 20,
-          right: 20,
-          backgroundColor: 'white',
-          padding: 20,
-          borderRadius: 10,
-          elevation: 5,
-          zIndex: 1000
-        }}>
-          <PlaybackFilePicker
-            onPick={(filename: string) => {
-              console.log('Playback file selected:', filename);
-              setShowPlaybackPicker(false);
-            }}
-          />
-          <Button 
-            title="Cancel" 
-            onPress={() => setShowPlaybackPicker(false)}
-          />
-        </View>
-      )}
+      {/* Units Configuration Dialog */}
+      <UnitsConfigDialog
+        visible={showUnitsDialog}
+        onClose={() => setShowUnitsDialog(false)}
+      />
 
       {/* Toast Messages */}
         <ToastMessage
@@ -561,8 +597,8 @@ const App = () => {
       {/* Onboarding Screen (Story 4.4 AC11) */}
       <OnboardingScreen
         visible={isOnboardingVisible}
-        onComplete={completeOnboarding}
-        onSkip={skipOnboarding}
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
       />
       </View>
     </LoadingProvider>
@@ -575,6 +611,7 @@ const styles = StyleSheet.create({
   },
   dashboardArea: {
     flex: 1, // Takes all remaining space between header and footer
+    marginBottom: 88, // Account for fixed autopilot footer height
   },
   footerArea: {
     // Footer sticks to bottom

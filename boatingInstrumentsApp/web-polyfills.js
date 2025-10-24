@@ -28,6 +28,8 @@ if (typeof process === 'undefined') {
   process.env.EXPO_PUBLIC_USE_STATIC = process.env.EXPO_PUBLIC_USE_STATIC || '1';
 }
 
+// Clean console implementation - no filtering, let's fix the root causes
+
 // Polyfill __dirname and __filename for web (not available in browser)
 if (typeof __dirname === 'undefined') {
   global.__dirname = '/';

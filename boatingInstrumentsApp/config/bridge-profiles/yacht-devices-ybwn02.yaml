@@ -1,0 +1,119 @@
+# Yacht Devices YBWN-02 WiFi Bridge Profile
+# Reference: YBWN-02 User Manual and Configuration Tool
+# URL: https://www.yachtd.com/
+
+name: "yacht-devices-ybwn02"
+manufacturer: "Yacht Devices"
+model: "YBWN-02 WiFi Bridge"
+description: "Professional marine WiFi bridge with extensive customization"
+defaultProfile: false
+pcdinUsage: "minimal"  # Prefers native sentences, minimal $PCDIN usage
+
+# Yacht Devices uses different transmission periods (faster updates)
+transmissionPeriods:
+  128267: 500   # Depth - 2Hz (faster than NGW-1)
+  128259: 500   # Speed Through Water - 2Hz
+  130306: 500   # Wind Data - 2Hz
+  129029: 1000  # GPS Position - 1Hz
+  127250: 500   # Vessel Heading - 2Hz
+  127488: 250   # Engine Parameters (RPM) - 4Hz (high frequency)
+  130310: 1000  # Water Temperature - 1Hz
+  130311: 1000  # Air Temperature - 1Hz
+  127505: 1000  # Fluid Level (tanks) - 1Hz
+  127508: 500   # Battery Status - 2Hz
+
+# Yacht Devices conversion rules (emphasizes native sentences)
+conversionRules:
+  # Same native conversions as NGW-1 but different priorities
+  128267:
+    nativeConversion:
+      sentenceType: "DBT"
+      description: "Depth Below Transducer"
+      converter: "PGN128267ToDBT"
+    pcdinFallback: false  # Yacht Devices strongly prefers native
+
+  128259:
+    nativeConversion:
+      sentenceType: "VHW"
+      description: "Water Speed and Heading"
+      converter: "PGN128259ToVHW"
+    pcdinFallback: false
+
+  130306:
+    nativeConversion:
+      sentenceType: "MWV"
+      description: "Wind Speed and Angle"
+      converter: "PGN130306ToMWV"
+    pcdinFallback: false
+
+  129029:
+    nativeConversion:
+      sentenceType: "GGA"
+      description: "Global Positioning System Fix Data"
+      converter: "PGN129029ToGGA"
+      alternativeSentences: ["RMC", "GLL"]  # Yacht Devices supports more GPS sentences
+    pcdinFallback: false
+
+  127250:
+    nativeConversion:
+      sentenceType: "HDG"
+      description: "Heading - Deviation & Variation"
+      converter: "PGN127250ToHDG"
+    pcdinFallback: false
+
+  127488:
+    nativeConversion:
+      sentenceType: "RPM"
+      description: "Revolutions"
+      converter: "PGN127488ToRPM"
+    pcdinFallback: false
+
+  130310:
+    nativeConversion:
+      sentenceType: "MTW"
+      description: "Mean Temperature of Water"
+      converter: "PGN130310ToMTW"
+    pcdinFallback: false
+
+  130311:
+    nativeConversion:
+      sentenceType: "MTA"
+      description: "Mean Temperature of Air"
+      converter: "PGN130311ToMTA"
+    pcdinFallback: false
+
+  # Yacht Devices tries to avoid $PCDIN when possible
+  127505:  # Fluid Level - still needs $PCDIN
+    nativeConversion: null
+    pcdinFallback: true
+    description: "Fluid Level (fuel, water, waste tanks)"
+
+  127508:  # Battery Status - strongly prefers XDR
+    nativeConversion:
+      sentenceType: "XDR"
+      description: "Transducer Measurement (Battery Voltage)"
+      converter: "PGN127508ToXDR"
+    pcdinFallback: false  # Yacht Devices avoids $PCDIN for batteries
+
+# Same sentence rules as NGW-1
+sentenceRules:
+  DBT: 128267
+  VHW: 128259
+  MWV: 130306
+  GGA: 129029
+  RMC: 129029
+  GLL: 129029  # Additional GPS sentence support
+  HDG: 127250
+  RPM: 127488
+  MTW: 130310
+  MTA: 130311
+  XDR: 127508
+
+notes: |
+  YBWN-02 Configuration Notes:
+  - Professional-grade bridge with high update rates
+  - Minimal $PCDIN usage - prefers native NMEA 0183 sentences
+  - Faster transmission periods for real-time applications
+  - Extensive GPS sentence support (GGA, RMC, GLL)
+  - Strong preference for XDR over $PCDIN for battery data
+  - Configurable update rates via Yacht Devices configuration tool

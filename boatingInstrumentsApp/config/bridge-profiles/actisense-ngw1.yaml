@@ -1,0 +1,142 @@
+# Actisense NGW-1 NMEA Gateway Profile
+# Reference: NGW-1 User Manual and PGN Conversion Table
+# URL: https://actisense.com/NGW-1/
+
+name: "actisense-ngw1"
+manufacturer: "Actisense"
+model: "NGW-1 NMEA Gateway"
+description: "Standard recreational marine WiFi bridge - most common configuration"
+defaultProfile: true
+pcdinUsage: "moderate"  # Uses $PCDIN for unmapped PGNs
+
+# Transmission periods in milliseconds (from NGW-1 spec)
+transmissionPeriods:
+  128267: 1000  # Depth - 1Hz
+  128259: 1000  # Speed Through Water - 1Hz  
+  130306: 1000  # Wind Data - 1Hz
+  129029: 1000  # GPS Position - 1Hz
+  127250: 1000  # Vessel Heading - 1Hz
+  127488: 500   # Engine Parameters (RPM) - 2Hz
+  130310: 2000  # Water Temperature - 0.5Hz
+  130311: 2000  # Air Temperature - 0.5Hz
+  127505: 2000  # Fluid Level (tanks) - 0.5Hz
+  127508: 1000  # Battery Status - 1Hz
+
+# Native conversion rules (PGN → NMEA 0183 sentence)
+conversionRules:
+  # Navigation Data
+  128267:  # Water Depth
+    nativeConversion:
+      sentenceType: "DBT"
+      description: "Depth Below Transducer"
+      converter: "PGN128267ToDBT"
+    pcdinFallback: false
+    bidirectional:
+      sentenceType: "DBT"
+      converter: "DBTToPGN128267"
+
+  128259:  # Speed Through Water
+    nativeConversion:
+      sentenceType: "VHW"  
+      description: "Water Speed and Heading"
+      converter: "PGN128259ToVHW"
+    pcdinFallback: false
+    bidirectional:
+      sentenceType: "VHW"
+      converter: "VHWToPGN128259"
+
+  130306:  # Wind Data
+    nativeConversion:
+      sentenceType: "MWV"
+      description: "Wind Speed and Angle"
+      converter: "PGN130306ToMWV"
+    pcdinFallback: false
+    bidirectional:
+      sentenceType: "MWV"
+      converter: "MWVToPGN130306"
+
+  129029:  # GNSS Position Data
+    nativeConversion:
+      sentenceType: "GGA"  # Primary GPS sentence
+      description: "Global Positioning System Fix Data"
+      converter: "PGN129029ToGGA"
+      alternativeSentences: ["RMC"]  # Can also generate RMC
+    pcdinFallback: false
+    bidirectional:
+      sentenceType: "GGA"
+      converter: "GGAToPGN129029"
+
+  127250:  # Vessel Heading
+    nativeConversion:
+      sentenceType: "HDG"
+      description: "Heading - Deviation & Variation"
+      converter: "PGN127250ToHDG"
+    pcdinFallback: false
+    bidirectional:
+      sentenceType: "HDG"
+      converter: "HDGToPGN127250"
+
+  127488:  # Engine Parameters, Rapid Update
+    nativeConversion:
+      sentenceType: "RPM"
+      description: "Revolutions"
+      converter: "PGN127488ToRPM"
+    pcdinFallback: false
+    bidirectional:
+      sentenceType: "RPM"
+      converter: "RPMToPGN127488"
+
+  # Temperature Data
+  130310:  # Water Temperature
+    nativeConversion:
+      sentenceType: "MTW"
+      description: "Mean Temperature of Water"
+      converter: "PGN130310ToMTW"
+    pcdinFallback: false
+
+  130311:  # Environmental Parameters  
+    nativeConversion:
+      sentenceType: "MTA"
+      description: "Mean Temperature of Air"
+      converter: "PGN130311ToMTA"
+    pcdinFallback: false
+
+  # Fluid Level (Tanks) - Uses $PCDIN (no native NMEA 0183 equivalent)
+  127505:  # Fluid Level
+    nativeConversion: null  # No native sentence
+    pcdinFallback: true
+    description: "Fluid Level (fuel, water, waste tanks)"
+
+  # Battery Status - Can use XDR or $PCDIN
+  127508:  # Battery Status
+    nativeConversion:
+      sentenceType: "XDR"  # Generic transducer data
+      description: "Transducer Measurement (Battery Voltage)"
+      converter: "PGN127508ToXDR"
+    pcdinFallback: true  # Fall back to $PCDIN if XDR conversion fails
+    bidirectional:
+      sentenceType: "XDR"
+      converter: "XDRToPGN127508"
+
+# Sentence-to-PGN mappings for bidirectional support
+sentenceRules:
+  DBT: 128267  # Depth Below Transducer → Water Depth
+  VHW: 128259  # Water Speed and Heading → Speed Through Water  
+  MWV: 130306  # Wind Speed and Angle → Wind Data
+  GGA: 129029  # GPS Fix Data → GNSS Position Data
+  RMC: 129029  # GPS Recommended Minimum → GNSS Position Data  
+  HDG: 127250  # Heading → Vessel Heading
+  RPM: 127488  # Revolutions → Engine Parameters
+  MTW: 130310  # Mean Temperature of Water → Water Temperature
+  MTA: 130311  # Mean Temperature of Air → Environmental Parameters
+  XDR: 127508  # Generic Transducer → Battery Status (when battery data)
+
+# Device-specific notes
+notes: |
+  NGW-1 Configuration Notes:
+  - Default configuration for recreational sailing
+  - Moderate $PCDIN usage - uses native sentences where available
+  - Standard transmission periods following NMEA recommendations
+  - Supports most common marine instrument types
+  - Tank data uses $PCDIN encapsulation (no native NMEA 0183 equivalent)
+  - Battery data can use XDR format with proper transducer codes

@@ -5,7 +5,7 @@
 
 import AlarmConfigurationManager from '../../../src/services/alarms/AlarmConfigurationManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../../../src/services/alarms/types';
-import { AlarmLevel } from '../../../src/stores/alarmStore';
+import { AlarmLevel } from '../../../src/store/alarmStore';
 
 // Mock dependencies
 jest.mock('../../../src/services/alarms/AlarmManager');

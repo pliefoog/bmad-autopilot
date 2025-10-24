@@ -2,9 +2,7 @@ module.exports = {
   dependencies: {
     'react-native-vector-icons': {
       platforms: {
-        ios: {
-          sharedLibraries: ['libRNVectorIcons'],
-        },
+        ios: null,
       },
     },
   },

@@ -3,7 +3,7 @@
  * End-to-end testing of NMEA data to alarm alert flow with marine safety validation
  */
 
-import { useAlarmStore } from '../../../src/stores/alarmStore';
+import { useAlarmStore } from '../../../src/store/alarmStore';
 import { CriticalAlarmType } from '../../../src/services/alarms/types';
 
 // Mock NMEA data store

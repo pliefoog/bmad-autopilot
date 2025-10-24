@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useWidgetStore } from '../../src/stores/widgetStore';
+import { useWidgetStore } from '../../src/store/widgetStore';
 import { createTestWidget, createMixedStateWidgets, createPerformanceTestWidgets, TEST_SCENARIOS } from '../factories/widgetFactory';
 
 // Mock AsyncStorage

@@ -43,9 +43,13 @@ class NMEABridgeSimulator {
     this.clients = new Map();
     this.bridgeMode = 'nmea0183'; // Default to NMEA 0183 bridge mode
     this.scenario = null;
+  this.strictScenario = false; // Enforce YAML-only values when true
+  this.scenarioTimers = [];
+  this.scenarioFunctions = new Map();
     this.dataGenerators = new Map();
     this.isRunning = false;
     this.messageInterval = null;
+    this.scenarioSpeed = 1.0; // Speed multiplier for scenario time progression
     
     // Recording playback
     this.recordingData = null;
@@ -121,6 +125,7 @@ class NMEABridgeSimulator {
   async start(config = {}) {
     try {
       this.bridgeMode = config.bridgeMode || 'nmea0183';
+      this.scenarioSpeed = config.speed || 1.0; // Apply speed to scenario progression
       
       // Start TCP server
       await this.startTCPServer();
@@ -137,6 +142,8 @@ class NMEABridgeSimulator {
       // Load scenario if specified
       if (config.scenario) {
         await this.loadScenario(config.scenario);
+        // Enforce strict scenario behavior when a scenario is loaded
+        this.strictScenario = true;
       }
       
       // Load recording if specified
@@ -145,7 +152,7 @@ class NMEABridgeSimulator {
       }
       
       // Start data generation
-      this.startDataGeneration();
+  this.startDataGeneration();
       
       this.isRunning = true;
       console.log('🚀 All servers started successfully');
@@ -475,10 +482,22 @@ class NMEABridgeSimulator {
         // In per-client mode, playback starts when clients connect
       }
     } else {
-      // Generate NMEA data every 100ms (10Hz) - algorithmic mode
+      // Initialize scenario runtime (generators and validation)
+      if (this.scenario) {
+        try {
+          this.initializeScenarioRuntime();
+        } catch (err) {
+          console.error(`❌ Scenario initialization failed: ${err.message}`);
+          process.exit(1);
+        }
+      }
+
+      // Generate NMEA data at individual message frequencies (not hardcoded 10Hz)
+      // GPS at 5Hz = 200ms, Depth at 2Hz = 500ms, etc.
       this.messageInterval = setInterval(() => {
-        this.generateAndBroadcastNMEAData();
-      }, 100);
+        // Only generate and broadcast messages that are due based on their individual timing
+        this.generateAndBroadcastNMEADataSelective();
+      }, 50); // Check every 50ms for precise timing
     }
   }
 
@@ -678,9 +697,12 @@ class NMEABridgeSimulator {
     
     // Generate basic NMEA sentences
     messages.push(this.generateDepthSentence());
-    messages.push(this.generateSpeedSentence());
+    messages.push(this.generateSpeedSentence());        // VTG - Speed Over Ground
+    messages.push(this.generateWaterSpeedSentence());   // VHW - Speed Through Water
     messages.push(this.generateWindSentence());
     messages.push(this.generateGPSSentence());
+    messages.push(this.generateRMCSentence());
+    messages.push(this.generateZDASentence());
     
     // Add autopilot status
     messages.push(this.generateAutopilotSentence());
@@ -692,33 +714,219 @@ class NMEABridgeSimulator {
     
     this.stats.totalMessages += messages.length;
   }
+
+  /**
+   * Generate and broadcast NMEA data selectively based on individual timing
+   */
+  generateAndBroadcastNMEADataSelective() {
+    if (!this.scenario || !this.scenario.timing) {
+      // Fallback to old method if no timing configured
+      return this.generateAndBroadcastNMEAData();
+    }
+
+    const now = Date.now();
+    const timing = this.scenario.timing;
+    const messages = [];
+
+    // Initialize last broadcast times if not set
+    if (!this.lastBroadcastTimes) {
+      this.lastBroadcastTimes = {};
+    }
+
+    // Helper to check if message type should be sent
+    const shouldSend = (messageType, frequencyHz) => {
+      const intervalMs = 1000 / frequencyHz;
+      const lastTime = this.lastBroadcastTimes[messageType] || 0;
+      return (now - lastTime) >= intervalMs;
+    };
+
+    // Check each message type individually
+    if (timing.depth && shouldSend('depth', timing.depth)) {
+      messages.push(this.generateDepthSentence());
+      this.lastBroadcastTimes.depth = now;
+    }
+
+    // Water temperature (separate timing from depth)
+    if (timing.water_temp && shouldSend('water_temp', timing.water_temp)) {
+      messages.push(this.generateWaterTemperatureSentence());
+      this.lastBroadcastTimes.water_temp = now;
+    }
+
+    if (timing.speed && shouldSend('speed', timing.speed)) {
+      messages.push(this.generateSpeedSentence());        // VTG - Speed Over Ground
+      messages.push(this.generateWaterSpeedSentence());   // VHW - Speed Through Water
+      this.lastBroadcastTimes.speed = now;
+    }
+
+    if (timing.wind && shouldSend('wind', timing.wind)) {
+      messages.push(this.generateWindSentence());
+      this.lastBroadcastTimes.wind = now;
+    }
+
+    if (timing.gps && shouldSend('gps', timing.gps)) {
+      messages.push(this.generateGPSSentence());
+      messages.push(this.generateRMCSentence());
+      messages.push(this.generateZDASentence());
+      this.lastBroadcastTimes.gps = now;
+    }
+
+    if (timing.compass && shouldSend('compass', timing.compass)) {
+      // Add compass sentence when implemented
+    }
+
+    // Always include autopilot status for now
+    if (shouldSend('autopilot', 1)) { // 1Hz for autopilot
+      messages.push(this.generateAutopilotSentence());
+      this.lastBroadcastTimes.autopilot = now;
+    }
+
+    // Broadcast messages that are due
+    messages.forEach(message => {
+      this.broadcastMessage(message);
+    });
+    
+    this.stats.totalMessages += messages.length;
+  }
   
   /**
-   * Generate depth sentence (DBT)
+   * Generate depth sentence (configurable format)
    */
   generateDepthSentence() {
-    const depth = 15 + 5 * Math.sin(Date.now() * 0.0001); // 15±5 feet sine wave
-    const sentence = `$IIDBT,,f,${depth.toFixed(1)},M,${(depth * 0.546667).toFixed(1)},F`;
+    const depthData = this.scenario?.data?.depth || {};
+    const depthMeters = depthData.currentValue;
+    if (this.strictScenario && (depthMeters === undefined || !Number.isFinite(depthMeters))) {
+      throw new Error('Scenario missing depth.currentValue. Ensure YAML functions update this value and timing is defined.');
+    }
+
+    // Default to DBT, but allow configuration
+    const depthFormat = this.scenario?.parameters?.depth_format || 'DBT';
+    
+    switch (depthFormat.toLowerCase()) {
+      case 'dpt':
+        return this.generateDPTSentence(depthMeters);
+      case 'dbk':
+        return this.generateDBKSentence(depthMeters);
+      case 'dbt':
+      default:
+        return this.generateDBTSentence(depthMeters);
+    }
+  }
+
+  /**
+   * Generate DBT (Depth Below Transducer) sentence
+   */
+  generateDBTSentence(depthMeters) {
+    const depthFeet = depthMeters / 0.3048; // Convert meters to feet
+    const depthFathoms = depthMeters * 0.546667; // Convert meters to fathoms
+
+    // Correct DBT format: $xxDBT,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
+    const sentence = `$IIDBT,${depthFeet.toFixed(1)},f,${depthMeters.toFixed(1)},M,${depthFathoms.toFixed(1)},F`;
     return this.addChecksum(sentence);
   }
-  
+
   /**
-   * Generate speed sentence (VTG)
+   * Generate DPT (Depth of Water) sentence
+   */
+  generateDPTSentence(depthMeters) {
+    // DPT format: $xxDPT,<depth_meters>,<offset>,<max_range>*hh
+    const offset = this.scenario?.parameters?.vessel?.keel_offset || 0.0; // Keel offset in meters
+    const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0; // Sonar max range
+    
+    const sentence = `$IIDPT,${depthMeters.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}`;
+    return this.addChecksum(sentence);
+  }
+
+  /**
+   * Generate DBK (Depth Below Keel) sentence
+   */
+  generateDBKSentence(depthMeters) {
+    // For DBK, subtract keel offset from transducer depth
+    const keelOffset = this.scenario?.parameters?.vessel?.keel_offset || 1.8; // Default keel depth
+    const depthBelowKeel = Math.max(0, depthMeters - keelOffset);
+    
+    const depthFeet = depthBelowKeel / 0.3048; // Convert meters to feet
+    const depthFathoms = depthBelowKeel * 0.546667; // Convert meters to fathoms
+
+    // DBK format: $xxDBK,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
+    const sentence = `$IIDBK,${depthFeet.toFixed(1)},f,${depthBelowKeel.toFixed(1)},M,${depthFathoms.toFixed(1)},F`;
+    return this.addChecksum(sentence);
+  }
+
+  /**
+   * Generate MTW (Mean Temperature of Water) sentence
+   */
+  generateWaterTemperatureSentence() {
+    // Simulate realistic water temperature (seasonal variation)
+    const baseTemp = 18.5; // Celsius - typical lake temperature
+    const seasonalVariation = Math.sin((Date.now() / (1000 * 60 * 60 * 24 * 365)) * 2 * Math.PI) * 8; // ±8°C seasonal
+    const dailyVariation = Math.sin((Date.now() / (1000 * 60 * 60 * 24)) * 2 * Math.PI) * 2; // ±2°C daily
+    const randomVariation = (Math.random() - 0.5) * 1.0; // ±0.5°C random
+    
+    const waterTemp = baseTemp + seasonalVariation + dailyVariation + randomVariation;
+    
+    // MTW format: $xxMTW,<temperature>,C*hh
+    const sentence = `$IIMTW,${waterTemp.toFixed(1)},C`;
+    return this.addChecksum(sentence);
+  }
+
+  /**
+   * Generate speed sentence (VTG - Speed Over Ground)
    */
   generateSpeedSentence() {
-    const speed = 6 + (Math.random() - 0.5) * 1; // 6 knots ±0.5
-    const course = this.autopilotState.currentHeading;
-    const sentence = `$IIVTG,${course.toFixed(1)},T,,M,${speed.toFixed(1)},N,${(speed * 1.852).toFixed(1)},K,A`;
+    const speedData = this.scenario?.data?.speed || {};
+    const speedKnots = speedData.currentValue;
+    if (this.strictScenario && (speedKnots === undefined || !Number.isFinite(speedKnots))) {
+      throw new Error('Scenario missing speed.currentValue. Ensure YAML functions update this value and timing is defined.');
+    }
+    const speedKmh = speedKnots * 1.852; // Convert knots to km/h
+    const course = this.autopilotState.currentHeading || 0; // Default to 0 degrees if undefined
+
+    const sentence = `$IIVTG,${course.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh.toFixed(1)},K,A`;
     return this.addChecksum(sentence);
   }
-  
+
+  /**
+   * Generate water speed sentence (VHW - Speed Through Water)
+   */
+  generateWaterSpeedSentence() {
+    const speedData = this.scenario?.data?.speed || {};
+    let stwKnots = speedData.currentValue || 0;
+    
+    if (this.strictScenario && (stwKnots === undefined || !Number.isFinite(stwKnots))) {
+      throw new Error('Scenario missing speed.currentValue for STW calculation.');
+    }
+    
+    // For sailboats, STW is typically slightly different from SOG due to current/leeway
+    // Apply a small random variation to simulate current effects
+    const currentEffect = (Math.random() - 0.5) * 0.4; // ±0.2 knots current effect
+    stwKnots = Math.max(0, stwKnots + currentEffect);
+    
+    const stwKmh = stwKnots * 1.852; // Convert knots to km/h
+    const heading = this.autopilotState.currentHeading || 0;
+
+    // VHW format: $xxVHW,x.x,T,x.x,M,x.x,N,x.x,K*hh
+    // Heading (true), Heading (magnetic), Speed (knots), Speed (km/h)
+    const sentence = `$IIVHW,${heading.toFixed(1)},T,,M,${stwKnots.toFixed(1)},N,${stwKmh.toFixed(1)},K`;
+    return this.addChecksum(sentence);
+  }
+
   /**
    * Generate wind sentence (MWV)
    */
   generateWindSentence() {
-    const windAngle = 45 + (Math.random() - 0.5) * 20; // 45° ±10°
-    const windSpeed = 15 + (Math.random() - 0.5) * 4; // 15 knots ±2
-    const sentence = `$IIMWV,${windAngle.toFixed(1)},R,${windSpeed.toFixed(1)},N,A`;
+    const windData = this.scenario?.data?.wind || {};
+    const windAngleData = windData.angle || {};
+    const windSpeedData = windData.speed || {};
+    const windAngle = windAngleData.currentValue;
+    const windSpeedKnots = windSpeedData.currentValue;
+    if (this.strictScenario && (windAngle === undefined || !Number.isFinite(windAngle))) {
+      throw new Error('Scenario missing wind.angle.currentValue. Ensure YAML functions update this value and timing is defined.');
+    }
+    if (this.strictScenario && (windSpeedKnots === undefined || !Number.isFinite(windSpeedKnots))) {
+      throw new Error('Scenario missing wind.speed.currentValue. Ensure YAML functions update this value and timing is defined.');
+    }
+
+    const sentence = `$IIMWV,${windAngle.toFixed(1)},R,${windSpeedKnots.toFixed(1)},N,A`;
     return this.addChecksum(sentence);
   }
   
@@ -726,14 +934,122 @@ class NMEABridgeSimulator {
    * Generate GPS sentence (GGA)
    */
   generateGPSSentence() {
-    const time = new Date().toISOString().substr(11, 8).replace(/:/g, '');
-    // NMEA GGA format: latitude and hemisphere are separate fields
-    // Format: DDMM.MMMM (degrees + minutes with 4 decimal places)
-    const lat = '4124.8963'; // 41°24.8963'N
-    const latHemisphere = 'N';
-    const lon = '08151.6838'; // 81°51.6838'W
-    const lonHemisphere = 'W';
+    let time, date, lat, latHemisphere, lon, lonHemisphere;
+
+    // Strict mode: require GPS values to be provided/generated by scenario
+    if (this.strictScenario) {
+      const gpsData = (this.scenario && this.scenario.data && this.scenario.data.gps) ? this.scenario.data.gps : null;
+      if (!gpsData) {
+        throw new Error('Scenario missing data.gps configuration.');
+      }
+      time = gpsData.time;
+      date = gpsData.date;
+      lat = gpsData.latitude;
+      latHemisphere = gpsData.latHemisphere;
+      lon = gpsData.longitude;
+      lonHemisphere = gpsData.lonHemisphere;
+      const missing = [];
+      if (!time) missing.push('data.gps.time');
+      if (!date) missing.push('data.gps.date');
+      if (!lat) missing.push('data.gps.latitude');
+      if (!latHemisphere) missing.push('data.gps.latHemisphere');
+      if (!lon) missing.push('data.gps.longitude');
+      if (!lonHemisphere) missing.push('data.gps.lonHemisphere');
+      if (missing.length) {
+        throw new Error(`Scenario GPS fields missing: ${missing.join(', ')}. Define via YAML functions or explicit values.`);
+      }
+    } else {
+      // Non-strict legacy fallback
+      const now = new Date();
+      const hours = String(now.getUTCHours()).padStart(2, '0');
+      const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+      time = `${hours}${minutes}${seconds}`;
+
+      const day = String(now.getUTCDate()).padStart(2, '0');
+      const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const year = String(now.getUTCFullYear()).slice(-2);
+      date = `${day}${month}${year}`;
+
+      lat = '4124.8963';
+      latHemisphere = 'N';
+      lon = '08151.6838';
+      lonHemisphere = 'W';
+    }
+
+    // NMEA GGA format
     const sentence = `$IIGGA,${time},${lat},${latHemisphere},${lon},${lonHemisphere},1,08,0.9,545.4,M,46.9,M,,`;
+    return this.addChecksum(sentence);
+  }
+
+  /**
+   * Generate GPS sentence (RMC)
+   */
+  generateRMCSentence() {
+    // Strict mode: require GPS values to be provided/generated by scenario
+    const gpsData = this.scenario?.data?.gps;
+    if (this.strictScenario) {
+      if (!gpsData) {
+        throw new Error('Scenario missing data.gps configuration for RMC.');
+      }
+      const missing = [];
+      if (!gpsData.time) missing.push('data.gps.time');
+      if (!gpsData.date) missing.push('data.gps.date');
+      if (!gpsData.latitude) missing.push('data.gps.latitude');
+      if (!gpsData.latHemisphere) missing.push('data.gps.latHemisphere');
+      if (!gpsData.longitude) missing.push('data.gps.longitude');
+      if (!gpsData.lonHemisphere) missing.push('data.gps.lonHemisphere');
+      if (missing.length) {
+        throw new Error(`Scenario GPS fields missing for RMC: ${missing.join(', ')}`);
+      }
+    }
+
+    const time = gpsData?.time;
+    const date = gpsData?.date; // ddmmyy
+    const lat = gpsData?.latitude;
+    const latHemisphere = gpsData?.latHemisphere;
+    const lon = gpsData?.longitude;
+    const lonHemisphere = gpsData?.lonHemisphere;
+
+    // Speed over ground (knots) and course over ground (true)
+    const sog = this.scenario?.data?.speed?.currentValue ?? 0;
+    const cog = (this.autopilotState.currentHeading || 0);
+
+    // Status A=valid, V=warning
+    const status = 'A';
+
+    // Magnetic variation unknown -> leave blank fields
+    const sentence = `$IIRMC,${time},${status},${lat},${latHemisphere},${lon},${lonHemisphere},${Number(sog).toFixed(1)},${Number(cog).toFixed(1)},${date},,,A`;
+    return this.addChecksum(sentence);
+  }
+
+  /**
+   * Generate GPS time/date sentence (ZDA)
+   */
+  generateZDASentence() {
+    const gpsData = this.scenario?.data?.gps;
+    if (this.strictScenario) {
+      if (!gpsData) {
+        throw new Error('Scenario missing data.gps configuration for ZDA.');
+      }
+      const missing = [];
+      if (!gpsData.time) missing.push('data.gps.time');
+      if (!gpsData.date) missing.push('data.gps.date');
+      if (missing.length) {
+        throw new Error(`Scenario GPS fields missing for ZDA: ${missing.join(', ')}`);
+      }
+    }
+
+    const t = gpsData?.time || '';
+    const d = gpsData?.date || '';
+    // date in ddmmyy; convert to components
+    const dd = d.substring(0, 2);
+    const mm = d.substring(2, 4);
+    const yy = d.substring(4, 6);
+    const fullYear = yy ? `20${yy}` : '';
+
+    // Leave local time zone fields blank (,,)
+    const sentence = `$IIZDA,${t},${dd},${mm},${fullYear},,,`;
     return this.addChecksum(sentence);
   }
   
@@ -822,20 +1138,30 @@ class NMEABridgeSimulator {
    */
   async loadScenario(scenarioName) {
     try {
-      const scenarioPath = path.join(__dirname, '..', 'vendor', 'test-scenarios', `${scenarioName}.yml`);
-      
-      if (!fs.existsSync(scenarioPath)) {
-        console.log(`⚠️  Scenario file not found: ${scenarioPath}`);
-        return;
+      let scenarioPath;
+      // Allow both short names like "basic/coastal-sailing" and full vendor paths
+      if (scenarioName.endsWith('.yml') || scenarioName.endsWith('.yaml')) {
+        scenarioPath = path.isAbsolute(scenarioName)
+          ? scenarioName
+          : path.join(__dirname, '..', scenarioName);
+      } else {
+        scenarioPath = path.join(__dirname, '..', 'vendor', 'test-scenarios', `${scenarioName}.yml`);
       }
-      
+
+      if (!fs.existsSync(scenarioPath)) {
+        throw new Error(`Scenario file not found: ${scenarioPath}`);
+      }
+
       const scenarioData = fs.readFileSync(scenarioPath, 'utf8');
       this.scenario = yaml.load(scenarioData);
-      
+
       console.log(`📋 Loaded scenario: ${this.scenario.name || scenarioName}`);
+      // Validate immediately so we fail-fast before starting
+      this.validateScenarioConfig();
       
     } catch (error) {
       console.error(`❌ Error loading scenario ${scenarioName}:`, error.message);
+      throw error;
     }
   }
   
@@ -854,6 +1180,269 @@ class NMEABridgeSimulator {
       
       console.log(`📊 Stats: ${this.stats.connectedClients} clients, ${this.stats.messagesPerSecond} msg/s, ${this.stats.memoryUsage}MB RAM`);
     }, 1000);
+  }
+
+  /**
+   * Validate scenario configuration strictly against YAML contents
+   * - No implicit defaults
+   * - All referenced function types must exist in scenario.functions
+   * - All timing entries for referenced data streams must exist
+   */
+  validateScenarioConfig() {
+    if (!this.scenario) return;
+    const s = this.scenario;
+    const errors = [];
+    if (!s.data || typeof s.data !== 'object') {
+      errors.push('Missing required section: data');
+    }
+    if (!s.timing || typeof s.timing !== 'object') {
+      errors.push('Missing required section: timing');
+    }
+    if (!s.functions || typeof s.functions !== 'object') {
+      errors.push('Missing required section: functions');
+    }
+    if (errors.length) {
+      throw new Error(`Scenario validation failed: ${errors.join('; ')}`);
+    }
+
+    // Helper to check a data node
+    const requireFunctionAndTiming = (streamKey, node) => {
+      const type = node && node.type;
+      if (!type) {
+        errors.push(`data.${streamKey}.type is required`);
+      } else if (!s.functions[type]) {
+        errors.push(`functions.${type} not defined for data.${streamKey}.type=${type}`);
+      }
+      const timingHz = s.timing && s.timing[streamKey.split('.')[0]]; // top-level timing key
+      if (timingHz === undefined) {
+        errors.push(`timing.${streamKey.split('.')[0]} is required (Hz)`);
+      }
+    };
+
+    // Depth
+    if (s.data.depth) requireFunctionAndTiming('depth', s.data.depth);
+    // Speed
+    if (s.data.speed) requireFunctionAndTiming('speed', s.data.speed);
+    // Wind
+    if (s.data.wind) {
+      if (s.data.wind.angle) requireFunctionAndTiming('wind', s.data.wind.angle);
+      if (s.data.wind.speed) requireFunctionAndTiming('wind', s.data.wind.speed);
+    }
+    // GPS - require function if declared
+    if (s.data.gps) requireFunctionAndTiming('gps', s.data.gps);
+
+    if (errors.length) {
+      throw new Error(`Scenario validation failed: ${errors.join('; ')}`);
+    }
+  }
+
+  /**
+   * Compile scenario functions from YAML into callable JS functions.
+   * Each function receives a single 'ctx' object with parameters.
+   */
+  compileScenarioFunctions() {
+    this.scenarioFunctions.clear();
+    const funcs = this.scenario.functions || {};
+    Object.entries(funcs).forEach(([name, code]) => {
+      try {
+        // Wrap provided code to allow 'return' at top level
+        const wrapped = `return (function(ctx){ with(ctx){ ${code}\n } })(ctx)`;
+        const fn = new Function('ctx', wrapped);
+        this.scenarioFunctions.set(name, fn);
+      } catch (err) {
+        throw new Error(`Failed to compile function '${name}': ${err.message}`);
+      }
+    });
+  }
+
+  /**
+   * Initialize generators and timers based on scenario timing
+   */
+  initializeScenarioRuntime() {
+    if (!this.scenario) return;
+    // Validate strictly
+    this.validateScenarioConfig();
+    // Compile functions
+    this.compileScenarioFunctions();
+    // Clear any existing timers
+    this.scenarioTimers.forEach(t => clearInterval(t));
+    this.scenarioTimers = [];
+
+    const nowMs = () => Date.now();
+    const startedAt = nowMs();
+
+    const getElapsed = () => ((nowMs() - startedAt) / 1000) * this.scenarioSpeed; // Apply scenario speed multiplier
+
+    // Helper to map YAML keys to camelCase variables expected by functions
+    const toCamel = (k) => k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    const buildCtx = (node) => {
+      const ctx = { currentTime: getElapsed() };
+      Object.entries(node).forEach(([k, v]) => {
+        if (k === 'type') return;
+        ctx[toCamel(k)] = v;
+      });
+      // Provide dynamic cross-dependencies
+      if (this.scenario?.data?.wind?.speed?.currentValue !== undefined) {
+        ctx.windSpeed = this.scenario.data.wind.speed.currentValue;
+      }
+      if (this.scenario?.data?.speed?.currentValue !== undefined) {
+        ctx.speed = this.scenario.data.speed.currentValue;
+      }
+      return ctx;
+    };
+
+    const startTimer = (hz, cb) => {
+      const interval = Math.max(1, Math.floor(1000 / hz));
+      const id = setInterval(cb, interval);
+      this.scenarioTimers.push(id);
+    };
+
+    const timing = this.scenario.timing || {};
+
+    // Depth generator
+    if (this.scenario.data.depth) {
+      const type = this.scenario.data.depth.type;
+      const fn = this.scenarioFunctions.get(type);
+      if (!fn) throw new Error(`Function not compiled: ${type}`);
+      startTimer(timing.depth, () => {
+        try {
+          const val = fn(buildCtx(this.scenario.data.depth));
+          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          this.scenario.data.depth.currentValue = val;
+        } catch (err) {
+          console.error(`❌ depth generator error: ${err.message}`);
+          process.exit(1);
+        }
+      });
+      // Seed initial value immediately to satisfy strict mode
+      try {
+        const seedVal = fn(buildCtx(this.scenario.data.depth));
+        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        this.scenario.data.depth.currentValue = seedVal;
+      } catch (err) {
+        console.error(`❌ depth generator seed error: ${err.message}`);
+        process.exit(1);
+      }
+    }
+
+    // Wind speed first (dependency)
+    if (this.scenario.data.wind && this.scenario.data.wind.speed) {
+      const type = this.scenario.data.wind.speed.type;
+      const fn = this.scenarioFunctions.get(type);
+      if (!fn) throw new Error(`Function not compiled: ${type}`);
+      startTimer(timing.wind, () => {
+        try {
+          const val = fn(buildCtx(this.scenario.data.wind.speed));
+          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          this.scenario.data.wind.speed.currentValue = val;
+        } catch (err) {
+          console.error(`❌ wind.speed generator error: ${err.message}`);
+          process.exit(1);
+        }
+      });
+      // Seed initial wind speed
+      try {
+        const seedVal = fn(buildCtx(this.scenario.data.wind.speed));
+        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        this.scenario.data.wind.speed.currentValue = seedVal;
+      } catch (err) {
+        console.error(`❌ wind.speed generator seed error: ${err.message}`);
+        process.exit(1);
+      }
+    }
+
+    // Wind angle
+    if (this.scenario.data.wind && this.scenario.data.wind.angle) {
+      const type = this.scenario.data.wind.angle.type;
+      const fn = this.scenarioFunctions.get(type);
+      if (!fn) throw new Error(`Function not compiled: ${type}`);
+      startTimer(timing.wind, () => {
+        try {
+          const val = fn(buildCtx(this.scenario.data.wind.angle));
+          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          this.scenario.data.wind.angle.currentValue = val;
+        } catch (err) {
+          console.error(`❌ wind.angle generator error: ${err.message}`);
+          process.exit(1);
+        }
+      });
+      // Seed initial wind angle
+      try {
+        const seedVal = fn(buildCtx(this.scenario.data.wind.angle));
+        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        this.scenario.data.wind.angle.currentValue = seedVal;
+      } catch (err) {
+        console.error(`❌ wind.angle generator seed error: ${err.message}`);
+        process.exit(1);
+      }
+    }
+
+    // Speed (depends on wind speed)
+    if (this.scenario.data.speed) {
+      const type = this.scenario.data.speed.type;
+      const fn = this.scenarioFunctions.get(type);
+      if (!fn) throw new Error(`Function not compiled: ${type}`);
+      startTimer(timing.speed, () => {
+        try {
+          const ctx = buildCtx(this.scenario.data.speed);
+          if (ctx.windSpeed === undefined) {
+            throw new Error(`Missing dependency 'windSpeed' for speed generator (ensure wind.speed is defined and generating first)`);
+          }
+          const val = fn(ctx);
+          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          this.scenario.data.speed.currentValue = val;
+        } catch (err) {
+          console.error(`❌ speed generator error: ${err.message}`);
+          process.exit(1);
+        }
+      });
+      // Seed initial speed (after wind speed seeding)
+      try {
+        const ctx = buildCtx(this.scenario.data.speed);
+        if (ctx.windSpeed === undefined) {
+          throw new Error(`Missing dependency 'windSpeed' for speed generator (ensure wind.speed is defined and generating first)`);
+        }
+        const seedVal = fn(ctx);
+        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        this.scenario.data.speed.currentValue = seedVal;
+      } catch (err) {
+        console.error(`❌ speed generator seed error: ${err.message}`);
+        process.exit(1);
+      }
+    }
+
+    // GPS requires explicit function; no built-ins allowed in strict mode
+    if (this.scenario.data.gps) {
+      const node = this.scenario.data.gps;
+      if (!node.type) throw new Error('data.gps.type is required');
+      const fn = this.scenarioFunctions.get(node.type);
+      if (!fn) {
+        throw new Error(`functions.${node.type} not defined. Strict mode forbids implicit GPS generators.`);
+      }
+      startTimer(timing.gps, () => {
+        try {
+          const result = fn(buildCtx(node));
+          if (!result || typeof result !== 'object') {
+            throw new Error(`GPS function '${node.type}' must return an object with time, date, latitude, latHemisphere, longitude, lonHemisphere`);
+          }
+          Object.assign(node, result);
+        } catch (err) {
+          console.error(`❌ gps generator error: ${err.message}`);
+          process.exit(1);
+        }
+      });
+      // Seed initial GPS fields
+      try {
+        const result = fn(buildCtx(node));
+        if (!result || typeof result !== 'object') {
+          throw new Error(`GPS function '${node.type}' must return an object with time, date, latitude, latHemisphere, longitude, lonHemisphere`);
+        }
+        Object.assign(node, result);
+      } catch (err) {
+        console.error(`❌ gps generator seed error: ${err.message}`);
+        process.exit(1);
+      }
+    }
   }
   
   /**

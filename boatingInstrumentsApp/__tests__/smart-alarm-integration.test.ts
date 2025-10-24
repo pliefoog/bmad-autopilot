@@ -8,7 +8,7 @@ import { VesselContextDetector } from '../VesselContextDetector';
 import { AdaptiveLearningEngine } from '../AdaptiveLearningEngine';
 import { MaintenanceScheduler } from '../MaintenanceScheduler';
 import { SmartAlarmManager } from '../SmartAlarmManager';
-import { Alarm } from '../../../stores/alarmStore';
+import { Alarm } from '../../../store/alarmStore';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({

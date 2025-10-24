@@ -4,7 +4,7 @@
  */
 
 import MarineTouchService from '../../src/services/marine/MarineTouchService';
-import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 
 // Mock settings store before importing service
 jest.mock('../../src/stores/settingsStore', () => ({
