@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { WidgetCard } from './WidgetCard';
-import { useWidgetStore } from '../stores/widgetStore';
+import { useWidgetStore } from '../store/widgetStore';
 
 interface WidgetWrapperProps {
   widgetId: string;

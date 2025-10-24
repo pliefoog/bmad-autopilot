@@ -1,5 +1,5 @@
-import { useAlarmStore, Alarm } from '../../stores/alarmStore';
-import { useNmeaStore } from '../../core/nmeaStore';
+import { useAlarmStore, Alarm } from '../../store/alarmStore';
+import { useNmeaStore } from '../../store/nmeaStore';
 import { NotificationManager } from '../notifications/NotificationManager';
 import { BackgroundProcessingManager } from '../background/BackgroundProcessingManager';
 import { VesselContextData } from '../notifications/NotificationContentManager';
@@ -180,8 +180,8 @@ export class NotificationIntegrationService {
     
     return {
       position: data.gpsPosition ? {
-        latitude: data.gpsPosition.lat,
-        longitude: data.gpsPosition.lon,
+        latitude: data.gpsPosition.latitude,
+        longitude: data.gpsPosition.longitude,
         accuracy: data.gpsQuality?.hdop
       } : undefined,
       heading: data.heading,

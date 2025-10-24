@@ -2,7 +2,7 @@
 // Custom hook for widget configuration management, layout updates, and widget lifecycle
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useWidgetStore, WidgetConfig, WidgetLayout } from '../stores/widgetStore';
+import { useWidgetStore, WidgetConfig, WidgetLayout } from '../store/widgetStore';
 
 export interface UseWidgetConfigOptions {
   // Widget selection

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Alarm } from '../core/nmeaStore';
-import { useSettingsStore } from '../stores/settingsStore';
+import { Alarm } from '../store/nmeaStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 export const AlarmBanner: React.FC<{ alarms: Alarm[] }> = ({ alarms }) => {
   const highContrast = useSettingsStore((state) => state.themeSettings.highContrast);

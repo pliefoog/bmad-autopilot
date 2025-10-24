@@ -2,7 +2,7 @@ import { autopilotSafetyManager } from './autopilotSafetyManager';
 import { autopilotRetryManager } from './autopilotRetryManager';
 import { AutopilotErrorManager } from './autopilotErrorManager';
 import { autopilotMonitoringService } from './autopilotMonitoringService';
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 
 /**
  * Connection state for tracking reconnection attempts

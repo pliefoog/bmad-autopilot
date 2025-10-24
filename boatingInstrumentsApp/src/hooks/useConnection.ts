@@ -2,8 +2,8 @@
 // Custom hook for connection management, health monitoring, and network diagnostics
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useConnectionStore } from '../stores/connectionStore';
-import type { ConnectionConfig as StoreConnectionConfig, ConnectionMetrics as StoreConnectionMetrics } from '../stores/connectionStore';
+import { useConnectionStore } from '../store/connectionStore';
+import type { ConnectionConfig as StoreConnectionConfig, ConnectionMetrics as StoreConnectionMetrics } from '../store/connectionStore';
 import type { 
   ConnectionStatus, 
   ConnectionHealth, 

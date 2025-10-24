@@ -1,7 +1,7 @@
 import { autopilotSafetyManager, SystemHealthMetrics } from './autopilotSafetyManager';
 import { AutopilotErrorManager } from './autopilotErrorManager';
 import { autopilotCommandQueue } from './autopilotCommandQueue';
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 
 /**
  * System degradation levels

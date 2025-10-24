@@ -14,4 +14,4 @@ export { ThemedView, ThemedText, MarineValueDisplay } from './ThemedComponents';
 export { ThemePreview } from './ThemePreview';
 
 // Theme types (re-export from stores)
-export type { ThemeColors, ThemeMode, ThemeSettings } from '../stores/settingsStore';
+export type { ThemeColors, ThemeMode, ThemeSettings } from '../store/settingsStore';

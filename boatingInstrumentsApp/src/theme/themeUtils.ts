@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { ThemeColors } from '../stores/settingsStore';
+import { ThemeColors } from '../store/settingsStore';
 import { PlatformStyles } from '../utils/animationUtils';
 
 // Base theme utilities for creating consistent styles

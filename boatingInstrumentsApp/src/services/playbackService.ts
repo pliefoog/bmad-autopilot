@@ -1,7 +1,7 @@
 // PlaybackService: Loads and replays recorded NMEA files for testing/demo
 import { readFileSync } from 'fs';
 import path from 'path';
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 import { parseNmeaSentence } from 'nmea-simple';
 import { parseAndValidate } from '@/utils/nmeaValidator';
 

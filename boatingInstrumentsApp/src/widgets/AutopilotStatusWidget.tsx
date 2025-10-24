@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WidgetCard } from './WidgetCard';
 import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
-import { useNmeaStore } from '../core/nmeaStore';
-import { useTheme } from '../core/themeStore';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useTheme } from '../store/themeStore';
+import { useMetricDisplay } from '../hooks/useMetricDisplay';
 import { AutopilotCommandManager, AutopilotMode } from '../services/autopilotService';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
@@ -16,6 +17,10 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
   const autopilot = useNmeaStore((state: any) => state.nmeaData.autopilot);
   const heading = useNmeaStore((state: any) => state.nmeaData.heading);
   const theme = useTheme();
+  // Metric display hooks for angles
+  const actualHeadingDisplay = useMetricDisplay('angle', autopilot?.actualHeading ?? heading?.heading ?? 0);
+  const targetHeadingDisplay = useMetricDisplay('angle', autopilot?.targetHeading ?? 0);
+  const rudderPositionDisplay = useMetricDisplay('angle', autopilot?.rudderPosition ?? 0);
   const [selectedView, setSelectedView] = useState<'overview' | 'details' | 'controls'>('overview');
   const [isCommandPending, setIsCommandPending] = useState(false);
   const commandManager = useRef<AutopilotCommandManager | null>(null);
@@ -260,23 +265,20 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
       <View style={styles.metricGrid}>
         <PrimaryMetricCell
           mnemonic="ACTUAL"
-          value={actualHeading !== undefined ? Math.round(actualHeading).toString() : '--'}
-          unit="°"
+          data={actualHeadingDisplay}
           state={getHeadingMetricState()}
           style={styles.metricCell}
         />
         <PrimaryMetricCell
           mnemonic="TARGET"
-          value={targetHeading !== undefined ? Math.round(targetHeading).toString() : '--'}
-          unit="°"
+          data={targetHeadingDisplay}
           state={getHeadingMetricState()}
           style={styles.metricCell}
         />
         {rudderPosition !== undefined && (
           <PrimaryMetricCell
             mnemonic="RUD"
-            value={`${rudderPosition > 0 ? '+' : ''}${rudderPosition.toFixed(0)}`}
-            unit="°"
+            data={rudderPositionDisplay}
             state={getRudderMetricState()}
             style={styles.metricCell}
           />

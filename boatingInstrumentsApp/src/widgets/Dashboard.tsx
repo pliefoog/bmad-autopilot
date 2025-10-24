@@ -11,14 +11,13 @@ import { WidgetCard } from './WidgetCard';
 import { WidgetSelector } from './WidgetSelector';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../core/themeStore';
+import { useTheme } from '../store/themeStore';
 import { WidgetRegistry } from './WidgetRegistry';
 import { PlatformStyles } from '../utils/animationUtils';
 import { registerAllWidgets } from './registerWidgets';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { LayoutService, WidgetLayout } from '../services/layoutService';
 import DraggableWidget from './DraggableWidget';
-import { GridOverlay } from './GridOverlay';
 
 type WidgetMeta = {
   title: string;
@@ -221,9 +220,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
-      {/* Grid overlay for drag mode */}
-      <GridOverlay visible={isDragMode} />
-      
       {/* Widget container */}
       <View style={styles.widgetContainer}>
         {layout

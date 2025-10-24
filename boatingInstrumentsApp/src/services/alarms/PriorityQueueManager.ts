@@ -3,7 +3,7 @@
  * Manages alarm priorities, queuing, and escalation with context awareness
  */
 
-import { Alarm, AlarmLevel } from '../../stores/alarmStore';
+import { Alarm, AlarmLevel } from '../../store/alarmStore';
 import { CriticalAlarmType, AlarmEscalationLevel } from './types';
 import { AlarmGroup, MarineSystemCategory } from './AlarmGroupingEngine';
 

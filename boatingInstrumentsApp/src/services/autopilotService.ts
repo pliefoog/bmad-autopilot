@@ -1,5 +1,5 @@
 import { ToPgn } from '@canboat/canboatjs';
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 
 /**
  * Autopilot modes supported by Raymarine Evolution

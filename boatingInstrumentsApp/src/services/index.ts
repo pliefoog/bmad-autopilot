@@ -22,12 +22,9 @@ export * from './autopilotCommandQueue';
 export * from './autopilotMonitoringService';
 export * from './gracefulDegradationService';
 export * from './autopilotReconnectionService';
-export * from './nmeaConnection';
 export * from './layoutService';
 export * from './playbackService';
-export * from './globalConnectionService';
 export * from './connectionDefaults';
-export * from './webNmeaInit';
 export * from './mockServer';
 export * from './stressTestService';
 

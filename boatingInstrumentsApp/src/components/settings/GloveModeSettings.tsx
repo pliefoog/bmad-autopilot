@@ -11,8 +11,8 @@
 
 import React from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
-import { useTheme } from '../../core/themeStore';
-import { useSettingsStore } from '../../stores/settingsStore';
+import { useTheme } from '../../store/themeStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { marineTouchService } from '../../services/marine/MarineTouchService';
 
 export const GloveModeSettings: React.FC = () => {

@@ -14,7 +14,7 @@ import {
   ViewStyle,
   TextStyle
 } from 'react-native';
-import { useAlarmStore, Alarm, AlarmLevel } from '../../stores/alarmStore';
+import { useAlarmStore, Alarm, AlarmLevel } from '../../store/alarmStore';
 
 // Marine safety color standards for high visibility
 const MARINE_COLORS = {

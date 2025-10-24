@@ -1,19 +1,29 @@
 // NMEA Domain Services
 // Services responsible for NMEA data parsing, processing, and connection management
 
-// Core connection classes
-export { NmeaConnectionManager } from './nmeaConnection';
-export type { NmeaConnectionOptions } from './nmeaConnection';
+// New modular NMEA architecture
+export { NmeaService } from './NmeaService';
+export type { NmeaServiceConfig, NmeaServiceStatus } from './NmeaService';
 
-// NMEA parsing services
+// Pure functional components
+export { PureConnectionManager } from './connection/PureConnectionManager';
+export type { ConnectionConfig, ConnectionStatus } from './connection/PureConnectionManager';
+
+export { PureNmeaParser } from './parsing/PureNmeaParser';
+export type { ParsedNmeaMessage } from './parsing/PureNmeaParser';
+
+export { PureDataTransformer } from './data/PureDataTransformer';
+export type { TransformedNmeaData } from './data/PureDataTransformer';
+
+export { PureStoreUpdater } from './data/PureStoreUpdater';
+export type { UpdateResult } from './data/PureStoreUpdater';
+
+// Legacy parsers (for compatibility)
 export * from './nmeaParser';
 export * from './pgnParser';
 
 // Autopilot command services
 export * from './AutopilotCommands';
-
-// Web initialization utilities
-export * from './webNmeaInit';
 
 // Instance detection utilities
 export * from './instanceDetection';
@@ -31,7 +41,6 @@ export type {
   EngineData,
   BatteryData,
   TankData,
-  ConnectionStatus,
   NMEAError
 } from './types';
 //   NmeaMessage,

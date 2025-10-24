@@ -1,0 +1,285 @@
+import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Svg, { Polyline } from 'react-native-svg';
+import { SimpleWidget } from '../components/atoms';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useTheme } from '../store/themeStore';
+import { createWidgetStyles } from '../theme/widgetStyles';
+import { useWidgetExpanded } from '../hooks/useWidgetExpanded';
+
+type DepthUnit = 'meters' | 'feet' | 'fathoms';
+
+interface DepthWidgetProps {
+  widgetId?: string; // For layout persistence
+}
+
+// Memoized DepthWidget
+export const DepthWidget: React.FC<DepthWidgetProps> = memo(({ 
+  widgetId = 'depth-widget' 
+}) => {
+  // Optimized store selector
+  const depth = useNmeaStore(useCallback((state: any) => state.nmeaData.depth, []));
+  const theme = useTheme();
+  
+  const [unit, setUnit] = useState<DepthUnit>('meters');
+  const [shallowWarning] = useState(2.0); // 2 meters shallow warning
+  const [criticalDepth] = useState(1.5); // 1.5 meters critical depth
+  const [depthHistory, setDepthHistory] = useState<{ depth: number; timestamp: number }[]>([]);
+  
+  // AC 3: State persists per widget in layout storage
+  const [expanded, toggleExpanded] = useWidgetExpanded(widgetId);
+
+  // Memoized depth conversion function
+  const convertDepth = useCallback((depthM: number | undefined): { value: string; unitStr: string } => {
+    if (depthM === undefined || depthM === null) return { value: '--', unitStr: 'm' };
+    
+    switch (unit) {
+      case 'feet':
+        return { value: (depthM * 3.28084).toFixed(1), unitStr: 'ft' };
+      case 'fathoms':
+        return { value: (depthM / 1.8288).toFixed(2), unitStr: 'fth' };
+      default:
+        return { value: depthM.toFixed(1), unitStr: 'm' };
+    }
+  }, [unit]);
+
+  // Memoized trend calculation
+  const trendAnalysis = useMemo(() => {
+    const getTrend = (): 'up' | 'down' | 'stable' | null => {
+      if (depthHistory.length < 3) return null;
+      const recent = depthHistory.slice(-3);
+      const trend = recent[2].depth - recent[0].depth;
+      if (Math.abs(trend) < 0.1) return 'stable';
+      return trend > 0 ? 'up' : 'down';
+    };
+
+    const getState = (): 'normal' | 'no-data' | 'alarm' | 'highlighted' => {
+      if (depth === undefined || depth === null) return 'no-data';
+      if (depth <= criticalDepth) return 'alarm';
+      if (depth <= shallowWarning) return 'highlighted';
+      return 'normal';
+    };
+
+    const getTrendDescription = () => {
+      const trend = getTrend();
+      const currentState = getState();
+      
+      if (currentState === 'alarm') return 'CRITICAL DEPTH!';
+      if (currentState === 'highlighted') return 'Shallow Water';
+      
+      switch (trend) {
+        case 'up': return 'Deepening';
+        case 'down': return 'Shoaling';
+        case 'stable': return 'Steady';
+        default: return 'Monitoring...';
+      }
+    };
+
+    const trend = getTrend();
+    const state = getState();
+    const trendDescription = getTrendDescription();
+
+    return {
+      trend,
+      state,
+      trendDescription,
+    };
+  }, [depthHistory, depth, criticalDepth, shallowWarning]);
+
+  // Memoized display values
+  const displayValues = useMemo(() => {
+    const converted = convertDepth(depth);
+    return {
+      ...converted,
+      hasValidDepth: depth !== undefined && depth !== null,
+    };
+  }, [depth, convertDepth]);
+
+  // Memoized unit toggle callback
+  const handleUnitToggle = useCallback(() => {
+    setUnit(prev => {
+      switch (prev) {
+        case 'meters': return 'feet';
+        case 'feet': return 'fathoms';
+        default: return 'meters';
+      }
+    });
+  }, []);
+
+  const renderDepthTrend = () => {
+    if (depthHistory.length < 2) return null;
+
+    const styles = createDepthStyles(theme);
+    const width = 80;
+    const height = 30;
+    const padding = 4;
+    
+    // Get min/max for scaling
+    const depths = depthHistory.map(h => h.depth);
+    const minDepth = Math.min(...depths);
+    const maxDepth = Math.max(...depths);
+    const range = maxDepth - minDepth || 1;
+
+    // Create SVG points
+    const points = depthHistory.map((entry, index) => {
+      const x = padding + (index / (depthHistory.length - 1)) * (width - 2 * padding);
+      const y = height - padding - ((entry.depth - minDepth) / range) * (height - 2 * padding);
+      return `${x},${y}`;
+    }).join(' ');
+
+    // Color based on current state using theme
+    const currentState = widgetState;
+    const strokeColor = currentState === 'alarm' ? theme.error : 
+                       currentState === 'highlighted' ? theme.warning : theme.primary;
+
+    return (
+      <View style={styles.trendGraphContainer}>
+        <Svg width={width} height={height}>
+          <Polyline
+            points={points}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+    );
+  };
+
+  const { value, unitStr } = convertDepth(depth);
+  const { trend, state: widgetState, trendDescription } = trendAnalysis;
+  
+  // Map widget state to PrimaryMetricCell state
+  const getMetricState = () => {
+    switch (widgetState) {
+      case 'highlighted':
+        return 'warning';
+      case 'no-data':
+        return 'normal'; // Show as normal but with --- value
+      default:
+        return widgetState as 'normal' | 'alarm';
+    }
+  };
+
+  const cycleUnit = () => {
+    const units: DepthUnit[] = ['meters', 'feet', 'fathoms'];
+    const currentIndex = units.indexOf(unit);
+    setUnit(units[(currentIndex + 1) % units.length]);
+  };
+
+  // Story 4.4 AC6-10: Build comprehensive accessibility label for depth data
+  const depthAccessibilityLabel = useMemo(() => {
+    if (depth === undefined || depth === null) {
+      return 'Depth: No data available';
+    }
+    
+    const parts: string[] = ['Depth'];
+    parts.push(`${value} ${unitStr}`);
+    
+    // Add trend information for screen readers
+    if (trend === 'up') {
+      parts.push('depth increasing');
+    } else if (trend === 'down') {
+      parts.push('depth decreasing, shoaling');
+    } else if (trend === 'stable') {
+      parts.push('depth steady');
+    }
+    
+    // Add critical state information
+    if (widgetState === 'alarm') {
+      parts.push('CRITICAL DEPTH ALARM');
+    } else if (widgetState === 'highlighted') {
+      parts.push('Shallow water warning');
+    }
+    
+    return parts.join(', ');
+  }, [depth, value, unitStr, trend, widgetState]);
+
+  const depthAccessibilityHint = useMemo(() => {
+    if (widgetState === 'alarm') {
+      return 'Critical depth - immediate action required';
+    } else if (widgetState === 'highlighted') {
+      return 'Approaching shallow water - monitor carefully';
+    }
+    return 'Tap to expand for depth trend graph';
+  }, [widgetState]);
+
+  // AC 2: Handle tap to toggle expanded state
+  const handleToggleExpanded = () => {
+    toggleExpanded();
+  };
+
+  // Handle unit cycling with secondary touch (still accessible)
+  const handleUnitCycle = () => {
+    cycleUnit();
+  };
+
+  const expandedContent = (
+    <>
+      {/* AC 14: Expanded state adds 60-second depth trend line graph */}
+      {renderDepthTrend()}
+      
+      {/* Unit cycling button - only show in expanded state to avoid confusion */}
+      <TouchableOpacity 
+        style={createDepthStyles(theme).unitButton}
+        onPress={handleUnitCycle}
+        testID={`${widgetId}-unit-cycle`}
+        accessible={true}
+        accessibilityLabel={`Change depth unit, currently ${unitStr}`}
+        accessibilityHint="Tap to cycle between meters, feet, and fathoms"
+        accessibilityRole="button"
+      >
+        <Text style={[createDepthStyles(theme).unitButtonText, { color: theme.textSecondary }]}>
+          Tap to change units
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <SimpleWidget
+      title="DEPTH"
+      icon="water"
+      value={value}
+      unit={unitStr}
+      state={getMetricState()}
+      secondary={trendDescription}
+      expanded={expanded}
+      onToggle={handleToggleExpanded}
+      testID={widgetId}
+      hasInteractiveContent={expanded} // Enable smart touch handling when expanded
+    >
+      {expandedContent}
+    </SimpleWidget>
+  );
+});
+
+// Custom styles specific to DepthWidget (using theme-aware styling)
+const createDepthStyles = (theme: any) => 
+  StyleSheet.create({
+    trendContainer: {
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    trendGraphContainer: {
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingBottom: 8,
+      backgroundColor: theme.background,
+      borderRadius: 4,
+      marginTop: 4,
+    },
+    unitButton: {
+      marginTop: 8,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      alignItems: 'center',
+    },
+    unitButtonText: {
+      fontSize: 12,
+      fontStyle: 'italic',
+    },
+  });

@@ -1,5 +1,5 @@
 import { Vibration } from 'react-native';
-import { useSettingsStore } from '../../stores/settingsStore';
+import { useSettingsStore } from '../../store/settingsStore';
 
 export type HapticPattern = 'light' | 'medium' | 'long' | 'success' | 'alert';
 

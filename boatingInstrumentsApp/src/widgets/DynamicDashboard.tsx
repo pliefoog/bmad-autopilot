@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Dimensions, Alert } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../core/themeStore';
+import { useTheme } from '../store/themeStore';
 import { WidgetRegistry } from './WidgetRegistry';
 import { WidgetSelector } from './WidgetSelector';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
@@ -9,27 +9,6 @@ import { PlatformStyles } from '../utils/animationUtils';
 import { LayoutService, WidgetLayout } from '../services/layoutService';
 import { DynamicLayoutService, DynamicWidgetLayout } from '../services/dynamicLayoutService';
 import { registerAllWidgets } from './registerWidgets';
-
-type WidgetMeta = {
-  title: string;
-  icon: string;
-  unit: string;
-};
-
-const widgetMeta: { [key: string]: WidgetMeta } = {
-  depth: { title: 'Depth', icon: 'water-outline', unit: 'ft' },
-  speed: { title: 'Speed', icon: 'speedometer-outline', unit: 'kt' },
-  wind: { title: 'Wind', icon: 'cloud-outline', unit: 'kt' },
-  gps: { title: 'GPS', icon: 'navigate-outline', unit: '' },
-  compass: { title: 'Compass', icon: 'compass-outline', unit: '°' },
-  engine: { title: 'Engine', icon: 'car-outline', unit: '' },
-  battery: { title: 'Battery', icon: 'battery-charging-outline', unit: 'V' },
-  tanks: { title: 'Tanks', icon: 'cube-outline', unit: '' },
-  autopilot: { title: 'Autopilot', icon: 'swap-horizontal-outline', unit: '' },
-  rudder: { title: 'Rudder', icon: 'boat-outline', unit: '°' },
-  watertemp: { title: 'Water Temp', icon: 'thermometer-outline', unit: '°C' },
-  theme: { title: 'Theme', icon: 'color-palette-outline', unit: '' },
-};
 
 // Render the appropriate widget component using registry
 function renderWidget(key: string): React.ReactElement {
@@ -56,29 +35,20 @@ const DynamicWidgetWrapper: React.FC<DynamicWidgetWrapperProps> = ({
 }) => {
   const theme = useTheme();
   
-  const handleToggleExpansion = useCallback(() => {
-    onExpansionChange(layout.id, !layout.expanded);
-  }, [layout.id, layout.expanded, onExpansionChange]);
-  
-  // Use simple flexbox with fixed width to prevent overlap
+  // Use simple flexbox with content-based width
   return (
     <View
       style={[
         styles.dynamicWidget,
         {
-          width: layout.fixedWidth,
           minHeight: layout.size.height,
         }
       ]}
       key={layout.id}
     >
-      <TouchableOpacity
-        onPress={handleToggleExpansion}
-        style={styles.widgetTouchable}
-        activeOpacity={0.95}
-      >
+      <View style={styles.widgetTouchable}>
         {children}
-      </TouchableOpacity>
+      </View>
     </View>
   );
 };

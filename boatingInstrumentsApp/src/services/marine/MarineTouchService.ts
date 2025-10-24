@@ -17,7 +17,7 @@
 
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { useSettingsStore } from '../../stores/settingsStore';
+import { useSettingsStore } from '../../store/settingsStore';
 
 /**
  * Marine Touch Configuration

@@ -4,9 +4,7 @@
 // Advanced connection monitoring
 export * from './connectionHealthMonitor';
 
-// Core connection services
-export { globalConnectionService } from './globalConnectionService';
-export { getConnectionDefaults } from './connectionDefaults';
+// Core connection services  
 export { gracefulDegradationService } from './gracefulDegradationService';
 
 // Note: Add other connection services here as they are created

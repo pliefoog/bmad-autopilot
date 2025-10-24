@@ -22,7 +22,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title }) =>
   const theme = useTheme();
   
   // Unit conversion system - consistent with other widgets
-  const { getFormattedValueWithUnit, getPreferredUnit, convertToPreferred, getGpsFormattedDateTime } = useUnitConversion();
+  const { getPreferredUnit, convertToPreferred, getGpsFormattedDateTime } = useUnitConversion();
 
   // GPS settings for coordinate format and date/time formatting
   // These subscriptions ensure the widget re-renders when GPS settings change

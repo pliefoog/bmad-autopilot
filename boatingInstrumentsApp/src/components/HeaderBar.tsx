@@ -7,13 +7,14 @@ import {
   Dimensions,
   AccessibilityInfo,
 } from 'react-native';
-import { useTheme } from '../core/themeStore';
-import { useNmeaStore, ConnectionStatus } from '../core/nmeaStore';
-import HamburgerMenu from './HamburgerMenu';
+import { useTheme } from '../store/themeStore';
+import { useNmeaStore, ConnectionStatus } from '../store/nmeaStore';
+import { HamburgerMenu } from './organisms/HamburgerMenu';
 import { UndoRedoControls } from './undo/UndoRedoControls';
 
 interface HeaderBarProps {
   onShowConnectionSettings?: () => void;
+  onShowUnitsDialog?: () => void;
   toastMessage?: {
     message: string;
     type: 'error' | 'warning' | 'success';
@@ -23,17 +24,23 @@ interface HeaderBarProps {
     startTime?: Date;
   };
   onToggleNavigationSession?: () => void;
-  useDynamicLayout?: boolean;
-  onToggleLayout?: () => void;
+  // Developer tools props (development only)
+  onStartPlayback?: () => void;
+  onStopPlayback?: () => void;
+  onStartStressTest?: () => void;
+  onStopStressTest?: () => void;
 }
 
 const HeaderBar: React.FC<HeaderBarProps> = ({
   onShowConnectionSettings,
+  onShowUnitsDialog,
   toastMessage,
   navigationSession,
   onToggleNavigationSession,
-  useDynamicLayout = true,
-  onToggleLayout,
+  onStartPlayback,
+  onStopPlayback,
+  onStartStressTest,
+  onStopStressTest,
 }) => {
   const theme = useTheme();
   const { connectionStatus } = useNmeaStore();
@@ -137,21 +144,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           )}
         </View>
 
-        {/* Layout Toggle Button */}
-        {onToggleLayout && (
-          <TouchableOpacity
-            style={[styles.layoutToggleButton, { backgroundColor: useDynamicLayout ? theme.primary : theme.surface }]}
-            onPress={onToggleLayout}
-            accessibilityRole="button"
-            accessibilityLabel={`Switch to ${useDynamicLayout ? 'classic' : 'dynamic'} layout`}
-            testID="layout-toggle-button"
-          >
-            <Text style={[styles.layoutToggleText, { color: useDynamicLayout ? theme.surface : theme.text }]}>
-              {useDynamicLayout ? 'DYN' : 'CLA'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
         {/* Right: Combined Status + Navigation Control + Undo/Redo */}
         <View style={styles.rightContent}>
           {/* AC13: Undo/Redo Controls */}
@@ -193,7 +185,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       <HamburgerMenu
         visible={showHamburgerMenu}
         onClose={() => setShowHamburgerMenu(false)}
-        onShowConnectionSettings={onShowConnectionSettings}
+        onShowUnitsDialog={onShowUnitsDialog}
       />
     </>
   );
@@ -338,22 +330,6 @@ const createStyles = (theme: any) =>
       fontSize: 12,
       fontWeight: 'bold',
       color: 'rgba(255, 255, 255, 1)', // Black icon as specified
-      textAlign: 'center',
-    },
-    // Layout Toggle Button Styles
-    layoutToggleButton: {
-      width: 36,
-      height: 28,
-      borderRadius: 6,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: '#666',
-    },
-    layoutToggleText: {
-      fontSize: 10,
-      fontWeight: 'bold',
       textAlign: 'center',
     },
   });

@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
-import { useTheme } from '../../core/themeStore';
+import { useTheme } from '../../store/themeStore';
 import { designTokens } from '../../theme/designTokens';
 
 // ============================================================================

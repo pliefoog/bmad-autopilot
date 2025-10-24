@@ -1,48 +1,205 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
-import { WidgetCard } from './WidgetCard';
-import { useNmeaStore } from '../core/nmeaStore';
-import { useTheme } from '../core/themeStore';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useTheme } from '../store/themeStore';
+import { useWidgetStore } from '../store/widgetStore';
+import { useMetricDisplay } from '../hooks/useMetricDisplay';
+import PrimaryMetricCell from '../components/PrimaryMetricCell';
+import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
-export const RudderPositionWidget: React.FC = () => {
-  const autopilot = useNmeaStore((state: any) => state.nmeaData.autopilot);
+interface RudderPositionWidgetProps {
+  id: string;
+  title: string;
+}
+
+/**
+ * RudderPositionWidget - Rudder angle display with SVG visualization per ui-architecture.md v2.3
+ * Primary Grid (1×1): Rudder angle with direction
+ * Secondary: SVG rudder visualization with boat outline
+ */
+export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.memo(({ id, title }) => {
   const theme = useTheme();
+
   
+  // Widget state management per ui-architecture.md v2.3
+  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
+  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
+  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
+  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
+  
+  // NMEA data selectors - Autopilot/rudder data
+  const autopilot = useNmeaStore(useCallback((state: any) => state.nmeaData.autopilot, []));
+  
+  // Extract rudder data with defaults
   const rudderAngle = autopilot?.rudderPosition || 0;
-  const displayAngle = Math.abs(rudderAngle).toFixed(1);
-  const side = rudderAngle >= 0 ? 'STBD' : 'PORT';
+  const isStale = !autopilot;
   
-  // Determine state based on rudder angle limits
-  const getState = () => {
-    if (autopilot?.rudderPosition === undefined) return 'no-data';
-    const absAngle = Math.abs(rudderAngle);
-    if (absAngle > 30) return 'alarm'; // Extreme rudder angle warning
-    if (absAngle > 20) return 'highlighted'; // Caution zone
+  // Metric display for rudder angle
+  const rudderAngleDisplay = useMetricDisplay('angle', Math.abs(rudderAngle));
+  
+  // Marine safety evaluation for rudder position
+  const getRudderState = useCallback((angle: number) => {
+    const absAngle = Math.abs(angle);
+    if (absAngle > 30) return 'alarm';    // Extreme rudder angle warning
+    if (absAngle > 20) return 'warning';  // Caution zone
     return 'normal';
-  };
-  
-  const state = getState();
-  
+  }, []);
+
+  const rudderState = getRudderState(rudderAngle);
+
+  // Format rudder display with direction and proper unit conversion
+  const formatRudderDisplay = useCallback((angle: number) => {
+    if (angle === 0) return { value: '0', unit: rudderAngleDisplay.unit };
+    
+    const side = angle >= 0 ? 'STBD' : 'PORT';
+    
+    return {
+      value: `${rudderAngleDisplay.value} ${side}`,
+      unit: rudderAngleDisplay.unit
+    };
+  }, [rudderAngleDisplay]);
+
+  // Widget interaction handlers
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+    toggleWidgetExpansion(id);
+  }, [id, updateWidgetInteraction, toggleWidgetExpansion]);
+
+  const handleLongPress = useCallback(() => {
+    toggleWidgetPin(id);
+  }, [id, toggleWidgetPin]);
+
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: theme.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: rudderState === 'alarm' ? theme.error :
+                   rudderState === 'warning' ? theme.warning :
+                   '#E5E7EB',
+      padding: 16,
+      marginBottom: 8,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    title: {
+      fontSize: 11,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+      color: theme.textSecondary,
+      textTransform: 'uppercase',
+    },
+    controls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    controlButton: {
+      padding: 4,
+      minWidth: 24,
+      alignItems: 'center',
+    },
+    caret: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
+    },
+    pinIcon: {
+      fontSize: 12,
+      color: theme.primary,
+    },
+    primaryGrid: {
+      alignItems: 'center',
+    },
+    rudderVisualization: {
+      alignItems: 'center',
+      marginTop: 12,
+    },
+    statusIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: rudderState === 'alarm' ? theme.error :
+                       rudderState === 'warning' ? theme.warning :
+                       theme.success,
+      opacity: isStale ? 0.3 : 1,
+    },
+    warningText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginTop: 8,
+      color: rudderState === 'alarm' ? theme.error :
+             rudderState === 'warning' ? theme.warning :
+             theme.textSecondary,
+    },
+  });
+
   return (
-    <WidgetCard
-      title="RUDDER POSITION"
-      icon="boat"
-      value={`${displayAngle}°`}
-      unit={side}
-      state={state}
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
+      activeOpacity={0.8}
     >
-      <View style={styles.rudderVisualization}>
-        <RudderIndicator angle={rudderAngle} theme={theme} />
+      {/* Widget Header with Title and Controls */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
+        
+        {/* Expansion Caret and Pin Controls */}
+        <View style={styles.controls}>
+          {pinned ? (
+            <TouchableOpacity
+              onLongPress={handleLongPress}
+              style={styles.controlButton}
+              testID={`pin-button-${id}`}
+            >
+              <Text style={styles.pinIcon}>📌</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={handlePress}
+              onLongPress={handleLongPress}
+              style={styles.controlButton}
+              testID={`caret-button-${id}`}
+            >
+              <Text style={styles.caret}>
+                {expanded ? '⌃' : '⌄'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-      <Text style={[styles.warningText, { color: theme.textSecondary }]}>
-        {state === 'alarm' ? 'EXTREME ANGLE!' : 
-         state === 'highlighted' ? 'High Angle' : 
-         state === 'no-data' ? 'No Data' : ''}
-      </Text>
-    </WidgetCard>
+      
+      {/* Primary Grid (1×1): Rudder angle with direction */}
+      <View style={styles.primaryGrid}>
+        <PrimaryMetricCell
+          mnemonic="RUDDER"
+          value={formatRudderDisplay(rudderAngle).value}
+          unit={formatRudderDisplay(rudderAngle).unit}
+          state={getRudderState(rudderAngle)}
+        />
+      </View>
+
+      {/* Secondary: SVG rudder visualization */}
+      {expanded && (
+        <View style={styles.rudderVisualization}>
+          <RudderIndicator angle={rudderAngle} theme={theme} />
+          <Text style={styles.warningText}>
+            {rudderState === 'alarm' ? 'EXTREME ANGLE!' : 
+             rudderState === 'warning' ? 'High Angle' : 
+             isStale ? 'No Data' : 'Normal Position'}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
   );
-};
+});
 
 interface RudderIndicatorProps {
   angle: number;
@@ -65,7 +222,7 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
       <Polygon
         points={`${center},5 ${center-15},${size-10} ${center+15},${size-10}`}
         fill="none"
-        stroke={theme.border}
+        stroke={theme.border || '#E5E7EB'}
         strokeWidth="2"
       />
       
@@ -92,8 +249,8 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
       />
       
       {/* Angle reference marks */}
-      <Line x1={center-20} y1={center+10} x2={center-15} y2={center+10} stroke={theme.border} strokeWidth="1" />
-      <Line x1={center+15} y1={center+10} x2={center+20} y2={center+10} stroke={theme.border} strokeWidth="1" />
+      <Line x1={center-20} y1={center+10} x2={center-15} y2={center+10} stroke={theme.border || '#E5E7EB'} strokeWidth="1" />
+      <Line x1={center+15} y1={center+10} x2={center+20} y2={center+10} stroke={theme.border || '#E5E7EB'} strokeWidth="1" />
       
       {/* Port/Starboard labels */}
       <SvgText 
@@ -118,15 +275,4 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  rudderVisualization: {
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  warningText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-});
+export default RudderPositionWidget;

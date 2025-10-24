@@ -4,7 +4,7 @@
  */
 
 import { CriticalAlarmType, AlarmEscalationLevel } from './types';
-import { Alarm, AlarmLevel } from '../../stores/alarmStore';
+import { Alarm, AlarmLevel } from '../../store/alarmStore';
 
 /**
  * Marine system categories for intelligent alarm grouping

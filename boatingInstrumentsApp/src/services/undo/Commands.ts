@@ -1,12 +1,8 @@
-/**
- * Concrete Command Implementations
- * Story 4.4 AC13: Specific commands for app configuration changes
- */
 
 import { Command } from './UndoRedoManager';
-import { useThemeStore } from '../../core/themeStore';
-import { useSettingsStore, ThemeMode } from '../../stores/settingsStore';
-import type { ThemeSettings } from '../../stores/settingsStore';
+import { useThemeStore } from '../../store/themeStore';
+import { useSettingsStore, ThemeSettings } from '../../store/settingsStore';
+import { ThemeMode } from '../../types';
 
 /**
  * Theme Change Command

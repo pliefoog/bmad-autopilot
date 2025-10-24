@@ -1,4 +1,4 @@
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 
 /**
  * Safety event types for autopilot system monitoring

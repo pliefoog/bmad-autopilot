@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { useTheme } from '../core/themeStore';
+import { useTheme } from '../store/themeStore';
 import { getUseNativeDriver, PlatformStyles } from '../utils/animationUtils';
 
 export interface ToastMessageData {

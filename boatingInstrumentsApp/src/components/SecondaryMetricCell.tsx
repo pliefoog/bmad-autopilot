@@ -1,37 +1,59 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../core/themeStore';
+import { useTheme } from '../store/themeStore';
+import { MetricDisplayData } from '../types/MetricDisplayData';
 
 interface SecondaryMetricCellProps {
-  mnemonic: string;              // "AVG", "MAX", "MIN" (10pt, semibold, uppercase)
-  value: string | number | null; // Secondary value (24pt, monospace, bold)
+  // New unified interface (preferred)
+  data?: MetricDisplayData;
+  
+  // Legacy individual props (for backward compatibility)
+  mnemonic?: string;              // "AVG", "MAX", "MIN" (10pt, semibold, uppercase)
+  value?: string | number | null; // Secondary value (24pt, monospace, bold)
   unit?: string;                 // Unit label (10pt, regular, light gray)
   precision?: number;            // Decimal places (default: 1)
+  
+  // Common props
   state?: 'normal' | 'warning' | 'alarm'; // Inherits from parent widget
   compact?: boolean;             // Use minimal spacing for dense 2×3 layouts
+  align?: 'left' | 'right';      // Horizontal alignment (default: left)
   style?: any;
   testID?: string;               // Accessibility identifier
 }
 
 /**
- * SecondaryMetricCell - Smaller secondary metric display component for expanded widget views
- * - Mnemonic: 10pt, uppercase, semibold, theme.textSecondary
- * - Value: 24pt, monospace, bold, theme.text (or state color)
- * - Unit: 10pt, regular, theme.textSecondary (light gray)
+ * SecondaryMetricCell - Secondary metric display component for expanded widget views
+ * Matches PrimaryMetricCell sizing but with reduced visual weight (muted colors)
+ * - Mnemonic: 12pt, uppercase, semibold, theme.textSecondary
+ * - Value: 36pt, monospace, bold, theme.textSecondary (MUTED - not theme.text)
+ * - Unit: 12pt, regular, theme.textSecondary
  * - Compact mode: Reduced spacing for dense 2×3 layouts
+ * - Key difference: Values use textSecondary instead of text for reduced emphasis
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
-  mnemonic,
-  value,
-  unit,
+  data,
+  mnemonic: legacyMnemonic,
+  value: legacyValue,
+  unit: legacyUnit,
   precision = 1,
   state = 'normal',
   compact = false,
+  align: legacyAlign = 'left',
   style,
   testID,
 }) => {
   const theme = useTheme();
-  const styles = createStyles(theme, compact);
+  
+  // Extract values - prefer data prop over legacy individual props
+  const mnemonic = data?.mnemonic ?? legacyMnemonic ?? '';
+  const value = data?.value ?? legacyValue ?? null;
+  const unit = data?.unit ?? legacyUnit ?? '';
+  
+  // Use layout information from MetricDisplayData if available
+  const alignment = data?.layout?.alignment === 'left' ? 'left' : 
+                   data?.layout?.alignment === 'right' ? 'right' : legacyAlign;
+  
+  const styles = createStyles(theme, compact, alignment);
 
   const getValueColor = () => {
     switch (state) {
@@ -41,7 +63,8 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         return theme.warning;
       case 'normal':
       default:
-        return theme.text;
+        // Use textSecondary for reduced visual weight (vs theme.text in PrimaryMetricCell)
+        return theme.textSecondary;
     }
   };
 
@@ -60,8 +83,18 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
   const displayValue = formatValue(value);
 
+  // Apply layout styling from MetricDisplayData if available
+  const containerStyle = [
+    styles.container,
+    style,
+    data?.layout && {
+      minWidth: data.layout.minWidth,
+      alignItems: alignment === 'right' ? 'flex-end' : 'flex-start',
+    }
+  ];
+
   return (
-    <View style={[styles.container, style]} testID={testID || "secondary-metric-cell"}>
+    <View style={containerStyle} testID={testID || "secondary-metric-cell"}>
       {/* First line: Mnemonic and Unit */}
       <View style={styles.mnemonicUnitRow}>
         <Text style={styles.mnemonic} testID="secondary-metric-mnemonic">
@@ -86,10 +119,10 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   );
 };
 
-const createStyles = (theme: any, compact: boolean) =>
+const createStyles = (theme: any, compact: boolean, align: 'left' | 'right' = 'left') =>
   StyleSheet.create({
     container: {
-      alignItems: 'flex-start',
+      alignItems: align === 'right' ? 'flex-end' : 'flex-start',
       justifyContent: 'center',
       paddingVertical: compact ? 2 : 3,
       paddingHorizontal: compact ? 4 : 6,
@@ -101,31 +134,31 @@ const createStyles = (theme: any, compact: boolean) =>
       marginBottom: compact ? 2 : 3,
     },
     mnemonic: {
-      fontSize: 10,
+      fontSize: 12, // Match PrimaryMetricCell (was 10pt)
       fontWeight: '600',
       color: theme.textSecondary,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
-      marginRight: 3,
+      marginRight: 4, // Match PrimaryMetricCell spacing
     },
     unit: {
-      fontSize: 10,
+      fontSize: 12, // Match PrimaryMetricCell (was 10pt)
       fontWeight: '400',
       color: theme.textSecondary,
       letterSpacing: 0,
-      marginLeft: 1,
+      marginLeft: 2, // Match PrimaryMetricCell spacing
     },
     valueContainer: {
       flexDirection: 'row',
       alignItems: 'baseline',
-      justifyContent: 'flex-start',
+      justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
     },
     value: {
-      fontSize: 24,
+      fontSize: 36, // Match PrimaryMetricCell (was 24pt)
       fontWeight: '700',
       fontFamily: 'monospace',
       letterSpacing: 0,
-      lineHeight: 28,
+      lineHeight: 40, // Match PrimaryMetricCell line height
     },
   });
 

@@ -12,9 +12,11 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as StatusIndicator } from './StatusIndicator';
 export { default as Switch } from './Switch';
 export { default as Tooltip } from './Tooltip';
+export { SimpleWidget } from './SimpleWidget';
 
 // Type exports
 export type { ButtonProps } from './Button';
 export type { IconName } from './Icon';
+export type { SimpleWidgetProps } from './SimpleWidget';
 
 // Add more atomic components as they are created

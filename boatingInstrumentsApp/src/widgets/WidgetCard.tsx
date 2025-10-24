@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, AccessibilityRole } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../core/themeStore';
-import { createWidgetStyles, getStateColor } from '../styles/widgetStyles';
+import { useTheme } from '../store/themeStore';
+import { createWidgetStyles, getStateColor } from '../theme/styles/widgetStyles';
 
 type WidgetCardProps = {
   title: string;
@@ -114,16 +114,13 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
         </Text>
         
         {/* Story 2.15: Pin indicator or chevron */}
-        <TouchableOpacity
-          onPress={handleCaretPress}
-          onLongPress={handleCaretLongPress}
+        <View
           style={widgetStyles.caretContainer}
           testID={`${testID}-caret`}
-          delayLongPress={500}
           accessible={true}
           accessibilityLabel={isPinned ? 'Pinned' : (expanded ? 'Collapse widget' : 'Expand widget')}
-          accessibilityHint={isPinned ? 'Long press to unpin this widget' : 'Long press to pin this widget in expanded state'}
-          accessibilityRole="button"
+          accessibilityHint={isPinned ? 'Widget is pinned' : 'Tap to toggle expansion'}
+          accessibilityRole="text"
         >
           {isPinned ? (
             <Ionicons 
@@ -139,7 +136,7 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
               {expanded ? '⌃' : '⌄'}
             </Text>
           )}
-        </TouchableOpacity>
+        </View>
       </View>
       
       {/* Widget Content */}

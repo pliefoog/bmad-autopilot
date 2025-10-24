@@ -18,7 +18,7 @@ import {
   Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../../core/themeStore';
+import { useTheme } from '../../store/themeStore';
 import { AccessibilityService } from '../../services/accessibility/AccessibilityService';
 
 export interface TooltipProps {

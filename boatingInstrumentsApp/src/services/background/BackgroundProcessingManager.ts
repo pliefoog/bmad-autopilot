@@ -1,7 +1,7 @@
 import { AppState, AppStateStatus, Platform } from 'react-native';
-import { useNmeaStore } from '../../core/nmeaStore';
-import { useAlarmStore } from '../../stores/alarmStore';
-import { NmeaConnectionManager } from '../nmea/nmeaConnection';
+import { useNmeaStore } from '../../store/nmeaStore';
+import { useAlarmStore } from '../../store/alarmStore';
+import { NmeaService } from '../nmea/NmeaService';
 import { NotificationManager } from '../notifications/NotificationManager';
 
 export interface BackgroundServiceConfig {
@@ -31,7 +31,7 @@ export class BackgroundProcessingManager {
   
   private config: BackgroundServiceConfig;
   private state: BackgroundProcessingState;
-  private nmeaConnection: NmeaConnectionManager | null = null;
+  private nmeaService: NmeaService | null = null;
   private notificationManager: NotificationManager;
   
   // Timers for background operations
@@ -75,13 +75,13 @@ export class BackgroundProcessingManager {
   /**
    * Initialize background processing system
    */
-  public async initialize(nmeaConnection: NmeaConnectionManager): Promise<void> {
+  public async initialize(nmeaService: NmeaService): Promise<void> {
     if (!this.config.enabled) {
       console.log('[Background] Background processing disabled by config');
       return;
     }
     
-    this.nmeaConnection = nmeaConnection;
+    this.nmeaService = nmeaService;
     
     // Initialize notification system for background alerts
     await this.notificationManager.initialize();
@@ -150,7 +150,7 @@ export class BackgroundProcessingManager {
    * Start background processing when app is backgrounded
    */
   private startBackgroundProcessing(): void {
-    if (!this.config.enabled || !this.nmeaConnection) {
+    if (!this.config.enabled || !this.nmeaService) {
       return;
     }
     
@@ -205,7 +205,7 @@ export class BackgroundProcessingManager {
    * Process NMEA data in background mode with reduced frequency
    */
   private processBackgroundData(): void {
-    if (!this.nmeaConnection || !this.state.isBackgrounded) {
+    if (!this.nmeaService || !this.state.isBackgrounded) {
       return;
     }
     

@@ -3,7 +3,7 @@
  * Learns from user behavior and environmental patterns to reduce false alarms
  */
 
-import { Alarm, AlarmLevel, AlarmThreshold } from '../../stores/alarmStore';
+import { Alarm, AlarmLevel, AlarmThreshold } from '../../store/alarmStore';
 import { VesselContext } from './PriorityQueueManager';
 import { NmeaDataSnapshot } from './VesselContextDetector';
 import AsyncStorage from '@react-native-async-storage/async-storage';

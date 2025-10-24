@@ -1,4 +1,4 @@
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 
 // StressTestService: Emits realistic NMEA sentence strings at high rates.
 // Sentences are pushed into the store via addRawSentence so the normal

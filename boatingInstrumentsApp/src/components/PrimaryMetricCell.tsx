@@ -1,15 +1,25 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../core/themeStore';
+import { useTheme } from '../store/themeStore';
+import { useUnitConversion } from '../hooks/useUnitConversion';
+import { MetricDisplayData } from '../types/MetricDisplayData';
 
 interface PrimaryMetricCellProps {
-  mnemonic: string;
-  value: string | number;
-  unit: string;
+  // New unified interface (preferred)
+  data?: MetricDisplayData;
+  
+  // Legacy individual props (for backward compatibility)
+  mnemonic?: string;
+  value?: string | number;
+  unit?: string;
+  
+  // Common props
   state?: 'normal' | 'warning' | 'alarm';
   style?: any;
   maxWidth?: number; // Optional max width constraint
-  minWidth?: number; // Optional min width constraint
+  minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
+  category?: string; // Unit category for consistent width calculation (legacy)
+  testID?: string;
 }
 
 /**
@@ -21,15 +31,39 @@ interface PrimaryMetricCellProps {
  * - Dynamic sizing: Adjusts font size based on content length and available width
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
-  mnemonic,
-  value,
-  unit,
+  data,
+  mnemonic: legacyMnemonic,
+  value: legacyValue,
+  unit: legacyUnit,
   state = 'normal',
   style,
   maxWidth,
-  minWidth = 120,
+  minWidth: legacyMinWidth,
+  category,
+  testID,
 }) => {
   const theme = useTheme();
+  const { getConsistentWidth, getPreferredUnit } = useUnitConversion();
+
+  // Extract values - prefer data prop over legacy individual props
+  const mnemonic = data?.mnemonic ?? legacyMnemonic ?? '';
+  const value = data?.value ?? legacyValue ?? '';
+  const unit = data?.unit ?? legacyUnit ?? '';
+  
+  // Use layout information from MetricDisplayData if available
+  const minWidth = data?.layout?.minWidth ?? legacyMinWidth;
+  const alignment = data?.layout?.alignment ?? 'right';
+
+  // Get consistent width for this category if provided
+  const consistentWidth = useMemo(() => {
+    if (category) {
+      // Get the preferred unit for this category to determine correct formatting
+      const preferredUnit = getPreferredUnit(category);
+      const unitId = preferredUnit?.id;
+      return getConsistentWidth(category, unit, unitId);
+    }
+    return null;
+  }, [category, unit, getConsistentWidth, getPreferredUnit]);
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
@@ -90,17 +124,68 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     ? value.toString() 
     : '---';
 
+    // Apply consistent width styling - prefer MetricDisplayData layout info
+  const containerStyle = [
+    styles.container, 
+    style, 
+    minWidth && { minWidth }, 
+    maxWidth && { maxWidth },
+    // Use MetricDisplayData layout info if available
+    data?.layout && {
+      minWidth: data.layout.minWidth,
+      alignItems: alignment === 'center' ? 'center' as const : 
+                 alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
+    },
+    // Fallback to legacy consistent width if no MetricDisplayData
+    !data && consistentWidth && { 
+      minWidth: consistentWidth.minWidth,
+      alignItems: consistentWidth.textAlign === 'center' ? 'center' as const : 
+                 consistentWidth.textAlign === 'right' ? 'flex-end' as const : 'flex-start' as const
+    }
+  ];
+
+  // Value container styling with consistent width and typography for stability  
+  const valueContainerStyle = [
+    styles.valueContainer,
+    // Use MetricDisplayData layout info if available
+    data?.layout && {
+      alignItems: alignment === 'center' ? 'center' as const : 
+                 alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
+    },
+    // Fallback to legacy consistent width if no MetricDisplayData
+    !data && consistentWidth && {
+      minWidth: consistentWidth.minWidth,
+      alignItems: consistentWidth.textAlign === 'center' ? 'center' as const : 
+                 consistentWidth.textAlign === 'right' ? 'flex-end' as const : 'flex-start' as const
+    }
+  ];
+
+  // Value text styling with spacing for consistent digit alignment
+  const valueTextStyle = useMemo(() => {
+    const baseStyle = {
+      ...styles.value,
+      color: getValueColor(),
+    };
+    
+    // Add letter spacing if specified for better digit alignment
+    if (consistentWidth?.letterSpacing) {
+      baseStyle.letterSpacing = consistentWidth.letterSpacing;
+    }
+    
+    return baseStyle;
+  }, [styles.value, getValueColor, consistentWidth?.letterSpacing]);
+
   return (
-    <View style={[styles.container, style, { minWidth, maxWidth }]} testID="primary-metric-cell">
+    <View style={containerStyle} testID={testID || "primary-metric-cell"}>
       {/* First line: Mnemonic and Unit */}
       <View style={styles.mnemonicUnitRow}>
         <Text style={styles.mnemonic} testID="metric-mnemonic">{mnemonic.toUpperCase()}</Text>
         <Text style={styles.unit} testID="metric-unit">({unit || ''})</Text>
       </View>
       {/* Second line: Value */}
-      <View style={styles.valueContainer}>
+      <View style={valueContainerStyle}>
         <Text 
-          style={[styles.value, { color: getValueColor() }]} 
+          style={valueTextStyle}
           testID="metric-value"
         >
           {displayValue}
@@ -113,7 +198,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
 const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit: number }) =>
   StyleSheet.create({
     container: {
-      alignItems: 'flex-start',
+      alignItems: 'flex-end', // Right-align all content within the cell
       justifyContent: 'center',
       paddingVertical: 4,
       paddingHorizontal: 8,
@@ -123,6 +208,7 @@ const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit
     mnemonicUnitRow: {
       flexDirection: 'row',
       alignItems: 'baseline',
+      justifyContent: 'flex-end', // Right-align mnemonic and unit
       marginBottom: 4, // spacing between first and second line
     },
     mnemonic: {
@@ -138,17 +224,17 @@ const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit
     valueContainer: {
       flexDirection: 'row',
       alignItems: 'baseline',
-      justifyContent: 'flex-start',
+      justifyContent: 'flex-end', // Right-align the value within its container
     },
     
     // AC 2: Value: 36-48pt, monospace, bold, theme.text (now dynamic)
     value: {
       fontSize: sizes.value,
       fontWeight: '700', // Bold
-      fontFamily: 'monospace', // AC 16: monospace font to prevent jitter
+      fontFamily: 'monospace', // AC 16: monospace font provides consistent digit widths
       letterSpacing: 0,
       lineHeight: sizes.value + 4, // Ensure consistent line height
-      flexShrink: 1, // Allow shrinking if needed
+      flexShrink: 0, // Prevent shrinking to maintain consistent width
     },
     
     // AC 2: Unit: 14-16pt, regular, theme.textSecondary (now dynamic)

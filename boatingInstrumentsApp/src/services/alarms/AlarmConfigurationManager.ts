@@ -3,7 +3,7 @@
  * User-configurable threshold system and alarm management for Task 5
  */
 
-import { AlarmThreshold, AlarmSettings, AlarmLevel } from '../../stores/alarmStore';
+import { AlarmThreshold, AlarmSettings, AlarmLevel } from '../../store/alarmStore';
 import { CriticalAlarmType, AlarmEscalationLevel, CriticalAlarmConfig } from '../alarms/types';
 import { AlarmManager } from '../alarms/AlarmManager';
 import { MarineAudioAlertManager } from '../alarms/MarineAudioAlertManager';

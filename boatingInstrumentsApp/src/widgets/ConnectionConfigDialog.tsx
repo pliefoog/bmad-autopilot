@@ -11,7 +11,7 @@ import {
   Switch,
 } from 'react-native';
 import { getConnectionDefaults } from '../services/connectionDefaults';
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 import { HelpButton } from '../components/atoms/HelpButton';
 import { Tooltip } from '../components/molecules/Tooltip';
 import { getHelpContent, getRelatedTopics } from '../content/help-content';

@@ -16,7 +16,7 @@
  */
 
 import { AccessibilityInfo, Platform, findNodeHandle } from 'react-native';
-import { useSettingsStore } from '../../stores/settingsStore';
+import { useSettingsStore } from '../../store/settingsStore';
 
 export interface AccessibilityState {
   screenReaderEnabled: boolean;

@@ -1,7 +1,7 @@
 // Connection Health Monitor
 // Advanced connection monitoring and diagnostics
 
-import { useConnectionStore, ConnectionMetrics } from '../../stores/connectionStore';
+import { useConnectionStore, ConnectionMetrics } from '../../store/connectionStore';
 
 export interface ConnectionHealth {
   status: 'excellent' | 'good' | 'poor' | 'critical' | 'disconnected';

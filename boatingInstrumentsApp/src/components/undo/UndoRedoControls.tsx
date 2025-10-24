@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../../core/themeStore';
+import { useTheme } from '../../store/themeStore';
 import { useUndoRedo, useKeyboardShortcuts } from '../../hooks/useUndoRedo';
 
 export interface UndoRedoControlsProps {

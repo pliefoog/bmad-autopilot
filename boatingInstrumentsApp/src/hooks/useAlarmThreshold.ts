@@ -2,7 +2,7 @@
 // Custom hook for managing alarm thresholds with dynamic configuration and real-time monitoring
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAlarmStore } from '../stores/alarmStore';
+import { useAlarmStore } from '../store/alarmStore';
 import { useNMEAData } from './useNMEAData';
 
 export interface AlarmThreshold {

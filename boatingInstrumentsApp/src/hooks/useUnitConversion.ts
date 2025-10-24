@@ -1152,7 +1152,9 @@ export function useUnitConversion(options: UseUnitConversionOptions = {}): UseUn
   const getPreferredUnit = useCallback((category: string): UnitDefinition | undefined => {
     const preference = preferences.find(p => p.category === category);
     const unitId = preference?.preferredUnit || SYSTEM_DEFAULTS[currentSystem][category];
-    return availableUnits.find(u => u.id === unitId);
+    const result = availableUnits.find(u => u.id === unitId);
+    
+    return result;
   }, [preferences, currentSystem, availableUnits]);
 
   const resetPreferences = useCallback((category?: string) => {

@@ -7,7 +7,7 @@ import {
   Dimensions,
   Platform
 } from 'react-native';
-import { useTheme } from '../core/themeStore';
+import { useTheme } from '../store/themeStore';
 import { PlatformStyles } from '../utils/animationUtils';
 import { getUseNativeDriver } from '../utils/animationUtils';
 import { DynamicLayoutService } from '../services/dynamicLayoutService';
@@ -38,6 +38,11 @@ interface WidgetShellProps {
   onToggle: () => void;
   
   /**
+   * Whether to disable the shell's TouchableOpacity (for widgets with internal touch elements)
+   */
+  disableTouch?: boolean;
+  
+  /**
    * Optional callback for long-press to lock expanded state
    */
   onLongPress?: () => void;
@@ -65,6 +70,7 @@ export const WidgetShell: React.FC<WidgetShellProps> = ({
   width = 150, // Default width if not specified
   onToggle,
   onLongPress,
+  disableTouch = false,
   testID = 'widget-shell',
 }) => {
   const theme = useTheme();
@@ -115,20 +121,28 @@ export const WidgetShell: React.FC<WidgetShellProps> = ({
       ]}
       testID={testID}
     >
-      <TouchableOpacity
-        style={styles.touchable}
-        onPress={handlePress}
-        onLongPress={onLongPress}
-        activeOpacity={0.95}
-        testID={`${testID}-touchable`}
-        accessibilityRole="button"
-        accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} widget`}
-        accessibilityHint="Double tap to toggle, long press to lock expanded"
-      >
-        <View style={styles.content}>
-          {children}
+      {disableTouch ? (
+        <View style={styles.touchable}>
+          <View style={styles.content}>
+            {children}
+          </View>
         </View>
-      </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.touchable}
+          onPress={handlePress}
+          onLongPress={onLongPress}
+          activeOpacity={0.95}
+          testID={`${testID}-touchable`}
+          accessibilityRole="button"
+          accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} widget`}
+          accessibilityHint="Double tap to toggle, long press to lock expanded"
+        >
+          <View style={styles.content}>
+            {children}
+          </View>
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 };

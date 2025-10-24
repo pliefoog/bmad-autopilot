@@ -11,12 +11,20 @@
  */
 
 import { EventEmitter } from 'events';
-import { useAlarmStore } from '../../stores/alarmStore';
+import type { AlarmLevel, Alarm } from '../../store/alarmStore';
 import { CriticalAlarmType, AlarmEscalationLevel, CriticalAlarmEvent, CriticalAlarmConfig } from './types';
 import { MarineAudioAlertManager } from './MarineAudioAlertManager';
 import { AlarmHistoryLogger } from './AlarmHistoryLogger';
 import { AccessibilityService } from '../accessibility/AccessibilityService';
 import { vibratePattern } from '../haptics/Haptics';
+
+export interface AlarmStore {
+  addAlarm: (alarm: Alarm) => void;
+  removeAlarm: (id: string) => void;
+  updateAlarm: (id: string, updates: Partial<Alarm>) => void;
+  acknowledgeAlarm: (id: string, acknowledgedBy?: string) => void;
+  clearAll: () => void;
+}
 
 export interface AlarmManagerConfig {
   // Marine safety settings
@@ -44,7 +52,7 @@ export class AlarmManager extends EventEmitter {
   private static instance: AlarmManager | null = null;
   
   private config: AlarmManagerConfig;
-  private alarmStore: ReturnType<typeof useAlarmStore>;
+  private alarmStore: AlarmStore;
   private audioManager: MarineAudioAlertManager;
   private historyLogger: AlarmHistoryLogger;
   private activeAlarmQueue: Map<string, CriticalAlarmEvent> = new Map();
@@ -56,10 +64,10 @@ export class AlarmManager extends EventEmitter {
   private falseNegativeCount = 0;
   private totalAlarmsTriggered = 0;
   
-  private constructor(config: AlarmManagerConfig) {
+  private constructor(config: AlarmManagerConfig, alarmStore: AlarmStore) {
     super();
     this.config = config;
-    this.alarmStore = useAlarmStore.getState();
+    this.alarmStore = alarmStore;
     this.audioManager = new MarineAudioAlertManager({
       targetAudioLevelDb: config.audioLevelDb,
       platformSpecific: config.platformSpecificAudio,
@@ -70,12 +78,12 @@ export class AlarmManager extends EventEmitter {
     this.initializeMarineSafetyMonitoring();
   }
   
-  public static getInstance(config?: AlarmManagerConfig): AlarmManager {
+  public static getInstance(config?: AlarmManagerConfig, alarmStore?: AlarmStore): AlarmManager {
     if (!AlarmManager.instance) {
-      if (!config) {
-        throw new Error('AlarmManager requires configuration on first instantiation');
+      if (!config || !alarmStore) {
+        throw new Error('AlarmManager requires configuration and alarm store on first instantiation');
       }
-      AlarmManager.instance = new AlarmManager(config);
+      AlarmManager.instance = new AlarmManager(config, alarmStore);
     }
     return AlarmManager.instance;
   }

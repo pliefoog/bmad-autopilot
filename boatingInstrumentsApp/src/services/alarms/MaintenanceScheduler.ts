@@ -3,7 +3,7 @@
  * Provides engine hours tracking, usage-based maintenance reminders, and predictive maintenance
  */
 
-import { Alarm, AlarmLevel } from '../../stores/alarmStore';
+import { Alarm, AlarmLevel } from '../../store/alarmStore';
 import { VesselContext } from './PriorityQueueManager';
 import { NmeaDataSnapshot } from './VesselContextDetector';
 import AsyncStorage from '@react-native-async-storage/async-storage';

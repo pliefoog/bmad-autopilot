@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions } from 
 import { Picker } from '@react-native-picker/picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNmeaStore } from '../core/nmeaStore';
-import { useThemeStore, useTheme } from '../core/themeStore';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useThemeStore, useTheme } from '../store/themeStore';
+import { useWidgetStore } from '../store/widgetStore';
 import { PlaybackService } from '../services/playbackService';
 import { StressTestService } from '../services/stressTestService';
 import { PlatformStyles } from '../utils/animationUtils';
@@ -17,6 +18,9 @@ import { CompassWidget } from '../widgets/CompassWidget';
 import { EngineWidget } from '../widgets/EngineWidget';
 import { BatteryWidget } from '../widgets/BatteryWidget';
 import { TanksWidget } from '../widgets/TanksWidget';
+import { RudderPositionWidget } from '../widgets/RudderPositionWidget';
+import { WaterTemperatureWidget } from '../widgets/WaterTemperatureWidget';
+import { ThemeSwitcher } from '../widgets/ThemeSwitcher';
 import { AutopilotStatusWidget } from '../widgets/AutopilotStatusWidget';
 import { AutopilotControlScreen } from '../widgets/AutopilotControlScreen';
 import { WidgetSelector } from '../widgets/WidgetSelector';
@@ -25,10 +29,31 @@ import { LayoutManager, LayoutWidget } from '../widgets/LayoutManager';
 import { WidgetShell } from '../components/WidgetShell';
 import HeaderBar from '../components/HeaderBar';
 import ToastMessage, { ToastMessageData } from '../components/ToastMessage';
-import { PlaybackFilePicker } from '../widgets/PlaybackFilePicker';
 import { ConnectionConfigDialog } from '../widgets/ConnectionConfigDialog';
-import { getConnectionDefaults } from '../services/connectionDefaults';
-import { globalConnectionService } from '../services/globalConnectionService';
+import { 
+  getConnectionDefaults, 
+  loadConnectionSettings, 
+  connectNmea, 
+  disconnectNmea, 
+  shouldEnableConnectButton, 
+  getCurrentConnectionConfig, 
+  initializeConnection,
+  type ConnectionConfig 
+} from '../services/connectionDefaults';
+import { AutopilotFooter } from '../components/organisms/AutopilotFooter';
+
+// Developer services (only loaded in development)
+let playbackService: any = null;
+let stressTestService: any = null;
+
+if (__DEV__ || process.env.NODE_ENV === 'development') {
+  try {
+    playbackService = require('../services/playbackService').playbackService;
+    stressTestService = require('../services/stressTestService').stressTestService;
+  } catch (e) {
+    console.warn('Developer services not available:', e);
+  }
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -78,19 +103,30 @@ const saveWidgetStates = async (states: Record<string, boolean>) => {
 const App = () => {
   const { connectionStatus, nmeaData, alarms, lastError } = useNmeaStore();
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
+  const { toggleWidgetPin, isWidgetPinned } = useWidgetStore();
   const theme = useTheme();
   const defaults = getConnectionDefaults();
   const [ip, setIp] = useState(defaults.ip);
   const [port, setPort] = useState(defaults.port.toString());
   const [protocol, setProtocol] = useState<'tcp' | 'udp' | 'websocket'>(defaults.protocol);
   const [selectedWidgets, setSelectedWidgets] = useState<string[]>([
-    'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 'battery', 'tanks', 'autopilot'
+    'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 'battery', 'tanks', 'autopilot', 
+    'rudder', 'water-temp', 'theme'
   ]);
-  const [playbackFile, setPlaybackFile] = useState<string>('demo.nmea');
+  
+  // Track detected instances for dynamic widget creation
+  const [detectedInstances, setDetectedInstances] = useState<{
+    batteries: string[];
+    engines: string[];
+    tanks: string[];
+  }>({
+    batteries: [],
+    engines: [],
+    tanks: []
+  });
   const [showAutopilotControl, setShowAutopilotControl] = useState(false);
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
   const [toastMessage, setToastMessage] = useState<ToastMessageData | null>(null);
-  const [showConnectionSettings, setShowConnectionSettings] = useState(false);
   const [showConnectionDialog, setShowConnectionDialog] = useState(false);
   
   // Widget expansion state management
@@ -516,6 +552,111 @@ const App = () => {
     calculateVMG();
   }, [calculateVMG]);
 
+  // Auto-detect NMEA instances and create appropriate widgets
+  useEffect(() => {
+    if (!nmeaData) return;
+    
+    const newInstances = {
+      batteries: [] as string[],
+      engines: [] as string[],
+      tanks: [] as string[]
+    };
+    
+    // Detect battery instances from basic and PGN data
+    if (nmeaData.battery) {
+      if (nmeaData.battery.house !== undefined) newInstances.batteries.push('battery-house');
+      if (nmeaData.battery.engine !== undefined) newInstances.batteries.push('battery-engine');
+    }
+    
+    // Check PGN data for additional battery instances
+    if (nmeaData.pgnData) {
+      // PGN 127508 - DC Detailed Status
+      const batteryPgn = nmeaData.pgnData['127508'] as any;
+      if (batteryPgn) {
+        const instances = Array.isArray(batteryPgn) ? batteryPgn : [batteryPgn];
+        instances.forEach((data: any) => {
+          if (data.instance === 0 && !newInstances.batteries.includes('battery-house')) {
+            newInstances.batteries.push('battery-house');
+          } else if (data.instance === 1 && !newInstances.batteries.includes('battery-engine')) {
+            newInstances.batteries.push('battery-engine');
+          } else if (data.instance === 2 && !newInstances.batteries.includes('battery-thruster')) {
+            newInstances.batteries.push('battery-thruster');
+          }
+        });
+      }
+    }
+    
+    // Detect engine instances from basic and PGN data
+    if (nmeaData.engine?.rpm !== undefined) {
+      newInstances.engines.push('engine-main');
+    }
+    
+    // Check PGN data for additional engine instances
+    if (nmeaData.pgnData) {
+      // PGN 127488 - Engine Parameters, Rapid Update
+      const enginePgn = nmeaData.pgnData['127488'] as any;
+      if (enginePgn) {
+        const instances = Array.isArray(enginePgn) ? enginePgn : [enginePgn];
+        instances.forEach((data: any) => {
+          if (data.instance === 0 && !newInstances.engines.includes('engine-port')) {
+            newInstances.engines.push('engine-port');
+          } else if (data.instance === 1 && !newInstances.engines.includes('engine-starboard')) {
+            newInstances.engines.push('engine-starboard');
+          } else if (data.instance === 2 && !newInstances.engines.includes('engine-main')) {
+            newInstances.engines.push('engine-main');
+          }
+        });
+      }
+    }
+    
+    // Detect tank instances from basic and PGN data
+    if (nmeaData.tanks) {
+      if (nmeaData.tanks.fuel !== undefined) newInstances.tanks.push('tank-fuel');
+      if (nmeaData.tanks.water !== undefined) newInstances.tanks.push('tank-water');
+      if (nmeaData.tanks.waste !== undefined) newInstances.tanks.push('tank-waste');
+    }
+    
+    // Check PGN data for additional tank instances
+    if (nmeaData.pgnData) {
+      // PGN 127505 - Fluid Level
+      const tankPgn = nmeaData.pgnData['127505'] as any;
+      if (tankPgn) {
+        const instances = Array.isArray(tankPgn) ? tankPgn : [tankPgn];
+        instances.forEach((data: any) => {
+          if (data.fluidType === 0 && !newInstances.tanks.includes('tank-fuel')) {
+            newInstances.tanks.push('tank-fuel');
+          } else if (data.fluidType === 1 && !newInstances.tanks.includes('tank-water')) {
+            newInstances.tanks.push('tank-water');
+          } else if (data.fluidType === 3 && !newInstances.tanks.includes('tank-waste')) {
+            newInstances.tanks.push('tank-waste');
+          }
+        });
+      }
+    }
+    
+    // Update detected instances if changed
+    const instancesChanged = 
+      JSON.stringify(newInstances) !== JSON.stringify(detectedInstances);
+      
+    if (instancesChanged) {
+      setDetectedInstances(newInstances);
+      
+      // Auto-add detected instances to selectedWidgets (but don't remove existing ones)
+      const allDetected = [
+        ...newInstances.batteries,
+        ...newInstances.engines, 
+        ...newInstances.tanks
+      ];
+      
+      const newWidgets = allDetected.filter(widget => !selectedWidgets.includes(widget));
+      
+      if (newWidgets.length > 0) {
+        setSelectedWidgets(prev => [...prev, ...newWidgets]);
+        showSuccessToast(`Auto-detected: ${newWidgets.join(', ')}`);
+      }
+    }
+  }, [nmeaData, detectedInstances, selectedWidgets]);
+
   // Theme cycling logic
   const cycleTheme = useCallback(() => {
     const nextTheme = 
@@ -526,101 +667,167 @@ const App = () => {
     showSuccessToast(`Theme: ${nextTheme.toUpperCase().replace('-', ' ')}`);
   }, [themeMode, setThemeMode]);
 
+  // Developer tool handlers (only available in development)
+  const handleStartPlayback = useCallback(() => {
+    if (playbackService) {
+      try {
+        playbackService.startPlayback('demo.nmea');
+        setToastMessage({
+          message: 'NMEA playback started',
+          type: 'success',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to start playback',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
+  const handleStopPlayback = useCallback(() => {
+    if (playbackService) {
+      try {
+        playbackService.stopPlayback();
+        setToastMessage({
+          message: 'NMEA playback stopped',
+          type: 'success',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to stop playback',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
+  const handleStartStressTest = useCallback(() => {
+    if (stressTestService) {
+      try {
+        stressTestService.start(500); // 500ms interval
+        setToastMessage({
+          message: 'Stress test started',
+          type: 'warning',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to start stress test',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
+  const handleStopStressTest = useCallback(() => {
+    if (stressTestService) {
+      try {
+        stressTestService.stop();
+        setToastMessage({
+          message: 'Stress test stopped',
+          type: 'success',
+          duration: 2000,
+        });
+      } catch (error) {
+        setToastMessage({
+          message: 'Failed to stop stress test',
+          type: 'error',
+          duration: 3000,
+        });
+      }
+    }
+  }, []);
+
   const widgetMap: { [key: string]: () => React.ReactNode } = {
     depth: () => (
       <TextNodeCatcher widgetName="DepthWidget">
-        <WidgetShell
-          expanded={expandedWidgets.depth}
-          onToggle={() => toggleWidgetExpanded('depth')}
-          onLongPress={() => lockWidgetExpanded('depth')}
-          testID="depth-shell"
-        >
-          <DepthWidget />
-        </WidgetShell>
+        <DepthWidget id="depth" title="DEPTH" />
       </TextNodeCatcher>
     ),
     speed: () => (
       <TextNodeCatcher widgetName="SpeedWidget">
-        <WidgetShell
-          expanded={expandedWidgets.speed}
-          onToggle={() => toggleWidgetExpanded('speed')}
-          onLongPress={() => lockWidgetExpanded('speed')}
-          testID="speed-shell"
-        >
-          <SpeedWidget />
-        </WidgetShell>
+        <SpeedWidget id="speed" title="SPEED" />
       </TextNodeCatcher>
     ),
     wind: () => (
       <TextNodeCatcher widgetName="WindWidget">
-        <WidgetShell
-          expanded={expandedWidgets.wind}
-          onToggle={() => toggleWidgetExpanded('wind')}
-          onLongPress={() => lockWidgetExpanded('wind')}
-          testID="wind-shell"
-        >
-          <WindWidget />
-        </WidgetShell>
+        <WindWidget id="wind" title="WIND" />
       </TextNodeCatcher>
     ),
     gps: () => (
       <TextNodeCatcher widgetName="GPSWidget">
-        <WidgetShell
-          expanded={expandedWidgets.gps}
-          onToggle={() => toggleWidgetExpanded('gps')}
-          onLongPress={() => lockWidgetExpanded('gps')}
-          testID="gps-shell"
-        >
-          <GPSWidget />
-        </WidgetShell>
+        <GPSWidget id="gps" title="GPS" />
       </TextNodeCatcher>
     ),
     compass: () => (
       <TextNodeCatcher widgetName="CompassWidget">
-        <WidgetShell
-          expanded={expandedWidgets.compass}
-          onToggle={() => toggleWidgetExpanded('compass')}
-          onLongPress={() => lockWidgetExpanded('compass')}
-          testID="compass-shell"
-        >
-          <CompassWidget />
-        </WidgetShell>
+        <CompassWidget id="compass" title="COMPASS" />
       </TextNodeCatcher>
     ),
     engine: () => (
       <TextNodeCatcher widgetName="EngineWidget">
-        <WidgetShell
-          expanded={expandedWidgets.engine}
-          onToggle={() => toggleWidgetExpanded('engine')}
-          onLongPress={() => lockWidgetExpanded('engine')}
-          testID="engine-shell"
-        >
-          <EngineWidget />
-        </WidgetShell>
+        <EngineWidget id="engine" title="ENGINE" />
+      </TextNodeCatcher>
+    ),
+    'engine-port': () => (
+      <TextNodeCatcher widgetName="EngineWidget-Port">
+        <EngineWidget id="engine-port" title="PORT ENGINE" />
+      </TextNodeCatcher>
+    ),
+    'engine-starboard': () => (
+      <TextNodeCatcher widgetName="EngineWidget-Starboard">
+        <EngineWidget id="engine-starboard" title="STBD ENGINE" />
+      </TextNodeCatcher>
+    ),
+    'engine-main': () => (
+      <TextNodeCatcher widgetName="EngineWidget-Main">
+        <EngineWidget id="engine-main" title="MAIN ENGINE" />
       </TextNodeCatcher>
     ),
     battery: () => (
       <TextNodeCatcher widgetName="BatteryWidget">
-        <WidgetShell
-          expanded={expandedWidgets.battery}
-          onToggle={() => toggleWidgetExpanded('battery')}
-          onLongPress={() => lockWidgetExpanded('battery')}
-          testID="battery-shell"
-        >
-          <BatteryWidget />
-        </WidgetShell>
+        <BatteryWidget id="battery" title="BATTERY" batteryInstance="house" />
+      </TextNodeCatcher>
+    ),
+    'battery-house': () => (
+      <TextNodeCatcher widgetName="BatteryWidget-House">
+        <BatteryWidget id="battery-house" title="HOUSE BATTERY" batteryInstance="house" />
+      </TextNodeCatcher>
+    ),
+    'battery-engine': () => (
+      <TextNodeCatcher widgetName="BatteryWidget-Engine">
+        <BatteryWidget id="battery-engine" title="START BATTERY" batteryInstance="engine" />
+      </TextNodeCatcher>
+    ),
+    'battery-thruster': () => (
+      <TextNodeCatcher widgetName="BatteryWidget-Thruster">
+        <BatteryWidget id="battery-thruster" title="THRUSTER BATTERY" batteryInstance="thruster" />
       </TextNodeCatcher>
     ),
     tanks: () => (
       <TextNodeCatcher widgetName="TanksWidget">
-        <WidgetShell
-          expanded={expandedWidgets.tanks}
-          onToggle={() => toggleWidgetExpanded('tanks')}
-          onLongPress={() => lockWidgetExpanded('tanks')}
-          testID="tanks-shell"
-        >
-          <TanksWidget />
-        </WidgetShell>
+        <TanksWidget id="tanks" title="TANKS" />
+      </TextNodeCatcher>
+    ),
+    'tank-fuel': () => (
+      <TextNodeCatcher widgetName="TanksWidget-Fuel">
+        <TanksWidget id="tank-fuel" title="FUEL TANK" />
+      </TextNodeCatcher>
+    ),
+    'tank-water': () => (
+      <TextNodeCatcher widgetName="TanksWidget-Water">
+        <TanksWidget id="tank-water" title="WATER TANK" />
+      </TextNodeCatcher>
+    ),
+    'tank-waste': () => (
+      <TextNodeCatcher widgetName="TanksWidget-Waste">
+        <TanksWidget id="tank-waste" title="WASTE TANK" />
       </TextNodeCatcher>
     ),
     autopilot: () => (
@@ -635,26 +842,41 @@ const App = () => {
         </WidgetShell>
       </TextNodeCatcher>
     ),
+    rudder: () => (
+      <TextNodeCatcher widgetName="RudderPositionWidget">
+        <RudderPositionWidget id="rudder" title="RUDDER" />
+      </TextNodeCatcher>
+    ),
+    'water-temp': () => (
+      <TextNodeCatcher widgetName="WaterTemperatureWidget">
+        <WaterTemperatureWidget id="water-temp" title="WATER TEMP" />
+      </TextNodeCatcher>
+    ),
+    theme: () => (
+      <TextNodeCatcher widgetName="ThemeSwitcher">
+        <ThemeSwitcher id="theme" title="THEME" />
+      </TextNodeCatcher>
+    ),
   };
 
   useEffect(() => {
     console.log('[App] useEffect for connection initialization triggered');
     
-    // Initialize global connection service with auto-connect
-    const initializeConnection = async () => {
+    // Initialize connection service with auto-connect
+    const initializeConnectionService = async () => {
       console.log('[App] Starting auto-connection initialization...');
       
       try {
-        await globalConnectionService.initialize();
-        console.log('[App] Global connection service initialized successfully');
+        await initializeConnection();
+        console.log('[App] Connection service initialized successfully');
         
         // Update local state with current connection options
-        const currentOptions = globalConnectionService.getCurrentOptions();
-        if (currentOptions) {
-          console.log('[App] Using connection options:', currentOptions);
-          setIp(currentOptions.ip);
-          setPort(currentOptions.port.toString());
-          setProtocol(currentOptions.protocol);
+        const currentConfig = getCurrentConnectionConfig();
+        if (currentConfig) {
+          console.log('[App] Using connection config:', currentConfig);
+          setIp(currentConfig.ip);
+          setPort(currentConfig.port.toString());
+          setProtocol(currentConfig.protocol);
         }
 
         // Show success toast to indicate auto-connection attempt
@@ -669,8 +891,8 @@ const App = () => {
     console.log('[App] Setting up initialization timer...');
     // Small delay to ensure component is fully mounted
     const timer = setTimeout(() => {
-      console.log('[App] Timer fired, calling initializeConnection...');
-      initializeConnection();
+      console.log('[App] Timer fired, calling initializeConnectionService...');
+      initializeConnectionService();
     }, 1000);
 
     return () => {
@@ -690,8 +912,8 @@ const App = () => {
     setProtocol(config.protocol as 'tcp' | 'udp');
     
     try {
-      // Use the new unified connect method
-      const success = await globalConnectionService.connect({
+      // Use the new connection utility
+      const success = await connectNmea({
         ip: config.ip,
         port: config.port,
         protocol: config.protocol as 'tcp' | 'udp' | 'websocket'
@@ -707,18 +929,14 @@ const App = () => {
   };
 
   // Check if connect button should be enabled (config different from current)
-  const shouldEnableConnectButton = (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
-    return globalConnectionService.shouldEnableConnectButton(config);
+  const isConnectButtonEnabled = (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
+    return shouldEnableConnectButton(config);
   };
 
   const handleConnectionDisconnect = async () => {
     try {
-      // Disconnect using global service
-      await globalConnectionService.updateConnection({
-        ip: '0.0.0.0',
-        port: 0,
-        protocol: 'tcp'
-      }, false); // Don't save this dummy config
+      // Disconnect using utility function
+      disconnectNmea();
       
       showSuccessToast('Disconnected from NMEA source');
     } catch (error) {
@@ -775,6 +993,10 @@ const App = () => {
         toastMessage={toastMessage}
         navigationSession={navigationSession}
         onToggleNavigationSession={toggleNavigationSession}
+        onStartPlayback={handleStartPlayback}
+        onStopPlayback={handleStopPlayback}
+        onStartStressTest={handleStartStressTest}
+        onStopStressTest={handleStopStressTest}
       />
 
       {/* Toast Message Overlay */}
@@ -783,42 +1005,6 @@ const App = () => {
         onDismiss={() => setToastMessage(null)}
       />
 
-      {/* Dev Controls - Hidden for now, can be added to hamburger menu */}
-      {showConnectionSettings && (
-        <View style={styles.devControls}>
-          <PlaybackFilePicker onPick={(file) => setPlaybackFile(file)} />
-          <View style={styles.devButtonRow}>
-            <TouchableOpacity
-              style={[styles.devButton, playbackService.isPlaybackActive() && styles.devButtonActive]}
-              onPress={() => {
-                if (playbackService.isPlaybackActive()) {
-                  playbackService.stopPlayback();
-                } else {
-                  playbackService.startPlayback(playbackFile);
-                }
-              }}
-            >
-              <Text style={styles.devButtonText}>
-                {playbackService.isPlaybackActive() ? 'STOP' : 'DEMO'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.devButton, stressTestService.isStressTestActive() && styles.devButtonDanger]}
-              onPress={() => {
-                if (stressTestService.isStressTestActive()) {
-                  stressTestService.stop();
-                } else {
-                  stressTestService.start(500);
-                }
-              }}
-            >
-              <Text style={styles.devButtonText}>
-                {stressTestService.isStressTestActive() ? 'STOP' : 'STRESS'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
       {/* Error Banner */}
       {lastError && (
@@ -856,36 +1042,10 @@ const App = () => {
         </View>
       </View>
 
-      {/* Footer Area - Always at bottom */}
-      <View style={styles.footerArea}>
-        {/* Autopilot Control Access */}
-        {selectedWidgets.includes('autopilot') && (
-          <TouchableOpacity
-            style={styles.autopilotAccess}
-            onPress={() => setShowAutopilotControl(true)}
-          >
-            <Text style={styles.autopilotAccessText}>AUTOPILOT CONTROL</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Bottom Navigation - Marine Style */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => setShowWidgetSelector(true)}
-          >
-            <Text style={styles.navButtonIcon}>+</Text>
-            <Text style={styles.navButtonText}>ADD</Text>
-          </TouchableOpacity>
-
-          <View style={styles.navDivider} />
-
-          <TouchableOpacity style={styles.navButton}>
-            <Ionicons name="notifications-outline" size={18} color={theme.iconPrimary} />
-            <Text style={styles.navButtonText}>ALARMS</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Fixed Autopilot Footer */}
+      <AutopilotFooter
+        onOpenAutopilotControl={() => setShowAutopilotControl(true)}
+      />
       
       {/* Autopilot Control Screen Modal */}
       <AutopilotControlScreen
@@ -904,7 +1064,7 @@ const App = () => {
           port: parseInt(port, 10), 
           protocol: protocol as 'tcp' | 'udp' | 'websocket'
         }}
-        shouldEnableConnectButton={shouldEnableConnectButton}
+        shouldEnableConnectButton={isConnectButtonEnabled}
       />
     </View>
   );
@@ -918,9 +1078,7 @@ const styles = StyleSheet.create({
   contentArea: {
     flex: 1,
     overflow: 'hidden',
-  },
-  footerArea: {
-    // No flex - takes only the space it needs
+    marginBottom: 88, // Account for fixed autopilot footer height
   },
   statusBar: {
     flexDirection: 'row',
@@ -1176,7 +1334,16 @@ const styles = StyleSheet.create({
     padding: 8,
     minHeight: '100%', // Ensure widgets fill available height
   },
-  widgetWrapper: {},
+  widgetWrapper: {
+    // Responsive width - allow widgets to size based on content
+    // but constrain to reasonable bounds for mobile/desktop
+    minWidth: 180,    // Smaller minimum for better fit
+    maxWidth: 450,    // Larger maximum to accommodate content
+    flexShrink: 1,    // Allow shrinking when space is tight
+    flexGrow: 1,      // Allow growing to fill available space
+    flexBasis: 'auto', // Auto-size based on content
+    margin: 4,        // Space between widgets
+  },
   autopilotAccess: {
     backgroundColor: '#1e40af',
     marginHorizontal: 0,

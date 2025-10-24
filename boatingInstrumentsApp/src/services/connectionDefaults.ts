@@ -1,9 +1,13 @@
 /**
- * Platform-specific connection defaults for NMEA Bridge
+ * Connection utilities for the new modular NMEA architecture
+ * Simple helpers for configuration and settings persistence
  */
-import { Platform } from 'react-native';
 
-export interface ConnectionDefaults {
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import { NmeaService, NmeaServiceConfig } from './nmea/NmeaService';
+
+export interface ConnectionConfig {
   ip: string;
   port: number;
   protocol: 'tcp' | 'udp' | 'websocket';
@@ -37,10 +41,7 @@ const getSuggestedNetworkHost = (): string => {
   return '192.168.1.52'; // Use the current network IP that's actually running services
 };
 
-/**
- * Get platform-specific default connection settings
- */
-export const getConnectionDefaults = (): ConnectionDefaults => {
+export const getConnectionDefaults = (): ConnectionConfig => {
   // Check if running in web environment
   if (typeof window !== 'undefined' && Platform.OS === 'web') {
     return {
@@ -67,4 +68,118 @@ export const getConnectionDescription = (): string => {
   }
   
   return 'TCP connection to WiFi NMEA Bridge (accessible from network)';
+};
+
+/**
+ * Load saved connection settings or return defaults
+ */
+export const loadConnectionSettings = async (): Promise<ConnectionConfig> => {
+  try {
+    const saved = await AsyncStorage.getItem('nmea-connection-config');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const defaults = getConnectionDefaults();
+      return {
+        ip: parsed.ip || defaults.ip,
+        port: parseInt(parsed.port) || defaults.port,
+        protocol: parsed.protocol || defaults.protocol
+      };
+    }
+  } catch (error) {
+    console.warn('[Connection] Failed to load saved settings:', error);
+  }
+  
+  return getConnectionDefaults();
+};
+
+/**
+ * Save connection settings to storage
+ */
+export const saveConnectionSettings = async (config: ConnectionConfig): Promise<void> => {
+  const settingsData = {
+    ip: config.ip,
+    port: config.port.toString(),
+    protocol: config.protocol
+  };
+
+  try {
+    await AsyncStorage.setItem('nmea-connection-config', JSON.stringify(settingsData));
+    console.log('[Connection] Settings saved');
+  } catch (error) {
+    console.error('[Connection] Failed to save settings:', error);
+  }
+};
+
+/**
+ * Connect to NMEA source with configuration
+ */
+export const connectNmea = async (config: ConnectionConfig, saveSettings: boolean = true): Promise<boolean> => {
+  console.log(`[Connection] Connect request: ${config.protocol}://${config.ip}:${config.port}`);
+  
+  // Save settings if requested
+  if (saveSettings) {
+    await saveConnectionSettings(config);
+  }
+  
+  // Convert to NmeaServiceConfig
+  const serviceConfig: NmeaServiceConfig = {
+    connection: {
+      ip: config.ip,
+      port: config.port,
+      protocol: config.protocol
+    }
+  };
+  
+  // Connect using NmeaService
+  return await NmeaService.getInstance().start(serviceConfig);
+};
+
+/**
+ * Disconnect from NMEA source
+ */
+export const disconnectNmea = (): void => {
+  console.log('[Connection] Disconnect requested');
+  NmeaService.getInstance().stop();
+};
+
+/**
+ * Check if connect button should be enabled (config different from current)
+ */
+export const shouldEnableConnectButton = (config: ConnectionConfig): boolean => {
+  const currentConfig = NmeaService.getInstance().getCurrentConfig();
+  if (!currentConfig) return true;
+  
+  return !(
+    currentConfig.connection.ip === config.ip &&
+    currentConfig.connection.port === config.port &&
+    currentConfig.connection.protocol === config.protocol
+  );
+};
+
+/**
+ * Get current connection configuration
+ */
+export const getCurrentConnectionConfig = (): ConnectionConfig | null => {
+  const serviceStatus = NmeaService.getInstance().getStatus();
+  const connectionStatus = serviceStatus.connection;
+  
+  if (!connectionStatus.config) return null;
+  
+  return {
+    ip: connectionStatus.config.ip,
+    port: connectionStatus.config.port,
+    protocol: connectionStatus.config.protocol
+  };
+};
+
+/**
+ * Initialize connection with saved/default settings
+ */
+export const initializeConnection = async (): Promise<void> => {
+  console.log('[Connection] Initializing...');
+  
+  const config = await loadConnectionSettings();
+  
+  // Attempt to connect in background (don't save during initialization)
+  connectNmea(config, false);
 };

@@ -3,8 +3,8 @@ import { View, StyleSheet } from 'react-native';
 import { MarineWidget } from '@/components/organisms';
 import { Button, Badge } from '@/components/atoms';
 import { IconButton } from '@/components/molecules';
-import { useNmeaStore } from '@/core/nmeaStore';
-import { useTheme } from '@/core/themeStore';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useTheme } from '../store/themeStore';
 
 type DepthUnit = 'meters' | 'feet' | 'fathoms';
 

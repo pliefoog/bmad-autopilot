@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, AccessibilityRole } from 'react-native';
 import LoadingSpinner from '../atoms/LoadingSpinner';
 import { useLoading } from '../../services/loading/LoadingContext';
 import { useTheme as useThemeProvider } from '../../theme/ThemeProvider';
-import { useTheme as useThemeStore } from '../../core/themeStore';
+import { useTheme as useThemeStore } from '../../store/themeStore';
 
 const LoadingOverlay: React.FC<{ testID?: string }> = ({ testID }) => {
   const { anyLoading } = useLoading();

@@ -3,7 +3,7 @@
  * Coordinates grouping, priority management, context detection, learning, and maintenance
  */
 
-import { useAlarmStore, Alarm, AlarmLevel, AlarmThreshold } from '../../stores/alarmStore';
+import { useAlarmStore, Alarm, AlarmLevel, AlarmThreshold } from '../../store/alarmStore';
 import { AlarmGroupingEngine, AlarmGroup, MarineSystemCategory } from './AlarmGroupingEngine';
 import { PriorityQueueManager, PriorityQueueEntry, VesselContext, QueueConfiguration } from './PriorityQueueManager';
 import { VesselContextDetector, NmeaDataSnapshot } from './VesselContextDetector';

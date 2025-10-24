@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Sound from 'react-native-sound';
-import { useNmeaStore } from '../core/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 import { AutopilotCommandManager } from '../services/autopilotService';
 import Svg, { Circle, Line, Text as SvgText, Path } from 'react-native-svg';
 import { HelpButton } from '../components/atoms/HelpButton';

@@ -1,4 +1,4 @@
-import { useNmeaStore } from '../../core/nmeaStore';
+import { useNmeaStore } from '../../store/nmeaStore';
 
 /**
  * NMEA Instance Detection Service

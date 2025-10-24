@@ -10,7 +10,7 @@ import { PriorityQueueManager, VesselContext } from '../PriorityQueueManager';
 import { VesselContextDetector, NmeaDataSnapshot } from '../VesselContextDetector';
 import { AdaptiveLearningEngine } from '../AdaptiveLearningEngine';
 import { MaintenanceScheduler } from '../MaintenanceScheduler';
-import { Alarm, AlarmLevel } from '../../../stores/alarmStore';
+import { Alarm, AlarmLevel } from '../../store/alarmStore';
 import { CriticalAlarmType } from '../types';
 
 // Mock AsyncStorage
