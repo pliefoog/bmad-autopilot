@@ -7,7 +7,7 @@ category: "autopilot"
 # Vessel parameters
 parameters:
   vessel:
-    length: 40  # feet (can be overridden with ${VESSEL_LENGTH:40})
+    length: 12.2  # meters (can be overridden with ${VESSEL_LENGTH:12.2})
     type: "sailboat"
   conditions:
     wind_speed: [12, 18]

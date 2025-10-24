@@ -1,0 +1,114 @@
+name: "Autopilot Engagement Cycle Test"
+description: "Complete autopilot engagement, parameter adjustment, and disengagement test sequence"
+duration: 240
+bridge_mode: "nmea0183"
+messageRate: 2.0
+scenario_type: "autopilot"
+vessel_type: "40ft Sailboat with Raymarine Autopilot"
+test_coverage: ["autopilot", "heading", "wind", "navigation"]
+
+conditions:
+  wind_speed: "18-22 knots"
+  sea_state: "moderate"
+  visibility: "good"
+
+equipment:
+  autopilot: "Raymarine"
+  engines: 1
+  batteries: 2
+
+tags: ["autopilot", "engagement", "raymarine", "control"]
+related_stories: ["story-7.4", "story-3.2"]
+
+nmea_sentences:
+  - sentence: "$IIGGA,120000.00,4030.1234,N,07430.5678,W,1,08,1.0,12.5,M,-34.0,M,,*XX"
+    sentence_type: "GGA"
+    description: "GPS Position Data"
+    source: "GPS_MAIN"
+    parameters: {}
+
+  - sentence: "$IIHDM,{heading},M*XX"
+    sentence_type: "HDM"
+    description: "Current Magnetic Heading"
+    source: "COMPASS"
+    parameters:
+      heading:
+        type: "linear"
+        start: 180.0
+        rate: 0.05
+        format: "000.0"
+
+  - sentence: "$IIMWV,{wind_angle},R,{wind_speed},N,A*XX"
+    sentence_type: "MWV"
+    description: "Apparent Wind Data"
+    source: "WIND"
+    parameters:
+      wind_angle:
+        type: "sine"
+        start: 45.0
+        amplitude: 8.0
+        frequency: 0.02
+        format: "000.0"
+      wind_speed:
+        type: "random"
+        min: 18.0
+        max: 22.0
+        format: "00.0"
+
+  - sentence: "$RAAPH,{ap_heading},M,{ap_status}*XX"
+    sentence_type: "APH"
+    description: "Autopilot Heading Command"
+    source: "AUTOPILOT"
+    parameters:
+      ap_heading:
+        type: "linear"
+        start: 180.0
+        rate: 0.05
+        format: "000.0"
+      ap_status:
+        type: "constant"
+        value: "A"
+
+  - sentence: "$RAAPB,A,A,{cross_track},L,N,A,A,{bearing_to_waypoint},M,{dest_waypoint},A,*XX"
+    sentence_type: "APB"
+    description: "Autopilot Cross Track Error"
+    source: "AUTOPILOT"
+    parameters:
+      cross_track:
+        type: "sine"
+        start: 0.02
+        amplitude: 0.05
+        frequency: 0.08
+        format: "0.000"
+      bearing_to_waypoint:
+        type: "linear"
+        start: 182.0
+        rate: -0.02
+        format: "000.0"
+      dest_waypoint:
+        type: "constant"
+        value: "WPT001"
+
+  - sentence: "$RAXTE,A,A,{cross_track_error},L,N*XX"
+    sentence_type: "XTE"
+    description: "Cross Track Error Magnitude"
+    source: "AUTOPILOT"
+    parameters:
+      cross_track_error:
+        type: "sine"
+        start: 0.02
+        amplitude: 0.03
+        frequency: 0.1
+        format: "0.000"
+
+  - sentence: "$RARSA,{rudder_angle},A,*XX"
+    sentence_type: "RSA"
+    description: "Rudder Sensor Angle"
+    source: "RUDDER"
+    parameters:
+      rudder_angle:
+        type: "sine"
+        start: 0.0
+        amplitude: 5.0
+        frequency: 0.15
+        format: "00.0"

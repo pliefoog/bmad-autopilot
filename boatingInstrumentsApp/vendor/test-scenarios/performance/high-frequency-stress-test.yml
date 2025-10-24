@@ -1,0 +1,157 @@
+name: "High-Frequency Stress Test"
+description: "High message rate stress testing with rapid data changes for performance validation"
+duration: 120
+bridge_mode: "nmea0183"
+messageRate: 10.0
+scenario_type: "performance"
+vessel_type: "High-Performance Test Platform"
+test_coverage: ["performance", "stress", "high-frequency", "rapid-change"]
+
+conditions:
+  message_rate: "10 Hz (600 messages/minute)"
+  data_variation: "high frequency changes"
+  stress_level: "maximum"
+
+equipment:
+  engines: 2
+  sensors: 8
+  data_sources: 12
+
+tags: ["performance", "stress", "high-frequency", "validation"]
+related_stories: ["story-7.4"]
+
+nmea_sentences:
+  # Rapid GPS Updates
+  - sentence: "$GPGGA,{time},{lat},{lat_ns},{lon},{lon_ew},1,08,1.0,{altitude},M,-34.0,M,,*XX"
+    sentence_type: "GGA"
+    description: "Rapid GPS Position Updates"
+    source: "GPS_MAIN"
+    parameters:
+      time:
+        type: "linear"
+        start: 120000
+        rate: 1
+        format: "000000.00"
+      lat:
+        type: "sine"
+        start: 4030.1234
+        amplitude: 0.01
+        frequency: 2.0
+        format: "4030.0000"
+      lat_ns:
+        type: "constant"
+        value: "N"
+      lon:
+        type: "sine"
+        start: 7430.5678
+        rate: 0.01
+        frequency: 1.8
+        format: "7430.0000"
+      lon_ew:
+        type: "constant"
+        value: "W"
+      altitude:
+        type: "random"
+        min: 8.0
+        max: 15.0
+        format: "00.0"
+
+  # High-Frequency Depth Changes
+  - sentence: "$IIDBT,,f,{depth_m},M,{depth_f},F*XX"
+    sentence_type: "DBT"
+    description: "Rapid Depth Variations"
+    source: "DEPTH_MAIN"
+    parameters:
+      depth_m:
+        type: "sine"
+        start: 20.0
+        amplitude: 10.0
+        frequency: 3.0
+        format: "00.0"
+      depth_f:
+        type: "sine"
+        start: 11.0
+        amplitude: 5.5
+        frequency: 3.0
+        format: "0.0"
+
+  # Rapid RPM Changes
+  - sentence: "$IIRPM,E,1,{rpm1},A,*XX"
+    sentence_type: "RPM"
+    description: "Engine 1 Rapid RPM Changes"
+    source: "ENGINE_1"
+    parameters:
+      rpm1:
+        type: "sine"
+        start: 2000
+        amplitude: 500
+        frequency: 0.5
+        format: "0000"
+
+  - sentence: "$IIRPM,E,2,{rpm2},A,*XX"
+    sentence_type: "RPM"
+    description: "Engine 2 Rapid RPM Changes"
+    source: "ENGINE_2"
+    parameters:
+      rpm2:
+        type: "sine"
+        start: 2050
+        amplitude: 450
+        frequency: 0.6
+        format: "0000"
+
+  # Rapid Wind Changes
+  - sentence: "$IIMWV,{wind_angle},R,{wind_speed},N,A*XX"
+    sentence_type: "MWV"
+    description: "Rapidly Changing Wind Data"
+    source: "WIND_MAIN"
+    parameters:
+      wind_angle:
+        type: "sine"
+        start: 90.0
+        amplitude: 60.0
+        frequency: 1.2
+        format: "000.0"
+      wind_speed:
+        type: "random"
+        min: 5.0
+        max: 35.0
+        format: "00.0"
+
+  # High-Frequency Temperature
+  - sentence: "$IIXDR,C,{temp1},C,ENG1_TEMP*XX"
+    sentence_type: "XDR"
+    description: "Rapid Temperature Changes"
+    source: "TEMP_1"
+    parameters:
+      temp1:
+        type: "sine"
+        start: 85.0
+        amplitude: 15.0
+        frequency: 0.8
+        format: "000.0"
+
+  # Rapid Pressure Changes
+  - sentence: "$IIXDR,P,{pressure1},B,OIL_PRES*XX"
+    sentence_type: "XDR"
+    description: "Rapid Pressure Fluctuations"
+    source: "PRESSURE_1"
+    parameters:
+      pressure1:
+        type: "random"
+        min: 2.5
+        max: 5.0
+        format: "0.00"
+
+  # High-Frequency Battery Voltage
+  - sentence: "$IIXDR,U,{voltage1},V,BATT_1*XX"
+    sentence_type: "XDR"
+    description: "Rapid Battery Voltage Changes"
+    source: "BATTERY_1"
+    parameters:
+      voltage1:
+        type: "sine"
+        start: 12.8
+        amplitude: 0.8
+        frequency: 2.5
+        format: "00.00"

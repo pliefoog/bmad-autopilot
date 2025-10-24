@@ -7,7 +7,7 @@ category: "autopilot"
 # Vessel parameters
 parameters:
   vessel:
-    length: 40  # feet
+    length: 12.2  # meters
     type: "sailboat"
   conditions:
     initial_wind_direction: 45   # degrees
