@@ -216,7 +216,7 @@ const WIND_PRESENTATIONS: Presentation[] = [
   {
     id: 'wind_kts_1',
     name: 'Knots (1 decimal)',
-    symbol: 'kts',
+    symbol: 'kt',
     description: 'Wind speed in knots with 1 decimal place',
     convert: (knots) => knots, // knots to knots (identity)
     format: (value) => value.toFixed(1),
@@ -311,7 +311,7 @@ const WIND_PRESENTATIONS: Presentation[] = [
   {
     id: 'kmh_0',
     name: 'km/h (integer)',
-    symbol: 'km/h',
+    symbol: 'kmh',
     description: 'Wind speed in kilometers per hour',
     convert: (knots) => knots * 1.852, // knots to km/h
     format: (value) => Math.round(value).toString(),
@@ -397,6 +397,627 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
   }
 ];
 
+// ===== PRESSURE PRESENTATIONS =====
+const PRESSURE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'bar_3',
+    name: 'Bar (3 decimals)',
+    symbol: 'bar',
+    description: 'Metric pressure in bar, 3 decimal places',
+    convert: (pascals: number) => pascals / 100000,
+    format: (bar: number) => bar.toFixed(3),
+    convertBack: (bar: number) => bar * 100000,
+    formatSpec: {
+      pattern: 'x.xxx',
+      decimals: 3,
+      minWidth: 5,
+      testCases: { min: 0.950, max: 1.050, typical: 1.013 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international']
+  },
+  {
+    id: 'psi_1',
+    name: 'PSI (1 decimal)',
+    symbol: 'psi',
+    description: 'Imperial pressure in pounds per square inch',
+    convert: (pascals: number) => pascals / 6894.76,
+    format: (psi: number) => psi.toFixed(1),
+    convertBack: (psi: number) => psi * 6894.76,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      testCases: { min: 13.8, max: 15.2, typical: 14.7 }
+    },
+    isImperial: true,
+    preferredInRegion: ['us']
+  },
+  {
+    id: 'inhg_2',
+    name: 'Inches Mercury (2 decimals)',
+    symbol: 'inHg',
+    description: 'Imperial pressure in inches of mercury',
+    convert: (pascals: number) => pascals / 3386.39,
+    format: (inhg: number) => inhg.toFixed(2),
+    convertBack: (inhg: number) => inhg * 3386.39,
+    formatSpec: {
+      pattern: 'xx.xx',
+      decimals: 2,
+      minWidth: 5,
+      testCases: { min: 28.0, max: 31.0, typical: 29.92 }
+    },
+    isImperial: true,
+    preferredInRegion: ['us', 'uk']
+  }
+];
+
+// ===== ANGLE PRESENTATIONS =====
+const ANGLE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'deg_0',
+    name: 'Degrees (integer)',
+    symbol: '°',
+    description: 'Angle in degrees, integer value',
+    convert: (degrees: number) => degrees,
+    format: (deg: number) => Math.round(deg).toString(),
+    convertBack: (deg: number) => deg,
+    formatSpec: {
+      pattern: 'xxx',
+      decimals: 0,
+      minWidth: 3,
+      testCases: { min: 0, max: 360, typical: 180 }
+    },
+    isDefault: true,
+    isNautical: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'deg_1',
+    name: 'Degrees (1 decimal)',
+    symbol: '°',
+    description: 'Angle in degrees, 1 decimal place',
+    convert: (degrees: number) => degrees,
+    format: (deg: number) => deg.toFixed(1),
+    convertBack: (deg: number) => deg,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 360.0, typical: 180.5 }
+    },
+    isNautical: true,
+    preferredInRegion: ['international']
+  }
+];
+
+// ===== COORDINATES PRESENTATIONS =====
+const COORDINATES_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'dd_6',
+    name: 'Decimal Degrees (6 decimals)',
+    symbol: 'DD',
+    description: 'Decimal degrees with 6 decimal places',
+    convert: (degrees: number) => degrees,
+    format: (deg: number) => deg.toFixed(6),
+    convertBack: (deg: number) => deg,
+    formatSpec: {
+      pattern: 'xxx.xxxxxx',
+      decimals: 6,
+      minWidth: 10,
+      testCases: { min: -180.000000, max: 180.000000, typical: -73.123456 }
+    },
+    isDefault: true,
+    isNautical: true,
+    preferredInRegion: ['international']
+  },
+  {
+    id: 'ddm_3',
+    name: 'Degrees Decimal Minutes (3 decimals)',
+    symbol: 'DDM',
+    description: 'Degrees and decimal minutes format',
+    convert: (degrees: number) => degrees,
+    format: (deg: number) => {
+      const d = Math.floor(Math.abs(deg));
+      const m = (Math.abs(deg) - d) * 60;
+      const sign = deg < 0 ? '-' : '';
+      return `${sign}${d}°${m.toFixed(3)}'`;
+    },
+    convertBack: (deg: number) => deg,
+    formatSpec: {
+      pattern: "xxx°xx.xxx'",
+      decimals: 3,
+      minWidth: 10,
+      testCases: { min: -180, max: 180, typical: -73.5 }
+    },
+    isNautical: true,
+    preferredInRegion: ['eu', 'us', 'uk']
+  },
+  {
+    id: 'dms_1',
+    name: 'Degrees Minutes Seconds (1 decimal)',
+    symbol: 'DMS',
+    description: 'Degrees, minutes, and seconds format',
+    convert: (degrees: number) => degrees,
+    format: (deg: number) => {
+      const d = Math.floor(Math.abs(deg));
+      const minTotal = (Math.abs(deg) - d) * 60;
+      const m = Math.floor(minTotal);
+      const s = (minTotal - m) * 60;
+      const sign = deg < 0 ? '-' : '';
+      return `${sign}${d}°${m}'${s.toFixed(1)}"`;
+    },
+    convertBack: (deg: number) => deg,
+    formatSpec: {
+      pattern: `xxx°xx'xx.x"`,
+      decimals: 1,
+      minWidth: 12,
+      testCases: { min: -180, max: 180, typical: -73.5 }
+    },
+    isNautical: true,
+    preferredInRegion: ['uk', 'international']
+  }
+];
+
+// ===== VOLTAGE PRESENTATIONS =====
+const VOLTAGE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'v_2',
+    name: 'Volts (2 decimals)',
+    symbol: 'V',
+    description: 'Electrical voltage in volts, 2 decimal places',
+    convert: (volts: number) => volts,
+    format: (v: number) => v.toFixed(2),
+    convertBack: (v: number) => v,
+    formatSpec: {
+      pattern: 'xx.xx',
+      decimals: 2,
+      minWidth: 5,
+      testCases: { min: 10.50, max: 14.80, typical: 12.60 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'v_1',
+    name: 'Volts (1 decimal)',
+    symbol: 'V',
+    description: 'Electrical voltage in volts, 1 decimal place',
+    convert: (volts: number) => volts,
+    format: (v: number) => v.toFixed(1),
+    convertBack: (v: number) => v,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      testCases: { min: 10.5, max: 14.8, typical: 12.6 }
+    },
+    isMetric: true,
+    preferredInRegion: ['international']
+  }
+];
+
+// ===== CURRENT PRESENTATIONS =====
+const CURRENT_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'a_2',
+    name: 'Amperes (2 decimals)',
+    symbol: 'A',
+    description: 'Electrical current in amperes, 2 decimal places',
+    convert: (amperes: number) => amperes,
+    format: (a: number) => a.toFixed(2),
+    convertBack: (a: number) => a,
+    formatSpec: {
+      pattern: 'xxx.xx',
+      decimals: 2,
+      minWidth: 6,
+      testCases: { min: 0.00, max: 100.00, typical: 5.25 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'a_1',
+    name: 'Amperes (1 decimal)',
+    symbol: 'A',
+    description: 'Electrical current in amperes, 1 decimal place',
+    convert: (amperes: number) => amperes,
+    format: (a: number) => a.toFixed(1),
+    convertBack: (a: number) => a,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 100.0, typical: 5.2 }
+    },
+    isMetric: true,
+    preferredInRegion: ['international']
+  }
+];
+
+// ===== VOLUME PRESENTATIONS =====
+const VOLUME_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'l_0',
+    name: 'Liters (integer)',
+    symbol: 'L',
+    description: 'Volume in liters, integer value',
+    convert: (liters: number) => liters,
+    format: (l: number) => Math.round(l).toString(),
+    convertBack: (l: number) => l,
+    formatSpec: {
+      pattern: 'xxx',
+      decimals: 0,
+      minWidth: 3,
+      testCases: { min: 0, max: 500, typical: 150 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international']
+  },
+  {
+    id: 'gal_us_1',
+    name: 'US Gallons (1 decimal)',
+    symbol: 'gal',
+    description: 'Volume in US gallons, 1 decimal place',
+    convert: (liters: number) => liters / 3.78541,
+    format: (gal: number) => gal.toFixed(1),
+    convertBack: (gal: number) => gal * 3.78541,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 132.1, typical: 39.6 }
+    },
+    isImperial: true,
+    preferredInRegion: ['us']
+  },
+  {
+    id: 'gal_uk_1',
+    name: 'Imperial Gallons (1 decimal)',
+    symbol: 'gal',
+    description: 'Volume in imperial gallons, 1 decimal place',
+    convert: (liters: number) => liters / 4.54609,
+    format: (gal: number) => gal.toFixed(1),
+    convertBack: (gal: number) => gal * 4.54609,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 110.0, typical: 33.0 }
+    },
+    isImperial: true,
+    preferredInRegion: ['uk']
+  }
+];
+
+// ===== TIME PRESENTATIONS =====
+const TIME_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'h_1',
+    name: 'Hours (1 decimal)',
+    symbol: 'h',
+    description: 'Time in hours, 1 decimal place',
+    convert: (hours: number) => hours,
+    format: (h: number) => h.toFixed(1),
+    convertBack: (h: number) => h,
+    formatSpec: {
+      pattern: 'xxxx.x',
+      decimals: 1,
+      minWidth: 6,
+      testCases: { min: 0.0, max: 9999.9, typical: 123.5 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'h_0',
+    name: 'Hours (integer)',
+    symbol: 'h',
+    description: 'Time in hours, integer value',
+    convert: (hours: number) => hours,
+    format: (h: number) => Math.round(h).toString(),
+    convertBack: (h: number) => h,
+    formatSpec: {
+      pattern: 'xxxx',
+      decimals: 0,
+      minWidth: 4,
+      testCases: { min: 0, max: 9999, typical: 123 }
+    },
+    isMetric: true,
+    preferredInRegion: ['international']
+  }
+];
+
+// ===== DISTANCE PRESENTATIONS =====
+const DISTANCE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'nm_1',
+    name: 'Nautical Miles (1 decimal)',
+    symbol: 'NM',
+    description: 'Distance in nautical miles, 1 decimal place',
+    convert: (meters: number) => meters / 1852,
+    format: (nm: number) => nm.toFixed(1),
+    convertBack: (nm: number) => nm * 1852,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 100.0, typical: 12.5 }
+    },
+    isDefault: true,
+    isNautical: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'km_1',
+    name: 'Kilometers (1 decimal)',
+    symbol: 'km',
+    description: 'Distance in kilometers, 1 decimal place',
+    convert: (meters: number) => meters / 1000,
+    format: (km: number) => km.toFixed(1),
+    convertBack: (km: number) => km * 1000,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 185.2, typical: 23.1 }
+    },
+    isMetric: true,
+    preferredInRegion: ['eu']
+  },
+  {
+    id: 'mi_1',
+    name: 'Miles (1 decimal)',
+    symbol: 'mi',
+    description: 'Distance in statute miles, 1 decimal place',
+    convert: (meters: number) => meters / 1609.344,
+    format: (mi: number) => mi.toFixed(1),
+    convertBack: (mi: number) => mi * 1609.344,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 115.1, typical: 14.3 }
+    },
+    isImperial: true,
+    preferredInRegion: ['us']
+  }
+];
+
+// ===== CAPACITY PRESENTATIONS =====
+const CAPACITY_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'ah_0',
+    name: 'Amp-hours (integer)',
+    symbol: 'Ah',
+    description: 'Battery capacity in amp-hours, integer value',
+    convert: (ampHours: number) => ampHours,
+    format: (ah: number) => Math.round(ah).toString(),
+    convertBack: (ah: number) => ah,
+    formatSpec: {
+      pattern: 'xxx',
+      decimals: 0,
+      minWidth: 3,
+      testCases: { min: 50, max: 800, typical: 200 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'kwh_1',
+    name: 'Kilowatt-hours (1 decimal)',
+    symbol: 'kWh',
+    description: 'Energy capacity in kilowatt-hours',
+    convert: (ampHours: number) => ampHours * 12 / 1000, // Assuming 12V system
+    format: (kwh: number) => kwh.toFixed(1),
+    convertBack: (kwh: number) => kwh * 1000 / 12,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      testCases: { min: 0.6, max: 9.6, typical: 2.4 }
+    },
+    isMetric: true,
+    preferredInRegion: ['eu', 'international']
+  }
+];
+
+// ===== FLOW RATE PRESENTATIONS =====
+const FLOW_RATE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'lph_1',
+    name: 'Liters/hour (1 decimal)',
+    symbol: 'L/h',
+    description: 'Flow rate in liters per hour, 1 decimal place',
+    convert: (litersPerHour: number) => litersPerHour,
+    format: (lph: number) => lph.toFixed(1),
+    convertBack: (lph: number) => lph,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 50.0, typical: 8.5 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international']
+  },
+  {
+    id: 'gph_us_1',
+    name: 'US Gallons/hour (1 decimal)',
+    symbol: 'GPH',
+    description: 'Flow rate in US gallons per hour',
+    convert: (litersPerHour: number) => litersPerHour / 3.78541,
+    format: (gph: number) => gph.toFixed(1),
+    convertBack: (gph: number) => gph * 3.78541,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      testCases: { min: 0.0, max: 13.2, typical: 2.2 }
+    },
+    isImperial: true,
+    preferredInRegion: ['us']
+  },
+  {
+    id: 'gph_uk_1',
+    name: 'Imperial Gallons/hour (1 decimal)',
+    symbol: 'GPH',
+    description: 'Flow rate in imperial gallons per hour',
+    convert: (litersPerHour: number) => litersPerHour / 4.54609,
+    format: (gph: number) => gph.toFixed(1),
+    convertBack: (gph: number) => gph * 4.54609,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      testCases: { min: 0.0, max: 11.0, typical: 1.9 }
+    },
+    isImperial: true,
+    preferredInRegion: ['uk']
+  }
+];
+
+// ===== FREQUENCY PRESENTATIONS =====
+const FREQUENCY_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'hz_1',
+    name: 'Hertz (1 decimal)',
+    symbol: 'Hz',
+    description: 'Frequency in hertz, 1 decimal place',
+    convert: (hertz: number) => hertz,
+    format: (hz: number) => hz.toFixed(1),
+    convertBack: (hz: number) => hz,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 45.0, max: 65.0, typical: 60.0 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'hz_0',
+    name: 'Hertz (integer)',
+    symbol: 'Hz',
+    description: 'Frequency in hertz, integer value',
+    convert: (hertz: number) => hertz,
+    format: (hz: number) => Math.round(hz).toString(),
+    convertBack: (hz: number) => hz,
+    formatSpec: {
+      pattern: 'xxx',
+      decimals: 0,
+      minWidth: 3,
+      testCases: { min: 45, max: 65, typical: 60 }
+    },
+    isMetric: true,
+    preferredInRegion: ['international']
+  }
+];
+
+// ===== POWER PRESENTATIONS =====
+const POWER_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'kw_1',
+    name: 'Kilowatts (1 decimal)',
+    symbol: 'kW',
+    description: 'Power in kilowatts, 1 decimal place',
+    convert: (watts: number) => watts / 1000,
+    format: (kw: number) => kw.toFixed(1),
+    convertBack: (kw: number) => kw * 1000,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 100.0, typical: 22.4 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international']
+  },
+  {
+    id: 'hp_0',
+    name: 'Horsepower (integer)',
+    symbol: 'HP',
+    description: 'Power in horsepower, integer value',
+    convert: (watts: number) => watts / 745.7,
+    format: (hp: number) => Math.round(hp).toString(),
+    convertBack: (hp: number) => hp * 745.7,
+    formatSpec: {
+      pattern: 'xxx',
+      decimals: 0,
+      minWidth: 3,
+      testCases: { min: 0, max: 134, typical: 30 }
+    },
+    isImperial: true,
+    preferredInRegion: ['us', 'uk']
+  },
+  {
+    id: 'w_0',
+    name: 'Watts (integer)',
+    symbol: 'W',
+    description: 'Power in watts, integer value',
+    convert: (watts: number) => watts,
+    format: (w: number) => Math.round(w).toString(),
+    convertBack: (w: number) => w,
+    formatSpec: {
+      pattern: 'xxxxx',
+      decimals: 0,
+      minWidth: 5,
+      testCases: { min: 0, max: 100000, typical: 22400 }
+    },
+    isMetric: true,
+    preferredInRegion: ['international']
+  }
+];
+
+// ===== RPM PRESENTATIONS =====
+const RPM_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'rpm_0',
+    name: 'RPM (integer)',
+    symbol: 'RPM',
+    description: 'Rotational speed in revolutions per minute',
+    convert: (rpm: number) => rpm,
+    format: (r: number) => Math.round(r).toString(),
+    convertBack: (r: number) => r,
+    formatSpec: {
+      pattern: 'xxxx',
+      decimals: 0,
+      minWidth: 4,
+      testCases: { min: 0, max: 6000, typical: 2200 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international']
+  },
+  {
+    id: 'rps_1',
+    name: 'Revolutions/second (1 decimal)',
+    symbol: 'RPS',
+    description: 'Rotational speed in revolutions per second',
+    convert: (rpm: number) => rpm / 60,
+    format: (rps: number) => rps.toFixed(1),
+    convertBack: (rps: number) => rps * 60,
+    formatSpec: {
+      pattern: 'xxx.x',
+      decimals: 1,
+      minWidth: 5,
+      testCases: { min: 0.0, max: 100.0, typical: 36.7 }
+    },
+    isMetric: true,
+    preferredInRegion: ['international']
+  }
+];
+
 // ===== PRESENTATION REGISTRY =====
 export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
   depth: {
@@ -416,15 +1037,58 @@ export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
     presentations: TEMPERATURE_PRESENTATIONS
   },
   
-  // Placeholder for other categories - will implement as needed
-  pressure: { category: 'pressure', presentations: [] },
-  angle: { category: 'angle', presentations: [] },
-  coordinates: { category: 'coordinates', presentations: [] },
-  voltage: { category: 'voltage', presentations: [] },
-  current: { category: 'current', presentations: [] },
-  volume: { category: 'volume', presentations: [] },
-  time: { category: 'time', presentations: [] },
-  distance: { category: 'distance', presentations: [] }
+  pressure: {
+    category: 'pressure',
+    presentations: PRESSURE_PRESENTATIONS
+  },
+  angle: {
+    category: 'angle',
+    presentations: ANGLE_PRESENTATIONS
+  },
+  coordinates: {
+    category: 'coordinates',
+    presentations: COORDINATES_PRESENTATIONS
+  },
+  voltage: {
+    category: 'voltage',
+    presentations: VOLTAGE_PRESENTATIONS
+  },
+  current: {
+    category: 'current',
+    presentations: CURRENT_PRESENTATIONS
+  },
+  volume: {
+    category: 'volume',
+    presentations: VOLUME_PRESENTATIONS
+  },
+  time: {
+    category: 'time',
+    presentations: TIME_PRESENTATIONS
+  },
+  distance: {
+    category: 'distance',
+    presentations: DISTANCE_PRESENTATIONS
+  },
+  capacity: {
+    category: 'capacity',
+    presentations: CAPACITY_PRESENTATIONS
+  },
+  flowRate: {
+    category: 'flowRate',
+    presentations: FLOW_RATE_PRESENTATIONS
+  },
+  frequency: {
+    category: 'frequency',
+    presentations: FREQUENCY_PRESENTATIONS
+  },
+  power: {
+    category: 'power',
+    presentations: POWER_PRESENTATIONS
+  },
+  rpm: {
+    category: 'rpm',
+    presentations: RPM_PRESENTATIONS
+  }
 };
 
 // ===== HELPER FUNCTIONS =====
@@ -463,4 +1127,21 @@ export function getPresentationsForRegion(
   return presentations.filter(p => 
     !p.preferredInRegion || p.preferredInRegion.includes(region)
   );
+}
+
+/**
+ * Get display label for configuration UI showing symbol with pattern
+ * Examples: "kts (xxx.x)", "°C (xx.x)", "m (xxx)"
+ * Use this in settings/configuration interfaces for clarity
+ */
+export function getPresentationConfigLabel(presentation: Presentation): string {
+  return `${presentation.symbol} (${presentation.formatSpec.pattern})`;
+}
+
+/**
+ * Get presentation symbol only for widget display
+ * Use this in MetricCell unit strings and widget displays
+ */
+export function getPresentationSymbol(presentation: Presentation): string {
+  return presentation.symbol;
 }

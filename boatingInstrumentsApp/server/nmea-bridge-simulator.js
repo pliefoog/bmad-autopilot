@@ -492,6 +492,9 @@ class NMEABridgeSimulator {
         }
       }
 
+      // Initialize start time for scenario data generation
+      this.startTime = Date.now();
+      
       // Generate NMEA data at individual message frequencies (not hardcoded 10Hz)
       // GPS at 5Hz = 200ms, Depth at 2Hz = 500ms, etc.
       this.messageInterval = setInterval(() => {
@@ -549,8 +552,26 @@ class NMEABridgeSimulator {
     }
     
     setTimeout(() => {
+      // Safety check for message structure
+      if (!message) {
+        console.warn('⚠️ Undefined message at index:', this.currentMessageIndex);
+        this.currentMessageIndex++;
+        this.scheduleNextRecordingMessage();
+        return;
+      }
+      
+      // Check different possible message field names in recording format
+      const nmeaMessage = message.message || message.sentence || message.data || message.raw;
+      
+      if (!nmeaMessage) {
+        console.warn('⚠️ No NMEA message found in recording entry:', JSON.stringify(message, null, 2));
+        this.currentMessageIndex++;
+        this.scheduleNextRecordingMessage();
+        return;
+      }
+      
       // Broadcast the recorded NMEA message
-      this.broadcastMessage(message.message);
+      this.broadcastMessage(nmeaMessage);
       this.stats.totalMessages++;
       
       // Schedule next message
@@ -670,6 +691,12 @@ class NMEABridgeSimulator {
    * Ensure proper NMEA message formatting with line terminators
    */
   ensureNMEAFormat(message) {
+    // Safety check for undefined/null message
+    if (!message || typeof message !== 'string') {
+      console.warn('⚠️ Invalid message passed to ensureNMEAFormat:', message);
+      return '';
+    }
+    
     // Remove any existing line terminators
     let cleanMessage = message.replace(/\r?\n/g, '');
     
@@ -703,6 +730,10 @@ class NMEABridgeSimulator {
     messages.push(this.generateGPSSentence());
     messages.push(this.generateRMCSentence());
     messages.push(this.generateZDASentence());
+    
+    // Add tank and battery XDR sentences
+    messages.push(...this.generateTankXDRSentences());
+    messages.push(...this.generateBatteryXDRSentences());
     
     // Add autopilot status
     messages.push(this.generateAutopilotSentence());
@@ -774,8 +805,29 @@ class NMEABridgeSimulator {
       // Add compass sentence when implemented
     }
 
-    // Always include autopilot status for now
-    if (shouldSend('autopilot', 1)) { // 1Hz for autopilot
+    // Multi-instance equipment support
+    if (timing.engine_rpm && shouldSend('engine_rpm', timing.engine_rpm)) {
+      messages.push(...this.generateEngineRPMSentences());
+      this.lastBroadcastTimes.engine_rpm = now;
+    }
+
+    if (timing.battery_voltage && shouldSend('battery_voltage', timing.battery_voltage)) {
+      messages.push(...this.generateMultiBatteryXDRSentences());
+      this.lastBroadcastTimes.battery_voltage = now;
+    }
+
+    if (timing.tank_levels && shouldSend('tank_levels', timing.tank_levels)) {
+      messages.push(...this.generateMultiTankXDRSentences());
+      this.lastBroadcastTimes.tank_levels = now;
+    }
+
+    if (timing.temperature && shouldSend('temperature', timing.temperature)) {
+      messages.push(...this.generateTemperatureXDRSentences());
+      this.lastBroadcastTimes.temperature = now;
+    }
+
+    // Always include autopilot status for now (if not multi-instance scenario)
+    if (!this.isMultiInstanceScenario() && shouldSend('autopilot', 1)) { // 1Hz for autopilot
       messages.push(this.generateAutopilotSentence());
       this.lastBroadcastTimes.autopilot = now;
     }
@@ -793,9 +845,15 @@ class NMEABridgeSimulator {
    */
   generateDepthSentence() {
     const depthData = this.scenario?.data?.depth || {};
-    const depthMeters = depthData.currentValue;
-    if (this.strictScenario && (depthMeters === undefined || !Number.isFinite(depthMeters))) {
-      throw new Error('Scenario missing depth.currentValue. Ensure YAML functions update this value and timing is defined.');
+    let depthMeters = depthData.currentValue;
+    
+    // Provide default depth if no scenario data (for basic operation)
+    if (depthMeters === undefined || !Number.isFinite(depthMeters)) {
+      if (this.strictScenario) {
+        throw new Error('Scenario missing depth.currentValue. Ensure YAML functions update this value and timing is defined.');
+      }
+      // Generate realistic varying depth for demonstration
+      depthMeters = 15.0 + Math.sin(Date.now() * 0.0001) * 5.0; // 10-20 meters
     }
 
     // Default to DBT, but allow configuration
@@ -817,7 +875,7 @@ class NMEABridgeSimulator {
    */
   generateDBTSentence(depthMeters) {
     const depthFeet = depthMeters / 0.3048; // Convert meters to feet
-    const depthFathoms = depthMeters * 0.546667; // Convert meters to fathoms
+    const depthFathoms = depthMeters / 1.8288; // Convert meters to fathoms (1 fathom = 1.8288 meters)
 
     // Correct DBT format: $xxDBT,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
     const sentence = `$IIDBT,${depthFeet.toFixed(1)},f,${depthMeters.toFixed(1)},M,${depthFathoms.toFixed(1)},F`;
@@ -874,10 +932,18 @@ class NMEABridgeSimulator {
    */
   generateSpeedSentence() {
     const speedData = this.scenario?.data?.speed || {};
-    const speedKnots = speedData.currentValue;
+    let speedKnots = speedData.currentValue;
+    
     if (this.strictScenario && (speedKnots === undefined || !Number.isFinite(speedKnots))) {
       throw new Error('Scenario missing speed.currentValue. Ensure YAML functions update this value and timing is defined.');
     }
+    
+    // Provide default speed if no scenario data (for basic operation)
+    if (speedKnots === undefined || !Number.isFinite(speedKnots)) {
+      // Generate realistic varying speed for demonstration
+      speedKnots = 6.5 + Math.sin(Date.now() * 0.0001) * 2.0; // 4.5-8.5 knots
+    }
+    
     const speedKmh = speedKnots * 1.852; // Convert knots to km/h
     const course = this.autopilotState.currentHeading || 0; // Default to 0 degrees if undefined
 
@@ -917,13 +983,24 @@ class NMEABridgeSimulator {
     const windData = this.scenario?.data?.wind || {};
     const windAngleData = windData.angle || {};
     const windSpeedData = windData.speed || {};
-    const windAngle = windAngleData.currentValue;
-    const windSpeedKnots = windSpeedData.currentValue;
+    let windAngle = windAngleData.currentValue;
+    let windSpeedKnots = windSpeedData.currentValue;
+    
     if (this.strictScenario && (windAngle === undefined || !Number.isFinite(windAngle))) {
       throw new Error('Scenario missing wind.angle.currentValue. Ensure YAML functions update this value and timing is defined.');
     }
     if (this.strictScenario && (windSpeedKnots === undefined || !Number.isFinite(windSpeedKnots))) {
       throw new Error('Scenario missing wind.speed.currentValue. Ensure YAML functions update this value and timing is defined.');
+    }
+
+    // Provide default wind if no scenario data (for basic operation)
+    if (windAngle === undefined || !Number.isFinite(windAngle)) {
+      // Generate realistic varying wind angle
+      windAngle = 45 + Math.sin(Date.now() * 0.00005) * 30; // 15-75 degrees
+    }
+    if (windSpeedKnots === undefined || !Number.isFinite(windSpeedKnots)) {
+      // Generate realistic varying wind speed
+      windSpeedKnots = 12 + Math.sin(Date.now() * 0.0001) * 5; // 7-17 knots
     }
 
     const sentence = `$IIMWV,${windAngle.toFixed(1)},R,${windSpeedKnots.toFixed(1)},N,A`;
@@ -1067,6 +1144,236 @@ class NMEABridgeSimulator {
       // Native NMEA 2000 format (simplified)
       return `PGN:126208,Data:${this.autopilotState.engaged ? '1' : '0'},${this.autopilotState.targetHeading}`;
     }
+  }
+
+  /**
+   * Generate tank XDR sentences (fuel, fresh water, waste water)
+   */
+  generateTankXDRSentences() {
+    const messages = [];
+    const currentTime = Date.now();
+    
+    // Generate fuel tank data (oscillating around 85%)
+    const fuelLevel = 0.85 + Math.sin(currentTime * 0.0001) * 0.1; // 75-95%
+    const fuelSentence = `$GPXDR,P,${fuelLevel.toFixed(3)},P,FUEL_0`;
+    messages.push(this.addChecksum(fuelSentence));
+    
+    // Generate fresh water tank data (oscillating around 60%)
+    const waterLevel = 0.60 + Math.sin(currentTime * 0.0002) * 0.15; // 45-75%
+    const waterSentence = `$GPXDR,P,${waterLevel.toFixed(3)},P,WATR_0`;
+    messages.push(this.addChecksum(waterSentence));
+    
+    // Generate waste water tank data (slowly increasing)
+    const wasteLevel = 0.25 + (currentTime % 600000) / 600000 * 0.4; // 25-65% over 10 minutes
+    const wasteSentence = `$GPXDR,P,${wasteLevel.toFixed(3)},P,WATR_1`;
+    messages.push(this.addChecksum(wasteSentence));
+    
+    return messages;
+  }
+
+  /**
+   * Generate battery XDR sentences
+   */
+  generateBatteryXDRSentences() {
+    const messages = [];
+    const currentTime = Date.now();
+    
+    // Generate battery voltage (oscillating around 12.5V)
+    const voltage = 12.5 + Math.sin(currentTime * 0.0003) * 0.3; // 12.2-12.8V
+    const voltageSentence = `$GPXDR,V,${voltage.toFixed(1)},V,BAT_0`;
+    messages.push(this.addChecksum(voltageSentence));
+    
+    // Generate battery current (varies with usage)
+    const current = 5.0 + Math.sin(currentTime * 0.0005) * 2.0; // 3-7A
+    const currentSentence = `$GPXDR,I,${current.toFixed(1)},A,BAT_0`;
+    messages.push(this.addChecksum(currentSentence));
+    
+    return messages;
+  }
+
+  /**
+   * Check if current scenario is a multi-instance scenario
+   */
+  isMultiInstanceScenario() {
+    return this.scenario && this.scenario.scenario_type === 'multi-instance';
+  }
+
+  /**
+   * Get scenario data value using functions
+   */
+  getScenarioDataValue(dataPath, config) {
+    if (!config || !config.type) return null;
+
+    const currentTime = Date.now() - (this.startTime || Date.now());
+    const functionName = config.type;
+    const scenarioFunction = this.scenarioFunctions.get(functionName);
+
+    if (scenarioFunction) {
+      try {
+        // Create context with config parameters and current time
+        const context = { ...config, currentTime };
+        return scenarioFunction(context);
+      } catch (error) {
+        console.error(`Error executing scenario function ${functionName} for ${dataPath}:`, error.message);
+        console.error('Context:', JSON.stringify(context, null, 2));
+        return null;
+      }
+    }
+
+    // Fallback to simple implementations if function not found
+    switch (config.type) {
+      case 'sine_wave':
+        const time = currentTime / 1000;
+        const radians = 2 * Math.PI * (config.frequency || 0.1) * time;
+        return (config.base || 0) + (config.amplitude || 1) * Math.sin(radians);
+      
+      case 'gaussian':
+        const u1 = Math.random();
+        const u2 = Math.random();
+        const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        const value = (config.mean || 0) + z0 * (config.std_dev || 1);
+        return Math.max(config.min || -Infinity, Math.min(config.max || Infinity, value));
+      
+      case 'linear_decline':
+        const timeSeconds = currentTime / 1000;
+        return Math.max(0, (config.start || 0) + (config.rate || 0) * timeSeconds);
+      
+      case 'linear_increase':
+        const timeSecondsInc = currentTime / 1000;
+        const val = (config.start || 0) + (config.rate || 0) * timeSecondsInc;
+        return (typeof config.max !== 'undefined') ? Math.min(config.max, val) : val;
+      
+      case 'constant':
+        return config.value || 0;
+      
+      default:
+        console.warn(`Unknown data type: ${config.type}`);
+        return 0;
+    }
+  }
+
+  /**
+   * Generate Engine RPM sentences for multiple engines
+   */
+  generateEngineRPMSentences() {
+    const messages = [];
+    
+    if (!this.scenario || !this.scenario.data || !this.scenario.data.engine_rpm) {
+      return messages;
+    }
+
+    const engineData = this.scenario.data.engine_rpm;
+    
+    // Generate RPM sentence for each engine instance
+    Object.entries(engineData).forEach(([engineKey, config], index) => {
+      const rpm = this.getScenarioDataValue(`engine_rpm.${engineKey}`, config);
+      if (rpm !== null) {
+        // $IIRPM,E,<instance>,<rpm>,A,*hh
+        const rpmSentence = `$IIRPM,E,${index},${Math.round(rpm)},A,`;
+        messages.push(this.addChecksum(rpmSentence));
+      }
+    });
+
+    return messages;
+  }
+
+  /**
+   * Generate multi-instance battery XDR sentences
+   */
+  generateMultiBatteryXDRSentences() {
+    const messages = [];
+    
+    if (!this.scenario || !this.scenario.data || !this.scenario.data.battery_voltage) {
+      // Fallback to original single battery
+      return this.generateBatteryXDRSentences();
+    }
+
+    const batteryData = this.scenario.data.battery_voltage;
+    
+    // Generate voltage sentence for each battery instance
+    Object.entries(batteryData).forEach(([batteryKey, config], index) => {
+      const voltage = this.getScenarioDataValue(`battery_voltage.${batteryKey}`, config);
+      if (voltage !== null) {
+        // $IIXDR,U,<voltage>,V,BAT_<instance>*hh
+        const voltageSentence = `$IIXDR,U,${voltage.toFixed(1)},V,BAT_${index}`;
+        messages.push(this.addChecksum(voltageSentence));
+      }
+    });
+
+    return messages;
+  }
+
+  /**
+   * Generate multi-instance tank XDR sentences
+   */
+  generateMultiTankXDRSentences() {
+    const messages = [];
+    
+    if (!this.scenario || !this.scenario.data || !this.scenario.data.tank_levels) {
+      // Fallback to original tank sentences
+      return this.generateTankXDRSentences();
+    }
+
+    const tankData = this.scenario.data.tank_levels;
+    
+    // Generate level sentence for each tank instance
+    Object.entries(tankData).forEach(([tankKey, config], index) => {
+      const level = this.getScenarioDataValue(`tank_levels.${tankKey}`, config);
+      if (level !== null) {
+        // Tank key IS the identifier (e.g., FUEL_0, WATR_2, WAST_4, BALL_5)
+        let tankId = tankKey;
+        
+        // $IIXDR,V,<level>,P,<tank_id>*hh (level as percentage 0-1)
+        const levelSentence = `$IIXDR,V,${(level / 100).toFixed(3)},P,${tankId}`;
+        messages.push(this.addChecksum(levelSentence));
+      }
+    });
+
+    return messages;
+  }
+
+  /**
+   * Generate temperature XDR sentences using Yacht Devices format
+   */
+  generateTemperatureXDRSentences() {
+    const messages = [];
+    
+    if (!this.scenario || !this.scenario.data || !this.scenario.data.temperature) {
+      return messages;
+    }
+
+    const tempData = this.scenario.data.temperature;
+    
+    // Generate temperature sentence for each sensor with unique instances
+    let instanceCounter = 0;
+    Object.entries(tempData).forEach(([tempKey, config]) => {
+      const temperature = this.getScenarioDataValue(`temperature.${tempKey}`, config);
+      if (temperature !== null) {
+        instanceCounter++;
+        // Map sensor type to standard XDR temperature identifiers with unique instances
+        let label;
+        if (tempKey.includes('water_temp')) {
+          label = `SEAW_${instanceCounter}`; // Seawater temperature
+        } else if (tempKey.includes('engine_temp')) {
+          label = `ENGR_${instanceCounter}`; // Engine room temperature
+        } else if (tempKey.includes('exhaust_temp')) {
+          label = `AIRX_${instanceCounter}`; // Exhaust temperature (outside air category)
+        } else if (tempKey.includes('outside')) {
+          label = `AIRX_${instanceCounter}`; // Outside air temperature
+        } else if (tempKey.includes('cabin')) {
+          label = `TEMP_${instanceCounter}`; // Cabin temperature
+        } else {
+          // Generic temperature sensor
+          label = `TEMP_${instanceCounter}`;
+        }
+        
+        // $IIXDR,C,<temp>,C,<label>*hh (Yacht Devices format)
+        const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${label}`;
+        messages.push(this.addChecksum(tempSentence));
+      }
+    });
+
+    return messages;
   }
   
   /**

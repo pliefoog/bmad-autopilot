@@ -10,7 +10,7 @@ import Animated, {
 import { WidgetCard } from './WidgetCard';
 import { WidgetSelector } from './WidgetSelector';
 
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { useTheme } from '../store/themeStore';
 import { WidgetRegistry } from './WidgetRegistry';
 import { PlatformStyles } from '../utils/animationUtils';
@@ -255,7 +255,7 @@ export const Dashboard: React.FC = () => {
           style={[styles.fab, styles.profileFab, { backgroundColor: theme.secondary }]} 
           onPress={switchProfile}
         >
-          <Ionicons 
+          <UniversalIcon 
             name="layers-outline" 
             size={24} 
             color={theme.surface} 
@@ -270,7 +270,7 @@ export const Dashboard: React.FC = () => {
           }]} 
           onPress={toggleDragMode}
         >
-          <Ionicons 
+          <UniversalIcon 
             name={isDragMode ? "checkmark" : "move"} 
             size={24} 
             color={theme.surface} 
@@ -282,7 +282,7 @@ export const Dashboard: React.FC = () => {
           style={[styles.fab, styles.addFab, { backgroundColor: theme.primary }]} 
           onPress={() => setSelectorVisible(true)}
         >
-          <Ionicons name="add" size={32} color={theme.surface} />
+          <UniversalIcon name="add" size={32} color={theme.surface} />
         </TouchableOpacity>
       </View>
 

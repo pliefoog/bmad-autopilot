@@ -7,7 +7,7 @@ import MarineTouchService from '../../src/services/marine/MarineTouchService';
 import { useSettingsStore } from '../../src/store/settingsStore';
 
 // Mock settings store before importing service
-jest.mock('../../src/stores/settingsStore', () => ({
+jest.mock('../../src/store/settingsStore', () => ({
   useSettingsStore: {
     getState: jest.fn(() => ({
       themeSettings: {

@@ -198,6 +198,8 @@ export class PureNmeaParser {
         return this.parseZDAFields(parts);
       case 'HDG':
         return this.parseHDGFields(parts);
+      case 'RPM':
+        return this.parseRPMFields(parts);
       case 'DPT':
         return this.parseDPTFields(parts);
       case 'DBK':
@@ -477,6 +479,25 @@ export class PureNmeaParser {
       // Parsed values
       temperature_celsius: parts[1] ? parseFloat(parts[1]) : null,
       unit: parts[2] || 'C'
+    };
+  }
+
+  /**
+   * Parse RPM (Engine RPM and Pitch) fields
+   * Format: $xxRPM,<source>,<instance>,<rpm>,<status>*hh
+   * Fields: 1=Source (E=Engine, P=Propeller), 2=Instance, 3=RPM Value, 4=Status (A=Active, V=Void)
+   */
+  private parseRPMFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Source
+      field_2: parts[2],  // Instance
+      field_3: parts[3],  // RPM Value
+      field_4: parts[4],  // Status
+      // Parsed values - these are the field names our NmeaSensorProcessor expects
+      source: parts[1] || '',
+      instance: parts[2] || '',
+      rpm: parts[3] || '',
+      status: parts[4] || ''
     };
   }
 

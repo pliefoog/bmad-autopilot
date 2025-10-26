@@ -12,7 +12,7 @@ const mockTheme = {
   textSecondary: '#666666',
 };
 
-jest.mock('../src/core/themeStore', () => ({
+jest.mock('../src/store/themeStore', () => ({
   useTheme: () => mockTheme,
 }));
 

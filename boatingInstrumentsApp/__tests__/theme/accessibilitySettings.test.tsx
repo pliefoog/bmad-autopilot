@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { ThemeProvider, useTheme } from '../../src/theme/ThemeProvider';
-import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useSettingsStore } from '../../src/store/settingsStore';
 
 const Consumer: React.FC = () => {
   const theme = useTheme();

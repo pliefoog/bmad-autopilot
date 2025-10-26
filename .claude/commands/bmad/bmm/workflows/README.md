@@ -26,6 +26,10 @@
 - Path: `bmad/bmm/workflows/1-analysis/research/workflow.yaml`
 - Adaptive research workflow supporting multiple research types: market research, deep research prompt generation, technical/architecture evaluation, competitive intelligence, user research, and domain analysis
 
+**create-ux-design**
+- Path: `bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.yaml`
+- Collaborative UX design facilitation workflow that creates exceptional user experiences through visual exploration and informed decision-making. Unlike template-driven approaches, this workflow facilitates discovery, generates visual options, and collaboratively designs the UX with the user at every step.
+
 **gdd**
 - Path: `bmad/bmm/workflows/2-plan-workflows/gdd/workflow.yaml`
 - Game Design Document workflow for all game project levels - from small prototypes to full AAA games. Generates comprehensive GDD with game mechanics, systems, progression, and implementation guidance.
@@ -41,10 +45,6 @@
 **tech-spec-sm**
 - Path: `bmad/bmm/workflows/2-plan-workflows/tech-spec/workflow.yaml`
 - Technical specification workflow for Level 0 projects (single atomic changes). Creates focused tech spec for bug fixes, single endpoint additions, or small isolated changes. Tech-spec only - no PRD needed.
-
-**ux-spec**
-- Path: `bmad/bmm/workflows/2-plan-workflows/ux/workflow.yaml`
-- UX/UI specification workflow for defining user experience and interface design. Creates comprehensive UX documentation including wireframes, user flows, component specifications, and design system guidelines.
 
 **architecture**
 - Path: `bmad/bmm/workflows/3-solutioning/architecture/workflow.yaml`
@@ -93,10 +93,6 @@
 **story-ready**
 - Path: `bmad/bmm/workflows/4-implementation/story-ready/workflow.yaml`
 - Marks a drafted story as ready for development and moves it from TODO → IN PROGRESS in the status file. Simple status-update workflow with no searching required.
-
-**sprint-status**
-- Path: `bmad/bmm/workflows/helpers/sprint-status/workflow.yaml`
-- Helper workflow for reading and updating sprint-status.yaml tracking file. Provides query and update operations for Phase 4 implementation workflows.
 
 **testarch-atdd**
 - Path: `bmad/bmm/workflows/testarch/atdd/workflow.yaml`

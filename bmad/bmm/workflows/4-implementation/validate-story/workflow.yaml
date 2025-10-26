@@ -1,0 +1,21 @@
+# Story Validation Workflow
+name: validate-story
+description: "Verify story/context alignment and check for documentation conflicts"
+author: "Sherlock (Debug Agent)"
+
+# Critical variables from config
+config_source: "{project-root}/bmad/bmm/config.yaml"
+output_folder: "{config_source}:output_folder"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+story_dir: "{config_source}:dev_story_location"
+date: system-generated
+
+# Workflow components
+installed_path: "{project-root}/bmad/bmm/workflows/4-implementation/validate-story"
+template: "{installed_path}/template.md"
+instructions: "{installed_path}/instructions.md"
+validation: "{installed_path}/checklist.md"
+
+# Output: Story Validation Report
+default_output_file: "{output_folder}/validation-reports/STORY-VALIDATION-{{story_number}}.md"

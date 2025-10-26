@@ -12,8 +12,7 @@ export { default as HamburgerMenu } from './HamburgerMenu';
 export { default as HeaderBar } from './HeaderBar';
 export { default as PrimaryMetricCell } from './PrimaryMetricCell';
 export { default as SecondaryMetricCell } from './SecondaryMetricCell';
-export { default as ToastMessage } from './ToastMessage';
 export { WidgetShell } from './WidgetShell';
 
-// Type exports
-export type { ToastMessageData } from './ToastMessage';
+// Toast system - Global unified implementation
+export * from './toast';

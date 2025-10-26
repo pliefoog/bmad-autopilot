@@ -1,5 +1,5 @@
 import { PlaybackService } from '../../src/services/playbackService';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 jest.useRealTimers();
 

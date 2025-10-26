@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import Button from '../../../src/components/atoms/Button';
 import { ThemeProvider } from '../../../src/theme/ThemeProvider';
-import { useSettingsStore } from '../../../src/stores/settingsStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import { Vibration, Animated } from 'react-native';
 
 describe('Button micro-interactions', () => {

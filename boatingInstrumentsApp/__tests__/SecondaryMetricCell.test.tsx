@@ -1,10 +1,10 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { SecondaryMetricCell } from '../src/components/SecondaryMetricCell';
-import { useTheme } from '../src/core/themeStore';
+import { useTheme } from '../src/store/themeStore';
 
 // Mock theme store
-jest.mock('../src/core/themeStore');
+jest.mock('../src/store/themeStore');
 
 const mockTheme = {
   primary: '#0284C7',

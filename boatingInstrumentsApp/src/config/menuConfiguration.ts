@@ -138,6 +138,13 @@ export const menuConfiguration: MenuConfiguration = {
           action: 'runDiagnostics',
           testId: 'menu-diagnostics',
         },
+        {
+          id: 'factory-reset',
+          label: 'Factory Reset',
+          icon: '🔄',
+          action: 'performFactoryReset',
+          testId: 'menu-factory-reset',
+        },
       ],
     },
     {

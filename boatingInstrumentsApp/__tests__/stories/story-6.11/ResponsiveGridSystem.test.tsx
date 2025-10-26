@@ -29,7 +29,7 @@ jest.mock('../../../src/store/themeStore', () => ({
   }),
 }));
 
-jest.mock('../../../src/stores/widgetStore', () => ({
+jest.mock('../../../src/store/widgetStore', () => ({
   useWidgetStore: () => ({
     selectedWidgets: ['depth', 'speed', 'wind', 'gps', 'compass', 'engine'],
     currentPage: 0,
@@ -230,11 +230,11 @@ describe('Story 6.11: Dashboard Pagination & Responsive Grid System', () => {
 
     test('AC 14: Empty State Display', () => {
       const emptyWidgetStore = {
-        ...jest.requireMock('../../../src/stores/widgetStore').useWidgetStore(),
+        ...jest.requireMock('../../../src/store/widgetStore').useWidgetStore(),
         selectedWidgets: [],
       };
       
-      jest.doMock('../../../src/stores/widgetStore', () => ({
+      jest.doMock('../../../src/store/widgetStore', () => ({
         useWidgetStore: () => emptyWidgetStore,
       }));
 

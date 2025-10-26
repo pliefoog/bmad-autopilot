@@ -2,10 +2,10 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { View, Text } from 'react-native';
 import { WidgetWrapper } from '../../src/widgets/WidgetWrapper';
-import { useWidgetStore } from '../../src/stores/widgetStore';
+import { useWidgetStore } from '../../src/store/widgetStore';
 
 // Mock the widget store
-jest.mock('../../src/stores/widgetStore');
+jest.mock('../../src/store/widgetStore');
 const mockUseWidgetStore = useWidgetStore as jest.MockedFunction<typeof useWidgetStore>;
 
 // Mock Ionicons

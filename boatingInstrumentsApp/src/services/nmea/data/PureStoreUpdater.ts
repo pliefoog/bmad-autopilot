@@ -13,6 +13,8 @@
 
 import { useNmeaStore } from '../../../store/nmeaStore';
 import type { TransformedNmeaData } from './PureDataTransformer';
+import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
+import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 
 export interface UpdateResult {
   updated: boolean;
@@ -30,11 +32,10 @@ export interface UpdateOptions {
 export class PureStoreUpdater {
   private static instance: PureStoreUpdater;
   
-  // Store bindings
-  private setNmeaData = useNmeaStore.getState().setNmeaData;
+  // Store bindings - NMEA Store v2.0 API
+  private updateSensorData = useNmeaStore.getState().updateSensorData;
   private setConnectionStatus = useNmeaStore.getState().setConnectionStatus;
   private setLastError = useNmeaStore.getState().setLastError;
-  private addRawSentence = useNmeaStore.getState().addRawSentence;
   
   // Throttling management
   private lastUpdateTimes: Map<string, number> = new Map();
@@ -100,8 +101,10 @@ export class PureStoreUpdater {
   /**
    * Update connection status in store
    */
-  updateConnectionStatus(status: any): void {
-    this.setConnectionStatus(status);
+  updateConnectionStatus(status: { state: 'disconnected' | 'connecting' | 'connected' | 'error' }): void {
+    // Map connection manager states to store states
+    const storeState = status.state === 'error' ? 'disconnected' : status.state;
+    this.setConnectionStatus(storeState);
   }
 
   /**
@@ -112,10 +115,184 @@ export class PureStoreUpdater {
   }
 
   /**
-   * Add raw NMEA sentence to store
+   * Add raw NMEA sentence to store - NMEA Store v2.0 (sensor data only)
    */
   addRawMessage(sentence: string): void {
-    this.addRawSentence(sentence);
+    // NMEA Store v2.0 focuses on clean sensor data - raw sentences not stored
+    // Log for debugging if needed
+    if (useNmeaStore.getState().debugMode) {
+      console.log('[PureStoreUpdater] Raw NMEA:', sentence);
+    }
+  }
+
+  /**
+   * Process parsed NMEA message using NmeaSensorProcessor - NMEA Store v2.0 Direct Path
+   * This is the NEW primary path that bypasses TransformedNmeaData
+   */
+  processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
+    console.log('[PureStoreUpdater] 🚀 NEW PATH: Processing NMEA message:', parsedMessage.messageType);
+    try {
+      // Process message using new NmeaSensorProcessor
+      const result = nmeaSensorProcessor.processMessage(parsedMessage);
+      
+      if (!result.success) {
+        // Log processing errors but don't treat as failures
+        if (useNmeaStore.getState().debugMode) {
+          console.warn('[PureStoreUpdater] NMEA processing:', result.errors?.join(', '));
+        }
+        return {
+          updated: false,
+          throttled: false,
+          batchedFields: [],
+          reason: `Processing failed: ${result.errors?.join(', ')}`
+        };
+      }
+
+      // Apply sensor updates to store
+      if (result.updates && result.updates.length > 0) {
+        console.log('[PureStoreUpdater] 🎯 Applying sensor updates:', result.updates);
+        return this.applySensorUpdates(result.updates, options);
+      }
+
+      console.log('[PureStoreUpdater] ⚠️ No sensor updates generated from processing');
+      return {
+        updated: false,
+        throttled: false,
+        batchedFields: [],
+        reason: 'No sensor updates generated'
+      };
+
+    } catch (error) {
+      console.error('[PureStoreUpdater] Error processing NMEA message:', error);
+      return {
+        updated: false,
+        throttled: false,
+        batchedFields: [],
+        reason: `Exception: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /**
+   * Apply sensor updates from NmeaSensorProcessor to NMEA Store v2.0
+   */
+  private applySensorUpdates(updates: SensorUpdate[], options: UpdateOptions = {}): UpdateResult {
+    const updatedFields: string[] = [];
+    let anyUpdated = false;
+
+    const {
+      throttleMs = this.DEFAULT_THROTTLE_MS,
+      skipThrottling = false
+    } = options;
+
+    for (const update of updates) {
+      const fieldKey = `${update.sensorType}.${update.instance}`;
+      
+      // Check throttling
+      if (!skipThrottling && this.isThrottled(fieldKey, throttleMs)) {
+        continue;
+      }
+
+      // Update sensor data in store
+      try {
+        console.log(`[PureStoreUpdater] 🔄 Updating store: ${update.sensorType}[${update.instance}] =`, update.data);
+        this.updateSensorData(update.sensorType, update.instance, update.data);
+        updatedFields.push(fieldKey);
+        anyUpdated = true;
+        
+        // Update throttle timestamp
+        this.lastUpdateTimes.set(fieldKey, Date.now());
+        
+        console.log(`[PureStoreUpdater] ✅ Store update SUCCESS: ${fieldKey}`);
+      } catch (error) {
+        console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
+      }
+    }
+
+    return {
+      updated: anyUpdated,
+      throttled: false,
+      batchedFields: updatedFields,
+      reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'All updates throttled'
+    };
+  }
+
+  /**
+   * Convert transformed NMEA data to sensor updates - NMEA Store v2.0 Bridge
+   */
+  private updateSensorDataFromTransformed(data: TransformedNmeaData): void {
+    // Bridge method to convert legacy bulk data format to sensor-specific updates
+    
+    // Handle depth data
+    if (data.depth !== undefined) {
+      this.updateSensorData('depth', 0, { 
+        depth: data.depth,
+        referencePoint: data.depthReferencePoint,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Handle speed data
+    if (data.sog !== undefined || data.stw !== undefined) {
+      this.updateSensorData('speed', 0, {
+        sog: data.sog,
+        stw: data.stw,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Handle GPS data
+    if (data.gpsPosition) {
+      this.updateSensorData('gps', 0, {
+        latitude: data.gpsPosition.latitude,
+        longitude: data.gpsPosition.longitude,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Handle compass data
+    if (data.heading !== undefined || data.track !== undefined) {
+      this.updateSensorData('compass', 0, {
+        heading: data.heading,
+        cog: data.track,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Handle wind data
+    if (data.windSpeed !== undefined || data.windAngle !== undefined) {
+      this.updateSensorData('wind', 0, {
+        speed: data.windSpeed,
+        angle: data.windAngle,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Handle engine data (CRITICAL FIX for engine detection)
+    if (data.engineRpm !== undefined || data.engineTemp !== undefined || data.enginePressure !== undefined) {
+      const engineInstance = data.engineInstance || 0; // Use instance from parsed data or default to 0
+      this.updateSensorData('engine', engineInstance, {
+        name: `Engine ${engineInstance + 1}`,
+        rpm: data.engineRpm,
+        coolantTemp: data.engineTemp,
+        oilPressure: data.enginePressure,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Handle tank/fuel data
+    if (data.fuelLevel !== undefined) {
+      const tankInstance = 0; // Default to tank 0 (multi-instance support needs to come from parser)
+      this.updateSensorData('tank', tankInstance, {
+        name: `Fuel Tank ${tankInstance + 1}`,
+        level: data.fuelLevel / 100, // Convert percentage to 0-1 ratio
+        type: 'fuel' as const,
+        timestamp: Date.now()
+      } as any);
+    }
+    
+    // Additional sensor data can be added here as needed
+    // The 'as any' cast is used for backward compatibility during migration
   }
 
   /**
@@ -205,6 +382,15 @@ export class PureStoreUpdater {
   }
 
   /**
+   * Check if a specific field is throttled - helper for new sensor processing
+   */
+  private isThrottled(fieldKey: string, throttleMs: number): boolean {
+    const lastUpdate = this.lastUpdateTimes.get(fieldKey);
+    if (!lastUpdate) return false;
+    return (Date.now() - lastUpdate) < throttleMs;
+  }
+
+  /**
    * Update throttle timestamps for fields
    */
   private updateThrottleTimestamps(fields: string[]): void {
@@ -224,11 +410,11 @@ export class PureStoreUpdater {
   }
 
   /**
-   * Perform immediate store update
+   * Perform immediate store update - NMEA Store v2.0 (sensor-based)
    */
   private immediateUpdate(data: TransformedNmeaData, fields: string[]): UpdateResult {
     try {
-      this.setNmeaData(data);
+      this.updateSensorDataFromTransformed(data);
       return {
         updated: true,
         throttled: false,
@@ -284,7 +470,8 @@ export class PureStoreUpdater {
     }
 
     try {
-      this.setNmeaData(batchData);
+      // Convert batched data to sensor updates - NMEA Store v2.0
+      this.updateSensorDataFromTransformed(batchData as any);
     } catch (error) {
       console.error('[StoreUpdater] Batch update failed:', error);
     }

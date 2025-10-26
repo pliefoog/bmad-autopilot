@@ -21,7 +21,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 // Mock alarm store
-jest.mock('../../../stores/alarmStore', () => ({
+jest.mock('../../../store/alarmStore', () => ({
   useAlarmStore: {
     getState: () => ({
       activeAlarms: [],

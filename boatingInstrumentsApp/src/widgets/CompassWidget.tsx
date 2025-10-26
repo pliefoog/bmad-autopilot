@@ -4,7 +4,8 @@ import Svg, { Circle, Line, Text as SvgText, G } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
+import { useDataPresentation } from '../presentation/useDataPresentation';
+import { MetricDisplayData } from '../types/MetricDisplayData';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
 interface CompassWidgetProps {
@@ -36,9 +37,94 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const deviation = useNmeaStore(useCallback((state: any) => state.nmeaData.magneticDeviation, [])); // Magnetic deviation (rarely available)
   const headingTimestamp = useNmeaStore(useCallback((state: any) => state.nmeaData.headingTimestamp, []));
   
-  // Enhanced metric display system using unified useMetricDisplay hook
-  const variationDisplay = useMetricDisplay('angle', variation, 'VAR');
-  const deviationDisplay = useMetricDisplay('angle', deviation, 'DEV');
+  // Epic 9 Enhanced Presentation System for compass angles
+  const anglePresentation = useDataPresentation('angle');
+
+  // Compass angle display data using Epic 9 presentation system
+  const getAngleDisplay = useCallback((
+    presentation: any,
+    value: number | null | undefined,
+    angleMnemonic: string,
+    fallbackSymbol: string = '°',
+    fallbackName: string = 'Degrees'
+  ): MetricDisplayData => {
+    const presDetails = presentation.presentation;
+    
+    if (value === null || value === undefined) {
+      return {
+        mnemonic: angleMnemonic, // NMEA source abbreviation like "VAR", "DEV"
+        value: '---',
+        unit: fallbackSymbol, // Presentation symbol
+        rawValue: 0,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: presDetails?.id || 'default',
+          name: fallbackName,
+          pattern: 'xxx'
+        },
+        status: {
+          isValid: false,
+          error: 'No data',
+          isFallback: true
+        }
+      };
+    }
+
+    if (!presentation.isValid || !presDetails) {
+      return {
+        mnemonic: angleMnemonic, // NMEA source abbreviation
+        value: value.toFixed(1),
+        unit: fallbackSymbol, // Presentation symbol
+        rawValue: value,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: 'fallback',
+          name: fallbackName,
+          pattern: 'xxx.x'
+        },
+        status: {
+          isValid: true,
+          isFallback: true
+        }
+      };
+    }
+    
+    return {
+      mnemonic: angleMnemonic, // NMEA source abbreviation like "VAR", "DEV"
+      value: presentation.convertAndFormat(value),
+      unit: presDetails.symbol, // Presentation symbol like "°"
+      rawValue: value,
+      layout: {
+        minWidth: 60,
+        alignment: 'right'
+      },
+      presentation: {
+        id: presDetails.id,
+        name: presDetails.name,
+        pattern: 'xxx.x'
+      },
+      status: {
+        isValid: true,
+        isFallback: false
+      }
+    };
+  }, []);
+
+  const variationDisplay = useMemo(() =>
+    getAngleDisplay(anglePresentation, variation, 'VAR', '°', 'Degrees VAR'),
+    [anglePresentation, variation, getAngleDisplay]
+  );
+
+  const deviationDisplay = useMemo(() =>
+    getAngleDisplay(anglePresentation, deviation, 'DEV', '°', 'Degrees DEV'),
+    [anglePresentation, deviation, getAngleDisplay]
+  );
   
   // Compass mode state with toggle capability
   const [compassMode, setCompassMode] = useState<CompassMode>('TRUE'); // Default to TRUE per marine standards

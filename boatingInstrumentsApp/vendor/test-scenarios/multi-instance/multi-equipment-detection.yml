@@ -2,10 +2,9 @@ name: "Multi-Instance Equipment Detection Test"
 description: "Progressive detection of multiple engines, batteries, and tanks with instance handling validation"
 duration: 300
 bridge_mode: "nmea0183"
-messageRate: 1.0
 scenario_type: "multi-instance"
 vessel_type: "Large Motor Yacht - Multi System"
-test_coverage: ["multi-instance", "engine", "battery", "tank", "detection"]
+test_coverage: ["multi-instance", "engine", "battery", "tank", "temperature", "detection"]
 
 conditions:
   scenario: "system startup with progressive equipment detection"
@@ -15,162 +14,250 @@ equipment:
   engines: 3
   batteries: 4
   tanks: 6
+  temperature_sensors: 4
 
-tags: ["multi-instance", "progressive", "detection", "validation"]
+tags: ["multi-instance", "progressive", "detection", "validation", "temperature", "yacht-devices"]
 related_stories: ["story-7.4", "story-6.10"]
 
-nmea_sentences:
-  # Engine Instance 0
-  - sentence: "$IIRPM,E,0,{rpm0},A,*XX"
-    sentence_type: "RPM"
-    description: "Engine 0 RPM"
-    source: "ENGINE_0"
-    parameters:
-      rpm0:
-        type: "linear"
-        start: 0
-        rate: 10
-        format: "0000"
+# Data generation for multi-instance equipment
+data:
+  # Engine RPM data (3 instances)
+  engine_rpm:
+    engine_0:
+      type: "sine_wave"
+      base: 1800
+      amplitude: 200
+      frequency: 0.05
+      unit: "rpm"
+    engine_1:
+      type: "sine_wave" 
+      base: 1750
+      amplitude: 180
+      frequency: 0.06
+      unit: "rpm"
+    engine_2:
+      type: "sine_wave"
+      base: 1820
+      amplitude: 220
+      frequency: 0.04
+      unit: "rpm"
+  
+  # Battery voltage data (4 instances)
+  battery_voltage:
+    battery_0:
+      type: "gaussian"
+      mean: 13.0
+      std_dev: 0.2
+      min: 12.8
+      max: 13.2
+      unit: "volts"
+    battery_1:
+      type: "gaussian"
+      mean: 12.8
+      std_dev: 0.2
+      min: 12.6
+      max: 13.0
+      unit: "volts"
+    battery_2:
+      type: "gaussian"
+      mean: 12.9
+      std_dev: 0.2
+      min: 12.7
+      max: 13.1
+      unit: "volts"
+    battery_3:
+      type: "gaussian"
+      mean: 13.1
+      std_dev: 0.2
+      min: 12.9
+      max: 13.3
+      unit: "volts"
+  
+  # Tank level data (6 instances) - Match XDR identifiers exactly
+  tank_levels:
+    FUEL_0:
+      type: "linear_decline"
+      start: 85.0
+      rate: -0.02
+      unit: "percent"
+    FUEL_1:
+      type: "linear_decline"
+      start: 78.0
+      rate: -0.018
+      unit: "percent"
+    WATR_2:
+      type: "linear_decline"
+      start: 92.0
+      rate: -0.005
+      unit: "percent"
+    WATR_3:
+      type: "linear_decline"
+      start: 88.0
+      rate: -0.007
+      unit: "percent"
+    WAST_4:
+      type: "linear_increase"
+      start: 25.0
+      rate: 0.003
+      unit: "percent"
+    BALL_5:
+      type: "constant"
+      value: 50.0
+      unit: "percent"
+  
+  # Temperature data (4 instances using Yacht Devices format)
+  temperature:
+    water_temp_1:
+      type: "sine_wave"
+      base: 22.5
+      amplitude: 2.0
+      frequency: 0.008
+      unit: "celsius"
+    water_temp_2:
+      type: "sine_wave"
+      base: 21.8
+      amplitude: 1.8
+      frequency: 0.007
+      unit: "celsius"
+    engine_temp_1:
+      type: "linear_increase"
+      start: 75.0
+      rate: 0.1
+      max: 95.0
+      unit: "celsius"
+    exhaust_temp_1:
+      type: "linear_increase"
+      start: 45.0
+      rate: 0.15
+      max: 65.0
+      unit: "celsius"
 
-  # Engine Instance 1  
-  - sentence: "$IIRPM,E,1,{rpm1},A,*XX"
-    sentence_type: "RPM"
-    description: "Engine 1 RPM"
-    source: "ENGINE_1"
-    parameters:
-      rpm1:
-        type: "linear"
-        start: 0
-        rate: 9
-        format: "0000"
+# NMEA sentence configuration for multi-instance data
+sentences:
+  # Engine RPM sentences (3 instances)
+  - type: "RPM"
+    instance: 0
+    frequency: 1
+    source: "ENGINE"
+  - type: "RPM" 
+    instance: 1
+    frequency: 1
+    source: "ENGINE"
+  - type: "RPM"
+    instance: 2
+    frequency: 1
+    source: "ENGINE"
+  
+  # Battery XDR sentences (4 instances)
+  - type: "XDR_BATTERY"
+    instance: 0
+    frequency: 0.5
+    source: "BATTERY"
+  - type: "XDR_BATTERY"
+    instance: 1
+    frequency: 0.5
+    source: "BATTERY"
+  - type: "XDR_BATTERY"
+    instance: 2
+    frequency: 0.5
+    source: "BATTERY"
+  - type: "XDR_BATTERY"
+    instance: 3
+    frequency: 0.5
+    source: "BATTERY"
+  
+  # Tank XDR sentences (6 instances)
+  - type: "XDR_TANK"
+    instance: 0
+    frequency: 0.2
+    source: "TANK_FUEL"
+  - type: "XDR_TANK"
+    instance: 1
+    frequency: 0.2
+    source: "TANK_FUEL"
+  - type: "XDR_TANK"
+    instance: 2
+    frequency: 0.2
+    source: "TANK_WATER"
+  - type: "XDR_TANK"
+    instance: 3
+    frequency: 0.2
+    source: "TANK_WATER"
+  - type: "XDR_TANK"
+    instance: 4
+    frequency: 0.2
+    source: "TANK_WASTE"
+  - type: "XDR_TANK"
+    instance: 5
+    frequency: 0.2
+    source: "TANK_BALLAST"
+  
+  # Temperature XDR sentences (4 instances - Yacht Devices format with unique instances)
+  - type: "XDR_TEMPERATURE"
+    instance: 1
+    frequency: 0.5
+    source: "TEMP_WATER"
+    label: "WaterTemp_1"
+  - type: "XDR_TEMPERATURE"
+    instance: 2
+    frequency: 0.5
+    source: "TEMP_WATER"
+    label: "WaterTemp_2"
+  - type: "XDR_TEMPERATURE"
+    instance: 3
+    frequency: 0.5
+    source: "TEMP_ENGINE"
+    label: "EngineTemp_1"
+  - type: "XDR_TEMPERATURE"
+    instance: 4
+    frequency: 0.5
+    source: "TEMP_EXHAUST"
+    label: "ExhaustTemp_1"
 
-  # Engine Instance 2
-  - sentence: "$IIRPM,E,2,{rpm2},A,*XX"
-    sentence_type: "RPM"
-    description: "Engine 2 RPM"
-    source: "ENGINE_2"
-    parameters:
-      rpm2:
-        type: "linear"
-        start: 0
-        rate: 11
-        format: "0000"
+# NMEA sentence generation timing for multi-instance equipment
+timing:
+  engine_rpm: 1      # Hz - Engine RPM updates
+  battery_voltage: 0.5  # Hz - Battery voltage updates  
+  tank_levels: 0.2   # Hz - Tank level updates
+  temperature: 0.5   # Hz - Temperature sensor updates
 
-  # Battery Instance 0
-  - sentence: "$IIXDR,U,{volt0},V,BAT_0*XX"
-    sentence_type: "XDR"
-    description: "Battery 0 Voltage"
-    source: "BATTERY_0"
-    parameters:
-      volt0:
-        type: "random"
-        min: 12.8
-        max: 13.2
-        format: "00.0"
+# Mathematical data generation functions for multi-instance equipment
+functions:
+  sine_wave: |
+    // Generate sine wave with base, amplitude, and frequency
+    const time = currentTime / 1000; // Convert to seconds
+    const radians = 2 * Math.PI * frequency * time;
+    return base + amplitude * Math.sin(radians);
+  
+  gaussian: |
+    // Generate Gaussian random values with mean and std deviation
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    const value = mean + z0 * std_dev;
+    return Math.max(min || -Infinity, Math.min(max || Infinity, value));
+  
+  linear_decline: |
+    // Linear decline with start value and rate
+    const time = currentTime / 1000; // Convert to seconds
+    return Math.max(0, start + rate * time);
+  
+  linear_increase: |
+    // Linear increase with start value, rate, and optional max
+    const time = currentTime / 1000; // Convert to seconds
+    const value = start + rate * time;
+    return (typeof max !== 'undefined') ? Math.min(max, value) : value;
+  
+  constant: |
+    // Return constant value
+    return value;
 
-  # Battery Instance 1
-  - sentence: "$IIXDR,U,{volt1},V,BAT_1*XX"
-    sentence_type: "XDR"
-    description: "Battery 1 Voltage"
-    source: "BATTERY_1"
-    parameters:
-      volt1:
-        type: "random"
-        min: 12.6
-        max: 13.0
-        format: "00.0"
-
-  # Battery Instance 2
-  - sentence: "$IIXDR,U,{volt2},V,BAT_2*XX"
-    sentence_type: "XDR"
-    description: "Battery 2 Voltage"
-    source: "BATTERY_2"
-    parameters:
-      volt2:
-        type: "random"
-        min: 12.7
-        max: 13.1
-        format: "00.0"
-
-  # Battery Instance 3
-  - sentence: "$IIXDR,U,{volt3},V,BAT_3*XX"
-    sentence_type: "XDR"
-    description: "Battery 3 Voltage"
-    source: "BATTERY_3"
-    parameters:
-      volt3:
-        type: "random"
-        min: 12.9
-        max: 13.3
-        format: "00.0"
-
-  # Tank Instance 0 (Fuel)
-  - sentence: "$IIXDR,V,{fuel0},P,FUEL_0*XX"
-    sentence_type: "XDR"
-    description: "Fuel Tank 0 Level"
-    source: "TANK_FUEL_0"
-    parameters:
-      fuel0:
-        type: "linear"
-        start: 85.0
-        rate: -0.02
-        format: "00.0"
-
-  # Tank Instance 1 (Fuel)
-  - sentence: "$IIXDR,V,{fuel1},P,FUEL_1*XX"
-    sentence_type: "XDR"
-    description: "Fuel Tank 1 Level"
-    source: "TANK_FUEL_1"
-    parameters:
-      fuel1:
-        type: "linear"
-        start: 78.0
-        rate: -0.018
-        format: "00.0"
-
-  # Tank Instance 2 (Water)
-  - sentence: "$IIXDR,V,{water0},P,WATR_0*XX"
-    sentence_type: "XDR"
-    description: "Fresh Water Tank 0 Level"
-    source: "TANK_WATER_0"
-    parameters:
-      water0:
-        type: "linear"
-        start: 92.0
-        rate: -0.005
-        format: "00.0"
-
-  # Tank Instance 3 (Water)
-  - sentence: "$IIXDR,V,{water1},P,WATR_1*XX"
-    sentence_type: "XDR"
-    description: "Fresh Water Tank 1 Level"
-    source: "TANK_WATER_1"
-    parameters:
-      water1:
-        type: "linear"
-        start: 88.0
-        rate: -0.007
-        format: "00.0"
-
-  # Tank Instance 4 (Waste)
-  - sentence: "$IIXDR,V,{waste0},P,WAST_0*XX"
-    sentence_type: "XDR"
-    description: "Waste Tank 0 Level"
-    source: "TANK_WASTE_0"
-    parameters:
-      waste0:
-        type: "linear"
-        start: 25.0
-        rate: 0.003
-        format: "00.0"
-
-  # Tank Instance 5 (Ballast)
-  - sentence: "$IIXDR,V,{ballast0},P,BALL_0*XX"
-    sentence_type: "XDR"
-    description: "Ballast Tank 0 Level"
-    source: "TANK_BALLAST_0"
-    parameters:
-      ballast0:
-        type: "constant"
-        value: 50.0
-        format: "00.0"
+# Phase progression for equipment detection
+phases:
+  - name: "engine_startup"
+    duration: 60
+    description: "Engine systems come online progressively"
+  
+  - name: "full_systems"
+    duration: 240
+    description: "All systems running with multi-instance data"

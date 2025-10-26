@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import LoadingSpinner from '../../../src/components/atoms/LoadingSpinner';
-import { useSettingsStore } from '../../../src/stores/settingsStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import { ThemeProvider } from '../../../src/theme/ThemeProvider';
 
 describe('LoadingSpinner reduced motion behavior', () => {

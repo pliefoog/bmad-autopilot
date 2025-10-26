@@ -3,11 +3,11 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { DepthWidget } from '../src/widgets/DepthWidget';
 
 // Mock dependencies
-jest.mock('../src/core/nmeaStore', () => ({
+jest.mock('../src/store/nmeaStore', () => ({
   useNmeaStore: jest.fn(),
 }));
 
-jest.mock('../src/core/themeStore', () => ({
+jest.mock('../src/store/themeStore', () => ({
   useTheme: () => ({
     primary: '#0EA5E9',
     secondary: '#64748B',
@@ -22,7 +22,7 @@ jest.mock('../src/core/themeStore', () => ({
   }),
 }));
 
-const { useNmeaStore } = require('../src/core/nmeaStore');
+const { useNmeaStore } = require('../src/store/nmeaStore');
 
 describe('DepthWidget', () => {
   beforeEach(() => {

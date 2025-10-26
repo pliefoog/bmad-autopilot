@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetRegistry } from './WidgetRegistry';
 import { PlatformStyles } from '../utils/animationUtils';
 import { HelpButton } from '../components/atoms/HelpButton';
@@ -68,10 +68,10 @@ export const WidgetSelector: React.FC<{
         activeOpacity={alreadyAdded ? 0.7 : 1}
         disabled={false}
       >
-        <Ionicons name={item.icon} size={32} color={alreadyAdded ? '#94A3B8' : '#0284C7'} style={{ marginBottom: 8 }} />
+        <UniversalIcon name={item.icon} size={32} color={alreadyAdded ? '#94A3B8' : '#0284C7'} style={{ marginBottom: 8 }} />
         <Text style={[styles.label, alreadyAdded && styles.labelDimmed]}>{item.label}</Text>
         {alreadyAdded && (
-          <Ionicons name="checkmark-circle-outline" size={20} color="#94A3B8" style={{ position: 'absolute', top: 8, right: 8 }} />
+          <UniversalIcon name="checkmark-circle-outline" size={20} color="#94A3B8" style={{ position: 'absolute', top: 8, right: 8 }} />
         )}
       </TouchableOpacity>
     );
@@ -91,7 +91,7 @@ export const WidgetSelector: React.FC<{
                 style={styles.helpButton}
               />
               <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <Ionicons name="close-outline" size={28} color="#CBD5E1" />
+                <UniversalIcon name="close-outline" size={28} color="#CBD5E1" />
               </TouchableOpacity>
             </View>
           </View>

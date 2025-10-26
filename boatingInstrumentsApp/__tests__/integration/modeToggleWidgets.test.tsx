@@ -3,7 +3,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import { Button, Text } from 'react-native';
 import { DepthWidget } from '../../src/widgets/DepthWidget';
 import { SpeedWidget } from '../../src/widgets/SpeedWidget';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 /**
  * Integration test: verify switching between playback and live modes updates widgets

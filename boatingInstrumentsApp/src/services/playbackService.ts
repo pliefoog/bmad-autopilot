@@ -33,8 +33,7 @@ export class PlaybackService {
     const baseIntervalMs = 1000; // default 1s between sentences
     const intervalMs = Math.max(1, baseIntervalMs / this.speed);
 
-    const setNmeaData = useNmeaStore.getState().setNmeaData;
-    const addRawSentence = useNmeaStore.getState().addRawSentence;
+    const updateSensorData = useNmeaStore.getState().updateSensorData;
 
     this.timer = setInterval(() => {
       if (!this.isActive) return;
@@ -51,17 +50,17 @@ export class PlaybackService {
       const validation = parseAndValidate(sentence);
       if (!validation.ok) {
         // store invalid sentence marker for QA/inspection but continue
-        addRawSentence(`INVALID:${sentence}`);
+        console.log(`[PlaybackService] Invalid sentence: ${sentence}`);
       } else {
-        addRawSentence(sentence);
+        console.log(`[PlaybackService] Processing: ${sentence}`);
       }
       // Parse sentence via canonical parser and update store similarly to live connection
       try {
         const parsed = parseNmeaSentence(sentence);
         if (parsed && parsed.sentenceId === 'DBT' && 'depthMeters' in parsed) {
-          setNmeaData({ depth: Number((parsed as any).depthMeters) });
+          updateSensorData('depth', 0, { depth: Number((parsed as any).depthMeters) });
         } else if (parsed && parsed.sentenceId === 'VTG' && 'speedKnots' in parsed) {
-          setNmeaData({ speed: Number((parsed as any).speedKnots) });
+          updateSensorData('speed', 0, { stw: Number((parsed as any).speedKnots) } as any);
         } else if (parsed && parsed.sentenceId === 'MWV' && 'windSpeed' in parsed && 'windAngle' in parsed) {
           setNmeaData({ windAngle: Number((parsed as any).windAngle), windSpeed: Number((parsed as any).windSpeed) });
         } else if (parsed && parsed.sentenceId === 'GGA' && 'latitude' in parsed && 'longitude' in parsed) {

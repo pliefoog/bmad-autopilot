@@ -276,6 +276,30 @@
 			}
 		},
 		{
+			"label": "Start Multi-Instance Equipment Detection Test",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge-simulator.js",
+				"--scenario",
+				"vendor/test-scenarios/multi-instance/multi-equipment-detection.yml"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Stop Web Dev Server",
 			"type": "shell",
 			"command": "pkill",

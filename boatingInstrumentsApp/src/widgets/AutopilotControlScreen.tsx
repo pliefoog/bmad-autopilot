@@ -8,7 +8,7 @@ import {
   Vibration,
   Alert,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import Sound from 'react-native-sound';
 import { useNmeaStore } from '../store/nmeaStore';
 import { AutopilotCommandManager } from '../services/autopilotService';
@@ -36,8 +36,9 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   visible,
   onClose
 }) => {
-  const autopilot = useNmeaStore((state: any) => state.nmeaData.autopilot);
-  const heading = useNmeaStore((state: any) => state.nmeaData.heading);
+  // Clean sensor data access - NMEA Store v2.0
+  const autopilotData = useNmeaStore((state) => state.getSensorData('autopilot', 0));
+  const compassData = useNmeaStore((state) => state.getSensorData('compass', 0));
 
   // Autopilot service instance
   const commandManager = useRef<AutopilotCommandManager | null>(null);
@@ -86,15 +87,20 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const [commandError, setCommandError] = useState<string | null>(null);
   const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
 
-  // Autopilot data with defaults
+  // Extract sensor data with proper typing and defaults
+  const autopilot = autopilotData as any; // Type assertion for legacy compatibility
+  const compass = compassData as any;
+  
+  // Extract heading from compass or autopilot
+  const currentHeading = autopilot?.currentHeading ?? compass?.heading ?? 0;
+  
+  // Autopilot status with defaults  
   const {
     mode = 'STANDBY',
     engaged = false,
     active = false,
-    targetHeading = heading || 0,
+    targetHeading = currentHeading,
   } = autopilot || {};
-
-  const currentHeading = heading || 0;
 
   // Haptic feedback for all interactions
   const triggerHaptic = useCallback(() => {
@@ -272,14 +278,14 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
           {commandError && (
             <View style={styles.errorContainer}>
               <View style={styles.errorMessageContainer}>
-                <Ionicons name="warning-outline" size={16} color="#DC2626" />
+                <UniversalIcon name="warning-outline" size={16} color="#DC2626" />
                 <Text style={styles.errorText}>{commandError}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setCommandError(null)}
                 style={styles.errorCloseButton}
               >
-                <Ionicons name="close-outline" size={16} color="#DC2626" />
+                <UniversalIcon name="close-outline" size={16} color="#DC2626" />
               </TouchableOpacity>
             </View>
           )}

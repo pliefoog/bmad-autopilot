@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { PlaybackService } from '../../src/services/playbackService';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 describe('PlaybackService stopPlayback', () => {
   const sample = '$GPVTG,120.5,T,,M,5.2,N,9.6,K,A*3E\r\n$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n';

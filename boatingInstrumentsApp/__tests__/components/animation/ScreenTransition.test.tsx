@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import ScreenTransition from '../../../src/components/molecules/ScreenTransition';
 import { ThemeProvider } from '../../../src/theme/ThemeProvider';
-import { useSettingsStore } from '../../../src/stores/settingsStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 import { Text } from 'react-native';
 
 describe('ScreenTransition', () => {

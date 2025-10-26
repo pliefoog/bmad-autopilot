@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { Button } from 'react-native';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 // Mock PlaybackService to allow deterministic behavior in UI tests
 const mockStart = jest.fn(function(file: string) {

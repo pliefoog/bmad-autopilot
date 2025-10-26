@@ -31,7 +31,7 @@ const mockNmeaStore = {
   })
 };
 
-jest.mock('../../../src/core/nmeaStore', () => ({
+jest.mock('../../../src/store/nmeaStore', () => ({
   useNmeaStore: {
     getState: () => mockNmeaStore
   }

@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { TanksWidget } from '../src/widgets/TanksWidget';
-import { useNmeaStore } from '../src/core/nmeaStore';
-import { useTheme } from '../src/core/themeStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
+import { useTheme } from '../src/store/themeStore';
 
 // Mock the stores
-jest.mock('../src/core/nmeaStore');
-jest.mock('../src/core/themeStore');
+jest.mock('../src/store/nmeaStore');
+jest.mock('../src/store/themeStore');
 
 const mockUseNmeaStore = useNmeaStore as jest.MockedFunction<typeof useNmeaStore>;
 const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;

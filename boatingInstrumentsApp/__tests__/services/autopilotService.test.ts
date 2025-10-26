@@ -1,8 +1,8 @@
 import { AutopilotCommandManager, AutopilotMode } from '../../src/services/autopilotService';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 // Mock the store
-jest.mock('../../src/core/nmeaStore');
+jest.mock('../../src/store/nmeaStore');
 const mockUseNmeaStore = useNmeaStore as jest.MockedFunction<typeof useNmeaStore>;
 
 // Mock canboat library

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetCard } from './WidgetCard';
 import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../store/nmeaStore';
@@ -14,11 +14,15 @@ interface AutopilotStatusWidgetProps {
 }
 
 export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ showControls = false }) => {
-  const autopilot = useNmeaStore((state: any) => state.nmeaData.autopilot);
-  const heading = useNmeaStore((state: any) => state.nmeaData.heading);
+  // Clean sensor data access - NMEA Store v2.0
+  const autopilot = useNmeaStore((state) => state.getSensorData('autopilot', 0));
+  const compass = useNmeaStore((state) => state.getSensorData('compass', 0));
   const theme = useTheme();
-  // Metric display hooks for angles
-  const actualHeadingDisplay = useMetricDisplay('angle', autopilot?.actualHeading ?? heading?.heading ?? 0);
+  
+  // Extract heading data from compass or autopilot
+  const currentHeading = autopilot?.actualHeading ?? compass?.heading ?? 0;
+  // Metric display hooks for angles - using clean sensor data
+  const actualHeadingDisplay = useMetricDisplay('angle', currentHeading);
   const targetHeadingDisplay = useMetricDisplay('angle', autopilot?.targetHeading ?? 0);
   const rudderPositionDisplay = useMetricDisplay('angle', autopilot?.rudderPosition ?? 0);
   const [selectedView, setSelectedView] = useState<'overview' | 'details' | 'controls'>('overview');
@@ -291,7 +295,7 @@ export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ sh
 
       {alarms && alarms.length > 0 && (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="warning-outline" size={14} color={theme.error} style={{ marginRight: 4 }} />
+          <UniversalIcon name="warning-outline" size={14} color={theme.error} style={{ marginRight: 4 }} />
           <Text style={[styles.alarmText, { color: theme.error }]}>
             {alarms[0]}
           </Text>

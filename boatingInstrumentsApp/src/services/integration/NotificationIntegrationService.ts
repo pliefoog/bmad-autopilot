@@ -3,6 +3,7 @@ import { useNmeaStore } from '../../store/nmeaStore';
 import { NotificationManager } from '../notifications/NotificationManager';
 import { BackgroundProcessingManager } from '../background/BackgroundProcessingManager';
 import { VesselContextData } from '../notifications/NotificationContentManager';
+import { useToastStore } from '../../store/toastStore';
 
 /**
  * Integration service that connects the notification system with existing alarm infrastructure
@@ -149,6 +150,9 @@ export class NotificationIntegrationService {
       // Send notification through notification manager
       await this.notificationManager.sendAlarmNotification(notificationData, vesselContext);
       
+      // Also display in-app toast for immediate user awareness
+      this.showAlarmToast(alarm);
+      
       console.log(`[Integration] Notification sent for alarm: ${alarm.message}`);
       
     } catch (error) {
@@ -169,6 +173,76 @@ export class NotificationIntegrationService {
       value: alarm.value,
       threshold: alarm.threshold
     };
+  }
+  
+  /**
+   * Display alarm as in-app toast using global toast system
+   */
+  private showAlarmToast(alarm: Alarm): void {
+    const toastStore = useToastStore.getState();
+    
+    // Map alarm levels to toast types and priorities
+    const getToastConfig = (level: string) => {
+      switch (level.toLowerCase()) {
+        case 'critical':
+          return { 
+            type: 'alarm' as const, 
+            priority: 'critical' as const,
+            persistent: true,
+            action: {
+              label: 'Acknowledge',
+              action: () => this.acknowledgeAlarm(alarm.id)
+            }
+          };
+        case 'warning':
+          return { 
+            type: 'warning' as const, 
+            priority: 'high' as const,
+            duration: 8000
+          };
+        case 'info':
+          return { 
+            type: 'info' as const, 
+            priority: 'normal' as const,
+            duration: 5000
+          };
+        default:
+          return { 
+            type: 'error' as const, 
+            priority: 'normal' as const,
+            duration: 6000
+          };
+      }
+    };
+    
+    const config = getToastConfig(alarm.level);
+    
+    // Create formatted message with source context
+    const message = alarm.source 
+      ? `${alarm.source}: ${alarm.message}`
+      : alarm.message;
+    
+    // Add toast to global store
+    toastStore.addToast({
+      ...config,
+      message,
+      source: 'marine-alarm'
+    });
+    
+    console.log(`[Integration] Toast displayed for alarm: ${alarm.level} - ${message}`);
+  }
+  
+  /**
+   * Acknowledge alarm (called from toast action button)
+   */
+  private acknowledgeAlarm(alarmId: string): void {
+    // Here you would implement alarm acknowledgment logic
+    // This could involve updating the alarm store, logging, etc.
+    console.log(`[Integration] Alarm acknowledged: ${alarmId}`);
+    
+    // You might want to update the alarm store to mark as acknowledged
+    const alarmState = useAlarmStore.getState();
+    // alarmState.acknowledgeAlarm?.(alarmId);
   }
   
   /**

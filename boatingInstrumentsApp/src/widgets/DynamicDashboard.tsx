@@ -1,26 +1,88 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Dimensions, Alert } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../store/themeStore';
+import { useWidgetStore } from '../store/widgetStore';
+import { useToast } from '../hooks/useToast';
 import { WidgetRegistry } from './WidgetRegistry';
 import { WidgetSelector } from './WidgetSelector';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { PlatformStyles } from '../utils/animationUtils';
-import { LayoutService, WidgetLayout } from '../services/layoutService';
 import { DynamicLayoutService, DynamicWidgetLayout } from '../services/dynamicLayoutService';
 import { registerAllWidgets } from './registerWidgets';
+import { WidgetFactory } from '../services/WidgetFactory';
+import UniversalIcon from '../components/atoms/UniversalIcon';
 
 // Render the appropriate widget component using registry
-function renderWidget(key: string): React.ReactElement {
-  const registeredWidget = WidgetRegistry.getWidget(key);
+function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): React.ReactElement {
+  // Use the local extractBaseWidgetType function for proper multi-instance handling
+  const baseType = extractBaseWidgetType(key);
+  const registeredWidget = WidgetRegistry.getWidget(baseType);
   
   if (registeredWidget) {
     const Component = registeredWidget.component;
-    return <Component key={key} id={key} title={registeredWidget.meta.title} />;
+    const title = WidgetFactory.getWidgetTitle(key);
+    return <Component key={key} id={key} title={title} />;
   }
   
-  throw new Error(`Widget "${key}" not found in registry`);
+  console.error(`[DynamicDashboard] Widget lookup failed:`, {
+    originalKey: key,
+    baseType,
+    availableWidgets: WidgetRegistry.getAllWidgets().map(w => w.id)
+  });
+  
+  // Trigger cleanup if callback provided
+  if (onWidgetError) {
+    console.log(`[DynamicDashboard] Triggering cleanup for invalid widget: ${key}`);
+    onWidgetError(key);
+  }
+  
+  throw new Error(`Widget "${key}" (base type: "${baseType}") not found in registry`);
 }
+
+// Extract base widget type from instance ID
+function extractBaseWidgetType(widgetId: string): string {
+  // Handle legacy widget ID mappings
+  if (widgetId === 'water-temperature') {
+    return 'watertemp';
+  }
+  
+  // Check if this is a multi-instance widget ID (e.g., "engine-0", "battery-1", "tank-0", "temp-0") 
+  const multiInstancePatterns = [
+    /^engine-\d+$/, // "engine-0", "engine-1", etc.
+    /^battery-\d+$/, // "battery-0", "battery-1", etc.
+    /^tank-\d+$/, // "tank-0", "tank-1", etc. (new simulator format)
+    /^tank-\w+-\d+$/, // "tank-fuel-0", "tank-freshWater-1", etc. (legacy format)
+    /^temp-\d+$/, // "temp-0", "temp-1", etc.
+  ];
+  
+  const isMultiInstance = multiInstancePatterns.some(pattern => pattern.test(widgetId));
+  
+  if (isMultiInstance) {
+    const parts = widgetId.split('-');
+    const baseType = parts[0];
+    
+    // Map base types to registered widget types
+    switch (baseType) {
+      case 'tank': return 'tanks'; // 'tank-0' or 'tank-fuel-0' -> use 'tanks' widget
+      case 'engine': return 'engine'; // 'engine-0' -> use 'engine' widget  
+      case 'battery': return 'battery'; // 'battery-0' -> use 'battery' widget
+      case 'temp': return 'temperature'; // 'temp-0' -> use 'temperature' widget
+      default: return baseType;
+    }
+  }
+  
+  // Additional legacy widget ID mappings
+  const legacyMappings: Record<string, string> = {
+    'water-temperature': 'watertemp',
+    'water-temp': 'watertemp',
+    'temperature': 'watertemp',
+  };
+  
+  return legacyMappings[widgetId] || widgetId;
+}
+
+// Generate appropriate title for widget instances
+
 
 interface DynamicWidgetWrapperProps {
   layout: DynamicWidgetLayout;
@@ -54,41 +116,68 @@ const DynamicWidgetWrapper: React.FC<DynamicWidgetWrapperProps> = ({
 };
 
 export const DynamicDashboard: React.FC = () => {
+  // ✨ NEW: Subscribe to widget store for dynamic widgets
+  const { dashboards, currentDashboard, cleanupOrphanedWidgets } = useWidgetStore();
+  const currentDashboardData = dashboards.find(d => d.id === currentDashboard);
+  const storeWidgets = currentDashboardData?.widgets || [];
+  
+  console.log('[DynamicDashboard] Store widgets:', storeWidgets.length, 'dashboard:', currentDashboard);
+  
   const [layout, setLayout] = useState<DynamicWidgetLayout[]>([]);
   const [showSelector, setShowSelector] = useState(false);
   const [isDragMode, setIsDragMode] = useState(false);
   const [currentProfile, setCurrentProfile] = useState<string>('default');
-  const [toastVisible, setToastVisible] = useState(false);
   const [removedWidget, setRemovedWidget] = useState<{
     widget: DynamicWidgetLayout;
     index: number;
   } | null>(null);
   
   const theme = useTheme();
+  const toast = useToast();
+
+  console.log('[DynamicDashboard] Widget store state:', {
+    currentDashboard,
+    dashboardCount: dashboards.length,
+    widgetCount: storeWidgets.length,
+    widgetIds: storeWidgets.map(w => w.id)
+  });
 
   // Register all widgets on mount
   useEffect(() => {
     registerAllWidgets();
   }, []);
 
-  // Load layout from storage
-  const loadLayout = useCallback(async () => {
-    try {
-      const legacyLayout = await LayoutService.loadLayout();
-      const dynamicLayout = DynamicLayoutService.migrateLegacyLayout(legacyLayout);
-      setLayout(dynamicLayout);
-    } catch (error) {
-      console.error('Failed to load layout:', error);
-      // Use default layout
-      const defaultLayout = LayoutService.getDefaultLayout();
-      const dynamicLayout = DynamicLayoutService.migrateLegacyLayout(defaultLayout);
-      setLayout(dynamicLayout);
-    }
+  // ✨ NEW: Convert widget store widgets to dynamic layout format
+  const convertWidgetStoreToDynamicLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
+    return widgets.map((widget, index) => {
+      const fixedWidth = DynamicLayoutService.calculateFixedWidgetWidth(widget.type || widget.id);
+      const fixedHeight = DynamicLayoutService.getWidgetHeight(false); // Start collapsed
+      
+      return {
+        id: widget.id,
+        position: widget.layout?.x && widget.layout?.y 
+          ? { x: widget.layout.x, y: widget.layout.y }
+          : { x: 0, y: 0 },
+        size: { 
+          width: widget.layout?.width || fixedWidth, 
+          height: widget.layout?.height || fixedHeight 
+        },
+        visible: widget.layout?.visible ?? true,
+        order: widget.order ?? index,
+        expanded: false, // Widget expansion handled by widget store
+        gridPosition: { row: 0, col: 0 },
+        gridSize: { width: 1, height: 1 },
+        fixedWidth,
+      };
+    });
   }, []);
 
+  // ✨ PURE WIDGET STORE: Update layout when widget store changes
   useEffect(() => {
-    loadLayout();
-  }, [loadLayout]);
+    console.log('[DynamicDashboard] Converting', storeWidgets.length, 'store widgets to layout');
+    const dynamicLayout = convertWidgetStoreToDynamicLayout(storeWidgets);
+    setLayout(dynamicLayout);
+  }, [storeWidgets, convertWidgetStoreToDynamicLayout]);
 
   // Handle orientation changes - recalculate layout
   useEffect(() => {
@@ -105,25 +194,38 @@ export const DynamicDashboard: React.FC = () => {
     return () => subscription?.remove();
   }, [layout]);
 
-  // Save layout to storage
+  // Save layout to widget store (pure widget store architecture)
   const saveLayout = useCallback(async (newLayout: DynamicWidgetLayout[]) => {
     try {
-      // Convert back to legacy format for storage
-      const legacyLayout: WidgetLayout[] = newLayout.map(widget => ({
-        id: widget.id,
-        position: widget.position,
-        size: widget.size,
-        visible: widget.visible,
-        order: widget.order,
-        expanded: widget.expanded,
-      }));
+      // Update widget store directly - no legacy conversion needed
+      const updatedWidgets = storeWidgets.map(widget => {
+        const layoutWidget = newLayout.find(l => l.id === widget.id);
+        if (layoutWidget) {
+          return {
+            ...widget,
+            layout: {
+              ...widget.layout,
+              x: layoutWidget.position.x,
+              y: layoutWidget.position.y,
+              width: layoutWidget.size.width,
+              height: layoutWidget.size.height,
+              visible: layoutWidget.visible,
+            },
+            order: layoutWidget.order ?? widget.order,
+          };
+        }
+        return widget;
+      });
       
-      await LayoutService.saveLayout(legacyLayout);
+      const { updateDashboard, currentDashboard } = useWidgetStore.getState();
+      updateDashboard(currentDashboard, { widgets: updatedWidgets });
       setLayout(newLayout);
+      
+      console.log('[DynamicDashboard] Layout saved to widget store');
     } catch (error) {
-      console.error('Failed to save layout:', error);
+      console.error('[DynamicDashboard] Failed to save layout:', error);
     }
-  }, []);
+  }, [storeWidgets]);
 
   // Handle widget expansion/collapse with simpler logic
   const handleExpansionChange = useCallback(async (widgetId: string, expanded: boolean) => {
@@ -149,68 +251,103 @@ export const DynamicDashboard: React.FC = () => {
     await saveLayout(updatedLayout);
   }, [layout, saveLayout]);
 
-  // Handle adding widgets from selector
+  // Handle adding widgets from selector (pure widget store)
   const handleAddWidget = useCallback(async (selectedIds: string[]) => {
-    const currentIds = layout.map(w => w.id);
+    const currentIds = storeWidgets.map(w => w.id);
     const newIds = selectedIds.filter(id => !currentIds.includes(id));
     
     if (newIds.length === 0) return;
 
-    // Create new widget layouts with fixed dimensions
-    const newWidgets: DynamicWidgetLayout[] = newIds.map((id, index) => {
-      const fixedWidth = DynamicLayoutService.calculateFixedWidgetWidth(id);
-      const fixedHeight = DynamicLayoutService.getWidgetHeight(false); // Start collapsed
-      
-      return {
+    // Create new widget configs for widget store
+    const newWidgetConfigs = newIds.map((id, index) => ({
+      id,
+      type: id,
+      title: id.charAt(0).toUpperCase() + id.slice(1), // Simple title capitalization
+      settings: {},
+      layout: {
         id,
-        position: { x: 0, y: 0 }, // Not used in flexbox layout
-        size: { width: fixedWidth, height: fixedHeight },
+        x: (storeWidgets.length + index) % 3 * 2, // Simple grid positioning
+        y: Math.floor((storeWidgets.length + index) / 3) * 2,
+        width: 2,
+        height: 2,
         visible: true,
-        order: layout.length + index,
-        expanded: false,
-        gridPosition: { row: 0, col: 0 },
-        gridSize: { width: 1, height: 1 },
-        fixedWidth,
-      };
-    });
+      },
+      enabled: true,
+      order: storeWidgets.length + index,
+    }));
 
-    // Simple concatenation - no complex layout calculation needed
-    const allWidgets = [...layout, ...newWidgets];
-    await saveLayout(allWidgets);
+    // Add to widget store directly
+    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
+    updateDashboard(currentDashboard, {
+      widgets: [...storeWidgets, ...newWidgetConfigs]
+    });
     
     setShowSelector(false);
-  }, [layout, saveLayout]);
+    console.log('[DynamicDashboard] Added', newIds.length, 'widgets to store');
+  }, [storeWidgets]);
 
-  // Handle removing widgets
+  // Handle removing widgets (pure widget store)
   const handleRemoveWidget = useCallback(async (widgetId: string) => {
-    const widgetIndex = layout.findIndex(w => w.id === widgetId);
+    const widgetIndex = storeWidgets.findIndex(w => w.id === widgetId);
     if (widgetIndex === -1) return;
 
-    const widget = layout[widgetIndex];
-    const updatedLayout = layout.filter(w => w.id !== widgetId);
+    const widget = storeWidgets[widgetIndex];
+    const updatedWidgets = storeWidgets.filter(w => w.id !== widgetId);
     
-    // No complex recalculation needed
-    setRemovedWidget({ widget, index: widgetIndex });
-    await saveLayout(updatedLayout);
+    // Store removed widget for undo functionality
+    setRemovedWidget({ 
+      widget: { id: widgetId, order: widgetIndex } as any, // Simplified for undo
+      index: widgetIndex 
+    });
     
-    // Show undo toast
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 5000);
-  }, [layout, saveLayout]);
+    // Update widget store directly
+    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
+    updateDashboard(currentDashboard, { widgets: updatedWidgets });
+    
+    // Show undo toast using global toast system
+    if (removedWidget) {
+      toast.showInfo(`Removed ${removedWidget.widget.id} widget`, {
+        duration: 5000,
+        source: 'dashboard',
+        action: {
+          label: 'Undo',
+          action: () => handleUndoRemove(),
+          style: 'primary'
+        }
+      });
+    }
+    console.log('[DynamicDashboard] Removed widget:', widgetId);
+  }, [storeWidgets]);
 
-  // Handle undo remove
+  // Handle undo remove (pure widget store)
   const handleUndoRemove = useCallback(async () => {
     if (!removedWidget) return;
 
-    const restoredLayout = [...layout];
-    restoredLayout.splice(removedWidget.index, 0, removedWidget.widget);
+    // Find the removed widget in the original store state
+    const originalWidget = storeWidgets.find(w => w.id === removedWidget.widget.id);
+    if (!originalWidget) {
+      console.error('[DynamicDashboard] Cannot restore widget - not found in store');
+      return;
+    }
+
+    // Restore widget to store
+    const restoredWidgets = [...storeWidgets];
+    restoredWidgets.splice(removedWidget.index, 0, originalWidget);
     
-    // No complex recalculation needed
-    await saveLayout(restoredLayout);
+    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
+    updateDashboard(currentDashboard, { widgets: restoredWidgets });
     
     setRemovedWidget(null);
-    setToastVisible(false);
-  }, [removedWidget, layout, saveLayout]);
+    toast.showSuccess(`Restored ${originalWidget.id} widget`, { source: 'dashboard' });
+    console.log('[DynamicDashboard] Restored widget:', originalWidget.id);
+  }, [removedWidget, storeWidgets]);
+
+  // Handle widget rendering errors by cleaning up invalid widgets
+  const handleWidgetError = useCallback((widgetId: string) => {
+    console.log(`[DynamicDashboard] Handling widget error for: ${widgetId}`);
+    // Trigger cleanup of orphaned widgets
+    cleanupOrphanedWidgets();
+  }, [cleanupOrphanedWidgets]);
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
@@ -238,7 +375,7 @@ export const DynamicDashboard: React.FC = () => {
                   }}
                   onRemove={() => handleRemoveWidget(widgetLayout.id)}
                 >
-                  {renderWidget(widgetLayout.id)}
+                  {renderWidget(widgetLayout.id, handleWidgetError)}
                 </WidgetErrorBoundary>
               </DynamicWidgetWrapper>
             ))}
@@ -253,7 +390,7 @@ export const DynamicDashboard: React.FC = () => {
           onPress={() => setShowSelector(true)}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={24} color={theme.surface} />
+          <UniversalIcon name="add" size={24} color={theme.surface} />
         </TouchableOpacity>
       </View>
 
@@ -267,20 +404,7 @@ export const DynamicDashboard: React.FC = () => {
         />
       )}
 
-      {/* Undo Toast */}
-      {toastVisible && removedWidget && (
-        <View style={[styles.toast, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.toastText, { color: theme.text }]}>
-            Widget "{removedWidget.widget.id}" removed
-          </Text>
-          <TouchableOpacity 
-            onPress={handleUndoRemove} 
-            style={[styles.toastUndo, { backgroundColor: theme.primary }]}
-          >
-            <Text style={[styles.toastUndoText, { color: theme.surface }]}>Undo</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+
     </View>
   );
 };
@@ -329,33 +453,5 @@ const styles = StyleSheet.create({
   },
   addFab: {
     // Uses base fab styles
-  },
-  toast: {
-    position: 'absolute',
-    bottom: 100,
-    left: 0,
-    right: 0,
-    marginHorizontal: 24,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 4, 0.2),
-    elevation: 8,
-  },
-  toastText: {
-    fontSize: 16,
-    marginRight: 16,
-  },
-  toastUndo: {
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-  },
-  toastUndoText: {
-    fontWeight: 'bold',
-    fontSize: 16,
   },
 });

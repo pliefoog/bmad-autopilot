@@ -15,10 +15,7 @@ import { UndoRedoControls } from './undo/UndoRedoControls';
 interface HeaderBarProps {
   onShowConnectionSettings?: () => void;
   onShowUnitsDialog?: () => void;
-  toastMessage?: {
-    message: string;
-    type: 'error' | 'warning' | 'success';
-  } | null;
+  onShowFactoryResetDialog?: () => void;
   navigationSession?: {
     isRecording: boolean;
     startTime?: Date;
@@ -34,7 +31,7 @@ interface HeaderBarProps {
 const HeaderBar: React.FC<HeaderBarProps> = ({
   onShowConnectionSettings,
   onShowUnitsDialog,
-  toastMessage,
+  onShowFactoryResetDialog,
   navigationSession,
   onToggleNavigationSession,
   onStartPlayback,
@@ -131,17 +128,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <Text style={styles.hamburgerIcon}>☰</Text>
         </TouchableOpacity>
 
-        {/* Center: App Title or Toast Message */}
+        {/* Center: App Title */}
         <View style={styles.centerContent}>
-          {toastMessage ? (
-            <View style={[styles.toastContainer, getToastStyle(toastMessage.type, theme)]}>
-              <Text style={[styles.toastText, getToastTextStyle(toastMessage.type, theme)]}>
-                {toastMessage.message}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles.appTitle}>Boat Instruments</Text>
-          )}
+          <Text style={styles.appTitle}>Boat Instruments</Text>
         </View>
 
         {/* Right: Combined Status + Navigation Control + Undo/Redo */}
@@ -186,35 +175,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         visible={showHamburgerMenu}
         onClose={() => setShowHamburgerMenu(false)}
         onShowUnitsDialog={onShowUnitsDialog}
+        onShowFactoryResetDialog={onShowFactoryResetDialog}
+        onShowConnectionSettings={onShowConnectionSettings}
       />
     </>
   );
-};
-
-const getToastStyle = (type: 'error' | 'warning' | 'success', theme: any) => {
-  switch (type) {
-    case 'error':
-      return { backgroundColor: theme.error };
-    case 'warning':
-      return { backgroundColor: theme.warning };
-    case 'success':
-      return { backgroundColor: theme.success };
-    default:
-      return { backgroundColor: theme.error };
-  }
-};
-
-const getToastTextStyle = (type: 'error' | 'warning' | 'success', theme: any) => {
-  switch (type) {
-    case 'error':
-      return { color: '#FFFFFF' }; // White text on red
-    case 'warning':
-      return { color: theme.text }; // Dark text on orange
-    case 'success':
-      return { color: '#FFFFFF' }; // White text on green
-    default:
-      return { color: '#FFFFFF' };
-  }
 };
 
 const createStyles = (theme: any) =>
@@ -252,17 +217,6 @@ const createStyles = (theme: any) =>
       fontSize: 16, // AC 3: 16pt
       fontWeight: '600', // AC 3: semibold
       color: theme.text, // AC 3: theme.text
-      textAlign: 'center',
-    },
-    toastContainer: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 6,
-      maxWidth: '100%',
-    },
-    toastText: {
-      fontSize: 14,
-      fontWeight: '500',
       textAlign: 'center',
     },
     rightContent: {

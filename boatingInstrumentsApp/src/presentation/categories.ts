@@ -25,7 +25,12 @@ export type DataCategory =
   | 'current'        // Electrical current
   | 'volume'         // Tank levels
   | 'time'           // Time/date display
-  | 'distance';      // Navigation distances/ranges
+  | 'distance'       // Navigation distances/ranges
+  | 'capacity'       // Battery capacity (Amp-hours)
+  | 'flowRate'       // Flow rates (fuel, water, cooling)
+  | 'frequency'      // Electrical/generator frequency
+  | 'power'          // Engine/electrical power
+  | 'rpm';           // Rotational speeds
 
 export interface DataCategoryInfo {
   id: DataCategory;
@@ -43,7 +48,7 @@ export const DATA_CATEGORIES: Record<DataCategory, DataCategoryInfo> = {
     name: 'Depth',
     description: 'Water depth from sounder',
     baseUnit: 'meters',
-    icon: '🌊',
+    icon: 'water-outline',
     precision: 1,
     typical_range: [0, 200]  // 0-200m typical recreational sailing
   },
@@ -154,7 +159,57 @@ export const DATA_CATEGORIES: Record<DataCategory, DataCategoryInfo> = {
     description: 'Navigation distances and ranges',
     baseUnit: 'meters',
     icon: '📏',
-    precision: 2,
-    typical_range: [0, 185200]  // 0-100 NM in meters
+    precision: 1,
+    typical_range: [0, 10000]  // 0-10km typical range display
+  },
+  
+  capacity: {
+    id: 'capacity',
+    name: 'Battery Capacity',
+    description: 'Battery storage capacity in amp-hours',
+    baseUnit: 'amp_hours',
+    icon: '🔋',
+    precision: 0,
+    typical_range: [0, 800]  // 0-800Ah typical marine battery bank
+  },
+  
+  flowRate: {
+    id: 'flowRate',
+    name: 'Flow Rate',
+    description: 'Fluid flow rates (fuel, water, cooling)',
+    baseUnit: 'liters_per_hour',
+    icon: 'water-outline',
+    precision: 1,
+    typical_range: [0, 50]  // 0-50 L/h typical fuel flow
+  },
+  
+  frequency: {
+    id: 'frequency',
+    name: 'Frequency',
+    description: 'Electrical frequency (generator, alternator)',
+    baseUnit: 'hertz',
+    icon: '🔊',
+    precision: 1,
+    typical_range: [0, 400]  // 0-400Hz range for marine systems
+  },
+  
+  power: {
+    id: 'power',
+    name: 'Power',
+    description: 'Engine power output and electrical power',
+    baseUnit: 'watts',
+    icon: '⚡',
+    precision: 0,
+    typical_range: [0, 100000]  // 0-100kW range for marine engines
+  },
+  
+  rpm: {
+    id: 'rpm',
+    name: 'RPM',
+    description: 'Rotational speed (engine, generator, propeller)',
+    baseUnit: 'rpm',
+    icon: '⚙️',
+    precision: 0,
+    typical_range: [0, 6000]  // 0-6000 RPM typical marine engine range
   }
 };

@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { AutopilotControlScreen } from '../src/widgets/AutopilotControlScreen';
-import { useNmeaStore } from '../src/core/nmeaStore';
-import { useTheme } from '../src/core/themeStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
+import { useTheme } from '../src/store/themeStore';
 
 // Mock Vibration by redefining the import after requiring the component
 const mockVibration = {
@@ -11,8 +11,8 @@ const mockVibration = {
 };
 
 // Mock dependencies
-jest.mock('../src/core/nmeaStore');
-jest.mock('../src/core/themeStore');
+jest.mock('../src/store/nmeaStore');
+jest.mock('../src/store/themeStore');
 
 // Instead of mocking the import, we'll spy on the component's usage
 

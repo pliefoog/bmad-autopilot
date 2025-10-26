@@ -1,38 +1,48 @@
 import React from 'react';
 
-// Web-compatible Ionicons replacement using emoji with monochromatic styling
+// Import Widget Metadata Registry for consistent icon mapping
+// Note: Dynamic import to avoid circular dependencies in mock
+let WidgetMetadataRegistry;
+try {
+  WidgetMetadataRegistry = require('../src/registry/WidgetMetadataRegistry').WidgetMetadataRegistry;
+} catch (e) {
+  // Fallback if registry not available
+  WidgetMetadataRegistry = null;
+}
+
+// Enhanced Web-compatible Ionicons replacement with registry integration
 const IconMap = {
-  // Marine instrument icons (user-specified descriptive symbols)
-  'water': '🌊',           // Water Wave for depth
-  'water-outline': '🌊', 
-  'car-outline': '⚙️',     // Gear for engine
-  'cube-outline': '⛽',     // Fuel Pump for tanks (generic)
-  'thermometer': '🌡️',     // Thermometer for temperature
-  'thermometer-outline': '🌡️',
-  'speedometer': '💨',     // Dashing Away for speed
-  'speedometer-outline': '💨',
-  'location': '📍',        // Round Pushpin for GPS position
-  'navigate': '🧭',        // Compass for navigation
-  'navigate-outline': '🧭',
-  'boat': '⛵',           // Sailboat 
-  'boat-outline': '⛵',
-  'leaf': '💨',           // Dashing Away for wind (movement)
-  'battery-charging-outline': '🔋',  // Battery symbol
-  'compass': '🧭',        // Compass symbol
-  'compass-outline': '🧭',
-  'swap-horizontal-outline': '🤖',  // Robot Face for autopilot
-  'cloud-outline': '💨',   // Dashing Away for wind
-  'color-palette-outline': '🎨',
+  // Marine instrument icons (monochromatic web-compatible symbols)
+  'water': '▢',           // Square for depth (monochromatic)
+  'water-outline': '▢',   // Square outline for depth  
+  'car-outline': '⚙',     // Simple gear for engine (no emoji variation)
+  'cube-outline': '□',     // Square outline for tanks
+  'thermometer': '|',     // Simple line for temperature
+  'thermometer-outline': '|',
+  'speedometer': '◐',     // Semi-circle for speed (gauge-like)
+  'speedometer-outline': '◐',
+  'location': '⊙',        // Target symbol for GPS position
+  'navigate': '↗',        // Arrow for navigation
+  'navigate-outline': '↗',
+  'boat': '△',           // Triangle for boat 
+  'boat-outline': '△',
+  'leaf': '◦',           // Small circle for wind
+  'battery-charging-outline': '▮',  // Rectangle for battery
+  'compass': '⊕',        // Cross in circle for compass
+  'compass-outline': '⊕',
+  'swap-horizontal-outline': '⇄',  // Double arrow for autopilot
+  'cloud-outline': '◦',   // Circle for wind
+  'color-palette-outline': '◨',
   
   // Tank-specific icons
-  'fuel-pump': '⛽',      // Fuel Pump for fuel tank
-  'droplet': '💧',        // Droplet for water tank
-  'toilet': '🚽',         // Toilet for waste tank
+  'fuel-pump': '□',      // Square for fuel tank
+  'droplet': '◦',        // Circle for water tank
+  'toilet': '▢',         // Square for waste tank
   
   // Generic metrics
-  'bar-chart': '📊',      // Bar Chart for generic NMEA metrics widget
-  'chart-bar': '📊',      // Alternative naming
-  'analytics': '📊',      // Alternative naming
+  'bar-chart': '▤',      // Grid pattern for charts
+  'chart-bar': '▤',      // Alternative naming
+  'analytics': '▤',      // Alternative naming
   
   // HamburgerMenu icons (simple Unicode symbols for web compatibility)
   'settings-outline': '⚙',
@@ -45,12 +55,49 @@ const IconMap = {
   'notifications-outline': '○',
   'warning-outline': '⚠',
   
+  // Additional UI icons
+  'add': '+',
+  'pin': '◉',
+  'checkmark-circle-outline': '✓',
+  'close-outline': '×',
+  'refresh-outline': '↻',
+  'remove': '−',
+  'layers-outline': '≡',
+  
   // Common fallbacks
   'default': '●',
 };
 
 const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
-  const iconSymbol = IconMap[name] || IconMap['default'];
+  // Try to get icon from registry first, then fallback to static map
+  let iconSymbol = IconMap[name];
+  
+  // Enhanced icon resolution with registry integration
+  if (!iconSymbol && WidgetMetadataRegistry) {
+    // Check if this icon name corresponds to a widget in the registry
+    try {
+      const allWidgets = WidgetMetadataRegistry.getAllMetadata();
+      const widget = allWidgets.find(w => w.icon === name);
+      if (widget) {
+        // Use the icon mapping for the widget's category
+        const categoryIcons = {
+          navigation: '◎',     // Target for navigation
+          environment: '◦',    // Circle for environment
+          engine: '⚙',         // Gear for engine
+          power: '▮',          // Rectangle for power
+          fluid: '□'           // Square for fluid
+        };
+        iconSymbol = categoryIcons[widget.category] || '●';
+      }
+    } catch (e) {
+      // Ignore registry errors
+    }
+  }
+  
+  // Final fallback
+  if (!iconSymbol) {
+    iconSymbol = IconMap['default'];
+  }
   
   // Convert hex color to brightness value for filter
   const getBrightness = (hexColor) => {
@@ -75,9 +122,18 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
         textAlign: 'center',
         width: size,
         height: size,
-        // Convert emoji to grayscale and adjust brightness to match theme
-        // Use will-change to isolate the filter effects
-        filter: `grayscale(100%) brightness(${brightness * 1.5}) contrast(1.2)`,
+        // Convert emoji to monochromatic using advanced CSS filters
+        // This technique converts colored emoji to single-color monochromatic icons
+        filter: `
+          grayscale(100%) 
+          brightness(${brightness * 2}) 
+          contrast(2) 
+          sepia(100%) 
+          saturate(0%) 
+          hue-rotate(0deg)
+        `,
+        // Additional properties to ensure monochromatic appearance
+        WebkitFilter: `grayscale(100%) brightness(${brightness * 2}) contrast(2)`,
         willChange: 'filter',
         // Ensure the icon doesn't affect parent layout
         position: 'relative',

@@ -20,7 +20,7 @@ jest.mock('@canboat/canboatjs', () => ({
 }));
 
 // Mock NMEA store
-jest.mock('../src/core/nmeaStore', () => ({
+jest.mock('../src/store/nmeaStore', () => ({
   useNmeaStore: {
     getState: () => ({
       setConnectionStatus: jest.fn(),

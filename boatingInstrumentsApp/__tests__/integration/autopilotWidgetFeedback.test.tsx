@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { AutopilotStatusWidget } from '../../src/widgets/AutopilotStatusWidget';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 // Mock the autopilot service
 jest.mock('../../src/services/autopilotService', () => ({

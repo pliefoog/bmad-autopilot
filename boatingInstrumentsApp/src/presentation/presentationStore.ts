@@ -33,16 +33,21 @@ export interface PresentationSettings {
 const DEFAULT_PRESENTATION_IDS: Record<DataCategory, string> = {
   depth: 'm_1',          // Meters (1 decimal)
   speed: 'kts_1',        // Knots (1 decimal) 
-  wind: 'kts_1',         // Knots (1 decimal)
+  wind: 'wind_kts_1',    // Wind knots (1 decimal)
   temperature: 'c_1',    // Celsius (1 decimal)
-  pressure: '',          // TODO: Will add when implementing pressure presentations
-  angle: '',             // TODO: Will add when implementing angle presentations
-  coordinates: '',       // TODO: Will add when implementing coordinate presentations
-  voltage: '',           // TODO: Will add when implementing voltage presentations
-  current: '',           // TODO: Will add when implementing current presentations
-  volume: '',            // TODO: Will add when implementing volume presentations
-  time: '',              // TODO: Will add when implementing time presentations
-  distance: ''           // TODO: Will add when implementing distance presentations
+  pressure: 'bar_3',     // Bar (3 decimals)
+  angle: 'deg_0',        // Degrees (integer)
+  coordinates: 'dd_6',   // Decimal degrees (6 decimals)
+  voltage: 'v_2',        // Volts (2 decimals)
+  current: 'a_2',        // Amperes (2 decimals)
+  volume: 'l_0',         // Liters (integer)
+  time: 'h_1',           // Hours (1 decimal)
+  distance: 'nm_1',      // Nautical miles (1 decimal)
+  capacity: 'ah_0',      // Amp-hours (integer)
+  flowRate: 'lph_1',     // Liters per hour (1 decimal)
+  frequency: 'hz_1',     // Hertz (1 decimal)
+  power: 'kw_1',         // Kilowatts (1 decimal)
+  rpm: 'rpm_0'           // RPM (integer)
 };
 
 // Region-specific defaults (override above for specific regions)
@@ -50,26 +55,78 @@ const REGION_DEFAULTS: Record<'eu' | 'us' | 'uk' | 'international', Partial<Reco
   eu: {
     depth: 'm_1',
     speed: 'kts_1',
-    wind: 'kts_1', 
-    temperature: 'c_1'
+    wind: 'wind_kts_1', 
+    temperature: 'c_1',
+    pressure: 'bar_3',
+    angle: 'deg_0',
+    coordinates: 'ddm_3',
+    voltage: 'v_2',
+    current: 'a_2',
+    volume: 'l_0',
+    time: 'h_1',
+    distance: 'nm_1',
+    capacity: 'ah_0',
+    flowRate: 'lph_1',
+    frequency: 'hz_1',
+    power: 'kw_1',
+    rpm: 'rpm_0'
   },
   us: {
-    depth: 'ft_0',
+    depth: 'ft_1',
     speed: 'kts_1',
-    wind: 'kts_1',
-    temperature: 'f_1'
+    wind: 'wind_kts_1',
+    temperature: 'f_1',
+    pressure: 'psi_1',
+    angle: 'deg_0',
+    coordinates: 'ddm_3',
+    voltage: 'v_2',
+    current: 'a_2',
+    volume: 'gal_us_1',
+    time: 'h_1',
+    distance: 'nm_1',
+    capacity: 'ah_0',
+    flowRate: 'gph_us_1',
+    frequency: 'hz_1',
+    power: 'hp_0',
+    rpm: 'rpm_0'
   },
   uk: {
     depth: 'fth_1',
     speed: 'kts_1', 
     wind: 'bf_desc',
-    temperature: 'c_1'
+    temperature: 'c_1',
+    pressure: 'inhg_2',
+    angle: 'deg_0',
+    coordinates: 'dms_1',
+    voltage: 'v_2',
+    current: 'a_2',
+    volume: 'gal_uk_1',
+    time: 'h_1',
+    distance: 'nm_1',
+    capacity: 'ah_0',
+    flowRate: 'gph_uk_1',
+    frequency: 'hz_1',
+    power: 'hp_0',
+    rpm: 'rpm_0'
   },
   international: {
     depth: 'm_1',
     speed: 'kts_1',
-    wind: 'kts_1',
-    temperature: 'c_1'
+    wind: 'wind_kts_1',
+    temperature: 'c_1',
+    pressure: 'bar_3',
+    angle: 'deg_0',
+    coordinates: 'dd_6',
+    voltage: 'v_2',
+    current: 'a_2',
+    volume: 'l_0',
+    time: 'h_1',
+    distance: 'nm_1',
+    capacity: 'ah_0',
+    flowRate: 'lph_1',
+    frequency: 'hz_1',
+    power: 'kw_1',
+    rpm: 'rpm_0'
   }
 };
 

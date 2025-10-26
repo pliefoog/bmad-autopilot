@@ -1,5 +1,5 @@
 import { AutopilotCommandManager, AutopilotCommand } from '../../src/services/autopilotService';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 
 // Mock @canboat/canboatjs at the module level
 jest.mock('@canboat/canboatjs', () => ({

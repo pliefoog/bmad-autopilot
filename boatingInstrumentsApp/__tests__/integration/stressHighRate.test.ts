@@ -1,5 +1,5 @@
 import StressTestService from '../../src/services/stressTestService';
-import { useNmeaStore } from '../../src/core/nmeaStore';
+import { useNmeaStore } from '../../src/store/nmeaStore';
 import PerformanceMonitor from '../../src/utils/performanceMonitor';
 
 jest.useRealTimers();

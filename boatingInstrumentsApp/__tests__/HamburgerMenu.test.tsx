@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import HamburgerMenu from '../src/components/HamburgerMenu';
-import { useTheme, useThemeStore } from '../src/core/themeStore';
+import { useTheme, useThemeStore } from '../src/store/themeStore';
 
 // Mock the theme stores
-jest.mock('../src/core/themeStore');
+jest.mock('../src/store/themeStore');
 
 const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
 const mockUseThemeStore = useThemeStore as jest.MockedFunction<typeof useThemeStore>;

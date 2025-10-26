@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import ToastMessage, { ToastMessageData } from '../src/components/ToastMessage';
-import { useTheme } from '../src/core/themeStore';
+import { useTheme } from '../src/store/themeStore';
 
 // Mock the theme store
-jest.mock('../src/core/themeStore');
+jest.mock('../src/store/themeStore');
 
 const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
 

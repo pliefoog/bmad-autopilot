@@ -261,22 +261,25 @@ export class NmeaService {
       const parsedMessage = parseResult.data;
       messageType = parsedMessage.messageType;
 
-      // Transform to store format
-      const transformResult = this.transformer.transformMessage(parsedMessage);
-      if (!transformResult.success || !transformResult.data) {
-        console.debug('[NmeaService] Transform failed:', transformResult.errors);
-        return;
+      // PHASE 1.2: Process using NEW NmeaSensorProcessor (direct path)
+      const updateOptions = this.currentConfig?.updates || {};
+      const sensorResult = this.storeUpdater.processNmeaMessage(parsedMessage, updateOptions);
+      
+      if (sensorResult.updated) {
+        success = true;
+        console.debug(`[NmeaService] Sensor processing SUCCESS for ${messageType}:`, sensorResult.batchedFields);
+      } else {
+        console.debug(`[NmeaService] Sensor processing result for ${messageType}:`, sensorResult.reason);
       }
 
-      // Update store with throttling/batching based on config
-      const updateOptions = this.currentConfig?.updates || {};
-      const updateResult = this.storeUpdater.updateStore(transformResult.data, updateOptions);
-      
-      if (updateResult.updated) {
-        success = true;
-      } else if (updateResult.throttled) {
-        // Throttling is normal, not an error
-        success = true;
+      // PARALLEL: Still run legacy transformer for compatibility
+      const transformResult = this.transformer.transformMessage(parsedMessage);
+      if (transformResult.success && transformResult.data) {
+        const legacyResult = this.storeUpdater.updateStore(transformResult.data, updateOptions);
+        
+        if (legacyResult.updated && !sensorResult.updated) {
+          success = true; // Legacy path succeeded where sensor path did not
+        }
       }
 
     } catch (error) {

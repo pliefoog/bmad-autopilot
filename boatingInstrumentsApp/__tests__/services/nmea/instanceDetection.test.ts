@@ -11,7 +11,7 @@ import {
 } from '../../../src/services/nmea/instanceDetection';
 
 // Mock the NMEA store
-jest.mock('../../../src/core/nmeaStore', () => ({
+jest.mock('../../../src/store/nmeaStore', () => ({
   useNmeaStore: {
     getState: jest.fn(() => ({
       nmeaData: {},
@@ -175,7 +175,7 @@ describe('InstanceDetectionService', () => {
   describe('Error Handling', () => {
     test('should handle scan errors gracefully', (done) => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      const mockUseNmeaStore = require('../../../src/core/nmeaStore').useNmeaStore;
+      const mockUseNmeaStore = require('../../../src/store/nmeaStore').useNmeaStore;
       
       // Mock getState to throw an error
       mockUseNmeaStore.getState.mockImplementationOnce(() => {

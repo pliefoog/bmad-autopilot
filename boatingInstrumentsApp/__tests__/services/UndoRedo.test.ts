@@ -31,7 +31,7 @@ class MockCommand implements Command {
 }
 
 // Mock zustand stores
-jest.mock('../src/core/themeStore', () => ({
+jest.mock('../src/store/themeStore', () => ({
   useThemeStore: {
     getState: jest.fn(() => ({
       mode: 'day',
@@ -46,7 +46,7 @@ jest.mock('../src/core/themeStore', () => ({
   },
 }));
 
-jest.mock('../src/stores/settingsStore', () => ({
+jest.mock('../src/store/settingsStore', () => ({
   useSettingsStore: {
     getState: jest.fn(() => ({
       display: {

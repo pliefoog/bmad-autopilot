@@ -11,14 +11,14 @@ import {
   AlarmOverlaySystem,
   CompactAlarmBar,
 } from '../../../src/components/alarms/CriticalAlarmVisuals';
-import type { Alarm, AlarmLevel } from '../../../src/stores/alarmStore';
+import type { Alarm, AlarmLevel } from '../../../src/store/alarmStore';
 
 // Mock the alarm store
-jest.mock('../../../src/stores/alarmStore', () => ({
+jest.mock('../../../src/store/alarmStore', () => ({
   useAlarmStore: jest.fn(),
 }));
 
-import { useAlarmStore } from '../../../src/stores/alarmStore';
+import { useAlarmStore } from '../../../src/store/alarmStore';
 
 // Mock alarm creator
 const createMockAlarm = (level: AlarmLevel, id?: string): Alarm => ({

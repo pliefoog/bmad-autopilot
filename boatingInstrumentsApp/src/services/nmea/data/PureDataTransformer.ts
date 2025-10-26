@@ -52,10 +52,11 @@ export interface TransformedNmeaData {
   windDirection?: number;
   windTimestamp?: number;
 
-  // Engine data (from NMEA 2000)
+  // Engine data (from NMEA 2000 and NMEA 0183)
   engineRpm?: number;
   engineTemp?: number;
   enginePressure?: number;
+  engineInstance?: number;  // Engine instance number (from RPM sentences)
   engineTimestamp?: number;
 
   // Tank data (from NMEA 2000)
@@ -122,6 +123,8 @@ export class PureDataTransformer {
           return this.transformMTW(parsedMessage, timestamp);
         case 'VHW':
           return this.transformVHW(parsedMessage, timestamp);
+        case 'RPM':
+          return this.transformRPM(parsedMessage, timestamp);
         default:
           return {
             success: false,
@@ -711,6 +714,48 @@ export class PureDataTransformer {
         depthTimestamp: timestamp
       },
       messageType: 'DIN'
+    };
+  }
+
+  /**
+   * Transform RPM (Engine RPM and Pitch) message
+   * Format: $--RPM,S,n,x.x,A*hh
+   * Where: S = Source (E=Engine), n = Instance, x.x = RPM value, A = Valid
+   */
+  private transformRPM(message: ParsedNmeaMessage, timestamp: number): TransformationResult {
+    const fields = message.fields;
+    
+    // Check if this is engine RPM (source = 'E')
+    if (fields.source !== 'E') {
+      return {
+        success: false,
+        errors: ['RPM message is not for engine (source not E)'],
+        messageType: 'RPM'
+      };
+    }
+
+    // Extract engine instance and RPM value
+    const engineInstance = parseInt(fields.instance) || 0;
+    const rpmValue = parseFloat(fields.rpm);
+    const status = fields.status;
+
+    // Validate data
+    if (isNaN(rpmValue) || status !== 'A') {
+      return {
+        success: false,
+        errors: ['Invalid RPM data or status not valid'],
+        messageType: 'RPM'
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        engineRpm: rpmValue,
+        engineInstance: engineInstance, // Include instance info
+        engineTimestamp: timestamp
+      },
+      messageType: 'RPM'
     };
   }
 }

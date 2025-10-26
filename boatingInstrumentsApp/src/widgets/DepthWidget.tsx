@@ -6,6 +6,7 @@ import { useWidgetStore } from '../store/widgetStore';
 import { useDepthPresentation } from '../presentation/useDataPresentation';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import { DepthSensorData } from '../types/SensorData';
 
 interface DepthWidgetProps {
   id: string;
@@ -32,48 +33,26 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Depth data with Raymarine-style priority selection
-  const depthSources = useNmeaStore(useCallback((state: any) => state.nmeaData.depthSources, []));
+  // Clean sensor data access - NMEA Store v2.0
+  const depthData = useNmeaStore(useCallback((state) => 
+    state.getSensorData('depth', 0) as DepthSensorData | undefined, // Primary depth sensor instance
+    []
+  ));
   
-  // Raymarine-style depth source priority selection: DPT > DBT > DBK
+  // Marine depth data with clean sensor access
   const selectedDepthData = useMemo(() => {
-    if (!depthSources) {
-      // Fallback to legacy depth fields for backward compatibility
-      const depth = useNmeaStore.getState().nmeaData.depth;
-      const depthSource = useNmeaStore.getState().nmeaData.depthSource;
-      const depthReferencePoint = useNmeaStore.getState().nmeaData.depthReferencePoint;
-      const depthTimestamp = useNmeaStore.getState().nmeaData.depthTimestamp;
-      return { depth, depthSource, depthReferencePoint, depthTimestamp };
+    if (!depthData) {
+      return { depth: undefined, depthSource: undefined, depthReferencePoint: undefined, depthTimestamp: undefined };
     }
     
-    const currentTime = Date.now();
-    const DATA_TIMEOUT_MS = 5000; // 5 seconds timeout for stale data
-    
-    // Priority order: DPT > DBT > DBK (Raymarine standard)
-    if (depthSources.DPT && (currentTime - depthSources.DPT.timestamp) < DATA_TIMEOUT_MS) {
-      return {
-        depth: depthSources.DPT.value,
-        depthSource: 'DPT' as const,
-        depthReferencePoint: depthSources.DPT.referencePoint,
-        depthTimestamp: depthSources.DPT.timestamp
-      };
-    } else if (depthSources.DBT && (currentTime - depthSources.DBT.timestamp) < DATA_TIMEOUT_MS) {
-      return {
-        depth: depthSources.DBT.value,
-        depthSource: 'DBT' as const,
-        depthReferencePoint: depthSources.DBT.referencePoint,
-        depthTimestamp: depthSources.DBT.timestamp
-      };
-    } else if (depthSources.DBK && (currentTime - depthSources.DBK.timestamp) < DATA_TIMEOUT_MS) {
-      return {
-        depth: depthSources.DBK.value,
-        depthSource: 'DBK' as const,
-        depthReferencePoint: depthSources.DBK.referencePoint,
-        depthTimestamp: depthSources.DBK.timestamp
-      };
-    }
-    
-    return { depth: undefined, depthSource: undefined, depthReferencePoint: undefined, depthTimestamp: undefined };
-  }, [depthSources]);
+    // Clean sensor data directly from NMEA Store v2.0
+    return {
+      depth: depthData.depth,
+      depthSource: 'DBT' as const, // NMEA sentence type
+      depthReferencePoint: depthData.referencePoint,
+      depthTimestamp: depthData.timestamp
+    };
+  }, [depthData]);
   
   const { depth, depthSource, depthReferencePoint, depthTimestamp } = selectedDepthData;
   

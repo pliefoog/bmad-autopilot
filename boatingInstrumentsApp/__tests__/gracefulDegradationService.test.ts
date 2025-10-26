@@ -6,12 +6,12 @@ import {
 } from '../src/services/gracefulDegradationService';
 import { autopilotSafetyManager } from '../src/services/autopilotSafetyManager';
 import { autopilotCommandQueue } from '../src/services/autopilotCommandQueue';
-import { useNmeaStore } from '../src/core/nmeaStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
 
 // Mock dependencies
 jest.mock('../src/services/autopilotSafetyManager');
 jest.mock('../src/services/autopilotCommandQueue');
-jest.mock('../src/core/nmeaStore');
+jest.mock('../src/store/nmeaStore');
 
 const mockSafetyManager = autopilotSafetyManager as jest.Mocked<typeof autopilotSafetyManager>;
 const mockCommandQueue = autopilotCommandQueue as jest.Mocked<typeof autopilotCommandQueue>;

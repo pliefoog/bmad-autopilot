@@ -1,13 +1,13 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { createWidgetStyles, getStateColor, getStateBackgroundColor } from '../src/styles/widgetStyles';
-import { useThemeStore, useTheme, ThemeColors } from '../src/core/themeStore';
+import { useThemeStore, useTheme, ThemeColors } from '../src/store/themeStore';
 import { WidgetCard } from '../src/widgets/WidgetCard';
 import { DepthWidget } from '../src/widgets/DepthWidget';
 
 // Mock Zustand stores
-jest.mock('../src/core/themeStore');
-jest.mock('../src/core/nmeaStore');
+jest.mock('../src/store/themeStore');
+jest.mock('../src/store/nmeaStore');
 
 // Mock react-native-vector-icons
 jest.mock('react-native-vector-icons/Ionicons', () => 'Ionicons');
@@ -255,7 +255,7 @@ describe('Theme Integration', () => {
   });
 
   describe('DepthWidget Theme Integration', () => {
-    const mockUseNmeaStore = require('../src/core/nmeaStore').useNmeaStore as jest.MockedFunction<any>;
+    const mockUseNmeaStore = require('../src/store/nmeaStore').useNmeaStore as jest.MockedFunction<any>;
     const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
 
     beforeEach(() => {

@@ -1,15 +1,19 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
-  StyleSheet,
-  Modal,
+  Text,
   TouchableOpacity,
+  Modal,
+  StyleSheet,
   ScrollView,
   Animated,
   Dimensions,
+  Platform,
   SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../../store/themeStore';
+import { useWidgetStore } from '../../store/widgetStore';
+import { useNmeaStore } from '../../store/nmeaStore';
 import { MenuSection } from '../molecules/MenuSection';
 import { DevToolsSection } from '../molecules/DevToolsSection';
 import { useMenuState } from '../../hooks/useMenuState';
@@ -19,6 +23,8 @@ interface HamburgerMenuProps {
   visible: boolean;
   onClose: () => void;
   onShowUnitsDialog?: () => void;
+  onShowFactoryResetDialog?: () => void;
+  onShowConnectionSettings?: () => void;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -29,18 +35,40 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   visible,
   onClose,
   onShowUnitsDialog,
+  onShowFactoryResetDialog,
+  onShowConnectionSettings,
 }) => {
   const theme = useTheme();
   const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible);
+  const { resetAppToDefaults } = useWidgetStore();
+  const nmeaStore = useNmeaStore();
   
   // Custom action handlers
   const actionHandlers = {
+    openConnectionSettings: () => {
+      // Close hamburger menu first, then open dialog after animation
+      handleClose();
+      setTimeout(() => {
+        onShowConnectionSettings?.();
+      }, 300); // Wait for hamburger close animation
+    },
     toggleUnits: () => {
       // Close hamburger menu first, then open dialog after animation
       handleClose();
       setTimeout(() => {
         onShowUnitsDialog?.();
       }, 300); // Wait for hamburger close animation
+    },
+    performFactoryReset: async () => {
+      // Close hamburger menu first, then open dialog after animation
+      handleClose();
+      setTimeout(() => {
+        onShowFactoryResetDialog?.();
+      }, 300); // Wait for hamburger close animation
+    },
+    // Backwards compatibility - redirect to new name
+    resetAppToDefaults: async () => {
+      await actionHandlers.performFactoryReset();
     },
   };
 

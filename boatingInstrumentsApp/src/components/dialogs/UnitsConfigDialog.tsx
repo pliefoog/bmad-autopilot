@@ -10,7 +10,9 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../../store/themeStore';
-import { useUnitConversion, UnitDefinition } from '../../hooks/useUnitConversion';
+import { usePresentationStore } from '../../presentation/presentationStore';
+import { DataCategory } from '../../presentation/categories';
+import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
 
 interface UnitsConfigDialogProps {
   visible: boolean;
@@ -23,102 +25,133 @@ interface CategoryConfig {
   icon: string;
 }
 
-// Marine unit presets based on real sailing preferences
-interface UnitPreset {
+// Marine presentation presets based on Epic 9 Enhanced Presentation System
+// Comprehensive interface covering all NMEA marine data categories
+interface PresentationPreset {
   id: string;
   name: string;
   description: string;
-  units: Record<string, string>;
+  presentations: Record<DataCategory, string>;
 }
 
-const UNIT_PRESETS: UnitPreset[] = [
+const PRESENTATION_PRESETS: PresentationPreset[] = [
   {
     id: 'nautical_eu',
     name: 'Nautical (EU)',
     description: 'European sailing standard',
-    units: {
-      distance: 'nautical_mile',
-      depth: 'meter',
-      vessel_speed: 'knots',
-      wind_speed: 'knots_wind',
-      temperature: 'celsius',
-      pressure: 'bar',
-      coordinates: 'degrees_minutes',
-      voltage: 'volt',
-      current: 'ampere',
-      capacity: 'ampere_hour',
-      flow_rate: 'liter_per_hour',
-      time: 'hour',
-      angle: 'degree',
-      volume: 'liter',
+    presentations: {
+      depth: 'm_1',
+      speed: 'kts_1',
+      wind: 'wind_kts_1',
+      temperature: 'c_1',
+      pressure: 'bar_3',
+      angle: 'deg_0',
+      coordinates: 'ddm_3',
+      voltage: 'v_2',
+      current: 'a_2',
+      volume: 'l_0',
+      time: 'h_1',
+      distance: 'nm_1',
+      capacity: 'ah_0',
+      flowRate: 'lph_1',
+      frequency: 'hz_1',
+      power: 'kw_1',
+      rpm: 'rpm_0',
     },
   },
   {
     id: 'nautical_uk',
     name: 'Nautical (UK)',
     description: 'British sailing standard',
-    units: {
-      distance: 'nautical_mile',
-      depth: 'fathom',
-      vessel_speed: 'knots',
-      wind_speed: 'beaufort',
-      temperature: 'celsius',
-      pressure: 'bar',
-      coordinates: 'degrees_minutes',
-      voltage: 'volt',
-      current: 'ampere',
-      capacity: 'ampere_hour',
-      flow_rate: 'gallon_uk_per_hour',
-      time: 'hour',
-      angle: 'degree',
-      volume: 'gallon_uk',
+    presentations: {
+      depth: 'fth_1',
+      speed: 'kts_1',
+      wind: 'bf_desc',
+      temperature: 'c_1',
+      pressure: 'inhg_2',
+      angle: 'deg_0',
+      coordinates: 'dms_1',
+      voltage: 'v_2',
+      current: 'a_2',
+      volume: 'gal_uk_1',
+      time: 'h_1',
+      distance: 'nm_1',
+      capacity: 'ah_0',
+      flowRate: 'gph_uk_1',
+      frequency: 'hz_1',
+      power: 'hp_0',
+      rpm: 'rpm_0',
     },
   },
   {
     id: 'nautical_us',
     name: 'Nautical (USA)',
     description: 'US sailing standard',
-    units: {
-      distance: 'nautical_mile',
-      depth: 'foot',
-      vessel_speed: 'knots',
-      wind_speed: 'knots_wind',
-      temperature: 'fahrenheit',
-      pressure: 'psi',
-      coordinates: 'degrees_minutes',
-      voltage: 'volt',
-      current: 'ampere',
-      capacity: 'ampere_hour',
-      flow_rate: 'gallon_us_per_hour',
-      time: 'hour',
-      angle: 'degree',
-      volume: 'gallon_us',
+    presentations: {
+      depth: 'ft_1',
+      speed: 'kts_1',
+      wind: 'wind_kts_1',
+      temperature: 'f_1',
+      pressure: 'psi_1',
+      angle: 'deg_0',
+      coordinates: 'ddm_3',
+      voltage: 'v_2',
+      current: 'a_2',
+      volume: 'gal_us_1',
+      time: 'h_1',
+      distance: 'nm_1',
+      capacity: 'ah_0',
+      flowRate: 'gph_us_1',
+      frequency: 'hz_1',
+      power: 'hp_0',
+      rpm: 'rpm_0',
     },
   },
   {
     id: 'custom',
     name: 'Custom',
-    description: 'User-defined selection',
-    units: {}, // Empty - user configures
+    description: 'User-defined presentations',
+    presentations: {
+      depth: 'm_1',
+      speed: 'kts_1',
+      wind: 'wind_kts_1',
+      temperature: 'c_1',
+      pressure: 'bar_3',
+      angle: 'deg_0',
+      coordinates: 'dd_6',
+      voltage: 'v_2',
+      current: 'a_2',
+      volume: 'l_0',
+      time: 'h_1',
+      distance: 'nm_1',
+      capacity: 'ah_0',
+      flowRate: 'lph_1',
+      frequency: 'hz_1',
+      power: 'kw_1',
+      rpm: 'rpm_0',
+    },
   },
 ];
 
-// Define unit categories for marine applications (separate distance and depth)
+// Complete unit categories for marine applications with Epic 9 presentations
 const UNIT_CATEGORIES: CategoryConfig[] = [
-  { key: 'distance', name: 'Distance', icon: '📏' },
-  { key: 'depth', name: 'Depth', icon: '🌊' },
-  { key: 'vessel_speed', name: 'Vessel Speed', icon: '🚤' },
-  { key: 'wind_speed', name: 'Wind Speed', icon: '💨' },
+  { key: 'depth', name: 'Depth', icon: 'water-outline' },
+  { key: 'speed', name: 'Speed', icon: '🚤' },
+  { key: 'wind', name: 'Wind', icon: '💨' },
   { key: 'temperature', name: 'Temperature', icon: '🌡️' },
   { key: 'pressure', name: 'Pressure', icon: '🔘' },
-  { key: 'coordinates', name: 'GPS Coordinates', icon: '🗺️' },
+  { key: 'angle', name: 'Angle', icon: '🧭' },
+  { key: 'coordinates', name: 'GPS Position', icon: '📍' },
   { key: 'voltage', name: 'Voltage', icon: '⚡' },
-  { key: 'current', name: 'Current', icon: '🔋' },
+  { key: 'current', name: 'Current', icon: '🔌' },
+  { key: 'volume', name: 'Volume', icon: '🪣' },
+  { key: 'time', name: 'Time', icon: '🕐' },
+  { key: 'distance', name: 'Distance', icon: '📏' },
   { key: 'capacity', name: 'Battery Capacity', icon: '🔋' },
-  { key: 'flow_rate', name: 'Flow Rate', icon: '💧' },
-  { key: 'time', name: 'Time', icon: '⏰' },
-  { key: 'angle', name: 'Angle', icon: '📐' },
-  { key: 'volume', name: 'Volume', icon: '🫙' },
+  { key: 'flowRate', name: 'Flow Rate', icon: 'water-outline' },
+  { key: 'frequency', name: 'Frequency', icon: '🔊' },
+  { key: 'power', name: 'Power', icon: '⚡' },
+  { key: 'rpm', name: 'RPM', icon: '⚙️' },
 ];
 
 export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
@@ -126,12 +159,14 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
+  const presentationStore = usePresentationStore();
   const {
-    getUnitsInCategory,
-    getPreferredUnit,
-    setPreferredUnit,
-    preferences,
-  } = useUnitConversion();
+    getPresentationForCategory,
+    setPresentationForCategory,
+    resetToDefaults,
+    marineRegion,
+    setMarineRegion
+  } = presentationStore;
 
   // State for current selection mode
   const [selectedPreset, setSelectedPreset] = useState<string>('custom');
@@ -140,18 +175,19 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
   // Determine current preset based on preferences
   const getCurrentPreset = useCallback((): string => {
-    for (const preset of UNIT_PRESETS) {
+    for (const preset of PRESENTATION_PRESETS) {
       if (preset.id === 'custom') continue;
       
-      const matches = Object.entries(preset.units).every(([category, unitId]) => {
-        const preferredUnit = getPreferredUnit(category);
-        return preferredUnit?.id === unitId;
+      const matches = Object.entries(preset.presentations).every(([category, presentationId]) => {
+        if (!presentationId) return true; // Skip empty presentation IDs
+        const currentPresentationId = presentationStore.selectedPresentations[category as DataCategory];
+        return currentPresentationId === presentationId;
       });
       
       if (matches) return preset.id;
     }
     return 'custom';
-  }, [getPreferredUnit]);
+  }, [presentationStore.selectedPresentations]);
 
   // Initialize state based on current preferences
   React.useEffect(() => {
@@ -162,24 +198,24 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
       // Initialize custom units with current preferences
       const current: Record<string, string> = {};
       UNIT_CATEGORIES.forEach(category => {
-        const preferred = getPreferredUnit(category.key);
-        if (preferred) {
-          current[category.key] = preferred.id;
+        const presentationId = presentationStore.selectedPresentations[category.key as DataCategory];
+        if (presentationId) {
+          current[category.key] = presentationId;
         }
       });
       setCustomUnits(current);
       setHasChanges(false);
     }
-  }, [visible, getCurrentPreset, getPreferredUnit]);
+  }, [visible, getCurrentPreset, presentationStore.selectedPresentations]);
 
   // Handle preset selection
   const handlePresetSelect = useCallback((presetId: string) => {
     setSelectedPreset(presetId);
     
     if (presetId !== 'custom') {
-      const preset = UNIT_PRESETS.find(p => p.id === presetId);
+      const preset = PRESENTATION_PRESETS.find(p => p.id === presetId);
       if (preset) {
-        setCustomUnits(prev => ({ ...prev, ...preset.units }));
+        setCustomUnits(prev => ({ ...prev, ...preset.presentations }));
       }
     }
     
@@ -197,37 +233,43 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   const handleSave = useCallback(() => {
     if (selectedPreset === 'custom') {
       // Apply custom selection
-      Object.entries(customUnits).forEach(([category, unitId]) => {
-        if (unitId) {
-          setPreferredUnit(category, unitId);
+      Object.entries(customUnits).forEach(([category, presentationId]) => {
+        if (presentationId) {
+          setPresentationForCategory(category as DataCategory, presentationId);
         }
       });
     } else {
       // Apply preset
-      const preset = UNIT_PRESETS.find(p => p.id === selectedPreset);
+      const preset = PRESENTATION_PRESETS.find(p => p.id === selectedPreset);
       if (preset) {
-        Object.entries(preset.units).forEach(([category, unitId]) => {
-          setPreferredUnit(category, unitId);
+        Object.entries(preset.presentations).forEach(([category, presentationId]) => {
+          if (presentationId) { // Only set if presentation ID exists
+            setPresentationForCategory(category as DataCategory, presentationId);
+          }
         });
       }
     }
     
     // Close dialog immediately after saving
     onClose();
-  }, [selectedPreset, customUnits, setPreferredUnit, onClose]);
+  }, [selectedPreset, customUnits, setPresentationForCategory, onClose]);
 
   // Get units for a category
-  const getUnitsForCategory = useCallback((category: string): UnitDefinition[] => {
-    return getUnitsInCategory(category);
-  }, [getUnitsInCategory]);
+  const getPresentationsForCategory = useCallback((category: string): Presentation[] => {
+    const categoryPresentations = PRESENTATIONS[category as DataCategory];
+    return categoryPresentations?.presentations || [];
+  }, []);
 
   // Get currently selected unit for category
   const getSelectedUnit = useCallback((category: string): string => {
     if (selectedPreset === 'custom') {
       return customUnits[category] || '';
     } else {
-      const preset = UNIT_PRESETS.find(p => p.id === selectedPreset);
-      return preset?.units[category] || '';
+      const preset = PRESENTATION_PRESETS.find(p => p.id === selectedPreset);
+      if (!preset) return '';
+      
+      // Direct access to presentation categories
+      return preset.presentations[category as DataCategory] || '';
     }
   }, [selectedPreset, customUnits]);
 
@@ -264,7 +306,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Marine Presets</Text>
             <View style={styles.presetContainer}>
-              {UNIT_PRESETS.map((preset) => (
+              {PRESENTATION_PRESETS.map((preset) => (
                 <TouchableOpacity
                   key={preset.id}
                   style={[
@@ -297,7 +339,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Custom Configuration</Text>
               {UNIT_CATEGORIES.map((category) => {
-                const units = getUnitsForCategory(category.key);
+                const presentations = getPresentationsForCategory(category.key);
                 const selectedUnit = getSelectedUnit(category.key);
                 
                 return (
@@ -310,25 +352,25 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                     </View>
                     
                     <View style={styles.unitsGrid}>
-                      {units.map((unit) => (
+                      {presentations.map((presentation) => (
                         <TouchableOpacity
-                          key={unit.id}
+                          key={presentation.id}
                           style={[
                             styles.unitButton,
                             { backgroundColor: theme.surface, borderColor: theme.border },
-                            selectedUnit === unit.id && {
+                            selectedUnit === presentation.id && {
                               borderColor: theme.accent,
                               backgroundColor: `${theme.accent}15`
                             }
                           ]}
-                          onPress={() => handleUnitSelect(category.key, unit.id)}
+                          onPress={() => handleUnitSelect(category.key, presentation.id)}
                         >
                           <Text style={[
                             styles.unitSymbol,
                             { color: theme.text },
-                            selectedUnit === unit.id && { color: theme.accent }
+                            selectedUnit === presentation.id && { color: theme.accent }
                           ]}>
-                            {unit.symbol}
+                            {getPresentationConfigLabel(presentation)}
                           </Text>
                         </TouchableOpacity>
                       ))}
@@ -345,8 +387,8 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Preview</Text>
               {UNIT_CATEGORIES.map((category) => {
                 const selectedUnitId = getSelectedUnit(category.key);
-                const units = getUnitsForCategory(category.key);
-                const selectedUnitDef = units.find(u => u.id === selectedUnitId);
+                const presentations = getPresentationsForCategory(category.key);
+                const selectedPresentation = presentations.find(p => p.id === selectedUnitId);
                 
                 return (
                   <View key={category.key} style={[styles.previewRow, { borderBottomColor: theme.border }]}>
@@ -357,7 +399,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                       </Text>
                     </View>
                     <Text style={[styles.previewUnit, { color: theme.accent }]}>
-                      {selectedUnitDef?.symbol || '—'}
+                      {selectedPresentation ? getPresentationConfigLabel(selectedPresentation) : '—'}
                     </Text>
                   </View>
                 );

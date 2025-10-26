@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
 
 interface Props {
   children: ReactNode;
@@ -52,7 +52,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
       return (
         <View style={styles.errorContainer}>
           <View style={styles.errorHeader}>
-            <Ionicons name="warning-outline" size={32} color="#DC2626" />
+            <UniversalIcon name="warning-outline" size={32} color="#DC2626" />
             <Text style={styles.errorTitle}>Widget Error</Text>
           </View>
           
@@ -69,7 +69,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
               style={[styles.errorButton, styles.reloadButton]} 
               onPress={this.handleReload}
             >
-              <Ionicons name="refresh-outline" size={16} color="#FFFFFF" />
+              <UniversalIcon name="refresh-outline" size={16} color="#FFFFFF" />
               <Text style={styles.reloadButtonText}>Reload</Text>
             </TouchableOpacity>
             
@@ -78,7 +78,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
                 style={[styles.errorButton, styles.removeButton]} 
                 onPress={this.handleRemove}
               >
-                <Ionicons name="close-outline" size={16} color="#FFFFFF" />
+                <UniversalIcon name="close-outline" size={16} color="#FFFFFF" />
                 <Text style={styles.removeButtonText}>Remove</Text>
               </TouchableOpacity>
             )}

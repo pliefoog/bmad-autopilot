@@ -1,5 +1,5 @@
 import { StressTestService } from '@/services/stressTestService';
-import { useNmeaStore } from '@/core/nmeaStore';
+import { useNmeaStore } from '@/store/nmeaStore';
 
 jest.useRealTimers();
 

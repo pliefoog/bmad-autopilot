@@ -1,5 +1,5 @@
 import { PlaybackService } from '@/services/playbackService';
-import { useNmeaStore } from '@/core/nmeaStore';
+import { useNmeaStore } from '@/store/nmeaStore';
 import { parseNmeaSentence } from 'nmea-simple';
 import fs from 'fs';
 import path from 'path';

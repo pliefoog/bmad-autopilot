@@ -1,8 +1,8 @@
 import { AutopilotSafetyManager, SafetyEventType, SafetyAlertLevel } from '../src/services/autopilotSafetyManager';
-import { useNmeaStore } from '../src/core/nmeaStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
 
 // Mock the store
-jest.mock('../src/core/nmeaStore', () => ({
+jest.mock('../src/store/nmeaStore', () => ({
   useNmeaStore: {
     getState: jest.fn(),
     setState: jest.fn(),

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { useNmeaStore } from '../src/core/nmeaStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
 import { Text, View } from 'react-native';
 
 // Simple test component that displays connection status

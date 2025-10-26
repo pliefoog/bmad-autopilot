@@ -5,7 +5,7 @@
 
 import TcpSocket from 'react-native-tcp-socket';
 import { NmeaConnectionManager, NmeaConnectionOptions } from '../src/services/nmea/nmeaConnection';
-import { useNmeaStore } from '../src/core/nmeaStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
 
 // Type the mocked module
 const mockTcpSocket = TcpSocket as jest.Mocked<typeof TcpSocket>;

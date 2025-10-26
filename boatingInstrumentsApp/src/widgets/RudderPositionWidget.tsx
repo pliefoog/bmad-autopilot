@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
+import { useDataPresentation } from '../presentation/useDataPresentation';
+import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -36,8 +37,66 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
   const rudderAngle = autopilot?.rudderPosition || 0;
   const isStale = !autopilot;
   
-  // Metric display for rudder angle
-  const rudderAngleDisplay = useMetricDisplay('angle', Math.abs(rudderAngle));
+  // Epic 9 Enhanced Presentation System for rudder angle
+  const anglePresentation = useDataPresentation('angle');
+
+  // Rudder angle display data using Epic 9 presentation system
+  const getRudderAngleDisplay = useCallback((
+    presentation: any,
+    value: number,
+    rudderMnemonic: string = 'RUD',
+    fallbackSymbol: string = '°',
+    fallbackName: string = 'Degrees'
+  ): MetricDisplayData => {
+    const presDetails = presentation.presentation;
+    
+    if (!presentation.isValid || !presDetails) {
+      return {
+        mnemonic: rudderMnemonic, // NMEA source abbreviation
+        value: Math.abs(value).toFixed(1),
+        unit: fallbackSymbol, // Presentation symbol
+        rawValue: Math.abs(value),
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: 'fallback',
+          name: fallbackName,
+          pattern: 'xxx.x'
+        },
+        status: {
+          isValid: true,
+          isFallback: true
+        }
+      };
+    }
+    
+    return {
+      mnemonic: rudderMnemonic, // NMEA source abbreviation like "RUD" 
+      value: presentation.convertAndFormat(Math.abs(value)),
+      unit: presDetails.symbol, // Presentation symbol like "°"
+      rawValue: Math.abs(value),
+      layout: {
+        minWidth: 60,
+        alignment: 'right'
+      },
+      presentation: {
+        id: presDetails.id,
+        name: presDetails.name,
+        pattern: 'xxx.x'
+      },
+      status: {
+        isValid: true,
+        isFallback: false
+      }
+    };
+  }, []);
+
+  const rudderAngleDisplay = useMemo(() =>
+    getRudderAngleDisplay(anglePresentation, rudderAngle, 'RUD'),
+    [anglePresentation, rudderAngle, getRudderAngleDisplay]
+  );
   
   // Marine safety evaluation for rudder position
   const getRudderState = useCallback((angle: number) => {
@@ -179,9 +238,7 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
       {/* Primary Grid (1×1): Rudder angle with direction */}
       <View style={styles.primaryGrid}>
         <PrimaryMetricCell
-          mnemonic="RUDDER"
-          value={formatRudderDisplay(rudderAngle).value}
-          unit={formatRudderDisplay(rudderAngle).unit}
+          data={rudderAngleDisplay}
           state={getRudderState(rudderAngle)}
         />
       </View>

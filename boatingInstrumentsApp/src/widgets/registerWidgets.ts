@@ -9,7 +9,7 @@ import { BatteryWidget } from './BatteryWidget';
 import { TanksWidget } from './TanksWidget';
 import { AutopilotStatusWidget } from './AutopilotStatusWidget';
 import { RudderPositionWidget } from './RudderPositionWidget';
-import { WaterTemperatureWidget } from './WaterTemperatureWidget';
+import { DynamicTemperatureWidget } from './DynamicTemperatureWidget';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
 /**
@@ -94,7 +94,21 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    WaterTemperatureWidget
+    DynamicTemperatureWidget
+  );
+
+  // Register multi-instance temperature widget (supports all NMEA temperature zones)
+  WidgetRegistry.register(
+    {
+      id: 'temperature',
+      title: 'Temperature',
+      icon: 'thermometer-outline',
+      description: 'Multi-instance temperature sensors (water, air, engine room, etc.)',
+      category: 'environment',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    DynamicTemperatureWidget
   );
 
   // Engine widgets
@@ -137,6 +151,22 @@ export function registerAllWidgets(): void {
     },
     TanksWidget
   );
+
+  // Register individual tank widget (for multi-instance tank-0, tank-1, etc.)
+  console.log('[registerAllWidgets] Registering tank widget...');
+  WidgetRegistry.register(
+    {
+      id: 'tank',
+      title: 'Tank',
+      icon: 'cube-outline',
+      description: 'Individual tank level and status',
+      category: 'electrical',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    TanksWidget
+  );
+  console.log('[registerAllWidgets] Tank widget registered successfully');
 
   // Autopilot widgets
   WidgetRegistry.register(

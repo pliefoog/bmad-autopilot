@@ -3,8 +3,8 @@
  * Tests Zustand state management, NMEA data updates, and alarm evaluation logic
  */
 
-import { useNmeaStore } from '../src/core/nmeaStore';
-import { Alarm, NmeaData } from '../src/core/nmeaStore';
+import { useNmeaStore } from '../src/store/nmeaStore';
+import { Alarm, NmeaData } from '../src/store/nmeaStore';
 
 describe('nmeaStore', () => {
   beforeEach(() => {

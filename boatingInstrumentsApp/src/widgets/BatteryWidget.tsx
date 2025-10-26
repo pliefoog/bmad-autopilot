@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
+import { useDataPresentation, useTemperaturePresentation } from '../presentation/useDataPresentation';
+import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -21,6 +22,12 @@ interface BatteryWidgetProps {
  */
 export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, title, batteryInstance = 'house' }) => {
   const theme = useTheme();
+
+  // Extract battery instance from widget ID (e.g., "battery-0", "battery-1")
+  const instanceNumber = useMemo(() => {
+    const match = id.match(/battery-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [id]);
   
   // Widget state management
   const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
@@ -29,87 +36,138 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Battery data with multi-instance support
-  const battery = useNmeaStore(useCallback((state: any) => state.nmeaData.battery, []));
+  // NMEA data selectors - Multi-instance Battery data
+  const batteryData = useNmeaStore(useCallback((state: any) => state.getBatteryData(instanceNumber), [instanceNumber]));
   
-  // Multi-instance battery data extraction based on NMEA instance
-  const getBatteryData = useCallback(() => {
-    if (!battery) return null;
-    
-    // If we have extended multi-instance battery data
-    if (Array.isArray(battery.banks)) {
-      const bank = battery.banks.find((b: any) => b.instance === batteryInstance);
-      if (bank) return bank;
+  // Extract battery data - now comes directly from NMEA store
+  const currentBatteryData = useMemo(() => {
+    if (batteryData) {
+      return {
+        voltage: batteryData.voltage,
+        current: batteryData.current,
+        temperature: batteryData.temperature,
+        stateOfCharge: batteryData.stateOfCharge,
+        nominalVoltage: 12.0, // Default nominal voltage
+        capacity: batteryData.capacity,
+        chemistry: 'Unknown', // Could be extended from NMEA data
+        instance: instanceNumber
+      };
     }
-    
-    // Fallback to simple structure based on instance type
-    switch (batteryInstance) {
-      case 'house':
-        return {
-          voltage: battery.house,
-          current: battery.current,
-          temperature: battery.temperature,
-          stateOfCharge: battery.stateOfCharge,
-          nominalVoltage: battery.nominalVoltage || 12.0,
-          capacity: battery.capacity,
-          chemistry: battery.chemistry || 'Unknown',
-          instance: 'house'
-        };
-      case 'engine':
-        return {
-          voltage: battery.engine,
-          current: battery.engineCurrent,
-          temperature: battery.engineTemperature,
-          stateOfCharge: battery.engineSOC,
-          nominalVoltage: 12.0,
-          capacity: battery.engineCapacity,
-          chemistry: battery.engineChemistry || 'Lead Acid',
-          instance: 'engine'
-        };
-      case 'thruster':
-        return {
-          voltage: battery.thruster,
-          current: battery.thrusterCurrent,
-          temperature: battery.thrusterTemperature,
-          stateOfCharge: battery.thrusterSOC,
-          nominalVoltage: 12.0,
-          capacity: battery.thrusterCapacity,
-          chemistry: battery.thrusterChemistry || 'AGM',
-          instance: 'thruster'
-        };
-      default:
-        // Generic instance fallback
-        return {
-          voltage: battery[batteryInstance] || battery.house,
-          current: battery.current,
-          temperature: battery.temperature,
-          stateOfCharge: battery.stateOfCharge,
-          nominalVoltage: 12.0,
-          capacity: battery.capacity,
-          chemistry: 'Unknown',
-          instance: batteryInstance
-        };
-    }
-  }, [battery, batteryInstance]);
-
-  const batteryData = getBatteryData();
+    return null;
+  }, [batteryData, instanceNumber]);
   
   // Extract values with defaults
-  const voltage = batteryData?.voltage || null;
-  const current = batteryData?.current || null;
-  const temperature = batteryData?.temperature || null;
-  const stateOfCharge = batteryData?.stateOfCharge || null;
-  const nominalVoltage = batteryData?.nominalVoltage || 12.0;
-  const capacity = batteryData?.capacity || null;
-  const chemistry = batteryData?.chemistry || 'Unknown';
+  const voltage = currentBatteryData?.voltage || null;
+  const current = currentBatteryData?.current || null;
+  const temperature = currentBatteryData?.temperature || null;
+  const stateOfCharge = currentBatteryData?.stateOfCharge || null;
+  const nominalVoltage = currentBatteryData?.nominalVoltage || 12.0;
+  const capacity = currentBatteryData?.capacity || null;
+  const chemistry = currentBatteryData?.chemistry || 'Unknown';
   
-  // Metric display hooks for battery values
-  const voltageDisplay = useMetricDisplay('voltage', voltage);
-  const currentDisplay = useMetricDisplay('current', current !== null ? Math.abs(current) : null);
-  const temperatureDisplay = useMetricDisplay('temperature', temperature);
-  const nominalVoltageDisplay = useMetricDisplay('voltage', nominalVoltage);
+  // Epic 9 Enhanced Presentation System for battery values
+  const voltagePresentation = useDataPresentation('voltage');
+  const currentPresentation = useDataPresentation('current');
+  const temperaturePresentation = useTemperaturePresentation();
+  const capacityPresentation = useDataPresentation('capacity');
   
-  const isStale = !batteryData || voltage === null;
+  // Battery display functions using Epic 9 system
+  const getBatteryDisplay = useCallback((
+    presentation: any,
+    value: number | null,
+    batteryMnemonic: string,
+    fallbackSymbol: string = '',
+    fallbackName: string = ''
+  ): MetricDisplayData => {
+    const presDetails = presentation.presentation;
+    
+    if (value === null) {
+      return {
+        mnemonic: batteryMnemonic,
+        value: '---',
+        unit: fallbackSymbol,
+        rawValue: 0,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: presDetails?.id || 'default',
+          name: fallbackName,
+          pattern: 'xxx'
+        },
+        status: {
+          isValid: false,
+          error: 'No data',
+          isFallback: true
+        }
+      };
+    }
+
+    if (!presentation.isValid || !presDetails) {
+      return {
+        mnemonic: batteryMnemonic,
+        value: value.toFixed(1),
+        unit: fallbackSymbol,
+        rawValue: value,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: 'fallback',
+          name: fallbackName,
+          pattern: 'xxx.x'
+        },
+        status: {
+          isValid: false,
+          isFallback: true
+        }
+      };
+    }
+
+    return {
+      mnemonic: batteryMnemonic,
+      value: presentation.format(presentation.convert(value)),
+      unit: presDetails.symbol,
+      rawValue: value,
+      layout: {
+        minWidth: 60,
+        alignment: 'right'
+      },
+      presentation: {
+        id: presDetails.id,
+        name: presDetails.name,
+        pattern: 'xxx.x'
+      },
+      status: {
+        isValid: true
+      }
+    };
+  }, []);
+
+  // Battery display values with proper NMEA mnemonics
+  const voltageDisplay = useMemo(() => 
+    getBatteryDisplay(voltagePresentation, voltage, 'VLT', 'V', 'Volts'),
+    [voltagePresentation, voltage, getBatteryDisplay]
+  );
+
+  const currentDisplay = useMemo(() => 
+    getBatteryDisplay(currentPresentation, current !== null ? Math.abs(current) : null, 'AMP', 'A', 'Amperes'),
+    [currentPresentation, current, getBatteryDisplay]
+  );
+
+  const temperatureDisplay = useMemo(() => 
+    getBatteryDisplay(temperaturePresentation, temperature, 'TMP', '°C', 'Celsius'),
+    [temperaturePresentation, temperature, getBatteryDisplay]
+  );
+
+  const nominalVoltageDisplay = useMemo(() => 
+    getBatteryDisplay(voltagePresentation, nominalVoltage, 'NOM', 'V', 'Nominal Volts'),
+    [voltagePresentation, nominalVoltage, getBatteryDisplay]
+  );
+  
+  const isStale = !currentBatteryData || voltage === null;
 
   // Marine safety thresholds for battery monitoring
   const getBatteryState = useCallback((voltage: number | null, soc: number | null) => {
@@ -279,24 +337,21 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
       {/* Primary Grid (2×2): VOLT, CURR, TEMP, SOC */}
       <View style={styles.primaryGrid}>
           <PrimaryMetricCell
-            mnemonic="VOLT"
             data={voltageDisplay}
             state={getVoltageState()}
           />
           <PrimaryMetricCell
-            mnemonic="CURR"
             data={currentDisplay}
             state={getCurrentState()}
           />
           <PrimaryMetricCell
-            mnemonic="TEMP"
             data={temperatureDisplay}
             state={getTempState()}
           />
           <PrimaryMetricCell
             mnemonic="SOC"
             value={stateOfCharge !== null ? `${stateOfCharge.toFixed(0)}%` : '---'}
-            unit=""
+            unit="%"
             state={getSOCState()}
           />
         </View>
@@ -305,7 +360,6 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
       {expanded && (
         <View style={styles.secondaryGrid}>
             <SecondaryMetricCell
-              mnemonic="NOM"
               data={nominalVoltageDisplay}
               state="normal"
               compact={true}

@@ -3,7 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
+import { useWindPresentation } from '../presentation/useDataPresentation';
+import { MetricDisplayData } from '../types/MetricDisplayData';
+import { usePresentationStore } from '../presentation/presentationStore';
+import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -19,6 +22,16 @@ interface WindWidgetProps {
  */
 export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) => {
   const theme = useTheme();
+  
+  // NEW: Clean semantic data presentation system for wind
+  const windPresentation = useWindPresentation();
+  const presentationStore = usePresentationStore();
+  
+  // Get the full presentation object with formatSpec
+  const fullWindPresentation = useMemo(() => {
+    const presentationId = presentationStore.selectedPresentations.wind;
+    return presentationId ? findPresentation('wind', presentationId) : null;
+  }, [presentationStore.selectedPresentations.wind]);
   
   // Widget state management per ui-architecture.md v2.3
   const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
@@ -135,35 +148,115 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
     };
   }, [windHistory]);
 
-  // NEW: Enhanced metric display system using unified useMetricDisplay hook
-  const awsDisplay = useMetricDisplay('wind', windSpeed, 'AWS');  // Apparent Wind Speed
-  const awaDisplay = useMetricDisplay('angle', windAngle, 'AWA'); // Apparent Wind Angle
-  const twsDisplay = useMetricDisplay('wind', trueWind.speed, 'TWS'); // True Wind Speed
-  const twaDisplay = useMetricDisplay('angle', trueWind.angle, 'TWA'); // True Wind Angle
-  const gustDisplay = useMetricDisplay('wind', gustCalculations.apparentGust, 'GUST');
-  const trueGustDisplay = useMetricDisplay('wind', gustCalculations.trueGust, 'TGUST');
-  const variationDisplay = useMetricDisplay('angle', gustCalculations.apparentVariation, 'VAR');
-  const trueVariationDisplay = useMetricDisplay('angle', gustCalculations.trueVariation, 'TVAR');
+  // NEW: Wind conversion using semantic presentation system
+  const getWindDisplay = useCallback((windValue: number | null | undefined, label: string = 'Wind'): MetricDisplayData => {
+    const presentation = windPresentation.presentation;
+    
+    if (windValue === undefined || windValue === null) {
+      return {
+        mnemonic: label, // NMEA source abbreviation like "AWA", "AWS", "TWA", "TWS"
+        value: '---',
+        unit: presentation?.symbol || 'kt', // Presentation symbol
+        rawValue: 0,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: presentation?.id || 'wind_kts_1',
+          name: presentation?.name || 'Knots (1 decimal)',
+          pattern: fullWindPresentation?.formatSpec.pattern || 'xxx.x'
+        },
+        status: {
+          isValid: false,
+          error: 'No data',
+          isFallback: true
+        }
+      };
+    }
+    
+    if (!windPresentation.isValid || !presentation || !fullWindPresentation) {
+      // Fallback to knots if presentation system fails
+      return {
+        mnemonic: label, // NMEA source abbreviation like "AWA", "AWS", "TWA", "TWS"
+        value: windValue.toFixed(1),
+        unit: 'kt', // Fallback presentation symbol
+        rawValue: windValue,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: 'wind_kts_1',
+          name: 'Knots (1 decimal)',
+          pattern: 'xxx.x'
+        },
+        status: {
+          isValid: true,
+          isFallback: true
+        }
+      };
+    }
+    
+    return {
+      mnemonic: label, // NMEA source abbreviation like "AWA", "AWS", "TWA", "TWS"
+      value: windPresentation.convertAndFormat(windValue),
+      unit: presentation.symbol, // Presentation symbol like "kt", "Bf"
+      rawValue: windValue,
+      layout: {
+        minWidth: fullWindPresentation.formatSpec.minWidth * 8,
+        alignment: 'right'
+      },
+      presentation: {
+        id: presentation.id,
+        name: presentation.name,
+        pattern: fullWindPresentation.formatSpec.pattern
+      },
+      status: {
+        isValid: true,
+        isFallback: false
+      }
+    };
+  }, [windPresentation, fullWindPresentation]);
+  
+  // Simple angle display function (angles don't need conversion, just formatting)
+  const getAngleDisplay = useCallback((angleValue: number | null | undefined, label: string = 'Angle'): MetricDisplayData => {
+    if (angleValue === undefined || angleValue === null) {
+      return {
+        mnemonic: label, // NMEA source abbreviation like "AWA", "TWA"
+        value: '---',
+        unit: '°', // Presentation symbol for degrees
+        rawValue: 0,
+        layout: { minWidth: 50, alignment: 'right' },
+        presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
+        status: { isValid: false, error: 'No data', isFallback: true }
+      };
+    }
+    
+    return {
+      mnemonic: label, // NMEA source abbreviation like "AWA", "TWA"
+      value: Math.round(angleValue).toString(),
+      unit: '°', // Presentation symbol for degrees
+      rawValue: angleValue,
+      layout: { minWidth: 50, alignment: 'right' },
+      presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
+      status: { isValid: true, isFallback: false }
+    };
+  }, []);
 
-  // DEBUG: Log wind data and metric display system
-  useEffect(() => {
-    console.log('[WindWidget] NMEA Data - AWS:', windSpeed, 'AWA:', windAngle);
-    console.log('[WindWidget] Metric Display - AWS:', awsDisplay, 'AWA:', awaDisplay);
-  }, [windSpeed, windAngle, awsDisplay, awaDisplay]);
-
-  // Wind display data for component compatibility (legacy format)
+  // Wind display data using presentation system
   const windDisplayData = useMemo(() => {
     return {
-      windSpeed: { value: awsDisplay.value, unit: awsDisplay.unit },
-      trueWindSpeed: { value: twsDisplay.value, unit: twsDisplay.unit },
-      windAngle: { value: awaDisplay.value, unit: awaDisplay.unit },
-      trueWindAngle: { value: twaDisplay.value, unit: twaDisplay.unit },
-      apparentGust: { value: gustDisplay.value, unit: gustDisplay.unit },
-      trueGust: { value: trueGustDisplay.value, unit: trueGustDisplay.unit },
-      apparentVariation: { value: variationDisplay.value, unit: variationDisplay.unit },
-      trueVariation: { value: trueVariationDisplay.value, unit: trueVariationDisplay.unit }
+      windSpeed: getWindDisplay(windSpeed, 'AWS'),
+      trueWindSpeed: getWindDisplay(trueWind.speed, 'TWS'),
+      windAngle: getAngleDisplay(windAngle, 'AWA'),
+      trueWindAngle: getAngleDisplay(trueWind.angle, 'TWA'),
+      apparentGust: getWindDisplay(gustCalculations.apparentGust, 'MAX'),
+      trueGust: getWindDisplay(gustCalculations.trueGust, 'MAX'),
+      apparentVariation: getAngleDisplay(gustCalculations.apparentVariation, 'VAR'),
+      trueVariation: getAngleDisplay(gustCalculations.trueVariation, 'VAR')
     };
-  }, [awsDisplay, twsDisplay, awaDisplay, twaDisplay, gustDisplay, trueGustDisplay, variationDisplay, trueVariationDisplay]);
+  }, [getWindDisplay, getAngleDisplay, windSpeed, windAngle, trueWind, gustCalculations]);
 
   // Update true wind history
   useEffect(() => {
@@ -249,13 +342,13 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
         <View style={styles.primaryGrid}>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
-              data={awsDisplay}
+              data={windDisplayData.windSpeed}
               state={isStale ? 'warning' : 'normal'}
             />
           </View>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
-              data={twsDisplay}
+              data={windDisplayData.trueWindSpeed}
               state={isStale ? 'warning' : 'normal'}
             />
           </View>
@@ -264,13 +357,13 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
         <View style={styles.primaryGrid}>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
-              data={awaDisplay}
+              data={windDisplayData.windAngle}
               state={isStale ? 'warning' : 'normal'}
             />
           </View>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
-              data={twaDisplay}
+              data={windDisplayData.trueWindAngle}
               state={isStale ? 'warning' : 'normal'}
             />
           </View>
@@ -284,14 +377,14 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
           <View style={styles.secondaryGrid}>
             <View style={styles.gridCell}>
               <SecondaryMetricCell
-                data={gustDisplay}
+                data={windDisplayData.apparentGust}
                 state="normal"
                 compact={true}
               />
             </View>
             <View style={styles.gridCell}>
               <SecondaryMetricCell
-                data={trueGustDisplay}
+                data={windDisplayData.trueGust}
                 state="normal"
                 compact={true}
               />
@@ -301,14 +394,14 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
           <View style={styles.secondaryGrid}>
             <View style={styles.gridCell}>
               <SecondaryMetricCell
-                data={variationDisplay}
+                data={windDisplayData.apparentVariation}
                 state="normal"
                 compact={true}
               />
             </View>
             <View style={styles.gridCell}>
               <SecondaryMetricCell
-                data={trueVariationDisplay}
+                data={windDisplayData.trueVariation}
                 state="normal"
                 compact={true}
               />

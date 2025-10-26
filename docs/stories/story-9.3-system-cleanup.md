@@ -36,6 +36,7 @@ so that **future features can be implemented efficiently with consistent behavio
   - [x] Update import statements across all widgets
   - [x] Clean up bridge-related configuration and constants
   - [x] Remove legacy unit conversion utilities from widgets
+  - [x] Remove legacy bridge imports and usage from App.tsx
   - [ ] Update documentation to reflect unified system
 
 - [ ] **Settings Integration** (AC: #2)
@@ -105,6 +106,7 @@ Claude 3.5 Sonnet
 #### Legacy System Removal (COMPLETED)
 - **legacyBridge.ts**: Deleted from src/presentation/
 - **Bridge sync calls**: Removed from UnitsConfigDialog.tsx
+- **App.tsx cleanup**: Removed useLegacyUnitBridge import and usage
 - **Import cleanup**: Updated presentation/index.ts exports
 
 #### Preservation Decisions

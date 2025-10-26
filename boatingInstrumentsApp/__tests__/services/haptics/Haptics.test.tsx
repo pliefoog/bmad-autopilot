@@ -2,7 +2,7 @@ import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { vibratePattern, hapticPatterns, useHaptics } from '../../../src/services/haptics/Haptics';
 import { Vibration, Text } from 'react-native';
-import { useSettingsStore } from '../../../src/stores/settingsStore';
+import { useSettingsStore } from '../../../src/store/settingsStore';
 
 describe('Haptics utilities', () => {
   test('vibratePattern maps named patterns to Vibration payloads', () => {

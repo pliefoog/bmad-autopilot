@@ -1,9 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
+import { useDataPresentation, useTemperaturePresentation } from '../presentation/useDataPresentation';
+import { MetricDisplayData } from '../types/MetricDisplayData';
+import { usePresentationStore } from '../presentation/presentationStore';
+import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -21,6 +24,11 @@ interface EngineWidgetProps {
 export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title }) => {
   const theme = useTheme();
 
+  // Extract engine instance from widget ID (e.g., "engine-0", "engine-1")
+  const instanceNumber = useMemo(() => {
+    const match = id.match(/engine-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [id]);
   
   // Widget state management per ui-architecture.md v2.3
   const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
@@ -29,23 +37,130 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Engine data
-  const engine = useNmeaStore(useCallback((state: any) => state.nmeaData.engine, []));
+  // NMEA data selectors - Multi-instance Engine data
+  const engineData = useNmeaStore(useCallback((state: any) => state.getEngineData(instanceNumber), [instanceNumber]));
   
   // Extract engine data with defaults for multi-instance support
-  const rpm = engine?.rpm || null;
-  const coolantTemp = engine?.coolantTemp || null;
-  const oilPressure = engine?.oilPressure || null;
-  const alternatorVoltage = engine?.alternatorVoltage || null;
-  const fuelFlow = engine?.fuelFlow || null;
-  const engineHours = engine?.engineHours || null;
+  const rpm = engineData?.rpm || null;
+  const coolantTemp = engineData?.coolantTemp || null;
+  const oilPressure = engineData?.oilPressure || null;
+  const alternatorVoltage = engineData?.alternatorVoltage || null;
+  const fuelFlow = engineData?.fuelFlow || null;
+  const engineHours = engineData?.engineHours || null;
   
-  // Metric display hooks for engine values
-  const coolantTempDisplay = useMetricDisplay('temperature', coolantTemp);
-  const oilPressureDisplay = useMetricDisplay('pressure', oilPressure);
-  const alternatorVoltageDisplay = useMetricDisplay('voltage', alternatorVoltage);
-  const fuelFlowDisplay = useMetricDisplay('volume', fuelFlow);
-  const engineHoursDisplay = useMetricDisplay('time', engineHours);
+  // Epic 9 Enhanced Presentation System for engine values
+  const frequencyPresentation = useDataPresentation('frequency');
+  const temperaturePresentation = useTemperaturePresentation();
+  const pressurePresentation = useDataPresentation('pressure');
+  const voltagePresentation = useDataPresentation('voltage');
+  const volumePresentation = useDataPresentation('volume');
+  const timePresentation = useDataPresentation('time');
+
+  // Engine display data using Epic 9 presentation system
+  const getEngineDisplay = useCallback((
+    presentation: any,
+    value: number | null,
+    engineMnemonic: string,
+    fallbackSymbol: string = '',
+    fallbackName: string = ''
+  ): MetricDisplayData => {
+    const presDetails = presentation.presentation;
+    
+    if (value === null) {
+      return {
+        mnemonic: engineMnemonic, // NMEA source abbreviation 
+        value: '---',
+        unit: fallbackSymbol, // Fallback presentation symbol
+        rawValue: 0,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: presDetails?.id || 'default',
+          name: fallbackName,
+          pattern: 'xxx'
+        },
+        status: {
+          isValid: false,
+          error: 'No data',
+          isFallback: true
+        }
+      };
+    }
+
+    if (!presentation.isValid || !presDetails) {
+      return {
+        mnemonic: engineMnemonic, // NMEA source abbreviation
+        value: value.toFixed(1),
+        unit: fallbackSymbol, // Fallback presentation symbol
+        rawValue: value,
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: 'fallback',
+          name: fallbackName,
+          pattern: 'xxx.x'
+        },
+        status: {
+          isValid: true,
+          isFallback: true
+        }
+      };
+    }
+    
+    return {
+      mnemonic: engineMnemonic, // NMEA source abbreviation like "TEMP", "OIL", "VOLT"
+      value: presentation.convertAndFormat(value),
+      unit: presDetails.symbol, // Presentation symbol like "°C", "bar", "V"
+      rawValue: value,
+      layout: {
+        minWidth: 60,
+        alignment: 'right'
+      },
+      presentation: {
+        id: presDetails.id,
+        name: presDetails.name,
+        pattern: 'xxx.x' // Default pattern
+      },
+      status: {
+        isValid: true,
+        isFallback: false
+      }
+    };
+  }, []);
+
+  const rpmDisplay = useMemo(() => 
+    getEngineDisplay(frequencyPresentation, rpm, 'RPM', 'rpm', 'RPM'), // Engine Revolution Per Minute
+    [frequencyPresentation, rpm, getEngineDisplay]
+  );
+
+  const coolantTempDisplay = useMemo(() => 
+    getEngineDisplay(temperaturePresentation, coolantTemp, 'ECT', '°C', 'Celsius'), // Engine Coolant Temperature
+    [temperaturePresentation, coolantTemp, getEngineDisplay]
+  );
+
+  const oilPressureDisplay = useMemo(() =>
+    getEngineDisplay(pressurePresentation, oilPressure, 'EOP', 'bar', 'Bar'), // Engine Oil Pressure
+    [pressurePresentation, oilPressure, getEngineDisplay]
+  );
+
+  const alternatorVoltageDisplay = useMemo(() =>
+    getEngineDisplay(voltagePresentation, alternatorVoltage, 'ALT', 'V', 'Volts'), // Alternator Voltage
+    [voltagePresentation, alternatorVoltage, getEngineDisplay]
+  );
+
+  const fuelFlowDisplay = useMemo(() =>
+    getEngineDisplay(volumePresentation, fuelFlow, 'EFF', 'L/h', 'Liters per Hour'), // Engine Fuel Flow
+    [volumePresentation, fuelFlow, getEngineDisplay]
+  );
+
+  const engineHoursDisplay = useMemo(() =>
+    getEngineDisplay(timePresentation, engineHours, 'EHR', 'h', 'Hours'), // Engine Hours
+    [timePresentation, engineHours, getEngineDisplay]
+  );
   
   // Marine safety thresholds for engine monitoring
   const getEngineState = useCallback((rpm: number | null, temp: number | null, oil: number | null) => {
@@ -65,7 +180,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   }, []);
 
   const engineState = getEngineState(rpm, coolantTemp, oilPressure);
-  const isStale = !engine;
+  const isStale = !engineData;
 
   // Individual metric state functions for PrimaryMetricCell
   const getRpmState = useCallback(() => {
@@ -201,23 +316,18 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
       {/* Primary Grid (2×2): RPM, TEMP, OIL, VOLT */}
       <View style={styles.primaryGrid}>
           <PrimaryMetricCell
-            mnemonic="RPM"
-            value={rpm !== null ? Math.round(rpm).toString() : '---'}
-            unit=""
+            data={rpmDisplay}
             state={getRpmState()}
           />
           <PrimaryMetricCell
-            mnemonic="TEMP"
             data={coolantTempDisplay}
             state={getTempState()}
           />
           <PrimaryMetricCell
-            mnemonic="OIL"
             data={oilPressureDisplay}
             state={getOilState()}
           />
           <PrimaryMetricCell
-            mnemonic="VOLT"
             data={alternatorVoltageDisplay}
             state={getVoltState()}
           />
@@ -227,13 +337,11 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
       {expanded && (
         <View style={styles.secondaryGrid}>
             <SecondaryMetricCell
-              mnemonic="FUEL"
               data={fuelFlowDisplay}
               state="normal"
               compact={true}
             />
             <SecondaryMetricCell
-              mnemonic="HRS"
               data={engineHoursDisplay}
               state="normal"
               compact={true}

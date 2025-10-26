@@ -50,9 +50,9 @@ interface ConnectionActions {
 type ConnectionStore = ConnectionState & ConnectionActions;
 
 const defaultConfig: ConnectionConfig = {
-  ip: '10.0.0.1',
-  port: 2000,
-  protocol: 'tcp',
+  ip: '127.0.0.1',
+  port: 8080,
+  protocol: 'websocket',
   autoConnect: true,
   reconnectInterval: 5000,
   maxReconnectAttempts: 10,

@@ -17,12 +17,12 @@ import { CompassWidget } from '../../../src/widgets/CompassWidget';
 import { WidgetCard } from '../../../src/widgets/WidgetCard';
 
 // Mock stores
-jest.mock('../../../src/core/nmeaStore');
-jest.mock('../../../src/core/themeStore');
+jest.mock('../../../src/store/nmeaStore');
+jest.mock('../../../src/store/themeStore');
 
 // Mock data for testing
-const mockNmeaStore = require('../../../src/core/nmeaStore');
-const mockThemeStore = require('../../../src/core/themeStore');
+const mockNmeaStore = require('../../../src/store/nmeaStore');
+const mockThemeStore = require('../../../src/store/themeStore');
 
 describe('Widget Accessibility Integration', () => {
   beforeEach(() => {
