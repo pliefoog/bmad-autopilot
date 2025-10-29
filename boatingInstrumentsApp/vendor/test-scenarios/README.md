@@ -21,17 +21,17 @@ vendor/test-scenarios/
 ## Scenario Usage
 
 ### Running Scenarios
-Use the NMEA Bridge Simulator to run any scenario:
+Use the unified NMEA Bridge to run any scenario:
 
 ```bash
 # Run a specific scenario
-node server/nmea-bridge-simulator.js --scenario navigation/basic-navigation
+node server/nmea-bridge.js --scenario basic-navigation
 
 # Run with looping
-node server/nmea-bridge-simulator.js --scenario autopilot/autopilot-engagement --loop
+node server/nmea-bridge.js --scenario autopilot-engagement --loop
 
-# List available scenarios
-node server/nmea-bridge-simulator.js --list-scenarios
+# Get help and list available scenarios
+node server/nmea-bridge.js --help
 ```
 
 ### Available VS Code Tasks

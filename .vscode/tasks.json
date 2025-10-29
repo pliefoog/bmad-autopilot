@@ -2,11 +2,14 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Start NMEA Bridge Simulator",
+			"label": "Start NMEA Bridge: Scenario - Basic Navigation (Default)",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js"
+				"server/nmea-bridge.js",
+				"--scenario",
+				"basic-navigation",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -29,7 +32,7 @@
 			"command": "pkill",
 			"args": [
 				"-f",
-				"nmea-bridge-simulator.js"
+				"nmea-bridge.js"
 			],
 			"group": "build",
 			"presentation": {
@@ -75,7 +78,7 @@
 			"label": "Start Full Web Development Stack",
 			"dependsOrder": "parallel",
 			"dependsOn": [
-				"Start NMEA Bridge Simulator",
+				"Start NMEA Bridge: Scenario - Basic Navigation (Default)",
 				"Start Web Dev Server"
 			],
 			"group": "build",
@@ -89,13 +92,15 @@
 			}
 		},
 		{
-			"label": "Start NMEA Bridge Simulator (Recording)",
+			"label": "Start NMEA Bridge: File Mode - Recording Playback",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
-				"--recording",
-				"server/recordings/archived/nmea_recording_20250720_003925.json",
+				"server/nmea-bridge.js",
+				"--file",
+				"vendor/sample-data/sailing-demo.nmea",
+				"--rate",
+				"10",
 				"--loop"
 			],
 			"options": {
@@ -114,37 +119,13 @@
 			}
 		},
 		{
-			"label": "Start Scenario: Basic Navigation",
+			"label": "Start NMEA Bridge: Scenario - Basic Navigation",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
+				"server/nmea-bridge.js",
 				"--scenario",
-				"navigation/basic-navigation"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start Scenario: Coastal Sailing (Comprehensive)",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge-simulator.js",
-				"--scenario",
-				"navigation/coastal-sailing",
+				"basic-navigation",
 				"--loop"
 			],
 			"options": {
@@ -163,13 +144,14 @@
 			}
 		},
 		{
-			"label": "Start Scenario: Deep Water Passage",
+			"label": "Start NMEA Bridge: Scenario - Coastal Sailing",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
+				"server/nmea-bridge.js",
 				"--scenario",
-				"navigation/deep-water-passage"
+				"coastal-sailing",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -187,13 +169,14 @@
 			}
 		},
 		{
-			"label": "Start Scenario: Autopilot Engagement",
+			"label": "Start NMEA Bridge: Scenario - Deep Water Passage",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
+				"server/nmea-bridge.js",
 				"--scenario",
-				"autopilot/autopilot-engagement"
+				"deep-water-passage",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -211,13 +194,39 @@
 			}
 		},
 		{
-			"label": "Start Scenario: Engine Monitoring",
+			"label": "Start NMEA Bridge: Scenario - Autopilot Engagement",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
+				"server/nmea-bridge.js",
 				"--scenario",
-				"engine/engine-monitoring"
+				"autopilot-engagement",
+				"--loop"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Scenario - Engine Monitoring",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge.js",
+				"--scenario",
+				"engine-monitoring",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -238,7 +247,7 @@
 			"label": "Start Full Dev Stack + Comprehensive Scenario",
 			"dependsOrder": "parallel",
 			"dependsOn": [
-				"Start Scenario: Coastal Sailing (Comprehensive)",
+				"Start NMEA Bridge: Scenario - Coastal Sailing",
 				"Start Web Dev Server"
 			],
 			"group": "build",
@@ -252,13 +261,14 @@
 			}
 		},
 		{
-			"label": "Start Scenario: Real-World Sailing Recording",
+			"label": "Start NMEA Bridge: Scenario - Real-World Sailing",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
+				"server/nmea-bridge.js",
 				"--scenario",
-				"vendor/test-scenarios/recorded/real-world-sailing.yml"
+				"real-world-sailing",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -276,13 +286,14 @@
 			}
 		},
 		{
-			"label": "Start Multi-Instance Equipment Detection Test",
+			"label": "Start NMEA Bridge: Scenario - Multi-Instance Equipment Detection",
 			"type": "shell",
 			"command": "node",
 			"args": [
-				"server/nmea-bridge-simulator.js",
+				"server/nmea-bridge.js",
 				"--scenario",
-				"vendor/test-scenarios/multi-instance/multi-equipment-detection.yml"
+				"multi-equipment-detection",
+				"--loop"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
@@ -316,6 +327,101 @@
 				"showReuseMessage": false,
 				"clear": false
 			}
+		},
+		{
+			"label": "Start NMEA Bridge: Live Mode - Hardware Connection",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge.js",
+				"--live",
+				"192.168.1.10",
+				"10110"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: File Mode - Sailing Demo",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"server/nmea-bridge.js",
+				"--file",
+				"vendor/sample-data/sailing-demo.nmea",
+				"--rate",
+				"10",
+				"--loop"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Test NMEA WebSocket Connection",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"test-nmea-websocket.js"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "new",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Test WebSocket Connection (Simple)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const ws=require(\"ws\");const client=new ws(\"ws://localhost:8080\");client.on(\"open\",()=>{console.log(\"✅ WebSocket connected to port 8080\");setTimeout(()=>client.close(),3000)});client.on(\"message\",(data)=>console.log(\"📨 Received:\",data.toString().trim()));client.on(\"close\",()=>console.log(\"🔌 Connection closed\"));client.on(\"error\",(err)=>console.log(\"❌ Error:\",err.message));"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "new",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"problemMatcher": []
 		}
 	]
 }

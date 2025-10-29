@@ -77,25 +77,74 @@ export class MockNmeaService {
     this.emitUpdate();
   }
 
-  // Simulate data quality changes
+  // Simulate data quality changes with comprehensive quality variations (AC1 Requirement)
   setQuality(quality: DataQuality): void {
     this.quality = quality;
     
-    // Adjust data based on quality
+    // Adjust data based on quality level per Story 11.1 AC1 requirements
     switch (quality) {
-      case 'poor':
-      case 'invalid':
-        // Add some noise or missing data
+      case 'excellent':
+        // Clean, precise data with high accuracy and completeness
         this.updateData({
-          latitude: (this.data.latitude || 0) + (Math.random() - 0.5) * 0.001,
-          longitude: (this.data.longitude || 0) + (Math.random() - 0.5) * 0.001,
+          latitude: Math.round((this.data.latitude || 0) * 100000) / 100000, // 5 decimal precision
+          longitude: Math.round((this.data.longitude || 0) * 100000) / 100000,
+          speed: Math.round((this.data.speed || 0) * 10) / 10, // 1 decimal precision
+          heading: Math.round((this.data.heading || 0) * 10) / 10,
+          timestamp: Date.now(), // Fresh timestamp
         });
         break;
-      case 'excellent':
-        // Clean, precise data
+        
+      case 'good':
+        // Stable data with minor variations
         this.updateData({
-          latitude: Math.round((this.data.latitude || 0) * 10000) / 10000,
-          longitude: Math.round((this.data.longitude || 0) * 10000) / 10000,
+          latitude: (this.data.latitude || 0) + (Math.random() - 0.5) * 0.0001,
+          longitude: (this.data.longitude || 0) + (Math.random() - 0.5) * 0.0001,
+          speed: Math.max(0, (this.data.speed || 0) + (Math.random() - 0.5) * 0.5),
+          timestamp: Date.now() - Math.random() * 1000, // Up to 1s delay
+        });
+        break;
+        
+      case 'fair':
+        // Noisy data with some missing fields
+        const fairData: Partial<NmeaData> = {
+          latitude: (this.data.latitude || 0) + (Math.random() - 0.5) * 0.001,
+          longitude: (this.data.longitude || 0) + (Math.random() - 0.5) * 0.001,
+          timestamp: Date.now() - Math.random() * 3000, // Up to 3s delay
+        };
+        
+        // Randomly omit some fields (simulate incomplete data)
+        if (Math.random() > 0.5) fairData.windSpeed = undefined;
+        if (Math.random() > 0.7) fairData.depth = undefined;
+        
+        this.updateData(fairData);
+        break;
+        
+      case 'poor':
+        // Highly noisy data with significant drift and missing fields
+        const poorData: Partial<NmeaData> = {
+          latitude: (this.data.latitude || 0) + (Math.random() - 0.5) * 0.01,
+          longitude: (this.data.longitude || 0) + (Math.random() - 0.5) * 0.01,
+          speed: Math.max(0, (this.data.speed || 0) + (Math.random() - 0.5) * 5),
+          timestamp: Date.now() - Math.random() * 8000, // Up to 8s delay
+        };
+        
+        // Frequently omit fields
+        if (Math.random() > 0.3) poorData.windSpeed = undefined;
+        if (Math.random() > 0.4) poorData.depth = undefined;
+        if (Math.random() > 0.6) poorData.heading = undefined;
+        
+        this.updateData(poorData);
+        break;
+        
+      case 'invalid':
+        // Invalid or corrupted data
+        this.updateData({
+          latitude: NaN,
+          longitude: null as any,
+          speed: -1, // Invalid negative speed
+          heading: 400, // Invalid heading > 360
+          depth: undefined,
+          timestamp: Date.now() - 15000, // Very stale data
         });
         break;
     }

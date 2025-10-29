@@ -1,0 +1,479 @@
+openapi: 3.0.3
+info:
+  title: Simulator Control API
+  description: |
+    REST API for controlling the NMEA Bridge Simulator, executing scenarios, 
+    injecting data, and monitoring performance. Provides external tools and 
+    agents with comprehensive control over marine instrument simulation.
+  version: "1.0.0"
+  contact:
+    name: NMEA Bridge Simulator
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:9090
+    description: Local development server
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Check if the simulator and API are running
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  simulator:
+                    type: boolean
+                    example: true
+                  uptime:
+                    type: number
+                    example: 150000
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /api/scenarios:
+    get:
+      summary: List available scenarios
+      description: Get list of all available test scenarios
+      responses:
+        '200':
+          description: List of scenarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        category:
+                          type: string
+                        description:
+                          type: string
+                  count:
+                    type: number
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/scenarios/start:
+    post:
+      summary: Start scenario
+      description: Start execution of a specific test scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "basic-navigation"
+                parameters:
+                  type: object
+                  example: {}
+                duration:
+                  type: number
+                  example: 300
+      responses:
+        '200':
+          description: Scenario started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  scenario:
+                    type: string
+                  status:
+                    type: string
+                  parameters:
+                    type: object
+                  startTime:
+                    type: string
+                    format: date-time
+        '400':
+          description: Bad request - missing scenario name
+        '500':
+          description: Failed to start scenario
+
+  /api/scenarios/stop:
+    post:
+      summary: Stop current scenario
+      description: Stop the currently running scenario
+      responses:
+        '200':
+          description: Scenario stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/scenarios/status:
+    get:
+      summary: Get scenario status
+      description: Get status of currently running scenario
+      responses:
+        '200':
+          description: Scenario status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenario:
+                    type: string
+                    nullable: true
+                  status:
+                    type: string
+                  startTime:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  duration:
+                    type: number
+                    nullable: true
+
+  /api/inject-data:
+    post:
+      summary: Inject NMEA data
+      description: Inject custom NMEA data into the simulator stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sentence:
+                  type: string
+                  example: "$GPDBT,10.2,f,3.1,M,1.7,F*47"
+                data:
+                  type: string
+                  example: "$GPDBT,10.2,f,3.1,M,1.7,F*47"
+                timestamp:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Data injected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  injected_sentence:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid NMEA sentence
+        '500':
+          description: Failed to inject data
+
+  /api/simulate-error:
+    post:
+      summary: Simulate error conditions
+      description: Simulate various error conditions for testing resilience
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum: [connection_lost, malformed_data, timeout, high_latency]
+                  example: "connection_lost"
+                duration:
+                  type: number
+                  default: 5000
+                  example: 10000
+                affected_protocols:
+                  type: array
+                  items:
+                    type: string
+                    enum: [tcp, udp, websocket]
+                  default: ["tcp", "websocket"]
+                severity:
+                  type: string
+                  enum: [low, medium, high]
+                  default: "medium"
+      responses:
+        '200':
+          description: Error simulation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error_type:
+                    type: string
+                  duration:
+                    type: number
+                  affected_protocols:
+                    type: array
+                    items:
+                      type: string
+                  start_time:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid error type
+        '500':
+          description: Failed to simulate error
+
+  /api/clients/connected:
+    get:
+      summary: Get connected clients
+      description: List all currently connected clients
+      responses:
+        '200':
+          description: List of connected clients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: number
+                  clients:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                          enum: [tcp, udp, websocket]
+                        connected:
+                          type: boolean
+                        address:
+                          type: string
+                        connected_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/session/save:
+    post:
+      summary: Save session state
+      description: Save current simulator session state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionName
+              properties:
+                sessionName:
+                  type: string
+                  example: "test-session-001"
+                includeState:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Session saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  sessionId:
+                    type: string
+                  saved_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid session name
+        '500':
+          description: Failed to save session
+
+  /api/session/load:
+    post:
+      summary: Load session state
+      description: Load a previously saved simulator session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+              properties:
+                sessionId:
+                  type: string
+                  example: "session_1640995200000"
+      responses:
+        '200':
+          description: Session loaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  session:
+                    type: object
+                  loaded_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid session ID
+        '404':
+          description: Session not found
+        '500':
+          description: Failed to load session
+
+  /api/metrics:
+    get:
+      summary: Get simulator metrics
+      description: Get comprehensive simulator performance metrics
+      responses:
+        '200':
+          description: Simulator metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messagesPerSecond:
+                    type: number
+                  averageLatency:
+                    type: number
+                  memoryUsage:
+                    type: number
+                  cpuUtilization:
+                    type: number
+                  activeConnections:
+                    type: number
+                  uptime:
+                    type: number
+                  totalMessages:
+                    type: number
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/metrics/performance:
+    get:
+      summary: Get detailed performance metrics
+      description: Get detailed performance metrics with historical data
+      responses:
+        '200':
+          description: Performance metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messagesPerSecond:
+                    type: number
+                  averageLatency:
+                    type: number
+                  memoryUsage:
+                    type: number
+                  cpuUtilization:
+                    type: number
+                  activeConnections:
+                    type: number
+                  uptime:
+                    type: number
+                  totalMessages:
+                    type: number
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/metrics/reset:
+    post:
+      summary: Reset performance metrics
+      description: Reset all performance counters to zero
+      responses:
+        '200':
+          description: Metrics reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+tags:
+  - name: Health
+    description: Service health monitoring
+  - name: Scenarios
+    description: Test scenario management
+  - name: Data Injection
+    description: Real-time data injection
+  - name: Error Simulation
+    description: Fault injection testing
+  - name: Monitoring
+    description: Client and performance monitoring
+  - name: Session Management
+    description: Session save/load functionality
+  - name: Metrics
+    description: Performance and usage metrics

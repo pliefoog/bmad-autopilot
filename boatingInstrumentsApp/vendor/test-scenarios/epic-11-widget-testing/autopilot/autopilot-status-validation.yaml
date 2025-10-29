@@ -1,0 +1,403 @@
+# Autopilot Status Widget Validation Scenario
+# Epic 11 - Professional Grade Testing Architecture
+# Story 11.2 - Widget-Scenario Mapping
+# Domain: Autopilot - Status Monitoring and Display
+
+name: "autopilot-status-validation"
+description: "Comprehensive autopilot status widget validation with mode monitoring, heading tracking, and marine autopilot safety standards"
+version: "1.0.0"
+category: "autopilot"
+domain: "autopilot-status"
+duration: 180000  # 3 minutes
+
+# Marine Domain Accuracy Requirements
+accuracy_standards:
+  heading_precision: 1.0  # 1° precision for autopilot heading
+  course_precision: 1.0   # 1° precision for course tracking
+  cross_track_error_precision: 0.01  # 0.01nm precision for XTE
+  response_time: 1000     # 1-second response time requirement
+  manufacturer_tolerance: "within_spec"
+  staleness_threshold: 5000  # 5 seconds
+
+# Integration with Triple-Tier Testing Architecture
+testing_tiers:
+  tier1_unit: "autopilot-status-widget.test.js"
+  tier2_api_injection: "autopilot-status-nmea-injection.test.js"
+  tier3_scenario_integration: "this_scenario"
+
+# NMEA Sentence Configuration for Autopilot Status Monitoring
+nmea_sentences:
+  primary:
+    - type: "APB"  # Autopilot Sentence "B"
+      purpose: "Autopilot status and navigation information"
+      parameters:
+        - "status_flags"          # A=OK, V=warning
+        - "cross_track_error_magnitude"
+        - "direction_to_steer"    # L=left, R=right
+        - "cross_track_units"     # N=nautical miles
+        - "status_arrival"        # A=arrival circle entered
+        - "status_perpendicular"  # A=perpendicular passed
+        - "bearing_origin_to_dest"
+        - "bearing_type"          # M=magnetic, T=true
+        - "destination_waypoint_id"
+      frequency: 1000  # 1 Hz
+
+    - type: "XTE"  # Cross-Track Error, Measured
+      purpose: "Precise cross-track error measurement"
+      parameters:
+        - "status_flag"           # A=data valid, V=loran-C blink/SNR warning
+        - "status_flag_2"         # A=data valid, V=general warning
+        - "cross_track_error_magnitude"
+        - "direction_to_steer"    # L=left, R=right  
+        - "cross_track_units"     # N=nautical miles
+      frequency: 1000  # 1 Hz
+
+    - type: "RSA"  # Rudder Sensor Angle
+      purpose: "Rudder position and autopilot engagement status"
+      parameters:
+        - "starboard_rudder_angle"
+        - "rudder_angle_status"   # A=data valid, V=invalid
+        - "port_rudder_angle"
+        - "port_rudder_status"
+      frequency: 500   # 2 Hz
+
+  secondary:
+    - type: "HDT"  # Heading - True
+      purpose: "Current vessel heading for autopilot reference"
+      parameters:
+        - "heading_degrees_true"
+        - "heading_reference"     # T=true
+      frequency: 1000  # 1 Hz
+
+    - type: "HDM"  # Heading - Magnetic  
+      purpose: "Magnetic heading for autopilot calculations"
+      parameters:
+        - "heading_degrees_magnetic"
+        - "heading_reference"     # M=magnetic
+      frequency: 1000  # 1 Hz
+
+# Test Phases for Autopilot Status Widget Validation
+test_phases:
+
+  # Phase 1: Basic Autopilot Status and Mode Display
+  phase_1_basic_status:
+    name: "Basic Autopilot Status and Mode Monitoring"
+    duration: 45000  # 45 seconds
+    objective: "Validate autopilot engagement status and mode display accuracy"
+    
+    nmea_data:
+      - sentence: "APB"
+        data:
+          - timestamp: 0
+            values: ["A", 0.02, "L", "N", "V", "V", 085, "T", "WP001"]  # On course
+          - timestamp: 5000  
+            values: ["A", 0.05, "R", "N", "V", "V", 085, "T", "WP001"]  # Slight off course
+          - timestamp: 10000
+            values: ["A", 0.08, "R", "N", "V", "V", 085, "T", "WP001"]  # More off course
+          - timestamp: 15000
+            values: ["A", 0.03, "L", "N", "V", "V", 085, "T", "WP001"]  # Correcting
+          - timestamp: 20000
+            values: ["A", 0.01, "L", "N", "V", "V", 085, "T", "WP001"]  # Back on course
+            
+      - sentence: "RSA"
+        data:
+          - timestamp: 0
+            values: [0.0, "A", 0.0, "A"]    # Centered rudder
+          - timestamp: 5000
+            values: [2.5, "A", 2.5, "A"]   # Slight starboard correction
+          - timestamp: 10000  
+            values: [5.2, "A", 5.2, "A"]   # More starboard correction
+          - timestamp: 15000
+            values: [-3.1, "A", -3.1, "A"] # Port correction
+          - timestamp: 20000
+            values: [0.5, "A", 0.5, "A"]   # Near center
+            
+    expected_behavior:
+      autopilot_status:
+        - engagement_status: "clearly displayed (engaged/disengaged)"
+        - mode_display: "current autopilot mode (heading/nav/wind)"
+        - target_heading: "desired course prominently shown"
+        - current_heading: "actual vessel heading displayed"
+      status_indicators:
+        - data_validity: "APB status 'A' = valid, 'V' = warning"
+        - rudder_position: "visual rudder angle indicator"
+        - correction_direction: "left/right steering indication"
+        
+    validation_criteria:
+      - "Autopilot engagement status updates within 1000ms of NMEA sentence"
+      - "Cross-track error displayed with 0.01nm precision"
+      - "Rudder angle accurate within 1° precision"
+      - "Steering direction indicators clear and immediate"
+      - "Waypoint information displayed when available"
+
+  # Phase 2: Cross-Track Error and Navigation Tracking
+  phase_2_navigation_tracking:
+    name: "Cross-Track Error and Navigation Accuracy"
+    duration: 50000  # 50 seconds
+    objective: "Validate cross-track error monitoring within 0.01nm precision"
+    
+    nmea_data:
+      - sentence: "XTE"
+        data:
+          - timestamp: 45000
+            values: ["A", "A", 0.12, "L", "N"]  # 0.12nm left of track
+          - timestamp: 50000
+            values: ["A", "A", 0.18, "L", "N"]  # Increasing error
+          - timestamp: 55000
+            values: ["A", "A", 0.15, "L", "N"]  # Correcting
+          - timestamp: 60000
+            values: ["A", "A", 0.08, "L", "N"]  # Back toward track
+          - timestamp: 65000
+            values: ["A", "A", 0.03, "R", "N"]  # Crossed to right side
+          - timestamp: 70000
+            values: ["A", "A", 0.01, "R", "N"]  # Nearly on track
+            
+      - sentence: "APB"
+        data:
+          - timestamp: 45000
+            values: ["A", 0.12, "L", "N", "V", "V", 275, "T", "WP002"]
+          - timestamp: 50000  
+            values: ["A", 0.18, "L", "N", "V", "V", 275, "T", "WP002"]
+          - timestamp: 55000
+            values: ["A", 0.15, "L", "N", "V", "V", 275, "T", "WP002"]
+          - timestamp: 60000
+            values: ["A", 0.08, "L", "N", "V", "V", 275, "T", "WP002"]
+          - timestamp: 65000
+            values: ["A", 0.03, "R", "N", "V", "V", 275, "T", "WP002"]
+          - timestamp: 70000
+            values: ["A", 0.01, "R", "N", "V", "V", 275, "T", "WP002"]
+            
+    expected_behavior:
+      cross_track_monitoring:
+        - xte_magnitude: [0.01, 0.18]
+        - xte_direction: "L/R clearly indicated"
+        - precision: 0.01
+        - units: "nautical_miles"
+      navigation_display:
+        - bearing_to_waypoint: "275° true bearing displayed"
+        - waypoint_id: "WP002 clearly shown"
+        - course_deviation: "visual indication of off-course amount"
+        - correction_guidance: "clear steering recommendations"
+        
+    validation_criteria:
+      - "Cross-track error accurate within 0.01nm precision"
+      - "XTE direction (left/right) correctly indicated"
+      - "Bearing to waypoint displayed with 1° accuracy"
+      - "Course deviation visually clear and intuitive"
+      - "Navigation guidance consistent between APB and XTE sentences"
+
+  # Phase 3: Heading Tracking and Course Management
+  phase_3_heading_tracking:
+    name: "Heading Tracking and Course Accuracy"
+    duration: 50000  # 50 seconds
+    objective: "Validate heading tracking within 1° precision and course management"
+    
+    nmea_data:
+      - sentence: "HDT"
+        data:
+          - timestamp: 90000
+            values: [085.3, "T"]  # True heading 085.3°
+          - timestamp: 95000
+            values: [087.1, "T"]  # Heading change
+          - timestamp: 100000
+            values: [089.8, "T"]  # Continuing turn
+          - timestamp: 105000
+            values: [088.5, "T"]  # Stabilizing
+          - timestamp: 110000
+            values: [087.2, "T"]  # On target
+            
+      - sentence: "HDM"
+        data:
+          - timestamp: 90000
+            values: [078.1, "M"]  # Magnetic heading (7.2° variation)
+          - timestamp: 95000
+            values: [079.9, "M"]  
+          - timestamp: 100000
+            values: [082.6, "M"]
+          - timestamp: 105000
+            values: [081.3, "M"]
+          - timestamp: 110000
+            values: [080.0, "M"]
+            
+      - sentence: "RSA"
+        data:
+          - timestamp: 90000
+            values: [1.2, "A", 1.2, "A"]   # Small correction
+          - timestamp: 95000
+            values: [3.8, "A", 3.8, "A"]   # Larger correction
+          - timestamp: 100000
+            values: [2.1, "A", 2.1, "A"]   # Reducing correction
+          - timestamp: 105000  
+            values: [0.8, "A", 0.8, "A"]   # Fine tuning
+          - timestamp: 110000
+            values: [0.2, "A", 0.2, "A"]   # Nearly centered
+            
+    expected_behavior:
+      heading_tracking:
+        - true_heading_range: [085.3, 089.8]
+        - magnetic_heading_range: [078.1, 082.6] 
+        - heading_precision: 1.0
+        - units: "degrees"
+      course_management:
+        - target_course: "autopilot desired course displayed"
+        - heading_deviation: "difference from target shown"
+        - correction_magnitude: "rudder angle correlates with heading error"
+        - heading_trend: "turning rate and direction indicators"
+        
+    validation_criteria:
+      - "Heading displays accurate within 1° precision"
+      - "True and magnetic heading relationship maintained"
+      - "Heading deviation from target clearly shown"
+      - "Rudder corrections correlate with heading errors"
+      - "Heading trend indicators functional (turning left/right/steady)"
+
+  # Phase 4: Error Conditions and Safety Monitoring
+  phase_4_error_safety:
+    name: "Autopilot Error Conditions and Safety Monitoring"
+    duration: 35000  # 35 seconds
+    objective: "Validate error handling and safety system monitoring"
+    
+    nmea_data:
+      - sentence: "APB"
+        data:
+          - timestamp: 140000
+            values: ["V", 0.25, "L", "N", "A", "V", 180, "T", "WP003"]  # Warning status
+          - timestamp: 145000
+            # Missing APB data for 10 seconds (communication failure)
+          - timestamp: 155000  
+            values: ["A", 0.08, "R", "N", "V", "V", 180, "T", "WP003"]  # Recovered
+            
+      - sentence: "RSA"  
+        data:
+          - timestamp: 140000
+            values: [null, "V", null, "V"]  # Rudder sensor failure
+          - timestamp: 145000
+            values: ["invalid", "V", "invalid", "V"]  # Invalid data
+          - timestamp: 150000
+            values: [15.5, "A", 15.5, "A"]  # Extreme rudder angle
+          - timestamp: 155000
+            values: [2.3, "A", 2.3, "A"]   # Normal operation resumed
+            
+    expected_behavior:
+      error_handling:
+        - warning_status: "APB 'V' status triggers visual warning"
+        - data_loss: "clear indication when autopilot data unavailable"
+        - sensor_failure: "rudder sensor failure clearly displayed"
+        - invalid_data: "bad data ignored, previous valid values retained"
+      safety_monitoring:
+        - extreme_angles: "excessive rudder angle warnings (>10°)"
+        - communication_loss: "autopilot disconnect warnings"
+        - data_staleness: "staleness indicators after 5-second threshold"
+        - system_status: "overall autopilot system health indication"
+        
+    validation_criteria:
+      - "Warning status (APB 'V') triggers immediate visual alert"
+      - "Missing autopilot data clearly indicated to user"
+      - "Rudder sensor failures displayed with appropriate warnings"
+      - "Extreme rudder angles generate safety alerts"
+      - "Data staleness detection functional at 5-second threshold"
+      - "Widget remains stable during all error conditions"
+
+# Performance Thresholds (Marine Safety Requirements)
+performance_requirements:
+  update_latency: 1000 # <1000ms NMEA → widget update (autopilot response requirement)
+  memory_usage: 40     # <40MB max memory for autopilot status widget  
+  cpu_usage: 8         # <8% CPU usage during normal operation
+  crash_free_rate: 99.5  # 99.5% crash-free session rate
+
+# Validation Metrics for Automated Testing
+validation_metrics:
+  accuracy_tests:
+    - metric: "heading_precision_degrees"
+      target: 1.0
+      tolerance: 0.5
+    - metric: "xte_precision_nm"
+      target: 0.01
+      tolerance: 0.005
+    - metric: "rudder_angle_precision_degrees"
+      target: 1.0
+      tolerance: 0.5
+      
+  performance_tests:
+    - metric: "update_latency_ms"
+      target: 1000
+      max_acceptable: 1500
+    - metric: "memory_usage_mb"
+      target: 40
+      max_acceptable: 55
+      
+  reliability_tests:
+    - metric: "error_recovery_time_ms"
+      target: 2000
+      max_acceptable: 3000
+    - metric: "data_staleness_detection_ms"
+      target: 5000
+      max_acceptable: 6000
+
+# Safety-Critical Monitoring Requirements
+safety_requirements:
+  autopilot_disconnect:
+    - detection_time: "<2 seconds from loss of APB/XTE data"
+    - visual_indication: "prominent disconnect warning display"
+    - audio_alert: "configurable audio warning for disconnect"
+    
+  navigation_warnings:
+    - excessive_xte: ">0.25nm cross-track error triggers warning"
+    - course_deviation: ">10° heading deviation triggers alert"
+    - waypoint_arrival: "arrival circle and perpendicular passage indication"
+    
+  system_monitoring:
+    - rudder_limits: "excessive rudder angle warnings (>15°)"
+    - correction_frequency: "rapid rudder movement indicates system issues"
+    - data_quality: "checksum validation and data consistency checking"
+
+# Integration Points with Testing Infrastructure
+testing_integration:
+  nmea_bridge_simulator:
+    - scenario_name: "autopilot-status-monitoring"
+    - port: 9090
+    - api_endpoint: "/api/scenarios/autopilot-status-validation"
+    
+  triple_tier_architecture:
+    - tier_2_injection: "Inject autopilot NMEA sentences via API"
+    - tier_3_validation: "Full scenario execution with safety system testing"
+    - automated_reporting: "Test results with marine autopilot safety compliance"
+    
+  cross_platform_testing:
+    - react_native_web: "WebSocket autopilot data streaming"
+    - ios_simulator: "Native autopilot status monitoring testing"
+    - android_emulator: "Native autopilot system validation"
+
+# Expected Test Outcomes
+expected_outcomes:
+  autopilot_accuracy:
+    - "Heading tracking accurate within 1° precision"
+    - "Cross-track error within 0.01nm accuracy"
+    - "Rudder angle monitoring within 1° precision" 
+    - "Navigation calculations mathematically correct"
+    
+  safety_compliance:
+    - "Autopilot disconnect detection functional and immediate"
+    - "Navigation warnings trigger at appropriate thresholds"
+    - "Safety alerts clear and prominent for marine operators"
+    - "System status monitoring comprehensive and reliable"
+    
+  operational_integration:
+    - "Multiple autopilot modes supported (heading/nav/wind)"
+    - "Waypoint navigation status clearly displayed"
+    - "Course management interface intuitive and accurate"
+    - "Real-time status updates meeting 1-second response requirement"
+
+# Dependencies and Prerequisites
+dependencies:
+  required_components:
+    - "AutopilotStatusWidget component (React Native)"
+    - "NMEA parsing service with APB/XTE/RSA/HDT/HDM support"
+    - "Navigation calculation service"
+    - "Marine autopilot safety threshold configuration"
+    
+  test_infrastructure:
+    - "NMEA Bridge Simulator with autopilot scenario support"
+    - "Triple-Tier Testing Architecture (Story 11.1)"
+    - "Marine autopilot safety compliance validation tools"
+    - "Cross-platform marine navigation testing environment"

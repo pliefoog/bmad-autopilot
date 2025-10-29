@@ -1,0 +1,91 @@
+<story-context id="story-11.2-widget-scenario-mapping" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.2</storyId>
+    <title>Widget-Scenario Mapping</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-10-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.2-widget-scenario-mapping.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Quality Assurance Engineer</asA>
+    <iWant>dedicated YAML test scenarios for each widget type with comprehensive marine domain validation</iWant>
+    <soThat>I can validate widget accuracy and performance against specific marine safety requirements with 1:1 test coverage</soThat>
+    <tasks>
+      <task id="1">Navigation Domain Widget Scenarios (AC1: #1, AC2: #1)</task>
+      <task id="2">Environment Domain Widget Scenarios (AC1: #2, AC2: #2-3)</task>
+      <task id="3">Engine Domain Widget Scenarios (AC1: #3, AC2: #4)</task>
+      <task id="4">Autopilot Domain Widget Scenarios (AC1: #4, AC2: #5)</task>
+      <task id="5">Error Condition and Stress Testing Scenarios (AC3: #1-5, AC4: #4)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC1">Widget Test Scenarios Structure (5 core domains) - Navigation, Environment, Engine, Autopilot widgets with YAML scenarios stored in vendor/test-scenarios/epic-11-widget-testing/</ac>
+    <ac id="AC2">Marine-Specific Test Cases (Accuracy Standards) - Navigation (0.1nm), Depth (0.1 unit), Wind (&lt;1°), Engine (manufacturer tolerances), Autopilot (1-second response), Staleness (5-second threshold)</ac>
+    <ac id="AC3">Error Condition Scenarios (Safety Validation) - Invalid checksums, timeouts, data degradation, performance stress (500+ msg/sec), widget resilience</ac>
+    <ac id="AC4">YAML Scenario Integration (Testing Infrastructure) - Integration with Triple-Tier Testing Architecture, marine domain accuracy validation, performance thresholds</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/testing-strategy.md" title="Testing Strategy for NMEA Marine Instrument Display" section="Test Data Strategy" snippet="Comprehensive library of synthetic NMEA recordings organized by scenario and widget type with YAML configuration management"/>
+      <doc path="docs/stories/epic-7-nmea-bridge-simulator-stories.md" title="Epic 7: NMEA Bridge Simulator Testing Infrastructure" section="Story 7.2: Standardized Test Scenario Library" snippet="Complete navigation scenario library (basic, coastal, deep-water), autopilot scenario suite, safety alarm scenarios, YAML configuration system operational"/>
+      <doc path="docs/architecture.md" title="Boating Instruments App Fullstack Architecture" section="Testing Architecture" section="Epic 11 Testing Architecture Foundation" snippet="Triple testing strategy with Static mocks, API message injection, and full scenario-based integration testing with 1:1 Widget-Scenario Mapping"/>
+      <doc path="boatingInstrumentsApp/vendor/test-scenarios/README.md" title="NMEA Bridge Simulator Test Scenarios" section="Directory Structure" snippet="Scenarios organized by navigation/, environmental/, engine/, battery/, tank/, autopilot/, multi-instance/, performance/, recorded/, story-validation/"/>
+      <doc path="boatingInstrumentsApp/vendor/test-scenarios/scenario.schema.json" title="NMEA Bridge Simulator Test Scenario Schema" section="JSON Schema Definition" snippet="Complete YAML scenario schema with name, description, duration, version, category, parameters, phases, and data specifications"/>
+    </docs>
+    <code>
+      <code path="boatingInstrumentsApp/src/testing/index.ts" kind="testing-infrastructure" symbol="Triple-Tier Testing Architecture Components" lines="15-25" reason="Foundation testing architecture from Story 11.1 - provides SimulatorTestClient, ScenarioEngine, and TestTierManager"/>
+      <code path="boatingInstrumentsApp/src/testing/mocks/mockNmeaService.ts" kind="mock-service" symbol="MockNmeaService, createMockNmeaService" lines="1-50" reason="Enhanced mock services with controllable NMEA data simulation and quality variations for widget testing"/>
+      <code path="boatingInstrumentsApp/__tests__/factories/widgetFactory.ts" kind="test-factory" symbol="WIDGET_TYPES, createTestWidget, TEST_SCENARIOS" lines="1-100" reason="Widget test factory with navigation, environmental, systems, autopilot widget types and test scenarios"/>
+      <code path="boatingInstrumentsApp/src/testing/fixtures/nmeaFixtures.ts" kind="test-fixtures" symbol="sampleNmeaData, createTestNmeaData, navigationTestData" lines="1-150" reason="Marine domain test data fixtures for navigation, weather, engine scenarios"/>
+      <code path="boatingInstrumentsApp/vendor/test-scenarios/scenario.schema.json" kind="schema" symbol="JSON Schema for YAML test scenarios" lines="1-50" reason="YAML scenario schema definition with name, description, duration, version, category, parameters structure"/>
+      <code path="boatingInstrumentsApp/__tests__/WindWidget.test.tsx" kind="widget-test" symbol="WindWidget test suite" lines="1-50" reason="Example widget testing pattern with store mocking and marine domain validation"/>
+      <code path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts" kind="test-utilities" symbol="renderWithProviders, PerformanceProfiler" lines="1-80" reason="Enhanced test utilities with marine-specific assertions and performance measurement"/>
+    </code>
+    <dependencies>
+      <node>
+        <testing>jest@29.7.0, @testing-library/react-native@13.3.3, react-test-renderer@19.1.0, supertest@7.1.4</testing>
+        <marine>@canboat/canboatjs@3.11.0, nmea-simple (implied), yaml@2.8.1</marine>
+        <react-native>react-native@0.82.0, expo, @expo/cli@54.0.11, react-native-svg@15.12.1</react-native>
+        <networking>react-native-tcp-socket@6.3.0, react-native-udp@4.1.7, ws (for WebSocket)</networking>
+        <development>typescript@5.8.3, eslint@8.57.1, prettier@2.8.8, @storybook/react-native@9.1.4</development>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Epic 6 Domain-Separated Service Architecture: YAML scenarios must be organized by service domain boundaries (navigation, engine, environment, autopilot)</constraint>
+    <constraint>Triple-Tier Testing Architecture (Story 11.1): Scenarios must integrate with Tier 2 API Message Injection and Tier 3 Full Scenario Integration frameworks</constraint>
+    <constraint>Marine Safety Performance Requirements: Widget updates &lt;100ms from NMEA sentence, 99.5% crash-free session rate, 5-second staleness detection</constraint>
+    <constraint>Cross-Platform Testing: Scenarios must support React Native Web (WebSocket proxy) and native platforms (direct TCP connections)</constraint>
+    <constraint>YAML Schema Compliance: All scenarios must conform to existing scenario.schema.json structure with name, description, duration, version, category, parameters</constraint>
+    <constraint>Marine Domain Accuracy: Navigation (0.1nm precision), Depth (0.1 unit), Wind (&lt;1° precision), Engine (manufacturer tolerances), Autopilot (1-second response)</constraint>
+  </constraints>
+  
+  <interfaces>
+    <interface name="TestScenario" kind="YAML schema" signature="name, description, duration, version, category, parameters, phases, data" path="boatingInstrumentsApp/vendor/test-scenarios/scenario.schema.json"/>
+    <interface name="MockNmeaService" kind="class interface" signature="start(), stop(), updateData(), setQuality(), simulateAnomaly()" path="boatingInstrumentsApp/src/testing/mocks/mockNmeaService.ts"/>
+    <interface name="SimulatorTestClient" kind="class interface" signature="discover(), injectMessage(), loadScenario(), executeScenario()" path="boatingInstrumentsApp/src/testing/helpers/SimulatorTestClient.ts"/>
+    <interface name="ScenarioEngine" kind="class interface" signature="loadYaml(), validate(), execute(), getMetrics()" path="boatingInstrumentsApp/src/testing/helpers/ScenarioEngine.ts"/>
+    <interface name="PerformanceProfiler" kind="utility class" signature="start(), stop(), measure(), validate()" path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts"/>
+    <interface name="NMEA Bridge Simulator Control API" kind="REST endpoint" signature="GET /api/scenarios/, POST /api/inject-data, POST /api/simulate-error" path="server/nmea-bridge.js port 9090"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Triple-Tier Testing Architecture (Story 11.1) with Tier 1 Static Mocks (&lt;50ms execution), Tier 2 API Message Injection (&lt;2000ms scenarios), Tier 3 Full Scenario Integration (&lt;30 seconds journeys). Jest with React Native Testing Library, professional documentation with PURPOSE/REQUIREMENT/METHOD headers, marine domain accuracy validation, performance threshold enforcement.</standards>
+    <locations>boatingInstrumentsApp/__tests__/tier1-unit/widgets/, boatingInstrumentsApp/__tests__/tier2-integration/, boatingInstrumentsApp/__tests__/tier3-e2e/, boatingInstrumentsApp/vendor/test-scenarios/epic-11-widget-testing/</locations>
+    <ideas>
+      <idea ac="AC1">Create speed-widget-validation.yaml with NMEA VHW/VLW/VTG sentence validation, 0.1 knot precision testing, units conversion accuracy</idea>
+      <idea ac="AC1">Create gps-widget-validation.yaml with NMEA GGA/RMC/GLL sentence validation, 0.1 nautical mile precision, coordinate format conversion</idea>
+      <idea ac="AC1">Create depth-widget-validation.yaml with NMEA DPT/DBT sentence validation, 0.1 unit measurement accuracy, units conversion (feet/meters/fathoms)</idea>
+      <idea ac="AC2">Implement marine domain accuracy testing: navigation precision validation, compass heading within &lt;1° accuracy, engine monitoring manufacturer tolerances</idea>
+      <idea ac="AC3">Create error condition scenarios: invalid checksums, malformed NMEA sentences, timeout recovery, data quality degradation simulation</idea>
+      <idea ac="AC3">Performance stress testing: 500+ messages/second throughput, memory monitoring under high-frequency data streams, widget state consistency</idea>
+      <idea ac="AC4">Integration with Triple-Tier Architecture: connect YAML scenarios to SimulatorTestClient, validate performance thresholds, cross-platform compatibility</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -10,7 +10,10 @@ class ScenarioEngine {
     this.storyValidations = new Map();
     this.performanceMetrics = new Map();
     
-    console.log('🎭 BMAD Scenario Engine initialized');
+    // Only log if simulator is provided (full initialization)
+    if (simulator) {
+      console.log('🎭 BMAD Scenario Engine initialized');
+    }
   }
   
   /**

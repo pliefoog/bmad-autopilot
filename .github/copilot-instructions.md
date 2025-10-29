@@ -34,18 +34,33 @@ This project uses the **BMAD Method v6** with specialized AI agents. Before maki
 
 ## Available VS Code Tasks
 
+**ALWAYS use VS Code tasks instead of manual CLI commands for simulator operations:**
+
+❌ Don't write: `node server/nmea-bridge.js --scenario basic-navigation`
+✅ Do use: `Ctrl+Shift+P` → `Tasks: Run Task` → `Start NMEA Bridge: Scenario - Basic Navigation`
+
 Use `Ctrl+Shift+P` → `Tasks: Run Task` or the `run_task` MCP tool to execute:
 
 **Development Tasks:**
 - `Start Web Dev Server` - Launch React Native web development server
 - `Stop Web Dev Server` - Stop the web development server
-- `Start NMEA Bridge Simulator` - Start simulator for NMEA data testing
-- `Stop NMEA Bridge Simulator` - Stop the NMEA simulator
-- `Start NMEA Bridge Simulator (Recording)` - Start simulator with recorded data playback
 - `Start Full Web Development Stack` - Launch both web server and NMEA simulator
+- `Stop NMEA Bridge Simulator` - Stop the NMEA simulator
+
+**NMEA Bridge Scenario Tasks:**
+- `Start NMEA Bridge: Scenario - Basic Navigation` - Standard depth, speed, wind, GPS data
+- `Start NMEA Bridge: Scenario - Coastal Sailing` - Realistic coastal sailing conditions
+- `Start NMEA Bridge: Scenario - Autopilot Engagement` - Complete autopilot workflow
+- `Start NMEA Bridge: Scenario - Engine Monitoring` - Engine system monitoring
+- `Start NMEA Bridge: Scenario - Multi-Instance Equipment Detection` - Multiple equipment testing
 
 **Testing Tasks:**
 - `Create test file for NmeaConnectionManager` - Generate test file template
+
+**Simulator Control API Reference:**
+- **Port:** 9090 (Use "Simulator Control API" naming)
+- **Endpoints:** `/api/scenarios/`, `/api/inject-data`, `/api/simulate-error`
+- **External Control:** Use REST API, not direct CLI commands
 
 ## Communication Best Practices
 

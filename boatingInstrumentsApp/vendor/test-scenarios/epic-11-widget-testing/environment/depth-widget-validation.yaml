@@ -1,0 +1,309 @@
+name: "Depth Widget Validation - Sounder Data Marine Domain Testing"
+description: "Comprehensive depth widget validation with NMEA DPT, DBT sentence processing, 0.1 unit precision testing, and units conversion accuracy (feet/meters/fathoms) for marine safety compliance"
+duration: 270  # 4.5 minutes for comprehensive depth validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "DepthWidget"
+  marine_accuracy:
+    precision: 0.1  # units - marine domain requirement (0.1 unit measurement)
+    tolerance: 0.05 # ±0.05 units acceptable variance
+    units: ["meters", "feet", "fathoms"]
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+    depth_smoothing: 0.3  # Smoothing factor for depth oscillation
+
+# Data generation parameters optimized for depth widget testing
+data:
+  # Depth progression for comprehensive testing
+  depth:
+    type: "depth_profile"
+    segments:
+      - type: "shallow_water"
+        start: 0.5   # meters - Very shallow (shoal detection)
+        end: 3.0     # meters
+        duration: 30
+        variation: 0.2
+        description: "Shallow water navigation - shoal detection critical"
+      - type: "harbor_depth"
+        start: 3.0   # meters
+        end: 8.0     # meters
+        duration: 45
+        variation: 0.5
+        description: "Harbor depth - typical marina/anchorage depths"
+      - type: "coastal_depth"
+        start: 8.0   # meters
+        end: 25.0    # meters
+        duration: 60
+        variation: 1.0
+        description: "Coastal navigation depths"
+      - type: "deep_water"
+        start: 25.0  # meters
+        end: 45.0    # meters
+        duration: 75
+        variation: 2.0
+        description: "Deep water navigation"
+      - type: "return_shallow"
+        start: 45.0  # meters
+        end: 5.0     # meters
+        duration: 60
+        variation: 1.5
+        description: "Return to shallow water approach"
+    unit: "meters"
+    precision: 0.1
+
+  # Depth below keel (accounting for transducer offset)
+  transducer_offset:
+    type: "constant"
+    value: 0.8  # meters - typical transducer depth below keel
+    
+  # Water temperature for depth sounder calibration
+  water_temperature:
+    type: "seasonal_variation"
+    base: 15.0  # degrees Celsius (Great Lakes average)
+    variation: 3.0
+    seasonal_factor: 0.1
+
+  # Sound velocity for accurate depth calculation
+  sound_velocity:
+    type: "calculated"
+    base: 1500  # m/s in fresh water
+    temperature_correction: true
+    salinity: 0  # Fresh water (Great Lakes)
+
+# NMEA sentence configuration for depth widget validation
+sentences:
+  # DPT - Depth of Water
+  - type: "DPT"
+    frequency: 2   # Hz - Standard depth sounder update rate
+    fields:
+      depth: "depth"
+      offset: "transducer_offset"
+      range_scale: "calculated"  # Maximum range scale
+      
+  # DBT - Depth Below Transducer
+  - type: "DBT"
+    frequency: 2   # Hz
+    fields:
+      depth_feet: "depth"      # Depth in feet (converted)
+      feet_unit: "f"
+      depth_meters: "depth"    # Depth in meters
+      meters_unit: "M"
+      depth_fathoms: "depth"   # Depth in fathoms (converted)
+      fathoms_unit: "F"
+      
+  # MTW - Mean Temperature of Water
+  - type: "MTW"
+    frequency: 0.2  # Hz - Slow updates for temperature
+    fields:
+      temperature: "water_temperature"
+      unit: "C"
+
+# Test phases for comprehensive depth validation
+phases:
+  - name: "shallow_water_alerts"
+    duration: 30
+    description: "Validate shallow water detection and safety alerts"
+    validation:
+      - type: "depth_accuracy"
+        range: [0.5, 3.0]
+        tolerance: 0.05
+      - type: "shallow_water_alarm"
+        threshold: 2.0  # meters
+        expect_alert: true
+      - type: "units_display"
+        check_all_units: true
+        
+  - name: "harbor_navigation"
+    duration: 45
+    description: "Test harbor depth accuracy and trend calculations"
+    validation:
+      - type: "depth_accuracy"
+        range: [3.0, 8.0]
+        tolerance: 0.05
+      - type: "trend_calculation"
+        check_deepening_trend: true
+      - type: "conversion_accuracy"
+        meters_to_feet: 3.28084
+        meters_to_fathoms: 0.546807
+        
+  - name: "coastal_navigation"
+    duration: 60
+    description: "Validate coastal depth stability and precision"
+    validation:
+      - type: "depth_accuracy"
+        range: [8.0, 25.0]
+        tolerance: 0.05
+      - type: "depth_smoothing"
+        oscillation_damping: 0.7  # 70% oscillation reduction
+      - type: "update_latency"
+        max_ms: 100
+        
+  - name: "deep_water_operation"
+    duration: 75
+    description: "Test deep water accuracy and sounder performance"
+    validation:
+      - type: "depth_accuracy"
+        range: [25.0, 45.0]
+        tolerance: 0.1  # Slightly relaxed for deep water
+      - type: "range_scale_adjustment"
+        auto_scaling: true
+      - type: "performance_stress"
+        message_rate: 2  # Hz
+        memory_check: true
+        
+  - name: "shallow_approach"
+    duration: 60
+    description: "Validate shallow water approach and safety systems"
+    validation:
+      - type: "depth_accuracy"
+        range: [5.0, 45.0]  # Decreasing depth
+        tolerance: 0.05
+      - type: "trend_calculation"
+        check_shoaling_trend: true
+      - type: "approach_safety"
+        depth_rate_alarm: true
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "transducer_interference"
+    type: "signal_interference"
+    interference_pattern: "air_bubbles"  # Common in shallow water
+    duration: 10  # seconds
+    validation:
+      - type: "interference_handling"
+        expect_data_filtering: true
+        
+  - name: "bottom_loss"
+    type: "signal_loss"
+    depth_threshold: 50  # meters - beyond sounder range
+    validation:
+      - type: "bottom_loss_indication"
+        expect_no_depth_display: true
+        
+  - name: "false_bottom"
+    type: "thermocline_effect"
+    depth_factor: 0.6  # 60% of actual depth
+    validation:
+      - type: "false_reading_detection"
+        expect_depth_validation: true
+
+# Performance stress testing
+stress_testing:
+  depth_updates:
+    rate: 10  # depth updates per second
+    duration: 30  # seconds
+    depth_variation: 5.0  # meters random variation
+    validation:
+      - type: "update_processing"
+        max_latency_ms: 100
+      - type: "depth_stability"
+        max_variation: 2.0  # meters after smoothing
+      - type: "memory_usage"
+        max_increase_mb: 4
+
+# Marine domain accuracy validation
+accuracy_validation:
+  depth_precision:
+    requirement: 0.1  # units - marine domain requirement
+    test_depths: [1.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0]
+    tolerance: 0.05  # units
+    validation:
+      - type: "precision_consistency"
+        across_depth_range: true
+        
+  units_conversion:
+    meters_to_feet: 3.28084
+    meters_to_fathoms: 0.546807
+    feet_to_fathoms: 0.166667
+    precision: 0.01  # conversion precision requirement
+    validation:
+      - type: "conversion_accuracy"
+        bidirectional: true
+        
+  depth_smoothing:
+    oscillation_damping: 0.7  # 70% reduction in oscillation
+    response_time: 3.0  # seconds for 95% of change
+    validation:
+      - type: "smoothing_effectiveness"
+        oscillation_reduction: true
+
+# Safety systems validation
+safety_validation:
+  shallow_water_alarms:
+    critical_depth: 1.0  # meters
+    warning_depth: 2.0   # meters
+    validation:
+      - type: "alarm_triggers"
+        depth_thresholds: true
+        
+  depth_trend_monitoring:
+    shoaling_rate: -0.5  # meters per minute - approaching shallow water
+    validation:
+      - type: "trend_alerts"
+        approach_warning: true
+        
+  data_staleness:
+    threshold_ms: 5000  # 5 second marine safety requirement
+    validation:
+      - type: "staleness_detection"
+        visual_indicator: true
+
+# Display and user interface validation
+display_validation:
+  depth_display:
+    formats: ["digital", "analog_gauge", "trend_graph"]
+    precision: 0.1  # units
+    validation:
+      - type: "display_accuracy"
+        format_consistency: true
+        
+  units_preference:
+    supported: ["meters", "feet", "fathoms"]
+    validation:
+      - type: "units_setting"
+        user_preference_storage: true
+        
+  range_scale:
+    auto_scaling: true
+    manual_ranges: [10, 20, 50, 100]  # meters
+    validation:
+      - type: "scale_adjustment"
+        optimal_display: true
+
+# Integration with Triple-Tier Testing Architecture
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_scenarios: ["shallow", "medium", "deep", "varying"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["DPT", "DBT", "MTW"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_depth_profile_validation: true
+
+# Marine safety requirements
+marine_safety:
+  grounding_prevention:
+    minimum_safe_depth: 1.5  # meters
+    validation:
+      - type: "grounding_alerts"
+        safety_margin: true
+        
+  depth_logging:
+    minimum_depth_encountered: true
+    validation:
+      - type: "depth_history"
+        safety_record: true
+        
+  sounder_reliability:
+    uptime_requirement: 99.5  # percent
+    validation:
+      - type: "reliability_monitoring"
+        system_availability: true

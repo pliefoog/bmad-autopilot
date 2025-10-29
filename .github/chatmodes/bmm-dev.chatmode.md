@@ -1,6 +1,6 @@
 ---
 description: "Activates the Developer Agent agent persona."
-tools: ["changes","codebase","fetch","findTestFiles","githubRepo","problems","usages","editFiles","runCommands","runTasks","runTests","search","searchResults","terminalLastCommand","terminalSelection","testFailure"]
+tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runTests']
 ---
 
 # Developer Agent Agent
@@ -69,7 +69,7 @@ You must fully embody this agent's persona and follow all activation instruction
     <item cmd="*workflow-status" workflow="{project-root}/bmad/bmm/workflows/workflow-status/workflow.yaml">Check workflow status and get recommendations</item>
     <item cmd="*develop" workflow="{project-root}/bmad/bmm/workflows/4-implementation/dev-story/workflow.yaml">Execute Dev Story workflow, implementing tasks and tests, or performing updates to the story</item>
     <item cmd="*story-done" workflow="{project-root}/bmad/bmm/workflows/4-implementation/story-done/workflow.yaml">Mark story done after DoD complete</item>
-    <item cmd="*review" workflow="{project-root}/bmad/bmm/workflows/4-implementation/review-story/workflow.yaml">Perform a thorough clean context review on a story flagged Ready for Review, and appends review notes to story file</item>
+    <item cmd="*code-review" workflow="{project-root}/bmad/bmm/workflows/4-implementation/code-review/workflow.yaml">Perform a thorough clean context review on a story flagged Ready for Review, and appends review notes to story file</item>
     <item cmd="*exit">Exit with confirmation</item>
   </menu>
 </agent>

@@ -1,0 +1,59 @@
+# Hunter 30 - Affordable Family Cruiser
+# Based on Hunter 30 production specifications
+
+name: "Hunter 30"
+type: "sailboat"
+category: "family-cruiser"
+
+# Physical specifications
+dimensions:
+  length_overall: 30.0      # feet
+  beam: 10.5                # feet
+  draft: 4.5                # feet (shoal draft option)
+  displacement: 8500        # pounds
+  ballast: 3200             # pounds
+  sail_area: 395            # square feet (main + jib)
+
+# Performance characteristics
+performance:
+  polar_diagram: "hunter30-polar.csv"   # Will create this
+  hull_speed: 7.3                       # theoretical hull speed in knots
+  design_displacement_ratio: 350        # heavy displacement for size
+  sail_area_displacement_ratio: 15.9    # moderate performance
+  ballast_displacement_ratio: 0.38      # adequate stability
+
+# Physics parameters for simulation
+physics:
+  keel_offset: 0.50         # higher due to shoal draft configuration
+  leeway_factor: 7.2        # higher leeway due to shoal draft
+  heel_sensitivity: 2.8     # more heel due to lighter displacement
+  vmg_efficiency: 0.72      # optimized for ease of handling vs speed
+  max_heel: 18              # conservative family-friendly limit
+  stall_angle: 42           # earlier stall, family-friendly rig
+
+# Engine specifications
+engine:
+  type: "inboard_diesel"
+  horsepower: 20
+  fuel_capacity: 15         # gallons
+  cruising_rpm: 2000
+  max_rpm: 2600
+
+# Environmental operating limits
+limits:
+  max_wind_speed: 30        # knots - family-oriented limits
+  max_wave_height: 4        # feet - nearshore/bay cruising
+  min_depth: 5              # feet - shoal draft advantage
+
+# Default sailing profile for scenarios
+defaults:
+  crew_weight: 450          # pounds - family crew
+  fuel_level: 0.85          # 85% fuel for day sailing
+  provisions: 300           # pounds - day/weekend sailing
+  sail_configuration: "main_jib"
+
+# Metadata
+created: "2024-12-27"
+version: "1.0"
+source: "Hunter Marine production specifications"
+notes: "Affordable family cruiser optimized for easy handling and shallow waters"

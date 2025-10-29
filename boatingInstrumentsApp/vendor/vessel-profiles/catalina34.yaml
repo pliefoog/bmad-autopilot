@@ -1,0 +1,59 @@
+# Catalina 34 - Popular Cruising Sailboat
+# Based on production Catalina 34 specifications
+
+name: "Catalina 34"
+type: "sailboat"
+category: "cruiser"
+
+# Physical specifications
+dimensions:
+  length_overall: 34.0      # feet
+  beam: 11.5                # feet
+  draft: 5.0                # feet (standard keel)
+  displacement: 12500       # pounds
+  ballast: 4850             # pounds
+  sail_area: 485            # square feet (main + 100% jib)
+
+# Performance characteristics
+performance:
+  polar_diagram: "catalina34-polar.csv"  # Will create this
+  hull_speed: 7.8                        # theoretical hull speed in knots
+  design_displacement_ratio: 315         # heavier displacement cruiser
+  sail_area_displacement_ratio: 14.8     # lower SA/D for cruising comfort
+  ballast_displacement_ratio: 0.39       # moderate ballast ratio
+
+# Physics parameters for simulation
+physics:
+  keel_offset: 0.40         # slightly less than racing boats
+  leeway_factor: 6.1        # higher due to fuller hull sections
+  heel_sensitivity: 2.2     # more heel due to higher center of gravity
+  vmg_efficiency: 0.78      # lower efficiency, optimized for comfort
+  max_heel: 20              # conservative comfort limit
+  stall_angle: 45           # earlier stall due to cruising rig
+
+# Engine specifications
+engine:
+  type: "inboard_diesel"
+  horsepower: 27
+  fuel_capacity: 25         # gallons
+  cruising_rpm: 2100
+  max_rpm: 2800
+
+# Environmental operating limits
+limits:
+  max_wind_speed: 35        # knots - cruising-oriented limit
+  max_wave_height: 6        # feet - comfort-focused
+  min_depth: 5.5            # feet
+
+# Default sailing profile for scenarios
+defaults:
+  crew_weight: 500          # pounds - smaller typical crew
+  fuel_level: 0.80          # 80% fuel for cruising
+  provisions: 600           # pounds - extended cruising provisions
+  sail_configuration: "main_jib"
+
+# Metadata
+created: "2024-12-27"
+version: "1.0"
+source: "Catalina Yachts production specifications"
+notes: "Popular coastal cruising sailboat optimized for comfort and ease of handling"

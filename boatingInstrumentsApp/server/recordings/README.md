@@ -36,11 +36,13 @@ server/recordings/
 Use the NMEA Bridge Simulator to play recordings:
 
 ```bash
-# Play a specific recording
-node server/nmea-bridge-simulator.js --recording server/recordings/navigation/nmea0183/basic-nav.json
+```bash
+# Basic playback using file mode
+node server/nmea-bridge.js --file server/recordings/navigation/nmea0183/basic-nav.nmea
 
-# Play with looping
-node server/nmea-bridge-simulator.js --recording server/recordings/autopilot/nmea2000/engagement.json --loop
+# With looping
+node server/nmea-bridge.js --file server/recordings/autopilot/nmea2000/engagement.nmea --loop
+```
 
 # Available VS Code task
 "Start NMEA Bridge Simulator (Recording)" - Uses archived/nmea_recording_20250720_003925.json
@@ -50,8 +52,10 @@ node server/nmea-bridge-simulator.js --recording server/recordings/autopilot/nme
 To create new recordings from scenario definitions:
 
 ```bash
-# Generate from scenario (if implemented)
-node server/nmea-bridge-simulator.js --scenario navigation/basic-navigation --output server/recordings/navigation/nmea0183/basic-navigation.json
+```bash
+# Generate new recording from scenario using the unified tool
+node server/nmea-bridge.js --scenario basic-navigation > server/recordings/navigation/nmea0183/basic-navigation.nmea
+```
 ```
 
 ## Recording Format
@@ -111,7 +115,7 @@ The organized category folders are ready for recordings to be generated from the
 ## Related Files
 
 - **Scenario Definitions:** `vendor/test-scenarios/` - YAML definitions for generating recordings
-- **Simulator:** `server/nmea-bridge-simulator.js` - Plays recordings and scenarios
+- **NMEA Bridge:** `server/nmea-bridge.js` - Unified tool for live, file, and scenario modes
 - **Story Documentation:** `docs/stories/story-7.4-synthetic-nmea-recordings.md`
 
 ---

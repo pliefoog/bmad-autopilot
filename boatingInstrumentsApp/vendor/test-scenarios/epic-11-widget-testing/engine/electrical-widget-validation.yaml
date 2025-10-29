@@ -1,0 +1,328 @@
+# Electrical Widget Validation Scenario
+# Epic 11 - Professional Grade Testing Architecture  
+# Story 11.2 - Widget-Scenario Mapping
+# Domain: Engine - Electrical System Monitoring
+
+name: "electrical-widget-validation"
+description: "Comprehensive electrical widget validation with power systems monitoring, battery management, and marine electrical safety standards"
+version: "1.0.0"
+category: "engine"
+domain: "electrical-systems"
+duration: 180000  # 3 minutes
+
+# Marine Domain Accuracy Requirements
+accuracy_standards:
+  voltage_precision: 0.1  # 0.1V precision for battery/system voltage
+  current_precision: 0.1  # 0.1A precision for current measurements
+  power_precision: 0.1    # 0.1W precision for power calculations
+  charge_level_precision: 1.0  # 1% precision for battery charge level
+  manufacturer_tolerance: "within_spec"
+  staleness_threshold: 5000  # 5 seconds
+
+# Integration with Triple-Tier Testing Architecture
+testing_tiers:
+  tier1_unit: "electrical-widget.test.js"
+  tier2_api_injection: "electrical-nmea-injection.test.js" 
+  tier3_scenario_integration: "this_scenario"
+
+# NMEA Sentence Configuration for Electrical Monitoring
+nmea_sentences:
+  primary:
+    - type: "XDR"  # Transducer Measurement
+      purpose: "Electrical system parameters"
+      parameters:
+        - "battery_voltage_main"
+        - "battery_voltage_house"
+        - "battery_current_main"
+        - "battery_current_house"
+        - "alternator_voltage"
+        - "alternator_current"
+        - "shore_power_voltage"
+        - "shore_power_current"
+      frequency: 2000  # 0.5 Hz
+
+  secondary:
+    - type: "RSA"  # Rudder Sensor Angle (repurposed for battery charge levels)
+      purpose: "Battery charge level monitoring"
+      parameters:
+        - "main_battery_charge"  # Main battery SOC
+        - "house_battery_charge" # House battery SOC
+      frequency: 5000  # 0.2 Hz
+
+# Test Phases for Electrical Widget Validation
+test_phases:
+
+  # Phase 1: Battery Voltage and Charging Monitoring
+  phase_1_battery_systems:
+    name: "Battery Voltage and Charging System Validation"
+    duration: 50000  # 50 seconds
+    objective: "Validate battery voltage monitoring within 0.1V precision and charging system accuracy"
+    
+    nmea_data:
+      - sentence: "XDR"
+        data:
+          - timestamp: 0
+            values: ["V", 12.4, "V", "BATT_MAIN"]  # Main battery 12.4V
+          - timestamp: 2000  
+            values: ["V", 12.6, "V", "BATT_MAIN"]  # Charging started
+          - timestamp: 4000
+            values: ["V", 13.2, "V", "BATT_MAIN"]  # Under charge
+          - timestamp: 6000
+            values: ["V", 13.8, "V", "BATT_MAIN"]  # Full charge voltage
+          - timestamp: 8000
+            values: ["V", 13.4, "V", "BATT_MAIN"]  # Stable charge
+          
+      - sentence: "XDR"
+        data:
+          - timestamp: 0
+            values: ["V", 12.2, "V", "BATT_HOUSE"]  # House battery 12.2V
+          - timestamp: 2000
+            values: ["V", 12.5, "V", "BATT_HOUSE"] 
+          - timestamp: 4000
+            values: ["V", 13.0, "V", "BATT_HOUSE"]
+          - timestamp: 6000
+            values: ["V", 13.6, "V", "BATT_HOUSE"]
+          - timestamp: 8000
+            values: ["V", 13.2, "V", "BATT_HOUSE"]
+            
+    expected_behavior:
+      voltage_monitoring:
+        - main_battery_range: [12.4, 13.8]
+        - house_battery_range: [12.2, 13.6]
+        - precision: 0.1
+        - units: "volts_dc"
+      charging_detection:
+        - charging_threshold: ">13.0V indicates charging"
+        - full_charge_voltage: "13.6V-13.8V range"
+        - charge_state_indication: "visual charging indicators"
+        
+    validation_criteria:
+      - "Battery voltage displays update within 100ms of XDR sentence"
+      - "Voltage readings accurate within 0.1V precision"
+      - "Charging state correctly detected and displayed"
+      - "Multiple battery bank support functional"
+      - "Voltage trend indicators show charging/discharging state"
+
+  # Phase 2: Current and Power Monitoring
+  phase_2_current_power:
+    name: "Current Flow and Power Consumption Monitoring"
+    duration: 50000  # 50 seconds
+    objective: "Validate current measurement within 0.1A precision and power calculations"
+    
+    nmea_data:
+      - sentence: "XDR"
+        data:
+          - timestamp: 50000
+            values: ["I", 15.2, "A", "BATT_MAIN_CURRENT"]  # 15.2A charging current
+          - timestamp: 52000
+            values: ["I", 8.7, "A", "BATT_MAIN_CURRENT"]   # Reduced charging
+          - timestamp: 54000  
+            values: ["I", -5.3, "A", "BATT_MAIN_CURRENT"]  # Discharging
+          - timestamp: 56000
+            values: ["I", -12.8, "A", "BATT_MAIN_CURRENT"] # Heavy discharge
+          
+      - sentence: "XDR"
+        data:
+          - timestamp: 50000
+            values: ["I", 3.4, "A", "HOUSE_CURRENT"]  # House load 3.4A
+          - timestamp: 52000
+            values: ["I", 5.7, "A", "HOUSE_CURRENT"]  # Increased load
+          - timestamp: 54000
+            values: ["I", 8.2, "A", "HOUSE_CURRENT"]  # High load
+          - timestamp: 56000
+            values: ["I", 2.1, "A", "HOUSE_CURRENT"]  # Reduced load
+            
+    expected_behavior:
+      current_monitoring:
+        - main_current_range: [-12.8, 15.2]
+        - house_current_range: [2.1, 8.2]
+        - precision: 0.1
+        - units: "amperes"
+      power_calculations:
+        - main_power: "voltage × current = watts"
+        - house_power: "voltage × current = watts" 
+        - total_consumption: "sum of all loads"
+        - charge_discharge_indication: "positive = charging, negative = discharging"
+        
+    validation_criteria:
+      - "Current measurements accurate within 0.1A precision"
+      - "Power calculations correct (V × I = W)"
+      - "Charge/discharge direction correctly indicated"
+      - "Total power consumption accurately calculated"
+      - "Current trend indicators functional"
+
+  # Phase 3: Battery Charge Level and Capacity
+  phase_3_battery_capacity:
+    name: "Battery Charge Level and State of Charge"
+    duration: 45000  # 45 seconds
+    objective: "Validate battery charge level monitoring within 1% precision"
+    
+    nmea_data:
+      - sentence: "RSA"
+        data:
+          - timestamp: 100000
+            values: [78.5, 65.2]  # Main: 78.5%, House: 65.2%
+          - timestamp: 105000
+            values: [79.1, 64.8]  # Main charging, House discharging
+          - timestamp: 110000
+            values: [79.8, 64.3]
+          - timestamp: 115000  
+            values: [80.2, 63.9]
+          - timestamp: 120000
+            values: [80.6, 63.4]  # Steady state
+            
+    expected_behavior:
+      charge_level_monitoring:
+        - main_battery_soc: [78.5, 80.6]
+        - house_battery_soc: [63.4, 65.2]
+        - precision: 1.0
+        - units: "percentage"
+      capacity_indicators:
+        - visual_gauges: "graphical battery level indicators"
+        - numeric_display: "percentage and/or hours remaining"
+        - trend_arrows: "charging/discharging indicators"
+        
+    validation_criteria:
+      - "State of charge accurate within 1% precision"
+      - "Visual battery gauges reflect numeric percentages"
+      - "Charging/discharging trends correctly displayed"
+      - "Multiple battery SOC monitoring functional"
+      - "Low battery warnings at appropriate thresholds"
+
+  # Phase 4: Alternator and Shore Power Monitoring
+  phase_4_charging_sources:
+    name: "Alternator and Shore Power System Monitoring"
+    duration: 35000  # 35 seconds
+    objective: "Validate charging source monitoring and power distribution"
+    
+    nmea_data:
+      - sentence: "XDR"
+        data:
+          - timestamp: 145000
+            values: ["V", 14.2, "V", "ALTERNATOR"]  # Alternator output
+          - timestamp: 147000
+            values: ["I", 25.3, "A", "ALT_CURRENT"] # Alternator current
+          - timestamp: 149000
+            values: ["V", 12.8, "V", "SHORE_POWER"] # Shore power connected
+          - timestamp: 151000
+            values: ["I", 18.7, "A", "SHORE_CURRENT"] # Shore power current
+          - timestamp: 153000
+            values: ["V", 0.0, "V", "ALTERNATOR"]   # Engine off
+            
+    expected_behavior:
+      charging_source_detection:
+        - alternator_active: "voltage >13.5V indicates running"
+        - shore_power_active: "voltage >12V indicates connected"
+        - source_priority: "shore power overrides alternator"
+        - charging_current: "total current from all sources"
+      power_distribution:
+        - load_balancing: "distribution between battery banks"
+        - charging_efficiency: "power in vs power stored"
+        - source_switching: "automatic or manual source selection"
+        
+    validation_criteria:
+      - "Alternator status correctly detected and displayed"
+      - "Shore power connection status accurate"
+      - "Charging source priorities handled correctly"
+      - "Total charging current accurately calculated"
+      - "Power distribution monitoring functional"
+
+# Performance Thresholds (Marine Safety Requirements)
+performance_requirements:
+  update_latency: 100  # <100ms NMEA → widget update
+  memory_usage: 45     # <45MB max memory for electrical widget
+  cpu_usage: 8         # <8% CPU usage during normal operation
+  crash_free_rate: 99.5  # 99.5% crash-free session rate
+
+# Validation Metrics for Automated Testing
+validation_metrics:
+  accuracy_tests:
+    - metric: "voltage_precision_v"
+      target: 0.1
+      tolerance: 0.05
+    - metric: "current_precision_a"
+      target: 0.1  
+      tolerance: 0.05
+    - metric: "charge_level_precision_percent"
+      target: 1.0
+      tolerance: 0.5
+      
+  performance_tests:
+    - metric: "update_latency_ms"
+      target: 100
+      max_acceptable: 150
+    - metric: "memory_usage_mb"
+      target: 45
+      max_acceptable: 60
+      
+  reliability_tests:
+    - metric: "error_recovery_time_ms"
+      target: 1000
+      max_acceptable: 2000
+    - metric: "data_staleness_detection_ms"
+      target: 5000
+      max_acceptable: 6000
+
+# Error Conditions and Edge Cases
+error_conditions:
+  sensor_failures:
+    - missing_voltage_data: "retain last valid reading, show staleness"
+    - invalid_current_readings: "ignore bad data, maintain stability"
+    - communication_timeouts: "clear indication of lost connection"
+    
+  electrical_safety:
+    - overvoltage_detection: ">15V triggers warning"
+    - undervoltage_detection: "<10.5V triggers critical alarm"
+    - overcurrent_detection: ">50A triggers protection warning"
+    - reverse_polarity: "detection and warning display"
+
+# Integration Points with Testing Infrastructure
+testing_integration:
+  nmea_bridge_simulator:
+    - scenario_name: "electrical-system-monitoring"
+    - port: 9090
+    - api_endpoint: "/api/scenarios/electrical-widget-validation"
+    
+  triple_tier_architecture:
+    - tier_2_injection: "Inject electrical NMEA sentences via API"
+    - tier_3_validation: "Full scenario execution with safety threshold testing"
+    - automated_reporting: "Test results with electrical safety compliance"
+    
+  cross_platform_testing:
+    - react_native_web: "WebSocket electrical data streaming"
+    - ios_simulator: "Native electrical monitoring testing"
+    - android_emulator: "Native electrical system validation"
+
+# Expected Test Outcomes
+expected_outcomes:
+  electrical_accuracy:
+    - "Voltage readings accurate within 0.1V precision"
+    - "Current measurements within 0.1A accuracy"
+    - "Battery charge levels within 1% precision"
+    - "Power calculations mathematically correct"
+    
+  safety_compliance:
+    - "Overvoltage/undervoltage detection functional"
+    - "Overcurrent protection warnings operational"
+    - "Electrical fault indication clear and immediate"
+    - "Marine electrical safety standards met"
+    
+  system_integration:
+    - "Multiple battery bank support"
+    - "Charging source detection and switching"
+    - "Power distribution monitoring accurate"
+    - "Electrical system status dashboard comprehensive"
+
+# Dependencies and Prerequisites
+dependencies:
+  required_components:
+    - "ElectricalWidget component (React Native)"
+    - "NMEA parsing service with XDR electrical parameter support"
+    - "Multi-battery monitoring service"
+    - "Marine electrical safety threshold configuration"
+    
+  test_infrastructure:
+    - "NMEA Bridge Simulator with electrical scenario support"
+    - "Triple-Tier Testing Architecture (Story 11.1)"
+    - "Electrical safety compliance validation tools"
+    - "Cross-platform marine electrical testing environment"

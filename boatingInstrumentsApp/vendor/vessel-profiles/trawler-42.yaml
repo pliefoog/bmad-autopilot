@@ -1,0 +1,78 @@
+# Trawler 42 - Long-Range Displacement Cruiser
+# Based on typical trawler yacht specifications
+
+name: "Trawler 42"
+type: "powerboat"
+category: "trawler"
+
+# Physical specifications
+dimensions:
+  length_overall: 42.0      # feet
+  beam: 13.5                # feet
+  draft: 4.2                # feet
+  displacement: 32000       # pounds - heavy displacement hull
+  fuel_capacity: 600        # gallons - extended range
+  water_capacity: 200       # gallons
+
+# Performance characteristics
+performance:
+  hull_speed: 8.6                       # displacement hull speed limit
+  cruise_speed: 7.5                     # knots - efficient trawling speed
+  max_speed: 9.2                        # knots - near hull speed
+  fuel_consumption_cruise: 2.8          # gallons per hour - very efficient
+  fuel_consumption_max: 5.5             # gallons per hour at max
+  range_cruise: 1600                    # nautical miles - exceptional range
+
+# Physics parameters for simulation (displacement hull)
+physics:
+  turning_radius: 180       # feet - larger turning radius
+  acceleration: 0.8         # knots per second - slow acceleration
+  deceleration: 2.0         # knots per second - gradual deceleration
+  wind_drift_factor: 1.2    # higher windage due to size
+  current_efficiency: 0.85  # moderate efficiency against current
+  wave_impact: 0.8          # excellent seakeeping, less speed loss
+
+# Engine specifications
+engine:
+  type: "single_diesel"
+  total_horsepower: 210     # single engine
+  cruising_rpm: 1800        # low RPM for efficiency
+  max_rpm: 2400
+  fuel_flow_cruise: 2.8     # gallons per hour
+
+# Environmental operating limits
+limits:
+  max_wind_speed: 45        # knots - excellent seaworthiness
+  max_wave_height: 12       # feet - designed for rough seas
+  min_depth: 5              # feet
+
+# Default power profile for scenarios
+defaults:
+  fuel_level: 0.85          # 85% fuel - long-range cruising
+  water_level: 0.95         # 95% water
+  provisions: 1800          # pounds - extended voyage provisions
+  generator_load: 0.30      # 30% generator load
+  stabilizers: true         # active fin stabilizers
+
+# Navigation equipment (extensive for long-range cruising)
+equipment:
+  radar: true
+  chart_plotter: true
+  depth_sounder: true
+  autopilot: true
+  bow_thruster: true
+  stern_thruster: true
+  weather_routing: true
+  satellite_communication: true
+
+# Seakeeping characteristics
+seakeeping:
+  roll_period: 12           # seconds - comfortable roll period
+  pitch_damping: 0.85       # excellent pitch damping
+  stability_range: 120      # degrees - exceptional stability
+
+# Metadata
+created: "2024-12-27"
+version: "1.0"
+source: "Typical trawler yacht specifications"
+notes: "Long-range displacement cruiser optimized for efficiency and seaworthiness"

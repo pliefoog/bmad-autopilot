@@ -1,0 +1,374 @@
+name: "Wind Widget Validation - Wind Calculations Marine Domain Testing"
+description: "Comprehensive wind widget validation with NMEA MWV, MWD sentence processing, <1° directional precision testing, and true/apparent wind calculation accuracy for marine sailing safety"
+duration: 360  # 6 minutes for comprehensive wind validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "WindWidget"
+  marine_accuracy:
+    precision: 1.0  # degrees - marine domain requirement (<1° directional precision)
+    tolerance: 0.5  # ±0.5 degrees acceptable variance
+    wind_types: ["apparent", "true", "ground"]
+    speed_units: ["knots", "m/s", "mph", "km/h"]
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+    wind_smoothing: 0.4  # Smoothing factor for wind oscillation
+
+# Data generation parameters optimized for wind widget testing
+data:
+  # Apparent wind data (what instruments measure)
+  apparent_wind:
+    angle:
+      type: "sailing_wind_profile"
+      patterns:
+        - type: "steady_breeze"
+          angle: 45      # degrees - close hauled
+          duration: 60
+          variation: 5   # degrees
+          description: "Close hauled sailing - critical wind angle"
+        - type: "wind_shift"
+          from_angle: 45
+          to_angle: 90   # beam reach
+          duration: 30
+          description: "Wind shift to beam reach"
+        - type: "steady_breeze"
+          angle: 90      # beam reach
+          duration: 60
+          variation: 8
+          description: "Beam reach sailing"
+        - type: "wind_shift"
+          from_angle: 90
+          to_angle: 135  # broad reach
+          duration: 30
+          description: "Wind shift to broad reach"
+        - type: "steady_breeze"
+          angle: 135     # broad reach
+          duration: 60
+          variation: 10
+          description: "Broad reach sailing"
+        - type: "wind_shift"
+          from_angle: 135
+          to_angle: 180  # dead downwind
+          duration: 30
+          description: "Wind shift to downwind"
+        - type: "variable_wind"
+          center: 180
+          variation: 20
+          duration: 90
+          description: "Variable downwind conditions"
+      unit: "degrees"
+      precision: 0.5
+
+    speed:
+      type: "wind_strength_profile"
+      patterns:
+        - base: 8.0    # knots - light breeze
+          variation: 2.0
+          duration: 120
+          description: "Light breeze conditions"
+        - base: 15.0   # knots - moderate breeze
+          variation: 3.0
+          duration: 120
+          description: "Moderate breeze conditions"
+        - base: 22.0   # knots - fresh breeze
+          variation: 4.0
+          duration: 120
+          description: "Fresh breeze conditions"
+      unit: "knots"
+      precision: 0.1
+
+  # Vessel motion for true wind calculation
+  vessel_speed:
+    type: "sailing_speed_profile"
+    patterns:
+      - speed: 4.0   # knots - close hauled
+        duration: 120
+        variation: 0.5
+      - speed: 6.0   # knots - beam reach
+        duration: 120
+        variation: 0.8
+      - speed: 5.5   # knots - broad reach/run
+        duration: 120
+        variation: 1.0
+    unit: "knots"
+
+  vessel_heading:
+    type: "sailing_course_profile"
+    patterns:
+      - heading: 30   # degrees - close hauled port
+        duration: 90
+        variation: 3
+      - heading: 60   # tack to starboard
+        duration: 30
+        variation: 5
+      - heading: 120  # beam reach
+        duration: 90
+        variation: 3
+      - heading: 180  # broad reach/run
+        duration: 150
+        variation: 5
+    unit: "degrees"
+
+# NMEA sentence configuration for wind widget validation
+sentences:
+  # MWV - Wind Speed and Angle
+  - type: "MWV"
+    frequency: 3   # Hz - High frequency for responsive wind display
+    fields:
+      wind_angle: "apparent_wind.angle"
+      reference: "R"  # Relative (apparent wind)
+      wind_speed: "apparent_wind.speed"
+      speed_units: "N"  # Knots
+      status: "A"     # Active
+      
+  # MWV - True Wind Speed and Angle (calculated)
+  - type: "MWV"
+    frequency: 2   # Hz
+    fields:
+      wind_angle: "calculated"  # True wind angle
+      reference: "T"  # True wind
+      wind_speed: "calculated"  # True wind speed
+      speed_units: "N"  # Knots
+      status: "A"     # Active
+      
+  # MWD - Wind Direction and Speed
+  - type: "MWD"
+    frequency: 1   # Hz
+    fields:
+      wind_direction_true: "calculated"    # True wind direction
+      wind_direction_magnetic: "calculated" # Magnetic wind direction
+      wind_speed_knots: "calculated"       # True wind speed in knots
+      wind_speed_mps: "calculated"         # True wind speed in m/s
+
+# Test phases for comprehensive wind validation
+phases:
+  - name: "wind_initialization"
+    duration: 15
+    description: "Validate wind widget initialization and display startup"
+    validation:
+      - type: "wind_display"
+        check_initialization: true
+      - type: "wind_rose_display"
+        compass_orientation: true
+      - type: "units_display"
+        check_all_units: true
+        
+  - name: "close_hauled_conditions"
+    duration: 90
+    description: "Test close hauled wind angle accuracy and apparent wind display"
+    validation:
+      - type: "wind_angle_accuracy"
+        expected: 45
+        tolerance: 0.5
+        reference: "apparent"
+      - type: "wind_speed_accuracy"
+        expected: 8.0
+        tolerance: 0.2
+        units: "knots"
+      - type: "true_wind_calculation"
+        vessel_speed: 4.0
+        vessel_heading: 30
+        validate_calculation: true
+        
+  - name: "beam_reach_conditions"  
+    duration: 90
+    description: "Validate beam reach wind calculations and display accuracy"
+    validation:
+      - type: "wind_angle_accuracy"
+        expected: 90
+        tolerance: 0.5
+        reference: "apparent"
+      - type: "wind_speed_accuracy"
+        expected: 15.0
+        tolerance: 0.2
+      - type: "wind_shift_detection"
+        from_angle: 45
+        to_angle: 90
+        max_response_time: 3  # seconds
+        
+  - name: "broad_reach_conditions"
+    duration: 90
+    description: "Test broad reach wind accuracy and true wind precision"
+    validation:
+      - type: "wind_angle_accuracy"
+        expected: 135
+        tolerance: 0.5
+      - type: "true_wind_accuracy"
+        directional_precision: 1.0  # degrees
+        speed_precision: 0.2  # knots
+      - type: "update_latency"
+        max_ms: 100
+        
+  - name: "downwind_conditions"
+    duration: 90
+    description: "Validate downwind sailing and variable wind handling"
+    validation:
+      - type: "wind_angle_accuracy"
+        expected: 180
+        tolerance: 1.0  # Relaxed for downwind
+      - type: "wind_variability_handling"
+        variation_range: 20  # degrees
+        smoothing_effectiveness: 0.6
+      - type: "performance_stress"
+        message_rate: 3  # Hz
+        memory_check: true
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "wind_sensor_failure"
+    type: "sensor_dropout"
+    duration: 10  # seconds
+    validation:
+      - type: "sensor_failure_indication"
+        expect_no_wind_display: true
+        
+  - name: "extreme_wind_angles"
+    type: "angle_wrap_around"
+    patterns: ["359_to_001", "001_to_359"]
+    validation:
+      - type: "angle_wrap_handling"
+        expect_smooth_transition: true
+        
+  - name: "wind_speed_spikes"
+    type: "speed_anomaly"
+    spike_factor: 3.0  # 3x normal speed
+    duration: 5  # seconds
+    validation:
+      - type: "speed_spike_filtering"
+        expect_spike_dampening: true
+
+# Performance stress testing
+stress_testing:
+  wind_updates:
+    rate: 10  # wind updates per second
+    duration: 30  # seconds
+    angle_jitter: 5.0  # degrees random jitter
+    speed_jitter: 2.0  # knots random jitter
+    validation:
+      - type: "update_processing"
+        max_latency_ms: 100
+      - type: "wind_stability"
+        max_angle_jitter: 2.0  # degrees after smoothing
+        max_speed_jitter: 0.5   # knots after smoothing
+      - type: "memory_usage"
+        max_increase_mb: 5
+
+# Marine domain accuracy validation
+accuracy_validation:
+  wind_direction_precision:
+    requirement: 1.0  # degrees - marine domain <1° requirement
+    test_angles: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330]
+    tolerance: 0.5  # degrees
+    validation:
+      - type: "directional_accuracy"
+        full_compass: true
+        
+  wind_speed_precision:
+    requirement: 0.1  # knots
+    test_speeds: [2, 5, 8, 12, 15, 20, 25, 30]  # knots
+    tolerance: 0.2  # knots
+    validation:
+      - type: "speed_accuracy"
+        across_speed_range: true
+        
+  true_wind_calculation:
+    algorithms: ["vector_addition", "trigonometric"]
+    accuracy: 0.5  # degrees direction, 0.2 knots speed
+    validation:
+      - type: "calculation_accuracy"
+        algorithm_consistency: true
+        
+  wind_smoothing:
+    oscillation_damping: 0.6  # 60% reduction in oscillation
+    response_time: 4.0  # seconds for 95% of change
+    validation:
+      - type: "smoothing_effectiveness"
+        oscillation_reduction: true
+
+# Wind display and visualization validation
+display_validation:
+  wind_rose:
+    apparent_wind_display: true
+    true_wind_display: true
+    wind_history_track: true
+    validation:
+      - type: "wind_rose_accuracy"
+        visual_alignment: true
+        
+  wind_vector_display:
+    arrow_orientation: true
+    magnitude_representation: true
+    validation:
+      - type: "vector_display"
+        intuitive_representation: true
+        
+  wind_speed_units:
+    supported: ["knots", "m/s", "mph", "km/h"]
+    conversion_factors:
+      knots_to_mps: 0.514444
+      knots_to_mph: 1.15078
+      knots_to_kmh: 1.852
+    validation:
+      - type: "units_conversion"
+        accuracy: 0.01
+
+# Sailing-specific wind validation
+sailing_validation:
+  apparent_vs_true_wind:
+    display_both: true
+    switching_capability: true
+    validation:
+      - type: "wind_type_display"
+        clear_indication: true
+        
+  wind_shift_detection:
+    threshold: 10  # degrees
+    time_window: 30  # seconds
+    validation:
+      - type: "shift_alerts"
+        tactical_information: true
+        
+  wind_strength_indicators:
+    beaufort_scale: true
+    color_coding: true
+    validation:
+      - type: "strength_indication"
+        sailor_friendly: true
+
+# Integration with Triple-Tier Testing Architecture
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_scenarios: ["light_wind", "moderate_wind", "strong_wind", "variable_wind"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["MWV", "MWD"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_sailing_wind_validation: true
+
+# Marine safety requirements
+safety_validation:
+  wind_data_staleness:
+    threshold_ms: 5000  # 5 second marine safety requirement
+    validation:
+      - type: "staleness_detection"
+        visual_indicator: true
+        
+  strong_wind_alerts:
+    warning_threshold: 25  # knots
+    critical_threshold: 35  # knots
+    validation:
+      - type: "wind_strength_alerts"
+        safety_warnings: true
+        
+  wind_direction_stability:
+    stability_threshold: 5  # degrees over 1 minute
+    validation:
+      - type: "direction_stability"
+        trend_indication: true

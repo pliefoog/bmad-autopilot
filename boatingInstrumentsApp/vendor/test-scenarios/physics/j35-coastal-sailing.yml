@@ -1,0 +1,123 @@
+name: "J/35 Coastal Sailing Physics Demo"
+description: "Physics-enhanced coastal sailing scenario with realistic vessel dynamics"
+duration: 300  # 5 minutes
+version: "1.0"
+category: "physics-enhanced"
+
+# Physics engine configuration
+physics:
+  enabled: true
+  vessel_profile: "j35"
+  update_interval_ms: 100  # 10 Hz physics updates
+  
+  # Initial vessel state
+  initial_state:
+    position:
+      latitude: 37.7749   # San Francisco Bay
+      longitude: -122.4194
+    motion:
+      speed: 0            # Starting from rest
+      heading: 270        # Heading west
+      
+  # NMEA sentence timing (realistic marine rates)
+  nmea_timing:
+    depth: { lastSent: 0, intervalMs: 500 }      # 2 Hz
+    speed: { lastSent: 0, intervalMs: 200 }      # 5 Hz  
+    wind: { lastSent: 0, intervalMs: 333 }       # 3 Hz
+    gps: { lastSent: 0, intervalMs: 200 }        # 5 Hz
+    compass: { lastSent: 0, intervalMs: 100 }    # 10 Hz
+    autopilot: { lastSent: 0, intervalMs: 1000 } # 1 Hz
+
+# Scenario phases with physics integration
+phases:
+  - phase: "departure_preparation"
+    duration: 30
+    description: "Engine start and departure from marina"
+    environment:
+      wind_speed: 8
+      wind_angle: 220
+      current_speed: 0.5
+      current_direction: 180
+      wave_height: 0.5
+    vessel_control:
+      target_speed: 2
+      target_heading: 270
+      throttle: 30
+      rudder_angle: 0
+    physics:
+      nmea_timing:
+        compass: { intervalMs: 50 }  # Higher compass rate during maneuvering
+        
+  - phase: "motor_to_sailing_area"
+    duration: 60
+    description: "Motor out of harbor to sailing area"
+    environment:
+      wind_speed: 12
+      wind_angle: 220
+      current_speed: 0.8
+      current_direction: 180
+      wave_height: 1.0
+    vessel_control:
+      target_speed: 4
+      target_heading: 270
+      throttle: 50
+      rudder_angle: 0
+      
+  - phase: "sail_deployment"
+    duration: 45
+    description: "Deploy sails and transition to sailing"
+    environment:
+      wind_speed: 15
+      wind_angle: 240
+      current_speed: 1.0
+      current_direction: 180
+      wave_height: 1.2
+    vessel_control:
+      target_speed: 6
+      target_heading: 225  # Turn to reach
+      throttle: 0          # Engine off
+      rudder_angle: -5
+      
+  - phase: "coastal_reach"
+    duration: 90
+    description: "Sailing on a comfortable reach along the coast"
+    environment:
+      wind_speed: 18
+      wind_angle: 240
+      current_speed: 1.2
+      current_direction: 180
+      wave_height: 1.5
+    vessel_control:
+      target_speed: 7
+      target_heading: 180  # Turn south
+      throttle: 0
+      rudder_angle: 0
+      
+  - phase: "return_tack"
+    duration: 75
+    description: "Tack back toward harbor"
+    environment:
+      wind_speed: 16
+      wind_angle: 240
+      current_speed: 1.0
+      current_direction: 180
+      wave_height: 1.3
+    vessel_control:
+      target_speed: 6
+      target_heading: 60   # Tack to northeast
+      throttle: 0
+      rudder_angle: 10
+
+# Performance monitoring
+monitoring:
+  performance_logging: true
+  state_snapshots: true
+  nmea_validation: true
+  physics_metrics: true
+
+# Output configuration
+output:
+  console_logging: true
+  file_logging: false
+  websocket_streaming: true
+  control_api: true

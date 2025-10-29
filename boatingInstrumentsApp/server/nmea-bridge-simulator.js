@@ -80,43 +80,30 @@ class NMEABridgeSimulator {
       memoryUsage: 0
     };
     
-    console.log('🌐 Enhanced NMEA Bridge Simulator');
-    console.log('=================================');
-    console.log(`TCP Server: ${BIND_HOST}:${TCP_PORT} (accessible from all network interfaces)`);
-    console.log(`UDP Server: ${BIND_HOST}:${UDP_PORT} (accessible from all network interfaces)`);
-    console.log(`WebSocket Server: ws://${BIND_HOST}:${WS_PORT} (accessible from all network interfaces)`);
-    console.log(`Bridge Mode: ${this.bridgeMode.toUpperCase()}`);
-    console.log('');
+    console.log('🌐 NMEA Bridge Simulator Started');
+    console.log(`📡 Mode: ${this.bridgeMode.toUpperCase()}`);
   }
   
   /**
-   * Display network connection information for all network interfaces
+   * Display essential network connection information
    */
   displayNetworkInfo() {
     const os = require('os');
     const networkInterfaces = os.networkInterfaces();
     
-    console.log('🔗 Network Connection Information:');
-    console.log('=================================');
-    console.log('Localhost connections:');
-    console.log(`  TCP: localhost:${TCP_PORT}`);
-    console.log(`  UDP: localhost:${UDP_PORT}`);
-    console.log(`  WebSocket: ws://localhost:${WS_PORT}`);
-    console.log('');
-    
-    console.log('Network interface connections:');
+    // Find the primary network interface
+    let primaryIP = 'localhost';
     Object.keys(networkInterfaces).forEach(interfaceName => {
       const interfaces = networkInterfaces[interfaceName];
       interfaces.forEach(iface => {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`  ${interfaceName} (${iface.address}):`);
-          console.log(`    TCP: ${iface.address}:${TCP_PORT}`);
-          console.log(`    UDP: ${iface.address}:${UDP_PORT}`);
-          console.log(`    WebSocket: ws://${iface.address}:${WS_PORT}`);
+        if (iface.family === 'IPv4' && !iface.internal && primaryIP === 'localhost') {
+          primaryIP = iface.address;
         }
       });
     });
-    console.log('');
+    
+    console.log(`   Ports: TCP/UDP :${TCP_PORT} | WebSocket :${WS_PORT}`);
+    console.log(`🔗 Hosts: localhost, ${primaryIP}`);
   }
   
   /**
@@ -155,9 +142,7 @@ class NMEABridgeSimulator {
   this.startDataGeneration();
       
       this.isRunning = true;
-      console.log('🚀 All servers started successfully');
-      console.log('📝 Press Ctrl+C to stop');
-      console.log('');
+      console.log('✅ Ready | Press Ctrl+C to stop');
       
       // Start performance monitoring
       this.startPerformanceMonitoring();
@@ -206,7 +191,7 @@ class NMEABridgeSimulator {
       });
       
       this.tcpServer.listen(TCP_PORT, BIND_HOST, () => {
-        console.log(`✅ TCP server listening on ${BIND_HOST}:${TCP_PORT} (all network interfaces)`);
+        // TCP server ready (silent)
         resolve();
       });
       
@@ -245,7 +230,7 @@ class NMEABridgeSimulator {
       });
       
       this.udpServer.on('listening', () => {
-        console.log(`✅ UDP server listening on ${BIND_HOST}:${UDP_PORT} (all network interfaces)`);
+        // UDP server ready (silent)
         resolve();
       });
       
@@ -266,7 +251,7 @@ class NMEABridgeSimulator {
       this.wsServer = new WebSocket.Server({ port: WS_PORT, host: BIND_HOST });
       
       this.wsServer.on('listening', () => {
-        console.log(`✅ WebSocket server listening on ${BIND_HOST}:${WS_PORT} (all network interfaces)`);
+        // WebSocket server ready (silent)
         resolve();
       });
       
@@ -1858,14 +1843,14 @@ if (require.main === module) {
   // Initialize and start BMAD Integration API
   let bmadApi = null;
   try {
-    const { BMADIntegrationAPI } = require('./bmad-integration-api');
-    bmadApi = new BMADIntegrationAPI(simulator);
+    const { SimulatorControlAPI } = require('./simulator-control-api');
+    bmadApi = new SimulatorControlAPI(simulator);
     
-    // Start BMAD API server
+    // Start Simulator Control API server
     bmadApi.start().then(() => {
-      console.log('🔗 BMAD Agent Integration API ready');
+      // API ready message handled by start() method
     }).catch((error) => {
-      console.error('❌ Failed to start BMAD API:', error.message);
+      console.error('❌ Failed to start Control API:', error.message);
     });
   } catch (error) {
     console.warn('⚠️  BMAD Integration API not available:', error.message);

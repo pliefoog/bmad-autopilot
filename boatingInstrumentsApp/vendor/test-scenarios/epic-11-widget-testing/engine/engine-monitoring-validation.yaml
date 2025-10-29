@@ -1,0 +1,436 @@
+name: "Engine Monitoring Widget Validation - Engine Telemetry Marine Domain Testing"
+description: "Comprehensive engine widget validation with NMEA XDR engine parameter processing for RPM, temperature, pressure monitoring within manufacturer tolerances and engine alarm thresholds for marine safety"
+duration: 420  # 7 minutes for comprehensive engine validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "EngineWidget"
+  marine_accuracy:
+    rpm_precision: 1.0       # RPM
+    temperature_precision: 1.0  # degrees Celsius
+    pressure_precision: 0.1    # PSI/bar
+    manufacturer_tolerances:
+      rpm: 25                # ±25 RPM
+      oil_pressure: 2.0      # ±2 PSI
+      coolant_temp: 3.0      # ±3°C
+      exhaust_temp: 10.0     # ±10°C
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+
+# Data generation parameters optimized for engine widget testing
+data:
+  # Engine RPM progression for load testing
+  engine_rpm:
+    type: "engine_load_profile"
+    patterns:
+      - type: "idle"
+        rpm: 650      # Typical diesel idle
+        duration: 60
+        variation: 20
+        description: "Engine idle - warm-up phase"
+      - type: "low_cruise"
+        rpm: 1800     # Low cruise RPM
+        duration: 90
+        variation: 30
+        description: "Low cruise RPM - fuel efficient"
+      - type: "normal_cruise"
+        rpm: 2200     # Normal cruise RPM
+        duration: 120
+        variation: 40
+        description: "Normal cruise RPM - typical operation"
+      - type: "high_cruise"
+        rpm: 2800     # High cruise RPM
+        duration: 90
+        variation: 50
+        description: "High cruise RPM - maximum continuous"
+      - type: "power_reduction"
+        start: 2800
+        end: 1500     # Return to lower RPM
+        duration: 60
+        description: "Power reduction - arriving at anchorage"
+    unit: "rpm"
+    precision: 1
+
+  # Engine oil pressure correlated with RPM
+  oil_pressure:
+    type: "rpm_correlated_pressure"
+    base_pressure: 15  # PSI at idle
+    rpm_factor: 0.015  # PSI per RPM increase
+    variation: 2.0     # Random variation
+    unit: "psi"
+    precision: 0.1
+
+  # Coolant temperature with thermal lag
+  coolant_temperature:
+    type: "thermal_response_profile"
+    patterns:
+      - type: "warm_up"
+        start: 60      # Cold engine start
+        end: 82        # Normal operating temp
+        duration: 120
+        thermal_constant: 0.8
+        description: "Engine warm-up phase"
+      - type: "operating_temp"
+        base: 82       # Normal operating temperature
+        duration: 240
+        variation: 3
+        load_factor: 0.15  # Temperature increase with load
+        description: "Normal operating temperature"
+      - type: "cool_down"
+        start: 88      # Higher temp at high load
+        end: 75        # Cooling down
+        duration: 60
+        thermal_constant: 0.6
+        description: "Engine cool-down"
+    unit: "celsius"
+    precision: 1
+
+  # Exhaust gas temperature
+  exhaust_temperature:
+    type: "exhaust_temp_profile"
+    base_temp: 250     # Base exhaust temp at idle
+    rpm_factor: 0.3    # Temperature increase per 100 RPM
+    load_factor: 50    # Additional temp under load
+    variation: 15      # Random variation
+    unit: "celsius"
+    precision: 2
+
+  # Fuel pressure
+  fuel_pressure:
+    type: "fuel_system_pressure"
+    base_pressure: 45  # PSI - typical fuel rail pressure
+    variation: 2       # Normal variation
+    rpm_correlation: 0.1  # Slight increase with RPM
+    unit: "psi"
+    precision: 0.5
+
+  # Engine hours (accumulated runtime)
+  engine_hours:
+    type: "accumulated_runtime"
+    initial_hours: 1247.5  # Existing engine hours
+    increment_rate: "real_time"  # Real-time accumulation
+    precision: 0.1
+
+# NMEA sentence configuration for engine widget validation
+sentences:
+  # XDR - Engine RPM
+  - type: "XDR"
+    frequency: 2   # Hz - Engine RPM updates
+    fields:
+      - transducer_type: "A"  # Angular displacement
+        measurement: "engine_rpm"
+        units: "R"  # Revolutions per minute
+        transducer_name: "ENGINE#1_RPM"
+        
+  # XDR - Oil Pressure
+  - type: "XDR"
+    frequency: 1   # Hz - Oil pressure updates
+    fields:
+      - transducer_type: "P"  # Pressure
+        measurement: "oil_pressure"
+        units: "B"  # Bars (converted from PSI)
+        transducer_name: "ENGINE#1_OIL_PRESS"
+        
+  # XDR - Coolant Temperature
+  - type: "XDR"
+    frequency: 0.5  # Hz - Temperature updates (slower)
+    fields:
+      - transducer_type: "C"  # Temperature
+        measurement: "coolant_temperature"
+        units: "C"  # Celsius
+        transducer_name: "ENGINE#1_COOLANT"
+        
+  # XDR - Exhaust Temperature
+  - type: "XDR"
+    frequency: 0.3  # Hz - Exhaust temperature
+    fields:
+      - transducer_type: "C"  # Temperature
+        measurement: "exhaust_temperature"
+        units: "C"  # Celsius
+        transducer_name: "ENGINE#1_EXHAUST"
+        
+  # XDR - Fuel Pressure
+  - type: "XDR"
+    frequency: 0.5  # Hz - Fuel pressure
+    fields:
+      - transducer_type: "P"  # Pressure
+        measurement: "fuel_pressure"
+        units: "B"  # Bars (converted from PSI)
+        transducer_name: "ENGINE#1_FUEL_PRESS"
+        
+  # XDR - Engine Hours
+  - type: "XDR"
+    frequency: 0.1  # Hz - Engine hours (slow updates)
+    fields:
+      - transducer_type: "G"  # Generic
+        measurement: "engine_hours"
+        units: "H"  # Hours
+        transducer_name: "ENGINE#1_HOURS"
+
+# Test phases for comprehensive engine validation
+phases:
+  - name: "engine_startup"
+    duration: 60
+    description: "Validate engine startup monitoring and cold start parameters"
+    validation:
+      - type: "startup_sequence"
+        rpm_increase: true
+        pressure_buildup: true
+        temperature_rise: true
+      - type: "cold_start_parameters"
+        low_oil_pressure_acceptable: true
+        low_coolant_temp_expected: true
+      - type: "parameter_initialization"
+        all_sensors_active: true
+        
+  - name: "warm_up_phase"
+    duration: 120
+    description: "Test engine warm-up monitoring and parameter trends"
+    validation:
+      - type: "warm_up_progression"
+        temperature_rising_trend: true
+        oil_pressure_stabilization: true
+      - type: "rpm_accuracy"
+        expected: 1800
+        tolerance: 25
+      - type: "manufacturer_tolerances"
+        within_spec: true
+        
+  - name: "normal_cruise_operation"
+    duration: 120
+    description: "Validate normal cruise operation and steady-state monitoring"
+    validation:
+      - type: "cruise_parameters"
+        rpm_stability: true
+        temperature_stability: true
+        pressure_stability: true
+      - type: "parameter_accuracy"
+        rpm_tolerance: 25
+        oil_pressure_tolerance: 2.0
+        coolant_temp_tolerance: 3.0
+      - type: "update_latency"
+        max_ms: 100
+        
+  - name: "high_load_operation"
+    duration: 90
+    description: "Test high load operation and thermal management"
+    validation:
+      - type: "high_load_response"
+        rpm_accuracy: 2800
+        increased_temperatures: true
+        maintained_oil_pressure: true
+      - type: "thermal_management"
+        temperature_limits: true
+        overheating_detection: false
+      - type: "performance_monitoring"
+        parameter_correlation: true
+        
+  - name: "power_reduction"
+    duration: 60
+    description: "Validate power reduction and engine cool-down"
+    validation:
+      - type: "power_reduction_response"
+        rpm_decrease_trend: true
+        temperature_reduction: true
+      - type: "cool_down_monitoring"
+        gradual_temperature_drop: true
+        pressure_adjustment: true
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "low_oil_pressure_alarm"
+    type: "pressure_drop"
+    parameter: "oil_pressure"
+    threshold: 10  # PSI - below safe operating pressure
+    duration: 15   # seconds
+    validation:
+      - type: "alarm_trigger"
+        expect_low_pressure_alert: true
+        
+  - name: "high_temperature_alarm"
+    type: "temperature_spike"
+    parameter: "coolant_temperature"
+    threshold: 105  # Celsius - overheating threshold
+    duration: 20    # seconds
+    validation:
+      - type: "overheating_detection"
+        expect_high_temp_alert: true
+        
+  - name: "rpm_sensor_failure"
+    type: "sensor_dropout"
+    parameter: "engine_rpm"
+    duration: 30  # seconds
+    validation:
+      - type: "sensor_failure_indication"
+        expect_rpm_fault_display: true
+        
+  - name: "excessive_exhaust_temperature"
+    type: "temperature_spike"
+    parameter: "exhaust_temperature"
+    threshold: 600  # Celsius - dangerous exhaust temp
+    validation:
+      - type: "exhaust_temp_alarm"
+        expect_safety_shutdown_warning: true
+
+# Performance stress testing
+stress_testing:
+  engine_parameter_updates:
+    rate: 10  # parameter updates per second
+    duration: 60  # seconds
+    parameter_variation: 5.0  # Percentage variation
+    validation:
+      - type: "update_processing"
+        max_latency_ms: 100
+      - type: "parameter_consistency"
+        cross_parameter_validation: true
+      - type: "memory_usage"
+        max_increase_mb: 8
+
+# Marine domain accuracy validation
+accuracy_validation:
+  engine_parameter_precision:
+    rpm_requirement: 25      # RPM tolerance
+    oil_pressure_requirement: 2.0   # PSI tolerance  
+    temperature_requirement: 3.0    # Celsius tolerance
+    test_conditions:
+      - idle: {rpm: 650, oil_press: 15, coolant: 82}
+      - cruise: {rpm: 2200, oil_press: 45, coolant: 85}
+      - high_load: {rpm: 2800, oil_press: 55, coolant: 88}
+    validation:
+      - type: "manufacturer_tolerance_compliance"
+        all_parameters: true
+        
+  parameter_correlation:
+    rpm_to_oil_pressure: 0.85  # Correlation coefficient
+    rpm_to_temperature: 0.75   # Correlation coefficient
+    load_to_exhaust_temp: 0.90 # Correlation coefficient
+    validation:
+      - type: "correlation_accuracy"
+        expected_relationships: true
+        
+  units_conversion:
+    pressure:
+      psi_to_bar: 0.0689476   # Conversion factor
+      psi_to_kpa: 6.89476     # Conversion factor
+    temperature:
+      celsius_to_fahrenheit: 1.8  # Slope
+      fahrenheit_offset: 32       # Offset
+    validation:
+      - type: "conversion_accuracy"
+        precision: 0.01
+
+# Engine safety monitoring validation
+safety_monitoring:
+  alarm_thresholds:
+    low_oil_pressure: 12      # PSI
+    high_coolant_temp: 100    # Celsius
+    high_exhaust_temp: 550    # Celsius
+    overspeed_rpm: 3200       # RPM
+    validation:
+      - type: "safety_threshold_monitoring"
+        immediate_alerts: true
+        
+  trend_monitoring:
+    temperature_rise_rate: 10  # Celsius per minute - rapid increase
+    pressure_drop_rate: 5      # PSI per minute - rapid decrease
+    validation:
+      - type: "trend_based_alerts"
+        predictive_warnings: true
+        
+  engine_protection:
+    auto_shutdown_conditions: true
+    parameter_limit_enforcement: true
+    validation:
+      - type: "protection_systems"
+        engine_safety_priority: true
+
+# Display and user interface validation
+display_validation:
+  engine_display:
+    analog_gauges: true
+    digital_readouts: true
+    trend_graphs: true
+    alarm_indicators: true
+    validation:
+      - type: "display_completeness"
+        all_parameters_visible: true
+        
+  units_preference:
+    temperature: ["celsius", "fahrenheit"]
+    pressure: ["psi", "bar", "kpa"]
+    validation:
+      - type: "units_switching"
+        real_time_conversion: true
+        
+  alarm_visualization:
+    color_coding: true
+    priority_indication: true
+    acknowledgment_capability: true
+    validation:
+      - type: "alarm_display"
+        clear_safety_indication: true
+
+# Marine engine specific validation
+marine_engine:
+  sea_water_cooling:
+    intake_temperature_monitoring: true
+    flow_rate_indication: true
+    validation:
+      - type: "cooling_system_monitoring"
+        marine_specific: true
+        
+  engine_load_management:
+    propeller_load_correlation: true
+    fuel_efficiency_monitoring: true
+    validation:
+      - type: "load_optimization"
+        marine_propulsion: true
+        
+  maintenance_alerts:
+    oil_change_intervals: true
+    filter_replacement_reminders: true
+    service_hour_tracking: true
+    validation:
+      - type: "maintenance_scheduling"
+        marine_service_intervals: true
+
+# Integration with Triple-Tier Testing Architecture
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_scenarios: ["idle", "cruise", "high_load", "alarms"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["XDR"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_engine_monitoring_validation: true
+
+# Marine safety requirements
+safety_validation:
+  engine_data_staleness:
+    threshold_ms: 5000  # 5 second marine safety requirement
+    validation:
+      - type: "staleness_detection"
+        visual_indicator: true
+        
+  critical_parameter_monitoring:
+    oil_pressure_critical: true
+    coolant_temperature_critical: true
+    exhaust_temperature_monitoring: true
+    validation:
+      - type: "critical_monitoring"
+        safety_priority: true
+        
+  engine_reliability:
+    uptime_monitoring: true
+    fault_detection: true
+    predictive_maintenance: true
+    validation:
+      - type: "reliability_monitoring"
+        marine_durability: true

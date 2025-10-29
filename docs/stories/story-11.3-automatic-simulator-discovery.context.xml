@@ -1,0 +1,122 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>epic-11</epicId>
+    <storyId>11.3</storyId>
+    <title>Automatic Simulator Discovery</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.3-automatic-simulator-discovery.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>test developer</asA>
+    <iWant>automatic NMEA Bridge Simulator discovery and connection management</iWant>
+    <soThat>I can run comprehensive integration tests without manual simulator configuration</soThat>
+    <tasks>
+      <task id="1" name="SimulatorTestClient Implementation" acs="AC1:1-5,AC4:1-5">
+        <subtask id="1.1" name="Port discovery and connection establishment">Implement auto-discovery on ports [9090, 8080] with 5-second timeout, Add 3 retry attempts with exponential backoff (100ms, 200ms, 400ms delays), Create connection validation and health check endpoints</subtask>
+        <subtask id="1.2" name="HTTP API communication layer">Implement scenario loading via POST /api/scenarios, Add NMEA message injection via POST /api/inject-data, Create simulator status endpoint GET /api/status</subtask>
+        <subtask id="1.3" name="WebSocket connection management">Real-time data stream handling with automatic reconnection, Connection pooling for test environment isolation, Thread-safe connection management for parallel tests</subtask>
+      </task>
+      <task id="2" name="Graceful Fallback and Mock Integration" acs="AC1:3,AC3:4">
+        <subtask id="2.1" name="Mock mode implementation">Automatic fallback when simulator unavailable, Mock NMEA data generation matching simulator patterns, Test execution continuity in offline development environments</subtask>
+        <subtask id="2.2" name="Error handling and recovery">Robust connection error handling with meaningful error messages, Resource cleanup and connection disposal, Timeout handling with configurable thresholds</subtask>
+      </task>
+      <task id="3" name="VS Code Test Explorer Integration" acs="AC2:1-5">
+        <subtask id="3.1" name="Test explorer UI enhancement">Simulator connection status display in test explorer, Real-time availability indicators with color coding, Test categorization based on simulator availability</subtask>
+        <subtask id="3.2" name="Performance monitoring integration">Performance threshold warnings during test execution, Test execution timing and bottleneck identification, Coverage visualization with marine safety focus areas</subtask>
+      </task>
+      <task id="4" name="Environment Auto-Configuration" acs="AC3:1-5">
+        <subtask id="4.1" name="Infrastructure detection">Automatic detection of available testing services, Dynamic test suite configuration, Environment-specific execution planning</subtask>
+        <subtask id="4.2" name="Epic 7/10 simulator integration">Integration with existing NMEA Bridge Simulator API, Leverage established scenario library from vendor/test-scenarios/, Maintain compatibility with existing test infrastructure</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC1" name="SimulatorTestClient Auto-Discovery (Core Functionality)">
+      <criterion id="1">Automatic discovery on ports [9090, 8080] with 5-second timeout</criterion>
+      <criterion id="2">Connection establishment with 3 retry attempts and exponential backoff</criterion>
+      <criterion id="3">Graceful fallback to mock mode if simulator unavailable</criterion>
+      <criterion id="4">HTTP API communication for scenario loading and NMEA injection</criterion>
+      <criterion id="5">WebSocket connection management for real-time data streams</criterion>
+    </ac>
+    <ac id="AC2" name="VS Code Test Explorer Integration (Developer Experience)">
+      <criterion id="1">Simulator connection status display in test explorer UI</criterion>
+      <criterion id="2">Real-time simulator availability indicators</criterion>
+      <criterion id="3">Automatic test categorization based on simulator availability</criterion>
+      <criterion id="4">Performance monitoring integration with threshold warnings</criterion>
+      <criterion id="5">Native Jest test discovery with simulator status annotations</criterion>
+    </ac>
+    <ac id="AC3" name="Test Environment Auto-Configuration (Infrastructure)">
+      <criterion id="1">Automatic detection of available testing infrastructure</criterion>
+      <criterion id="2">Dynamic test suite configuration based on available services</criterion>
+      <criterion id="3">Environment-specific test execution planning</criterion>
+      <criterion id="4">Robust error handling and recovery mechanisms</criterion>
+      <criterion id="5">Integration with existing Epic 7/10 NMEA Bridge Simulator API</criterion>
+    </ac>
+    <ac id="AC4" name="Connection Management and Resilience (Reliability)">
+      <criterion id="1">Connection pooling for test environment isolation</criterion>
+      <criterion id="2">Automatic reconnection on connection drops</criterion>
+      <criterion id="3">Resource cleanup and connection disposal</criterion>
+      <criterion id="4">Timeout handling with configurable thresholds</criterion>
+      <criterion id="5">Thread-safe connection management for parallel test execution</criterion>
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path=".github/copilot-instructions.md" title="GitHub Copilot Instructions" section="Simulator Control API Reference" snippet="Port: 9090 API endpoints: /api/scenarios/, /api/inject-data, /api/simulate-error. Use REST API, not direct CLI commands."/>
+      <doc path="docs/nmea-bridge-simulator-architecture.md" title="NMEA Bridge Simulator Architecture" section="Testing & Validation Strategy" snippet="CI/CD Integration with docker containers on ports 10110:10110, 8080:8080, 9090:9090. Full test suite with scenario matrix testing."/>
+      <doc path="docs/nmea-research-findings.md" title="NMEA Protocol Research" section="Integration Testing" snippet="Simulate WiFi bridge power loss scenarios with connection.disconnect() testing patterns."/>
+      <doc path="docs/prd/epic-list.md" title="Product Requirements" section="Epic 7: NMEA Bridge Simulator" snippet="Performance targets: 50+ concurrent connections, 500+ NMEA sentences/second, <100MB RAM usage. Hardware mitigation priority."/>
+      <doc path="docs/stories/epic-7-nmea-bridge-simulator-stories.md" title="Epic 7 User Stories" section="Technical Architecture" snippet="Multi-protocol server supporting TCP (native clients) and WebSocket (web clients). Algorithmic data generation with realistic marine patterns."/>
+      <doc path="docs/architecture.md" title="System Architecture" section="Test Environment Architecture" snippet="Automatic Simulator Discovery with SimulatorTestClient.autoConnect() checking ports [9090, 8080] with 5-second timeout."/>
+    </docs>
+    <code>
+      <code path="boatingInstrumentsApp/src/testing/helpers/SimulatorTestClient.ts" kind="test-client" symbol="SimulatorTestClient" lines="1-50" reason="Existing implementation from Story 11.1 - base class for auto-discovery enhancement. Contains autoConnect() method and connection management."/>
+      <code path="boatingInstrumentsApp/server/nmea-bridge-simulator.js" kind="simulator-server" symbol="NMEABridgeSimulator" lines="36-100" reason="Core NMEA Bridge Simulator server implementation. Provides API endpoints on port 9090 and WebSocket on 8080 for test integration."/>
+      <code path="boatingInstrumentsApp/jest.config.js" kind="test-config" symbol="Jest Configuration" lines="1-71" reason="Test framework configuration with tier-based testing support. Needs VS Code Test Explorer integration for simulator status display."/>
+      <code path="boatingInstrumentsApp/__tests__/nmea-bridge-simulator-integration.test.ts" kind="integration-test" symbol="NMEA Bridge Simulator Integration Tests" lines="1-50" reason="Existing integration tests for simulator - pattern for SimulatorTestClient auto-discovery testing."/>
+      <code path="boatingInstrumentsApp/__tests__/nmea-bridge-simulator-network.test.ts" kind="network-test" symbol="Real Network Integration Tests" lines="1-30" reason="Network testing patterns including port binding, connections, startup timeout handling - relevant for port discovery implementation."/>
+    </code>
+    <dependencies>
+      <node>
+        <testing>jest: ^29.7.0, @types/jest: ^29.5.13, @testing-library/react-native: ^13.3.3</testing>
+        <network>ws: ^8.18.0, react-native-tcp-socket: ^7.0.2</network>
+        <react-native>react-native: 0.82.4, expo: ~52.2.0, @expo/cli: ^0.23.1</react-native>
+        <state-management>zustand: ^4.5.6</state-management>
+        <nmea>@canboat/canboatjs: ^3.11.0</nmea>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Built on Epic 7/10 NMEA Bridge Simulator infrastructure with established API patterns
+    - Integrates with Triple-Tier Testing Architecture from Story 11.1 (Static Mocks, API Injection, Full Scenario)
+    - Follows Epic 6 domain separation principles (navigation, engine, environment, autopilot, core)
+    - Maintains React Native cross-platform testing compatibility
+    - Performance Requirements: <2000ms per integration test scenario, <5-second discovery timeout
+    - Coverage Standards: Integration coverage ≥90% for end-to-end marine data workflows
+    - Marine Safety Compliance: Automatic fallback ensures 99.5% test execution reliability
+    - VS Code Test Explorer integration requirements for real-time status display
+  </constraints>
+  <interfaces>
+    <interface name="ISimulatorTestClient" kind="test client interface" signature="autoConnect(options?: SimulatorConfig): Promise<SimulatorTestClient>; isConnected(): boolean; injectNmeaMessage(sentence: string): Promise<void>; startScenario(name: string): Promise<void>; disconnect(): Promise<void>" path="boatingInstrumentsApp/src/testing/helpers/SimulatorTestClient.ts"/>
+    <interface name="Simulator Control API" kind="HTTP REST API" signature="GET /api/status; POST /api/inject-data; POST /api/scenarios/{scenario_name}/start; POST /api/simulate-error" path="Port 9090 - NMEA Bridge Simulator"/>
+    <interface name="WebSocket Bridge" kind="WebSocket API" signature="Real-time NMEA data streaming with message format {type: 'nmea', data: string, timestamp: number}" path="Port 8080 - Web platform integration"/>
+    <interface name="Jest Test Explorer" kind="VS Code extension API" signature="Test discovery, status display, coverage overlay, performance monitoring integration" path=".vscode/settings.json and jest.config.js"/>
+  </interfaces>
+  <tests>
+    <standards>Jest (^29.7.0) as primary test runner with React Native preset, @testing-library/react-native for component testing, triple-tier architecture (Static Mocks <50ms, API Injection <2000ms, Full Scenario <30s), professional documentation headers with PURPOSE/REQUIREMENT/METHOD/EXPECTED format, VS Code Test Explorer integration with real-time status indicators.</standards>
+    <locations>boatingInstrumentsApp/__tests__/ (main test directory), boatingInstrumentsApp/__tests__/tier2-integration/ (API injection tests), boatingInstrumentsApp/src/testing/helpers/ (test utilities), boatingInstrumentsApp/vendor/test-scenarios/ (YAML scenario library), .vscode/ (Test Explorer configuration)</locations>
+    <ideas>
+      <idea ac="AC1">Port discovery and connection establishment testing: validate auto-discovery on ports [9090, 8080], test 5-second timeout behavior, verify 3 retry attempts with exponential backoff, validate graceful fallback to mock mode</idea>
+      <idea ac="AC1">HTTP API communication testing: test scenario loading via POST /api/scenarios, validate NMEA message injection via POST /api/inject-data, verify simulator status endpoint GET /api/status</idea>
+      <idea ac="AC2">VS Code Test Explorer integration testing: verify simulator connection status display, test real-time availability indicators, validate automatic test categorization, performance monitoring integration</idea>
+      <idea ac="AC3">Test environment auto-configuration testing: validate automatic infrastructure detection, test dynamic test suite configuration, verify environment-specific execution planning, robust error handling validation</idea>
+      <idea ac="AC4">Connection management and resilience testing: test connection pooling for isolation, validate automatic reconnection on drops, verify resource cleanup and disposal, timeout handling with configurable thresholds</idea>
+    </ideas>
+  </tests>
+</story-context>

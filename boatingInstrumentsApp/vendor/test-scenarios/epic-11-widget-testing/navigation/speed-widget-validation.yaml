@@ -1,0 +1,212 @@
+name: "Speed Widget Validation - SOG/STW Marine Domain Testing"
+description: "Comprehensive speed widget validation with NMEA VHW, VLW, VTG sentence processing, 0.1 knot precision testing, and units conversion accuracy for marine safety compliance"
+duration: 180  # 3 minutes for comprehensive validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "SpeedWidget"
+  marine_accuracy:
+    precision: 0.1  # knots - marine domain requirement
+    tolerance: 0.05 # ±0.05 knots acceptable variance
+    units: ["knots", "mph", "kph"]
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+
+# Data generation parameters optimized for speed widget testing
+data:
+  # Speed Over Ground (SOG) testing data
+  speed_sog:
+    type: "stepped_progression"
+    steps:
+      - value: 0.0    # Stationary
+        duration: 20
+      - value: 2.5    # Slow movement
+        duration: 30
+      - value: 6.0    # Cruising speed
+        duration: 60
+      - value: 12.5   # High speed
+        duration: 30
+      - value: 8.0    # Return to normal
+        duration: 40
+    unit: "knots"
+    precision: 0.1
+
+  # Speed Through Water (STW) testing data
+  speed_stw:
+    type: "current_offset"
+    base_speed: "speed_sog"
+    current_set: 270  # degrees
+    current_drift: 1.2  # knots
+    precision: 0.1
+
+  # Course Over Ground for VTG sentences
+  course:
+    type: "linear_progression"
+    start: 0
+    end: 360
+    duration: 180
+    unit: "degrees"
+
+  # Position for movement validation
+  gps:
+    type: "boat_movement"
+    start_position:
+      latitude: 41.4145
+      longitude: -81.8610
+    speed_source: "speed_sog"
+    course_source: "course"
+
+# NMEA sentence configuration for speed widget validation
+sentences:
+  # VHW - Water Speed and Heading
+  - type: "VHW"
+    frequency: 2   # Hz - Higher frequency for widget responsiveness testing
+    fields:
+      heading_true: "course"
+      heading_magnetic: "course"  # Simplified for testing
+      speed_knots: "speed_stw"
+      speed_kmh: "speed_stw"
+    
+  # VTG - Track Made Good and Ground Speed  
+  - type: "VTG"
+    frequency: 2   # Hz
+    fields:
+      course_true: "course"
+      course_magnetic: "course"
+      speed_knots: "speed_sog"
+      speed_kmh: "speed_sog"
+      speed_mph: "speed_sog"
+      
+  # VLW - Distance Traveled Through Water
+  - type: "VLW" 
+    frequency: 1   # Hz
+    fields:
+      total_distance: "calculated"
+      distance_reset: "calculated"
+
+# Test phases for comprehensive validation
+phases:
+  - name: "stationary_baseline"
+    duration: 20
+    description: "Validate zero speed accuracy and widget initialization"
+    validation:
+      - type: "speed_accuracy"
+        expected: 0.0
+        tolerance: 0.05
+      - type: "units_display"
+        check_all_units: true
+        
+  - name: "low_speed_precision"
+    duration: 30  
+    description: "Test low speed precision and 0.1 knot accuracy requirement"
+    validation:
+      - type: "speed_accuracy"
+        expected: 2.5
+        tolerance: 0.05
+      - type: "conversion_accuracy"
+        knots_to_mph: 2.877
+        knots_to_kph: 4.630
+        
+  - name: "cruising_speed_stability"
+    duration: 60
+    description: "Validate cruising speed stability and trend calculations"
+    validation:
+      - type: "speed_accuracy" 
+        expected: 6.0
+        tolerance: 0.05
+      - type: "trend_calculation"
+        check_positive_trend: true
+      - type: "update_latency"
+        max_ms: 100
+        
+  - name: "high_speed_handling"
+    duration: 30
+    description: "Test high speed accuracy and widget performance under load"
+    validation:
+      - type: "speed_accuracy"
+        expected: 12.5
+        tolerance: 0.05
+      - type: "performance_stress"
+        message_rate: 2  # Hz
+        memory_check: true
+        
+  - name: "speed_transition"
+    duration: 40
+    description: "Validate speed transitions and trend indicators"
+    validation:
+      - type: "speed_accuracy"
+        expected: 8.0
+        tolerance: 0.05
+      - type: "trend_calculation"
+        check_negative_trend: true
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "invalid_checksum"
+    type: "corrupt_nmea"
+    frequency: 0.1  # 10% corruption rate
+    validation:
+      - type: "error_resilience"
+        expect_fallback: true
+        
+  - name: "timeout_recovery"
+    type: "data_timeout"
+    timeout_duration: 6  # seconds - exceeds staleness threshold
+    validation:
+      - type: "staleness_detection"
+        threshold_ms: 5000
+
+  - name: "malformed_sentences"
+    type: "malformed_nmea"
+    patterns: ["missing_fields", "invalid_values", "wrong_sentence_id"]
+    validation:
+      - type: "parsing_resilience"
+        expect_graceful_handling: true
+
+# Performance stress testing
+stress_testing:
+  message_burst:
+    rate: 500  # messages per second - AC3 requirement
+    duration: 10  # seconds
+    validation:
+      - type: "message_processing"
+        max_latency_ms: 100
+      - type: "memory_usage"
+        max_increase_mb: 10
+      - type: "widget_consistency"
+        check_state_integrity: true
+
+# Marine domain accuracy validation
+accuracy_validation:
+  navigation_precision:
+    requirement: 0.1  # nautical miles for speed-distance calculations
+    test_distance: 1.0  # nautical mile test run
+    validation:
+      - type: "distance_accuracy"
+        calculated_vs_actual: 0.1  # nm tolerance
+        
+  units_conversion:
+    knots_to_mph: 1.15078
+    knots_to_kph: 1.852
+    precision: 0.01  # conversion precision requirement
+    
+  trend_indicators:
+    response_time_ms: 1000  # Maximum trend update time
+    smoothing_factor: 0.3   # Trend calculation smoothing
+    
+# Integration with Triple-Tier Testing Architecture  
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_data_scenarios: ["zero_speed", "normal_speed", "high_speed"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["VHW", "VTG", "VLW"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_journey_validation: true

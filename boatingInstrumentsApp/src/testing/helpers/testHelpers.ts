@@ -79,10 +79,11 @@ export const waitForCondition = async (
   throw new Error(`Condition not met within ${timeout}ms`);
 };
 
-// Performance testing utilities
+// Performance testing utilities (AC1 Requirement: <50ms execution per test)
 export class PerformanceProfiler {
   private startTime: number = 0;
   private measurements: Record<string, number[]> = {};
+  private readonly AC1_UNIT_TEST_THRESHOLD = 50; // Story 11.1 AC1: <50ms per test
 
   start(): void {
     this.startTime = performance.now();
@@ -96,6 +97,44 @@ export class PerformanceProfiler {
     }
     
     this.measurements[label].push(elapsed);
+  }
+
+  // AC1 Performance Validation: Check if test execution meets <50ms requirement
+  validateUnitTestPerformance(label: string): { passed: boolean; time: number; threshold: number } {
+    const measurements = this.measurements[label] || [];
+    const latestTime = measurements[measurements.length - 1] || 0;
+    
+    return {
+      passed: latestTime < this.AC1_UNIT_TEST_THRESHOLD,
+      time: latestTime,
+      threshold: this.AC1_UNIT_TEST_THRESHOLD
+    };
+  }
+
+  // AC2 Performance Validation: Check if integration test meets <2000ms requirement
+  validateIntegrationTestPerformance(label: string): { passed: boolean; time: number; threshold: number } {
+    const measurements = this.measurements[label] || [];
+    const latestTime = measurements[measurements.length - 1] || 0;
+    const AC2_INTEGRATION_TEST_THRESHOLD = 2000;
+    
+    return {
+      passed: latestTime < AC2_INTEGRATION_TEST_THRESHOLD,
+      time: latestTime,
+      threshold: AC2_INTEGRATION_TEST_THRESHOLD
+    };
+  }
+
+  // AC3 Performance Validation: Check if E2E test meets <30 seconds requirement
+  validateE2ETestPerformance(label: string): { passed: boolean; time: number; threshold: number } {
+    const measurements = this.measurements[label] || [];
+    const latestTime = measurements[measurements.length - 1] || 0;
+    const AC3_E2E_TEST_THRESHOLD = 30000; // 30 seconds
+    
+    return {
+      passed: latestTime < AC3_E2E_TEST_THRESHOLD,
+      time: latestTime,
+      threshold: AC3_E2E_TEST_THRESHOLD
+    };
   }
 
   getStats(label: string): { avg: number; min: number; max: number; count: number } | null {

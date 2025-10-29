@@ -21,17 +21,17 @@ PHASE_4_COMPLETE: false
 
 ## Development Queue
 
-STORIES_SEQUENCE: ["story-8.7", "story-5.1", "story-5.2", "story-5.3", "story-5.4", "story-5.5", "story-5.6", "story-5.7"]
-TODO_STORY: story-8.7
-TODO_TITLE: Interactive Dashboard Drag-Drop
+STORIES_SEQUENCE: ["story-10.3", "story-10.4", "story-10.5", "story-8.7", "story-5.1", "story-5.2", "story-5.3", "story-5.4", "story-5.5", "story-5.6", "story-5.7"]
+TODO_STORY: story-10.3
+TODO_TITLE: Tool Consolidation & Unified CLI
 IN_PROGRESS_STORY: 
 IN_PROGRESS_TITLE: 
-STORIES_DONE: ["story-1.1", "story-1.2", "story-1.3", "story-1.4", "story-1.5", "story-2.1", "story-2.2", "story-2.3", "story-2.4", "story-2.5", "story-2.6", "story-2.7", "story-2.8", "story-2.9", "story-2.10", "story-2.11", "story-2.12", "story-2.13", "story-2.14", "story-2.15", "story-2.16", "story-3.2", "story-3.3", "story-3.4", "story-3.5", "story-3.6", "story-3.7", "story-4.1", "story-4.2", "story-4.3", "story-4.4", "story-4.5", "story-4.6", "story-4.7", "story-6.1", "story-6.2", "story-6.3", "story-6.4", "story-6.5", "story-6.6", "story-6.7", "story-6.8", "story-6.9", "story-6.10", "story-6.11", "story-6.12", "story-6.13", "story-6.14", "story-6.15", "story-7.1", "story-7.2", "story-7.3", "story-7.4", "story-7.5", "story-8.1", "story-8.2", "story-8.3", "story-8.4", "story-8.5", "story-8.6", "story-9.1", "story-9.2", "story-9.3"]
+STORIES_DONE: ["story-1.1", "story-1.2", "story-1.3", "story-1.4", "story-1.5", "story-2.1", "story-2.2", "story-2.3", "story-2.4", "story-2.5", "story-2.6", "story-2.7", "story-2.8", "story-2.9", "story-2.10", "story-2.11", "story-2.12", "story-2.13", "story-2.14", "story-2.15", "story-2.16", "story-3.2", "story-3.3", "story-3.4", "story-3.5", "story-3.6", "story-3.7", "story-4.1", "story-4.2", "story-4.3", "story-4.4", "story-4.5", "story-4.6", "story-4.7", "story-6.1", "story-6.2", "story-6.3", "story-6.4", "story-6.5", "story-6.6", "story-6.7", "story-6.8", "story-6.9", "story-6.10", "story-6.11", "story-6.12", "story-6.13", "story-6.14", "story-6.15", "story-7.1", "story-7.2", "story-7.3", "story-7.4", "story-7.5", "story-8.1", "story-8.2", "story-8.3", "story-8.4", "story-8.5", "story-8.6", "story-9.1", "story-9.2", "story-9.3", "story-10.1", "story-10.2"]
 
 ## Next Action
 
-NEXT_ACTION: Epic 7 complete! All 5 stories (7.1, 7.2, 7.3, 7.4, 7.5) delivered. Ready for Epic 8 or quality/launch stories. Story 8.7 (Interactive Dashboard Drag-Drop) ready for development.
-NEXT_COMMAND: *develop story-8.7 (Interactive Dashboard Drag-Drop) OR *epic-tech-context epic-5 (Quality & Launch) OR *retrospective epic-7
+NEXT_ACTION: Epic 10 Stories 10.1 & 10.2 complete! Modular architecture and API standardization delivered. Ready for tool consolidation phase. Story 10.3 (Tool Consolidation & Unified CLI) ready for development.
+NEXT_COMMAND: *develop story-10.3 (Tool Consolidation & Unified CLI) OR *epic-tech-context epic-10 (NMEA Simulator Modernization)
 NEXT_AGENT: dev  
 COMPLETED: Story 7.4 (Synthetic NMEA Test Recordings Library) completed (2025-10-24) - Comprehensive test recordings library with 8/8 DoD items complete. Professional-grade recording infrastructure with validation tools, documentation, and senior developer approval received. Epic 7 fully complete (5/5 stories).
 
@@ -112,12 +112,19 @@ COMPLETED: Story 7.4 (Synthetic NMEA Test Recordings Library) completed (2025-10
 - story-9.2: Component Migration (TODO - PrimaryMetricCell/SecondaryMetricCell updates, SpeedWidget/WindWidget conversion, layout stability testing)
 - story-9.3: System Cleanup (TODO - Remove legacyBridge.ts, deprecate useUnitConversion, complete widget migration)
 
-### Epic 7 - NMEA Bridge Simulator Testing Infrastructure (3/5 Complete)
+### Epic 10 - NMEA Bridge Simulator Architecture Modernization 🔄 67% COMPLETE (2/5 stories done)
+- story-10.1: Modular Component Extraction ✅ COMPLETE (Modular architecture implemented with clean component separation)
+- story-10.2: API Standardization & Renaming ✅ COMPLETE ("Simulator Control API" naming across all components)
+- story-10.3: Tool Consolidation & Unified CLI (TODO - Create unified nmea-bridge.js with mode-based operation)
+- story-10.4: Documentation Consolidation (TODO - Resolve README conflicts, unified documentation)
+- story-10.5: Final Validation & Testing (TODO - Performance validation post-consolidation)
+
+### Epic 7 - NMEA Bridge Simulator Testing Infrastructure ✅ COMPLETE (5/5 stories done)
 - story-7.1: Core Multi-Protocol Simulator ✅ COMPLETE 
 - story-7.2: Standardized Test Scenario Library ✅ COMPLETE
 - story-7.3: BMAD Agent Integration Testing (SIMPLIFIED) ✅ COMPLETE
-- story-7.4: Synthetic NMEA Test Recordings Library (TODO - Widget-specific recording library needed)
-- story-7.5: NMEA Protocol Conversion Engine (TODO - Protocol conversion for accurate bridge simulation)
+- story-7.4: Synthetic NMEA Test Recordings Library ✅ COMPLETE (Comprehensive test recordings library with validation tools)
+- story-7.5: NMEA Protocol Conversion Engine ✅ COMPLETE (Protocol conversion for accurate bridge simulation)
 
 ## Completed Stories
 

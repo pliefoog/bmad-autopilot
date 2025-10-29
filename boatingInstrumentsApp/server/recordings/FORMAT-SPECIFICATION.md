@@ -309,17 +309,16 @@ navigation-coastal-sailing-nmea0183-60min.json.gz
 ### Recording Playback
 
 ```bash
-# Basic playback
-node server/nmea-bridge-simulator.js --recording path/to/recording.json
+```bash
+# Basic file playback (unified tool supports NMEA files)
+node server/nmea-bridge.js --file path/to/recording.nmea
 
-# Compressed file playback  
-node server/nmea-bridge-simulator.js --recording path/to/recording.json.gz
+# With looping
+node server/nmea-bridge.js --file path/to/recording.nmea --loop
 
-# Looped playback
-node server/nmea-bridge-simulator.js --recording path/to/recording.json --loop
-
-# Speed adjustment
-node server/nmea-bridge-simulator.js --recording path/to/recording.json --speed 2.0
+# Speed control via rate
+node server/nmea-bridge.js --file path/to/recording.nmea --rate 20
+```
 ```
 
 ### Quality Assurance

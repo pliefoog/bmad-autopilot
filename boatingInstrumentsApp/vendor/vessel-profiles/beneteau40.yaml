@@ -1,0 +1,59 @@
+# Beneteau Oceanis 40 - Modern Performance Cruiser
+# Based on Beneteau Oceanis 40 specifications
+
+name: "Beneteau Oceanis 40"
+type: "sailboat"
+category: "performance-cruiser"
+
+# Physical specifications
+dimensions:
+  length_overall: 39.7      # feet
+  beam: 12.9                # feet
+  draft: 6.2                # feet (standard keel)
+  displacement: 16535       # pounds
+  ballast: 5732             # pounds
+  sail_area: 750            # square feet (main + genoa)
+
+# Performance characteristics
+performance:
+  polar_diagram: "beneteau40-polar.csv"  # Will create this
+  hull_speed: 8.4                        # theoretical hull speed in knots
+  design_displacement_ratio: 245         # moderate displacement cruiser
+  sail_area_displacement_ratio: 17.2     # good performance ratio
+  ballast_displacement_ratio: 0.35       # modern ballast ratio
+
+# Physics parameters for simulation
+physics:
+  keel_offset: 0.35         # modern fin keel design
+  leeway_factor: 4.8        # efficient hull shape reduces leeway
+  heel_sensitivity: 1.6     # lower center of gravity, better stability
+  vmg_efficiency: 0.88      # modern hull design with good efficiency
+  max_heel: 22              # comfortable performance cruising limit
+  stall_angle: 48           # modern rig with good high-angle performance
+
+# Engine specifications
+engine:
+  type: "inboard_diesel"
+  horsepower: 40
+  fuel_capacity: 42         # gallons
+  cruising_rpm: 2300
+  max_rpm: 3200
+
+# Environmental operating limits
+limits:
+  max_wind_speed: 45        # knots - robust performance cruiser
+  max_wave_height: 10       # feet - offshore capable
+  min_depth: 7              # feet
+
+# Default sailing profile for scenarios
+defaults:
+  crew_weight: 700          # pounds - larger crew capacity
+  fuel_level: 0.70          # 70% fuel
+  provisions: 800           # pounds - extended cruising capability
+  sail_configuration: "main_genoa"
+
+# Metadata
+created: "2024-12-27"
+version: "1.0"
+source: "Beneteau production specifications"
+notes: "Modern performance cruiser with excellent sailing characteristics and comfort"

@@ -1,5 +1,6 @@
-// Testing Infrastructure Index
+// Testing Infrastructure Index  
 // Centralized export point for all testing utilities and helpers
+// Triple-Tier Testing Architecture (Story 11.1)
 
 /**
  * Test Fixtures
@@ -16,6 +17,13 @@ export * from './mocks/mockWidgetService';
  * Test Helpers and Utilities
  */
 export * from './helpers/testHelpers';
+
+/**
+ * Triple-Tier Testing Architecture Components (Story 11.1)
+ */
+export * from './helpers/SimulatorTestClient';
+export * from './helpers/ScenarioEngine';  
+export * from './helpers/TestTierManager';
 
 /**
  * Common Testing Patterns

@@ -12,13 +12,22 @@ module.exports = {
   testMatch: [
     '**/__tests__/**/*.test.ts?(x)',
     '**/src/testing/**/*.test.ts?(x)',
+    '**/server/test/**/*.test.js',
+    // Story 11.1: Triple-Tier Testing Architecture
+    '**/__tests__/tier1-unit/**/*.test.ts?(x)',
+    '**/__tests__/tier2-integration/**/*.test.ts?(x)',
+    '**/__tests__/tier3-e2e/**/*.test.ts?(x)',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
+    'server/**/*.js',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
     '!src/testing/**', // Exclude testing utilities from coverage
+    '!server/test/**', // Exclude test files from coverage
+    '!server/__tests__/**', // Exclude test files from coverage
   ],
+  // Story 11.1 AC1 & AC2 Coverage Requirements: 85% widget, 80% service, 90% integration
   coverageThreshold: {
     global: {
       branches: 70,
@@ -26,17 +35,29 @@ module.exports = {
       lines: 70,
       statements: 70,
     },
+    './src/widgets/': {
+      branches: 85,
+      functions: 85,
+      lines: 85,
+      statements: 85,
+    },
+    './src/services/': {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
     './src/hooks/': {
       branches: 80,
       functions: 80,
       lines: 80,
       statements: 80,
     },
-    './src/services/': {
-      branches: 75,
-      functions: 75,
-      lines: 75,
-      statements: 75,
+    './server/lib/': {
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90,
     },
   },
   testEnvironment: 'node',

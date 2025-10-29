@@ -1,0 +1,84 @@
+<story-context id="story-10.5-test-coverage-quality" v="1.0">
+  <metadata>
+    <epicId>10</epicId>
+    <storyId>10.5</storyId>
+    <title>Test Coverage &amp; Quality</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-10.5-test-coverage-quality.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>development team member</asA>
+    <iWant>comprehensive test coverage and validation of the unified NMEA bridge tool</iWant>
+    <soThat>we can confidently deploy the consolidated architecture with assured quality and performance standards</soThat>
+    <tasks>
+      <task id="1">Implement Comprehensive Unit Testing (AC1: #1-5)</task>
+      <task id="2">Build Integration Test Suite (AC2: #1-5)</task>
+      <task id="3">Establish Performance Regression Testing (AC3: #1-5)</task>
+      <task id="4">Validate Legacy Functionality Preservation (AC4: #1-5)</task>
+      <task id="5">Prepare CI/CD Integration Framework (AC5: #1-5)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Unit Test Coverage Achievement - 90%+ unit test coverage across all modular components</criterion>
+    <criterion id="AC2">Integration Test Validation - Mode transition and multi-protocol validation</criterion>
+    <criterion id="AC3">Performance Regression Prevention - Maintain Epic 7 performance targets</criterion>
+    <criterion id="AC4">Legacy Compatibility Validation - Preserve all Epic 7 functionality</criterion>
+    <criterion id="AC5">CI/CD Pipeline Readiness - Complete test automation framework</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/stories/epic-10-nmea-simulator-modernization.md" title="Epic 10 Definition" section="Story 10.5" snippet="Final validation step ensuring unified tool architecture meets quality requirements"/>
+      <doc path="docs/tech-spec-epic-10.md" title="Technical Specification" section="AC-10.5" snippet="90%+ unit test coverage across modular components, integration tests, performance regression testing"/>
+      <doc path="docs/tech-spec-epic-10.md" title="Test Coverage Framework" section="Test Coverage Framework" snippet="Unit tests for data sources, protocol servers, API routes. Integration tests for mode transitions"/>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="Testing Infrastructure" snippet="99.5% crash-free session rate requirement, comprehensive testing standards"/>
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/server/nmea-bridge.js" kind="main-entry" symbol="main" lines="" reason="Unified CLI interface requiring comprehensive testing"/>
+      <artifact path="boatingInstrumentsApp/server/lib/protocol-servers.js" kind="module" symbol="ProtocolServers" lines="" reason="Multi-protocol server component needing unit tests"/>
+      <artifact path="boatingInstrumentsApp/server/lib/control-api.js" kind="api" symbol="SimulatorControlAPI" lines="" reason="REST API endpoints requiring validation testing"/>
+      <artifact path="boatingInstrumentsApp/server/lib/data-sources/" kind="directory" symbol="DataSources" lines="" reason="Data source components (live.js, file.js, scenario.js) needing mocked testing"/>
+      <artifact path="boatingInstrumentsApp/server/scenarios/" kind="directory" symbol="TestScenarios" lines="" reason="YAML scenarios for integration testing"/>
+      <artifact path="boatingInstrumentsApp/jest.config.js" kind="config" symbol="JestConfig" lines="" reason="Existing Jest configuration to extend for server testing"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="jest" version="^29.0.0">JavaScript testing framework</package>
+        <package name="supertest" version="^6.0.0">HTTP assertions for API testing</package>
+        <package name="@types/jest" version="^29.0.0">TypeScript definitions for Jest</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>90%+ unit test coverage requirement across all lib/ components</constraint>
+    <constraint>Performance targets must be maintained: 500+ msg/sec, &lt;100MB RAM, 50+ connections</constraint>
+    <constraint>All Epic 7 functionality must be preserved during consolidation testing</constraint>
+    <constraint>Test framework must follow existing Jest patterns in boatingInstrumentsApp/</constraint>
+    <constraint>CI/CD pipeline compatibility required for automated testing</constraint>
+    <constraint>Cross-platform test execution (Node.js, Docker environments)</constraint>
+  </constraints>
+  
+  <interfaces>
+    <interface name="DataSource" kind="interface" signature="start(): Promise&lt;void&gt;; stop(): Promise&lt;void&gt;; getStatus(): SourceStatus;" path="boatingInstrumentsApp/server/lib/data-sources/"/>
+    <interface name="SimulatorControlAPI" kind="REST" signature="GET /api/scenarios/, POST /api/inject-data, POST /api/simulate-error" path="boatingInstrumentsApp/server/lib/control-api.js"/>
+    <interface name="NMEAMessage" kind="interface" signature="{ sentence: string; timestamp: Date; messageType: string; protocol: string; }" path="boatingInstrumentsApp/server/lib/"/>
+    <interface name="SimulatorConfig" kind="interface" signature="{ server: {ports, maxClients}; nmea: {protocol, validation}; scenarios: {defaultPath} }" path="boatingInstrumentsApp/server/lib/"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest testing framework with TypeScript support. Unit tests with 90%+ coverage target. Integration tests for multi-protocol validation. Performance regression tests maintaining Epic 7 targets. Mocked dependencies for isolated component testing.</standards>
+    <locations>boatingInstrumentsApp/server/test/unit/, boatingInstrumentsApp/server/test/integration/, boatingInstrumentsApp/server/test/performance/</locations>
+    <ideas>
+      <idea ac="AC1">Unit tests for CLI mode parsing, data source components with mocked inputs, protocol server connection handling</idea>
+      <idea ac="AC2">Mode transition tests (live→file→scenario), multi-protocol concurrent connections, VS Code task integration</idea>
+      <idea ac="AC3">Load testing 500+ msg/sec, memory profiling &lt;100MB RAM, connection scaling 50+ clients, API response &lt;50ms</idea>
+      <idea ac="AC4">Epic 7 scenario execution validation, YAML configuration migration, documentation example execution</idea>
+      <idea ac="AC5">CI/CD pipeline integration, Docker compatibility, cross-platform execution, coverage reporting automation</idea>
+    </ideas>
+  </tests>
+</story-context>

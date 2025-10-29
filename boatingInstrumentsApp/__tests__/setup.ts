@@ -1,5 +1,6 @@
 // Jest setup file for React Native testing
 // This file is loaded before all tests via setupFilesAfterEnv in jest.config.js
+// Story 11.1: Triple-Tier Testing Architecture Integration
 
 // Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => {

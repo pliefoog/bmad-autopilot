@@ -1,0 +1,71 @@
+# Motor Yacht 45 - Luxury Power Cruiser
+# Based on typical 45-foot motor yacht specifications
+
+name: "Motor Yacht 45"
+type: "powerboat"
+category: "motor-yacht"
+
+# Physical specifications - Nautical (EU) units
+dimensions:
+  length_overall: 13.72     # meters (45.0 ft)
+  beam: 4.42                # meters (14.5 ft)
+  draft: 1.16               # meters (3.8 ft)
+  displacement: 12700       # kg (28000 lbs)
+  fuel_capacity: 1514       # liters (400 gallons)
+  water_capacity: 568       # liters (150 gallons)
+
+# Performance characteristics
+performance:
+  hull_speed: 9.0                       # displacement hull speed limit
+  cruise_speed: 20                      # knots - typical cruise speed
+  max_speed: 28                         # knots - maximum speed
+  fuel_consumption_cruise: 12           # gallons per hour at cruise
+  fuel_consumption_max: 22              # gallons per hour at max
+  range_cruise: 600                     # nautical miles at cruise speed
+
+# Physics parameters for simulation (power boat specific)
+physics:
+  turning_radius: 120       # feet at cruise speeds
+  acceleration: 2.5         # knots per second under power
+  deceleration: 4.0         # knots per second when throttling down
+  wind_drift_factor: 0.8    # lateral drift factor in wind (0-1)
+  current_efficiency: 0.92  # efficiency against current
+  wave_impact: 1.2          # speed reduction factor in waves
+
+# Engine specifications
+engine:
+  type: "twin_diesel"
+  total_horsepower: 740     # combined twin engines
+  individual_hp: 370        # per engine
+  cruising_rpm: 2100
+  max_rpm: 2900
+  fuel_flow_cruise: 6       # gallons per hour per engine
+
+# Environmental operating limits
+limits:
+  max_wind_speed: 35        # knots - comfortable operation
+  max_wave_height: 6        # feet - comfortable cruising
+  min_depth: 4.5            # feet - minimum safe depth
+
+# Default power profile for scenarios
+defaults:
+  fuel_level: 0.75          # 75% fuel load
+  water_level: 0.90         # 90% water
+  provisions: 1200          # pounds - extended cruising
+  generator_load: 0.40      # 40% generator load
+  air_conditioning: true    # AC typically running
+
+# Navigation equipment (typical for motor yacht)
+equipment:
+  radar: true
+  chart_plotter: true
+  depth_sounder: true
+  autopilot: true
+  bow_thruster: true
+  stern_thruster: false
+
+# Metadata
+created: "2024-12-27"
+version: "1.0"
+source: "Typical motor yacht specifications"
+notes: "Luxury power cruiser optimized for comfort and extended range cruising"

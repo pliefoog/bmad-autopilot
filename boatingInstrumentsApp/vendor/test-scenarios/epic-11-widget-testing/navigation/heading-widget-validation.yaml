@@ -1,0 +1,300 @@
+name: "Heading Widget Validation - Compass Calculations Marine Domain Testing"
+description: "Comprehensive heading widget validation with NMEA HDT, HDM, HDG sentence processing, <1° directional precision testing, and true/magnetic heading conversion accuracy for marine navigation safety"
+duration: 300  # 5 minutes for comprehensive heading validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "CompassWidget"
+  marine_accuracy:
+    precision: 1.0  # degrees - marine domain requirement (<1° directional)
+    tolerance: 0.5  # ±0.5 degrees acceptable variance
+    heading_types: ["true", "magnetic", "compass"]
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+    compass_smoothing: 0.2  # Smoothing factor for compass oscillation
+
+# Data generation parameters optimized for heading widget testing
+data:
+  # True heading progression for compass accuracy testing
+  heading_true:
+    type: "compass_sweep"
+    patterns:
+      - type: "full_rotation"
+        start: 0
+        end: 360
+        duration: 120
+        description: "Complete compass calibration sweep"
+      - type: "oscillation"
+        center: 90
+        amplitude: 15
+        frequency: 0.1  # Hz
+        duration: 60
+        description: "Easterly heading with natural oscillation"
+      - type: "steady_course"
+        heading: 180
+        variance: 2
+        duration: 60
+        description: "Steady southerly course"
+      - type: "course_change"
+        from: 180
+        to: 270
+        duration: 30
+        description: "Port turn to westerly heading"
+      - type: "steady_course"
+        heading: 270
+        variance: 1
+        duration: 30
+        description: "Steady westerly course"
+    unit: "degrees"
+    precision: 0.1
+
+  # Magnetic variation for true/magnetic conversion
+  magnetic_variation:
+    type: "geographic_variation"
+    location:
+      latitude: 41.4145
+      longitude: -81.8610
+    value: 7.5  # degrees west for Great Lakes region
+    annual_change: 0.1  # degrees per year easterly drift
+
+  # Compass deviation (local magnetic effects)
+  compass_deviation:
+    type: "deviation_table"
+    table:  # Compass heading -> deviation
+      0: -2.0    # North: 2° west deviation
+      45: -1.0   # NE: 1° west deviation
+      90: 0.5    # East: 0.5° east deviation
+      135: 1.5   # SE: 1.5° east deviation
+      180: 0.0   # South: no deviation
+      225: -0.5  # SW: 0.5° west deviation
+      270: -1.0  # West: 1° west deviation
+      315: -1.5  # NW: 1.5° west deviation
+    interpolation: "cubic_spline"
+
+  # Rate of turn for heading change validation
+  rate_of_turn:
+    type: "calculated"
+    source: "heading_true"
+    smoothing: 0.3
+    max_rate: 10  # degrees per second (realistic for marine vessels)
+
+# NMEA sentence configuration for heading widget validation
+sentences:
+  # HDT - Heading True
+  - type: "HDT"
+    frequency: 5   # Hz - Higher frequency for responsive compass display
+    fields:
+      heading: "heading_true"
+      
+  # HDM - Heading Magnetic  
+  - type: "HDM"
+    frequency: 5   # Hz
+    fields:
+      heading: "calculated"  # True heading - magnetic variation
+      
+  # HDG - Heading, Deviation & Variation
+  - type: "HDG"
+    frequency: 2   # Hz
+    fields:
+      heading: "calculated"  # Magnetic heading + compass deviation
+      deviation: "compass_deviation"
+      deviation_direction: "calculated"  # E/W based on sign
+      variation: "magnetic_variation"
+      variation_direction: "W"  # West for Great Lakes region
+      
+  # ROT - Rate of Turn
+  - type: "ROT"
+    frequency: 2   # Hz
+    fields:
+      rate_of_turn: "rate_of_turn"
+
+# Test phases for comprehensive heading validation
+phases:
+  - name: "compass_initialization"
+    duration: 20
+    description: "Validate compass initialization and heading display startup"
+    validation:
+      - type: "compass_display"
+        check_initialization: true
+      - type: "heading_format"
+        degrees_format: true
+        cardinal_directions: true
+        
+  - name: "full_compass_sweep"
+    duration: 120
+    description: "Test compass accuracy across full 360° rotation"
+    validation:
+      - type: "heading_accuracy"
+        tolerance_degrees: 0.5
+        full_rotation: true
+      - type: "compass_rose_alignment"
+        cardinal_points: [0, 90, 180, 270]
+        tolerance: 0.5
+      - type: "heading_conversion"
+        true_to_magnetic: true
+        magnetic_to_compass: true
+        
+  - name: "oscillation_handling"
+    duration: 60
+    description: "Validate compass smoothing and oscillation damping"
+    validation:
+      - type: "oscillation_damping"
+        smoothing_factor: 0.2
+        max_variation: 3.0  # degrees
+      - type: "heading_stability"
+        center_heading: 90
+        stability_threshold: 1.0
+        
+  - name: "steady_course_accuracy"
+    duration: 60
+    description: "Test steady course heading accuracy and precision"
+    validation:
+      - type: "heading_accuracy"
+        expected: 180
+        tolerance_degrees: 0.5
+      - type: "precision_consistency"
+        sample_period: 10  # seconds
+        max_deviation: 0.5
+        
+  - name: "course_change_response"
+    duration: 30
+    description: "Validate heading change response and rate of turn"
+    validation:
+      - type: "course_change"
+        from_heading: 180
+        to_heading: 270
+        max_response_time: 2  # seconds
+      - type: "rate_of_turn"
+        expected_rate: 3  # degrees per second
+        tolerance: 1.0
+        
+  - name: "final_course_stability"
+    duration: 30
+    description: "Confirm final heading stability and accuracy"
+    validation:
+      - type: "heading_accuracy"
+        expected: 270
+        tolerance_degrees: 0.5
+      - type: "update_latency"
+        max_ms: 100
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "compass_interference"
+    type: "magnetic_interference"
+    deviation_spike: 15  # degrees sudden deviation
+    duration: 5  # seconds
+    validation:
+      - type: "interference_detection"
+        expect_deviation_alert: true
+        
+  - name: "heading_wrap_around"
+    type: "heading_discontinuity"
+    patterns: ["359_to_001", "001_to_359"]
+    validation:
+      - type: "wrap_around_handling"
+        expect_smooth_transition: true
+        
+  - name: "rate_of_turn_limits"
+    type: "excessive_turn_rate"
+    rate: 25  # degrees per second - unrealistic for marine vessels
+    validation:
+      - type: "turn_rate_validation"
+        expect_rate_limiting: true
+
+# Performance stress testing
+stress_testing:
+  heading_updates:
+    rate: 10  # heading updates per second
+    duration: 30  # seconds
+    jitter: 2.0  # degrees random jitter
+    validation:
+      - type: "update_processing"
+        max_latency_ms: 100
+      - type: "compass_stability"
+        max_jitter: 1.0  # degrees after smoothing
+      - type: "memory_usage"
+        max_increase_mb: 3
+
+# Marine domain accuracy validation
+accuracy_validation:
+  directional_precision:
+    requirement: 1.0  # degrees - marine domain <1° requirement
+    test_headings: [0, 45, 90, 135, 180, 225, 270, 315]
+    tolerance: 0.5  # degrees
+    validation:
+      - type: "cardinal_accuracy"
+        cardinal_points: true
+      - type: "intercardinal_accuracy"
+        intercardinal_points: true
+        
+  heading_conversions:
+    true_to_magnetic:
+      variation: 7.5  # degrees west
+      accuracy: 0.1   # degrees
+    magnetic_to_compass:
+      deviation_accuracy: 0.2  # degrees
+    validation:
+      - type: "conversion_accuracy"
+        bidirectional: true
+        
+  compass_smoothing:
+    oscillation_damping: 0.8  # 80% reduction in oscillation
+    response_time: 2.0  # seconds for 95% of change
+    validation:
+      - type: "smoothing_effectiveness"
+        oscillation_reduction: true
+
+# Compass rose and display validation
+display_validation:
+  compass_rose:
+    cardinal_points: ["N", "E", "S", "W"]
+    intercardinal_points: ["NE", "SE", "SW", "NW"]
+    degree_markings: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330]
+    validation:
+      - type: "compass_rose_accuracy"
+        marking_alignment: true
+        
+  heading_display:
+    formats: ["degrees", "cardinal", "both"]
+    precision: 1  # degree
+    validation:
+      - type: "display_format"
+        user_preference: true
+
+# Integration with Triple-Tier Testing Architecture
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_scenarios: ["north", "east", "south", "west", "varying"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["HDT", "HDM", "HDG", "ROT"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_compass_validation: true
+
+# Marine safety requirements
+safety_validation:
+  heading_staleness:
+    threshold_ms: 5000  # 5 second marine safety requirement
+    validation:
+      - type: "staleness_detection"
+        visual_indicator: true
+        
+  compass_deviation_alerts:
+    excessive_deviation: 10  # degrees
+    validation:
+      - type: "deviation_warning"
+        user_alert: true
+        
+  rate_of_turn_monitoring:
+    normal_range: [-5, 5]  # degrees per second
+    validation:
+      - type: "turn_rate_display"
+        rate_indicator: true

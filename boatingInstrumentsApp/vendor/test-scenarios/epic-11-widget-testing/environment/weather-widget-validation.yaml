@@ -1,0 +1,406 @@
+name: "Weather Widget Validation - Environmental Data Marine Domain Testing"
+description: "Comprehensive weather widget validation with NMEA MTA, XDR, MMB sentence processing for temperature, pressure, humidity sensor accuracy and weather condition monitoring for marine safety"
+duration: 300  # 5 minutes for comprehensive weather validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "WeatherWidget"
+  marine_accuracy:
+    temperature_precision: 0.1  # degrees Celsius
+    pressure_precision: 0.1     # millibars/hPa
+    humidity_precision: 1.0     # percent RH
+    units: 
+      temperature: ["celsius", "fahrenheit"]
+      pressure: ["mbar", "hpa", "inhg", "mmhg"]
+      humidity: ["percent"]
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+
+# Data generation parameters optimized for weather widget testing
+data:
+  # Air temperature progression for marine weather monitoring
+  air_temperature:
+    type: "diurnal_temperature_profile"
+    patterns:
+      - type: "morning_warming"
+        start: 12.0  # degrees Celsius - cool morning
+        end: 18.0    # warming trend
+        duration: 60
+        variation: 0.5
+        description: "Morning temperature rise"
+      - type: "midday_peak"
+        base: 18.0   # peak temperature
+        duration: 60
+        variation: 1.0
+        description: "Stable midday temperature"
+      - type: "afternoon_cooling"
+        start: 18.0
+        end: 15.0    # evening cooling
+        duration: 60
+        variation: 0.8
+        description: "Afternoon temperature drop"
+      - type: "evening_stable"
+        base: 15.0
+        duration: 60
+        variation: 0.3
+        description: "Stable evening temperature"
+      - type: "weather_front"
+        start: 15.0
+        end: 10.0    # cold front passage
+        duration: 60
+        variation: 2.0
+        description: "Cold front temperature drop"
+    unit: "celsius"
+    precision: 0.1
+
+  # Barometric pressure for weather trend monitoring
+  barometric_pressure:
+    type: "weather_pressure_profile"
+    patterns:
+      - type: "high_pressure"
+        base: 1025.0  # hPa - high pressure system
+        duration: 120
+        variation: 2.0
+        trend: "stable"
+        description: "High pressure - fair weather"
+      - type: "pressure_drop"
+        start: 1025.0
+        end: 1010.0   # dropping pressure
+        duration: 120
+        variation: 3.0
+        trend: "falling"
+        description: "Pressure falling - weather deteriorating"
+      - type: "low_pressure"
+        base: 1010.0  # low pressure system
+        duration: 60
+        variation: 4.0
+        trend: "unstable"
+        description: "Low pressure - unsettled weather"
+    unit: "hpa"
+    precision: 0.1
+
+  # Relative humidity for comfort and weather monitoring
+  relative_humidity:
+    type: "humidity_profile"
+    patterns:
+      - base: 65    # percent RH - comfortable
+        duration: 120
+        variation: 5
+        description: "Comfortable humidity levels"
+      - base: 80    # higher humidity
+        duration: 120
+        variation: 8
+        description: "Higher humidity - weather change"
+      - base: 90    # high humidity - weather front
+        duration: 60
+        variation: 5
+        description: "High humidity - approaching weather"
+    unit: "percent"
+    precision: 1
+
+  # Dew point calculation for comfort index
+  dew_point:
+    type: "calculated"
+    source: ["air_temperature", "relative_humidity"]
+    formula: "magnus_formula"
+    unit: "celsius"
+
+  # Weather trend indicators
+  pressure_tendency:
+    type: "pressure_trend"
+    source: "barometric_pressure"
+    time_window: 180  # 3 minutes for trend calculation
+    categories: ["rising", "steady", "falling"]
+
+# NMEA sentence configuration for weather widget validation
+sentences:
+  # MTA - Air Temperature
+  - type: "MTA"
+    frequency: 0.5  # Hz - Slow updates for temperature
+    fields:
+      temperature: "air_temperature"
+      unit: "C"
+      
+  # XDR - Transducer Measurement (for pressure and humidity)
+  - type: "XDR"
+    frequency: 0.3  # Hz - Environmental sensors
+    fields:
+      - transducer_type: "P"  # Pressure
+        measurement: "barometric_pressure"
+        units: "B"  # Bars (converted to hPa)
+        transducer_name: "BARO"
+      - transducer_type: "H"  # Humidity
+        measurement: "relative_humidity"
+        units: "P"  # Percent
+        transducer_name: "RHUM"
+        
+  # MMB - Barometer
+  - type: "MMB"
+    frequency: 0.2  # Hz - Barometric pressure updates
+    fields:
+      pressure_bars: "barometric_pressure"  # Converted to bars
+      pressure_inHg: "barometric_pressure"  # Converted to inches mercury
+
+# Test phases for comprehensive weather validation
+phases:
+  - name: "weather_initialization"
+    duration: 30
+    description: "Validate weather widget initialization and sensor calibration"
+    validation:
+      - type: "sensor_initialization"
+        check_all_sensors: true
+      - type: "units_display"
+        temperature_units: ["celsius", "fahrenheit"]
+        pressure_units: ["hpa", "mbar", "inhg"]
+      - type: "baseline_readings"
+        temperature_range: [10, 20]  # Celsius
+        pressure_range: [1000, 1030]  # hPa
+        humidity_range: [40, 80]     # percent
+        
+  - name: "stable_weather_conditions"
+    duration: 60
+    description: "Test stable high pressure weather monitoring"
+    validation:
+      - type: "temperature_accuracy"
+        expected_range: [12, 18]
+        tolerance: 0.2
+      - type: "pressure_accuracy"
+        expected: 1025.0
+        tolerance: 1.0
+      - type: "humidity_accuracy"
+        expected: 65
+        tolerance: 2
+      - type: "weather_trend"
+        expected: "stable"
+        
+  - name: "weather_transition"
+    duration: 120
+    description: "Validate weather change detection and trend analysis"
+    validation:
+      - type: "pressure_trend_detection"
+        trend: "falling"
+        rate_threshold: 2.0  # hPa per hour
+      - type: "temperature_stability"
+        variation_threshold: 1.0  # degrees
+      - type: "humidity_increase_detection"
+        increase_threshold: 10  # percent
+      - type: "weather_alert_generation"
+        deteriorating_conditions: true
+        
+  - name: "adverse_weather_conditions"
+    duration: 60
+    description: "Test adverse weather monitoring and safety alerts"
+    validation:
+      - type: "low_pressure_detection"
+        threshold: 1015.0  # hPa
+        expect_alert: true
+      - type: "high_humidity_handling"
+        threshold: 85  # percent
+        comfort_indication: true
+      - type: "weather_stability_monitoring"
+        unstable_conditions: true
+        
+  - name: "cold_front_passage"
+    duration: 60
+    description: "Validate cold front detection and rapid weather changes"
+    validation:
+      - type: "rapid_temperature_change"
+        rate_threshold: 2.0  # degrees per hour
+        detection_time: 10   # seconds
+      - type: "pressure_change_rate"
+        rate_threshold: 3.0  # hPa per hour
+      - type: "weather_front_indicators"
+        multiple_parameter_changes: true
+      - type: "update_latency"
+        max_ms: 100
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "sensor_calibration_drift"
+    type: "calibration_error"
+    temperature_offset: 2.0   # degrees error
+    pressure_offset: 5.0      # hPa error
+    humidity_offset: 10.0     # percent error
+    validation:
+      - type: "calibration_detection"
+        expect_sensor_validation: true
+        
+  - name: "extreme_weather_readings"
+    type: "out_of_range_values"
+    temperature_extreme: -30.0  # Celsius - unrealistic for marine
+    pressure_extreme: 950.0     # hPa - extreme low pressure
+    humidity_extreme: 105       # percent - impossible value
+    validation:
+      - type: "range_validation"
+        expect_value_rejection: true
+        
+  - name: "sensor_noise_interference"
+    type: "electrical_interference"
+    noise_amplitude: 0.5  # sensor reading variation
+    duration: 30  # seconds
+    validation:
+      - type: "noise_filtering"
+        expect_reading_smoothing: true
+
+# Performance stress testing
+stress_testing:
+  weather_updates:
+    rate: 5   # weather updates per second (faster than normal)
+    duration: 30  # seconds
+    parameter_variation: 2.0  # multiple parameter changes
+    validation:
+      - type: "update_processing"
+        max_latency_ms: 100
+      - type: "data_consistency"
+        cross_parameter_validation: true
+      - type: "memory_usage"
+        max_increase_mb: 3
+
+# Marine domain accuracy validation
+accuracy_validation:
+  temperature_precision:
+    requirement: 0.1  # degrees Celsius
+    test_temperatures: [-5, 0, 5, 10, 15, 20, 25, 30, 35]  # Celsius
+    tolerance: 0.2  # degrees
+    validation:
+      - type: "temperature_accuracy"
+        across_range: true
+        
+  pressure_precision:
+    requirement: 0.1  # hPa
+    test_pressures: [980, 1000, 1013.25, 1020, 1030, 1040]  # hPa
+    tolerance: 0.5  # hPa
+    validation:
+      - type: "pressure_accuracy"
+        including_standard_atmosphere: true
+        
+  humidity_precision:
+    requirement: 1.0  # percent RH
+    test_humidity: [30, 50, 65, 80, 95]  # percent
+    tolerance: 2.0  # percent
+    validation:
+      - type: "humidity_accuracy"
+        across_comfort_range: true
+        
+  units_conversion:
+    temperature:
+      celsius_to_fahrenheit: 1.8  # slope factor
+      fahrenheit_offset: 32       # offset
+    pressure:
+      hpa_to_mbar: 1.0           # 1:1 conversion
+      hpa_to_inhg: 0.02953       # conversion factor
+      hpa_to_mmhg: 0.75006       # conversion factor
+    validation:
+      - type: "conversion_accuracy"
+        precision: 0.01
+
+# Weather trend analysis validation
+trend_analysis:
+  pressure_trends:
+    rising_threshold: 1.0    # hPa per hour
+    falling_threshold: -1.0  # hPa per hour
+    rapid_change: 3.0        # hPa per hour
+    validation:
+      - type: "trend_detection"
+        time_accuracy: 5  # seconds
+        
+  temperature_trends:
+    warming_threshold: 0.5   # degrees per hour
+    cooling_threshold: -0.5  # degrees per hour
+    validation:
+      - type: "temperature_trend"
+        smoothing_effectiveness: 0.7
+        
+  weather_prediction:
+    pressure_based_forecasting: true
+    trend_based_warnings: true
+    validation:
+      - type: "basic_forecasting"
+        accuracy_threshold: 70  # percent
+
+# Display and user interface validation
+display_validation:
+  weather_display:
+    current_conditions: true
+    trend_indicators: true
+    comfort_indices: true
+    validation:
+      - type: "display_completeness"
+        all_parameters_visible: true
+        
+  units_preference:
+    temperature: ["celsius", "fahrenheit"]
+    pressure: ["hpa", "mbar", "inhg", "mmhg"]
+    validation:
+      - type: "units_switching"
+        real_time_conversion: true
+        
+  weather_alerts:
+    pressure_warnings: true
+    temperature_extremes: true
+    humidity_comfort: true
+    validation:
+      - type: "alert_generation"
+        timely_warnings: true
+
+# Marine-specific weather validation
+marine_weather:
+  comfort_indices:
+    heat_index: true
+    dew_point_comfort: true
+    validation:
+      - type: "comfort_calculation"
+        marine_specific: true
+        
+  weather_routing:
+    pressure_system_awareness: true
+    frontal_system_detection: true
+    validation:
+      - type: "routing_assistance"
+        weather_awareness: true
+        
+  safety_monitoring:
+    rapid_weather_changes: true
+    extreme_condition_detection: true
+    validation:
+      - type: "safety_alerts"
+        marine_hazard_awareness: true
+
+# Integration with Triple-Tier Testing Architecture
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_scenarios: ["fair_weather", "changing_weather", "storm_approach", "stable_conditions"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["MTA", "XDR", "MMB"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_weather_monitoring_validation: true
+
+# Marine safety requirements
+safety_validation:
+  weather_data_staleness:
+    threshold_ms: 5000  # 5 second marine safety requirement
+    validation:
+      - type: "staleness_detection"
+        visual_indicator: true
+        
+  extreme_weather_alerts:
+    low_pressure_warning: 1010.0    # hPa
+    high_pressure_warning: 1035.0   # hPa
+    temperature_extremes: [-10, 40] # Celsius
+    validation:
+      - type: "extreme_condition_alerts"
+        safety_warnings: true
+        
+  weather_trend_reliability:
+    trend_accuracy: 80  # percent over 3-hour window
+    validation:
+      - type: "trend_reliability"
+        marine_decision_support: true

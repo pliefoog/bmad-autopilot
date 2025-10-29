@@ -1,0 +1,271 @@
+name: "GPS Widget Validation - Coordinate Processing Marine Domain Testing"
+description: "Comprehensive GPS widget validation with NMEA GGA, RMC, GLL sentence processing, 0.1 nautical mile precision testing, and coordinate format conversion accuracy for marine navigation safety"
+duration: 240  # 4 minutes for comprehensive GPS validation
+version: "1.0"
+category: "basic"
+
+# Widget testing configuration
+widget_testing:
+  target_widget: "GPSWidget"
+  marine_accuracy:
+    precision: 0.1  # nautical miles - marine domain requirement
+    tolerance: 0.05 # ±0.05 nm acceptable variance
+    coordinate_formats: ["dd", "ddm", "dms"]  # Decimal degrees, degrees decimal minutes, degrees minutes seconds
+  performance:
+    update_latency_max: 100  # ms - marine safety requirement
+    staleness_threshold: 5000  # 5 seconds marine safety threshold
+    fix_quality: ["invalid", "gps", "dgps", "pps", "rtk", "float_rtk"]
+
+# Data generation parameters optimized for GPS widget testing
+data:
+  # GPS coordinate progression for position accuracy testing
+  position:
+    type: "navigational_route"
+    waypoints:
+      - latitude: 41.4145    # Lake Erie starting point
+        longitude: -81.8610
+        duration: 60
+        description: "Harbor departure"
+      - latitude: 41.4500    # Intermediate waypoint
+        longitude: -81.8200
+        duration: 60
+        description: "Open water navigation"  
+      - latitude: 41.4800    # Destination waypoint
+        longitude: -81.7800
+        duration: 60
+        description: "Approach navigation"
+      - latitude: 41.4890    # Final position
+        longitude: -81.7750
+        duration: 60
+        description: "Anchorage position"
+    interpolation: "great_circle"  # True marine navigation
+    precision: 0.0001  # Degrees (~11 meters at this latitude)
+
+  # GPS quality and satellite information
+  gps_quality:
+    type: "stepped_progression"
+    steps:
+      - value: 0      # Invalid
+        duration: 20
+      - value: 1      # GPS fix (SPS)  
+        duration: 60
+      - value: 2      # DGPS fix
+        duration: 80
+      - value: 4      # RTK fixed
+        duration: 60
+      - value: 1      # Return to GPS
+        duration: 20
+    description: "GPS fix quality progression"
+
+  # Satellite count for accuracy validation
+  satellites:
+    type: "random_walk"
+    start: 8
+    min: 4
+    max: 12
+    step_size: 1
+    correlation: 0.8  # Gradual changes
+
+  # Horizontal dilution of precision
+  hdop:
+    type: "inversely_correlated"
+    source: "satellites"
+    base: 1.0
+    factor: 0.2
+    min: 0.8
+    max: 3.0
+
+# NMEA sentence configuration for GPS widget validation
+sentences:
+  # GGA - Global Positioning System Fix Data
+  - type: "GGA"
+    frequency: 1   # Hz - Standard GPS update rate
+    fields:
+      time: "system_time"
+      latitude: "position.latitude"
+      longitude: "position.longitude"
+      quality: "gps_quality"
+      satellites: "satellites"
+      hdop: "hdop"
+      altitude: 178.0  # meters above sea level (Lake Erie average)
+      geoid_height: -34.2  # geoid separation for Great Lakes region
+      
+  # RMC - Recommended Minimum Specific GPS/Transit Data
+  - type: "RMC"
+    frequency: 1   # Hz
+    fields:
+      time: "system_time"
+      status: "calculated"  # A=Active, V=Void based on quality
+      latitude: "position.latitude"
+      longitude: "position.longitude"
+      speed: "calculated"  # knots from position changes
+      course: "calculated"  # degrees from position changes
+      date: "system_date"
+      magnetic_variation: 7.5  # degrees west for Great Lakes region
+      
+  # GLL - Geographic Position - Latitude/Longitude
+  - type: "GLL"
+    frequency: 0.5  # Hz - Lower frequency for position validation
+    fields:
+      latitude: "position.latitude"
+      longitude: "position.longitude"
+      time: "system_time"
+      status: "calculated"
+
+# Test phases for comprehensive GPS validation
+phases:
+  - name: "gps_initialization"
+    duration: 20
+    description: "Validate GPS initialization and invalid fix handling"
+    validation:
+      - type: "fix_quality"
+        expected: "invalid"
+      - type: "satellite_display"
+        check_count: true
+      - type: "position_display"
+        expect_no_position: true
+        
+  - name: "first_fix_acquisition"
+    duration: 60
+    description: "Test first GPS fix acquisition and position display"
+    validation:
+      - type: "fix_quality"
+        expected: "gps"
+      - type: "position_accuracy"
+        reference_lat: 41.4145
+        reference_lon: -81.8610
+        tolerance_nm: 0.05
+      - type: "coordinate_formats"
+        test_all_formats: true
+        
+  - name: "dgps_enhancement"
+    duration: 80
+    description: "Validate DGPS fix enhancement and improved accuracy"
+    validation:
+      - type: "fix_quality"
+        expected: "dgps"
+      - type: "position_accuracy"
+        reference_lat: 41.4500
+        reference_lon: -81.8200  
+        tolerance_nm: 0.02  # Better accuracy with DGPS
+      - type: "accuracy_indicators"
+        check_hdop_display: true
+        
+  - name: "rtk_precision"
+    duration: 60
+    description: "Test RTK fixed precision and marine navigation accuracy"
+    validation:
+      - type: "fix_quality"
+        expected: "rtk_fixed"
+      - type: "position_accuracy"
+        reference_lat: 41.4800
+        reference_lon: -81.7800
+        tolerance_nm: 0.01  # Highest accuracy with RTK
+      - type: "update_latency"
+        max_ms: 100
+        
+  - name: "degraded_conditions"
+    duration: 20
+    description: "Validate handling of degraded GPS conditions"
+    validation:
+      - type: "fix_quality"
+        expected: "gps"
+      - type: "degradation_handling"
+        check_quality_indicators: true
+
+# Error condition testing scenarios
+error_conditions:
+  - name: "position_jump_detection"
+    type: "position_anomaly"
+    jump_distance: 1.0  # nautical miles - unrealistic for marine vessels
+    validation:
+      - type: "anomaly_detection"
+        expect_filtering: true
+        
+  - name: "satellite_loss"
+    type: "satellite_dropout"
+    min_satellites: 3  # Below minimum for 3D fix
+    duration: 10  # seconds
+    validation:
+      - type: "fix_degradation"
+        expect_quality_change: true
+        
+  - name: "coordinate_format_errors"
+    type: "coordinate_corruption"
+    patterns: ["invalid_hemisphere", "out_of_range", "precision_loss"]
+    validation:
+      - type: "format_resilience"
+        expect_graceful_handling: true
+
+# Performance stress testing
+stress_testing:
+  position_updates:
+    rate: 10  # position updates per second
+    duration: 30  # seconds
+    validation:
+      - type: "update_processing"
+        max_latency_ms: 100
+      - type: "coordinate_consistency"
+        check_format_stability: true
+      - type: "memory_usage"
+        max_increase_mb: 5
+
+# Marine domain accuracy validation
+accuracy_validation:
+  navigation_precision:
+    requirement: 0.1  # nautical miles - marine navigation standard
+    test_routes:
+      - distance: 5.0  # nautical miles
+        waypoints: 4
+        tolerance: 0.05  # nm per waypoint
+    validation:
+      - type: "route_accuracy"
+        calculated_vs_planned: 0.1  # nm total error
+        
+  coordinate_conversion:
+    dd_to_ddm_precision: 0.0001  # degrees
+    dd_to_dms_precision: 0.01    # seconds
+    validation:
+      - type: "conversion_accuracy"
+        bidirectional: true
+        
+  position_interpolation:
+    great_circle_accuracy: 0.01  # nm
+    rhumb_line_accuracy: 0.01    # nm
+    validation:
+      - type: "interpolation_accuracy"
+        method_comparison: true
+
+# Integration with Triple-Tier Testing Architecture
+testing_integration:
+  tier1_static_mocks:
+    execution_time_ms: 50  # Under 50ms requirement
+    mock_scenarios: ["no_fix", "gps_fix", "dgps_fix", "rtk_fix"]
+    
+  tier2_api_injection:
+    execution_time_ms: 2000  # Under 2s requirement
+    inject_nmea_sentences: ["GGA", "RMC", "GLL"]
+    
+  tier3_full_scenario:
+    execution_time_ms: 30000  # Under 30s requirement
+    full_navigation_validation: true
+
+# Marine safety requirements
+safety_validation:
+  position_staleness:
+    threshold_ms: 5000  # 5 second marine safety requirement
+    validation:
+      - type: "staleness_detection"
+        visual_indicator: true
+        
+  fix_quality_indicators:
+    requirements: ["visual_quality", "satellite_count", "accuracy_estimate"]
+    validation:
+      - type: "quality_display"
+        user_awareness: true
+        
+  coordinate_display:
+    formats: ["decimal_degrees", "degrees_minutes", "degrees_minutes_seconds"]
+    validation:
+      - type: "format_consistency"
+        user_preference_storage: true

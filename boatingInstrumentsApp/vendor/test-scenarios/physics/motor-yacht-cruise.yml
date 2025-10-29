@@ -1,0 +1,74 @@
+name: "Motor Yacht Coastal Cruise"
+description: "Physics-enhanced motor yacht cruising scenario with realistic power boat dynamics"
+version: "1.0"
+category: "physics"
+duration: 1800  # 30 minutes
+
+parameters:
+  physics:
+    enabled: true
+    vessel_profile: "motor-yacht-45"
+    overrides:
+      physics:
+        fuel_efficiency: 1.2
+        max_speed: 22
+        cruise_speed: 12
+      environmental:
+        water_temperature: 22  # 72°F in Celsius
+        sea_state: 2
+        current_speed: 0.5
+        current_direction: 180
+      behavioral:
+        crew_skill_level: "intermediate"
+        sailing_mode: "cruising"
+        risk_tolerance: 0.4
+      defaults:
+        fuel_level: 0.8
+        crew_weight: 400
+    evolution_parameters:
+      physics_update_rate: 5
+      convergence_threshold: 0.05
+
+data:
+  speed:
+    type: "physics_calculated"
+    source: "power_curve"
+    unit: "knots"
+    evolution:
+      - time: 0
+        target: 8
+      - time: 300
+        target: 12
+      - time: 900
+        target: 15
+      - time: 1500
+        target: 10
+      - time: 1800
+        target: 6
+  
+  heading:
+    type: "sine_wave"
+    unit: "degrees"
+    base_value: 90
+    amplitude: 15
+    period: 600
+    
+  fuel_flow:
+    type: "physics_calculated"
+    source: "engine_model"
+    unit: "gph"
+    
+  engine_rpm:
+    type: "physics_calculated"
+    source: "power_curve"
+    unit: "rpm"
+    
+  water_depth:
+    type: "coastal_sailing"
+    unit: "meters"
+    base_value: 22
+    amplitude: 15
+    
+validation:
+  target_speed_range: [6, 20]
+  target_fuel_flow_range: [2, 12]

@@ -1,0 +1,112 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.1</storyId>
+    <title>Triple Testing Strategy Implementation</title>
+    <status>Draft</status>
+    <generatedAt>2025-10-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.1-triple-testing-strategy-implementation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Test Architecture Team member</asA>
+    <iWant>a unified triple-tier testing architecture with Static Mocks, API Message Injection, and Full Scenario Integration</iWant>
+    <soThat>I can transform existing 228+ test files from basic validation to professional-grade requirement verification with proper infrastructure frameworks</soThat>
+    <tasks>5 main tasks with 13 detailed subtasks covering Tier 1 Static Mocks, Tier 2 API Message Injection, Tier 3 Full Scenario Integration, Architecture Integration and Testing Infrastructure Integration</tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>Tier 1 - Static Mocks (Unit Tests) Infrastructure</title>
+      <requirements>Enhanced mock services with controllable NMEA data simulation, individual widget functionality validation, service method accuracy testing, &lt;50ms execution per test, 85% widget coverage, 80% service coverage</requirements>
+    </criterion>
+    <criterion id="AC2">
+      <title>Tier 2 - API Message Injection (Integration Tests) Framework</title>
+      <requirements>SimulatorTestClient with auto-discovery on ports [9090, 8080], real NMEA pipeline testing, targeted sentence injection, pipeline validation, &lt;2000ms per test scenario, 90% integration coverage</requirements>
+    </criterion>
+    <criterion id="AC3">
+      <title>Tier 3 - Full Scenario Integration (End-to-End Tests) System</title>
+      <requirements>YAML scenario execution, multi-widget interactions, cross-platform behavior testing, performance under load, marine safety constraint validation, &lt;30 seconds per user journey</requirements>
+    </criterion>
+    <criterion id="AC4">
+      <title>Testing Architecture Integration and Fallback Systems</title>
+      <requirements>All three testing tiers operational, automatic fallback from Tier 2/3 to Tier 1 when simulator unavailable, performance targets met, clean separation between test scopes</requirements>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/architecture.md" title="System Architecture" section="Epic 6 Testing Infrastructure" snippet="Testing architecture with mock NMEA service, performance profiling, memory leak detection, and domain-specific test utilities" />
+      <doc path="docs/nmea-bridge-simulator-architecture.md" title="NMEA Bridge Simulator Architecture" section="Testing &amp; Validation Strategy" snippet="Cross-platform validation with WebSocket and TCP integration testing, CI/CD pipeline integration with simulator startup/shutdown" />
+      <doc path="boatingInstrumentsApp/src/testing/README.md" title="Testing Infrastructure Documentation" section="Core Features" snippet="NMEA data testing with controllable mock service, real-time data simulation, connection simulation, and anomaly injection" />
+      <doc path="docs/architecture/testing-strategy.md" title="Testing Strategy" section="Test Examples" snippet="Widget component testing patterns with ThemeProvider, NMEA service testing with mock implementations" />
+      <doc path="docs/nmea-developer-guide.md" title="NMEA Architecture Developer Guide" section="Testing Patterns" snippet="Integration testing patterns for full NMEA pipeline validation from message reception to store updates" />
+      <doc path="docs/ui-architecture/api-integration.md" title="API Integration Architecture" section="Testing Integration" snippet="Mock NMEA connection implementation with real-time data generation and store integration" />
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/__tests__/setup.ts" kind="test-setup" symbol="Jest setup configuration" lines="1-50" reason="Jest configuration with React Native mocking patterns for testing infrastructure" />
+      <artifact path="boatingInstrumentsApp/src/testing/index.ts" kind="testing-utilities" symbol="Testing infrastructure exports" lines="1-50" reason="Centralized testing utilities export including fixtures, mocks, and helpers" />
+      <artifact path="boatingInstrumentsApp/src/testing/mocks/mockNmeaService.ts" kind="mock-service" symbol="MockNmeaService" lines="1-50" reason="Controllable NMEA data simulation service for testing with quality variations" />
+      <artifact path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts" kind="test-utilities" symbol="renderWithProviders, PerformanceProfiler" lines="1-50" reason="Enhanced React Native testing utilities with performance monitoring and network simulation" />
+      <artifact path="boatingInstrumentsApp/__tests__/nmea-bridge-simulator-integration.test.ts" kind="integration-test" symbol="NMEA Bridge Simulator Integration" lines="1-50" reason="Integration testing patterns for simulator connection and message format validation" />
+      <artifact path="boatingInstrumentsApp/__tests__/nmeaConnection.test.ts" kind="unit-test" symbol="NmeaConnectionManager tests" lines="1-50" reason="Unit testing patterns for TCP connection lifecycle and error handling" />
+      <artifact path="boatingInstrumentsApp/__tests__/integration/autopilotWidgetFeedback.test.tsx" kind="integration-test" symbol="AutopilotStatusWidget integration" lines="1-30" reason="Widget integration testing with NMEA store and service mocking" />
+    </code>
+    <dependencies>
+      <node>
+        <package name="jest" version="^29.7.0" />
+        <package name="@testing-library/react-native" version="^12.4.2" />
+        <package name="@testing-library/jest-native" version="^5.4.3" />
+        <package name="react-test-renderer" version="^18.2.0" />
+        <package name="ts-jest" version="^29.1.1" />
+      </node>
+      <react-native>
+        <package name="react-native" version="^0.72.6" />
+        <package name="react-native-tcp-socket" version="^6.0.6" />
+        <package name="react-native-udp" version="^4.1.6" />
+        <package name="expo" version="~49.0.15" />
+      </react-native>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Epic 6 Domain-Separated Service Architecture: Testing architecture must respect service domain boundaries (navigation, engine, environment, autopilot, core)</constraint>
+    <constraint>Layered Architecture Pattern: Tests organized by layer - UI widgets (presentation), NMEA services (business logic), TCP connections (data access)</constraint>
+    <constraint>Performance Requirements: Marine safety mandates &lt;100ms NMEA sentence → widget update, 99.5% crash-free session rate</constraint>
+    <constraint>Cross-Platform Support: React Native Web (WebSocket bridge proxy) and native platforms (direct TCP connections)</constraint>
+    <constraint>Epic 7/10 Integration: Must integrate with existing NMEA Bridge Simulator infrastructure (500+ msg/sec, &lt;100MB RAM)</constraint>
+    <constraint>Testing Performance Targets: Unit tests &lt;50ms, Integration tests &lt;2000ms, E2E tests &lt;30 seconds</constraint>
+    <constraint>Coverage Requirements: 85% widget coverage, 80% service coverage, 90% integration coverage for marine data workflows</constraint>
+  </constraints>
+  <interfaces>
+    <interface name="SimulatorTestClient" kind="class" signature="class SimulatorTestClient { static autoConnect(options): Promise&lt;SimulatorTestClient&gt;; injectNmeaMessage(sentence: string): Promise&lt;void&gt;; }" path="src/testing/helpers/SimulatorTestClient.ts" />
+    <interface name="MockNmeaService" kind="class" signature="class MockNmeaService { start(interval: number): void; setQuality(quality: DataQuality): void; simulateDisconnection(duration: number): void; simulateAnomaly(field: string, value: number, duration: number): void; }" path="boatingInstrumentsApp/src/testing/mocks/mockNmeaService.ts" />
+    <interface name="TestRenderOptions" kind="interface" signature="interface TestRenderOptions extends RenderOptions { nmeaData?: Partial&lt;NmeaData&gt;; initialProps?: Record&lt;string, any&gt;; }" path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts" />
+    <interface name="PerformanceProfiler" kind="class" signature="class PerformanceProfiler { start(): void; mark(label: string): void; getStats(label: string): PerformanceStats; }" path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts" />
+    <interface name="NMEA Bridge Simulator API" kind="REST" signature="GET /api/status, POST /api/scenarios/load, POST /api/inject-data, GET /api/session/save" path="server/nmea-bridge.js" />
+  </interfaces>
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library for component testing. Mock services provide controllable NMEA data simulation with quality variations. Performance profiling integrated for render time monitoring. Cross-platform testing through WebSocket bridge proxy (web) and direct TCP connections (native). Professional documentation with PURPOSE/REQUIREMENT/METHOD headers required for all tests.</standards>
+    <locations>
+      <location>__tests__/ - Current test directory structure</location>
+      <location>src/testing/ - Testing infrastructure and utilities</location>
+      <location>__tests__/tier1-unit/ - Static Mocks (Unit Tests) - NEW</location>
+      <location>__tests__/tier2-integration/ - API Message Injection (Integration Tests) - NEW</location>
+      <location>__tests__/tier3-e2e/ - Full Scenario Integration (E2E Tests) - NEW</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Create enhanced mock services with data quality enum (excellent/good/fair/poor/invalid) for comprehensive unit testing of widget components and service methods</idea>
+      <idea ac="AC1">Implement performance measurement utilities to ensure &lt;50ms execution per unit test with automated threshold validation</idea>
+      <idea ac="AC1">Setup coverage monitoring framework to achieve 85% widget coverage and 80% service coverage targets</idea>
+      <idea ac="AC2">Build SimulatorTestClient with auto-discovery on ports [9090, 8080] and 5-second timeout with exponential backoff retry logic</idea>
+      <idea ac="AC2">Create real NMEA pipeline testing (TCP/WebSocket → Parser → Store → UI) with targeted sentence injection and timing control</idea>
+      <idea ac="AC2">Implement integration test performance validation ensuring &lt;2000ms per test scenario with 90% integration coverage</idea>
+      <idea ac="AC3">Develop YAML scenario execution engine for complete user journey validation with multi-widget interaction testing</idea>
+      <idea ac="AC3">Create performance under load testing framework with marine safety constraint validation for autopilot workflows</idea>
+      <idea ac="AC3">Implement E2E performance monitoring ensuring &lt;30 seconds per complete user journey with requirements compliance validation</idea>
+      <idea ac="AC4">Design automatic fallback system from Tier 2/3 to Tier 1 when simulator unavailable with graceful degradation</idea>
+      <idea ac="AC4">Create testing tier integration framework ensuring clean separation between unit, integration, and E2E test scopes</idea>
+    </ideas>
+  </tests>
+</story-context>

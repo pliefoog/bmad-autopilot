@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context story-id="10.6" epic-id="10" generated="2024-12-27T00:00:00Z">
+  
+  <meta>
+    <story-title>Enhanced Multi-Parameter Evolution Engine</story-title>  
+    <story-points>8</story-points>
+    <context-type>implementation</context-type>
+    <development-status>ready-for-dev</development-status>
+    <bmad-workflow>story-context</bmad-workflow>
+  </meta>
+
+  <!-- STORY OVERVIEW -->
+  <story-overview>
+    <objective>Create advanced physics-based NMEA simulation engine with vessel profiles, polar diagrams, and realistic sailing dynamics for comprehensive marine instrument testing</objective>
+    <current-problem>Existing NMEA simulator lacks realistic vessel behavior, relying on basic mathematical functions rather than physics-based calculations for sailing dynamics</current-problem>
+    <solution-approach>Extend existing modular scenario system with optional physics engine supporting vessel profiles, polar diagram integration, and multi-parameter state evolution</solution-approach>
+    <success-criteria>
+      <criterion type="functional">Support 6+ vessel types with distinct sailing characteristics</criterion>
+      <criterion type="performance">Maintain 500+ messages/sec with physics calculations enabled</criterion>
+      <criterion type="integration">Full backward compatibility with existing 47 scenarios</criterion>
+      <criterion type="quality">Physics accuracy within 5% of real-world sailing data</criterion>
+    </success-criteria>
+  </story-overview>
+
+  <!-- ARCHITECTURE FOUNDATION -->
+  <existing-architecture>
+    <core-simulator>
+      <file>boatingInstrumentsApp/server/nmea-bridge-simulator.js</file>
+      <description>Unified NMEA bridge with scenario engine, function compilation, and multi-protocol support</description>
+      <key-components>
+        <component name="ScenarioDataSource" location="lib/data-sources/scenario.js">
+          Modular scenario execution with EventEmitter architecture
+        </component>
+        <component name="NmeaGenerator" location="lib/nmea-generator.js">
+          Physics-aware NMEA sentence generation with vessel considerations
+        </component>
+        <component name="ScenarioEngine" location="scenario-engine.js">
+          Scenario management with performance validation and runtime compilation
+        </component>
+      </key-components>
+      
+      <integration-points>
+        <point name="Scenario Extension">
+          Existing ScenarioDataSource.setScenario() method for physics engine integration
+        </point>
+        <point name="Message Generation">
+          NmeaGenerator.generateSelectiveMessages() with timing control for physics calculations
+        </point>
+        <point name="API Control">
+          Simulator Control API (port 9090) endpoints for runtime physics configuration
+        </point>
+      </integration-points>
+    </core-simulator>
+
+    <scenario-system>
+      <configuration-format>YAML-based scenario definitions with function compilation</configuration-format>
+      <existing-scenarios>47 scenarios across navigation, autopilot, engine, environmental categories</existing-scenarios>
+      <function-system>JavaScript function compilation with scenario context for dynamic data generation</function-system>
+      <timing-control>Message-type specific timing intervals with selective generation</timing-control>
+    </scenario-system>
+
+    <polar-infrastructure>
+      <existing-data>
+        <file>vendor/polars/j35-polar.csv</file>
+        <format>CSV with TWA vs TWS performance matrix</format>
+        <sample-data>
+          TWA,TWS 6,TWS 8,TWS 10,TWS 12,TWS 14,TWS 16,TWS 20
+          52,4.9,5.8,6.4,6.8,7.0,7.1,7.2
+          60,5.3,6.2,6.7,7.1,7.3,7.4,7.4
+        </sample-data>
+      </existing-data>
+      <integration-ready>Polar data structure matches physics engine requirements</integration-ready>
+    </polar-infrastructure>
+  </existing-architecture>
+
+  <!-- PHYSICS ENGINE DESIGN -->
+  <physics-engine-specification>
+    <architecture-pattern>
+      <approach>Optional plugin extending existing scenario system</approach>
+      <activation>Physics mode enabled via scenario configuration: physics: { enabled: true, vessel: "j35" }</activation>
+      <fallback>Non-physics scenarios continue unchanged - full backward compatibility</fallback>
+    </architecture-pattern>
+
+    <vessel-profiles>
+      <location>scenarios/vessel-profiles/*.yaml</location>
+      <profile-structure>
+        <vessel-identity>name, type, length, beam, displacement, sail_area</vessel-identity>
+        <polar-data>Reference to polar diagram CSV file</polar-data>
+        <physics-parameters>keel_offset, leeway_factor, heel_sensitivity, vmg_efficiency</physics-parameters>
+        <performance-limits>max_heel, max_apparent_wind, stall_conditions</performance-limits>
+      </profile-structure>
+      <initial-vessels>J/35 (existing polar), Catalina 34, Beneteau 40, Hunter 30, Motor Yacht 45, Trawler 42</initial-vessels>
+    </vessel-profiles>
+
+    <physics-calculations>
+      <sailing-dynamics>
+        <true-wind-calculation>Convert apparent wind to true wind using SOG and heading</true-wind-calculation>
+        <polar-interpolation>Bilinear interpolation of polar diagram for TWA/TWS performance</polar-interpolation>
+        <leeway-calculation>Calculate leeway angle based on heel and wind conditions</leeway-calculation>
+        <heel-calculation>Determine heel angle from wind pressure and vessel characteristics</heel-calculation>
+        <vmg-calculation>Velocity Made Good calculation for upwind/downwind efficiency</vmg-calculation>
+      </sailing-dynamics>
+      
+      <state-evolution>
+        <parameter-coupling>Speed affects apparent wind, which affects heel, which affects leeway</parameter-coupling>
+        <convergence-algorithm>Iterative calculation until parameter stability (< 1% change)</convergence-algorithm>
+        <time-integration>Physics state updated at 10Hz, NMEA generation at configured intervals</time-integration>
+      </state-evolution>
+
+      <environmental-factors>
+        <current-effects>Set and drift affecting ground track vs water track</current-effects>
+        <sea-state>Wave effects on speed and heading stability</sea-state>
+        <wind-variability>Realistic wind shifts and gusts based on location profiles</wind-variability>
+      </environmental-factors>
+    </physics-calculations>
+  </physics-engine-specification>
+
+  <!-- IMPLEMENTATION STRATEGY -->
+  <development-approach>
+    <phase-1-foundation>
+      <tasks>
+        <task>Create lib/physics/ module with core physics calculations</task>
+        <task>Implement vessel profile YAML parser and validation</task>
+        <task>Create polar diagram interpolation engine</task>
+        <task>Develop physics state container and evolution loop</task>
+      </tasks>
+      <validation>Unit tests for physics calculations with known input/output pairs</validation>
+    </phase-1-foundation>
+
+    <phase-2-integration>
+      <tasks>
+        <task>Extend ScenarioDataSource to detect physics mode scenarios</task>
+        <task>Create physics engine factory and initialization system</task>
+        <task>Integrate physics state with NmeaGenerator calculations</task>
+        <task>Implement scenario schema extensions for physics configuration</task>
+      </tasks>
+      <validation>Integration tests with existing scenarios - ensure no regression</validation>
+    </phase-2-integration>
+
+    <phase-3-scenarios>
+      <tasks>
+        <task>Create 6 vessel profile YAML files with distinct characteristics</task>
+        <task>Develop physics-enabled test scenarios for each vessel type</task>
+        <task>Update scenario validation to support physics parameters</task>
+        <task>Create comprehensive physics validation test suite</task>
+      </tasks>
+      <validation>End-to-end testing with real sailing data comparison</validation>
+    </phase-3-scenarios>
+
+    <code-modification-pattern>
+      <principle>Extend, don't replace - maintain existing functionality</principle>
+      <strategy>Factory pattern for physics vs non-physics scenario execution</strategy>
+      <testing>Each change tested against existing scenario suite for regression</testing>
+    </code-modification-pattern>
+  </development-approach>
+
+  <!-- EXISTING CODE INTEGRATION -->
+  <code-integration-points>
+    <scenario-data-source>
+      <file>lib/data-sources/scenario.js</file>
+      <extension-method>
+        <current>setScenario(scenario, scenarioFunctions, strictScenario)</current>
+        <enhanced>Add physics engine detection and initialization in setScenario method</enhanced>
+        <pattern>if (scenario.physics?.enabled) { this.initPhysicsEngine(scenario.physics) }</pattern>
+      </extension-method>
+      
+      <message-generation>
+        <current>Event-driven message emission based on timing configuration</current>
+        <enhanced>Physics engine provides evolved state for each message generation cycle</enhanced>
+        <integration>Physics state passed to existing NMEA generation functions</integration>
+      </message-generation>
+    </scenario-data-source>
+
+    <nmea-generator>
+      <file>lib/nmea-generator.js</file>
+      <physics-awareness>
+        <existing-features>
+          <leeway-comment>Line 339: "For sailboats, STW is typically slightly different from SOG due to current/leeway"</leeway-comment>
+          <speed-calculation>Realistic sailing speed variations with sine wave modulation</speed-calculation>
+          <vessel-parameters>Keel offset and sonar configuration already supported</vessel-parameters>
+        </existing-features>
+        
+        <enhancement-points>
+          <speed-generation>Replace mathematical simulation with physics-calculated speed</speed-generation>
+          <wind-sentences>Use physics engine for accurate apparent vs true wind calculations</wind-sentences>
+          <heading-accuracy>Integrate leeway calculations for accurate heading vs track</heading-accuracy>
+        </enhancement-points>
+      </physics-awareness>
+    </nmea-generator>
+
+    <scenario-engine>
+      <file>scenario-engine.js</file>
+      <performance-integration>
+        <existing>validatePerformance method with metrics collection</existing>
+        <enhancement>Add physics engine performance metrics (calculation time, convergence iterations)</enhancement>
+        <monitoring>Physics engine memory usage and calculation frequency tracking</monitoring>
+      </performance-integration>
+    </scenario-engine>
+  </code-integration-points>
+
+  <!-- TESTING FRAMEWORK -->
+  <testing-strategy>
+    <unit-tests>
+      <physics-calculations>
+        <polar-interpolation>Test bilinear interpolation with known J/35 polar data points</polar-interpolation>
+        <wind-calculations>Validate apparent/true wind conversions with marine navigation formulas</wind-calculations>
+        <sailing-dynamics>Test leeway, heel, VMG calculations with standard sailing theory</sailing-dynamics>
+      </physics-calculations>
+      
+      <vessel-profiles>
+        <profile-loading>Validate YAML vessel profile parsing and error handling</profile-loading>
+        <polar-data>Test CSV polar diagram loading with various data formats</polar-data>
+        <validation>Schema validation for vessel profile completeness and correctness</validation>
+      </vessel-profiles>
+    </unit-tests>
+
+    <integration-tests>
+      <scenario-compatibility>
+        <existing-scenarios>Run full scenario suite to ensure no physics mode interference</existing-scenarios>
+        <physics-scenarios>Create test scenarios for each vessel type with known expected outcomes</physics-scenarios>
+        <performance-regression>Validate that physics mode meets 500+ msg/sec performance target</performance-regression>
+      </scenario-compatibility>
+      
+      <api-compatibility>
+        <control-endpoints>Test Simulator Control API with physics-enabled scenarios</control-endpoints>
+        <runtime-switching>Validate switching between physics and non-physics modes</runtime-switching>
+        <error-handling>Test physics engine failure scenarios and graceful fallback</error-handling>
+      </api-compatibility>
+    </integration-tests>
+
+    <validation-data>
+      <real-world-comparison>
+        <data-source>Use recorded NMEA data from actual sailing sessions</data-source>
+        <comparison-metrics>Speed, heading, wind data accuracy within 5% tolerance</comparison-metrics>
+        <conditions>Test across different wind conditions and sailing angles</conditions>
+      </real-world-comparison>
+      
+      <physics-accuracy>
+        <polar-validation>Compare physics engine output to published polar diagrams</polar-validation>
+        <sailing-theory>Validate VMG calculations against racing optimization software</sailing-theory>
+        <parameter-coupling>Verify realistic interaction between speed, heel, leeway, and wind</parameter-coupling>
+      </physics-accuracy>
+    </validation-data>
+  </testing-strategy>
+
+  <!-- PERFORMANCE CONSIDERATIONS -->
+  <performance-requirements>
+    <target-metrics>
+      <throughput>500+ messages/second with physics calculations enabled</throughput>
+      <memory>Less than 100MB RAM usage including physics state and vessel data</memory>
+      <latency>Physics calculations complete within 10ms for state evolution</latency>
+      <cpu>Physics engine uses less than 25% CPU on single core</cpu>
+    </target-metrics>
+
+    <optimization-strategies>
+      <calculation-frequency>Physics state at 10Hz, NMEA generation at message-specific intervals</calculation-frequency>
+      <polar-caching>Pre-interpolate polar data for common TWA/TWS combinations</polar-caching>
+      <convergence-limits>Limit iterative calculations to 5 iterations max for real-time performance</convergence-limits>
+      <memory-management>Reuse calculation objects and avoid frequent garbage collection</memory-management>
+    </optimization-strategies>
+
+    <performance-monitoring>
+      <existing-infrastructure>Scenario engine already includes performance validation framework</existing-infrastructure>
+      <physics-metrics>Add calculation time, memory usage, convergence iterations to metrics collection</physics-metrics>
+      <real-time-monitoring>Performance dashboard through Simulator Control API for development</real-time-monitoring>
+    </performance-monitoring>
+  </performance-requirements>
+
+  <!-- FILE STRUCTURE PLAN -->
+  <file-structure>
+    <new-files>
+      <physics-engine>
+        <file>lib/physics/index.js</file>
+        <description>Main physics engine with state evolution and calculation coordination</description>
+      </physics-engine>
+      
+      <physics-calculations>
+        <file>lib/physics/sailing-dynamics.js</file>
+        <description>Core sailing physics: wind calculations, leeway, heel, VMG</description>
+      </physics-calculations>
+      
+      <polar-engine>
+        <file>lib/physics/polar-engine.js</file>
+        <description>Polar diagram loading, interpolation, and performance lookup</description>
+      </polar-engine>
+      
+      <vessel-profiles>
+        <directory>scenarios/vessel-profiles/</directory>
+        <files>j35.yaml, catalina34.yaml, beneteau40.yaml, hunter30.yaml, motor-yacht45.yaml, trawler42.yaml</files>
+        <description>Vessel-specific configuration including polar references and physics parameters</description>
+      </vessel-profiles>
+      
+      <physics-scenarios>
+        <directory>vendor/test-scenarios/physics/</directory>
+        <files>physics-j35-sailing.yaml, physics-motor-yacht.yaml, physics-validation.yaml</files>
+        <description>Physics-enabled test scenarios for each vessel type</description>
+      </physics-scenarios>
+      
+      <test-suite>
+        <directory>server/test/physics/</directory>
+        <files>physics-engine.test.js, sailing-dynamics.test.js, polar-engine.test.js, vessel-profiles.test.js</files>
+        <description>Comprehensive physics engine test coverage</description>
+      </test-suite>
+    </new-files>
+
+    <modified-files>
+      <scenario-data-source>
+        <file>lib/data-sources/scenario.js</file>
+        <changes>Add physics engine initialization and state integration</changes>
+      </scenario-data-source>
+      
+      <nmea-generator>
+        <file>lib/nmea-generator.js</file>
+        <changes>Integrate physics-calculated values for speed, wind, and heading sentences</changes>
+      </nmea-generator>
+      
+      <scenario-engine>
+        <file>scenario-engine.js</file>
+        <changes>Add physics engine performance monitoring and validation</changes>
+      </scenario-engine>
+      
+      <schema-update>
+        <file>vendor/test-scenarios/scenario.schema.json</file>
+        <changes>Extend schema to support physics configuration parameters</changes>
+      </schema-update>
+    </modified-files>
+  </file-structure>
+
+  <!-- DEVELOPMENT PRIORITIES -->
+  <development-priorities>
+    <critical-path>
+      <priority-1>Physics engine core with sailing dynamics calculations</priority-1>
+      <priority-2>Vessel profile system and polar diagram integration</priority-2>
+      <priority-3>Scenario system integration without breaking existing functionality</priority-3>
+      <priority-4>Comprehensive testing and validation framework</priority-4>
+    </critical-path>
+
+    <risk-mitigation>
+      <backward-compatibility>Extensive regression testing with existing 47 scenarios</backward-compatibility>
+      <performance-risk>Incremental performance testing during development</performance-risk>
+      <physics-accuracy>Validation against known sailing data and published polars</physics-accuracy>
+      <complexity-management>Modular design with clear separation of physics vs scenario concerns</complexity-management>
+    </risk-mitigation>
+
+    <success-validation>
+      <functional-validation>6 distinct vessel types working with physics engine</functional-validation>
+      <performance-validation>500+ msg/sec maintained with physics calculations</performance-validation>
+      <accuracy-validation>Physics output within 5% of real-world sailing data</accuracy-validation>
+      <integration-validation>All existing scenarios continue to function unchanged</integration-validation>
+    </success-validation>
+  </development-priorities>
+
+  <!-- COMPLETION CRITERIA -->
+  <completion-checklist>
+    <acceptance-criteria>
+      <ac1-multi-parameter>
+        <description>Multi-parameter YAML scenario format with physics configuration</description>
+        <tasks>
+          <task>Schema extension for physics parameters</task>
+          <task>Vessel profile YAML format definition</task>
+          <task>Physics mode detection in scenario loading</task>
+          <task>Validation framework for physics scenarios</task>
+        </tasks>
+      </ac1-multi-parameter>
+      
+      <ac2-physics-engine>
+        <description>Sailboat physics engine with polar diagrams and realistic dynamics</description>
+        <tasks>
+          <task>Core physics calculations (wind, leeway, heel, VMG)</task>
+          <task>Polar diagram interpolation system</task>
+          <task>State evolution with parameter coupling</task>
+          <task>6 vessel profiles with distinct characteristics</task>
+        </tasks>
+      </ac2-physics-engine>
+      
+      <ac3-nmea-orchestration>
+        <description>State-driven NMEA message orchestration with physics integration</description>
+        <tasks>
+          <task>Physics state integration with NMEA generator</task>
+          <task>Selective message generation with timing control</task>
+          <task>Backward compatibility with existing scenarios</task>
+          <task>API endpoint compatibility maintenance</task>
+        </tasks>
+      </ac3-nmea-orchestration>
+      
+      <ac4-performance-integration>
+        <description>Performance optimization and comprehensive testing</description>
+        <tasks>
+          <task>500+ msg/sec performance with physics enabled</task>
+          <task>Memory usage under 100MB</task>
+          <task>Comprehensive test suite with real-world validation</task>
+          <task>Performance monitoring and metrics collection</task>
+        </tasks>
+      </ac4-performance-integration>
+    </acceptance-criteria>
+
+    <integration-validation>
+      <existing-functionality>All 47 existing scenarios continue to work unchanged</existing-functionality>
+      <new-functionality>Physics-enabled scenarios produce realistic sailing behavior</new-functionality>
+      <performance-maintained>No degradation in non-physics mode performance</performance-maintained>
+      <api-compatibility>Simulator Control API endpoints remain fully functional</api-compatibility>
+    </integration-validation>
+  </completion-checklist>
+
+</story-context>

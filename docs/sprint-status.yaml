@@ -1,4 +1,4 @@
-# generated: 2025-10-24
+# generated: 2025-10-28
 # project: bmad-autopilot
 # project_key: bmad-autopilot
 # tracking_system: file-system
@@ -29,7 +29,7 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-10-24
+generated: 2025-10-28
 project: bmad-autopilot
 project_key: bmad-autopilot
 tracking_system: file-system
@@ -144,3 +144,25 @@ development_status:
   9-2-component-migration: done
   9-3-system-cleanup: done
   epic-9-retrospective: optional
+
+  # Epic 10: NMEA Bridge Simulator Architecture Modernization - COMPLETE ✅ (5/6 stories, 1 ready for dev)
+  epic-10: done
+  10-1-modular-component-extraction: done
+  10-2-api-standardization-renaming: done
+  10-3-tool-consolidation-unified-cli: done
+  10-4-documentation-cleanup-tooling: done
+  10-5-test-coverage-quality: done
+  10-6-multi-parameter-evolution-engine: done
+  epic-10-retrospective: completed
+
+  # Epic 11: Professional-Grade Testing Architecture - IN PROGRESS ✅ (1/8 stories complete)
+  epic-11: contexted
+  11-1-triple-testing-strategy-implementation: done
+  11-2-widget-scenario-mapping: ready-for-dev
+  11-3-automatic-simulator-discovery: ready-for-dev
+  11-4-professional-test-documentation-standards: backlog
+  11-5-marine-domain-validation-standards: backlog
+  11-6-coverage-and-performance-thresholds: backlog
+  11-7-vscode-test-explorer-integration: backlog
+  11-8-cicd-pipeline-integration: backlog
+  epic-11-retrospective: optional

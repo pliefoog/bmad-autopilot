@@ -6,6 +6,7 @@
 |------|---------|-------------|--------|
 | 2025-10-10 | 1.0 | Initial full-stack architecture document | Winston (Architect) |
 | 2025-10-16 | 2.0 | Epic 6 Foundation Updates - Domain-separated architecture, enhanced hooks, testing infrastructure | James (Developer) |
+| 2025-10-28 | 3.0 | Epic 11 Testing Architecture Foundation - Unified NMEA Bridge Simulator integration | Winston (Architect) |
 
 ---
 
@@ -13,7 +14,15 @@
 
 This document outlines the **core system architecture** for the Boating Instruments App, focusing on the NMEA service layer, data models, deployment infrastructure, and system integration patterns. It serves as the single source of truth for backend services, deployment, and system-level architecture decisions.
 
-**Recent Updates (Epic 6 Foundation):**
+**Recent Updates (Epic 11 Testing Architecture Foundation):**
+- **Unified NMEA Bridge Simulator Integration:** Professional-grade testing leveraging Epic 7/10 simulator infrastructure
+- **Triple Testing Strategy:** Static mocks, API message injection, and full scenario-based integration testing
+- **1:1 Widget-Scenario Mapping:** Dedicated YAML scenarios for each widget type with clear separation of concerns
+- **Professional Test Documentation:** Purpose-driven tests with requirement traceability and proper error validation
+- **Automatic Simulator Discovery:** Seamless test environment with VS Code Test Explorer integration
+- **Quality Standards Framework:** Performance thresholds, coverage requirements, and marine domain validation
+
+**Previous Epic 6 Foundation:**
 - **Domain-Separated Service Layer:** Services reorganized by marine domains (navigation, engine, environment, autopilot)
 - **Enhanced Hook Architecture:** Comprehensive custom hooks for NMEA data, widget state, and performance monitoring
 - **Centralized Type System:** Complete TypeScript interfaces for all NMEA data, widget configurations, and service contracts
@@ -1450,6 +1459,272 @@ For complete frontend architecture specifications including component organizati
 ---
 
 ---
+
+---
+
+## Epic 11: Professional-Grade Testing Architecture
+
+### Overview
+
+Epic 11 establishes a unified testing architecture that transforms the existing 228+ test files from basic validation to professional-grade requirement verification using the sophisticated NMEA Bridge Simulator infrastructure built in Epic 7 and enhanced in Epic 10.
+
+### Core Testing Strategy: Triple Approach
+
+**1. Static Mocks (Unit Tests)**
+- **Purpose:** Fast, isolated component testing
+- **Scope:** Individual widget functionality, service method validation, data transformation accuracy
+- **Implementation:** Enhanced mock services with controllable data scenarios
+- **Performance:** <50ms test execution, ideal for TDD workflows
+
+**2. API Message Injection (Integration Tests)**
+- **Purpose:** Real NMEA pipeline testing with controlled data
+- **Scope:** Widget-to-service communication, NMEA parsing validation, state management integration
+- **Implementation:** Simulator Control API (port 9090) for targeted message injection
+- **Benefits:** Tests real TCP/WebSocket → Parser → Store → UI pipeline without full scenarios
+
+**3. Full Scenario Integration (End-to-End Tests)**
+- **Purpose:** Complete user journey validation with realistic marine data
+- **Scope:** Multi-widget interactions, performance under load, cross-platform behavior
+- **Implementation:** Dedicated YAML scenarios for comprehensive testing
+- **Validation:** Requirements compliance, marine domain accuracy
+
+### Widget-Scenario Architecture (1:1 Mapping)
+
+**Scenario Organization:**
+```
+vendor/test-scenarios/epic-11-widget-testing/
+├── depth-widget-validation.yml          # DepthWidget: SDDBT sentences, unit conversions, staleness
+├── speed-widget-validation.yml          # SpeedWidget: VHW sentences, SOG/STW display, unit handling  
+├── wind-widget-validation.yml           # WindWidget: MWV sentences, apparent/true wind, direction display
+├── compass-widget-validation.yml        # CompassWidget: HDG/HDT sentences, magnetic/true heading
+├── autopilot-widget-validation.yml      # AutopilotWidget: APB sentences, mode changes, command feedback
+├── engine-widget-validation.yml         # EngineWidget: RPM sentences, multi-engine support
+├── metric-cell-validation.yml           # MetricCell: Generic component with multiple data types
+├── widget-performance-stress.yml        # Performance: 500+ msg/sec stress testing
+└── widget-error-conditions.yml          # Error Handling: Invalid checksums, malformed data
+```
+
+**Example Scenario Structure:**
+```yaml
+# depth-widget-validation.yml
+name: "DepthWidget Professional Validation"
+description: "Comprehensive testing for depth display accuracy and marine compliance"
+duration: 180
+purpose: "Validates FR-12.3 depth display requirements with realistic marine data patterns"
+
+test_cases:
+  - name: "basic_depth_display"
+    purpose: "Verify accurate depth rendering with proper units"
+    messages:
+      - sentence: "$SDDBT,12.4,f,3.8,M,2.1,F*3A"
+        expected_widget_state: { value: "12.4", unit: "ft" }
+        requirement: "FR-12.3.1 - Depth accuracy within 0.1 units"
+        
+  - name: "unit_conversion_validation"  
+    purpose: "Test automatic unit conversion between feet/meters"
+    messages:
+      - sentence: "$SDDBT,3.8,f,3.8,M,2.1,F*3A"
+        expected_widget_state: { value: "3.8", unit: "m" }
+        requirement: "FR-12.3.2 - Unit conversion accuracy"
+        
+  - name: "staleness_indicator"
+    purpose: "Verify stale data warning after 5 second timeout"
+    delay_after_message: 6000
+    expected_widget_state: { staleness_warning: true }
+    requirement: "NFR-8.1 - Data freshness indicators"
+```
+
+### Professional Test Documentation Standard
+
+**Enhanced Test Pattern:**
+```typescript
+/**
+ * TEST PURPOSE: Validates depth widget displays accurate marine depth readings through real NMEA pipeline
+ * REQUIREMENT: FR-12.3 - Depth display accuracy within 0.1 units with proper marine formatting
+ * METHOD: API message injection via Simulator Control API (localhost:9090)
+ * SCENARIO: Basic depth reading → Unit conversion → Staleness detection
+ * EXPECTED: Widget renders "12.4 ft" → Updates to "3.8 m" → Shows staleness after 5s timeout
+ * ERROR CONDITIONS: Invalid checksum should not update display, malformed sentence logged as warning
+ */
+describe('DepthWidget - Professional Marine Data Validation', () => {
+  let simulatorClient: SimulatorTestClient;
+  
+  beforeAll(async () => {
+    // Automatic discovery of running NMEA Bridge Simulator
+    simulatorClient = await SimulatorTestClient.autoConnect({
+      ports: [9090, 8080], // Check API and WebSocket ports
+      timeout: 5000
+    });
+    
+    if (!simulatorClient.isConnected()) {
+      throw new Error(
+        'NMEA Bridge Simulator not running. Start with: npm run test:start-simulator'
+      );
+    }
+  });
+
+  it('processes depth data through complete NMEA pipeline', async () => {
+    // PURPOSE: Validate real NMEA → Parser → Store → Widget data flow
+    const depthMessage = '$SDDBT,12.4,f,3.8,M,2.1,F*3A';
+    
+    // Inject via API - uses real TCP connection and parsing
+    await simulatorClient.injectNmeaMessage(depthMessage);
+    
+    // Validate widget updates through real pipeline (not mocked)
+    await waitFor(() => {
+      const depthWidget = getByTestId('depth-widget');
+      expect(depthWidget).toHaveTextContent('12.4');
+      expect(depthWidget).toHaveTextContent('ft');
+      expect(depthWidget).not.toHaveClass('stale-data');
+    }, { timeout: 2000 });
+    
+    // Error condition validation with specific error type
+    const invalidMessage = '$SDDBT,12.4,f*FF'; // Invalid checksum
+    
+    await expect(async () => {
+      await simulatorClient.injectNmeaMessage(invalidMessage);
+    }).rejects.toThrow(
+      new NMEAValidationError('Invalid checksum: expected 3A, got FF')
+    );
+  });
+
+  it('validates staleness detection per marine safety requirements', async () => {
+    // PURPOSE: Ensure critical marine data staleness is properly indicated
+    // REQUIREMENT: NFR-8.1 - Marine safety data must indicate staleness after 5s
+    
+    await simulatorClient.injectNmeaMessage('$SDDBT,15.2,f,4.6,M,2.5,F*1B');
+    
+    // Verify initial valid state
+    await waitFor(() => {
+      expect(getByTestId('depth-widget')).not.toHaveClass('stale-data');
+    });
+    
+    // Wait for staleness timeout (5 seconds per marine safety standards)
+    await new Promise(resolve => setTimeout(resolve, 5500));
+    
+    // Validate staleness indicator appears
+    await waitFor(() => {
+      expect(getByTestId('depth-widget')).toHaveClass('stale-data');
+      expect(getByTestId('depth-staleness-warning')).toBeVisible();
+    });
+  });
+});
+```
+
+### Test Environment Architecture
+
+**Automatic Simulator Discovery:**
+```typescript
+// src/testing/helpers/SimulatorTestClient.ts
+export class SimulatorTestClient {
+  static async autoConnect(options = {}): Promise<SimulatorTestClient> {
+    const { ports = [9090, 8080], timeout = 5000 } = options;
+    
+    // Check if NMEA Bridge Simulator is running
+    for (const port of ports) {
+      try {
+        const response = await fetch(`http://localhost:${port}/api/status`, {
+          signal: AbortSignal.timeout(timeout)
+        });
+        
+        if (response.ok) {
+          return new SimulatorTestClient(`http://localhost:${port}`);
+        }
+      } catch (error) {
+        // Continue checking other ports
+      }
+    }
+    
+    throw new Error('NMEA Bridge Simulator not found. Start with: npm run test:start-simulator');
+  }
+  
+  async injectNmeaMessage(sentence: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/api/inject-data`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sentence })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new NMEAValidationError(error.message);
+    }
+  }
+}
+```
+
+**VS Code Test Explorer Integration:**
+```json
+// .vscode/settings.json
+{
+  "jest.jestCommandLine": "npm test --",
+  "jest.autoRun": {
+    "watch": false,
+    "onStartup": ["all-tests"]
+  },
+  "jest.testExplorer": {
+    "enabled": true,
+    "showCoverageOnLoad": true
+  },
+  "jest.disabledWorkspaceFolders": [],
+  "testing.automaticallyOpenPeekView": "failureInVisibleDocument"
+}
+```
+
+**Test Scripts Enhancement:**
+```json
+// package.json scripts
+{
+  "test": "jest",
+  "test:watch": "jest --watch",
+  "test:coverage": "jest --coverage",
+  "test:integration": "jest --testPathPattern=integration",
+  "test:widgets": "jest --testPathPattern=widgets",
+  "test:start-simulator": "node server/nmea-bridge.js --scenario basic-navigation --loop",
+  "test:full-stack": "npm-run-all --parallel test:start-simulator \"test:integration -- --runInBand\""
+}
+```
+
+### Quality Standards Framework
+
+**Professional Test Coverage Requirements:**
+- **Global Coverage:** 70% minimum (marine safety focus over blanket coverage)
+- **Widget Coverage:** 85% minimum (UI components critical for marine operations)
+- **Service Coverage:** 80% minimum (NMEA parsing and state management)
+- **Integration Coverage:** 90% minimum (end-to-end marine data workflows)
+
+**Performance Validation Thresholds:**
+- **Render Performance:** <16ms widget updates (60fps marine display requirement)
+- **Memory Management:** <50MB increase per test operation (mobile device constraints)
+- **Data Latency:** <100ms NMEA sentence → widget update (marine safety requirement)
+- **Simulator Throughput:** 500+ messages/second handling without dropped data
+
+**Marine Domain Validation Standards:**
+- **Navigation Accuracy:** GPS calculations within 0.1 nautical mile precision
+- **Depth Readings:** Sounder data accuracy within 0.1 unit of measurement
+- **Wind Data:** Apparent/true wind calculations with <1° directional accuracy
+- **Engine Monitoring:** RPM and temperature readings within manufacturer tolerances
+- **Autopilot Commands:** Command validation and feedback within 1-second response time
+
+### Epic 11 Implementation Benefits
+
+**For Developers:**
+- **Seamless Testing:** Auto-discovery eliminates manual simulator setup
+- **Real Data Validation:** API injection tests actual NMEA pipeline, not mocks
+- **Professional Standards:** Clear documentation explains test purpose and requirements
+- **VS Code Integration:** Native test explorer support with coverage visualization
+
+**For Project Quality:**
+- **Requirement Traceability:** Every test links to specific functional requirements
+- **Marine Compliance:** Professional-grade validation meets marine industry standards  
+- **Maintainable Architecture:** 1:1 widget-scenario mapping enables focused test evolution
+- **Performance Assurance:** Comprehensive thresholds prevent marine safety degradation
+
+**For Team Workflow:**
+- **Clear Ownership:** Each widget team owns their dedicated test scenarios
+- **Separation of Concerns:** Unit/integration/E2E tests have distinct purposes
+- **Continuous Integration:** Automated simulator-based testing in CI/CD pipelines
+- **Professional Documentation:** Test cases serve as living requirement validation
 
 ---
 

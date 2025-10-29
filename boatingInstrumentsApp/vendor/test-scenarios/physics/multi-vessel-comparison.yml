@@ -1,0 +1,159 @@
+name: "Multi-Vessel Physics Comparison"
+description: "Demonstrate physics differences between sailboat and powerboat in identical conditions"
+duration: 480  # 8 minutes
+version: "1.0"
+category: "physics"
+
+# This scenario will cycle through different vessel profiles to demonstrate physics variations
+parameters:
+  physics:
+    enabled: true
+    vessel_profile: "j35"  # Starting vessel
+    
+    # Shared environmental conditions for fair comparison  
+    overrides:
+      environmental:
+        water_temperature: 20
+        sea_state: 3
+        barometric_pressure: 1013
+        visibility: 20
+      
+      behavioral:
+        crew_skill_level: "intermediate"
+        risk_tolerance: 0.5
+    
+    evolution_parameters:
+      physics_update_rate: 8
+      convergence_threshold: 0.02
+      max_iterations: 25
+      time_step: 0.125
+
+# Comparison phases with vessel profile switching
+phases:
+  - phase: "j35_sailboat_performance"
+    duration: 120
+    description: "J/35 sailboat physics demonstration"
+    vessel_profile: "j35"
+    events:
+      - time: 0
+        command: "set_wind_conditions" 
+        value: "true_wind_speed=18,true_wind_angle=110"
+        description: "Reaching conditions favorable for sailboat"
+      - time: 30
+        command: "optimize_sail_trim"
+        value: "point_of_sail=reach"
+        description: "Optimize for reaching performance"
+      - time: 90
+        command: "demonstrate_heel"
+        value: "wind_increase=4"
+        description: "Show heel response to wind increase"
+  
+  - phase: "catalina34_cruiser_performance"  
+    duration: 120
+    description: "Catalina 34 family cruiser comparison"
+    vessel_profile: "catalina34"
+    events:
+      - time: 0
+        command: "maintain_conditions"
+        value: "true_wind_speed=18,true_wind_angle=110"
+        description: "Same conditions as J/35"
+      - time: 30
+        command: "compare_performance"
+        value: "target_comfort=true"
+        description: "Demonstrate comfort-oriented sailing"
+      - time: 90
+        command: "family_sailing_mode"
+        value: "heel_limit=15,speed_priority=comfort"
+        description: "Show family-friendly sailing characteristics"
+  
+  - phase: "motor_yacht_performance"
+    duration: 120  
+    description: "Motor Yacht 45 power boat comparison"
+    vessel_profile: "motor-yacht-45"
+    events:
+      - time: 0
+        command: "engage_engines"
+        value: "cruise_power=0.65"
+        description: "Establish cruise power independent of wind"
+      - time: 30
+        command: "demonstrate_stability"
+        value: "maintain_course=true"
+        description: "Show power boat stability in wind/waves"
+      - time: 90
+        command: "power_boat_maneuvers"
+        value: "tight_turns=true,speed_changes=true"
+        description: "Demonstrate power boat agility"
+  
+  - phase: "trawler_efficiency"
+    duration: 120
+    description: "Trawler 42 displacement hull demonstration"
+    vessel_profile: "trawler-42"
+    events:
+      - time: 0
+        command: "efficient_cruise"
+        value: "hull_speed_ratio=0.9"
+        description: "Demonstrate displacement hull efficiency"
+      - time: 30
+        command: "seakeeping_demo"
+        value: "sea_state_increase=1"
+        description: "Show excellent seakeeping characteristics"
+      - time: 90
+        command: "range_demonstration"
+        value: "fuel_efficiency_mode=true"
+        description: "Demonstrate long-range capabilities"
+
+# Comparative data streams for analysis
+data:
+  speed:
+    type: "physics_calculated"
+    source: "vessel_specific_performance"
+    comparison_mode: true
+    unit: "knots"
+  
+  efficiency:
+    type: "physics_calculated"
+    source: "speed_power_ratio"
+    unit: "miles_per_gallon"
+  
+  stability:
+    type: "physics_calculated"
+    source: "roll_pitch_analysis"
+    unit: "degrees"
+  
+  wind_response:
+    type: "physics_calculated"
+    source: "wind_sensitivity_analysis"
+    unit: "percentage"
+  
+  turning_performance:
+    type: "physics_calculated"
+    source: "maneuverability_metrics"
+    unit: "degrees_per_second"
+  
+  comfort_index:
+    type: "physics_calculated"
+    source: "motion_comfort_calculation"
+    unit: "index_0_to_100"
+
+# Rapid data collection for comparison
+timing:
+  speed: 0.5
+  efficiency: 2
+  stability: 1
+  wind_response: 1
+  turning_performance: 1
+  comfort_index: 2
+
+# Comparative validation metrics
+validation:
+  j35_vs_catalina34:
+    speed_difference_max: 1.5      # J/35 should be faster
+    heel_difference_min: 3         # Catalina should heel less
+  
+  sailboat_vs_powerboat:
+    wind_independence: true        # Powerboats maintain speed regardless of wind
+    fuel_consumption_factor: 8     # Powerboats use ~8x more fuel
+  
+  displacement_vs_planing:
+    hull_speed_limitation: true    # Trawler limited by hull speed
+    efficiency_at_cruise: 3        # Trawler 3x more efficient at cruise

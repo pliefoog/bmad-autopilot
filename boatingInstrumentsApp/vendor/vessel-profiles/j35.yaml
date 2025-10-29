@@ -1,0 +1,59 @@
+# J/35 Sailboat - Classic Cruiser-Racer
+# Based on production J/35 specifications and performance characteristics
+
+name: "J/35"
+type: "sailboat"
+category: "cruiser-racer"
+
+# Physical specifications - Nautical (EU) units
+dimensions:
+  length_overall: 10.67     # meters (35.0 ft)
+  beam: 3.58                # meters (11.75 ft)
+  draft: 1.68               # meters (5.5 ft)
+  displacement: 5216        # kg (11500 lbs)
+  ballast: 2223             # kg (4900 lbs)
+  sail_area: 55.37          # square meters (596 sq ft)
+
+# Performance characteristics
+performance:
+  polar_diagram: "j35-polar.csv"    # Reference to polar data file
+  hull_speed: 7.9                   # theoretical hull speed in knots
+  design_displacement_ratio: 280    # design displacement/length ratio
+  sail_area_displacement_ratio: 16.8 # sail area/displacement ratio
+  ballast_displacement_ratio: 0.43  # ballast/displacement ratio
+
+# Physics parameters for simulation
+physics:
+  keel_offset: 0.45         # centerboard offset from centerline (0-1)
+  leeway_factor: 5.2        # degrees per knot of side force
+  heel_sensitivity: 1.8     # degrees heel per knot of wind pressure
+  vmg_efficiency: 0.85      # velocity made good efficiency factor (0-1)
+  max_heel: 25              # maximum comfortable heel angle (degrees)
+  stall_angle: 50           # apparent wind angle where performance degrades significantly
+
+# Engine specifications (auxiliary power)
+engine:
+  type: "inboard_diesel"
+  horsepower: 27
+  fuel_capacity: 20         # gallons
+  cruising_rpm: 2200
+  max_rpm: 3000
+
+# Environmental operating limits
+limits:
+  max_wind_speed: 40        # knots - comfortable operating limit
+  max_wave_height: 8        # feet - comfortable operating limit
+  min_depth: 6              # feet - minimum safe depth
+
+# Default sailing profile for scenarios
+defaults:
+  crew_weight: 600          # pounds - typical crew weight
+  fuel_level: 0.75          # 75% fuel
+  provisions: 400           # pounds - provisions and gear
+  sail_configuration: "main_jib"  # main+jib, main+genoa, main_only, etc.
+
+# Metadata
+created: "2024-12-27"
+version: "1.0"
+source: "J/Boats production specifications"
+notes: "Classic 35-foot cruiser-racer with proven offshore capability"

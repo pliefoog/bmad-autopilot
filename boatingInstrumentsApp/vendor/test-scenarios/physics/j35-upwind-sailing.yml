@@ -1,0 +1,72 @@
+name: "J/35 Upwind Racing"
+description: "Physics-enhanced J/35 upwind sailing with realistic sailing dynamics"
+version: "1.0"
+category: "physics"
+duration: 1200  # 20 minutes
+
+parameters:
+  physics:
+    enabled: true
+    vessel_profile: "j35"
+    overrides:
+      physics:
+        heel_sensitivity: 1.8
+        vmg_efficiency: 0.92
+        max_heel: 28
+        tacking_efficiency: 0.85
+      environmental:
+        water_temperature: 18  # Celsius (converted from 65°F)
+        sea_state: 3
+        wind_speed: 18
+        wind_direction: 0  # True wind from north
+        current_speed: 0.8
+        current_direction: 45
+      behavioral:
+        crew_skill_level: "advanced"
+        sailing_mode: "racing"
+        risk_tolerance: 0.8
+      defaults:
+        crew_weight: 650
+        fuel_level: 0.5
+    evolution_parameters:
+      physics_update_rate: 15
+      convergence_threshold: 0.01
+
+data:
+  speed:
+    type: "physics_calculated"
+    source: "polar_interpolation"
+    unit: "knots"
+    
+  heading:
+    type: "tidal_cycle"
+    unit: "degrees"
+    base_value: 45
+    amplitude: 90
+    period: 600  # Tack every 10 minutes
+    
+  heel:
+    type: "physics_calculated"
+    source: "sailing_dynamics"
+    unit: "degrees"
+    
+  apparent_wind_speed:
+    type: "physics_calculated"
+    source: "vessel_state_integration"
+    unit: "knots"
+    
+  apparent_wind_angle:
+    type: "physics_calculated"
+    source: "vessel_state_integration"
+    unit: "degrees"
+    
+  water_depth:
+    type: "progressive_shallow"
+    unit: "meters"
+    base_value: 46
+    final_value: 15
+    
+validation:
+  target_speed_range: [5.5, 8.5]
+  target_heel_range: [15, 28]
+  target_vmg_range: [4.0, 6.5]

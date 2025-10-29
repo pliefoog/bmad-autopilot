@@ -501,10 +501,10 @@ npm test                    # All unit tests with mocks
 npm test -- --watch        # Watch mode for active development
 ```
 
-**Integration Tests (Requires NMEA Bridge Simulator):**
+**Integration Tests (Requires NMEA Bridge):**
 ```bash
-# Terminal 1: Start comprehensive NMEA Bridge Simulator
-node server/nmea-bridge-simulator.js --scenario basic-navigation --api-port 9090
+# Terminal 1: Start NMEA Bridge with comprehensive scenario
+node server/nmea-bridge.js --scenario basic-navigation
 
 # Terminal 2: Run integration tests
 npm run test:integration
@@ -513,42 +513,42 @@ npm run test:integration
 **Cross-Platform Testing:**
 ```bash
 # Web browser testing
-node server/nmea-bridge-simulator.js --scenario autopilot-engagement
+node server/nmea-bridge.js --scenario autopilot-engagement
 npm run web
 
-# iOS/Android native testing (same simulator, different protocol)
-node server/nmea-bridge-simulator.js --scenario shallow-water-alarm  
+# iOS/Android native testing (same unified tool, different protocol)
+node server/nmea-bridge.js --scenario shallow-water-alarm  
 npm run ios    # Connects via TCP to same simulator
 npm run android # Connects via TCP to same simulator
 ```
 
-**Manual Testing with NMEA Bridge Simulator:**
+**Manual Testing with NMEA Bridge:**
 ```bash
 # Option 1: Use standardized test scenarios
-node server/nmea-bridge-simulator.js --scenario coastal-sailing
+node server/nmea-bridge.js --scenario coastal-sailing
 npm run web
 
-# Option 2: Use recorded real-world data  
-node server/nmea-bridge-simulator.js --scenario recorded-regatta
+# Option 2: Use file playback mode  
+node server/nmea-bridge.js --file vendor/sample-data/sailing-demo.nmea --loop
 npm run web
 
-# Option 3: Connect to real WiFi bridge (legacy mode)
-node server/nmea-websocket-bridge.js 192.168.1.10 10110  
+# Option 3: Connect to real WiFi bridge (live mode)
+node server/nmea-bridge.js --live 192.168.1.10 10110  
 npm run web
 ```
 
 **Scenario-Based Testing:**
 ```bash
 # Autopilot testing
-node server/nmea-bridge-simulator.js --scenario autopilot-engagement
+node server/nmea-bridge.js --scenario autopilot-engagement
 npm run web  # Test autopilot UI behavior
 
 # Alarm testing
-node server/nmea-bridge-simulator.js --scenario shallow-water-alarm
+node server/nmea-bridge.js --scenario shallow-water-alarm
 npm run ios  # Test native alarm notifications
 
 # Performance testing  
-node server/nmea-bridge-simulator.js --scenario high-frequency-data
+node server/nmea-bridge.js --scenario high-frequency-data
 npm run test:performance  # Validate 500+ msg/sec handling
 ```
 

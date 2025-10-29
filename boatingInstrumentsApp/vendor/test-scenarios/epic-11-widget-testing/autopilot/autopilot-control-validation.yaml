@@ -1,0 +1,457 @@
+# Autopilot Control Widget Validation Scenario
+# Epic 11 - Professional Grade Testing Architecture
+# Story 11.2 - Widget-Scenario Mapping  
+# Domain: Autopilot - Control Interface and Command Validation
+
+name: "autopilot-control-validation"
+description: "Comprehensive autopilot control widget validation with command interface, response validation, and marine autopilot control safety standards"
+version: "1.0.0"
+category: "autopilot"
+domain: "autopilot-control"
+duration: 200000  # 3 minutes 20 seconds
+
+# Marine Domain Accuracy Requirements
+accuracy_standards:
+  command_response_time: 1000  # 1-second response time requirement
+  heading_precision: 1.0       # 1° precision for heading commands
+  course_precision: 1.0        # 1° precision for course changes
+  rudder_command_precision: 1.0 # 1° precision for rudder commands
+  manufacturer_tolerance: "within_spec"
+  staleness_threshold: 5000    # 5 seconds
+
+# Integration with Triple-Tier Testing Architecture
+testing_tiers:
+  tier1_unit: "autopilot-control-widget.test.js"
+  tier2_api_injection: "autopilot-control-nmea-injection.test.js"
+  tier3_scenario_integration: "this_scenario"
+
+# NMEA Sentence Configuration for Autopilot Control Testing
+nmea_sentences:
+  outgoing_commands:
+    - type: "APB"  # Autopilot Command (outgoing)
+      purpose: "Send autopilot course and mode commands"
+      parameters:
+        - "command_type"          # Course, heading, or mode change
+        - "target_heading"        # Desired heading in degrees
+        - "navigation_mode"       # AUTO, STANDBY, TRACK, WIND
+      frequency: "on_demand"      # Triggered by user actions
+
+  incoming_responses:
+    - type: "APB"  # Autopilot Sentence "B" (incoming responses)
+      purpose: "Autopilot acknowledgment and status feedback"
+      parameters:
+        - "status_flags"          # A=command accepted, V=warning/rejected
+        - "cross_track_error_magnitude"
+        - "direction_to_steer"    # L=left, R=right
+        - "cross_track_units"     # N=nautical miles
+        - "status_arrival"        # A=arrival circle entered
+        - "status_perpendicular"  # A=perpendicular passed
+        - "bearing_origin_to_dest"
+        - "bearing_type"          # M=magnetic, T=true
+        - "destination_waypoint_id"
+      frequency: 1000  # 1 Hz response frequency
+
+    - type: "RSA"  # Rudder Sensor Angle (response validation)
+      purpose: "Confirm autopilot rudder commands executed"
+      parameters:
+        - "starboard_rudder_angle"
+        - "rudder_angle_status"   # A=data valid, V=invalid
+        - "port_rudder_angle" 
+        - "port_rudder_status"
+      frequency: 500   # 2 Hz
+
+# Test Phases for Autopilot Control Widget Validation
+test_phases:
+
+  # Phase 1: Basic Command Interface and Response Testing
+  phase_1_command_interface:
+    name: "Basic Autopilot Command Interface Validation"
+    duration: 50000  # 50 seconds
+    objective: "Validate autopilot command interface responds within 1-second requirement"
+    
+    test_actions:
+      - timestamp: 0
+        action: "engage_autopilot"
+        expected_command: 
+          sentence: "APB"
+          values: ["ENGAGE", "AUTO", 0, 0, 0, 0, 0, 0, ""]
+        timeout: 1000
+        
+      - timestamp: 5000
+        action: "set_heading_090"
+        expected_command:
+          sentence: "APB" 
+          values: ["HEADING", 090, 0, 0, 0, 0, 0, 0, ""]
+        timeout: 1000
+        
+      - timestamp: 10000
+        action: "set_heading_180"
+        expected_command:
+          sentence: "APB"
+          values: ["HEADING", 180, 0, 0, 0, 0, 0, 0, ""]
+        timeout: 1000
+        
+      - timestamp: 15000
+        action: "course_adjustment_plus_10"
+        expected_command:
+          sentence: "APB"
+          values: ["COURSE_ADJ", "+10", 0, 0, 0, 0, 0, 0, ""]
+        timeout: 1000
+        
+      - timestamp: 20000
+        action: "course_adjustment_minus_5"
+        expected_command:
+          sentence: "APB"
+          values: ["COURSE_ADJ", "-5", 0, 0, 0, 0, 0, 0, ""]
+        timeout: 1000
+        
+    autopilot_responses:
+      - timestamp: 1000
+        sentence: "APB"
+        values: ["A", 0.00, "L", "N", "V", "V", 000, "T", ""]  # Engaged successfully
+      - timestamp: 6000
+        sentence: "APB"  
+        values: ["A", 0.02, "R", "N", "V", "V", 090, "T", ""]  # Heading 090 accepted
+      - timestamp: 11000
+        sentence: "APB"
+        values: ["A", 0.05, "L", "N", "V", "V", 180, "T", ""]  # Heading 180 accepted
+      - timestamp: 16000
+        sentence: "APB"
+        values: ["A", 0.03, "R", "N", "V", "V", 190, "T", ""]  # +10° course adjustment
+      - timestamp: 21000
+        sentence: "APB"
+        values: ["A", 0.01, "L", "N", "V", "V", 185, "T", ""]  # -5° course adjustment
+        
+    expected_behavior:
+      command_interface:
+        - engage_button: "prominent autopilot engagement control"
+        - heading_input: "numeric heading input with validation"
+        - course_adjustments: "+/- buttons for fine course changes"
+        - mode_selection: "AUTO/STANDBY/TRACK mode selection"
+      response_validation:
+        - command_acknowledgment: "visual confirmation of command acceptance"
+        - response_time: "<1000ms from command to acknowledgment"
+        - error_handling: "clear indication if command rejected"
+        - status_updates: "real-time autopilot status display"
+        
+    validation_criteria:
+      - "Autopilot commands generated within 1000ms of user action"
+      - "Command format correct per NMEA APB specification"
+      - "Autopilot responses processed and displayed within 1000ms"
+      - "User interface updates reflect command acceptance/rejection"
+      - "All control elements functional and responsive"
+
+  # Phase 2: Heading and Course Management Commands  
+  phase_2_heading_course_commands:
+    name: "Heading and Course Management Command Validation"
+    duration: 60000  # 60 seconds
+    objective: "Validate heading and course command accuracy within 1° precision"
+    
+    test_actions:
+      - timestamp: 50000
+        action: "set_precise_heading_123"
+        expected_command:
+          sentence: "APB"
+          values: ["HEADING", 123, 0, 0, 0, 0, 0, 0, ""]
+        tolerance: 1.0  # 1° precision requirement
+        
+      - timestamp: 55000
+        action: "course_adjustment_plus_1"
+        expected_command:
+          sentence: "APB"
+          values: ["COURSE_ADJ", "+1", 0, 0, 0, 0, 0, 0, ""]
+        
+      - timestamp: 60000
+        action: "course_adjustment_minus_3"  
+        expected_command:
+          sentence: "APB"
+          values: ["COURSE_ADJ", "-3", 0, 0, 0, 0, 0, 0, ""]
+        
+      - timestamp: 65000
+        action: "set_magnetic_heading_045"
+        expected_command:
+          sentence: "APB"
+          values: ["HEADING", 045, 0, 0, 0, 0, 0, "M", ""]
+        
+      - timestamp: 70000
+        action: "large_course_change_270"
+        expected_command:
+          sentence: "APB"  
+          values: ["HEADING", 270, 0, 0, 0, 0, 0, "T", ""]
+        
+    autopilot_responses:
+      - timestamp: 51000
+        sentence: "APB"
+        values: ["A", 0.01, "L", "N", "V", "V", 123, "T", ""]  # Heading 123° accepted
+      - timestamp: 56000
+        sentence: "APB"
+        values: ["A", 0.02, "R", "N", "V", "V", 124, "T", ""]  # +1° course adjustment
+      - timestamp: 61000  
+        sentence: "APB"
+        values: ["A", 0.01, "L", "N", "V", "V", 121, "T", ""]  # -3° course adjustment  
+      - timestamp: 66000
+        sentence: "APB"
+        values: ["A", 0.03, "R", "N", "V", "V", 045, "M", ""]  # Magnetic heading 045°
+      - timestamp: 71000
+        sentence: "APB"
+        values: ["A", 0.08, "L", "N", "V", "V", 270, "T", ""]  # Large course change
+        
+    expected_behavior:
+      heading_commands:
+        - precision: "heading commands accurate within 1°"
+        - validation: "heading input range validation (0-359°)"
+        - format: "true/magnetic heading distinction clear"
+        - confirmation: "target heading displayed after command"
+      course_adjustments:
+        - increment_accuracy: "small adjustments (±1°) function correctly"
+        - large_changes: "large course changes (>90°) handled properly"
+        - cumulative_tracking: "course adjustments accumulate correctly"
+        - limits: "course adjustment limits enforced appropriately"
+        
+    validation_criteria:
+      - "Heading commands accurate within 1° precision requirement"
+      - "Course adjustments calculate correctly from current heading"
+      - "True/magnetic heading modes function distinctly"
+      - "Large course changes processed without errors"
+      - "Heading validation prevents invalid inputs (>359°, <0°)"
+
+  # Phase 3: Mode Changes and Advanced Functions
+  phase_3_mode_advanced:
+    name: "Autopilot Mode Changes and Advanced Function Validation"
+    duration: 55000  # 55 seconds
+    objective: "Validate autopilot mode changes and advanced control functions"
+    
+    test_actions:
+      - timestamp: 110000
+        action: "switch_to_standby_mode"
+        expected_command:
+          sentence: "APB"
+          values: ["MODE", "STANDBY", 0, 0, 0, 0, 0, 0, ""]
+          
+      - timestamp: 115000
+        action: "switch_to_nav_mode"
+        expected_command:
+          sentence: "APB"
+          values: ["MODE", "NAV", 0, 0, 0, 0, 0, 0, "WP001"]
+          
+      - timestamp: 120000
+        action: "switch_to_wind_mode"
+        expected_command:
+          sentence: "APB"
+          values: ["MODE", "WIND", 0, 0, 0, 0, 0, 0, ""]
+          
+      - timestamp: 125000
+        action: "dodge_port_10_degrees"
+        expected_command:
+          sentence: "APB"
+          values: ["DODGE", "PORT", 10, 0, 0, 0, 0, 0, ""]
+          
+      - timestamp: 130000
+        action: "return_to_course"
+        expected_command:
+          sentence: "APB"
+          values: ["RETURN", "COURSE", 0, 0, 0, 0, 0, 0, ""]
+        
+    autopilot_responses:
+      - timestamp: 111000
+        sentence: "APB"
+        values: ["A", 0.00, "L", "N", "V", "V", 000, "T", ""]  # Standby mode
+      - timestamp: 116000
+        sentence: "APB"
+        values: ["A", 0.05, "R", "N", "V", "V", 085, "T", "WP001"]  # Nav mode to WP001
+      - timestamp: 121000
+        sentence: "APB"
+        values: ["A", 0.02, "L", "N", "V", "V", 120, "T", ""]  # Wind mode (relative)
+      - timestamp: 126000
+        sentence: "APB"  
+        values: ["A", 0.15, "L", "N", "V", "V", 110, "T", ""]  # Dodge maneuver
+      - timestamp: 131000
+        sentence: "APB"
+        values: ["A", 0.03, "R", "N", "V", "V", 120, "T", ""]  # Return to course
+        
+    expected_behavior:
+      mode_switching:
+        - standby_mode: "autopilot disengaged, manual control"
+        - nav_mode: "navigation to waypoints, GPS track following"
+        - wind_mode: "wind-relative heading maintenance"
+        - auto_mode: "compass heading maintenance"
+      advanced_functions:
+        - dodge_maneuvers: "temporary course changes with return"
+        - track_mode: "GPS route following with cross-track error"
+        - wind_hold: "apparent or true wind angle maintenance"
+        - tack_gybe: "sailing-specific autopilot functions"
+        
+    validation_criteria:
+      - "Mode changes executed within 1000ms response requirement"
+      - "Each autopilot mode functions distinctly and correctly"
+      - "Mode switching interface clear and intuitive"
+      - "Advanced functions (dodge, return) operate as expected"
+      - "Mode-specific parameters handled appropriately"
+
+  # Phase 4: Error Conditions and Safety Systems
+  phase_4_error_safety:
+    name: "Autopilot Control Error Handling and Safety Validation"
+    duration: 35000  # 35 seconds
+    objective: "Validate error handling and safety systems for autopilot control"
+    
+    test_actions:
+      - timestamp: 165000
+        action: "send_invalid_heading_400"  # Invalid heading >359°
+        expected_behavior: "command rejected, error message displayed"
+        
+      - timestamp: 170000
+        action: "rapid_heading_changes"  # Multiple commands in quick succession
+        expected_behavior: "commands queued or latest command takes priority"
+        
+      - timestamp: 175000
+        action: "emergency_standby"  # Emergency autopilot disconnect
+        expected_command:
+          sentence: "APB"
+          values: ["EMERGENCY", "STANDBY", 0, 0, 0, 0, 0, 0, ""]
+        priority: "immediate"
+        
+    autopilot_responses:
+      - timestamp: 165500
+        sentence: "APB"
+        values: ["V", 0.00, "L", "N", "V", "V", 000, "T", ""]  # Command rejected (V status)
+        
+      - timestamp: 176000  
+        sentence: "APB"
+        values: ["A", 0.00, "L", "N", "V", "V", 000, "T", ""]  # Emergency standby confirmed
+        
+    # Simulate communication failures
+    communication_failures:
+      - timestamp: 180000
+        duration: 8000  # 8 seconds of no autopilot response
+        expected_behavior: "timeout warning, command retry options"
+        
+      - timestamp: 190000  
+        # Resume normal communication
+        sentence: "APB"
+        values: ["A", 0.02, "R", "N", "V", "V", 275, "T", ""]  # Communication restored
+        
+    expected_behavior:
+      error_handling:
+        - invalid_commands: "clear error messages for invalid inputs"
+        - command_rejection: "autopilot rejection handling and user notification"
+        - timeout_handling: "communication timeout warnings and recovery"
+        - safety_override: "emergency disconnect functions immediately"
+      safety_systems:
+        - input_validation: "all user inputs validated before transmission"
+        - command_confirmation: "critical commands require confirmation"
+        - emergency_controls: "prominent emergency disconnect controls"
+        - system_monitoring: "continuous autopilot system health monitoring"
+        
+    validation_criteria:
+      - "Invalid commands rejected with clear error messages"
+      - "Command timeouts detected and handled appropriately"
+      - "Emergency controls function immediately without delay"
+      - "Safety systems prevent dangerous autopilot commands"
+      - "Communication failure recovery handled gracefully"
+      - "Widget remains stable during all error conditions"
+
+# Performance Thresholds (Marine Safety Requirements)
+performance_requirements:
+  command_response_time: 1000  # <1000ms command → NMEA transmission
+  acknowledgment_time: 1000    # <1000ms autopilot response → UI update  
+  memory_usage: 35             # <35MB max memory for autopilot control widget
+  cpu_usage: 12                # <12% CPU usage during active control
+  crash_free_rate: 99.5        # 99.5% crash-free session rate
+
+# Validation Metrics for Automated Testing
+validation_metrics:
+  accuracy_tests:
+    - metric: "heading_command_precision_degrees"
+      target: 1.0
+      tolerance: 0.5
+    - metric: "course_adjustment_precision_degrees"  
+      target: 1.0
+      tolerance: 0.5
+      
+  performance_tests:
+    - metric: "command_response_time_ms"
+      target: 1000
+      max_acceptable: 1500
+    - metric: "acknowledgment_time_ms"
+      target: 1000  
+      max_acceptable: 1500
+    - metric: "memory_usage_mb"
+      target: 35
+      max_acceptable: 50
+      
+  reliability_tests:
+    - metric: "command_success_rate_percent"
+      target: 99.0
+      min_acceptable: 95.0
+    - metric: "error_recovery_time_ms"
+      target: 2000
+      max_acceptable: 3000
+
+# Safety-Critical Control Requirements
+safety_requirements:
+  emergency_functions:
+    - emergency_standby: "immediate autopilot disconnect <500ms"
+    - manual_override: "manual control always takes precedence"
+    - safety_limits: "prevent dangerous heading/course commands"
+    
+  command_validation:
+    - input_range_checking: "heading 0-359°, course adjustments ±180°"
+    - rate_limiting: "prevent excessive command frequency"
+    - confirmation_required: "critical commands require confirmation"
+    
+  system_monitoring:
+    - command_acknowledgment: "all commands must be acknowledged"
+    - timeout_detection: "command timeout after 5 seconds"
+    - communication_quality: "monitor command success/failure rates"
+
+# Integration Points with Testing Infrastructure
+testing_integration:
+  nmea_bridge_simulator:
+    - scenario_name: "autopilot-control-interface"
+    - port: 9090
+    - api_endpoint: "/api/scenarios/autopilot-control-validation"
+    - bidirectional_testing: "both command transmission and response validation"
+    
+  triple_tier_architecture:
+    - tier_2_injection: "Inject autopilot command responses via API"
+    - tier_3_validation: "Full scenario execution with command/response validation"
+    - automated_reporting: "Test results with marine autopilot control safety compliance"
+    
+  cross_platform_testing:
+    - react_native_web: "WebSocket autopilot command interface testing"
+    - ios_simulator: "Native autopilot control validation"
+    - android_emulator: "Native autopilot command interface testing"
+
+# Expected Test Outcomes
+expected_outcomes:
+  control_accuracy:
+    - "Autopilot commands accurate within 1° precision"
+    - "Command transmission within 1000ms response requirement"
+    - "Mode changes and advanced functions operate correctly"
+    - "Course adjustments calculate and execute precisely"
+    
+  safety_compliance:
+    - "Emergency controls function immediately and reliably" 
+    - "Invalid commands rejected with appropriate error handling"
+    - "Safety systems prevent dangerous autopilot operations"
+    - "Communication failures handled gracefully with user notification"
+    
+  operational_integration:
+    - "All autopilot modes supported and functional"
+    - "Command confirmation and acknowledgment systems operational"
+    - "User interface intuitive and responsive for marine operators"
+    - "Integration with autopilot status monitoring seamless"
+
+# Dependencies and Prerequisites
+dependencies:
+  required_components:
+    - "AutopilotControlWidget component (React Native)"
+    - "NMEA command transmission service with APB support"
+    - "Autopilot command validation and safety checking service"
+    - "Marine autopilot control interface with safety systems"
+    
+  test_infrastructure:
+    - "NMEA Bridge Simulator with bidirectional autopilot support"
+    - "Triple-Tier Testing Architecture (Story 11.1)"
+    - "Marine autopilot control safety compliance validation tools"
+    - "Cross-platform marine autopilot control testing environment"
