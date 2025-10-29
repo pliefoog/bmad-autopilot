@@ -1,0 +1,119 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.4</storyId>
+    <title>Professional Test Documentation Standards</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-29</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.4-professional-test-documentation-standards.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Test Engineer and Quality Assurance Professional</asA>
+    <iWant>standardized test documentation templates with comprehensive requirement traceability and purpose-driven design</iWant>
+    <soThat>all test cases meet professional marine software development standards and enable systematic requirement coverage validation</soThat>
+    <tasks>
+      - Task 1: Create Documentation Template Infrastructure (AC: 11.4.1)
+      - Task 2: Implement Requirement Traceability System (AC: 11.4.2)  
+      - Task 3: Establish Professional Documentation Standards (AC: 11.4.3)
+      - Task 4: Build Automated Test Report Generation (AC: 11.4.4)
+      - Task 5: Testing and Validation (All ACs)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC-11.4.1: Test Documentation Template Implementation - Each test case includes standardized TypeScript comment headers with PURPOSE/REQUIREMENT/METHOD/EXPECTED/ERROR CONDITIONS structure, reusable across all test types, integrating with Jest and @testing-library/react-native frameworks.
+
+    AC-11.4.2: Requirement Traceability System - Automated Test → FR/NFR → Component → Validation Result mapping operational with automated traceability reports, coverage analysis per functional requirement, gap identification for untested requirements, VS Code Test Explorer integration.
+
+    AC-11.4.3: Professional Documentation Standards Compliance - All test cases demonstrate purpose-driven design with clear objectives, measurable success criteria including performance thresholds (&lt;16ms widget updates, &lt;100ms data latency, &lt;50MB memory), comprehensive error condition documentation for marine safety scenarios, marine safety requirement compliance linking to 99.5% crash-free session rate target.
+
+    AC-11.4.4: Automated Test Report Generation - Automated test execution summaries with requirement coverage analysis, performance threshold compliance reporting for marine domain accuracy standards, trend analysis for quality metrics tracking, professional marine software development documentation format standards.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/tech-spec-epic-11.md" title="Technical Specification: Epic 11 - Professional-Grade Testing Architecture" section="AC-11.4 Professional Test Documentation Standards" snippet="Each test includes explicit PURPOSE statement linking to specific requirement, METHOD section describing approach, EXPECTED section with measurable outcomes, ERROR CONDITIONS section validating failure modes with requirement traceability system." />
+      <doc path="docs/testing-strategy.md" title="Testing Strategy for NMEA Marine Instrument Display" section="Recording File Standards" snippet="Professional test documentation standards with JSON format specifications, quality criteria, coverage requirements, and marine safety validation requirements." />
+      <doc path="docs/qa/Epic4-Marine-Safety-Alarm-Testing-Framework.md" title="Marine Safety Alarm Reliability Testing Framework" section="Marine Safety Requirements" snippet="Industry standards compliance with false positive rate &lt;1%, false negative rate &lt;0.1%, marine environment validation requirements for professional testing documentation." />
+      <doc path="docs/architecture.md" title="Boating Instruments App Fullstack Architecture Document" section="Epic 6 Testing Infrastructure - Quality Assurance Standards" snippet="Performance thresholds (&lt;16ms render time, &lt;50MB memory, &lt;5s data staleness), data quality thresholds (excellent/good/fair/poor classifications), coverage requirements (70% global, 90% critical marine functions)." />
+      <doc path="bmad/bmm/workflows/testarch/trace/instructions.md" title="Test Architect Workflow: Requirements Traceability &amp; Quality Gate Decision" section="Traceability System" snippet="Automated Test → FR/NFR → Component → Validation Result mapping with gap identification, coverage analysis per functional requirement, professional traceability reporting standards." />
+      <doc path="docs/ui-architecture.md" title="Boating Instruments App Frontend Architecture Document" section="Testing Requirements - Component Test Template" snippet="Marine theme compliance rules with mandatory testing in all three modes (day/night/red-night), TypeScript test template patterns with marine safety validation requirements." />
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/__tests__/setup.ts" kind="test-setup" symbol="jest.mock" lines="1-280" reason="Global Jest test setup with mocks for React Native dependencies, establishes testing infrastructure patterns for Story 11.4 template integration" />
+      <artifact path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts" kind="test-utilities" symbol="renderWithProviders" lines="1-50" reason="Enhanced render functions and test wrapper utilities that can be extended with documentation template integration" />
+      <artifact path="boatingInstrumentsApp/src/testing/index.ts" kind="test-framework" symbol="testSetup" lines="212-280" reason="Test configuration and environment setup utilities, foundation for traceability system integration" />
+      <artifact path="boatingInstrumentsApp/jest.config.js" kind="configuration" symbol="module.exports" lines="1-30" reason="Jest configuration with moduleNameMapping patterns that support vendor/test-standards directory structure" />
+      <artifact path="boatingInstrumentsApp/__tests__/ToastMessage.test.tsx" kind="test-example" symbol="describe" lines="1-50" reason="Example of current test documentation patterns that need enhancement with PURPOSE/REQUIREMENT/METHOD/EXPECTED headers" />
+      <artifact path="docs/testing-strategy.md" kind="documentation" symbol="Testing Philosophy" lines="1-100" reason="Existing testing standards and quality criteria that inform professional documentation requirements" />
+      <artifact path="docs/ui-architecture.md" kind="architecture" symbol="Component Test Template" lines="1830-1900" reason="Current component test template patterns that need enhancement with professional documentation standards" />
+      <artifact path="docs/qa/Epic4-Marine-Safety-Alarm-Testing-Framework.md" kind="marine-testing" symbol="generateMarineAlarmScenarios" lines="180-220" reason="Example of marine-specific test scenarios and professional testing documentation for traceability requirements" />
+    </code>
+    <dependencies>
+      <ecosystem name="Node.js">
+        <package name="jest" version="^29.7.0" />
+        <package name="@testing-library/react-native" version="^13.3.3" />
+        <package name="@types/jest" version="^29.5.13" />
+        <package name="supertest" version="^7.1.4" />
+        <package name="react-test-renderer" version="^19.1.0" />
+        <package name="typescript" version="^5.8.3" />
+        <package name="ajv" version="^8.17.1" />
+        <package name="js-yaml" version="^4.1.0" />
+        <package name="eslint" version="^8.57.1" />
+        <package name="prettier" version="^2.8.8" />
+      </ecosystem>
+      <ecosystem name="React Native">
+        <package name="react-native" version="^0.81.4" />
+        <package name="expo" version="^54.0.20" />
+        <package name="expo-router" version="^6.0.12" />
+        <package name="zustand" version="^5.0.8" />
+      </ecosystem>
+      <ecosystem name="Marine Domain">
+        <package name="nmea-simple" version="^3.3.0" />
+        <package name="@canboat/canboatjs" version="^3.11.0" />
+        <package name="@sentry/react-native" version="~7.2.0" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Follow Epic 6 Domain-Separated Service Architecture with clear separation between navigation, engine, environment, autopilot, and core domains in test documentation
+    - Integrate with Epic 7/10 NMEA Bridge Simulator infrastructure for realistic test scenario documentation patterns
+    - Maintain consistency with React Native cross-platform testing patterns established in existing test suite
+    - Align with existing Jest and @testing-library/react-native framework patterns for seamless integration
+    - Documentation templates must be TypeScript-compatible and integrate with existing jest.config.js moduleNameMapping
+    - Templates designed for enhancement approach (not replacement) of existing 228+ test files
+    - Performance integration: &lt;16ms widget updates, &lt;100ms data latency, &lt;50MB memory thresholds in documentation
+    - Marine safety focus: Error condition documentation covering marine safety scenarios and 99.5% crash-free session rate
+    - VS Code Test Explorer integration points established in Story 11.3 must be preserved and enhanced
+    - Professional standards align with marine software development industry practices
+  </constraints>
+  <interfaces>
+    <interface name="TestDocumentationTemplate" kind="TypeScript comment template" signature="/** PURPOSE: [requirement linkage] REQUIREMENT: [FR/NFR link] METHOD: [API injection/scenario/mock] EXPECTED: [measurable outcomes] ERROR CONDITIONS: [failure modes] */" path="vendor/test-standards/documentation-template.js" />
+    <interface name="RequirementTraceabilitySystem" kind="automated mapping system" signature="Test → FR/NFR → Component → Validation Result" path="vendor/test-standards/traceability-reporter.js" />
+    <interface name="Jest Test Framework" kind="testing framework integration" signature="describe(), it(), expect() with enhanced documentation headers" path="boatingInstrumentsApp/__tests__/**/*.test.js" />
+    <interface name="React Native Testing Library" kind="component testing utilities" signature="renderWithProviders(), fireEvent, waitFor with professional documentation" path="boatingInstrumentsApp/src/testing/helpers/testHelpers.ts" />
+    <interface name="VS Code Test Explorer" kind="development integration" signature="test discovery and coverage visualization with traceability display" path="existing Story 11.3 integration points" />
+    <interface name="Professional Standards Guide" kind="documentation standards" signature="purpose-driven test case design principles and marine safety compliance validation" path="docs/qa/professional-standards-guide.md" />
+  </interfaces>
+  <tests>
+    <standards>Professional test documentation using Jest and @testing-library/react-native with TypeScript comment template headers (PURPOSE/REQUIREMENT/METHOD/EXPECTED/ERROR CONDITIONS). Enhanced testing infrastructure supports Epic 11 triple testing strategy: Static Mocks (&lt;50ms unit tests), API Message Injection (integration tests via Simulator Control API), Full Scenario Integration (e2e tests with YAML scenarios). Documentation standards ensure marine safety compliance with requirement traceability system and performance thresholds (&lt;16ms render, &lt;100ms data latency, &lt;50MB memory).</standards>
+    <locations>
+      <location>__tests__/**/*.test.js</location>
+      <location>src/testing/**/*.test.js</location>
+      <location>vendor/test-standards/</location>
+      <location>docs/qa/</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-11.4.1">Create TypeScript comment template validation tests to ensure PURPOSE/REQUIREMENT/METHOD/EXPECTED/ERROR CONDITIONS structure compliance across all test files</idea>
+      <idea ac="AC-11.4.2">Test requirement traceability system accuracy by validating Test → FR/NFR → Component → Validation Result mapping against known test cases and requirements</idea>
+      <idea ac="AC-11.4.2">Unit test traceability report generator to ensure coverage analysis per functional requirement produces accurate results and identifies gaps correctly</idea>
+      <idea ac="AC-11.4.3">Validate professional documentation standards compliance by testing measurable success criteria integration and marine safety scenario error condition coverage</idea>
+      <idea ac="AC-11.4.4">Test automated test report generation functionality including performance threshold compliance reporting and trend analysis accuracy</idea>
+      <idea ac="All ACs">Integration test with existing 228+ test files sample to verify enhancement approach preserves existing functionality while adding professional documentation</idea>
+      <idea ac="All ACs">End-to-end test with VS Code Test Explorer integration to verify real-time traceability visibility and performance threshold warnings display correctly</idea>
+    </ideas>
+  </tests>
+</story-context>

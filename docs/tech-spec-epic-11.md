@@ -347,7 +347,7 @@ interface ITestUtils {
 **AC-11.2: Widget-Scenario Mapping (1:1)**
 - GIVEN widget types (depth, speed, wind, compass, autopilot, engine, metric-cell)
 - WHEN test scenarios are created
-- THEN each widget has dedicated YAML validation scenario in `vendor/test-scenarios/epic-11-widget-testing/`
+- THEN each widget has dedicated YAML validation scenario in `marine-assets/test-scenarios/epic-11-widget-testing/`
 - AND each scenario includes marine-specific test cases with requirement traceability
 - AND performance stress testing scenario handles 500+ messages/second
 - AND error conditions scenario validates invalid checksums and malformed data

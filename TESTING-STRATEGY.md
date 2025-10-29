@@ -406,7 +406,7 @@ Verify app meets performance requirements per NFR4 and NFR10.
 
 **Test:**
 ```bash
-npm run dev:bench -- vendor/sample-data/high_density.nmea 500 5
+npm run dev:bench -- ../marine-assets/sample-data/high_density.nmea 500 5
 # Streams 500 msg/sec for 5 seconds
 
 # Expected output:
@@ -529,7 +529,7 @@ node server/nmea-bridge.js --scenario coastal-sailing
 npm run web
 
 # Option 2: Use file playback mode  
-node server/nmea-bridge.js --file vendor/sample-data/sailing-demo.nmea --loop
+node server/nmea-bridge.js --file ../marine-assets/sample-data/sailing-demo.nmea --loop
 npm run web
 
 # Option 3: Connect to real WiFi bridge (live mode)
@@ -600,7 +600,7 @@ npm run test:integration:ci           # Integration tests with embedded bridge
 
 2. **Run performance benchmarks:**
    ```bash
-   npm run dev:bench -- vendor/sample-data/high_density.nmea 500 5
+   npm run dev:bench -- ../marine-assets/sample-data/high_density.nmea 500 5
    ```
 
 3. **Manual testing:**
@@ -651,7 +651,7 @@ open coverage/lcov-report/index.html
 
 ### Sample NMEA Files
 
-**Location:** `vendor/sample-data/`
+**Location:** `marine-assets/sample-data/`
 
 **Available Files:**
 

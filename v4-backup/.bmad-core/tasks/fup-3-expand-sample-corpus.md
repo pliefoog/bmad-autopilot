@@ -6,7 +6,7 @@ story: 1.4
 
 description: |
   Add timestamped logs, instrument-specific recordings, and additional malformed variants
-  under `vendor/sample-data/` to improve test coverage for parsing and validation.
+  under `marine-assets/sample-data/` to improve test coverage for parsing and validation.
 
 acceptance_criteria:
   - At least 5 new sample files added (including timestamped and malformed variants).

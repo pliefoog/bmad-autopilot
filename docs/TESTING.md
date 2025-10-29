@@ -104,7 +104,7 @@ npm run web
 **3. High-Frequency Load Testing:**
 ```bash
 # High message rate testing (500+ msg/sec)
-node server/nmea-websocket-bridge.js --file vendor/sample-data/high-frequency.nmea --rate 500
+node server/nmea-websocket-bridge.js --file ../marine-assets/sample-data/high-frequency.nmea --rate 500
 
 # Monitor performance under load
 npm run test:performance
@@ -112,7 +112,7 @@ npm run test:performance
 
 ### Test Data Files
 
-**Location:** `vendor/sample-data/` and `__tests__/fixtures/`
+**Location:** `marine-assets/sample-data/` and `__tests__/fixtures/`
 
 **Available Test Files:**
 - `basic-instruments.nmea` - Standard depth/speed/wind data
@@ -291,14 +291,14 @@ node server/nmea-websocket-bridge.js --file __tests__/fixtures/test-sequence.nme
 npm run test:integration
 
 # Performance testing with high-frequency data
-node server/nmea-websocket-bridge.js --file vendor/sample-data/high-frequency.nmea --rate 500
+node server/nmea-websocket-bridge.js --file marine-assets/sample-data/high-frequency.nmea --rate 500
 npm run test:performance
 ```
 
 ### Manual Testing Commands
 ```bash
 # Web UI testing with sample NMEA data
-node server/nmea-websocket-bridge.js --file vendor/sample-data/basic-instruments.nmea --loop
+node server/nmea-websocket-bridge.js --file ../marine-assets/sample-data/basic-instruments.nmea --loop
 npm run web
 
 # Web UI testing with live boat data

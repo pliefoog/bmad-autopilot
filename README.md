@@ -55,7 +55,7 @@ npm run android
 Use **Playback Mode** to test with pre-recorded NMEA data:
 
 ```bash
-npm run dev:bench -- vendor/sample-data/sailing_session.nmea 10 30
+npm run dev:bench -- ../marine-assets/sample-data/sailing_session.nmea 10 30
 ```
 
 Or launch the app and skip the setup wizard to enter **Demo Mode** with synthetic data.
@@ -135,11 +135,21 @@ bmad-autopilot/
 │   │
 │   ├── ios/                      # iOS native code
 │   ├── android/                  # Android native code
-│   ├── vendor/sample-data/       # NMEA test data files
 │   │
 │   ├── App.tsx                   # Root component
 │   ├── package.json              # Dependencies
 │   └── jest.config.js            # Test configuration
+│
+├── marine-assets/                # Marine domain data
+│   ├── sample-data/              # NMEA test data files
+│   ├── test-scenarios/           # YAML scenario library
+│   ├── polars/                   # Polar performance diagrams
+│   └── vessel-profiles/          # Boat configuration templates
+│
+├── test-infrastructure/          # Testing tools & standards
+│   ├── documentation-template.js # Professional test templates
+│   ├── requirement-mapping.json  # Traceability schema
+│   └── traceability-reporter.js  # Coverage analysis tool
 │
 ├── docs/                         # Project documentation
 │   ├── prd.md                    # Product Requirements Document

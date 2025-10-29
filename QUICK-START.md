@@ -159,7 +159,7 @@ cd ios && bundle exec pod install && cd ..
 ### Playback Mode
 ```bash
 # Run NMEA playback benchmark
-npm run dev:bench -- vendor/sample-data/high_density.nmea 500 5
+npm run dev:bench -- ../marine-assets/sample-data/high_density.nmea 500 5
 
 # Or use in-app:
 # Settings → Playback Mode → Select file → Start

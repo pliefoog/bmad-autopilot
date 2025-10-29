@@ -517,7 +517,7 @@ adb logcat | grep NMEA
 
 # 3. Test with sample data
 # Use playback mode to verify widgets work
-npm run dev:bench -- vendor/sample-data/sailing_session.nmea 10 30
+npm run dev:bench -- ../marine-assets/sample-data/sailing_session.nmea 10 30
 
 # 4. Check widget configuration
 # Settings → Widgets → Select Data Source
@@ -720,16 +720,16 @@ npm run test:integration:connection
 **Solutions:**
 ```bash
 # Verify sample data exists
-ls vendor/sample-data/
+ls marine-assets/sample-data/
 
 # If missing, create sample NMEA file:
-cat > vendor/sample-data/test.nmea << EOF
+cat > marine-assets/sample-data/test.nmea << EOF
 \$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
 \$SDDBT,12.4,f,3.8,M,2.1,F*3A
 EOF
 
 # Run test with correct path
-npm run dev:bench -- vendor/sample-data/test.nmea 10 5
+npm run dev:bench -- ../marine-assets/sample-data/test.nmea 10 5
 ```
 
 ---

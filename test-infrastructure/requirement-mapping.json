@@ -1,0 +1,370 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Requirement Traceability Mapping Schema",
+  "description": "Schema for mapping tests to functional/non-functional requirements and components with validation results",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Schema version",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when mapping was generated"
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Project identifier"
+        },
+        "totalTests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of tests in the mapping"
+        },
+        "coverageAnalysis": {
+          "type": "object",
+          "properties": {
+            "functionalRequirements": {
+              "type": "object",
+              "properties": {
+                "total": { "type": "integer", "minimum": 0 },
+                "covered": { "type": "integer", "minimum": 0 },
+                "coveragePercentage": { "type": "number", "minimum": 0, "maximum": 100 }
+              },
+              "required": ["total", "covered", "coveragePercentage"]
+            },
+            "nonFunctionalRequirements": {
+              "type": "object",
+              "properties": {
+                "total": { "type": "integer", "minimum": 0 },
+                "covered": { "type": "integer", "minimum": 0 },
+                "coveragePercentage": { "type": "number", "minimum": 0, "maximum": 100 }
+              },
+              "required": ["total", "covered", "coveragePercentage"]
+            },
+            "marineComponents": {
+              "type": "object",
+              "properties": {
+                "total": { "type": "integer", "minimum": 0 },
+                "covered": { "type": "integer", "minimum": 0 },
+                "coveragePercentage": { "type": "number", "minimum": 0, "maximum": 100 }
+              },
+              "required": ["total", "covered", "coveragePercentage"]
+            }
+          },
+          "required": ["functionalRequirements", "nonFunctionalRequirements", "marineComponents"]
+        }
+      },
+      "required": ["version", "generatedAt", "projectName", "totalTests", "coverageAnalysis"]
+    },
+    "requirements": {
+      "type": "object",
+      "description": "Master list of all functional and non-functional requirements",
+      "properties": {
+        "functional": {
+          "type": "object",
+          "patternProperties": {
+            "^FR-[A-Z]+-\\d+$": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "pattern": "^FR-[A-Z]+-\\d+$" },
+                "title": { "type": "string", "minLength": 1 },
+                "description": { "type": "string", "minLength": 1 },
+                "domain": { 
+                  "type": "string",
+                  "enum": ["navigation", "engine", "environment", "autopilot", "core"]
+                },
+                "priority": {
+                  "type": "string", 
+                  "enum": ["critical", "high", "medium", "low"]
+                },
+                "marineSafety": {
+                  "type": "boolean",
+                  "description": "Indicates if requirement is marine safety critical"
+                },
+                "performanceThresholds": {
+                  "type": "object",
+                  "properties": {
+                    "renderTimeMs": { "type": "number", "maximum": 16 },
+                    "dataLatencyMs": { "type": "number", "maximum": 100 },
+                    "memoryUsageMB": { "type": "number", "maximum": 50 }
+                  }
+                }
+              },
+              "required": ["id", "title", "description", "domain", "priority", "marineSafety"]
+            }
+          }
+        },
+        "nonFunctional": {
+          "type": "object",
+          "patternProperties": {
+            "^NFR-[A-Z]+-\\d+$": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "pattern": "^NFR-[A-Z]+-\\d+$" },
+                "title": { "type": "string", "minLength": 1 },
+                "description": { "type": "string", "minLength": 1 },
+                "category": {
+                  "type": "string",
+                  "enum": ["performance", "reliability", "usability", "security", "compatibility", "maintainability"]
+                },
+                "measurementCriteria": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Specific metrics for validation"
+                },
+                "targetValue": {
+                  "type": "string",
+                  "description": "Target performance or quality metric"
+                }
+              },
+              "required": ["id", "title", "description", "category", "measurementCriteria"]
+            }
+          }
+        },
+        "acceptanceCriteria": {
+          "type": "object",
+          "patternProperties": {
+            "^AC-\\d+\\.\\d+(\\.\\d+)?$": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "pattern": "^AC-\\d+\\.\\d+(\\.\\d+)?$" },
+                "title": { "type": "string", "minLength": 1 },
+                "description": { "type": "string", "minLength": 1 },
+                "epicId": { "type": "integer", "minimum": 1 },
+                "storyId": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+                "linkedRequirements": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(FR|NFR)-[A-Z]+-\\d+$"
+                  }
+                }
+              },
+              "required": ["id", "title", "description", "epicId", "storyId"]
+            }
+          }
+        }
+      },
+      "required": ["functional", "nonFunctional", "acceptanceCriteria"]
+    },
+    "components": {
+      "type": "object",
+      "description": "Marine domain components and their test mappings",
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_]*$": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "domain": {
+              "type": "string",
+              "enum": ["navigation", "engine", "environment", "autopilot", "core"]
+            },
+            "filePath": { "type": "string", "minLength": 1 },
+            "componentType": {
+              "type": "string",
+              "enum": ["widget", "service", "store", "utility", "integration"]
+            },
+            "marineSafetyCritical": {
+              "type": "boolean",
+              "description": "Indicates if component is marine safety critical"
+            },
+            "testFiles": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Paths to test files covering this component"
+            },
+            "linkedRequirements": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^(AC-\\d+\\.\\d+(\\.\\d+)?|(FR|NFR)-[A-Z]+-\\d+)$"
+              }
+            }
+          },
+          "required": ["name", "domain", "filePath", "componentType", "marineSafetyCritical"]
+        }
+      }
+    },
+    "testMappings": {
+      "type": "object",
+      "description": "Individual test case mappings to requirements and components",
+      "patternProperties": {
+        ".*\\.test\\.(js|tsx?)$": {
+          "type": "object",
+          "properties": {
+            "filePath": { "type": "string", "minLength": 1 },
+            "testSuites": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "suiteName": { "type": "string", "minLength": 1 },
+                  "testCases": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "testName": { "type": "string", "minLength": 1 },
+                        "purpose": { "type": "string", "minLength": 1 },
+                        "requirements": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^(AC-\\d+\\.\\d+(\\.\\d+)?|(FR|NFR)-[A-Z]+-\\d+)$"
+                          },
+                          "minItems": 1
+                        },
+                        "components": {
+                          "type": "array",
+                          "items": { "type": "string" },
+                          "minItems": 1
+                        },
+                        "testMethod": {
+                          "type": "string",
+                          "enum": ["static-mock", "api-injection", "scenario-execution", "mock-strategy"]
+                        },
+                        "expectedOutcomes": {
+                          "type": "array",
+                          "items": { "type": "string" },
+                          "minItems": 1
+                        },
+                        "errorConditions": {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        },
+                        "performanceThresholds": {
+                          "type": "object",
+                          "properties": {
+                            "renderTimeMs": { "type": "number", "maximum": 16 },
+                            "dataLatencyMs": { "type": "number", "maximum": 100 },
+                            "memoryUsageMB": { "type": "number", "maximum": 50 }
+                          }
+                        },
+                        "marineSafetyCritical": { "type": "boolean" },
+                        "validationResults": {
+                          "type": "object",
+                          "properties": {
+                            "lastRun": { "type": "string", "format": "date-time" },
+                            "status": {
+                              "type": "string",
+                              "enum": ["passed", "failed", "skipped", "pending"]
+                            },
+                            "executionTimeMs": { "type": "number", "minimum": 0 },
+                            "coveragePercentage": { "type": "number", "minimum": 0, "maximum": 100 },
+                            "performanceMetrics": {
+                              "type": "object",
+                              "properties": {
+                                "actualRenderTimeMs": { "type": "number", "minimum": 0 },
+                                "actualDataLatencyMs": { "type": "number", "minimum": 0 },
+                                "actualMemoryUsageMB": { "type": "number", "minimum": 0 }
+                              }
+                            },
+                            "errors": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "message": { "type": "string" },
+                                  "stack": { "type": "string" },
+                                  "type": { "type": "string" }
+                                },
+                                "required": ["message"]
+                              }
+                            }
+                          },
+                          "required": ["lastRun", "status"]
+                        }
+                      },
+                      "required": ["testName", "purpose", "requirements", "components", "testMethod", "expectedOutcomes"]
+                    }
+                  }
+                },
+                "required": ["suiteName", "testCases"]
+              }
+            }
+          },
+          "required": ["filePath", "testSuites"]
+        }
+      }
+    },
+    "gapAnalysis": {
+      "type": "object",
+      "description": "Identification of untested requirements and components",
+      "properties": {
+        "untestedRequirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "requirementId": { "type": "string" },
+              "title": { "type": "string" },
+              "domain": { "type": "string" },
+              "priority": { "type": "string" },
+              "marineSafetyCritical": { "type": "boolean" },
+              "recommendedTestType": {
+                "type": "string",
+                "enum": ["unit", "integration", "e2e", "performance", "security"]
+              },
+              "riskLevel": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"]
+              }
+            },
+            "required": ["requirementId", "title", "domain", "priority", "marineSafetyCritical", "riskLevel"]
+          }
+        },
+        "undertestedComponents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "componentName": { "type": "string" },
+              "domain": { "type": "string" },
+              "currentCoveragePercentage": { "type": "number", "minimum": 0, "maximum": 100 },
+              "targetCoveragePercentage": { "type": "number", "minimum": 0, "maximum": 100 },
+              "marineSafetyCritical": { "type": "boolean" },
+              "missingTestTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["unit", "integration", "e2e", "performance", "security"]
+                }
+              }
+            },
+            "required": ["componentName", "domain", "currentCoveragePercentage", "targetCoveragePercentage", "marineSafetyCritical"]
+          }
+        },
+        "performanceGaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "testPath": { "type": "string" },
+              "testName": { "type": "string" },
+              "thresholdType": {
+                "type": "string",
+                "enum": ["renderTime", "dataLatency", "memoryUsage", "crashFreeRate"]
+              },
+              "expectedValue": { "type": "number" },
+              "actualValue": { "type": "number" },
+              "variance": { "type": "number" },
+              "riskLevel": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"]
+              }
+            },
+            "required": ["testPath", "testName", "thresholdType", "expectedValue", "actualValue", "variance", "riskLevel"]
+          }
+        }
+      },
+      "required": ["untestedRequirements", "undertestedComponents", "performanceGaps"]
+    }
+  },
+  "required": ["metadata", "requirements", "components", "testMappings", "gapAnalysis"]
+}

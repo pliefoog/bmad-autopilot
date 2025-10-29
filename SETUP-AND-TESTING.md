@@ -695,8 +695,8 @@ Replay pre-recorded NMEA data files for realistic testing.
 
 **Sample Data Files:**
 ```bash
-# Located in: vendor/sample-data/
-ls vendor/sample-data/
+# Located in: marine-assets/sample-data/
+ls marine-assets/sample-data/
 # high_density.nmea    - 500 msg/sec stress test
 # sailing_session.nmea - Typical sailing data
 # motor_session.nmea   - Powerboat engine data
@@ -706,7 +706,7 @@ ls vendor/sample-data/
 
 ```bash
 # Run playback benchmark
-npm run dev:bench -- vendor/sample-data/high_density.nmea 500 5
+npm run dev:bench -- ../marine-assets/sample-data/high_density.nmea 500 5
 # Arguments: <file> <rate-msg/sec> <duration-seconds>
 
 # Validates:

@@ -9,5 +9,44 @@
     "cursor-workspace": true
   },
   "github.copilot.chat.agent.autoFix": true,
-  "chat.tools.autoApprove": false
+  "chat.tools.autoApprove": false,
+  
+  // Story 11.3 AC2: VS Code Test Explorer Integration
+  "jest.jestCommandLine": "npm run test",
+  "jest.autoRun": {
+    "watch": false,
+    "onStartup": ["all-tests"]
+  },
+  "jest.showCoverageOnLoad": true,
+  "jest.coverageFormatter": "GutterFormatter",
+  
+  // AC2.1: Simulator connection status display in test explorer UI
+  "testing.openTesting": "openOnTestStart",
+  "testing.followRunningTest": true,
+  "testing.defaultGutterClickAction": "run",
+  
+  // AC2.2: Real-time simulator availability indicators  
+  "testing.showAllMessages": true,
+  "testing.gutterEnabled": true,
+  
+  // AC2.4: Performance monitoring integration with threshold warnings
+  "jest.debugMode": true,
+  "jest.enableInlineErrorMessages": true,
+  
+  // Story 11.3: Test categorization based on simulator availability
+  "testing.saveBeforeTest": true,
+  "files.associations": {
+    "*.test.ts": "typescript",
+    "*.integration.test.ts": "typescript"
+  },
+  
+  // Environment-specific test execution indicators
+  "workbench.colorCustomizations": {
+    "testing.iconFailed": "#ff6b6b",
+    "testing.iconErrored": "#ffa500", 
+    "testing.iconPassed": "#51cf66",
+    "testing.iconQueued": "#74c0fc",
+    "testing.iconSkipped": "#868e96",
+    "testing.iconUnset": "#adb5bd"
+  }
 }

@@ -1,13 +1,17 @@
 module.exports = {
   preset: 'react-native',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
+  setupFilesAfterEnv: [
+    '<rootDir>/__tests__/setup.ts',
+    '<rootDir>/__tests__/setup-test-environment.ts'
+  ],
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|react-native-tcp-socket|react-native-udp|@react-native-async-storage|react-native-vector-icons|@sentry|zustand|react-native-svg|react-native-sound|expo-brightness|expo-modules-core|react-native-gesture-handler)/)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@testing/(.*)$': '<rootDir>/src/testing/$1',
+    '^@test-standards/(.*)$': '<rootDir>/../test-infrastructure/$1',
   },
   testMatch: [
     '**/__tests__/**/*.test.ts?(x)',
@@ -67,4 +71,9 @@ module.exports = {
     enableGlobally: false,
   },
   testTimeout: 10000,
+  // Story 11.4: Professional Test Documentation Standards - Traceability Support
+  coverageDirectory: 'coverage',
+  collectCoverage: false, // Enable via CLI flag for traceability reports
+  coverageReporters: ['json-summary', 'text', 'lcov'],
+  testResultsProcessor: undefined, // Can be configured for custom result processing
 };

@@ -1,5 +1,13 @@
 # GitHub Copilot Instructions - BMad Autopilot
 
+## ⚠️ CRITICAL PROJECT REORGANIZATION NOTICE ⚠️
+
+**VENDOR FOLDER REORGANIZATION IN PROGRESS (October 2025):**
+- **OLD STRUCTURE:** Dual `vendor/` folders (root + app level) causing path confusion
+- **NEW STRUCTURE:** `marine-assets/` + `test-infrastructure/` for logical separation
+- **ACTION REQUIRED:** If you encounter incorrect path references to `vendor/`, **STOP and ask the user for permission to update paths** before proceeding
+- **AFFECTED PATHS:** All references to `vendor/test-standards/`, `vendor/sample-data/`, `vendor/polars/`, etc.
+
 ## Project Overview
 
 This is a **React Native cross-platform marine instrument display** that connects to boat NMEA networks via WiFi bridges. The app runs entirely on-device (no server) and transforms smartphones/tablets/desktops into comprehensive marine displays with Raymarine autopilot control.

@@ -77,6 +77,27 @@ class SimulatorControlAPI {
       });
     });
 
+    // Main status endpoint for Story 11.3 auto-discovery
+    this.app.get('/api/status', (req, res) => {
+      res.json({
+        running: this.simulator.isRunning,
+        status: this.simulator.isRunning ? 'active' : 'stopped',
+        simulator: {
+          version: '1.0.0',
+          uptime: Date.now() - this.performanceMetrics.startTime,
+          clients_connected: this.simulator.clients.size,
+          total_messages: this.simulator.stats.totalMessages || 0,
+          messages_per_second: this.simulator.stats.messagesPerSecond || 0
+        },
+        endpoints: {
+          websocket: `ws://localhost:8080`,
+          tcp: `localhost:2000`,
+          api: `http://localhost:${this.apiPort}`
+        },
+        timestamp: new Date().toISOString()
+      });
+    });
+
     // === Scenario Management Endpoints (AC4) ===
     
     // Start scenario
