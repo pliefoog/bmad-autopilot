@@ -9,6 +9,8 @@ import { usePresentationStore } from '../presentation/presentationStore';
 import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface EngineWidgetProps {
   id: string;
@@ -38,15 +40,29 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Multi-instance Engine data
-  const engineData = useNmeaStore(useCallback((state: any) => state.getEngineData(instanceNumber), [instanceNumber]));
+  // FIXED: Use empty dependency array like other widgets to prevent selector recreation
+  const engineData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.engine[instanceNumber], []));
   
-  // Extract engine data with defaults for multi-instance support
-  const rpm = engineData?.rpm || null;
-  const coolantTemp = engineData?.coolantTemp || null;
-  const oilPressure = engineData?.oilPressure || null;
-  const alternatorVoltage = engineData?.alternatorVoltage || null;
-  const fuelFlow = engineData?.fuelFlow || null;
-  const engineHours = engineData?.engineHours || null;
+  // Extract engine data with defaults for multi-instance support - match WindWidget pattern exactly
+  // Convert undefined to null to prevent toFixed() errors
+  const rpm = engineData?.rpm ?? null;
+  const coolantTemp = engineData?.coolantTemp ?? null;
+  const oilPressure = engineData?.oilPressure ?? null;
+  const alternatorVoltage = engineData?.alternatorVoltage ?? null;
+  const fuelFlow = engineData?.fuelFlow ?? null;
+  const engineHours = engineData?.engineHours ?? null;
+  
+  // Debug logging to diagnose flickering
+  React.useEffect(() => {
+    console.log(`🔧 [EngineWidget-${instanceNumber}] Store data:`, {
+      hasEngineData: !!engineData,
+      rpm,
+      coolantTemp,
+      oilPressure,
+      alternatorVoltage,
+      timestamp: engineData?.timestamp
+    });
+  }, [instanceNumber, engineData, rpm, coolantTemp, oilPressure, alternatorVoltage]);
   
   // Epic 9 Enhanced Presentation System for engine values
   const frequencyPresentation = useDataPresentation('frequency');
@@ -66,7 +82,8 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   ): MetricDisplayData => {
     const presDetails = presentation.presentation;
     
-    if (value === null) {
+    // Check for both null and undefined to prevent toFixed() errors
+    if (value === null || value === undefined) {
       return {
         mnemonic: engineMnemonic, // NMEA source abbreviation 
         value: '---',
@@ -286,7 +303,15 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('engine')?.icon || 'car-outline'} 
+            size={12} 
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={styles.title}>{title}</Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
@@ -296,7 +321,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={styles.pinIcon}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

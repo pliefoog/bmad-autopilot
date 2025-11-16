@@ -70,6 +70,21 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     resetAppToDefaults: async () => {
       await actionHandlers.performFactoryReset();
     },
+    openAlarmConfiguration: () => {
+      // Navigate to alarm configuration screen
+      handleClose();
+      setTimeout(() => {
+        // Use Expo Router navigation
+        const router = require('expo-router');
+        router.router.push('/settings/alarms');
+      }, 300);
+    },
+    openAlarmHistory: () => {
+      // Navigate to alarm history (placeholder for now)
+      handleClose();
+      // TODO: Implement alarm history screen
+      console.log('Alarm History - coming soon');
+    },
   };
 
   // Handle menu close with animation

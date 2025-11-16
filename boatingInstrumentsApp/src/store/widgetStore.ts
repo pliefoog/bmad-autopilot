@@ -110,6 +110,7 @@ interface WidgetActions {
   getInstanceWidgetMetrics: () => { totalInstanceWidgets: number; orphanedWidgets: number; lastCleanupTime: number };
   forceInstanceCleanup: () => void;
   resetAppToDefaults: () => Promise<void>;
+  emergencyReset: () => void;
   // TODO: Pagination methods (Story 6.11) - temporarily disabled for dynamic widget focus
 }
 
@@ -1084,55 +1085,14 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       resetAppToDefaults: async () => {
-        console.log('[WidgetStore] 🔄 Performing factory reset - Restoring to initial state');
-        
-        // Stop any running services
-        try {
-          instanceDetectionService.stopScanning();
-        } catch (error) {
-          console.log('[WidgetStore] Warning: Could not stop instance detection service');
-        }
+        console.log('[WidgetStore] Executing factory reset...');
 
-        // Reset widget store to initial state
-        const initialState = {
-          availableWidgets: [
-            'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 
-            'battery', 'tanks', 'autopilot', 'weather', 'navigation'
-          ],
-          selectedWidgets: [],
-          currentDashboard: 'default',
-          dashboards: [
-            {
-              id: 'default',
-              name: 'Default Dashboard',
-              widgets: [], // Start with empty dashboard
-              gridSize: 20,
-              snapToGrid: true,
-              columns: 12,
-              rows: 8,
-              backgroundColor: '#f0f0f0'
-            }
-          ],
-          presets: [],
-          editMode: false,
-          gridVisible: false,
-          dragMode: false,
-          pinnedWidgets: new Set<string>(),
-          widgetExpanded: {},
-          // Pagination state
-          currentPage: 0,
-          totalPages: 1,
-          pageWidgets: { 0: [] },
-          maxWidgetsPerPage: 6,
-          isAnimatingPageTransition: false,
-        };
-
-        // Apply the reset
-        set(initialState);
-
-        // Clear web storage (localStorage)
+        // First, clear ALL storage comprehensively
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
+            // Clear the specific Zustand persist key first
+            window.localStorage.removeItem('widget-store');
+            
             // Clear all widget-related localStorage
             const keysToRemove = [];
             for (let i = 0; i < window.localStorage.length; i++) {
@@ -1150,86 +1110,129 @@ export const useWidgetStore = create<WidgetStore>()(
             }
             keysToRemove.forEach(key => window.localStorage.removeItem(key));
             console.log('[WidgetStore] Cleared localStorage keys:', keysToRemove);
+            
+            // Force storage event to trigger persist middleware cleanup
+            window.dispatchEvent(new StorageEvent('storage', {
+              key: 'widget-store',
+              oldValue: null,
+              newValue: null,
+              url: window.location.href
+            }));
           }
         } catch (error) {
-          console.log('[WidgetStore] Warning: Could not clear localStorage:', error);
+          console.error('[WidgetStore] Error clearing localStorage:', error);
         }
 
-        // Clear mobile storage (AsyncStorage) including onboarding state
-        try {
-          const AsyncStorage = (globalThis as any).AsyncStorage;
-          if (AsyncStorage) {
-            try {
-              await AsyncStorage.clear();
-              console.log('[WidgetStore] AsyncStorage completely cleared');
-            } catch (asyncError) {
-              console.warn('[WidgetStore] AsyncStorage clear failed, clearing specific keys:', asyncError);
-              // Try to clear specific keys we know about
-              const knownKeys = [
-                '@bmad_autopilot:has_completed_onboarding', // Reset onboarding
-                '@bmad_autopilot:user_preferences',
-                '@bmad_autopilot:widget_layouts',
-                '@bmad_autopilot:connection_settings',
-                '@bmad_autopilot:theme_settings',
-                '@bmad_autopilot:tutorial_progress',
-                '@bmad_autopilot:diagnostic_data',
-                '@bmad_autopilot:help_content_cache'
-              ];
-              
-              for (const key of knownKeys) {
-                try {
-                  await AsyncStorage.removeItem(key);
-                } catch (keyError) {
-                  console.warn(`[WidgetStore] Failed to remove ${key}:`, keyError);
-                }
-              }
+        const initialState = {
+          // Core widget state
+          availableWidgets: [
+            'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 
+            'battery', 'tanks', 'autopilot', 'weather', 'navigation'
+          ],
+          selectedWidgets: [],
+          currentDashboard: 'default',
+          dashboards: [
+            {
+              id: 'default',
+              name: 'Default Dashboard',
+              widgets: [],
+              gridSize: 20,
+              snapToGrid: true,
+              columns: 12,
+              rows: 8,
+              backgroundColor: '#f0f0f0'
             }
+          ],
+          presets: [],
+          editMode: false,
+          gridVisible: false,
+          widgetExpanded: {},
+          // Dynamic widget lifecycle configuration
+          widgetExpirationTimeout: 60000,
+          enableWidgetAutoRemoval: true,
+        };
+
+        // Apply the reset state - this will trigger persist middleware to save the clean state
+        set(initialState);
+
+        // Force a small delay to let persist middleware complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Double-check that localStorage is cleared after state reset
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.removeItem('widget-store');
+            console.log('[WidgetStore] Double-cleared widget-store key after state reset');
           }
         } catch (error) {
-          console.log('[WidgetStore] Warning: Could not access AsyncStorage:', error);
+          console.error('[WidgetStore] Error in double-clear:', error);
         }
 
-        // Reset all application stores to factory defaults
+        // Clear AsyncStorage (React Native)
+        try {
+          if (typeof window === 'undefined') {
+            // React Native environment
+            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+            AsyncStorage.clear().catch((error: Error) => {
+              console.error('[WidgetStore] Error clearing AsyncStorage:', error);
+            });
+          }
+        } catch (error) {
+          console.error('[WidgetStore] Error accessing AsyncStorage:', error);
+        }
+
+        // Reset other stores
         try {
           // Import and reset other stores
-          const { useNmeaStore } = await import('./nmeaStore');
-          const { useConnectionStore } = await import('./connectionStore');
-          const { useSettingsStore } = await import('./settingsStore');
-          const { useAlarmStore } = await import('./alarmStore');
-          
-          // Reset NMEA store
-          const nmeaStore = useNmeaStore.getState();
-          if (nmeaStore.reset) {
-            nmeaStore.reset();
-            console.log('[WidgetStore] NMEA store reset to defaults');
-          }
-          
-          // Reset connection store
-          const connectionStore = useConnectionStore.getState();
-          if (connectionStore.reset) {
-            connectionStore.reset();
-            console.log('[WidgetStore] Connection store reset to defaults');
-          }
-          
-          // Reset settings store
-          const settingsStore = useSettingsStore.getState();
-          if (settingsStore.resetToDefaults) {
-            settingsStore.resetToDefaults();
-            console.log('[WidgetStore] Settings store reset to defaults');
-          }
-          
-          // Reset alarm store
-          const alarmStore = useAlarmStore.getState();
-          if (alarmStore.reset) {
-            alarmStore.reset();
-            console.log('[WidgetStore] Alarm store reset to defaults');
-          }
-          
-        } catch (storeError) {
-          console.warn('[WidgetStore] Some stores could not be reset:', storeError);
+          const { useNmeaStore } = require('./nmeaStore');
+          const { useConnectionStore } = require('./connectionStore');
+          const { useSettingsStore } = require('./settingsStore');
+          const { useAlarmStore } = require('./alarmStore');
+
+          // Reset all stores to their initial state
+          useNmeaStore.getState().reset?.();
+          useConnectionStore.getState().reset?.();
+          useSettingsStore.getState().reset?.();
+          useAlarmStore.getState().reset?.();
+        } catch (error) {
+          console.error('[WidgetStore] Error resetting other stores:', error);
         }
 
-        console.log('[WidgetStore] ✅ Factory reset complete - App restored to first-launch state');
+        console.log('[WidgetStore] Factory reset completed');
+        
+        // Final verification - log current state after reset
+        const finalState = get();
+        console.log('[WidgetStore] Final state after reset:', {
+          selectedWidgets: finalState.selectedWidgets,
+          dashboards: finalState.dashboards,
+          currentDashboard: finalState.currentDashboard
+        });
+      },
+      
+      // Emergency reset method that completely bypasses persist middleware
+      emergencyReset: () => {
+        console.log('[WidgetStore] EMERGENCY RESET - Bypassing persist middleware');
+        
+        // Clear localStorage aggressively
+        if (typeof window !== 'undefined' && window.localStorage) {
+          // Clear absolutely everything widget-related
+          const allKeys = Object.keys(window.localStorage);
+          allKeys.forEach(key => {
+            if (key.includes('widget') || key.includes('dashboard') || key.includes('bmad')) {
+              window.localStorage.removeItem(key);
+              console.log(`[WidgetStore] Emergency cleared: ${key}`);
+            }
+          });
+          
+          // Also clear the persist key
+          window.localStorage.removeItem('widget-store');
+        }
+        
+        // Force page reload to completely reset all stores
+        if (typeof window !== 'undefined') {
+          console.log('[WidgetStore] Forcing page reload to complete reset');
+          window.location.reload();
+        }
       },
 
       // Dynamic widget lifecycle actions

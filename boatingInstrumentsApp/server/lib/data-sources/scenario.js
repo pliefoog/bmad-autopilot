@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 const EventEmitter = require('events');
+const ScenarioSchemaValidator = require('../scenario-schema');
 
 class ScenarioDataSource extends EventEmitter {
   constructor(config) {
@@ -68,8 +69,18 @@ class ScenarioDataSource extends EventEmitter {
         throw new Error(`Scenario not found: ${this.config.scenarioName}`);
       }
 
+      // Validate scenario schema
+      const validation = ScenarioSchemaValidator.validate(this.scenario);
+      if (!validation.valid) {
+        console.warn(`⚠️ Scenario validation warnings for ${this.config.scenarioName}:`);
+        validation.errors.forEach(error => console.warn(`   • ${error}`));
+      }
+
       this.emit('status', `Loaded scenario: ${this.scenario.name || this.config.scenarioName}`);
       this.emit('status', `Description: ${this.scenario.description || 'No description'}`);
+      
+      // Initialize YAML-defined sentence generators now that scenario is loaded
+      this.initializeYAMLGenerators();
       
     } catch (error) {
       throw new Error(`Failed to load scenario: ${error.message}`);
@@ -80,12 +91,49 @@ class ScenarioDataSource extends EventEmitter {
    * Resolve scenario file path
    */
   resolveScenarioPath(scenarioName) {
-    // Try different path patterns
+    // If it's already a path (contains slashes), try marine-assets with that path structure
+    if (scenarioName.includes('/') || scenarioName.includes('\\')) {
+      const marineAssetsPath = path.join(__dirname, '../../../../marine-assets/test-scenarios', scenarioName);
+      for (const ext of ['.yml', '.yaml']) {
+        const fullPath = marineAssetsPath + ext;
+        if (fs.existsSync(fullPath)) {
+          return fullPath;
+        }
+      }
+      
+      // Try as absolute path
+      const resolvedPath = path.resolve(scenarioName);
+      if (fs.existsSync(resolvedPath)) {
+        return resolvedPath;
+      }
+      
+      // If path-based lookup failed, extract just the filename and search recursively
+      const filename = scenarioName.split('/').pop().split('\\').pop();
+      const foundPath = this.searchForScenarioFile(filename);
+      if (foundPath) return foundPath;
+    }
+    
+    // Try simple name lookups
+    const foundPath = this.searchForScenarioFile(scenarioName);
+    if (foundPath) return foundPath;
+
+    // Return a reasonable default for error reporting
+    return path.join(__dirname, '../../../../marine-assets/test-scenarios', `${scenarioName}.yml`);
+  }
+
+  /**
+   * Search for scenario file by name in all possible locations
+   */
+  searchForScenarioFile(scenarioName) {
+    // Try flat structure first (faster)
     const possiblePaths = [
+      // Local scenarios directory
       path.join(__dirname, '../../scenarios', `${scenarioName}.yml`),
       path.join(__dirname, '../../scenarios', scenarioName, 'scenario.yml'),
       path.join(__dirname, '../../scenarios', `${scenarioName}.yaml`),
-      scenarioName // If it's already a full path
+      // Marine assets root level
+      path.join(__dirname, '../../../../marine-assets/test-scenarios', `${scenarioName}.yml`),
+      path.join(__dirname, '../../../../marine-assets/test-scenarios', `${scenarioName}.yaml`),
     ];
 
     for (const scenarioPath of possiblePaths) {
@@ -93,8 +141,45 @@ class ScenarioDataSource extends EventEmitter {
         return scenarioPath;
       }
     }
+    
+    // Recursively search subdirectories in marine-assets/test-scenarios
+    const marineAssetsDir = path.join(__dirname, '../../../../marine-assets/test-scenarios');
+    if (fs.existsSync(marineAssetsDir)) {
+      const foundPath = this.findScenarioInSubdirectories(marineAssetsDir, scenarioName);
+      if (foundPath) return foundPath;
+    }
+    
+    return null;
+  }
 
-    return possiblePaths[0]; // Return first attempt for error reporting
+  /**
+   * Recursively search for scenario file in subdirectories
+   */
+  findScenarioInSubdirectories(baseDir, scenarioName) {
+    try {
+      const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const subDirPath = path.join(baseDir, entry.name);
+          // Check for scenario file in this subdirectory
+          for (const ext of ['.yml', '.yaml']) {
+            const scenarioPath = path.join(subDirPath, `${scenarioName}${ext}`);
+            if (fs.existsSync(scenarioPath)) {
+              return scenarioPath;
+            }
+          }
+          
+          // Recurse into subdirectory
+          const foundPath = this.findScenarioInSubdirectories(subDirPath, scenarioName);
+          if (foundPath) return foundPath;
+        }
+      }
+    } catch (error) {
+      // Ignore errors reading directory
+    }
+    
+    return null;
   }
 
   /**
@@ -152,6 +237,23 @@ class ScenarioDataSource extends EventEmitter {
             generators: ['depth', 'speed', 'wind', 'gps', 'heading', 'autopilot']
           }
         ]
+      },
+      'multi-equipment-detection': {
+        name: 'Multi-Equipment Detection',
+        description: 'Multi-instance equipment testing with various sensors',
+        bridgeMode: 'nmea0183',
+        phases: [
+          {
+            name: 'equipment-discovery',
+            duration: 10000,
+            generators: ['depth', 'speed', 'wind', 'gps', 'heading']
+          },
+          {
+            name: 'steady-monitoring',
+            duration: 60000,
+            generators: ['depth', 'speed', 'wind', 'gps', 'heading', 'autopilot']
+          }
+        ]
       }
     };
 
@@ -201,13 +303,15 @@ class ScenarioDataSource extends EventEmitter {
       this.currentPhase = phase;
       this.phaseStartTime = Date.now();
       
-      this.emit('status', `Starting phase: ${phase.name} (${phase.duration}ms duration)`);
+      // Convert duration from seconds to milliseconds
+      const phaseDurationMs = phase.duration * 1000;
+      this.emit('status', `Starting phase: ${phase.name} (${phase.duration}s duration)`);
       
       // Start generators for this phase
       this.startPhaseGenerators(phase);
       
       // Schedule next phase
-      const phaseDuration = Math.round(phase.duration / this.config.speed);
+      const phaseDuration = Math.round(phaseDurationMs / this.config.speed);
       const phaseTimer = setTimeout(() => {
         this.stopPhaseGenerators(phase);
         this.stats.phasesCompleted++;
@@ -225,12 +329,21 @@ class ScenarioDataSource extends EventEmitter {
    * Start generators for current phase
    */
   startPhaseGenerators(phase) {
-    if (!phase.generators) return;
+    // Start explicitly listed generators
+    if (phase.generators) {
+      phase.generators.forEach(generatorName => {
+        const generator = this.dataGenerators.get(generatorName);
+        if (generator) {
+          this.startGenerator(generatorName, generator, phase);
+        }
+      });
+    }
 
-    phase.generators.forEach(generatorName => {
-      const generator = this.dataGenerators.get(generatorName);
-      if (generator) {
+    // Also start all YAML-defined generators (they have their own frequency control)
+    this.dataGenerators.forEach((generator, generatorName) => {
+      if (generatorName.startsWith('yaml_')) {
         this.startGenerator(generatorName, generator, phase);
+        console.log(`🎛️ Started YAML generator: ${generatorName}`);
       }
     });
   }
@@ -243,10 +356,16 @@ class ScenarioDataSource extends EventEmitter {
     const interval = Math.round(baseInterval / this.config.speed);
     
     const timer = setInterval(() => {
-      const message = generator.generate();
-      if (message) {
-        this.stats.messagesGenerated++;
-        this.emit('data', message);
+      const messages = generator.generate();
+      if (messages) {
+        // Handle both single messages and arrays of messages
+        const messageArray = Array.isArray(messages) ? messages : [messages];
+        messageArray.forEach(message => {
+          if (message && message.trim()) {
+            this.stats.messagesGenerated++;
+            this.emit('data', message);
+          }
+        });
       }
     }, interval);
 
@@ -265,11 +384,20 @@ class ScenarioDataSource extends EventEmitter {
    * Start continuous generation (fallback mode)
    */
   startContinuousGeneration() {
-    const generators = ['depth', 'speed', 'wind', 'gps'];
+    // Start built-in generators
+    const builtInGenerators = ['depth', 'speed', 'wind', 'gps'];
     
-    generators.forEach(generatorName => {
+    builtInGenerators.forEach(generatorName => {
       const generator = this.dataGenerators.get(generatorName);
       if (generator) {
+        this.startGenerator(generatorName, generator, { name: 'continuous' });
+      }
+    });
+    
+    // Start all YAML-defined generators
+    this.dataGenerators.forEach((generator, generatorName) => {
+      if (generatorName.startsWith('yaml_')) {
+        console.log(`🔄 Starting YAML generator: ${generatorName}`);
         this.startGenerator(generatorName, generator, { name: 'continuous' });
       }
     });
@@ -364,6 +492,622 @@ class ScenarioDataSource extends EventEmitter {
         return this.generateAPB();
       }
     });
+
+  }
+
+  /**
+   * Initialize generators for YAML-defined sentences
+   */
+  initializeYAMLGenerators() {
+    console.log(`🔍 Checking for YAML sentences in scenario...`);
+    console.log(`   Scenario exists: ${!!this.scenario}`);
+    
+    // Standard field name is 'nmea_sentences'
+    const sentences = this.scenario?.nmea_sentences;
+    
+    console.log(`   nmea_sentences exists: ${!!sentences}`);
+    console.log(`   nmea_sentences is array: ${Array.isArray(sentences)}`);
+    console.log(`   nmea_sentences count: ${sentences?.length || 0}`);
+    
+    if (!sentences || !Array.isArray(sentences)) {
+      console.log(`⚠️ No YAML sentences found in scenario (expected 'nmea_sentences' array)`);
+      return;
+    }
+
+    // Process each sentence definition from YAML
+    sentences.forEach((sentenceDef, index) => {
+      const generatorName = `yaml_${sentenceDef.type.toLowerCase()}_${index}`;
+      const frequencyHz = sentenceDef.frequency || 1;
+      const intervalMs = Math.round(1000 / frequencyHz);
+
+      // Create generator based on sentence type
+      switch (sentenceDef.type) {
+        case 'XDR_BATTERY':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateYAMLBatterySentence(sentenceDef)
+          });
+          console.log(`🔋 Added YAML battery generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'XDR_TANK':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateYAMLTankSentence(sentenceDef)
+          });
+          break;
+
+        case 'XDR_TEMPERATURE':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateYAMLTemperatureSentence(sentenceDef)
+          });
+          break;
+
+        case 'RPM':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateYAMLRPMSentence(sentenceDef)
+          });
+          console.log(`⚙️ Added YAML RPM generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'XDR':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateYAMLXDRSentence(sentenceDef)
+          });
+          console.log(`📊 Added YAML XDR generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'RSA':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateYAMLRSASentence(sentenceDef)
+          });
+          console.log(`🎛️ Added YAML RSA generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        default:
+          console.warn(`⚠️ Unknown YAML sentence type: ${sentenceDef.type}`);
+      }
+    });
+  }
+
+  /**
+   * Generate comprehensive battery XDR sentences from YAML configuration
+   */
+  generateYAMLBatterySentence(sentenceDef) {
+    const instance = sentenceDef.instance || 0;
+    
+    if (!this.scenario?.data?.battery_voltage) {
+      return [];
+    }
+
+    // Get battery configuration for this instance
+    const batteryEntries = Object.entries(this.scenario.data.battery_voltage);
+    if (instance >= batteryEntries.length) {
+      return [];
+    }
+
+    const [batteryKey, batteryConfig] = batteryEntries[instance];
+    const voltage = this.getYAMLDataValue(batteryKey, batteryConfig);
+    
+    if (voltage !== null) {
+      const messages = [];
+      const batteryId = `BAT_${instance}`;
+      
+      // 1. Voltage XDR sentence
+      const voltageSentence = `$IIXDR,U,${voltage.toFixed(1)},V,${batteryId}`;
+      messages.push(voltageSentence + '*' + this.calculateChecksum(voltageSentence.substring(1)));
+      
+      // 2. Current (AMP) XDR sentence - calculate realistic current based on voltage
+      const current = this.calculateBatteryCurrent(voltage, instance, batteryConfig);
+      const currentSentence = `$IIXDR,I,${current.toFixed(1)},A,${batteryId}`;
+      messages.push(currentSentence + '*' + this.calculateChecksum(currentSentence.substring(1)));
+      
+      // 3. Temperature (TMP) XDR sentence - battery temperature
+      const temperature = this.calculateBatteryTemperature(voltage, instance);
+      const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${batteryId}_TMP`;
+      messages.push(tempSentence + '*' + this.calculateChecksum(tempSentence.substring(1)));
+      
+      // 4. State of Charge (SOC) XDR sentence - percentage
+      const soc = this.calculateBatterySOC(voltage, instance);
+      const socSentence = `$IIXDR,P,${soc.toFixed(0)},P,${batteryId}_SOC`;
+      messages.push(socSentence + '*' + this.calculateChecksum(socSentence.substring(1)));
+      
+      // 5. Nominal Voltage (NOM) XDR sentence - rated voltage
+      const nominalVoltage = this.getBatteryNominalVoltage(instance);
+      const nomSentence = `$IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
+      messages.push(nomSentence + '*' + this.calculateChecksum(nomSentence.substring(1)));
+      
+      // 6. Battery Chemistry (CHEM) XDR sentence - battery type
+      const chemistry = this.getBatteryChemistry(instance);
+      const chemSentence = `$IIXDR,G,${chemistry},,${batteryId}_CHEM`;
+      messages.push(chemSentence + '*' + this.calculateChecksum(chemSentence.substring(1)));
+      
+      console.log(`🔋 Generated comprehensive battery data for ${batteryId}: V=${voltage.toFixed(1)}V, I=${current.toFixed(1)}A, SOC=${soc.toFixed(0)}%, T=${temperature.toFixed(1)}°C`);
+      
+      return messages;
+    }
+
+    return [];
+  }
+
+  /**
+   * Calculate realistic battery current based on voltage and battery state
+   */
+  calculateBatteryCurrent(voltage, instance, batteryConfig) {
+    const currentTime = Date.now();
+    const timeSeconds = (currentTime / 1000) % 3600; // Hour cycle
+    
+    // Different current profiles for different battery types
+    const batteryProfiles = [
+      { // House battery - moderate cycling
+        baseLoad: -8.5,
+        chargingCurrent: 15,
+        chargingVoltage: 13.8
+      },
+      { // Engine battery - minimal load, alternator charging
+        baseLoad: -1.2,
+        chargingCurrent: 25,
+        chargingVoltage: 14.2
+      },
+      { // Thruster battery - high current capability
+        baseLoad: -2.0,
+        chargingCurrent: 40,
+        chargingVoltage: 13.6
+      },
+      { // Backup/Windlass battery
+        baseLoad: -0.8,
+        chargingCurrent: 12,
+        chargingVoltage: 13.4
+      }
+    ];
+    
+    const profile = batteryProfiles[instance % batteryProfiles.length];
+    
+    // Determine if charging (voltage above charging threshold)
+    if (voltage > profile.chargingVoltage - 0.5) {
+      // Charging - positive current with some variation
+      const chargingPhase = Math.sin(timeSeconds * 0.001) * 0.3 + 0.7; // 0.4 to 1.0
+      return profile.chargingCurrent * chargingPhase + (Math.random() - 0.5) * 2;
+    } else {
+      // Discharging - negative current
+      const loadVariation = 1 + Math.sin(timeSeconds * 0.002) * 0.5; // 0.5 to 1.5 load factor
+      return profile.baseLoad * loadVariation + (Math.random() - 0.5) * 1.5;
+    }
+  }
+
+  /**
+   * Calculate battery temperature based on current and ambient conditions
+   */
+  calculateBatteryTemperature(voltage, instance) {
+    const currentTime = Date.now();
+    const ambientTemp = 22 + Math.sin(currentTime * 0.0001) * 5; // 17-27°C ambient
+    
+    // Battery generates heat when charging/discharging heavily
+    const thermalOffset = Math.abs(voltage - 12.6) * 2; // Heat from charging/deep discharge
+    const instanceOffset = instance * 0.5; // Slight variation between batteries
+    
+    return ambientTemp + thermalOffset + instanceOffset + (Math.random() - 0.5) * 1;
+  }
+
+  /**
+   * Calculate State of Charge percentage based on voltage
+   */
+  calculateBatterySOC(voltage, instance) {
+    // Standard 12V lead-acid voltage to SOC mapping
+    const voltageSOCMap = [
+      { voltage: 12.6, soc: 100 },
+      { voltage: 12.5, soc: 90 },
+      { voltage: 12.42, soc: 80 },
+      { voltage: 12.32, soc: 70 },
+      { voltage: 12.20, soc: 60 },
+      { voltage: 12.06, soc: 50 },
+      { voltage: 11.9, soc: 40 },
+      { voltage: 11.75, soc: 30 },
+      { voltage: 11.58, soc: 20 },
+      { voltage: 11.31, soc: 10 },
+      { voltage: 10.5, soc: 0 }
+    ];
+    
+    // Handle voltages above 12.6V (charging) - cap at 100%
+    if (voltage >= 12.6) {
+      return 100;
+    }
+    
+    // Linear interpolation between voltage points
+    for (let i = 0; i < voltageSOCMap.length - 1; i++) {
+      const current = voltageSOCMap[i];
+      const next = voltageSOCMap[i + 1];
+      
+      if (voltage >= next.voltage) {
+        const ratio = (voltage - next.voltage) / (current.voltage - next.voltage);
+        const soc = next.soc + ratio * (current.soc - next.soc);
+        return Math.max(0, Math.min(100, soc)); // Ensure 0-100% range
+      }
+    }
+    
+    return 0; // Below minimum voltage
+  }
+
+  /**
+   * Get nominal voltage for battery instance
+   */
+  getBatteryNominalVoltage(instance) {
+    const nominalVoltages = [
+      12.0, // House battery - standard 12V
+      12.0, // Engine battery - standard 12V  
+      12.0, // Thruster battery - standard 12V
+      12.0  // Backup battery - standard 12V
+    ];
+    
+    return nominalVoltages[instance % nominalVoltages.length];
+  }
+
+  /**
+   * Get battery chemistry for instance
+   */
+  getBatteryChemistry(instance) {
+    const chemistries = [
+      'AGM',     // House battery - AGM deep cycle
+      'WET',     // Engine battery - wet cell starter
+      'LiFePO4', // Thruster battery - lithium for high current
+      'GEL'      // Backup battery - gel maintenance-free
+    ];
+    
+    return chemistries[instance % chemistries.length];
+  }
+
+  /**
+   * Generate tank XDR sentence from YAML configuration
+   */
+  generateYAMLTankSentence(sentenceDef) {
+    const instance = sentenceDef.instance || 0;
+    
+    if (!this.scenario?.data?.tank_levels) {
+      return null;
+    }
+
+    const tankEntries = Object.entries(this.scenario.data.tank_levels);
+    if (instance >= tankEntries.length) {
+      return null;
+    }
+
+    const [tankKey, tankConfig] = tankEntries[instance];
+    const level = this.getYAMLDataValue(tankKey, tankConfig);
+    
+    if (level !== null) {
+      const sentence = `$IIXDR,P,${level.toFixed(1)},P,${tankKey}`;
+      const checksum = this.calculateChecksum(sentence.substring(1));
+      return `${sentence}*${checksum}`;
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate temperature XDR sentence from YAML configuration
+   */
+  generateYAMLTemperatureSentence(sentenceDef) {
+    const instance = sentenceDef.instance || 1;
+    
+    if (!this.scenario?.data?.temperature) {
+      return null;
+    }
+
+    const tempEntries = Object.entries(this.scenario.data.temperature);
+    const tempIndex = instance - 1; // Convert to 0-based index
+    
+    if (tempIndex < 0 || tempIndex >= tempEntries.length) {
+      return null;
+    }
+
+    const [tempKey, tempConfig] = tempEntries[tempIndex];
+    const temperature = this.getYAMLDataValue(tempKey, tempConfig);
+    
+    if (temperature !== null) {
+      const label = sentenceDef.label || tempKey;
+      const sentence = `$IIXDR,C,${temperature.toFixed(1)},C,${label}`;
+      const checksum = this.calculateChecksum(sentence.substring(1));
+      return `${sentence}*${checksum}`;
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate RPM sentence from YAML configuration
+   * Supports template-based parameter interpolation per Story 7.2
+   */
+  generateYAMLRPMSentence(sentenceDef) {
+    // Use template-based parameter replacement if sentence template and parameters are defined
+    if (sentenceDef.sentence && sentenceDef.parameters) {
+      const sentenceWithParams = this.replaceSentenceParameters(sentenceDef.sentence, sentenceDef.parameters);
+      
+      // Remove the *XX placeholder and calculate real checksum
+      const sentenceWithoutChecksum = sentenceWithParams.replace(/\*XX$/, '');
+      const checksum = this.calculateChecksum(sentenceWithoutChecksum.substring(1));
+      return `${sentenceWithoutChecksum}*${checksum}`;
+    }
+    
+    // Legacy format support for backward compatibility
+    const instance = sentenceDef.instance || 0;
+    
+    // Try modern engine configuration structure
+    if (this.scenario?.engine?.main_engine?.rpm_normal) {
+      const baseRPM = this.scenario.engine.main_engine.rpm_normal;
+      
+      // Add realistic RPM variation from engine load and vibration
+      const timeSeconds = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
+      const loadVariation = Math.sin(timeSeconds * 0.03) * 15; // ±15 RPM from load changes
+      const vibration = (Math.random() - 0.5) * 10; // ±5 RPM from engine vibration
+      const rpm = Math.round(baseRPM + loadVariation + vibration);
+      
+      // Use 'E' for engine source (not 'S' for shaft) - required by NmeaSensorProcessor
+      const sentence = `$IIRPM,E,${instance},${rpm.toFixed(0)},A,`;
+      const checksum = this.calculateChecksum(sentence.substring(1));
+      return `${sentence}*${checksum}`;
+    }
+    
+    // Fall back to legacy data.engine_rpm structure
+    if (this.scenario?.data?.engine_rpm) {
+      const engineEntries = Object.entries(this.scenario.data.engine_rpm);
+      if (instance >= engineEntries.length) {
+        return null;
+      }
+
+      const [engineKey, engineConfig] = engineEntries[instance];
+      const rpm = this.getYAMLDataValue(engineKey, engineConfig);
+      
+      if (rpm !== null) {
+        const sentence = `$IIRPM,E,${instance},${rpm.toFixed(0)},A,`;
+        const checksum = this.calculateChecksum(sentence.substring(1));
+        return `${sentence}*${checksum}`;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate XDR transducer sentence from YAML configuration
+   * Supports template-based parameter interpolation per Story 7.2
+   * Supports multiple sensor types based on subtypes configuration (legacy)
+   */
+  generateYAMLXDRSentence(sentenceDef) {
+    // Use template-based parameter replacement if sentence template and parameters are defined
+    if (sentenceDef.sentence && sentenceDef.parameters) {
+      const sentenceWithParams = this.replaceSentenceParameters(sentenceDef.sentence, sentenceDef.parameters);
+      
+      // Remove the *XX placeholder and calculate real checksum
+      const sentenceWithoutChecksum = sentenceWithParams.replace(/\*XX$/, '');
+      const checksum = this.calculateChecksum(sentenceWithoutChecksum.substring(1));
+      return `${sentenceWithoutChecksum}*${checksum}`;
+    }
+    
+    // Legacy format support for backward compatibility
+    if (!sentenceDef.subtypes || !Array.isArray(sentenceDef.subtypes)) {
+      return null;
+    }
+
+    const transducers = [];
+    const scenario = this.scenario;
+    
+    sentenceDef.subtypes.forEach(subtype => {
+      switch (subtype) {
+        case 'coolant_temperature':
+          if (scenario?.engine?.main_engine) {
+            const temp = scenario.engine.main_engine.coolant_normal || 180;
+            transducers.push(`C,${temp.toFixed(1)},F,ENGINE#1`);
+          }
+          break;
+        case 'oil_pressure':
+          if (scenario?.engine?.main_engine) {
+            const pressure = scenario.engine.main_engine.oil_normal || 45;
+            transducers.push(`P,${pressure.toFixed(1)},P,ENGINE#1`);
+          }
+          break;
+        case 'alternator_voltage':
+          if (scenario?.engine?.alternator) {
+            const voltage = scenario.engine.alternator.voltage_normal || 13.8;
+            transducers.push(`U,${voltage.toFixed(2)},V,ALTERNATOR`);
+          }
+          break;
+      }
+    });
+
+    if (transducers.length === 0) {
+      return null;
+    }
+
+    const sentence = `$IIXDR,${transducers.join(',')}`;
+    const checksum = this.calculateChecksum(sentence.substring(1));
+    return `${sentence}*${checksum}`;
+  }
+
+  /**
+   * Generate RSA rudder sensor angle sentence from YAML configuration
+   */
+  generateYAMLRSASentence(sentenceDef) {
+    // Simple rudder angle for engine load correlation
+    // In real scenario, this would be dynamic based on maneuvers
+    const rudderAngle = 0; // Straight ahead for engine monitoring
+    const sentence = `$IIRSA,${rudderAngle.toFixed(1)},A,,`;
+    const checksum = this.calculateChecksum(sentence.substring(1));
+    return `${sentence}*${checksum}`;
+  }
+
+  /**
+   * Get data value from YAML configuration using functions
+   * Supports Story 7.2 variation types: sine, sine_wave, linear, gaussian, random, constant
+   */
+  getYAMLDataValue(dataKey, dataConfig) {
+    if (!dataConfig || typeof dataConfig !== 'object') {
+      return null;
+    }
+
+    const currentTime = Date.now() - (this.stats.startTime || Date.now());
+    
+    try {
+      switch (dataConfig.type) {
+        case 'sine':
+        case 'sine_wave':
+          return this.generateSineWave(dataConfig, currentTime);
+        case 'linear':
+          return this.generateLinear(dataConfig, currentTime);
+        case 'gaussian':
+          return this.generateGaussian(dataConfig, currentTime);
+        case 'linear_decline':
+          return this.generateLinearDecline(dataConfig, currentTime);
+        case 'linear_increase':
+          return this.generateLinearIncrease(dataConfig, currentTime);
+        case 'random':
+          return this.generateRandom(dataConfig);
+        case 'constant':
+          return dataConfig.value;
+        default:
+          console.warn(`⚠️ Unknown data type: ${dataConfig.type}`);
+          return null;
+      }
+    } catch (error) {
+      console.error(`❌ Error generating data for ${dataKey}:`, error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Generate Gaussian random values
+   */
+  generateGaussian(config, currentTime) {
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    const value = config.mean + z0 * config.std_dev;
+    return Math.max(config.min || -Infinity, Math.min(config.max || Infinity, value));
+  }
+
+  /**
+   * Generate sine wave values
+   * Supports both "base" and "start" parameter naming for compatibility
+   */
+  generateSineWave(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    const radians = 2 * Math.PI * config.frequency * time;
+    const baseValue = config.base || config.start || 0;
+    return baseValue + config.amplitude * Math.sin(radians);
+  }
+
+  /**
+   * Generate linear decline values
+   */
+  generateLinearDecline(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    return Math.max(0, config.start + config.rate * time);
+  }
+
+  /**
+   * Generate linear increase values
+   */
+  generateLinearIncrease(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    const value = config.start + config.rate * time;
+    return (typeof config.max !== 'undefined') ? Math.min(config.max, value) : value;
+  }
+
+  /**
+   * Generate linear values (used by comprehensive-engine-monitoring.yml)
+   * Supports both "start" and "rate" format
+   */
+  generateLinear(config, currentTime) {
+    if (config.rate !== undefined) {
+      return this.generateLinearIncrease(config, currentTime);
+    } else if (config.start !== undefined) {
+      // Constant value if no rate specified
+      return config.start;
+    }
+    return 0;
+  }
+
+  /**
+   * Generate random values within min/max range
+   * Used by comprehensive-engine-monitoring.yml for pressure variations
+   */
+  generateRandom(config) {
+    const min = config.min || 0;
+    const max = config.max || 1;
+    return min + Math.random() * (max - min);
+  }
+
+  /**
+   * Replace parameter placeholders in sentence templates with computed values
+   * @param {string} sentenceTemplate - Sentence with {parameter_name} placeholders
+   * @param {object} parameters - Parameter definitions with type, base, amplitude, etc.
+   * @returns {string} Sentence with parameters replaced with computed values
+   */
+  replaceSentenceParameters(sentenceTemplate, parameters) {
+    if (!parameters || Object.keys(parameters).length === 0) {
+      return sentenceTemplate;
+    }
+
+    let result = sentenceTemplate;
+    const currentTime = Date.now() - (this.stats.startTime || Date.now());
+
+    // Find all {parameter} placeholders and replace with computed values
+    Object.entries(parameters).forEach(([paramName, paramConfig]) => {
+      const placeholder = `{${paramName}}`;
+      
+      if (result.includes(placeholder)) {
+        // Generate value using the parameter configuration
+        let value = this.getYAMLDataValue(paramName, paramConfig);
+        
+        if (value !== null && value !== undefined) {
+          // Apply formatting if specified
+          if (paramConfig.format) {
+            value = this.formatValue(value, paramConfig.format);
+          } else {
+            // Default formatting based on type
+            value = typeof value === 'number' ? value.toFixed(1) : String(value);
+          }
+          
+          result = result.replace(placeholder, value);
+        }
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * Format a value according to a format string
+   * @param {number} value - Value to format
+   * @param {string} format - Format string (e.g., "0000", "00.0", "00.00")
+   * @returns {string} Formatted value
+   */
+  formatValue(value, format) {
+    if (format.includes('.')) {
+      // Decimal format
+      const parts = format.split('.');
+      const decimals = parts[1].length;
+      const integerPadding = parts[0].length;
+      
+      const formatted = Math.abs(value).toFixed(decimals);
+      const [intPart, decPart] = formatted.split('.');
+      const paddedInt = intPart.padStart(integerPadding, '0');
+      
+      return value < 0 ? `-${paddedInt}.${decPart}` : `${paddedInt}.${decPart}`;
+    } else {
+      // Integer format
+      const rounded = Math.round(value);
+      return Math.abs(rounded).toString().padStart(format.length, '0');
+    }
   }
 
   /**
@@ -371,7 +1115,7 @@ class ScenarioDataSource extends EventEmitter {
    */
   generateDBT(depth) {
     const checksum = this.calculateChecksum(`DBT,${depth.toFixed(1)},f,${(depth * 0.3048).toFixed(1)},M,${(depth * 0.5468).toFixed(1)},F`);
-    return `$IIDBT,${depth.toFixed(1)},f,${(depth * 0.3048).toFixed(1)},M,${(depth * 0.5468).toFixed(1)},F*${checksum}`;
+    return `$GPDBT,,f,${depth.toFixed(1)},M,${(depth * 0.5468).toFixed(1)},F*${checksum}`;
   }
 
   generateVHW(speed) {

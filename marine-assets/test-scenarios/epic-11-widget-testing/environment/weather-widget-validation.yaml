@@ -115,8 +115,8 @@ data:
     time_window: 180  # 3 minutes for trend calculation
     categories: ["rising", "steady", "falling"]
 
-# NMEA sentence configuration for weather widget validation
-sentences:
+# NMEA sentences to emit
+nmea_sentences:
   # MTA - Air Temperature
   - type: "MTA"
     frequency: 0.5  # Hz - Slow updates for temperature

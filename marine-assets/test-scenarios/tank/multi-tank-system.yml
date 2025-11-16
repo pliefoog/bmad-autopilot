@@ -1,0 +1,274 @@
+---
+# Multi-Tank System Test Scenario
+# Tests comprehensive tank monitoring with multiple tank types
+# XDR sentence format for tank levels using volume (V) measurement type
+
+metadata:
+  name: "Multi-Tank System - Comprehensive"
+  description: "Tests all tank types (fuel, water, waste, ballast, blackwater) with realistic fill levels and consumption patterns"
+  version: "1.0"
+  author: "BMAD Test Suite"
+  tags:
+    - "tank"
+    - "multi-instance"
+    - "fluid-systems"
+    - "XDR"
+  test_cases:
+    - "Multiple tank types display correctly"
+    - "Tank levels update dynamically"
+    - "Different consumption rates per tank type"
+    - "Tank capacity calculations accurate"
+
+# NMEA 0183 Mode Configuration
+bridge_mode: "nmea0183"
+
+# Equipment Configuration
+equipment:
+  tanks:
+    count: 7
+    types:
+      - type: "fuel"
+        instances: [0, 1]  # Port and Starboard fuel tanks
+      - type: "water"
+        instances: [2]      # Fresh water tank
+      - type: "waste"
+        instances: [3]      # Gray water tank
+      - type: "blackwater"
+        instances: [4]      # Black water tank
+      - type: "ballast"
+        instances: [5, 6]   # Port and Starboard ballast tanks
+
+# NMEA Sentences - XDR format for tank measurements
+# Format: $IIXDR,V,value,P,TANKTYPE_INSTANCE*checksum
+# V = Volume measurement type
+# P = Percentage (or L = Liters)
+# Tank types: FUEL, WATR, WAST, BALL, BWAT
+nmea_sentences:
+  # FUEL Tank 0 - Port Fuel Tank (200L capacity, 75% full, slowly draining)
+  - sentence: "$IIXDR,V,{port_fuel_level},P,FUEL_0*XX"
+    sentence_type: "XDR"
+    description: "Port fuel tank level"
+    source: "TANK_FUEL_PORT"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      port_fuel_level:
+        type: "sine"
+        start: 0.50
+        amplitude: 0.40
+        frequency: 0.0167
+        format: "0.000"
+
+  # FUEL Tank 1 - Starboard Fuel Tank (200L capacity, 80% full, slowly draining)
+  - sentence: "$IIXDR,V,{stbd_fuel_level},P,FUEL_1*XX"
+    sentence_type: "XDR"
+    description: "Starboard fuel tank level"
+    source: "TANK_FUEL_STBD"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      stbd_fuel_level:
+        type: "sine"
+        start: 0.50
+        amplitude: 0.35
+        frequency: 0.0167
+        format: "0.000"
+
+  # WATR Tank 2 - Fresh Water Tank (150L capacity, 60% full, consumption pattern)
+  - sentence: "$IIXDR,V,{water_level},P,WATR_2*XX"
+    sentence_type: "XDR"
+    description: "Fresh water tank level"
+    source: "TANK_WATER_FRESH"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      water_level:
+        type: "sine"
+        start: 0.50
+        amplitude: 0.45
+        frequency: 0.0167
+        format: "0.000"
+
+  # WAST Tank 3 - Gray Water/Waste Tank (100L capacity, 35% full, filling up)
+  - sentence: "$IIXDR,V,{waste_level},P,WAST_3*XX"
+    sentence_type: "XDR"
+    description: "Gray water/waste tank level"
+    source: "TANK_WASTE_GRAY"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      waste_level:
+        type: "sine"
+        start: 0.50
+        amplitude: 0.40
+        frequency: 0.0167
+        format: "0.000"
+
+  # BWAT Tank 4 - Black Water Tank (80L capacity, 25% full, slowly filling)
+  - sentence: "$IIXDR,V,{blackwater_level},P,BWAT_4*XX"
+    sentence_type: "XDR"
+    description: "Black water tank level"
+    source: "TANK_BLACKWATER"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      blackwater_level:
+        type: "sine"
+        start: 0.50
+        amplitude: 0.30
+        frequency: 0.0167
+        format: "0.000"
+
+  # BALL Tank 5 - Port Ballast Tank (300L capacity, 90% full, stable)
+  - sentence: "$IIXDR,V,{port_ballast_level},P,BALL_5*XX"
+    sentence_type: "XDR"
+    description: "Port ballast tank level"
+    source: "TANK_BALLAST_PORT"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      port_ballast_level:
+        type: "sine"
+        start: 0.70
+        amplitude: 0.25
+        frequency: 0.0167
+        format: "0.000"
+
+  # BALL Tank 6 - Starboard Ballast Tank (300L capacity, 40% full, adjusting)
+  - sentence: "$IIXDR,V,{stbd_ballast_level},P,BALL_6*XX"
+    sentence_type: "XDR"
+    description: "Starboard ballast tank level"
+    source: "TANK_BALLAST_STBD"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      stbd_ballast_level:
+        type: "sine"
+        start: 0.50
+        amplitude: 0.45
+        frequency: 0.0167
+        format: "0.000"
+
+# Expected Outcomes
+expected_results:
+  widgets_created: 7
+  widget_ids:
+    - "tank-0"  # Port Fuel
+    - "tank-1"  # Starboard Fuel
+    - "tank-2"  # Fresh Water
+    - "tank-3"  # Gray Water/Waste
+    - "tank-4"  # Black Water
+    - "tank-5"  # Port Ballast
+    - "tank-6"  # Starboard Ballast
+  
+  tank_details:
+    - id: "tank-0"
+      type: "fuel"
+      name: "Fuel Tank 1"
+      capacity_liters: 200
+      initial_level_pct: 75
+      final_level_pct: 65
+      
+    - id: "tank-1"
+      type: "fuel"
+      name: "Fuel Tank 2"
+      capacity_liters: 200
+      initial_level_pct: 80
+      final_level_pct: 70
+      
+    - id: "tank-2"
+      type: "water"
+      name: "Water Tank 3"
+      capacity_liters: 150
+      initial_level_pct: 60
+      final_level_pct: 45
+      
+    - id: "tank-3"
+      type: "waste"
+      name: "Waste Tank 4"
+      capacity_liters: 100
+      initial_level_pct: 35
+      final_level_pct: 50
+      
+    - id: "tank-4"
+      type: "blackwater"
+      name: "Blackwater Tank 5"
+      capacity_liters: 80
+      initial_level_pct: 25
+      final_level_pct: 35
+      
+    - id: "tank-5"
+      type: "ballast"
+      name: "Ballast Tank 6"
+      capacity_liters: 300
+      initial_level_pct: 90
+      final_level_pct: 90
+      
+    - id: "tank-6"
+      type: "ballast"
+      name: "Ballast Tank 7"
+      capacity_liters: 300
+      initial_level_pct: 40
+      final_level_pct: 55
+
+# Test Validation Points
+validation:
+  - point: "Initial state"
+    time_sec: 0
+    checks:
+      - "All 7 tank widgets visible"
+      - "Port fuel tank shows 75% (150L/200L)"
+      - "Starboard fuel tank shows 80% (160L/200L)"
+      - "Water tank shows 60% (90L/150L)"
+      - "Waste tank shows 35% (35L/100L)"
+      - "Black water tank shows 25% (20L/80L)"
+      - "Port ballast shows 90% (270L/300L)"
+      - "Starboard ballast shows 40% (120L/300L)"
+  
+  - point: "Mid scenario"
+    time_sec: 150
+    checks:
+      - "Fuel tanks show decreasing levels"
+      - "Water tank level decreasing"
+      - "Waste tanks show increasing levels"
+      - "Ballast tanks adjusting"
+  
+  - point: "End state"
+    time_sec: 300
+    checks:
+      - "Port fuel tank shows 65% (130L/200L)"
+      - "Starboard fuel tank shows 70% (140L/200L)"
+      - "Water tank shows 45% (67.5L/150L)"
+      - "Waste tank shows 50% (50L/100L)"
+      - "Black water tank shows 35% (28L/80L)"
+      - "Starboard ballast shows 55% (165L/300L)"
+
+# Scenario Notes
+notes: |
+  This scenario simulates a realistic cruising vessel with comprehensive tank monitoring:
+  
+  FUEL TANKS (2):
+  - Port and starboard fuel tanks showing typical consumption
+  - Both tanks draining as engines consume fuel
+  - Uneven consumption rate simulates port/starboard engine load differences
+  
+  FRESH WATER (1):
+  - Single fresh water tank with active consumption
+  - Simulates crew usage (cooking, cleaning, drinking)
+  
+  WASTE SYSTEMS (2):
+  - Gray water tank filling from sinks/showers
+  - Black water tank filling from heads/toilets
+  - Both show realistic fill rates
+  
+  BALLAST TANKS (2):
+  - Port ballast full to correct vessel list
+  - Starboard ballast filling to balance vessel
+  - Simulates active ballast system management
+  
+  TEST COVERAGE:
+  ✅ All 5 tank types (fuel, water, waste, blackwater, ballast)
+  ✅ Multiple instances of same type
+  ✅ Different consumption/fill patterns
+  ✅ Realistic capacity values
+  ✅ Dynamic level changes over time

@@ -30,12 +30,12 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Autopilot/rudder data
-  const autopilot = useNmeaStore(useCallback((state: any) => state.nmeaData.autopilot, []));
+  // NMEA data selectors - Autopilot/rudder data from sensor store
+  const autopilotData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.autopilot?.[0], []));
   
   // Extract rudder data with defaults
-  const rudderAngle = autopilot?.rudderPosition || 0;
-  const isStale = !autopilot;
+  const rudderAngle = autopilotData?.rudderPosition || 0;
+  const isStale = !autopilotData;
   
   // Epic 9 Enhanced Presentation System for rudder angle
   const anglePresentation = useDataPresentation('angle');
@@ -218,7 +218,7 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={styles.pinIcon}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

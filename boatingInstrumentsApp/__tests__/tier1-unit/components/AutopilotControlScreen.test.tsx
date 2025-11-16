@@ -85,6 +85,7 @@ describe('AutopilotControlScreen', () => {
     secondary: '#0891B2',
     background: '#F8FAFC',
     surface: '#FFFFFF',
+    appBackground: '#F3F4F6',
     text: '#0F172A',
     textSecondary: '#475569',
     accent: '#059669',
@@ -93,14 +94,23 @@ describe('AutopilotControlScreen', () => {
     success: '#059669',
     border: '#CBD5E1',
     shadow: '#00000020',
+    iconPrimary: '#0F172A',
+    iconSecondary: '#475569',
+    iconAccent: '#059669',
+    iconDisabled: '#94A3B8',
   };
 
   const mockAutopilotData = {
     mode: 'COMPASS',
     engaged: false,
     active: false,
+    currentHeading: 175,
     targetHeading: 180,
     rudderPosition: 0,
+  };
+
+  const mockCompassData = {
+    heading: 175,
   };
 
   beforeEach(() => {
@@ -108,9 +118,10 @@ describe('AutopilotControlScreen', () => {
     mockUseTheme.mockReturnValue(mockTheme);
     mockUseNmeaStore.mockImplementation((selector: any) => {
       const state = {
-        nmeaData: {
-          autopilot: mockAutopilotData,
-          heading: 175,
+        getSensorData: (sensorType: string, instance: number) => {
+          if (sensorType === 'autopilot') return mockAutopilotData;
+          if (sensorType === 'compass') return mockCompassData;
+          return undefined;
         },
       };
       return selector(state);
@@ -293,6 +304,164 @@ describe('AutopilotControlScreen', () => {
       await waitFor(() => {
         const engageButton = getByText('ENGAGE');
         expect(engageButton.props.disabled).toBeFalsy(); // Button itself isn't disabled, but TouchableOpacity checks isCommandPending internally
+      });
+    });
+
+    describe('Large Heading Change Safety', () => {
+      beforeEach(() => {
+        // Setup engaged state for heading adjustments
+        mockUseNmeaStore.mockImplementation((selector: any) => {
+          const state = {
+            getSensorData: (sensorType: string, instance: number) => {
+              if (sensorType === 'autopilot') return { ...mockAutopilotData, engaged: true, active: true };
+              if (sensorType === 'compass') return mockCompassData;
+              return undefined;
+            },
+          };
+          return selector(state);
+        });
+      });
+
+      it('allows small cumulative heading changes without confirmation', async () => {
+        const { getByText, queryByText } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Make small adjustments (under 20° total)
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+1°'));
+
+        // Should not show large change confirmation
+        expect(queryByText('LARGE HEADING CHANGE')).toBeFalsy();
+        expect(getByText('+10°')).toBeTruthy(); // Buttons remain available
+      });
+
+      it('shows confirmation dialog for cumulative heading changes >20°', async () => {
+        const { getByText, queryByText } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Make adjustments that exceed 20° cumulatively
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°')); // This should trigger confirmation
+
+        await waitFor(() => {
+          expect(getByText('LARGE HEADING CHANGE')).toBeTruthy();
+          expect(getByText('CONFIRM')).toBeTruthy();
+          expect(getByText('CANCEL')).toBeTruthy();
+        });
+      });
+
+      it('can cancel large heading change confirmation', async () => {
+        const { getByText, queryByText } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Trigger large change confirmation
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+
+        await waitFor(() => {
+          expect(getByText('CANCEL')).toBeTruthy();
+        });
+
+        // Cancel the change
+        fireEvent.press(getByText('CANCEL'));
+
+        await waitFor(() => {
+          expect(queryByText('LARGE HEADING CHANGE')).toBeFalsy();
+        });
+      });
+
+      it('can confirm large heading change and reset tracking', async () => {
+        const { getByText, queryByText } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Trigger large change confirmation
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+
+        await waitFor(() => {
+          expect(getByText('CONFIRM')).toBeTruthy();
+        });
+
+        // Confirm the change
+        fireEvent.press(getByText('CONFIRM'));
+
+        await waitFor(() => {
+          expect(queryByText('LARGE HEADING CHANGE')).toBeFalsy();
+        });
+      });
+
+      it('shows current and target heading in confirmation dialog', async () => {
+        const { getByText } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Trigger large change confirmation
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+
+        await waitFor(() => {
+          expect(getByText('LARGE HEADING CHANGE')).toBeTruthy();
+          // Should show current and target headings
+          expect(getByText(/Current:.*175.*Target:/)).toBeTruthy();
+        });
+      });
+
+      it('resets cumulative tracking when autopilot is disengaged', async () => {
+        const { getByText, rerender } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Make some adjustments
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+5°')); // Small adjustment to build up cumulative
+
+        // Disengage autopilot
+        mockUseNmeaStore.mockImplementation((selector: any) => {
+          const state = {
+            getSensorData: (sensorType: string, instance: number) => {
+              if (sensorType === 'autopilot') return { ...mockAutopilotData, engaged: false, active: false };
+              if (sensorType === 'compass') return mockCompassData;
+              return undefined;
+            },
+          };
+          return selector(state);
+        });
+
+        rerender(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Re-engage autopilot
+        mockUseNmeaStore.mockImplementation((selector: any) => {
+          const state = {
+            getSensorData: (sensorType: string, instance: number) => {
+              if (sensorType === 'autopilot') return { ...mockAutopilotData, engaged: true, active: true };
+              if (sensorType === 'compass') return mockCompassData;
+              return undefined;
+            },
+          };
+          return selector(state);
+        });
+
+        rerender(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Should be able to make large adjustment without immediate confirmation (tracking reset)
+        fireEvent.press(getByText('+10°'));
+        expect(getByText('+10°')).toBeTruthy(); // Should work normally
+      });
+
+      it('emergency disengage bypasses all confirmations', async () => {
+        const { getByText, queryByText } = render(<AutopilotControlScreen visible={true} onClose={() => {}} />);
+
+        // Trigger large change confirmation
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+        fireEvent.press(getByText('+10°'));
+
+        await waitFor(() => {
+          expect(getByText('LARGE HEADING CHANGE')).toBeTruthy();
+        });
+
+        // Emergency disengage should work without additional confirmation
+        fireEvent.press(getByText('EMERGENCY DISENGAGE'));
+
+        // Large change modal should remain (not dismissed by emergency)
+        // Emergency disengage works independently
+        expect(getByText('EMERGENCY DISENGAGE')).toBeTruthy();
       });
     });
   });

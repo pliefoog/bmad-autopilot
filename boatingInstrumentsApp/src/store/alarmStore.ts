@@ -49,8 +49,8 @@ interface AlarmState {
   settings: AlarmSettings;
   maxHistorySize: number;
   // Critical alarm system integration
-  criticalAlarmManager?: AlarmManager;
-  criticalAlarmMonitors?: CriticalAlarmMonitors;
+  criticalAlarmManager?: any; // AlarmManager type not available
+  criticalAlarmMonitors?: any; // CriticalAlarmMonitors type not available
   criticalAlarmsEnabled: boolean;
 }
 

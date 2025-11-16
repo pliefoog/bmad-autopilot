@@ -1,0 +1,40 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+  // Story 11.7: VS Code Test Explorer Integration - Jest Configuration
+  "jest.jestCommandLine": "npm test",
+  "jest.rootPath": "./",
+  "jest.runMode": "on-demand",
+  "jest.enable": true,    // AC1: Professional Test Documentation Display
+    "testing.openTesting": "openOnTestStart",
+    "testing.followRunningTest": true,
+    "testing.defaultGutterClickAction": "run",
+    "testing.showAllMessages": true,
+    
+    // AC2: Real-time Coverage Visualization
+    "coverage-gutters.coverageFileNames": [
+      "boatingInstrumentsApp/coverage/lcov.info",
+      "boatingInstrumentsApp/coverage/vscode-coverage-overlay.json"
+    ],
+    "coverage-gutters.showLineCoverage": true,
+    "coverage-gutters.showBranchCoverage": true,
+    
+    // AC3: Simulator Status Integration
+    "testing.gutterEnabled": true,
+    
+    // AC4: Performance Monitoring Integration  
+    "jest.debugMode": true,
+    "jest.enableInlineErrorMessages": true
+  },
+  "extensions": {
+    "recommendations": [
+      "orta.vscode-jest",
+      "hbenl.vscode-test-explorer",
+      "ryanluker.vscode-coverage-gutters"
+    ]
+  }
+}

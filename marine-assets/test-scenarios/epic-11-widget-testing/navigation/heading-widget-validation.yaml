@@ -81,8 +81,8 @@ data:
     smoothing: 0.3
     max_rate: 10  # degrees per second (realistic for marine vessels)
 
-# NMEA sentence configuration for heading widget validation
-sentences:
+# NMEA sentences to emit
+nmea_sentences:
   # HDT - Heading True
   - type: "HDT"
     frequency: 5   # Hz - Higher frequency for responsive compass display

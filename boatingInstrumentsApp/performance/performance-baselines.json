@@ -1,0 +1,66 @@
+{
+  "description": "Story 11.6: Performance baseline data and thresholds for marine application",
+  "version": "1.0.0",
+  "generated": "2025-10-30",
+  "thresholds": {
+    "render_performance": {
+      "max_widget_update_ms": 16,
+      "target_fps": 60,
+      "description": "60fps requirement for marine instrument displays"
+    },
+    "memory_management": {
+      "max_test_operation_increase_mb": 50,
+      "baseline_memory_mb": 100,
+      "description": "Memory usage tracking during test operations"
+    },
+    "data_latency": {
+      "max_nmea_to_widget_ms": 100,
+      "max_tcp_socket_latency_ms": 50,
+      "description": "NMEA sentence to widget update latency"
+    },
+    "simulator_throughput": {
+      "min_messages_per_second": 500,
+      "max_message_processing_ms": 2,
+      "description": "NMEA Bridge Simulator throughput validation"
+    }
+  },
+  "baselines": {
+    "widget_render_times": {
+      "depth_widget": 8.5,
+      "speed_widget": 7.2,
+      "wind_widget": 12.1,
+      "gps_widget": 9.8,
+      "autopilot_widget": 15.3,
+      "navigation_widget": 13.7
+    },
+    "service_response_times": {
+      "nmea_parser": 2.1,
+      "store_update": 3.4,
+      "data_validation": 1.8,
+      "tcp_connection": 25.6
+    },
+    "memory_usage": {
+      "initial_load_mb": 95.2,
+      "after_connection_mb": 102.8,
+      "during_playback_mb": 115.4,
+      "peak_usage_mb": 148.7
+    }
+  },
+  "test_scenarios": {
+    "basic_navigation": {
+      "duration_seconds": 60,
+      "expected_messages": 600,
+      "widgets_active": ["depth", "speed", "wind", "gps"]
+    },
+    "autopilot_engagement": {
+      "duration_seconds": 120,
+      "expected_messages": 1200,
+      "widgets_active": ["autopilot", "navigation", "wind", "gps"]
+    },
+    "high_throughput": {
+      "duration_seconds": 30,
+      "expected_messages": 1500,
+      "widgets_active": ["all"]
+    }
+  }
+}

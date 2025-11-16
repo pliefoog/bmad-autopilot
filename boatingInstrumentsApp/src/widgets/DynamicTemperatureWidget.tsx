@@ -8,6 +8,8 @@ import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemperatureSensorData } from '../types/SensorData';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface DynamicTemperatureWidgetProps {
   id: string;
@@ -103,9 +105,24 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
 
   // Auto-generate appropriate title based on temperature data
   const getDisplayTitle = useCallback(() => {
-    // Use sensor name from NMEA data if available, otherwise use provided title
-    return sensorName !== title ? sensorName : title;
-  }, [sensorName, title]);
+    // Standard NMEA temperature location mapping
+    const locationMap: Record<string, string> = {
+      'engine': 'Engine Room',
+      'seawater': 'Sea Water',
+      'outside': 'Outside Air',
+      'cabin': 'Main Cabin',
+      'exhaust': 'Exhaust',
+      'refrigerator': 'Refrigerator',
+      'freezer': 'Freezer',
+      'battery': 'Battery Bay',
+      'engineRoom': 'Engine Room',
+    };
+    
+    const locationName = locationMap[location] || location.charAt(0).toUpperCase() + location.slice(1);
+    
+    // Format: "Temperature - [Location]" e.g. "Temperature - Engine Room", "Temperature - Sea Water"
+    return `Temperature - ${locationName}`;
+  }, [location]);
 
   const styles = StyleSheet.create({
     container: {
@@ -150,13 +167,20 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
     primaryView: {
       marginBottom: 8,
     },
-    secondaryView: {
-      flexDirection: 'row',
-      gap: 8,
+    secondaryContainer: {
       marginTop: 12,
       paddingTop: 12,
       borderTopWidth: 1,
       borderTopColor: '#E5E7EB',
+    },
+    secondaryGrid: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginBottom: 8,
+      gap: 16,
+    },
+    gridCell: {
+      alignItems: 'flex-end',
     },
   });
 
@@ -169,7 +193,14 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={styles.title}>{getDisplayTitle()}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('temperature')?.icon || 'thermometer-outline'} 
+            size={16} 
+            color={theme.primary}
+          />
+          <Text style={styles.title}>{getDisplayTitle()}</Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
@@ -179,7 +210,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={styles.pinIcon}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -208,21 +239,29 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
 
       {/* Secondary View: Location and Sensor Type */}
       {expanded && (
-        <View style={styles.secondaryView}>
-          <SecondaryMetricCell
-            mnemonic="LOC"
-            value={location.toUpperCase()}
-            unit=""
-            state="normal"
-            compact={true}
-          />
-          <SecondaryMetricCell
-            mnemonic="INST"
-            value={`${instanceNumber}`}
-            unit=""
-            state="normal"
-            compact={true}
-          />
+        <View style={styles.secondaryContainer}>
+          <View style={styles.secondaryGrid}>
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                mnemonic="LOC"
+                value={location.toUpperCase()}
+                unit=""
+                state="normal"
+                compact={true}
+                align="right"
+              />
+            </View>
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                mnemonic="INST"
+                value={`${instanceNumber}`}
+                unit=""
+                state="normal"
+                compact={true}
+                align="right"
+              />
+            </View>
+          </View>
         </View>
       )}
     </TouchableOpacity>

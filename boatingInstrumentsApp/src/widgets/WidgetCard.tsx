@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, AccessibilityRole } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import UniversalIcon from '../components/atoms/UniversalIcon';
 import { useTheme } from '../store/themeStore';
 import { createWidgetStyles, getStateColor } from '../theme/styles/widgetStyles';
 
@@ -50,6 +50,12 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   const theme = useTheme();
   const widgetStyles = createWidgetStyles(theme);
   const displayColor = getStateColor(state, theme);
+
+  // DEBUG: Log widget rendering
+  if (typeof window !== 'undefined' && !window.__widgetDebugLogged) {
+    console.log('🔧 WidgetCard rendering with icon:', icon);
+    window.__widgetDebugLogged = true;
+  }
 
   // Build comprehensive accessibility label if not provided
   const defaultAccessibilityLabel = React.useMemo(() => {
@@ -103,7 +109,7 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
       
       {/* Widget Header with Chevron/Pin Indicator */}
       <View style={widgetStyles.widgetHeader}>
-        <Ionicons 
+        <UniversalIcon 
           name={icon} 
           size={12} 
           color={theme.textSecondary} 
@@ -123,7 +129,7 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
           accessibilityRole="text"
         >
           {isPinned ? (
-            <Ionicons 
+            <UniversalIcon 
               name="pin" 
               size={12} 
               color={theme.accent}

@@ -74,8 +74,8 @@ data:
     temperature_correction: true
     salinity: 0  # Fresh water (Great Lakes)
 
-# NMEA sentence configuration for depth widget validation
-sentences:
+# NMEA sentences to emit
+nmea_sentences:
   # DPT - Depth of Water
   - type: "DPT"
     frequency: 2   # Hz - Standard depth sounder update rate

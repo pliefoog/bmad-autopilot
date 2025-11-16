@@ -1,6 +1,7 @@
 # Story 11.4: Professional Test Documentation Standards
 
 Status: Done
+workflow_status: Done
 
 ## Requirements Context Summary
 

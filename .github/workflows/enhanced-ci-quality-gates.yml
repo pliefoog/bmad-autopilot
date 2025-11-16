@@ -1,0 +1,383 @@
+name: Enhanced CI - Quality Gates with Professional Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '20'
+  CI: true
+  CI_FAIL_ON_QUALITY_VIOLATION: true
+  CI_GENERATE_REPORTS: true
+  CI_UPLOAD_ARTIFACTS: true
+  CI_MAX_MEMORY_MB: 3072
+  CI_MAX_CPU_CORES: 2
+  CI_ENABLE_SELECTIVE_TESTS: true
+
+jobs:
+  # Job 1: Environment Setup and Resource Optimization
+  setup-and-optimize:
+    name: Setup CI Environment with Resource Optimization
+    runs-on: ubuntu-latest
+    outputs:
+      optimal-workers: ${{ steps.optimize.outputs.workers }}
+      memory-limit: ${{ steps.optimize.outputs.memory }}
+      selective-tests: ${{ steps.analyze.outputs.selective }}
+      test-selection: ${{ steps.analyze.outputs.selection }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better diff analysis
+
+      - name: Setup Node.js with Caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'boatingInstrumentsApp/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./boatingInstrumentsApp
+        run: npm ci --prefer-offline
+
+      - name: Setup Resource Optimization
+        id: optimize
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Start resource optimizer and capture configuration
+          node scripts/ci/ci-resource-optimizer.js config > optimizer-config.json
+          
+          # Extract optimal configuration values
+          WORKERS=$(node -e "console.log(JSON.parse(require('fs').readFileSync('optimizer-config.json', 'utf-8')).jest.maxWorkers)")
+          MEMORY=$(node -e "console.log(JSON.parse(require('fs').readFileSync('optimizer-config.json', 'utf-8')).limits.maxMemoryMB)")
+          
+          echo "workers=$WORKERS" >> $GITHUB_OUTPUT
+          echo "memory=$MEMORY" >> $GITHUB_OUTPUT
+          echo "Resource optimization configured: $WORKERS workers, ${MEMORY}MB memory"
+
+      - name: Analyze Test Selection
+        id: analyze
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Analyze changed files and determine test selection strategy
+          node scripts/ci/selective-test-runner.js analyze > test-analysis.json
+          
+          # Check if selective testing is beneficial
+          SELECTIVE=$(node -e "
+            const analysis = JSON.parse(require('fs').readFileSync('test-analysis.json', 'utf-8'));
+            const savings = analysis.analysis?.estimatedSavings || 0;
+            console.log(savings > 0.3 ? 'true' : 'false');
+          ")
+          
+          SELECTION=$(node -e "
+            const analysis = JSON.parse(require('fs').readFileSync('test-analysis.json', 'utf-8'));
+            console.log(JSON.stringify(analysis.selectedTests || []));
+          ")
+          
+          echo "selective=$SELECTIVE" >> $GITHUB_OUTPUT
+          echo "selection=$SELECTION" >> $GITHUB_OUTPUT
+          echo "Test selection analysis completed: selective=$SELECTIVE"
+
+      - name: Upload Analysis Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-analysis-${{ github.run_number }}
+          path: |
+            boatingInstrumentsApp/optimizer-config.json
+            boatingInstrumentsApp/test-analysis.json
+          retention-days: 7
+
+  # Job 2: NMEA Bridge Simulator Integration Tests
+  simulator-integration:
+    name: NMEA Bridge Simulator Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup-and-optimize
+    strategy:
+      matrix:
+        scenario: 
+          - basic-navigation
+          - coastal-sailing
+          - autopilot-engagement
+          - engine-monitoring
+      fail-fast: false
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'boatingInstrumentsApp/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./boatingInstrumentsApp
+        run: npm ci --prefer-offline
+
+      - name: Start NMEA Bridge Simulator with Lifecycle Management
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Use the enhanced lifecycle manager for reliable startup
+          node scripts/ci/simulator-lifecycle.js start ${{ matrix.scenario }} --duration 180000 > simulator-config.json
+          
+          # Verify simulator is healthy
+          SIMULATOR_STATUS=$(node scripts/ci/simulator-lifecycle.js status)
+          echo "Simulator status: $SIMULATOR_STATUS"
+
+      - name: Run Scenario-Specific Integration Tests
+        working-directory: ./boatingInstrumentsApp
+        env:
+          JEST_MAX_WORKERS: ${{ needs.setup-and-optimize.outputs.optimal-workers }}
+          NODE_OPTIONS: --max-old-space-size=${{ needs.setup-and-optimize.outputs.memory-limit }}
+        run: |
+          # Run tests with resource optimization
+          npm run test:integration -- --testNamePattern="${{ matrix.scenario }}" --maxWorkers=${{ needs.setup-and-optimize.outputs.optimal-workers }}
+
+      - name: Collect Performance Metrics
+        if: always()
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Collect simulator performance metrics
+          SIMULATOR_CONFIG=$(cat simulator-config.json)
+          PORTS=$(echo "$SIMULATOR_CONFIG" | node -e "console.log(JSON.stringify(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8')).ports))")
+          
+          # Extract API port and collect metrics
+          API_PORT=$(echo "$PORTS" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8')).api)")
+          curl -f http://localhost:$API_PORT/api/metrics/performance > performance-${{ matrix.scenario }}.json || echo "Failed to collect metrics"
+
+      - name: Stop Simulator with Cleanup
+        if: always()
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Use lifecycle manager for clean shutdown
+          node scripts/ci/simulator-lifecycle.js stop
+          
+          # Run environment cleanup
+          node scripts/ci/test-environment-cleanup.js quick
+
+      - name: Upload Integration Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results-${{ matrix.scenario }}-${{ github.run_number }}
+          path: |
+            boatingInstrumentsApp/performance-${{ matrix.scenario }}.json
+            boatingInstrumentsApp/simulator-config.json
+          retention-days: 7
+
+  # Job 3: Quality Gates with Enhanced Testing
+  quality-gates:
+    name: Professional Quality Gates Pipeline
+    runs-on: ubuntu-latest
+    needs: [setup-and-optimize, simulator-integration]
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'boatingInstrumentsApp/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./boatingInstrumentsApp
+        run: npm ci --prefer-offline
+
+      - name: Start Resource Monitoring
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Start resource monitoring in background
+          node scripts/ci/ci-resource-optimizer.js start &
+          OPTIMIZER_PID=$!
+          echo "OPTIMIZER_PID=$OPTIMIZER_PID" >> $GITHUB_ENV
+          echo "Started resource monitoring with PID: $OPTIMIZER_PID"
+
+      - name: Run Selective or Full Test Suite
+        working-directory: ./boatingInstrumentsApp
+        env:
+          JEST_MAX_WORKERS: ${{ needs.setup-and-optimize.outputs.optimal-workers }}
+          NODE_OPTIONS: --max-old-space-size=${{ needs.setup-and-optimize.outputs.memory-limit }}
+        run: |
+          if [ "${{ needs.setup-and-optimize.outputs.selective-tests }}" = "true" ]; then
+            echo "Running selective test suite..."
+            node scripts/ci/selective-test-runner.js run --coverage --fallback
+          else
+            echo "Running full test suite..."
+            npm run test:quality-gates
+          fi
+
+      - name: Execute Enhanced Quality Gates Pipeline
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Run comprehensive quality gates with CI integration
+          node scripts/ci/ci-quality-gates.js run
+
+      - name: Generate Comprehensive Quality Reports
+        if: always()
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Generate multi-format quality reports
+          node scripts/ci/quality-report-generator.js generate
+
+      - name: Stop Resource Monitoring
+        if: always()
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Stop resource monitoring and generate report
+          if [ ! -z "$OPTIMIZER_PID" ]; then
+            kill $OPTIMIZER_PID || true
+          fi
+          
+          # Generate resource optimization report
+          node scripts/ci/ci-resource-optimizer.js report || true
+
+      - name: Upload Quality Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ github.run_number }}
+          path: |
+            boatingInstrumentsApp/coverage/reports/
+            boatingInstrumentsApp/scripts/ci/resource-optimization-report.json
+            boatingInstrumentsApp/scripts/ci/flaky-tests-report.json
+          retention-days: 30
+
+      - name: Upload Coverage to Codecov (if configured)
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./boatingInstrumentsApp/coverage
+          fail_ci_if_error: false
+
+      - name: Comment PR with Quality Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './boatingInstrumentsApp/coverage/reports/quality-report.md';
+            
+            if (fs.existsSync(path)) {
+              const report = fs.readFileSync(path, 'utf8');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 🎯 Quality Gates Report\n\n${report}`
+              });
+            }
+
+  # Job 4: Performance Regression Detection
+  performance-regression:
+    name: Performance Regression Analysis
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'boatingInstrumentsApp/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./boatingInstrumentsApp
+        run: npm ci --prefer-offline
+
+      - name: Download Previous Performance Baseline
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-baseline
+          path: ./boatingInstrumentsApp/performance/
+        continue-on-error: true
+
+      - name: Run Performance Benchmarks
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Run performance validation tests
+          npm run test:performance-validation
+
+      - name: Analyze Performance Regression
+        working-directory: ./boatingInstrumentsApp
+        run: |
+          # Check for performance regressions using enhanced quality gates
+          node scripts/ci/ci-quality-gates.js run
+
+      - name: Upload Performance Baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline
+          path: ./boatingInstrumentsApp/performance/baseline-metrics.json
+          retention-days: 90
+
+  # Job 5: Deployment Readiness Check
+  deployment-readiness:
+    name: Deployment Readiness Validation
+    runs-on: ubuntu-latest
+    needs: [simulator-integration, quality-gates, performance-regression]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Quality Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: quality-reports-${{ github.run_number }}
+          path: ./quality-reports
+
+      - name: Validate Deployment Readiness
+        run: |
+          # Check if all quality gates passed
+          QUALITY_PASSED=$(cat quality-reports/quality-gates-report.json | jq -r '.results.passed')
+          
+          if [ "$QUALITY_PASSED" = "true" ]; then
+            echo "✅ All quality gates passed - deployment ready"
+            echo "DEPLOYMENT_READY=true" >> $GITHUB_ENV
+          else
+            echo "❌ Quality gates failed - deployment blocked"
+            echo "DEPLOYMENT_READY=false" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      - name: Create Deployment Status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentReady = process.env.DEPLOYMENT_READY === 'true';
+            
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: deploymentReady ? 'success' : 'failure',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: deploymentReady ? 'All quality gates passed' : 'Quality gates failed',
+              context: 'deployment/readiness'
+            });
+
+      - name: Trigger Deployment Pipeline
+        if: env.DEPLOYMENT_READY == 'true'
+        run: |
+          echo "🚀 Quality gates passed - ready for deployment"
+          # Integration point for deployment pipeline
+          # This would typically trigger a deployment workflow or external system

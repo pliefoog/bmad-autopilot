@@ -1,4 +1,15 @@
 {
+  "name": "bmad-autopilot-workspace",
+  "private": true,
+  "workspaces": [
+    "boatingInstrumentsApp"
+  ],
+  "scripts": {
+    "test": "cd boatingInstrumentsApp && npm test",
+    "test:watch": "cd boatingInstrumentsApp && npm test -- --watch",
+    "test:coverage": "cd boatingInstrumentsApp && npm test -- --coverage",
+    "test:vscode": "cd boatingInstrumentsApp && npx jest"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "jest": "^30.2.0",

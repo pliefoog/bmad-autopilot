@@ -7,6 +7,8 @@ import { useDataPresentation, useTemperaturePresentation } from '../presentation
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import UniversalIcon from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface BatteryWidgetProps {
   id: string;
@@ -47,23 +49,23 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
         current: batteryData.current,
         temperature: batteryData.temperature,
         stateOfCharge: batteryData.stateOfCharge,
-        nominalVoltage: 12.0, // Default nominal voltage
+        nominalVoltage: batteryData.nominalVoltage,
         capacity: batteryData.capacity,
-        chemistry: 'Unknown', // Could be extended from NMEA data
+        chemistry: batteryData.chemistry,
         instance: instanceNumber
       };
     }
     return null;
   }, [batteryData, instanceNumber]);
   
-  // Extract values with defaults
+  // Extract values with fallbacks
   const voltage = currentBatteryData?.voltage || null;
   const current = currentBatteryData?.current || null;
   const temperature = currentBatteryData?.temperature || null;
   const stateOfCharge = currentBatteryData?.stateOfCharge || null;
-  const nominalVoltage = currentBatteryData?.nominalVoltage || 12.0;
+  const nominalVoltage = currentBatteryData?.nominalVoltage || null;
   const capacity = currentBatteryData?.capacity || null;
-  const chemistry = currentBatteryData?.chemistry || 'Unknown';
+  const chemistry = currentBatteryData?.chemistry || null;
   
   // Epic 9 Enhanced Presentation System for battery values
   const voltagePresentation = useDataPresentation('voltage');
@@ -225,23 +227,6 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
     toggleWidgetPin(id);
   }, [id, toggleWidgetPin]);
 
-  // Auto-generate appropriate title based on instance and location
-  const getDisplayTitle = useCallback(() => {
-    // If custom title provided, use it
-    if (title !== 'BATTERY') return title;
-    
-    // Auto-generate based on instance
-    switch (batteryInstance) {
-      case 'house': return 'HOUSE BATTERY';
-      case 'engine': return 'START BATTERY';
-      case 'thruster': return 'THRUSTER BATTERY';
-      case 'bow': return 'BOW BATTERY';
-      case 'stern': return 'STERN BATTERY';
-      case 'generator': return 'GENERATOR BATTERY';
-      default: return `${batteryInstance.toUpperCase()} BATTERY`;
-    }
-  }, [title, batteryInstance]);
-
   const styles = StyleSheet.create({
     container: {
       backgroundColor: theme.surface,
@@ -307,7 +292,14 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={styles.title}>{getDisplayTitle()}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('battery')?.icon || 'battery-charging-outline'} 
+            size={16} 
+            color={theme.primary}
+          />
+          <Text style={styles.title}>{title}</Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
@@ -317,7 +309,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={styles.pinIcon}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -360,7 +352,9 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
       {expanded && (
         <View style={styles.secondaryGrid}>
             <SecondaryMetricCell
-              data={nominalVoltageDisplay}
+              mnemonic="NOM"
+              value={nominalVoltage !== null ? nominalVoltage.toFixed(1) : '---'}
+              unit="V"
               state="normal"
               compact={true}
             />
@@ -373,7 +367,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
             />
             <SecondaryMetricCell
               mnemonic="CHEM"
-              value={chemistry}
+              value={chemistry || 'Unknown'}
               unit=""
               state="normal"
               compact={true}

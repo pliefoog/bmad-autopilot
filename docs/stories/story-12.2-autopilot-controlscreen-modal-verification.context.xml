@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="story-12.2-autopilot-controlscreen-modal-verification" v="1.0">
+  <metadata>
+    <epicId>12</epicId>
+    <storyId>12.2</storyId>
+    <title>AutopilotControlScreen Modal Verification</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-12.2-autopilot-controlscreen-modal-verification.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boat operator</asA>
+    <iWant>the AutopilotControlScreen modal to be fully verified and functional</iWant>
+    <soThat>I can reliably access full-screen autopilot controls without modal presentation issues</soThat>
+    <tasks>
+      - Task 1: Verify Modal Integration in App.tsx (AC: 1)
+        - Subtask 1.1: Review current App.tsx modal state management
+        - Subtask 1.2: Verify AutopilotFooter callback integration
+        - Subtask 1.3: Test modal visibility toggle workflow
+        - Subtask 1.4: Confirm no z-index or layout conflicts
+      
+      - Task 2: Verify P70-Inspired Control Interface (AC: 2)
+        - Subtask 2.1: Test all heading adjustment buttons (±1°, ±10°)
+        - Subtask 2.2: Verify ENGAGE button functionality
+        - Subtask 2.3: Verify STANDBY button functionality
+        - Subtask 2.4: Test mode selection controls
+        - Subtask 2.5: Verify compass visualization updates
+      
+      - Task 3: Verify Safety Confirmation System (AC: 3)
+        - Subtask 3.1: Test cumulative heading change tracking
+        - Subtask 3.2: Trigger confirmation dialog with >20° adjustment
+        - Subtask 3.3: Test confirmation approval workflow
+        - Subtask 3.4: Test confirmation cancellation workflow
+        - Subtask 3.5: Verify emergency disengage bypasses confirmation
+      
+      - Task 4: Validate Integration with Architecture (AC: 4)
+        - Subtask 4.1: Test Enhanced Presentation System integration
+        - Subtask 4.2: Verify theme switching (day/night/red-night)
+        - Subtask 4.3: Validate NMEA store integration
+        - Subtask 4.4: Test AutopilotCommandManager integration
+        - Subtask 4.5: Run existing unit tests
+      
+      - Task 5: Manual Testing Across Platforms (AC: 1-4)
+        - Subtask 5.1: Web platform - modal presentation and resize
+        - Subtask 5.2: iOS simulator - native modal and safe areas
+        - Subtask 5.3: Android emulator - modal dismissal gestures
+        - Subtask 5.4: Full autopilot workflow on each platform
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" priority="critical">
+      <title>Modal Presentation &amp; Dismissal</title>
+      <description>Modal opens/closes properly from AutopilotFooter trigger without UI conflicts</description>
+      <conditions>
+        - AutopilotFooter "onOpenAutopilotControl" callback correctly triggers modal visibility
+        - Modal presents in full-screen mode without underlying dashboard interference
+        - Close button and modal dismissal gestures work properly
+        - Modal state synchronizes correctly with parent App.tsx visibility state
+      </conditions>
+    </criterion>
+
+    <criterion id="AC2" priority="critical">
+      <title>P70-Inspired Controls Functional</title>
+      <description>All autopilot controls are responsive and operational</description>
+      <conditions>
+        - Heading adjustment buttons (+1°, -1°, +10°, -10°) send correct commands
+        - ENGAGE/STANDBY primary controls function properly
+        - Mode selection controls (COMPASS, WIND, NAV) work correctly
+        - Current heading display updates in real-time from NMEA data
+      </conditions>
+    </criterion>
+
+    <criterion id="AC3" priority="critical">
+      <title>Safety Confirmations</title>
+      <description>Large heading adjustments (&gt;20°) trigger confirmation dialogs</description>
+      <conditions>
+        - Confirmation dialog appears when cumulative heading change exceeds 20°
+        - Confirmation includes current heading, target heading, and change magnitude
+        - User can approve or cancel large heading changes
+        - Emergency disengage always bypasses confirmation (immediate action)
+      </conditions>
+    </criterion>
+
+    <criterion id="AC4" priority="high">
+      <title>Integration Quality</title>
+      <description>Component properly integrates with existing architecture</description>
+      <conditions>
+        - Modal works correctly with Enhanced Presentation System (Epic 9)
+        - Theme system compatibility (day/night/red-night modes) verified
+        - NMEA store integration provides real-time autopilot/compass data
+        - AutopilotCommandManager service layer integration functional
+      </conditions>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/stories/epic-12-v23-completion-technical-debt.md</path>
+        <title>Epic 12: v2.3 Completion &amp; Technical Debt Resolution</title>
+        <section>Story 12.2: AutopilotControlScreen Modal Verification</section>
+        <snippet>AutopilotControlScreen.tsx exists (783 lines) - verify complete implementation. Test full-screen modal presentation and dismissal. Validate safety confirmations for large heading changes (&gt;20°). Ensure proper integration with AutopilotFooter component.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/tech-spec-epic-12.md</path>
+        <title>Technical Specification: v2.3 Completion &amp; Technical Debt Resolution</title>
+        <section>Story 12.2: AutopilotControlScreen Verification Workflow</section>
+        <snippet>Test modal visibility toggle functionality. Verify full-screen autopilot command interface. Validate safety confirmation dialogs. Ensure proper modal closing and return to dashboard.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/ui-architecture/p70-autopilot-mockup.md</path>
+        <title>Raymarine P70-Style Autopilot Control Interface Mockup</title>
+        <section>Component Specifications</section>
+        <snippet>P70-inspired grid-based button layout for course adjustments. Large accessible touch targets optimized for marine conditions. Central heading display with compass visualization. Primary ENGAGE/STANDBY controls. Emergency disengage always accessible.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/stories/story-3.2-autopilot-control-ui.md</path>
+        <title>Story 3.2: Autopilot Control UI &amp; Touch Interface</title>
+        <section>QA Results - Production Ready</section>
+        <snippet>All 15 acceptance criteria met. Marine safety features validated. Professional UI implementation complete with AutopilotCommandManager service integration, audio alerts, and comprehensive error handling.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/stories/story-6.13-fixed-autopilot-footer.md</path>
+        <title>Story 6.13: Fixed Autopilot Control Footer</title>
+        <section>Technical Implementation - Autopilot Button States</section>
+        <snippet>Visual state indicators: Off/Standby (gray), Engaged (blue/green), Error (red), Disconnected (dimmed). Button interactions: Single tap opens control panel, long press for emergency disengage with confirmation, haptic feedback on supported devices.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>boatingInstrumentsApp/src/widgets/AutopilotControlScreen.tsx</path>
+        <kind>component</kind>
+        <symbol>AutopilotControlScreen</symbol>
+        <lines>1-783</lines>
+        <reason>Main autopilot control modal component with P70-inspired interface. Contains all heading adjustment controls, safety confirmation system, NMEA store integration, and AutopilotCommandManager service integration.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/components/organisms/AutopilotFooter.tsx</path>
+        <kind>component</kind>
+        <symbol>AutopilotFooter</symbol>
+        <lines>1-88</lines>
+        <reason>Fixed footer component that triggers AutopilotControlScreen modal via onOpenAutopilotControl callback. Provides quick access to autopilot controls from main dashboard.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/mobile/App.tsx</path>
+        <kind>component</kind>
+        <symbol>App</symbol>
+        <lines>14, 37, 421-431</lines>
+        <reason>Main app component managing AutopilotControlScreen modal state (showAutopilotControl, setShowAutopilotControl) and integration with AutopilotFooter.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/components/molecules/AutopilotButton.tsx</path>
+        <kind>component</kind>
+        <symbol>AutopilotButton</symbol>
+        <lines>1-200</lines>
+        <reason>Autopilot button UI component used in AutopilotFooter. Displays autopilot status, mode, and heading information with state-based visual indicators.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/services/autopilotService.ts</path>
+        <kind>service</kind>
+        <symbol>AutopilotCommandManager</symbol>
+        <lines>1-500</lines>
+        <reason>Service layer handling autopilot command execution. Integrated with AutopilotControlScreen to send engagement, standby, heading adjustment, and emergency disengage commands.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/store/nmeaStore.ts</path>
+        <kind>store</kind>
+        <symbol>useNmeaStore</symbol>
+        <lines>1-1000</lines>
+        <reason>Zustand store providing real-time autopilot and compass sensor data via getSensorData('autopilot', 0) and getSensorData('compass', 0) methods.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/__tests__/tier1-unit/components/AutopilotControlScreen.test.tsx</path>
+        <kind>test</kind>
+        <symbol>AutopilotControlScreen test suite</symbol>
+        <lines>1-439</lines>
+        <reason>Comprehensive unit test suite covering UI layout, control buttons, safety confirmations, service integration, responsive design, and accessibility features.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/hooks/useAutopilotStatus.ts</path>
+        <kind>hook</kind>
+        <symbol>useAutopilotStatus</symbol>
+        <lines>1-100</lines>
+        <reason>Custom hook extracting autopilot status information from NMEA store. Used by AutopilotFooter to display current autopilot state.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="react-native" version="~0.76.0">Core React Native framework</package>
+        <package name="react-native-sound" version="^0.12.0">Audio feedback for autopilot state changes</package>
+        <package name="react-native-svg" version="^15.8.0">Compass visualization rendering</package>
+        <package name="react-native-safe-area-context" version="^4.14.0">Safe area handling for modal</package>
+        <package name="zustand" version="^5.0.2">State management for NMEA data</package>
+      </node>
+
+      <testing>
+        <package name="@testing-library/react-native" version="^12.8.3">Component testing framework</package>
+        <package name="jest" version="^29.7.0">Test runner</package>
+      </testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">
+      <rule>Component follows Atomic Design pattern - AutopilotControlScreen (organism) uses AutopilotButton (molecule) and UniversalIcon (atom)</rule>
+      <rule>Service layer separation - All autopilot commands routed through AutopilotCommandManager service</rule>
+      <rule>Enhanced Presentation System (Epic 9) - Must use theme system hooks (useTheme) and presentation components</rule>
+      <rule>Multi-store architecture - NMEA data from nmeaStore, UI state managed locally in component</rule>
+    </constraint>
+
+    <constraint type="safety">
+      <rule>Two-step engagement - ENGAGE button must trigger confirmation modal before activating autopilot</rule>
+      <rule>Large heading changes - Cumulative adjustments &gt;20° require confirmation dialog</rule>
+      <rule>Emergency disengage - Must bypass all confirmations for immediate action</rule>
+      <rule>Visual feedback - All state changes require visual indicators (status LED, button colors)</rule>
+      <rule>Audio alerts - State changes should trigger audio feedback (engage, disengage, error)</rule>
+      <rule>Haptic feedback - All button presses require tactile confirmation via Vibration API</rule>
+    </constraint>
+
+    <constraint type="ui">
+      <rule>Modal presentation - Must use React Native Modal with pageSheet presentationStyle</rule>
+      <rule>Touch targets - Minimum 44pt touch targets for all interactive elements (marine accessibility)</rule>
+      <rule>Theme compatibility - Must support day, night, and red-night themes from theme system</rule>
+      <rule>Responsive design - Must work in portrait and landscape orientations</rule>
+      <rule>Z-index management - Modal must not conflict with AlarmBanner or ToastContainer</rule>
+    </constraint>
+
+    <constraint type="testing">
+      <rule>Triple-tier testing strategy (Epic 11) - Unit, integration, and manual testing required</rule>
+      <rule>Existing tests must pass - All tests in AutopilotControlScreen.test.tsx must continue passing</rule>
+      <rule>NMEA simulator integration - Use "Start NMEA Bridge: Scenario - Autopilot Engagement" for testing</rule>
+      <rule>Cross-platform verification - Test on Web, iOS simulator, and Android emulator</rule>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AutopilotControlScreenProps</name>
+      <kind>React component props</kind>
+      <signature>
+interface AutopilotControlScreenProps {
+  visible: boolean;
+  onClose: () => void;
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/widgets/AutopilotControlScreen.tsx</path>
+    </interface>
+
+    <interface>
+      <name>AutopilotFooterProps</name>
+      <kind>React component props</kind>
+      <signature>
+interface AutopilotFooterProps {
+  onOpenAutopilotControl: () => void;
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/components/organisms/AutopilotFooter.tsx</path>
+    </interface>
+
+    <interface>
+      <name>useNmeaStore.getSensorData</name>
+      <kind>Zustand store method</kind>
+      <signature>
+getSensorData(sensorType: 'autopilot' | 'compass', instance: number): SensorData | undefined
+      </signature>
+      <path>boatingInstrumentsApp/src/store/nmeaStore.ts</path>
+    </interface>
+
+    <interface>
+      <name>AutopilotCommandManager</name>
+      <kind>Service class</kind>
+      <signature>
+class AutopilotCommandManager {
+  engageAutopilot(heading: number): Promise&lt;boolean&gt;
+  standby(): Promise&lt;boolean&gt;
+  adjustHeading(delta: number): Promise&lt;boolean&gt;
+  emergencyDisengage(): Promise&lt;boolean&gt;
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/services/autopilotService.ts</path>
+    </interface>
+
+    <interface>
+      <name>useTheme</name>
+      <kind>Theme system hook</kind>
+      <signature>
+useTheme(): ThemeColors
+// Returns: { surface, text, primary, error, border, appBackground, ... }
+      </signature>
+      <path>boatingInstrumentsApp/src/store/themeStore.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Epic 11 professional-grade testing architecture requires triple-tier testing strategy:
+      - Tier 1 (Unit): Component isolation testing with mocked dependencies
+      - Tier 2 (Integration): Full data flow testing with NMEA Bridge Simulator
+      - Tier 3 (Manual): Cross-platform verification and UX validation
+      
+      All tests must use React Native Testing Library (@testing-library/react-native) for component interaction testing.
+      Jest configuration includes proper mocking of React Native Modal, Sound, and Vibration APIs.
+      Test coverage target: &gt;60% overall, &gt;90% for safety-critical autopilot controls.
+    </standards>
+
+    <locations>
+      - boatingInstrumentsApp/__tests__/tier1-unit/components/AutopilotControlScreen.test.tsx
+      - boatingInstrumentsApp/__tests__/tier2-integration/autopilot-workflow.test.tsx (if needed)
+      - Manual testing protocol documented in story file
+    </locations>
+
+    <ideas>
+      <idea criterion="AC1">
+        - Test modal visibility state management in App.tsx
+        - Verify onOpenAutopilotControl callback chain from AutopilotFooter
+        - Test modal close via button press and onRequestClose
+        - Verify no z-index conflicts with AlarmBanner/ToastContainer using visual inspection
+      </idea>
+
+      <idea criterion="AC2">
+        - Test heading adjustment buttons send correct deltas (+1, -1, +10, -10)
+        - Mock AutopilotCommandManager and verify method calls
+        - Test ENGAGE button triggers confirmation modal
+        - Test STANDBY button calls standby service method
+        - Verify compass display updates with NMEA store data changes
+      </idea>
+
+      <idea criterion="AC3">
+        - Test cumulative heading change tracking across multiple button presses
+        - Trigger &gt;20° change and verify confirmation modal appears
+        - Test confirmation approval calls engageAutopilot with correct heading
+        - Test confirmation cancellation closes modal without command execution
+        - Verify emergency disengage calls service immediately without confirmation
+      </idea>
+
+      <idea criterion="AC4">
+        - Test theme switching updates component colors/styles
+        - Verify useTheme hook integration
+        - Test NMEA store getSensorData calls for autopilot and compass
+        - Verify AutopilotCommandManager integration with all control methods
+        - Run existing unit test suite (439 lines) to ensure no regressions
+      </idea>
+
+      <idea criterion="Cross-Platform">
+        - Web: Test modal with browser window resize, ensure responsive layout
+        - iOS: Verify safe area insets, native modal presentation style
+        - Android: Test back button dismissal, modal overlay touch handling
+        - All platforms: Full autopilot workflow from footer → modal → command → close
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

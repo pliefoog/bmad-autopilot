@@ -100,6 +100,24 @@ jest.mock('@testing-library/react-native', () => {
   const render = (component: React.ReactElement) => {
     const rendered = create(component);
     
+    // Helper to find text content in tree
+    const findByText = (text: string, root: any): any => {
+      try {
+        return root.findAll((node: any) => {
+          // Check if node has children that are text
+          if (node.children && node.children.length > 0) {
+            const textContent = node.children.filter((child: any) => typeof child === 'string').join('');
+            if (textContent === text) {
+              return true;
+            }
+          }
+          return false;
+        });
+      } catch {
+        return [];
+      }
+    };
+    
     return {
       getByTestId: (testID: string) => {
         const instance = rendered.root;
@@ -130,6 +148,31 @@ jest.mock('@testing-library/react-native', () => {
         } catch {
           return null;
         }
+      },
+      getByText: (text: string) => {
+        const instance = rendered.root;
+        const matches = findByText(text, instance);
+        if (matches.length === 0) {
+          throw new Error(`Unable to find an element with text: ${text}`);
+        }
+        return matches[0];
+      },
+      getAllByText: (text: string) => {
+        const instance = rendered.root;
+        const matches = findByText(text, instance);
+        if (matches.length === 0) {
+          throw new Error(`Unable to find elements with text: ${text}`);
+        }
+        return matches;
+      },
+      queryByText: (text: string) => {
+        const instance = rendered.root;
+        const matches = findByText(text, instance);
+        return matches.length > 0 ? matches[0] : null;
+      },
+      queryAllByText: (text: string) => {
+        const instance = rendered.root;
+        return findByText(text, instance);
       },
       rerender: (newComponent: React.ReactElement) => {
         rendered.update(newComponent);

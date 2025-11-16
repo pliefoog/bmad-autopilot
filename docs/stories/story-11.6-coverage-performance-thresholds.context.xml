@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="story-11.6-coverage-performance-thresholds" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.6</storyId>
+    <title>Coverage and Performance Thresholds</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-30</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.6-coverage-performance-thresholds.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>test engineer and quality assurance specialist</asA>
+    <iWant>comprehensive coverage requirements and performance thresholds established and enforced with automated validation</iWant>
+    <soThat>marine application quality is guaranteed with 70%+ global coverage, 85%+ widget coverage, 80%+ service coverage, and performance targets of &lt;16ms renders, &lt;100ms data latency maintained consistently</soThat>
+    <tasks>
+      <task id="1" ac="1">Implement Coverage Threshold Framework - Configure Jest to enforce 70% global coverage minimum, Set up widget-specific coverage thresholds at 85% minimum, Configure service layer coverage thresholds at 80% minimum, Implement integration test coverage tracking at 90% minimum, Create marine safety focus area coverage reporting</task>
+      <task id="2" ac="2">Build Performance Threshold Monitoring - Integrate render performance monitoring into test framework (&lt;16ms target), Implement memory usage tracking with 50MB test operation limit, Create data latency monitoring (NMEA → widget &lt;100ms target), Build simulator throughput validation (500+ msg/sec capacity), Add performance metrics collection and reporting</task>
+      <task id="3" ac="3">Create Automated Quality Enforcement - Integrate coverage validation into CI/CD test pipeline, Build performance regression detection system with alerting, Configure build gates that fail on coverage/performance violations, Implement quality trend analysis with historical tracking, Create automated threshold violation notifications</task>
+      <task id="4" ac="4">Establish Marine Safety Performance Validation - Identify and catalog critical marine functions for monitoring, Implement safety-critical operation latency measurement, Build error recovery time tracking and optimization framework, Create resource utilization monitoring for mobile battery optimization, Establish marine industry compliance validation checkpoints</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Coverage Threshold Framework Implementation - Global coverage ≥70% (marine safety focus over blanket coverage), Widget coverage ≥85% (UI components critical for marine operations), Service coverage ≥80% (NMEA parsing and state management), Integration coverage ≥90% (end-to-end marine data workflows)</criterion>
+    <criterion id="2">Performance Threshold Monitoring System - Render performance monitoring &lt;16ms widget updates (60fps requirement), Memory management tracking &lt;50MB increase per test operation, Data latency validation &lt;100ms NMEA sentence → widget update, Simulator throughput validation 500+ messages/second handling capacity</criterion>
+    <criterion id="3">Quality Threshold Enforcement Automation - Automated threshold validation integrated in test pipeline, Performance regression detection and alerting system, Coverage requirement enforcement with build gates, Quality trend analysis and improvement tracking system</criterion>
+    <criterion id="4">Marine Safety Performance Validation - Critical marine function performance monitoring, Safety-critical operation latency validation, Error recovery time measurement and optimization, Resource utilization monitoring for battery life optimization</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/tech-spec-epic-11.md" title="Technical Specification: Epic 11 - Professional-Grade Testing Architecture" section="Performance" snippet="Test execution performance requirements: Unit test execution &lt;50ms per test, Integration test execution &lt;2000ms per test scenario, Marine data validation performance with &lt;16ms widget updates and &lt;100ms NMEA sentence → widget update"/>
+      <doc path="docs/stories/epic-11-professional-grade-testing-architecture.md" title="Epic 11: Professional-Grade Testing Architecture" section="Story 11.6" snippet="Coverage and performance thresholds with comprehensive coverage requirements: Global coverage ≥70%, Widget coverage ≥85%, Service coverage ≥80%, Integration coverage ≥90%"/>
+      <doc path="docs/architecture.md" title="System Architecture" section="Testing Strategy" snippet="Professional testing architecture with cross-platform testing support and marine domain validation standards"/>
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/jest.config.js" kind="config" symbol="jest.config" lines="" reason="Current Jest configuration file that needs extension with coverage thresholds and performance monitoring"/>
+      <artifact path="boatingInstrumentsApp/package.json" kind="config" symbol="scripts" lines="" reason="NPM scripts for test execution that need coverage and performance threshold integration"/>
+      <artifact path="boatingInstrumentsApp/__tests__" kind="directory" symbol="" lines="" reason="Existing test directory structure that coverage thresholds will be applied to"/>
+      <artifact path="boatingInstrumentsApp/src/services" kind="directory" symbol="" lines="" reason="Service layer code that requires 80% coverage threshold enforcement"/>
+      <artifact path="boatingInstrumentsApp/src/widgets" kind="directory" symbol="" lines="" reason="Widget components that require 85% coverage threshold enforcement"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="jest" version="^29.0.0" reason="Test runner that will be configured with coverage thresholds"/>
+        <package name="@testing-library/react-native" version="^12.0.0" reason="Testing utilities for React Native components"/>
+        <package name="@testing-library/jest-native" version="^5.0.0" reason="Extended Jest matchers for React Native testing"/>
+        <package name="react-native-performance" version="^5.0.0" reason="Performance monitoring API for React Native applications"/>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Testing Infrastructure Integration: Builds on Epic 6 Domain-Separated Service Architecture for test organization</constraint>
+    <constraint>Performance Monitoring Architecture: React Native performance monitoring via React DevTools profiler integration</constraint>
+    <constraint>Quality Enforcement Patterns: Jest configuration with custom coverage reporters and threshold enforcement</constraint>
+    <constraint>Cross-Platform Support: Maintains testing support across iOS, Android, Windows, macOS platforms</constraint>
+    <constraint>Marine Safety Focus: Coverage requirements prioritize marine safety functions over blanket coverage</constraint>
+    <constraint>Performance Targets: &lt;16ms widget updates (60fps), &lt;100ms NMEA sentence → widget update, &lt;50MB memory increase per test operation</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Jest Coverage Configuration" kind="configuration" signature="coverageThreshold: { global: { branches: 70, functions: 70, lines: 70, statements: 70 }, './src/widgets/**/*.{js,jsx,ts,tsx}': { branches: 85, functions: 85, lines: 85, statements: 85 }, './src/services/**/*.{js,jsx,ts,tsx}': { branches: 80, functions: 80, lines: 80, statements: 80 } }" path="boatingInstrumentsApp/jest.config.js"/>
+    <interface name="Performance Monitoring API" kind="function signature" signature="interface PerformanceMetrics { renderTime: number; memoryUsage: number; dataLatency: number; throughput: number; }" path="boatingInstrumentsApp/src/utils/performance-monitor.js"/>
+    <interface name="Coverage Reporter" kind="class interface" signature="class CustomCoverageReporter { onRunComplete(contexts, results): void; generateThresholdReport(): CoverageReport; }" path="boatingInstrumentsApp/src/test-utils/coverage-reporter.js"/>
+  </interfaces>
+
+  <tests>
+    <standards>Professional testing architecture with triple testing strategy (Static Mocks, API Message Injection, Full Scenario Integration). Jest framework with React Native Testing Library, custom coverage reporters for domain-specific thresholds, and performance monitoring integration. All tests must include PURPOSE/REQUIREMENT/METHOD documentation headers.</standards>
+    <locations>boatingInstrumentsApp/__tests__/**, boatingInstrumentsApp/src/**/*.test.{js,jsx,ts,tsx}, boatingInstrumentsApp/src/**/*.spec.{js,jsx,ts,tsx}</locations>
+    <ideas>
+      <idea ac="1">Create Jest configuration tests to verify coverage thresholds are properly enforced across global, widget, and service domains</idea>
+      <idea ac="2">Implement performance monitoring integration tests that measure render time, memory usage, and data latency during test execution</idea>
+      <idea ac="3">Build CI/CD pipeline integration tests that verify build gates fail appropriately when coverage or performance thresholds are violated</idea>
+      <idea ac="4">Create marine safety validation tests that monitor critical marine function performance and verify compliance with industry standards</idea>
+    </ideas>
+  </tests>
+</story-context>

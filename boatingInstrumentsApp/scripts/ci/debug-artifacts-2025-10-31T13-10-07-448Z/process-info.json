@@ -1,0 +1,76 @@
+{
+  "timestamp": "2025-10-31T13:10:14.839Z",
+  "mainProcess": {
+    "pid": 65196,
+    "ppid": 50680,
+    "memory": {
+      "rss": 19218432,
+      "heapTotal": 6094848,
+      "heapUsed": 5174280,
+      "external": 1520719,
+      "arrayBuffers": 10499
+    },
+    "uptime": 46.783034833,
+    "versions": {
+      "node": "20.19.5",
+      "acorn": "8.15.0",
+      "ada": "2.9.2",
+      "ares": "1.34.5",
+      "brotli": "1.1.0",
+      "cjs_module_lexer": "2.1.0",
+      "cldr": "47.0",
+      "icu": "77.1",
+      "llhttp": "9.3.0",
+      "modules": "115",
+      "napi": "9",
+      "nghttp2": "1.67.0",
+      "openssl": "3.6.0",
+      "simdutf": "6.4.2",
+      "tz": "2025a",
+      "undici": "6.21.2",
+      "unicode": "16.0",
+      "uv": "1.51.0",
+      "uvwasi": "0.0.21",
+      "v8": "11.3.244.8-node.30",
+      "zlib": "1.2.12"
+    },
+    "features": {
+      "inspector": true,
+      "debug": false,
+      "uv": true,
+      "ipv6": true,
+      "tls_alpn": true,
+      "tls_sni": true,
+      "tls_ocsp": true,
+      "tls": true,
+      "cached_builtins": true,
+      "require_module": true
+    }
+  },
+  "childProcesses": {
+    "error": "Command failed: ps --ppid 65196 -o pid,ppid,comm,args --no-headers\nps: illegal option -- -\nusage: ps [-AaCcEefhjlMmrSTvwXx] [-O fmt | -o fmt] [-G gid[,gid...]]\n          [-g grp[,grp...]] [-u [uid,uid...]]\n          [-p pid[,pid...]] [-t tty[,tty...]] [-U user[,user...]]\n       ps [-L]\n"
+  },
+  "openFiles": [
+    "node    65196 pieter  cwd      DIR               1,32     3808             6443011 /Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp",
+    "node    65196 pieter  txt      REG               1,13 41070704           247064631 /opt/homebrew/Cellar/node@20/20.19.5/bin/node",
+    "node    65196 pieter  txt      REG               1,13    88080           118702561 /opt/homebrew/Cellar/brotli/1.1.0/lib/libbrotlidec.1.1.0.dylib",
+    "node    65196 pieter  txt      REG               1,13   230704           218935112 /opt/homebrew/Cellar/libuv/1.51.0/lib/libuv.1.dylib",
+    "node    65196 pieter  txt      REG               1,13   244656           247061191 /opt/homebrew/Cellar/c-ares/1.34.5/lib/libcares.2.19.4.dylib",
+    "node    65196 pieter  txt      REG               1,13   202080           247061394 /opt/homebrew/Cellar/libnghttp2/1.67.1/lib/libnghttp2.14.dylib",
+    "node    65196 pieter  txt      REG               1,13  2289328 1152921500312524246 /usr/lib/dyld",
+    "node    65196 pieter  txt      REG               1,13   640080           118702562 /opt/homebrew/Cellar/brotli/1.1.0/lib/libbrotlienc.1.1.0.dylib",
+    "node    65196 pieter  txt      REG               1,13   168128           118702560 /opt/homebrew/Cellar/brotli/1.1.0/lib/libbrotlicommon.1.1.0.dylib",
+    "node    65196 pieter  txt      REG               1,13   905888           254188285 /opt/homebrew/Cellar/openssl@3/3.6.0/lib/libssl.3.dylib",
+    "node    65196 pieter  txt      REG               1,13  4874704           254188284 /opt/homebrew/Cellar/openssl@3/3.6.0/lib/libcrypto.3.dylib",
+    "node    65196 pieter  txt      REG               1,13  1841072           218926836 /opt/homebrew/Cellar/icu4c@77/77.1/lib/libicuuc.77.1.dylib",
+    "node    65196 pieter  txt      REG               1,13  3174032           218926832 /opt/homebrew/Cellar/icu4c@77/77.1/lib/libicui18n.77.1.dylib",
+    "node    65196 pieter  txt      REG               1,13 32167248           218926831 /opt/homebrew/Cellar/icu4c@77/77.1/lib/libicudata.77.1.dylib",
+    "node    65196 pieter    0u     CHR               16,6   0t3314                 773 /dev/ttys006",
+    "node    65196 pieter    1u     CHR               16,6   0t3668                 773 /dev/ttys006",
+    "node    65196 pieter    2u     CHR               16,6  0t68870                 773 /dev/ttys006",
+    "node    65196 pieter    3u  KQUEUE                                                 count=0, state=0x8",
+    "node    65196 pieter    4     PIPE  0xf023f90dc030cbc    16384                     ->0x2a9653ec36c15761",
+    "node    65196 pieter    5     PIPE 0x2a9653ec36c15761    16384                     ->0xf023f90dc030cbc"
+  ],
+  "networkConnections": []
+}

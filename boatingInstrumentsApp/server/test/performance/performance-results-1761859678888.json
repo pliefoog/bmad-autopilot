@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-10-30T21:27:58.888Z",
+  "testType": "api_response",
+  "metrics": {
+    "averageResponseTimeMs": 70.762381609999,
+    "p95ResponseTimeMs": 115.24549999998999,
+    "maxResponseTimeMs": 120.3023749999993,
+    "timeoutRate": 0
+  },
+  "environment": {
+    "nodeVersion": "v20.19.5",
+    "platform": "darwin",
+    "arch": "arm64"
+  }
+}

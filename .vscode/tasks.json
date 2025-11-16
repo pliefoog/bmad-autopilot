@@ -2,17 +2,266 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Start NMEA Bridge: Scenario - Basic Navigation (Default)",
+			"label": "Run Jest Tests - VS Code Test Explorer",
 			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"basic-navigation",
-				"--loop"
-			],
+			"command": "npm",
+			"args": ["test"],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Start NMEA Bridge: Single Engine Scenario (Default)",
+			"type": "shell",
+			"comment": "Single engine monitoring with RPM, coolant temp, oil pressure, alternator voltage, fuel flow, and engine hours",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/engine/basic-engine-monitoring-with-variation.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Dual Engine Scenario",
+			"type": "shell",
+			"comment": "Twin engine monitoring with all parameters for both engines",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/engine/dual-engine-monitoring-with-variation.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Basic Navigation",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/basic-navigation.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Coastal Sailing",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/coastal-sailing.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Deep Water Passage",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/deep-water-passage.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Autopilot Engagement",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/autopilot/autopilot-engagement.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Real-World Sailing",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/recorded/real-world-sailing.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Multi-Instance Equipment Detection",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/multi-instance/multi-equipment-detection.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Battery Systems Test",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/battery/battery-drain-scenario.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Multi-Tank System Test",
+			"type": "shell",
+			"comment": "Tests all tank types with realistic fill/consumption patterns",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/tank/multi-tank-system.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Multi-Temperature Monitoring Test",
+			"type": "shell",
+			"comment": "Tests multiple temperature sensors across engine room, cabin, water, and refrigeration systems",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/temperature/multi-temperature-monitoring.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
 			},
 			"isBackground": true,
 			"problemMatcher": [],
@@ -47,15 +296,8 @@
 		{
 			"label": "Start Web Dev Server",
 			"type": "shell",
-			"command": "npx",
-			"args": [
-				"@expo/cli",
-				"start",
-				"--web",
-				"--port",
-				"8082",
-				"--clear"
-			],
+			"command": "npm",
+			"args": ["run", "web"],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"env": {
@@ -75,248 +317,12 @@
 			}
 		},
 		{
-			"label": "Start Full Web Development Stack",
-			"dependsOrder": "parallel",
-			"dependsOn": [
-				"Start NMEA Bridge: Scenario - Basic Navigation (Default)",
-				"Start Web Dev Server"
-			],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: File Mode - Recording Playback",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--file",
-				"vendor/sample-data/sailing-demo.nmea",
-				"--rate",
-				"10",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Basic Navigation",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"basic-navigation",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Coastal Sailing",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"coastal-sailing",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Deep Water Passage",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"deep-water-passage",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Autopilot Engagement",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"autopilot-engagement",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Engine Monitoring",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"engine-monitoring",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start Full Dev Stack + Comprehensive Scenario",
-			"dependsOrder": "parallel",
-			"dependsOn": [
-				"Start NMEA Bridge: Scenario - Coastal Sailing",
-				"Start Web Dev Server"
-			],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Real-World Sailing",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"real-world-sailing",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
-			"label": "Start NMEA Bridge: Scenario - Multi-Instance Equipment Detection",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--scenario",
-				"multi-equipment-detection",
-				"--loop"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build",
-			"presentation": {
-				"echo": true,
-				"reveal": "always",
-				"focus": false,
-				"panel": "new",
-				"showReuseMessage": true,
-				"clear": false
-			}
-		},
-		{
 			"label": "Stop Web Dev Server",
 			"type": "shell",
 			"command": "pkill",
 			"args": [
 				"-f",
-				"@expo/cli start --web"
+				"expo start --web"
 			],
 			"group": "build",
 			"presentation": {
@@ -329,20 +335,12 @@
 			}
 		},
 		{
-			"label": "Start NMEA Bridge: Live Mode - Hardware Connection",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--live",
-				"192.168.1.10",
-				"10110"
+			"label": "Start Full Web Development Stack",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start NMEA Bridge: Single Engine Scenario (Default)",
+				"Start Web Dev Server"
 			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
 			"group": "build",
 			"presentation": {
 				"echo": true,
@@ -354,22 +352,12 @@
 			}
 		},
 		{
-			"label": "Start NMEA Bridge: File Mode - Sailing Demo",
-			"type": "shell",
-			"command": "node",
-			"args": [
-				"server/nmea-bridge.js",
-				"--file",
-				"vendor/sample-data/sailing-demo.nmea",
-				"--rate",
-				"10",
-				"--loop"
+			"label": "Start Full Dev Stack + Coastal Sailing",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start NMEA Bridge: Coastal Sailing",
+				"Start Web Dev Server"
 			],
-			"options": {
-				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
-			},
-			"isBackground": true,
-			"problemMatcher": [],
 			"group": "build",
 			"presentation": {
 				"echo": true,

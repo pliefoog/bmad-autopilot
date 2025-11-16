@@ -6,6 +6,7 @@ import { useWidgetStore } from '../store/widgetStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import * as Brightness from 'expo-brightness';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
 
 interface ThemeSwitcherProps {
   id: string;
@@ -221,7 +222,14 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <UniversalIcon 
+            name="color-palette-outline" 
+            size={16} 
+            color={theme.primary}
+          />
+          <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
@@ -231,7 +239,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={styles.pinIcon}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

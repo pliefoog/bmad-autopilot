@@ -23,16 +23,19 @@ export interface EngineSensorData extends BaseSensorData {
   rpm?: number;           // PRIMARY metric
   coolantTemp?: number;   // PRIMARY metric  
   oilPressure?: number;   // PRIMARY metric
-  voltage?: number;       // Secondary metric
+  alternatorVoltage?: number;       // Secondary metric (also called 'voltage' in some contexts)
   fuelRate?: number;      // Secondary metric
   hours?: number;         // Secondary metric
 }
 
 export interface BatterySensorData extends BaseSensorData {
-  voltage?: number;       // PRIMARY metric
-  current?: number;       // PRIMARY metric
-  stateOfCharge?: number; // PRIMARY metric (0-100%)
-  temperature?: number;   // Secondary metric
+  voltage?: number;       // PRIMARY metric - actual voltage
+  current?: number;       // PRIMARY metric - current draw/charge
+  stateOfCharge?: number; // PRIMARY metric (0-100%) - battery SOC
+  temperature?: number;   // PRIMARY metric - battery temperature
+  nominalVoltage?: number; // Secondary metric - rated voltage
+  capacity?: number;      // Secondary metric - capacity in Ah
+  chemistry?: string;     // Secondary metric - battery chemistry type
 }
 
 export interface WindSensorData extends BaseSensorData {

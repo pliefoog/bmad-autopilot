@@ -72,10 +72,13 @@ export class CriticalAlarmConfiguration {
       
       const newConfig = { ...currentConfig, ...updates };
       
-      // Validate marine safety standards
-      if (this.config.validateMarineStandards) {
+      // Validate marine safety standards only for critical navigation alarms
+      // Non-critical alarms (like LOW_BATTERY) have different requirements
+      if (this.config.validateMarineStandards && this.isCriticalNavigationAlarm(type) && updates.enabled !== false) {
         const validationResult = this.validateMarineStandards(newConfig);
+        console.log('[CriticalAlarmConfiguration] validateMarineStandards result:', validationResult);
         if (!validationResult.valid) {
+          console.log('[CriticalAlarmConfiguration] Marine standards validation failed:', validationResult.errors);
           result.errors.push(...validationResult.errors);
           return result;
         }
@@ -83,7 +86,9 @@ export class CriticalAlarmConfiguration {
       
       // Validate user permissions for critical settings
       const permissionResult = this.validateUserPermissions(type, updates);
+      console.log('[CriticalAlarmConfiguration] validateUserPermissions result:', permissionResult);
       if (!permissionResult.allowed) {
+        console.log('[CriticalAlarmConfiguration] Permission validation failed:', permissionResult.errors);
         result.errors.push(...permissionResult.errors);
         return result;
       }
@@ -188,20 +193,24 @@ export class CriticalAlarmConfiguration {
   /**
    * Enable or disable specific alarm type
    */
-  public async setAlarmEnabled(type: CriticalAlarmType, enabled: boolean): Promise<boolean> {
+  public async setAlarmEnabled(type: CriticalAlarmType, enabled: boolean, confirmed: boolean = false): Promise<{ success: boolean; requiresConfirmation: boolean; message?: string }> {
     const config = this.alarmConfigs.get(type);
     if (!config) {
-      return false;
+      return { success: false, requiresConfirmation: false, message: 'Alarm configuration not found' };
     }
     
-    // Safety check: Critical navigation alarms cannot be disabled
-    if (!enabled && this.isCriticalNavigationAlarm(type)) {
-      console.warn(`CriticalAlarmConfiguration: Cannot disable critical navigation alarm: ${type}`);
-      return false;
+    // Safety check: Critical navigation alarms require confirmation to disable
+    if (!enabled && this.isCriticalNavigationAlarm(type) && !confirmed) {
+      console.warn(`CriticalAlarmConfiguration: Critical navigation alarm ${type} requires confirmation to disable`);
+      return { 
+        success: false, 
+        requiresConfirmation: true, 
+        message: 'This is a critical navigation alarm. Disabling it may compromise vessel safety. Are you sure you want to disable it?' 
+      };
     }
     
     const updateResult = await this.updateAlarmConfig(type, { enabled });
-    return updateResult.success;
+    return { success: updateResult.success, requiresConfirmation: false };
   }
   
   /**
@@ -226,10 +235,16 @@ export class CriticalAlarmConfiguration {
       // Test configuration validity
       const config = this.alarmConfigs.get(type);
       if (config) {
-        const configValidation = this.validateMarineStandards(config);
-        result.configurationValid = configValidation.valid;
-        if (!configValidation.valid) {
-          result.issues.push(...configValidation.errors);
+        // Only validate marine standards for critical navigation alarms
+        if (this.isCriticalNavigationAlarm(type)) {
+          const configValidation = this.validateMarineStandards(config);
+          result.configurationValid = configValidation.valid;
+          if (!configValidation.valid) {
+            result.issues.push(...configValidation.errors);
+          }
+        } else {
+          // Non-critical alarms are always considered valid for testing
+          result.configurationValid = true;
         }
       } else {
         result.issues.push(`No configuration found for alarm type: ${type}`);
@@ -671,9 +686,8 @@ export class CriticalAlarmConfiguration {
       errors.push('Navigation hazard alarms should not allow snoozing for safety');
     }
     
-    if (updates.enabled === false && this.isCriticalNavigationAlarm(type)) {
-      errors.push('Cannot disable critical navigation alarms');
-    }
+    // Note: enabled state changes are now handled via setAlarmEnabled with confirmation
+    // Don't block here - allow the confirmation flow to handle it
     
     return { allowed: errors.length === 0, errors };
   }

@@ -11,36 +11,54 @@
   "github.copilot.chat.agent.autoFix": true,
   "chat.tools.autoApprove": false,
   
-  // Story 11.3 AC2: VS Code Test Explorer Integration
-  "jest.jestCommandLine": "npm run test",
-  "jest.autoRun": {
-    "watch": false,
-    "onStartup": ["all-tests"]
+  // Story 11.7: VS Code Test Explorer Integration - Professional Test Tooling
+  "jest.rootPath": "./boatingInstrumentsApp",
+  "jest.runMode": {
+    "type": "on-demand"
   },
-  "jest.showCoverageOnLoad": true,
-  "jest.coverageFormatter": "GutterFormatter",
+  "jest.coverageColors": {
+    "covered": "rgba(9, 156, 65, 0.4)",
+    "uncovered": "rgba(221, 46, 68, 0.2)",
+    "partially-covered": "rgba(255, 152, 0, 0.2)"
+  },
+  "jest.enable": true,
   
-  // AC2.1: Simulator connection status display in test explorer UI
+  // AC1: Professional Test Documentation Display in Test Explorer
   "testing.openTesting": "openOnTestStart",
   "testing.followRunningTest": true,
   "testing.defaultGutterClickAction": "run",
-  
-  // AC2.2: Real-time simulator availability indicators  
   "testing.showAllMessages": true,
+  
+  // AC2: Real-time Coverage Visualization with marine safety focus
+  "coverage-gutters.coverageFileNames": [
+    "lcov.info",
+    "cov.xml",
+    "coverage.xml",
+    "jacoco.xml",
+    "coverage/vscode-coverage-overlay.json"
+  ],
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showBranchCoverage": true,
+  "coverage-gutters.highlightDark": "rgba(255, 0, 0, 0.3)",
+  "coverage-gutters.highlightLight": "rgba(255, 0, 0, 0.2)",
+  
+  // AC3: Simulator Connection Status in Test Explorer UI  
   "testing.gutterEnabled": true,
   
-  // AC2.4: Performance monitoring integration with threshold warnings
+  // AC4: Performance Monitoring Integration with threshold warnings
   "jest.debugMode": true,
   "jest.enableInlineErrorMessages": true,
+  "jest.showTerminalOnLaunch": false,
   
-  // Story 11.3: Test categorization based on simulator availability
+  // AC5: Development Workflow Enhancement - Test categorization and execution
   "testing.saveBeforeTest": true,
   "files.associations": {
     "*.test.ts": "typescript",
-    "*.integration.test.ts": "typescript"
+    "*.integration.test.ts": "typescript",
+    "*.e2e.test.ts": "typescript"
   },
   
-  // Environment-specific test execution indicators
+  // Marine domain-specific test execution indicators
   "workbench.colorCustomizations": {
     "testing.iconFailed": "#ff6b6b",
     "testing.iconErrored": "#ffa500", 
@@ -48,5 +66,6 @@
     "testing.iconQueued": "#74c0fc",
     "testing.iconSkipped": "#868e96",
     "testing.iconUnset": "#adb5bd"
-  }
+  },
+  "testing.automaticallyOpenTestResults": "openOnTestStart"
 }

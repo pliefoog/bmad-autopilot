@@ -75,8 +75,8 @@ data:
     min: 0.8
     max: 3.0
 
-# NMEA sentence configuration for GPS widget validation
-sentences:
+# NMEA sentences to emit
+nmea_sentences:
   # GGA - Global Positioning System Fix Data
   - type: "GGA"
     frequency: 1   # Hz - Standard GPS update rate

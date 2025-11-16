@@ -1,0 +1,584 @@
+{
+  "testToSource": {
+    "__tests__/marine-safety/coverage-threshold-framework.test.ts": [],
+    "__tests__/marine-safety/marine-safety-performance.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/test-utils/performance-monitor-setup.ts"
+    ],
+    "__tests__/tier1-unit/alarms/audio/EnhancedAudioAlertSystem.test.ts": [],
+    "__tests__/tier1-unit/alarms/audio/MarineAudioAlertManager.test.ts": [],
+    "__tests__/tier1-unit/alarms/configuration/AlarmConfigurationManager.test.ts": [],
+    "__tests__/tier1-unit/alarms/configuration/CriticalAlarmConfiguration.test.ts": [],
+    "__tests__/tier1-unit/alarms/critical/AlarmManager.test.ts": [],
+    "__tests__/tier1-unit/alarms/monitoring/CriticalAlarmMonitors.test.ts": [],
+    "__tests__/tier1-unit/components/accessibility/Button.accessibility.test.tsx": [],
+    "__tests__/tier1-unit/components/accessibility/Button.microinteractions.test.tsx": [],
+    "__tests__/tier1-unit/components/accessibility/WidgetAccessibility.test.tsx": [],
+    "__tests__/tier1-unit/components/alarms/CriticalAlarmVisuals.test.tsx": [],
+    "__tests__/tier1-unit/components/animation/ScreenTransition.test.tsx": [],
+    "__tests__/tier1-unit/components/App.test.tsx": [],
+    "__tests__/tier1-unit/components/AutopilotControlScreen.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/AutopilotControlScreen.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/components/ConnectionStatusIndicator.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/components/errorBoundaries.test.tsx": [],
+    "__tests__/tier1-unit/components/HamburgerMenu.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/components/HeaderBar.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/HeaderBar.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/components/loading/LoadingContext.test.tsx": [],
+    "__tests__/tier1-unit/components/loading/LoadingOverlay.test.tsx": [],
+    "__tests__/tier1-unit/components/loading/LoadingSpinner.reducedMotion.test.tsx": [],
+    "__tests__/tier1-unit/components/loading/ProgressBar.test.tsx": [],
+    "__tests__/tier1-unit/components/marine/MarineComponents.test.tsx": [],
+    "__tests__/tier1-unit/components/molecules/PaginationDots.test.tsx": [],
+    "__tests__/tier1-unit/components/onboarding.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/hooks/useOnboarding.ts"
+    ],
+    "__tests__/tier1-unit/components/PrimaryMetricCell.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/components/SecondaryMetricCell.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/components/smoke.test.js": [],
+    "__tests__/tier1-unit/components/smoke.test.ts": [],
+    "__tests__/tier1-unit/components/themeCompliance.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/utils/themeCompliance.ts"
+    ],
+    "__tests__/tier1-unit/components/themeIntegration.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetCard.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DepthWidget.tsx"
+    ],
+    "__tests__/tier1-unit/components/ToastMessage.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/ToastMessage.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/components/WidgetShell.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/WidgetShell.tsx"
+    ],
+    "__tests__/tier1-unit/hooks/useMetricDisplay.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/settingsStore.ts"
+    ],
+    "__tests__/tier1-unit/marine-domains/autopilot-validation.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/marine-domain-validator.js"
+    ],
+    "__tests__/tier1-unit/marine-domains/engine-validation.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/marine-domain-validator.js"
+    ],
+    "__tests__/tier1-unit/marine-domains/environmental-validation.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/marine-domain-validator.js"
+    ],
+    "__tests__/tier1-unit/marine-domains/integration-validation.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/marine-domain-validator.js",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/staleness-detector.js"
+    ],
+    "__tests__/tier1-unit/marine-domains/navigation-validation.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/marine-domain-validator.js"
+    ],
+    "__tests__/tier1-unit/marine-domains/staleness-detection.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/staleness-detector.js"
+    ],
+    "__tests__/tier1-unit/navigation/ExpoRouterNavigation.test.tsx": [],
+    "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/NotificationManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/NotificationContentManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/SmartNotificationManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/PlatformNotificationService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/background/BackgroundProcessingManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/integration/NotificationIntegrationService.ts"
+    ],
+    "__tests__/tier1-unit/performance-thresholds.test.ts": [],
+    "__tests__/tier1-unit/platform/crossPlatform.test.ts": [],
+    "__tests__/tier1-unit/platform/responsiveLayout.test.tsx": [],
+    "__tests__/tier1-unit/presentation/enhancedPresentations.test.ts": [],
+    "__tests__/tier1-unit/screens/ScreenRendering.test.tsx": [],
+    "__tests__/tier1-unit/services/accessibility/AccessibilityService.test.ts": [],
+    "__tests__/tier1-unit/services/autopilotCommandQueue.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotRetryManager.ts"
+    ],
+    "__tests__/tier1-unit/services/autopilotCommands.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/nmea/AutopilotCommands.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/nmea/types.ts"
+    ],
+    "__tests__/tier1-unit/services/autopilotErrorManager.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotErrorManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotSafetyManager.ts"
+    ],
+    "__tests__/tier1-unit/services/autopilotMonitoringService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotMonitoringService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotErrorManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotCommandQueue.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotSafetyManager.ts"
+    ],
+    "__tests__/tier1-unit/services/autopilotRetryManager.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotRetryManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotSafetyManager.ts"
+    ],
+    "__tests__/tier1-unit/services/autopilotSafetyManager.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotSafetyManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/services/autopilotService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/services/FontMeasurementService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/FontMeasurementService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/presentation/presentations.ts"
+    ],
+    "__tests__/tier1-unit/services/gracefulDegradationService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotSafetyManager.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotCommandQueue.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/services/haptics/Haptics.test.tsx": [],
+    "__tests__/tier1-unit/services/KeyboardNavigation.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/navigation/KeyboardNavigationService.ts"
+    ],
+    "__tests__/tier1-unit/services/layoutService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/layoutService.ts"
+    ],
+    "__tests__/tier1-unit/services/MarineTouchService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/marine/MarineTouchService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/settingsStore.ts"
+    ],
+    "__tests__/tier1-unit/services/mockServer.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/mockServer.ts"
+    ],
+    "__tests__/tier1-unit/services/nmea/instanceDetection.integration.test.ts": [],
+    "__tests__/tier1-unit/services/nmea/instanceDetection.test.ts": [],
+    "__tests__/tier1-unit/services/nmea/protocol/NMEAProtocolConverter.test.ts": [],
+    "__tests__/tier1-unit/services/PerformanceMonitor.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/performance/PerformanceMonitor.ts"
+    ],
+    "__tests__/tier1-unit/services/performanceOptimization.test.tsx": [],
+    "__tests__/tier1-unit/services/playbackParity.test.ts": [],
+    "__tests__/tier1-unit/services/playbackService.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/playbackService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/services/stopPlayback.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/playbackService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/services/stressTestService.test.ts": [],
+    "__tests__/tier1-unit/services/UndoRedo.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/undo/UndoRedoManager.ts"
+    ],
+    "__tests__/tier1-unit/services/WidgetRegistry.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetRegistry.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetBase.ts"
+    ],
+    "__tests__/tier1-unit/services/widgetStorage.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/storage/widgetStorage.ts"
+    ],
+    "__tests__/tier1-unit/stores/enhancedWidgetStore.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/widgetStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/__tests__/tier1-unit/factories/widgetFactory.ts"
+    ],
+    "__tests__/tier1-unit/stores/nmeaStore.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier1-unit/stores/themeStore.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/stories/story-6.11/ResponsiveGridSystem.simple.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.11/ResponsiveGridSystem.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.11/TimerEnvironment.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.12/CleanDashboardInterface.simple.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.13/AutopilotFooter.basic.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.13/AutopilotFooterTests.simple.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.13/AutopilotFooterTests.test.tsx": [],
+    "__tests__/tier1-unit/stories/story-6.14/HamburgerMenuConsolidation.test.tsx": [],
+    "__tests__/tier1-unit/test-standards/documentation-template.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/test-infrastructure/documentation-template.js"
+    ],
+    "__tests__/tier1-unit/test-standards/traceability-reporter.test.ts": [],
+    "__tests__/tier1-unit/testing/SimulatorTestClient.autoDiscovery.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/helpers/SimulatorTestClient.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/__tests__/setup-test-environment.ts"
+    ],
+    "__tests__/tier1-unit/theme/accessibilitySettings.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/theme/ThemeProvider.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/settingsStore.ts"
+    ],
+    "__tests__/tier1-unit/types/sharedTypes.test.ts": [],
+    "__tests__/tier1-unit/widgets/AutopilotStatusWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/AutopilotStatusWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/widgets/BatteryWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/BatteryWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/widgets/CompassWidget.test.tsx": [],
+    "__tests__/tier1-unit/widgets/DepthWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DepthWidget.tsx"
+    ],
+    "__tests__/tier1-unit/widgets/DraggableWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DraggableWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/layoutService.ts"
+    ],
+    "__tests__/tier1-unit/widgets/DraggableWidgetCrossPlatform.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DraggableWidgetPlatform.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/layoutService.ts"
+    ],
+    "__tests__/tier1-unit/widgets/EngineWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/EngineWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/widgets/GPSWidget.test.tsx": [],
+    "__tests__/tier1-unit/widgets/RudderPositionWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/RudderPositionWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/widgets/SpeedWidget.test.tsx": [],
+    "__tests__/tier1-unit/widgets/TanksWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/TanksWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts"
+    ],
+    "__tests__/tier1-unit/widgets/WidgetWrapper.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetWrapper.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/widgetStore.ts"
+    ],
+    "__tests__/tier1-unit/widgets/WindWidget.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WindWidget.tsx"
+    ],
+    "__tests__/tier2-integration/integration/autopilotCommandFlow.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier2-integration/integration/autopilotWidgetFeedback.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/AutopilotStatusWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier2-integration/integration/connectionResilience.test.ts": [],
+    "__tests__/tier2-integration/integration/criticalAlarmFlow.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/alarmStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/alarms/types.ts"
+    ],
+    "__tests__/tier2-integration/integration/malformedStress.test.ts": [],
+    "__tests__/tier2-integration/integration/mockServerValidation.test.ts": [],
+    "__tests__/tier2-integration/integration/modeToggleWidgets.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DepthWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/SpeedWidget.tsx",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier2-integration/integration/playbackMalformed.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/playbackService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier2-integration/integration/playbackUi.test.tsx": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier2-integration/integration/stressHighRate.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/stressTestService.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/utils/performanceMonitor.ts"
+    ],
+    "__tests__/tier2-integration/pipeline/nmea-bridge-simulator-integration.test.ts": [],
+    "__tests__/tier2-integration/pipeline/nmea-bridge-simulator-network.test.ts": [],
+    "__tests__/tier2-integration/pipeline/nmea2000Connection.test.ts": [],
+    "__tests__/tier2-integration/pipeline/nmeaConnection.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts"
+    ],
+    "__tests__/tier2-integration/pipeline/NmeaPipeline.test.ts": [],
+    "__tests__/tier2-integration/testing/TestEnvironmentConfig.integration.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/helpers/TestEnvironmentConfig.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/helpers/Epic710SimulatorIntegration.ts",
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/__tests__/setup-test-environment.ts"
+    ],
+    "__tests__/tier2-integration/vscode-test-explorer-integration.test.ts": [],
+    "__tests__/tier3-e2e/journeys/AutopilotEngagement.test.ts": [],
+    "__tests__/tier3-e2e/scenarios/scenario-engine.test.ts": [],
+    "__tests__/tier3-e2e/scenarios/smart-alarm-integration.test.ts": [],
+    "__tests__/utils/nmeaValidator.test.ts": [],
+    "__tests__/utils/performanceMonitor.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/utils/performanceMonitor.ts"
+    ],
+    "src/hooks/__tests__/useUnitConversion.marine.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/hooks/useUnitConversion.ts"
+    ],
+    "src/testing/__tests__/useNMEAData.enhanced.test.ts": [
+      "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/hooks/useNMEAData.ts"
+    ]
+  },
+  "sourceToTests": {
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/test-utils/performance-monitor-setup.ts": [
+      "__tests__/marine-safety/marine-safety-performance.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/AutopilotControlScreen.tsx": [
+      "__tests__/tier1-unit/components/AutopilotControlScreen.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/nmeaStore.ts": [
+      "__tests__/tier1-unit/components/AutopilotControlScreen.test.tsx",
+      "__tests__/tier1-unit/components/ConnectionStatusIndicator.test.tsx",
+      "__tests__/tier1-unit/components/HeaderBar.test.tsx",
+      "__tests__/tier1-unit/services/autopilotSafetyManager.test.ts",
+      "__tests__/tier1-unit/services/autopilotService.test.ts",
+      "__tests__/tier1-unit/services/gracefulDegradationService.test.ts",
+      "__tests__/tier1-unit/services/playbackService.test.ts",
+      "__tests__/tier1-unit/services/stopPlayback.test.ts",
+      "__tests__/tier1-unit/stores/nmeaStore.test.ts",
+      "__tests__/tier1-unit/widgets/AutopilotStatusWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/BatteryWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/EngineWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/RudderPositionWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/TanksWidget.test.tsx",
+      "__tests__/tier2-integration/integration/autopilotCommandFlow.test.ts",
+      "__tests__/tier2-integration/integration/autopilotWidgetFeedback.test.tsx",
+      "__tests__/tier2-integration/integration/modeToggleWidgets.test.tsx",
+      "__tests__/tier2-integration/integration/playbackMalformed.test.ts",
+      "__tests__/tier2-integration/integration/playbackUi.test.tsx",
+      "__tests__/tier2-integration/integration/stressHighRate.test.ts",
+      "__tests__/tier2-integration/pipeline/nmeaConnection.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/themeStore.ts": [
+      "__tests__/tier1-unit/components/AutopilotControlScreen.test.tsx",
+      "__tests__/tier1-unit/components/HamburgerMenu.test.tsx",
+      "__tests__/tier1-unit/components/HeaderBar.test.tsx",
+      "__tests__/tier1-unit/components/PrimaryMetricCell.test.tsx",
+      "__tests__/tier1-unit/components/SecondaryMetricCell.test.tsx",
+      "__tests__/tier1-unit/components/themeIntegration.test.tsx",
+      "__tests__/tier1-unit/components/ToastMessage.test.tsx",
+      "__tests__/tier1-unit/stores/themeStore.test.ts",
+      "__tests__/tier1-unit/widgets/AutopilotStatusWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/BatteryWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/EngineWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/RudderPositionWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/TanksWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/HeaderBar.tsx": [
+      "__tests__/tier1-unit/components/HeaderBar.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/hooks/useOnboarding.ts": [
+      "__tests__/tier1-unit/components/onboarding.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx": [
+      "__tests__/tier1-unit/components/PrimaryMetricCell.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx": [
+      "__tests__/tier1-unit/components/SecondaryMetricCell.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/utils/themeCompliance.ts": [
+      "__tests__/tier1-unit/components/themeCompliance.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetCard.tsx": [
+      "__tests__/tier1-unit/components/themeIntegration.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DepthWidget.tsx": [
+      "__tests__/tier1-unit/components/themeIntegration.test.tsx",
+      "__tests__/tier1-unit/widgets/DepthWidget.test.tsx",
+      "__tests__/tier2-integration/integration/modeToggleWidgets.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/ToastMessage.tsx": [
+      "__tests__/tier1-unit/components/ToastMessage.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/components/WidgetShell.tsx": [
+      "__tests__/tier1-unit/components/WidgetShell.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/settingsStore.ts": [
+      "__tests__/tier1-unit/hooks/useMetricDisplay.test.tsx",
+      "__tests__/tier1-unit/services/MarineTouchService.test.ts",
+      "__tests__/tier1-unit/theme/accessibilitySettings.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/marine-domain-validator.js": [
+      "__tests__/tier1-unit/marine-domains/autopilot-validation.test.ts",
+      "__tests__/tier1-unit/marine-domains/engine-validation.test.ts",
+      "__tests__/tier1-unit/marine-domains/environmental-validation.test.ts",
+      "__tests__/tier1-unit/marine-domains/integration-validation.test.ts",
+      "__tests__/tier1-unit/marine-domains/navigation-validation.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/marine-domains/staleness-detector.js": [
+      "__tests__/tier1-unit/marine-domains/integration-validation.test.ts",
+      "__tests__/tier1-unit/marine-domains/staleness-detection.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/NotificationManager.ts": [
+      "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/NotificationContentManager.ts": [
+      "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/SmartNotificationManager.ts": [
+      "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/notifications/PlatformNotificationService.ts": [
+      "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/background/BackgroundProcessingManager.ts": [
+      "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/integration/NotificationIntegrationService.ts": [
+      "__tests__/tier1-unit/notifications/NotificationSystemIntegration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotService.ts": [
+      "__tests__/tier1-unit/services/autopilotCommandQueue.test.ts",
+      "__tests__/tier1-unit/services/autopilotMonitoringService.test.ts",
+      "__tests__/tier1-unit/services/autopilotService.test.ts",
+      "__tests__/tier2-integration/integration/autopilotCommandFlow.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotRetryManager.ts": [
+      "__tests__/tier1-unit/services/autopilotCommandQueue.test.ts",
+      "__tests__/tier1-unit/services/autopilotRetryManager.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/nmea/AutopilotCommands.ts": [
+      "__tests__/tier1-unit/services/autopilotCommands.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/nmea/types.ts": [
+      "__tests__/tier1-unit/services/autopilotCommands.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotErrorManager.ts": [
+      "__tests__/tier1-unit/services/autopilotErrorManager.test.ts",
+      "__tests__/tier1-unit/services/autopilotMonitoringService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotSafetyManager.ts": [
+      "__tests__/tier1-unit/services/autopilotErrorManager.test.ts",
+      "__tests__/tier1-unit/services/autopilotMonitoringService.test.ts",
+      "__tests__/tier1-unit/services/autopilotRetryManager.test.ts",
+      "__tests__/tier1-unit/services/autopilotSafetyManager.test.ts",
+      "__tests__/tier1-unit/services/gracefulDegradationService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotMonitoringService.ts": [
+      "__tests__/tier1-unit/services/autopilotMonitoringService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/autopilotCommandQueue.ts": [
+      "__tests__/tier1-unit/services/autopilotMonitoringService.test.ts",
+      "__tests__/tier1-unit/services/gracefulDegradationService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/FontMeasurementService.ts": [
+      "__tests__/tier1-unit/services/FontMeasurementService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/presentation/presentations.ts": [
+      "__tests__/tier1-unit/services/FontMeasurementService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/navigation/KeyboardNavigationService.ts": [
+      "__tests__/tier1-unit/services/KeyboardNavigation.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/layoutService.ts": [
+      "__tests__/tier1-unit/services/layoutService.test.ts",
+      "__tests__/tier1-unit/widgets/DraggableWidget.test.tsx",
+      "__tests__/tier1-unit/widgets/DraggableWidgetCrossPlatform.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/marine/MarineTouchService.ts": [
+      "__tests__/tier1-unit/services/MarineTouchService.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/mockServer.ts": [
+      "__tests__/tier1-unit/services/mockServer.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/performance/PerformanceMonitor.ts": [
+      "__tests__/tier1-unit/services/PerformanceMonitor.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/playbackService.ts": [
+      "__tests__/tier1-unit/services/playbackService.test.ts",
+      "__tests__/tier1-unit/services/stopPlayback.test.ts",
+      "__tests__/tier2-integration/integration/playbackMalformed.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/undo/UndoRedoManager.ts": [
+      "__tests__/tier1-unit/services/UndoRedo.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetRegistry.ts": [
+      "__tests__/tier1-unit/services/WidgetRegistry.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetBase.ts": [
+      "__tests__/tier1-unit/services/WidgetRegistry.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/storage/widgetStorage.ts": [
+      "__tests__/tier1-unit/services/widgetStorage.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/widgetStore.ts": [
+      "__tests__/tier1-unit/stores/enhancedWidgetStore.test.ts",
+      "__tests__/tier1-unit/widgets/WidgetWrapper.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/__tests__/tier1-unit/factories/widgetFactory.ts": [
+      "__tests__/tier1-unit/stores/enhancedWidgetStore.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/test-infrastructure/documentation-template.js": [
+      "__tests__/tier1-unit/test-standards/documentation-template.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/helpers/SimulatorTestClient.ts": [
+      "__tests__/tier1-unit/testing/SimulatorTestClient.autoDiscovery.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/__tests__/setup-test-environment.ts": [
+      "__tests__/tier1-unit/testing/SimulatorTestClient.autoDiscovery.test.ts",
+      "__tests__/tier2-integration/testing/TestEnvironmentConfig.integration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/theme/ThemeProvider.tsx": [
+      "__tests__/tier1-unit/theme/accessibilitySettings.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/AutopilotStatusWidget.tsx": [
+      "__tests__/tier1-unit/widgets/AutopilotStatusWidget.test.tsx",
+      "__tests__/tier2-integration/integration/autopilotWidgetFeedback.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/BatteryWidget.tsx": [
+      "__tests__/tier1-unit/widgets/BatteryWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DraggableWidget.tsx": [
+      "__tests__/tier1-unit/widgets/DraggableWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/DraggableWidgetPlatform.tsx": [
+      "__tests__/tier1-unit/widgets/DraggableWidgetCrossPlatform.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/EngineWidget.tsx": [
+      "__tests__/tier1-unit/widgets/EngineWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/RudderPositionWidget.tsx": [
+      "__tests__/tier1-unit/widgets/RudderPositionWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/TanksWidget.tsx": [
+      "__tests__/tier1-unit/widgets/TanksWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WidgetWrapper.tsx": [
+      "__tests__/tier1-unit/widgets/WidgetWrapper.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/WindWidget.tsx": [
+      "__tests__/tier1-unit/widgets/WindWidget.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/store/alarmStore.ts": [
+      "__tests__/tier2-integration/integration/criticalAlarmFlow.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/alarms/types.ts": [
+      "__tests__/tier2-integration/integration/criticalAlarmFlow.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/widgets/SpeedWidget.tsx": [
+      "__tests__/tier2-integration/integration/modeToggleWidgets.test.tsx"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/services/stressTestService.ts": [
+      "__tests__/tier2-integration/integration/stressHighRate.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/utils/performanceMonitor.ts": [
+      "__tests__/tier2-integration/integration/stressHighRate.test.ts",
+      "__tests__/utils/performanceMonitor.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/helpers/TestEnvironmentConfig.ts": [
+      "__tests__/tier2-integration/testing/TestEnvironmentConfig.integration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/testing/helpers/Epic710SimulatorIntegration.ts": [
+      "__tests__/tier2-integration/testing/TestEnvironmentConfig.integration.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/hooks/useUnitConversion.ts": [
+      "src/hooks/__tests__/useUnitConversion.marine.test.ts"
+    ],
+    "/Volumes/SSD_I/Dev/JSDev/bmad-autopilot/boatingInstrumentsApp/src/hooks/useNMEAData.ts": [
+      "src/testing/__tests__/useNMEAData.enhanced.test.ts"
+    ]
+  },
+  "generatedAt": "2025-10-31T12:42:08.493Z"
+}

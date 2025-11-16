@@ -1,0 +1,114 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>12</epicId>
+    <storyId>12.1</storyId>
+    <title>AlarmBanner UI Integration</title>
+    <status>drafted</status>
+    <generatedAt>October 31, 2025</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-12.1-alarmbanner-ui-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boat operator monitoring critical systems</asA>
+    <iWant>alarm notifications to be prominently displayed at the top of my dashboard</iWant>
+    <soThat>I can immediately see and respond to safety-critical alerts without missing important warnings</soThat>
+    <tasks>
+      - Task 1: Layout Integration (AC 1.1, 1.2, 1.3) - Identify integration point, add component, implement z-index positioning
+      - Task 2: Data Connection & Display (AC 2.1, 2.2, 2.3, 1.4) - Connect to alarm store, test triggering, verify multiple alarms
+      - Task 3: Theme System Integration (AC 3.1, 3.2, 3.3, 3.4) - Test day/night/red-night themes, high contrast compatibility
+      - Task 4: Enhanced Presentation Compliance (AC 4.1, 4.2, 4.3, 4.4) - Verify Epic 9 patterns, theme hooks, responsive behavior
+      - Task 5: Testing & Validation - Unit tests, integration tests, cross-platform, performance, manual testing
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Layout Integration">
+      <item id="1.1">AlarmBanner renders at the top of the main layout hierarchy (App.tsx or Dashboard.tsx)</item>
+      <item id="1.2">Component has proper z-index positioning to appear above all other UI elements</item>
+      <item id="1.3">No layout conflicts or positioning issues with existing dashboard components</item>
+      <item id="1.4">Banner gracefully handles null/empty alarm arrays without rendering issues</item>
+    </criterion>
+    <criterion id="AC2" title="Alarm Display Functionality">
+      <item id="2.1">Alarm triggering from the alarm store displays visual indicators correctly</item>
+      <item id="2.2">Multiple alarms display properly in sequence within the banner</item>
+      <item id="2.3">Alarm severity levels (info, warning, critical) render with appropriate visual styling</item>
+      <item id="2.4">Banner auto-hides when no active alarms exist</item>
+    </criterion>
+    <criterion id="AC3" title="Theme System Compatibility">
+      <item id="3.1">AlarmBanner renders correctly in day theme mode</item>
+      <item id="3.2">AlarmBanner renders correctly in night theme mode</item>
+      <item id="3.3">AlarmBanner renders correctly in red-night theme mode</item>
+      <item id="3.4">High contrast mode compatibility maintained across all themes</item>
+    </criterion>
+    <criterion id="AC4" title="Enhanced Presentation Integration">
+      <item id="4.1">AlarmBanner integrates with Epic 9 Enhanced Presentation System patterns</item>
+      <item id="4.2">Component follows established theme and styling conventions</item>
+      <item id="4.3">Responsive behavior matches other dashboard components</item>
+      <item id="4.4">No conflicts with existing presentation layer architecture</item>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item path="docs/tech-spec-epic-12.md" title="Epic 12 Technical Specification" section="AlarmBanner Integration API" snippet="Technical foundation for AlarmBanner integration with detailed API specifications and workflow guidance"/>
+      <item path="docs/stories/epic-12-v23-completion-technical-debt.md" title="Epic 12 Story Breakdown" section="Story 12.1" snippet="AlarmBanner component exists (95 lines) but not integrated into App.tsx/Dashboard.tsx, requires z-index positioning and theme compatibility"/>
+      <item path="docs/V2.3-COMPLETION-HANDOFF.md" title="V2.3 Completion Requirements" section="AlarmBanner Integration" snippet="AlarmBanner integration verification needed for v2.3 handoff completion"/>
+    </docs>
+    <code>
+      <item path="boatingInstrumentsApp/src/widgets/AlarmBanner.tsx" kind="component" symbol="AlarmBanner" lines="1-95" reason="Existing AlarmBanner component - needs integration into main layout"/>
+      <item path="boatingInstrumentsApp/src/mobile/App.tsx" kind="component" symbol="App" lines="1-466" reason="Main application layout - primary integration point for AlarmBanner"/>
+      <item path="boatingInstrumentsApp/src/store/alarmStore.ts" kind="store" symbol="useAlarmStore" lines="1-400" reason="Zustand alarm store - data source for AlarmBanner component"/>
+      <item path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="useTheme" lines="1-200" reason="Theme store for day/night/red-night theme compatibility"/>
+      <item path="boatingInstrumentsApp/src/services/ui/layoutService.ts" kind="service" symbol="LayoutService" lines="30-250" reason="Layout management service for z-index positioning and layout coordination"/>
+      <item path="boatingInstrumentsApp/src/services/integration/NotificationIntegrationService.ts" kind="service" symbol="NotificationIntegrationService" lines="1-400" reason="Alarm integration service connecting alarm store to UI notifications"/>
+      <item path="boatingInstrumentsApp/__tests__/tier1-unit/components/alarms/CriticalAlarmVisuals.test.tsx" kind="test" symbol="CriticalAlarmVisuals" lines="32-100" reason="Existing alarm component tests - pattern for AlarmBanner integration tests"/>
+    </code>
+    <dependencies>
+      <react_native>
+        <package>react-native</package>
+        <package>react</package>
+        <package>zustand</package>
+      </react_native>
+      <ui_frameworks>
+        <package>react-native-svg</package>
+        <package>react-native-reanimated</package>
+        <package>react-native-gesture-handler</package>
+      </ui_frameworks>
+      <testing>
+        <package>@testing-library/react-native</package>
+        <package>jest</package>
+      </testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Epic 9 Enhanced Presentation System: Must use established presentation hooks and theme context patterns
+    - React Native StyleSheet: Implement z-index positioning using StyleSheet.create with proper layering
+    - Zustand State Management: Connect to existing alarm store (useAlarmStore) without modifying store structure
+    - Theme System Compatibility: Support day/night/red-night modes with high contrast accessibility
+    - Performance Requirements: Maintain <16ms render time requirement for marine safety compliance
+    - Cross-Platform Support: Ensure consistent behavior across iOS/Android/Web platforms
+    - Layout Hierarchy: AlarmBanner must appear at top of layout without disrupting existing dashboard components
+  </constraints>
+  
+  <interfaces>
+    <interface name="AlarmBanner Component" kind="React Component" signature="AlarmBanner: React.FC<{ alarms: Alarm[] }>" path="boatingInstrumentsApp/src/widgets/AlarmBanner.tsx"/>
+    <interface name="useAlarmStore Hook" kind="Zustand Hook" signature="useAlarmStore(): { activeAlarms: Alarm[], acknowledgeAlarm: (id: string) => void }" path="boatingInstrumentsApp/src/store/alarmStore.ts"/>
+    <interface name="useTheme Hook" kind="Theme Hook" signature="useTheme(): { theme: Theme, setTheme: (mode: string) => void }" path="boatingInstrumentsApp/src/store/themeStore.ts"/>
+    <interface name="Alarm Interface" kind="TypeScript Interface" signature="Alarm: { id: string, message: string, level: AlarmLevel, timestamp: number }" path="boatingInstrumentsApp/src/store/alarmStore.ts"/>
+    <interface name="AlarmBanner Integration API" kind="Integration API" signature="renderAlarmBanner(alarms: Alarm[]): React.Component" path="docs/tech-spec-epic-12.md"/>
+  </interfaces>
+  
+  <tests>
+    <standards>Jest + React Native Testing Library for component testing, performance monitoring with <16ms render targets, cross-platform compatibility validation for iOS/Android/Web, integration testing with NMEA Bridge Simulator</standards>
+    <locations>__tests__/tier1-unit/components/alarms/, __tests__/integration/, __tests__/tier1-unit/widgets/</locations>
+    <ideas>
+      <idea ac="AC1">Layout integration tests: AlarmBanner renders at top hierarchy, z-index positioning works, no layout conflicts with existing components</idea>
+      <idea ac="AC2">Alarm display tests: Store connection works, multiple alarms display correctly, severity styling applies, auto-hide functionality</idea>
+      <idea ac="AC3">Theme compatibility tests: Day/night/red-night mode rendering, high contrast mode support, theme switching behavior</idea>
+      <idea ac="AC4">Enhanced presentation tests: Epic 9 pattern compliance, theme hook usage, responsive behavior consistency</idea>
+      <idea ac="Performance">Render performance tests: <16ms render time validation, memory usage monitoring, animation performance</idea>
+    </ideas>
+  </tests>
+</story-context>

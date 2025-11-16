@@ -32,10 +32,7 @@ export interface UpdateOptions {
 export class PureStoreUpdater {
   private static instance: PureStoreUpdater;
   
-  // Store bindings - NMEA Store v2.0 API
-  private updateSensorData = useNmeaStore.getState().updateSensorData;
-  private setConnectionStatus = useNmeaStore.getState().setConnectionStatus;
-  private setLastError = useNmeaStore.getState().setLastError;
+  // Store bindings - NMEA Store v2.0 API - Using getters to avoid stale closures
   
   // Throttling management
   private lastUpdateTimes: Map<string, number> = new Map();
@@ -104,14 +101,14 @@ export class PureStoreUpdater {
   updateConnectionStatus(status: { state: 'disconnected' | 'connecting' | 'connected' | 'error' }): void {
     // Map connection manager states to store states
     const storeState = status.state === 'error' ? 'disconnected' : status.state;
-    this.setConnectionStatus(storeState);
+    useNmeaStore.getState().setConnectionStatus(storeState);
   }
 
   /**
    * Update error in store
    */
   updateError(error: string): void {
-    this.setLastError(error);
+    useNmeaStore.getState().setLastError(error);
   }
 
   /**
@@ -130,7 +127,6 @@ export class PureStoreUpdater {
    * This is the NEW primary path that bypasses TransformedNmeaData
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
-    console.log('[PureStoreUpdater] 🚀 NEW PATH: Processing NMEA message:', parsedMessage.messageType);
     try {
       // Process message using new NmeaSensorProcessor
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
@@ -150,11 +146,8 @@ export class PureStoreUpdater {
 
       // Apply sensor updates to store
       if (result.updates && result.updates.length > 0) {
-        console.log('[PureStoreUpdater] 🎯 Applying sensor updates:', result.updates);
         return this.applySensorUpdates(result.updates, options);
       }
-
-      console.log('[PureStoreUpdater] ⚠️ No sensor updates generated from processing');
       return {
         updated: false,
         throttled: false,
@@ -175,6 +168,8 @@ export class PureStoreUpdater {
 
   /**
    * Apply sensor updates from NmeaSensorProcessor to NMEA Store v2.0
+   * CRITICAL FIX: Merge multiple updates for same sensor/instance before throttling
+   * This ensures XDR sentences with multiple measurements (temp+pressure+voltage) don't lose data
    */
   private applySensorUpdates(updates: SensorUpdate[], options: UpdateOptions = {}): UpdateResult {
     const updatedFields: string[] = [];
@@ -185,31 +180,49 @@ export class PureStoreUpdater {
       skipThrottling = false
     } = options;
 
+    // CRITICAL: Merge updates for same sensor/instance to prevent data loss
+    // XDR sentences often contain multiple measurements (coolantTemp, oilPressure, voltage)
+    // that arrive as separate updates but should be applied together
+    const mergedUpdates = new Map<string, SensorUpdate>();
+
     for (const update of updates) {
       const fieldKey = `${update.sensorType}.${update.instance}`;
       
-      // Check throttling
-      if (!skipThrottling && this.isThrottled(fieldKey, throttleMs)) {
+      if (mergedUpdates.has(fieldKey)) {
+        // Merge data fields from this update into existing update
+        const existing = mergedUpdates.get(fieldKey)!;
+        existing.data = { ...existing.data, ...update.data };
+      } else {
+        // First update for this sensor/instance
+        mergedUpdates.set(fieldKey, { ...update, data: { ...update.data } });
+      }
+    }
+
+    // Apply merged updates with field-specific throttling
+    for (const [fieldKey, update] of mergedUpdates.entries()) {
+      // Use field-specific throttle settings (engine=0ms, wind/gps=500ms, depth=1500ms, etc.)
+      const fieldThrottle = this.getFieldThrottleMs(update.sensorType);
+      const effectiveThrottle = skipThrottling ? 0 : fieldThrottle;
+      
+      if (effectiveThrottle > 0 && this.isThrottled(fieldKey, effectiveThrottle)) {
+        console.log(`[PureStoreUpdater] Throttled ${fieldKey} (${effectiveThrottle}ms interval)`);
         continue;
       }
 
       // Update sensor data in store
       try {
-        console.log(`[PureStoreUpdater] 🔄 Updating store: ${update.sensorType}[${update.instance}] =`, update.data);
-        this.updateSensorData(update.sensorType, update.instance, update.data);
+        useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data);
         updatedFields.push(fieldKey);
         anyUpdated = true;
         
         // Update throttle timestamp
         this.lastUpdateTimes.set(fieldKey, Date.now());
         
-        console.log(`[PureStoreUpdater] ✅ Store update SUCCESS: ${fieldKey}`);
+        console.log(`[PureStoreUpdater] ✅ Updated ${fieldKey}:`, Object.keys(update.data));
       } catch (error) {
         console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
       }
-    }
-
-    return {
+    }    return {
       updated: anyUpdated,
       throttled: false,
       batchedFields: updatedFields,
@@ -225,7 +238,7 @@ export class PureStoreUpdater {
     
     // Handle depth data
     if (data.depth !== undefined) {
-      this.updateSensorData('depth', 0, { 
+      useNmeaStore.getState().updateSensorData('depth', 0, { 
         depth: data.depth,
         referencePoint: data.depthReferencePoint,
         timestamp: Date.now()
@@ -234,7 +247,7 @@ export class PureStoreUpdater {
     
     // Handle speed data
     if (data.sog !== undefined || data.stw !== undefined) {
-      this.updateSensorData('speed', 0, {
+      useNmeaStore.getState().updateSensorData('speed', 0, {
         sog: data.sog,
         stw: data.stw,
         timestamp: Date.now()
@@ -243,7 +256,7 @@ export class PureStoreUpdater {
     
     // Handle GPS data
     if (data.gpsPosition) {
-      this.updateSensorData('gps', 0, {
+      useNmeaStore.getState().updateSensorData('gps', 0, {
         latitude: data.gpsPosition.latitude,
         longitude: data.gpsPosition.longitude,
         timestamp: Date.now()
@@ -252,7 +265,7 @@ export class PureStoreUpdater {
     
     // Handle compass data
     if (data.heading !== undefined || data.track !== undefined) {
-      this.updateSensorData('compass', 0, {
+      useNmeaStore.getState().updateSensorData('compass', 0, {
         heading: data.heading,
         cog: data.track,
         timestamp: Date.now()
@@ -261,7 +274,7 @@ export class PureStoreUpdater {
     
     // Handle wind data
     if (data.windSpeed !== undefined || data.windAngle !== undefined) {
-      this.updateSensorData('wind', 0, {
+      useNmeaStore.getState().updateSensorData('wind', 0, {
         speed: data.windSpeed,
         angle: data.windAngle,
         timestamp: Date.now()
@@ -271,19 +284,24 @@ export class PureStoreUpdater {
     // Handle engine data (CRITICAL FIX for engine detection)
     if (data.engineRpm !== undefined || data.engineTemp !== undefined || data.enginePressure !== undefined) {
       const engineInstance = data.engineInstance || 0; // Use instance from parsed data or default to 0
-      this.updateSensorData('engine', engineInstance, {
+      
+      // CRITICAL: Only send fields that are actually present to avoid clearing existing data
+      const engineUpdate: any = {
         name: `Engine ${engineInstance + 1}`,
-        rpm: data.engineRpm,
-        coolantTemp: data.engineTemp,
-        oilPressure: data.enginePressure,
         timestamp: Date.now()
-      } as any);
+      };
+      
+      if (data.engineRpm !== undefined) engineUpdate.rpm = data.engineRpm;
+      if (data.engineTemp !== undefined) engineUpdate.coolantTemp = data.engineTemp;
+      if (data.enginePressure !== undefined) engineUpdate.oilPressure = data.enginePressure;
+      
+      useNmeaStore.getState().updateSensorData('engine', engineInstance, engineUpdate);
     }
     
     // Handle tank/fuel data
     if (data.fuelLevel !== undefined) {
       const tankInstance = 0; // Default to tank 0 (multi-instance support needs to come from parser)
-      this.updateSensorData('tank', tankInstance, {
+      useNmeaStore.getState().updateSensorData('tank', tankInstance, {
         name: `Fuel Tank ${tankInstance + 1}`,
         level: data.fuelLevel / 100, // Convert percentage to 0-1 ratio
         type: 'fuel' as const,
@@ -492,7 +510,7 @@ export class PureStoreUpdater {
       case 'wind':
         return 500;  // Wind updates more frequently
       case 'engine':
-        return 1000; // Engine data every second
+        return 0; // Engine data: NO THROTTLING - multi-measurement XDR requires immediate updates
       case 'speed':
       case 'heading':
       case 'track':

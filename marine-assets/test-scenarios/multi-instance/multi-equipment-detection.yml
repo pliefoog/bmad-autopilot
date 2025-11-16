@@ -132,8 +132,8 @@ data:
       max: 65.0
       unit: "celsius"
 
-# NMEA sentence configuration for multi-instance data
-sentences:
+# NMEA Sentence Configuration
+nmea_sentences:
   # Engine RPM sentences (3 instances)
   - type: "RPM"
     instance: 0

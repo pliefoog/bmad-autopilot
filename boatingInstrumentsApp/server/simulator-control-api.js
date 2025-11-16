@@ -113,7 +113,7 @@ class SimulatorControlAPI {
         
         // Determine scenario category and path
         const category = this.getScenarioCategory(name);
-        const scenarioPath = `vendor/test-scenarios/${category}/${name}.yml`;
+        const scenarioPath = `marine-assets/test-scenarios/${category}/${name}.yml`;
         
         // Load scenario using scenario engine
         const scenario = await this.scenarioEngine.loadScenario(scenarioPath, { 
@@ -660,8 +660,8 @@ class SimulatorControlAPI {
     const path = require('path');
     
     // Try to find the scenario file in the filesystem
-    const categories = ['basic', 'autopilot', 'development', 'performance', 'safety', 'recorded', 'story-validation'];
-    const scenariosBasePath = path.join(__dirname, '..', 'vendor', 'test-scenarios');
+    const categories = ['basic', 'autopilot', 'development', 'performance', 'safety', 'recorded', 'story-validation', 'multi-instance'];
+    const scenariosBasePath = path.join(__dirname, '..', '..', 'marine-assets', 'test-scenarios');
     
     for (const category of categories) {
       const categoryPath = path.join(scenariosBasePath, category);

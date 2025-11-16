@@ -3,6 +3,210 @@ description: "Electrical system monitoring with voltage decline simulation"
 duration: 900  # 15 minutes
 version: "1.0"
 category: "safety"
+bridge_mode: "nmea0183"
+messageRate: 0.2
+scenario_type: "battery"
+vessel_type: "Sailboat with Solar"
+test_coverage: ["battery", "voltage", "electrical", "alarms", "solar"]
+
+conditions:
+  charging_state: "varying"
+  solar_available: true
+  load_profile: "sailing"
+
+equipment:
+  batteries: 5  # House, Port Engine, Stbd Engine, Generator, Thruster
+  solar_panels: true
+  alternator: true
+
+tags: ["battery", "electrical", "monitoring", "alarms", "solar", "safety", "multi-instance", "location"]
+related_stories: ["story-2.6", "epic-2"]
+
+# NMEA sentence definitions for battery monitoring
+nmea_sentences:
+  # House Battery (Instance 0) - Main battery bank with drain/charge cycle
+  - sentence: "$IIXDR,U,{house_voltage},V,BAT_0,I,{house_current},A,BAT_0,C,{house_temp},C,BAT_0_TMP,P,{house_percent},P,BAT_0_SOC,U,12.0,V,BAT_0_NOM,V,400,H,BAT_0_CAP,G,AGM,N,BAT_0_CHEM*XX"
+    sentence_type: "XDR"
+    description: "House Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_HOUSE"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      house_voltage:
+        type: "linear"
+        start: 12.6
+        end: 11.4
+        duration: 420
+        then:
+          type: "linear"
+          start: 11.4
+          end: 12.2
+          duration: 480
+        format: "00.0"
+      house_current:
+        type: "sine"
+        start: -8
+        amplitude: 4
+        frequency: 0.01
+        format: "00.0"
+      house_temp:
+        type: "sine"
+        start: 25
+        amplitude: 3
+        frequency: 0.005
+        format: "00.0"
+      house_percent:
+        type: "linear"
+        start: 95
+        end: 45
+        duration: 420
+        then:
+          type: "linear"
+          start: 45
+          end: 80
+          duration: 480
+        format: "000"
+
+  # Port Engine Battery (Instance 4) - Port engine starting battery
+  - sentence: "$IIXDR,U,{port_voltage},V,BAT_4,I,{port_current},A,BAT_4,C,{port_temp},C,BAT_4_TMP,P,{port_percent},P,BAT_4_SOC,U,12.0,V,BAT_4_NOM,V,100,H,BAT_4_CAP,G,FLA,N,BAT_4_CHEM*XX"
+    sentence_type: "XDR"
+    description: "Port Engine Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_PORT_ENGINE"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      port_voltage:
+        type: "sine"
+        start: 12.8
+        amplitude: 0.2
+        frequency: 0.02
+        format: "00.0"
+      port_current:
+        type: "constant"
+        value: 2.5
+        format: "00.0"
+      port_temp:
+        type: "sine"
+        start: 28
+        amplitude: 2
+        frequency: 0.008
+        format: "00.0"
+      port_percent:
+        type: "constant"
+        value: 98
+        format: "000"
+
+  # Starboard Engine Battery (Instance 5) - Starboard engine starting battery
+  - sentence: "$IIXDR,U,{stbd_voltage},V,BAT_5,I,{stbd_current},A,BAT_5,C,{stbd_temp},C,BAT_5_TMP,P,{stbd_percent},P,BAT_5_SOC,U,12.0,V,BAT_5_NOM,V,100,H,BAT_5_CAP,G,FLA,N,BAT_5_CHEM*XX"
+    sentence_type: "XDR"
+    description: "Starboard Engine Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_STBD_ENGINE"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      stbd_voltage:
+        type: "sine"
+        start: 12.7
+        amplitude: 0.25
+        frequency: 0.018
+        format: "00.0"
+      stbd_current:
+        type: "constant"
+        value: 2.8
+        format: "00.0"
+      stbd_temp:
+        type: "sine"
+        start: 29
+        amplitude: 2.5
+        frequency: 0.009
+        format: "00.0"
+      stbd_percent:
+        type: "constant"
+        value: 97
+        format: "000"
+
+  # Generator Battery (Instance 3) - Generator starting battery
+  - sentence: "$IIXDR,U,{gen_voltage},V,BAT_3,I,{gen_current},A,BAT_3,C,{gen_temp},C,BAT_3_TMP,P,{gen_percent},P,BAT_3_SOC,U,12.0,V,BAT_3_NOM,V,75,H,BAT_3_CAP,G,AGM,N,BAT_3_CHEM*XX"
+    sentence_type: "XDR"
+    description: "Generator Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_GENERATOR"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      gen_voltage:
+        type: "sine"
+        start: 12.9
+        amplitude: 0.15
+        frequency: 0.015
+        format: "00.0"
+      gen_current:
+        type: "constant"
+        value: 1.5
+        format: "00.0"
+      gen_temp:
+        type: "sine"
+        start: 27
+        amplitude: 2
+        frequency: 0.007
+        format: "00.0"
+      gen_percent:
+        type: "constant"
+        value: 99
+        format: "000"
+
+  # Thruster Battery (Instance 2) - Bow thruster battery with discharge spikes
+  - sentence: "$IIXDR,U,{thruster_voltage},V,BAT_2,I,{thruster_current},A,BAT_2,C,{thruster_temp},C,BAT_2_TMP,P,{thruster_percent},P,BAT_2_SOC,U,12.0,V,BAT_2_NOM,V,200,H,BAT_2_CAP,G,LIFEPO4,N,BAT_2_CHEM*XX"
+    sentence_type: "XDR"
+    description: "Thruster Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_THRUSTER"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      thruster_voltage:
+        type: "sine"
+        start: 12.5
+        amplitude: 0.3
+        frequency: 0.015
+        format: "00.0"
+      thruster_current:
+        type: "sine"
+        start: -5
+        amplitude: 10
+        frequency: 0.02
+        format: "00.0"
+      thruster_temp:
+        type: "sine"
+        start: 26
+        amplitude: 4
+        frequency: 0.012
+        format: "00.0"
+      thruster_percent:
+        type: "sine"
+        start: 85
+        amplitude: 5
+        frequency: 0.01
+        format: "000"
+
+  # Solar Panel Output
+  - sentence: "$IIXDR,A,{solar_current},A,SOLAR_PANEL,U,{solar_voltage},V,SOLAR_PANEL*XX"
+    sentence_type: "XDR"
+    description: "Solar panel current and voltage output"
+    source: "SOLAR_PANEL"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      solar_current:
+        type: "sine"
+        start: 5
+        amplitude: 8
+        frequency: 0.005
+        format: "00.0"
+      solar_voltage:
+        type: "sine"
+        start: 18
+        amplitude: 2
+        frequency: 0.008
+        format: "00.0"
 
 # Electrical system parameters
 parameters:

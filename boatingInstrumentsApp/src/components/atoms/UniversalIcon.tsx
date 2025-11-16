@@ -15,15 +15,8 @@ import { Platform } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 // Platform-specific icon imports
-let IoniconsComponent: any;
-
-if (Platform.OS === 'web') {
-  // Web uses the enhanced mock with monochromatic conversion
-  IoniconsComponent = require('../../../__mocks__/Ionicons.js').default;
-} else {
-  // Mobile uses real vector icons
-  IoniconsComponent = require('react-native-vector-icons/Ionicons').default;
-}
+// Use the module alias so metro/babel resolve to mock on web
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export interface UniversalIconProps {
   /** Ionicon name (e.g., 'navigate-outline', 'water-outline') */
@@ -69,6 +62,15 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
 }) => {
   const theme = useTheme();
 
+  // Debug logging
+  if (typeof window !== 'undefined') {
+    window.__universalIconCalls = window.__universalIconCalls || [];
+    if (window.__universalIconCalls.length < 5) {
+      console.log('🎯 UniversalIcon called:', { name, size, color });
+      window.__universalIconCalls.push(name);
+    }
+  }
+
   // Auto-resolve color if not provided
   const resolvedColor = color || theme.textSecondary;
 
@@ -94,16 +96,13 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
 
   // Platform-specific rendering
   return (
-    <IoniconsComponent
+    <Ionicons
       name={name}
       size={size}
       color={resolvedColor}
       style={style}
       accessibilityLabel={accessibilityLabel || name}
       testID={testID}
-      // Web-specific props (ignored on mobile)
-      role="img"
-      aria-label={accessibilityLabel || name}
     />
   );
 };

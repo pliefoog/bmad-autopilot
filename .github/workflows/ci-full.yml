@@ -1,12 +1,25 @@
-name: CI - Full Tests
+name: CI - Full Tests (Legacy)
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_full_run:
+        description: 'Force full test run (skip selective testing)'
+        required: false
+        default: 'false'
+
+env:
+  NODE_VERSION: '20'
+  CI: true
+  # Integration with enhanced CI pipeline
+  CI_USE_ENHANCED_PIPELINE: true
+  CI_LEGACY_MODE: true
 
 jobs:
   test-full:
-    name: Full test suite
+    name: Full test suite (Legacy Mode)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -15,16 +28,49 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: 'boatingInstrumentsApp/package-lock.json'
 
       - name: Install dependencies
         working-directory: boatingInstrumentsApp
         run: npm ci
 
-      - name: Run full tests
+      - name: Setup CI Environment Cleanup
         working-directory: boatingInstrumentsApp
-        run: npm test --silent
+        run: |
+          # Clean up any existing test processes
+          node scripts/ci/test-environment-cleanup.js quick || true
+
+      - name: Run full tests with enhanced reporting
+        working-directory: boatingInstrumentsApp
+        run: |
+          if [ "${{ env.CI_USE_ENHANCED_PIPELINE }}" = "true" ] && [ "${{ github.event.inputs.force_full_run }}" != "true" ]; then
+            echo "🔄 Using enhanced CI pipeline with selective testing"
+            node scripts/ci/selective-test-runner.js run --coverage --fallback
+          else
+            echo "🧪 Running legacy full test suite"
+            npm test --silent
+          fi
+
+      - name: Generate Quality Report
+        if: always()
+        working-directory: boatingInstrumentsApp
+        run: |
+          # Generate quality report if enhanced pipeline is enabled
+          if [ "${{ env.CI_USE_ENHANCED_PIPELINE }}" = "true" ]; then
+            node scripts/ci/quality-report-generator.js generate || true
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-full-${{ github.run_number }}
+          path: |
+            boatingInstrumentsApp/coverage/
+            boatingInstrumentsApp/scripts/ci/selective-test-analysis.json
+          if-no-files-found: ignore
 
       - name: Upload perf artifacts if present
         uses: actions/upload-artifact@v4
@@ -32,3 +78,10 @@ jobs:
           name: perf-csvs
           path: boatingInstrumentsApp/vendor/bench-results/*.csv
           if-no-files-found: ignore
+
+      - name: Environment Cleanup
+        if: always()
+        working-directory: boatingInstrumentsApp
+        run: |
+          # Clean up test environment
+          node scripts/ci/test-environment-cleanup.js full || true

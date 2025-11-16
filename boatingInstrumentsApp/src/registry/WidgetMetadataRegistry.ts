@@ -34,16 +34,28 @@ export interface WidgetMetadata {
   maxInstances?: number;
 }
 
+// NMEA Engine Instance Mapping (marine convention for vessel layout)
+const ENGINE_INSTANCE_MAP: Record<number, InstanceMapping> = {
+  0: { title: 'MAIN', priority: 1, position: 'main' },
+  1: { title: 'PORT', priority: 2, position: 'port' },
+  2: { title: 'STBD', priority: 3, position: 'starboard' },
+  3: { title: 'GENERATOR', priority: 4, position: 'generator' },
+  4: { title: 'AUX', priority: 5, position: 'auxiliary' },
+};
+
 // NMEA Battery Instance Mapping (from existing NMEA standards)
+// Supports location-based batteries (e.g., PORT ENGINE, STBD ENGINE)
 const BATTERY_INSTANCE_MAP: Record<number, InstanceMapping> = {
-  0: { title: 'HOUSE', priority: 1 },
-  1: { title: 'ENGINE', priority: 2 },
-  2: { title: 'THRUSTER', priority: 3 },
-  3: { title: 'GENERATOR', priority: 4 },
-  4: { title: 'ENGINE 2', priority: 5 },
-  5: { title: 'WINDLASS', priority: 6 },
-  6: { title: 'BOW THRUSTER', priority: 7 },
-  7: { title: 'STERN THRUSTER', priority: 8 },
+  0: { title: 'HOUSE', priority: 1, position: 'house' },
+  1: { title: 'ENGINE', priority: 2, position: 'engine' },
+  2: { title: 'THRUSTER', priority: 3, position: 'thruster' },
+  3: { title: 'GENERATOR', priority: 4, position: 'generator' },
+  4: { title: 'PORT ENGINE', priority: 5, position: 'port' },
+  5: { title: 'STBD ENGINE', priority: 6, position: 'starboard' },
+  6: { title: 'BOW THRUSTER', priority: 7, position: 'bow' },
+  7: { title: 'STERN THRUSTER', priority: 8, position: 'stern' },
+  8: { title: 'WINDLASS', priority: 9, position: 'bow' },
+  9: { title: 'INVERTER', priority: 10, position: 'house' },
 };
 
 // NMEA Temperature Source Mapping (based on NMEA 2000 Temperature Source enumeration)
@@ -178,11 +190,14 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     category: 'engine',
     description: 'Engine parameters and performance data',
     maxInstances: 8,
-    instanceMapping: (instance: number, data?: any) => ({
-      title: `ENGINE #${data?.sourceAddress || (instance + 1)}`,
-      priority: data?.sourceAddress || (instance + 1),
-      sourceAddress: data?.sourceAddress
-    })
+    instanceMapping: (instance: number, data?: any) => {
+      const mapping = ENGINE_INSTANCE_MAP[instance];
+      return mapping || { 
+        title: `ENGINE #${instance + 1}`, 
+        priority: instance + 10,
+        position: `engine${instance + 1}`
+      };
+    }
   },
 
   battery: {
@@ -374,7 +389,8 @@ export class WidgetMetadataRegistry {
 
     if (metadata.type === 'multi-instance' && metadata.instanceMapping && instance !== undefined) {
       const instanceData = metadata.instanceMapping(instance, data);
-      return instanceData.title;
+      // Return format: "BASE_TYPE - INSTANCE_TITLE" (e.g., "ENGINE - PORT", "BATTERY - HOUSE")
+      return `${metadata.title.toUpperCase()} - ${instanceData.title}`;
     }
 
     return metadata.title;

@@ -17,7 +17,8 @@ export const DepthWidgetAtomic: React.FC<DepthWidgetAtomicProps> = ({
   widgetId = 'depth-widget',
   onExpand
 }) => {
-  const depth = useNmeaStore((state: any) => state.nmeaData.depth);
+  const depthData = useNmeaStore((state: any) => state.nmeaData.sensors.depth[0]);
+  const depth = depthData?.depth;
   const connectionStatus = useNmeaStore((state: any) => state.connectionStatus);
   const theme = useTheme();
   

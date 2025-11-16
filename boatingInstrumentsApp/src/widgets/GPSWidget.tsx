@@ -7,6 +7,8 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useUnitConversion } from '../hooks/useUnitConversion';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface GPSWidgetProps {
   id: string;
@@ -38,11 +40,14 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title }) =>
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - GPS Position and Time
-  const gpsPosition = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsPosition, []));
-  const gpsQuality = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsQuality, []));
-  const utcTime = useNmeaStore(useCallback((state: any) => state.nmeaData.utcTime, []));
-  const gpsTimestamp = useNmeaStore(useCallback((state: any) => state.nmeaData.gpsTimestamp, []));
+  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
+  const gpsData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.gps[0], [])); // GPS sensor data
+  
+  // Extract GPS values from sensor data
+  const gpsPosition = gpsData?.position; // GPS position object with lat/lon
+  const gpsQuality = gpsData?.quality; // GPS quality data
+  const utcTime = gpsData?.utcTime; // UTC time from GPS
+  const gpsTimestamp = gpsData?.timestamp;
   
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
@@ -111,7 +116,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title }) =>
 
 
 
-  // Date and Time formatting with GPS-specific preferences and timezone
+  // Date and Time formatting - GPS always displays UTC time (marine standard)
   const dateTimeFormatted = useMemo(() => {
     if (!utcTime) {
       return { 
@@ -121,9 +126,70 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title }) =>
       };
     }
 
-    const date = new Date(utcTime);
-    return getGpsFormattedDateTime(date);
-  }, [utcTime, getGpsFormattedDateTime]);
+    const date = new Date(utcTime); // utcTime is already a UTC timestamp
+    
+    // GPS always shows UTC time - format directly without timezone conversion
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    const hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const seconds = date.getUTCSeconds();
+    
+    // Format date based on GPS date format setting
+    let formattedDate: string;
+    switch (gpsDateFormat) {
+      case 'iso_date':
+        formattedDate = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        break;
+      case 'us_date':
+        formattedDate = `${(month + 1).toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+        break;
+      case 'eu_date':
+        formattedDate = `${day.toString().padStart(2, '0')}.${(month + 1).toString().padStart(2, '0')}.${year}`;
+        break;
+      case 'uk_date':
+        formattedDate = `${day.toString().padStart(2, '0')}/${(month + 1).toString().padStart(2, '0')}/${year}`;
+        break;
+      case 'nautical_date':
+      default:
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        formattedDate = `${dayNames[date.getUTCDay()]} ${monthNames[month]} ${day.toString().padStart(2, '0')}, ${year}`;
+        break;
+    }
+    
+    // Format time based on GPS time format setting
+    let formattedTime: string;
+    switch (gpsTimeFormat) {
+      case 'time_24h':
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        break;
+      case 'time_12h':
+        const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        formattedTime = `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        break;
+      case 'time_12h_full':
+        const hours12Full = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+        const ampmFull = hours >= 12 ? 'PM' : 'AM';
+        formattedTime = `${hours12Full.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampmFull}`;
+        break;
+      case 'time_compact':
+        formattedTime = `${hours.toString().padStart(2, '0')}.${minutes.toString().padStart(2, '0')}`;
+        break;
+      case 'time_24h_full':
+      default:
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        break;
+    }
+    
+    return {
+      date: formattedDate,
+      time: formattedTime,
+      timezone: 'UTC'
+    };
+  }, [utcTime, gpsDateFormat, gpsTimeFormat]);
 
   // Data staleness detection (>10s = stale for GPS)
   const isStale = gpsTimestamp ? (Date.now() - gpsTimestamp) > 10000 : true;
@@ -137,19 +203,27 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title }) =>
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textSecondary }]}>
-          {title.toUpperCase()}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'navigate-outline'} 
+            size={12} 
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.title, { color: theme.textSecondary }]}>
+            {title.toUpperCase()}
+          </Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
           {pinned ? (
             <TouchableOpacity
-              onLongPress={handleLongPressOnCaret}
+              onLongPress={handleLongPress}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={[styles.pinIcon, { color: theme.primary }]}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

@@ -112,8 +112,8 @@ data:
         variation: 5
     unit: "degrees"
 
-# NMEA sentence configuration for wind widget validation
-sentences:
+# NMEA sentences to emit
+nmea_sentences:
   # MWV - Wind Speed and Angle
   - type: "MWV"
     frequency: 3   # Hz - High frequency for responsive wind display

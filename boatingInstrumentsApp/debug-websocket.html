@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NMEA Debug Console</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .log { background: #f0f0f0; padding: 10px; height: 300px; overflow-y: auto; }
+        .status { color: red; }
+        .status.connected { color: green; }
+        .count { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔍 NMEA Connection Debug</h1>
+    
+    <div class="section">
+        <h3>Connection Status</h3>
+        <div id="status" class="status">Disconnected</div>
+        <div>Host: <span id="host">-</span></div>
+        <div>Messages Received: <span id="messageCount" class="count">0</span></div>
+    </div>
+    
+    <div class="section">
+        <h3>Recent Messages</h3>
+        <div id="messageLog" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Sentence Types</h3>
+        <div id="sentenceTypes"></div>
+    </div>
+
+    <script>
+        let messageCount = 0;
+        let sentenceTypes = {};
+        const maxLogMessages = 50;
+        
+        const statusEl = document.getElementById('status');
+        const hostEl = document.getElementById('host');
+        const messageCountEl = document.getElementById('messageCount');
+        const messageLogEl = document.getElementById('messageLog');
+        const sentenceTypesEl = document.getElementById('sentenceTypes');
+        
+        function log(message) {
+            console.log(message);
+            const div = document.createElement('div');
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            messageLogEl.insertBefore(div, messageLogEl.firstChild);
+            
+            // Keep only recent messages
+            while (messageLogEl.children.length > maxLogMessages) {
+                messageLogEl.removeChild(messageLogEl.lastChild);
+            }
+        }
+        
+        function updateSentenceTypes() {
+            sentenceTypesEl.innerHTML = Object.entries(sentenceTypes)
+                .sort((a, b) => b[1] - a[1])
+                .map(([type, count]) => `${type}: ${count}`)
+                .join(', ');
+        }
+        
+        // Attempt connection
+        const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+        const wsUrl = `ws://${host}:8080`;
+        
+        hostEl.textContent = wsUrl;
+        log(`Attempting connection to ${wsUrl}...`);
+        
+        const ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+            statusEl.textContent = 'Connected';
+            statusEl.className = 'status connected';
+            log('✅ WebSocket connected successfully!');
+        };
+        
+        ws.onmessage = (event) => {
+            messageCount++;
+            messageCountEl.textContent = messageCount;
+            
+            const message = event.data.toString().trim();
+            
+            // Extract sentence type
+            const match = message.match(/^\$([A-Z]{2})([A-Z]{3})/);
+            if (match) {
+                const sentenceType = match[2];
+                sentenceTypes[sentenceType] = (sentenceTypes[sentenceType] || 0) + 1;
+                updateSentenceTypes();
+            }
+            
+            // Log every 10th message to avoid spam
+            if (messageCount % 10 === 1) {
+                log(`📨 ${message.substring(0, 60)}...`);
+            }
+        };
+        
+        ws.onerror = (error) => {
+            statusEl.textContent = 'Error';
+            log(`❌ WebSocket error: ${error}`);
+        };
+        
+        ws.onclose = () => {
+            statusEl.textContent = 'Disconnected';
+            statusEl.className = 'status';
+            log('🔌 WebSocket connection closed');
+        };
+    </script>
+</body>
+</html>

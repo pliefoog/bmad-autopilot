@@ -21,7 +21,7 @@ const SOG_CAPABLE_SENTENCES = {
 };
 
 class NmeaWebSocketValidator {
-  constructor(url = 'ws://127.0.0.1:8080') {
+  constructor(url = 'ws://192.168.1.58:8080') {
     this.url = url;
     this.ws = null;
     this.messageCount = 0;

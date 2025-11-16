@@ -175,6 +175,27 @@ export const menuConfiguration: MenuConfiguration = {
         },
       ],
     },
+    {
+      id: 'alarms',
+      title: 'Alarms',
+      icon: '🚨',
+      items: [
+        {
+          id: 'alarm-configuration',
+          label: 'Alarm Configuration',
+          icon: '⚙️',
+          action: 'openAlarmConfiguration',
+          testId: 'menu-alarms',
+        },
+        {
+          id: 'alarm-history',
+          label: 'Alarm History',
+          icon: '📋',
+          action: 'openAlarmHistory',
+          testId: 'menu-alarm-history',
+        },
+      ],
+    },
   ],
 
   // Development tools (only visible in development builds)

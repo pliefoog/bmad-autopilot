@@ -26,6 +26,7 @@ module.exports = function(api) {
             '@utils': './src/utils',
             // Web compatibility: Mock native modules
             'react-native-sound': './__mocks__/Sound.js',
+            'react-native-vector-icons/Ionicons': './__mocks__/Ionicons.js',
           },
         },
       ],

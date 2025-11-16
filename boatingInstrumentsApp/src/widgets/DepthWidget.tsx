@@ -7,6 +7,8 @@ import { useDepthPresentation } from '../presentation/useDataPresentation';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { DepthSensorData } from '../types/SensorData';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface DepthWidgetProps {
   id: string;
@@ -186,6 +188,12 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('depth')?.icon || 'water-outline'} 
+            size={12} 
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
           <Text style={[styles.title, { color: theme.textSecondary }]}>
             {title.toUpperCase()}
           </Text>
@@ -230,20 +238,24 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
       {expanded && (
         <View style={styles.secondaryContainer}>
           <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              mnemonic="MIN"
-              {...convertDepth.sessionMin}
-              state="normal"
-              compact={true}
-            />
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                mnemonic="MIN"
+                {...convertDepth.sessionMin}
+                state="normal"
+                compact={true}
+              />
+            </View>
           </View>
           <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              mnemonic="MAX"
-              {...convertDepth.sessionMax}
-              state="normal"
-              compact={true}
-            />
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                mnemonic="MAX"
+                {...convertDepth.sessionMax}
+                state="normal"
+                compact={true}
+              />
+            </View>
           </View>
         </View>
       )}
@@ -269,6 +281,8 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
     fontSize: 11,
@@ -311,6 +325,10 @@ const styles = StyleSheet.create({
   // Secondary Grid (1×2): Min and Max depths
   secondaryGrid: {
     marginBottom: 8,
+  },
+  // Grid cell wrapper for proper alignment
+  gridCell: {
+    alignItems: 'flex-end',
   },
 });
 

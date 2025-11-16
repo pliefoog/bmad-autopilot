@@ -86,6 +86,11 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const [isCommandPending, setIsCommandPending] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
+  
+  // Safety confirmation system for large heading changes
+  const [cumulativeHeadingChange, setCumulativeHeadingChange] = useState(0);
+  const [showLargeChangeConfirmation, setShowLargeChangeConfirmation] = useState(false);
+  const [pendingHeadingAdjustment, setPendingHeadingAdjustment] = useState<number>(0);
 
   // Extract sensor data with proper typing and defaults
   const autopilot = autopilotData as any; // Type assertion for legacy compatibility
@@ -131,6 +136,25 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
       }
     });
   }, []);
+
+  // Reset cumulative heading tracking when engagement changes or after timeout
+  useEffect(() => {
+    // Reset tracking when autopilot is disengaged
+    if (!engaged) {
+      setCumulativeHeadingChange(0);
+    }
+  }, [engaged]);
+
+  // Auto-reset cumulative tracking after 5 minutes of inactivity
+  useEffect(() => {
+    if (cumulativeHeadingChange !== 0) {
+      const resetTimer = setTimeout(() => {
+        setCumulativeHeadingChange(0);
+      }, 5 * 60 * 1000); // 5 minutes
+
+      return () => clearTimeout(resetTimer);
+    }
+  }, [cumulativeHeadingChange]);
 
   // Safety confirmation modal for engagement
   const handleEngageRequest = useCallback(() => {
@@ -188,16 +212,36 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
     }
   }, [triggerHaptic, playDisengageAlert, playErrorAlert]);
 
-  // Heading adjustment
+  // Heading adjustment with cumulative safety tracking
   const adjustHeading = useCallback(async (adjustment: number) => {
     triggerHaptic();
+    
+    // Check if this adjustment would exceed the safety threshold
+    const newCumulativeChange = Math.abs(cumulativeHeadingChange + adjustment);
+    
+    if (newCumulativeChange > 20) {
+      // Show safety confirmation for large cumulative changes
+      setPendingHeadingAdjustment(adjustment);
+      setShowLargeChangeConfirmation(true);
+      return;
+    }
+    
+    // Proceed with normal adjustment
+    await executeHeadingAdjustment(adjustment);
+  }, [cumulativeHeadingChange, triggerHaptic]);
+
+  // Execute the actual heading adjustment (separated for confirmation workflow)
+  const executeHeadingAdjustment = useCallback(async (adjustment: number) => {
     setIsCommandPending(true);
     setCommandError(null);
 
     try {
       if (commandManager.current) {
         const success = await commandManager.current.adjustHeading(adjustment);
-        if (!success) {
+        if (success) {
+          // Update cumulative tracking on successful adjustment
+          setCumulativeHeadingChange(prev => prev + adjustment);
+        } else {
           setCommandError(`Failed to adjust heading ${adjustment > 0 ? '+' : ''}${adjustment}°`);
           playErrorAlert();
         }
@@ -208,7 +252,22 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
     } finally {
       setIsCommandPending(false);
     }
-  }, [triggerHaptic, playErrorAlert]);
+  }, [playErrorAlert]);
+
+  // Confirmation handlers for large heading changes
+  const handleLargeChangeConfirm = useCallback(async () => {
+    setShowLargeChangeConfirmation(false);
+    await executeHeadingAdjustment(pendingHeadingAdjustment);
+    // Reset cumulative tracking after large confirmed change
+    setCumulativeHeadingChange(0);
+    setPendingHeadingAdjustment(0);
+  }, [pendingHeadingAdjustment, executeHeadingAdjustment]);
+
+  const handleLargeChangeCancel = useCallback(() => {
+    setShowLargeChangeConfirmation(false);
+    setPendingHeadingAdjustment(0);
+    // Don't reset cumulative tracking - user may try smaller adjustments
+  }, []);
 
   // Status colors based on engagement state
   const getStatusColor = () => {
@@ -456,6 +515,44 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmEngageText}>ENGAGE</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Large Heading Change Confirmation Modal */}
+        <Modal
+          visible={showLargeChangeConfirmation}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={handleLargeChangeCancel}
+        >
+          <View style={styles.confirmationOverlay}>
+            <View style={styles.confirmationDialog}>
+              <Text style={styles.confirmationTitle}>LARGE HEADING CHANGE</Text>
+              <Text style={styles.confirmationMessage}>
+                Adjusting {pendingHeadingAdjustment > 0 ? '+' : ''}{pendingHeadingAdjustment}° will result in a total change of {Math.abs(cumulativeHeadingChange + pendingHeadingAdjustment)}°.
+              </Text>
+              <Text style={styles.confirmationDetails}>
+                Current: {Math.round(currentHeading)}° → Target: {Math.round(currentHeading + cumulativeHeadingChange + pendingHeadingAdjustment)}°
+              </Text>
+
+              <View style={styles.confirmationButtons}>
+                <TouchableOpacity
+                  style={styles.confirmCancelButton}
+                  onPress={handleLargeChangeCancel}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.confirmCancelText}>CANCEL</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.confirmEngageButton}
+                  onPress={handleLargeChangeConfirm}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.confirmEngageText}>CONFIRM</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -747,9 +844,16 @@ const styles = StyleSheet.create({
   confirmationMessage: {
     fontSize: 16,
     color: '#9ca3af',
-    marginBottom: 25,
+    marginBottom: 15,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  confirmationDetails: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 25,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   confirmationButtons: {
     flexDirection: 'row',
@@ -780,3 +884,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+// Default export for compatibility with existing tests
+export default AutopilotControlScreen;

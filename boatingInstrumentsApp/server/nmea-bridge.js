@@ -56,11 +56,24 @@ class UnifiedNMEABridge {
    * Validate that a scenario exists (either as file or built-in)
    */
   validateScenarioExists(scenarioName) {
+    // If it's already a path (contains slashes), check if it exists directly
+    if (scenarioName.includes('/') || scenarioName.includes('\\')) {
+      const marineAssetsPath = path.join(__dirname, '../../marine-assets/test-scenarios', scenarioName);
+      if (fs.existsSync(`${marineAssetsPath}.yml`) || fs.existsSync(`${marineAssetsPath}.yaml`)) {
+        return true;
+      }
+      return fs.existsSync(path.resolve(scenarioName));
+    }
+    
     // Check for YAML files in common scenario locations
     const possiblePaths = [
+      // Local scenarios directory
       path.join(__dirname, 'scenarios', `${scenarioName}.yml`),
       path.join(__dirname, 'scenarios', scenarioName, 'scenario.yml'),
-      path.join(__dirname, 'scenarios', `${scenarioName}.yaml`)
+      path.join(__dirname, 'scenarios', `${scenarioName}.yaml`),
+      // Marine assets test scenarios (root level)
+      path.join(__dirname, '../../marine-assets/test-scenarios', `${scenarioName}.yml`),
+      path.join(__dirname, '../../marine-assets/test-scenarios', `${scenarioName}.yaml`),
     ];
 
     for (const scenarioPath of possiblePaths) {
@@ -68,10 +81,48 @@ class UnifiedNMEABridge {
         return true;
       }
     }
+    
+    // Recursively search subdirectories in marine-assets/test-scenarios
+    const marineAssetsDir = path.join(__dirname, '../../marine-assets/test-scenarios');
+    if (fs.existsSync(marineAssetsDir)) {
+      try {
+        const foundInSubdir = this.findScenarioInSubdirectories(marineAssetsDir, scenarioName);
+        if (foundInSubdir) return true;
+      } catch (error) {
+        // Ignore errors
+      }
+    }
 
-    // Check built-in scenarios
-    const builtInScenarios = ['basic-navigation', 'coastal-sailing', 'autopilot-engagement'];
+    // Check built-in scenarios (legacy JS-based scenarios)
+    const builtInScenarios = ['basic-navigation', 'coastal-sailing', 'autopilot-engagement', 'multi-equipment-detection', 'electrical-widget-validation'];
     return builtInScenarios.includes(scenarioName);
+  }
+
+  /**
+   * Recursively search for scenario file in subdirectories
+   */
+  findScenarioInSubdirectories(baseDir, scenarioName) {
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const subDirPath = path.join(baseDir, entry.name);
+        // Check for scenario file in this subdirectory
+        const ymlPath = path.join(subDirPath, `${scenarioName}.yml`);
+        const yamlPath = path.join(subDirPath, `${scenarioName}.yaml`);
+        
+        if (fs.existsSync(ymlPath) || fs.existsSync(yamlPath)) {
+          return true;
+        }
+        
+        // Recurse into subdirectory
+        if (this.findScenarioInSubdirectories(subDirPath, scenarioName)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 
   /**
@@ -79,23 +130,22 @@ class UnifiedNMEABridge {
    */
   listAvailableScenarios() {
     console.error('Built-in scenarios:');
-    console.error('  • basic-navigation    - Standard depth, speed, wind, and GPS data');
-    console.error('  • coastal-sailing     - Realistic coastal sailing conditions');
-    console.error('  • autopilot-engagement - Complete autopilot workflow');
+    console.error('  • basic-navigation         - Standard depth, speed, wind, and GPS data');
+    console.error('  • coastal-sailing          - Realistic coastal sailing conditions');
+    console.error('  • autopilot-engagement     - Complete autopilot workflow');
+    console.error('  • multi-equipment-detection - Multi-instance equipment testing');
+    console.error('  • electrical-widget-validation - Multi-battery electrical system testing');
     
-    // Check for custom scenario files
-    const scenariosDir = path.join(__dirname, 'scenarios');
+    // Recursively discover all scenario files
+    const scenariosDir = path.join(__dirname, '..', '..', 'marine-assets', 'test-scenarios');
     if (fs.existsSync(scenariosDir)) {
       try {
-        const files = fs.readdirSync(scenariosDir);
-        const customScenarios = files
-          .filter(file => file.endsWith('.yml') || file.endsWith('.yaml'))
-          .map(file => file.replace(/\.(yml|yaml)$/, ''));
+        const scenarios = this.discoverAllScenarios(scenariosDir, scenariosDir);
         
-        if (customScenarios.length > 0) {
+        if (scenarios.length > 0) {
           console.error('');
-          console.error('Custom scenarios:');
-          customScenarios.forEach(scenario => {
+          console.error('File-based scenarios (use path format: folder/name):');
+          scenarios.sort().forEach(scenario => {
             console.error(`  • ${scenario}`);
           });
         }
@@ -103,6 +153,36 @@ class UnifiedNMEABridge {
         // Ignore errors reading scenarios directory
       }
     }
+  }
+
+  /**
+   * Recursively discover all scenario files in directory tree
+   */
+  discoverAllScenarios(currentDir, baseDir) {
+    const scenarios = [];
+    
+    try {
+      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name);
+        
+        if (entry.isDirectory()) {
+          // Recurse into subdirectories
+          const subScenarios = this.discoverAllScenarios(fullPath, baseDir);
+          scenarios.push(...subScenarios);
+        } else if (entry.name.endsWith('.yml') || entry.name.endsWith('.yaml')) {
+          // Calculate relative path from base directory
+          const relativePath = path.relative(baseDir, fullPath);
+          const scenarioName = relativePath.replace(/\.(yml|yaml)$/, '');
+          scenarios.push(scenarioName);
+        }
+      }
+    } catch (error) {
+      // Ignore errors reading directory
+    }
+    
+    return scenarios;
   }
 
   /**

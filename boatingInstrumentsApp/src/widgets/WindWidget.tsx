@@ -9,6 +9,8 @@ import { usePresentationStore } from '../presentation/presentationStore';
 import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface WindWidgetProps {
   id: string;
@@ -40,12 +42,17 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Apparent and True Wind
-  const windAngle = useNmeaStore(useCallback((state: any) => state.nmeaData.windAngle, [])); // AWA (Apparent Wind Angle)
-  const windSpeed = useNmeaStore(useCallback((state: any) => state.nmeaData.windSpeed, [])); // AWS (Apparent Wind Speed)
-  const heading = useNmeaStore(useCallback((state: any) => state.nmeaData.heading, [])); // For true wind calculations
-  const sog = useNmeaStore(useCallback((state: any) => state.nmeaData.sog, [])); // Speed Over Ground for true wind
-  const windTimestamp = useNmeaStore(useCallback((state: any) => state.nmeaData.windTimestamp, []));
+  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
+  const windData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.wind[0], [])); // Wind sensor data
+  const compassData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.compass[0], [])); // Compass data for heading
+  const speedData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.speed[0], [])); // Speed data for SOG
+  
+  // Extract wind values from sensor data
+  const windAngle = windData?.angle; // AWA (Apparent Wind Angle)
+  const windSpeed = windData?.speed; // AWS (Apparent Wind Speed)
+  const heading = compassData?.heading; // For true wind calculations
+  const sog = speedData?.overGround; // Speed Over Ground for true wind
+  const windTimestamp = windData?.timestamp;
   
   // Debug logging - remove after testing
   React.useEffect(() => {
@@ -219,7 +226,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
     };
   }, [windPresentation, fullWindPresentation]);
   
-  // Simple angle display function (angles don't need conversion, just formatting)
+  // Enhanced angle display function with AWA port/starboard indication
   const getAngleDisplay = useCallback((angleValue: number | null | undefined, label: string = 'Angle'): MetricDisplayData => {
     if (angleValue === undefined || angleValue === null) {
       return {
@@ -233,8 +240,27 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
       };
     }
     
+    // Special formatting for Apparent Wind Angle (AWA)
+    if (label === 'AWA') {
+      const absAngle = Math.abs(angleValue);
+      const side = angleValue >= 0 ? 'STB' : 'PRT';
+      
+      return {
+        mnemonic: label,
+        value: absAngle.toFixed(0),
+        unit: `° ${side}`,
+        rawValue: angleValue,
+        layout: { minWidth: 70, alignment: 'right' },
+        presentation: { id: 'awa_deg', name: 'AWA with Port/Starboard', pattern: 'xxx° SSS' },
+        status: { 
+          isValid: true, 
+          isFallback: false
+        }
+      };
+    }
+    
     return {
-      mnemonic: label, // NMEA source abbreviation like "AWA", "TWA"
+      mnemonic: label, // NMEA source abbreviation like "TWA"
       value: Math.round(angleValue).toString(),
       unit: '°', // Presentation symbol for degrees
       rawValue: angleValue,
@@ -307,19 +333,27 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textSecondary }]}>
-          {title.toUpperCase()}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('wind')?.icon || 'cloud-outline'} 
+            size={12} 
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.title, { color: theme.textSecondary }]}>
+            {title.toUpperCase()}
+          </Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
           {pinned ? (
             <TouchableOpacity
-              onLongPress={handleLongPressOnCaret}
+              onLongPress={handleLongPress}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={[styles.pinIcon, { color: theme.primary }]}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

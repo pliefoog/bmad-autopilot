@@ -111,6 +111,8 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         <Text 
           style={[styles.value, { color: getValueColor() }]} 
           testID="secondary-metric-value"
+          numberOfLines={1}
+          ellipsizeMode="tail"
         >
           {displayValue}
         </Text>

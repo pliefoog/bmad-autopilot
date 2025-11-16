@@ -8,6 +8,8 @@ import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TankSensorData } from '../types/SensorData';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface TanksWidgetProps {
   id: string;
@@ -89,9 +91,23 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
 
   // Auto-generate appropriate title based on tank data
   const getDisplayTitle = useCallback(() => {
-    // Use tank name from NMEA data if available, otherwise use provided title
-    return tankName !== title ? tankName : title;
-  }, [tankName, title]);
+    // Standard NMEA tank location mapping by instance number
+    const locationMap: Record<number, string> = {
+      0: 'Port',
+      1: 'Stbd',
+      2: 'Center',
+      3: 'Fwd',
+      4: 'Aft',
+      5: 'Port',   // Second port tank (e.g., ballast)
+      6: 'Stbd',   // Second starboard tank (e.g., ballast)
+    };
+    
+    const location = locationMap[instanceNumber] || `#${instanceNumber + 1}`;
+    const typeLabel = tankType.charAt(0).toUpperCase() + tankType.slice(1);
+    
+    // Format: "[Type] Tank - [Location]" e.g. "Fuel Tank - Port", "Water Tank - Center"
+    return `${typeLabel} Tank - ${location}`;
+  }, [tankType, instanceNumber]);
 
   const styles = StyleSheet.create({
     container: {
@@ -141,6 +157,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
       paddingTop: 12,
       borderTopWidth: 1,
       borderTopColor: '#E5E7EB',
+      alignItems: 'flex-end',
     },
   });
 
@@ -153,7 +170,14 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={styles.title}>{getDisplayTitle()}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('tank')?.icon || 'cube-outline'} 
+            size={16} 
+            color={theme.primary}
+          />
+          <Text style={styles.title}>{getDisplayTitle()}</Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
@@ -163,7 +187,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={styles.pinIcon}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity

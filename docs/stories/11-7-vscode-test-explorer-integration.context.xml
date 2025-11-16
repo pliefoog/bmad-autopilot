@@ -1,0 +1,77 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.7</storyId>
+    <title>VS Code Test Explorer Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-30</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/11-7-vscode-test-explorer-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer working on marine safety-critical features</asA>
+    <iWant>comprehensive VS Code Test Explorer integration with professional test tooling</iWant>
+    <soThat>I can efficiently run and monitor tests with real-time coverage visualization, simulator status, and performance threshold validation within my development workflow</soThat>
+    <tasks>{{story_tasks}}</tasks>
+  </story>
+
+  <acceptanceCriteria>{{acceptance_criteria}}</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/TESTING.md" title="Testing Infrastructure Documentation" section="Jest Configuration & VS Code Integration" snippet="Comprehensive testing infrastructure with Jest, coverage commands, and VS Code Test Explorer integration patterns" />
+      <doc path="docs/architecture.md" title="Boating Instruments App Architecture" section="VS Code Test Explorer Integration & Quality Standards Framework" snippet="Professional test coverage requirements, performance validation thresholds, and VS Code integration configuration" />
+      <doc path="boatingInstrumentsApp/jest.config.js" title="Jest Configuration" section="Coverage Thresholds & Reporters" snippet="Marine safety-focused coverage thresholds: 85% widgets, 80% services, 90% integration, with enhanced coverage reporters" />
+      <doc path="docs/stories/epic-11-professional-grade-testing-architecture.md" title="Epic 11: Professional-Grade Testing Architecture" section="Story 11.7: VS Code Test Explorer Integration" snippet="VS Code Test Explorer integration deliverables: professional test documentation display, real-time coverage visualization, simulator status, performance monitoring" />
+      <doc path="docs/tech-spec-epic-11.md" title="Epic 11 Technical Specification" section="AC-11.7: VS Code Test Explorer Integration" snippet="Test Explorer enhancement with professional documentation display, real-time coverage overlay, simulator connection status, performance threshold violations" />
+    </docs>
+    <code>
+      <artifact path="src/testing/helpers/SimulatorTestClient.ts" kind="service" symbol="SimulatorTestClient" lines="entire" reason="Auto-discovery system with connection status monitoring for VS Code Test Explorer integration" />
+      <artifact path="src/testing/helpers/TestEnvironmentConfig.ts" kind="service" symbol="TestEnvironmentConfig" lines="entire" reason="Infrastructure detection and dynamic test suite configuration for automatic test categorization" />
+      <artifact path="src/testing/helpers/testHelpers.ts" kind="utility" symbol="PerformanceProfiler" lines="entire" reason="Performance monitoring integration for threshold violation warnings in test execution" />
+      <artifact path="src/testing/helpers/TestTierManager.ts" kind="service" symbol="TestTierManager" lines="entire" reason="Triple-tier testing architecture management for test execution timing and categorization" />
+      <artifact path="__tests__/setup-test-environment.ts" kind="config" symbol="global test environment setup" lines="entire" reason="Global test environment detection with VS Code Test Explorer status integration" />
+      <artifact path="boatingInstrumentsApp/jest.config.js" kind="config" symbol="Jest configuration" lines="entire" reason="Current Jest configuration with coverage thresholds and reporters for VS Code integration enhancement" />
+      <artifact path="src/test-utils/performance-monitor-setup.ts" kind="utility" symbol="performance monitoring setup" lines="entire" reason="Performance monitoring integration for Jest test execution with threshold validation" />
+      <artifact path="test-infrastructure/traceability-reporter.js" kind="utility" symbol="TraceabilityReporter" lines="entire" reason="Professional test documentation and requirement traceability system for VS Code Test Explorer display" />
+    </code>
+    <dependencies>
+      <node>
+        <jest>^29.7.0</jest>
+        <testing-library-react-native>^13.3.3</testing-library-react-native>
+        <types-jest>^29.5.13</types-jest>
+        <supertest>^7.1.4</supertest>
+        <typescript>^5.8.3</typescript>
+        <eslint>^8.57.1</eslint>
+        <prettier>^2.8.8</prettier>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Professional Test Documentation: All tests must include PURPOSE/REQUIREMENT/METHOD headers for VS Code Test Explorer display</constraint>
+    <constraint>Performance Monitoring: Real-time monitoring must not impact test execution performance by more than 5% overhead</constraint>
+    <constraint>Coverage Integration: VS Code coverage overlay must support marine safety focus areas with <100ms update latency</constraint>
+    <constraint>Simulator Integration: Must leverage existing SimulatorTestClient from Story 11.3 for connection status display</constraint>
+    <constraint>Test Categorization: Automatic test organization by domain (navigation, engine, environment, autopilot) based on documentation headers</constraint>
+  </constraints>
+  <interfaces>
+    <interface name="Jest Test Explorer Extension API" kind="VS Code extension API" signature="VSCode Jest extension APIs for test discovery, status display, and coverage integration" path="VS Code marketplace Jest extensions" />
+    <interface name="SimulatorTestClient" kind="service class" signature="class SimulatorTestClient { static autoConnect(): Promise<SimulatorTestClient>; getConnectionInfo(): ConnectionInfo; }" path="src/testing/helpers/SimulatorTestClient.ts" />
+    <interface name="TestEnvironmentConfig" kind="configuration service" signature="class TestEnvironmentConfig { discoverCapabilities(): Promise<TestEnvironmentCapabilities>; createExecutionPlan(): Promise<TestExecutionPlan>; }" path="src/testing/helpers/TestEnvironmentConfig.ts" />
+    <interface name="PerformanceProfiler" kind="monitoring utility" signature="class PerformanceProfiler { start(): void; mark(label: string): void; getStats(label: string): PerformanceStats; }" path="src/testing/helpers/testHelpers.ts" />
+    <interface name="Jest Coverage Reporters" kind="Jest configuration" signature="coverageReporters: string[] with json-summary, text, lcov for real-time coverage overlay integration" path="boatingInstrumentsApp/jest.config.js" />
+  </interfaces>
+  <tests>
+    <standards>Jest testing framework with React Native Testing Library and professional test documentation standards. Tests must include PURPOSE, REQUIREMENT, METHOD, and EXPECTED headers. Coverage integration with VS Code Test Explorer using enhanced Jest coverage reporters. Performance monitoring integration with <5% overhead requirement. Marine safety focus areas highlighted in coverage overlay with navigation, engine, environment, autopilot domain separation.</standards>
+    <locations>__tests__/ directory for main test suite, __tests__/tier1-unit/ for unit tests, __tests__/tier2-integration/ for integration tests, src/testing/ for testing utilities and helpers, VS Code workspace settings in .vscode/ directory for Test Explorer configuration</locations>
+    <ideas>
+      <idea ac="AC1">Professional Test Documentation Display: Test Jest Test Explorer extension integration with PURPOSE/REQUIREMENT/METHOD header parsing, implement test name enhancement with professional documentation display, create requirement traceability links in test results, validate test categorization based on documentation headers and marine domain classification</idea>
+      <idea ac="AC2">Real-Time Coverage Visualization: Implement custom Jest coverage reporter for VS Code integration, create marine safety focus area highlighting system, add coverage threshold visualization (85% widgets, 80% services, 90% integration), develop real-time coverage updates with <100ms latency requirement, test coverage gap identification for marine domains</idea>
+      <idea ac="AC3">Simulator Connection Status Integration: Integrate SimulatorTestClient connection status with VS Code Test Explorer UI, implement auto-discovery status monitoring for ports [9090, 8080], create connection health indicators with retry attempt tracking, develop fallback mode status display when simulator unavailable</idea>
+      <idea ac="AC4">Performance Monitoring Integration: Integrate PerformanceProfiler with VS Code Test Explorer for threshold violation warnings, implement render performance alerts for >16ms widget updates, create memory usage warnings for >50MB increase per test, add data latency validation alerts for >100ms NMEA → widget updates</idea>
+      <idea ac="AC5">Development Workflow Enhancement: Implement test execution timing and bottleneck identification in VS Code Test Explorer, create quick failure analysis with stack trace navigation, develop domain-based test suite organization (navigation, engine, environment, autopilot), ensure compatibility with existing Jest Test Explorer extension</idea>
+    </ideas>
+  </tests>
+</story-context>

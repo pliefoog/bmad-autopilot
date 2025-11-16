@@ -41,8 +41,8 @@ class PhysicsEnhancedScenarioDataSource extends ScenarioDataSource {
         
         // Try physics-specific paths first, then fall back to standard paths
         const possiblePaths = [
-            path.join(__dirname, '../../../vendor/test-scenarios/physics', `${scenarioName}.yml`),
-            path.join(__dirname, '../../../vendor/test-scenarios/physics', `${scenarioName}.yaml`),
+            path.join(__dirname, '../../../marine-assets/test-scenarios/physics', `${scenarioName}.yml`),
+            path.join(__dirname, '../../../marine-assets/test-scenarios/physics', `${scenarioName}.yaml`),
             path.join(__dirname, '../../scenarios', `${scenarioName}.yml`),
             path.join(__dirname, '../../scenarios', scenarioName, 'scenario.yml'),
             path.join(__dirname, '../../scenarios', `${scenarioName}.yaml`),

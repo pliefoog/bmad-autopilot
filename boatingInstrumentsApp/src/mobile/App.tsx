@@ -3,11 +3,13 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
+import { useAlarmStore } from '../store/alarmStore';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useToast } from '../hooks/useToast';
 import { DynamicDashboard } from '../widgets/DynamicDashboard';
 import HeaderBar from '../components/HeaderBar';
 import { ToastContainer } from '../components/toast';
+import { AlarmBanner } from '../widgets/AlarmBanner';
 import { ConnectionConfigDialog } from '../widgets/ConnectionConfigDialog';
 import { AutopilotControlScreen } from '../widgets/AutopilotControlScreen';
 import { AutopilotFooter } from '../components/organisms/AutopilotFooter';
@@ -27,6 +29,7 @@ const STORAGE_KEY = 'nmea-connection-config';
 
 const App = () => {
   const { connectionStatus, lastError } = useNmeaStore();
+  const { activeAlarms } = useAlarmStore();
   const theme = useTheme();
   const toast = useToast();
   const defaults = getConnectionDefaults();
@@ -400,6 +403,9 @@ const App = () => {
         navigationSession={navigationSession}
         onToggleNavigationSession={handleToggleNavigationSession}
       />
+
+      {/* Alarm Banner - Top Priority Display */}
+      <AlarmBanner alarms={activeAlarms} />
 
       {/* Global Toast Container */}
       <ToastContainer 

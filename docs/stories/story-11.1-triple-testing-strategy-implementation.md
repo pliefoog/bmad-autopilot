@@ -1,6 +1,7 @@
 # Story 11.1: Triple Testing Strategy Implementation
 
 Status: Done
+workflow_status: Done
 
 ## Story
 

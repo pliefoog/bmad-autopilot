@@ -10,65 +10,57 @@ try {
   WidgetMetadataRegistry = null;
 }
 
-// Enhanced Web-compatible Ionicons replacement with registry integration
+// Enhanced Web-compatible Ionicons replacement with emoji-based icons
+// Emojis are converted to monochromatic using CSS filters for theme compatibility
 const IconMap = {
-  // Marine instrument icons (monochromatic web-compatible symbols)
-  'water': '▢',           // Square for depth (monochromatic)
-  'water-outline': '▢',   // Square outline for depth  
-  'car-outline': '⚙',     // Simple gear for engine (no emoji variation)
-  'cube-outline': '□',     // Square outline for tanks
-  'thermometer': '|',     // Simple line for temperature
-  'thermometer-outline': '|',
-  'speedometer': '◐',     // Semi-circle for speed (gauge-like)
-  'speedometer-outline': '◐',
-  'location': '⊙',        // Target symbol for GPS position
-  'navigate': '↗',        // Arrow for navigation
-  'navigate-outline': '↗',
-  'boat': '△',           // Triangle for boat 
-  'boat-outline': '△',
-  'leaf': '◦',           // Small circle for wind
-  'battery-charging-outline': '▮',  // Rectangle for battery
-  'compass': '⊕',        // Cross in circle for compass
-  'compass-outline': '⊕',
-  'swap-horizontal-outline': '⇄',  // Double arrow for autopilot
-  'cloud-outline': '◦',   // Circle for wind
-  'color-palette-outline': '◨',
+  // Marine instrument icons (actively used in widgets)
+  'water-outline': '💧',           // Water droplet for depth
+  'car-outline': '⚙️',             // Gear for engine
+  'cube-outline': '📦',            // Box for tanks
+  'thermometer-outline': '🌡️',    // Thermometer for temperature
+  'speedometer-outline': '⏱️',     // Stopwatch for speed
+  'navigate-outline': '📍',        // Pin/location for navigation/GPS
+  'compass-outline': '🧭',         // Compass for heading
+  'battery-charging-outline': '🔋', // Battery
+  'swap-horizontal-outline': '🔄', // Arrows for autopilot
+  'cloud-outline': '☁️',           // Cloud for wind/weather
+  'boat-outline': '⛵',            // Sailboat for trip widget
+  'color-palette-outline': '🎨',   // Theme switcher
   
-  // Tank-specific icons
-  'fuel-pump': '□',      // Square for fuel tank
-  'droplet': '◦',        // Circle for water tank
-  'toilet': '▢',         // Square for waste tank
-  
-  // Generic metrics
-  'bar-chart': '▤',      // Grid pattern for charts
-  'chart-bar': '▤',      // Alternative naming
-  'analytics': '▤',      // Alternative naming
-  
-  // HamburgerMenu icons (simple Unicode symbols for web compatibility)
-  'settings-outline': '⚙',
+  // UI/Navigation icons (actively used)
+  'settings-outline': '⚙️',
   'grid-outline': '▦',
-  'alert-circle-outline': '⚠',
-  'wifi-outline': '◉',
-  'information-circle-outline': 'ℹ',
+  'alert-circle-outline': '⚠️',
+  'wifi-outline': '📶',
+  'information-circle-outline': 'ℹ️',
+  'information-circle': 'ℹ️',      // Tooltip (no outline variant)
+  'notifications-outline': '🔔',
+  'warning-outline': '⚠️',
+  'add': '➕',
+  'pin': '📌',
+  'checkmark-circle-outline': '✅',
+  'close-outline': '❌',
+  'refresh-outline': '🔄',
+  'remove': '➖',
+  'layers-outline': '📚',
+  'trash-outline': '🗑️',          // Undo/Redo clear history
+  'help-circle-outline': '❓',     // Help button
   
-  // Footer/UI icons (simple Unicode symbols for web compatibility)
-  'notifications-outline': '○',
-  'warning-outline': '⚠',
+  // Undo/Redo icons
+  'arrow-undo': '↶',
+  'arrow-redo': '↷',
   
-  // Additional UI icons
-  'add': '+',
-  'pin': '◉',
-  'checkmark-circle-outline': '✓',
-  'close-outline': '×',
-  'refresh-outline': '↻',
-  'remove': '−',
-  'layers-outline': '≡',
-  
-  // Common fallbacks
-  'default': '●',
+  // Common fallback
+  'default': '⚫',
 };
 
 const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
+  // Debug logging to verify mock is loaded
+  if (typeof window !== 'undefined' && !window.__ioniconsDebugLogged) {
+    console.log('✅ Ionicons MOCK loaded on web platform');
+    window.__ioniconsDebugLogged = true;
+  }
+  
   // Try to get icon from registry first, then fallback to static map
   let iconSymbol = IconMap[name];
   
@@ -81,13 +73,13 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
       if (widget) {
         // Use the icon mapping for the widget's category
         const categoryIcons = {
-          navigation: '◎',     // Target for navigation
-          environment: '◦',    // Circle for environment
-          engine: '⚙',         // Gear for engine
-          power: '▮',          // Rectangle for power
-          fluid: '□'           // Square for fluid
+          navigation: '🧭',     // Compass for navigation
+          environment: '🌡️',    // Thermometer for environment
+          engine: '⚙️',         // Gear for engine
+          power: '🔋',          // Battery for power
+          fluid: '💧'           // Droplet for fluid
         };
-        iconSymbol = categoryIcons[widget.category] || '●';
+        iconSymbol = categoryIcons[widget.category] || '⚫';
       }
     } catch (e) {
       // Ignore registry errors
@@ -97,6 +89,21 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
   // Final fallback
   if (!iconSymbol) {
     iconSymbol = IconMap['default'];
+  }
+  
+  // Debug: Log first few icon requests to verify mock is working
+  if (typeof window !== 'undefined') {
+    window.__iconRequests = window.__iconRequests || [];
+    if (window.__iconRequests.length < 5) {
+      console.log(`🎨 Icon request #${window.__iconRequests.length + 1}:`, { 
+        name, 
+        symbol: iconSymbol, 
+        color, 
+        size,
+        found: !!IconMap[name]
+      });
+      window.__iconRequests.push({ name, symbol: iconSymbol, color, size });
+    }
   }
   
   // Convert hex color to brightness value for filter
@@ -122,20 +129,9 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
         textAlign: 'center',
         width: size,
         height: size,
-        // Convert emoji to monochromatic using advanced CSS filters
-        // This technique converts colored emoji to single-color monochromatic icons
-        filter: `
-          grayscale(100%) 
-          brightness(${brightness * 2}) 
-          contrast(2) 
-          sepia(100%) 
-          saturate(0%) 
-          hue-rotate(0deg)
-        `,
-        // Additional properties to ensure monochromatic appearance
-        WebkitFilter: `grayscale(100%) brightness(${brightness * 2}) contrast(2)`,
+        // Convert emoji to grayscale and adjust brightness to match theme
+        filter: `grayscale(100%) brightness(${brightness * 1.5}) contrast(1.2)`,
         willChange: 'filter',
-        // Ensure the icon doesn't affect parent layout
         position: 'relative',
         isolation: 'isolate',
         ...style,

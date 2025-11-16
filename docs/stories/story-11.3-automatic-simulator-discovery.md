@@ -1,6 +1,7 @@
 # Story 11.3: Automatic Simulator Discovery
 
 Status: Approved
+workflow_status: Done
 
 ## Story
 

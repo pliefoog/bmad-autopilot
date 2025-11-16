@@ -1,0 +1,166 @@
+name: "Dual Engine Monitoring with Realistic Variation"
+description: "Twin engine monitoring with RPM, coolant temperature, oil pressure, and alternator voltage for both engines - all with realistic sine wave variations using Story 7.2 parameter interpolation"
+duration: 300
+version: "1.0"
+category: "basic"
+bridge_mode: "nmea0183"
+messageRate: 1.0
+scenario_type: "engine"
+vessel_type: "Motor Yacht Twin Engine"
+test_coverage: ["engine", "rpm", "temperature", "pressure", "electrical", "multi-instance"]
+
+conditions:
+  engine_load: "65% cruise"
+  sea_state: "calm"
+  temperature: "normal operating"
+
+equipment:
+  engines: 2
+  batteries: 1
+
+tags: ["engine", "monitoring", "development", "realistic", "variation", "dual-engine", "multi-instance"]
+related_stories: ["story-2.5", "story-7.2", "epic-2"]
+
+# NMEA sentence definitions with parameter interpolation (Story 7.2)
+nmea_sentences:
+  # Port Engine RPM with sine wave variation (±15 RPM from load changes)
+  - sentence: "$IIRPM,E,1,{rpm1},A,*XX"
+    sentence_type: "RPM"
+    description: "Port Engine RPM with realistic load cycle variations"
+    source: "ENGINE_PORT"
+    interval: 1.0
+    type: "RPM"
+    parameters:
+      rpm1:
+        type: "sine"
+        start: 1800
+        amplitude: 15
+        frequency: 0.03
+        format: "0000"
+
+  # Starboard Engine RPM with slightly different characteristics (phase offset)
+  - sentence: "$IIRPM,E,2,{rpm2},A,*XX"
+    sentence_type: "RPM"
+    description: "Starboard Engine RPM with realistic load cycle variations (slightly offset from Port)"
+    source: "ENGINE_STBD"
+    interval: 1.0
+    type: "RPM"
+    parameters:
+      rpm2:
+        type: "sine"
+        start: 1785
+        amplitude: 18
+        frequency: 0.028
+        format: "0000"
+
+  # Port Engine sensors - coolant temp, oil pressure, alternator voltage
+  - sentence: "$IIXDR,C,{coolant_temp1},F,ENGINE#2,P,{oil_pressure1},P,ENGINE#2,U,{alternator_voltage1},V,ALTERNATOR#2*XX"
+    sentence_type: "XDR"
+    description: "Port Engine sensors with realistic variations - temperature, pressure, voltage"
+    source: "ENGINE_PORT_SENSORS"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      coolant_temp1:
+        type: "sine"
+        start: 180.0
+        amplitude: 2.0
+        frequency: 0.01
+        format: "000.0"
+      oil_pressure1:
+        type: "sine"
+        start: 45.0
+        amplitude: 1.5
+        frequency: 0.02
+        format: "00.0"
+      alternator_voltage1:
+        type: "sine"
+        start: 13.8
+        amplitude: 0.15
+        frequency: 0.015
+        format: "00.00"
+
+  # Starboard Engine sensors - coolant temp, oil pressure, alternator voltage
+  - sentence: "$IIXDR,C,{coolant_temp2},F,ENGINE#3,P,{oil_pressure2},P,ENGINE#3,U,{alternator_voltage2},V,ALTERNATOR#3*XX"
+    sentence_type: "XDR"
+    description: "Starboard Engine sensors with realistic variations - temperature, pressure, voltage"
+    source: "ENGINE_STBD_SENSORS"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      coolant_temp2:
+        type: "sine"
+        start: 182.0
+        amplitude: 2.2
+        frequency: 0.012
+        format: "000.0"
+      oil_pressure2:
+        type: "sine"
+        start: 44.5
+        amplitude: 1.8
+        frequency: 0.018
+        format: "00.0"
+      alternator_voltage2:
+        type: "sine"
+        start: 13.75
+        amplitude: 0.18
+        frequency: 0.017
+        format: "00.00"
+
+  # Port Engine Fuel Flow with realistic consumption variation
+  - sentence: "$IIXDR,V,{fuel_flow1},L,ENGINE#2_FUEL*XX"
+    sentence_type: "XDR"
+    description: "Port Engine fuel flow rate with realistic variations based on RPM and load"
+    source: "ENGINE_PORT_FUEL_FLOW"
+    interval: 2.0
+    type: "XDR"
+    parameters:
+      fuel_flow1:
+        type: "sine"
+        start: 22.5
+        amplitude: 3.5
+        frequency: 0.025
+        format: "00.0"
+
+  # Starboard Engine Fuel Flow with slightly different characteristics
+  - sentence: "$IIXDR,V,{fuel_flow2},L,ENGINE#3_FUEL*XX"
+    sentence_type: "XDR"
+    description: "Starboard Engine fuel flow rate with realistic variations based on RPM and load"
+    source: "ENGINE_STBD_FUEL_FLOW"
+    interval: 2.0
+    type: "XDR"
+    parameters:
+      fuel_flow2:
+        type: "sine"
+        start: 23.0
+        amplitude: 3.8
+        frequency: 0.023
+        format: "00.0"
+
+  # Port Engine Hours (slowly incrementing)
+  - sentence: "$IIXDR,G,{engine_hours1},H,ENGINE#2_HOURS*XX"
+    sentence_type: "XDR"
+    description: "Port Engine operating hours counter"
+    source: "ENGINE_PORT_HOURS"
+    interval: 60.0
+    type: "XDR"
+    parameters:
+      engine_hours1:
+        type: "linear"
+        start: 1247.5
+        rate: 0.0167
+        format: "0000.0"
+
+  # Starboard Engine Hours (slightly higher hours)
+  - sentence: "$IIXDR,G,{engine_hours2},H,ENGINE#3_HOURS*XX"
+    sentence_type: "XDR"
+    description: "Starboard Engine operating hours counter"
+    source: "ENGINE_STBD_HOURS"
+    interval: 60.0
+    type: "XDR"
+    parameters:
+      engine_hours2:
+        type: "linear"
+        start: 1305.2
+        rate: 0.0167
+        format: "0000.0"

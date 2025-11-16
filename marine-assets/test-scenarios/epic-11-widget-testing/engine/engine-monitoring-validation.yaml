@@ -115,7 +115,7 @@ data:
     precision: 0.1
 
 # NMEA sentence configuration for engine widget validation
-sentences:
+nmea_sentences:
   # XDR - Engine RPM
   - type: "XDR"
     frequency: 2   # Hz - Engine RPM updates

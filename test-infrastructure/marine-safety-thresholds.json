@@ -1,0 +1,252 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Marine Safety Thresholds Configuration",
+  "description": "Industry standard accuracy requirements for marine instrument validation compliance",
+  "version": "1.0.0",
+  "maritimeAuthority": "IMO/NMEA Standards",
+  "lastUpdated": "2025-10-30",
+  
+  "domains": {
+    "navigation": {
+      "description": "Marine navigation accuracy standards per IMO SOLAS requirements",
+      "requirements": {
+        "gpsAccuracy": {
+          "threshold": 0.1,
+          "unit": "nautical_miles", 
+          "standard": "IMO Resolution MSC.191(79)",
+          "description": "GPS position accuracy within 0.1nm for marine navigation safety"
+        },
+        "headingAccuracy": {
+          "threshold": 1.0,
+          "unit": "degrees",
+          "standard": "IEC 61162-1",
+          "description": "Compass heading accuracy <1° directional precision"
+        },
+        "courseAccuracy": {
+          "threshold": 1.0,
+          "unit": "degrees", 
+          "standard": "IMO Resolution A.694(17)",
+          "description": "Course over ground accuracy for marine navigation"
+        },
+        "speedAccuracy": {
+          "threshold": 0.1,
+          "unit": "knots",
+          "standard": "IEC 61162-1",
+          "description": "Speed over ground accuracy for collision avoidance"
+        }
+      }
+    },
+    
+    "environmental": {
+      "description": "Environmental sensor accuracy standards for marine safety",
+      "requirements": {
+        "depthAccuracy": {
+          "threshold": 0.1,
+          "unit": "measurement_units",
+          "standard": "IEC 61162-1",
+          "description": "Echo sounder depth accuracy within 0.1 units for navigation safety"
+        },
+        "windDirectionAccuracy": {
+          "threshold": 1.0,
+          "unit": "degrees",
+          "standard": "WMO Standards",
+          "description": "Wind direction accuracy <1° for marine weather routing"
+        },
+        "windSpeedAccuracy": {
+          "threshold": 0.1,
+          "unit": "knots",
+          "standard": "WMO Standards", 
+          "description": "Wind speed accuracy for marine weather systems"
+        },
+        "temperatureAccuracy": {
+          "threshold": 0.5,
+          "unit": "celsius",
+          "standard": "IMO MARPOL",
+          "description": "Marine temperature sensor accuracy ±0.5°C"
+        },
+        "pressureAccuracy": {
+          "threshold": 1.0,
+          "unit": "mbar",
+          "standard": "WMO Standards",
+          "description": "Barometric pressure accuracy for marine weather"
+        }
+      }
+    },
+    
+    "engine": {
+      "description": "Marine engine monitoring accuracy per manufacturer specifications",
+      "requirements": {
+        "rpmAccuracy": {
+          "threshold": 2.0,
+          "unit": "percent",
+          "standard": "ISO 8178",
+          "description": "Engine RPM accuracy within manufacturer tolerance ±2%"
+        },
+        "engineTemperatureAccuracy": {
+          "threshold": 2.0,
+          "unit": "celsius",
+          "standard": "ABYC Standards",
+          "description": "Engine temperature monitoring ±2°C tolerance"
+        },
+        "fuelConsumptionAccuracy": {
+          "threshold": 3.0,
+          "unit": "percent",
+          "standard": "ISO 8178",
+          "description": "Fuel consumption accuracy ±3% for efficiency monitoring"
+        },
+        "oilPressureAccuracy": {
+          "threshold": 2.0,
+          "unit": "psi",
+          "standard": "ABYC E-11",
+          "description": "Engine oil pressure monitoring ±2 PSI tolerance"
+        },
+        "voltageAccuracy": {
+          "threshold": 0.1,
+          "unit": "volts",
+          "standard": "ABYC E-11",
+          "description": "Electrical system voltage monitoring ±0.1V accuracy"
+        }
+      }
+    },
+    
+    "autopilot": {
+      "description": "Autopilot system accuracy and response time standards",
+      "requirements": {
+        "responseTime": {
+          "threshold": 1000,
+          "unit": "milliseconds",
+          "standard": "IEC 62065",
+          "description": "Autopilot command response within 1 second for marine safety"
+        },
+        "headingControlAccuracy": {
+          "threshold": 0.5,
+          "unit": "degrees",
+          "standard": "IEC 62065",
+          "description": "Autopilot heading control accuracy ±0.5° precision"
+        },
+        "courseKeepingAccuracy": {
+          "threshold": 2.0,
+          "unit": "degrees",
+          "standard": "IMO Resolution MSC.64(67)",
+          "description": "Autopilot course keeping tolerance ±2° for marine operations"
+        },
+        "commandValidationTime": {
+          "threshold": 100,
+          "unit": "milliseconds",
+          "standard": "IEC 62065",
+          "description": "Autopilot command validation within 100ms"
+        },
+        "emergencyStopResponse": {
+          "threshold": 500,
+          "unit": "milliseconds",
+          "standard": "IMO SOLAS",
+          "description": "Emergency stop response within 500ms for safety"
+        }
+      }
+    },
+    
+    "safety": {
+      "description": "Marine safety data freshness and system reliability thresholds",
+      "requirements": {
+        "dataFreshnessThreshold": {
+          "threshold": 5000,
+          "unit": "milliseconds",
+          "standard": "IMO Resolution MSC.192(79)",
+          "description": "Critical marine data staleness detection at 5-second threshold"
+        },
+        "dataAgeWarning": {
+          "threshold": 3000,
+          "unit": "milliseconds", 
+          "standard": "IMO SOLAS Ch.V",
+          "description": "Marine data age warning at 3-second threshold"
+        },
+        "maxDataGap": {
+          "threshold": 10000,
+          "unit": "milliseconds",
+          "standard": "IEC 61162-1",
+          "description": "Maximum acceptable data gap for marine systems"
+        },
+        "criticalSystemTimeout": {
+          "threshold": 2000,
+          "unit": "milliseconds",
+          "standard": "IMO SOLAS",
+          "description": "Critical marine system timeout threshold"
+        },
+        "crashFreeTarget": {
+          "threshold": 99.5,
+          "unit": "percent",
+          "standard": "Marine Industry Standard",
+          "description": "Target crash-free session rate for marine safety compliance"
+        }
+      }
+    }
+  },
+  
+  "performance": {
+    "description": "Marine system performance requirements for real-time operations",
+    "requirements": {
+      "widgetUpdateLatency": {
+        "threshold": 16,
+        "unit": "milliseconds",
+        "standard": "Real-time Systems",
+        "description": "Marine widget update latency <16ms for smooth operation"
+      },
+      "dataProcessingLatency": {
+        "threshold": 100,
+        "unit": "milliseconds",
+        "standard": "Marine Real-time Systems",
+        "description": "NMEA data processing latency <100ms for marine safety"
+      },
+      "memoryUsage": {
+        "threshold": 50,
+        "unit": "megabytes",
+        "standard": "Marine Electronics",
+        "description": "Memory usage threshold <50MB for embedded marine systems"
+      }
+    }
+  },
+  
+  "testing": {
+    "description": "Testing accuracy requirements for marine domain validation",
+    "requirements": {
+      "minimumTestCoverage": {
+        "threshold": 95.0,
+        "unit": "percent",
+        "standard": "Marine Software Quality",
+        "description": "Minimum test coverage for marine safety-critical systems"
+      },
+      "testPassRate": {
+        "threshold": 100.0,
+        "unit": "percent",
+        "standard": "Marine Quality Assurance", 
+        "description": "Required test pass rate for marine domain validation"
+      },
+      "performanceTestDuration": {
+        "threshold": 300,
+        "unit": "seconds",
+        "standard": "Marine Endurance Testing",
+        "description": "Minimum performance test duration for marine reliability"
+      }
+    }
+  },
+  
+  "validation": {
+    "maritimeStandards": [
+      "IMO SOLAS (International Convention for Safety of Life at Sea)",
+      "IEC 61162-1 (Maritime navigation and radiocommunication equipment)",
+      "IEC 62065 (Track control systems)",
+      "IMO Resolution MSC.191(79) (Performance standards for ECDIS)",
+      "ABYC Standards (American Boat and Yacht Council)",
+      "ISO 8178 (Reciprocating internal combustion engines)",
+      "WMO Standards (World Meteorological Organization)"
+    ],
+    "complianceLevel": "International Marine Safety Standards",
+    "certificationRequirements": {
+      "navigation": "Type approval per IMO Resolution MSC.191(79)",
+      "safety": "SOLAS compliance certification required",
+      "environmental": "WMO standards compliance for marine weather",
+      "engine": "ISO 8178 and ABYC compliance for marine propulsion",
+      "autopilot": "IEC 62065 type approval for marine autopilot systems"
+    }
+  }
+}

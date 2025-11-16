@@ -1,6 +1,7 @@
-# Story 11.2: Widget-Scenario Mapping
+# Story 11.2: Widget-Scenario Test Mapping
 
 Status: Done
+workflow_status: Done
 
 ## Story
 

@@ -1,0 +1,194 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.5</storyId>
+    <title>Marine Domain Validation Standards</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-30</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.5-marine-domain-validation-standards.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Marine Safety Engineer and Quality Assurance Professional</asA>
+    <iWant>comprehensive marine domain validation tests with industry-standard accuracy thresholds and safety compliance</iWant>
+    <soThat>all marine instrument displays meet professional marine safety standards and provide accurate navigation, engine, and environmental data</soThat>
+    <tasks>
+      <task id="1" ac="11.5.1">Implement Navigation Domain Validation - Create navigation accuracy validation utilities with 0.1nm precision testing, GPS coordinate validation, heading calculation validation with &lt;1° precision</task>
+      <task id="2" ac="11.5.2">Implement Environmental Domain Validation - Create depth measurement validation with 0.1 unit accuracy, wind calculation validation with &lt;1° precision, environmental sensor range validation</task>
+      <task id="3" ac="11.5.3">Implement Engine Domain Validation - Create engine monitoring validation within manufacturer tolerances, RPM accuracy validation, temperature monitoring against safety limits</task>
+      <task id="4" ac="11.5.4">Implement Autopilot Domain Validation - Create autopilot command validation with 1-second response time, Raymarine Evolution protocol accuracy, emergency stop command validation</task>
+      <task id="5" ac="11.5.5">Implement Staleness Detection and Marine Safety Systems - Create 5-second marine safety threshold staleness detection, data age monitoring, timeout detection with marine safety warnings</task>
+      <task id="6" ac="all">Testing and Integration Validation - Validate against Epic 6 service architecture, integrate with Story 11.4 documentation standards, verify marine safety compliance</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-11.5.1">
+      <title>Navigation Domain Validation Standards</title>
+      <description>Navigation accuracy within 0.1 nautical mile precision, GPS coordinate validation using marine tolerances, heading calculations accurate within &lt;1° directional precision, position tracking validates against marine navigation standards, coordinate system transformations maintain accuracy within marine safety thresholds</description>
+    </criterion>
+    <criterion id="AC-11.5.2">
+      <title>Environmental Domain Validation Standards</title>
+      <description>Depth readings accurate within 0.1 unit of measurement, wind calculations accurate within &lt;1° directional precision, environmental sensor validation covers temperature and barometric pressure ranges, water depth validation includes safety margin calculations, weather data validation meets marine forecasting accuracy standards</description>
+    </criterion>
+    <criterion id="AC-11.5.3">
+      <title>Engine Domain Validation Standards</title>
+      <description>Engine monitoring within manufacturer tolerances, RPM accuracy validation covers operational range thresholds, temperature monitoring validates against engine safety limits, fuel consumption calculations maintain accuracy within industry standards, engine alarm threshold validation ensures marine safety compliance</description>
+    </criterion>
+    <criterion id="AC-11.5.4">
+      <title>Autopilot Domain Validation Standards</title>
+      <description>Autopilot commands validated within 1-second response time, command encoding/decoding maintains accuracy for Raymarine Evolution protocol, autopilot state transitions validated against marine safety requirements, emergency stop commands validated for immediate response compliance, autopilot accuracy validation includes course correction precision testing</description>
+    </criterion>
+    <criterion id="AC-11.5.5">
+      <title>Staleness Detection and Marine Safety Thresholds</title>
+      <description>Staleness detection tested at 5-second marine safety threshold, data age monitoring covers all critical marine instrumentation, timeout detection triggers appropriate marine safety warnings, stale data handling maintains system reliability for marine operations, marine safety compliance links to 99.5% crash-free session rate target</description>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-11.md</path>
+        <title>Tech Spec Epic 11: Professional Grade Testing Architecture</title>
+        <section>AC-11.5: Marine Domain Validation Standards</section>
+        <snippet>Navigation accuracy within 0.1 nautical mile precision, depth readings accurate within 0.1 unit, wind calculations accurate within &lt;1° directional precision, engine monitoring within manufacturer tolerances, autopilot commands validated within 1-second response time, staleness detection tested at 5-second marine safety threshold</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Boating Instruments App Fullstack Architecture Document</title>
+        <section>Epic 6 Domain-Separated Service Architecture</section>
+        <snippet>Domain-Separated Service Layer: Services reorganized by marine domains (navigation, engine, environment, autopilot). Enhanced Hook Architecture with comprehensive custom hooks for NMEA data, widget state, and performance monitoring</snippet>
+      </doc>
+      <doc>
+        <path>test-infrastructure/documentation-template.js</path>
+        <title>Professional Test Documentation Template System</title>
+        <section>Story 11.4 Implementation</section>
+        <snippet>Professional test documentation template system with PURPOSE/REQUIREMENT/METHOD/EXPECTED/ERROR CONDITIONS structure implemented for Jest and React Native Testing Library integration</snippet>
+      </doc>
+      <doc>
+        <path>docs/qa/professional-standards-guide.md</path>
+        <title>Professional Standards Guide</title>
+        <section>Marine Safety Compliance</section>
+        <snippet>Purpose-driven design principles, marine performance thresholds (&lt;16ms widget updates, &lt;100ms data latency, &lt;50MB memory), comprehensive marine safety scenario coverage linking to 99.5% crash-free session rate target</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/services/nmea/AutopilotCommands.ts</path>
+        <kind>service</kind>
+        <symbol>AutopilotCommandServiceImpl</symbol>
+        <lines>118-150</lines>
+        <reason>Autopilot command validation and mode setting for 1-second response time testing</reason>
+      </artifact>
+      <artifact>
+        <path>src/services/alarms/AlarmGroupingEngine.ts</path>
+        <kind>service</kind>
+        <symbol>AlarmGroupingEngine</symbol>
+        <lines>262-300</lines>
+        <reason>Marine domain alarm categorization for navigation, engine, environment systems validation</reason>
+      </artifact>
+      <artifact>
+        <path>src/services/alarms/AdaptiveLearningEngine.ts</path>
+        <kind>service</kind>
+        <symbol>AdaptiveLearningEngine</symbol>
+        <lines>286-320</lines>
+        <reason>Marine safety threshold adjustments and navigation alarm protection for staleness detection</reason>
+      </artifact>
+      <artifact>
+        <path>src/types/autopilot.types.ts</path>
+        <kind>types</kind>
+        <symbol>AutopilotPerformance</symbol>
+        <lines>134-160</lines>
+        <reason>Autopilot accuracy metrics including headingAccuracy, courseKeeping, and response time validation</reason>
+      </artifact>
+      <artifact>
+        <path>src/testing/index.ts</path>
+        <kind>testing</kind>
+        <symbol>navigationTestUtils</symbol>
+        <lines>120-160</lines>
+        <reason>Marine domain testing utilities for navigation, engine, environment, and autopilot data creation</reason>
+      </artifact>
+      <artifact>
+        <path>__tests__/integration/autopilotCommandFlow.test.ts</path>
+        <kind>test</kind>
+        <symbol>autopilot command validation</symbol>
+        <lines>54-90</lines>
+        <reason>Example of marine domain validation testing for autopilot command accuracy and timing</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <jest>^29.7.0</jest>
+        <testing-library-react-native>^13.3.3</testing-library-react-native>
+        <supertest>^7.1.4</supertest>
+        <ajv>^8.17.1</ajv>
+        <js-yaml>^4.1.0</js-yaml>
+      </node>
+      <marine>
+        <nmea-simple>^3.3.0</nmea-simple>
+        <canboat-canboatjs>^3.11.0</canboat-canboatjs>
+        <react-native-tcp-socket>^6.3.0</react-native-tcp-socket>
+      </marine>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <architectural>Follow Epic 6 Domain-Separated Service Architecture with clear validation boundaries between navigation, engine, environment, autopilot, and core domains</architectural>
+    <integration>Integrate with Epic 7/10 NMEA Bridge Simulator infrastructure for realistic marine data validation scenarios</integration>
+    <platform>Maintain consistency with React Native cross-platform patterns while ensuring marine safety compliance</platform>
+    <testing>Align with existing Jest and @testing-library/react-native framework patterns established in Story 11.4</testing>
+    <marine>Respect marine industry standards for instrument accuracy and safety thresholds</marine>
+    <performance>Validate performance thresholds: &lt;16ms widget updates, &lt;100ms data latency, &lt;50MB memory</performance>
+    <safety>Marine safety compliance must link to 99.5% crash-free session rate target</safety>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>MarineDomainValidator</name>
+      <kind>class interface</kind>
+      <signature>validateAccuracy(value: number, threshold: number, unit: string): ValidationResult</signature>
+      <path>test-infrastructure/marine-domain-validator.js</path>
+    </interface>
+    <interface>
+      <name>StalenessDetector</name>
+      <kind>class interface</kind>
+      <signature>checkDataFreshness(timestamp: number, thresholdMs: number): boolean</signature>
+      <path>test-infrastructure/staleness-detector.js</path>
+    </interface>
+    <interface>
+      <name>AutopilotCommandService</name>
+      <kind>service interface</kind>
+      <signature>setMode(mode: string): Promise&lt;void&gt;, validateCommand(command: AutopilotCommand): boolean</signature>
+      <path>src/services/nmea/AutopilotCommands.ts</path>
+    </interface>
+    <interface>
+      <name>MarineTestUtils</name>
+      <kind>testing utilities</kind>
+      <signature>createNavigationData(lat: number, lon: number), createAutopilotData(status: string, mode: string)</signature>
+      <path>src/testing/index.ts</path>
+    </interface>
+    <interface>
+      <name>AlarmGroupingEngine</name>
+      <kind>marine alarm interface</kind>
+      <signature>initializeGroupingRules(): GroupingRule[], matchesContext(conditions: any, context: VesselContext): boolean</signature>
+      <path>src/services/alarms/AlarmGroupingEngine.ts</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Marine domain validation tests use Story 11.4 professional documentation template with PURPOSE/REQUIREMENT/METHOD/EXPECTED/ERROR CONDITIONS structure. Tests integrate with Jest and @testing-library/react-native frameworks, follow Epic 6 domain separation, and validate marine industry accuracy standards (0.1nm navigation precision, 0.1 unit depth accuracy, &lt;1° wind precision, manufacturer engine tolerances, 1-second autopilot response, 5-second staleness threshold).</standards>
+    <locations>
+      <location>__tests__/tier1-unit/marine-domains/ - Domain-specific validation test suites</location>
+      <location>__tests__/integration/ - End-to-end marine validation scenarios</location>
+      <location>test-infrastructure/ - Marine validation utilities and configurations</location>
+      <location>docs/qa/ - Marine compliance reporting and standards documentation</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-11.5.1">Navigation accuracy tests with GPS coordinate validation, heading calculation precision, position tracking against marine charts, coordinate transformation accuracy for different marine projection systems</idea>
+      <idea ac="AC-11.5.2">Environmental sensor validation with depth sounder accuracy, wind calculation precision (true/apparent), temperature sensor ranges, barometric pressure validation, weather data forecasting accuracy</idea>
+      <idea ac="AC-11.5.3">Engine monitoring validation with RPM accuracy across operational ranges, temperature monitoring against manufacturer safety limits, fuel consumption calculation accuracy, engine alarm threshold compliance</idea>
+      <idea ac="AC-11.5.4">Autopilot command validation with 1-second response time testing, Raymarine Evolution protocol accuracy, emergency stop validation, course correction precision, autopilot state transition safety</idea>
+      <idea ac="AC-11.5.5">Staleness detection with 5-second marine safety threshold, data age monitoring for critical systems, timeout detection with marine safety warnings, stale data handling for operational reliability</idea>
+      <idea ac="all">Integration tests with Epic 6 service architecture validation, Story 11.4 documentation standard compliance, NMEA Bridge Simulator scenario testing, marine safety regulation compliance validation</idea>
+    </ideas>
+  </tests>
+</story-context>

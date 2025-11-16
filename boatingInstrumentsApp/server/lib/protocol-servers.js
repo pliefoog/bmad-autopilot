@@ -191,7 +191,7 @@ class ProtocolServers {
           this.udpServer.send(message + '\r\n', client.remote.port, client.remote.address);
           successCount++;
         } else if (client.type === 'websocket' && client.socket && client.socket.readyState === WebSocket.OPEN) {
-          client.socket.send(message);
+          client.socket.send(message + '\r\n');
           successCount++;
         }
       } catch (error) {

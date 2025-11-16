@@ -60,7 +60,7 @@ data:
     course_source: "course"
 
 # NMEA sentence configuration for speed widget validation
-sentences:
+nmea_sentences:
   # VHW - Water Speed and Heading
   - type: "VHW"
     frequency: 2   # Hz - Higher frequency for widget responsiveness testing

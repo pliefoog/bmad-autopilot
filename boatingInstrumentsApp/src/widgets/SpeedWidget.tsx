@@ -9,6 +9,8 @@ import { usePresentationStore } from '../presentation/presentationStore';
 import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface SpeedWidgetProps {
   id: string;
@@ -41,10 +43,13 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Both SOG and STW
-  const sog = useNmeaStore(useCallback((state: any) => state.nmeaData.sog, [])); // Speed Over Ground (VTG/RMC/GPS)
-  const stw = useNmeaStore(useCallback((state: any) => state.nmeaData.stw, [])); // Speed Through Water (VHW/log/paddle wheel)
-  // Note: speedTimestamp doesn't exist in store, using general data staleness
+  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
+  const speedData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.speed[0], [])); // Speed sensor data
+  
+  // Extract speed values from sensor data
+  const sog = speedData?.overGround; // Speed Over Ground (VTG/RMC/GPS)
+  const stw = speedData?.throughWater; // Speed Through Water (VHW/log/paddle wheel)
+  const speedTimestamp = speedData?.timestamp;
   
   // Speed history for averages and maximums
   const [speedHistory, setSpeedHistory] = useState<{
@@ -216,19 +221,27 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textSecondary }]}>
-          {title.toUpperCase()}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('speed')?.icon || 'speedometer-outline'} 
+            size={12} 
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.title, { color: theme.textSecondary }]}>
+            {title.toUpperCase()}
+          </Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
           {pinned ? (
             <TouchableOpacity
-              onLongPress={handleLongPressOnCaret}
+              onLongPress={handleLongPress}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={[styles.pinIcon, { color: theme.primary }]}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -262,29 +275,37 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
         <View style={styles.secondaryContainer}>
           {/* First Row: AVG values */}
           <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              data={speedDisplayData.sogAvg}
-              state="normal"
-              compact={true}
-            />
-            <SecondaryMetricCell
-              data={speedDisplayData.stwAvg}
-              state="normal"
-              compact={true}
-            />
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                data={speedDisplayData.sogAvg}
+                state="normal"
+                compact={true}
+              />
+            </View>
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                data={speedDisplayData.stwAvg}
+                state="normal"
+                compact={true}
+              />
+            </View>
           </View>
           {/* Second Row: MAX values */}
           <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              data={speedDisplayData.sogMax}
-              state="normal"
-              compact={true}
-            />
-            <SecondaryMetricCell
-              data={speedDisplayData.stwMax}
-              state="normal"
-              compact={true}
-            />
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                data={speedDisplayData.sogMax}
+                state="normal"
+                compact={true}
+              />
+            </View>
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                data={speedDisplayData.stwMax}
+                state="normal"
+                compact={true}
+              />
+            </View>
           </View>
         </View>
       )}
@@ -348,6 +369,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
+  },
+  // Grid cell wrapper for proper alignment
+  gridCell: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
 });
 

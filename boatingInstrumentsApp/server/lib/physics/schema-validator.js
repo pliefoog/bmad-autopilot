@@ -11,7 +11,7 @@ const yaml = require('js-yaml');
 class ScenarioSchemaValidator {
     constructor() {
         this.ajv = new Ajv({ allErrors: true, verbose: true });
-        this.schemaPath = path.join(__dirname, '../../../vendor/test-scenarios/scenario.schema.json');
+        this.schemaPath = path.join(__dirname, '../../../marine-assets/test-scenarios/scenario.schema.json');
         this.schema = null;
         this._loadSchema();
     }

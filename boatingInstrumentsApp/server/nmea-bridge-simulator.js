@@ -817,6 +817,11 @@ class NMEABridgeSimulator {
       this.lastBroadcastTimes.autopilot = now;
     }
 
+    // Process YAML-defined sentences if available
+    if (this.scenario && this.scenario.sentences) {
+      messages.push(...this.generateYAMLDefinedSentences(now, shouldSend));
+    }
+
     // Broadcast messages that are due
     messages.forEach(message => {
       this.broadcastMessage(message);
@@ -986,6 +991,15 @@ class NMEABridgeSimulator {
     if (windSpeedKnots === undefined || !Number.isFinite(windSpeedKnots)) {
       // Generate realistic varying wind speed
       windSpeedKnots = 12 + Math.sin(Date.now() * 0.0001) * 5; // 7-17 knots
+    }
+
+    // Safety check: Normalize wind angle to NMEA 0-360° range
+    windAngle = windAngle % 360;
+    if (windAngle < 0) windAngle += 360;
+    
+    // Warn about extreme values (debugging)
+    if (windAngle > 360 || windAngle < 0) {
+      console.warn(`⚠️  Wind angle out of range: ${windAngle}°, normalizing...`);
     }
 
     const sentence = `$IIMWV,${windAngle.toFixed(1)},R,${windSpeedKnots.toFixed(1)},N,A`;
@@ -1267,6 +1281,7 @@ class NMEABridgeSimulator {
    */
   generateMultiBatteryXDRSentences() {
     const messages = [];
+    const currentTime = Date.now();
     
     if (!this.scenario || !this.scenario.data || !this.scenario.data.battery_voltage) {
       // Fallback to original single battery
@@ -1284,6 +1299,337 @@ class NMEABridgeSimulator {
         messages.push(this.addChecksum(voltageSentence));
       }
     });
+
+    return messages;
+  }
+
+  /**
+   * Generate NMEA sentences based on YAML sentence definitions
+   */
+  generateYAMLDefinedSentences(currentTime, shouldSend) {
+    const messages = [];
+    
+    if (!this.scenario?.sentences || !Array.isArray(this.scenario.sentences)) {
+      return messages;
+    }
+
+    // Process each sentence definition
+    this.scenario.sentences.forEach((sentenceDef, index) => {
+      const sentenceKey = `yaml_sentence_${index}`;
+      
+      // Check if this sentence should be sent based on its frequency
+      if (sentenceDef.frequency && shouldSend(sentenceKey, sentenceDef.frequency)) {
+        const generatedSentences = this.generateYAMLSentence(sentenceDef);
+        messages.push(...generatedSentences);
+        
+        // Update timing for this specific sentence
+        if (!this.lastBroadcastTimes) {
+          this.lastBroadcastTimes = {};
+        }
+        this.lastBroadcastTimes[sentenceKey] = currentTime;
+      }
+    });
+
+    return messages;
+  }
+
+  /**
+   * Generate a specific NMEA sentence based on YAML configuration
+   */
+  generateYAMLSentence(sentenceDef) {
+    const messages = [];
+    
+    switch (sentenceDef.type) {
+      case 'XDR_BATTERY':
+        messages.push(...this.generateYAMLBatterySentence(sentenceDef));
+        break;
+      case 'XDR_TANK':
+        messages.push(...this.generateYAMLTankSentence(sentenceDef));
+        break;
+      case 'XDR_TEMPERATURE':
+        messages.push(...this.generateYAMLTemperatureSentence(sentenceDef));
+        break;
+      case 'RPM':
+        messages.push(...this.generateYAMLRPMSentence(sentenceDef));
+        break;
+      default:
+        console.warn(`⚠️ Unknown YAML sentence type: ${sentenceDef.type}`);
+    }
+
+    return messages;
+  }
+
+  /**
+   * Generate comprehensive battery XDR sentences from YAML definition
+   */
+  generateYAMLBatterySentence(sentenceDef) {
+    const messages = [];
+    const instance = sentenceDef.instance || 0;
+    
+    // Get battery data for this instance
+    if (!this.scenario?.data?.battery_voltage) {
+      return messages;
+    }
+
+    // Find the battery configuration for this instance
+    const batteryEntries = Object.entries(this.scenario.data.battery_voltage);
+    if (instance >= batteryEntries.length) {
+      return messages;
+    }
+
+    const [batteryKey, batteryConfig] = batteryEntries[instance];
+    const voltage = this.getScenarioDataValue(`battery_voltage.${batteryKey}`, batteryConfig);
+    
+    if (voltage !== null) {
+      const batteryId = `BAT_${instance}`;
+      
+      // 1. Voltage XDR sentence
+      const voltageSentence = `$IIXDR,U,${voltage.toFixed(1)},V,${batteryId}`;
+      messages.push(this.addChecksum(voltageSentence));
+      
+      // 2. Current (AMP) XDR sentence - calculate realistic current based on voltage
+      const current = this.calculateBatteryCurrent(voltage, instance, batteryConfig);
+      const currentSentence = `$IIXDR,I,${current.toFixed(1)},A,${batteryId}`;
+      messages.push(this.addChecksum(currentSentence));
+      
+      // 3. Temperature (TMP) XDR sentence - battery temperature
+      const temperature = this.calculateBatteryTemperature(voltage, instance);
+      const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${batteryId}_TMP`;
+      messages.push(this.addChecksum(tempSentence));
+      
+      // 4. State of Charge (SOC) XDR sentence - percentage
+      const soc = this.calculateBatterySOC(voltage, instance);
+      const socSentence = `$IIXDR,P,${soc.toFixed(0)},P,${batteryId}_SOC`;
+      messages.push(this.addChecksum(socSentence));
+      
+      // 5. Nominal Voltage (NOM) XDR sentence - rated voltage
+      const nominalVoltage = this.getBatteryNominalVoltage(instance);
+      const nomSentence = `$IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
+      messages.push(this.addChecksum(nomSentence));
+      
+      // 6. Battery Chemistry (CHEM) XDR sentence - battery type
+      const chemistry = this.getBatteryChemistry(instance);
+      const chemSentence = `$IIXDR,G,${chemistry},,${batteryId}_CHEM`;
+      messages.push(this.addChecksum(chemSentence));
+      
+      console.log(`🔋 Generated comprehensive battery data for ${batteryId}: V=${voltage.toFixed(1)}V, I=${current.toFixed(1)}A, SOC=${soc.toFixed(0)}%, T=${temperature.toFixed(1)}°C`);
+    }
+
+    return messages;
+  }
+
+  /**
+   * Calculate realistic battery current based on voltage and battery state
+   */
+  calculateBatteryCurrent(voltage, instance, batteryConfig) {
+    const currentTime = Date.now();
+    const timeSeconds = (currentTime / 1000) % 3600; // Hour cycle
+    
+    // Different current profiles for different battery types
+    const batteryProfiles = [
+      { // House battery - moderate cycling
+        baseLoad: -8.5,
+        chargingCurrent: 15,
+        chargingVoltage: 13.8
+      },
+      { // Engine battery - minimal load, alternator charging
+        baseLoad: -1.2,
+        chargingCurrent: 25,
+        chargingVoltage: 14.2
+      },
+      { // Thruster battery - high current capability
+        baseLoad: -2.0,
+        chargingCurrent: 40,
+        chargingVoltage: 13.6
+      },
+      { // Backup/Windlass battery
+        baseLoad: -0.8,
+        chargingCurrent: 12,
+        chargingVoltage: 13.4
+      }
+    ];
+    
+    const profile = batteryProfiles[instance % batteryProfiles.length];
+    
+    // Determine if charging (voltage above charging threshold)
+    if (voltage > profile.chargingVoltage - 0.5) {
+      // Charging - positive current with some variation
+      const chargingPhase = Math.sin(timeSeconds * 0.001) * 0.3 + 0.7; // 0.4 to 1.0
+      return profile.chargingCurrent * chargingPhase + (Math.random() - 0.5) * 2;
+    } else {
+      // Discharging - negative current
+      const loadVariation = 1 + Math.sin(timeSeconds * 0.002) * 0.5; // 0.5 to 1.5 load factor
+      return profile.baseLoad * loadVariation + (Math.random() - 0.5) * 1.5;
+    }
+  }
+
+  /**
+   * Calculate battery temperature based on current and ambient conditions
+   */
+  calculateBatteryTemperature(voltage, instance) {
+    const currentTime = Date.now();
+    const ambientTemp = 22 + Math.sin(currentTime * 0.0001) * 5; // 17-27°C ambient
+    
+    // Battery generates heat when charging/discharging heavily
+    const thermalOffset = Math.abs(voltage - 12.6) * 2; // Heat from charging/deep discharge
+    const instanceOffset = instance * 0.5; // Slight variation between batteries
+    
+    return ambientTemp + thermalOffset + instanceOffset + (Math.random() - 0.5) * 1;
+  }
+
+  /**
+   * Calculate State of Charge percentage based on voltage
+   */
+  calculateBatterySOC(voltage, instance) {
+    // Standard 12V lead-acid voltage to SOC mapping
+    const voltageSOCMap = [
+      { voltage: 12.6, soc: 100 },
+      { voltage: 12.5, soc: 90 },
+      { voltage: 12.42, soc: 80 },
+      { voltage: 12.32, soc: 70 },
+      { voltage: 12.20, soc: 60 },
+      { voltage: 12.06, soc: 50 },
+      { voltage: 11.9, soc: 40 },
+      { voltage: 11.75, soc: 30 },
+      { voltage: 11.58, soc: 20 },
+      { voltage: 11.31, soc: 10 },
+      { voltage: 10.5, soc: 0 }
+    ];
+    
+    // Handle voltages above 12.6V (charging) - cap at 100%
+    if (voltage >= 12.6) {
+      return 100;
+    }
+    
+    // Linear interpolation between voltage points
+    for (let i = 0; i < voltageSOCMap.length - 1; i++) {
+      const current = voltageSOCMap[i];
+      const next = voltageSOCMap[i + 1];
+      
+      if (voltage >= next.voltage) {
+        const ratio = (voltage - next.voltage) / (current.voltage - next.voltage);
+        const soc = next.soc + ratio * (current.soc - next.soc);
+        return Math.max(0, Math.min(100, soc)); // Ensure 0-100% range
+      }
+    }
+    
+    return 0; // Below minimum voltage
+  }
+
+  /**
+   * Get nominal voltage for battery instance
+   */
+  getBatteryNominalVoltage(instance) {
+    const nominalVoltages = [
+      12.0, // House battery - standard 12V
+      12.0, // Engine battery - standard 12V  
+      12.0, // Thruster battery - standard 12V
+      12.0  // Backup battery - standard 12V
+    ];
+    
+    return nominalVoltages[instance % nominalVoltages.length];
+  }
+
+  /**
+   * Get battery chemistry for instance
+   */
+  getBatteryChemistry(instance) {
+    const chemistries = [
+      'AGM',     // House battery - AGM deep cycle
+      'WET',     // Engine battery - wet cell starter
+      'LiFePO4', // Thruster battery - lithium for high current
+      'GEL'      // Backup battery - gel maintenance-free
+    ];
+    
+    return chemistries[instance % chemistries.length];
+  }
+
+  /**
+   * Generate tank XDR sentence from YAML definition  
+   */
+  generateYAMLTankSentence(sentenceDef) {
+    const messages = [];
+    const instance = sentenceDef.instance || 0;
+    
+    if (!this.scenario?.data?.tank_levels) {
+      return messages;
+    }
+
+    // Find tank configuration for this instance
+    const tankEntries = Object.entries(this.scenario.data.tank_levels);
+    if (instance >= tankEntries.length) {
+      return messages;
+    }
+
+    const [tankKey, tankConfig] = tankEntries[instance];
+    const level = this.getScenarioDataValue(`tank_levels.${tankKey}`, tankConfig);
+    
+    if (level !== null) {
+      // Generate tank XDR sentence: $IIXDR,P,<level>,P,<tankKey>*hh
+      const tankSentence = `$IIXDR,P,${level.toFixed(1)},P,${tankKey}`;
+      messages.push(this.addChecksum(tankSentence));
+    }
+
+    return messages;
+  }
+
+  /**
+   * Generate temperature XDR sentence from YAML definition
+   */
+  generateYAMLTemperatureSentence(sentenceDef) {
+    const messages = [];
+    const instance = sentenceDef.instance || 1; // Temp instances often start at 1
+    
+    if (!this.scenario?.data?.temperature) {
+      return messages;
+    }
+
+    // Find temperature configuration for this instance
+    const tempEntries = Object.entries(this.scenario.data.temperature);
+    const tempIndex = instance - 1; // Convert to 0-based index
+    
+    if (tempIndex < 0 || tempIndex >= tempEntries.length) {
+      return messages;
+    }
+
+    const [tempKey, tempConfig] = tempEntries[tempIndex];
+    const temperature = this.getScenarioDataValue(`temperature.${tempKey}`, tempConfig);
+    
+    if (temperature !== null) {
+      // Generate temperature XDR sentence with custom label
+      const label = sentenceDef.label || tempKey;
+      const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${label}`;
+      messages.push(this.addChecksum(tempSentence));
+    }
+
+    return messages;
+  }
+
+  /**
+   * Generate RPM sentence from YAML definition
+   */
+  generateYAMLRPMSentence(sentenceDef) {
+    const messages = [];
+    const instance = sentenceDef.instance || 0;
+    
+    if (!this.scenario?.data?.engine_rpm) {
+      return messages;
+    }
+
+    // Find engine configuration for this instance
+    const engineEntries = Object.entries(this.scenario.data.engine_rpm);
+    if (instance >= engineEntries.length) {
+      return messages;
+    }
+
+    const [engineKey, engineConfig] = engineEntries[instance];
+    const rpm = this.getScenarioDataValue(`engine_rpm.${engineKey}`, engineConfig);
+    
+    if (rpm !== null) {
+      // Generate RPM sentence: $IIRPM,S,<instance>,<rpm>,A,*hh
+      const rpmSentence = `$IIRPM,S,${instance},${rpm.toFixed(0)},A,`;
+      messages.push(this.addChecksum(rpmSentence));
+    }
 
     return messages;
   }
@@ -1437,7 +1783,7 @@ class NMEABridgeSimulator {
           ? scenarioName
           : path.join(__dirname, '..', scenarioName);
       } else {
-        scenarioPath = path.join(__dirname, '..', 'vendor', 'test-scenarios', `${scenarioName}.yml`);
+        scenarioPath = path.join(__dirname, '..', '..', 'marine-assets', 'test-scenarios', `${scenarioName}.yml`);
       }
 
       if (!fs.existsSync(scenarioPath)) {

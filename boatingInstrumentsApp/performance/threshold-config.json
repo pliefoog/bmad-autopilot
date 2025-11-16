@@ -1,0 +1,51 @@
+{
+  "description": "Story 11.6: Performance limits and targets for automated validation",
+  "version": "1.0.0",
+  "performance_gates": {
+    "render_performance": {
+      "fail_threshold_ms": 20,
+      "warn_threshold_ms": 16,
+      "target_threshold_ms": 12,
+      "enforcement": "fail_build"
+    },
+    "memory_limits": {
+      "fail_threshold_mb": 70,
+      "warn_threshold_mb": 50,
+      "target_threshold_mb": 30,
+      "enforcement": "fail_build"
+    },
+    "data_latency": {
+      "fail_threshold_ms": 150,
+      "warn_threshold_ms": 100,
+      "target_threshold_ms": 75,
+      "enforcement": "fail_build"
+    },
+    "throughput": {
+      "fail_threshold_msgs_sec": 400,
+      "warn_threshold_msgs_sec": 500,
+      "target_threshold_msgs_sec": 750,
+      "enforcement": "fail_build"
+    }
+  },
+  "regression_detection": {
+    "enabled": true,
+    "baseline_comparison_percentage": 10,
+    "consecutive_failures_to_alert": 3,
+    "performance_trend_window_days": 7
+  },
+  "alerting": {
+    "enabled": true,
+    "channels": ["console", "file"],
+    "severity_levels": {
+      "critical": "fail_threshold exceeded",
+      "warning": "warn_threshold exceeded",
+      "info": "performance degradation detected"
+    }
+  },
+  "marine_safety_performance": {
+    "autopilot_response_time_ms": 50,
+    "navigation_update_frequency_hz": 10,
+    "alarm_propagation_time_ms": 200,
+    "error_recovery_time_ms": 1000
+  }
+}

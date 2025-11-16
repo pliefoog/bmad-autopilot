@@ -19,7 +19,7 @@ import { AccessibilityService } from '../accessibility/AccessibilityService';
 import { vibratePattern } from '../haptics/Haptics';
 
 export interface AlarmStore {
-  addAlarm: (alarm: Alarm) => void;
+  addAlarm: (alarm: Omit<Alarm, 'id' | 'timestamp'>) => void;
   removeAlarm: (id: string) => void;
   updateAlarm: (id: string, updates: Partial<Alarm>) => void;
   acknowledgeAlarm: (id: string, acknowledgedBy?: string) => void;

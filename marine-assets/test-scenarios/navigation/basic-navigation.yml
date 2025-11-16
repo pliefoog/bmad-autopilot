@@ -43,8 +43,8 @@ data:
     speed_range: [4, 8]  # knots
     heading_variance: 5   # degrees
 
-# NMEA sentence configuration
-sentences:
+# NMEA sentence definitions
+nmea_sentences:
   - type: "DBT"    # Depth Below Transducer
     frequency: 1   # Hz
   - type: "VTG"    # Track Made Good and Ground Speed

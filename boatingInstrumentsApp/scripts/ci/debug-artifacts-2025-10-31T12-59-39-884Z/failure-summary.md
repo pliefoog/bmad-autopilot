@@ -1,0 +1,110 @@
+# 🚨 Failure Analysis Report
+
+**Timestamp:** 2025-10-31T12:59:33.632Z
+**Severity:** LOW (0/4)
+**Dominant Pattern:** unknown
+**Reproducibility:** medium
+
+## 📋 Summary
+
+- **Failure Types Found:** 
+- **Pattern Matches:** 0
+- **Artifacts Collected:** 79
+- **Pipeline Blocked:** Yes
+- **Deployment Risk:** medium
+
+## 🔍 Likely Root Causes
+
+- Unknown - requires manual investigation
+
+## 📁 Collected Artifacts
+
+- **system-info:** Comprehensive system and environment information (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-44-27-325Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-44-27-325Z/failure-analysis-report.json (0.02 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-44-27-325Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/failure-analysis-report.json (0.02 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/failure-analysis-report.json (0.02 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-46-35-921Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/failure-analysis-report.json (0.02 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/failure-analysis-report.json (0.02 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-44-27-325Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/failure-analysis-report.json (0.02 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-46-35-921Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/debug-artifacts-2025-10-31T12-50-30-374Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/ci-config/test-dependency-mapping.json (0.04 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/dependency-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/failure-analysis-report.json (0.03 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/process-info.json (0.00 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-50-30-374Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: debug-artifacts-2025-10-31T12-59-39-884Z/system-info.json (0.01 MB)
+- **ci-config:** ci-config artifact: test-dependency-mapping.json (0.04 MB)
+- **logs:** logs artifact: android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/arm64-v8a/CMakeFiles/CMakeOutput.log (0.04 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeError.log (0.00 MB)
+- **logs:** logs artifact: scripts/ci/debug-artifacts-2025-10-31T12-50-30-374Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-46-35-921Z/logs/scripts/ci/debug-artifacts-2025-10-31T12-44-27-325Z/logs/android/app/.cxx/Debug/4b46302p/armeabi-v7a/CMakeFiles/CMakeOutput.log (0.05 MB)
+- **process-info:** Process and runtime information (0.00 MB)
+- **dependency-info:** Dependency and package management information (0.01 MB)
+
+## 🖥️ System Information
+
+- **Platform:** Darwin darwin
+- **Node.js:** v20.19.5
+- **Memory:** 8192 MB total, 204 MB free
+- **CPU:** 8 cores
+
+---
+*Report generated by BMad CI Failure Analysis Collector*

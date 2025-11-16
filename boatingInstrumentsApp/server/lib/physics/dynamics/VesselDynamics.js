@@ -265,9 +265,17 @@ class VesselDynamics {
         // Calculate angle - atan2 gives angle from positive X axis
         let apparentAngle = Math.atan2(apparentWindX, apparentWindY) * 180 / Math.PI;
         
-        // Normalize angle to 0-360 range
+        // Proper angle normalization to prevent extreme values
+        apparentAngle = apparentAngle % 360;
         if (apparentAngle < 0) {
             apparentAngle += 360;
+        }
+        
+        // Safety check for extreme values (should never happen with proper normalization)
+        if (Math.abs(apparentAngle) > 360) {
+            console.warn(`⚠️  VesselDynamics: Extreme apparent wind angle detected: ${apparentAngle}°. Clamping to safe range.`);
+            apparentAngle = apparentAngle % 360;
+            if (apparentAngle < 0) apparentAngle += 360;
         }
         
         this.state.apparentWindAngle = apparentAngle;

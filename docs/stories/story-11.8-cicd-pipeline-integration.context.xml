@@ -1,0 +1,173 @@
+<story-context id="story-11.8-cicd-pipeline-integration" v="1.0">
+  <metadata>
+    <epicId>11</epicId>
+    <storyId>11.8</storyId>
+    <title>CI/CD Pipeline Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-11.8-cicd-pipeline-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>development team member</asA>
+    <iWant>comprehensive CI/CD pipeline integration for the professional testing architecture</iWant>
+    <soThat>quality gates are enforced automatically and testing infrastructure scales seamlessly across development workflows</soThat>
+    <tasks>
+      - CI/CD Configuration Setup (AC: 1): Configure automated NMEA Bridge Simulator lifecycle management, implement parallel test execution without port/resource conflicts, add flaky test detection with configurable retry logic, create test environment cleanup scripts for CI runs
+      - Quality Gates Implementation (AC: 2): Configure coverage threshold enforcement in pipeline, implement performance regression detection with build failures, add marine safety compliance validation checks, set up automated quality report generation  
+      - Pipeline Performance Optimization (AC: 3): Implement selective test running based on changed files, optimize resource usage for CI environments (memory, CPU), add test result caching for faster incremental builds, configure failure analysis and debugging artifacts
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. CI/CD Pipeline Configuration: Automated NMEA Bridge Simulator startup/shutdown management implemented, parallel test execution support without resource conflicts configured, flaky test detection and automatic retry mechanisms operational, test environment cleanup and state reset between runs automated
+    2. Quality Gate Integration: Coverage threshold enforcement in build pipeline (70% global, 85% widgets, 80% services, 90% integration), performance threshold validation with build failure on regression (&lt;16ms renders, &lt;100ms latency, &lt;50MB memory), marine safety requirement compliance validation integrated, automated quality report generation and distribution functional
+    3. Pipeline Optimization: Test execution time optimization with selective test running implemented, resource utilization optimization for CI/CD environments configured, test result caching and incremental validation operational, failure analysis and debugging support integration available
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-11.md</path>
+        <title>Technical Specification: Epic 11 - Professional-Grade Testing Architecture</title>
+        <section>Story 11.8: CI/CD Pipeline Integration</section>
+        <snippet>Epic 11 establishes a unified professional-grade testing architecture that transforms existing 228+ test files from basic validation to comprehensive requirement verification using the sophisticated NMEA Bridge Simulator infrastructure built in Epic 7 and enhanced in Epic 10.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/epic-11-professional-grade-testing-architecture.md</path>
+        <title>Epic 11: Professional-Grade Testing Architecture</title>
+        <section>Story 11.8: CI/CD Pipeline Integration</section>
+        <snippet>Integrate professional testing architecture with continuous integration and deployment pipeline. Deliverables include automated NMEA Bridge Simulator startup/shutdown management, quality gate integration with coverage and performance thresholds, and pipeline optimization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Boating Instruments App Fullstack Architecture Document</title>
+        <section>Epic 11 Testing Architecture Foundation</section>
+        <snippet>Unified NMEA Bridge Simulator Integration for professional-grade testing leveraging Epic 7/10 simulator infrastructure with triple testing strategy and quality standards framework enforcing performance thresholds and coverage requirements.</snippet>
+      </doc>
+      <doc>
+        <path>bmad/bmm/workflows/testarch/trace/instructions.md</path>
+        <title>Test Architect Workflow: Requirements Traceability & Quality Gate Decision</title>
+        <section>Quality Gate Decision Engine</section>
+        <snippet>Phase 2 uses traceability results to make quality gate decisions (PASS/CONCERNS/FAIL/WAIVED) based on evidence and decision rules. Deterministic rule-based approach with thresholds for P0/P1 coverage, pass rates, and marine safety compliance.</snippet>
+      </doc>
+      <doc>
+        <path>docs/nmea-bridge-simulator-architecture.md</path>
+        <title>NMEA Bridge Simulator Architecture</title>
+        <section>Continuous Integration Integration</section>
+        <snippet>CI/CD integration with Docker-based simulator for automated testing pipelines. REST API control interface on port 9090 for scenario management, real-time control, and session management.</snippet>
+      </doc>
+      <doc>
+        <path>TESTING-STRATEGY.md</path>
+        <title>Boating Instruments App - Testing Strategy</title>
+        <section>Quality Gates</section>
+        <snippet>Pre-release quality gates include 100% test pass rate, coverage ≥70% sustained, 99.5% crash-free rate (2 weeks sustained), and performance benchmarks pass.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>.github/workflows/ci-full.yml</path>
+        <kind>workflow</kind>
+        <symbol>CI - Full Tests</symbol>
+        <lines>1-50</lines>
+        <reason>Existing full CI pipeline that needs integration with professional testing architecture</reason>
+      </artifact>
+      <artifact>
+        <path>.github/workflows/ci-fast.yml</path>
+        <kind>workflow</kind>
+        <symbol>CI - Fast Tests</symbol>
+        <lines>1-50</lines>
+        <reason>Fast CI pipeline for PRs that needs quality gate integration</reason>
+      </artifact>
+      <artifact>
+        <path>.github/workflows/simulator-control-integration-tests.yml</path>
+        <kind>workflow</kind>
+        <symbol>Simulator Control API Integration Tests</symbol>
+        <lines>1-100</lines>
+        <reason>Existing simulator integration testing pipeline to extend with quality gates</reason>
+      </artifact>
+      <artifact>
+        <path>boatingInstrumentsApp/package.json</path>
+        <kind>config</kind>
+        <symbol>test scripts</symbol>
+        <lines>12-32</lines>
+        <reason>Existing test scripts including quality gates, coverage thresholds, and performance validation</reason>
+      </artifact>
+      <artifact>
+        <path>boatingInstrumentsApp/server/nmea-bridge-simulator.js</path>
+        <kind>service</kind>
+        <symbol>NMEABridgeSimulator</symbol>
+        <lines>32-50</lines>
+        <reason>NMEA Bridge Simulator that needs automated lifecycle management in CI/CD</reason>
+      </artifact>
+      <artifact>
+        <path>boatingInstrumentsApp/__tests__/nmea-bridge-simulator-integration.test.ts</path>
+        <kind>test</kind>
+        <symbol>simulator integration tests</symbol>
+        <lines>88-100</lines>
+        <reason>Performance and integration tests that validate 500+ messages/second and marine safety thresholds</reason>
+      </artifact>
+      <artifact>
+        <path>boatingInstrumentsApp/__tests__/nmea-bridge-simulator-network.test.ts</path>
+        <kind>test</kind>
+        <symbol>network integration tests</symbol>
+        <lines>27-50</lines>
+        <reason>Real network integration tests showing simulator startup/shutdown patterns for CI automation</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <jest>^29.0.0</jest>
+        <react-native-testing-library>^13.3.3</react-native-testing-library>
+        <websocket>^1.0.35</websocket>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - NMEA Bridge Simulator Integration: Must leverage Epic 7/10 simulator infrastructure with reliable startup/shutdown automation on ports 9090 (API), 8080 (WebSocket), 2000 (TCP)
+    - Quality Threshold Framework: Enforce coverage thresholds (70%+ global, 85% widgets, 80% services, 90% integration) and performance thresholds (&lt;16ms renders, &lt;100ms latency, &lt;50MB memory) established in Story 11.6
+    - Multi-Platform Support: CI/CD must support web development workflow and native platform testing consistently across iOS, Android, Windows, macOS platforms
+    - Marine Safety Compliance: &lt;100ms NMEA sentence → widget update enforced in CI, 99.5% crash-free rate validation, comprehensive error condition testing for safety-critical operations
+    - Professional Testing Standards: All tests must include PURPOSE/REQUIREMENT/METHOD documentation headers established in Story 11.4
+    - Architecture Alignment: Respect Epic 6 domain-separated service boundaries (navigation, engine, environment, autopilot, core) in testing infrastructure
+  </constraints>
+  
+  <interfaces>
+    <interface>
+      <name>NMEA Bridge Simulator Control API</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /api/scenarios/start, GET /api/scenarios/status, POST /api/scenarios/stop, POST /api/inject-data, GET /api/metrics/performance</signature>
+      <path>boatingInstrumentsApp/server/nmea-bridge-simulator.js</path>
+    </interface>
+    <interface>
+      <name>GitHub Actions Workflow</name>
+      <kind>CI/CD pipeline</kind>
+      <signature>CI workflow with simulator lifecycle, quality gates, and performance validation</signature>
+      <path>.github/workflows/</path>
+    </interface>
+    <interface>
+      <name>Jest Coverage API</name>
+      <kind>test framework</kind>
+      <signature>--coverage --coverageReporters=json-summary --passWithNoTests</signature>
+      <path>boatingInstrumentsApp/package.json</path>
+    </interface>
+    <interface>
+      <name>Quality Gate Enforcer</name>
+      <kind>script interface</kind>
+      <signature>node scripts/quality-gate-enforcer.js</signature>
+      <path>boatingInstrumentsApp/scripts/quality-gate-enforcer.js</path>
+    </interface>
+  </interfaces>
+  
+  <tests>
+    <standards>Professional testing architecture established in Epic 11 with triple testing strategy (Static Mocks, API Message Injection, Full Scenario Integration). All tests must include PURPOSE/REQUIREMENT/METHOD documentation headers and maintain marine domain validation standards with 0.1 nautical mile GPS precision, 0.1 unit depth accuracy, and &lt;1° wind directional precision. Performance targets: &lt;50ms unit tests, &lt;2000ms integration tests, &lt;30 seconds E2E tests.</standards>
+    <locations>__tests__/tier1-unit/, __tests__/tier2-integration/, __tests__/tier3-e2e/, __tests__/marine-safety/, marine-assets/test-scenarios/epic-11-widget-testing/</locations>
+    <ideas>
+      AC1 Tests: Simulator lifecycle automation test (startup/shutdown in CI), parallel execution conflict detection test, flaky test retry mechanism validation, test environment cleanup verification
+      AC2 Tests: Coverage threshold enforcement test (build failure on &lt;70% global), performance regression detection test (&gt;16ms render failure), marine safety compliance validation test (99.5% crash-free rate), quality report generation automation test
+      AC3 Tests: Selective test running performance test (changed files only), CI resource utilization monitoring test (&lt;2GB memory, &lt;4 CPU cores), test result caching effectiveness test, failure analysis artifact collection test
+    </ideas>
+  </tests>
+</story-context>

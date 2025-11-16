@@ -28,6 +28,7 @@ config.resolver.alias = {
 
   // Web compatibility: Mock native modules that don't work in web environment
   'react-native-sound': path.resolve(__dirname, '__mocks__/Sound.js'),
+  'react-native-vector-icons/Ionicons': path.resolve(__dirname, '__mocks__/Ionicons.js'),
 };
 
 // Configure for web compatibility

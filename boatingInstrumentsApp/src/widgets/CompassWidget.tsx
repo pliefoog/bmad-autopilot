@@ -7,6 +7,8 @@ import { useWidgetStore } from '../store/widgetStore';
 import { useDataPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 
 interface CompassWidgetProps {
   id: string;
@@ -30,12 +32,16 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Heading data
-  const heading = useNmeaStore(useCallback((state: any) => state.nmeaData.heading, [])); // True heading
-  const magneticHeading = useNmeaStore(useCallback((state: any) => state.nmeaData.magneticHeading, [])); // Magnetic heading
-  const variation = useNmeaStore(useCallback((state: any) => state.nmeaData.magneticVariation, [])); // Magnetic variation
-  const deviation = useNmeaStore(useCallback((state: any) => state.nmeaData.magneticDeviation, [])); // Magnetic deviation (rarely available)
-  const headingTimestamp = useNmeaStore(useCallback((state: any) => state.nmeaData.headingTimestamp, []));
+  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
+  const compassData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.compass[0], [])); // Compass sensor data
+  
+  // Extract heading values from sensor data
+  const heading = compassData?.heading; // True/magnetic heading
+  const magneticHeading = compassData?.magneticHeading; // Magnetic heading (if available separately)
+  const compassTimestamp = compassData?.timestamp;
+  const variation = compassData?.magneticVariation; // Magnetic variation from sensor data
+  const deviation = compassData?.magneticDeviation; // Magnetic deviation from sensor data
+  const headingTimestamp = compassData?.timestamp; // Use sensor timestamp
   
   // Epic 9 Enhanced Presentation System for compass angles
   const anglePresentation = useDataPresentation('angle');
@@ -187,9 +193,17 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
     >
       {/* Widget Header with Title and Controls */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textSecondary }]}>
-          {title.toUpperCase()}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <UniversalIcon 
+            name={WidgetMetadataRegistry.getMetadata('compass')?.icon || 'compass-outline'} 
+            size={12} 
+            color={theme.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.title, { color: theme.textSecondary }]}>
+            {title.toUpperCase()}
+          </Text>
+        </View>
         
         {/* Expansion Caret and Pin Controls */}
         <View style={styles.controls}>
@@ -250,18 +264,22 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
       {expanded && (
         <View style={styles.secondaryContainer}>
           <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              data={variationDisplay}
-              state="normal"
-              compact={true}
-            />
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                data={variationDisplay}
+                state="normal"
+                compact={true}
+              />
+            </View>
           </View>
           <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              data={deviationDisplay}
-              state="normal"
-              compact={true}
-            />
+            <View style={styles.gridCell}>
+              <SecondaryMetricCell
+                data={deviationDisplay}
+                state="normal"
+                compact={true}
+              />
+            </View>
           </View>
         </View>
       )}
@@ -470,6 +488,10 @@ const styles = StyleSheet.create({
   // Secondary Grid (1×2): Variation and Deviation
   secondaryGrid: {
     marginBottom: 8,
+  },
+  // Grid cell wrapper for proper alignment
+  gridCell: {
+    alignItems: 'flex-end',
   },
 });
 

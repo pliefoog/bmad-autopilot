@@ -144,11 +144,11 @@ class ScenarioEngine {
       const path = require('path');
       const yaml = require('js-yaml');
       
-      const scenariosPath = path.join(__dirname, '..', 'vendor', 'test-scenarios');
+      const scenariosPath = path.join(__dirname, '..', '..', 'marine-assets', 'test-scenarios');
       const availableScenarios = [];
       
       // Scan scenario directories
-      const categories = ['basic', 'autopilot', 'development', 'performance', 'safety', 'recorded', 'story-validation'];
+      const categories = ['basic', 'autopilot', 'development', 'performance', 'safety', 'recorded', 'story-validation', 'multi-instance'];
       
       for (const category of categories) {
         const categoryPath = path.join(scenariosPath, category);

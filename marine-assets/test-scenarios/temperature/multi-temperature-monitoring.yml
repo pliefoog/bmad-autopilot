@@ -1,0 +1,207 @@
+---
+# Multi-Temperature Sensor Test Scenario
+# Tests comprehensive temperature monitoring with multiple sensor locations
+# XDR sentence format for temperature measurements
+
+name: "Multi-Temperature Monitoring - Comprehensive"
+description: "Tests multiple temperature sensors across engine room, cabin, water, and refrigeration systems with realistic thermal dynamics"
+version: "1.0"
+category: "environmental"
+bridge_mode: "nmea0183"
+messageRate: 0.5
+scenario_type: "temperature"
+vessel_type: "Motor Yacht"
+test_coverage: ["temperature", "multi-instance", "XDR", "thermal-monitoring"]
+
+metadata:
+  author: "BMAD Test Suite"
+  tags:
+    - "temperature"
+    - "multi-instance"
+    - "XDR"
+    - "thermal-monitoring"
+  test_cases:
+    - "Multiple temperature sensor instances display correctly"
+    - "Temperature values update dynamically"
+    - "Different thermal patterns per location"
+    - "Temperature alarm thresholds work correctly"
+
+# Equipment Configuration
+equipment:
+  temperature_sensors:
+    count: 8
+    locations:
+      - name: "Engine Room"
+        instance: 1
+        normal_range: [35, 55]
+        alarm_threshold: 75
+      - name: "Main Cabin"
+        instance: 2
+        normal_range: [18, 28]
+        alarm_threshold: 35
+      - name: "Sea Water"
+        instance: 3
+        normal_range: [10, 25]
+        alarm_threshold: 30
+      - name: "Exhaust"
+        instance: 4
+        normal_range: [80, 120]
+        alarm_threshold: 150
+      - name: "Refrigerator"
+        instance: 5
+        normal_range: [2, 8]
+        alarm_threshold: 15
+      - name: "Battery Bay"
+        instance: 6
+        normal_range: [20, 35]
+        alarm_threshold: 50
+      - name: "Aft Cabin"
+        instance: 7
+        normal_range: [18, 28]
+        alarm_threshold: 35
+      - name: "Bilge"
+        instance: 8
+        normal_range: [15, 30]
+        alarm_threshold: 40
+
+# NMEA Sentences - XDR format for temperature measurements
+# Format: $IIXDR,C,value,C,LOCATION_INSTANCE*checksum
+# C = Temperature in Celsius
+# Location codes: ENGR (Engine Room), TEMP (Cabin), SEAW (Sea Water), AIRX (Outside Air)
+nmea_sentences:
+  # Temperature Sensor 1 - Engine Room (oscillating around 45°C, ±8°C range)
+  - sentence: "$IIXDR,C,{engine_room_temp},C,ENGR_1*XX"
+    sentence_type: "XDR"
+    description: "Engine room ambient temperature"
+    source: "TEMP_ENGINE_ROOM"
+    interval: 2.0
+    type: "XDR"
+    parameters:
+      engine_room_temp:
+        type: "sine"
+        start: 45.0
+        amplitude: 8.0
+        frequency: 0.0083  # 120 second period
+        format: "0.0"
+
+  # Temperature Sensor 2 - Main Cabin (slow oscillation around 22°C, ±3°C range)
+  - sentence: "$IIXDR,C,{main_cabin_temp},C,TEMP_2*XX"
+    sentence_type: "XDR"
+    description: "Main cabin ambient temperature"
+    source: "TEMP_MAIN_CABIN"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      main_cabin_temp:
+        type: "sine"
+        start: 22.0
+        amplitude: 3.0
+        frequency: 0.0042  # 240 second period (slower cabin changes)
+        format: "0.0"
+
+  # Temperature Sensor 3 - Sea Water (stable around 18°C, ±4°C range)
+  - sentence: "$IIXDR,C,{sea_water_temp},C,SEAW_3*XX"
+    sentence_type: "XDR"
+    description: "Sea water intake temperature"
+    source: "TEMP_SEA_WATER"
+    interval: 3.0
+    type: "XDR"
+    parameters:
+      sea_water_temp:
+        type: "sine"
+        start: 18.0
+        amplitude: 4.0
+        frequency: 0.0056  # 180 second period
+        format: "0.0"
+
+  # Temperature Sensor 4 - Exhaust (high temp around 95°C, ±15°C range)
+  - sentence: "$IIXDR,C,{exhaust_temp},C,ENGR_4*XX"
+    sentence_type: "XDR"
+    description: "Engine exhaust temperature"
+    source: "TEMP_EXHAUST"
+    interval: 1.0
+    type: "XDR"
+    parameters:
+      exhaust_temp:
+        type: "sine"
+        start: 95.0
+        amplitude: 15.0
+        frequency: 0.0167  # 60 second period (rapid exhaust changes)
+        format: "0.0"
+
+  # Temperature Sensor 5 - Refrigerator (cold around 5°C, ±2°C range)
+  - sentence: "$IIXDR,C,{fridge_temp},C,TEMP_5*XX"
+    sentence_type: "XDR"
+    description: "Refrigerator internal temperature"
+    source: "TEMP_REFRIGERATOR"
+    interval: 10.0
+    type: "XDR"
+    parameters:
+      fridge_temp:
+        type: "sine"
+        start: 5.0
+        amplitude: 2.0
+        frequency: 0.0028  # 360 second period (slow thermal mass)
+        format: "0.0"
+
+  # Temperature Sensor 6 - Battery Bay (moderate around 28°C, ±5°C range)
+  - sentence: "$IIXDR,C,{battery_temp},C,TEMP_6*XX"
+    sentence_type: "XDR"
+    description: "Battery compartment temperature"
+    source: "TEMP_BATTERY_BAY"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      battery_temp:
+        type: "sine"
+        start: 28.0
+        amplitude: 5.0
+        frequency: 0.0111  # 90 second period
+        format: "0.0"
+
+  # Temperature Sensor 7 - Aft Cabin (similar to main cabin, 21°C, ±3°C)
+  - sentence: "$IIXDR,C,{aft_cabin_temp},C,TEMP_7*XX"
+    sentence_type: "XDR"
+    description: "Aft cabin ambient temperature"
+    source: "TEMP_AFT_CABIN"
+    interval: 5.0
+    type: "XDR"
+    parameters:
+      aft_cabin_temp:
+        type: "sine"
+        start: 21.0
+        amplitude: 3.0
+        frequency: 0.0042  # 240 second period
+        format: "0.0"
+
+  # Temperature Sensor 8 - Outside Air (cooler around 16°C, ±6°C range)
+  - sentence: "$IIXDR,C,{outside_temp},C,AIRX_8*XX"
+    sentence_type: "XDR"
+    description: "Outside air temperature"
+    source: "TEMP_OUTSIDE"
+    interval: 10.0
+    type: "XDR"
+    parameters:
+      outside_temp:
+        type: "sine"
+        start: 16.0
+        amplitude: 6.0
+        frequency: 0.0056  # 180 second period
+        format: "0.0"
+
+# Duration and loop settings
+duration: 300  # 5 minutes
+loop: true
+loop_mode: "continuous"
+
+# Validation criteria
+validation:
+  temperature_ranges:
+    engine_room: [30, 60]
+    main_cabin: [15, 30]
+    sea_water: [10, 25]
+    exhaust: [70, 120]
+    refrigerator: [0, 10]
+    battery_bay: [20, 40]
+    aft_cabin: [15, 30]
+    bilge: [10, 30]
