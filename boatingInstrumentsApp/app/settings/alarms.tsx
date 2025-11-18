@@ -349,7 +349,7 @@ export default function AlarmSettingsScreen() {
           const thresholdValue = thresholdValues.get(alarmDef.type) || '';
 
           return (
-            <View key={alarmDef.type} style={[styles.alarmCard, { backgroundColor: theme.surface }]}>
+            <View key={alarmDef.type} style={[styles.alarmCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={styles.alarmHeader}>
                 <UniversalIcon name={alarmDef.iconName} size={32} color={theme.text} style={styles.alarmIcon} />
                 <View style={styles.alarmTitleContainer}>
@@ -363,8 +363,8 @@ export default function AlarmSettingsScreen() {
                 <Switch
                   value={config?.enabled ?? true}
                   onValueChange={(value) => handleEnableToggle(alarmDef.type, value)}
-                  trackColor={{ false: theme.border, true: theme.text }}
-                  thumbColor={theme.text}
+                  trackColor={{ false: theme.border, true: theme.secondary }}
+                  thumbColor={config?.enabled ? theme.text : theme.textSecondary}
                 />
                 <Text style={[styles.toggleLabel, { color: theme.textSecondary }]}>{config?.enabled ? 'Enabled' : 'Disabled'}</Text>
               </View>
@@ -390,8 +390,8 @@ export default function AlarmSettingsScreen() {
                     <Pressable
                       style={[
                         styles.saveButton,
-                        { backgroundColor: theme.text },
-                        (!config?.enabled || saving) && { backgroundColor: theme.border },
+                        { backgroundColor: theme.secondary, borderWidth: 1, borderColor: theme.secondary },
+                        (!config?.enabled || saving) && { backgroundColor: theme.surface, borderColor: theme.border },
                       ]}
                       onPress={() => handleThresholdSave(alarmDef.type)}
                       disabled={!config?.enabled || saving}
@@ -414,7 +414,7 @@ export default function AlarmSettingsScreen() {
                 style={[
                   styles.testButton,
                   { backgroundColor: theme.background, borderColor: theme.border },
-                  testingAlarm === alarmDef.type && { backgroundColor: theme.text, borderColor: theme.text },
+                  testingAlarm === alarmDef.type && { backgroundColor: theme.secondary, borderColor: theme.secondary },
                 ]}
                 onPress={() => handleTestAlarm(alarmDef.type)}
                 disabled={testingAlarm !== null}
@@ -455,7 +455,7 @@ export default function AlarmSettingsScreen() {
         onRequestClose={() => setConfirmDialog({ ...confirmDialog, visible: false })}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>{confirmDialog.title}</Text>
             <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>{confirmDialog.message}</Text>
             <View style={styles.modalButtons}>
@@ -535,11 +535,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
   },
   alarmHeader: {
     flexDirection: 'row',
@@ -653,11 +649,7 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
+    borderWidth: 1,
   },
   modalTitle: {
     fontSize: 20,
