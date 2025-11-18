@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { getConnectionDefaults } from '../services/connectionDefaults';
 import { useNmeaStore } from '../store/nmeaStore';
+import { useTheme } from '../store/themeStore';
 import { HelpButton } from '../components/atoms/HelpButton';
 import { Tooltip } from '../components/molecules/Tooltip';
 import { getHelpContent, getRelatedTopics } from '../content/help-content';
@@ -34,6 +35,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   shouldEnableConnectButton,
 }) => {
   const defaults = getConnectionDefaults();
+  const theme = useTheme();
   const connectionStatus = useNmeaStore(state => state.connectionStatus);
   const isConnected = connectionStatus === 'connected';
   const isWeb = Platform.OS === 'web';
@@ -146,9 +148,9 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Connection Settings</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.text }]}>Connection Settings</Text>
           <View style={styles.headerActions}>
             <HelpButton 
               helpId="connection-setup" 
@@ -156,21 +158,21 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
               size={24}
               style={styles.helpButton}
             />
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+            <TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: theme.surface }]}>
+              <Text style={[styles.closeButtonText, { color: theme.text }]}>✕</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.description}>
+          <Text style={[styles.description, { color: theme.textSecondary }]}>
             NMEA Bridge Details
           </Text>
 
           <View style={styles.section}>
-            <Text style={styles.label}>Host (IP or DNS name)</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Host (IP or DNS name)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface, color: theme.text, borderColor: theme.border }]}
               value={ip}
               onChangeText={handleIpChange}
               placeholder="e.g. 192.168.1.100 or bridge.local"
@@ -182,9 +184,9 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>Port</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Port</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.surface, color: theme.text, borderColor: theme.border }]}
               value={port}
               onChangeText={handlePortChange}
               placeholder="Enter port number"
@@ -195,43 +197,45 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
           {!isWeb && (
             <View style={styles.section}>
               <View style={styles.protocolToggle}>
-                <Text style={styles.label}>Protocol</Text>
-                <View style={styles.toggleContainer}>
-                  <Text style={[styles.toggleLabel, !useTcp && styles.toggleLabelActive]}>UDP</Text>
+                <Text style={[styles.label, { color: theme.text }]}>Protocol</Text>
+                <View style={[styles.toggleContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                  <Text style={[styles.toggleLabel, { color: theme.textSecondary }, !useTcp && { color: theme.text }]}>UDP</Text>
                   <Switch
                     value={useTcp}
                     onValueChange={setUseTcp}
-                    trackColor={{ false: '#FF6B35', true: '#007AFF' }}
-                    thumbColor="#fff"
+                    trackColor={{ false: theme.warning, true: theme.text }}
+                    thumbColor={theme.text}
                   />
-                  <Text style={[styles.toggleLabel, useTcp && styles.toggleLabelActive]}>TCP</Text>
+                  <Text style={[styles.toggleLabel, { color: theme.textSecondary }, useTcp && { color: theme.text }]}>TCP</Text>
                 </View>
               </View>
             </View>
           )}
         </View>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { borderTopColor: theme.border }]}>
           <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Reset to Suggested</Text>
+            <Text style={[styles.resetButtonText, { color: theme.text }]}>Reset to Suggested</Text>
           </TouchableOpacity>
           
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+            <TouchableOpacity style={[styles.cancelButton, { backgroundColor: theme.surface }]} onPress={onClose}>
+              <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={[
                 styles.connectButton,
-                !isConnectButtonEnabled() && styles.connectButtonDisabled
+                { backgroundColor: theme.text },
+                !isConnectButtonEnabled() && { backgroundColor: theme.surface, opacity: 0.5 }
               ]} 
               onPress={handleConnect}
               disabled={!isConnectButtonEnabled()}
             >
               <Text style={[
                 styles.connectButtonText,
-                !isConnectButtonEnabled() && styles.connectButtonTextDisabled
+                { color: theme.background },
+                !isConnectButtonEnabled() && { color: theme.textSecondary }
               ]}>
                 Connect
               </Text>
@@ -261,7 +265,6 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
   },
   header: {
     flexDirection: 'row',
@@ -269,7 +272,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
   headerActions: {
     flexDirection: 'row',
@@ -282,18 +284,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
   },
   closeButton: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -302,7 +301,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   description: {
-    color: '#ccc',
     fontSize: 14,
     marginBottom: 30,
     lineHeight: 20,
@@ -311,19 +309,15 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   label: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#2a2a2a',
     borderRadius: 8,
     padding: 15,
-    color: '#fff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#444',
   },
   protocolToggle: {
     marginTop: 10,
@@ -332,31 +326,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#2a2a2a',
     borderRadius: 8,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#444',
   },
   toggleLabel: {
-    color: '#ccc',
     fontSize: 16,
     fontWeight: '600',
-  },
-  toggleLabelActive: {
-    color: '#fff',
   },
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
   },
   resetButton: {
     alignSelf: 'center',
     marginBottom: 20,
   },
   resetButtonText: {
-    color: '#007AFF',
     fontSize: 14,
   },
   actionButtons: {
@@ -367,11 +353,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 8,
-    backgroundColor: '#2a2a2a',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -379,19 +363,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 8,
-    backgroundColor: '#007AFF',
     alignItems: 'center',
   },
-  connectButtonDisabled: {
-    backgroundColor: '#333',
-    opacity: 0.5,
-  },
   connectButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  connectButtonTextDisabled: {
-    color: '#888',
   },
 });
