@@ -388,15 +388,11 @@ export default function AlarmSettingsScreen() {
                       editable={config?.enabled ?? true}
                     />
                     <Pressable
-                      style={[
-                        styles.saveButton,
-                        { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border },
-                        (!config?.enabled || saving) && { backgroundColor: theme.surface, borderColor: theme.border },
-                      ]}
+                      style={styles.saveButton}
                       onPress={() => handleThresholdSave(alarmDef.type)}
                       disabled={!config?.enabled || saving}
                     >
-                      <Text style={[styles.saveButtonText, { color: theme.text }]}>
+                      <Text style={[styles.saveButtonText, { color: (!config?.enabled || saving) ? theme.textSecondary : theme.text }]}>
                         {saving ? '...' : 'Save'}
                       </Text>
                     </Pressable>
@@ -432,8 +428,8 @@ export default function AlarmSettingsScreen() {
         })}
 
         {/* Reset to Defaults */}
-        <Pressable style={[styles.resetButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }]} onPress={handleResetToDefaults}>
-          <Text style={[styles.resetButtonText, { color: theme.textSecondary }]}>Reset All to Defaults</Text>
+        <Pressable style={styles.resetButton} onPress={handleResetToDefaults}>
+          <Text style={[styles.resetButtonText, { color: theme.text }]}>Reset All to Defaults</Text>
         </Pressable>
 
         {/* Marine Safety Notice */}
