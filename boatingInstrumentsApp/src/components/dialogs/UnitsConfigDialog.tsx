@@ -285,7 +285,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={onClose} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.primary }]}>Cancel</Text>
+            <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Units</Text>
           <TouchableOpacity 
@@ -295,7 +295,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
           >
             <Text style={[
               styles.headerButtonText, 
-              { color: hasChanges ? theme.primary : theme.textSecondary }
+              { color: hasChanges ? theme.text : theme.textSecondary }
             ]}>
               Save
             </Text>
@@ -314,16 +314,16 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                     styles.presetButton,
                     { backgroundColor: theme.surface, borderColor: theme.border },
                     selectedPreset === preset.id && { 
-                      borderColor: theme.primary,
-                      backgroundColor: `${theme.primary}15`
+                      borderColor: theme.text,
+                      backgroundColor: `${theme.text}15`
                     }
                   ]}
                   onPress={() => handlePresetSelect(preset.id)}
                 >
                   <Text style={[
                     styles.presetName,
-                    { color: theme.text },
-                    selectedPreset === preset.id && { color: theme.primary }
+                    { color: theme.textSecondary },
+                    selectedPreset === preset.id && { color: theme.text }
                   ]}>
                     {preset.name}
                   </Text>
@@ -364,16 +364,16 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                             styles.unitButton,
                             { backgroundColor: theme.surface, borderColor: theme.border },
                             selectedUnit === presentation.id && {
-                              borderColor: theme.primary,
-                              backgroundColor: `${theme.primary}15`
+                              borderColor: theme.text,
+                              backgroundColor: `${theme.text}15`
                             }
                           ]}
                           onPress={() => handleUnitSelect(category.key, presentation.id)}
                         >
                           <Text style={[
                             styles.unitSymbol,
-                            { color: theme.text },
-                            selectedUnit === presentation.id && { color: theme.primary }
+                            { color: theme.textSecondary },
+                            selectedUnit === presentation.id && { color: theme.text }
                           ]}>
                             {getPresentationConfigLabel(presentation)}
                           </Text>
@@ -403,7 +403,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                         {category.name}
                       </Text>
                     </View>
-                    <Text style={[styles.previewUnit, { color: theme.primary }]}>
+                    <Text style={[styles.previewUnit, { color: theme.text }]}>
                       {selectedPresentation ? getPresentationConfigLabel(selectedPresentation) : '—'}
                     </Text>
                   </View>
