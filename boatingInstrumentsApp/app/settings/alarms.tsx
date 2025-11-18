@@ -27,6 +27,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/store/themeStore';
+import { UniversalIcon } from '../../src/components/atoms/UniversalIcon';
 import { CriticalAlarmConfiguration } from '../../src/services/alarms/CriticalAlarmConfiguration';
 import { CriticalAlarmType, CriticalAlarmConfig } from '../../src/services/alarms/types';
 import { AlarmConfigurationManager } from '../../src/services/alarms/AlarmConfigurationManager';
@@ -39,7 +40,7 @@ interface AlarmTypeConfig {
   type: CriticalAlarmType;
   label: string;
   description: string;
-  icon: string;
+  iconName: string; // Ionicon name for UniversalIcon
   thresholdLabel: string;
   unit: string;
   min: number;
@@ -52,7 +53,7 @@ const ALARM_CONFIGS: AlarmTypeConfig[] = [
     type: CriticalAlarmType.SHALLOW_WATER,
     label: 'Shallow Water',
     description: 'Alert when depth falls below configured threshold',
-    icon: '⚓',
+    iconName: 'water',
     thresholdLabel: 'Minimum Depth',
     unit: 'm',
     min: 0.5,
@@ -63,7 +64,7 @@ const ALARM_CONFIGS: AlarmTypeConfig[] = [
     type: CriticalAlarmType.ENGINE_OVERHEAT,
     label: 'Engine Overheat',
     description: 'Alert when engine temperature exceeds safe limits',
-    icon: '🔥',
+    iconName: 'flame',
     thresholdLabel: 'Maximum Temperature',
     unit: '°C',
     min: 80,
@@ -74,7 +75,7 @@ const ALARM_CONFIGS: AlarmTypeConfig[] = [
     type: CriticalAlarmType.LOW_BATTERY,
     label: 'Low Battery',
     description: 'Alert when battery voltage drops below safe level',
-    icon: '🔋',
+    iconName: 'battery-charging',
     thresholdLabel: 'Minimum Voltage',
     unit: 'V',
     min: 10.5,
@@ -85,7 +86,7 @@ const ALARM_CONFIGS: AlarmTypeConfig[] = [
     type: CriticalAlarmType.AUTOPILOT_FAILURE,
     label: 'Autopilot Failure',
     description: 'Alert on autopilot disconnection or malfunction',
-    icon: '🧭',
+    iconName: 'navigate',
     thresholdLabel: 'Detection Enabled',
     unit: '',
     min: 0,
@@ -96,7 +97,7 @@ const ALARM_CONFIGS: AlarmTypeConfig[] = [
     type: CriticalAlarmType.GPS_LOSS,
     label: 'GPS Signal Loss',
     description: 'Alert when GPS signal quality degrades or is lost',
-    icon: '📡',
+    iconName: 'radio',
     thresholdLabel: 'Timeout',
     unit: 's',
     min: 5,
@@ -350,7 +351,7 @@ export default function AlarmSettingsScreen() {
           return (
             <View key={alarmDef.type} style={[styles.alarmCard, { backgroundColor: theme.surface }]}>
               <View style={styles.alarmHeader}>
-                <Text style={styles.alarmIcon}>{alarmDef.icon}</Text>
+                <UniversalIcon name={alarmDef.iconName} size={32} color={theme.text} style={styles.alarmIcon} />
                 <View style={styles.alarmTitleContainer}>
                   <Text style={[styles.alarmTitle, { color: theme.text }]}>{alarmDef.label}</Text>
                   <Text style={[styles.alarmDescription, { color: theme.textSecondary }]}>{alarmDef.description}</Text>
@@ -546,7 +547,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   alarmIcon: {
-    fontSize: 32,
     marginRight: 12,
   },
   alarmTitleContainer: {
