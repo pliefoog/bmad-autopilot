@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../src/store/themeStore';
 import { CriticalAlarmConfiguration } from '../../src/services/alarms/CriticalAlarmConfiguration';
 import { CriticalAlarmType, CriticalAlarmConfig } from '../../src/services/alarms/types';
 import { AlarmConfigurationManager } from '../../src/services/alarms/AlarmConfigurationManager';
@@ -106,6 +107,7 @@ const ALARM_CONFIGS: AlarmTypeConfig[] = [
 
 export default function AlarmSettingsScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [configs, setConfigs] = useState<Map<CriticalAlarmType, CriticalAlarmConfig>>(new Map());
@@ -313,29 +315,29 @@ export default function AlarmSettingsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading alarm settings...</Text>
+          <ActivityIndicator size="large" color={theme.text} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading alarm settings...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={[styles.backButtonText, { color: theme.text }]}>← Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Alarm Configuration</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Alarm Configuration</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Critical Safety Alarms</Text>
-          <Text style={styles.sectionDescription}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Critical Safety Alarms</Text>
+          <Text style={[styles.sectionDescription, { color: theme.textSecondary }]}>
             Configure thresholds for marine safety alarms. Critical navigation alarms cannot be
             disabled for safety compliance.
           </Text>
@@ -346,12 +348,12 @@ export default function AlarmSettingsScreen() {
           const thresholdValue = thresholdValues.get(alarmDef.type) || '';
 
           return (
-            <View key={alarmDef.type} style={styles.alarmCard}>
+            <View key={alarmDef.type} style={[styles.alarmCard, { backgroundColor: theme.surface }]}>
               <View style={styles.alarmHeader}>
                 <Text style={styles.alarmIcon}>{alarmDef.icon}</Text>
                 <View style={styles.alarmTitleContainer}>
-                  <Text style={styles.alarmTitle}>{alarmDef.label}</Text>
-                  <Text style={styles.alarmDescription}>{alarmDef.description}</Text>
+                  <Text style={[styles.alarmTitle, { color: theme.text }]}>{alarmDef.label}</Text>
+                  <Text style={[styles.alarmDescription, { color: theme.textSecondary }]}>{alarmDef.description}</Text>
                 </View>
               </View>
 
@@ -360,21 +362,24 @@ export default function AlarmSettingsScreen() {
                 <Switch
                   value={config?.enabled ?? true}
                   onValueChange={(value) => handleEnableToggle(alarmDef.type, value)}
-                  trackColor={{ false: '#D1D1D6', true: '#34C759' }}
-                  thumbColor="#FFFFFF"
+                  trackColor={{ false: theme.border, true: theme.text }}
+                  thumbColor={theme.text}
                 />
-                <Text style={styles.toggleLabel}>{config?.enabled ? 'Enabled' : 'Disabled'}</Text>
+                <Text style={[styles.toggleLabel, { color: theme.textSecondary }]}>{config?.enabled ? 'Enabled' : 'Disabled'}</Text>
               </View>
 
               {/* Threshold Configuration */}
               {alarmDef.type !== CriticalAlarmType.AUTOPILOT_FAILURE && (
                 <View style={styles.configRow}>
-                  <Text style={styles.configLabel}>
+                  <Text style={[styles.configLabel, { color: theme.text }]}>
                     {alarmDef.thresholdLabel} ({alarmDef.unit})
                   </Text>
                   <View style={styles.thresholdInputContainer}>
                     <TextInput
-                      style={styles.thresholdInput}
+                      style={[
+                        styles.thresholdInput,
+                        { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }
+                      ]}
                       value={thresholdValue}
                       onChangeText={(value) => handleThresholdChange(alarmDef.type, value)}
                       keyboardType="decimal-pad"
@@ -384,12 +389,13 @@ export default function AlarmSettingsScreen() {
                     <Pressable
                       style={[
                         styles.saveButton,
-                        (!config?.enabled || saving) && styles.saveButtonDisabled,
+                        { backgroundColor: theme.text },
+                        (!config?.enabled || saving) && { backgroundColor: theme.border },
                       ]}
                       onPress={() => handleThresholdSave(alarmDef.type)}
                       disabled={!config?.enabled || saving}
                     >
-                      <Text style={styles.saveButtonText}>
+                      <Text style={[styles.saveButtonText, { color: theme.background }]}>
                         {saving ? '...' : 'Save'}
                       </Text>
                     </Pressable>
@@ -398,7 +404,7 @@ export default function AlarmSettingsScreen() {
               )}
 
               {/* Valid Range Info */}
-              <Text style={styles.rangeInfo}>
+              <Text style={[styles.rangeInfo, { color: theme.textSecondary }]}>
                 Valid range: {alarmDef.min} - {alarmDef.max} {alarmDef.unit}
               </Text>
 
@@ -406,12 +412,17 @@ export default function AlarmSettingsScreen() {
               <Pressable
                 style={[
                   styles.testButton,
-                  testingAlarm === alarmDef.type && styles.testButtonActive,
+                  { backgroundColor: theme.background, borderColor: theme.border },
+                  testingAlarm === alarmDef.type && { backgroundColor: theme.text, borderColor: theme.text },
                 ]}
                 onPress={() => handleTestAlarm(alarmDef.type)}
                 disabled={testingAlarm !== null}
               >
-                <Text style={styles.testButtonText}>
+                <Text style={[
+                  styles.testButtonText,
+                  { color: theme.text },
+                  testingAlarm === alarmDef.type && { color: theme.background }
+                ]}>
                   {testingAlarm === alarmDef.type ? 'Testing...' : 'Test Alarm'}
                 </Text>
               </Pressable>
@@ -420,14 +431,14 @@ export default function AlarmSettingsScreen() {
         })}
 
         {/* Reset to Defaults */}
-        <Pressable style={styles.resetButton} onPress={handleResetToDefaults}>
-          <Text style={styles.resetButtonText}>Reset All to Defaults</Text>
+        <Pressable style={[styles.resetButton, { backgroundColor: theme.error }]} onPress={handleResetToDefaults}>
+          <Text style={[styles.resetButtonText, { color: theme.text }]}>Reset All to Defaults</Text>
         </Pressable>
 
         {/* Marine Safety Notice */}
-        <View style={styles.safetyNotice}>
-          <Text style={styles.safetyNoticeTitle}>⚠️ Marine Safety Notice</Text>
-          <Text style={styles.safetyNoticeText}>
+                <View style={[styles.safetyNotice, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.safetyNoticeTitle, { color: theme.text }]}>⚠️ Safety Compliance Notice</Text>
+          <Text style={[styles.safetyNoticeText, { color: theme.textSecondary }]}>
             Critical navigation alarms meet marine safety standards and include redundant
             alerting. Alarm response time: &lt;500ms. Audio level: &gt;85dB for marine
             environment compliance.
@@ -443,21 +454,21 @@ export default function AlarmSettingsScreen() {
         onRequestClose={() => setConfirmDialog({ ...confirmDialog, visible: false })}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{confirmDialog.title}</Text>
-            <Text style={styles.modalMessage}>{confirmDialog.message}</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{confirmDialog.title}</Text>
+            <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>{confirmDialog.message}</Text>
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalButton, styles.modalCancelButton]}
+                style={[styles.modalButton, styles.modalCancelButton, { backgroundColor: theme.background }]}
                 onPress={() => setConfirmDialog({ ...confirmDialog, visible: false })}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={[styles.modalButton, styles.modalConfirmButton]}
+                style={[styles.modalButton, styles.modalConfirmButton, { backgroundColor: theme.error }]}
                 onPress={confirmDialog.onConfirm}
               >
-                <Text style={styles.modalConfirmText}>Disable Anyway</Text>
+                <Text style={[styles.modalConfirmText, { color: theme.text }]}>Disable Anyway</Text>
               </Pressable>
             </View>
           </View>
@@ -470,7 +481,6 @@ export default function AlarmSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
   },
   loadingContainer: {
     flex: 1,
@@ -480,7 +490,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
   },
   header: {
     flexDirection: 'row',
@@ -488,21 +497,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   backButton: {
     padding: 8,
   },
   backButtonText: {
     fontSize: 17,
-    color: '#007AFF',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
   },
   headerSpacer: {
     width: 60,
@@ -519,16 +524,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 8,
   },
   sectionDescription: {
     fontSize: 15,
-    color: '#666',
     lineHeight: 20,
   },
   alarmCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -553,12 +555,10 @@ const styles = StyleSheet.create({
   alarmTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000000',
     marginBottom: 4,
   },
   alarmDescription: {
     fontSize: 14,
-    color: '#666',
   },
   configRow: {
     flexDirection: 'row',
@@ -573,12 +573,10 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     fontSize: 16,
-    color: '#666',
     marginLeft: 12,
   },
   configLabel: {
     fontSize: 16,
-    color: '#000000',
     flex: 1,
   },
   thresholdInputContainer: {
@@ -589,51 +587,35 @@ const styles = StyleSheet.create({
     width: 80,
     height: 36,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
-    backgroundColor: '#FFFFFF',
     marginRight: 8,
   },
   saveButton: {
-    backgroundColor: '#007AFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  saveButtonDisabled: {
-    backgroundColor: '#C7C7CC',
-  },
   saveButtonText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
   rangeInfo: {
     fontSize: 12,
-    color: '#999',
     marginBottom: 12,
   },
   testButton: {
-    backgroundColor: '#F2F2F7',
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E5EA',
-  },
-  testButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
   },
   testButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#007AFF',
   },
   resetButton: {
-    backgroundColor: '#FF3B30',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -641,27 +623,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   resetButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
   safetyNotice: {
-    backgroundColor: '#FFF9E6',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#FFD60A',
     marginBottom: 16,
   },
   safetyNoticeTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000000',
     marginBottom: 8,
   },
   safetyNoticeText: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 20,
   },
   modalOverlay: {
@@ -672,7 +649,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,
     width: '100%',
@@ -686,13 +662,11 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 12,
     textAlign: 'center',
   },
   modalMessage: {
     fontSize: 16,
-    color: '#666',
     lineHeight: 22,
     marginBottom: 24,
     textAlign: 'center',
@@ -708,19 +682,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelButton: {
-    backgroundColor: '#F2F2F7',
   },
   modalCancelText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
   },
   modalConfirmButton: {
-    backgroundColor: '#FF3B30',
   },
   modalConfirmText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
 });
