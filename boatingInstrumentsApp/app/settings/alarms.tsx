@@ -363,7 +363,7 @@ export default function AlarmSettingsScreen() {
                 <Switch
                   value={config?.enabled ?? true}
                   onValueChange={(value) => handleEnableToggle(alarmDef.type, value)}
-                  trackColor={{ false: theme.border, true: theme.secondary }}
+                  trackColor={{ false: theme.border, true: theme.textSecondary }}
                   thumbColor={config?.enabled ? theme.text : theme.textSecondary}
                 />
                 <Text style={[styles.toggleLabel, { color: theme.textSecondary }]}>{config?.enabled ? 'Enabled' : 'Disabled'}</Text>
@@ -390,13 +390,13 @@ export default function AlarmSettingsScreen() {
                     <Pressable
                       style={[
                         styles.saveButton,
-                        { backgroundColor: theme.secondary, borderWidth: 1, borderColor: theme.secondary },
+                        { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border },
                         (!config?.enabled || saving) && { backgroundColor: theme.surface, borderColor: theme.border },
                       ]}
                       onPress={() => handleThresholdSave(alarmDef.type)}
                       disabled={!config?.enabled || saving}
                     >
-                      <Text style={[styles.saveButtonText, { color: theme.background }]}>
+                      <Text style={[styles.saveButtonText, { color: theme.text }]}>
                         {saving ? '...' : 'Save'}
                       </Text>
                     </Pressable>
@@ -414,7 +414,7 @@ export default function AlarmSettingsScreen() {
                 style={[
                   styles.testButton,
                   { backgroundColor: theme.background, borderColor: theme.border },
-                  testingAlarm === alarmDef.type && { backgroundColor: theme.secondary, borderColor: theme.secondary },
+                  testingAlarm === alarmDef.type && { backgroundColor: theme.surface, borderColor: theme.text },
                 ]}
                 onPress={() => handleTestAlarm(alarmDef.type)}
                 disabled={testingAlarm !== null}
@@ -422,7 +422,7 @@ export default function AlarmSettingsScreen() {
                 <Text style={[
                   styles.testButtonText,
                   { color: theme.text },
-                  testingAlarm === alarmDef.type && { color: theme.background }
+                  testingAlarm === alarmDef.type && { color: theme.text }
                 ]}>
                   {testingAlarm === alarmDef.type ? 'Testing...' : 'Test Alarm'}
                 </Text>
@@ -432,8 +432,8 @@ export default function AlarmSettingsScreen() {
         })}
 
         {/* Reset to Defaults */}
-        <Pressable style={[styles.resetButton, { backgroundColor: theme.error }]} onPress={handleResetToDefaults}>
-          <Text style={[styles.resetButtonText, { color: theme.text }]}>Reset All to Defaults</Text>
+        <Pressable style={[styles.resetButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }]} onPress={handleResetToDefaults}>
+          <Text style={[styles.resetButtonText, { color: theme.textSecondary }]}>Reset All to Defaults</Text>
         </Pressable>
 
         {/* Marine Safety Notice */}
