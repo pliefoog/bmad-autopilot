@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { useTheme } from '../store/themeStore';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetRegistry } from './WidgetRegistry';
 import { PlatformStyles } from '../utils/animationUtils';
@@ -20,6 +21,7 @@ export const WidgetSelector: React.FC<{
   visible: boolean;
   onClose: () => void;
 }> = ({ selected, onChange, visible, onClose }) => {
+  const theme = useTheme();
   const [localSelected, setLocalSelected] = useState<string[]>(selected);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
@@ -63,15 +65,20 @@ export const WidgetSelector: React.FC<{
     const alreadyAdded = localSelected.includes(item.key);
     return (
       <TouchableOpacity
-        style={[styles.card, alreadyAdded && styles.cardDimmed, highlighted === item.key && styles.cardHighlight]}
+        style={[
+          styles.card,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+          alreadyAdded && styles.cardDimmed,
+          highlighted === item.key && [styles.cardHighlight, { borderColor: theme.text }]
+        ]}
         onPress={() => handleAdd(item.key)}
         activeOpacity={alreadyAdded ? 0.7 : 1}
         disabled={false}
       >
-        <UniversalIcon name={item.icon} size={32} color={alreadyAdded ? '#94A3B8' : '#0284C7'} style={{ marginBottom: 8 }} />
-        <Text style={[styles.label, alreadyAdded && styles.labelDimmed]}>{item.label}</Text>
+        <UniversalIcon name={item.icon} size={32} color={alreadyAdded ? theme.textSecondary : theme.text} style={{ marginBottom: 8 }} />
+        <Text style={[styles.label, { color: theme.text }, alreadyAdded && { color: theme.textSecondary }]}>{item.label}</Text>
         {alreadyAdded && (
-          <UniversalIcon name="checkmark-circle-outline" size={20} color="#94A3B8" style={{ position: 'absolute', top: 8, right: 8 }} />
+          <UniversalIcon name="checkmark-circle-outline" size={20} color={theme.textSecondary} style={{ position: 'absolute', top: 8, right: 8 }} />
         )}
       </TouchableOpacity>
     );
@@ -80,9 +87,9 @@ export const WidgetSelector: React.FC<{
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: theme.background }]}>
           <View style={styles.header}>
-            <Text style={styles.title}>Add Instrument</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Add Instrument</Text>
             <View style={styles.headerActions}>
               <HelpButton 
                 helpId="widget-customization" 
@@ -91,7 +98,7 @@ export const WidgetSelector: React.FC<{
                 style={styles.helpButton}
               />
               <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <UniversalIcon name="close-outline" size={28} color="#CBD5E1" />
+                <UniversalIcon name="close-outline" size={28} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -130,7 +137,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#1E293B',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 16,
@@ -156,7 +162,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
     letterSpacing: 1,
   },
   closeBtn: {
@@ -166,10 +171,8 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   card: {
-    backgroundColor: '#1E293B',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
     margin: 8,
     flex: 1,
     minWidth: 140,
@@ -183,17 +186,12 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   cardHighlight: {
-    borderColor: '#06B6D4',
     ...PlatformStyles.boxShadow('#06B6D4', { x: 0, y: 2 }, 4, 0.5),
   },
   label: {
     fontSize: 15,
-    color: '#FFFFFF',
     fontWeight: '600',
     marginTop: 4,
     letterSpacing: 1,
-  },
-  labelDimmed: {
-    color: '#94A3B8',
   },
 });

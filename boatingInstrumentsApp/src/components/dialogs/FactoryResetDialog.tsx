@@ -75,7 +75,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
       ]}>
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={onCancel} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.accent }]}>Cancel</Text>
+            <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Factory Reset</Text>
           <TouchableOpacity 

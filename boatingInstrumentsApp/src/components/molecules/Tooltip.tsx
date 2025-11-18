@@ -124,12 +124,12 @@ export const Tooltip: React.FC<TooltipProps> = ({
           activeOpacity={1}
           onPress={(e) => e.stopPropagation()}
           style={[
-            styles.tooltipContainer,
+            styles.container,
             {
               backgroundColor: theme.background,
-              borderColor: theme.primary,
-              maxWidth: Math.min(screenWidth * 0.9, 500),
-            },
+              borderColor: theme.text,
+              maxWidth: Math.min(500, screenWidth - 40),
+            }
           ]}
           accessible={true}
           accessibilityRole="alert"
