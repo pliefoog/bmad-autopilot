@@ -1135,6 +1135,21 @@ export function getPresentationsForRegion(
  * Use this in settings/configuration interfaces for clarity
  */
 export function getPresentationConfigLabel(presentation: Presentation): string {
+  // For units with same symbol but different regions (e.g., US vs Imperial gallons)
+  // show the full name to distinguish them
+  const hasRegionVariant = presentation.name.includes('US ') || 
+                           presentation.name.includes('Imperial ') ||
+                           presentation.name.includes('UK ');
+  
+  if (hasRegionVariant) {
+    // Extract the unit type and region: "US Gallons/hour" -> "GPH (US)"
+    const isUS = presentation.name.includes('US ');
+    const isUK = presentation.name.includes('UK ') || presentation.name.includes('Imperial ');
+    const region = isUS ? 'US' : isUK ? 'UK' : '';
+    return region ? `${presentation.symbol} (${region}) (${presentation.formatSpec.pattern})` 
+                  : `${presentation.symbol} (${presentation.formatSpec.pattern})`;
+  }
+  
   return `${presentation.symbol} (${presentation.formatSpec.pattern})`;
 }
 

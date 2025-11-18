@@ -22,7 +22,7 @@
 			"label": "Start NMEA Bridge: Single Engine Scenario (Default)",
 			"type": "shell",
 			"comment": "Single engine monitoring with RPM, coolant temp, oil pressure, alternator voltage, fuel flow, and engine hours",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/engine/basic-engine-monitoring-with-variation.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/engine/basic-engine-monitoring-with-variation.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -46,7 +46,7 @@
 			"label": "Start NMEA Bridge: Dual Engine Scenario",
 			"type": "shell",
 			"comment": "Twin engine monitoring with all parameters for both engines",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/engine/dual-engine-monitoring-with-variation.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/engine/dual-engine-monitoring-with-variation.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -69,7 +69,7 @@
 		{
 			"label": "Start NMEA Bridge: Basic Navigation",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/basic-navigation.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/basic-navigation.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -92,7 +92,7 @@
 		{
 			"label": "Start NMEA Bridge: Coastal Sailing",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/coastal-sailing.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/coastal-sailing.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -115,7 +115,7 @@
 		{
 			"label": "Start NMEA Bridge: Deep Water Passage",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/deep-water-passage.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/deep-water-passage.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -138,7 +138,7 @@
 		{
 			"label": "Start NMEA Bridge: Autopilot Engagement",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/autopilot/autopilot-engagement.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/autopilot/autopilot-engagement.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -161,7 +161,7 @@
 		{
 			"label": "Start NMEA Bridge: Real-World Sailing",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/recorded/real-world-sailing.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/recorded/real-world-sailing.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -184,7 +184,7 @@
 		{
 			"label": "Start NMEA Bridge: Multi-Instance Equipment Detection",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/multi-instance/multi-equipment-detection.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/multi-instance/multi-equipment-detection.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -207,7 +207,8 @@
 		{
 			"label": "Start NMEA Bridge: Battery Systems Test",
 			"type": "shell",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/battery/battery-drain-scenario.yml --loop",
+			"comment": "Tests battery monitoring with voltage, current, and state of charge",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/battery/battery-drain-scenario.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -230,8 +231,8 @@
 		{
 			"label": "Start NMEA Bridge: Multi-Tank System Test",
 			"type": "shell",
-			"comment": "Tests all tank types with realistic fill/consumption patterns",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/tank/multi-tank-system.yml --loop",
+			"comment": "Tests multiple fluid tanks: fuel, fresh water, gray water, black water",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/tank/multi-tank-system.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
@@ -255,7 +256,7 @@
 			"label": "Start NMEA Bridge: Multi-Temperature Monitoring Test",
 			"type": "shell",
 			"comment": "Tests multiple temperature sensors across engine room, cabin, water, and refrigeration systems",
-			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/temperature/multi-temperature-monitoring.yml --loop",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/temperature/multi-temperature-monitoring.yml --loop",
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {

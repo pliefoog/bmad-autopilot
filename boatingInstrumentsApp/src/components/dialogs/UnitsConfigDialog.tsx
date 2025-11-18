@@ -13,6 +13,7 @@ import { useTheme } from '../../store/themeStore';
 import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
+import { UniversalIcon } from '../atoms/UniversalIcon';
 
 interface UnitsConfigDialogProps {
   visible: boolean;
@@ -22,7 +23,7 @@ interface UnitsConfigDialogProps {
 interface CategoryConfig {
   key: string;
   name: string;
-  icon: string;
+  iconName: string; // Ionicon name for UniversalIcon
 }
 
 // Marine presentation presets based on Epic 9 Enhanced Presentation System
@@ -135,23 +136,23 @@ const PRESENTATION_PRESETS: PresentationPreset[] = [
 
 // Complete unit categories for marine applications with Epic 9 presentations
 const UNIT_CATEGORIES: CategoryConfig[] = [
-  { key: 'depth', name: 'Depth', icon: 'water-outline' },
-  { key: 'speed', name: 'Speed', icon: '🚤' },
-  { key: 'wind', name: 'Wind', icon: '💨' },
-  { key: 'temperature', name: 'Temperature', icon: '🌡️' },
-  { key: 'pressure', name: 'Pressure', icon: '🔘' },
-  { key: 'angle', name: 'Angle', icon: '🧭' },
-  { key: 'coordinates', name: 'GPS Position', icon: '📍' },
-  { key: 'voltage', name: 'Voltage', icon: '⚡' },
-  { key: 'current', name: 'Current', icon: '🔌' },
-  { key: 'volume', name: 'Volume', icon: '🪣' },
-  { key: 'time', name: 'Time', icon: '🕐' },
-  { key: 'distance', name: 'Distance', icon: '📏' },
-  { key: 'capacity', name: 'Battery Capacity', icon: '🔋' },
-  { key: 'flowRate', name: 'Flow Rate', icon: 'water-outline' },
-  { key: 'frequency', name: 'Frequency', icon: '🔊' },
-  { key: 'power', name: 'Power', icon: '⚡' },
-  { key: 'rpm', name: 'RPM', icon: '⚙️' },
+  { key: 'depth', name: 'Depth', iconName: 'water' },
+  { key: 'speed', name: 'Speed', iconName: 'speedometer' },
+  { key: 'wind', name: 'Wind', iconName: 'flag' },
+  { key: 'temperature', name: 'Temperature', iconName: 'thermometer' },
+  { key: 'pressure', name: 'Pressure', iconName: 'analytics' },
+  { key: 'angle', name: 'Angle', iconName: 'compass' },
+  { key: 'coordinates', name: 'GPS Position', iconName: 'location' },
+  { key: 'voltage', name: 'Voltage', iconName: 'flash' },
+  { key: 'current', name: 'Current', iconName: 'power' },
+  { key: 'volume', name: 'Volume', iconName: 'cube' },
+  { key: 'time', name: 'Time', iconName: 'time' },
+  { key: 'distance', name: 'Distance', iconName: 'swap-horizontal' },
+  { key: 'capacity', name: 'Battery Capacity', iconName: 'battery-charging' },
+  { key: 'flowRate', name: 'Flow Rate', iconName: 'water' },
+  { key: 'frequency', name: 'Frequency', iconName: 'pulse' },
+  { key: 'power', name: 'Power', iconName: 'flash' },
+  { key: 'rpm', name: 'RPM', iconName: 'speedometer' },
 ];
 
 export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
@@ -345,7 +346,11 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                 return (
                   <View key={category.key} style={styles.categorySection}>
                     <View style={styles.categoryHeader}>
-                      <Text style={styles.categoryIcon}>{category.icon}</Text>
+                      <UniversalIcon 
+                        name={category.iconName} 
+                        size={20} 
+                        color={theme.primary} 
+                      />
                       <Text style={[styles.categoryName, { color: theme.text }]}>
                         {category.name}
                       </Text>
@@ -478,10 +483,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  categoryIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    gap: 8,
   },
   categoryName: {
     fontSize: 16,
