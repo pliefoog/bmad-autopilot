@@ -283,6 +283,9 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
       transparent={false}
     >
       <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {/* iOS modal drag indicator */}
+        <View style={styles.dragHandle} />
+        
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={onClose} style={styles.headerButton}>
             <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
@@ -295,7 +298,8 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
           >
             <Text style={[
               styles.headerButtonText, 
-              { color: hasChanges ? theme.text : theme.textSecondary }
+              { color: hasChanges ? theme.text : theme.textSecondary },
+              hasChanges && { fontWeight: '600' }
             ]}>
               Save
             </Text>
@@ -406,18 +410,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 8,
+  },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
     flex: 1,
     textAlign: 'center',
   },
@@ -426,8 +438,8 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   headerButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '400',
   },
   content: {
     flex: 1,

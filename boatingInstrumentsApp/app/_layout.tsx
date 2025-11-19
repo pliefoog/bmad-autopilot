@@ -5,6 +5,7 @@ import { LoadingProvider } from '../src/services/loading/LoadingContext';
 import LoadingOverlay from '../src/components/molecules/LoadingOverlay';
 import { useEffect } from 'react';
 import { AccessibilityService } from '../src/services/accessibility/AccessibilityService';
+import { Platform } from 'react-native';
 
 export default function RootLayout() {
   // Initialize accessibility service on app mount
@@ -25,7 +26,8 @@ export default function RootLayout() {
             animation: 'slide_from_right',
             gestureEnabled: true, // Enable iOS swipe-back gesture
             gestureDirection: 'horizontal',
-            headerBackTitle: '', // Show back chevron without title (iOS standard)
+            headerBackTitle: Platform.OS === 'web' ? 'Back' : '', // Show "Back" text on web, chevron on iOS
+            headerBackTitleVisible: Platform.OS === 'web', // Always show back button on web
             presentation: 'card', // Standard push navigation
           }}>
             <Stack.Screen 

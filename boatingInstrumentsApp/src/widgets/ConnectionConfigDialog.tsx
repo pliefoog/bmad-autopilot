@@ -149,19 +149,20 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
       onRequestClose={onClose}
     >
       <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {/* iOS modal drag indicator */}
+        <View style={styles.dragHandle} />
+        
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <TouchableOpacity onPress={onClose} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
+          </TouchableOpacity>
           <Text style={[styles.title, { color: theme.text }]}>Connection Settings</Text>
-          <View style={styles.headerActions}>
-            <HelpButton 
-              helpId="connection-setup" 
-              onPress={() => showHelp('connection-setup')}
-              size={24}
-              style={styles.helpButton}
-            />
-            <TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.closeButtonText, { color: theme.text }]}>✕</Text>
-            </TouchableOpacity>
-          </View>
+          <HelpButton 
+            helpId="connection-setup" 
+            onPress={() => showHelp('connection-setup')}
+            size={20}
+            style={styles.helpButton}
+          />
         </View>
 
         <View style={styles.content}>
@@ -266,35 +267,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 8,
+  },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  headerButton: {
+    padding: 8,
+    minWidth: 60,
   },
-  helpButton: {
-    marginRight: 4,
+  headerButtonText: {
+    fontSize: 17,
+    fontWeight: '400',
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
-  closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  helpButton: {
+    padding: 8,
+    minWidth: 60,
+    alignItems: 'flex-end',
   },
   content: {
     flex: 1,
