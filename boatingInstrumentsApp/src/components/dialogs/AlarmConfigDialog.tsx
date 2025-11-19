@@ -278,7 +278,8 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
         setHasChanges(false);
         Alert.alert('Success', 'Alarm configuration saved', [{ text: 'OK' }]);
       } else {
-        Alert.alert('Error', result.error || 'Failed to save alarm configuration');
+        const errorMsg = result.errors?.join(', ') || 'Failed to save alarm configuration';
+        Alert.alert('Error', errorMsg);
       }
     } catch (error) {
       console.error('[AlarmConfigDialog] Failed to save:', error);
