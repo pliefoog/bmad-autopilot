@@ -303,15 +303,15 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Marine Presets Section */}
+          {/* Preset Selector */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Marine Presets</Text>
-            <View style={styles.presetContainer}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Preset</Text>
+            <View style={styles.presetRow}>
               {PRESENTATION_PRESETS.map((preset) => (
                 <TouchableOpacity
                   key={preset.id}
                   style={[
-                    styles.presetButton,
+                    styles.presetChip,
                     { backgroundColor: theme.surface, borderColor: theme.border },
                     selectedPreset === preset.id && { 
                       borderColor: theme.text,
@@ -321,96 +321,78 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                   onPress={() => handlePresetSelect(preset.id)}
                 >
                   <Text style={[
-                    styles.presetName,
+                    styles.presetChipText,
                     { color: theme.textSecondary },
                     selectedPreset === preset.id && { color: theme.text }
                   ]}>
                     {preset.name}
-                  </Text>
-                  <Text style={[styles.presetDescription, { color: theme.textSecondary }]}>
-                    {preset.description}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          {/* Custom Configuration Section */}
-          {selectedPreset === 'custom' && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Custom Configuration</Text>
-              {UNIT_CATEGORIES.map((category) => {
-                const presentations = getPresentationsForCategory(category.key);
-                const selectedUnit = getSelectedUnit(category.key);
-                
-                return (
-                  <View key={category.key} style={styles.categorySection}>
-                    <View style={styles.categoryHeader}>
-                      <UniversalIcon 
-                        name={category.iconName} 
-                        size={20} 
-                        color={theme.primary} 
-                      />
-                      <Text style={[styles.categoryName, { color: theme.text }]}>
-                        {category.name}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.unitsGrid}>
-                      {presentations.map((presentation) => (
-                        <TouchableOpacity
-                          key={presentation.id}
-                          style={[
-                            styles.unitButton,
-                            { backgroundColor: theme.surface, borderColor: theme.border },
-                            selectedUnit === presentation.id && {
-                              borderColor: theme.text,
-                              backgroundColor: `${theme.text}15`
-                            }
-                          ]}
-                          onPress={() => handleUnitSelect(category.key, presentation.id)}
-                        >
-                          <Text style={[
-                            styles.unitSymbol,
-                            { color: theme.textSecondary },
-                            selectedUnit === presentation.id && { color: theme.text }
-                          ]}>
-                            {getPresentationConfigLabel(presentation)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-
-          {/* Preset Preview Section */}
-          {selectedPreset !== 'custom' && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Preview</Text>
-              {UNIT_CATEGORIES.map((category) => {
-                const selectedUnitId = getSelectedUnit(category.key);
-                const presentations = getPresentationsForCategory(category.key);
-                const selectedPresentation = presentations.find(p => p.id === selectedUnitId);
-                
-                return (
-                  <View key={category.key} style={[styles.previewRow, { borderBottomColor: theme.border }]}>
-                    <View style={styles.previewLeft}>
-                      <Text style={styles.previewIcon}>{category.icon}</Text>
-                      <Text style={[styles.previewCategory, { color: theme.text }]}>
-                        {category.name}
-                      </Text>
-                    </View>
-                    <Text style={[styles.previewUnit, { color: theme.text }]}>
-                      {selectedPresentation ? getPresentationConfigLabel(selectedPresentation) : '—'}
+          {/* Unit Configuration - Unified view for all presets and custom */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {selectedPreset === 'custom' ? 'Unit Configuration' : `${PRESENTATION_PRESETS.find(p => p.id === selectedPreset)?.name || 'Preset'} Configuration`}
+            </Text>
+            {selectedPreset !== 'custom' && (
+              <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
+                Preset units are locked. Switch to Custom to modify.
+              </Text>
+            )}
+            {UNIT_CATEGORIES.map((category) => {
+              const presentations = getPresentationsForCategory(category.key);
+              const selectedUnit = getSelectedUnit(category.key);
+              const isCustomMode = selectedPreset === 'custom';
+              
+              return (
+                <View key={category.key} style={styles.categoryRow}>
+                  <View style={styles.categoryLabel}>
+                    <UniversalIcon 
+                      name={category.iconName} 
+                      size={20} 
+                      color={isCustomMode ? theme.text : theme.textSecondary} 
+                    />
+                    <Text style={[
+                      styles.categoryName, 
+                      { color: isCustomMode ? theme.text : theme.textSecondary }
+                    ]}>
+                      {category.name}
                     </Text>
                   </View>
-                );
-              })}
-            </View>
-          )}
+                  
+                  <View style={styles.unitsGrid}>
+                    {presentations.map((presentation) => (
+                      <TouchableOpacity
+                        key={presentation.id}
+                        style={[
+                          styles.unitButton,
+                          { backgroundColor: theme.surface, borderColor: theme.border },
+                          selectedUnit === presentation.id && {
+                            borderColor: theme.text,
+                            backgroundColor: `${theme.text}15`
+                          },
+                          !isCustomMode && { opacity: 0.6 }
+                        ]}
+                        onPress={() => isCustomMode && handleUnitSelect(category.key, presentation.id)}
+                        disabled={!isCustomMode}
+                      >
+                        <Text style={[
+                          styles.unitSymbol,
+                          { color: theme.textSecondary },
+                          selectedUnit === presentation.id && { color: theme.text }
+                        ]}>
+                          {getPresentationConfigLabel(presentation)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </ScrollView>
 
         {/* Extra padding at bottom for safe area */}
@@ -460,39 +442,44 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
-  presetContainer: {
+  sectionNote: {
+    fontSize: 13,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  presetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  presetButton: {
-    padding: 16,
-    borderRadius: 8,
+  presetChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 2,
   },
-  presetName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  presetDescription: {
+  presetChipText: {
     fontSize: 14,
+    fontWeight: '600',
   },
-  categorySection: {
+  categoryRow: {
     marginBottom: 16,
   },
-  categoryHeader: {
+  categoryLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
     gap: 8,
   },
   categoryName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
   unitsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginLeft: 28,
   },
   unitButton: {
     paddingHorizontal: 12,
@@ -505,28 +492,6 @@ const styles = StyleSheet.create({
   unitSymbol: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  previewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  previewLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  previewIcon: {
-    fontSize: 18,
-    marginRight: 12,
-  },
-  previewCategory: {
-    fontSize: 16,
-  },
-  previewUnit: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   bottomPadding: {
     height: Platform.OS === 'ios' ? 32 : 16,
