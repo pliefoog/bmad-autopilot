@@ -136,22 +136,22 @@ const PRESENTATION_PRESETS: PresentationPreset[] = [
 
 // Complete unit categories for marine applications with Epic 9 presentations
 const UNIT_CATEGORIES: CategoryConfig[] = [
-  { key: 'depth', name: 'Depth', iconName: 'water-outline' },
-  { key: 'speed', name: 'Speed', iconName: 'speedometer-outline' },
+  { key: 'depth', name: 'Depth', iconName: 'arrow-down-outline' },
+  { key: 'speed', name: 'Speed', iconName: 'arrow-forward-outline' },
   { key: 'wind', name: 'Wind', iconName: 'cloud-outline' },
   { key: 'temperature', name: 'Temperature', iconName: 'thermometer-outline' },
   { key: 'pressure', name: 'Pressure', iconName: 'speedometer-outline' },
-  { key: 'angle', name: 'Angle', iconName: 'compass-outline' },
+  { key: 'angle', name: 'Angle', iconName: 'angle-outline' },
   { key: 'coordinates', name: 'GPS Position', iconName: 'navigate-outline' },
-  { key: 'voltage', name: 'Voltage', iconName: 'battery-charging-outline' },
-  { key: 'current', name: 'Current', iconName: 'battery-charging-outline' },
+  { key: 'voltage', name: 'Voltage', iconName: 'cellular-outline' },
+  { key: 'current', name: 'Current', iconName: 'flash-outline' },
   { key: 'volume', name: 'Volume', iconName: 'cube-outline' },
   { key: 'time', name: 'Time', iconName: 'speedometer-outline' },
-  { key: 'distance', name: 'Distance', iconName: 'swap-horizontal-outline' },
+  { key: 'distance', name: 'Distance', iconName: 'arrows-horizontal-outline' },
   { key: 'capacity', name: 'Battery Capacity', iconName: 'battery-charging-outline' },
   { key: 'flowRate', name: 'Flow Rate', iconName: 'water-outline' },
   { key: 'frequency', name: 'Frequency', iconName: 'speedometer-outline' },
-  { key: 'power', name: 'Power', iconName: 'battery-charging-outline' },
+  { key: 'power', name: 'Power', iconName: 'flash-outline' },
   { key: 'rpm', name: 'RPM', iconName: 'speedometer-outline' },
 ];
 
@@ -353,7 +353,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                     <UniversalIcon 
                       name={category.iconName} 
                       size={20} 
-                      color={isCustomMode ? theme.text : theme.textSecondary} 
+                      color={theme.textSecondary} 
                     />
                     <Text style={[
                       styles.categoryName, 

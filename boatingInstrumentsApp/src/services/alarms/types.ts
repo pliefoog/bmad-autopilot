@@ -78,6 +78,7 @@ export interface CriticalAlarmConfig {
   
   // Audio/visual settings
   audioEnabled: boolean;
+  audioPattern?: 'rapid_pulse' | 'warble' | 'intermittent' | 'triple_blast' | 'morse_u' | 'continuous_descending'; // Alarm sound pattern (ISO 9692)
   visualEnabled: boolean;
   vibrationEnabled: boolean;
   notificationEnabled: boolean;

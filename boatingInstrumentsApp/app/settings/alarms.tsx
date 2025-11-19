@@ -16,22 +16,22 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/store/themeStore';
 import { UniversalIcon } from '../../src/components/atoms/UniversalIcon';
 import { CriticalAlarmConfiguration } from '../../src/services/alarms/CriticalAlarmConfiguration';
 import { CriticalAlarmType, CriticalAlarmConfig } from '../../src/services/alarms/types';
 
-// Initialize alarm service
-const alarmConfig = new CriticalAlarmConfiguration();
+// Use shared singleton instance
+const alarmConfig = CriticalAlarmConfiguration.getInstance();
 
 // Alarm list configuration
 const ALARM_LIST = [
   {
     type: CriticalAlarmType.SHALLOW_WATER,
     label: 'Shallow Water',
-    iconName: 'water-outline',
+    iconName: 'arrow-down-outline',
     unit: 'm',
   },
   {
@@ -55,7 +55,7 @@ const ALARM_LIST = [
   {
     type: CriticalAlarmType.GPS_LOSS,
     label: 'GPS Signal Loss',
-    iconName: 'wifi-outline',
+    iconName: 'navigate-outline',
     unit: 's',
   },
 ];
@@ -66,10 +66,17 @@ export default function AlarmListScreen() {
   const [loading, setLoading] = useState(true);
   const [configs, setConfigs] = useState<Map<CriticalAlarmType, CriticalAlarmConfig>>(new Map());
 
-  // Load all alarm configurations
+  // Load all alarm configurations on mount
   useEffect(() => {
     loadConfigurations();
   }, []);
+
+  // Reload configurations when screen comes into focus (e.g., returning from detail screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadConfigurations();
+    }, [])
+  );
 
   const loadConfigurations = async () => {
     setLoading(true);
@@ -159,16 +166,16 @@ export default function AlarmListScreen() {
   // Get alarm summary text
   const getAlarmSummary = (type: CriticalAlarmType, config: CriticalAlarmConfig | undefined): string => {
     if (!config) return 'Not configured';
-    if (!config.enabled) return 'Disabled';
+    if (!config.enabled) return ''; // Empty string - status shown by dot
 
     const alarm = ALARM_LIST.find(a => a.type === type);
-    if (!alarm) return 'Enabled';
+    if (!alarm) return '';
 
     if (type === CriticalAlarmType.AUTOPILOT_FAILURE) {
-      return 'Enabled';
+      return '';
     }
 
-    return `Alert at ${config.thresholds.critical}${alarm.unit}`;
+    return `Alert: ${config.thresholds.critical}${alarm.unit}`;
   };
 
   if (loading) {
@@ -196,7 +203,7 @@ export default function AlarmListScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Description */}
         <Text style={[styles.description, { color: theme.textSecondary }]}>
-          Configure critical safety alarms for marine navigation. Tap any alarm to customize its settings.
+          Tap any alarm to customize its settings.
         </Text>
 
         {/* Alarm List */}
@@ -211,18 +218,20 @@ export default function AlarmListScreen() {
               onPress={() => handleNavigateToDetail(alarm.type)}
             >
               <View style={styles.alarmContent}>
-                <UniversalIcon name={alarm.iconName} size={32} color={theme.text} style={styles.alarmIcon} />
+                <UniversalIcon name={alarm.iconName} size={20} color={theme.textSecondary} style={styles.alarmIcon} />
                 <View style={styles.alarmInfo}>
-                  <Text style={[styles.alarmLabel, { color: theme.text }]}>{alarm.label}</Text>
-                  <Text style={[styles.alarmSummary, { color: theme.textSecondary }]}>{summary}</Text>
+                  <Text style={[styles.alarmLabel, { color: theme.text }]}>
+                    {alarm.label} <Text style={[styles.alarmSummary, { color: theme.textSecondary }]}>{summary}</Text>
+                  </Text>
                 </View>
               </View>
               <View style={styles.alarmActions}>
-                <Switch
-                  value={config?.enabled ?? true}
-                  onValueChange={(value) => handleQuickToggle(alarm.type, value)}
-                  trackColor={{ false: theme.border, true: theme.textSecondary }}
-                  thumbColor={config?.enabled ? theme.text : theme.textSecondary}
+                {/* Status indicator: green=enabled, gray=disabled, red=alarm active */}
+                <View 
+                  style={[
+                    styles.statusDot, 
+                    { backgroundColor: config?.enabled ? theme.success || '#10B981' : theme.textSecondary }
+                  ]} 
                 />
                 <UniversalIcon name="chevron-forward-outline" size={20} color={theme.textSecondary} style={styles.chevron} />
               </View>
@@ -232,17 +241,8 @@ export default function AlarmListScreen() {
 
         {/* Reset All Button */}
         <Pressable style={styles.resetButton} onPress={handleResetAll}>
-          <Text style={[styles.resetButtonText, { color: theme.text }]}>Reset All to Defaults</Text>
+          <Text style={[styles.resetButtonText, { color: theme.primary || '#007AFF' }]}>Reset</Text>
         </Pressable>
-
-        {/* Safety Notice */}
-        <View style={[styles.notice, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.noticeTitle, { color: theme.text }]}>⚠️ Safety Compliance</Text>
-          <Text style={[styles.noticeText, { color: theme.textSecondary }]}>
-            Critical navigation alarms meet marine safety standards and include redundant alerting. 
-            Response time: &lt;500ms. Audio level: &gt;85dB.
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -316,15 +316,20 @@ const styles = StyleSheet.create({
   alarmLabel: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
   },
   alarmSummary: {
     fontSize: 14,
+    fontWeight: '400',
   },
   alarmActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   chevron: {
     marginLeft: 4,

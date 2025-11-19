@@ -82,6 +82,9 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'cloud-outline', 'water-outline', 'thermometer-outline',
       // Multi-instance devices  
       'car-outline', 'battery-charging-outline', 'cube-outline',
+      // Alarm configuration icons
+      'arrow-down-outline', 'arrow-forward-outline', 'swap-horizontal-outline',
+      'chevron-back-outline', 'chevron-forward-outline',
       // UI elements
       'add', 'pin', 'close-outline', 'checkmark-circle-outline',
       'refresh-outline', 'remove', 'layers-outline', 'settings-outline',

@@ -6,6 +6,7 @@
 
 import { Platform } from 'react-native';
 import { CriticalAlarmType, AlarmEscalationLevel, MarineAudioConfig } from './types';
+import { CriticalAlarmConfiguration } from './CriticalAlarmConfiguration';
 
 interface AudioSystemCapabilities {
   maxVolume: number;
@@ -15,6 +16,8 @@ interface AudioSystemCapabilities {
 }
 
 export class MarineAudioAlertManager {
+  private static instance: MarineAudioAlertManager | null = null;
+  
   private config: MarineAudioConfig;
   private capabilities: AudioSystemCapabilities;
   private activeSounds: Map<CriticalAlarmType, any> = new Map();
@@ -25,10 +28,44 @@ export class MarineAudioAlertManager {
   private oscillators: Map<string, OscillatorNode> = new Map();
   private gainNodes: Map<string, GainNode> = new Map();
   
-  constructor(config: MarineAudioConfig) {
-    this.config = config;
+  constructor(config?: MarineAudioConfig) {
+    this.config = config || this.getDefaultConfig();
     this.capabilities = this.detectAudioCapabilities();
     this.initializePlatformAudio();
+  }
+  
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): MarineAudioAlertManager {
+    if (!MarineAudioAlertManager.instance) {
+      MarineAudioAlertManager.instance = new MarineAudioAlertManager();
+    }
+    return MarineAudioAlertManager.instance;
+  }
+  
+  /**
+   * Get default marine audio configuration
+   */
+  private getDefaultConfig(): MarineAudioConfig {
+    return {
+      targetAudioLevelDb: 85,
+      platformSpecific: true,
+      masterVolume: 1.0,
+      volumeOverride: true,
+      respectSystemVolume: false,
+      backgroundAudioCapable: true,
+      allowSyntheticSounds: true,
+      soundPatterns: {
+        [CriticalAlarmType.SHALLOW_WATER]: { pattern: 'rapid_pulse' },
+        [CriticalAlarmType.ENGINE_OVERHEAT]: { pattern: 'warble' },
+        [CriticalAlarmType.LOW_BATTERY]: { pattern: 'intermittent' },
+        [CriticalAlarmType.AUTOPILOT_FAILURE]: { pattern: 'triple_blast' },
+        [CriticalAlarmType.GPS_LOSS]: { pattern: 'continuous_descending' },
+      },
+      weatherCompensation: false,
+      engineNoiseCompensation: false,
+    };
   }
   
   /**
@@ -157,10 +194,15 @@ export class MarineAudioAlertManager {
         await this.overrideSystemVolume();
       }
       
-      // Get sound configuration for this alarm type
-      const soundConfig = this.config.soundPatterns[alarmType];
+      // Get user-configured audio pattern from alarm configuration
+      const alarmConfig = CriticalAlarmConfiguration.getInstance();
+      const config = alarmConfig.getAlarmConfig(alarmType);
+      const configuredPattern = config?.audioPattern;
       
-      if (soundConfig.filename) {
+      // Get sound configuration for this alarm type with user preference
+      const soundConfig = this.getAlarmSoundConfig(alarmType, escalationLevel, configuredPattern);
+      
+      if (soundConfig.useCustomFile && soundConfig.filename) {
         // Play custom sound file
         return await this.playCustomSoundFile(alarmType, soundConfig.filename, escalationLevel);
       } else {
@@ -401,28 +443,30 @@ export class MarineAudioAlertManager {
   
   /**
    * Get alarm-specific sound configuration with distinct patterns for each type
+   * Now supports user-configured patterns from CriticalAlarmConfiguration
    */
   private getAlarmSoundConfig(
     alarmType: CriticalAlarmType,
-    escalationLevel: AlarmEscalationLevel
+    escalationLevel: AlarmEscalationLevel,
+    configuredPattern?: 'rapid_pulse' | 'warble' | 'intermittent' | 'triple_blast' | 'continuous_descending'
   ): any {
     const baseVolume = this.calculateVolumeForEscalation(escalationLevel);
     const baseFrequency = this.getMarineAlarmFrequency(alarmType);
     
-    // Distinct sound patterns for each alarm type following marine standards
-    const soundConfigs = {
-      [CriticalAlarmType.SHALLOW_WATER]: {
+    // Pattern configurations with all parameters
+    // Following ISO 9692 and IEC 60092-504 maritime alarm standards
+    const patternConfigs = {
+      rapid_pulse: {
         pattern: 'rapid_pulse',
         frequency: baseFrequency,
         volume: baseVolume,
-        pulseRate: 6, // 6 Hz rapid pulsing for urgent navigation warning
+        pulseRate: 5, // 5 Hz for Priority 1 alarms
         dutyCycle: 0.3,
         useCustomFile: false,
         filename: null,
-        description: 'Rapid pulsing for shallow water - immediate navigation hazard',
+        description: 'Rapid pulsing (ISO Priority 1) - Immediate danger',
       },
-      
-      [CriticalAlarmType.ENGINE_OVERHEAT]: {
+      warble: {
         pattern: 'warble',
         frequency: baseFrequency,
         volume: baseVolume,
@@ -430,21 +474,9 @@ export class MarineAudioAlertManager {
         warbleDepth: 150, // ±150 Hz frequency deviation
         useCustomFile: false,
         filename: null,
-        description: 'Warbling tone for engine overheat - mechanical warning',
+        description: 'Warbling tone (ISO Priority 3) - Equipment warning',
       },
-      
-      [CriticalAlarmType.LOW_BATTERY]: {
-        pattern: 'intermittent',
-        frequency: baseFrequency,
-        volume: baseVolume,
-        onTime: 0.8, // 800ms on
-        offTime: 0.4, // 400ms off
-        useCustomFile: false,
-        filename: null,
-        description: 'Intermittent tone for low battery - power system warning',
-      },
-      
-      [CriticalAlarmType.AUTOPILOT_FAILURE]: {
+      triple_blast: {
         pattern: 'triple_blast',
         frequency: baseFrequency,
         volume: baseVolume,
@@ -453,10 +485,31 @@ export class MarineAudioAlertManager {
         groupInterval: 1.5, // 1.5s between groups
         useCustomFile: false,
         filename: null,
-        description: 'Triple blast pattern for autopilot failure - navigation system alert',
+        description: 'Triple blast (ISO Priority 4) - General alert',
       },
-      
-      [CriticalAlarmType.GPS_LOSS]: {
+      morse_u: {
+        pattern: 'morse_u',
+        frequency: baseFrequency,
+        volume: baseVolume,
+        shortDuration: 0.2, // 200ms for short beeps (dit)
+        longDuration: 0.6,  // 600ms for long beep (dah)
+        gapDuration: 0.2,   // 200ms between beeps
+        groupInterval: 1.5, // 1.5s between groups
+        useCustomFile: false,
+        filename: null,
+        description: 'Morse "U" (·· —) (ISO Priority 2) - Navigation alert "You are in danger"',
+      },
+      intermittent: {
+        pattern: 'intermittent',
+        frequency: baseFrequency,
+        volume: baseVolume,
+        onTime: 0.8, // 800ms on
+        offTime: 0.4, // 400ms off
+        useCustomFile: false,
+        filename: null,
+        description: 'Intermittent tone (ISO Priority 5) - Information',
+      },
+      continuous_descending: {
         pattern: 'continuous_descending',
         frequency: baseFrequency,
         volume: baseVolume,
@@ -464,18 +517,24 @@ export class MarineAudioAlertManager {
         frequencyRange: 300, // 300 Hz sweep range
         useCustomFile: false,
         filename: null,
-        description: 'Descending tone for GPS loss - navigation system failure',
+        description: 'Descending tone - Signal degradation',
       },
     };
     
-    return soundConfigs[alarmType] || {
-      pattern: 'continuous',
-      frequency: baseFrequency,
-      volume: baseVolume,
-      useCustomFile: false,
-      filename: null,
-      description: 'Default continuous tone',
+    // Default patterns for each alarm type following maritime standards
+    // ISO 9692: Priority 1 (immediate), 2 (navigation), 3 (equipment), 4 (general), 5 (info)
+    const defaultPatterns: Record<CriticalAlarmType, keyof typeof patternConfigs> = {
+      [CriticalAlarmType.SHALLOW_WATER]: 'rapid_pulse',        // Priority 1 - Immediate grounding danger
+      [CriticalAlarmType.AUTOPILOT_FAILURE]: 'morse_u',        // Priority 2 - Navigation "You are in danger"
+      [CriticalAlarmType.ENGINE_OVERHEAT]: 'warble',           // Priority 3 - Equipment warning
+      [CriticalAlarmType.LOW_BATTERY]: 'triple_blast',         // Priority 4 - General alert
+      [CriticalAlarmType.GPS_LOSS]: 'intermittent',            // Priority 5 - Information (before critical)
     };
+    
+    // Use configured pattern, fall back to default for alarm type
+    const pattern = configuredPattern || defaultPatterns[alarmType] || 'rapid_pulse';
+    
+    return patternConfigs[pattern] || patternConfigs.rapid_pulse;
   }
   
   /**
@@ -742,8 +801,41 @@ export class MarineAudioAlertManager {
         }
         break;
         
+      case 'morse_u':
+        // Morse code "U" pattern (·· —) - ISO maritime standard for "You are in danger"
+        const shortDur = soundConfig.shortDuration || 0.2;  // Dit
+        const longDur = soundConfig.longDuration || 0.6;    // Dah
+        const gapDur = soundConfig.gapDuration || 0.2;      // Gap between dits/dahs
+        const morseGroupInterval = soundConfig.groupInterval || 1.5;
+        
+        // Create Morse "U" groups: short short long (·· —)
+        for (let group = 0; group < 40; group++) { // 40 groups over 60 seconds
+          const groupStart = currentTime + (group * morseGroupInterval);
+          
+          // First short beep (dit)
+          gainNode.gain.setValueAtTime(0, groupStart);
+          gainNode.gain.setValueAtTime(volume, groupStart + 0.01);
+          gainNode.gain.setValueAtTime(volume, groupStart + shortDur);
+          gainNode.gain.setValueAtTime(0, groupStart + shortDur + 0.01);
+          
+          // Second short beep (dit)
+          const secondBeep = groupStart + shortDur + gapDur;
+          gainNode.gain.setValueAtTime(0, secondBeep);
+          gainNode.gain.setValueAtTime(volume, secondBeep + 0.01);
+          gainNode.gain.setValueAtTime(volume, secondBeep + shortDur);
+          gainNode.gain.setValueAtTime(0, secondBeep + shortDur + 0.01);
+          
+          // Long beep (dah)
+          const longBeep = secondBeep + shortDur + gapDur;
+          gainNode.gain.setValueAtTime(0, longBeep);
+          gainNode.gain.setValueAtTime(volume, longBeep + 0.01);
+          gainNode.gain.setValueAtTime(volume, longBeep + longDur);
+          gainNode.gain.setValueAtTime(0, longBeep + longDur + 0.01);
+        }
+        break;
+        
       case 'triple_blast':
-        // Triple blast pattern for autopilot failure
+        // Triple blast pattern for general alerts
         const blastDuration = soundConfig.blastDuration || 0.2;
         const blastInterval = soundConfig.blastInterval || 0.1;
         const groupInterval = soundConfig.groupInterval || 1.5;

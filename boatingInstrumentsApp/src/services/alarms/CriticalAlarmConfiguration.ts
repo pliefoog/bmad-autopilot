@@ -21,6 +21,8 @@ export interface AlarmConfigurationOptions {
 }
 
 export class CriticalAlarmConfiguration {
+  private static instance: CriticalAlarmConfiguration | null = null;
+  
   private config: AlarmConfigurationOptions;
   private alarmConfigs: Map<CriticalAlarmType, CriticalAlarmConfig> = new Map();
   private thresholds: Map<string, CriticalAlarmThreshold> = new Map();
@@ -45,6 +47,16 @@ export class CriticalAlarmConfiguration {
     
     this.initializeDefaultConfigurations();
     this.loadConfigurationsFromStorage();
+  }
+  
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): CriticalAlarmConfiguration {
+    if (!CriticalAlarmConfiguration.instance) {
+      CriticalAlarmConfiguration.instance = new CriticalAlarmConfiguration();
+    }
+    return CriticalAlarmConfiguration.instance;
   }
   
   /**
@@ -407,6 +419,31 @@ export class CriticalAlarmConfiguration {
   }
   
   /**
+   * Reset a specific alarm to its default configuration
+   */
+  public async resetToDefault(type: CriticalAlarmType): Promise<void> {
+    // Store current configs
+    const allConfigs = new Map(this.alarmConfigs);
+    
+    // Temporarily clear and reinitialize to get defaults
+    this.alarmConfigs.clear();
+    this.initializeDefaultConfigurations();
+    
+    // Get the default for this specific type
+    const defaultConfig = this.alarmConfigs.get(type);
+    
+    // Restore all configs
+    this.alarmConfigs = allConfigs;
+    
+    // Set this one to default
+    if (defaultConfig) {
+      this.alarmConfigs.set(type, defaultConfig);
+      await this.saveConfigurationsToStorage();
+      console.log(`CriticalAlarmConfiguration: Reset ${type} to default`);
+    }
+  }
+  
+  /**
    * Set callback for configuration changes
    */
   public setConfigChangedCallback(
@@ -432,6 +469,7 @@ export class CriticalAlarmConfiguration {
       debounceMs: 1000,
       escalationTimeoutMs: 10000,
       audioEnabled: true,
+      audioPattern: 'rapid_pulse',
       visualEnabled: true,
       vibrationEnabled: true,
       notificationEnabled: true,
@@ -458,6 +496,7 @@ export class CriticalAlarmConfiguration {
       debounceMs: 2000,
       escalationTimeoutMs: 15000,
       audioEnabled: true,
+      audioPattern: 'warble',
       visualEnabled: true,
       vibrationEnabled: true,
       notificationEnabled: true,
@@ -484,6 +523,7 @@ export class CriticalAlarmConfiguration {
       debounceMs: 5000, // Longer debounce for battery voltage fluctuations
       escalationTimeoutMs: 30000,
       audioEnabled: true,
+      audioPattern: 'intermittent',
       visualEnabled: true,
       vibrationEnabled: false,
       notificationEnabled: true,
@@ -508,6 +548,7 @@ export class CriticalAlarmConfiguration {
       debounceMs: 500, // Quick response for navigation safety
       escalationTimeoutMs: 5000,
       audioEnabled: true,
+      audioPattern: 'triple_blast',
       visualEnabled: true,
       vibrationEnabled: true,
       notificationEnabled: true,
@@ -533,6 +574,7 @@ export class CriticalAlarmConfiguration {
       debounceMs: 10000, // 10 seconds to account for temporary signal loss
       escalationTimeoutMs: 20000,
       audioEnabled: true,
+      audioPattern: 'continuous_descending',
       visualEnabled: true,
       vibrationEnabled: true,
       notificationEnabled: true,

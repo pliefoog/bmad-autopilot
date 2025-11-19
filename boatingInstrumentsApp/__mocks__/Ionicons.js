@@ -15,13 +15,18 @@ try {
 const IconMap = {
   // Marine instrument icons (actively used in widgets)
   'water-outline': '💧',           // Water droplet for depth
+  'arrow-down-outline': '⭣',       // Downward arrow with bar (depth indicator)
+  'arrow-forward-outline': '⇉',    // Triple right arrows (speed/velocity)
   'car-outline': '⚙️',             // Gear for engine
   'cube-outline': '📦',            // Box for tanks
   'thermometer-outline': '🌡️',    // Thermometer for temperature
   'speedometer-outline': '⏱️',     // Stopwatch for speed
   'navigate-outline': '📍',        // Pin/location for navigation/GPS
+  'arrows-horizontal-outline': '↔',   // Left-right arrow for distance
+  'angle-outline': '∠',            // Angle symbol for angles
   'compass-outline': '🧭',         // Compass for heading
   'battery-charging-outline': '🔋', // Battery
+  'flash-outline': '⚡',           // Lightning for electrical current
   'swap-horizontal-outline': '🔄', // Arrows for autopilot
   'cloud-outline': '☁️',           // Cloud for wind/weather
   'boat-outline': '⛵',            // Sailboat for trip widget
@@ -32,6 +37,7 @@ const IconMap = {
   'grid-outline': '▦',
   'alert-circle-outline': '⚠️',
   'wifi-outline': '📶',
+  'cellular-outline': '📶',        // Signal bars for voltage levels
   'information-circle-outline': 'ℹ️',
   'information-circle': 'ℹ️',      // Tooltip (no outline variant)
   'notifications-outline': '🔔',
@@ -42,6 +48,8 @@ const IconMap = {
   'close-outline': '❌',
   'refresh-outline': '🔄',
   'remove': '➖',
+  'chevron-forward-outline': '›',  // Right chevron for navigation
+  'chevron-back-outline': '‹',     // Left chevron for back navigation
   'layers-outline': '📚',
   'trash-outline': '🗑️',          // Undo/Redo clear history
   'help-circle-outline': '❓',     // Help button
@@ -118,6 +126,10 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
   
   const brightness = color.startsWith('#') ? getBrightness(color) : 0.5;
   
+  // Scale up certain Unicode symbols that render smaller than emojis
+  const needsScaling = ['∠', '↔', '⚡', '⭣', '⇉', '›', '‹'].includes(iconSymbol);
+  const scale = needsScaling ? 1.4 : 1;
+  
   return (
     <span
       style={{
@@ -129,8 +141,9 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
         textAlign: 'center',
         width: size,
         height: size,
+        transform: `scale(${scale})`,
         // Convert emoji to grayscale and adjust brightness to match theme
-        filter: `grayscale(100%) brightness(${brightness * 1.5}) contrast(1.2)`,
+        filter: `grayscale(100%) brightness(${brightness * 2.5}) contrast(1.2)`,
         willChange: 'filter',
         position: 'relative',
         isolation: 'isolate',
