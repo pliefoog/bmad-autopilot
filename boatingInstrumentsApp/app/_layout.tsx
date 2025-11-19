@@ -21,34 +21,48 @@ export default function RootLayout() {
       <ThemeProvider>
         <LoadingProvider>
           <Stack screenOptions={{ 
-          headerShown: false, // Custom header in each screen
-          animation: 'slide_from_right',
-        }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen 
-            name="settings" 
-            options={{ 
-              presentation: 'modal',
-              animation: 'slide_from_bottom',
-              headerShown: true,
-              title: 'Settings',
-            }} 
-          />
-          <Stack.Screen
-            name="widget-selector"
-            options={{ 
-              presentation: 'modal',
-              headerShown: true,
-              title: 'Add Widget',
-            }}
-          />
-        <Stack.Screen
-          name="+not-found"
-          options={{
-            title: 'Page Not Found',
-          }}
-        />
-    </Stack>
+            headerShown: true, // Enable native iOS headers for HIG compliance
+            animation: 'slide_from_right',
+            gestureEnabled: true, // Enable iOS swipe-back gesture
+            gestureDirection: 'horizontal',
+            headerBackTitle: '', // Show back chevron without title (iOS standard)
+            presentation: 'card', // Standard push navigation
+          }}>
+            <Stack.Screen 
+              name="index" 
+              options={{
+                headerShown: false, // Dashboard uses custom header
+              }}
+            />
+            <Stack.Screen 
+              name="settings" 
+              options={{ 
+                presentation: 'card', // Settings is part of navigation hierarchy (not modal)
+                animation: 'slide_from_right',
+                headerShown: true,
+                title: 'Settings',
+                headerBackTitle: 'Dashboard',
+                gestureEnabled: true,
+              }} 
+            />
+            <Stack.Screen
+              name="widget-selector"
+              options={{ 
+                presentation: 'modal', // Widget selector IS a modal (temporary task)
+                animation: 'slide_from_bottom',
+                headerShown: true,
+                title: 'Add Widget',
+                gestureEnabled: true,
+                gestureDirection: 'vertical', // iOS modal dismisses with vertical swipe
+              }}
+            />
+            <Stack.Screen
+              name="+not-found"
+              options={{
+                title: 'Page Not Found',
+              }}
+            />
+          </Stack>
           <LoadingOverlay />
         </LoadingProvider>
       </ThemeProvider>

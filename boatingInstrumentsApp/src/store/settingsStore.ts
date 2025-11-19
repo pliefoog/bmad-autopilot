@@ -30,6 +30,38 @@ export interface ThemeColors {
   iconSecondary: string;   // Secondary icon color (muted)
   iconAccent: string;      // Accent icon color for important elements
   iconDisabled: string;    // Disabled/inactive icon color
+  // iOS semantic colors (HIG compliance)
+  iosSystemBlue: string;
+  iosSystemGreen: string;
+  iosSystemIndigo: string;
+  iosSystemOrange: string;
+  iosSystemPink: string;
+  iosSystemPurple: string;
+  iosSystemRed: string;
+  iosSystemTeal: string;
+  iosSystemYellow: string;
+  iosSystemGray: string;
+  iosSystemGray2: string;
+  iosSystemGray3: string;
+  iosSystemGray4: string;
+  iosSystemGray5: string;
+  iosSystemGray6: string;
+  // iOS label colors (adapt to theme)
+  iosLabel: string;                    // Primary text
+  iosSecondaryLabel: string;           // Secondary text (60% opacity)
+  iosTertiaryLabel: string;            // Tertiary text (30% opacity)
+  iosQuaternaryLabel: string;          // Quaternary text (18% opacity)
+  // iOS fill colors
+  iosSystemBackground: string;         // Primary background
+  iosSecondarySystemBackground: string;// Secondary background
+  iosTertiarySystemBackground: string; // Tertiary background
+  iosSystemFill: string;               // Fill color
+  iosSecondarySystemFill: string;      // Secondary fill
+  iosTertiarySystemFill: string;       // Tertiary fill
+  iosQuaternarySystemFill: string;     // Quaternary fill
+  // iOS separator
+  iosSeparator: string;                // Hairline separator
+  iosOpaqueSeparator: string;          // Opaque separator
 }
 
 export interface ThemeSettings {
@@ -197,8 +229,9 @@ const defaultSettings: SettingsState = {
   },
 };
 
-// Theme color definitions - Marine compliant colors
+// Theme color definitions - Marine compliant colors with iOS semantic colors
 const dayTheme: ThemeColors = {
+  // Marine-specific colors (preserved for navigation safety)
   primary: '#CC3300',      // Dark red instead of blue
   secondary: '#666666',    // Neutral gray
   background: '#FFFFFF',
@@ -223,9 +256,42 @@ const dayTheme: ThemeColors = {
   iconSecondary: '#666666',
   iconAccent: '#CC3300',
   iconDisabled: '#E0E0E0',
+  // iOS semantic colors (standard palette for UI elements)
+  iosSystemBlue: '#007AFF',
+  iosSystemGreen: '#34C759',
+  iosSystemIndigo: '#5856D6',
+  iosSystemOrange: '#FF9500',
+  iosSystemPink: '#FF2D55',
+  iosSystemPurple: '#AF52DE',
+  iosSystemRed: '#FF3B30',
+  iosSystemTeal: '#5AC8FA',
+  iosSystemYellow: '#FFCC00',
+  iosSystemGray: '#8E8E93',
+  iosSystemGray2: '#AEAEB2',
+  iosSystemGray3: '#C7C7CC',
+  iosSystemGray4: '#D1D1D6',
+  iosSystemGray5: '#E5E5EA',
+  iosSystemGray6: '#F2F2F7',
+  // iOS label colors (light mode)
+  iosLabel: '#000000',
+  iosSecondaryLabel: 'rgba(60, 60, 67, 0.6)',
+  iosTertiaryLabel: 'rgba(60, 60, 67, 0.3)',
+  iosQuaternaryLabel: 'rgba(60, 60, 67, 0.18)',
+  // iOS backgrounds (light mode)
+  iosSystemBackground: '#FFFFFF',
+  iosSecondarySystemBackground: '#F2F2F7',
+  iosTertiarySystemBackground: '#FFFFFF',
+  iosSystemFill: 'rgba(120, 120, 128, 0.2)',
+  iosSecondarySystemFill: 'rgba(120, 120, 128, 0.16)',
+  iosTertiarySystemFill: 'rgba(118, 118, 128, 0.12)',
+  iosQuaternarySystemFill: 'rgba(116, 116, 128, 0.08)',
+  // iOS separators
+  iosSeparator: 'rgba(60, 60, 67, 0.29)',
+  iosOpaqueSeparator: '#C6C6C8',
 };
 
 const nightTheme: ThemeColors = {
+  // Marine-specific colors (preserved for navigation safety)
   primary: '#CC3300',      // Dark red instead of blue
   secondary: '#666666',    // Neutral gray
   background: '#1A1A1A',   // Dark gray background
@@ -250,9 +316,42 @@ const nightTheme: ThemeColors = {
   iconSecondary: '#AAAAAA',
   iconAccent: '#CC3300',
   iconDisabled: '#666666',
+  // iOS semantic colors (adjusted for dark mode)
+  iosSystemBlue: '#0A84FF',
+  iosSystemGreen: '#30D158',
+  iosSystemIndigo: '#5E5CE6',
+  iosSystemOrange: '#FF9F0A',
+  iosSystemPink: '#FF375F',
+  iosSystemPurple: '#BF5AF2',
+  iosSystemRed: '#FF453A',
+  iosSystemTeal: '#64D2FF',
+  iosSystemYellow: '#FFD60A',
+  iosSystemGray: '#8E8E93',
+  iosSystemGray2: '#636366',
+  iosSystemGray3: '#48484A',
+  iosSystemGray4: '#3A3A3C',
+  iosSystemGray5: '#2C2C2E',
+  iosSystemGray6: '#1C1C1E',
+  // iOS label colors (dark mode)
+  iosLabel: '#FFFFFF',
+  iosSecondaryLabel: 'rgba(235, 235, 245, 0.6)',
+  iosTertiaryLabel: 'rgba(235, 235, 245, 0.3)',
+  iosQuaternaryLabel: 'rgba(235, 235, 245, 0.18)',
+  // iOS backgrounds (dark mode)
+  iosSystemBackground: '#000000',
+  iosSecondarySystemBackground: '#1C1C1E',
+  iosTertiarySystemBackground: '#2C2C2E',
+  iosSystemFill: 'rgba(120, 120, 128, 0.36)',
+  iosSecondarySystemFill: 'rgba(120, 120, 128, 0.32)',
+  iosTertiarySystemFill: 'rgba(118, 118, 128, 0.24)',
+  iosQuaternarySystemFill: 'rgba(116, 116, 128, 0.18)',
+  // iOS separators (dark mode)
+  iosSeparator: 'rgba(84, 84, 88, 0.6)',
+  iosOpaqueSeparator: '#38383A',
 };
 
 const redNightTheme: ThemeColors = {
+  // Marine red night vision mode (CRITICAL for navigation safety)
   primary: '#FF0000',      // Pure red - marine compliant
   secondary: '#CC0000',    // Dark red
   background: '#000000',   // Pure black
@@ -277,6 +376,38 @@ const redNightTheme: ThemeColors = {
   iconSecondary: '#CC0000',
   iconAccent: '#FF0000',
   iconDisabled: '#330000',
+  // iOS semantic colors (red night vision - all red spectrum)
+  iosSystemBlue: '#FF0000',      // No blue in red night mode
+  iosSystemGreen: '#FF0000',     // No green in red night mode
+  iosSystemIndigo: '#CC0000',    // Dark red substitute
+  iosSystemOrange: '#FF0000',    // Pure red
+  iosSystemPink: '#FF0000',      // Pure red
+  iosSystemPurple: '#CC0000',    // Dark red substitute
+  iosSystemRed: '#FF0000',       // Pure red
+  iosSystemTeal: '#FF0000',      // Pure red
+  iosSystemYellow: '#FF0000',    // Pure red (no yellow)
+  iosSystemGray: '#660000',      // Dark red gray
+  iosSystemGray2: '#550000',
+  iosSystemGray3: '#440000',
+  iosSystemGray4: '#330000',
+  iosSystemGray5: '#220000',
+  iosSystemGray6: '#110000',
+  // iOS label colors (red night mode)
+  iosLabel: '#FF0000',
+  iosSecondaryLabel: 'rgba(255, 0, 0, 0.6)',
+  iosTertiaryLabel: 'rgba(255, 0, 0, 0.3)',
+  iosQuaternaryLabel: 'rgba(255, 0, 0, 0.18)',
+  // iOS backgrounds (red night mode)
+  iosSystemBackground: '#000000',
+  iosSecondarySystemBackground: '#110000',
+  iosTertiarySystemBackground: '#220000',
+  iosSystemFill: 'rgba(255, 0, 0, 0.2)',
+  iosSecondarySystemFill: 'rgba(255, 0, 0, 0.16)',
+  iosTertiarySystemFill: 'rgba(255, 0, 0, 0.12)',
+  iosQuaternarySystemFill: 'rgba(255, 0, 0, 0.08)',
+  // iOS separators (red night mode)
+  iosSeparator: 'rgba(255, 0, 0, 0.29)',
+  iosOpaqueSeparator: '#660000',
 };
 
 // Theme compliance validation disabled for runtime performance

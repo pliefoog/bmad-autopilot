@@ -16,7 +16,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/store/themeStore';
 import { UniversalIcon } from '../../src/components/atoms/UniversalIcon';
@@ -339,26 +339,15 @@ export default function AlarmDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-          <Pressable 
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.push('/settings/alarms');
-              }
-            }} 
-            style={styles.backButton}
-          >
-            <UniversalIcon name="chevron-back-outline" size={24} color={theme.textSecondary} />
-          </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>{metadata.label}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+    <>
+      <Stack.Screen
+        options={{
+          title: metadata.label,
+          headerBackTitle: 'Alarms',
+        }}
+      />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Icon and Description */}
         <View style={styles.iconSection}>
           <View style={[styles.iconContainer, { backgroundColor: theme.surface }]}>
@@ -504,6 +493,7 @@ export default function AlarmDetailScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+    </>
   );
 }
 

@@ -16,7 +16,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/store/themeStore';
 import { UniversalIcon } from '../../src/components/atoms/UniversalIcon';
@@ -190,17 +190,15 @@ export default function AlarmListScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.text }]}>← Back</Text>
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Alarms</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Alarms',
+          headerBackTitle: 'Settings',
+        }}
+      />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Description */}
         <Text style={[styles.description, { color: theme.textSecondary }]}>
           Tap any alarm to customize its settings.
@@ -243,8 +241,9 @@ export default function AlarmListScreen() {
         <Pressable style={styles.resetButton} onPress={handleResetAll}>
           <Text style={[styles.resetButtonText, { color: theme.primary || '#007AFF' }]}>Reset</Text>
         </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
