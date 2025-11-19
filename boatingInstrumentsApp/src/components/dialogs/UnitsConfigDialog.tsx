@@ -335,11 +335,11 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
           {/* Unit Configuration - Unified view for all presets and custom */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              {selectedPreset === 'custom' ? 'Unit Configuration' : `${PRESENTATION_PRESETS.find(p => p.id === selectedPreset)?.name || 'Preset'} Configuration`}
+              Unit and Format Settings
             </Text>
             {selectedPreset !== 'custom' && (
               <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
-                Preset units are locked. Switch to Custom to modify.
+                Switch to Custom to modify.
               </Text>
             )}
             {UNIT_CATEGORIES.map((category) => {
