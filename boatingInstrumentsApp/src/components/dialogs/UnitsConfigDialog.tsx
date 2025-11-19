@@ -337,11 +337,11 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Unit and Format Settings
             </Text>
-            {selectedPreset !== 'custom' && (
-              <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
-                Switch to Custom to modify.
-              </Text>
-            )}
+            <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
+              {selectedPreset === 'custom' 
+                ? 'Select preset to use predefined settings.' 
+                : 'Switch to Custom to modify.'}
+            </Text>
             {UNIT_CATEGORIES.map((category) => {
               const presentations = getPresentationsForCategory(category.key);
               const selectedUnit = getSelectedUnit(category.key);
