@@ -116,15 +116,7 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   };
   
-  // Calculate brightness from color
-  const colorBrightness = color.startsWith('#') ? getBrightness(color) : 0.5;
-  
-  // Invert logic: dark colors (day mode) need HIGH filter brightness
-  // Light colors (night mode) need LOW filter brightness
-  // This ensures grayscale emojis match the intended theme color
-  const filterBrightness = colorBrightness < 0.5 
-    ? 1.8  // Dark color (day mode) -> bright grayscale
-    : 0.8; // Light color (night mode) -> dim grayscale
+  const brightness = color.startsWith('#') ? getBrightness(color) : 0.5;
   
   return (
     <span
@@ -138,7 +130,7 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
         width: size,
         height: size,
         // Convert emoji to grayscale and adjust brightness to match theme
-        filter: `grayscale(100%) brightness(${filterBrightness}) contrast(1.2)`,
+        filter: `grayscale(100%) brightness(${brightness * 1.5}) contrast(1.2)`,
         willChange: 'filter',
         position: 'relative',
         isolation: 'isolate',
