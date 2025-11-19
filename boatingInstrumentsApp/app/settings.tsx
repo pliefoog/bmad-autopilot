@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AlarmConfigDialog } from '../src/components/dialogs/AlarmConfigDialog';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const [alarmDialogVisible, setAlarmDialogVisible] = useState(false);
 
   const settingsOptions = [
     {
@@ -12,7 +14,7 @@ export default function SettingsScreen() {
       title: 'Alarm Configuration',
       description: 'Configure critical safety alarms and thresholds',
       icon: '⚠️',
-      route: '/settings/alarms',
+      action: () => setAlarmDialogVisible(true),
       available: true,
     },
     {
@@ -58,7 +60,15 @@ export default function SettingsScreen() {
             <Pressable
               key={option.id}
               style={[styles.optionCard, !option.available && styles.optionCardDisabled]}
-              onPress={() => option.available && router.push(option.route as any)}
+              onPress={() => {
+                if (option.available) {
+                  if (option.action) {
+                    option.action();
+                  } else if (option.route) {
+                    router.push(option.route as any);
+                  }
+                }
+              }}
               disabled={!option.available}
             >
               <Text style={styles.optionIcon}>{option.icon}</Text>
@@ -85,6 +95,12 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+
+    {/* Alarm Configuration Dialog */}
+    <AlarmConfigDialog
+      visible={alarmDialogVisible}
+      onClose={() => setAlarmDialogVisible(false)}
+    />
     </>
   );
 }
