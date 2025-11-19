@@ -47,15 +47,14 @@ export const AutopilotPanel: React.FC<AutopilotPanelProps> = ({
       onRequestClose={onClose}
     >
       <SafeAreaView style={[styles.container, { backgroundColor: theme.surface }]}>
+        {/* iOS Drag Handle */}
+        <View style={styles.dragHandle} />
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            Autopilot Controls
-          </Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={[styles.closeButtonText, { color: theme.primary }]}>
-              Done
-            </Text>
+          <TouchableOpacity onPress={onClose} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.primary }]}>Done</Text>
           </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.text }]}>Autopilot Controls</Text>
+          <View style={styles.headerButton} />
         </View>
 
         <View style={styles.content}>
@@ -143,23 +142,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 5,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  closeButton: {
+  headerButton: {
     padding: 8,
+    minWidth: 60,
   },
-  closeButtonText: {
-    fontSize: 16,
+  headerButtonText: {
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  title: {
+    fontSize: 17,
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
   content: {
     flex: 1,

@@ -88,19 +88,19 @@ export const WidgetSelector: React.FC<{
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.sheet, { backgroundColor: theme.background }]}>
+          {/* iOS Drag Handle */}
+          <View style={styles.dragHandle} />
           <View style={styles.header}>
+            <TouchableOpacity onPress={onClose} style={styles.headerButton}>
+              <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
+            </TouchableOpacity>
             <Text style={[styles.title, { color: theme.text }]}>Add Instrument</Text>
-            <View style={styles.headerActions}>
-              <HelpButton 
-                helpId="widget-customization" 
-                onPress={() => showHelp('widget-customization')}
-                size={24}
-                style={styles.helpButton}
-              />
-              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <UniversalIcon name="close-outline" size={28} color={theme.textSecondary} />
-              </TouchableOpacity>
-            </View>
+            <HelpButton 
+              helpId="widget-customization" 
+              onPress={() => showHelp('widget-customization')}
+              size={24}
+              style={styles.helpButton}
+            />
           </View>
           <FlatList
             data={widgetList}
@@ -140,32 +140,45 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 0,
     paddingBottom: 32,
     minHeight: '60%',
     elevation: 8,
+  },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 5,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 12,
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  headerButton: {
+    padding: 8,
+    minWidth: 60,
+  },
+  headerButtonText: {
+    fontSize: 17,
+    fontWeight: '400',
   },
   helpButton: {
-    marginRight: 4,
+    padding: 8,
+    minWidth: 60,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  closeBtn: {
-    padding: 4,
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
   grid: {
     paddingBottom: 12,

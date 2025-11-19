@@ -73,6 +73,8 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
         { backgroundColor: theme.background },
         Platform.OS === 'web' && { position: 'relative', zIndex: 10002 }
       ]}>
+        {/* iOS Drag Handle */}
+        <View style={styles.dragHandle} />
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={onCancel} style={styles.headerButton}>
             <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
@@ -175,6 +177,15 @@ const styles = StyleSheet.create({
     zIndex: 10000, // Higher than hamburger menu to ensure it appears on top
     elevation: 50, // For Android
   },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 5,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -182,11 +193,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
     flex: 1,
     textAlign: 'center',
   },
@@ -195,8 +205,8 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   headerButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '400',
   },
   content: {
     flex: 1,

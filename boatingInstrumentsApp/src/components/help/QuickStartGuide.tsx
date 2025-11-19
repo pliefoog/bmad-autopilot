@@ -164,20 +164,21 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
       onRequestClose={onClose}
     >
       <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* iOS Drag Handle */}
+        <View style={styles.dragHandle} />
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <View style={styles.headerContent}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              🚀 Quick Start Guide
-            </Text>
             <TouchableOpacity
               onPress={onClose}
-              style={styles.closeButton}
+              style={styles.headerButton}
               accessibilityLabel="Close quick start guide"
               accessibilityRole="button"
             >
-              <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
+              <Text style={[styles.headerButtonText, { color: colors.text }]}>Done</Text>
             </TouchableOpacity>
+            <Text style={[styles.title, { color: colors.text }]}>Quick Start</Text>
+            <View style={styles.headerButton} />
           </View>
 
           {/* Progress */}
@@ -317,8 +318,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 5,
+  },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingTop: 12,
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
@@ -329,15 +339,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  closeButton: {
+  headerButton: {
     padding: 8,
+    minWidth: 60,
   },
-  closeText: {
-    fontSize: 24,
+  headerButtonText: {
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
   progressSection: {
     // Progress container

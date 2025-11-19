@@ -307,20 +307,20 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
+        {/* iOS Drag Handle */}
+        <View style={styles.dragHandle} />
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>AUTOPILOT CONTROL</Text>
-          <View style={styles.headerActions}>
-            <HelpButton 
-              helpId="autopilot-modes" 
-              onPress={() => showHelp('autopilot-modes')}
-              size={24}
-              style={styles.helpButton}
-            />
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={onClose} style={styles.headerButton}>
+            <Text style={styles.headerButtonText}>Done</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Autopilot</Text>
+          <HelpButton 
+            helpId="autopilot-modes" 
+            onPress={() => showHelp('autopilot-modes')}
+            size={24}
+            style={styles.helpButton}
+          />
         </View>
 
         <View style={styles.content}>
@@ -583,39 +583,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 5,
+    marginBottom: 5,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  headerButton: {
+    padding: 8,
+    minWidth: 60,
+  },
+  headerButtonText: {
+    color: '#007AFF',
+    fontSize: 17,
+    fontWeight: '400',
   },
   helpButton: {
-    marginRight: 4,
+    padding: 8,
+    minWidth: 60,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
     color: '#fff',
-  },
-  closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
   },
   content: {
     flex: 1,
