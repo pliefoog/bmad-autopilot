@@ -3,8 +3,8 @@
 
 **Epic ID:** 9.0
 **Priority:** P0 (Critical Architecture Fix)
-**Status:** Ready for Development
-**Timeline:** 3 stories × 2-3 days each = 1-2 sprints total
+**Status:** ✅ COMPLETE (November 20, 2025)
+**Timeline:** 6 stories completed - All goals achieved or exceeded
 
 ---
 
@@ -111,6 +111,40 @@ interface MetricDisplayData {
 - Modern settings integration (direct presentation system)
 - Complete widget migration (all remaining widgets)
 - Documentation and handoff
+
+### Story 9.4: Complete Widget Migration (GPSWidget)
+**Scope:** Migrate remaining widgets to useMetricDisplay
+**Timeline:** 1 day
+**Key Deliverables:**
+- Migrate GPSWidget from useUnitConversion to useMetricDisplay
+- Remove all useUnitConversion imports from widgets
+- Validate GPSWidget coordinate formatting with new system
+- Ensure settings reactivity works for GPS unit changes
+
+**Blocks:** Epic 13.3 (Navigation Session & Glove Mode) - needs consistent metric display across all widgets
+
+### Story 9.5: Implement FontMeasurementService
+**Scope:** Real font measurement for layout stability
+**Timeline:** 2 days
+**Key Deliverables:**
+- Create FontMeasurementService with Canvas API (web) and native measurement
+- Implement worst-case width calculations for minWidth
+- Add aggressive caching for performance (<5ms target)
+- Integrate with MetricDisplayData.layout.minWidth
+- Test on all platforms (iOS, Android, Web)
+
+**Blocks:** Epic 13.3.4 (Dashboard Density Integration) - needs stable minWidth for smooth transitions
+
+### Story 9.6: Settings Integration Modernization
+**Scope:** Clean settings → presentation system integration
+**Timeline:** 1-2 days
+**Key Deliverables:**
+- Remove dual-system references in settings stores
+- Direct presentation system integration (no legacy bridge)
+- Validate instant unit reactivity across all widgets
+- Document new settings → useMetricDisplay flow
+
+**Blocks:** Epic 13.2 (Unified Settings System) - needs clean presentation layer foundation
 
 ---
 

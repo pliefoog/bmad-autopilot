@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context story-id="9.6" epic-id="9" generated="2025-11-20T00:00:00Z">
+  
+  <meta>
+    <story-title>Settings Integration Modernization</story-title>
+    <story-points>2</story-points>
+    <context-type>implementation</context-type>
+    <development-status>ready-for-dev</development-status>
+    <bmad-workflow>story-context</bmad-workflow>
+  </meta>
+
+  <!-- STORY OVERVIEW -->
+  <story-overview>
+    <objective>Validate and document the unified presentation system's settings integration, ensuring instant unit reactivity across all widgets without dual-system conflicts</objective>
+    <current-problem>Epic 9 Stories 9.1-9.5 implemented the enhanced presentation system, but final validation and documentation of settings → widgets reactivity pattern is needed to complete the epic</current-problem>
+    <solution-approach>Comprehensive end-to-end testing of settings propagation, performance measurement, and architectural documentation rather than new implementation</solution-approach>
+    <success-criteria>
+      <criterion type="functional">Settings changes propagate to all widgets in <100ms</criterion>
+      <criterion type="validation">Zero dual-system references in settings components</criterion>
+      <criterion type="documentation">Complete architecture guide for Epic 13.2 foundation</criterion>
+      <criterion type="quality">Epic 9 ready for retrospective and closure</criterion>
+    </success-criteria>
+  </story-overview>
+
+  <!-- USER STORY -->
+  <story>
+    <asA>marine navigator</asA>
+    <iWant>unit changes in settings to immediately reflect in all widgets without dual-system conflicts</iWant>
+    <soThat>I have full control over my instrument display preferences with instant reactivity</soThat>
+    
+    <tasks>
+      <task id="1" ac="1">
+        <name>Settings Component Cleanup</name>
+        <subtasks>
+          <subtask>Audit all settings components for useUnitConversion imports</subtask>
+          <subtask>Verify UnitsConfigDialog uses only usePresentationStore</subtask>
+          <subtask>Remove any remaining legacy bridge references from settings</subtask>
+          <subtask>Update settings component tests to use presentation system</subtask>
+        </subtasks>
+      </task>
+      
+      <task id="2" ac="2">
+        <name>Direct Presentation Integration</name>
+        <subtasks>
+          <subtask>Validate setPresentationForCategory() calls in UnitsConfigDialog</subtask>
+          <subtask>Verify getPresentationConfigLabel() displays correct names</subtask>
+          <subtask>Test category-based presentation validation</subtask>
+          <subtask>Ensure presentation selection updates store directly</subtask>
+        </subtasks>
+      </task>
+      
+      <task id="3" ac="3">
+        <name>Reactivity Validation Testing</name>
+        <subtasks>
+          <subtask>Manual test: change depth units in settings → verify DepthWidget updates</subtask>
+          <subtask>Manual test: change speed units → verify SpeedWidget updates instantly</subtask>
+          <subtask>Manual test: change coordinate format → verify GPSWidget updates</subtask>
+          <subtask>Measure settings → widget propagation time (<100ms target)</subtask>
+          <subtask>Test with multiple widgets visible simultaneously</subtask>
+        </subtasks>
+      </task>
+      
+      <task id="4" ac="4">
+        <name>Documentation and Architecture Guide</name>
+        <subtasks>
+          <subtask>Document Settings → usePresentationStore → useMetricDisplay flow</subtask>
+          <subtask>Create migration guide from dual-system to unified architecture</subtask>
+          <subtask>Document reactive pattern for future settings development</subtask>
+          <subtask>Update Epic 9 completion status and Epic 13.2 dependencies</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <!-- ACCEPTANCE CRITERIA -->
+  <acceptanceCriteria>
+    <criterion id="1" priority="P0">
+      <title>Remove Dual-System References</title>
+      <description>Clean elimination of legacy bridge architecture from settings</description>
+      <validations>
+        <validation>Remove all useUnitConversion imports from settings components (preserve only for GPSWidget GPS functions)</validation>
+        <validation>Validate UnitsConfigDialog uses only usePresentationStore for presentation selection</validation>
+        <validation>Ensure no legacy bridge sync calls remain in settings components</validation>
+        <validation>Document the clean settings → presentation system architecture</validation>
+      </validations>
+    </criterion>
+    
+    <criterion id="2" priority="P0">
+      <title>Direct Presentation System Integration</title>
+      <description>Settings work exclusively with enhanced presentation system</description>
+      <validations>
+        <validation>UnitsConfigDialog calls setPresentationForCategory() directly (no intermediate bridges)</validation>
+        <validation>Settings UI displays presentation names via getPresentationConfigLabel() helper</validation>
+        <validation>Category-based compatibility validation uses PRESENTATIONS[category] arrays</validation>
+        <validation>Presentation selection immediately updates presentation store without translation layer</validation>
+      </validations>
+    </criterion>
+    
+    <criterion id="3" priority="P0">
+      <title>Validate Instant Unit Reactivity</title>
+      <description>Settings changes propagate immediately to all widgets</description>
+      <validations>
+        <validation>Unit changes in UnitsConfigDialog trigger usePresentationStore updates</validation>
+        <validation>All widgets using useMetricDisplay receive new presentations via reactive hooks</validation>
+        <validation>No widget restart or refresh required for unit changes to take effect</validation>
+        <validation>Settings → widgets flow completes in <100ms (instant from user perspective)</validation>
+      </validations>
+    </criterion>
+    
+    <criterion id="4" priority="P1">
+      <title>Document New Settings Flow</title>
+      <description>Clear architecture documentation for future development</description>
+      <validations>
+        <validation>Settings → useMetricDisplay flow documented in story Dev Notes</validation>
+        <validation>Presentation store reactive pattern documented for future settings features</validation>
+        <validation>Migration guide from dual-system to unified architecture available</validation>
+        <validation>Epic 9 completion documented as foundation for Epic 13.2 (Unified Settings System)</validation>
+      </validations>
+    </criterion>
+  </acceptanceCriteria>
+
+  <!-- EXISTING ARCHITECTURE -->
+  <existing-architecture>
+    <epic9-completed-stories>
+      <story id="9.1" status="complete">
+        <title>Enhanced Presentation Foundation</title>
+        <achievements>
+          <achievement>useMetricDisplay hook with single source of truth</achievement>
+          <achievement>FontMeasurementService with LRU caching</achievement>
+          <achievement>Marine-specific format patterns (xxx.x, x Bf)</achievement>
+          <achievement>MetricDisplayData interface with layout stability</achievement>
+        </achievements>
+      </story>
+      
+      <story id="9.2" status="complete">
+        <title>Component Migration</title>
+        <achievements>
+          <achievement>PrimaryMetricCell and SecondaryMetricCell updates</achievement>
+          <achievement>SpeedWidget and WindWidget migrated to useMetricDisplay</achievement>
+          <achievement>Layout stability testing validated</achievement>
+        </achievements>
+      </story>
+      
+      <story id="9.3" status="complete">
+        <title>System Cleanup</title>
+        <achievements>
+          <achievement>legacyBridge.ts deleted and removed from imports</achievement>
+          <achievement>UnitsConfigDialog modernized with usePresentationStore</achievement>
+          <achievement>All widgets migrated except GPSWidget GPS functions</achievement>
+          <achievement>Direct presentation selection via setPresentationForCategory()</achievement>
+        </achievements>
+      </story>
+      
+      <story id="9.4" status="complete">
+        <title>GPSWidget Migration</title>
+        <achievements>
+          <achievement>Coordinate presentations (DD/DDM/DMS/UTM) integrated</achievement>
+          <achievement>useMetricDisplay with metadata for latitude/longitude</achievement>
+          <achievement>Settings reactivity verified for GPS coordinate formats</achievement>
+        </achievements>
+      </story>
+      
+      <story id="9.5" status="complete">
+        <title>FontMeasurementService</title>
+        <achievements>
+          <achievement>Canvas API implementation with LRU cache (500 entries)</achievement>
+          <achievement>Performance <5ms for cached measurements</achievement>
+          <achievement>minWidth calculations prevent metric jumping</achievement>
+          <achievement>Theme invalidation integrated in ThemeProvider</achievement>
+        </achievements>
+      </story>
+    </epic9-completed-stories>
+
+    <settings-integration-current-state>
+      <component name="UnitsConfigDialog" path="src/components/dialogs/UnitsConfigDialog.tsx">
+        <status>Already modernized in Story 9.3</status>
+        <implementation>
+          <feature>Uses usePresentationStore() directly (no useUnitConversion)</feature>
+          <feature>Calls setPresentationForCategory(category, presentationId) on selection</feature>
+          <feature>Displays presentation names via getPresentationConfigLabel(presentation)</feature>
+          <feature>Preset system (Nautical EU/US/UK, Motoryacht, Custom)</feature>
+          <feature>Category-based validation using PRESENTATIONS[category]</feature>
+        </implementation>
+        <no-dual-system-references>
+          <verification>Zero grep matches for "legacyBridge" in file</verification>
+          <verification>Zero grep matches for "useUnitConversion" in file</verification>
+          <verification>Only import is usePresentationStore from presentation system</verification>
+        </no-dual-system-references>
+      </component>
+      
+      <reactive-architecture>
+        <zustand-store name="usePresentationStore" path="src/presentation/presentationStore.ts">
+          <state>
+            <field>selectedPresentations: Record<DataCategory, string></field>
+            <field>marineRegion: 'eu' | 'us' | 'uk' | 'international'</field>
+          </state>
+          <actions>
+            <action>setPresentationForCategory(category, presentationId)</action>
+            <action>setMarineRegion(region)</action>
+            <action>resetToDefaults()</action>
+          </actions>
+          <persistence>AsyncStorage with persist middleware</persistence>
+        </zustand-store>
+        
+        <metric-hook name="useMetricDisplay" path="src/hooks/useMetricDisplay.ts">
+          <reactive-dependencies>
+            <dependency>useSettingsStore() - reactive Zustand subscription</dependency>
+            <dependency>useMemo() with [units, gps, rawValue, category] dependencies</dependency>
+          </reactive-dependencies>
+          <flow>
+            <step>User changes unit in UnitsConfigDialog</step>
+            <step>setPresentationForCategory() updates Zustand store</step>
+            <step>useMetricDisplay re-runs due to reactive dependencies</step>
+            <step>Widgets re-render with new MetricDisplayData</step>
+            <step>Total propagation time: <100ms (Zustand update + React render)</step>
+          </flow>
+        </metric-hook>
+      </reactive-architecture>
+    </settings-integration-current-state>
+  </existing-architecture>
+
+  <!-- ARTIFACTS -->
+  <artifacts>
+    <docs>
+      <doc path="docs/stories/epic-9-enhanced-presentation-system.md" section="Story 9.6">
+        <snippet>Settings Integration Modernization completes Epic 9 by validating instant unit reactivity and documenting the unified architecture foundation for Epic 13.2</snippet>
+      </doc>
+      
+      <doc path="docs/ui-architecture.md" section="Enhanced Presentation System Architecture">
+        <snippet>Single source of truth: Settings → useMetricDisplay → Pre-formatted MetricDisplayData → Pure Components. Eliminates dual-system conflicts with unified metric display architecture</snippet>
+      </doc>
+      
+      <doc path="docs/sprint-artifacts/story-9.3-system-cleanup.md" section="Settings Integration Validation">
+        <snippet>UnitsConfigDialog verified complete in Story 9.3: uses usePresentationStore directly, calls setPresentationForCategory(), displays via getPresentationConfigLabel(). Zero dual-system references</snippet>
+      </doc>
+      
+      <doc path="docs/sprint-artifacts/story-9.5-implement-fontmeasurementservice.md" section="Story 9.5 Review Outcome">
+        <snippet>Layout stability pillar complete. Story 9.6 completes settings reactivity pillar by validating instant unit changes. Primarily validation and documentation rather than implementation</snippet>
+      </doc>
+    </docs>
+    
+    <code>
+      <file path="src/components/dialogs/UnitsConfigDialog.tsx" kind="component" lines="1-520">
+        <symbol>UnitsConfigDialog</symbol>
+        <reason>Main settings dialog already modernized in Story 9.3 - uses usePresentationStore exclusively</reason>
+      </file>
+      
+      <file path="src/presentation/presentationStore.ts" kind="store" lines="1-280">
+        <symbol>usePresentationStore</symbol>
+        <reason>Zustand store managing presentation selections with AsyncStorage persistence</reason>
+      </file>
+      
+      <file path="src/hooks/useMetricDisplay.ts" kind="hook" lines="1-220">
+        <symbol>useMetricDisplay</symbol>
+        <reason>Unified metric display hook with reactive dependencies on settings store</reason>
+      </file>
+      
+      <file path="src/presentation/presentations.ts" kind="data" lines="1-1200">
+        <symbol>PRESENTATIONS</symbol>
+        <reason>Presentation definitions for all data categories with format patterns</reason>
+      </file>
+      
+      <file path="src/widgets/SpeedWidget.tsx" kind="widget" lines="1-350">
+        <symbol>SpeedWidget</symbol>
+        <reason>Example widget using useMetricDisplay for testing settings reactivity</reason>
+      </file>
+      
+      <file path="src/widgets/DepthWidget.tsx" kind="widget" lines="1-280">
+        <symbol>DepthWidget</symbol>
+        <reason>Example widget for manual reactivity testing</reason>
+      </file>
+      
+      <file path="src/widgets/GPSWidget.tsx" kind="widget" lines="1-420">
+        <symbol>GPSWidget</symbol>
+        <reason>Coordinate format testing - migrated in Story 9.4</reason>
+      </file>
+    </code>
+    
+    <dependencies>
+      <ecosystem name="node">
+        <package name="zustand" version="^4.4.1">State management with persistence</package>
+        <package name="@react-native-async-storage/async-storage" version="^1.19.3">Persistence layer</package>
+        <package name="react-native" version="0.74.5">React Native framework</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <!-- CONSTRAINTS -->
+  <constraints>
+    <constraint type="architecture">
+      <rule>No new implementation required - Story 9.3 already completed settings modernization</rule>
+      <rationale>Focus on validation, testing, and documentation rather than code changes</rationale>
+    </constraint>
+    
+    <constraint type="testing">
+      <rule>Manual testing acceptable for reactivity validation</rule>
+      <rationale>Automated visual regression testing deferred to Epic 13 per Story 9.5 advisory</rationale>
+    </constraint>
+    
+    <constraint type="performance">
+      <rule>Settings → widgets propagation must complete in <100ms</rule>
+      <rationale>Instant from user perspective, achievable with Zustand reactive updates</rationale>
+    </constraint>
+    
+    <constraint type="compatibility">
+      <rule>Preserve GPSWidget GPS function useUnitConversion usage</rule>
+      <rationale>Date/time formatting kept out of scope per Story 9.4</rationale>
+    </constraint>
+    
+    <constraint type="documentation">
+      <rule>Comprehensive architecture guide required for Epic 13.2 foundation</rule>
+      <rationale>Settings system modernization in Epic 13.2 depends on clear presentation layer documentation</rationale>
+    </constraint>
+  </constraints>
+
+  <!-- INTERFACES -->
+  <interfaces>
+    <interface name="usePresentationStore" kind="zustand-store">
+      <signature>
+        interface PresentationSettings {
+          selectedPresentations: Record<DataCategory, string>;
+          marineRegion: 'eu' | 'us' | 'uk' | 'international';
+          setPresentationForCategory: (category: DataCategory, presentationId: string) => void;
+          setMarineRegion: (region: string) => void;
+          resetToDefaults: () => void;
+          getPresentationForCategory: (category: DataCategory) => Presentation | undefined;
+        }
+      </signature>
+      <path>src/presentation/presentationStore.ts</path>
+    </interface>
+    
+    <interface name="useMetricDisplay" kind="hook">
+      <signature>
+        function useMetricDisplay(
+          category: DataCategory,
+          rawValue: number | null | undefined,
+          mnemonic?: string,
+          options?: MetricDisplayOptions
+        ): MetricDisplayData;
+      </signature>
+      <path>src/hooks/useMetricDisplay.ts</path>
+    </interface>
+    
+    <interface name="MetricDisplayData" kind="type">
+      <signature>
+        interface MetricDisplayData {
+          mnemonic: string;
+          value: string;
+          unit: string;
+          rawValue: number;
+          layout: { minWidth: number; alignment: string; fontSize: number };
+          presentation: { id: string; name: string; pattern: string };
+          status: { isValid: boolean; isFallback: boolean; error?: string };
+        }
+      </signature>
+      <path>src/types/MetricDisplayData.ts</path>
+    </interface>
+    
+    <interface name="setPresentationForCategory" kind="function">
+      <signature>
+        setPresentationForCategory(category: DataCategory, presentationId: string): void
+      </signature>
+      <path>src/presentation/presentationStore.ts</path>
+      <usage>UnitsConfigDialog.tsx lines 239-251</usage>
+    </interface>
+  </interfaces>
+
+  <!-- TESTS -->
+  <tests>
+    <standards>
+      Epic 11 Triple-tier Testing Architecture applies: Tier 1 unit tests for hooks/stores, integration tests for component interactions, manual validation for visual behavior. Story 9.6 focuses on manual reactivity testing and performance measurement rather than automated test expansion.
+    </standards>
+    
+    <locations>
+      <location>__tests__/tier1-unit/hooks/useMetricDisplay.test.tsx</location>
+      <location>__tests__/tier1-unit/widgets/GPSWidget.test.tsx</location>
+      <location>__tests__/tier1-unit/presentation/presentationStore.test.tsx</location>
+    </locations>
+    
+    <ideas>
+      <test-idea ac="1">
+        <description>Audit settings components for dual-system references</description>
+        <approach>Grep search for "useUnitConversion" and "legacyBridge" in src/components/dialogs/</approach>
+        <expected>Zero matches except GPSWidget.tsx GPS functions</expected>
+      </test-idea>
+      
+      <test-idea ac="2">
+        <description>Validate UnitsConfigDialog implementation</description>
+        <approach>Code review of UnitsConfigDialog.tsx for usePresentationStore usage patterns</approach>
+        <expected>All setPresentationForCategory calls direct, no bridge sync calls</expected>
+      </test-idea>
+      
+      <test-idea ac="3">
+        <description>Manual reactivity testing - depth units</description>
+        <approach>
+          1. Launch app with NMEA simulator providing depth data
+          2. Open UnitsConfigDialog, note current depth display
+          3. Change depth units (meters → feet)
+          4. Close dialog, observe DepthWidget update time
+        </approach>
+        <expected>DepthWidget updates instantly (<100ms), no flicker or delay</expected>
+      </test-idea>
+      
+      <test-idea ac="3">
+        <description>Manual reactivity testing - speed units</description>
+        <approach>
+          1. Launch app with speed data visible
+          2. Change speed units in settings (knots → mph)
+          3. Measure propagation time with browser DevTools Performance tab
+        </approach>
+        <expected>SpeedWidget re-renders within 100ms of store update</expected>
+      </test-idea>
+      
+      <test-idea ac="3">
+        <description>Multi-widget reactivity testing</description>
+        <approach>
+          1. Display 6+ widgets simultaneously (speed, depth, wind, GPS, etc.)
+          2. Change units for one category
+          3. Verify only affected widgets re-render
+        </approach>
+        <expected>Selective re-rendering, no full dashboard refresh</expected>
+      </test-idea>
+      
+      <test-idea ac="4">
+        <description>Documentation completeness review</description>
+        <approach>Review Dev Notes section for architecture flow, reactive pattern, migration guide completeness</approach>
+        <expected>Settings → usePresentationStore → useMetricDisplay flow clearly documented with code examples</expected>
+      </test-idea>
+    </ideas>
+  </tests>
+
+  <!-- DEVELOPMENT NOTES -->
+  <dev-notes>
+    <note type="critical">
+      Story 9.6 is primarily VALIDATION and DOCUMENTATION rather than implementation. Story 9.3 already completed the settings modernization work. This story confirms it works correctly end-to-end.
+    </note>
+    
+    <note type="architecture">
+      Clean Settings Flow (No Bridges, No Translation):
+      
+      User Changes Unit in Settings
+        ↓
+      UnitsConfigDialog.tsx calls setPresentationForCategory(category, presentationId)
+        ↓
+      usePresentationStore updates selectedPresentations[category]
+        ↓
+      All widgets using useMetricDisplay(category, ...) re-render via reactive hook
+        ↓
+      MetricDisplayData updates with new presentation's convert/format functions
+        ↓
+      PrimaryMetricCell/SecondaryMetricCell display new units instantly
+      
+      Total propagation time: <100ms (Zustand state update + React render cycle)
+    </note>
+    
+    <note type="testing">
+      Manual Testing Strategy:
+      1. Use browser DevTools Performance tab to measure settings → widget propagation time
+      2. Test with NMEA simulator providing realistic data across multiple widgets
+      3. Verify no console warnings or errors during unit changes
+      4. Confirm AsyncStorage persistence across app restarts
+    </note>
+    
+    <note type="epic-completion">
+      Epic 9 Achievement Summary:
+      - ✅ Unit Reactivity Fixed (Settings propagate instantly via Zustand)
+      - ✅ Layout Stability (FontMeasurementService prevents jumping)
+      - ✅ Marine Precision (Format patterns: xxx.x, x Bf)
+      - ✅ Simplified Architecture (Single useMetricDisplay hook)
+      - ✅ Performance Optimized (<5ms cached measurements)
+      
+      Story 9.6 completes validation and documentation for Epic 9 closure.
+    </note>
+    
+    <note type="future-dependencies">
+      Epic 13.2 (Unified Settings System) depends on this story's documentation:
+      - Settings architecture patterns established in Story 9.6
+      - Presentation store reactive pattern serves as model
+      - Migration guide helps future settings modernization
+    </note>
+  </dev-notes>
+
+</story-context>
