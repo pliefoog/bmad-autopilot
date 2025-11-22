@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 interface SwitchProps {
@@ -42,11 +42,6 @@ const Switch: React.FC<SwitchProps> = ({
   
   const finalThumbColor = thumbColor || defaultThumbColor;
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('[Switch] value:', value, 'thumbColor:', finalThumbColor, 'trackColor:', finalTrackColor, 'theme.surface:', theme.surface);
-  }, [value, finalThumbColor, finalTrackColor, theme.surface]);
-  
   const handlePress = () => {
     if (!disabled) {
       onValueChange(!value);
@@ -54,14 +49,11 @@ const Switch: React.FC<SwitchProps> = ({
   };
 
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={handlePress}
       disabled={disabled}
+      activeOpacity={0.8}
       testID={testID}
-      accessibilityRole="none"
-      importantForAccessibility="no"
-      // @ts-ignore - prevent React Native Web from treating as switch
-      dataSet={{ switch: 'false' }}
       style={[
         styles.toggle,
         {
@@ -72,19 +64,15 @@ const Switch: React.FC<SwitchProps> = ({
       ]}
     >
       <View
-        importantForAccessibility="no"
-        // @ts-ignore - force override React Native Web's green background
         style={[
           styles.toggleThumb,
           {
             backgroundColor: finalThumbColor,
             transform: [{ translateX: value ? 14 : 0 }],
           },
-          // Force override inline styles injected by React Native Web
-          { backgroundColor: finalThumbColor + ' !important' } as any,
         ]}
       />
-    </Pressable>
+    </TouchableOpacity>
   );
 };
 
