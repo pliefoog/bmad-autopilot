@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Modal,
   View,
@@ -9,7 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface FactoryResetDialogProps {
   visible: boolean;
@@ -23,6 +23,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   onCancel,
 }) => {
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const handleConfirm = async () => {
     // For mobile platforms, use React Native Alert instead of the modal
@@ -171,7 +172,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     zIndex: 10000, // Higher than hamburger menu to ensure it appears on top
