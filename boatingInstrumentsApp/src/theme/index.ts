@@ -1,17 +1,25 @@
 // Theme System - Complete theme architecture for marine displays
-// Centralized exports for theme provider, utilities, and components
+// Centralized exports for theme utilities and components
+// NOTE: Core theme functionality now in ../store/themeStore
 
-// Core theme provider and hooks
-export { ThemeProvider, useTheme, useThemeColors, useThemeMode, useThemeSpacing, useThemeTypography } from './ThemeProvider';
+// Re-export theme hooks from store (new centralized location)
+export { useTheme, useThemeStore } from '../store/themeStore';
+export type { ThemeColors, ThemeMode } from '../store/themeStore';
 
 // Theme utilities for custom styling
 export { createThemeStyles, createMarineWidgetStyles } from './themeUtils';
 
-// Pre-built themed components
-export { ThemedView, ThemedText, MarineValueDisplay } from './ThemedComponents';
+// Design tokens
+export { designTokens } from './designTokens';
+export { iconSystem } from './iconSystem';
 
-// Demo component
-export { ThemePreview } from './ThemePreview';
+// Legacy compatibility - if needed by old code
+export const useThemeColors = () => {
+  const theme = require('../store/themeStore').useTheme();
+  return theme;
+};
 
-// Theme types (re-export from stores)
-export type { ThemeColors, ThemeMode, ThemeSettings } from '../store/settingsStore';
+export const useThemeMode = () => {
+  const { mode, setMode } = require('../store/themeStore').useThemeStore();
+  return { mode, setMode };
+};
