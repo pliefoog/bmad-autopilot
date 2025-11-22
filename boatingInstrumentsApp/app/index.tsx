@@ -1,6 +1,3 @@
-// Import polyfill first for web builds
-import '../import-meta-polyfill.web.js';
-
 // Import the original boating instruments app
 import App from '../App';
 
