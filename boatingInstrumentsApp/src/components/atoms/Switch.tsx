@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { Switch as RNSwitch, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme, ThemeColors } from '../../store/themeStore';
+import React from 'react';
+import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme } from '../../store/themeStore';
 
 interface SwitchProps {
   value: boolean;
@@ -17,6 +17,10 @@ interface SwitchProps {
   testID?: string;
 }
 
+/**
+ * Custom Switch component using ThemeWidget toggle pattern
+ * Pure View-based implementation that properly respects theme colors
+ */
 const Switch: React.FC<SwitchProps> = ({
   value,
   onValueChange,
@@ -24,53 +28,87 @@ const Switch: React.FC<SwitchProps> = ({
   size = 'medium',
   trackColor,
   thumbColor,
-  ios_backgroundColor,
   style,
   testID,
 }) => {
   const theme = useTheme();
   
-  // Use theme colors as defaults
-  const defaultTrackColor = useMemo(() => ({
-    false: theme.borderLight,
-    true: theme.interactive,
-  }), [theme]);
+  // Size dimensions matching ThemeWidget pattern
+  const dimensions = {
+    small: { width: 32, height: 16, thumbSize: 12, padding: 2 },
+    medium: { width: 36, height: 20, thumbSize: 16, padding: 2 },
+    large: { width: 44, height: 24, thumbSize: 20, padding: 2 },
+  }[size];
   
-  // Use theme.surface for thumb to match ThemeSwitcher pattern
+  // Use theme colors as defaults (matching ThemeWidget)
+  const defaultTrackColorOn = theme.interactive;
+  const defaultTrackColorOff = theme.border;
   const defaultThumbColor = theme.surface;
-  const defaultIosBackgroundColor = theme.borderLight;
-  const switchStyle = [
-    styles.switch,
-    styles[`switch_${size}`],
-    style,
-  ];
+  
+  const finalTrackColor = value 
+    ? (trackColor?.true || defaultTrackColorOn)
+    : (trackColor?.false || defaultTrackColorOff);
+  
+  const finalThumbColor = thumbColor || defaultThumbColor;
+  
+  const handlePress = () => {
+    if (!disabled) {
+      onValueChange(!value);
+    }
+  };
+  
+  // Calculate thumb position (matching ThemeWidget calculation)
+  const thumbTranslateX = value ? (dimensions.width - dimensions.thumbSize - dimensions.padding * 2) : 0;
 
   return (
-    <RNSwitch
-      style={switchStyle}
-      value={value}
-      onValueChange={onValueChange}
+    <TouchableOpacity
+      onPress={handlePress}
       disabled={disabled}
-      trackColor={trackColor || defaultTrackColor}
-      thumbColor={thumbColor || defaultThumbColor}
-      ios_backgroundColor={ios_backgroundColor || defaultIosBackgroundColor}
+      activeOpacity={0.8}
       testID={testID}
-    />
+      style={style}
+    >
+      <View
+        style={[
+          styles.track,
+          {
+            width: dimensions.width,
+            height: dimensions.height,
+            borderRadius: dimensions.height / 2,
+            backgroundColor: finalTrackColor,
+            padding: dimensions.padding,
+            opacity: disabled ? 0.5 : 1,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.thumb,
+            {
+              width: dimensions.thumbSize,
+              height: dimensions.thumbSize,
+              borderRadius: dimensions.thumbSize / 2,
+              backgroundColor: finalThumbColor,
+              transform: [{ translateX: thumbTranslateX }],
+            },
+          ]}
+        />
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  switch: {
-    // Base styles
+  track: {
+    justifyContent: 'center',
   },
-  switch_small: {
-    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-  },
-  switch_medium: {
-    // Default size
-  },
-  switch_large: {
-    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
+  thumb: {
+    // Shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
   },
 });
 
