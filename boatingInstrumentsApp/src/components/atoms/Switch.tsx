@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 interface SwitchProps {
@@ -54,10 +54,9 @@ const Switch: React.FC<SwitchProps> = ({
   };
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={handlePress}
       disabled={disabled}
-      activeOpacity={0.8}
       testID={testID}
       accessibilityRole="none"
       importantForAccessibility="no"
@@ -80,7 +79,7 @@ const Switch: React.FC<SwitchProps> = ({
           },
         ]}
       />
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
