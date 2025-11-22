@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useState } from 'react';
 import { View, Dimensions, Platform, TouchableOpacity } from 'react-native';
 import { WidgetLayout } from '../services/layoutService';
 import { StyleSheet } from 'react-native';
+import { useTheme } from '../store/themeStore';
 
 // Import gesture handler only for mobile platforms
 let PanGestureHandler: any;
@@ -45,10 +46,12 @@ interface ResizeHandleProps {
 }
 
 const ResizeHandle: React.FC<ResizeHandleProps> = ({ widgetId, layout, position, onSizeChange }) => {
+  const theme = useTheme();
+  
   const getHandleStyle = () => {
     const baseStyle = {
       position: 'absolute' as const,
-      backgroundColor: '#06B6D4',
+      backgroundColor: theme.primary,
       borderRadius: 6,
       zIndex: 1001,
     };

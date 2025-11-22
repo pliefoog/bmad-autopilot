@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { View, Dimensions } from 'react-native';
 import { WidgetLayout } from '../services/layoutService';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../store/themeStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GRID_SIZE = 20; // Snap-to-grid size
@@ -25,10 +26,12 @@ interface ResizeHandleProps {
 }
 
 const ResizeHandle: React.FC<ResizeHandleProps> = ({ widgetId, layout, position, onSizeChange }) => {
+  const theme = useTheme();
+  
   const getHandleStyle = () => {
     const baseStyle = {
       position: 'absolute' as const,
-      backgroundColor: '#06B6D4',
+      backgroundColor: theme.primary,
       borderRadius: 6,
       zIndex: 1001,
       cursor: 'pointer' as const,

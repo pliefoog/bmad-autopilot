@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { useTheme } from '../store/themeStore';
 
 const WIDGET_MIN_HEIGHT = 120;
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -10,6 +11,9 @@ export interface LayoutWidget {
 }
 
 export const LayoutManager: React.FC<{ widgets: LayoutWidget[] }> = ({ widgets }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   // For demo: simple vertical drag-and-drop, resizable widgets
   const [sizes, setSizes] = useState<{ [key: string]: { width: number; height: number } }>(
     Object.fromEntries(widgets.map(w => [w.key, { width: SCREEN_WIDTH - 48, height: WIDGET_MIN_HEIGHT }]))
@@ -46,26 +50,26 @@ export const LayoutManager: React.FC<{ widgets: LayoutWidget[] }> = ({ widgets }
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: typeof useTheme extends () => infer R ? R : never) => StyleSheet.create({
   widget: {
     marginBottom: 16,
-    backgroundColor: '#f4f6fa',
+    backgroundColor: theme.surface,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.border,
     position: 'relative',
   },
   resizeBar: {
     height: 18,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: theme.surfaceDim,
     alignItems: 'center',
     justifyContent: 'center',
   },
   resizeHandle: {
     width: 40,
     height: 18,
-    backgroundColor: '#b0b0b0',
+    backgroundColor: theme.borderDark,
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',

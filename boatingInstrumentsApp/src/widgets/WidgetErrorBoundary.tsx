@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import { themeStore, ThemeColors } from '../store/themeStore';
 
 interface Props {
   children: ReactNode;
@@ -49,37 +50,40 @@ export class WidgetErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const theme = themeStore.getState().colors;
+      const dynamicStyles = createStyles(theme);
+      
       return (
-        <View style={styles.errorContainer}>
-          <View style={styles.errorHeader}>
-            <UniversalIcon name="warning-outline" size={32} color="#DC2626" />
-            <Text style={styles.errorTitle}>Widget Error</Text>
+        <View style={dynamicStyles.errorContainer}>
+          <View style={dynamicStyles.errorHeader}>
+            <UniversalIcon name="warning-outline" size={32} color={theme.error} />
+            <Text style={dynamicStyles.errorTitle}>Widget Error</Text>
           </View>
           
-          <Text style={styles.errorWidget}>{this.props.widgetId}</Text>
+          <Text style={dynamicStyles.errorWidget}>{this.props.widgetId}</Text>
           
           {this.state.error && (
-            <Text style={styles.errorMessage} numberOfLines={2}>
+            <Text style={dynamicStyles.errorMessage} numberOfLines={2}>
               {this.state.error.message}
             </Text>
           )}
           
-          <View style={styles.errorActions}>
+          <View style={dynamicStyles.errorActions}>
             <TouchableOpacity 
-              style={[styles.errorButton, styles.reloadButton]} 
+              style={[dynamicStyles.errorButton, dynamicStyles.reloadButton]} 
               onPress={this.handleReload}
             >
-              <UniversalIcon name="refresh-outline" size={16} color="#000000" />
-              <Text style={styles.reloadButtonText}>Reload</Text>
+              <UniversalIcon name="refresh-outline" size={16} color={theme.text} />
+              <Text style={dynamicStyles.reloadButtonText}>Reload</Text>
             </TouchableOpacity>
             
             {this.props.onRemove && (
               <TouchableOpacity 
-                style={[styles.errorButton, styles.removeButton]} 
+                style={[dynamicStyles.errorButton, dynamicStyles.removeButton]} 
                 onPress={this.handleRemove}
               >
-                <UniversalIcon name="close-outline" size={16} color="#000000" />
-                <Text style={styles.removeButtonText}>Remove</Text>
+                <UniversalIcon name="close-outline" size={16} color={theme.text} />
+                <Text style={dynamicStyles.removeButtonText}>Remove</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -91,12 +95,12 @@ export class WidgetErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   errorContainer: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: theme.surfaceDim,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: theme.error,
     padding: 16,
     margin: 8,
     minWidth: 160,
@@ -111,18 +115,18 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#DC2626',
+    color: theme.error,
     marginTop: 4,
   },
   errorWidget: {
     fontSize: 14,
-    color: '#7F1D1D',
+    color: theme.textSecondary,
     marginBottom: 8,
     textAlign: 'center',
   },
   errorMessage: {
     fontSize: 12,
-    color: '#991B1B',
+    color: theme.textTertiary,
     textAlign: 'center',
     marginBottom: 12,
     paddingHorizontal: 8,
@@ -140,18 +144,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   reloadButton: {
-    backgroundColor: '#059669',
+    backgroundColor: theme.success,
   },
   reloadButtonText: {
-    color: '#000000', // Dark text on green button for contrast
+    color: theme.text,
     fontSize: 12,
     fontWeight: 'bold',
   },
   removeButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: theme.error,
   },
   removeButtonText: {
-    color: '#000000', // Dark text on red button for contrast
+    color: theme.surface,
     fontSize: 12,
     fontWeight: 'bold',
   },

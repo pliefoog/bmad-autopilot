@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.borderDark,
     alignSelf: 'center',
     marginTop: 5,
     marginBottom: 8,

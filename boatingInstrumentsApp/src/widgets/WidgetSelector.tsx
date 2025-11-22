@@ -130,10 +130,10 @@ export const WidgetSelector: React.FC<{
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: theme.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 36,
     height: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.borderDark,
     borderRadius: 3,
     alignSelf: 'center',
     marginTop: 5,
@@ -192,14 +192,14 @@ const styles = StyleSheet.create({
     minHeight: 160,
     alignItems: 'center',
     justifyContent: 'center',
-    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 4, 0.2),
+    ...PlatformStyles.boxShadow(theme.shadow, { x: 0, y: 2 }, 4, 0.2),
     position: 'relative',
   },
   cardDimmed: {
     opacity: 0.5,
   },
   cardHighlight: {
-    ...PlatformStyles.boxShadow('#06B6D4', { x: 0, y: 2 }, 4, 0.5),
+    ...PlatformStyles.boxShadow(theme.primary, { x: 0, y: 2 }, 4, 0.5),
   },
   label: {
     fontSize: 15,
