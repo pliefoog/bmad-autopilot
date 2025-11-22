@@ -10,7 +10,7 @@
  * 5. Accessibility features
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface OnboardingScreenProps {
   visible: boolean;
@@ -46,6 +46,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { width } = Dimensions.get('window');
 
   const currentStep = ONBOARDING_STEPS[currentStepIndex];
@@ -95,20 +96,20 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       presentationStyle="fullScreen"
       onRequestClose={handleSkip}
     >
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Header with Skip Button */}
         <View style={styles.header}>
           <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
-              <View style={[styles.progressBar, { width: `${progress}%`, backgroundColor: theme.colors.primary }]} />
+              <View style={[styles.progressBar, { width: `${progress}%`, backgroundColor: theme.primary }]} />
             </View>
-            <Text style={[styles.progressText, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.progressText, { color: theme.textSecondary }]}>
               {currentStepIndex + 1} of {ONBOARDING_STEPS.length}
             </Text>
           </View>
           {!isLastStep && (
             <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-              <Text style={[styles.skipText, { color: theme.colors.primary }]}>Skip</Text>
+              <Text style={[styles.skipText, { color: theme.primary }]}>Skip</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -123,12 +124,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           {!isFirstStep && (
             <TouchableOpacity
               onPress={handleBack}
-              style={[styles.footerButton, styles.backButton, { borderColor: theme.colors.border }]}
+              style={[styles.footerButton, styles.backButton, { borderColor: theme.border }]}
               accessibilityLabel="Go back to previous step"
               accessibilityRole="button"
             >
-              <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
-              <Text style={[styles.footerButtonText, { color: theme.colors.text }]}>Back</Text>
+              <Ionicons name="arrow-back" size={20} color={theme.text} />
+              <Text style={[styles.footerButtonText, { color: theme.text }]}>Back</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -136,7 +137,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             style={[
               styles.footerButton,
               styles.nextButton,
-              { backgroundColor: theme.colors.primary },
+              { backgroundColor: theme.primary },
               isFirstStep && styles.footerButtonFull,
             ]}
             accessibilityLabel={isLastStep ? 'Complete onboarding' : 'Continue to next step'}
@@ -159,12 +160,12 @@ const WelcomeStep: React.FC = () => {
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="boat-outline" size={80} color={theme.colors.primary} />
+        <Ionicons name="boat-outline" size={80} color={theme.primary} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>
         Welcome to BMad Autopilot
       </Text>
-      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
+      <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
         Transform your device into a comprehensive marine display with real-time NMEA data, 
         autopilot control, and critical alarm monitoring.
       </Text>
@@ -183,12 +184,12 @@ const ConnectionStep: React.FC = () => {
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="wifi" size={80} color={theme.colors.primary} />
+        <Ionicons name="wifi" size={80} color={theme.primary} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>
         Connect to Your Boat
       </Text>
-      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
+      <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
         Connect to your marine WiFi bridge to receive real-time NMEA 0183 and NMEA 2000 data 
         from your boat's instruments.
       </Text>
@@ -207,12 +208,12 @@ const WidgetsStep: React.FC = () => {
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="grid-outline" size={80} color={theme.colors.primary} />
+        <Ionicons name="grid-outline" size={80} color={theme.primary} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>
         Customize Your Display
       </Text>
-      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
+      <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
         Add and arrange marine instrument widgets to create your perfect dashboard. 
         Monitor depth, speed, wind, GPS, heading, and more.
       </Text>
@@ -222,7 +223,7 @@ const WidgetsStep: React.FC = () => {
         <WidgetPreview icon="navigate" label="Wind" theme={theme} />
         <WidgetPreview icon="location" label="GPS" theme={theme} />
       </View>
-      <Text style={[styles.tipText, { color: theme.colors.warning }]}>
+      <Text style={[styles.tipText, { color: theme.warning }]}>
         💡 Tap widgets to expand, long-press to pin important ones
       </Text>
     </View>
@@ -234,12 +235,12 @@ const AlarmsStep: React.FC = () => {
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="alert-circle-outline" size={80} color={theme.colors.error} />
+        <Ionicons name="alert-circle-outline" size={80} color={theme.error} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>
         Marine Safety Alarms
       </Text>
-      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
+      <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
         Configure critical alarms to alert you of dangerous conditions. 
         The app monitors depth, engine temperature, battery voltage, and more.
       </Text>
@@ -263,7 +264,7 @@ const AlarmsStep: React.FC = () => {
           theme={theme}
         />
       </View>
-      <Text style={[styles.warningText, { color: theme.colors.error }]}>
+      <Text style={[styles.warningText, { color: theme.error }]}>
         ⚠️ Critical alarms cannot be disabled for safety
       </Text>
     </View>
@@ -275,12 +276,12 @@ const AccessibilityStep: React.FC = () => {
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="accessibility-outline" size={80} color={theme.colors.success} />
+        <Ionicons name="accessibility-outline" size={80} color={theme.success} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>
         Accessible for Everyone
       </Text>
-      <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
+      <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
         Comprehensive accessibility features ensure everyone can use the app safely, 
         including support for screen readers, high contrast, and marine conditions.
       </Text>
@@ -323,8 +324,8 @@ interface FeatureItemProps {
 
 const FeatureItem: React.FC<FeatureItemProps> = ({ icon, text, theme }) => (
   <View style={styles.featureItem}>
-    <Ionicons name={icon as any} size={24} color={theme.colors.primary} />
-    <Text style={[styles.featureText, { color: theme.colors.text }]}>{text}</Text>
+    <Ionicons name={icon as any} size={24} color={theme.primary} />
+    <Text style={[styles.featureText, { color: theme.text }]}>{text}</Text>
   </View>
 );
 
@@ -336,10 +337,10 @@ interface InstructionItemProps {
 
 const InstructionItem: React.FC<InstructionItemProps> = ({ number, text, theme }) => (
   <View style={styles.instructionItem}>
-    <View style={[styles.instructionNumber, { backgroundColor: theme.colors.primary }]}>
+    <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
       <Text style={styles.instructionNumberText}>{number}</Text>
     </View>
-    <Text style={[styles.instructionText, { color: theme.colors.text }]}>{text}</Text>
+    <Text style={[styles.instructionText, { color: theme.text }]}>{text}</Text>
   </View>
 );
 
@@ -350,9 +351,9 @@ interface WidgetPreviewProps {
 }
 
 const WidgetPreview: React.FC<WidgetPreviewProps> = ({ icon, label, theme }) => (
-  <View style={[styles.widgetPreview, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-    <Ionicons name={icon as any} size={32} color={theme.colors.primary} />
-    <Text style={[styles.widgetLabel, { color: theme.colors.text }]}>{label}</Text>
+  <View style={[styles.widgetPreview, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+    <Ionicons name={icon as any} size={32} color={theme.primary} />
+    <Text style={[styles.widgetLabel, { color: theme.text }]}>{label}</Text>
   </View>
 );
 
@@ -364,11 +365,11 @@ interface AlarmItemProps {
 }
 
 const AlarmItem: React.FC<AlarmItemProps> = ({ icon, title, description, theme }) => (
-  <View style={[styles.alarmItem, { backgroundColor: theme.colors.surface }]}>
-    <Ionicons name={icon as any} size={24} color={theme.colors.error} />
+  <View style={[styles.alarmItem, { backgroundColor: theme.surface }]}>
+    <Ionicons name={icon as any} size={24} color={theme.error} />
     <View style={styles.alarmContent}>
-      <Text style={[styles.alarmTitle, { color: theme.colors.text }]}>{title}</Text>
-      <Text style={[styles.alarmDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
+      <Text style={[styles.alarmTitle, { color: theme.text }]}>{title}</Text>
+      <Text style={[styles.alarmDescription, { color: theme.textSecondary }]}>{description}</Text>
     </View>
   </View>
 );
@@ -381,16 +382,16 @@ interface AccessibilityFeatureProps {
 }
 
 const AccessibilityFeature: React.FC<AccessibilityFeatureProps> = ({ icon, title, description, theme }) => (
-  <View style={[styles.accessibilityFeature, { backgroundColor: theme.colors.surface }]}>
-    <Ionicons name={icon as any} size={24} color={theme.colors.success} />
+  <View style={[styles.accessibilityFeature, { backgroundColor: theme.surface }]}>
+    <Ionicons name={icon as any} size={24} color={theme.success} />
     <View style={styles.accessibilityContent}>
-      <Text style={[styles.accessibilityTitle, { color: theme.colors.text }]}>{title}</Text>
-      <Text style={[styles.accessibilityDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
+      <Text style={[styles.accessibilityTitle, { color: theme.text }]}>{title}</Text>
+      <Text style={[styles.accessibilityDescription, { color: theme.textSecondary }]}>{description}</Text>
     </View>
   </View>
 );
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
