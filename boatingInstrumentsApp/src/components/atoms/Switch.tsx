@@ -42,12 +42,12 @@ const Switch: React.FC<SwitchProps> = ({
   
   const finalThumbColor = thumbColor || defaultThumbColor;
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('[Switch] value:', value, 'thumbColor:', finalThumbColor, 'trackColor:', finalTrackColor, 'theme.surface:', theme.surface);
-  }, [value, finalThumbColor, finalTrackColor, theme.surface]);
-  
   const handlePress = () => {
+    console.log('🔴🔴🔴 SWITCH TOGGLED 🔴🔴🔴');
+    console.log('  value:', value, '→', !value);
+    console.log('  theme.surface:', theme.surface);
+    console.log('  finalThumbColor:', finalThumbColor);
+    console.log('  finalTrackColor:', finalTrackColor);
     if (!disabled) {
       onValueChange(!value);
     }
