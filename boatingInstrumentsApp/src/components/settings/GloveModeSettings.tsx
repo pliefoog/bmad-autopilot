@@ -39,7 +39,7 @@ export const GloveModeSettings: React.FC = () => {
           value={gloveMode}
           onValueChange={handleToggle}
           trackColor={{ false: theme.border, true: theme.interactive }}
-          thumbColor={theme.surface}
+          thumbColor="#FFFFFF"
           ios_backgroundColor={theme.border}
         />
       </View>

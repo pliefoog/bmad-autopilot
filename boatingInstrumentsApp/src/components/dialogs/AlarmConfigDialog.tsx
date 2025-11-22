@@ -377,7 +377,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
                       value={isEnabled}
                       onValueChange={(value) => handleQuickToggle(alarm.type, value)}
                       trackColor={{ false: theme.border, true: theme.interactive }}
-                      thumbColor={theme.surface}
+                      thumbColor="#FFFFFF"
                       ios_backgroundColor={theme.border}
                       disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
                     />
@@ -433,7 +433,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
               value={config.enabled}
               onValueChange={(value) => updateConfig({ enabled: value })}
               trackColor={{ false: theme.border, true: theme.interactive }}
-              thumbColor={theme.surface}
+              thumbColor="#FFFFFF"
               ios_backgroundColor={theme.border}
               disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
             />
