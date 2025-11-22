@@ -59,7 +59,8 @@ const Switch: React.FC<SwitchProps> = ({
       disabled={disabled}
       activeOpacity={0.8}
       testID={testID}
-      accessible={false}
+      accessibilityRole="none"
+      importantForAccessibility="no"
       style={[
         styles.toggle,
         {
@@ -70,7 +71,7 @@ const Switch: React.FC<SwitchProps> = ({
       ]}
     >
       <View
-        accessible={false}
+        importantForAccessibility="no"
         style={[
           styles.toggleThumb,
           {
