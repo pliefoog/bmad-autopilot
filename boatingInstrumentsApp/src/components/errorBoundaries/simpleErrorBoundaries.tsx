@@ -3,6 +3,7 @@
 
 import React, { ReactNode, Component, ErrorInfo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface BaseErrorBoundaryState {
   hasError: boolean;
@@ -14,7 +15,100 @@ interface BaseErrorBoundaryProps {
   children: ReactNode;
   fallback?: (error: Error, retry: () => void) => ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  theme?: ThemeColors; // Injected theme
 }
+
+// Themed error fallback component
+const ThemedErrorFallback: React.FC<{
+  error: Error;
+  retry: () => void;
+}> = ({ error, retry }) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorTitle}>Something went wrong</Text>
+      <Text style={styles.errorMessage}>{error.message}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={retry}>
+        <Text style={styles.retryButtonText}>Try Again</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Themed widget error fallback
+const ThemedWidgetErrorFallback: React.FC<{
+  error: Error;
+  retry: () => void;
+  widgetId: string;
+  widgetType: string;
+}> = ({ error, retry, widgetId, widgetType }) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorIcon}>⚠️</Text>
+      <Text style={styles.errorTitle}>Widget Error ({widgetType})</Text>
+      <Text style={styles.errorMessage}>Widget "{widgetId}" encountered an error</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={retry}>
+        <Text style={styles.retryButtonText}>Reload Widget</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Themed connection error fallback
+const ThemedConnectionErrorFallback: React.FC<{
+  error: Error;
+  retry: () => void;
+  connectionType?: string;
+  hostAddress?: string;
+  port?: number;
+}> = ({ error, retry, connectionType, hostAddress, port }) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorIcon}>📡</Text>
+      <Text style={styles.errorTitle}>Connection Error ({connectionType?.toUpperCase() || 'UNKNOWN'})</Text>
+      <Text style={styles.errorMessage}>Failed to connect to NMEA bridge</Text>
+      {hostAddress && (
+        <Text style={styles.errorDetails}>Host: {hostAddress}:{port}</Text>
+      )}
+      <TouchableOpacity style={styles.retryButton} onPress={retry}>
+        <Text style={styles.retryButtonText}>Reconnect</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Themed data error fallback
+const ThemedDataErrorFallback: React.FC<{
+  error: Error;
+  retry: () => void;
+  dataType?: string;
+  sourceId?: string;
+}> = ({ error, retry, dataType, sourceId }) => {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorIcon}>📊</Text>
+      <Text style={styles.errorTitle}>Data Processing Error ({dataType?.toUpperCase() || 'UNKNOWN'})</Text>
+      <Text style={styles.errorMessage}>Failed to process marine data</Text>
+      {sourceId && (
+        <Text style={styles.errorDetails}>Source: {sourceId}</Text>
+      )}
+      <TouchableOpacity style={styles.retryButton} onPress={retry}>
+        <Text style={styles.retryButtonText}>Retry Parsing</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export class SimpleBaseErrorBoundary extends Component<BaseErrorBoundaryProps, BaseErrorBoundaryState> {
   constructor(props: BaseErrorBoundaryProps) {
@@ -36,13 +130,7 @@ export class SimpleBaseErrorBoundary extends Component<BaseErrorBoundaryProps, B
   };
 
   renderDefaultFallback = (error: Error, retry: () => void): ReactNode => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorTitle}>Something went wrong</Text>
-      <Text style={styles.errorMessage}>{error.message}</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={retry}>
-        <Text style={styles.retryButtonText}>Try Again</Text>
-      </TouchableOpacity>
-    </View>
+    <ThemedErrorFallback error={error} retry={retry} />
   );
 
   render() {
@@ -83,14 +171,12 @@ export class SimpleWidgetErrorBoundary extends Component<WidgetErrorBoundaryProp
   };
 
   renderWidgetFallback = (error: Error, retry: () => void): ReactNode => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorIcon}>⚠️</Text>
-      <Text style={styles.errorTitle}>Widget Error ({this.props.widgetType})</Text>
-      <Text style={styles.errorMessage}>Widget "{this.props.widgetId}" encountered an error</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={retry}>
-        <Text style={styles.retryButtonText}>Reload Widget</Text>
-      </TouchableOpacity>
-    </View>
+    <ThemedWidgetErrorFallback 
+      error={error} 
+      retry={retry} 
+      widgetId={this.props.widgetId}
+      widgetType={this.props.widgetType}
+    />
   );
 
   render() {
@@ -129,17 +215,13 @@ export class SimpleConnectionErrorBoundary extends Component<ConnectionErrorBoun
   };
 
   renderConnectionFallback = (error: Error, retry: () => void): ReactNode => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorIcon}>📡</Text>
-      <Text style={styles.errorTitle}>Connection Error ({this.props.connectionType?.toUpperCase() || 'UNKNOWN'})</Text>
-      <Text style={styles.errorMessage}>Failed to connect to NMEA bridge</Text>
-      {this.props.hostAddress && (
-        <Text style={styles.errorDetails}>Host: {this.props.hostAddress}:{this.props.port}</Text>
-      )}
-      <TouchableOpacity style={styles.retryButton} onPress={retry}>
-        <Text style={styles.retryButtonText}>Reconnect</Text>
-      </TouchableOpacity>
-    </View>
+    <ThemedConnectionErrorFallback
+      error={error}
+      retry={retry}
+      connectionType={this.props.connectionType}
+      hostAddress={this.props.hostAddress}
+      port={this.props.port}
+    />
   );
 
   render() {
@@ -177,17 +259,12 @@ export class SimpleDataErrorBoundary extends Component<DataErrorBoundaryProps, B
   };
 
   renderDataFallback = (error: Error, retry: () => void): ReactNode => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorIcon}>📊</Text>
-      <Text style={styles.errorTitle}>Data Processing Error ({this.props.dataType?.toUpperCase() || 'UNKNOWN'})</Text>
-      <Text style={styles.errorMessage}>Failed to process marine data</Text>
-      {this.props.sourceId && (
-        <Text style={styles.errorDetails}>Source: {this.props.sourceId}</Text>
-      )}
-      <TouchableOpacity style={styles.retryButton} onPress={retry}>
-        <Text style={styles.retryButtonText}>Retry Parsing</Text>
-      </TouchableOpacity>
-    </View>
+    <ThemedDataErrorFallback
+      error={error}
+      retry={retry}
+      dataType={this.props.dataType}
+      sourceId={this.props.sourceId}
+    />
   );
 
   render() {
@@ -199,13 +276,13 @@ export class SimpleDataErrorBoundary extends Component<DataErrorBoundaryProps, B
   }
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.surface,
   },
   errorIcon: {
     fontSize: 32,
@@ -214,31 +291,31 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#dc3545',
+    color: theme.error,
     marginBottom: 8,
     textAlign: 'center',
   },
   errorMessage: {
     fontSize: 14,
-    color: '#6c757d',
+    color: theme.textSecondary,
     marginBottom: 8,
     textAlign: 'center',
   },
   errorDetails: {
     fontSize: 12,
-    color: '#6c757d',
+    color: theme.textSecondary,
     marginBottom: 16,
     textAlign: 'center',
     fontFamily: 'monospace',
   },
   retryButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: theme.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
   },
   retryButtonText: {
-    color: '#F3F4F6',
+    color: theme.surface,
     fontSize: 14,
     fontWeight: '600',
   },

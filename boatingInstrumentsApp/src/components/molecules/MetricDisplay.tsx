@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Badge } from '../atoms';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface MetricDisplayProps {
   label: string;
@@ -33,6 +34,9 @@ const MetricDisplay: React.FC<MetricDisplayProps> = ({
   unitStyle,
   testID,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   const formatValue = (val: string | number): string => {
     if (typeof val === 'number') {
       return val.toFixed(precision);
@@ -115,7 +119,7 @@ const MetricDisplay: React.FC<MetricDisplayProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
   },
@@ -136,7 +140,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   label: {
-    color: '#6B7280',
+    color: theme.textSecondary,
     fontWeight: '500',
   },
   label_small: {
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontWeight: '700',
-    color: '#111827',
+    color: theme.text,
   },
   value_small: {
     fontSize: 16,
@@ -167,16 +171,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   value_normal: {
-    color: '#111827',
+    color: theme.text,
   },
   value_warning: {
-    color: '#F59E0B',
+    color: theme.warning,
   },
   value_danger: {
-    color: '#EF4444',
+    color: theme.error,
   },
   unit: {
-    color: '#6B7280',
+    color: theme.textSecondary,
     fontWeight: '500',
   },
   unit_small: {
@@ -190,7 +194,7 @@ const styles = StyleSheet.create({
   },
   trend: {
     fontSize: 14,
-    color: '#6B7280',
+    color: theme.textSecondary,
   },
 });
 

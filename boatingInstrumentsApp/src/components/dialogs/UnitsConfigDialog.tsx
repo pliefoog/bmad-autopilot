@@ -9,7 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
@@ -160,6 +160,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const presentationStore = usePresentationStore();
   const {
     getPresentationForCategory,
@@ -406,7 +407,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.overlay,
     alignSelf: 'center',
     marginTop: 5,
     marginBottom: 8,
