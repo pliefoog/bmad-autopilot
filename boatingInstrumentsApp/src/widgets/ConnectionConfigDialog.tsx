@@ -205,7 +205,6 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
                     value={useTcp}
                     onValueChange={setUseTcp}
                     trackColor={{ false: theme.borderLight, true: theme.interactive }}
-                    thumbColor="#FFFFFF"
                     ios_backgroundColor={theme.borderLight}
                   />
                   <Text style={[styles.toggleLabel, { color: theme.textSecondary }, useTcp && { color: theme.text }]}>TCP</Text>

@@ -34,6 +34,11 @@ const Switch: React.FC<SwitchProps> = ({
 }) => {
   const theme = useTheme();
   
+  // Debug: Verify this web component is being used
+  React.useEffect(() => {
+    console.log('[Switch.web.tsx] Custom web Switch loaded with thumbColor:', thumbColor || '#FFFFFF');
+  }, []);
+  
   // Use theme colors as defaults
   const defaultTrackColor = useMemo(() => ({
     false: theme.borderLight,
@@ -44,6 +49,9 @@ const Switch: React.FC<SwitchProps> = ({
   
   const finalTrackColor = trackColor || defaultTrackColor;
   const finalThumbColor = thumbColor || defaultThumbColor;
+  
+  // Use theme-based thumb color for consistency with other themed components
+  const actualThumbColor = finalThumbColor === '#FFFFFF' ? theme.surface : finalThumbColor;
   
   const currentTrackColor = value ? finalTrackColor.true : finalTrackColor.false;
   
@@ -98,7 +106,7 @@ const Switch: React.FC<SwitchProps> = ({
           {
             width: dimensions.thumbSize,
             height: dimensions.thumbSize,
-            backgroundColor: finalThumbColor,
+            backgroundColor: actualThumbColor,
             transform: [{ translateX: thumbTranslateX }],
           },
         ]}
