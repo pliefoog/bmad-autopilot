@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 36,
     height: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.overlay,
     borderRadius: 3,
     alignSelf: 'center',
     marginTop: 5,
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingVertical: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 193, 7, 0.1)', // Light warning background
+    backgroundColor: theme.surfaceHighlight,
   },
   warningIcon: {
     fontSize: 32,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   finalWarning: {
     marginTop: 16,
     padding: 16,
-    backgroundColor: 'rgba(220, 38, 38, 0.1)', // Light error background
+    backgroundColor: theme.surfaceDim,
     borderRadius: 8,
     alignItems: 'center',
   },

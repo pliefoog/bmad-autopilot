@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   text_colored: {
-    color: '#000000', // Dark text on colored badges for better contrast in all themes
+    color: theme.appBackground, // Dark/light text on colored badges for better contrast in all themes
   },
   text_small: {
     fontSize: 10,

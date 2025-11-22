@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   // Platform-specific shadow styles for depth
   shadowIOS: {
-    shadowColor: '#000000',
+    shadowColor: theme.shadowDark,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   shadowWeb: {
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+    boxShadow: `0px 2px 8px ${theme.shadow}`,
   },
   // Positioning styles
   centeredPosition: {
