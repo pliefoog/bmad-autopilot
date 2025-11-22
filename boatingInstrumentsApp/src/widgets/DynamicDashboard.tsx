@@ -96,19 +96,20 @@ const DynamicWidgetWrapper: React.FC<DynamicWidgetWrapperProps> = ({
   children 
 }) => {
   const theme = useTheme();
+  const wrapperStyles = useMemo(() => createWrapperStyles(theme), [theme]);
   
   // Use simple flexbox with content-based width
   return (
     <View
       style={[
-        styles.dynamicWidget,
+        wrapperStyles.dynamicWidget,
         {
           minHeight: layout.size.height,
         }
       ]}
       key={layout.id}
     >
-      <View style={styles.widgetTouchable}>
+      <View style={wrapperStyles.widgetTouchable}>
         {children}
       </View>
     </View>
@@ -410,6 +411,18 @@ export const DynamicDashboard: React.FC = () => {
   );
 };
 
+const createWrapperStyles = (theme: ThemeColors) => StyleSheet.create({
+  dynamicWidget: {
+    marginRight: 12, // Horizontal spacing
+    marginBottom: 12, // Vertical spacing between rows
+  },
+  widgetTouchable: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+});
+
 const createStyles = (theme: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
@@ -426,15 +439,6 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
-  },
-  dynamicWidget: {
-    marginRight: 12, // Horizontal spacing
-    marginBottom: 12, // Vertical spacing between rows
-  },
-  widgetTouchable: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
   },
   fabContainer: {
     position: 'absolute',
