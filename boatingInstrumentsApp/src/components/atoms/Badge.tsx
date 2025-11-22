@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { useTheme } from '../../store/themeStore';
 
 interface BadgeProps {
   children: string | number;
@@ -20,9 +21,38 @@ const Badge: React.FC<BadgeProps> = ({
   textStyle,
   testID,
 }) => {
+  const theme = useTheme();
+  
+  // Create dynamic styles based on current theme
+  const dynamicStyles = useMemo(() => ({
+    badge_default: {
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    badge_primary: {
+      backgroundColor: theme.primary,
+    },
+    badge_secondary: {
+      backgroundColor: theme.secondary,
+    },
+    badge_success: {
+      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+    },
+    badge_warning: {
+      backgroundColor: theme.warning,
+    },
+    badge_danger: {
+      backgroundColor: theme.error,
+    },
+    text_default: {
+      color: theme.text,
+    },
+  }), [theme]);
+
   const badgeStyle = [
     styles.badge,
-    styles[`badge_${variant}`],
+    dynamicStyles[`badge_${variant}`],
     styles[`badge_${size}`],
     rounded && styles.badge_rounded,
     style,
@@ -30,7 +60,7 @@ const Badge: React.FC<BadgeProps> = ({
 
   const badgeTextStyle = [
     styles.text,
-    styles[`text_${variant}`],
+    variant === 'default' ? dynamicStyles.text_default : styles.text_colored,
     styles[`text_${size}`],
     textStyle,
   ];
@@ -52,26 +82,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badge_default: {
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  badge_primary: {
-    backgroundColor: '#3B82F6',
-  },
-  badge_secondary: {
-    backgroundColor: '#6B7280',
-  },
-  badge_success: {
-    backgroundColor: '#10B981',
-  },
-  badge_warning: {
-    backgroundColor: '#F59E0B',
-  },
-  badge_danger: {
-    backgroundColor: '#EF4444',
-  },
   badge_small: {
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -90,23 +100,8 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: '500',
   },
-  text_default: {
-    color: '#374151',
-  },
-  text_primary: {
-    color: '#FFFFFF',
-  },
-  text_secondary: {
-    color: '#FFFFFF',
-  },
-  text_success: {
-    color: '#FFFFFF',
-  },
-  text_warning: {
-    color: '#FFFFFF',
-  },
-  text_danger: {
-    color: '#FFFFFF',
+  text_colored: {
+    color: '#000000', // Dark text on colored badges for better contrast in all themes
   },
   text_small: {
     fontSize: 10,

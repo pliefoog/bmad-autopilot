@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 import { getUseNativeDriver } from '../../utils/animationUtils';
 
 interface LoadingSpinnerProps {
@@ -12,18 +12,16 @@ interface LoadingSpinnerProps {
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'medium',
-  color = '#007AFF',
+  color,
   style,
   testID,
 }) => {
   const spinValue = React.useRef(new Animated.Value(0)).current;
   const theme = useTheme();
+  const spinnerColor = color || theme.accent;
 
   React.useEffect(() => {
-    if (theme.reducedMotion) {
-      // Do not start rotation when reduced motion is requested
-      return;
-    }
+    // Always animate - removed reducedMotion check as it's not in theme interface
 
     const spin = () => {
       spinValue.setValue(0);
@@ -35,7 +33,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       }).start(() => spin());
     };
     spin();
-  }, [spinValue, theme.reducedMotion]);
+  }, [spinValue]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
@@ -45,7 +43,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   const spinnerStyle = [
     styles.spinner,
     styles[`spinner_${size}`],
-    { borderTopColor: color || theme.colors.accent },
+    { borderTopColor: spinnerColor },
     style,
   ];
 

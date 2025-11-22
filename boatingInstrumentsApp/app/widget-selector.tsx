@@ -1,10 +1,13 @@
-import React from 'react';
+import { useTheme, ThemeColors } from '../src/store/themeStore';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 
 // TODO: This will be fully implemented in Task 7 with actual widget selection
 export default function WidgetSelectorScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const widgets = [
     'Depth', 'Speed', 'Wind', 'GPS', 'Compass', 
@@ -34,10 +37,10 @@ export default function WidgetSelectorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.appBackground,
   },
   scrollContent: {
     padding: 20,
@@ -46,22 +49,24 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: theme.text,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.textSecondary,
     marginBottom: 30,
   },
   widgetOption: {
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     padding: 15,
     marginBottom: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.borderLight,
   },
   widgetText: {
     fontSize: 16,
     fontWeight: '500',
+    color: theme.text,
   },
 });

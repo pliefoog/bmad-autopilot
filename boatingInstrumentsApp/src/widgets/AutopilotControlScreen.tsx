@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import Svg, { Circle, Line, Text as SvgText, Path } from 'react-native-svg';
 import { HelpButton } from '../components/atoms/HelpButton';
 import { Tooltip } from '../components/molecules/Tooltip';
 import { getHelpContent, getRelatedTopics } from '../content/help-content';
+import { useTheme, ThemeColors } from '../store/themeStore';
 
 interface AutopilotControlScreenProps {
   visible: boolean;
@@ -36,6 +37,9 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   visible,
   onClose
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   // Clean sensor data access - NMEA Store v2.0
   const autopilotData = useNmeaStore((state) => state.getSensorData('autopilot', 0));
   const compassData = useNmeaStore((state) => state.getSensorData('compass', 0));
@@ -269,11 +273,11 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
     // Don't reset cumulative tracking - user may try smaller adjustments
   }, []);
 
-  // Status colors based on engagement state
+  // Status colors based on engagement state (theme-aware for marine safety)
   const getStatusColor = () => {
-    if (engaged && active) return '#10b981'; // Green
-    if (engaged && !active) return '#f59e0b'; // Amber
-    return '#6b7280'; // Gray
+    if (engaged && active) return theme.success; // Green in day/night, red in red-night mode
+    if (engaged && !active) return theme.warning; // Amber
+    return theme.textSecondary; // Gray
   };
 
   const getStatusText = () => {
@@ -294,6 +298,26 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const navigateToRelatedTopic = (helpId: string) => {
     setActiveHelpId(helpId);
   };
+
+  // Dynamic theme-aware styles for marine safety compliance
+  const dynamicStyles = useMemo(() => ({
+    headingValueCurrent: {
+      fontSize: 32,
+      fontWeight: 'bold' as const,
+      color: theme.success, // Theme-aware (red in red-night mode)
+      fontFamily: 'monospace',
+    },
+    engageButton: {
+      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+    },
+    confirmEngageButton: {
+      flex: 1,
+      padding: 15,
+      borderRadius: 8,
+      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+      alignItems: 'center' as const,
+    },
+  }), [theme]);
 
   // Get current help content
   const helpContent = activeHelpId ? getHelpContent(activeHelpId) : null;
@@ -337,14 +361,14 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
           {commandError && (
             <View style={styles.errorContainer}>
               <View style={styles.errorMessageContainer}>
-                <UniversalIcon name="warning-outline" size={16} color="#DC2626" />
+                <UniversalIcon name="warning-outline" size={16} color={theme.text} />
                 <Text style={styles.errorText}>{commandError}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setCommandError(null)}
                 style={styles.errorCloseButton}
               >
-                <UniversalIcon name="close-outline" size={16} color="#DC2626" />
+                <UniversalIcon name="close-outline" size={16} color={theme.text} />
               </TouchableOpacity>
             </View>
           )}
@@ -361,7 +385,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
                   cy={90}
                   r={75}
                   fill="none"
-                  stroke="#4b5563"
+                  stroke={theme.border}
                   strokeWidth="2"
                 />
                 {/* North indicator */}
@@ -370,7 +394,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
                   y1={20}
                   x2={90}
                   y2={40}
-                  stroke="#10b981"
+                  stroke={theme.success}
                   strokeWidth="4"
                   strokeLinecap="round"
                 />
@@ -378,7 +402,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
                   x={90}
                   y={18}
                   fontSize="14"
-                  fill="#fff"
+                  fill={theme.text}
                   textAnchor="middle"
                   fontWeight="bold"
                 >
@@ -391,7 +415,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
             <View style={styles.headingValues}>
               <View style={styles.headingValue}>
                 <Text style={styles.headingValueLabel}>CURRENT</Text>
-                <Text style={styles.headingValueCurrent}>{Math.round(currentHeading)}°</Text>
+                <Text style={dynamicStyles.headingValueCurrent}>{Math.round(currentHeading)}°</Text>
               </View>
               <View style={styles.headingValue}>
                 <Text style={styles.headingValueLabel}>TARGET</Text>
@@ -406,7 +430,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
             <View style={styles.primaryControlRow}>
               {!engaged ? (
                 <TouchableOpacity
-                  style={[styles.primaryButton, styles.engageButton]}
+                  style={[styles.primaryButton, dynamicStyles.engageButton]}
                   onPress={handleEngageRequest}
                   disabled={isCommandPending}
                   activeOpacity={0.7}
@@ -510,7 +534,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.confirmEngageButton}
+                  style={dynamicStyles.confirmEngageButton}
                   onPress={handleEngageConfirm}
                   activeOpacity={0.7}
                 >
@@ -548,7 +572,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.confirmEngageButton}
+                  style={dynamicStyles.confirmEngageButton}
                   onPress={handleLargeChangeConfirm}
                   activeOpacity={0.7}
                 >
@@ -578,15 +602,16 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+// Theme-aware style factory
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: theme.surface,
   },
   dragHandle: {
     width: 36,
     height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: theme.overlay,
     borderRadius: 3,
     alignSelf: 'center',
     marginTop: 5,
@@ -599,14 +624,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: theme.border,
   },
   headerButton: {
     padding: 8,
     minWidth: 60,
   },
   headerButtonText: {
-    color: '#007AFF',
+    color: theme.primary,
     fontSize: 17,
     fontWeight: '400',
   },
@@ -617,7 +642,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#fff',
+    color: theme.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -631,7 +656,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.surfaceDim,
     padding: 15,
     borderRadius: 8,
   },
@@ -647,11 +672,11 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
   },
   modeText: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: theme.textSecondary,
     marginTop: 2,
   },
 
@@ -660,7 +685,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#dc2626',
+    backgroundColor: theme.error,
     borderRadius: 8,
     padding: 12,
     marginBottom: 15,
@@ -675,7 +700,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
   },
   errorCloseButton: {
     width: 24,
@@ -687,7 +712,7 @@ const styles = StyleSheet.create({
   errorCloseText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
   },
 
   // Heading Display
@@ -698,7 +723,7 @@ const styles = StyleSheet.create({
   headingLabel: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#9ca3af',
+    color: theme.textSecondary,
     marginBottom: 15,
     letterSpacing: 1,
   },
@@ -717,20 +742,20 @@ const styles = StyleSheet.create({
   },
   headingValueLabel: {
     fontSize: 12,
-    color: '#6b7280',
+    color: theme.textTertiary,
     marginBottom: 8,
     fontWeight: '600',
   },
   headingValueCurrent: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#10b981',
+    color: theme.text,
     fontFamily: 'monospace',
   },
   headingValueTarget: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#f59e0b',
+    color: theme.warning,
     fontFamily: 'monospace',
   },
 
@@ -749,28 +774,28 @@ const styles = StyleSheet.create({
     minHeight: 70,
   },
   engageButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: theme.interactive,
   },
   standbyButton: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: theme.warning,
   },
   primaryButtonText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
     letterSpacing: 1,
   },
 
   // Adjustment Grid
   adjustmentGrid: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.surfaceDim,
     padding: 20,
     borderRadius: 12,
   },
   adjustmentLabel: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#9ca3af',
+    color: theme.textSecondary,
     marginBottom: 15,
     letterSpacing: 1,
     textAlign: 'center',
@@ -786,7 +811,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
-    backgroundColor: '#3b82f6',
+    backgroundColor: theme.interactive,
     minHeight: 60,
   },
   adjustButtonLarge: {
@@ -798,7 +823,7 @@ const styles = StyleSheet.create({
   adjustButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
     fontFamily: 'monospace',
   },
 
@@ -806,10 +831,10 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: theme.border,
   },
   emergencyButton: {
-    backgroundColor: '#dc2626',
+    backgroundColor: theme.error,
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
@@ -819,19 +844,19 @@ const styles = StyleSheet.create({
   emergencyButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
     letterSpacing: 1,
   },
 
   // Confirmation Modal
   confirmationOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: theme.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
   },
   confirmationDialog: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: theme.surfaceDim,
     borderRadius: 16,
     padding: 30,
     margin: 20,
@@ -841,20 +866,20 @@ const styles = StyleSheet.create({
   confirmationTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.text,
     marginBottom: 15,
     textAlign: 'center',
   },
   confirmationMessage: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: theme.textSecondary,
     marginBottom: 15,
     textAlign: 'center',
     lineHeight: 24,
   },
   confirmationDetails: {
     fontSize: 14,
-    color: '#6b7280',
+    color: theme.textTertiary,
     marginBottom: 25,
     textAlign: 'center',
     fontWeight: '500',
@@ -867,11 +892,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 8,
-    backgroundColor: '#3b3b3b',
+    backgroundColor: theme.surfaceHighlight,
     alignItems: 'center',
   },
   confirmCancelText: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -879,11 +904,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 8,
-    backgroundColor: '#10b981',
+    backgroundColor: theme.interactive,
     alignItems: 'center',
   },
   confirmEngageText: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: '600',
   },

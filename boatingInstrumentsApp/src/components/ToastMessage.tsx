@@ -148,13 +148,13 @@ const getToastBackgroundStyle = (type: 'error' | 'warning' | 'success', theme: a
 const getToastTextStyle = (type: 'error' | 'warning' | 'success', theme: any) => {
   switch (type) {
     case 'error':
-      return { color: '#FFFFFF' }; // AC 11: White text on red
+      return { color: theme.text }; // Theme-aware text on error background
     case 'warning':
-      return { color: theme.text }; // AC 12: Dark text on orange
+      return { color: theme.text }; // Theme-aware text on warning background
     case 'success':
-      return { color: '#FFFFFF' }; // AC 13: White text on green
+      return { color: theme.text }; // Theme-aware text on success background
     default:
-      return { color: '#FFFFFF' };
+      return { color: theme.text };
   }
 };
 

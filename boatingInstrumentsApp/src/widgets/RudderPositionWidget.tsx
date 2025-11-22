@@ -137,7 +137,7 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
       borderWidth: 1,
       borderColor: rudderState === 'alarm' ? theme.error :
                    rudderState === 'warning' ? theme.warning :
-                   '#E5E7EB',
+                   theme.border,
       padding: 16,
       marginBottom: 8,
     },
@@ -279,7 +279,7 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
       <Polygon
         points={`${center},5 ${center-15},${size-10} ${center+15},${size-10}`}
         fill="none"
-        stroke={theme.border || '#E5E7EB'}
+        stroke={theme.border}
         strokeWidth="2"
       />
       
@@ -306,8 +306,8 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
       />
       
       {/* Angle reference marks */}
-      <Line x1={center-20} y1={center+10} x2={center-15} y2={center+10} stroke={theme.border || '#E5E7EB'} strokeWidth="1" />
-      <Line x1={center+15} y1={center+10} x2={center+20} y2={center+10} stroke={theme.border || '#E5E7EB'} strokeWidth="1" />
+      <Line x1={center-20} y1={center+10} x2={center-15} y2={center+10} stroke={theme.border} strokeWidth="1" />
+      <Line x1={center+15} y1={center+10} x2={center+20} y2={center+10} stroke={theme.border} strokeWidth="1" />
       
       {/* Port/Starboard labels */}
       <SvgText 

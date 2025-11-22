@@ -22,10 +22,73 @@ interface MeasurementKey {
 }
 
 /**
+ * LRU Cache for font measurements with performance tracking
+ */
+class LRUMeasurementCache {
+  private cache = new Map<string, FontMetrics>();
+  private accessOrder: string[] = [];
+  private maxSize = 500;
+  private hits = 0;
+  private misses = 0;
+
+  get(key: string): FontMetrics | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      this.hits++;
+      this.updateAccessOrder(key);
+      return value;
+    }
+    this.misses++;
+    return undefined;
+  }
+
+  set(key: string, value: FontMetrics): void {
+    // Evict oldest entry if at capacity
+    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+      const oldestKey = this.accessOrder.shift();
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
+    }
+
+    this.cache.set(key, value);
+    this.updateAccessOrder(key);
+  }
+
+  private updateAccessOrder(key: string): void {
+    const index = this.accessOrder.indexOf(key);
+    if (index > -1) {
+      this.accessOrder.splice(index, 1);
+    }
+    this.accessOrder.push(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+    this.accessOrder = [];
+    this.hits = 0;
+    this.misses = 0;
+  }
+
+  getStats() {
+    const totalRequests = this.hits + this.misses;
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: totalRequests > 0 ? this.hits / totalRequests : 0,
+      memoryEstimate: this.cache.size * 100, // Rough estimate: ~100 bytes per entry
+      keys: Array.from(this.cache.keys()), // For debugging/testing
+    };
+  }
+}
+
+/**
  * Font Measurement Service with platform-specific implementations and aggressive caching
  */
 export class FontMeasurementService {
-  private static measurementCache = new Map<string, FontMetrics>();
+  private static measurementCache = new LRUMeasurementCache();
   private static canvas: HTMLCanvasElement | null = null;
   private static canvasContext: CanvasRenderingContext2D | null = null;
 
@@ -91,31 +154,32 @@ export class FontMeasurementService {
    * Measure text with caching - main public interface
    */
   static measureText(
-    text: string, 
-    fontSize: number, 
-    fontFamily: string = 'system', 
+    text: string,
+    fontSize: number,
+    fontFamily: string = 'system',
     fontWeight: string = 'normal'
   ): FontMetrics {
     const key: MeasurementKey = { text, fontSize, fontFamily, fontWeight };
     const cacheKey = this.getCacheKey(key);
-    
+
     // Check cache first
-    if (this.measurementCache.has(cacheKey)) {
-      return this.measurementCache.get(cacheKey)!;
+    const cachedMetrics = this.measurementCache.get(cacheKey);
+    if (cachedMetrics !== undefined) {
+      return cachedMetrics;
     }
-    
+
     // Measure based on platform
     let metrics: FontMetrics;
-    
+
     if (Platform.OS === 'web') {
       metrics = this.measureTextWeb(key);
     } else {
       metrics = this.measureTextNative(key);
     }
-    
+
     // Cache result
     this.measurementCache.set(cacheKey, metrics);
-    
+
     return metrics;
   }
 
@@ -159,11 +223,21 @@ export class FontMeasurementService {
     
     // Add pattern-based test strings for worst-case scenarios
     if (format.pattern === 'xxx.x') {
-      testStrings.push('999.9', '000.0', '123.4');
+      testStrings.push('999.9', '000.0', '123.4', '-99.9');
     } else if (format.pattern === 'xxxx.x') {
       testStrings.push('9999.9', '0000.0', '1234.5');
     } else if (format.pattern === 'xxx') {
-      testStrings.push('999', '000', '123');
+      testStrings.push('999', '000', '123', '-99');
+    } else if (format.pattern.includes('°') && format.pattern.includes('′')) {
+      // Coordinate patterns (DDM, DMS)
+      testStrings.push(
+        "179° 59.999′ W",
+        "89° 59.999′ S",
+        "0° 0.000′ N"
+      );
+    } else if (format.pattern.includes('°')) {
+      // Angle patterns (degrees only)
+      testStrings.push('359°', '0°', '180°');
     }
     
     // Measure all test strings and find maximum width
@@ -186,13 +260,10 @@ export class FontMeasurementService {
   }
 
   /**
-   * Get cache statistics (for debugging)
+   * Get cache statistics (for debugging and performance monitoring)
    */
-  static getCacheStats(): { size: number; keys: string[] } {
-    return {
-      size: this.measurementCache.size,
-      keys: Array.from(this.measurementCache.keys())
-    };
+  static getCacheStats() {
+    return this.measurementCache.getStats();
   }
 
   /**

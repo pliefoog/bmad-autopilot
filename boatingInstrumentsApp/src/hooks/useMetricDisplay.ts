@@ -6,11 +6,10 @@
  */
 
 import { useMemo } from 'react';
-import { useSettingsStore } from '../store/settingsStore';
+import { useCurrentPresentation } from '../presentation/presentationStore';
 import { MetricDisplayData, MetricDisplayOptions } from '../types/MetricDisplayData';
 import { 
-  PRESENTATIONS, 
-  findPresentation, 
+  PRESENTATIONS,
   getDefaultPresentation 
 } from '../presentation/presentations';
 import { DataCategory } from '../presentation/categories';
@@ -25,7 +24,8 @@ export function useMetricDisplay(
   mnemonic?: string,
   options?: MetricDisplayOptions
 ): MetricDisplayData {
-  const { units } = useSettingsStore();
+  // Story 9.6: Get presentation directly from presentation store (reactive)
+  const presentation = useCurrentPresentation(category);
   
   return useMemo(() => {
     // Handle invalid inputs
@@ -33,27 +33,17 @@ export function useMetricDisplay(
       return createInvalidMetricDisplay(category, mnemonic, 'Invalid or missing value');
     }
 
-    // Get current unit preference from settings
-    const unitPreference = getUnitPreferenceForCategory(category, units);
+    // Use current presentation from store, fallback to default
+    const activePresentation = presentation || getDefaultPresentation(category);
     
-    // Find presentation based on preference or options
-    let presentation = options?.presentationId 
-      ? findPresentation(category, options.presentationId)
-      : findPresentation(category, unitPreference);
-    
-    // Fall back to default if not found
-    if (!presentation) {
-      presentation = getDefaultPresentation(category);
-    }
-    
-    if (!presentation) {
+    if (!activePresentation) {
       return createInvalidMetricDisplay(category, mnemonic, `No presentation found for category: ${category}`);
     }
 
     try {
-      // Convert and format the value
-      const convertedValue = presentation.convert(rawValue);
-      const formattedValue = presentation.format(convertedValue);
+      // Convert and format the value with optional metadata
+      const convertedValue = activePresentation.convert(rawValue);
+      const formattedValue = activePresentation.format(convertedValue, options?.metadata);
       
       // Calculate optimal width for layout stability
       const fontSize = options?.fontSize || 16;
@@ -61,16 +51,16 @@ export function useMetricDisplay(
       const fontWeight = options?.fontWeight || 'normal';
       
       const minWidth = FontMeasurementService.calculateOptimalWidth(
-        presentation.formatSpec,
+        activePresentation.formatSpec,
         fontSize,
         fontFamily,
         fontWeight
       );
 
       return {
-        mnemonic: mnemonic || presentation.symbol,
+        mnemonic: mnemonic || activePresentation.symbol,
         value: formattedValue,
-        unit: presentation.name,
+        unit: activePresentation.symbol, // Use symbol (DD, DDM, DMS) not full name
         rawValue,
         layout: {
           minWidth,
@@ -78,13 +68,13 @@ export function useMetricDisplay(
           fontSize
         },
         presentation: {
-          id: presentation.id,
-          name: presentation.name,
-          pattern: presentation.formatSpec.pattern
+          id: activePresentation.id,
+          name: activePresentation.name,
+          pattern: activePresentation.formatSpec.pattern
         },
         status: {
           isValid: true,
-          isFallback: false
+          isFallback: !presentation // Mark as fallback if using default
         }
       };
       
@@ -95,45 +85,7 @@ export function useMetricDisplay(
         `Conversion error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
-  }, [category, rawValue, mnemonic, units, options]);
-}
-
-/**
- * Get unit preference for a data category from settings
- */
-function getUnitPreferenceForCategory(
-  category: DataCategory, 
-  units: any
-): string {
-  switch (category) {
-    case 'depth':
-      const depthUnit = units.depth;
-      return depthUnit === 'meters' ? 'm_1' :
-             depthUnit === 'feet' ? 'ft_1' :
-             depthUnit === 'fathoms' ? 'fth_1' : 'm_1';
-             
-    case 'speed':
-      const speedUnit = units.speed;
-      return speedUnit === 'knots' ? 'kts_1' :
-             speedUnit === 'kmh' ? 'kmh_1' :
-             speedUnit === 'mph' ? 'mph_1' : 'kts_1';
-             
-    case 'wind':
-      const windUnit = units.wind;
-      return windUnit === 'knots' ? 'wind_kts_1' :
-             windUnit === 'beaufort' ? 'bf_desc' :
-             windUnit === 'kmh' ? 'kmh_0' : 'wind_kts_1';
-             
-    case 'temperature':
-      const tempUnit = units.temperature;
-      return tempUnit === 'celsius' ? 'c_1' :
-             tempUnit === 'fahrenheit' ? 'f_1' : 'c_1';
-             
-    default:
-      // Return first available presentation for unknown categories
-      const presentations = PRESENTATIONS[category]?.presentations;
-      return presentations?.[0]?.id || 'unknown';
-  }
+  }, [category, rawValue, mnemonic, presentation, options]);
 }
 
 /**

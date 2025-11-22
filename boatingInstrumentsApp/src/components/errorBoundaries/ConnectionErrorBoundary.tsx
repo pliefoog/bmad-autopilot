@@ -4,6 +4,8 @@
 import React, { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BaseErrorBoundary, CustomErrorInfo, ErrorBoundaryProps } from './BaseErrorBoundary';
+import { ThemeColors } from '../../store/themeStore';
+import { themeStore } from '../../store/themeStore';
 
 export interface ConnectionErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'category'> {
   connectionId?: string;
@@ -155,18 +157,19 @@ export class ConnectionErrorBoundary extends React.Component<ConnectionErrorBoun
   private renderConnectionFallback = (error: ConnectionErrorInfo, retry: () => void): ReactNode => {
     const { enableAutoReconnect = true, connectionType = 'unknown' } = this.props;
     const diagnostics = error.diagnostics || {};
+    const theme = themeStore.getState().theme;
 
     return (
-      <View style={styles.connectionErrorContainer}>
-        <View style={styles.connectionErrorHeader}>
-          <Text style={styles.connectionErrorIcon}>📡</Text>
-          <Text style={styles.connectionErrorTitle}>
+      <View style={styles(theme).connectionErrorContainer}>
+        <View style={styles(theme).connectionErrorHeader}>
+          <Text style={styles(theme).connectionErrorIcon}>📡</Text>
+          <Text style={styles(theme).connectionErrorTitle}>
             Connection Error ({connectionType.toUpperCase()})
           </Text>
         </View>
 
-        <View style={styles.connectionErrorBody}>
-          <Text style={styles.connectionErrorMessage}>
+        <View style={styles(theme).connectionErrorBody}>
+          <Text style={styles(theme).connectionErrorMessage}>
             {error.severity === 'high'
               ? 'Unable to establish connection to the NMEA bridge. Please check your network settings.'
               : 'Connection temporarily interrupted. The system is attempting to reconnect.'
@@ -174,88 +177,88 @@ export class ConnectionErrorBoundary extends React.Component<ConnectionErrorBoun
           </Text>
 
           {error.networkDetails && (
-            <View style={styles.networkInfo}>
-              <Text style={styles.networkTitle}>Connection Details:</Text>
+            <View style={styles(theme).networkInfo}>
+              <Text style={styles(theme).networkTitle}>Connection Details:</Text>
               {error.networkDetails.host && (
-                <Text style={styles.networkText}>Host: {error.networkDetails.host}</Text>
+                <Text style={styles(theme).networkText}>Host: {error.networkDetails.host}</Text>
               )}
               {error.networkDetails.port && (
-                <Text style={styles.networkText}>Port: {error.networkDetails.port}</Text>
+                <Text style={styles(theme).networkText}>Port: {error.networkDetails.port}</Text>
               )}
-              <Text style={styles.networkText}>Type: {connectionType}</Text>
+              <Text style={styles(theme).networkText}>Type: {connectionType}</Text>
             </View>
           )}
 
-          <View style={styles.diagnosticsInfo}>
-            <Text style={styles.diagnosticsTitle}>Network Diagnostics:</Text>
-            <View style={styles.diagnosticRow}>
-              <Text style={styles.diagnosticLabel}>Network Reachable:</Text>
-              <Text style={[styles.diagnosticValue, diagnostics.pingResult ? styles.success : styles.error]}>
+          <View style={styles(theme).diagnosticsInfo}>
+            <Text style={styles(theme).diagnosticsTitle}>Network Diagnostics:</Text>
+            <View style={styles(theme).diagnosticRow}>
+              <Text style={styles(theme).diagnosticLabel}>Network Reachable:</Text>
+              <Text style={[styles(theme).diagnosticValue, diagnostics.pingResult ? styles(theme).success : styles(theme).error]}>
                 {diagnostics.pingResult ? '✓' : '✗'}
               </Text>
             </View>
-            <View style={styles.diagnosticRow}>
-              <Text style={styles.diagnosticLabel}>DNS Resolution:</Text>
-              <Text style={[styles.diagnosticValue, diagnostics.dnsResolution ? styles.success : styles.error]}>
+            <View style={styles(theme).diagnosticRow}>
+              <Text style={styles(theme).diagnosticLabel}>DNS Resolution:</Text>
+              <Text style={[styles(theme).diagnosticValue, diagnostics.dnsResolution ? styles(theme).success : styles(theme).error]}>
                 {diagnostics.dnsResolution ? '✓' : '✗'}
               </Text>
             </View>
-            <View style={styles.diagnosticRow}>
-              <Text style={styles.diagnosticLabel}>Port Accessible:</Text>
-              <Text style={[styles.diagnosticValue, diagnostics.portAccessible ? styles.success : styles.error]}>
+            <View style={styles(theme).diagnosticRow}>
+              <Text style={styles(theme).diagnosticLabel}>Port Accessible:</Text>
+              <Text style={[styles(theme).diagnosticValue, diagnostics.portAccessible ? styles(theme).success : styles(theme).error]}>
                 {diagnostics.portAccessible ? '✓' : '✗'}
               </Text>
             </View>
             {diagnostics.firewallIssue && (
-              <View style={styles.diagnosticRow}>
-                <Text style={styles.diagnosticLabel}>Firewall Issue:</Text>
-                <Text style={[styles.diagnosticValue, styles.warning]}>⚠️</Text>
+              <View style={styles(theme).diagnosticRow}>
+                <Text style={styles(theme).diagnosticLabel}>Firewall Issue:</Text>
+                <Text style={[styles(theme).diagnosticValue, styles(theme).warning]}>⚠️</Text>
               </View>
             )}
           </View>
 
           {__DEV__ && (
-            <View style={styles.connectionDebugInfo}>
-              <Text style={styles.debugTitle}>Debug Info:</Text>
-              <Text style={styles.debugText}>Severity: {error.severity}</Text>
-              <Text style={styles.debugText}>Message: {error.message}</Text>
+            <View style={styles(theme).connectionDebugInfo}>
+              <Text style={styles(theme).debugTitle}>Debug Info:</Text>
+              <Text style={styles(theme).debugText}>Severity: {error.severity}</Text>
+              <Text style={styles(theme).debugText}>Message: {error.message}</Text>
               {error.connectionId && (
-                <Text style={styles.debugText}>Connection ID: {error.connectionId}</Text>
+                <Text style={styles(theme).debugText}>Connection ID: {error.connectionId}</Text>
               )}
             </View>
           )}
         </View>
 
-        <View style={styles.connectionErrorActions}>
+        <View style={styles(theme).connectionErrorActions}>
           <TouchableOpacity 
-            style={styles.reconnectButton} 
+            style={styles(theme).reconnectButton} 
             onPress={this.handleReconnect}
           >
-            <Text style={styles.reconnectButtonText}>Reconnect</Text>
+            <Text style={styles(theme).reconnectButtonText}>Reconnect</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.resetButton} 
+            style={styles(theme).resetButton} 
             onPress={this.handleConnectionReset}
           >
-            <Text style={styles.resetButtonText}>Reset Connection</Text>
+            <Text style={styles(theme).resetButtonText}>Reset Connection</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.fallbackButton} 
+            style={styles(theme).fallbackButton} 
             onPress={this.handleFallbackMode}
           >
-            <Text style={styles.fallbackButtonText}>Offline Mode</Text>
+            <Text style={styles(theme).fallbackButtonText}>Offline Mode</Text>
           </TouchableOpacity>
         </View>
 
         {error.severity === 'high' && (
-          <View style={styles.troubleshootingTips}>
-            <Text style={styles.tipsTitle}>Troubleshooting Tips:</Text>
-            <Text style={styles.tipText}>• Check WiFi connection</Text>
-            <Text style={styles.tipText}>• Verify NMEA bridge is powered on</Text>
-            <Text style={styles.tipText}>• Ensure bridge and device are on same network</Text>
-            <Text style={styles.tipText}>• Check firewall settings</Text>
+          <View style={styles(theme).troubleshootingTips}>
+            <Text style={styles(theme).tipsTitle}>Troubleshooting Tips:</Text>
+            <Text style={styles(theme).tipText}>• Check WiFi connection</Text>
+            <Text style={styles(theme).tipText}>• Verify NMEA bridge is powered on</Text>
+            <Text style={styles(theme).tipText}>• Ensure bridge and device are on same network</Text>
+            <Text style={styles(theme).tipText}>• Check firewall settings</Text>
           </View>
         )}
       </View>
@@ -271,11 +274,11 @@ export class ConnectionErrorBoundary extends React.Component<ConnectionErrorBoun
   }
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: ThemeColors) => StyleSheet.create({
   connectionErrorContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.appBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -290,7 +293,7 @@ const styles = StyleSheet.create({
   connectionErrorTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#dc3545',
+    color: theme.error,
     textAlign: 'center',
   },
   connectionErrorBody: {
@@ -299,13 +302,13 @@ const styles = StyleSheet.create({
   },
   connectionErrorMessage: {
     fontSize: 14,
-    color: '#6c757d',
+    color: theme.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 16,
   },
   networkInfo: {
-    backgroundColor: '#e9ecef',
+    backgroundColor: theme.surfaceDim,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
@@ -313,27 +316,27 @@ const styles = StyleSheet.create({
   networkTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 6,
   },
   networkText: {
     fontSize: 11,
-    color: '#6c757d',
+    color: theme.textSecondary,
     fontFamily: 'monospace',
     marginBottom: 2,
   },
   diagnosticsInfo: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.appBackground,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: theme.borderLight,
   },
   diagnosticsTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 8,
   },
   diagnosticRow: {
@@ -344,23 +347,23 @@ const styles = StyleSheet.create({
   },
   diagnosticLabel: {
     fontSize: 11,
-    color: '#6c757d',
+    color: theme.textSecondary,
   },
   diagnosticValue: {
     fontSize: 12,
     fontWeight: 'bold',
   },
   success: {
-    color: '#28a745',
+    color: theme.success,
   },
   error: {
-    color: '#dc3545',
+    color: theme.error,
   },
   warning: {
-    color: '#ffc107',
+    color: theme.warning,
   },
   connectionDebugInfo: {
-    backgroundColor: '#f1f3f4',
+    backgroundColor: theme.surfaceDim,
     padding: 12,
     borderRadius: 6,
     marginTop: 8,
@@ -368,12 +371,12 @@ const styles = StyleSheet.create({
   debugTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 6,
   },
   debugText: {
     fontSize: 10,
-    color: '#6c757d',
+    color: theme.textSecondary,
     fontFamily: 'monospace',
     marginBottom: 3,
   },
@@ -382,56 +385,56 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   reconnectButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: theme.interactive,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
   },
   reconnectButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
   },
   resetButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: theme.success,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   resetButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 12,
     fontWeight: '600',
   },
   fallbackButton: {
-    backgroundColor: '#6c757d',
+    backgroundColor: theme.textSecondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   fallbackButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 12,
     fontWeight: '600',
   },
   troubleshootingTips: {
-    backgroundColor: '#fff3cd',
+    backgroundColor: theme.surfaceHighlight,
     padding: 12,
     borderRadius: 6,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#ffeaa7',
+    borderColor: theme.warning,
     alignSelf: 'stretch',
   },
   tipsTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#856404',
+    color: theme.warning,
     marginBottom: 6,
   },
   tipText: {
     fontSize: 11,
-    color: '#856404',
+    color: theme.warning,
     marginBottom: 3,
     paddingLeft: 4,
   },

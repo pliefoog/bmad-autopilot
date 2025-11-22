@@ -29,8 +29,8 @@ export interface Presentation {
   // Conversion from base unit to display unit
   convert: (baseValue: number) => number;
   
-  // Format the converted value for display  
-  format: (convertedValue: number) => string;
+  // Format the converted value for display with optional metadata
+  format: (convertedValue: number, metadata?: { isLatitude?: boolean; [key: string]: any }) => string;
   
   // Reverse conversion for input/settings
   convertBack: (displayValue: number) => number;
@@ -500,13 +500,20 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     symbol: 'DD',
     description: 'Decimal degrees with 6 decimal places',
     convert: (degrees: number) => degrees,
-    format: (deg: number) => deg.toFixed(6),
+    format: (deg: number, metadata?: { isLatitude?: boolean }) => {
+      const absValue = Math.abs(deg);
+      if (metadata?.isLatitude !== undefined) {
+        const direction = deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : (metadata.isLatitude ? 'S' : 'W');
+        return `${absValue.toFixed(6)}° ${direction}`;
+      }
+      return deg.toFixed(6); // Fallback without hemisphere
+    },
     convertBack: (deg: number) => deg,
     formatSpec: {
-      pattern: 'xxx.xxxxxx',
+      pattern: 'xxx.xxxxxx° X',
       decimals: 6,
-      minWidth: 10,
-      testCases: { min: -180.000000, max: 180.000000, typical: -73.123456 }
+      minWidth: 14,
+      testCases: { min: 0.000000, max: 180.000000, typical: 73.123456 }
     },
     isDefault: true,
     isNautical: true,
@@ -518,18 +525,24 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     symbol: 'DDM',
     description: 'Degrees and decimal minutes format',
     convert: (degrees: number) => degrees,
-    format: (deg: number) => {
-      const d = Math.floor(Math.abs(deg));
-      const m = (Math.abs(deg) - d) * 60;
-      const sign = deg < 0 ? '-' : '';
-      return `${sign}${d}°${m.toFixed(3)}'`;
+    format: (deg: number, metadata?: { isLatitude?: boolean }) => {
+      const absValue = Math.abs(deg);
+      const d = Math.floor(absValue);
+      const m = (absValue - d) * 60;
+      const baseFormat = `${d}° ${m.toFixed(3).padStart(6, '0')}′`;
+      
+      if (metadata?.isLatitude !== undefined) {
+        const direction = deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : (metadata.isLatitude ? 'S' : 'W');
+        return `${baseFormat} ${direction}`;
+      }
+      return deg < 0 ? `-${baseFormat}` : baseFormat;
     },
     convertBack: (deg: number) => deg,
     formatSpec: {
-      pattern: "xxx°xx.xxx'",
+      pattern: "xxx° xx.xxx′ X",
       decimals: 3,
-      minWidth: 10,
-      testCases: { min: -180, max: 180, typical: -73.5 }
+      minWidth: 15,
+      testCases: { min: 0, max: 180, typical: 73.5 }
     },
     isNautical: true,
     preferredInRegion: ['eu', 'us', 'uk']
@@ -540,23 +553,50 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     symbol: 'DMS',
     description: 'Degrees, minutes, and seconds format',
     convert: (degrees: number) => degrees,
-    format: (deg: number) => {
-      const d = Math.floor(Math.abs(deg));
-      const minTotal = (Math.abs(deg) - d) * 60;
+    format: (deg: number, metadata?: { isLatitude?: boolean }) => {
+      const absValue = Math.abs(deg);
+      const d = Math.floor(absValue);
+      const minTotal = (absValue - d) * 60;
       const m = Math.floor(minTotal);
       const s = (minTotal - m) * 60;
-      const sign = deg < 0 ? '-' : '';
-      return `${sign}${d}°${m}'${s.toFixed(1)}"`;
+      // Compact format with minimal spacing
+      const baseFormat = `${d}°${m.toString().padStart(2, '0')}′${s.toFixed(1).padStart(4, '0')}″`;
+      
+      if (metadata?.isLatitude !== undefined) {
+        const direction = deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : (metadata.isLatitude ? 'S' : 'W');
+        return `${baseFormat}\u2009${direction}`; // Thin space (U+2009) for compact but readable separation
+      }
+      return deg < 0 ? `-${baseFormat}` : baseFormat;
     },
     convertBack: (deg: number) => deg,
     formatSpec: {
-      pattern: `xxx°xx'xx.x"`,
+      pattern: `xxx°xx′xx.x″ X`,
       decimals: 1,
-      minWidth: 12,
-      testCases: { min: -180, max: 180, typical: -73.5 }
+      minWidth: 15,
+      testCases: { min: 0, max: 180, typical: 73.5 }
     },
     isNautical: true,
     preferredInRegion: ['uk', 'international']
+  },
+  {
+    id: 'utm',
+    name: 'UTM (Placeholder)',
+    symbol: 'UTM',
+    description: 'Universal Transverse Mercator - placeholder implementation',
+    convert: (degrees: number) => degrees,
+    format: (deg: number) => {
+      // TODO: Implement proper UTM conversion (requires utm library)
+      return `UTM ${Math.floor(Math.abs(deg))}`;
+    },
+    convertBack: (deg: number) => deg,
+    formatSpec: {
+      pattern: 'UTM xxx',
+      decimals: 0,
+      minWidth: 8,
+      testCases: { min: 0, max: 60, typical: 32 }
+    },
+    isNautical: false,
+    preferredInRegion: ['international']
   }
 ];
 

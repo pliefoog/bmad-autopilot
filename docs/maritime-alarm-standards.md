@@ -48,6 +48,26 @@
 
 ## Implementation Mapping
 
+### Visual Alarm Standards (Red-Night Mode Compliance)
+
+**CRITICAL:** Visual alarms must preserve scotopic vision for safe night navigation.
+
+**Night Vision Requirements:**
+- **Wavelength Range:** 625-750nm (red spectrum only) in red-night mode
+- **Zero Blue/Green:** No wavelengths <620nm that bleach rhodopsin
+- **Brightness Control:** Maximum 5% screen brightness, 2 cd/m² luminance (IMO SOLAS)
+- **Animation Over Color:** Use pulse/flicker patterns for alarm differentiation when color unavailable
+
+**See:** [marine-night-vision-standards.md](marine-night-vision-standards.md) for comprehensive scientific foundation, USCG/IMO compliance standards, and implementation guidelines.
+
+**Visual Alarm Hierarchy (Red-Night Compliant):**
+- **Critical:** Rapid flicker (300ms) + bright red (#FCA5A5) - maximum contrast
+- **Warning:** Gentle pulse (1.5s) + medium red (#DC2626) - attention without panic
+- **Caution:** Steady glow + dark red (#991B1B) - persistent notification
+- **Info:** No animation + theme red - passive information
+
+### Audio-Visual Integration
+
 | Alarm Type | Priority | Pattern | Frequency | Rationale |
 |------------|----------|---------|-----------|-----------|
 | Shallow Water | 1 | Rapid Pulse | 800 Hz | Immediate grounding danger - highest priority |

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, AccessibilityProps } from 'react-native';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface ProgressBarProps extends AccessibilityProps {
   progress: number; // 0 - 100
@@ -11,6 +11,7 @@ interface ProgressBarProps extends AccessibilityProps {
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 6, style, testID, accessibilityLabel }) => {
   const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const safeProgress = Math.max(0, Math.min(100, progress));
 
   return (
@@ -21,19 +22,20 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 6, style, 
       style={[styles.container, { height }, style]}
       testID={testID}
     >
-      <View testID={testID ? `${testID}-fill` : 'progress-fill'} style={[styles.fill, { width: `${safeProgress}%`, backgroundColor: theme.colors.accent }]} />
+      <View testID={testID ? `${testID}-fill` : 'progress-fill'} style={[styles.fill, { width: `${safeProgress}%` }]} />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: theme.borderLight,
     borderRadius: 8,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
+    backgroundColor: theme.accent,
   },
 });
 

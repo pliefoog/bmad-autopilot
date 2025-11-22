@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Text, StyleSheet, Animated, ViewStyle, TextStyle, TouchableOpacity, GestureResponderEvent } from 'react-native';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { ANIMATION_DURATIONS, ANIMATION_EASINGS } from '../../utils/animationOptimization';
 import { getUseNativeDriver } from '../../utils/animationUtils';
 
@@ -64,38 +64,38 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
     switch (buttonVariant) {
       case 'primary':
         return {
-          background: '#1E4A6B',
-          backgroundPressed: '#0F2A3B',
-          border: '#3A6A8B',
-          text: '#FFFFFF',
+          background: theme.interactive,
+          backgroundPressed: theme.interactiveActive,
+          border: theme.border,
+          text: theme.text,
         };
       case 'secondary':
         return {
-          background: '#2A2A2A',
-          backgroundPressed: '#1A1A1A',
-          border: '#4A4A4A',
-          text: '#CCCCCC',
+          background: theme.surfaceDim,
+          backgroundPressed: theme.surface,
+          border: theme.border,
+          text: theme.textSecondary,
         };
       case 'emergency':
         return {
-          background: '#8B0000',
-          backgroundPressed: '#4B0000',
-          border: '#AA0000',
-          text: '#FFFFFF',
+          background: theme.error,
+          backgroundPressed: theme.error,
+          border: theme.borderDark,
+          text: theme.text,
         };
       case 'toggle':
         return {
-          background: isToggled ? '#00AA00' : '#2A2A2A',
-          backgroundPressed: isToggled ? '#008800' : '#1A1A1A',
-          border: isToggled ? '#00CC00' : '#4A4A4A',
-          text: isToggled ? '#FFFFFF' : '#CCCCCC',
+          background: isToggled ? theme.success : theme.surfaceDim,
+          backgroundPressed: isToggled ? theme.success : theme.surface,
+          border: isToggled ? theme.success : theme.border,
+          text: isToggled ? theme.text : theme.textSecondary,
         };
       default:
         return {
-          background: '#1E4A6B',
-          backgroundPressed: '#0F2A3B',
-          border: '#3A6A8B',
-          text: '#FFFFFF',
+          background: theme.interactive,
+          backgroundPressed: theme.interactiveActive,
+          border: theme.border,
+          text: theme.text,
         };
     }
   };
@@ -140,6 +140,7 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
   
   const colors = getVariantColors(variant);
   const dimensions = getSizeDimensions(size);
+  const styles = useMemo(() => createStyles(theme, colors, dimensions, disabled), [theme, colors, dimensions, disabled]);
   
   // Handle press in with animation (AC 24)
   const handlePressIn = () => {
@@ -196,8 +197,6 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
     inputRange: [0, 1],
     outputRange: [0.3, 0.1],
   });
-  
-  const styles = createStyles(theme, colors, dimensions, disabled);
   
   return (
     <TouchableOpacity
@@ -259,7 +258,7 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
 };
 
 const createStyles = (
-  theme: any, 
+  theme: ThemeColors, 
   colors: any, 
   dimensions: any,
   disabled: boolean
@@ -270,28 +269,28 @@ const createStyles = (
       paddingVertical: dimensions.paddingVertical,
       borderRadius: dimensions.borderRadius,
       borderWidth: 2,
-      borderColor: disabled ? '#333333' : colors.border,
+      borderColor: disabled ? theme.borderDark : colors.border,
       minWidth: dimensions.minWidth,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
       opacity: disabled ? 0.5 : 1,
       // Professional marine styling with depth
-      shadowColor: '#000000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowRadius: 4,
       // Beveled appearance
-      borderTopColor: disabled ? '#333333' : colors.border,
-      borderLeftColor: disabled ? '#333333' : colors.border,
-      borderBottomColor: disabled ? '#222222' : '#1A1A1A',
-      borderRightColor: disabled ? '#222222' : '#1A1A1A',
+      borderTopColor: disabled ? theme.borderDark : colors.border,
+      borderLeftColor: disabled ? theme.borderDark : colors.border,
+      borderBottomColor: disabled ? theme.surface : theme.surfaceDim,
+      borderRightColor: disabled ? theme.surface : theme.surfaceDim,
     },
     
     buttonText: {
       fontSize: dimensions.fontSize,
       fontFamily: 'monospace',
       fontWeight: '700',
-      color: disabled ? '#666666' : colors.text,
+      color: disabled ? theme.interactiveDisabled : colors.text,
       textAlign: 'center',
       letterSpacing: 0.5,
       textTransform: 'uppercase',
@@ -304,7 +303,7 @@ const createStyles = (
       left: 1,
       right: 1,
       height: '30%',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: theme.surfaceHighlight,
       borderTopLeftRadius: dimensions.borderRadius - 2,
       borderTopRightRadius: dimensions.borderRadius - 2,
       zIndex: 1,
@@ -316,7 +315,7 @@ const createStyles = (
       left: 1,
       right: 1,
       height: '20%',
-      backgroundColor: '#000000',
+      backgroundColor: theme.shadow,
       borderBottomLeftRadius: dimensions.borderRadius - 2,
       borderBottomRightRadius: dimensions.borderRadius - 2,
       zIndex: 1,

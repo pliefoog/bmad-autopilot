@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TextInput, StyleSheet, ViewStyle, TextStyle, Platform } from 'react-native';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface InputProps {
   value: string;
@@ -41,6 +42,8 @@ const Input: React.FC<InputProps> = ({
   accessibilityHint,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   const inputStyle = [
     styles.input,
@@ -64,7 +67,7 @@ const Input: React.FC<InputProps> = ({
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor="#9CA3AF"
+      placeholderTextColor={theme.textTertiary}
       editable={!disabled}
       multiline={multiline}
       keyboardType={keyboardType}
@@ -82,24 +85,24 @@ const Input: React.FC<InputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   input: {
     borderRadius: 10, // iOS standard for text fields
     paddingHorizontal: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.surfaceHighlight,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: theme.borderLight,
   },
   input_default: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
+    backgroundColor: theme.surfaceHighlight,
+    borderColor: theme.borderLight,
   },
   input_outline: {
     backgroundColor: 'transparent',
-    borderColor: '#D1D5DB',
+    borderColor: theme.borderLight,
   },
   input_filled: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: theme.surface,
     borderColor: 'transparent',
   },
   input_small: {
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   input_focused: {
-    borderColor: '#007AFF', // iOS system blue for focus state
+    borderColor: theme.primary, // iOS system blue for focus state
     borderWidth: 2, // Thicker border when focused (iOS pattern)
   },
   input_multiline: {
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
     minHeight: 80,
   },
   text: {
-    color: '#111827',
+    color: theme.text,
   },
   text_small: {
     fontSize: 15, // iOS callout size

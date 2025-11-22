@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { useSettingsStore, ThemeColors, ThemeMode } from '../store/settingsStore';
+import { FontMeasurementService } from '../services/FontMeasurementService';
 
 interface ThemeContextValue {
   colors: ThemeColors;
@@ -122,6 +123,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const nextIndex = (currentIndex + 1) % modes.length;
     setThemeMode(modes[nextIndex]);
   };
+
+  // Invalidate font measurement cache when theme or font settings change
+  useEffect(() => {
+    FontMeasurementService.clearCache();
+  }, [themeMode, fontSize, fontWeight]);
 
   const contextValue: ThemeContextValue = useMemo(() => ({
     colors,

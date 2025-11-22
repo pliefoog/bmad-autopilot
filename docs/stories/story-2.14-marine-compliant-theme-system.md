@@ -87,10 +87,13 @@
 - Existing pattern: All components already use theme context (no hardcoded colors)
 
 **Marine Safety Requirements:**
-- Red-Night mode CRITICAL for night vision preservation
-- Must emit zero blue/green light (wavelengths below 620nm)
-- Brightness reduction required: Day (100%) → Night (40%) → Red-Night (20%)
+- Red-Night mode CRITICAL for night vision preservation (scotopic vision)
+- Must emit zero blue/green light (wavelengths below 620nm destroy rhodopsin)
+- Safe wavelength range: 625-750nm (red spectrum only, <1% scotopic impact)
+- Brightness reduction required: Day (100%) → Night (40%) → Red-Night (5%)
 - Marine standard: Red light preserves rhodopsin in retinal rods for 30+ minutes
+- USCG/IMO Compliance: Chart room red lighting ≤2 cd/m², zero blue/green emission
+- **See:** [marine-night-vision-standards.md](../../docs/marine-night-vision-standards.md) for comprehensive scientific foundation (rhodopsin chemistry, wavelength analysis, USCG/IMO standards, professional equipment patterns)
 
 **Integration Points:**
 - All existing widgets in `src/widgets/` directory

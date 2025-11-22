@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { PlatformStyles } from '../../utils/animationUtils';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface CardProps {
   children: React.ReactNode;
@@ -23,6 +24,9 @@ const Card: React.FC<CardProps> = ({
   style,
   testID,
 }) => {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  
   const cardStyle = [
     styles.card,
     styles[`card_${variant}`],
@@ -40,24 +44,24 @@ const Card: React.FC<CardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.surfaceHighlight,
   },
   card_default: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.borderLight,
   },
   card_elevated: {
-    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 3.84, 0.1),
+    ...PlatformStyles.boxShadow(theme.shadow, { x: 0, y: 2 }, 3.84, 0.1),
     elevation: 5,
   },
   card_outlined: {
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: theme.border,
   },
   card_filled: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.surfaceHighlight,
   },
   padding_none: {
     padding: 0,

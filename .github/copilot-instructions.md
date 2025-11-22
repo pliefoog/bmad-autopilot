@@ -13,28 +13,9 @@
 This is a **React Native cross-platform marine instrument display** that connects to boat NMEA networks via WiFi bridges. The app runs entirely on-device (no server) and transforms smartphones/tablets/desktops into comprehensive marine displays with Raymarine autopilot control.
 
 ## Critical Development Context
-
-### BMAD Method Workflow
-
-This project uses the **BMAD Method v6** with specialized AI agents. Before making changes:
-
-1. **Agent Personas:** Use BMAD agent commands:
-   - `#bmad-master` - Universal task executor (🧙 BMad Master)
-   - `#tea` - Master Test Architect & quality advisor (🧪 Murat)
-   - `#dev` - Full stack developer (💻 Amelia)
-   - `#architect` - Architecture & design decisions (🏗️ Winston)
-   - `#analyst` - Business analysis & requirements (📊 Mary)
-   - `#pm` - Product management (📋 John)
-   - `#sm` - Scrum Master & story preparation (🏃 Bob)
-   - `#ux-expert` - UI/UX design specialist (🎨 Sally)
-   - `#game-architect` - Performance & systems architecture (🏛️ Cloud Dragonborn)
-   - `#game-designer` - User experience & interaction design (🎲 Samus Shepard)
-   - `#game-dev` - Real-time performance optimization (🕹️ Link Freeman)
-2. **Story-Driven Development:** All work tracks to user stories in `docs/stories/`. Stories follow format: `story-{epic}.{number}-{slug}.md`
-3. **Quality Gates:** Use `#tea` agent with test architecture review and `#sm` agent with `*story-ready` workflow to validate completion before marking stories done
-4. **Configuration:** Project config in `bmad/bmm/config.yaml` defines doc locations, patterns, and workflow paths
-
-**Always read and action `bmad/bmm/config.yaml` before making any changes. Ensure your workflow and decisions are aligned with the latest configuration.**
+- **NMEA Bridge Simulator:** A Node.js-based simulator that mimics NMEA data streams for development/testing without physical hardware.
+- **Simulator Control API:** RESTful API to manage simulator scenarios and data injection.
+- **VS Code Tasks:** Predefined tasks for starting/stopping the simulator and web server.
 
 ### File Structure (MCP Tool Usage Required)
 

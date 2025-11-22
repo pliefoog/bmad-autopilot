@@ -32,6 +32,9 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
+  // Create theme-aware styles
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   const compassData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.compass[0], [])); // Compass sensor data
   
@@ -409,13 +412,13 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
 
 CompassWidget.displayName = 'CompassWidget';
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     borderRadius: 8,
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.border,
   },
   header: {
     flexDirection: 'row',
@@ -483,7 +486,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: theme.border,
   },
   // Secondary Grid (1×2): Variation and Deviation
   secondaryGrid: {

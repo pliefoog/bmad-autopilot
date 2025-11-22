@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#F3F4F6',
   },
   stepContent: {
     flex: 1,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#F3F4F6',
   },
 });
 

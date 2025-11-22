@@ -4,6 +4,8 @@
 import React, { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BaseErrorBoundary, CustomErrorInfo, ErrorBoundaryProps } from './BaseErrorBoundary';
+import { ThemeColors } from '../../store/themeStore';
+import { themeStore } from '../../store/themeStore';
 
 export interface WidgetErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'category'> {
   widgetId: string;
@@ -143,18 +145,19 @@ export class WidgetErrorBoundary extends BaseErrorBoundary<WidgetErrorBoundaryPr
   private renderWidgetFallback = (error: WidgetErrorInfo, retry: () => void): ReactNode => {
     const { enableWidgetRecovery = true, fallbackWidgets = [] } = this.props;
     const canReplace = enableWidgetRecovery && fallbackWidgets.length > 0;
+    const theme = themeStore.getState().theme;
 
     return (
-      <View style={styles.widgetErrorContainer}>
-        <View style={styles.widgetErrorHeader}>
-          <Text style={styles.widgetErrorIcon}>⚠️</Text>
-          <Text style={styles.widgetErrorTitle}>
+      <View style={styles(theme).widgetErrorContainer}>
+        <View style={styles(theme).widgetErrorHeader}>
+          <Text style={styles(theme).widgetErrorIcon}>⚠️</Text>
+          <Text style={styles(theme).widgetErrorTitle}>
             {this.props.widgetTitle || this.props.widgetType} Error
           </Text>
         </View>
 
-        <View style={styles.widgetErrorBody}>
-          <Text style={styles.widgetErrorMessage}>
+        <View style={styles(theme).widgetErrorBody}>
+          <Text style={styles(theme).widgetErrorMessage}>
             {error.severity === 'critical'
               ? 'This widget encountered a critical error and needs to be replaced or removed.'
               : 'This widget is temporarily unavailable due to an error.'
@@ -162,33 +165,33 @@ export class WidgetErrorBoundary extends BaseErrorBoundary<WidgetErrorBoundaryPr
           </Text>
 
           {__DEV__ && (
-            <View style={styles.widgetDebugInfo}>
-              <Text style={styles.debugTitle}>Widget Debug Info:</Text>
-              <Text style={styles.debugText}>ID: {error.widgetId}</Text>
-              <Text style={styles.debugText}>Type: {error.widgetType}</Text>
-              <Text style={styles.debugText}>Severity: {error.severity}</Text>
-              <Text style={styles.debugText}>Message: {error.message}</Text>
+            <View style={styles(theme).widgetDebugInfo}>
+              <Text style={styles(theme).debugTitle}>Widget Debug Info:</Text>
+              <Text style={styles(theme).debugText}>ID: {error.widgetId}</Text>
+              <Text style={styles(theme).debugText}>Type: {error.widgetType}</Text>
+              <Text style={styles(theme).debugText}>Severity: {error.severity}</Text>
+              <Text style={styles(theme).debugText}>Message: {error.message}</Text>
             </View>
           )}
         </View>
 
-        <View style={styles.widgetErrorActions}>
+        <View style={styles(theme).widgetErrorActions}>
           {error.severity !== 'critical' && (
-            <TouchableOpacity style={styles.retryButton} onPress={retry}>
-              <Text style={styles.retryButtonText}>Retry Widget</Text>
+            <TouchableOpacity style={styles(theme).retryButton} onPress={retry}>
+              <Text style={styles(theme).retryButtonText}>Retry Widget</Text>
             </TouchableOpacity>
           )}
 
           {canReplace && (
-            <View style={styles.replacementOptions}>
-              <Text style={styles.replacementTitle}>Try Alternative:</Text>
+            <View style={styles(theme).replacementOptions}>
+              <Text style={styles(theme).replacementTitle}>Try Alternative:</Text>
               {fallbackWidgets.slice(0, 3).map((widgetType, index) => (
                 <TouchableOpacity
                   key={widgetType}
-                  style={styles.replaceButton}
+                  style={styles(theme).replaceButton}
                   onPress={() => this.handleWidgetReplace(widgetType)}
                 >
-                  <Text style={styles.replaceButtonText}>
+                  <Text style={styles(theme).replaceButtonText}>
                     {widgetType.charAt(0).toUpperCase() + widgetType.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -197,16 +200,16 @@ export class WidgetErrorBoundary extends BaseErrorBoundary<WidgetErrorBoundaryPr
           )}
 
           <TouchableOpacity
-            style={styles.removeButton}
+            style={styles(theme).removeButton}
             onPress={this.handleWidgetRemove}
           >
-            <Text style={styles.removeButtonText}>Remove Widget</Text>
+            <Text style={styles(theme).removeButtonText}>Remove Widget</Text>
           </TouchableOpacity>
         </View>
 
         {error.severity === 'critical' && (
-          <View style={styles.criticalWidgetWarning}>
-            <Text style={styles.criticalText}>
+          <View style={styles(theme).criticalWidgetWarning}>
+            <Text style={styles(theme).criticalText}>
               This widget has been disabled due to critical errors.
               Please replace or remove it to continue.
             </Text>
@@ -225,13 +228,13 @@ export class WidgetErrorBoundary extends BaseErrorBoundary<WidgetErrorBoundaryPr
   }
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: ThemeColors) => StyleSheet.create({
   widgetErrorContainer: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff3cd',
+    backgroundColor: theme.warning,
     borderWidth: 1,
-    borderColor: '#ffeaa7',
+    borderColor: theme.borderLight,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -248,7 +251,7 @@ const styles = StyleSheet.create({
   widgetErrorTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#856404',
+    color: theme.text,
     textAlign: 'center',
   },
   widgetErrorBody: {
@@ -257,13 +260,13 @@ const styles = StyleSheet.create({
   },
   widgetErrorMessage: {
     fontSize: 12,
-    color: '#856404',
+    color: theme.text,
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: 8,
   },
   widgetDebugInfo: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.surfaceDim,
     padding: 8,
     borderRadius: 4,
     width: '100%',
@@ -272,12 +275,12 @@ const styles = StyleSheet.create({
   debugTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 4,
   },
   debugText: {
     fontSize: 9,
-    color: '#6c757d',
+    color: theme.textSecondary,
     fontFamily: 'monospace',
     marginBottom: 2,
   },
@@ -286,13 +289,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   retryButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: theme.success,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
   },
   retryButtonText: {
-    color: 'white',
+    color: theme.surface,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -302,44 +305,44 @@ const styles = StyleSheet.create({
   },
   replacementTitle: {
     fontSize: 10,
-    color: '#856404',
+    color: theme.text,
     marginBottom: 4,
     fontWeight: '500',
   },
   replaceButton: {
-    backgroundColor: '#17a2b8',
+    backgroundColor: theme.interactive,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 3,
     marginVertical: 2,
   },
   replaceButtonText: {
-    color: 'white',
+    color: theme.surface,
     fontSize: 10,
     fontWeight: '500',
   },
   removeButton: {
-    backgroundColor: '#dc3545',
+    backgroundColor: theme.error,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 3,
   },
   removeButtonText: {
-    color: 'white',
+    color: theme.surface,
     fontSize: 10,
     fontWeight: '500',
   },
   criticalWidgetWarning: {
-    backgroundColor: '#f8d7da',
+    backgroundColor: theme.error,
     padding: 8,
     borderRadius: 4,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#f5c6cb',
+    borderColor: theme.borderDark,
   },
   criticalText: {
     fontSize: 10,
-    color: '#721c24',
+    color: theme.surface,
     textAlign: 'center',
     fontWeight: '500',
   },

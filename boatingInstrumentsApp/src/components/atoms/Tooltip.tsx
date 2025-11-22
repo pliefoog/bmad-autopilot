@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, TextStyle } from 'react-native';
-
+import { useTheme, ThemeColors } from '../../store/themeStore';
 interface TooltipProps {
   children: string;
   variant?: 'default' | 'dark' | 'light';
@@ -16,6 +16,9 @@ const Tooltip: React.FC<TooltipProps> = ({
   style,
   testID,
 }) => {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  
   const tooltipStyle = [
     styles.tooltip,
     styles[`tooltip_${variant}`],
@@ -30,7 +33,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   tooltip: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -40,18 +43,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tooltip_default: {
-    backgroundColor: '#374151',
-    color: '#FFFFFF',
+    backgroundColor: theme.surfaceDim,
+    color: theme.text,
   },
   tooltip_dark: {
-    backgroundColor: '#1F2937',
-    color: '#FFFFFF',
+    backgroundColor: theme.surface,
+    color: theme.text,
   },
   tooltip_light: {
-    backgroundColor: '#F9FAFB',
-    color: '#374151',
+    backgroundColor: theme.surfaceHighlight,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.borderLight,
   },
   tooltip_small: {
     fontSize: 10,

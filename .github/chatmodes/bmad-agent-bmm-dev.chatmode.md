@@ -1,6 +1,6 @@
 ---
 description: "Activates the Dev agent persona."
-tools: ['edit', 'search', 'new/runVscodeCommand', 'runCommands', 'runTasks', 'playwright/*', 'usages', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'todos', 'runSubagent', 'runTests']
+tools: ["changes","codebase","createDirectory","createFile","editFiles","fetch","fileSearch","githubRepo","listDirectory","problems","readFile","runInTerminal","runTask","runTests","runVscodeCommand","search","searchResults","terminalLastCommand","terminalSelection","testFailure","textSearch","usages"]
 ---
 
 # Dev Agent

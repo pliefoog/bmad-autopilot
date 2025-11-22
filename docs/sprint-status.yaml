@@ -138,11 +138,14 @@ development_status:
   8-7-interactive-dashboard-drag-drop: backlog  # RETAINED - May enhance current MVP dashboard
   epic-8-retrospective: optional
 
-  # Epic 9: Enhanced Presentation System - COMPLETE ✅ (3/3 stories)
-  epic-9: done
+  # Epic 9: Enhanced Presentation System - IN PROGRESS (5/6 stories done, 1 review, 1 ready-for-dev)
+  epic-9: contexted
   9-1-enhanced-presentation-foundation: done
   9-2-component-migration: done
   9-3-system-cleanup: done
+  9-4-gps-widget-migration: review
+  9-5-implement-fontmeasurementservice: done
+  9-6-settings-integration-modernization: ready-for-dev
   epic-9-retrospective: optional
 
   # Epic 10: NMEA Bridge Simulator Architecture Modernization - COMPLETE ✅ (5/6 stories, 1 ready for dev)
@@ -167,13 +170,20 @@ development_status:
   11-8-cicd-pipeline-integration: done
   epic-11-retrospective: optional
 
-  # Epic 12: v2.3 Completion & Technical Debt Resolution - IN PROGRESS (2/7 stories ready)
-  epic-12: contexted
+  # Epic 12: v2.3 Completion & Technical Debt Resolution - COMPLETE ✅ (3/7 stories - Strategic Descope)
+  epic-12: done
   12-1-alarmbanner-ui-integration: done
   12-2-autopilot-controlscreen-modal-verification: done
-  12-3-settings-dialog-integration-verification: backlog
-  12-4-mdns-auto-discovery-implementation: backlog
-  12-5-test-suite-stabilization: backlog
-  12-6-performance-baseline-documentation: backlog
-  12-7-v23-handoff-completion-sign-off: backlog
-  epic-12-retrospective: optional
+  12-3-settings-dialog-integration-verification: done  # AlarmConfigDialog implemented
+  12-4-mdns-auto-discovery-implementation: descoped  # Non-blocking for Epic 13, low ROI
+  12-5-test-suite-stabilization: deferred  # Epic 13.1.3 validates tests
+  12-6-performance-baseline-documentation: deferred  # Captured during Epic 13 development
+  12-7-v23-handoff-completion-sign-off: deferred  # Administrative work parallels Epic 13.1
+  epic-12-retrospective: completed
+
+  # Epic 13: VIP Platform UX Implementation - IN PROGRESS (Phase 0 started)
+  epic-13: backlog
+  13-1-1-fix-red-night-mode: ready-for-dev
+  13-1-2-feature-flag-infrastructure: backlog
+  13-1-3-validate-epic-9-complete: backlog
+  epic-13-retrospective: optional

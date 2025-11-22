@@ -24,9 +24,6 @@ export const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Blue color as specified in UI Architecture v2.3
-  const blueColor = '#007AFF'; // iOS system blue, marine-appropriate
-
   return (
     <TouchableOpacity
       style={[
@@ -35,7 +32,7 @@ export const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: disabled ? theme.textSecondary : blueColor,
+          backgroundColor: disabled ? theme.interactiveDisabled : theme.interactive,
           opacity: disabled ? 0.5 : 1,
         },
         Platform.OS === 'ios' ? styles.shadowIOS : 
@@ -54,7 +51,7 @@ export const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({
         <Ionicons
           name="add"
           size={size * 0.5} // Icon size is 50% of button size
-          color="white"
+          color={theme.surface}
           style={styles.icon}
         />
       </View>
@@ -104,7 +101,7 @@ const styles = StyleSheet.create({
   },
   // Platform-specific shadow styles for depth
   shadowIOS: {
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 2,

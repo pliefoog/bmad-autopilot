@@ -43,6 +43,9 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
+  // Create theme-aware styles
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   const speedData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.speed[0], [])); // Speed sensor data
   
@@ -315,13 +318,13 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
 
 SpeedWidget.displayName = 'SpeedWidget';
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     borderRadius: 8,
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.border,
   },
   header: {
     flexDirection: 'row',
@@ -362,7 +365,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: theme.border,
   },
   // Secondary Grid (2×2): SOG and STW in columns
   secondaryGrid: {

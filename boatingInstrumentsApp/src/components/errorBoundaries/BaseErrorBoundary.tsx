@@ -3,6 +3,8 @@
 
 import React, { Component, ErrorInfo as ReactErrorInfo, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { ThemeColors } from '../../store/themeStore';
+import { themeStore } from '../../store/themeStore';
 
 export interface CustomErrorInfo {
   message: string;
@@ -169,20 +171,21 @@ export class BaseErrorBoundary extends Component<ErrorBoundaryProps, ErrorBounda
   private renderDefaultFallback() {
     const { error, retryCount, isRetrying } = this.state;
     const { enableRetry = true, retryAttempts = 3 } = this.props;
+    const theme = themeStore.getState().theme;
     
     if (!error) return null;
 
     const canRetry = enableRetry && retryCount < retryAttempts;
 
     return (
-      <View style={styles.errorContainer}>
-        <View style={styles.errorHeader}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Something went wrong</Text>
+      <View style={styles(theme).errorContainer}>
+        <View style={styles(theme).errorHeader}>
+          <Text style={styles(theme).errorIcon}>⚠️</Text>
+          <Text style={styles(theme).errorTitle}>Something went wrong</Text>
         </View>
         
-        <View style={styles.errorBody}>
-          <Text style={styles.errorMessage}>
+        <View style={styles(theme).errorBody}>
+          <Text style={styles(theme).errorMessage}>
             {error.severity === 'critical' 
               ? 'A critical error occurred that requires attention.'
               : 'An unexpected error occurred. The application is trying to recover.'
@@ -190,39 +193,39 @@ export class BaseErrorBoundary extends Component<ErrorBoundaryProps, ErrorBounda
           </Text>
           
           {__DEV__ && (
-            <View style={styles.debugInfo}>
-              <Text style={styles.debugTitle}>Debug Information:</Text>
-              <Text style={styles.debugText}>Category: {error.category}</Text>
-              <Text style={styles.debugText}>Severity: {error.severity}</Text>
-              <Text style={styles.debugText}>Message: {error.message}</Text>
+            <View style={styles(theme).debugInfo}>
+              <Text style={styles(theme).debugTitle}>Debug Information:</Text>
+              <Text style={styles(theme).debugText}>Category: {error.category}</Text>
+              <Text style={styles(theme).debugText}>Severity: {error.severity}</Text>
+              <Text style={styles(theme).debugText}>Message: {error.message}</Text>
               {retryCount > 0 && (
-                <Text style={styles.debugText}>Retry Attempts: {retryCount}</Text>
+                <Text style={styles(theme).debugText}>Retry Attempts: {retryCount}</Text>
               )}
             </View>
           )}
         </View>
 
         {canRetry && (
-          <View style={styles.errorActions}>
+          <View style={styles(theme).errorActions}>
             <TouchableOpacity
-              style={[styles.retryButton, isRetrying && styles.retryButtonDisabled]}
+              style={[styles(theme).retryButton, isRetrying && styles(theme).retryButtonDisabled]}
               onPress={this.handleRetry}
               disabled={isRetrying}
             >
-              <Text style={styles.retryButtonText}>
+              <Text style={styles(theme).retryButtonText}>
                 {isRetrying ? 'Retrying...' : 'Try Again'}
               </Text>
             </TouchableOpacity>
             
-            <Text style={styles.retryInfo}>
+            <Text style={styles(theme).retryInfo}>
               {retryAttempts - retryCount} attempts remaining
             </Text>
           </View>
         )}
 
         {error.severity === 'critical' && (
-          <View style={styles.criticalWarning}>
-            <Text style={styles.criticalText}>
+          <View style={styles(theme).criticalWarning}>
+            <Text style={styles(theme).criticalText}>
               Please restart the application if the problem persists.
             </Text>
           </View>
@@ -244,11 +247,11 @@ export class BaseErrorBoundary extends Component<ErrorBoundaryProps, ErrorBounda
   }
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: ThemeColors) => StyleSheet.create({
   errorContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.appBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#dc3545',
+    color: theme.error,
     textAlign: 'center',
   },
   errorBody: {
@@ -272,13 +275,13 @@ const styles = StyleSheet.create({
   },
   errorMessage: {
     fontSize: 14,
-    color: '#6c757d',
+    color: theme.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 15,
   },
   debugInfo: {
-    backgroundColor: '#f1f3f4',
+    backgroundColor: theme.surfaceDim,
     padding: 15,
     borderRadius: 8,
     marginTop: 10,
@@ -286,12 +289,12 @@ const styles = StyleSheet.create({
   debugTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 8,
   },
   debugText: {
     fontSize: 11,
-    color: '#6c757d',
+    color: theme.textSecondary,
     fontFamily: 'monospace',
     marginBottom: 4,
   },
@@ -299,35 +302,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retryButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: theme.interactive,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
     marginBottom: 10,
   },
   retryButtonDisabled: {
-    backgroundColor: '#6c757d',
+    backgroundColor: theme.textSecondary,
   },
   retryButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
   },
   retryInfo: {
     fontSize: 12,
-    color: '#6c757d',
+    color: theme.textSecondary,
   },
   criticalWarning: {
-    backgroundColor: '#f8d7da',
+    backgroundColor: theme.surfaceHighlight,
     padding: 12,
     borderRadius: 6,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: '#f5c6cb',
+    borderColor: theme.error,
   },
   criticalText: {
     fontSize: 12,
-    color: '#721c24',
+    color: theme.error,
     textAlign: 'center',
     fontWeight: '500',
   },

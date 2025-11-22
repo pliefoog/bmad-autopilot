@@ -22,6 +22,7 @@
 - **Advanced UI:** React Native Reanimated for smooth animations and gestures
 - **Drag & Drop:** React Native Gesture Handler + custom drag-drop implementation
 - **Charts/Gauges:** React Native SVG + custom instrument components (analog compass rose, bar graphs, angle indicators)
+- **Theme System:** Marine-compliant day/night/red-night modes following USCG/IMO scotopic vision standards (see [marine-night-vision-standards.md](../marine-night-vision-standards.md))
 
 **Platform-Specific Adaptations:**
 - **Windows:** React Native for Windows + WinUI 3 controls where needed

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme } from '../../store/themeStore';
 
 interface StatusIndicatorProps {
   status: 'connected' | 'connecting' | 'disconnected' | 'error' | 'warning';
@@ -14,10 +15,31 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   style,
   testID,
 }) => {
+  const theme = useTheme();
+  
+  // Create dynamic styles based on current theme
+  const dynamicStyles = useMemo(() => ({
+    indicator_connected: {
+      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+    },
+    indicator_connecting: {
+      backgroundColor: theme.warning,
+    },
+    indicator_disconnected: {
+      backgroundColor: theme.textSecondary, // Gray
+    },
+    indicator_error: {
+      backgroundColor: theme.error,
+    },
+    indicator_warning: {
+      backgroundColor: theme.warning,
+    },
+  }), [theme]);
+
   const indicatorStyle = [
     styles.indicator,
     styles[`indicator_${size}`],
-    styles[`indicator_${status}`],
+    dynamicStyles[`indicator_${status}`],
     style,
   ];
 
@@ -39,21 +61,6 @@ const styles = StyleSheet.create({
   indicator_large: {
     width: 16,
     height: 16,
-  },
-  indicator_connected: {
-    backgroundColor: '#10B981', // Green
-  },
-  indicator_connecting: {
-    backgroundColor: '#F59E0B', // Yellow/Orange
-  },
-  indicator_disconnected: {
-    backgroundColor: '#6B7280', // Gray
-  },
-  indicator_error: {
-    backgroundColor: '#EF4444', // Red
-  },
-  indicator_warning: {
-    backgroundColor: '#F59E0B', // Yellow/Orange
   },
 });
 

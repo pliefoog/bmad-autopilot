@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   nextButtonText: {
-    color: '#FFFFFF',
+    color: '#F3F4F6',
   },
   navButtonTextDisabled: {
     opacity: 0.5,

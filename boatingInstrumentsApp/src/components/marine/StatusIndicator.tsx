@@ -226,7 +226,7 @@ const createStyles = (
       width: dimensions.led * 0.7,
       height: dimensions.led * 0.7,
       borderRadius: (dimensions.led * 0.7) / 2,
-      backgroundColor: isActive ? '#FFFFFF' : statusColor,
+      backgroundColor: isActive ? theme.text : statusColor,
       opacity: isActive ? 0.8 : 0.3,
     },
     

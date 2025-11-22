@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface SettingsSectionProps {
   title: string;
   children: React.ReactNode;
 }
 
-const SettingsSection: React.FC<SettingsSectionProps> = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    {children}
-  </View>
-);
+const SettingsSection: React.FC<SettingsSectionProps> = ({ title, children }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+};
 
 interface OptionButtonProps {
   label: string;
@@ -21,19 +27,24 @@ interface OptionButtonProps {
   onPress: () => void;
 }
 
-const OptionButton: React.FC<OptionButtonProps> = ({ label, description, selected, onPress }) => (
-  <TouchableOpacity
-    style={[styles.optionButton, selected && styles.optionButtonSelected]}
-    onPress={onPress}
-  >
-    <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
-      {label}
-    </Text>
-    {description && (
-      <Text style={styles.optionDescription}>{description}</Text>
-    )}
-  </TouchableOpacity>
-);
+const OptionButton: React.FC<OptionButtonProps> = ({ label, description, selected, onPress }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
+  return (
+    <TouchableOpacity
+      style={[styles.optionButton, selected && styles.optionButtonSelected]}
+      onPress={onPress}
+    >
+      <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+        {label}
+      </Text>
+      {description && (
+        <Text style={styles.optionDescription}>{description}</Text>
+      )}
+    </TouchableOpacity>
+  );
+};
 
 interface SimpleTimezonePickerProps {
   selectedTimezone: string;
@@ -48,6 +59,8 @@ const SimpleTimezonePicker: React.FC<SimpleTimezonePickerProps> = ({
   expanded,
   onToggleExpanded
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   // Simple UTC offset timezones from -12 to +14 with major cities
   const timezoneOffsets = [
     { offset: -12, label: 'UTC-12', cities: 'Baker Island' },
@@ -127,6 +140,8 @@ const SimpleTimezonePicker: React.FC<SimpleTimezonePickerProps> = ({
 export const MaritimeSettingsConfiguration: React.FC = () => {
   const { gps, setGpsSetting } = useSettingsStore();
   const [expandedTimezone, setExpandedTimezone] = useState<boolean>(false);
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // Coordinate format options
   const coordinateFormats = [
@@ -222,21 +237,21 @@ export const MaritimeSettingsConfiguration: React.FC = () => {
           • <Text style={styles.bold}>Major Cities:</Text> Reference points for timezone identification
         </Text>
       </View>
-    </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+// Theme-aware style factory
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.appBackground,
   },
   section: {
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     margin: 16,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -245,12 +260,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1e293b',
+    color: theme.text,
     marginBottom: 8,
   },
   sectionDescription: {
     fontSize: 14,
-    color: '#64748b',
+    color: theme.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
   },
@@ -260,7 +275,7 @@ const styles = StyleSheet.create({
   subsectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: theme.text,
     marginBottom: 12,
   },
   optionsGrid: {
@@ -270,37 +285,37 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: theme.borderLight,
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#f9fafb',
+    backgroundColor: theme.surface,
     minWidth: 120,
     alignItems: 'center',
   },
   optionButtonSelected: {
-    borderColor: '#059669',
-    backgroundColor: 'rgba(5, 150, 105, 0.08)',
+    borderColor: theme.success,
+    backgroundColor: theme.overlay,
   },
   optionLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: theme.text,
     marginBottom: 4,
   },
   optionLabelSelected: {
-    color: '#059669',
+    color: theme.success,
   },
   optionDescription: {
     fontSize: 12,
-    color: '#6b7280',
+    color: theme.textTertiary,
     textAlign: 'center',
     lineHeight: 16,
   },
   timezonePicker: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: theme.borderLight,
     borderRadius: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.surface,
   },
   timezoneHeader: {
     flexDirection: 'row',
@@ -311,23 +326,23 @@ const styles = StyleSheet.create({
   timezoneLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: theme.text,
     flex: 1,
   },
   timezoneValue: {
     fontSize: 14,
-    color: '#6b7280',
+    color: theme.textSecondary,
     flex: 2,
     textAlign: 'center',
   },
   expandIcon: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: theme.textSecondary,
   },
   timezoneDropdown: {
     maxHeight: 300,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: theme.borderLight,
   },
   timezoneList: {
     paddingHorizontal: 4,
@@ -336,10 +351,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: theme.surfaceHighlight,
   },
   timezoneOptionSelected: {
-    backgroundColor: 'rgba(5, 150, 105, 0.08)',
+    backgroundColor: theme.overlay,
   },
   timezoneOptionContent: {
     flexDirection: 'row',
@@ -349,37 +364,37 @@ const styles = StyleSheet.create({
   timezoneOptionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: theme.text,
     minWidth: 60,
   },
   timezoneOptionTextSelected: {
-    color: '#059669',
+    color: theme.success,
     fontWeight: '700',
   },
   timezoneCityText: {
     fontSize: 12,
-    color: '#6b7280',
+    color: theme.textTertiary,
     fontStyle: 'italic',
     flex: 1,
     textAlign: 'right',
   },
   helpSection: {
-    backgroundColor: '#fffbeb',
+    backgroundColor: theme.warning + '14', // 8% opacity
     margin: 16,
     padding: 16,
     borderRadius: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
+    borderLeftColor: theme.warning,
   },
   helpTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#92400e',
+    color: theme.text,
     marginBottom: 8,
   },
   helpText: {
     fontSize: 14,
-    color: '#92400e',
+    color: theme.text,
     lineHeight: 20,
   },
   bold: {

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Switch as RNSwitch, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface SwitchProps {
   value: boolean;
@@ -20,14 +21,20 @@ const Switch: React.FC<SwitchProps> = ({
   onValueChange,
   disabled = false,
   size = 'medium',
-  trackColor = {
-    false: '#D1D5DB',
-    true: '#3B82F6',
-  },
-  thumbColor = '#FFFFFF',
+  trackColor,
+  thumbColor,
   style,
   testID,
 }) => {
+  const theme = useTheme();
+  
+  // Use theme colors as defaults
+  const defaultTrackColor = useMemo(() => ({
+    false: theme.borderLight,
+    true: theme.interactive,
+  }), [theme]);
+  
+  const defaultThumbColor = theme.surface;
   const switchStyle = [
     styles.switch,
     styles[`switch_${size}`],
@@ -40,8 +47,8 @@ const Switch: React.FC<SwitchProps> = ({
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
-      trackColor={trackColor}
-      thumbColor={thumbColor}
+      trackColor={trackColor || defaultTrackColor}
+      thumbColor={thumbColor || defaultThumbColor}
       testID={testID}
     />
   );

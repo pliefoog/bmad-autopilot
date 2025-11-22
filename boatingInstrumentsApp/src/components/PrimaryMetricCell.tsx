@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
-import { useUnitConversion } from '../hooks/useUnitConversion';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 
 interface PrimaryMetricCellProps {
@@ -18,7 +17,6 @@ interface PrimaryMetricCellProps {
   style?: any;
   maxWidth?: number; // Optional max width constraint
   minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
-  category?: string; // Unit category for consistent width calculation (legacy)
   testID?: string;
 }
 
@@ -29,6 +27,8 @@ interface PrimaryMetricCellProps {
  * - Unit: 16pt, regular, theme.textSecondary
  * - Spacing: 4pt between mnemonic and value, 2pt between value and unit
  * - Dynamic sizing: Adjusts font size based on content length and available width
+ * 
+ * Story 9.6: Removed legacy useUnitConversion - uses MetricDisplayData exclusively
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   data,
@@ -39,11 +39,9 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   style,
   maxWidth,
   minWidth: legacyMinWidth,
-  category,
   testID,
 }) => {
   const theme = useTheme();
-  const { getConsistentWidth, getPreferredUnit } = useUnitConversion();
 
   // Extract values - prefer data prop over legacy individual props
   const mnemonic = data?.mnemonic ?? legacyMnemonic ?? '';
@@ -53,17 +51,6 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   // Use layout information from MetricDisplayData if available
   const minWidth = data?.layout?.minWidth ?? legacyMinWidth;
   const alignment = data?.layout?.alignment ?? 'right';
-
-  // Get consistent width for this category if provided
-  const consistentWidth = useMemo(() => {
-    if (category) {
-      // Get the preferred unit for this category to determine correct formatting
-      const preferredUnit = getPreferredUnit(category);
-      const unitId = preferredUnit?.id;
-      return getConsistentWidth(category, unit, unitId);
-    }
-    return null;
-  }, [category, unit, getConsistentWidth, getPreferredUnit]);
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
@@ -135,12 +122,6 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
       minWidth: data.layout.minWidth,
       alignItems: alignment === 'center' ? 'center' as const : 
                  alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
-    },
-    // Fallback to legacy consistent width if no MetricDisplayData
-    !data && consistentWidth && { 
-      minWidth: consistentWidth.minWidth,
-      alignItems: consistentWidth.textAlign === 'center' ? 'center' as const : 
-                 consistentWidth.textAlign === 'right' ? 'flex-end' as const : 'flex-start' as const
     }
   ];
 
@@ -151,29 +132,14 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     data?.layout && {
       alignItems: alignment === 'center' ? 'center' as const : 
                  alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
-    },
-    // Fallback to legacy consistent width if no MetricDisplayData
-    !data && consistentWidth && {
-      minWidth: consistentWidth.minWidth,
-      alignItems: consistentWidth.textAlign === 'center' ? 'center' as const : 
-                 consistentWidth.textAlign === 'right' ? 'flex-end' as const : 'flex-start' as const
     }
   ];
 
-  // Value text styling with spacing for consistent digit alignment
-  const valueTextStyle = useMemo(() => {
-    const baseStyle = {
-      ...styles.value,
-      color: getValueColor(),
-    };
-    
-    // Add letter spacing if specified for better digit alignment
-    if (consistentWidth?.letterSpacing) {
-      baseStyle.letterSpacing = consistentWidth.letterSpacing;
-    }
-    
-    return baseStyle;
-  }, [styles.value, getValueColor, consistentWidth?.letterSpacing]);
+  // Value text styling
+  const valueTextStyle = {
+    ...styles.value,
+    color: getValueColor(),
+  };
 
   return (
     <View style={containerStyle} testID={testID || "primary-metric-cell"}>

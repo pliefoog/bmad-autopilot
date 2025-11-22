@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <metadata>
+    <epic-id>13.1</epic-id>
+    <story-id>13.1.1</story-id>
+    <story-key>13-1-1-fix-red-night-mode</story-key>
+    <title>Fix Red-Night Mode Color Violations</title>
+    <status>ready-for-dev</status>
+    <generated-date>2025-11-22</generated-date>
+  </metadata>
+
+  <story>
+    <as-a>marine navigator using the app at night</as-a>
+    <i-want>red-night mode to eliminate all green, blue, and white colors</i-want>
+    <so-that>my night vision remains adapted and I can safely navigate in darkness</so-that>
+  </story>
+
+  <acceptance-criteria>
+    <criterion id="AC1">
+      <description>Green Color Elimination - No green colors (#10B981 or similar) visible in red-night mode</description>
+      <validation>
+        - Status indicator dots must not display green when active
+        - Connection indicators must show bright red (#FCA5A5) instead of green
+        - Widget status elements must use red spectrum only
+        - Visual inspection across all screens confirms zero green colors
+      </validation>
+    </criterion>
+
+    <criterion id="AC2">
+      <description>Blue and White Color Elimination - Only red spectrum (625nm wavelength) visible</description>
+      <validation>
+        - No blue colors (#0EA5E9, #3B82F6, or similar) in red-night mode
+        - No white text or backgrounds (#FFFFFF, #F9FAFB, or similar)
+        - All text must be red spectrum (heading red, body text dark red)
+        - Backgrounds must be dark red (#1C0000, #2D0000) only
+      </validation>
+    </criterion>
+
+    <criterion id="AC3">
+      <description>Active State Visual Distinction - Clear differentiation between active/inactive states</description>
+      <validation>
+        - Active states use bright red (#FCA5A5)
+        - Inactive states use dark red (#7F1D1D)
+        - Connection status indicator clearly shows connected vs disconnected
+        - Widget states (pinned, expanded) remain distinguishable
+      </validation>
+    </criterion>
+
+    <criterion id="AC4">
+      <description>Theme Color Palette Update - themeColors.ts red-night palette corrected</description>
+      <validation>
+        - Remove all green color definitions from red-night palette
+        - Update primary/secondary/accent colors to red spectrum
+        - Update text colors (heading, body, muted) to appropriate red shades
+        - Update status colors (success, warning, error, info) to red spectrum equivalents
+      </validation>
+    </criterion>
+
+    <criterion id="AC5">
+      <description>Visual Regression Testing - Validation across all theme modes</description>
+      <validation>
+        - Screenshots captured in day, night, and red-night modes
+        - Side-by-side comparison confirms red-night color compliance
+        - All widgets tested (depth, speed, wind, compass, autopilot, GPS, engine, alarms)
+        - Settings screens, connection dialogs, status indicators all validated
+      </validation>
+    </criterion>
+  </acceptance-criteria>
+
+  <tasks>
+    <task id="T1" acceptance-criteria="AC1, AC2">
+      <name>Audit Current Red-Night Mode Violations</name>
+      <subtasks>
+        <subtask>Visual inspection of all screens in red-night mode</subtask>
+        <subtask>Identify all green color usage (#10B981 status indicators)</subtask>
+        <subtask>Identify all blue color usage (if any)</subtask>
+        <subtask>Identify all white text/background usage</subtask>
+        <subtask>Create violation inventory with file locations</subtask>
+      </subtasks>
+    </task>
+
+    <task id="T2" acceptance-criteria="AC4">
+      <name>Update Theme Color Palette</name>
+      <subtasks>
+        <subtask>Review src/theme/themeColors.ts red-night palette</subtask>
+        <subtask>Remove green color definitions (#10B981 → #FCA5A5 for active)</subtask>
+        <subtask>Update primary colors to red spectrum (#DC2626 → #7F1D1D)</subtask>
+        <subtask>Update text colors (heading: #FCA5A5, body: #DC2626, muted: #991B1B)</subtask>
+        <subtask>Update status colors (success → bright red, warning → amber red, error → deep red)</subtask>
+        <subtask>Validate background colors (#1C0000, #2D0000, #450A0A)</subtask>
+      </subtasks>
+    </task>
+
+    <task id="T3" acceptance-criteria="AC1, AC3">
+      <name>Fix Status Indicator Components</name>
+      <subtasks>
+        <subtask>Locate connection status indicator component</subtask>
+        <subtask>Replace conditional green color logic with theme.status.active (bright red)</subtask>
+        <subtask>Update inactive state to use theme.status.inactive (dark red)</subtask>
+        <subtask>Test visual distinction between active/inactive states</subtask>
+        <subtask>Update any other status indicators (widget status, alarm indicators)</subtask>
+      </subtasks>
+    </task>
+
+    <task id="T4" acceptance-criteria="AC2, AC3">
+      <name>Validate Widget Components</name>
+      <subtasks>
+        <subtask>Check all widget types in red-night mode (DepthWidget, SpeedWidget, WindWidget, etc.)</subtask>
+        <subtask>Verify no hardcoded colors bypass theme system</subtask>
+        <subtask>Test widget states (pinned, expanded) remain visually distinct</subtask>
+        <subtask>Validate metric cells use theme.text colors properly</subtask>
+        <subtask>Check AutopilotFooter controls in red-night mode</subtask>
+      </subtasks>
+    </task>
+
+    <task id="T5" acceptance-criteria="AC5">
+      <name>Visual Regression Testing</name>
+      <subtasks>
+        <subtask>Capture screenshots in day mode (baseline)</subtask>
+        <subtask>Capture screenshots in night mode (baseline)</subtask>
+        <subtask>Capture screenshots in red-night mode (validation)</subtask>
+        <subtask>Side-by-side comparison confirms no green/blue/white</subtask>
+        <subtask>Document validation results with screenshots</subtask>
+      </subtasks>
+    </task>
+  </tasks>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/stories/epic-13-vip-platform-ux-implementation.md</path>
+        <title>Epic 13: VIP Platform UX Implementation</title>
+        <section>Story 13.1.1: Fix Red-Night Mode Color Violations</section>
+        <snippet>Eliminate green/blue/white color violations in red-night mode. Status indicator dots currently show green (#10B981) which destroys night vision at 625nm wavelength. Marine safety requires red spectrum only (625-700nm).</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/ui-architecture.md</path>
+        <title>UI Architecture Document</title>
+        <section>Red-Night Mode Compliance</section>
+        <snippet>Red-night mode must use only red spectrum light (625-700nm) to preserve scotopic vision. RGB validation: R &lt; 70, G = 0, B = 0. Professional marine instruments universally use red lighting at night per USCG standards.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>System Architecture Document</title>
+        <section>Theme System Integration</section>
+        <snippet>Theme system provides day/night/red-night modes through ThemeProvider context. All components must use theme.status.active instead of hardcoded colors. Theme changes propagate instantly without widget restart.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/stories/story-6.9-theme-provider-context-enhancement.md</path>
+        <title>Story 6.9: Theme Provider Context Enhancement</title>
+        <section>Marine Safety Color Science</section>
+        <snippet>Red-night mode: Wavelengths 620-750nm preserve rhodopsin. Blue/green light: &lt;620nm destroys adaptation. Brightness levels: Day (100%) → Night (40%) → Red-night (20%).</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/stories/story-9.5-implement-fontmeasurementservice.md</path>
+        <title>Story 9.5: FontMeasurementService Implementation</title>
+        <section>Theme Integration Learnings</section>
+        <snippet>Cache invalidation in ThemeProvider.tsx (lines 127-130) demonstrates proper theme system integration. Theme context updates propagate instantly when themeMode changes. No widget restart required.</snippet>
+      </artifact>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>boatingInstrumentsApp/src/components/atoms/StatusIndicator.tsx</path>
+        <kind>component</kind>
+        <symbol>StatusIndicator</symbol>
+        <lines>38-40</lines>
+        <reason>PRIMARY VIOLATION: Hardcoded green color #10B981 for indicator_connected status. Must replace with theme-aware color using useTheme hook.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/store/themeStore.ts</path>
+        <kind>store</kind>
+        <symbol>redNightTheme</symbol>
+        <lines>75-98</lines>
+        <reason>Red-night theme color definitions. Currently has success: '#DC2626' which is correct (red), but needs validation against all color properties for green violations.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/utils/themeCompliance.ts</path>
+        <kind>utility</kind>
+        <symbol>analyzeColorCompliance</symbol>
+        <lines>37-87</lines>
+        <reason>Validation function for red-night color compliance. Use to verify no G > 0 or B > 0 in RGB values. Marine safety level classification: safe/warning/unsafe.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/theme/ThemeProvider.tsx</path>
+        <kind>provider</kind>
+        <symbol>ThemeProvider</symbol>
+        <lines>121-130</lines>
+        <reason>Theme invalidation mechanism (cache clearing on theme changes). Demonstrates how theme updates propagate to all components via useEffect hook.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/components/marine/StatusIndicator.tsx</path>
+        <kind>component</kind>
+        <symbol>StatusIndicator (marine)</symbol>
+        <lines>234-250</lines>
+        <reason>Marine-specific status indicator that uses statusColor prop. Check if this component receives theme-aware colors or if it has hardcoded green violations.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/scripts/validate-themes.js</path>
+        <kind>script</kind>
+        <symbol>redNightTheme validation</symbol>
+        <lines>30-60</lines>
+        <reason>Theme validation script that checks red-night compliance. Use as reference for expected color values and validation approach.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/__tests__/tier1-unit/stores/themeStore.test.ts</path>
+        <kind>test</kind>
+        <symbol>red-night theme tests</symbol>
+        <lines>55-75</lines>
+        <reason>Existing theme store tests validate red-night colors. Extend these tests to verify green color elimination after fixes.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <ecosystem name="npm">
+        <package>react-native</package>
+        <package>zustand</package>
+        <package>@react-native-async-storage/async-storage</package>
+        <package>expo-brightness</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface>
+      <name>ThemeColors</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface ThemeColors {
+  primary: string;
+  secondary: string;
+  background: string;
+  surface: string;
+  appBackground: string;
+  text: string;
+  textSecondary: string;
+  accent: string;
+  warning: string;
+  error: string;
+  success: string;
+  border: string;
+  shadow: string;
+  iconPrimary: string;
+  iconSecondary: string;
+  iconAccent: string;
+  iconDisabled: string;
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/store/themeStore.ts</path>
+    </interface>
+
+    <interface>
+      <name>ColorCompliance</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface ColorCompliance {
+  isRedNightSafe: boolean;
+  hasBlueGreenLight: boolean;
+  wavelengthRange: string;
+  marineSafetyLevel: 'safe' | 'warning' | 'unsafe';
+  recommendation?: string;
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/utils/themeCompliance.ts</path>
+    </interface>
+
+    <interface>
+      <name>StatusIndicatorProps</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface StatusIndicatorProps {
+  status: 'connected' | 'connecting' | 'disconnected' | 'error' | 'warning';
+  size?: 'small' | 'medium' | 'large';
+  style?: ViewStyle;
+  testID?: string;
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/components/atoms/StatusIndicator.tsx</path>
+    </interface>
+
+    <interface>
+      <name>useTheme</name>
+      <kind>React Hook</kind>
+      <signature>
+const useTheme = () => {
+  const { colors, mode } = useThemeStore();
+  return { colors, mode };
+}
+      </signature>
+      <path>boatingInstrumentsApp/src/hooks/useTheme.ts</path>
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint>
+      <type>Marine Safety Standard</type>
+      <description>Red-night mode MUST emit ZERO blue/green light (wavelengths below 620nm). RGB values must have G=0 and B=0. This is a critical marine safety requirement per USCG standards.</description>
+    </constraint>
+
+    <constraint>
+      <type>Theme System Pattern</type>
+      <description>All components MUST use theme context colors via useTheme() hook. NO hardcoded color values allowed. Components must react to theme changes without restart.</description>
+    </constraint>
+
+    <constraint>
+      <type>Visual Distinction Requirement</type>
+      <description>Active/inactive states must remain clearly distinguishable using only red spectrum: active (#FCA5A5 bright red), inactive (#7F1D1D dark red). No reliance on color variety.</description>
+    </constraint>
+
+    <constraint>
+      <type>Testing Standard</type>
+      <description>Follow Story 9.5 testing precedent: comprehensive unit tests + manual visual validation + documented screenshots. Visual regression suite is future enhancement.</description>
+    </constraint>
+
+    <constraint>
+      <type>Performance Requirement</type>
+      <description>Theme changes must propagate instantly (&lt;50ms). Cache invalidation on theme changes validated in Story 9.5 (ThemeProvider lines 127-130).</description>
+    </constraint>
+
+    <constraint>
+      <type>No Breaking Changes</type>
+      <description>Theme system already abstracts colors. Only update color palette values in themeStore.ts. Any hardcoded colors are technical debt violations to be fixed.</description>
+    </constraint>
+
+    <constraint>
+      <type>Wavelength Specification</type>
+      <description>Red spectrum: 620-750nm (scotopic vision safe). Green: 495-570nm (destroys adaptation). Blue: 450-495nm (most damaging). Use themeCompliance.ts validation.</description>
+    </constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      Epic 11 established triple-tier testing: (1) Static mocks for unit tests, (2) API message injection for integration, (3) Full scenario E2E. This story follows Story 9.5 precedent: comprehensive unit tests with manual visual validation. Automated visual regression suite remains future enhancement. Theme compliance validation exists in themeCompliance.ts - use validateThemePalette() and analyzeColorCompliance() functions. Unit tests in __tests__/tier1-unit/stores/themeStore.test.ts validate critical marine colors preserved across themes.
+    </standards>
+
+    <locations>
+      <location>boatingInstrumentsApp/__tests__/tier1-unit/stores/themeStore.test.ts</location>
+      <location>boatingInstrumentsApp/__tests__/tier1-unit/components/StatusIndicator.test.tsx (create)</location>
+      <location>boatingInstrumentsApp/__tests__/tier1-unit/utils/themeCompliance.test.ts (create)</location>
+      <location>boatingInstrumentsApp/scripts/validate-themes.js (existing validation script)</location>
+    </locations>
+
+    <ideas>
+      <test-idea acceptance-criteria="AC1, AC4">
+        <description>Unit test: Validate redNightTheme object has zero green colors</description>
+        <approach>Load redNightTheme from themeStore.ts, run validateThemePalette(), assert all results have isRedNightSafe=true and hasBlueGreenLight=false. Specifically check success color is not #10B981.</approach>
+      </test-idea>
+
+      <test-idea acceptance-criteria="AC1, AC3">
+        <description>Component test: StatusIndicator uses theme colors, not hardcoded green</description>
+        <approach>Render StatusIndicator with status='connected' in red-night mode, assert backgroundColor is theme.success (red) not #10B981 (green). Test active/inactive visual distinction.</approach>
+      </test-idea>
+
+      <test-idea acceptance-criteria="AC2">
+        <description>Unit test: Red-night palette has zero blue/white RGB values</description>
+        <approach>For each redNightTheme color, use hexToRgb() to extract RGB, assert G=0 and B=0. White check: no colors with R=255, G=255, B=255. Blue check: no colors with B > G or B > R.</approach>
+      </test-idea>
+
+      <test-idea acceptance-criteria="AC4">
+        <description>Integration test: Theme changes propagate to StatusIndicator</description>
+        <approach>Render StatusIndicator, toggle theme from day → red-night, assert backgroundColor changes from green (#10B981) to red (theme.success). Verify &lt;50ms update time.</approach>
+      </test-idea>
+
+      <test-idea acceptance-criteria="AC5">
+        <description>Manual test: Visual inspection across all screens</description>
+        <approach>Enable red-night mode, navigate Dashboard → Settings → Alarms → Autopilot. Capture screenshots. Use overlay comparison to detect green channel violations. Document with annotated screenshots.</approach>
+      </test-idea>
+
+      <test-idea acceptance-criteria="AC3">
+        <description>Visual test: Active/inactive state distinction in red-night</description>
+        <approach>Render connection status indicator in both connected (active) and disconnected (inactive) states. Verify visual distinction: active uses bright red (#FCA5A5), inactive uses dark red (#7F1D1D). Test with color-blind simulation.</approach>
+      </test-idea>
+    </ideas>
+  </tests>
+
+  <marine-context>
+    <safety-standard>
+      <name>USCG Navigation Light Standards</name>
+      <requirement>Marine electronics must use red lighting (625-700nm) for night operations to preserve crew night vision adaptation</requirement>
+    </safety-standard>
+
+    <safety-standard>
+      <name>ANSI/ABYC A-16</name>
+      <requirement>Lighting for marine electronics must not compromise scotopic (rod cell) vision during critical navigation operations</requirement>
+    </safety-standard>
+
+    <color-science>
+      <wavelength type="red" range="620-750nm" effect="Minimal scotopic response, preserves night vision">Red spectrum is marine-safe for night operations. Rhodopsin (visual purple) in retinal rods is insensitive to red light.</wavelength>
+      <wavelength type="green" range="495-570nm" effect="Peak photopic sensitivity, destroys adaptation">Green light (#10B981 at 555nm) destroys night vision adaptation in &lt;1 second. Takes 20-30 minutes to re-adapt.</wavelength>
+      <wavelength type="blue" range="445-495nm" effect="Most damaging to scotopic vision">Blue light is most damaging to night vision. Even brief exposure requires full re-adaptation period.</wavelength>
+    </color-science>
+
+    <adaptation-timeline>
+      <phase duration="5-10 min">Initial dark adaptation (cone cells adjust)</phase>
+      <phase duration="20-30 min">Full scotopic adaptation (rod cells achieve maximum sensitivity)</phase>
+      <phase duration="&lt;1 sec">Destruction by green/blue light exposure</phase>
+    </adaptation-timeline>
+  </marine-context>
+
+  <implementation-notes>
+    <primary-violation>
+      StatusIndicator.tsx line 38: backgroundColor: '#10B981' hardcoded green for indicator_connected. This is the PRIMARY violation blocking story completion. Replace with theme.success which should be red (#FCA5A5 or #DC2626) in red-night mode.
+    </primary-violation>
+
+    <fix-approach>
+      1. Update StatusIndicator.tsx to use useTheme() hook
+      2. Replace hardcoded colors with theme.success, theme.warning, theme.error
+      3. Validate themeStore.ts redNightTheme has no green colors (check success property)
+      4. Test visual distinction between active (bright red) and inactive (dark red) states
+      5. Run validate-themes.js script to confirm compliance
+      6. Manual visual inspection with screenshots in all three modes
+    </fix-approach>
+
+    <theme-propagation>
+      ThemeProvider.tsx useEffect (lines 127-130) clears FontMeasurementService cache on theme changes, demonstrating instant propagation pattern. StatusIndicator using useTheme() will automatically re-render with new colors when themeMode changes. No widget restart required.
+    </theme-propagation>
+
+    <validation-tools>
+      - themeCompliance.ts: analyzeColorCompliance() validates individual colors
+      - themeCompliance.ts: validateThemePalette() checks entire theme object
+      - scripts/validate-themes.js: Automated red-night compliance checking
+      - Manual: Screenshot comparison with green channel isolation
+    </validation-tools>
+  </implementation-notes>
+</story-context>

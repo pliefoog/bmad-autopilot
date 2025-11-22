@@ -129,7 +129,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#E5E7EB',
+      borderColor: theme.border,
       padding: 16,
       marginBottom: 8,
     },
@@ -171,7 +171,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       marginTop: 12,
       paddingTop: 12,
       borderTopWidth: 1,
-      borderTopColor: '#E5E7EB',
+      borderTopColor: theme.border,
     },
     secondaryGrid: {
       flexDirection: 'row',

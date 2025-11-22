@@ -1,0 +1,404 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9</epicId>
+    <storyId>5</storyId>
+    <title>Implement FontMeasurementService</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/story-9.5-implement-fontmeasurementservice.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>marine navigator</asA>
+    <iWant>metrics to display with stable layouts that don't jump when values change</iWant>
+    <soThat>I can read instruments reliably without distraction from visual movement</soThat>
+    <tasks>
+- [ ] **Task 1: Create FontMeasurementService Core** (AC: 1)
+  - [ ] Subtask 1.1: Define service interface (measureText, measureWorstCase, clearCache)
+  - [ ] Subtask 1.2: Implement web Canvas API measurement module
+  - [ ] Subtask 1.3: Implement iOS native measurement module (TextLayoutManager)
+  - [ ] Subtask 1.4: Implement Android native measurement module (Paint.measureText)
+  - [ ] Subtask 1.5: Create platform selection logic using Platform.select()
+
+- [ ] **Task 2: Implement Caching System** (AC: 4)
+  - [ ] Subtask 2.1: Design LRU cache data structure (Map with size limit)
+  - [ ] Subtask 2.2: Implement cache key generation (font + text combination)
+  - [ ] Subtask 2.3: Add cache invalidation on font/theme changes
+  - [ ] Subtask 2.4: Pre-calculate common metric patterns during app init
+  - [ ] Subtask 2.5: Add performance monitoring and cache hit rate tracking
+
+- [ ] **Task 3: Worst-Case Width Calculations** (AC: 3)
+  - [ ] Subtask 3.1: Analyze format patterns for maximum width scenarios
+  - [ ] Subtask 3.2: Implement worst-case text generation per category (speed: "999.9", depth: "9999.9")
+  - [ ] Subtask 3.3: Calculate minWidth including padding and alignment
+  - [ ] Subtask 3.4: Test with edge cases (negatives, zeros, max values)
+  - [ ] Subtask 3.5: Validate minWidth across different font sizes
+
+- [ ] **Task 4: Integrate with useMetricDisplay Hook** (AC: 5)
+  - [ ] Subtask 4.1: Update useMetricDisplay to call FontMeasurementService
+  - [ ] Subtask 4.2: Populate MetricDisplayData.layout.minWidth field
+  - [ ] Subtask 4.3: Update PrimaryMetricCell to apply minWidth style
+  - [ ] Subtask 4.4: Update SecondaryMetricCell to apply minWidth style
+  - [ ] Subtask 4.5: Add re-measurement trigger on settings changes
+
+- [ ] **Task 5: Testing and Performance Validation** (AC: 1, 4)
+  - [ ] Subtask 5.1: Unit tests for measurement accuracy across platforms
+  - [ ] Subtask 5.2: Performance benchmarks validate <5ms target
+  - [ ] Subtask 5.3: Visual regression tests for layout stability (no jumping)
+  - [ ] Subtask 5.4: Memory profiling for cache usage (<5MB target)
+  - [ ] Subtask 5.5: Integration tests with real NMEA data (rapid value changes)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **FontMeasurementService Created** - Platform-specific text measurement service with caching
+   - Service implements Canvas API measurement for web platform
+   - Service implements native text measurement for iOS/Android
+   - Worst-case width calculations implemented for minWidth computation
+   - Aggressive caching system reduces measurement overhead to <5ms per metric
+   - Service handles font family, size, weight, and style variations
+
+2. **Platform-Specific Implementation** - Correct measurement APIs for each platform
+   - Web: Canvas API `measureText()` with font context
+   - iOS: Native TextLayoutManager or UIFont measurement
+   - Android: Native Paint.measureText() or TextPaint
+   - Fallback estimation for unsupported platforms
+   - Platform.select() properly routes to correct implementation
+
+3. **Worst-Case Width Calculations** - MinWidth prevents layout jumping
+   - Calculate maximum possible width for each format pattern (e.g., "999.9 kts")
+   - MetricDisplayData.layout.minWidth populated accurately
+   - Test with edge cases: 0.0, 999.9, negative values, long unit strings
+   - Padding and alignment considered in width calculations
+   - Responsive to font size changes (theme system integration)
+
+4. **Caching System** - Performance optimization meets <5ms target
+   - LRU cache stores measurements by font + text key
+   - Cache invalidation on font or theme changes
+   - Pre-calculation during app initialization for common patterns
+   - Performance benchmarking validates <5ms average measurement time
+   - Memory usage remains under 5MB for measurement cache
+
+5. **Integration with useMetricDisplay** - Hook uses service for layout stability
+   - useMetricDisplay calls FontMeasurementService for minWidth
+   - MetricDisplayData.layout.minWidth field correctly populated
+   - PrimaryMetricCell and SecondaryMetricCell apply minWidth styles
+   - Visual regression testing shows zero layout jumping
+   - Settings changes (font size, units) trigger re-measurement
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/stories/epic-9-enhanced-presentation-system.md</path>
+        <title>Epic 9: Enhanced Presentation System</title>
+        <section>Story 9.5: Implement FontMeasurementService</section>
+        <snippet>Create FontMeasurementService with Canvas API (web) and native measurement. Implement worst-case width calculations for minWidth. Add aggressive caching for performance (&lt;5ms target). Integrate with MetricDisplayData.layout.minWidth. Blocks Epic 13.3.4 (Dashboard Density Integration) - needs stable minWidth for smooth transitions.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/stories/epic-9-enhanced-presentation-system.md</path>
+        <title>Epic 9: Enhanced Presentation System</title>
+        <section>Technical Architecture - Font Measurement Service</section>
+        <snippet>Platform-specific text measurement (Canvas API web, native mobile). Aggressive caching for performance. Worst-case width calculations prevent layout jumping. Performance requirement: &lt;5ms for metric formatting with font measurement caching.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/ui-architecture.md</path>
+        <title>Frontend Architecture - Enhanced Presentation System</title>
+        <section>MetricDisplayData Interface</section>
+        <snippet>MetricDisplayData includes layout.minWidth (calculated stable width prevents jumping), alignment, and font properties. Single hook replaces both useUnitConversion and useDataPresentation. FontMeasurementService provides platform-specific measurement with aggressive caching.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/ui-architecture.md</path>
+        <title>Frontend Architecture - Font Measurement Service</title>
+        <section>FontMeasurementService Implementation</section>
+        <snippet>measureText() uses platform-specific measurement (Canvas API web, native mobile). calculateOptimalWidth() tests worst-case values to find maximum width preventing layout jumping. Aggressive caching via Map for performance.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Core Architecture - Performance Optimization</title>
+        <section>Frontend Performance Requirements</section>
+        <snippet>Response Time Target: &lt;100ms from NMEA sentence arrival to widget update. Render Performance: 60 FPS maintained with 10+ simultaneous widget updates. Memory Management: UI layer limited to 60-second NMEA history buffer.</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Core Architecture - Epic 11 Testing Architecture</title>
+        <section>Quality Standards Framework</section>
+        <snippet>Performance Validation: &lt;16ms widget updates (60fps requirement), &lt;50MB memory increase per test operation, &lt;100ms NMEA sentence → widget update. Coverage Requirements: Widget Coverage 85% minimum, Service Coverage 80% minimum.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>boatingInstrumentsApp/src/hooks/useMetricDisplay.ts</path>
+        <kind>hook</kind>
+        <symbol>useMetricDisplay</symbol>
+        <lines>1-218</lines>
+        <reason>Primary integration point for FontMeasurementService. Currently imports and calls FontMeasurementService.calculateOptimalWidth() (line 63-68) and FontMeasurementService.preloadMarineMeasurements() (line 216). Service must be implemented to fulfill these API contracts.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/hooks/useMetricDisplay.ts</path>
+        <kind>hook</kind>
+        <symbol>FontMeasurementService import</symbol>
+        <lines>17</lines>
+        <reason>Import statement expects FontMeasurementService at src/services/FontMeasurementService. Story must create this service module with calculateOptimalWidth() and preloadMarineMeasurements() methods.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/presentation/presentations.ts</path>
+        <kind>service</kind>
+        <symbol>PresentationFormat</symbol>
+        <lines>12-21</lines>
+        <reason>Defines format specification with pattern, decimals, minWidth, and testCases. FontMeasurementService.calculateOptimalWidth() must consume PresentationFormat.testCases (min/max/typical) to generate worst-case widths.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/presentation/presentations.ts</path>
+        <kind>data</kind>
+        <symbol>DEPTH_PRESENTATIONS</symbol>
+        <lines>56-142</lines>
+        <reason>Example presentation definitions with formatSpec.testCases. Shows pattern like "xxx.x" (max: 999.9) that FontMeasurementService must measure to calculate stable minWidth.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx</path>
+        <kind>component</kind>
+        <symbol>SecondaryMetricCell</symbol>
+        <lines>33-100</lines>
+        <reason>Integration point that applies MetricDisplayData.layout.minWidth (line 91). Must verify minWidth is properly applied as a style constraint to prevent layout jumping.</reason>
+      </artifact>
+
+      <artifact>
+        <path>boatingInstrumentsApp/src/types/MetricDisplayData.ts</path>
+        <kind>interface</kind>
+        <symbol>MetricDisplayData</symbol>
+        <lines>full-file</lines>
+        <reason>Type definition for MetricDisplayData interface including layout.minWidth field. FontMeasurementService must populate this field accurately.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <runtime>
+        <package name="react-native" version="^0.81.4" ecosystem="npm">
+          Platform API for Platform.select() routing to web/iOS/Android implementations
+        </package>
+        <package name="react" version="^19.1.0" ecosystem="npm">
+          React hooks for service integration and memoization
+        </package>
+      </runtime>
+      <web-specific>
+        <native>Canvas API (browser built-in)</native>
+        Context2D measureText() for web platform font measurement
+      </web-specific>
+      <ios-specific>
+        <native>UIFont / TextLayoutManager (React Native bridge)</native>
+        Native iOS text measurement APIs for accurate font metrics
+      </ios-specific>
+      <android-specific>
+        <native>Paint.measureText() / TextPaint (React Native bridge)</native>
+        Native Android text measurement APIs for accurate font metrics
+      </android-specific>
+      <testing>
+        <package name="jest" version="dev dependency" ecosystem="npm">
+          Unit testing framework for measurement accuracy tests
+        </package>
+        <package name="@testing-library/react-native" version="^13.3.3" ecosystem="npm">
+          Component testing for MetricCell integration
+        </package>
+      </testing>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <performance>
+      - **Measurement Performance Target**: Average measurement time &lt;5ms per metric (Epic 9 requirement)
+      - **Cold Measurement**: &lt;10ms acceptable for first measurement (initialization)
+      - **Cached Measurement**: &lt;1ms for cache hits (majority of cases)
+      - **Pre-calculation Overhead**: &lt;200ms during app startup for common patterns
+      - **Overall Widget Update**: &lt;100ms NMEA sentence → widget update (system requirement)
+      - **Render Performance**: &lt;16ms frame time to maintain 60 FPS
+    </performance>
+
+    <memory>
+      - **Cache Size Limit**: 500 entries with LRU eviction policy
+      - **Memory Usage**: &lt;5MB for full measurement cache
+      - **Cache Hit Rate**: Target &gt;95% after warm-up period
+      - **Invalidation Time**: &lt;50ms on theme/font changes
+    </memory>
+
+    <architecture>
+      - **Service Layer Separation**: Pure service with no UI dependencies (src/services/)
+      - **Platform-Specific Files**: Use .ios.ts/.android.ts/.web.ts pattern for native code
+      - **Single Responsibility**: FontMeasurementService only handles text measurement, not formatting or display
+      - **No Direct DOM Access in Components**: Service encapsulates all measurement logic
+      - **TypeScript Strict Mode**: All code must pass strict type checking
+    </architecture>
+
+    <testing>
+      - **Unit Test Coverage**: 80% minimum for service layer (Epic 11 standard)
+      - **Platform Mocking**: Mock native modules for web test environment
+      - **Performance Benchmarks**: Automated validation of &lt;5ms target in CI/CD
+      - **Visual Regression**: Screenshot diff testing for layout stability validation
+    </testing>
+
+    <marine-standards>
+      - **Professional Instrument Behavior**: Zero layout jumping is non-negotiable for marine safety
+      - **Format Pattern Compliance**: Must measure exact worst-case patterns from presentations
+      - **Font Variation Handling**: Support system, monospace fonts with multiple weights (400-700)
+      - **Decimal Precision**: Accurate minWidth for patterns with 0-3 decimal places
+    </marine-standards>
+  </constraints>
+
+  <interfaces>
+    <api>
+      <interface name="FontMeasurementService.measureText">
+        <signature>measureText(text: string, fontSize: number, fontFamily: string, fontWeight: string): number</signature>
+        <description>Platform-specific text width measurement with caching. Returns pixel width.</description>
+        <usage>Called by calculateOptimalWidth() for each test case value</usage>
+      </interface>
+
+      <interface name="FontMeasurementService.calculateOptimalWidth">
+        <signature>calculateOptimalWidth(formatSpec: PresentationFormat, fontSize: number, fontFamily: string, fontWeight: string): number</signature>
+        <description>Calculates stable minWidth by measuring worst-case test values. Consumed by useMetricDisplay.</description>
+        <usage>useMetricDisplay.ts line 63-68 calls this with presentation.formatSpec</usage>
+      </interface>
+
+      <interface name="FontMeasurementService.preloadMarineMeasurements">
+        <signature>preloadMarineMeasurements(fontSize: number, fontFamily: string): void</signature>
+        <description>Pre-calculates common marine metric patterns during app initialization. Improves cache hit rate.</description>
+        <usage>useFontMeasurementPreload hook line 216 calls during app startup</usage>
+      </interface>
+
+      <interface name="FontMeasurementService.clearCache">
+        <signature>clearCache(): void</signature>
+        <description>Invalidates measurement cache on theme/font changes. Called by theme system.</description>
+        <usage>Theme change handlers must trigger cache invalidation</usage>
+      </interface>
+    </api>
+
+    <data>
+      <interface name="PresentationFormat (from presentations.ts)">
+        <signature>{ pattern: string; decimals: number; minWidth: number; testCases: { min: number; max: number; typical: number; } }</signature>
+        <description>Input to calculateOptimalWidth(). testCases.max is critical for worst-case measurement.</description>
+        <path>boatingInstrumentsApp/src/presentation/presentations.ts:12-21</path>
+      </interface>
+
+      <interface name="MetricDisplayData.layout.minWidth">
+        <signature>layout: { minWidth: number; alignment: string; fontSize?: number; }</signature>
+        <description>Output field populated by useMetricDisplay with calculated stable width.</description>
+        <path>boatingInstrumentsApp/src/types/MetricDisplayData.ts</path>
+      </interface>
+    </data>
+
+    <components>
+      <interface name="PrimaryMetricCell minWidth application">
+        <description>Must apply data.layout.minWidth as View style constraint</description>
+        <path>boatingInstrumentsApp/src/components/molecules/PrimaryMetricCell.tsx</path>
+      </interface>
+
+      <interface name="SecondaryMetricCell minWidth application">
+        <description>Already applies data.layout.minWidth (line 91). Verify proper styling.</description>
+        <path>boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx:91</path>
+      </interface>
+    </components>
+  </interfaces>
+
+  <tests>
+    <standards>
+Epic 11 Professional-Grade Testing Architecture standards apply to this story:
+
+**Unit Tests** (Static Mocks):
+- Platform-specific measurement accuracy with mocked native modules
+- Cache hit/miss scenarios and LRU eviction behavior
+- Worst-case width calculations for all presentation categories
+- Font variation handling (size, weight, family)
+- Performance benchmarks validate &lt;5ms average measurement time
+
+**Integration Tests** (API Message Injection):
+- Real NMEA data with rapid value changes (0→999.9 kts) via Simulator Control API
+- Settings changes triggering re-measurement and cache invalidation
+- Theme switches (day/night/red-night) with font variation validation
+- Cross-platform measurement consistency (web/iOS/Android)
+
+**End-to-End Tests** (Full Scenario):
+- Visual regression testing with screenshot diff for layout stability
+- Complete widget update pipeline: NMEA → Parser → Store → useMetricDisplay → MetricCell
+- Performance under load: 500+ messages/second stress testing
+- Memory profiling validates &lt;5MB cache usage target
+
+**Coverage Requirements**:
+- Service Coverage: 80% minimum (FontMeasurementService core logic)
+- Hook Coverage: 80% minimum (useMetricDisplay integration)
+- Integration Coverage: 90% minimum (complete data flow validation)
+
+**Marine Domain Validation**:
+- Format pattern accuracy for speed (xxx.x kts), depth (xxxx.x m), wind (x Bf)
+- Coordinate format precision (DDM, DMS, DD patterns)
+- Negative value handling for temperature and wind direction
+- Professional instrument stability: zero pixel jumping tolerance
+    </standards>
+
+    <locations>
+      <location>boatingInstrumentsApp/__tests__/tier1-unit/services/FontMeasurementService.test.ts</location>
+      <location>boatingInstrumentsApp/__tests__/tier1-unit/presentation/enhancedPresentations.test.ts</location>
+      <location>boatingInstrumentsApp/__tests__/tier2-integration/hooks/useMetricDisplay.test.ts</location>
+      <location>boatingInstrumentsApp/__tests__/tier3-e2e/visual-regression/layout-stability.test.ts</location>
+      <location>boatingInstrumentsApp/__tests__/performance/font-measurement-benchmark.test.ts</location>
+    </locations>
+
+    <ideas>
+      <test id="AC1-1" acceptance-criteria="1">
+        **Purpose**: Validate Canvas API web measurement accuracy
+        **Method**: Measure known text strings with verified pixel widths
+        **Expected**: Measurements within 1px of browser-verified dimensions
+        **Error Conditions**: Invalid font family should fall back to system default
+      </test>
+
+      <test id="AC2-1" acceptance-criteria="2">
+        **Purpose**: Validate platform-specific measurement routing
+        **Method**: Mock Platform.OS and verify correct implementation called
+        **Expected**: Web uses Canvas, iOS uses native bridge, Android uses native bridge
+        **Error Conditions**: Unsupported platform should use fallback estimation
+      </test>
+
+      <test id="AC3-1" acceptance-criteria="3">
+        **Purpose**: Validate worst-case width calculation for speed category
+        **Method**: Measure formatSpec.testCases.max value "999.9 kts"
+        **Expected**: minWidth accommodates maximum value without clipping
+        **Error Conditions**: Edge values (0.0, negative) should not exceed calculated width
+      </test>
+
+      <test id="AC4-1" acceptance-criteria="4">
+        **Purpose**: Validate LRU cache eviction with 500 entry limit
+        **Method**: Insert 501 measurements, verify oldest entry evicted
+        **Expected**: Cache size remains at 500, cache hit rate &gt;95% after warm-up
+        **Error Conditions**: Cache invalidation should clear all entries correctly
+      </test>
+
+      <test id="AC4-2" acceptance-criteria="4">
+        **Purpose**: Validate &lt;5ms average measurement performance
+        **Method**: Benchmark 100 measurements with cache warm-up
+        **Expected**: Average time &lt;5ms, cached hits &lt;1ms
+        **Error Conditions**: Cold measurements may exceed 5ms but must stay &lt;10ms
+      </test>
+
+      <test id="AC5-1" acceptance-criteria="5">
+        **Purpose**: Validate zero layout jumping with rapid value changes
+        **Method**: Inject NMEA depth data rapidly changing from 5.0 → 45.0 → 145.0 ft
+        **Expected**: DepthWidget layout remains stable, no visible jumping
+        **Error Conditions**: Missing minWidth should be caught in visual regression
+      </test>
+
+      <test id="AC5-2" acceptance-criteria="5">
+        **Purpose**: Validate settings change triggers re-measurement
+        **Method**: Change unit preference from knots to mph, verify minWidth updates
+        **Expected**: New minWidth calculated for mph format pattern
+        **Error Conditions**: Stale minWidth should cause test failure via layout shift
+      </test>
+    </ideas>
+  </tests>
+</story-context>

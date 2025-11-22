@@ -69,7 +69,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
               style={[styles.errorButton, styles.reloadButton]} 
               onPress={this.handleReload}
             >
-              <UniversalIcon name="refresh-outline" size={16} color="#FFFFFF" />
+              <UniversalIcon name="refresh-outline" size={16} color="#000000" />
               <Text style={styles.reloadButtonText}>Reload</Text>
             </TouchableOpacity>
             
@@ -78,7 +78,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
                 style={[styles.errorButton, styles.removeButton]} 
                 onPress={this.handleRemove}
               >
-                <UniversalIcon name="close-outline" size={16} color="#FFFFFF" />
+                <UniversalIcon name="close-outline" size={16} color="#000000" />
                 <Text style={styles.removeButtonText}>Remove</Text>
               </TouchableOpacity>
             )}
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#059669',
   },
   reloadButtonText: {
-    color: '#FFFFFF',
+    color: '#000000', // Dark text on green button for contrast
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#DC2626',
   },
   removeButtonText: {
-    color: '#FFFFFF',
+    color: '#000000', // Dark text on red button for contrast
     fontSize: 12,
     fontWeight: 'bold',
   },

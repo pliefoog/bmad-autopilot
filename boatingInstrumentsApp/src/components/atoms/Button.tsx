@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, StyleSheet, ViewStyle, TextStyle, Animated } from 'react-native';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useHaptics } from '../../services/haptics/Haptics';
 import { useMarineTouch } from '../../services/marine/MarineTouchService';
 
@@ -29,6 +29,9 @@ const Button: React.FC<ButtonProps> = ({
   accessibilityLabel,
   accessibilityHint,
 }) => {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  
   const buttonStyle = [
     styles.button,
     styles[`button_${variant}`],
@@ -95,7 +98,7 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   button: {
     borderRadius: 10, // iOS standard for buttons/form controls
     alignItems: 'center',
@@ -104,16 +107,16 @@ const styles = StyleSheet.create({
   },
   // Legacy variants (preserved for compatibility)
   button_primary: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   button_secondary: {
-    backgroundColor: '#6B7280',
-    borderColor: '#6B7280',
+    backgroundColor: theme.textSecondary,
+    borderColor: theme.textSecondary,
   },
   button_outline: {
     backgroundColor: 'transparent',
-    borderColor: '#007AFF',
+    borderColor: theme.primary,
   },
   button_ghost: {
     backgroundColor: 'transparent',
@@ -121,17 +124,17 @@ const styles = StyleSheet.create({
   },
   // iOS button variants (HIG compliant)
   button_filled: {
-    backgroundColor: '#007AFF', // iOS tint color (filled)
-    borderColor: '#007AFF',
+    backgroundColor: theme.primary, // iOS tint color (filled)
+    borderColor: theme.primary,
     borderWidth: 0,
   },
   button_tinted: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)', // 10% tint
+    backgroundColor: theme.overlay, // 10% tint
     borderColor: 'transparent',
     borderWidth: 0,
   },
   button_gray: {
-    backgroundColor: 'rgba(120, 120, 128, 0.2)', // iOS gray fill
+    backgroundColor: theme.overlay, // iOS gray fill
     borderColor: 'transparent',
     borderWidth: 0,
   },
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
   },
   button_bordered: {
     backgroundColor: 'transparent',
-    borderColor: 'rgba(0, 0, 0, 0.3)', // iOS separator color
+    borderColor: theme.border, // iOS separator color
     borderWidth: 1,
   },
   button_small: {
@@ -171,32 +174,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   text_primary: {
-    color: '#FFFFFF',
+    color: theme.text,
   },
   text_secondary: {
-    color: '#FFFFFF',
+    color: theme.text,
   },
   text_outline: {
-    color: '#007AFF',
+    color: theme.primary,
   },
   text_ghost: {
-    color: '#007AFF',
+    color: theme.primary,
   },
   // iOS variant text colors
   text_filled: {
-    color: '#FFFFFF',
+    color: theme.text,
   },
   text_tinted: {
-    color: '#007AFF',
+    color: theme.primary,
   },
   text_gray: {
-    color: '#000000',
+    color: theme.text,
   },
   text_plain: {
-    color: '#007AFF',
+    color: theme.primary,
   },
   text_bordered: {
-    color: '#007AFF',
+    color: theme.primary,
   },
   text_small: {
     fontSize: 14,

@@ -22,6 +22,8 @@ This document serves as the **definitive authority** for all frontend architectu
 **System Integration:** Interfaces with core system architecture detailed in [docs/architecture.md](architecture.md)  
 **Authority:** This document governs all frontend technology decisions and clean dashboard UI specifications
 
+**Marine Safety Standards:** Red-night mode implementation follows USCG/IMO standards for scotopic vision preservation. See comprehensive research in [docs/marine-night-vision-standards.md](marine-night-vision-standards.md) for wavelength analysis, rhodopsin chemistry, and professional marine equipment compliance.
+
 ## Executive Summary
 
 The Boating Instruments App implements a **clean, intuitive recreational boating dashboard** with familiar marine equipment design language. The design emphasizes:
@@ -1973,6 +1975,13 @@ export default {
 ### **🚨 CRITICAL: Marine Theme Compliance Rules**
 
 **RED-NIGHT MODE SAFETY REQUIREMENTS:**
+
+**Scientific Foundation** (see [marine-night-vision-standards.md](marine-night-vision-standards.md)):\n- **Rhodopsin Protection:** Human rod cells contain rhodopsin (peak sensitivity 507nm blue-green) which bleaches from wavelengths <620nm
+- **Adaptation Time:** 20-45 minutes for full scotopic vision; destroyed in <1 second by blue/green light
+- **Safe Wavelengths:** 625-750nm (red spectrum) has <1% scotopic impact vs 100% at 507nm
+- **USCG/IMO Standards:** Chart room lighting must be red-only, <10% brightness, <2 cd/m² luminance
+
+**Implementation Requirements:**
 ```typescript
 // MANDATORY: All components must use theme context
 const Component: React.FC = () => {
@@ -1989,18 +1998,26 @@ const Component: React.FC = () => {
   // ❌ FORBIDDEN: Hardcoded colors
   const badStyles = StyleSheet.create({
     container: {
-      backgroundColor: '#FFFFFF', // ❌ DANGEROUS - bright white in red-night mode
-      color: '#000000',           // ❌ DANGEROUS - black text unreadable
+      backgroundColor: '#FFFFFF', // ❌ DANGEROUS - bright white destroys rhodopsin in <1s
+      color: '#000000',           // ❌ DANGEROUS - black text unreadable in red-night
+      borderColor: '#10B981',     // ❌ DANGEROUS - green at 555nm peak photopic sensitivity
+      borderColor: '#0EA5E9',     // ❌ DANGEROUS - blue at 450nm destroys scotopic adaptation
     },
   });
 };
+
+**COLOR VIOLATIONS BY SEVERITY:**
+- **CRITICAL (Life Safety):** White (#FFFFFF), Green (#10B981), Blue (#0EA5E9) - destroys 20-45min dark adaptation
+- **HIGH:** Light gray (#E5E7EB) - appears greenish in red-night due to RGB white mixing  
+- **MEDIUM:** Hardcoded colors bypassing theme - prevents proper mode switching
+- **SEE:** marine-night-vision-standards.md Section "Common Violations & Fixes" for detailed examples
 
 // MANDATORY: Theme validation in development
 if (__DEV__) {
   const themeValidation = theme.validateThemeCompliance();
   if (!themeValidation.isCompliant) {
     console.error('THEME VIOLATION:', themeValidation.violations);
-    // In red-night mode violations are SAFETY CRITICAL
+    // In red-night mode violations are SAFETY CRITICAL - can cause maritime accidents
   }
 }
 ```
@@ -2405,8 +2422,8 @@ export const MARINE_DISPLAY_MODES = {
   },
   'red-night': {
     name: 'Red Night Mode',
-    description: 'CRITICAL: Marine night navigation mode - preserves night vision completely',
-    screenBrightness: 0.05, // 5% - MAXIMUM for marine safety
+    description: 'CRITICAL: Marine night navigation mode - preserves scotopic vision (rod cells) by using only 625-750nm red wavelengths. Zero blue/green light prevents rhodopsin bleaching. See marine-night-vision-standards.md for USCG/IMO compliance.',
+    screenBrightness: 0.05, // 5% - MAXIMUM for marine safety (IMO SOLAS 2 cd/m² limit)
     colors: {
       background: '#0A0000', // Very dark red-black
       surface: '#1A0000',    // Slightly lighter red-black

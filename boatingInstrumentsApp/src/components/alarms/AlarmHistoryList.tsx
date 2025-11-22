@@ -5,7 +5,7 @@
  * Displays alarm event history with filtering and export capabilities
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useTheme } from '../../store/themeStore';
 import { AlarmConfigurationManager, AlarmHistoryEntry } from '../../src/services/alarms/AlarmConfigurationManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../../src/services/alarms/types';
 import { AlarmLevel } from '../../src/store/alarmStore';
@@ -30,6 +31,8 @@ export const AlarmHistoryList: React.FC<AlarmHistoryListProps> = ({
   filterByType,
   onExport,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [history, setHistory] = useState<AlarmHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterLevel, setFilterLevel] = useState<AlarmEscalationLevel | AlarmLevel | 'all'>('all');
@@ -267,7 +270,7 @@ export const AlarmHistoryList: React.FC<AlarmHistoryListProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -280,49 +283,49 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: theme.textSecondary,
   },
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: theme.border,
   },
   filterLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
+    color: theme.text,
     marginRight: 12,
   },
   filterButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: theme.surface,
     marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.primary,
   },
   filterButtonText: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textSecondary,
   },
   filterButtonTextActive: {
-    color: '#FFFFFF',
+    color: theme.text,
     fontWeight: '600',
   },
   listContent: {
     padding: 16,
   },
   historyItem: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -346,12 +349,12 @@ const styles = StyleSheet.create({
   typeLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: theme.text,
     marginBottom: 2,
   },
   timestamp: {
     fontSize: 13,
-    color: '#666',
+    color: theme.textSecondary,
   },
   levelBadge: {
     paddingHorizontal: 10,
@@ -361,23 +364,23 @@ const styles = StyleSheet.create({
   levelBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
-    textTransform: 'uppercase',
+    color: theme.text,
+    textTransform: 'uppercase' as 'uppercase',
   },
   message: {
     fontSize: 15,
-    color: '#333',
+    color: theme.text,
     marginBottom: 8,
     lineHeight: 20,
   },
   valueInfo: {
     fontSize: 13,
-    color: '#666',
+    color: theme.textSecondary,
     marginBottom: 12,
   },
   itemFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
+    borderTopColor: theme.border,
     paddingTop: 8,
   },
   footerItem: {
@@ -386,16 +389,16 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontSize: 13,
-    color: '#666',
+    color: theme.textSecondary,
     marginRight: 6,
   },
   footerValue: {
     fontSize: 13,
-    color: '#000',
+    color: theme.text,
   },
   falsePositiveBadge: {
     marginTop: 8,
-    backgroundColor: '#FFF9E6',
+    backgroundColor: theme.warning,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -403,7 +406,7 @@ const styles = StyleSheet.create({
   },
   falsePositiveText: {
     fontSize: 12,
-    color: '#FF9500',
+    color: theme.text,
     fontWeight: '600',
   },
   emptyContainer: {
@@ -419,22 +422,22 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: theme.text,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 15,
-    color: '#666',
+    color: theme.textSecondary,
   },
   exportButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.primary,
     paddingVertical: 14,
     margin: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
   exportButtonText: {
-    color: '#FFFFFF',
+    color: theme.text,
     fontSize: 16,
     fontWeight: '600',
   },

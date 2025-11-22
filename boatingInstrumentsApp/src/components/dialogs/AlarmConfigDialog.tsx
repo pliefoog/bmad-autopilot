@@ -495,7 +495,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
           }}
           disabled={!config.enabled}
         >
-          <UniversalIcon name="volume-high-outline" size={20} color="#FFFFFF" />
+          <UniversalIcon name="volume-high-outline" size={20} color="#F3F4F6" />
           <Text style={styles.testButtonText}>Test Alarm Sound</Text>
         </Pressable>
       </ScrollView>
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   testButtonText: {
-    color: '#FFFFFF',
+    color: '#F3F4F6',
     fontSize: 17,
     fontWeight: '600',
   },

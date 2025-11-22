@@ -4,6 +4,8 @@
 import React, { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { BaseErrorBoundary, CustomErrorInfo, ErrorBoundaryProps } from './BaseErrorBoundary';
+import { ThemeColors } from '../../store/themeStore';
+import { themeStore } from '../../store/themeStore';
 
 export interface DataErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'category'> {
   dataType?: 'nmea0183' | 'nmea2000' | 'json' | 'binary';
@@ -251,18 +253,19 @@ export class DataErrorBoundary extends BaseErrorBoundary {
   private renderDataFallback = (error: DataErrorInfo, retry: () => void): ReactNode => {
     const { dataType = 'unknown' } = this.dataProps;
     const { parsingDetails, statistics, suggestions } = error;
+    const theme = themeStore.getState().theme;
 
     return (
-      <ScrollView style={styles.dataErrorContainer}>
-        <View style={styles.dataErrorHeader}>
-          <Text style={styles.dataErrorIcon}>📊</Text>
-          <Text style={styles.dataErrorTitle}>
+      <ScrollView style={styles(theme).dataErrorContainer}>
+        <View style={styles(theme).dataErrorHeader}>
+          <Text style={styles(theme).dataErrorIcon}>📊</Text>
+          <Text style={styles(theme).dataErrorTitle}>
             Data Processing Error ({dataType.toUpperCase()})
           </Text>
         </View>
 
-        <View style={styles.dataErrorBody}>
-          <Text style={styles.dataErrorMessage}>
+        <View style={styles(theme).dataErrorBody}>
+          <Text style={styles(theme).dataErrorMessage}>
             {error.severity === 'high'
               ? 'Critical data parsing error detected. The data format may be corrupted or unsupported.'
               : 'Data parsing temporarily interrupted. Some marine data may be unavailable.'
@@ -270,100 +273,100 @@ export class DataErrorBoundary extends BaseErrorBoundary {
           </Text>
 
           {parsingDetails && (
-            <View style={styles.parsingInfo}>
-              <Text style={styles.parsingTitle}>Parsing Details:</Text>
+            <View style={styles(theme).parsingInfo}>
+              <Text style={styles(theme).parsingTitle}>Parsing Details:</Text>
               {parsingDetails.expectedFormat && (
-                <Text style={styles.parsingText}>Expected: {parsingDetails.expectedFormat}</Text>
+                <Text style={styles(theme).parsingText}>Expected: {parsingDetails.expectedFormat}</Text>
               )}
               {parsingDetails.parsePosition && (
-                <Text style={styles.parsingText}>Error at position: {parsingDetails.parsePosition}</Text>
+                <Text style={styles(theme).parsingText}>Error at position: {parsingDetails.parsePosition}</Text>
               )}
               {parsingDetails.errorPattern && (
-                <Text style={styles.parsingText}>Pattern: {parsingDetails.errorPattern}</Text>
+                <Text style={styles(theme).parsingText}>Pattern: {parsingDetails.errorPattern}</Text>
               )}
               {parsingDetails.corruptionLevel && (
-                <Text style={[styles.parsingText, { 
-                  color: parsingDetails.corruptionLevel === 'high' ? '#dc3545' : 
-                         parsingDetails.corruptionLevel === 'medium' ? '#ffc107' : '#28a745'
+                <Text style={[styles(theme).parsingText, { 
+                  color: parsingDetails.corruptionLevel === 'high' ? theme.error : 
+                         parsingDetails.corruptionLevel === 'medium' ? theme.warning : theme.success
                 }]}>
                   Corruption Level: {parsingDetails.corruptionLevel}
                 </Text>
               )}
               {parsingDetails.rawData && (
-                <View style={styles.rawDataContainer}>
-                  <Text style={styles.rawDataTitle}>Raw Data (truncated):</Text>
-                  <Text style={styles.rawDataText}>{parsingDetails.rawData}</Text>
+                <View style={styles(theme).rawDataContainer}>
+                  <Text style={styles(theme).rawDataTitle}>Raw Data (truncated):</Text>
+                  <Text style={styles(theme).rawDataText}>{parsingDetails.rawData}</Text>
                 </View>
               )}
             </View>
           )}
 
           {statistics && (
-            <View style={styles.statisticsInfo}>
-              <Text style={styles.statisticsTitle}>Statistics:</Text>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Total Messages:</Text>
-                <Text style={styles.statValue}>{statistics.totalMessages || 0}</Text>
+            <View style={styles(theme).statisticsInfo}>
+              <Text style={styles(theme).statisticsTitle}>Statistics:</Text>
+              <View style={styles(theme).statRow}>
+                <Text style={styles(theme).statLabel}>Total Messages:</Text>
+                <Text style={styles(theme).statValue}>{statistics.totalMessages || 0}</Text>
               </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Error Count:</Text>
-                <Text style={styles.statValue}>{statistics.errorCount || 0}</Text>
+              <View style={styles(theme).statRow}>
+                <Text style={styles(theme).statLabel}>Error Count:</Text>
+                <Text style={styles(theme).statValue}>{statistics.errorCount || 0}</Text>
               </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Error Rate:</Text>
-                <Text style={[styles.statValue, { 
-                  color: (statistics.errorRate || 0) > 50 ? '#dc3545' : '#28a745'
+              <View style={styles(theme).statRow}>
+                <Text style={styles(theme).statLabel}>Error Rate:</Text>
+                <Text style={[styles(theme).statValue, { 
+                  color: (statistics.errorRate || 0) > 50 ? theme.error : theme.success
                 }]}>
                   {(statistics.errorRate || 0).toFixed(1)}%
                 </Text>
               </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Consecutive Errors:</Text>
-                <Text style={styles.statValue}>{statistics.consecutiveErrors || 0}</Text>
+              <View style={styles(theme).statRow}>
+                <Text style={styles(theme).statLabel}>Consecutive Errors:</Text>
+                <Text style={styles(theme).statValue}>{statistics.consecutiveErrors || 0}</Text>
               </View>
             </View>
           )}
 
           {suggestions && suggestions.length > 0 && (
-            <View style={styles.suggestionsInfo}>
-              <Text style={styles.suggestionsTitle}>Suggestions:</Text>
+            <View style={styles(theme).suggestionsInfo}>
+              <Text style={styles(theme).suggestionsTitle}>Suggestions:</Text>
               {suggestions.map((suggestion, index) => (
-                <Text key={index} style={styles.suggestionText}>• {suggestion}</Text>
+                <Text key={index} style={styles(theme).suggestionText}>• {suggestion}</Text>
               ))}
             </View>
           )}
 
           {__DEV__ && (
-            <View style={styles.dataDebugInfo}>
-              <Text style={styles.debugTitle}>Debug Info:</Text>
-              <Text style={styles.debugText}>Severity: {error.severity}</Text>
-              <Text style={styles.debugText}>Data Type: {dataType}</Text>
-              <Text style={styles.debugText}>Source ID: {error.sourceId || 'unknown'}</Text>
-              <Text style={styles.debugText}>Message: {error.message}</Text>
+            <View style={styles(theme).dataDebugInfo}>
+              <Text style={styles(theme).debugTitle}>Debug Info:</Text>
+              <Text style={styles(theme).debugText}>Severity: {error.severity}</Text>
+              <Text style={styles(theme).debugText}>Data Type: {dataType}</Text>
+              <Text style={styles(theme).debugText}>Source ID: {error.sourceId || 'unknown'}</Text>
+              <Text style={styles(theme).debugText}>Message: {error.message}</Text>
             </View>
           )}
         </View>
 
-        <View style={styles.dataErrorActions}>
+        <View style={styles(theme).dataErrorActions}>
           <TouchableOpacity 
-            style={styles.recoveryButton} 
+            style={styles(theme).recoveryButton} 
             onPress={this.handleDataRecovery}
           >
-            <Text style={styles.recoveryButtonText}>Retry Parsing</Text>
+            <Text style={styles(theme).recoveryButtonText}>Retry Parsing</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.resetButton} 
+            style={styles(theme).resetButton} 
             onPress={this.handleParsingReset}
           >
-            <Text style={styles.resetButtonText}>Reset Parser</Text>
+            <Text style={styles(theme).resetButtonText}>Reset Parser</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.fallbackButton} 
+            style={styles(theme).fallbackButton} 
             onPress={this.handleFallbackParser}
           >
-            <Text style={styles.fallbackButtonText}>Fallback Mode</Text>
+            <Text style={styles(theme).fallbackButtonText}>Fallback Mode</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -379,10 +382,10 @@ export class DataErrorBoundary extends BaseErrorBoundary {
   }
 }
 
-const styles = StyleSheet.create({
+const styles = (theme: ThemeColors) => StyleSheet.create({
   dataErrorContainer: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.appBackground,
   },
   dataErrorHeader: {
     alignItems: 'center',
@@ -395,7 +398,7 @@ const styles = StyleSheet.create({
   dataErrorTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#dc3545',
+    color: theme.error,
     textAlign: 'center',
   },
   dataErrorBody: {
@@ -403,13 +406,13 @@ const styles = StyleSheet.create({
   },
   dataErrorMessage: {
     fontSize: 14,
-    color: '#6c757d',
+    color: theme.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 16,
   },
   parsingInfo: {
-    backgroundColor: '#e9ecef',
+    backgroundColor: theme.surfaceDim,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
@@ -417,48 +420,48 @@ const styles = StyleSheet.create({
   parsingTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 6,
   },
   parsingText: {
     fontSize: 11,
-    color: '#6c757d',
+    color: theme.textSecondary,
     marginBottom: 2,
   },
   rawDataContainer: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.appBackground,
     padding: 8,
     borderRadius: 4,
     marginTop: 6,
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: theme.borderLight,
   },
   rawDataTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 4,
   },
   rawDataText: {
     fontSize: 9,
-    color: '#6c757d',
+    color: theme.textSecondary,
     fontFamily: 'monospace',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.surfaceHighlight,
     padding: 4,
     borderRadius: 2,
   },
   statisticsInfo: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.appBackground,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: theme.borderLight,
   },
   statisticsTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 8,
   },
   statRow: {
@@ -469,35 +472,35 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    color: '#6c757d',
+    color: theme.textSecondary,
   },
   statValue: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
   },
   suggestionsInfo: {
-    backgroundColor: '#d4edda',
+    backgroundColor: theme.surfaceHighlight,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#c3e6cb',
+    borderColor: theme.success,
   },
   suggestionsTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#155724',
+    color: theme.success,
     marginBottom: 6,
   },
   suggestionText: {
     fontSize: 11,
-    color: '#155724',
+    color: theme.success,
     marginBottom: 3,
     paddingLeft: 4,
   },
   dataDebugInfo: {
-    backgroundColor: '#f1f3f4',
+    backgroundColor: theme.surfaceDim,
     padding: 12,
     borderRadius: 6,
     marginTop: 8,
@@ -505,12 +508,12 @@ const styles = StyleSheet.create({
   debugTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#495057',
+    color: theme.text,
     marginBottom: 6,
   },
   debugText: {
     fontSize: 10,
-    color: '#6c757d',
+    color: theme.textSecondary,
     fontFamily: 'monospace',
     marginBottom: 3,
   },
@@ -520,35 +523,35 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   recoveryButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: theme.interactive,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
   },
   recoveryButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '600',
   },
   resetButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: theme.success,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   resetButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 12,
     fontWeight: '600',
   },
   fallbackButton: {
-    backgroundColor: '#6c757d',
+    backgroundColor: theme.textSecondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   fallbackButtonText: {
-    color: 'white',
+    color: theme.text,
     fontSize: 12,
     fontWeight: '600',
   },

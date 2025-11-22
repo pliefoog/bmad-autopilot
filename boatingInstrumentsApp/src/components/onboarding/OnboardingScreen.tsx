@@ -145,7 +145,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             <Text style={[styles.footerButtonText, styles.nextButtonText]}>
               {isLastStep ? "Get Started" : "Next"}
             </Text>
-            {!isLastStep && <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />}
+            {!isLastStep && <Ionicons name="arrow-forward" size={20} color="#F3F4F6" />}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   instructionNumberText: {
-    color: '#FFFFFF',
+    color: '#F3F4F6',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -602,6 +602,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   nextButtonText: {
-    color: '#FFFFFF',
+    color: '#F3F4F6',
   },
 });

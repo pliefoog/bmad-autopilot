@@ -34,6 +34,9 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
+  // Create theme-aware styles
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   // NMEA data selectors - Depth data with Raymarine-style priority selection
   // Clean sensor data access - NMEA Store v2.0
   const depthData = useNmeaStore(useCallback((state) => 
@@ -265,13 +268,13 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
 
 DepthWidget.displayName = 'DepthWidget';
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     borderRadius: 8,
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.border,
   },
   header: {
     flexDirection: 'row',
@@ -320,7 +323,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: theme.border,
   },
   // Secondary Grid (1×2): Min and Max depths
   secondaryGrid: {

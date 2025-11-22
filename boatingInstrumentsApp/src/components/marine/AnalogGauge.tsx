@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, ViewStyle } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText, G } from 'react-native-svg';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { ANIMATION_DURATIONS, ANIMATION_EASINGS } from '../../utils/animationOptimization';
 
 /**
@@ -129,11 +129,11 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
   const getMarineColor = (colorName: 'green' | 'amber' | 'red') => {
     switch (colorName) {
       case 'green':
-        return '#00AA00'; // Marine normal range
+        return theme.success; // Marine normal range (becomes red in red-night!)
       case 'amber':
-        return '#FFAA00'; // Marine caution range
+        return theme.warning; // Marine caution range
       case 'red':
-        return '#AA0000'; // Marine danger range
+        return theme.error; // Marine danger range
     }
   };
   
@@ -190,7 +190,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
                 y1={outerPoint.y}
                 x2={innerPoint.x}
                 y2={innerPoint.y}
-                stroke="#CCCCCC"
+                stroke={theme.textSecondary}
                 strokeWidth={tick.isMajor ? 2 : 1}
               />
               
@@ -200,7 +200,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
                   x={angleToPoint(tick.angle, radius * 0.75).x}
                   y={angleToPoint(tick.angle, radius * 0.75).y + 4}
                   fontSize={size * 0.08}
-                  fill="#CCCCCC"
+                  fill={theme.textSecondary}
                   textAnchor="middle"
                   fontFamily="monospace"
                 >
@@ -260,7 +260,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
           cy={center}
           r={radius}
           fill="none"
-          stroke="#2A2A2A"
+          stroke={theme.borderDark}
           strokeWidth={2}
         />
       </Svg>
@@ -278,15 +278,15 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
   );
 };
 
-const createStyles = (theme: any, size: number) => {
+const createStyles = (theme: ThemeColors, size: number) => {
   return StyleSheet.create({
     container: {
       width: size,
       height: size,
-      backgroundColor: '#0A0A0A', // Marine equipment background
+      backgroundColor: theme.surfaceDim, // Marine equipment background
       borderRadius: size / 2,
       borderWidth: 2,
-      borderColor: '#2A2A2A',
+      borderColor: theme.borderDark,
       position: 'relative',
       justifyContent: 'center',
       alignItems: 'center',
@@ -304,12 +304,12 @@ const createStyles = (theme: any, size: number) => {
     
     digitalReadout: {
       position: 'absolute',
-      backgroundColor: 'rgba(10, 10, 10, 0.9)',
+      backgroundColor: theme.overlayDark,
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 4,
       borderWidth: 1,
-      borderColor: '#2A2A2A',
+      borderColor: theme.borderDark,
       alignItems: 'center',
       minWidth: size * 0.3,
     },

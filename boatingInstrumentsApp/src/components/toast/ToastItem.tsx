@@ -188,11 +188,11 @@ const getToastTextStyle = (type: ToastData['type'], theme: any) => {
   switch (type) {
     case 'error':
     case 'alarm':
-      return { color: '#FFFFFF' };
+      return { color: theme.text };
     case 'success':
-      return { color: '#FFFFFF' };
+      return { color: theme.text };
     case 'info':
-      return { color: '#FFFFFF' };
+      return { color: theme.text };
     case 'warning':
       return { color: theme.text };
     default:
@@ -203,16 +203,16 @@ const getToastTextStyle = (type: ToastData['type'], theme: any) => {
 const getActionButtonStyle = (style: string = 'default', theme: any) => {
   switch (style) {
     case 'destructive':
-      return { backgroundColor: '#FF4444' };
+      return { backgroundColor: theme.error };
     case 'primary':
       return { backgroundColor: theme.primary };
     default:
-      return { backgroundColor: 'rgba(255, 255, 255, 0.2)' };
+      return { backgroundColor: theme.surface };
   }
 };
 
 const getActionTextStyle = (style: string = 'default', theme: any) => {
-  return { color: '#FFFFFF', fontWeight: '600' as const };
+  return { color: theme.text, fontWeight: '600' as const };
 };
 
 const createStyles = (theme: any) => StyleSheet.create({

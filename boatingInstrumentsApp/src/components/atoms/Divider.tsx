@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface DividerProps {
   variant?: 'horizontal' | 'vertical';
@@ -10,35 +11,17 @@ interface DividerProps {
   testID?: string;
 }
 
-const Divider: React.FC<DividerProps> = ({
-  variant = 'horizontal',
-  thickness = 'thin',
-  color = '#E5E7EB',
-  margin = 'medium',
-  style,
-  testID,
-}) => {
-  const dividerStyle = [
-    styles.divider,
-    styles[`divider_${variant}`],
-    styles[`thickness_${thickness}`],
-    styles[`margin_${variant}_${margin}`],
-    { backgroundColor: color },
-    style,
-  ];
-
-  return <View style={dividerStyle} testID={testID} />;
-};
-
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   divider: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: theme.borderLight,
   },
   divider_horizontal: {
     width: '100%',
+    height: 1,
   },
   divider_vertical: {
     height: '100%',
+    width: 1,
   },
   thickness_thin: {
     width: 1,
@@ -78,17 +61,26 @@ const styles = StyleSheet.create({
   },
 });
 
-// Override thickness for horizontal dividers
-StyleSheet.create({
-  ...styles,
-  divider_horizontal: {
-    ...styles.divider_horizontal,
-    height: 1, // Override for horizontal
-  },
-  divider_vertical: {
-    ...styles.divider_vertical,
-    width: 1, // Override for vertical
-  },
-});
+const Divider: React.FC<DividerProps> = ({
+  variant = 'horizontal',
+  thickness = 'thin',
+  color,
+  margin = 'medium',
+  style,
+  testID,
+}) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const dividerStyle = [
+    styles.divider,
+    styles[`divider_${variant}`],
+    styles[`thickness_${thickness}`],
+    styles[`margin_${variant}_${margin}`],
+    color ? { backgroundColor: color } : null,
+    style,
+  ];
+
+  return <View style={dividerStyle} testID={testID} />;
+};
 
 export default Divider;

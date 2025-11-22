@@ -268,7 +268,7 @@ const createStyles = (theme: any) =>
     statusIconText: {
       fontSize: 12,
       fontWeight: 'bold',
-      color: '#ffffff',
+      color: theme.text,
       textAlign: 'center',
     },
     navigationIcon: {
@@ -283,7 +283,7 @@ const createStyles = (theme: any) =>
     navigationIconText: {
       fontSize: 12,
       fontWeight: 'bold',
-      color: 'rgba(255, 255, 255, 1)', // Black icon as specified
+      color: theme.text,
       textAlign: 'center',
     },
   });

@@ -10,20 +10,20 @@ const getAlarmStyle = (level: string, highContrast: boolean, theme: ThemeColors)
     switch (level) {
       case 'info':
         return {
-          backgroundColor: '#0050B3', // Dark blue
-          borderColor: '#FFFFFF',
+          backgroundColor: theme.primary,
+          borderColor: theme.border,
           borderWidth: 3,
         };
       case 'warning':
         return {
-          backgroundColor: '#D46B08', // Dark orange
-          borderColor: '#FFFFFF',
+          backgroundColor: theme.warning,
+          borderColor: theme.border,
           borderWidth: 3,
         };
       case 'critical':
         return {
-          backgroundColor: '#CF1322', // Dark red
-          borderColor: '#FFFFFF',
+          backgroundColor: theme.error,
+          borderColor: theme.border,
           borderWidth: 4, // Thicker border for critical
         };
       default:
@@ -108,8 +108,7 @@ export const AlarmBanner: React.FC<{ alarms: Alarm[] }> = ({ alarms }) => {
             style={[
               styles.message,
               { color: theme.text },
-              highContrast && styles.messageHighContrast,
-              highContrast && { color: '#FFFFFF' } // White text for high contrast dark backgrounds
+              highContrast && styles.messageHighContrast
             ]}
           >
             {alarm.message}

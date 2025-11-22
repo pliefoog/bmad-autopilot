@@ -14,28 +14,29 @@ import {
   ViewStyle,
   TextStyle
 } from 'react-native';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useAlarmStore, Alarm, AlarmLevel } from '../../store/alarmStore';
 
 // Marine safety color standards for high visibility
+// CRITICAL SAFETY: These specific hex colors meet IMO SOLAS visibility requirements
+// and must remain fixed for marine safety compliance. They work with theme.text overlay.
 const MARINE_COLORS = {
-  // Critical navigation hazards - Red
+  // Critical navigation hazards - Pure Red (IMO standard)
   CRITICAL_RED: '#FF0000',
   CRITICAL_RED_FLASH: '#FF3333',
   
-  // Warning conditions - Amber/Yellow
+  // Warning conditions - Amber/Yellow (IMO standard)
   WARNING_AMBER: '#FFA500',
   WARNING_AMBER_FLASH: '#FFD700',
   
-  // Information - Blue
+  // Information - Blue (IMO standard)
   INFO_BLUE: '#0066FF',
   INFO_BLUE_FLASH: '#3399FF',
   
-  // High contrast text
-  TEXT_WHITE: '#FFFFFF',
+  // High contrast text - Black (for amber backgrounds)
   TEXT_BLACK: '#000000',
   
-  // Background with transparency
-  OVERLAY_DARK: 'rgba(0, 0, 0, 0.85)',
+  // Overlay transparency for critical alerts
   OVERLAY_CRITICAL: 'rgba(255, 0, 0, 0.2)',
 };
 
@@ -131,6 +132,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
   onAcknowledge,
   style
 }) => {
+  const theme = useTheme();
   const [showFlashing, setShowFlashing] = useState(true);
 
   // Stop flashing after 30 seconds for critical, 20s for warning, 10s for info
@@ -151,8 +153,8 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
         return {
           background: MARINE_COLORS.CRITICAL_RED,
           backgroundFlash: MARINE_COLORS.CRITICAL_RED_FLASH,
-          text: MARINE_COLORS.TEXT_WHITE,
-          border: MARINE_COLORS.TEXT_WHITE,
+          text: theme.text,
+          border: theme.text,
         };
       case 'warning':
         return {
@@ -166,8 +168,8 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
         return {
           background: MARINE_COLORS.INFO_BLUE,
           backgroundFlash: MARINE_COLORS.INFO_BLUE_FLASH,
-          text: MARINE_COLORS.TEXT_WHITE,
-          border: MARINE_COLORS.TEXT_WHITE,
+          text: theme.text,
+          border: theme.text,
         };
     }
   };
@@ -197,7 +199,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
       textAlign: 'center',
       marginBottom: 8,
       textShadowColor: colors.background === MARINE_COLORS.WARNING_AMBER ? 
-                       MARINE_COLORS.TEXT_WHITE : MARINE_COLORS.TEXT_BLACK,
+                       theme.text : MARINE_COLORS.TEXT_BLACK,
       textShadowOffset: { width: 1, height: 1 },
       textShadowRadius: 2,
     },
@@ -279,7 +281,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
             borderRadius: 8,
           }}>
             <Text style={{
-              color: MARINE_COLORS.TEXT_WHITE,
+              color: theme.text,
               fontSize: 16,
               fontWeight: 'bold',
             }}>
@@ -301,7 +303,8 @@ interface AlarmOverlaySystemProps {
 }
 
 export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children }) => {
-  const { activeAlarms, acknowledgeAlarm } = useAlarmStore();
+  const theme = useTheme();
+  const { alarms, acknowledgeAlarm } = useAlarmStore();
   const unacknowledgedAlarms = activeAlarms.filter(alarm => !alarm.acknowledged);
   
   // Prioritize critical alarms for overlay display
@@ -336,7 +339,7 @@ export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children
       flexGrow: 1,
     },
     acknowledgeButton: {
-      backgroundColor: MARINE_COLORS.TEXT_WHITE,
+      backgroundColor: theme.surface,
       padding: 12,
       borderRadius: 8,
       marginTop: 8,
@@ -350,14 +353,14 @@ export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children
     dismissButton: {
       backgroundColor: 'transparent',
       borderWidth: 2,
-      borderColor: MARINE_COLORS.TEXT_WHITE,
+      borderColor: theme.border,
       padding: 12,
       borderRadius: 8,
       marginTop: 8,
       alignItems: 'center',
     },
     dismissText: {
-      color: MARINE_COLORS.TEXT_WHITE,
+      color: theme.text,
       fontSize: 16,
       fontWeight: 'bold',
     },
@@ -393,7 +396,7 @@ export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children
                 alignItems: 'center',
               }}>
                 <Text style={{
-                  color: MARINE_COLORS.TEXT_WHITE,
+                  color: theme.text,
                   fontSize: 16,
                   fontWeight: 'bold',
                 }}>
@@ -443,10 +446,10 @@ export const CompactAlarmBar: React.FC<CompactAlarmBarProps> = ({ style, onPress
                       warningCount > 0 ? 'warning' : 'info';
 
   const colors = highestLevel === 'critical' ? 
-    { bg: MARINE_COLORS.CRITICAL_RED, text: MARINE_COLORS.TEXT_WHITE } :
+    { bg: MARINE_COLORS.CRITICAL_RED, text: theme.text } :
     highestLevel === 'warning' ?
     { bg: MARINE_COLORS.WARNING_AMBER, text: MARINE_COLORS.TEXT_BLACK } :
-    { bg: MARINE_COLORS.INFO_BLUE, text: MARINE_COLORS.TEXT_WHITE };
+    { bg: MARINE_COLORS.INFO_BLUE, text: theme.text };
 
   const compactStyles = StyleSheet.create({
     container: {

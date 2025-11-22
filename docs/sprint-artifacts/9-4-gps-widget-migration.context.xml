@@ -1,0 +1,420 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9</epicId>
+    <storyId>9.4</storyId>
+    <title>Complete Widget Migration (GPSWidget)</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-20</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/story-9.4-gps-widget-migration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>marine navigator using the GPS widget</asA>
+    <iWant>coordinate format changes to apply instantly with stable layout</iWant>
+    <soThat>I can switch between DD/DDM/DMS formats without visual jumping or delays</soThat>
+    <tasks>
+      <task id="phase-1-preparation">
+        <name>Phase 1: Preparation</name>
+        <subtasks>
+          <subtask checked="true">Verify Story 9.1-9.3 complete</subtask>
+          <subtask>Review current GPSWidget implementation (lines 1-367)</subtask>
+          <subtask>Identify all useUnitConversion usages</subtask>
+          <subtask>Review existing coordinate presentations (lines 495-550 in presentations.ts)</subtask>
+          <subtask>Design hemisphere metadata approach</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-2-implementation">
+        <name>Phase 2: Implementation</name>
+        <subtasks>
+          <subtask>Extend MetricDisplayOptions interface to support metadata field</subtask>
+          <subtask>Enhance coordinate presentations with hemisphere support (dd_6, ddm_3, dms_1)</subtask>
+          <subtask>Add UTM placeholder presentation</subtask>
+          <subtask>Update useMetricDisplay to pass metadata to format function</subtask>
+          <subtask>Update GPSWidget imports (remove useUnitConversion, add useMetricDisplay)</subtask>
+          <subtask>Replace formatGPSCoordinate with useMetricDisplay calls (pass isLatitude metadata)</subtask>
+          <subtask>Update LAT/LON rendering to use MetricDisplayData</subtask>
+          <subtask>Preserve date/time formatting (defer to Story 9.6)</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-3-testing">
+        <name>Phase 3: Testing</name>
+        <subtasks>
+          <subtask>Unit tests: coordinate format conversions</subtask>
+          <subtask>Storybook: visual regression testing</subtask>
+          <subtask>Settings reactivity: format changes propagate</subtask>
+          <subtask>Layout stability: no jumping with value changes</subtask>
+          <subtask>Performance: &lt;5ms per coordinate</subtask>
+          <subtask>Theme modes: day/night/red-night compliance</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-4-validation">
+        <name>Phase 4: Validation</name>
+        <subtasks>
+          <subtask>Code review: no useUnitConversion in GPSWidget (except date/time functions)</subtask>
+          <subtask>Search codebase: verify GPSWidget migration complete</subtask>
+          <subtask>Performance benchmark: console logs show &lt;5ms average</subtask>
+          <subtask>Documentation: update widget architecture docs</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>Coordinate Format Migration</title>
+      <description>Migrate 4 coordinate formats (DD, DDM, DMS, UTM) with instant settings updates</description>
+      <scenarios>
+        <scenario>
+          Given GPSWidget displaying latitude 48.63665° and longitude -2.02335°
+          When coordinate format changes from DDM to DMS in settings
+          Then LAT displays "48° 38′ 12.0″ N" (DMS format)
+          And LON displays "2° 01′ 24.1″ W" (DMS format)
+          And layout does not jump or shift
+        </scenario>
+        <scenario>
+          Given coordinate format switches to DD (Decimal Degrees)
+          When the setting changes
+          Then LAT displays "48.63665° N" (DD format)
+          And LON displays "2.02335° W" (DD format)
+          And unit label shows "DD"
+          And font measurement maintains minWidth stability
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC2">
+      <title>useMetricDisplay Integration</title>
+      <description>Use useMetricDisplay hook for LAT and LON with metadata parameter for hemisphere</description>
+      <scenarios>
+        <scenario>
+          Given GPSWidget component is rendering
+          When accessing latitude and longitude values
+          Then useMetricDisplay hook invoked for LAT with metadata: { isLatitude: true }
+          And useMetricDisplay hook invoked for LON with metadata: { isLatitude: false }
+          And category is "coordinates"
+          And mnemonic is "LAT" or "LON"
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC3">
+      <title>Remove useUnitConversion References</title>
+      <description>Remove useUnitConversion import from GPSWidget except for date/time functions</description>
+      <scenarios>
+        <scenario>
+          Given GPSWidget source code
+          When checking imports
+          Then import useMetricDisplay instead of useUnitConversion for coordinates
+          And getGpsFormattedDateTime remains in useUnitConversion (Story 9.6 scope)
+          And no legacy bridge imports exist
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC4">
+      <title>Layout Stability with Font Measurement</title>
+      <description>Prevent visual jumping when coordinate values change using font measurement</description>
+      <scenarios>
+        <scenario>
+          Given coordinates displaying "48° 38.199′ N"
+          When value changes to "2° 01.401′ W"
+          Then widget width does NOT change
+          And coordinate cell maintains minWidth
+          And no visual jumping occurs
+          And alignment remains right-justified
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC5">
+      <title>Settings Reactivity Preserved</title>
+      <description>Preserve GPS settings reactivity from GPS-SETTINGS-REACTIVITY-FIX.md</description>
+      <scenarios>
+        <scenario>
+          Given GPS settings reactivity was fixed
+          When coordinate format changes in settings
+          Then widget re-renders immediately
+          And new format displays within 1 render cycle
+          And no app restart required
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC6">
+      <title>UTM Format Support (Deferred)</title>
+      <description>Add placeholder UTM format with TODO for future implementation</description>
+      <scenarios>
+        <scenario>
+          Given UTM format selected in settings
+          When viewing GPS coordinates
+          Then placeholder UTM format displays
+          And TODO comment indicates "Implement proper UTM conversion"
+          And widget does not crash
+          And users can switch back to DD/DDM/DMS without issue
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC7">
+      <title>Date/Time Formatting (Out of Scope)</title>
+      <description>Date/time formatting remains in useUnitConversion (Story 9.6 scope)</description>
+      <explicitScope>
+        <inScope>LAT and LON cells only (primary grid), coordinate formatting (DD/DDM/DMS/UTM)</inScope>
+        <outOfScope>DATE and TIME cells (secondary grid), timezone conversions, date/time formatting functions</outOfScope>
+      </explicitScope>
+    </criterion>
+    <criterion id="AC8">
+      <title>No Visual Regression</title>
+      <description>Ensure no visual changes to GPSWidget UI in any theme mode</description>
+      <scenarios>
+        <scenario>
+          Given old vs new GPSWidget UI comparison
+          When viewing collapsed state
+          Then LAT and LON display identically
+          And coordinate formatting matches previous behavior
+          And grid layout unchanged (2×1 primary grid)
+        </scenario>
+        <scenario>
+          Given testing in all three theme modes
+          When switching between day/night/red-night
+          Then coordinates render with correct theme colors
+          And no hardcoded colors appear
+          And text contrast meets accessibility standards
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC9">
+      <title>Performance Validation</title>
+      <description>Validate &lt;5ms per coordinate with font measurement caching</description>
+      <scenarios>
+        <scenario>
+          Given measuring coordinate formatting performance
+          When processing 100 coordinate conversions
+          Then average time is &lt; 5ms per coordinate
+          And font measurement cache is utilized
+          And no performance degradation vs legacy system
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC10">
+      <title>Coordinate Presentation Definitions</title>
+      <description>Enhance existing coordinate presentations with hemisphere support</description>
+      <scenarios>
+        <scenario>
+          Given presentation system defines coordinate formats
+          When referencing coordinate category
+          Then DD presentation exists with pattern "xx.xxxxx°"
+          And DDM presentation exists with pattern "xx° xx.xxx′"
+          And DMS presentation exists with pattern "xx° xx′ xx.x″"
+          And UTM presentation exists with placeholder pattern
+        </scenario>
+      </scenarios>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/stories/epic-9-enhanced-presentation-system.md" 
+           title="Epic 9: Enhanced Presentation System" 
+           section="Story 9.4: Complete Widget Migration (GPSWidget)" 
+           snippet="Migrate GPSWidget from useUnitConversion to useMetricDisplay. Remove useUnitConversion imports from widgets. Validate GPSWidget coordinate formatting with new system. Timeline: 1 day. Blocks Epic 13.3 (Navigation Session &amp; Glove Mode)." />
+      <doc path="docs/ui-architecture.md" 
+           title="UI Architecture Document" 
+           section="Enhanced Presentation System Architecture" 
+           snippet="Unified metric display architecture with MetricDisplayData interface. Single source of truth: Settings → useMetricDisplay → Pre-formatted MetricDisplayData → Pure Components. Real font measurement for pixel-accurate layout stability." />
+      <doc path="docs/architecture.md" 
+           title="System Architecture" 
+           section="NMEA Service Layer" 
+           snippet="On-device native application with React Native. Complete offline functionality. Real-time NMEA parsing with &lt;1 second latency. Platform-specific text measurement for font-based layout calculations." />
+      <doc path="boatingInstrumentsApp/GPS-SETTINGS-REACTIVITY-FIX.md" 
+           title="GPS Settings Reactivity Fix" 
+           section="Solution" 
+           snippet="Fixed useUnitConversion hook dependencies for getGpsFormattedDateTime. Added GPS settings subscriptions to GPSWidget (coordinateFormat, dateFormat, timeFormat, timezone). Settings changes now trigger immediate re-render." />
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/src/widgets/GPSWidget.tsx" 
+                kind="widget" 
+                symbol="GPSWidget" 
+                lines="1-367" 
+                reason="Main migration target - migrate from useUnitConversion to useMetricDisplay for coordinates" />
+      <artifact path="boatingInstrumentsApp/src/widgets/GPSWidget.tsx" 
+                kind="function" 
+                symbol="formatGPSCoordinate" 
+                lines="64-116" 
+                reason="Custom coordinate formatting logic to be replaced by useMetricDisplay with metadata parameter" />
+      <artifact path="boatingInstrumentsApp/src/hooks/useUnitConversion.ts" 
+                kind="hook" 
+                symbol="useUnitConversion" 
+                lines="1-1800" 
+                reason="Legacy system to be replaced - understand current GPS coordinate formatting (formatDecimalDegrees, formatDegreesMinutes, formatDegreesMinutesSeconds)" />
+      <artifact path="boatingInstrumentsApp/src/hooks/useUnitConversion.ts" 
+                kind="function" 
+                symbol="formatDecimalDegrees" 
+                lines="174-177" 
+                reason="Current DD format implementation to replicate in presentation system" />
+      <artifact path="boatingInstrumentsApp/src/hooks/useUnitConversion.ts" 
+                kind="function" 
+                symbol="formatDegreesMinutes" 
+                lines="179-185" 
+                reason="Current DDM format with hemisphere support to replicate in presentation system" />
+      <artifact path="boatingInstrumentsApp/src/hooks/useMetricDisplay.ts" 
+                kind="hook" 
+                symbol="useMetricDisplay" 
+                lines="1-200" 
+                reason="Unified metric display hook - extend to support metadata parameter for coordinate hemisphere handling" />
+      <artifact path="boatingInstrumentsApp/src/presentation/presentations.ts" 
+                kind="definitions" 
+                symbol="PRESENTATIONS" 
+                lines="495-550" 
+                reason="Existing coordinate presentations (dd_6, ddm_3, dms_1) need enhancement with hemisphere support via metadata parameter" />
+      <artifact path="boatingInstrumentsApp/src/types/MetricDisplayData.ts" 
+                kind="interface" 
+                symbol="MetricDisplayData" 
+                lines="1-70" 
+                reason="Interface definition - verify layout.minWidth, alignment, and status fields available for coordinate display" />
+      <artifact path="boatingInstrumentsApp/src/types/MetricDisplayData.ts" 
+                kind="interface" 
+                symbol="MetricDisplayOptions" 
+                lines="54-65" 
+                reason="Extend to support metadata field for passing isLatitude parameter to format functions" />
+      <artifact path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx" 
+                kind="component" 
+                symbol="PrimaryMetricCell" 
+                lines="1-250" 
+                reason="Primary metric display component - already accepts MetricDisplayData, verify coordinate category support and layout stability" />
+      <artifact path="boatingInstrumentsApp/src/components/SecondaryMetricCell.tsx" 
+                kind="component" 
+                symbol="SecondaryMetricCell" 
+                lines="1-165" 
+                reason="Secondary metric display for DATE/TIME in expanded view - no changes required but validate compatibility" />
+      <artifact path="boatingInstrumentsApp/src/services/FontMeasurementService.ts" 
+                kind="service" 
+                symbol="FontMeasurementService" 
+                lines="1-200" 
+                reason="Font measurement service for calculating minWidth - used by useMetricDisplay for layout stability" />
+      <artifact path="boatingInstrumentsApp/src/store/settingsStore.ts" 
+                kind="store" 
+                symbol="useSettingsStore" 
+                lines="1-500" 
+                reason="Settings store with gpsCoordinateFormat - verify subscription triggers widget re-render" />
+    </code>
+    <dependencies>
+      <node ecosystem="npm">
+        <package name="react" version="^18.x" reason="Core React hooks (useMemo, useCallback) for hook implementation" />
+        <package name="react-native" version="^0.73.x" reason="Platform-specific text measurement APIs for font measurement service" />
+        <package name="zustand" version="^4.x" reason="Settings store integration for reactive unit preferences" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="scope" priority="critical">
+      Date/time formatting MUST remain in useUnitConversion (Story 9.6 scope). Only migrate coordinate formatting (LAT/LON cells).
+    </constraint>
+    <constraint type="scope" priority="critical">
+      UTM full implementation deferred to future story. Add placeholder only with TODO comment.
+    </constraint>
+    <constraint type="architectural" priority="high">
+      Preserve GPS settings reactivity from GPS-SETTINGS-REACTIVITY-FIX.md. Settings subscriptions on lines 30-33 must remain intact.
+    </constraint>
+    <constraint type="architectural" priority="high">
+      Widget state management unchanged. Expand/collapse behavior (lines 52-62) and pin functionality preserved.
+    </constraint>
+    <constraint type="performance" priority="high">
+      Coordinate formatting must be &lt;5ms per coordinate with font measurement caching. Use performance.now() benchmarks.
+    </constraint>
+    <constraint type="testing" priority="high">
+      No visual regression. Test in all three theme modes (day/night/red-night) with screenshot comparison.
+    </constraint>
+    <constraint type="marine-standards" priority="medium">
+      Maintain decimal precision per format: DD=5 decimals, DDM=3 decimals, DMS=1 decimal.
+    </constraint>
+    <constraint type="layout" priority="high">
+      Font measurement must prevent layout jumping. MetricDisplayData.layout.minWidth applied to PrimaryMetricCell.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="MetricDisplayOptions" kind="TypeScript Interface" path="boatingInstrumentsApp/src/types/MetricDisplayData.ts">
+      <signature>
+interface MetricDisplayOptions {
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  presentationId?: string;
+  includeDebug?: boolean;
+  // ADD: metadata field
+  metadata?: {
+    isLatitude?: boolean;
+    [key: string]: any;
+  };
+}
+      </signature>
+      <usage>Extend to support metadata parameter for passing isLatitude to coordinate presentation format functions</usage>
+    </interface>
+    <interface name="Presentation.format" kind="Function Signature" path="boatingInstrumentsApp/src/presentation/presentations.ts">
+      <signature>
+// Current:
+format: (value: number) => string;
+
+// Enhanced (add optional second parameter):
+format: (value: number, metadata?: { isLatitude?: boolean }) => string;
+      </signature>
+      <usage>Enhance existing dd_6, ddm_3, dms_1 coordinate presentations to accept optional metadata parameter for hemisphere determination</usage>
+    </interface>
+    <interface name="useMetricDisplay" kind="React Hook" path="boatingInstrumentsApp/src/hooks/useMetricDisplay.ts">
+      <signature>
+function useMetricDisplay(
+  category: DataCategory,
+  rawValue: number | null | undefined,
+  mnemonic?: string,
+  options?: MetricDisplayOptions
+): MetricDisplayData;
+      </signature>
+      <usage>Use with category="coordinates", mnemonic="LAT"|"LON", options.metadata.isLatitude for coordinate display</usage>
+    </interface>
+    <interface name="PrimaryMetricCell" kind="React Component" path="boatingInstrumentsApp/src/components/PrimaryMetricCell.tsx">
+      <signature>
+interface PrimaryMetricCellProps {
+  data?: MetricDisplayData;
+  mnemonic?: string;
+  value?: string | number;
+  unit?: string;
+  state?: 'normal' | 'warning' | 'alarm';
+  category?: string;
+}
+      </signature>
+      <usage>Pass MetricDisplayData from useMetricDisplay directly to data prop for coordinate display with layout stability</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Unit tests use Jest with React Native Testing Library. Widget tests located in __tests__/tier1-unit/widgets/. Hook tests in __tests__/tier1-unit/hooks/. Component tests in __tests__/tier1-unit/components/. Storybook stories in src/stories/widgets/ for visual regression testing. Performance benchmarks use performance.now() with 100-iteration averages. Theme testing covers day/night/red-night modes per marine-compliant theme system.
+    </standards>
+    <locations>
+      <location>__tests__/tier1-unit/widgets/GPSWidget.test.tsx</location>
+      <location>__tests__/tier1-unit/hooks/useMetricDisplay.test.tsx</location>
+      <location>__tests__/tier1-unit/components/PrimaryMetricCell.test.tsx</location>
+      <location>src/stories/widgets/GPSWidget.stories.tsx</location>
+    </locations>
+    <ideas>
+      <idea criterionId="AC1">
+        Test coordinate format conversions for all formats (DD/DDM/DMS/UTM) with sample coordinates (48.63665, -2.02335). Verify formatted output matches expected patterns with correct hemisphere indicators.
+      </idea>
+      <idea criterionId="AC2">
+        Unit test useMetricDisplay hook with category="coordinates", verify metadata.isLatitude parameter passed to presentation format function. Mock presentations.ts to capture format function calls.
+      </idea>
+      <idea criterionId="AC3">
+        Static analysis test: grep GPSWidget.tsx for "useUnitConversion" imports, assert only getGpsFormattedDateTime usage for date/time (lines 119-191). Verify useMetricDisplay import exists.
+      </idea>
+      <idea criterionId="AC4">
+        Layout stability test: render PrimaryMetricCell with varying coordinate lengths, measure container width consistency. Verify minWidth applied from MetricDisplayData.layout.
+      </idea>
+      <idea criterionId="AC5">
+        Integration test: mock settingsStore, change gpsCoordinateFormat, verify GPSWidget re-renders with new format within 1 cycle. Use act() wrapper for state updates.
+      </idea>
+      <idea criterionId="AC8">
+        Storybook visual regression: capture screenshots in all theme modes (day/night/red-night), compare before/after migration pixel-by-pixel. Use jest-image-snapshot.
+      </idea>
+      <idea criterionId="AC9">
+        Performance benchmark: measure useMetricDisplay execution time over 100 iterations, calculate average. Assert &lt;5ms per coordinate. Test with font measurement cache warm vs cold.
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -62,4 +62,11 @@ export interface MetricDisplayOptions {
   presentationId?: string;
   /** Include debug information */
   includeDebug?: boolean;
+  /** Metadata for format functions (e.g., isLatitude for coordinates) */
+  metadata?: {
+    /** Whether this is a latitude (vs longitude) coordinate */
+    isLatitude?: boolean;
+    /** Extensible metadata for other use cases */
+    [key: string]: any;
+  };
 }

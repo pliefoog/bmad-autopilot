@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, ViewStyle } from 'react-native';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { ANIMATION_DURATIONS, ANIMATION_EASINGS } from '../../utils/animationOptimization';
 import { getUseNativeDriver } from '../../utils/animationUtils';
 
@@ -119,18 +119,18 @@ export const LinearBar: React.FC<LinearBarProps> = ({
     // Check thresholds for warning/critical states
     for (const threshold of thresholds.sort((a, b) => b.value - a.value)) {
       if (clampedValue <= threshold.value) {
-        return threshold.color === 'red' ? '#AA0000' : '#FFAA00';
+        return threshold.color === 'red' ? theme.error : theme.warning;
       }
     }
     
     // Normal colors based on type
     switch (type) {
       case 'tank':
-        return '#0066CC'; // Marine blue for fluids
+        return theme.interactive; // Marine blue for fluids
       case 'battery':
-        return '#00AA00'; // Green for battery charge
+        return theme.success; // Green for battery charge (becomes red in red-night!)
       case 'gauge':
-        return '#CCCCCC'; // Neutral for generic gauge
+        return theme.textSecondary; // Neutral for generic gauge
       default:
         return theme.primary;
     }
@@ -222,7 +222,7 @@ export const LinearBar: React.FC<LinearBarProps> = ({
               style={[
                 styles.thresholdMarker,
                 markerStyle,
-                { borderColor: threshold.color === 'red' ? '#AA0000' : '#FFAA00' }
+                { borderColor: threshold.color === 'red' ? theme.error : theme.warning }
               ]}
               testID={testID ? `${testID}-threshold-${index}` : `threshold-${index}`}
             />
@@ -243,7 +243,7 @@ export const LinearBar: React.FC<LinearBarProps> = ({
   );
 };
 
-const createStyles = (theme: any, orientation: LinearBarOrientation, thickness: number) => {
+const createStyles = (theme: ThemeColors, orientation: LinearBarOrientation, thickness: number) => {
   return StyleSheet.create({
     container: {
       alignItems: 'center',
@@ -252,10 +252,10 @@ const createStyles = (theme: any, orientation: LinearBarOrientation, thickness: 
     
     barContainer: {
       position: 'relative',
-      backgroundColor: '#1A1A1A', // Marine equipment background
+      backgroundColor: theme.surface, // Marine equipment background
       borderRadius: thickness / 4,
       borderWidth: 1,
-      borderColor: '#2A2A2A',
+      borderColor: theme.borderDark,
       overflow: 'hidden',
     },
     
@@ -265,7 +265,7 @@ const createStyles = (theme: any, orientation: LinearBarOrientation, thickness: 
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: '#0A0A0A',
+      backgroundColor: theme.surfaceDim,
       borderRadius: thickness / 6,
     },
     
@@ -276,7 +276,7 @@ const createStyles = (theme: any, orientation: LinearBarOrientation, thickness: 
       left: 0,
       borderRadius: thickness / 6,
       // Gradient-like effect with shadow
-      shadowColor: '#FFFFFF',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.3,
       shadowRadius: 2,
@@ -293,12 +293,12 @@ const createStyles = (theme: any, orientation: LinearBarOrientation, thickness: 
     valueContainer: {
       marginTop: orientation === 'vertical' ? 8 : 4,
       marginLeft: orientation === 'horizontal' ? 8 : 0,
-      backgroundColor: 'rgba(10, 10, 10, 0.8)',
+      backgroundColor: theme.overlayDark,
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: 4,
       borderWidth: 1,
-      borderColor: '#2A2A2A',
+      borderColor: theme.borderDark,
     },
     
     valueText: {

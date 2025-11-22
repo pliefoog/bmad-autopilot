@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-15T16:38:23.821Z",
+  "timestamp": "2025-11-22T10:21:04.453Z",
   "thresholds": {
     "maxRenderTimeMs": 16,
     "maxMemoryIncreaseMb": 50,
@@ -8,172 +8,92 @@
   },
   "metrics": [
     {
-      "renderTime": 8.25445800000125,
-      "memoryUsage": 32.05463409423828,
-      "dataLatency": 58.746144317763715,
-      "throughput": 519.0824325264696,
-      "testName": "AlarmSettingsScreen Screen Rendering should render all 5 alarm types",
-      "timestamp": 1763224703630
+      "renderTime": 19.29925000000003,
+      "memoryUsage": 17.868331909179688,
+      "dataLatency": 27.31200765735844,
+      "throughput": 631.6466228791005,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) Day Theme uses theme.success for success variant (green in day mode)",
+      "timestamp": 1763806864348
     },
     {
-      "renderTime": 11.710290999999415,
-      "memoryUsage": 37.774879455566406,
-      "dataLatency": 66.38746060161915,
-      "throughput": 471.0046057184321,
-      "testName": "AlarmSettingsScreen Screen Rendering should display marine safety notice",
-      "timestamp": 1763224703662
+      "renderTime": 2.9644170000001395,
+      "memoryUsage": 28.828765869140625,
+      "dataLatency": 52.947283399490246,
+      "throughput": 497.39666044053126,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) Red-Night Theme uses theme.success for success variant (red in red-night mode)",
+      "timestamp": 1763806864375
     },
     {
-      "renderTime": 3.1091249999990396,
-      "memoryUsage": 34.97361755371094,
-      "dataLatency": 72.99534819844936,
-      "throughput": 622.4496889752509,
-      "testName": "AlarmSettingsScreen Screen Rendering should show loading state initially",
-      "timestamp": 1763224703692
+      "renderTime": 3.93487499999992,
+      "memoryUsage": 23.71813201904297,
+      "dataLatency": 62.3464468061705,
+      "throughput": 462.0786082850471,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) Red-Night Theme CRITICAL: success badge has ZERO green light in red-night mode",
+      "timestamp": 1763806864392
     },
     {
-      "renderTime": 3.4830000000001746,
-      "memoryUsage": 38.54076385498047,
-      "dataLatency": 42.58465438694979,
-      "throughput": 606.4906193853933,
-      "testName": "AlarmSettingsScreen Enable/Disable Toggle should toggle alarm enabled state",
-      "timestamp": 1763224703696
+      "renderTime": 6.9444579999999405,
+      "memoryUsage": 20.235565185546875,
+      "dataLatency": 40.16388053720122,
+      "throughput": 500.2165558342847,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) Theme Awareness reacts to theme changes",
+      "timestamp": 1763806864408
     },
     {
-      "renderTime": 6.982249999999112,
-      "memoryUsage": 32.24717712402344,
-      "dataLatency": 49.68655063159726,
-      "throughput": 626.783545724099,
-      "testName": "AlarmSettingsScreen Enable/Disable Toggle should show alert when disabling critical navigation alarm fails",
-      "timestamp": 1763224703704
+      "renderTime": 3.726375000000189,
+      "memoryUsage": 23.412994384765625,
+      "dataLatency": 64.09379108339783,
+      "throughput": 572.1419830081879,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.primary for primary variant",
+      "timestamp": 1763806864414
     },
     {
-      "renderTime": 9.09912500000064,
-      "memoryUsage": 35.85234832763672,
-      "dataLatency": 31.472538343101107,
-      "throughput": 558.5507938268349,
-      "testName": "AlarmSettingsScreen Threshold Configuration should update threshold value on input",
-      "timestamp": 1763224703714
+      "renderTime": 5.7409999999999854,
+      "memoryUsage": 26.60047149658203,
+      "dataLatency": 58.539164061053214,
+      "throughput": 585.7504272999552,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.secondary for secondary variant",
+      "timestamp": 1763806864421
     },
     {
-      "renderTime": 7.72991600000023,
-      "memoryUsage": 39.445709228515625,
-      "dataLatency": 39.84949532510381,
-      "throughput": 596.606933825434,
-      "testName": "AlarmSettingsScreen Threshold Configuration should validate threshold range on save",
-      "timestamp": 1763224703722
+      "renderTime": 5.4722499999998035,
+      "memoryUsage": 29.783218383789062,
+      "dataLatency": 68.42662003208503,
+      "throughput": 554.5637836963075,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.success for success variant",
+      "timestamp": 1763806864427
     },
     {
-      "renderTime": 5.335415999999896,
-      "memoryUsage": 43.051246643066406,
-      "dataLatency": 27.618086216560023,
-      "throughput": 493.08909195553866,
-      "testName": "AlarmSettingsScreen Threshold Configuration should save valid threshold successfully",
-      "timestamp": 1763224703729
+      "renderTime": 2.975416999999652,
+      "memoryUsage": 32.970314025878906,
+      "dataLatency": 69.80039921906949,
+      "throughput": 499.95964460732165,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.warning for warning variant",
+      "timestamp": 1763806864431
     },
     {
-      "renderTime": 12.584790999999313,
-      "memoryUsage": 40.56672668457031,
-      "dataLatency": 46.97013670195932,
-      "throughput": 581.1599463899311,
-      "testName": "AlarmSettingsScreen Threshold Configuration should handle marine safety validation errors",
-      "timestamp": 1763224703755
+      "renderTime": 5.860584000000017,
+      "memoryUsage": 29.59320831298828,
+      "dataLatency": 25.996535260515408,
+      "throughput": 640.8727123146916,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.error for danger variant",
+      "timestamp": 1763806864445
     },
     {
-      "renderTime": 4.066000000000713,
-      "memoryUsage": 44.172119140625,
-      "dataLatency": 47.2965934712377,
-      "throughput": 635.7505612105314,
-      "testName": "AlarmSettingsScreen Test Alarm Function should test alarm configuration successfully",
-      "timestamp": 1763224703760
-    },
-    {
-      "renderTime": 4.694166999999652,
-      "memoryUsage": 37.03099060058594,
-      "dataLatency": 42.19456184393077,
-      "throughput": 468.32989777829295,
-      "testName": "AlarmSettingsScreen Test Alarm Function should show test failure when configuration invalid",
-      "timestamp": 1763224703765
-    },
-    {
-      "renderTime": 3.536083000000872,
-      "memoryUsage": 45.47412109375,
-      "dataLatency": 26.079137878811267,
-      "throughput": 555.2695412474656,
-      "testName": "AlarmSettingsScreen Test Alarm Function should disable test buttons while testing",
-      "timestamp": 1763224703774
-    },
-    {
-      "renderTime": 4.254249999999956,
-      "memoryUsage": 37.3720703125,
-      "dataLatency": 35.039744907385774,
-      "throughput": 476.9920251641786,
-      "testName": "AlarmSettingsScreen Reset to Defaults should show confirmation dialog for reset",
-      "timestamp": 1763224703779
-    },
-    {
-      "renderTime": 0.4670829999995476,
-      "memoryUsage": 42.68913269042969,
-      "dataLatency": 56.422094652446404,
-      "throughput": 512.9858451845805,
-      "testName": "AlarmSettingsScreen Reset to Defaults should reset all configurations when confirmed",
-      "timestamp": 1763224703783
-    },
-    {
-      "renderTime": 3.5148749999989377,
-      "memoryUsage": 46.222816467285156,
-      "dataLatency": 61.01243067795837,
-      "throughput": 619.7292135787152,
-      "testName": "AlarmSettingsScreen Marine Safety Compliance should display response time requirement",
-      "timestamp": 1763224703787
-    },
-    {
-      "renderTime": 2.7756659999995463,
-      "memoryUsage": 49.79645538330078,
-      "dataLatency": 56.197994914787465,
-      "throughput": 583.5411291649182,
-      "testName": "AlarmSettingsScreen Marine Safety Compliance should display audio level requirement",
-      "timestamp": 1763224703790
-    },
-    {
-      "renderTime": 4.766583999999057,
-      "memoryUsage": 42.43341064453125,
-      "dataLatency": 50.837789129499015,
-      "throughput": 498.06213557087335,
-      "testName": "AlarmSettingsScreen Marine Safety Compliance should mention redundant alerting",
-      "timestamp": 1763224703795
-    },
-    {
-      "renderTime": 2.961250000000291,
-      "memoryUsage": 50.806175231933594,
-      "dataLatency": 71.49397339124555,
-      "throughput": 552.4060801244813,
-      "testName": "AlarmSettingsScreen Accessibility should have accessible labels for all controls",
-      "timestamp": 1763224703802
-    },
-    {
-      "renderTime": 2.9671670000006998,
-      "memoryUsage": 47.964027404785156,
-      "dataLatency": 68.6530393221033,
-      "throughput": 482.51856463430914,
-      "testName": "AlarmSettingsScreen Accessibility should have clear error messages",
-      "timestamp": 1763224703812
-    },
-    {
-      "renderTime": 4.599167000000307,
-      "memoryUsage": 44.11223602294922,
-      "dataLatency": 39.929036666668324,
-      "throughput": 579.8927489388304,
-      "testName": "AlarmSettingsScreen Performance should debounce rapid threshold changes",
-      "timestamp": 1763224703820
+      "renderTime": 3.4737919999997757,
+      "memoryUsage": 32.815696716308594,
+      "dataLatency": 32.287912538876306,
+      "throughput": 644.3817416024684,
+      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.surface and border for default variant",
+      "timestamp": 1763806864450
     }
   ],
   "summary": {
-    "totalTests": 20,
-    "averageRenderTime": 5.344533199999932,
-    "averageMemoryUsage": 41.129032897949216,
-    "averageDataLatency": 49.57334057895888,
-    "averageThroughput": 552.034770046228,
-    "thresholdViolations": 7
+    "totalTests": 10,
+    "averageRenderTime": 6.039241799999945,
+    "averageMemoryUsage": 26.582669830322267,
+    "averageDataLatency": 50.191404059521766,
+    "averageThroughput": 558.9008739967896,
+    "thresholdViolations": 4
   }
 }

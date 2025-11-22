@@ -342,7 +342,7 @@ export const Badge: React.FC<BadgeProps> = ({
         },
       ]}
     >
-      <Text style={[styles.badgeText, { fontSize, color: '#FFFFFF' }]}>
+      <Text style={[styles.badgeText, { fontSize, color: '#F3F4F6' }]}>
         {label}
       </Text>
     </View>

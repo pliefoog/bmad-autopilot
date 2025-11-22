@@ -42,6 +42,9 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
+  // Create theme-aware styles
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   const windData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.wind[0], [])); // Wind sensor data
   const compassData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.compass[0], [])); // Compass data for heading
@@ -449,13 +452,13 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
 
 WindWidget.displayName = 'WindWidget';
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     borderRadius: 8,
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.border,
   },
   header: {
     flexDirection: 'row',
@@ -500,7 +503,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: theme.border,
   },
   // Secondary Grid (2×2): Gust and Variation data
   secondaryGrid: {

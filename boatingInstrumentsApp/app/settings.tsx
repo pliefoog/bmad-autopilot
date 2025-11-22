@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlarmConfigDialog } from '../src/components/dialogs/AlarmConfigDialog';
+import { useTheme, ThemeColors } from '../src/store/themeStore';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const [alarmDialogVisible, setAlarmDialogVisible] = useState(false);
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const settingsOptions = [
     {
@@ -105,10 +108,10 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: theme.appBackground,
   },
   header: {
     flexDirection: 'row',
@@ -116,21 +119,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: theme.borderLight,
   },
   backButton: {
     padding: 8,
   },
   backButtonText: {
     fontSize: 17,
-    color: '#007AFF',
+    color: theme.primary,
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
+    color: theme.text,
   },
   headerSpacer: {
     width: 60,
@@ -144,17 +147,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#000000',
+    color: theme.text,
     marginBottom: 16,
   },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -173,25 +176,25 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
+    color: theme.text,
     marginBottom: 4,
   },
   optionTitleDisabled: {
-    color: '#666',
+    color: theme.textSecondary,
   },
   optionDescription: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textSecondary,
   },
   comingSoonBadge: {
     fontSize: 12,
-    color: '#FF9500',
+    color: theme.warning,
     fontWeight: '600',
     marginTop: 4,
   },
   chevron: {
     fontSize: 24,
-    color: '#C7C7CC',
+    color: theme.borderLight,
     marginLeft: 8,
   },
   infoSection: {
@@ -201,13 +204,13 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: theme.textSecondary,
     textTransform: 'uppercase',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textSecondary,
     marginBottom: 4,
   },
 });

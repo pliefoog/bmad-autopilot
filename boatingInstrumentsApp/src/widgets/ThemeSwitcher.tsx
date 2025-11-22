@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemeStore, ThemeMode } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -53,7 +53,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
   const increaseBrightness = useCallback(() => {
     const newBrightness = Math.min(1, brightness + 0.1);
     setBrightness(newBrightness);
-    if (!nativeBrightnessControl) {
+    if (!nativeBrightnessControl && Platform.OS !== 'web') {
       Brightness.setBrightnessAsync(newBrightness);
     }
   }, [brightness, nativeBrightnessControl, setBrightness]);
@@ -61,7 +61,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
   const decreaseBrightness = useCallback(() => {
     const newBrightness = Math.max(0, brightness - 0.1);
     setBrightness(newBrightness);
-    if (!nativeBrightnessControl) {
+    if (!nativeBrightnessControl && Platform.OS !== 'web') {
       Brightness.setBrightnessAsync(newBrightness);
     }
   }, [brightness, nativeBrightnessControl, setBrightness]);
@@ -81,7 +81,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#E5E7EB',
+      borderColor: theme.border,
       padding: 16,
       marginBottom: 8,
     },
@@ -159,7 +159,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
       width: 32,
       height: 32,
       borderWidth: 1,
-      borderColor: '#E5E7EB',
+      borderColor: theme.border,
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
@@ -168,7 +168,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
       flex: 1,
       height: 6,
       borderRadius: 3,
-      backgroundColor: '#E5E7EB',
+      backgroundColor: theme.border,
       overflow: 'hidden',
     },
     brightnessFill: {
@@ -184,7 +184,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
       paddingHorizontal: 4,
       borderRadius: 6,
       borderWidth: 1,
-      borderColor: '#E5E7EB',
+      borderColor: theme.border,
     },
     nativeToggleContent: {
       flexDirection: 'row',
@@ -202,7 +202,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
       borderRadius: 10,
       justifyContent: 'center',
       padding: 2,
-      backgroundColor: nativeBrightnessControl ? theme.text : '#E5E7EB',
+      backgroundColor: nativeBrightnessControl ? theme.text : theme.border,
     },
     toggleThumb: {
       width: 16,
@@ -292,7 +292,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
                   styles.themeButton,
                   {
                     backgroundColor: mode === themeOption.mode ? theme.text : 'transparent',
-                    borderColor: mode === themeOption.mode ? theme.text : '#E5E7EB',
+                    borderColor: mode === themeOption.mode ? theme.text : theme.border,
                   }
                 ]}
                 onPress={() => setMode(themeOption.mode)}
