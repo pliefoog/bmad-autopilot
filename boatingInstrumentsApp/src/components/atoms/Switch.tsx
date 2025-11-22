@@ -60,6 +60,8 @@ const Switch: React.FC<SwitchProps> = ({
       testID={testID}
       accessibilityRole="none"
       importantForAccessibility="no"
+      // @ts-ignore - prevent React Native Web from treating as switch
+      dataSet={{ switch: 'false' }}
       style={[
         styles.toggle,
         {
