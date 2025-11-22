@@ -361,7 +361,7 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
             accessibilityLabel={step.actionLabel}
           >
             {diagnosticRunning ? (
-              <ActivityIndicator color=theme.surface />
+              <ActivityIndicator color={theme.surface} />
             ) : (
               <Text style={styles.actionButtonText}>{step.actionLabel}</Text>
             )}
