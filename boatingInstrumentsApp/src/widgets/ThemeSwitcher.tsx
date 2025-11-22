@@ -7,6 +7,7 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import * as Brightness from 'expo-brightness';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
+import Switch from '../components/atoms/Switch';
 
 interface ThemeSwitcherProps {
   id: string;
@@ -196,21 +197,6 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
       marginLeft: 8,
       color: theme.textSecondary,
     },
-    toggle: {
-      width: 36,
-      height: 20,
-      borderRadius: 10,
-      justifyContent: 'center',
-      padding: 2,
-      backgroundColor: nativeBrightnessControl ? theme.text : theme.border,
-    },
-    toggleThumb: {
-      width: 16,
-      height: 16,
-      borderRadius: 8,
-      backgroundColor: theme.surface,
-      transform: [{ translateX: nativeBrightnessControl ? 14 : 0 }],
-    },
   });
 
   return (
@@ -361,9 +347,11 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
                   Native Screen Control
                 </Text>
               </View>
-              <View style={styles.toggle}>
-                <View style={styles.toggleThumb} />
-              </View>
+              <Switch
+                value={nativeBrightnessControl}
+                onValueChange={toggleNativeBrightnessControl}
+                trackColor={{ false: theme.border, true: theme.text }}
+              />
             </TouchableOpacity>
           </View>
         </View>
