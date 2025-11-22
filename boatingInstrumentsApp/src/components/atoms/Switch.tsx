@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 interface SwitchProps {
@@ -49,16 +49,17 @@ const Switch: React.FC<SwitchProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      disabled={disabled}
-      activeOpacity={0.8}
+    <View
+      // @ts-ignore - web-specific props
+      onClick={disabled ? undefined : handlePress}
+      onTouchStart={disabled ? undefined : handlePress}
       testID={testID}
       style={[
         styles.toggle,
         {
           backgroundColor: finalTrackColor,
           opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? 'default' : 'pointer',
         },
         style,
       ]}
@@ -72,7 +73,7 @@ const Switch: React.FC<SwitchProps> = ({
           },
         ]}
       />
-    </TouchableOpacity>
+    </View>
   );
 };
 
