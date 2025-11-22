@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { StatusIndicator, Badge } from '../atoms';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface ConnectionStatusProps {
   status: 'connected' | 'disconnected' | 'error' | 'reconnecting';
@@ -21,6 +22,9 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   style,
   testID,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   const getStatusText = () => {
     switch (status) {
       case 'connected': return label || 'Connected';
@@ -97,7 +101,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   compactContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -105,15 +109,15 @@ const styles = StyleSheet.create({
   },
   compactLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.textSecondary,
     fontWeight: '500',
   },
   detailedContainer: {
     padding: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.surface,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: theme.border,
   },
   statusRow: {
     flexDirection: 'row',
@@ -126,11 +130,11 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: theme.text,
   },
   details: {
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.textSecondary,
     marginTop: 2,
   },
 });

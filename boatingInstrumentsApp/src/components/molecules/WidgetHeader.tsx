@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Icon, StatusIndicator } from '../atoms';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface WidgetHeaderProps {
   title: string;
@@ -26,6 +27,9 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   subtitleStyle,
   testID,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   return (
     <View style={[styles.container, style]} testID={testID}>
       <View style={styles.leftSection}>
@@ -71,7 +75,7 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: theme.border,
   },
   leftSection: {
     flexDirection: 'row',
@@ -100,11 +104,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: theme.text,
   },
   subtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.textSecondary,
     marginTop: 2,
   },
   statusIndicator: {

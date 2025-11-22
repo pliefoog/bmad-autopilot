@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { Button, Icon } from '../atoms';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface IconButtonProps {
   iconName: string;
@@ -25,6 +26,9 @@ const IconButton: React.FC<IconButtonProps> = ({
   style,
   testID,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   const buttonStyle = [
     rounded && styles.rounded,
     style,
@@ -43,14 +47,14 @@ const IconButton: React.FC<IconButtonProps> = ({
       <Icon
         name={iconName}
         size={size === 'small' ? 16 : size === 'large' ? 24 : 20}
-        color={disabled ? '#9CA3AF' : undefined}
+        color={disabled ? theme.iconDisabled : undefined}
         testID={testID ? `${testID}-icon` : undefined}
       />
     </Button>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   rounded: {
     borderRadius: 9999,
     aspectRatio: 1,
