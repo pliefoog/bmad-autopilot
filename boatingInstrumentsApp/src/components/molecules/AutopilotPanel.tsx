@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 36,
     height: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.overlay,
     borderRadius: 3,
     alignSelf: 'center',
     marginTop: 5,

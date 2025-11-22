@@ -495,7 +495,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
           }}
           disabled={!config.enabled}
         >
-          <UniversalIcon name="volume-high-outline" size={20} color="#F3F4F6" />
+          <UniversalIcon name="volume-high-outline" size={20} color={theme.text} />
           <Text style={styles.testButtonText}>Test Alarm Sound</Text>
         </Pressable>
       </ScrollView>
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 36,
     height: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.overlay,
     borderRadius: 3,
     alignSelf: 'center',
     marginTop: 5,
@@ -738,8 +738,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   testButtonText: {
-    color: '#F3F4F6',
-    fontSize: 17,
+    color: theme.text,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

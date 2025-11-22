@@ -100,16 +100,16 @@ export const AlarmHistoryList: React.FC<AlarmHistoryListProps> = ({
       case 'EMERGENCY':
       case 'CRITICAL':
       case 'critical':
-        return '#FF3B30';
+        return theme.error;
       case 'CAUTION':
       case 'WARNING':
       case 'warning':
-        return '#FF9500';
+        return theme.warning;
       case 'INFO':
       case 'info':
-        return '#007AFF';
+        return theme.primary;
       default:
-        return '#8E8E93';
+        return theme.textTertiary;
     }
   };
 
@@ -210,7 +210,7 @@ export const AlarmHistoryList: React.FC<AlarmHistoryListProps> = ({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={theme.primary} />
         <Text style={styles.loadingText}>Loading history...</Text>
       </View>
     );
