@@ -373,12 +373,18 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
                   <Text style={[styles.alarmLabel, { color: theme.text }]}>{alarm.label}</Text>
                   <View style={styles.alarmStatus}>
                     {isEnabled && <View style={[styles.statusDot, { backgroundColor: theme.success }]} />}
-                    <Switch
-                      value={isEnabled}
-                      onValueChange={(value) => handleQuickToggle(alarm.type, value)}
-                      trackColor={{ false: theme.border, true: theme.interactive }}
+                    <TouchableOpacity
+                      onPress={() => handleQuickToggle(alarm.type, !isEnabled)}
                       disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
-                    />
+                      activeOpacity={1}
+                    >
+                      <Switch
+                        value={isEnabled}
+                        onValueChange={(value) => handleQuickToggle(alarm.type, value)}
+                        trackColor={{ false: theme.border, true: theme.interactive }}
+                        disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
                 {summary && <Text style={[styles.alarmSummary, { color: theme.textSecondary }]}>{summary}</Text>}
@@ -427,12 +433,18 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.sectionRow}>
             <Text style={[styles.sectionLabel, { color: theme.text }]}>Enable Alarm</Text>
-            <Switch
-              value={config.enabled}
-              onValueChange={(value) => updateConfig({ enabled: value })}
-              trackColor={{ false: theme.border, true: theme.interactive }}
+            <TouchableOpacity
+              onPress={() => updateConfig({ enabled: !config.enabled })}
               disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
-            />
+              activeOpacity={1}
+            >
+              <Switch
+                value={config.enabled}
+                onValueChange={(value) => updateConfig({ enabled: value })}
+                trackColor={{ false: theme.border, true: theme.interactive }}
+                disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
