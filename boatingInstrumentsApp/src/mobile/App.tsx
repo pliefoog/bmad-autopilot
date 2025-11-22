@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -16,6 +16,7 @@ import { AutopilotFooter } from '../components/organisms/AutopilotFooter';
 import { OnboardingScreen } from '../components/onboarding/OnboardingScreen';
 import { UnitsConfigDialog } from '../components/dialogs/UnitsConfigDialog';
 import { FactoryResetDialog } from '../components/dialogs/FactoryResetDialog';
+import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
 import { 
   getConnectionDefaults, 
   connectNmea, 
@@ -40,6 +41,7 @@ const App = () => {
   const [showConnectionDialog, setShowConnectionDialog] = useState(false);
   const [showUnitsDialog, setShowUnitsDialog] = useState(false);
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false);
+  const [showTestSwitchDialog, setShowTestSwitchDialog] = useState(false);
   
   // Navigation session state
   const [navigationSession, setNavigationSession] = useState<{
@@ -453,6 +455,30 @@ const App = () => {
         onConfirm={handleFactoryResetConfirm}
         onCancel={() => setShowFactoryResetDialog(false)}
       />
+
+      <TestSwitchDialog
+        visible={showTestSwitchDialog}
+        onClose={() => setShowTestSwitchDialog(false)}
+      />
+
+      {/* Temporary Test Button - Floating */}
+      <TouchableOpacity
+        onPress={() => setShowTestSwitchDialog(true)}
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          right: 20,
+          backgroundColor: theme.interactive,
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          borderRadius: 8,
+          zIndex: 9999,
+        }}
+      >
+        <Text style={{ color: theme.onColor, fontWeight: '600' }}>
+          TEST SWITCH
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };

@@ -28,6 +28,48 @@ import { MarineAudioAlertManager } from '../../services/alarms/MarineAudioAlertM
 const alarmConfig = CriticalAlarmConfiguration.getInstance();
 const audioManager = MarineAudioAlertManager.getInstance();
 
+// Local Switch component to bypass any rendering issues
+const LocalSwitch: React.FC<{
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  trackColor?: { false?: string; true?: string };
+  disabled?: boolean;
+}> = ({ value, onValueChange, trackColor, disabled }) => {
+  const theme = useTheme();
+  
+  const finalTrackColor = value 
+    ? (trackColor?.true || theme.interactive)
+    : (trackColor?.false || theme.border);
+  
+  const finalThumbColor = theme.surface;
+  
+  return (
+    <View
+      // @ts-ignore
+      onClick={disabled ? undefined : () => onValueChange(!value)}
+      style={{
+        width: 36,
+        height: 20,
+        borderRadius: 10,
+        padding: 2,
+        backgroundColor: finalTrackColor,
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? 'default' : 'pointer',
+      }}
+    >
+      <View
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: 8,
+          backgroundColor: finalThumbColor,
+          transform: [{ translateX: value ? 14 : 0 }],
+        }}
+      />
+    </View>
+  );
+};
+
 // Alarm list configuration
 const ALARM_LIST = [
   {
@@ -170,6 +212,30 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
   useEffect(() => {
     if (visible) {
       loadConfigurations();
+      
+      // Web-specific: Remove green overlay elements from DOM
+      if (typeof window !== 'undefined') {
+        const removeGreenElements = () => {
+          const elements = document.querySelectorAll('div[style*="rgb(0, 150, 136)"]');
+          elements.forEach(el => {
+            if (el instanceof HTMLElement) {
+              el.style.display = 'none';
+              el.style.visibility = 'hidden';
+              el.style.opacity = '0';
+              el.style.width = '0';
+              el.style.height = '0';
+            }
+          });
+        };
+        
+        // Run multiple times to catch dynamically added elements
+        removeGreenElements();
+        setTimeout(removeGreenElements, 100);
+        setTimeout(removeGreenElements, 500);
+        const interval = setInterval(removeGreenElements, 1000);
+        
+        return () => clearInterval(interval);
+      }
     }
   }, [visible]);
 
@@ -378,7 +444,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
                       disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
                       activeOpacity={1}
                     >
-                      <Switch
+                      <LocalSwitch
                         value={isEnabled}
                         onValueChange={(value) => handleQuickToggle(alarm.type, value)}
                         trackColor={{ false: theme.border, true: theme.interactive }}
@@ -438,7 +504,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
               disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
               activeOpacity={1}
             >
-              <Switch
+              <LocalSwitch
                 value={config.enabled}
                 onValueChange={(value) => updateConfig({ enabled: value })}
                 trackColor={{ false: theme.border, true: theme.interactive }}
@@ -520,6 +586,35 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
+      {/* Web-specific: Hide the green overlay element */}
+      {typeof window !== 'undefined' && (
+        // @ts-ignore
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Nuclear option - hide ALL elements with the exact green color */
+            div[style*="rgb(0, 150, 136)"] {
+              display: none !important;
+              visibility: hidden !important;
+              opacity: 0 !important;
+              width: 0 !important;
+              height: 0 !important;
+              position: absolute !important;
+              z-index: -9999 !important;
+            }
+            
+            /* Also target by background-color specifically */
+            div[style*="background-color: rgb(0, 150, 136)"] {
+              display: none !important;
+            }
+            
+            /* Class-based targeting */
+            .r-insetInlineStart-rci37q[style*="rgb(0, 150, 136)"] {
+              display: none !important;
+            }
+          `
+        }} />
+      )}
+      
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* iOS Drag Handle */}
         <View style={styles.dragHandle} />

@@ -60,9 +60,16 @@ const Switch: React.FC<SwitchProps> = ({
           backgroundColor: finalTrackColor,
           opacity: disabled ? 0.5 : 1,
           cursor: disabled ? 'default' : 'pointer',
+          // Web-specific: hide injected checkbox
+          // @ts-ignore
+          overflow: 'hidden',
         },
         style,
       ]}
+      // @ts-ignore - web-specific inline style to target injected checkbox
+      {...(typeof window !== 'undefined' && {
+        dataSet: { hideCheckbox: 'true' },
+      })}
     >
       <View
         style={[
@@ -70,9 +77,37 @@ const Switch: React.FC<SwitchProps> = ({
           {
             backgroundColor: finalThumbColor,
             transform: [{ translateX: value ? 14 : 0 }],
+            // @ts-ignore - ensure thumb is on top
+            zIndex: 1,
+            position: 'relative',
           },
         ]}
       />
+      {/* Web-specific: inject style to hide checkbox */}
+      {typeof window !== 'undefined' && (
+        // @ts-ignore
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Hide React Native Web's injected checkbox in all contexts */
+            input[type="checkbox"][role="switch"],
+            input[type="checkbox"][role="switch"] + *,
+            input[type="checkbox"][role="switch"] > * {
+              opacity: 0 !important;
+              pointer-events: none !important;
+              visibility: hidden !important;
+              display: none !important;
+            }
+            
+            /* Target checkboxes within ScrollViews specifically */
+            [data-focusable="true"] input[type="checkbox"][role="switch"] {
+              opacity: 0 !important;
+              pointer-events: none !important;
+              visibility: hidden !important;
+              display: none !important;
+            }
+          `
+        }} />
+      )}
     </View>
   );
 };
