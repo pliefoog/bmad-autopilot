@@ -71,12 +71,15 @@ const Switch: React.FC<SwitchProps> = ({
     >
       <View
         importantForAccessibility="no"
+        // @ts-ignore - force override React Native Web's green background
         style={[
           styles.toggleThumb,
           {
             backgroundColor: finalThumbColor,
             transform: [{ translateX: value ? 14 : 0 }],
           },
+          // Force override inline styles injected by React Native Web
+          { backgroundColor: finalThumbColor + ' !important' } as any,
         ]}
       />
     </Pressable>
