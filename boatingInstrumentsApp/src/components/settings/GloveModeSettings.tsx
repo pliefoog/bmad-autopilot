@@ -10,7 +10,8 @@
  */
 
 import React from 'react';
-import { View, Text, Switch, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import Switch from '../atoms/Switch';
 import { useTheme } from '../../store/themeStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { marineTouchService } from '../../services/marine/MarineTouchService';
@@ -37,8 +38,8 @@ export const GloveModeSettings: React.FC = () => {
         <Switch
           value={gloveMode}
           onValueChange={handleToggle}
-          trackColor={{ false: theme.border, true: theme.primary }}
-          thumbColor={gloveMode ? theme.surface : theme.textSecondary}
+          trackColor={{ false: theme.border, true: theme.interactive }}
+          thumbColor={theme.surface}
           ios_backgroundColor={theme.border}
         />
       </View>

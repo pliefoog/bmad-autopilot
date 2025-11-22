@@ -11,13 +11,13 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Switch,
   Pressable,
   TextInput,
   Alert,
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import Switch from '../atoms/Switch';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { CriticalAlarmConfiguration } from '../../services/alarms/CriticalAlarmConfiguration';
@@ -376,8 +376,8 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
                     <Switch
                       value={isEnabled}
                       onValueChange={(value) => handleQuickToggle(alarm.type, value)}
-                      trackColor={{ false: theme.border, true: theme.success }}
-                      thumbColor={theme.background}
+                      trackColor={{ false: theme.border, true: theme.interactive }}
+                      thumbColor={theme.surface}
                       disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
                     />
                   </View>
@@ -431,8 +431,8 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
             <Switch
               value={config.enabled}
               onValueChange={(value) => updateConfig({ enabled: value })}
-              trackColor={{ false: theme.border, true: theme.success }}
-              thumbColor={theme.background}
+              trackColor={{ false: theme.border, true: theme.interactive }}
+              thumbColor={theme.surface}
               disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
             />
           </View>
