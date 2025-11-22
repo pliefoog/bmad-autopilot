@@ -36,8 +36,8 @@ const Switch: React.FC<SwitchProps> = ({
     true: theme.interactive,
   }), [theme]);
   
-  // Use white/light color for thumb to contrast against dark track when OFF and colored track when ON
-  const defaultThumbColor = '#FFFFFF';
+  // Use theme.surface for thumb to match ThemeSwitcher pattern
+  const defaultThumbColor = theme.surface;
   const defaultIosBackgroundColor = theme.borderLight;
   const switchStyle = [
     styles.switch,
