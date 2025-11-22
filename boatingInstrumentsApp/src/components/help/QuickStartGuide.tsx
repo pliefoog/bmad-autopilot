@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QuickStartStep, QuickStartProgress } from '../../systems/help/types';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 
 const STORAGE_KEY = '@bmad:quick_start_progress';
 

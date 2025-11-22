@@ -21,7 +21,7 @@ import {
   Platform,
 } from 'react-native';
 import { HelpSearchResult } from '../../systems/help/types';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 
 interface HelpSearchProps {
   placeholder?: string;

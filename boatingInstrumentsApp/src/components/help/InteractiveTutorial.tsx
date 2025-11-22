@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { Tutorial, TutorialStep, TutorialProgress } from '../../systems/help/types';
 import TutorialManager from '../../systems/help/TutorialManager';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 
 interface InteractiveTutorialProps {
   tutorial: Tutorial;

@@ -17,7 +17,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 import DiagnosticCollector from '../../systems/help/DiagnosticCollector';
 
 interface TroubleshootingIssue {

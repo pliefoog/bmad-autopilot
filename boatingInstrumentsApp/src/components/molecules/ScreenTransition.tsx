@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Animated, StyleSheet, Easing, ViewStyle } from 'react-native';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 
 interface ScreenTransitionProps {
   children: React.ReactNode;

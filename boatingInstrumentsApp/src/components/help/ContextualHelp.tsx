@@ -21,7 +21,7 @@ import {
   Platform,
 } from 'react-native';
 import { HelpContent } from '../../systems/help/types';
-import { useTheme } from '../../theme/ThemeProvider';
+import { useTheme } from '../../store/themeStore';
 
 interface ContextualHelpProps {
   content: string | HelpContent;
