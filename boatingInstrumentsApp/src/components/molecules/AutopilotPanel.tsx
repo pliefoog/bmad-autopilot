@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,7 @@ import {
   TouchableOpacity, 
   SafeAreaView 
 } from 'react-native';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { AutopilotState } from '../../hooks/useAutopilotStatus';
 
 interface AutopilotPanelProps {
@@ -28,6 +28,7 @@ export const AutopilotPanel: React.FC<AutopilotPanelProps> = ({
   onDisengage,
 }) => {
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const adjustHeading = (delta: number) => {
     if (autopilotState.targetHeading !== undefined && onHeadingChange) {
@@ -138,7 +139,7 @@ export const AutopilotPanel: React.FC<AutopilotPanelProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
