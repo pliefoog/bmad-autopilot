@@ -12,6 +12,7 @@ interface SwitchProps {
     true?: string;
   };
   thumbColor?: string;
+  ios_backgroundColor?: string;
   style?: ViewStyle;
   testID?: string;
 }
@@ -23,6 +24,7 @@ const Switch: React.FC<SwitchProps> = ({
   size = 'medium',
   trackColor,
   thumbColor,
+  ios_backgroundColor,
   style,
   testID,
 }) => {
@@ -35,6 +37,7 @@ const Switch: React.FC<SwitchProps> = ({
   }), [theme]);
   
   const defaultThumbColor = theme.surface;
+  const defaultIosBackgroundColor = theme.borderLight;
   const switchStyle = [
     styles.switch,
     styles[`switch_${size}`],
@@ -49,6 +52,7 @@ const Switch: React.FC<SwitchProps> = ({
       disabled={disabled}
       trackColor={trackColor || defaultTrackColor}
       thumbColor={thumbColor || defaultThumbColor}
+      ios_backgroundColor={ios_backgroundColor || defaultIosBackgroundColor}
       testID={testID}
     />
   );
