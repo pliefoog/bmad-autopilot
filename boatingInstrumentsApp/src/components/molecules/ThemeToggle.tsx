@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { Button, Switch, Label } from '../atoms';
+import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { Button, Label } from '../atoms';
+import { useTheme } from '../../store/themeStore';
 
 interface ThemeToggleProps {
   isDarkMode: boolean;
@@ -21,6 +22,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   style,
   testID,
 }) => {
+  const theme = useTheme();
+
   if (variant === 'button') {
     return (
       <Button
@@ -45,12 +48,26 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           Dark Mode
         </Label>
       )}
-      <Switch
-        value={isDarkMode}
-        onValueChange={onToggle}
-        size={size}
+      <TouchableOpacity 
+        onPress={() => onToggle(!isDarkMode)} 
+        style={[
+          styles.toggle,
+          {
+            backgroundColor: isDarkMode ? theme.text : theme.border,
+          }
+        ]}
         testID={testID ? `${testID}-switch` : undefined}
-      />
+      >
+        <View 
+          style={[
+            styles.toggleThumb,
+            {
+              backgroundColor: theme.surface,
+              transform: [{ translateX: isDarkMode ? 14 : 0 }],
+            }
+          ]} 
+        />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -61,6 +78,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 8,
+  },
+  toggle: {
+    width: 36,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleThumb: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
 });
 
