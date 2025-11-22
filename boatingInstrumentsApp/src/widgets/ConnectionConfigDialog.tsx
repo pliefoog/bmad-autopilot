@@ -150,7 +150,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
     >
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* iOS modal drag indicator */}
-        <View style={styles.dragHandle} />
+        <View style={[styles.dragHandle, { backgroundColor: theme.borderDark }]} />
         
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity onPress={onClose} style={styles.headerButton}>
@@ -271,7 +271,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: theme.borderDark,
     alignSelf: 'center',
     marginTop: 5,
     marginBottom: 8,
