@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   instructionNumberText: {
-    color: '#F3F4F6',
+    color: theme.surface,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -602,6 +602,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   nextButtonText: {
-    color: '#F3F4F6',
+    color: theme.surface,
   },
 });
