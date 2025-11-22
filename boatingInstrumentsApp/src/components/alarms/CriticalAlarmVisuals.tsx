@@ -275,7 +275,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backgroundColor: theme.overlayDark,
             justifyContent: 'center',
             alignItems: 'center',
             borderRadius: 8,

@@ -9,7 +9,7 @@
  * - Accessible for screen readers
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
   Platform,
 } from 'react-native';
 import { HelpContent } from '../../systems/help/types';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface ContextualHelpProps {
   content: string | HelpContent;
@@ -46,7 +46,8 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
   maxWidth = 300,
   autoDismiss = 0,
 }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
@@ -139,8 +140,8 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
               style={[
                 styles.tooltip,
                 {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
                   maxWidth,
                   opacity: fadeAnim,
                   transform: [{ scale: scaleAnim }],
@@ -158,10 +159,10 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
                     tooltipPos.arrowPosition === 'left' && styles.arrowLeft,
                     tooltipPos.arrowPosition === 'right' && styles.arrowRight,
                     {
-                      borderTopColor: tooltipPos.arrowPosition === 'bottom' ? colors.surface : 'transparent',
-                      borderBottomColor: tooltipPos.arrowPosition === 'top' ? colors.surface : 'transparent',
-                      borderLeftColor: tooltipPos.arrowPosition === 'right' ? colors.surface : 'transparent',
-                      borderRightColor: tooltipPos.arrowPosition === 'left' ? colors.surface : 'transparent',
+                      borderTopColor: tooltipPos.arrowPosition === 'bottom' ? theme.surface : 'transparent',
+                      borderBottomColor: tooltipPos.arrowPosition === 'top' ? theme.surface : 'transparent',
+                      borderLeftColor: tooltipPos.arrowPosition === 'right' ? theme.surface : 'transparent',
+                      borderRightColor: tooltipPos.arrowPosition === 'left' ? theme.surface : 'transparent',
                     },
                   ]}
                 />
@@ -171,14 +172,14 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
               <View style={styles.content}>
                 {titleText && (
                   <Text
-                    style={[styles.title, { color: colors.text }]}
+                    style={[styles.title, { color: theme.text }]}
                     accessibilityRole="header"
                   >
                     {titleText}
                   </Text>
                 )}
                 <Text
-                  style={[styles.text, { color: colors.textSecondary }, titleText && styles.textWithTitle]}
+                  style={[styles.text, { color: theme.textSecondary }, titleText && styles.textWithTitle]}
                 >
                   {contentText}
                 </Text>
@@ -277,10 +278,10 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: theme.overlay,
   },
   tooltip: {
     position: 'absolute',
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: theme.shadowDark,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
       web: {
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.25)',
+        boxShadow: `0 2px 4px ${theme.shadow}`,
       },
     }),
   },

@@ -1,24 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Text, AccessibilityRole } from 'react-native';
 import LoadingSpinner from '../atoms/LoadingSpinner';
 import { useLoading } from '../../services/loading/LoadingContext';
-import { useTheme as useThemeProvider } from '../../store/themeStore';
-import { useTheme as useThemeStore } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 const LoadingOverlay: React.FC<{ testID?: string }> = ({ testID }) => {
   const { anyLoading } = useLoading();
-  let theme;
-  try {
-    theme = useThemeProvider();
-  } catch (e) {
-    // Fall back to core theme store when ThemeProvider is not present
-    theme = useThemeStore();
-  }
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   if (!anyLoading) return null;
-
-  const surfaceColor = 'colors' in theme ? theme.colors.surface : (theme as any).surface;
-  const textColor = 'colors' in theme ? theme.colors.text : (theme as any).text;
 
   return (
     <View
@@ -27,17 +18,17 @@ const LoadingOverlay: React.FC<{ testID?: string }> = ({ testID }) => {
       accessibilityLabel="Loading"
       style={[StyleSheet.absoluteFillObject, styles.backdrop]}
     >
-      <View style={[styles.container, { backgroundColor: surfaceColor }]}>
+      <View style={[styles.container, { backgroundColor: theme.surface }]}>
         <LoadingSpinner size="large" testID="global-spinner" />
-        <Text style={[styles.text, { color: textColor }]}>Loading…</Text>
+        <Text style={[styles.text, { color: theme.text }]}>Loading…</Text>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.overlayDark,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,

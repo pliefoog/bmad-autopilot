@@ -9,7 +9,7 @@
  * - Re-accessible from settings
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QuickStartStep, QuickStartProgress } from '../../systems/help/types';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 
 const STORAGE_KEY = '@bmad:quick_start_progress';
 
@@ -38,7 +38,8 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
   onStepAction,
   steps: providedSteps,
 }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [progress, setProgress] = useState<QuickStartProgress>({
     started: false,
     currentStep: 0,
@@ -163,11 +164,11 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* iOS Drag Handle */}
         <View style={styles.dragHandle} />
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <View style={styles.headerContent}>
             <TouchableOpacity
               onPress={onClose}
@@ -175,30 +176,30 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
               accessibilityLabel="Close quick start guide"
               accessibilityRole="button"
             >
-              <Text style={[styles.headerButtonText, { color: colors.text }]}>Done</Text>
+              <Text style={[styles.headerButtonText, { color: theme.text }]}>Done</Text>
             </TouchableOpacity>
-            <Text style={[styles.title, { color: colors.text }]}>Quick Start</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Quick Start</Text>
             <View style={styles.headerButton} />
           </View>
 
           {/* Progress */}
           <View style={styles.progressSection}>
             <View style={styles.progressInfo}>
-              <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+              <Text style={[styles.progressText, { color: theme.textSecondary }]}>
                 {completedCount} of {progress.totalSteps} completed
               </Text>
               {isComplete && (
-                <Text style={[styles.completeText, { color: colors.success }]}>
+                <Text style={[styles.completeText, { color: theme.success }]}>
                   ✓ All Done!
                 </Text>
               )}
             </View>
-            <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
+            <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
               <View
                 style={[
                   styles.progressBar,
                   {
-                    backgroundColor: isComplete ? colors.success : colors.primary,
+                    backgroundColor: isComplete ? theme.success : theme.primary,
                     width: `${progressPercent}%`,
                   },
                 ]}
@@ -214,7 +215,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
               key={step.id}
               style={[
                 styles.stepItem,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: theme.surface, borderColor: theme.border },
                 step.completed && styles.stepItemCompleted,
               ]}
               onPress={() => handleStepPress(step)}
@@ -227,14 +228,14 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
               <View
                 style={[
                   styles.stepNumber,
-                  { borderColor: colors.border },
-                  step.completed && { backgroundColor: colors.success, borderColor: colors.success },
+                  { borderColor: theme.border },
+                  step.completed && { backgroundColor: theme.success, borderColor: theme.success },
                 ]}
               >
                 {step.completed ? (
                   <Text style={styles.checkmark}>✓</Text>
                 ) : (
-                  <Text style={[styles.stepNumberText, { color: colors.textSecondary }]}>
+                  <Text style={[styles.stepNumberText, { color: theme.textSecondary }]}>
                     {index + 1}
                   </Text>
                 )}
@@ -247,7 +248,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
                   <Text
                     style={[
                       styles.stepTitle,
-                      { color: colors.text },
+                      { color: theme.text },
                       step.completed && styles.stepTitleCompleted,
                     ]}
                   >
@@ -257,7 +258,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
                 <Text
                   style={[
                     styles.stepDescription,
-                    { color: colors.textSecondary },
+                    { color: theme.textSecondary },
                     step.completed && styles.stepDescriptionCompleted,
                   ]}
                 >
@@ -267,28 +268,28 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
 
               {/* Arrow */}
               {!step.completed && (
-                <Text style={[styles.arrow, { color: colors.textSecondary }]}>→</Text>
+                <Text style={[styles.arrow, { color: theme.textSecondary }]}>→</Text>
               )}
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         {/* Footer Actions */}
-        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <View style={[styles.footer, { borderTopColor: theme.border }]}>
           {isComplete ? (
             <>
               <TouchableOpacity
-                style={[styles.footerButton, { borderColor: colors.border }]}
+                style={[styles.footerButton, { borderColor: theme.border }]}
                 onPress={handleRestart}
                 accessibilityLabel="Restart quick start guide"
                 accessibilityRole="button"
               >
-                <Text style={[styles.footerButtonText, { color: colors.text }]}>
+                <Text style={[styles.footerButtonText, { color: theme.text }]}>
                   ↻ Restart
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.footerButton, styles.primaryButton, { backgroundColor: colors.primary }]}
+                style={[styles.footerButton, styles.primaryButton, { backgroundColor: theme.primary }]}
                 onPress={handleDismiss}
                 accessibilityLabel="Finish and close"
                 accessibilityRole="button"
@@ -298,12 +299,12 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
             </>
           ) : (
             <TouchableOpacity
-              style={[styles.footerButton, { borderColor: colors.border }]}
+              style={[styles.footerButton, { borderColor: theme.border }]}
               onPress={handleDismiss}
               accessibilityLabel="Skip quick start guide"
               accessibilityRole="button"
             >
-              <Text style={[styles.footerButtonText, { color: colors.textSecondary }]}>
+              <Text style={[styles.footerButtonText, { color: theme.textSecondary }]}>
                 Skip for Now
               </Text>
             </TouchableOpacity>
@@ -314,14 +315,14 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
   dragHandle: {
     width: 36,
     height: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: theme.overlay,
     borderRadius: 3,
     alignSelf: 'center',
     marginTop: 5,
