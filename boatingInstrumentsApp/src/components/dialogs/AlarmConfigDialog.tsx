@@ -4,7 +4,7 @@
  * Matches UnitsConfigDialog pattern for consistency
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -18,7 +18,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { useTheme } from '../../store/themeStore';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { CriticalAlarmConfiguration } from '../../services/alarms/CriticalAlarmConfiguration';
 import { CriticalAlarmType, CriticalAlarmConfig, AlarmEscalationLevel } from '../../services/alarms/types';
@@ -155,6 +155,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedAlarmType, setSelectedAlarmType] = useState<CriticalAlarmType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -562,7 +563,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
