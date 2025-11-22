@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Dimensions, Alert } from 'react-native';
-import { useTheme } from '../store/themeStore';
+import { useTheme, ThemeColors } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useToast } from '../hooks/useToast';
 import { WidgetRegistry } from './WidgetRegistry';
@@ -133,6 +133,7 @@ export const DynamicDashboard: React.FC = () => {
   } | null>(null);
   
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const toast = useToast();
 
   console.log('[DynamicDashboard] Widget store state:', {
@@ -409,7 +410,7 @@ export const DynamicDashboard: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
   },
