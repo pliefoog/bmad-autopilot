@@ -252,9 +252,9 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({
               right: 0,
               bottom: 0,
               borderWidth: 2,
-              borderColor: '#06B6D4',
+              borderColor: theme.secondary,
               borderRadius: 8,
-              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              backgroundColor: theme.surfaceHighlight,
               pointerEvents: 'none',
             }}
           />

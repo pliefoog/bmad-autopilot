@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    ...PlatformStyles.boxShadow('#000', { x: 0, y: 2 }, 4, 0.3),
+    ...PlatformStyles.boxShadow(theme.shadowDark, { x: 0, y: 2 }, 4, 0.3),
     elevation: 6,
   },
   addFab: {

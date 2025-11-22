@@ -81,7 +81,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       fontWeight: '500',
     },
     buttonTextPrimary: {
-      color: '#FFFFFF',
+      color: colors.surface,
       fontSize,
       fontWeight: '500',
     },
@@ -211,7 +211,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
     
     // Overlays and modals
     overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: colors.overlay,
       position: 'absolute',
       top: 0,
       left: 0,

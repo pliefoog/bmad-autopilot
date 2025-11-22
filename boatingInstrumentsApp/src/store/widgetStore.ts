@@ -1140,7 +1140,7 @@ export const useWidgetStore = create<WidgetStore>()(
               snapToGrid: true,
               columns: 12,
               rows: 8,
-              backgroundColor: '#f0f0f0'
+              backgroundColor: themeStore.getState().colors.surface
             }
           ],
           presets: [],

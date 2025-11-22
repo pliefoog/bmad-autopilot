@@ -293,9 +293,9 @@ const WebDraggableWidget: React.FC<DraggableWidgetProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              border: '2px solid #06B6D4',
+              border: `2px solid ${theme.secondary}`,
               borderRadius: '8px',
-              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              backgroundColor: theme.surfaceHighlight,
               pointerEvents: 'none',
             }}
           />
@@ -445,9 +445,9 @@ const MobileDraggableWidget: React.FC<DraggableWidgetProps> = ({
                 right: 0,
                 bottom: 0,
                 borderWidth: 2,
-                borderColor: '#06B6D4',
+                borderColor: theme.secondary,
                 borderRadius: 8,
-                backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                backgroundColor: theme.surfaceHighlight,
                 pointerEvents: 'none',
               }}
             />

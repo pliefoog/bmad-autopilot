@@ -354,7 +354,7 @@ export const createThemedStyles = (theme: ThemeColors) => {
      * Primary button text styling.
      */
     buttonTextPrimary: {
-      color: '#FFFFFF',
+      color: theme.surface,
       fontSize: 14,
       fontWeight: '600',
     } as TextStyle,
@@ -372,7 +372,7 @@ export const createThemedStyles = (theme: ThemeColors) => {
      * Danger button text styling.
      */
     buttonTextDanger: {
-      color: '#FFFFFF',
+      color: theme.surface,
       fontSize: 14,
       fontWeight: '600',
     } as TextStyle,
