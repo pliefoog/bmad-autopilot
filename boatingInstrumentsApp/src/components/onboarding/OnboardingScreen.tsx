@@ -145,7 +145,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             <Text style={[styles.footerButtonText, styles.nextButtonText]}>
               {isLastStep ? "Get Started" : "Next"}
             </Text>
-            {!isLastStep && <Ionicons name="arrow-forward" size={20} color="#F3F4F6" />}
+            {!isLastStep && <Ionicons name="arrow-forward" size={20} color=theme.surface />}
           </TouchableOpacity>
         </View>
       </SafeAreaView>

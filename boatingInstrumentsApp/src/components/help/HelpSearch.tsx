@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#F3F4F6',
+    color: theme.surface,
     textTransform: 'capitalize',
   },
   resultSnippet: {

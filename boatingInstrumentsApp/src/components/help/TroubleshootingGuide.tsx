@@ -361,7 +361,7 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
             accessibilityLabel={step.actionLabel}
           >
             {diagnosticRunning ? (
-              <ActivityIndicator color="#F3F4F6" />
+              <ActivityIndicator color=theme.surface />
             ) : (
               <Text style={styles.actionButtonText}>{step.actionLabel}</Text>
             )}
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   actionButtonText: {
-    color: '#F3F4F6',
+    color: theme.surface,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   nextButtonText: {
-    color: '#F3F4F6',
+    color: theme.surface,
     fontSize: 16,
     fontWeight: '600',
   },
