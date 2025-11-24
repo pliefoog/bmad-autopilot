@@ -13,7 +13,7 @@ import { WidgetFactory } from '../services/WidgetFactory';
 import UniversalIcon from '../components/atoms/UniversalIcon';
 
 // Render the appropriate widget component using registry
-function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): React.ReactElement {
+function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): React.ReactElement | null {
   // Use the local extractBaseWidgetType function for proper multi-instance handling
   const baseType = extractBaseWidgetType(key);
   const registeredWidget = WidgetRegistry.getWidget(baseType);
@@ -27,6 +27,7 @@ function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): 
   console.error(`[DynamicDashboard] Widget lookup failed:`, {
     originalKey: key,
     baseType,
+    registryCount: WidgetRegistry.getCount(),
     availableWidgets: WidgetRegistry.getAllWidgets().map(w => w.id)
   });
   
@@ -36,7 +37,9 @@ function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): 
     onWidgetError(key);
   }
   
-  throw new Error(`Widget "${key}" (base type: "${baseType}") not found in registry`);
+  // Return null instead of throwing to prevent crashes
+  console.warn(`[DynamicDashboard] Rendering placeholder for missing widget: ${key}`);
+  return null;
 }
 
 // Extract base widget type from instance ID
@@ -81,46 +84,14 @@ function extractBaseWidgetType(widgetId: string): string {
   return legacyMappings[widgetId] || widgetId;
 }
 
-// Generate appropriate title for widget instances
-
-
-interface DynamicWidgetWrapperProps {
-  layout: DynamicWidgetLayout;
-  onExpansionChange: (widgetId: string, expanded: boolean) => void;
-  children: React.ReactNode;
-}
-
-const DynamicWidgetWrapper: React.FC<DynamicWidgetWrapperProps> = ({ 
-  layout, 
-  onExpansionChange, 
-  children 
-}) => {
-  const theme = useTheme();
-  const wrapperStyles = useMemo(() => createWrapperStyles(theme), [theme]);
-  
-  // Use simple flexbox with content-based width
-  return (
-    <View
-      style={[
-        wrapperStyles.dynamicWidget,
-        {
-          minHeight: layout.size.height,
-        }
-      ]}
-      key={layout.id}
-    >
-      <View style={wrapperStyles.widgetTouchable}>
-        {children}
-      </View>
-    </View>
-  );
-};
-
 export const DynamicDashboard: React.FC = () => {
   // ✨ NEW: Subscribe to widget store for dynamic widgets
   const { dashboards, currentDashboard, cleanupOrphanedWidgets } = useWidgetStore();
   const currentDashboardData = dashboards.find(d => d.id === currentDashboard);
   const storeWidgets = currentDashboardData?.widgets || [];
+  
+  // Subscribe to widget expanded state for pagination recalculation
+  const widgetExpanded = useWidgetStore((state) => state.widgetExpanded);
   
   console.log('[DynamicDashboard] Store widgets:', storeWidgets.length, 'dashboard:', currentDashboard);
   
@@ -128,6 +99,12 @@ export const DynamicDashboard: React.FC = () => {
   const [showSelector, setShowSelector] = useState(false);
   const [isDragMode, setIsDragMode] = useState(false);
   const [currentProfile, setCurrentProfile] = useState<string>('default');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [dimensions, setDimensions] = useState(() => {
+    const { width, height } = Dimensions.get('window');
+    return { width, height };
+  });
+  const [widgetHeights, setWidgetHeights] = useState<Map<string, number>>(new Map());
   const [removedWidget, setRemovedWidget] = useState<{
     widget: DynamicWidgetLayout;
     index: number;
@@ -146,55 +123,151 @@ export const DynamicDashboard: React.FC = () => {
 
   // Register all widgets on mount
   useEffect(() => {
+    console.log('[DynamicDashboard] Registering all widgets...');
     registerAllWidgets();
+    console.log('[DynamicDashboard] Widget registry count:', WidgetRegistry.getCount());
+    console.log('[DynamicDashboard] Registered widgets:', WidgetRegistry.getAllWidgets().map(w => w.id));
   }, []);
 
-  // ✨ NEW: Convert widget store widgets to dynamic layout format
-  const convertWidgetStoreToDynamicLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
+  // Listen for dimension changes (window resize)
+  useEffect(() => {
+    // React Native Dimensions API listener
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      console.log('[DynamicDashboard] RN Dimensions changed:', { 
+        width: window.width, 
+        height: window.height
+      });
+      setDimensions({ width: window.width, height: window.height });
+      setCurrentPage(0);
+    });
+
+    // Web-specific window resize listener for more reliable updates
+    const handleResize = () => {
+      const { width, height } = Dimensions.get('window');
+      console.log('[DynamicDashboard] Web window resize:', { width, height });
+      setDimensions({ width, height });
+      setCurrentPage(0);
+    };
+
+    // Add web listener if running on web (check for addEventListener method)
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      subscription?.remove();
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        window.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []); // Empty dependency array - only set up once
+
+  // ✨ Flow layout calculation that prevents overlapping
+  const calculateFlowLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
+    const screenWidth = dimensions.width;
+    const screenHeight = dimensions.height;
+    const margin = 0;
+    const spacing = 0;
+    const availableWidth = screenWidth - (2 * margin);
+    
+    console.log('[DynamicDashboard] Layout calculation:', {
+      screenWidth,
+      availableWidth,
+      totalWidgets: widgets.length
+    });
+    
+    // Row-based layout: widgets flow left-to-right using natural widths
+    let currentX = 0;
+    let currentY = 0;
+    let currentRow = 0;
+    let rowMaxHeight = 0;
+    let currentRowWidth = 0;
+    const rowHeights: number[] = [];
+    
     return widgets.map((widget, index) => {
-      const fixedWidth = DynamicLayoutService.calculateFixedWidgetWidth(widget.type || widget.id);
-      const fixedHeight = DynamicLayoutService.getWidgetHeight(false); // Start collapsed
+      // Get widget's natural dimensions from registry
+      const registeredWidget = WidgetRegistry.getWidget(widget.type);
+      const baseWidth = registeredWidget?.meta.defaultSize.width || 200;
+      const baseCollapsedHeight = registeredWidget?.meta.defaultSize.height || 140;
+      const baseExpandedHeight = baseCollapsedHeight * 2.086; // Maintain ratio
+      
+      const isExpanded = widget.layout?.expanded || false;
+      const widgetWidth = baseWidth;
+      const widgetHeight = isExpanded ? baseExpandedHeight : baseCollapsedHeight;
+      
+      // Check if widget fits in current row (considering spacing)
+      const needsSpacing = currentRowWidth > 0 ? spacing : 0;
+      const wouldExceed = currentRowWidth + needsSpacing + widgetWidth > availableWidth;
+      
+      if (wouldExceed && currentRowWidth > 0) {
+        // Save current row's max height
+        rowHeights[currentRow] = rowMaxHeight;
+        
+        // Move to next row - widget doesn't fit
+        console.log('[DynamicDashboard] Starting new row:', {
+          widgetId: widget.id,
+          widgetType: widget.type,
+          currentRowWidth,
+          widgetWidth,
+          availableWidth,
+          rowNumber: currentRow + 1
+        });
+        
+        currentRow++;
+        currentX = 0;
+        currentY += rowMaxHeight + spacing;
+        currentRowWidth = 0;
+        rowMaxHeight = 0;
+      }
+      
+      // Place widget at current position
+      const position = { x: currentX, y: currentY };
+      
+      // Track tallest widget in this row
+      rowMaxHeight = Math.max(rowMaxHeight, widgetHeight);
+      
+      // Update position for next widget
+      currentX += widgetWidth + spacing;
+      currentRowWidth += (needsSpacing + widgetWidth);
       
       return {
         id: widget.id,
-        position: widget.layout?.x && widget.layout?.y 
-          ? { x: widget.layout.x, y: widget.layout.y }
-          : { x: 0, y: 0 },
+        position,
         size: { 
-          width: widget.layout?.width || fixedWidth, 
-          height: widget.layout?.height || fixedHeight 
+          width: widgetWidth, 
+          height: widgetHeight 
         },
         visible: widget.layout?.visible ?? true,
         order: widget.order ?? index,
-        expanded: false, // Widget expansion handled by widget store
-        gridPosition: { row: 0, col: 0 },
+        expanded: isExpanded,
+        gridPosition: { row: currentRow, col: 0 },
         gridSize: { width: 1, height: 1 },
-        fixedWidth,
+        fixedWidth: widgetWidth,
+        collapsedHeight: baseCollapsedHeight,
+        expandedHeight: baseExpandedHeight,
       };
     });
-  }, []);
+  }, [dimensions]);
 
-  // ✨ PURE WIDGET STORE: Update layout when widget store changes
+  // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
-    console.log('[DynamicDashboard] Converting', storeWidgets.length, 'store widgets to layout');
-    const dynamicLayout = convertWidgetStoreToDynamicLayout(storeWidgets);
+    console.log('[DynamicDashboard] Layout recalculation triggered:', {
+      reason: 'storeWidgets or dimensions changed',
+      widgetCount: storeWidgets.length,
+      dimensions: dimensions,
+      timestamp: Date.now()
+    });
+    const dynamicLayout = calculateFlowLayout(storeWidgets);
+    console.log('[DynamicDashboard] New layout calculated:', {
+      layoutCount: dynamicLayout.length,
+      firstWidget: dynamicLayout[0] ? {
+        id: dynamicLayout[0].id,
+        position: dynamicLayout[0].position,
+        size: dynamicLayout[0].size
+      } : null
+    });
     setLayout(dynamicLayout);
-  }, [storeWidgets, convertWidgetStoreToDynamicLayout]);
-
-  // Handle orientation changes - recalculate layout
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      setTimeout(() => {
-        if (layout.length > 0) {
-          const recalculatedLayout = DynamicLayoutService.calculateFlowLayout(layout);
-          setLayout(recalculatedLayout);
-        }
-      }, 100);
-    };
-
-    const subscription = Dimensions.addEventListener('change', handleOrientationChange);
-    return () => subscription?.remove();
-  }, [layout]);
+  }, [storeWidgets, calculateFlowLayout, dimensions]);
 
   // Save layout to widget store (pure widget store architecture)
   const saveLayout = useCallback(async (newLayout: DynamicWidgetLayout[]) => {
@@ -229,29 +302,29 @@ export const DynamicDashboard: React.FC = () => {
     }
   }, [storeWidgets]);
 
-  // Handle widget expansion/collapse with simpler logic
+  // Handle widget expansion/collapse with responsive heights
   const handleExpansionChange = useCallback(async (widgetId: string, expanded: boolean) => {
-    const updatedLayout = layout.map(widget => {
+    // Update widget store with expanded state
+    const updatedWidgets = storeWidgets.map(widget => {
       if (widget.id === widgetId) {
-        const newHeight = expanded 
-          ? DynamicLayoutService.getWidgetHeight(true)   // 292px 
-          : DynamicLayoutService.getWidgetHeight(false); // 140px
-          
         return {
           ...widget,
-          expanded,
-          size: {
-            ...widget.size,
-            height: newHeight
+          layout: {
+            ...widget.layout,
+            expanded
           }
         };
       }
       return widget;
     });
     
-    // Don't recalculate complex positions - just update heights
-    await saveLayout(updatedLayout);
-  }, [layout, saveLayout]);
+    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
+    updateDashboard(currentDashboard, { widgets: updatedWidgets });
+    
+    // Recalculate entire layout since row heights affect all subsequent rows
+    const recalculatedLayout = calculateFlowLayout(updatedWidgets);
+    setLayout(recalculatedLayout);
+  }, [storeWidgets, calculateFlowLayout]);
 
   // Handle adding widgets from selector (pure widget store)
   const handleAddWidget = useCallback(async (selectedIds: string[]) => {
@@ -351,38 +424,262 @@ export const DynamicDashboard: React.FC = () => {
     cleanupOrphanedWidgets();
   }, [cleanupOrphanedWidgets]);
 
+  // Group widgets into rows for rendering
+  const widgetRows = useMemo(() => {
+    const screenWidth = dimensions.width;
+    const margin = 0;
+    const spacing = 0;
+    const availableWidth = screenWidth - (2 * margin);
+    
+    const rows: DynamicWidgetLayout[][] = [];
+    let currentRow: DynamicWidgetLayout[] = [];
+    let currentRowWidth = 0;
+    
+    console.log('[DynamicDashboard] Grouping widgets into rows:', {
+      totalWidgets: layout.filter(w => w.visible).length,
+      screenWidth,
+      availableWidth
+    });
+    
+    layout.filter(w => w.visible).forEach((widget, index) => {
+      const widgetWidth = widget.size.width;
+      
+      // Check if widget fits in current row (with spacing)
+      const needsSpacing = currentRow.length > 0 ? spacing : 0;
+      const wouldExceed = currentRowWidth + needsSpacing + widgetWidth > availableWidth;
+      
+      if (wouldExceed && currentRow.length > 0) {
+        // Start new row - widget doesn't fit
+        console.log('[DynamicDashboard] Row completed, starting new row:', {
+          completedRowWidgets: currentRow.length,
+          completedRowWidth: currentRowWidth,
+          carryoverWidget: widget.id,
+          carryoverWidth: widgetWidth,
+          availableWidth
+        });
+        rows.push(currentRow);
+        currentRow = [widget];
+        currentRowWidth = widgetWidth;
+      } else {
+        // Add to current row - widget fits
+        currentRow.push(widget);
+        currentRowWidth += (needsSpacing + widgetWidth);
+      }
+    });
+    
+    // Add last row
+    if (currentRow.length > 0) {
+      rows.push(currentRow);
+      console.log('[DynamicDashboard] Final row:', {
+        widgetCount: currentRow.length,
+        rowWidth: currentRowWidth
+      });
+    }
+    
+    console.log('[DynamicDashboard] Total rows created:', rows.length);
+    
+    return rows;
+  }, [layout, dimensions]);
+
+  // Measure widget height when it renders
+  const handleWidgetLayout = useCallback((widgetId: string, height: number) => {
+    setWidgetHeights(prev => {
+      const newMap = new Map(prev);
+      newMap.set(widgetId, height);
+      return newMap;
+    });
+  }, []);
+
+  // Calculate pages based on accumulated widget heights
+  const { pages, totalPages } = useMemo(() => {
+    const headerHeight = 60; // HeaderBar height
+    const footerHeight = 88; // AutopilotFooter base height (without safe area)
+    const paginationControlsHeight = 60; // Page indicators
+    const fabHeight = 100; // FAB button
+    const availableHeight = dimensions.height - headerHeight - footerHeight - paginationControlsHeight - fabHeight;
+    
+    const visibleWidgets = storeWidgets.filter(w => w.layout?.visible ?? true);
+    
+    // Group widgets into pages based on flex wrap rows and height
+    const pgs: typeof visibleWidgets[][] = [];
+    let currentPageWidgets: typeof visibleWidgets = [];
+    let currentPageHeight = 0;
+    let currentRowWidth = 0;
+    let currentRowMaxHeight = 0;
+    
+    visibleWidgets.forEach((widget) => {
+      // Get widget dimensions from registry or measured heights
+      const registeredWidget = WidgetRegistry.getWidget(widget.type);
+      const baseWidth = registeredWidget?.meta.defaultSize.width || 200;
+      const measuredHeight = widgetHeights.get(widget.id);
+      const isExpanded = widgetExpanded[widget.id] || false; // Use store's expanded state
+      const baseHeight = registeredWidget?.meta.defaultSize.height || 140;
+      const widgetHeight = measuredHeight || (isExpanded ? baseHeight * 2.086 : baseHeight);
+      
+      // Check if widget wraps to new row
+      const wouldWrapToNewRow = currentRowWidth + baseWidth > dimensions.width;
+      
+      if (wouldWrapToNewRow && currentRowWidth > 0) {
+        // Commit current row height
+        currentPageHeight += currentRowMaxHeight;
+        currentRowWidth = baseWidth;
+        currentRowMaxHeight = widgetHeight;
+        
+        // Check if new row exceeds page height
+        if (currentPageHeight + currentRowMaxHeight > availableHeight && currentPageWidgets.length > 0) {
+          // Start new page
+          pgs.push(currentPageWidgets);
+          currentPageWidgets = [widget];
+          currentPageHeight = currentRowMaxHeight;
+        } else {
+          // Add to current page
+          currentPageWidgets.push(widget);
+        }
+      } else {
+        // Add to current row
+        currentRowWidth += baseWidth;
+        currentRowMaxHeight = Math.max(currentRowMaxHeight, widgetHeight);
+        currentPageWidgets.push(widget);
+      }
+    });
+    
+    // Add final page
+    if (currentPageWidgets.length > 0) {
+      pgs.push(currentPageWidgets);
+    }
+    
+    console.log('[DynamicDashboard] Pagination:', {
+      totalPages: pgs.length,
+      availableHeight,
+      widgetHeightsCount: widgetHeights.size
+    });
+    
+    return { pages: pgs, totalPages: pgs.length };
+  }, [storeWidgets, dimensions, widgetHeights, widgetExpanded]);
+
+  // Get widgets for current page
+  const currentPageWidgets = useMemo(() => {
+    if (totalPages <= 1) {
+      return storeWidgets.filter(w => w.layout?.visible ?? true);
+    }
+    return pages[currentPage] || [];
+  }, [pages, currentPage, totalPages, storeWidgets]);
+
+  const usePagination = totalPages > 1;
+
+  console.log('[DynamicDashboard] Render mode:', {
+    totalPages,
+    usePagination,
+    currentPage,
+    widgetCount: currentPageWidgets.length,
+    dimensions
+  });
+
+  const goToNextPage = useCallback(() => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  const goToPrevPage = useCallback(() => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentPage]);
+
+  const goToPage = useCallback((pageIndex: number) => {
+    if (pageIndex >= 0 && pageIndex < totalPages) {
+      setCurrentPage(pageIndex);
+    }
+  }, [totalPages]);
+
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
-      {/* Widget container with flow layout */}
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.widgetContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Render widgets in flex flow layout */}
-        <View style={styles.widgetFlowContainer}>
-          {layout
-            .filter(w => w.visible)
-            .map((widgetLayout) => (
-              <DynamicWidgetWrapper
-                key={widgetLayout.id}
-                layout={widgetLayout}
-                onExpansionChange={handleExpansionChange}
+      {/* Widget container with flex wrap layout */}
+      <View style={styles.pageContainer}>
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.widgetContainer}
+          showsVerticalScrollIndicator={!usePagination}
+          scrollEnabled={!usePagination}
+        >
+          {/* Flex wrap container - widgets automatically flow into rows */}
+          <View style={styles.widgetFlexContainer}>
+            {currentPageWidgets.map((widget) => (
+              <View 
+                key={widget.id} 
+                style={styles.widgetWrapper}
+                onLayout={(event) => {
+                  const { height } = event.nativeEvent.layout;
+                  handleWidgetLayout(widget.id, height);
+                }}
               >
                 <WidgetErrorBoundary
-                  widgetId={widgetLayout.id}
+                  widgetId={widget.id}
                   onReload={() => {
-                    // Force re-render by updating layout
+                    // Force re-render
                     setLayout(prev => [...prev]);
                   }}
-                  onRemove={() => handleRemoveWidget(widgetLayout.id)}
+                  onRemove={() => handleRemoveWidget(widget.id)}
                 >
-                  {renderWidget(widgetLayout.id, handleWidgetError)}
+                  {renderWidget(widget.id, handleWidgetError)}
                 </WidgetErrorBoundary>
-              </DynamicWidgetWrapper>
+              </View>
             ))}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Pagination Controls - show when using pagination */}
+      {usePagination && (
+        <View style={styles.paginationContainer}>
+          {/* Previous Page Button */}
+          <TouchableOpacity
+            style={[styles.paginationArrow, currentPage === 0 && styles.paginationArrowDisabled]}
+            onPress={goToPrevPage}
+            disabled={currentPage === 0}
+            activeOpacity={0.7}
+          >
+            <UniversalIcon 
+              name="chevron-left" 
+              size={24} 
+              color={currentPage === 0 ? theme.textSecondary : theme.text} 
+            />
+          </TouchableOpacity>
+
+          {/* Page Dots */}
+          <View style={styles.paginationDots}>
+            {Array.from({ length: totalPages }).map((_, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  index === currentPage && styles.paginationDotActive,
+                  { 
+                    backgroundColor: index === currentPage ? theme.primary : theme.border 
+                  }
+                ]}
+                onPress={() => goToPage(index)}
+                activeOpacity={0.7}
+              />
+            ))}
+          </View>
+
+          {/* Next Page Button */}
+          <TouchableOpacity
+            style={[styles.paginationArrow, currentPage === totalPages - 1 && styles.paginationArrowDisabled]}
+            onPress={goToNextPage}
+            disabled={currentPage === totalPages - 1}
+            activeOpacity={0.7}
+          >
+            <UniversalIcon 
+              name="chevron-right" 
+              size={24} 
+              color={currentPage === totalPages - 1 ? theme.textSecondary : theme.text} 
+            />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      )}
 
       {/* FAB Container */}
       <View style={styles.fabContainer}>
@@ -411,39 +708,74 @@ export const DynamicDashboard: React.FC = () => {
   );
 };
 
-const createWrapperStyles = (theme: ThemeColors) => StyleSheet.create({
-  dynamicWidget: {
-    marginRight: 12, // Horizontal spacing
-    marginBottom: 12, // Vertical spacing between rows
-  },
-  widgetTouchable: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-});
-
 const createStyles = (theme: ThemeColors) => StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  pageContainer: {
     flex: 1,
   },
   scrollContainer: {
     flex: 1,
   },
   widgetContainer: {
-    padding: 16, // Consistent margin
-    paddingBottom: 100, // Space for FABs
+    paddingBottom: 20,
   },
-  widgetFlowContainer: {
+  widgetFlexContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
-    justifyContent: 'flex-start',
+  },
+  widgetWrapper: {
+    // Let widgets size naturally based on content
+    alignSelf: 'flex-start',
+  },
+  widgetRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  paginationArrow: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+  paginationArrowDisabled: {
+    opacity: 0.3,
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   fabContainer: {
     position: 'absolute',
     right: 24,
-    bottom: 32,
+    bottom: 80, // Moved up to make room for pagination
     flexDirection: 'column',
     gap: 16,
   },
