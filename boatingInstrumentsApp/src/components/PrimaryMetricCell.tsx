@@ -18,6 +18,13 @@ interface PrimaryMetricCellProps {
   maxWidth?: number; // Optional max width constraint
   minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
   testID?: string;
+  
+  // Responsive font sizes (optional - overrides defaults)
+  fontSize?: {
+    mnemonic?: number;
+    value?: number;
+    unit?: number;
+  };
 }
 
 /**
@@ -40,6 +47,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   maxWidth,
   minWidth: legacyMinWidth,
   testID,
+  fontSize: customFontSize,
 }) => {
   const theme = useTheme();
 
@@ -58,9 +66,9 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
       ? value.toString() 
       : '---';
     
-    const baseValueSize = 36;
-    const baseMnemonicSize = 12;
-    const baseUnitSize = 12;
+    const baseValueSize = customFontSize?.value ?? 36;
+    const baseMnemonicSize = customFontSize?.mnemonic ?? 12;
+    const baseUnitSize = customFontSize?.unit ?? 12;
     
     // Adjust value font size based on text length and available width
     let valueFontSize = baseValueSize;

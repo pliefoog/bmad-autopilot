@@ -1,0 +1,353 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>13</epicId>
+    <storyId>13.2.2</storyId>
+    <title>Implement Platform Input Components</title>
+    <status>done</status>
+    <generatedAt>2025-11-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/13-2-2-platform-input-components.md</sourceStoryPath>
+    <completedAt>2025-11-24</completedAt>
+    <completionNotes>All 7 tasks completed. Code review approved with 9.5/10 rating. All acceptance criteria met. Components ready for integration in Story 13.2.3.</completionNotes>
+  </metadata>
+
+  <story>
+    <asA>boat owner configuring settings across different platforms</asA>
+    <iWant>input components that feel native to each platform while maintaining consistent behavior</iWant>
+    <soThat>I can configure settings efficiently whether using touch, keyboard, or gloves</soThat>
+    <tasks>
+      <task id="1" acs="1,5">
+        <title>Create PlatformTextInput Component</title>
+        <subtasks>
+          <subtask id="1.1">Create `src/components/dialogs/inputs/PlatformTextInput.tsx`</subtask>
+          <subtask id="1.2">Implement touch target sizing (44pt phone, 56pt tablet)</subtask>
+          <subtask id="1.3">Add keyboard input handling for desktop</subtask>
+          <subtask id="1.4">Implement focus indicator styling (2px border)</subtask>
+          <subtask id="1.5">Add input validation and error display</subtask>
+          <subtask id="1.6">Create TypeScript interface `PlatformTextInputProps`</subtask>
+        </subtasks>
+      </task>
+      <task id="2" acs="2,5">
+        <title>Create PlatformToggle Component</title>
+        <subtasks>
+          <subtask id="2.1">Create `src/components/dialogs/inputs/PlatformToggle.tsx`</subtask>
+          <subtask id="2.2">Implement iOS native Switch component</subtask>
+          <subtask id="2.3">Implement Android Material Design toggle</subtask>
+          <subtask id="2.4">Implement Web custom styled toggle</subtask>
+          <subtask id="2.5">Add disabled state styling (opacity 0.5)</subtask>
+          <subtask id="2.6">Create TypeScript interface `PlatformToggleProps`</subtask>
+        </subtasks>
+      </task>
+      <task id="3" acs="3,5">
+        <title>Create PlatformPicker Component</title>
+        <subtasks>
+          <subtask id="3.1">Create `src/components/dialogs/inputs/PlatformPicker.tsx`</subtask>
+          <subtask id="3.2">Implement mobile native picker sheet (iOS/Android)</subtask>
+          <subtask id="3.3">Implement desktop dropdown menu</subtask>
+          <subtask id="3.4">Add keyboard navigation (↑↓ arrow keys)</subtask>
+          <subtask id="3.5">Support multi-column pickers for complex data</subtask>
+          <subtask id="3.6">Create TypeScript interface `PlatformPickerProps`</subtask>
+        </subtasks>
+      </task>
+      <task id="4" acs="4,5">
+        <title>Create PlatformButton Component</title>
+        <subtasks>
+          <subtask id="4.1">Create `src/components/dialogs/inputs/PlatformButton.tsx`</subtask>
+          <subtask id="4.2">Implement touch target sizing (44pt phone, 56pt tablet)</subtask>
+          <subtask id="4.3">Create variants (primary, secondary, danger)</subtask>
+          <subtask id="4.4">Add press state animation (opacity 0.7)</subtask>
+          <subtask id="4.5">Add haptic feedback on press (mobile)</subtask>
+          <subtask id="4.6">Create TypeScript interface `PlatformButtonProps`</subtask>
+        </subtasks>
+      </task>
+      <task id="5" acs="1,2,3,4,5">
+        <title>Create Shared Input Hooks</title>
+        <subtasks>
+          <subtask id="5.1">Create `src/hooks/useInputFocus.ts` for focus management</subtask>
+          <subtask id="5.2">Create `src/hooks/useTouchTargetSize.ts` for sizing</subtask>
+          <subtask id="5.3">Create `src/hooks/useInputValidation.ts` for validation</subtask>
+          <subtask id="5.4">Create `src/hooks/useHapticFeedback.ts` for tactile feedback</subtask>
+          <subtask id="5.5">Export all hooks from `src/hooks/index.ts`</subtask>
+        </subtasks>
+      </task>
+      <task id="6" acs="1,3">
+        <title>Create Input Utilities</title>
+        <subtasks>
+          <subtask id="6.1">Create `src/utils/inputValidation.ts` with validators</subtask>
+          <subtask id="6.2">Add email, IP address, port number validators</subtask>
+          <subtask id="6.3">Add number range validators (min/max)</subtask>
+          <subtask id="6.4">Add custom regex validator support</subtask>
+          <subtask id="6.5">Export validation result types</subtask>
+        </subtasks>
+      </task>
+      <task id="7" acs="1,2,3,4,5">
+        <title>Testing and Integration</title>
+        <subtasks>
+          <subtask id="7.1">Test PlatformTextInput on iOS, Android, Web</subtask>
+          <subtask id="7.2">Test PlatformToggle native rendering on all platforms</subtask>
+          <subtask id="7.3">Test PlatformPicker sheet/dropdown behavior</subtask>
+          <subtask id="7.4">Test PlatformButton variants and states</subtask>
+          <subtask id="7.5">Validate keyboard navigation on desktop browser</subtask>
+          <subtask id="7.6">Test components within BaseSettingsModal</subtask>
+          <subtask id="7.7">Validate touch target sizes with physical devices</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1" title="PlatformTextInput Component - Cross-platform text input with adaptive sizing">
+      <requirement>Component renders with correct touch target height (44pt phone, 56pt tablet)</requirement>
+      <requirement>Input field accepts keyboard input on desktop platforms</requirement>
+      <requirement>Input field shows native keyboard on mobile platforms</requirement>
+      <requirement>Focus indicator appears on Tab navigation (2px blue border)</requirement>
+      <requirement>Input validation displays error messages below field</requirement>
+      <requirement>Placeholder text visible when field is empty</requirement>
+    </criterion>
+    <criterion id="2" title="PlatformToggle Component - Native switch/toggle rendering">
+      <requirement>iOS renders native Switch component with platform styling</requirement>
+      <requirement>Android renders Material Design toggle switch</requirement>
+      <requirement>Web renders custom styled toggle with hover states</requirement>
+      <requirement>Toggle state changes on tap/click with immediate visual feedback</requirement>
+      <requirement>Disabled state renders with reduced opacity (0.5)</requirement>
+      <requirement>Toggle includes accessible label text</requirement>
+    </criterion>
+    <criterion id="3" title="PlatformPicker Component - Platform-appropriate selection UI">
+      <requirement>Mobile (iOS/Android) displays native picker sheet on tap</requirement>
+      <requirement>Desktop/Web displays dropdown menu below input</requirement>
+      <requirement>Keyboard navigation (↑↓) selects options on desktop</requirement>
+      <requirement>Selected value displays in picker button/input</requirement>
+      <requirement>Picker closes after selection on all platforms</requirement>
+      <requirement>Supports multi-column pickers for complex selections</requirement>
+    </criterion>
+    <criterion id="4" title="PlatformButton Component - Consistent button styling with platform feel">
+      <requirement>Button renders with correct touch target size (44pt phone, 56pt tablet)</requirement>
+      <requirement>Primary/secondary/danger variants use theme colors</requirement>
+      <requirement>Press state shows opacity change (0.7) with 100ms feedback</requirement>
+      <requirement>Disabled state prevents interaction and shows reduced opacity</requirement>
+      <requirement>Button text follows platform typography standards</requirement>
+      <requirement>Haptic feedback on press (mobile only)</requirement>
+    </criterion>
+    <criterion id="5" title="Keyboard Navigation Integration - Desktop accessibility">
+      <requirement>All input components respond to Tab key navigation</requirement>
+      <requirement>Focus indicators visible on all focused components</requirement>
+      <requirement>Enter key submits form from any focused input</requirement>
+      <requirement>Escape key clears focus or cancels input</requirement>
+      <requirement>Arrow keys navigate picker options</requirement>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/epic-13-vip-platform-ux-implementation.md" title="Epic 13: VIP Platform UX Implementation" section="Story 13.2.2">
+        Defines requirements for platform input components including PlatformTextInput, PlatformToggle, PlatformPicker, and PlatformButton. Specifies touch target sizes (44pt phone, 56pt tablet), keyboard navigation (Tab, Enter, Escape), and platform-native rendering patterns.
+      </doc>
+      <doc path="docs/sprint-artifacts/13-2-1-base-settings-modal-foundation.md" title="Story 13.2.1: Base Settings Modal Foundation" section="Implementation Complete - APPROVED">
+        Previous story implementing BaseSettingsModal foundation with platform detection (hasKeyboard, isTablet), design tokens (settingsTokens.ts), and keyboard navigation. All 5 ACs met, 28/28 tests passing. Provides reusable foundation for input components.
+      </doc>
+      <doc path="docs/SETTINGS-DIALOGS-CROSS-PLATFORM-IMPLEMENTATION.md" title="Settings Dialogs: Cross-Platform Implementation Guide" section="Platform Input Components">
+        Comprehensive guide for implementing cross-platform input components. Includes design tokens, touch target standards, keyboard navigation patterns, and platform-specific adaptations for iOS/Android/Web.
+      </doc>
+      <doc path="docs/architecture.md" title="System Architecture" section="UI Component System">
+        Defines component architecture patterns including atomic design structure, platform detection utilities, and theming integration.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/src/platform/detection.ts" kind="utility" symbol="hasKeyboard, isTablet" lines="1-50" reason="Platform detection utilities created in Story 13.2.1 - required for adaptive input behavior">
+        Contains hasKeyboard() and isTablet() functions for platform detection. Used to determine input behavior (keyboard vs touch), touch target sizing, and navigation patterns.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/theme/settingsTokens.ts" kind="tokens" symbol="SETTINGS_TOKENS, touchTargets" lines="1-100" reason="Design tokens created in Story 13.2.1 - defines touch target sizes and spacing">
+        Defines SETTINGS_TOKENS with touchTargets.phone (44pt), touchTargets.tablet (56pt), touchTargets.desktop (40pt). Also includes spacing, typography, and animation timing tokens.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/base/BaseSettingsModal.tsx" kind="component" symbol="BaseSettingsModal" lines="1-200" reason="Modal container created in Story 13.2.1 - input components will integrate with this">
+        Reusable modal container implementing keyboard navigation (Tab, Enter, Esc), platform-aware sizing, and focus trap. Input components must work within this container.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/hooks/useTheme.ts" kind="hook" symbol="useTheme" lines="1-50" reason="Theme hook for accessing reactive color palette - required for input styling">
+        Provides access to theme colors (theme.primary, theme.text, theme.border, etc.) that input components will use for consistent styling across day/night/red-night modes.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/theme/designTokens.ts" kind="tokens" symbol="typography, spacing, touchTargets" lines="1-450" reason="Global design system tokens - provides typography scale and spacing values">
+        Comprehensive design tokens including typography.fontSize, spacing scale (4pt base), touchTargets.minimum (44pt), and iosTypography for platform consistency.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/hooks/useKeyboardNavigation.ts" kind="hook" symbol="useKeyboardNavigation, useFocusLock" lines="1-120" reason="Keyboard navigation service hooks - required for Tab navigation and focus management">
+        Provides useKeyboardNavigation() for initializing keyboard shortcuts and useFocusLock() for modal focus trapping. Input components will integrate with this service.
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="npm" manifestPath="boatingInstrumentsApp/package.json">
+        <package name="react" version="18.2.0" />
+        <package name="react-native" version="0.74.1" />
+        <package name="expo" version="~51.0.8" />
+        <package name="expo-haptics" version="~13.0.1" usage="Mobile haptic feedback for buttons and toggles" />
+        <package name="@react-native-picker/picker" version="*" usage="Native picker component for iOS/Android" />
+        <package name="zustand" version="^4.5.2" usage="State management for input form state" />
+        <package name="typescript" version="~5.3.3" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Use native components where possible (iOS Switch, Android Material Design) rather than custom implementations</constraint>
+    <constraint type="architecture">All components must work within BaseSettingsModal container from Story 13.2.1</constraint>
+    <constraint type="architecture">Components must use established platform detection utilities (hasKeyboard, isTablet)</constraint>
+    <constraint type="architecture">Components must integrate with existing keyboard navigation service (KeyboardNavigationService)</constraint>
+    <constraint type="design">Touch targets must be 44pt minimum (phone), 56pt recommended (tablet), per iOS HIG and marine safety requirements</constraint>
+    <constraint type="design">Focus indicators required on desktop (2px blue border) for Tab navigation accessibility</constraint>
+    <constraint type="design">All input styling must use theme colors via useTheme() hook for day/night/red-night mode support</constraint>
+    <constraint type="performance">Input validation must not block UI - use debounced validation for real-time feedback</constraint>
+    <constraint type="performance">Haptic feedback must be non-blocking and platform-specific (iOS/Android only)</constraint>
+    <constraint type="testing">Components must be manually tested on iOS, Android, and Web platforms (no simulator limitations)</constraint>
+    <constraint type="breaking-changes">NO breaking changes - all new components, no modifications to existing functionality</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="PlatformTextInputProps" kind="TypeScript interface" signature="interface PlatformTextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  label?: string;
+  error?: string;
+  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
+  autoFocus?: boolean;
+  disabled?: boolean;
+  maxLength?: number;
+  validator?: (value: string) => string | undefined;
+  onSubmit?: () => void;
+  testID?: string;
+}" path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformTextInput.tsx">
+      Text input component with adaptive sizing, validation, and keyboard support
+    </interface>
+    <interface name="PlatformToggleProps" kind="TypeScript interface" signature="interface PlatformToggleProps {
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  label: string;
+  disabled?: boolean;
+  color?: string;
+  testID?: string;
+}" path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformToggle.tsx">
+      Platform-native toggle/switch component (iOS Switch, Android Material, Web custom)
+    </interface>
+    <interface name="PlatformPickerProps" kind="TypeScript interface" signature="interface PlatformPickerItem {
+  label: string;
+  value: string | number;
+  icon?: string;
+}
+
+interface PlatformPickerProps {
+  value: string | number;
+  onValueChange: (value: string | number) => void;
+  items: PlatformPickerItem[];
+  label?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  multiColumn?: boolean;
+  testID?: string;
+}" path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformPicker.tsx">
+      Platform-appropriate picker component (mobile sheet, desktop dropdown)
+    </interface>
+    <interface name="PlatformButtonProps" kind="TypeScript interface" signature="interface PlatformButtonProps {
+  onPress: () => void;
+  title: string;
+  variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
+  fullWidth?: boolean;
+  loading?: boolean;
+  icon?: string;
+  testID?: string;
+}" path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformButton.tsx">
+      Consistent button component with variants and haptic feedback
+    </interface>
+    <interface name="useTouchTargetSize" kind="React hook" signature="const useTouchTargetSize = (): number => {
+  // Returns 44pt (phone), 56pt (tablet), or 40pt (desktop)
+}" path="boatingInstrumentsApp/src/hooks/useTouchTargetSize.ts">
+      Hook that returns appropriate touch target size based on platform detection
+    </interface>
+    <interface name="useInputValidation" kind="React hook" signature="const useInputValidation = (
+  value: string,
+  validator?: (value: string) => string | undefined
+): {
+  error: string | undefined;
+  touched: boolean;
+  validate: () => boolean;
+  setTouched: (touched: boolean) => void;
+}" path="boatingInstrumentsApp/src/hooks/useInputValidation.ts">
+      Hook for managing input validation state with touched tracking
+    </interface>
+    <interface name="useInputFocus" kind="React hook" signature="const useInputFocus = (): {
+  inputRef: RefObject<TextInput>;
+  focus: () => void;
+  blur: () => void;
+  keyboardEnabled: boolean;
+}" path="boatingInstrumentsApp/src/hooks/useInputFocus.ts">
+      Hook for managing input focus state and keyboard detection
+    </interface>
+    <interface name="useHapticFeedback" kind="React hook" signature="const useHapticFeedback = (): {
+  triggerLight: () => Promise<void>;
+  triggerMedium: () => Promise<void>;
+  triggerSuccess: () => Promise<void>;
+  triggerError: () => Promise<void>;
+}" path="boatingInstrumentsApp/src/hooks/useHapticFeedback.ts">
+      Hook for triggering platform-specific haptic feedback (iOS/Android only)
+    </interface>
+    <interface name="validators" kind="Validation utilities" signature="export const validators = {
+  required: (value: string) => string | undefined;
+  email: (value: string) => string | undefined;
+  ipAddress: (value: string) => string | undefined;
+  portNumber: (value: string) => string | undefined;
+  numberRange: (min: number, max: number) => (value: string) => string | undefined;
+}" path="boatingInstrumentsApp/src/utils/inputValidation.ts">
+      Common input validation functions for forms
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing follows Story 13.2.1 manual testing pattern: No automated unit tests due to React Native platform detection limitations in test environment (hasKeyboard() always returns true). Instead, use comprehensive manual testing on physical devices/browsers with visual validation of touch targets, keyboard navigation, and platform-native rendering.
+    </standards>
+    <locations>
+      boatingInstrumentsApp/__tests__/tier1-unit/components/dialogs/inputs/
+      boatingInstrumentsApp/__tests__/tier1-unit/hooks/
+      boatingInstrumentsApp/__tests__/tier1-unit/utils/
+    </locations>
+    <ideas>
+      <test ac="1" title="PlatformTextInput renders with correct touch target height">
+        Manual: Open ConnectionSettingsModal on phone (44pt), tablet (56pt), desktop (40pt). Measure input height with ruler/inspector.
+      </test>
+      <test ac="1" title="PlatformTextInput shows focus indicator on Tab navigation">
+        Manual: Open settings modal in desktop browser. Press Tab key. Verify 2px blue border appears around focused input.
+      </test>
+      <test ac="1" title="PlatformTextInput displays validation errors">
+        Manual: Enter invalid IP address "999.999.999.999". Verify error message appears below input with proper styling.
+      </test>
+      <test ac="2" title="PlatformToggle renders native Switch on iOS/Android">
+        Manual: Open settings modal on iOS device. Verify native iOS Switch component renders. Repeat on Android with Material Design toggle.
+      </test>
+      <test ac="2" title="PlatformToggle renders custom styled toggle on Web">
+        Manual: Open settings modal in web browser. Verify custom-styled toggle appears with hover states (not native Switch).
+      </test>
+      <test ac="3" title="PlatformPicker shows native picker sheet on mobile">
+        Manual: Tap picker on iOS. Verify native picker wheel slides up from bottom. Repeat on Android with native dropdown.
+      </test>
+      <test ac="3" title="PlatformPicker shows dropdown menu on desktop">
+        Manual: Click picker in desktop browser. Verify dropdown menu appears below input (not sheet). Test arrow key navigation (↑↓).
+      </test>
+      <test ac="4" title="PlatformButton renders with correct touch target size">
+        Manual: Open settings modal on phone (44pt), tablet (56pt). Measure button height. Verify minimum touch target compliance.
+      </test>
+      <test ac="4" title="PlatformButton shows press state animation">
+        Manual: Press button on any platform. Verify opacity changes to 0.7 during press state with smooth 100ms animation.
+      </test>
+      <test ac="4" title="PlatformButton triggers haptic feedback on mobile">
+        Manual: Press button on iOS/Android device. Verify tactile vibration feedback. Verify NO haptic on desktop/web.
+      </test>
+      <test ac="5" title="All inputs respond to Tab key navigation">
+        Manual: Open settings modal with multiple inputs in desktop browser. Press Tab key repeatedly. Verify focus moves through all inputs in order.
+      </test>
+      <test ac="5" title="Enter key submits form from any input">
+        Manual: Focus any input in settings modal. Type value and press Enter. Verify form submits (onSave called).
+      </test>
+      <test ac="5" title="Escape key cancels input">
+        Manual: Open settings modal, focus input, press Escape. Verify modal closes without saving (onClose called).
+      </test>
+    </ideas>
+  </tests>
+</story-context>

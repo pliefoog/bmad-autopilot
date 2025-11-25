@@ -18,6 +18,7 @@ import { MenuSection } from '../molecules/MenuSection';
 import { DevToolsSection } from '../molecules/DevToolsSection';
 import { useMenuState } from '../../hooks/useMenuState';
 import { menuConfiguration } from '../../config/menuConfiguration';
+import { FeatureFlagsMenu } from '../developer/FeatureFlagsMenu';
 
 interface HamburgerMenuProps {
   visible: boolean;
@@ -42,48 +43,55 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible);
   const { resetAppToDefaults } = useWidgetStore();
   const nmeaStore = useNmeaStore();
+  const [showFeatureFlags, setShowFeatureFlags] = useState(false);
   
   // Custom action handlers
   const actionHandlers = {
     openConnectionSettings: () => {
-      // Close hamburger menu first, then open dialog after animation
-      handleClose();
-      setTimeout(() => {
-        onShowConnectionSettings?.();
-      }, 300); // Wait for hamburger close animation
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowConnectionSettings?.());
+      });
     },
     toggleUnits: () => {
-      // Close hamburger menu first, then open dialog after animation
-      handleClose();
-      setTimeout(() => {
-        onShowUnitsDialog?.();
-      }, 300); // Wait for hamburger close animation
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowUnitsDialog?.());
+      });
     },
     performFactoryReset: async () => {
-      // Close hamburger menu first, then open dialog after animation
-      handleClose();
-      setTimeout(() => {
-        onShowFactoryResetDialog?.();
-      }, 300); // Wait for hamburger close animation
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowFactoryResetDialog?.());
+      });
     },
     // Backwards compatibility - redirect to new name
     resetAppToDefaults: async () => {
       await actionHandlers.performFactoryReset();
     },
     openAlarmConfiguration: () => {
-      // Navigate to alarm configuration screen
-      handleClose();
-      setTimeout(() => {
-        // Use Expo Router navigation
-        const router = require('expo-router');
-        router.router.push('/settings/alarms');
-      }, 300);
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => {
+          const router = require('expo-router');
+          router.router.push('/settings/alarms');
+        });
+      });
     },
     openAlarmHistory: () => {
       // Navigate to alarm history (placeholder for now)
-      handleClose();
-      // TODO: Implement alarm history screen
-      console.log('Alarm History - coming soon');
+      animateOut(() => {
+        onClose();
+        // TODO: Implement alarm history screen
+        console.log('Alarm History - coming soon');
+      });
+    },
+    openFeatureFlags: () => {
+      // Trigger close animation, then open feature flags
+      animateOut(() => {
+        onClose();
+        setTimeout(() => setShowFeatureFlags(true), 0);
+      });
     },
   };
 
@@ -117,12 +125,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     }
   }, [visible, animateIn]);
 
-  if (!visible) {
-    return null;
-  }
-
   return (
     <>
+    {/* Hamburger Menu Modal */}
     <Modal
       transparent
       visible={visible}
@@ -192,6 +197,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   <DevToolsSection
                     sections={devSections}
                     onItemPress={handleClose}
+                    actionHandlers={actionHandlers}
                   />
                 )}
               </ScrollView>
@@ -200,6 +206,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         </Animated.View>
       </TouchableOpacity>
     </Modal>
+    
+    {/* Feature Flags Developer Menu - Always rendered so state persists */}
+    <FeatureFlagsMenu
+      visible={showFeatureFlags}
+      onClose={() => setShowFeatureFlags(false)}
+    />
     </>
   );
 };

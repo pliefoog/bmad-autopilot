@@ -98,33 +98,6 @@ graph TB
 
 **TEA workflows:** `*framework` and `*ci` run once in Phase 3 after architecture. `*test-design` runs per-epic in Phase 4. Output: `test-design-epic-N.md`.
 
-## Domain-Specific Testing Requirements
-
-### Marine Safety Compliance Testing
-
-**CRITICAL:** Marine applications require specialized testing for scotopic vision preservation (night vision) compliance with USCG/IMO standards.
-
-**Red-Night Mode Testing:**
-- **RGB Validation:** Automated color extraction from rendered components, verify 0% green/blue wavelengths (<620nm)
-- **Wavelength Analysis:** Validate all colors fall within 625-750nm range (red spectrum only)
-- **Brightness Control:** Verify screen brightness ≤5% maximum, ≤2 cd/m² luminance (IMO SOLAS Chapter V)
-- **Dark Adaptation Testing:** Manual verification by human testers after 20-minute dark adaptation period
-- **Rhodopsin Protection:** Confirm zero blue/green light emission that would bleach rhodopsin photopigment
-
-**See:** [marine-night-vision-standards.md](../../../docs/marine-night-vision-standards.md) for comprehensive scientific foundation, testing protocols, USCG/IMO compliance standards.
-
-**Test Priority Matrix:**
-- **P1 (CRITICAL):** Visual alarms, autopilot controls, depth warnings - must preserve night vision
-- **P2 (HIGH):** Navigation widgets, engine monitoring - critical marine safety data
-- **P3 (MEDIUM):** Settings, help screens - secondary UI elements
-- **P4 (LOW):** Error boundaries, onboarding - non-marine-critical UI
-
-**Validation Tools:**
-- RGB extraction from rendered components (Jest snapshots)
-- Wavelength calculators (RGB → wavelength conversion)
-- CIE 1951 scotopic luminosity function validation
-- Professional colorimeter measurement (production validation)
-
 Quick Flow track skips Phases 0, 1, and 3. BMad Method and Enterprise use all phases based on project needs.
 
 ### Why TEA is Different from Other BMM Agents

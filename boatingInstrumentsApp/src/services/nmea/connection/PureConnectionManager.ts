@@ -11,19 +11,79 @@
  * - Clean state management
  */
 
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 
-// Platform-specific imports - TCP/UDP don't work in Expo Go or web
-let TcpSocket: any = null;
-let UdpSocket: any = null;
-
-// Only load native socket modules if not on web
-if (Platform.OS !== 'web') {
+/**
+ * Lazy-load TCP socket module
+ * Returns the Socket class, not the module
+ */
+function getTcpSocket() {
+  console.log('[getTcpSocket] Platform.OS:', Platform.OS);
+  
+  if (Platform.OS === 'web') {
+    console.log('[getTcpSocket] Web platform - returning null');
+    return null;
+  }
+  
+  // Check if native module is available
+  console.log('[getTcpSocket] Checking native modules:', {
+    hasTcpSockets: !!NativeModules.TcpSockets,
+    hasTcpSocket: !!NativeModules.TcpSocket,
+    availableModules: Object.keys(NativeModules).filter(k => k.toLowerCase().includes('tcp'))
+  });
+  
+  if (!NativeModules.TcpSockets && !NativeModules.TcpSocket) {
+    console.error('[getTcpSocket] ⚠️ Native TCP socket module not found! The library may not be properly linked.');
+    // Continue anyway - the JS module might still work
+  }
+  
   try {
-    TcpSocket = require('react-native-tcp-socket');
-    UdpSocket = require('react-native-udp');
+    console.log('[getTcpSocket] Attempting to require react-native-tcp-socket...');
+    const TcpSocketModule = require('react-native-tcp-socket');
+    console.log('[getTcpSocket] Module loaded:', {
+      type: typeof TcpSocketModule,
+      keys: Object.keys(TcpSocketModule || {}).slice(0, 20),
+      hasSocket: !!(TcpSocketModule && TcpSocketModule.Socket),
+      hasDefault: !!(TcpSocketModule && TcpSocketModule.default),
+      socketType: TcpSocketModule?.Socket ? typeof TcpSocketModule.Socket : 'undefined',
+      defaultType: TcpSocketModule?.default ? typeof TcpSocketModule.default : 'undefined'
+    });
+    
+    // Try multiple export patterns
+    if (TcpSocketModule.Socket) {
+      console.log('[getTcpSocket] Using TcpSocketModule.Socket');
+      return TcpSocketModule.Socket;
+    } else if (TcpSocketModule.default && TcpSocketModule.default.Socket) {
+      console.log('[getTcpSocket] Using TcpSocketModule.default.Socket');
+      return TcpSocketModule.default.Socket;
+    } else if (typeof TcpSocketModule === 'function') {
+      console.log('[getTcpSocket] Module itself is a function');
+      return TcpSocketModule;
+    } else if (TcpSocketModule.default && typeof TcpSocketModule.default === 'function') {
+      console.log('[getTcpSocket] Using TcpSocketModule.default as constructor');
+      return TcpSocketModule.default;
+    } else {
+      console.error('[getTcpSocket] Could not find Socket constructor in module exports');
+      return null;
+    }
   } catch (error) {
-    console.warn('[ConnectionManager] Native socket modules not available. TCP/UDP connections disabled.');
+    console.error('[getTcpSocket] Error loading TCP socket module:', error);
+    return null;
+  }
+}
+
+/**
+ * Lazy-load UDP socket module
+ */
+function getUdpSocket() {
+  if (Platform.OS === 'web') return null;
+  
+  try {
+    const UdpSocketModule = require('react-native-udp');
+    return UdpSocketModule.default || UdpSocketModule;
+  } catch (error) {
+    console.warn('[ConnectionManager] UDP socket module not available:', error);
+    return null;
   }
 }
 
@@ -85,6 +145,7 @@ export class PureConnectionManager {
    */
   async connect(config: ConnectionConfig): Promise<boolean> {
     console.log(`[ConnectionManager] Connecting to ${config.protocol}://${config.ip}:${config.port}`);
+    console.log('[ConnectionManager] Platform:', Platform.OS);
     
     // Disconnect any existing connection
     if (this.activeConnection) {
@@ -103,17 +164,22 @@ export class PureConnectionManager {
       }, this.CONNECTION_TIMEOUT);
 
       // Create protocol-specific connection
+      console.log('[ConnectionManager] About to switch on protocol:', config.protocol);
       switch (config.protocol) {
         case 'websocket':
+          console.log('[ConnectionManager] Calling connectWebSocket...');
           return await this.connectWebSocket(config);
         case 'tcp':
+          console.log('[ConnectionManager] Calling connectTCP...');
           return await this.connectTCP(config);
         case 'udp':
+          console.log('[ConnectionManager] Calling connectUDP...');
           return await this.connectUDP(config);
         default:
           throw new Error(`Unsupported protocol: ${config.protocol}`);
       }
     } catch (error) {
+      console.error('[ConnectionManager] Connection attempt caught error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
       this.handleError(errorMessage);
       return false;
@@ -236,20 +302,153 @@ export class PureConnectionManager {
    * Connect via TCP
    */
   private async connectTCP(config: ConnectionConfig): Promise<boolean> {
+    const TcpSocket = getTcpSocket();
+    
     if (!TcpSocket) {
+      console.error('[ConnectionManager] TCP Socket is null - not available on this platform');
       throw new Error('TCP not supported in this environment');
+    }
+
+    console.log('[ConnectionManager] TCP Socket loaded:', {
+      type: typeof TcpSocket,
+      isClass: typeof TcpSocket === 'function',
+      keys: TcpSocket ? Object.keys(TcpSocket).slice(0, 10) : [],
+      hasCreateConnection: !!(TcpSocket.createConnection),
+      hasConnect: !!(TcpSocket.connect)
+    });
+    
+    // Also try to get the full module for static methods
+    let TcpModule: any = null;
+    try {
+      TcpModule = require('react-native-tcp-socket');
+      console.log('[ConnectionManager] Full TCP module:', {
+        hasCreateConnection: !!(TcpModule && TcpModule.createConnection),
+        hasConnect: !!(TcpModule && TcpModule.connect),
+        createConnectionType: TcpModule?.createConnection ? typeof TcpModule.createConnection : 'undefined'
+      });
+    } catch (e) {
+      console.warn('[ConnectionManager] Could not require full module:', e);
     }
 
     return new Promise((resolve, reject) => {
       try {
-        const socket = TcpSocket.createConnection({
-          port: config.port,
-          host: config.ip,
-          timeout: this.CONNECTION_TIMEOUT
-        });
+        // Create TCP socket instance
+        let socket: any = null;
+        let connectionMethod = 'unknown';
+        
+        // Try module-level connect function (simpler than createConnection)
+        if (TcpModule && TcpModule.connect && typeof TcpModule.connect === 'function') {
+          console.log('[ConnectionManager] Using TcpModule.connect (module-level function)...');
+          connectionMethod = 'TcpModule.connect';
+          try {
+            socket = TcpModule.connect({
+              port: config.port,
+              host: config.ip
+            });
+            console.log('[ConnectionManager] connect() returned:', {
+              socketType: typeof socket,
+              isNull: socket === null,
+              hasOn: socket && typeof socket.on === 'function'
+            });
+          } catch (connectError: any) {
+            console.error('[ConnectionManager] TcpModule.connect() threw error:', {
+              message: connectError?.message,
+              type: connectError?.constructor?.name,
+              nativeModuleAvailable: !!NativeModules.TcpSockets || !!NativeModules.TcpSocket
+            });
+            throw new Error(`Native TCP module not properly linked. Error: ${connectError?.message || 'unknown'}. Try rebuilding the Android app with 'npx expo prebuild --clean' then 'npx expo run:android'`);
+          }
+        } else if (TcpModule && TcpModule.createConnection && typeof TcpModule.createConnection === 'function') {
+          console.log('[ConnectionManager] Using TcpModule.createConnection (module-level static method)...');
+          connectionMethod = 'TcpModule.createConnection';
+          try {
+            socket = TcpModule.createConnection({
+              port: config.port,
+              host: config.ip,
+              timeout: this.CONNECTION_TIMEOUT
+            });
+            console.log('[ConnectionManager] createConnection returned:', {
+              socketType: typeof socket,
+              isNull: socket === null
+            });
+          } catch (createError: any) {
+            console.error('[ConnectionManager] TcpModule.createConnection() threw error:', {
+              message: createError?.message,
+              type: createError?.constructor?.name
+            });
+            throw new Error(`Native TCP module not properly linked. Error: ${createError?.message || 'unknown'}`);
+          }
+        } else if (TcpSocket.createConnection && typeof TcpSocket.createConnection === 'function') {
+          console.log('[ConnectionManager] Using TcpSocket.createConnection (Socket class static method)...');
+          socket = TcpSocket.createConnection({
+            port: config.port,
+            host: config.ip,
+            timeout: this.CONNECTION_TIMEOUT
+          });
+          console.log('[ConnectionManager] createConnection returned:', {
+            socketType: typeof socket,
+            isNull: socket === null
+          });
+        } else if (typeof TcpSocket === 'function') {
+          // TcpSocket is the Socket class constructor
+          console.log('[ConnectionManager] Creating new TcpSocket instance...');
+          try {
+            socket = new TcpSocket();
+            console.log('[ConnectionManager] Socket instance created:', {
+              isNull: socket === null,
+              isUndefined: socket === undefined,
+              type: typeof socket,
+              hasConnect: socket && typeof socket.connect === 'function',
+              socketKeys: socket ? Object.keys(socket).slice(0, 10) : []
+            });
+          } catch (constructorError) {
+            console.error('[ConnectionManager] Error calling TcpSocket constructor:', constructorError);
+            throw new Error('Failed to create TCP socket instance: ' + (constructorError instanceof Error ? constructorError.message : 'unknown error'));
+          }
+          
+          if (!socket) {
+            throw new Error('Failed to create TCP socket instance - constructor returned null/undefined');
+          }
+          
+          if (typeof socket.connect !== 'function') {
+            console.error('[ConnectionManager] Socket methods:', socket ? Object.getOwnPropertyNames(socket) : []);
+            console.error('[ConnectionManager] Socket prototype:', socket ? Object.getOwnPropertyNames(Object.getPrototypeOf(socket)) : []);
+            throw new Error('TCP socket instance has no connect method');
+          }
+          
+          console.log('[ConnectionManager] About to call socket.connect');
+          console.log('[ConnectionManager] Config object:', config);
+          console.log('[ConnectionManager] Config.ip:', config ? config.ip : 'CONFIG IS NULL');
+          console.log('[ConnectionManager] Config.port:', config ? config.port : 'CONFIG IS NULL');
+          
+          // Build options object separately to debug
+          const connectOptions = {
+            port: config.port,
+            host: config.ip,
+          };
+          console.log('[ConnectionManager] Connect options:', connectOptions);
+          
+          // Call connect
+          const connectResult = socket.connect(connectOptions);
+          
+          console.log('[ConnectionManager] socket.connect() called, result:', connectResult);
+        } else if (TcpSocket.connect) {
+          console.log('[ConnectionManager] Using TcpSocket.connect (static method)...');
+          socket = TcpSocket.connect({
+            port: config.port,
+            host: config.ip,
+            timeout: this.CONNECTION_TIMEOUT
+          });
+        } else {
+          throw new Error('Unknown TCP socket API. Available methods: ' + Object.keys(TcpSocket).join(', '));
+        }
+
+        if (!socket) {
+          throw new Error('Failed to create socket - all connection methods returned null');
+        }
 
         socket.on('connect', () => {
-          console.log('[ConnectionManager] TCP connected');
+          console.log('[ConnectionManager] TCP connected to', config.ip, ':', config.port);
           this.activeConnection = socket;
           this.connectionType = 'tcp';
           this.connectedAt = new Date();
@@ -285,6 +484,8 @@ export class PureConnectionManager {
    * Connect via UDP
    */
   private async connectUDP(config: ConnectionConfig): Promise<boolean> {
+    const UdpSocket = getUdpSocket();
+    
     if (!UdpSocket) {
       throw new Error('UDP not supported in this environment');
     }

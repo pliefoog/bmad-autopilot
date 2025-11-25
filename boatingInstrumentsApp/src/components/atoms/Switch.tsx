@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 interface SwitchProps {
@@ -84,7 +84,7 @@ const Switch: React.FC<SwitchProps> = ({
         ]}
       />
       {/* Web-specific: inject style to hide checkbox */}
-      {typeof window !== 'undefined' && (
+      {Platform.OS === 'web' && (
         // @ts-ignore
         <style dangerouslySetInnerHTML={{
           __html: `

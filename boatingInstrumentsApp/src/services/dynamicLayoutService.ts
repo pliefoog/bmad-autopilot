@@ -2,19 +2,22 @@ import { Dimensions } from 'react-native';
 import { WidgetLayout } from './layoutService';
 
 export interface GridConfig {
-  baseUnitWidth: number;
-  baseUnitHeight: number;
-  spacing: number;
-  margin: number;
-  minColumns: number;
-  maxColumns: number;
+  columns: number;           // Number of columns (1, 2, 4, or 8)
+  rows: number;              // Number of rows per page
+  widgetWidth: number;       // Fixed width per widget
+  widgetHeight: number;      // Fixed height per widget
+  spacing: number;           // Spacing between widgets
+  margin: number;            // Screen edge margin
+  availableHeight: number;   // Available height for widgets
+  availableWidth: number;    // Available width for widgets
 }
 
 export interface DynamicWidgetLayout extends WidgetLayout {
-  gridPosition: { row: number; col: number }; // Grid position (not pixels)
-  gridSize: { width: number; height: number }; // Grid units (1x1 or 1x2)
-  fixedWidth: number; // Fixed width determined by content analysis
-  expanded: boolean;
+  page: number;              // Page number (0-indexed)
+  gridPosition: { row: number; col: number }; // Position within page
+  width: number;             // Fixed width in pixels
+  height: number;            // Fixed height in pixels
+  expanded: boolean;         // Always true in new system
 }
 
 export class DynamicLayoutService {
@@ -23,227 +26,202 @@ export class DynamicLayoutService {
   }
 
   /**
-   * Calculate optimal grid configuration based on screen size
-   * FIXED: Standardized heights only - content must adapt to fit
+   * Calculate optimal grid configuration based on screen size and available space
+   * Returns fixed widget dimensions and grid layout
+   * 
+   * Breakpoints and behavior:
+   * - < 600px: 1 column, vertical scroll (mobile portrait)
+   * - 600-767px: 2 columns, vertical scroll (mobile landscape)
+   * - 768-1023px: 3 columns, pagination (tablet portrait)
+   * - 1024-1279px: 5 columns, pagination (tablet landscape)
+   * - 1280-1919px: 6 columns, pagination (desktop)
+   * - 1920+: 8 columns, pagination (large desktop)
    */
-  static getGridConfig(): GridConfig {
-    const { width: screenWidth } = this.getScreenDimensions();
+  static getGridConfig(headerHeight: number = 60, footerHeight: number = 88): GridConfig {
+    const { width: screenWidth, height: screenHeight } = this.getScreenDimensions();
     
-    // FIXED: Only two heights allowed
-    const baseUnitHeight = 140; // Collapsed height (fixed)
-    const spacing = 12; // Spacing between widgets
-    const margin = 16; // Screen edge margin
+    const spacing = 8;  // Spacing between widgets
+    const margin = 8;   // Screen edge margin
     
-    // Calculate responsive columns
+    // Calculate available space
     const availableWidth = screenWidth - (2 * margin);
-    let columns: number;
+    const availableHeight = screenHeight - headerHeight - footerHeight - (2 * margin);
     
-    if (screenWidth >= 1024) {
-      columns = 5; // Large screens
+    // Determine columns based on screen width
+    let columns: number;
+    let usePagination: boolean;
+    
+    if (screenWidth >= 1920) {
+      columns = 8; // Large desktop (1920+)
+      usePagination = true;
+    } else if (screenWidth >= 1280) {
+      columns = 6; // Desktop (1280-1919)
+      usePagination = true;
+    } else if (screenWidth >= 1024) {
+      columns = 5; // Tablet landscape (1024-1279)
+      usePagination = true;
     } else if (screenWidth >= 768) {
-      columns = 4; // Tablets
-    } else if (screenWidth >= 480) {
-      columns = 3; // Large phones
+      columns = 3; // Tablet portrait (768-1023)
+      usePagination = true;
+    } else if (screenWidth >= 600) {
+      columns = 2; // Mobile landscape (600-767)
+      usePagination = false; // Vertical scroll
     } else {
-      columns = 2; // Small phones
+      columns = 1; // Mobile portrait (< 600)
+      usePagination = false; // Vertical scroll
     }
     
-    // Base unit width is just for reference - actual widths are content-determined
-    const baseUnitWidth = Math.floor((availableWidth - (spacing * (columns - 1))) / columns);
+    // Calculate widget width
+    const totalSpacingWidth = spacing * (columns - 1);
+    const widgetWidth = Math.floor((availableWidth - totalSpacingWidth) / columns);
+    
+    // Calculate rows that fit in available height
+    // Use square aspect ratio as baseline (height = width)
+    const minWidgetHeight = widgetWidth;
+    let rows = Math.floor(availableHeight / (minWidgetHeight + spacing));
+    
+    // Ensure at least 1 row
+    if (rows < 1) {
+      rows = 1;
+    }
+    
+    // For mobile (no pagination), use flexible row count
+    // For tablet/desktop (with pagination), fix rows per page
+    if (!usePagination) {
+      rows = 999; // Unlimited rows for vertical scroll
+    }
+    
+    // Calculate widget height to fill vertical space evenly
+    const totalSpacingHeight = spacing * (Math.min(rows, 10) - 1); // Cap at 10 for calculation
+    const widgetHeight = Math.floor((availableHeight - totalSpacingHeight) / Math.min(rows, 10));
     
     return {
-      baseUnitWidth,
-      baseUnitHeight,
+      columns,
+      rows: usePagination ? rows : 999, // Unlimited rows for scroll mode
+      widgetWidth,
+      widgetHeight,
       spacing,
       margin,
-      minColumns: 2,
-      maxColumns: columns,
+      availableHeight,
+      availableWidth,
     };
   }
 
   /**
-   * Calculate FIXED width requirements for a widget based on content analysis
-   * FIXED: Width determined by maximum content needs (collapsed OR expanded)
+   * Convert widget layouts to grid-based dynamic layout with pagination or scrolling
+   * Mobile (1-2 cols): Widgets flow vertically with scrolling, height fills screen
+   * Tablet/Desktop (4-8 cols): Fixed pages, widgets sized to fill each page
    */
-  static calculateFixedWidgetWidth(widgetId: string): number {
-    // Analyze both collapsed and expanded content to determine maximum width needed
-    switch (widgetId) {
-      case 'engine':
-        // Engine: Multiple metrics in grid (RPM, Temp, Pressure, etc.)
-        return 200; // Wide enough for 2x2 metric grid
+  static toDynamicLayout(layouts: WidgetLayout[], headerHeight: number = 60, footerHeight: number = 88): DynamicWidgetLayout[] {
+    const gridConfig = this.getGridConfig(headerHeight, footerHeight);
+    const { columns, rows, widgetWidth, widgetHeight, spacing, availableHeight } = gridConfig;
+    
+    // Filter visible widgets and sort by order
+    const visibleWidgets = layouts
+      .filter(w => w.visible)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    const usePagination = rows < 999; // Pagination mode vs scroll mode
+    
+    if (usePagination) {
+      // PAGINATION MODE (Tablet/Desktop): Fixed pages with rows × columns grid
+      const widgetsPerPage = columns * rows;
+      
+      return visibleWidgets.map((layout, index) => {
+        const page = Math.floor(index / widgetsPerPage);
+        const indexInPage = index % widgetsPerPage;
+        const row = Math.floor(indexInPage / columns);
+        const col = indexInPage % columns;
         
-      case 'tanks':
-        // Tanks: Multiple tank levels with labels
-        return 180; // Wide enough for tank labels + levels
+        return {
+          ...layout,
+          page,
+          gridPosition: { row, col },
+          width: widgetWidth,
+          height: widgetHeight,
+          expanded: true,
+          size: {
+            width: widgetWidth,
+            height: widgetHeight
+          },
+          position: { x: 0, y: 0 }
+        };
+      });
+    } else {
+      // SCROLL MODE (Mobile): Use reasonable fixed height for each widget
+      // Don't try to fit all widgets on screen - let them scroll naturally
+      const reasonableHeight = Math.max(widgetWidth * 1.2, 280); // At least 1.2:1 aspect ratio or 280px minimum
+      
+      return visibleWidgets.map((layout, index) => {
+        const page = 0; // Single page
+        const row = Math.floor(index / columns);
+        const col = index % columns;
         
-      case 'gps':
-        // GPS: Long coordinate strings (48.63665°, -122.02334°)
-        return 220; // Wide enough for full coordinates
-        
-      case 'autopilot':
-        // Autopilot: Controls and status display
-        return 190; // Wide enough for control buttons
-        
-      case 'wind':
-        // Wind: Direction + speed, possibly with arrow
-        return 160; // Standard width for wind display
-        
-      case 'compass':
-        // Compass: Heading + compass rose
-        return 160; // Standard width for compass
-        
-      case 'depth':
-        // Depth: Value + trend + history
-        return 150; // Standard width for depth
-        
-      case 'speed':
-        // Speed: Value + units
-        return 140; // Standard width for speed
-        
-      case 'battery':
-        // Battery: Voltage + percentage
-        return 140; // Standard width for battery
-        
-      default:
-        // Default width for unknown widgets
-        return 150;
+        return {
+          ...layout,
+          page,
+          gridPosition: { row, col },
+          width: widgetWidth,
+          height: reasonableHeight,
+          expanded: true,
+          size: {
+            width: widgetWidth,
+            height: reasonableHeight
+          },
+          position: { x: 0, y: 0 }
+        };
+      });
     }
   }
 
   /**
-   * Convert widget layout to grid-based dynamic layout
-   * FIXED: Standardized heights + fixed widths + proper grid positioning
+   * Get total number of pages needed for the given widgets
+   * Returns 1 for mobile (scroll mode), multiple pages for tablet/desktop (pagination mode)
    */
-  static toDynamicLayout(layouts: WidgetLayout[]): DynamicWidgetLayout[] {
-    const gridConfig = this.getGridConfig();
+  static getTotalPages(widgets: DynamicWidgetLayout[], headerHeight: number = 60, footerHeight: number = 88): number {
+    const gridConfig = this.getGridConfig(headerHeight, footerHeight);
+    const usePagination = gridConfig.rows < 999;
     
-    return layouts.map((layout, index) => {
-      // FIXED: Only two heights allowed (1 or 2 units)
-      const gridHeight = layout.expanded ? 2 : 1;
-      
-      // FIXED: Width is fixed per widget type (never changes on expand/collapse)
-      const fixedWidth = this.calculateFixedWidgetWidth(layout.id);
-      
-      // FIXED: Standardized pixel heights only
-      const pixelHeight = gridHeight * gridConfig.baseUnitHeight + (gridHeight - 1) * gridConfig.spacing;
-      
-      return {
-        ...layout,
-        gridPosition: { row: 0, col: 0 }, // Will be calculated by layout algorithm
-        gridSize: { width: 1, height: gridHeight }, // Grid units (always 1 wide, 1-2 tall)
-        fixedWidth,
-        expanded: layout.expanded || false,
-        size: {
-          width: fixedWidth,
-          height: pixelHeight
-        }
-      };
-    });
+    if (!usePagination) {
+      return 1; // Mobile: single scrollable page
+    }
+    
+    // Tablet/Desktop: calculate pages needed
+    const widgetsPerPage = gridConfig.columns * gridConfig.rows;
+    const visibleWidgets = widgets.filter(w => w.visible);
+    return Math.max(1, Math.ceil(visibleWidgets.length / widgetsPerPage));
   }
 
   /**
-   * Calculate optimal flow layout positions for widgets  
-   * FIXED: Simple left-to-right, top-to-bottom flow with proper spacing
+   * Get widgets for a specific page
+   */
+  static getWidgetsForPage(widgets: DynamicWidgetLayout[], page: number): DynamicWidgetLayout[] {
+    return widgets.filter(w => w.page === page);
+  }
+
+  /**
+   * Legacy method for compatibility - always returns expanded layout now
    */
   static calculateFlowLayout(widgets: DynamicWidgetLayout[]): DynamicWidgetLayout[] {
-    const gridConfig = this.getGridConfig();
-    const { margin, spacing } = gridConfig;
-    const screenWidth = this.getScreenDimensions().width;
-    const maxRowWidth = screenWidth - (2 * margin);
-    
-    // Sort widgets by order preference
-    const sortedWidgets = [...widgets].filter(w => w.visible)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-    
-    // Since we're now using flexbox layout, we don't need to calculate exact positions
-    // Just ensure all widgets have their correct fixed widths and heights
-    const positionedWidgets = sortedWidgets.map((widget, index) => {
-      return {
-        ...widget,
-        position: { x: 0, y: 0 }, // Not used in flexbox layout
-        gridPosition: { 
-          row: 0, 
-          col: index 
-        }
-      };
-    });
-    
-    return positionedWidgets;
+    return widgets;
   }
 
   /**
-   * Calculate row height needed for a set of widgets
-   * FIXED: Simple height calculation based on tallest widget in row
-   */
-  private static calculateRowHeight(widgets: DynamicWidgetLayout[]): number {
-    if (widgets.length === 0) return 0;
-    return Math.max(...widgets.map(w => w.size.height));
-  }
-
-  /**
-   * Handle widget expansion - recalculate layout for affected widgets
-   * FIXED: Only height changes, width stays the same, recalculate positions
+   * Legacy method for compatibility - expansion is always on in new system
    */
   static handleWidgetExpansion(
     widgets: DynamicWidgetLayout[],
     expandedWidgetId: string,
     isExpanded: boolean
   ): DynamicWidgetLayout[] {
-    const gridConfig = this.getGridConfig();
-    
-    // Update the expanded widget - ONLY height changes, width stays fixed
-    const updatedWidgets = widgets.map(widget => {
-      if (widget.id === expandedWidgetId) {
-        const gridHeight = isExpanded ? 2 : 1;
-        const pixelHeight = gridHeight * gridConfig.baseUnitHeight + (gridHeight - 1) * gridConfig.spacing;
-        
-        return {
-          ...widget,
-          expanded: isExpanded,
-          gridSize: { width: 1, height: gridHeight },
-          size: {
-            width: widget.fixedWidth, // FIXED: Width never changes
-            height: pixelHeight
-          }
-        };
-      }
-      return widget;
-    });
-    
-    // Recalculate flow layout for all widgets (positions may change due to height change)
-    return this.calculateFlowLayout(updatedWidgets);
+    // In the new system, all widgets are always expanded
+    return widgets;
   }
 
   /**
-   * Get standardized widget dimensions
-   * FIXED: Returns only the two allowed heights
-   */
-  static getStandardWidgetDimensions(expanded: boolean): { width: number; height: number } {
-    const gridConfig = this.getGridConfig();
-    return {
-      width: gridConfig.baseUnitWidth, // This is just for reference, actual widths are fixed per widget
-      height: expanded 
-        ? 2 * gridConfig.baseUnitHeight + gridConfig.spacing  // Expanded: 2 units
-        : gridConfig.baseUnitHeight                           // Collapsed: 1 unit
-    };
-  }
-
-  /**
-   * Get the fixed height for a widget in a specific state
-   * FIXED: Only two heights possible
-   */
-  static getWidgetHeight(expanded: boolean): number {
-    const gridConfig = this.getGridConfig();
-    return expanded 
-      ? 2 * gridConfig.baseUnitHeight + gridConfig.spacing
-      : gridConfig.baseUnitHeight;
-  }
-
-  /**
-   * Convert legacy layout to dynamic layout
+   * Legacy method for compatibility
    */
   static migrateLegacyLayout(legacyLayouts: WidgetLayout[]): DynamicWidgetLayout[] {
-    const dynamicLayouts = this.toDynamicLayout(legacyLayouts);
-    return this.calculateFlowLayout(dynamicLayouts);
+    return this.toDynamicLayout(legacyLayouts);
   }
 }

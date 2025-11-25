@@ -1,8 +1,9 @@
-name: "Coastal Sailing Scenario"
-description: "Variable depth (1.5-30.5 meters) with tidal effects simulation"
+name: "Comprehensive Coastal Sailing Scenario"
+description: "Complete coastal cruiser simulation with all marine systems: depth, speed, wind, GPS, compass, engine, batteries (2x), tanks (4x), temperatures (5x), and rudder position. Realistic tidal effects, thermal wind patterns, and multi-instance sensor configurations typical of a 30-45ft coastal cruising vessel."
 duration: 600  # 10 minutes
-version: "1.0"
-category: "basic"
+version: "2.0"
+category: "comprehensive"
+bridge_mode: "nmea0183"  # NMEA 0183 protocol mode
 
 # Vessel parameters (configurable)
 parameters:
@@ -74,6 +75,62 @@ data:
       - {lat: 41.4950, lon: -81.6700, time: 450}    # 7.5 min
       - {lat: 41.5000, lon: -81.6650, time: 600}    # 10 min end
     speed_over_ground: "calculated"  # Based on speed data
+  
+  # ========== ENGINE DATA ==========
+  engine:
+    rpm:
+      type: "sine_wave"
+      base: 1800        # Cruising RPM (typical diesel)
+      amplitude: 200    # ±200 RPM variation
+      period: 120       # 2-minute cycle
+      min: 500
+      max: 3200
+    
+    coolant_temp:
+      type: "gaussian"
+      mean: 180         # Normal operating temperature (°F) - parser converts to C
+      std_dev: 4
+      min: 140
+      max: 203
+    
+    oil_pressure:
+      type: "gaussian"
+      mean: 55          # Normal oil pressure (PSI) - parser converts to Pascals
+      std_dev: 5
+      min: 30
+      max: 80
+    
+    alternator_voltage:
+      type: "sine_wave"
+      base: 14.2        # Charging voltage
+      amplitude: 0.4    # ±0.4V variation
+      period: 180       # 3-minute cycle
+      min: 12.0
+      max: 14.8
+    
+    fuel_rate:
+      type: "gaussian"
+      mean: 4.5         # Liters per hour
+      std_dev: 0.5
+      min: 0.5
+      max: 12.0
+    
+    hours:
+      type: "linear"
+      start: 1250.0     # Starting engine hours
+      end: 1250.2       # Ending engine hours (0.2 hours = 12 minutes runtime)
+      min: 0
+      max: 10000
+  
+  # ========== RUDDER DATA ==========
+  rudder:
+    angle:
+      type: "sine_wave"
+      base: 0           # Centered rudder
+      amplitude: 8      # ±8 degrees for course corrections
+      period: 45        # 45-second steering cycle
+      min: -35
+      max: 35
 
 # NMEA sentence generation timing (realistic marine instrument frequencies)
 timing:
@@ -310,16 +367,394 @@ functions:
 
     return { time, date, latitude, latHemisphere, longitude, lonHemisphere };
 
+# NMEA sentence definitions - Comprehensive coastal cruiser configuration
+nmea_sentences:
+  # ========== DEPTH MONITORING ==========
+  - type: "DPT"    # Depth Below Transducer (primary depth source)
+    frequency: 2   # Hz (every 0.5 seconds)
+  
+  - type: "DBT"    # Depth Below Transducer (alternate format for compatibility)
+    frequency: 1   # Hz (every 1 second)
+  
+  - type: "DBK"    # Depth Below Keel (safety-critical for grounding avoidance)
+    frequency: 1   # Hz (every 1 second)
+  
+  # ========== WATER TEMPERATURE ==========
+  - type: "MTW"    # Water Temperature
+    frequency: 0.2 # Hz (every 5 seconds)
+  
+  # ========== SPEED & NAVIGATION ==========
+  - type: "VHW"    # Water Speed and Heading (through water)
+    frequency: 1   # Hz (every 1 second)
+  
+  - type: "VTG"    # Track Made Good and Ground Speed (over ground)
+    frequency: 1   # Hz (every 1 second)
+  
+  # ========== WIND INSTRUMENTS ==========
+  - type: "MWV"    # Wind Speed and Angle (apparent/true wind)
+    frequency: 2   # Hz (every 0.5 seconds)
+  
+  # ========== GPS POSITION ==========
+  - type: "GGA"    # GPS Fix Data (position, quality, satellites)
+    frequency: 5   # Hz (every 0.2 seconds - rapid updates)
+  
+  - type: "RMC"    # Recommended Minimum GPS Data (position, speed, date/time)
+    frequency: 1   # Hz (every 1 second - standard rate)
+  
+  # ========== HEADING & COMPASS ==========
+  - type: "HDT"    # True Heading (primary compass)
+    frequency: 10  # Hz (every 0.1 seconds - rapid updates)
+  
+  - type: "HDG"    # Magnetic Heading with Deviation & Variation
+    frequency: 5   # Hz (every 0.2 seconds)
+  
+  - type: "HDM"    # Magnetic Heading (simple)
+    frequency: 2   # Hz (every 0.5 seconds)
+  
+  # ========== ENGINE MONITORING ==========
+  # Single diesel engine configuration (typical 30-45ft coastal cruiser)
+  - type: "RPM"    # Engine RPM
+    frequency: 1   # Hz (every 1 second)
+    instances:
+      - instance: 0  # Main engine
+        source: "E"  # Engine
+        data_path: "engine.rpm"
+        min: 500
+        max: 3200
+        typical: 1800
+  
+  # Engine parameters via XDR sentences
+  - type: "XDR"    # Engine Coolant Temperature
+    frequency: 0.5 # Hz (every 2 seconds)
+    measurements:
+      - measurement_type: "C"           # Temperature in Celsius
+        identifier: "ENGINE#1"            # Parser expects ENGINE#X format
+        data_path: "engine.coolant_temp"
+        units: "F"                       # Parser expects Fahrenheit for engine temp
+        min: 140
+        max: 203
+        typical: 180
+        warning_high: 194
+  
+  - type: "XDR"    # Engine Oil Pressure
+    frequency: 0.5 # Hz (every 2 seconds)
+    measurements:
+      - measurement_type: "P"           # Pressure
+        identifier: "ENGINE#1"            # Parser expects ENGINE#X format (same as coolant)
+        data_path: "engine.oil_pressure"
+        units: "P"  # PSI (parser expects PSI, not Bar)
+        min: 36
+        max: 73
+        typical: 55
+        warning_low: 44
+  
+  - type: "XDR"    # Engine Alternator Voltage
+    frequency: 0.5 # Hz (every 2 seconds)
+    measurements:
+      - measurement_type: "U"           # Voltage (U not V)
+        identifier: "ALTERNATOR"           # Parser expects ALTERNATOR format
+        data_path: "engine.alternator_voltage"
+        units: "V"
+        min: 12.0
+        max: 14.8
+        typical: 14.2
+  
+  - type: "XDR"    # Engine Fuel Flow Rate
+    frequency: 0.5 # Hz (every 2 seconds)
+    measurements:
+      - measurement_type: "V"           # Volume (flow rate)
+        identifier: "ENGINE#1_FUEL"        # Parser expects ENGINE#X_FUEL format
+        data_path: "engine.fuel_rate"
+        units: "L"  # Liters per hour
+        min: 3.0
+        max: 6.0
+        typical: 4.5
+  
+  - type: "XDR"    # Engine Hours Meter
+    frequency: 0.1 # Hz (every 10 seconds - slow update)
+    measurements:
+      - measurement_type: "G"           # Generic numeric (not T)
+        identifier: "ENGINE#1_HOURS"       # Parser expects ENGINE#X_HOURS format
+        data_path: "engine.hours"
+        units: "H"  # Hours
+        min: 0
+        max: 10000
+        typical: 1250
+  
+  # ========== BATTERY MONITORING ==========
+  # Typical dual-battery setup: House bank + Engine/starter battery
+  # Using single-sentence XDR format (proven working from battery-drain-scenario.yml)
+  
+  # House Battery Bank (Instance 0) - primary electrical system
+  - sentence: "$IIXDR,U,{house_voltage},V,BAT_0,I,{house_current},A,BAT_0,C,{house_temp},C,BAT_0_TMP,P,{house_soc},P,BAT_0_SOC,U,12.0,V,BAT_0_NOM,V,400,H,BAT_0_CAP,G,AGM,N,BAT_0_CHEM*XX"
+    sentence_type: "XDR"
+    description: "House Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_HOUSE"
+    interval: 2.0  # Every 2 seconds
+    type: "XDR"
+    parameters:
+      house_voltage:
+        type: "sine"
+        start: 12.6
+        amplitude: 0.8
+        frequency: 0.0033  # Period ~300 seconds
+        min: 11.8
+        max: 14.4
+        format: "00.0"
+      house_current:
+        type: "sine"
+        start: -5.2
+        amplitude: 5.0
+        frequency: 0.005
+        min: -15.0
+        max: 2.0
+        format: "00.0"
+      house_temp:
+        type: "sine"
+        start: 22
+        amplitude: 3
+        frequency: 0.003
+        min: 15
+        max: 35
+        format: "00.0"
+      house_soc:
+        type: "linear"
+        start: 85
+        end: 75
+        duration: 600
+        format: "000"
+  
+  # Engine/Starter Battery (Instance 1) - dedicated starting battery
+  - sentence: "$IIXDR,U,{engine_voltage},V,BAT_1,I,{engine_current},A,BAT_1,C,{engine_temp},C,BAT_1_TMP,P,{engine_soc},P,BAT_1_SOC,U,12.0,V,BAT_1_NOM,V,100,H,BAT_1_CAP,G,FLA,N,BAT_1_CHEM*XX"
+    sentence_type: "XDR"
+    description: "Engine Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
+    source: "BATTERY_ENGINE"
+    interval: 2.0  # Every 2 seconds
+    type: "XDR"
+    parameters:
+      engine_voltage:
+        type: "sine"
+        start: 13.2
+        amplitude: 0.6
+        frequency: 0.004  # Period ~250 seconds
+        min: 12.4
+        max: 14.6
+        format: "00.0"
+      engine_current:
+        type: "sine"
+        start: -1.5
+        amplitude: 3.0
+        frequency: 0.008
+        min: -8.0
+        max: 5.0
+        format: "00.0"
+      engine_temp:
+        type: "sine"
+        start: 28
+        amplitude: 4
+        frequency: 0.004
+        min: 18
+        max: 45
+        format: "00.0"
+      engine_soc:
+        type: "sine"
+        start: 92
+        amplitude: 8
+        frequency: 0.0025  # Period ~400 seconds
+        min: 75
+        max: 100
+        format: "000"
+  
+  # ========== TANK LEVELS ==========
+  # Typical coastal cruiser tank configuration
+  
+  # Fuel Tank (diesel)
+  - type: "XDR_TANK"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 0
+        tank_type: "FUEL"
+        capacity: 200  # Liters
+        data:
+          level:
+            type: "linear"
+            start: 0.75
+            end: 0.68
+            min: 0.0
+            max: 1.0
+  
+  # Fresh Water Tank
+  - type: "XDR_TANK"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 1
+        tank_type: "WATR"
+        capacity: 150  # Liters
+        data:
+          level:
+            type: "linear"
+            start: 0.60
+            end: 0.55
+            min: 0.0
+            max: 1.0
+  
+  # Gray Water Tank (sink/shower waste)
+  - type: "XDR_TANK"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 2
+        tank_type: "WAST"
+        capacity: 80   # Liters
+        data:
+          level:
+            type: "linear"
+            start: 0.15
+            end: 0.25
+            min: 0.0
+            max: 1.0
+  
+  # Black Water Tank (toilet waste)
+  - type: "XDR_TANK"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 3
+        tank_type: "BWAT"
+        capacity: 60   # Liters
+        data:
+          level:
+            type: "linear"
+            start: 0.10
+            end: 0.18
+            min: 0.0
+            max: 1.0
+  
+  # ========== TEMPERATURE SENSORS ==========
+  # Multiple temperature monitoring points
+  
+  # Seawater Temperature (from through-hull sensor)
+  - type: "XDR_TEMPERATURE"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 0
+        location: "SEAW"
+        location_name: "Seawater"
+        data:
+          temperature:
+            type: "gaussian"
+            mean: 18.5
+            std_dev: 0.5
+            min: 16
+            max: 22
+            unit: "C"
+  
+  # Outside Air Temperature (from mast sensor)
+  - type: "XDR_TEMPERATURE"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 1
+        location: "AIRX"
+        location_name: "Outside Air"
+        data:
+          temperature:
+            type: "sine_wave"
+            base: 22
+            amplitude: 4
+            period: 600
+            min: 15
+            max: 28
+            unit: "C"
+  
+  # Engine Room Temperature (from bilge sensor)
+  - type: "XDR_TEMPERATURE"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 2
+        location: "ENGR"
+        location_name: "Engine Room"
+        data:
+          temperature:
+            type: "gaussian"
+            mean: 35
+            std_dev: 3
+            min: 25
+            max: 50
+            unit: "C"
+  
+  # Main Cabin Temperature (from salon sensor)
+  - type: "XDR_TEMPERATURE"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 3
+        location: "TEMP"
+        location_name: "Main Cabin"
+        data:
+          temperature:
+            type: "gaussian"
+            mean: 21
+            std_dev: 1.5
+            min: 18
+            max: 26
+            unit: "C"
+  
+  # Refrigerator Temperature (from fridge sensor)
+  - type: "XDR_TEMPERATURE"
+    frequency: 0.2 # Hz (every 5 seconds)
+    instances:
+      - instance: 4
+        location: "TEMP"
+        location_name: "Refrigerator"
+        data:
+          temperature:
+            type: "gaussian"
+            mean: 4
+            std_dev: 1
+            min: 2
+            max: 8
+            unit: "C"
+  
+  # ========== RUDDER POSITION ==========
+  - type: "RSA"    # Rudder Sensor Angle
+    frequency: 5   # Hz (every 0.2 seconds - responsive)
+    data_path: "rudder.angle"
+    min: -35
+    max: 35
+    typical: 0
+
+# Autopilot configuration
+autopilot:
+  enabled: false
+  initial_state:
+    mode: "STANDBY"
+    engaged: false
+    target_heading: 45
+    current_heading: 45
+
 # Use case documentation
 use_cases:
+  - "Complete widget integration testing (all 12+ widget types)"
+  - "Multi-instance sensor detection and display"
   - "Depth alarm testing with tidal variations"
   - "Coastal navigation widget validation"
   - "Tidal current effect simulation"
   - "Shallow water approach scenarios"
   - "Wind pattern coastal effects testing"
+  - "Engine monitoring and alarm thresholds"
+  - "Dual-battery bank monitoring (house + engine)"
+  - "Tank level monitoring (fuel, water, gray, black)"
+  - "Multi-zone temperature monitoring (5 sensors)"
+  - "Rudder position feedback and autopilot testing"
+  - "Comprehensive marine data flow validation"
+  - "Realistic boat systems for development and demos"
 
 # Related acceptance criteria
 acceptance_criteria:
-  - "AC1: Variable depth (1.5-30.5 meters) with tidal effects"
-  - "AC1: Realistic timing between related instruments"
-  - "AC1: Parameterizable vessel characteristics"
+  - "AC1: All supported NMEA sentence types generated"
+  - "AC2: Multi-instance sensors (2x batteries, 4x tanks, 5x temps)"
+  - "AC3: Realistic timing between related instruments"
+  - "AC4: Parameterizable vessel characteristics"
+  - "AC5: Complete coastal cruiser system representation"
+  - "AC6: Variable depth (1.5-30.5 meters) with tidal effects"
+  - "AC7: Engine parameters with safety thresholds"
+  - "AC8: Battery monitoring for dual-bank systems"
+  - "AC9: Tank monitoring for all fluid types"
+  - "AC10: Temperature monitoring across vessel zones"

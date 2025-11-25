@@ -1,9 +1,21 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as Brightness from 'expo-brightness';
 // Theme compliance validation moved to development-only environment
+
+// Conditional AsyncStorage import with web fallback
+let AsyncStorage: any;
+try {
+  AsyncStorage = require('@react-native-async-storage/async-storage').default;
+} catch {
+  // Fallback storage for web/development when native module not available
+  AsyncStorage = {
+    getItem: async (key: string) => localStorage.getItem(key),
+    setItem: async (key: string, value: string) => localStorage.setItem(key, value),
+    removeItem: async (key: string) => localStorage.removeItem(key),
+  };
+}
 
 // Theme types for marine display modes
 export type ThemeMode = 'day' | 'night' | 'red-night' | 'auto';
@@ -124,7 +136,7 @@ const redNightTheme: ThemeColors = {
   textSecondary: '#DC2626', // Dark red for secondary text
   textTertiary: '#991B1B', // Very dark red
   accent: '#EF4444',       // Red accent
-  warning: '#F59E0B',      // Amber warning (still visible)
+  warning: '#DC2626',      // Red warning (red spectrum for night vision, same as error)
   error: '#DC2626',        // Dark red error
   success: '#DC2626',      // Red success (no green for night vision)
   border: '#7F1D1D',       // Dark red border

@@ -23,10 +23,8 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
     // Check if there's a custom handler for this action
     if (actionHandlers[actionId]) {
       actionHandlers[actionId]();
-      // For toggleUnits, don't call onItemPress as the handler manages the menu close
-      if (actionId !== 'toggleUnits') {
-        onItemPress();
-      }
+      // Custom handlers manage their own menu closing, so don't call onItemPress
+      // which would cause double-close or interfere with timing
     } else {
       // Otherwise use the default action executor
       executeAction(actionId);

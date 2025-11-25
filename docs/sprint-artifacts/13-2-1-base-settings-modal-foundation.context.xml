@@ -1,0 +1,333 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>13</epicId>
+    <storyId>13.2.1</storyId>
+    <title>Create Base Settings Modal Foundation</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-13-vip-platform-ux-implementation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer implementing settings dialogs</asA>
+    <iWant>a reusable BaseSettingsModal component with cross-platform consistency</iWant>
+    <soThat>all settings dialogs have uniform behavior, keyboard navigation, and glove-friendly touch targets</soThat>
+    <tasks>
+      <task id="phase-1-design-tokens">
+        <name>Phase 1: Create Settings Design Tokens</name>
+        <subtasks>
+          <subtask>Create src/theme/settingsTokens.ts</subtask>
+          <subtask>Define modal dimensions (width, maxWidth, height)</subtask>
+          <subtask>Define touch target sizes (44pt phone, 56pt tablet, 64pt glove)</subtask>
+          <subtask>Define spacing scale (4pt, 8pt, 12pt, 16pt, 24pt)</subtask>
+          <subtask>Define animation timings (enter: 300ms, exit: 250ms)</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-2-platform-detection">
+        <name>Phase 2: Platform Detection Utilities</name>
+        <subtasks>
+          <subtask>Create src/utils/platformDetection.ts</subtask>
+          <subtask>Implement detectPlatform() → 'ios' | 'android' | 'web' | 'desktop'</subtask>
+          <subtask>Implement hasKeyboard() → boolean (web/desktop detection)</subtask>
+          <subtask>Implement hasTouchscreen() → boolean</subtask>
+          <subtask>Add unit tests for platform detection</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-3-base-modal">
+        <name>Phase 3: BaseSettingsModal Component</name>
+        <subtasks>
+          <subtask>Create src/components/dialogs/base/BaseSettingsModal.tsx</subtask>
+          <subtask>Implement modal container with backdrop</subtask>
+          <subtask>Create SettingsHeader component (title, close button)</subtask>
+          <subtask>Create SettingsFooter component (cancel, save buttons)</subtask>
+          <subtask>Implement dismissible/non-dismissible configuration</subtask>
+          <subtask>Add glove-mode touch target sizing (56pt minimum)</subtask>
+          <subtask>Apply theme colors from themeStore</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-4-keyboard-nav">
+        <name>Phase 4: Keyboard Navigation</name>
+        <subtasks>
+          <subtask>Add keyboard event listeners (Tab, Enter, Esc)</subtask>
+          <subtask>Implement Tab → focus next input</subtask>
+          <subtask>Implement Shift+Tab → focus previous input</subtask>
+          <subtask>Implement Enter → submit form (save)</subtask>
+          <subtask>Implement Escape → close modal (cancel)</subtask>
+          <subtask>Add focus trap (keep focus within modal)</subtask>
+          <subtask>Test keyboard navigation on web/desktop</subtask>
+        </subtasks>
+      </task>
+      <task id="phase-5-testing">
+        <name>Phase 5: Testing & Documentation</name>
+        <subtasks>
+          <subtask>Create BaseSettingsModal.test.tsx (unit tests)</subtask>
+          <subtask>Test platform detection logic</subtask>
+          <subtask>Test keyboard navigation (Tab, Enter, Esc)</subtask>
+          <subtask>Test touch target sizing (44pt, 56pt, 64pt)</subtask>
+          <subtask>Test dismissible vs non-dismissible behavior</subtask>
+          <subtask>Visual regression test in day/night/red-night modes</subtask>
+          <subtask>Document BaseSettingsModal API and usage patterns</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>Modal Appearance and Layout</title>
+      <description>Modal appears centered with consistent header/footer across all platforms</description>
+      <scenarios>
+        <scenario>
+          Given I am on any screen requiring settings configuration
+          When I tap a settings trigger
+          Then a modal should appear using BaseSettingsModal
+            And the modal should be centered on screen
+            And the modal should have consistent header with title and close button
+            And the modal should have consistent footer with cancel/save buttons
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC2">
+      <title>Keyboard Navigation (Desktop/Web)</title>
+      <description>Tab, Enter, and Esc keys work correctly for keyboard navigation</description>
+      <scenarios>
+        <scenario>
+          Given I am using a desktop browser with keyboard
+          When the settings modal is open
+          Then I should be able to Tab through all inputs
+            And pressing Enter should submit the form (call onSave)
+            And pressing Escape should close the modal (call onCancel)
+            And focus should be trapped within the modal (no tab escape)
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC3">
+      <title>Glove-Friendly Touch Targets (Tablet)</title>
+      <description>All interactive elements meet 56pt minimum touch target size on tablets</description>
+      <scenarios>
+        <scenario>
+          Given I am using a tablet with glove-friendly mode active
+          When I interact with modal inputs
+          Then all touch targets should be 56pt or larger
+            And spacing between elements should be 16pt or more
+            And buttons should have 56pt height minimum
+            And close button should be 56pt × 56pt
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC4">
+      <title>Dismissible Modal Behavior</title>
+      <description>Modal closes when tapping outside based on dismissible configuration</description>
+      <scenarios>
+        <scenario>
+          Given the modal is open with dismissible={true}
+          When I tap outside the modal area (on backdrop)
+          Then the modal should close (call onCancel)
+            And the backdrop should be semi-transparent (#000000 60% opacity)
+        </scenario>
+        <scenario>
+          Given the modal is open with dismissible={false}
+          When I tap outside the modal area (on backdrop)
+          Then the modal should remain open
+            And only close button or cancel button should close it
+        </scenario>
+      </scenarios>
+    </criterion>
+    <criterion id="AC5">
+      <title>Theme Integration</title>
+      <description>Modal respects current theme (day/night/red-night) with proper colors</description>
+      <scenarios>
+        <scenario>
+          Given I open the settings modal in red-night mode
+          When I inspect the modal colors
+          Then background should be theme.surface (dark red)
+            And text should be theme.text (red spectrum only)
+            And borders should be theme.border (red spectrum)
+            And NO green, blue, or white colors should appear
+        </scenario>
+      </scenarios>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/stories/epic-13-vip-platform-ux-implementation.md" 
+           title="Epic 13: VIP Platform UX Implementation" 
+           section="Story 13.2.1: Create Base Settings Modal Foundation" 
+           snippet="Implement reusable BaseSettingsModal component with cross-platform consistency, keyboard navigation, and glove-friendly touch targets. Foundation for all Phase 1 settings dialogs." />
+      <doc path="docs/VIP-PLATFORM-UX-STRATEGY.md" 
+           title="VIP Platform: Cross-Platform UX Strategy" 
+           section="Glove-Friendly Design System" 
+           snippet="Touch target sizes: 44pt phone (no gloves), 56pt tablet (dashboard/helm), 64pt glove mode. Spacing 16pt minimum. Marine environment requires forgiving UI due to wet hands, gloves, motion." />
+      <doc path="docs/CROSS-PLATFORM-UX-STRATEGY.md" 
+           title="Cross-Platform UX Strategy" 
+           section="Platform-Specific Interaction Enhancements" 
+           snippet="Desktop: Keyboard shortcuts, hover states, right-click context menus. Mobile: Touch gestures, swipe, long-press. TV: D-pad navigation, 10-foot UI." />
+      <doc path="docs/architecture/settings-integration-architecture.md" 
+           title="Settings Integration Architecture Guide" 
+           section="Reactive Pattern Template" 
+           snippet="Zustand stores for settings state management. Direct store updates trigger immediate widget re-renders. AsyncStorage for persistence. No additional infrastructure required." />
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/AlarmConfigDialog.tsx" 
+                kind="component" 
+                symbol="AlarmConfigDialog" 
+                lines="1-600" 
+                reason="Reference implementation: existing modal with header, footer, scroll view. Shows modal structure patterns to replicate in BaseSettingsModal." />
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/UnitsConfigDialog.tsx" 
+                kind="component" 
+                symbol="UnitsConfigDialog" 
+                lines="1-400" 
+                reason="Reference implementation: settings modal with cancel/save buttons, theme integration. Will be refactored to use BaseSettingsModal in Story 13.2.4." />
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/FactoryResetDialog.tsx" 
+                kind="component" 
+                symbol="FactoryResetDialog" 
+                lines="1-200" 
+                reason="Reference implementation: modal with pageSheet presentation, theme integration, onRequestClose handler." />
+      <artifact path="boatingInstrumentsApp/src/theme/designTokens.ts" 
+                kind="constants" 
+                symbol="touchTargets" 
+                lines="383-420" 
+                reason="Existing touch target definitions: minimum=44pt, standard=48pt, marine=56pt, marineLarge=64pt, glove=68pt. Use as reference for settingsTokens.ts." />
+      <artifact path="boatingInstrumentsApp/src/services/marine/MarineTouchService.ts" 
+                kind="service" 
+                symbol="MarineTouchService" 
+                lines="1-350" 
+                reason="Marine touch service with glove mode detection. Provides getAdjustedTouchTarget() for dynamic sizing based on glove mode." />
+      <artifact path="boatingInstrumentsApp/src/hooks/useKeyboardNavigation.ts" 
+                kind="hook" 
+                symbol="useKeyboardNavigation" 
+                lines="1-150" 
+                reason="Existing keyboard navigation implementation. Provides focus management, Tab navigation, platform detection. Reference for modal keyboard handling." />
+      <artifact path="boatingInstrumentsApp/src/store/themeStore.ts" 
+                kind="store" 
+                symbol="useTheme" 
+                lines="1-200" 
+                reason="Theme store with day/night/red-night modes. Provides theme colors for modal styling. Use theme.surface, theme.text, theme.border." />
+      <artifact path="boatingInstrumentsApp/src/store/settingsStore.ts" 
+                kind="store" 
+                symbol="useSettingsStore" 
+                lines="1-300" 
+                reason="Settings store with gloveMode flag. Check themeSettings.gloveMode to determine touch target sizing (56pt vs 44pt)." />
+    </code>
+    <dependencies>
+      <node ecosystem="npm">
+        <package name="react" version="^18.x" reason="Core React hooks (useState, useEffect, useCallback) for component implementation" />
+        <package name="react-native" version="^0.73.x" reason="Modal, View, ScrollView, TouchableOpacity, Keyboard, Platform APIs" />
+        <package name="zustand" version="^4.x" reason="Theme and settings store integration for reactive state management" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="scope" priority="critical">
+      This story creates ONLY the BaseSettingsModal foundation. Migration of existing dialogs (UnitsConfigDialog, ConnectionConfigDialog, AlarmConfigDialog) happens in Stories 13.2.3 and 13.2.4.
+    </constraint>
+    <constraint type="architectural" priority="high">
+      BaseSettingsModal must be platform-agnostic. Platform-specific behavior should be detected and adapted automatically, not hard-coded for specific platforms.
+    </constraint>
+    <constraint type="ux" priority="high">
+      Touch targets must meet marine environment standards: 44pt minimum (phone), 56pt (tablet/helm), 64pt (glove mode). Never compromise on touch target sizes for aesthetics.
+    </constraint>
+    <constraint type="performance" priority="medium">
+      Modal animations must complete within 300ms (enter) and 250ms (exit) per design tokens. No janky animations or delayed rendering.
+    </constraint>
+    <constraint type="accessibility" priority="high">
+      Keyboard navigation must work flawlessly on desktop/web. Focus trap must prevent Tab key from escaping modal. Esc key must always close modal.
+    </constraint>
+    <constraint type="theme" priority="critical">
+      Red-night mode compliance is MANDATORY. No green (#10B981), blue, or white colors. All colors must be red spectrum (625nm wavelength) in red-night mode.
+    </constraint>
+    <constraint type="testing" priority="high">
+      Must have comprehensive unit tests for keyboard navigation, touch target sizing, platform detection, and theme integration. Visual regression tests required.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="BaseSettingsModalProps" kind="TypeScript Interface" path="boatingInstrumentsApp/src/components/dialogs/base/BaseSettingsModal.tsx">
+      <signature>
+interface BaseSettingsModalProps {
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+  onSave?: () => void;
+  dismissible?: boolean; // default: true
+  children: React.ReactNode;
+  showFooter?: boolean; // default: true
+  saveButtonText?: string; // default: "Save"
+  cancelButtonText?: string; // default: "Cancel"
+  testID?: string;
+}
+      </signature>
+      <usage>Base props for all settings modals. visible controls modal display. onClose called on cancel/dismiss. onSave called on save button press. dismissible controls backdrop tap behavior.</usage>
+    </interface>
+    <interface name="SettingsTokens" kind="TypeScript Constants" path="boatingInstrumentsApp/src/theme/settingsTokens.ts">
+      <signature>
+export const settingsTokens = {
+  modal: {
+    width: { phone: '90%', tablet: 500, desktop: 600 },
+    maxWidth: 800,
+    maxHeight: '90%',
+  },
+  touchTargets: {
+    phone: 44,
+    tablet: 56,
+    glove: 64,
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+  },
+  animation: {
+    enter: 300,
+    exit: 250,
+  },
+};
+      </signature>
+      <usage>Design tokens for consistent settings modal styling across all dialogs. Import and use these values instead of hard-coded numbers.</usage>
+    </interface>
+    <interface name="platformDetection" kind="Utility Functions" path="boatingInstrumentsApp/src/utils/platformDetection.ts">
+      <signature>
+export type PlatformType = 'ios' | 'android' | 'web' | 'desktop';
+
+export function detectPlatform(): PlatformType;
+export function hasKeyboard(): boolean;
+export function hasTouchscreen(): boolean;
+export function isGloveMode(): boolean; // reads from settingsStore
+      </signature>
+      <usage>Platform detection utilities for adaptive UI behavior. Use detectPlatform() to determine current platform. Use hasKeyboard() to enable keyboard shortcuts.</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Unit tests use Jest with React Native Testing Library. Component tests in __tests__/tier1-unit/components/dialogs/base/. Keyboard navigation tests simulate keyDown events. Touch target tests measure rendered element dimensions. Theme tests validate colors in all three modes (day/night/red-night). Visual regression tests use jest-image-snapshot.
+    </standards>
+    <locations>
+      <location>__tests__/tier1-unit/components/dialogs/base/BaseSettingsModal.test.tsx</location>
+      <location>__tests__/tier1-unit/utils/platformDetection.test.ts</location>
+      <location>__tests__/visual-regression/BaseSettingsModal.visual.test.tsx</location>
+    </locations>
+    <ideas>
+      <idea criterionId="AC1">
+        Test modal rendering with visible={true}. Verify modal container, header, footer, backdrop are all present. Test with different title props. Verify close button exists.
+      </idea>
+      <idea criterionId="AC2">
+        Test keyboard navigation: simulate Tab keyDown → verify focus moves to next input. Simulate Enter → verify onSave called. Simulate Escape → verify onClose called. Test focus trap (Tab at last element → focus wraps to first).
+      </idea>
+      <idea criterionId="AC3">
+        Test touch target sizing: mock settingsStore.gloveMode=true → measure button heights → assert >= 56pt. Mock gloveMode=false → measure button heights → assert >= 44pt. Test spacing between elements >= 16pt.
+      </idea>
+      <idea criterionId="AC4">
+        Test dismissible behavior: render with dismissible={true} → simulate backdrop press → verify onClose called. Render with dismissible={false} → simulate backdrop press → verify onClose NOT called.
+      </idea>
+      <idea criterionId="AC5">
+        Test theme integration: mock themeStore.mode='red-night' → render modal → extract all color values → assert NO green/blue/white colors → assert all colors from red spectrum. Repeat for day/night modes.
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

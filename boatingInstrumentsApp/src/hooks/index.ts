@@ -28,6 +28,21 @@ export type {
   ConversionPreference 
 } from './useUnitConversion';
 
+// Story 13.2.2 - Platform Input Component Hooks
+export { useInputFocus } from './useInputFocus';
+export type { UseInputFocusReturn } from './useInputFocus';
+
+export { useTouchTargetSize } from './useTouchTargetSize';
+
+export { useInputValidation } from './useInputValidation';
+export type { 
+  ValidatorFunction,
+  UseInputValidationReturn 
+} from './useInputValidation';
+
+export { useHapticFeedback } from './useHapticFeedback';
+export type { UseHapticFeedbackReturn } from './useHapticFeedback';
+
 // Import hooks for combined usage
 import { useConnection } from './useConnection';
 import { useNMEAData } from './useNMEAData';

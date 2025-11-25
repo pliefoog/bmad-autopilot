@@ -11,20 +11,24 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface EngineWidgetProps {
   id: string;
   title: string;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 /**
- * Engine Widget - Multi-Instance Engine Display per ui-architecture.md v2.3
+ * Engine Widget - Single-Instance Engine Display per ui-architecture.md v2.3
  * Primary Grid (2×2): RPM, TEMP, OIL, VOLT
- * Secondary Grid (1×2): Fuel Rate, Engine Hours
+ * Secondary Grid (2×1): Fuel Rate, Engine Hours
  * Supports multi-instance detection via NMEA engine instances
  */
-export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title }) => {
+export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
   // Extract engine instance from widget ID (e.g., "engine-0", "engine-1")
   const instanceNumber = useMemo(() => {
@@ -33,9 +37,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   }, [id]);
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -231,21 +233,23 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   // Widget interaction handlers
   const handlePress = useCallback(() => {
     updateWidgetInteraction(id);
-    toggleWidgetExpansion(id);
-  }, [id, updateWidgetInteraction, toggleWidgetExpansion]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPress = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   const styles = StyleSheet.create({
     container: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 16,
-      marginBottom: 8,
     },
     header: {
       flexDirection: 'row',
@@ -281,16 +285,34 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
     primaryGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 8,
+      justifyContent: 'space-between',
+      alignContent: 'center',
+      alignItems: 'center',
+      height: '50%',
+      width: '80%',
+      alignSelf: 'center',
+    },
+    primaryGridCell: {
+      width: '48%',
       marginBottom: 8,
     },
+    // Horizontal separator between primary and secondary views
+    separator: {
+      height: 1,
+      marginVertical: 4,
+    },
+    // Secondary Container
+    secondaryContainer: {
+      height: '50%',
+      justifyContent: 'center',
+    },
+    // Secondary Grid (2R×1C): Fuel and Hours
     secondaryGrid: {
-      flexDirection: 'row',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignSelf: 'center',
       gap: 8,
-      marginTop: 12,
-      paddingTop: 12,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
+      width: '80%',
     },
   });
 
@@ -313,66 +335,97 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
           <Text style={styles.title}>{title}</Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPress}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={styles.caret}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
       {/* Primary Grid (2×2): RPM, TEMP, OIL, VOLT */}
       <View style={styles.primaryGrid}>
-          <PrimaryMetricCell
-            data={rpmDisplay}
-            state={getRpmState()}
-          />
-          <PrimaryMetricCell
-            data={coolantTempDisplay}
-            state={getTempState()}
-          />
-          <PrimaryMetricCell
-            data={oilPressureDisplay}
-            state={getOilState()}
-          />
-          <PrimaryMetricCell
-            data={alternatorVoltageDisplay}
-            state={getVoltState()}
-          />
+          <View style={styles.primaryGridCell}>
+            <PrimaryMetricCell
+              data={rpmDisplay}
+              state={getRpmState()}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
+          </View>
+          <View style={styles.primaryGridCell}>
+            <PrimaryMetricCell
+              data={coolantTempDisplay}
+              state={getTempState()}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
+          </View>
+          <View style={styles.primaryGridCell}>
+            <PrimaryMetricCell
+              data={oilPressureDisplay}
+              state={getOilState()}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
+          </View>
+          <View style={styles.primaryGridCell}>
+            <PrimaryMetricCell
+              data={alternatorVoltageDisplay}
+              state={getVoltState()}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
+          </View>
         </View>
 
       {/* Secondary Grid (1×2): Fuel Rate, Engine Hours */}
-      {expanded && (
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+      {/* SECONDARY GRID */}
+      <View style={styles.secondaryContainer}>
         <View style={styles.secondaryGrid}>
-            <SecondaryMetricCell
-              data={fuelFlowDisplay}
-              state="normal"
-              compact={true}
-            />
-            <SecondaryMetricCell
-              data={engineHoursDisplay}
-              state="normal"
-              compact={true}
-            />
+          <SecondaryMetricCell
+            data={fuelFlowDisplay}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <SecondaryMetricCell
+            data={engineHoursDisplay}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });

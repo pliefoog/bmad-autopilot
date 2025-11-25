@@ -6,29 +6,32 @@ import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useDataPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
+import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface CompassWidgetProps {
   id: string;
   title: string;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 type CompassMode = 'TRUE' | 'MAGNETIC';
 
 /**
  * Compass Widget - Interactive per ui-architecture.md v2.3
- * Primary Grid (1×1): SVG compass rose with digital heading + Mode Toggle (TRUE ↔ MAGNETIC)
- * Secondary Grid (1×2): Variation and Deviation (if available)
+ * Primary Grid (2×1): True Heading + Magnetic Heading
+ * Secondary Grid (2×1): Variation and Deviation (if available)
  */
-export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, title }) => {
+export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -140,11 +143,10 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
 
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
-    toggleWidgetExpansion(id);
     updateWidgetInteraction(id);
-  }, [id, toggleWidgetExpansion, updateWidgetInteraction]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPressOnCaret = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
@@ -208,84 +210,76 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
           </Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPressOnCaret}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={[styles.pinIcon, { color: theme.primary }]}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPressOnCaret}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={[styles.caret, { color: theme.textSecondary }]}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
+          </View>
+        )}
+      </View>
+
+      {/* PRIMARY GRID (2×1): True Heading + Magnetic Heading */}
+      <View style={styles.primaryContainer}>
+        <View style={styles.primaryGrid}>
+          <PrimaryMetricCell
+            mnemonic="TRUE"
+            value={heading !== null && heading !== undefined ? Math.round(heading).toString().padStart(3, '0') : '---'}
+            unit="°"
+            state={isStale ? 'warning' : 'normal'}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <PrimaryMetricCell
+            mnemonic="MAG"
+            value={magneticHeading !== null && magneticHeading !== undefined ? Math.round(magneticHeading).toString().padStart(3, '0') : (heading && variation ? Math.round(heading - variation).toString().padStart(3, '0') : '---')}
+            unit="°"
+            state={isStale ? 'warning' : 'normal'}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
         </View>
       </View>
 
-      {/* PRIMARY GRID (1×1): SVG compass rose with digital heading */}
-      <TouchableOpacity onPress={handleModeToggle} style={styles.compassContainer}>
-        <View style={styles.compassHeader}>
-          <Text style={[styles.modeIndicator, { 
-            color: compassMode === 'TRUE' ? theme.primary : theme.warning 
-          }]}>
-            {compassMode}
-          </Text>
-          <Text style={[styles.cardinalText, { color: theme.textSecondary }]}>
-            {cardinalDirection}
-          </Text>
-        </View>
-        
-        {/* SVG Compass Rose */}
-        <View style={styles.compassRose}>
-          <CompassRose 
-            heading={currentHeading || 0} 
-            theme={theme} 
-            isStale={isStale}
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+      {/* SECONDARY GRID: Variation and Deviation */}
+      <View style={styles.secondaryContainer}>
+        <View style={styles.secondaryGrid}>
+          <SecondaryMetricCell
+            data={variationDisplay}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <SecondaryMetricCell
+            data={deviationDisplay}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
           />
         </View>
-        
-        {/* Digital Heading Display */}
-        <Text style={[styles.headingText, { 
-          color: isStale ? theme.textSecondary : theme.text 
-        }]}>
-          {headingDisplay}
-        </Text>
-      </TouchableOpacity>
-
-      {/* SECONDARY GRID (1×2): Variation and Deviation */}
-      {expanded && (
-        <View style={styles.secondaryContainer}>
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={variationDisplay}
-                state="normal"
-                compact={true}
-              />
-            </View>
-          </View>
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={deviationDisplay}
-                state="normal"
-                compact={true}
-              />
-            </View>
-          </View>
-        </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });
@@ -414,9 +408,11 @@ CompassWidget.displayName = 'CompassWidget';
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 8,
     borderWidth: 1,
     borderColor: theme.border,
   },
@@ -447,54 +443,34 @@ const createStyles = (theme: any) => StyleSheet.create({
   pinIcon: {
     fontSize: 12,
   },
-  // Primary Grid: Compass rose display (1×1)
-  compassContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
-    minHeight: 180,
+  // Primary Grid (2×1): True and Magnetic Heading
+  primaryContainer: {
+    height: '50%',
+    justifyContent: 'center',
   },
-  compassHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 8,
+  primaryGrid: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: 8,
   },
-  modeIndicator: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  // Horizontal separator between primary and secondary views
+  separator: {
+    height: 1,
+    marginVertical: 4,
   },
-  cardinalText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  compassRose: {
-    marginVertical: 8,
-  },
-  headingText: {
-    fontSize: 24,
-    fontFamily: 'monospace',
-    fontWeight: '700',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  // Secondary Container for expanded view
+  // Secondary Container
   secondaryContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
+    height: '50%',
+    justifyContent: 'center',
   },
-  // Secondary Grid (1×2): Variation and Deviation
+  // Secondary Grid (2R×1C): Variation and Deviation
   secondaryGrid: {
-    marginBottom: 8,
-  },
-  // Grid cell wrapper for proper alignment
-  gridCell: {
-    alignItems: 'flex-end',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    width: '80%',
   },
 });
 

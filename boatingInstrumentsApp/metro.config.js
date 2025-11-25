@@ -10,6 +10,17 @@ const path = require('path');
  */
 const config = getDefaultConfig(__dirname);
 
+// Configure Expo Router entry point resolution
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Redirect expo/AppEntry.js to look for our index.js instead of App
+  if (moduleName === '../../App' && context.originModulePath.includes('expo/AppEntry')) {
+    return context.resolveRequest(context, '../../index', platform);
+  }
+  
+  // Use default resolution for all other modules
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 // Configure path aliases for clean imports
 config.resolver.alias = {
   '@': path.resolve(__dirname, 'src'),

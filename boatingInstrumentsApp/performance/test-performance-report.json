@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-22T10:21:04.453Z",
+  "timestamp": "2025-11-24T13:15:36.485Z",
   "thresholds": {
     "maxRenderTimeMs": 16,
     "maxMemoryIncreaseMb": 50,
@@ -8,92 +8,196 @@
   },
   "metrics": [
     {
-      "renderTime": 19.29925000000003,
-      "memoryUsage": 17.868331909179688,
-      "dataLatency": 27.31200765735844,
-      "throughput": 631.6466228791005,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) Day Theme uses theme.success for success variant (green in day mode)",
-      "timestamp": 1763806864348
+      "renderTime": 15.036833999999999,
+      "memoryUsage": 22.20476531982422,
+      "dataLatency": 42.58504932479465,
+      "throughput": 473.1002836979526,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render modal when visible is true",
+      "timestamp": 1763990136183
     },
     {
-      "renderTime": 2.9644170000001395,
-      "memoryUsage": 28.828765869140625,
-      "dataLatency": 52.947283399490246,
-      "throughput": 497.39666044053126,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) Red-Night Theme uses theme.success for success variant (red in red-night mode)",
-      "timestamp": 1763806864375
+      "renderTime": 3.2814579999999296,
+      "memoryUsage": 20.943702697753906,
+      "dataLatency": 70.96489377093721,
+      "throughput": 464.47949034453865,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render header with title",
+      "timestamp": 1763990136206
     },
     {
-      "renderTime": 3.93487499999992,
-      "memoryUsage": 23.71813201904297,
-      "dataLatency": 62.3464468061705,
-      "throughput": 462.0786082850471,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) Red-Night Theme CRITICAL: success badge has ZERO green light in red-night mode",
-      "timestamp": 1763806864392
+      "renderTime": 4.302874999999858,
+      "memoryUsage": 18.748321533203125,
+      "dataLatency": 74.17883281781678,
+      "throughput": 612.3552596734661,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render close button in header",
+      "timestamp": 1763990136215
     },
     {
-      "renderTime": 6.9444579999999405,
-      "memoryUsage": 20.235565185546875,
-      "dataLatency": 40.16388053720122,
-      "throughput": 500.2165558342847,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) Theme Awareness reacts to theme changes",
-      "timestamp": 1763806864408
+      "renderTime": 3.164167000000134,
+      "memoryUsage": 22.096115112304688,
+      "dataLatency": 51.47367491526481,
+      "throughput": 564.1096546191816,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render footer with cancel and save buttons by default",
+      "timestamp": 1763990136218
     },
     {
-      "renderTime": 3.726375000000189,
-      "memoryUsage": 23.412994384765625,
-      "dataLatency": 64.09379108339783,
-      "throughput": 572.1419830081879,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.primary for primary variant",
-      "timestamp": 1763806864414
+      "renderTime": 3.3221669999998085,
+      "memoryUsage": 25.43714141845703,
+      "dataLatency": 41.37295052211726,
+      "throughput": 470.8616699473088,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should not render footer when showFooter is false",
+      "timestamp": 1763990136222
     },
     {
-      "renderTime": 5.7409999999999854,
-      "memoryUsage": 26.60047149658203,
-      "dataLatency": 58.539164061053214,
-      "throughput": 585.7504272999552,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.secondary for secondary variant",
-      "timestamp": 1763806864421
+      "renderTime": 4.555124999999862,
+      "memoryUsage": 22.24829864501953,
+      "dataLatency": 30.82397777380632,
+      "throughput": 546.0521576519402,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render custom button text",
+      "timestamp": 1763990136232
     },
     {
-      "renderTime": 5.4722499999998035,
-      "memoryUsage": 29.783218383789062,
-      "dataLatency": 68.42662003208503,
-      "throughput": 554.5637836963075,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.success for success variant",
-      "timestamp": 1763806864427
+      "renderTime": 3.575833999999986,
+      "memoryUsage": 25.585906982421875,
+      "dataLatency": 49.44355548408336,
+      "throughput": 555.6954026799534,
+      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render children content",
+      "timestamp": 1763990136236
     },
     {
-      "renderTime": 2.975416999999652,
-      "memoryUsage": 32.970314025878906,
-      "dataLatency": 69.80039921906949,
-      "throughput": 499.95964460732165,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.warning for warning variant",
-      "timestamp": 1763806864431
+      "renderTime": 181.15262500000017,
+      "memoryUsage": 30.688690185546875,
+      "dataLatency": 26.477622938926913,
+      "throughput": 458.5223088223494,
+      "testName": "BaseSettingsModal AC2: Keyboard Navigation should call onClose when Escape key is pressed",
+      "timestamp": 1763990136418
     },
     {
-      "renderTime": 5.860584000000017,
-      "memoryUsage": 29.59320831298828,
-      "dataLatency": 25.996535260515408,
-      "throughput": 640.8727123146916,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.error for danger variant",
-      "timestamp": 1763806864445
+      "renderTime": 2.804583999999977,
+      "memoryUsage": 30.172103881835938,
+      "dataLatency": 43.58018232390071,
+      "throughput": 571.1441471100738,
+      "testName": "BaseSettingsModal AC2: Keyboard Navigation should call onSave when Enter key is pressed",
+      "timestamp": 1763990136428
     },
     {
-      "renderTime": 3.4737919999997757,
-      "memoryUsage": 32.815696716308594,
-      "dataLatency": 32.287912538876306,
-      "throughput": 644.3817416024684,
-      "testName": "Badge - Theme Compliance (Story 13.1.1) All Badge Variants uses theme.surface and border for default variant",
-      "timestamp": 1763806864450
+      "renderTime": 2.5428329999999733,
+      "memoryUsage": 33.4952392578125,
+      "dataLatency": 52.28885001356559,
+      "throughput": 476.24140244380595,
+      "testName": "BaseSettingsModal AC2: Keyboard Navigation should not trigger keyboard handlers when modal is not visible",
+      "timestamp": 1763990136431
+    },
+    {
+      "renderTime": 0.3919170000001486,
+      "memoryUsage": 27.207061767578125,
+      "dataLatency": 66.04270618535432,
+      "throughput": 476.2714343223036,
+      "testName": "BaseSettingsModal AC2: Keyboard Navigation should not setup keyboard listeners on mobile platforms",
+      "timestamp": 1763990136436
+    },
+    {
+      "renderTime": 2.6963329999998678,
+      "memoryUsage": 35.37806701660156,
+      "dataLatency": 28.238361400786026,
+      "throughput": 518.4154844517027,
+      "testName": "BaseSettingsModal AC3: Glove-Friendly Touch Targets should use 44pt touch targets when glove mode is disabled",
+      "timestamp": 1763990136443
+    },
+    {
+      "renderTime": 2.380957999999964,
+      "memoryUsage": 38.696739196777344,
+      "dataLatency": 33.94623647407907,
+      "throughput": 504.113632358953,
+      "testName": "BaseSettingsModal AC3: Glove-Friendly Touch Targets should use 64pt touch targets when glove mode is enabled",
+      "timestamp": 1763990136446
+    },
+    {
+      "renderTime": 3.4967079999998987,
+      "memoryUsage": 30.445419311523438,
+      "dataLatency": 42.0772448155498,
+      "throughput": 644.5220212279207,
+      "testName": "BaseSettingsModal AC3: Glove-Friendly Touch Targets should apply correct button heights based on glove mode",
+      "timestamp": 1763990136450
+    },
+    {
+      "renderTime": 2.494333000000097,
+      "memoryUsage": 33.90019226074219,
+      "dataLatency": 50.08419863857441,
+      "throughput": 506.0504495326393,
+      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onClose when backdrop is pressed and dismissible is true",
+      "timestamp": 1763990136453
+    },
+    {
+      "renderTime": 2.411333999999897,
+      "memoryUsage": 37.10883331298828,
+      "dataLatency": 31.272929343565913,
+      "throughput": 544.1614418430395,
+      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should NOT call onClose when backdrop is pressed and dismissible is false",
+      "timestamp": 1763990136456
+    },
+    {
+      "renderTime": 2.8476670000000013,
+      "memoryUsage": 40.49090576171875,
+      "dataLatency": 74.15494702769823,
+      "throughput": 489.5482944055,
+      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onClose when close button is pressed",
+      "timestamp": 1763990136459
+    },
+    {
+      "renderTime": 2.3674170000001595,
+      "memoryUsage": 37.39696502685547,
+      "dataLatency": 64.13751247612491,
+      "throughput": 630.7667282979822,
+      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onClose when cancel button is pressed",
+      "timestamp": 1763990136467
+    },
+    {
+      "renderTime": 2.320207999999866,
+      "memoryUsage": 40.80939483642578,
+      "dataLatency": 64.15317001421609,
+      "throughput": 617.8031915678214,
+      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onSave when save button is pressed",
+      "timestamp": 1763990136470
+    },
+    {
+      "renderTime": 4.076625000000149,
+      "memoryUsage": 32.715126037597656,
+      "dataLatency": 42.3098818892924,
+      "throughput": 592.3724942218743,
+      "testName": "BaseSettingsModal AC5: Theme Integration should use theme colors for modal styling",
+      "timestamp": 1763990136475
+    },
+    {
+      "renderTime": 2.8765840000000935,
+      "memoryUsage": 35.99608612060547,
+      "dataLatency": 66.81400669139845,
+      "throughput": 647.4507239263362,
+      "testName": "BaseSettingsModal AC5: Theme Integration should apply theme colors to buttons",
+      "timestamp": 1763990136478
+    },
+    {
+      "renderTime": 2.375833000000057,
+      "memoryUsage": 39.36285400390625,
+      "dataLatency": 49.55850446345541,
+      "throughput": 640.1640521745348,
+      "testName": "BaseSettingsModal AC5: Theme Integration should work with red-night theme",
+      "timestamp": 1763990136481
+    },
+    {
+      "renderTime": 2.252875000000131,
+      "memoryUsage": 42.67469787597656,
+      "dataLatency": 44.54283069015218,
+      "throughput": 625.6671540195589,
+      "testName": "BaseSettingsModal Accessibility should have proper accessibility labels",
+      "timestamp": 1763990136484
     }
   ],
   "summary": {
-    "totalTests": 10,
-    "averageRenderTime": 6.039241799999945,
-    "averageMemoryUsage": 26.582669830322267,
-    "averageDataLatency": 50.191404059521766,
-    "averageThroughput": 558.9008739967896,
-    "thresholdViolations": 4
+    "totalTests": 23,
+    "averageRenderTime": 11.162056260869566,
+    "averageMemoryUsage": 31.46967945928159,
+    "averageDataLatency": 49.58791826067221,
+    "averageThroughput": 549.1247338843798,
+    "thresholdViolations": 7
   }
 }

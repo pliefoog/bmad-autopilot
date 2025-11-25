@@ -52,15 +52,15 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   const theme = useTheme();
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   
-  // Get marine safety colors (AC 23)
+  // Get marine safety colors (AC 23) - theme-aware for red-night mode compliance
   const getStatusColor = (state: StatusState): string => {
     switch (state) {
       case 'normal':
-        return '#00AA00'; // Marine standard green
+        return theme.success; // Theme-aware success color (green in day/night, red in red-night)
       case 'caution':
-        return '#FFAA00'; // Marine standard amber/yellow
+        return theme.warning; // Theme-aware warning color (amber/yellow)
       case 'alarm':
-        return '#AA0000'; // Marine standard red
+        return theme.error; // Theme-aware error color (red)
       case 'off':
         return '#2A2A2A'; // Dark gray for off state
       case 'unknown':

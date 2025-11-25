@@ -107,7 +107,9 @@ export class NmeaService {
     this.resetMetrics();
 
     try {
+      console.log('[NmeaService] About to call connectionManager.connect with:', config.connection);
       const connected = await this.connectionManager.connect(config.connection);
+      console.log('[NmeaService] connectionManager.connect returned:', connected);
       if (connected) {
         this.isRunning = true;
         console.log('[NmeaService] Started successfully');

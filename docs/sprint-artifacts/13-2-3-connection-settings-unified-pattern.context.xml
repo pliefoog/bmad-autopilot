@@ -1,0 +1,334 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>13</epicId>
+    <storyId>13.2.3</storyId>
+    <title>Migrate Connection Settings to Unified Pattern</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/13-2-3-connection-settings-unified-pattern.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>boat owner configuring WiFi bridge connections</asA>
+    <iWant>connection settings to use the new unified modal pattern with platform-aware inputs</iWant>
+    <soThat>I can configure connections efficiently with keyboard shortcuts and improved touch targets</soThat>
+    <tasks>
+      <task id="1" acs="1,5">
+        <title>Integrate BaseSettingsModal Foundation</title>
+        <subtasks>
+          <subtask id="1.1">Create new file at `src/components/dialogs/ConnectionConfigDialog.tsx`</subtask>
+          <subtask id="1.2">Import BaseSettingsModal and extend with connection-specific logic</subtask>
+          <subtask id="1.3">Remove custom Modal, drag handle, and custom header/footer</subtask>
+          <subtask id="1.4">Map onClose → onCancel, handleConnect → onSave callbacks</subtask>
+          <subtask id="1.5">Verify modal inherits keyboard navigation from BaseSettingsModal</subtask>
+        </subtasks>
+      </task>
+      <task id="2" acs="2">
+        <title>Replace Native Inputs with Platform Components</title>
+        <subtasks>
+          <subtask id="2.1">Replace IP address TextInput with PlatformTextInput</subtask>
+          <subtask id="2.2">Add validators.ipAddress to IP input with error display</subtask>
+          <subtask id="2.3">Replace port TextInput with PlatformTextInput (numeric keyboard)</subtask>
+          <subtask id="2.4">Add validators.portNumber to port input (1-65535 range)</subtask>
+          <subtask id="2.5">Replace protocol Switch with PlatformToggle (TCP/UDP label)</subtask>
+          <subtask id="2.6">Hide protocol toggle on Web platform (websocket only)</subtask>
+        </subtasks>
+      </task>
+      <task id="3" acs="3">
+        <title>Implement Keyboard Shortcuts</title>
+        <subtasks>
+          <subtask id="3.1">Add Cmd+S/Ctrl+S handler to save settings</subtask>
+          <subtask id="3.2">Configure PlatformTextInput onSubmit to call handleSave</subtask>
+          <subtask id="3.3">Verify Escape key inherited from BaseSettingsModal</subtask>
+          <subtask id="3.4">Test Tab navigation order (IP → Port → Protocol → Reset → Save → Cancel)</subtask>
+          <subtask id="3.5">Add keyboard shortcuts hint in footer (desktop only)</subtask>
+        </subtasks>
+      </task>
+      <task id="4" acs="4">
+        <title>Update Component Location and Imports</title>
+        <subtasks>
+          <subtask id="4.1">Delete old file at `src/widgets/ConnectionConfigDialog.tsx`</subtask>
+          <subtask id="4.2">Search and update all import statements referencing old path</subtask>
+          <subtask id="4.3">Update src/mobile/App.tsx import (line 13)</subtask>
+          <subtask id="4.4">Update any test files referencing old path</subtask>
+          <subtask id="4.5">Verify no breaking changes to props interface</subtask>
+        </subtasks>
+      </task>
+      <task id="5" acs="5">
+        <title>Refactor Button Layout</title>
+        <subtasks>
+          <subtask id="5.1">Remove duplicate Cancel button from content area</subtask>
+          <subtask id="5.2">Keep "Reset to Defaults" button in body (secondary action)</subtask>
+          <subtask id="5.3">Replace footer buttons with PlatformButton components</subtask>
+          <subtask id="5.4">Use variant="primary" for Save, variant="secondary" for Cancel</subtask>
+          <subtask id="5.5">Apply glove-friendly touch targets (56pt tablet)</subtask>
+        </subtasks>
+      </task>
+      <task id="6" acs="1,2,3,4,5">
+        <title>Integration Testing</title>
+        <subtasks>
+          <subtask id="6.1">Test connection flow on iOS (native picker, touch targets)</subtask>
+          <subtask id="6.2">Test connection flow on Android (Material Design inputs)</subtask>
+          <subtask id="6.3">Test connection flow on Web (keyboard shortcuts, dropdown)</subtask>
+          <subtask id="6.4">Validate IP address format (e.g., "192.168.1.100")</subtask>
+          <subtask id="6.5">Validate port number range (1-65535)</subtask>
+          <subtask id="6.6">Test protocol toggle (TCP/UDP/Websocket auto-detection)</subtask>
+          <subtask id="6.7">Verify Reset to Defaults functionality</subtask>
+          <subtask id="6.8">Confirm zero breaking changes (connections still work)</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1" title="BaseSettingsModal Integration - Replace custom modal with unified foundation">
+      <requirement>ConnectionConfigDialog extends BaseSettingsModal component</requirement>
+      <requirement>Modal uses consistent header/footer from BaseSettingsModal</requirement>
+      <requirement>Modal inherits keyboard navigation (Tab, Enter, Esc) from base</requirement>
+      <requirement>Modal respects platform-aware touch targets (44pt phone, 56pt tablet)</requirement>
+      <requirement>Drag handle removed (BaseSettingsModal handles iOS presentation)</requirement>
+    </criterion>
+    <criterion id="2" title="Platform Input Components - Replace native inputs with unified components">
+      <requirement>IP address field uses PlatformTextInput with ipAddress validator</requirement>
+      <requirement>Port number field uses PlatformTextInput with portNumber validator</requirement>
+      <requirement>Protocol toggle uses PlatformToggle (TCP/UDP, hidden on Web)</requirement>
+      <requirement>Input validation displays inline error messages</requirement>
+      <requirement>Focus indicators visible on keyboard navigation (desktop)</requirement>
+    </criterion>
+    <criterion id="3" title="Keyboard Shortcuts Integration - Desktop productivity enhancements">
+      <requirement>Cmd+S (Mac) / Ctrl+S (Windows) saves connection settings</requirement>
+      <requirement>Enter key from any input field submits form</requirement>
+      <requirement>Escape key cancels without saving and closes modal</requirement>
+      <requirement>Tab navigation cycles through all inputs in logical order</requirement>
+      <requirement>Keyboard shortcuts documented in modal footer (desktop only)</requirement>
+    </criterion>
+    <criterion id="4" title="Component Location Consolidation - Move to unified dialogs folder">
+      <requirement>File moved from src/widgets/ConnectionConfigDialog.tsx</requirement>
+      <requirement>New location: src/components/dialogs/ConnectionConfigDialog.tsx</requirement>
+      <requirement>All imports updated across codebase (src/mobile/App.tsx, etc.)</requirement>
+      <requirement>No breaking changes to public API (props interface unchanged)</requirement>
+      <requirement>Zero functional regressions from location change</requirement>
+    </criterion>
+    <criterion id="5" title="Single Cancel Button - Eliminate duplicate dismiss actions">
+      <requirement>Remove duplicate "Cancel" button from body content</requirement>
+      <requirement>Use only footer Cancel button from BaseSettingsModal</requirement>
+      <requirement>"Reset to Defaults" button remains in body (distinct action)</requirement>
+      <requirement>Save/Cancel buttons use PlatformButton component</requirement>
+      <requirement>Button styling consistent with Phase 1 design tokens</requirement>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/stories/epic-13-vip-platform-ux-implementation.md" title="Epic 13: VIP Platform UX Implementation" section="Story 13.2.3: Migrate Connection Settings to Unified Pattern">
+        Defines requirements for refactoring ConnectionConfigDialog to use BaseSettingsModal, PlatformTextInput, PlatformToggle components. Specifies keyboard shortcuts (Cmd+S, Enter, Esc), component location consolidation (src/widgets → src/components/dialogs), and 67% tap reduction by eliminating duplicate Cancel button.
+      </doc>
+      <doc path="docs/sprint-artifacts/13-2-2-platform-input-components.md" title="Story 13.2.2: Platform Input Components" section="Implementation Complete - REVIEW">
+        Previous story creating PlatformTextInput, PlatformToggle, PlatformPicker, PlatformButton components. All 6 implementation tasks complete (4 components, 4 hooks, 1 utility). Provides validators.ipAddress, validators.portNumber, useInputValidation hook, useTouchTargetSize hook for this story's usage.
+      </doc>
+      <doc path="docs/sprint-artifacts/13-2-1-base-settings-modal-foundation.md" title="Story 13.2.1: Base Settings Modal Foundation" section="Implementation Complete - APPROVED">
+        Foundation story creating BaseSettingsModal with keyboard navigation (Tab, Enter, Esc), platform detection (hasKeyboard, isTablet), design tokens (settingsTokens.ts), and touch target sizing (44pt/56pt/64pt). All 5 ACs met, 28/28 tests passing. Provides reusable modal container for this story.
+      </doc>
+      <doc path="docs/SETTINGS-DIALOGS-CROSS-PLATFORM-IMPLEMENTATION.md" title="Settings Dialogs: Cross-Platform Implementation Guide" section="Modal Patterns &amp; Input Components">
+        Comprehensive guide for implementing cross-platform settings dialogs. Includes BaseSettingsModal usage patterns, PlatformTextInput/PlatformToggle integration examples, keyboard shortcut implementation (Cmd+S, Enter, Esc), and migration strategies from legacy modals.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="boatingInstrumentsApp/src/widgets/ConnectionConfigDialog.tsx" kind="component" symbol="ConnectionConfigDialog" lines="1-378" reason="Existing component to be refactored - uses custom Modal, native TextInput, manual validation, duplicate Cancel buttons">
+        Current implementation of ConnectionConfigDialog using custom modal wrapper, native TextInput components, and manual validation logic. Located in src/widgets/ directory. Needs migration to src/components/dialogs/, integration with BaseSettingsModal, replacement of native inputs with PlatformTextInput/PlatformToggle, and keyboard shortcuts implementation.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/base/BaseSettingsModal.tsx" kind="component" symbol="BaseSettingsModal, BaseSettingsModalProps" lines="1-491" reason="Foundation modal component from Story 13.2.1 - provides keyboard navigation, focus trap, theme integration">
+        Reusable BaseSettingsModal component implementing keyboard navigation (Tab, Enter, Esc via KeyboardNavigationService), platform-aware touch targets (44pt/56pt/64pt via useTouchTargetSize), consistent header/footer structure, dismissible/non-dismissible modes, and theme integration. Props: visible, title, onClose, onSave, dismissible, children, showFooter, saveButtonText, cancelButtonText.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformTextInput.tsx" kind="component" symbol="PlatformTextInput, PlatformTextInputProps" lines="1-236" reason="Input component from Story 13.2.2 - provides validation, focus indicators, adaptive sizing">
+        Cross-platform text input with validation support (validator prop), keyboard navigation (onSubmit for Enter key), focus indicators (2px border on desktop), adaptive touch targets (useTouchTargetSize hook), theme integration (useTheme), and error display. Props: value, onChangeText, label, placeholder, validator, onSubmit, keyboardType, error, disabled.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformToggle.tsx" kind="component" symbol="PlatformToggle, PlatformToggleProps" lines="1-150" reason="Toggle component from Story 13.2.2 - native Switch (iOS/Android), custom Web toggle">
+        Platform-native toggle component using native Switch on iOS/Android, custom styled toggle on Web. Includes haptic feedback (useHapticFeedback hook), disabled state (opacity 0.5), accessible label, theme colors. Props: value, onValueChange, label, disabled, color.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/components/dialogs/inputs/PlatformButton.tsx" kind="component" symbol="PlatformButton, PlatformButtonProps" lines="1-180" reason="Button component from Story 13.2.2 - variants, haptic feedback, loading states">
+        Consistent button component with variants (primary, secondary, danger), haptic feedback on press, loading spinner support, adaptive touch targets, press state animation (opacity 0.7). Props: onPress, title, variant, disabled, fullWidth, loading, icon.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/utils/inputValidation.ts" kind="utility" symbol="validators.ipAddress, validators.portNumber" lines="1-235" reason="Validation functions from Story 13.2.2 - IP address and port number validators">
+        Comprehensive validators library with ipAddress (IPv4 dotted-decimal, octet range 0-255), portNumber (1-65535 range), email, required, numberRange factory. Returns error string if invalid, undefined if valid. Used with PlatformTextInput validator prop.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/hooks/useInputValidation.ts" kind="hook" symbol="useInputValidation" lines="1-80" reason="Validation hook from Story 13.2.2 - manages validation state and touched tracking">
+        Hook for managing input validation state with validator function, touched tracking, error state. Returns: error (string | undefined), touched (boolean), validate (function), setTouched (function). Used to integrate validators with PlatformTextInput.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/hooks/useTouchTargetSize.ts" kind="hook" symbol="useTouchTargetSize" lines="1-50" reason="Touch target sizing hook from Story 13.2.2 - returns platform-aware size">
+        Hook returning platform-aware touch target size: 44pt (phone), 56pt (tablet), 64pt (glove mode), 40pt (desktop with keyboard). Uses isTablet, hasKeyboard, isGloveMode from platform detection. Returns number for height/width styling.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/hooks/useInputFocus.ts" kind="hook" symbol="useInputFocus" lines="1-60" reason="Focus management hook from Story 13.2.2 - keyboard navigation support">
+        Hook for managing input focus state with keyboard detection. Returns: inputRef (RefObject), focus (function), blur (function), keyboardEnabled (boolean). Used to enable focus indicators on desktop platforms.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/utils/platformDetection.ts" kind="utility" symbol="hasKeyboard, isTablet, isGloveMode" lines="1-200" reason="Platform detection utilities from Story 13.2.1 - required for adaptive behavior">
+        Platform detection functions: hasKeyboard() (returns true for desktop/web with keyboard), isTablet() (screen width >= 768), isGloveMode() (from settings store). Used throughout Phase 1 components for adaptive sizing and keyboard features.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/theme/settingsTokens.ts" kind="tokens" symbol="SETTINGS_TOKENS, getButtonHeight" lines="1-150" reason="Design tokens from Story 13.2.1 - touch targets, spacing, animation timing">
+        Design tokens for settings UI: touchTargets (phone 44pt, tablet 56pt, glove 64pt, desktop 40pt), spacing scale, animation timing (open 300ms, close 200ms), typography, and getButtonHeight utility function.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/mobile/App.tsx" kind="component" symbol="App" lines="13" reason="Import location that needs updating - references old ConnectionConfigDialog path">
+        Current import: `import { ConnectionConfigDialog } from '../widgets/ConnectionConfigDialog';` on line 13. Needs update to: `import { ConnectionConfigDialog } from '../components/dialogs/ConnectionConfigDialog';` after migration.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/store/themeStore.ts" kind="store" symbol="useTheme, ThemeColors" lines="1-300" reason="Theme hook from Story 13.2.1 - provides reactive color palette">
+        Zustand store providing theme colors (theme.primary, theme.text, theme.background, theme.border, etc.) for day/night/red-night modes. useTheme() hook returns reactive ThemeColors object used by all Phase 1 components.
+      </artifact>
+      <artifact path="boatingInstrumentsApp/src/services/connectionDefaults.ts" kind="service" symbol="getConnectionDefaults" lines="1-50" reason="Connection configuration defaults - provides initial IP/port/protocol values">
+        Service function returning default connection configuration: { ip: '192.168.1.1', port: 10110, protocol: 'tcp' }. Used for "Reset to Defaults" functionality in ConnectionConfigDialog.
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="npm" manifestPath="boatingInstrumentsApp/package.json">
+        <package name="react" version="18.2.0" usage="Core React library for component structure" />
+        <package name="react-native" version="0.74.1" usage="Cross-platform UI framework (Modal, TextInput, Switch, Platform, KeyboardAvoidingView)" />
+        <package name="expo" version="~51.0.8" usage="Development platform and build toolchain" />
+        <package name="expo-haptics" version="~13.0.1" usage="Haptic feedback for PlatformToggle and PlatformButton on mobile" />
+        <package name="zustand" version="^4.5.2" usage="State management for theme and settings stores" />
+        <package name="typescript" version="~5.3.3" usage="Type safety for component props and interfaces" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Must extend BaseSettingsModal from Story 13.2.1 for keyboard navigation and focus management</constraint>
+    <constraint type="architecture">Must use PlatformTextInput, PlatformToggle, PlatformButton from Story 13.2.2 for input consistency</constraint>
+    <constraint type="architecture">Must maintain existing ConnectionConfigDialogProps interface for backward compatibility</constraint>
+    <constraint type="architecture">Must move component from src/widgets/ to src/components/dialogs/ for architectural alignment</constraint>
+    <constraint type="design">Touch targets must be 44pt (phone), 56pt (tablet), 64pt (glove mode) per settingsTokens</constraint>
+    <constraint type="design">Focus indicators required on desktop (2px blue border) for Tab navigation accessibility</constraint>
+    <constraint type="design">All styling must use theme colors via useTheme() hook for day/night/red-night mode support</constraint>
+    <constraint type="breaking-changes">NO breaking changes - existing connection flow must continue to function identically</constraint>
+    <constraint type="breaking-changes">Props interface (ConnectionConfigDialogProps) must remain unchanged for consuming components</constraint>
+    <constraint type="breaking-changes">Connection validation logic (shouldEnableConnectButton callback) must be preserved</constraint>
+    <constraint type="testing">Manual testing required on iOS, Android, Web platforms per Story 13.2.1/13.2.2 testing patterns</constraint>
+    <constraint type="testing">Regression testing required - all connection scenarios must work after refactor</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="ConnectionConfigDialogProps" kind="TypeScript interface" signature="interface ConnectionConfigDialogProps {
+  visible: boolean;
+  onClose: () => void;
+  onConnect: (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => void;
+  onDisconnect: () => void; // Deprecated but kept for compatibility
+  currentConfig?: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' };
+  shouldEnableConnectButton?: (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => boolean;
+}" path="boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx">
+      Props interface for ConnectionConfigDialog - MUST remain unchanged for backward compatibility
+    </interface>
+    <interface name="BaseSettingsModal Props Mapping" kind="Component usage pattern" signature="<BaseSettingsModal
+  visible={visible}
+  title=&quot;Connection Settings&quot;
+  subtitle=&quot;NMEA Bridge Details&quot;
+  onSave={handleConnect}
+  onCancel={onClose}
+  saveLabel=&quot;Connect&quot;
+  cancelLabel=&quot;Cancel&quot;
+  saveDisabled={!isConnectButtonEnabled()}
+  helpId=&quot;connection-setup&quot;
+>
+  {/* Form content using PlatformTextInput, PlatformToggle */}
+</BaseSettingsModal>" path="boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx">
+      Mapping pattern from ConnectionConfigDialog props to BaseSettingsModal props
+    </interface>
+    <interface name="PlatformTextInput for IP Address" kind="Component usage pattern" signature="<PlatformTextInput
+  label=&quot;Host (IP or DNS name)&quot;
+  value={ip}
+  onChangeText={setIp}
+  placeholder=&quot;e.g. 192.168.1.100 or bridge.local&quot;
+  keyboardType=&quot;default&quot;
+  validator={validators.ipAddress}
+  onSubmit={handleConnect}
+  testID=&quot;connection-ip-input&quot;
+/>" path="boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx">
+      IP address input with validation - replaces native TextInput
+    </interface>
+    <interface name="PlatformTextInput for Port" kind="Component usage pattern" signature="<PlatformTextInput
+  label=&quot;Port&quot;
+  value={port}
+  onChangeText={setPort}
+  placeholder=&quot;Enter port number&quot;
+  keyboardType=&quot;numeric&quot;
+  validator={validators.portNumber}
+  onSubmit={handleConnect}
+  testID=&quot;connection-port-input&quot;
+/>" path="boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx">
+      Port number input with validation - replaces native TextInput
+    </interface>
+    <interface name="PlatformToggle for Protocol" kind="Component usage pattern" signature="{!isWeb && (
+  <PlatformToggle
+    label={useTcp ? &quot;Protocol: TCP&quot; : &quot;Protocol: UDP&quot;}
+    value={useTcp}
+    onValueChange={setUseTcp}
+    testID=&quot;connection-protocol-toggle&quot;
+  />
+)}" path="boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx">
+      Protocol toggle (TCP/UDP) - hidden on Web (websocket only), replaces native Switch
+    </interface>
+    <interface name="Keyboard Shortcuts Handler" kind="React useEffect hook" signature="useEffect(() => {
+  if (!visible || !hasKeyboard()) return;
+  
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault();
+      if (isConnectButtonEnabled()) {
+        handleConnect();
+      }
+    }
+  };
+  
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [visible, ip, port, useTcp]);" path="boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx">
+      Cmd+S / Ctrl+S keyboard shortcut handler for saving settings (desktop only)
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing follows Story 13.2.1/13.2.2 manual testing pattern: No automated unit tests due to React Native platform detection limitations in test environment. Instead, use comprehensive manual testing on physical devices/browsers with visual validation of touch targets, keyboard navigation, and platform-native rendering. Focus on regression testing to ensure existing connection flow continues to work.
+    </standards>
+    <locations>
+      boatingInstrumentsApp/__tests__/tier1-unit/components/dialogs/
+      boatingInstrumentsApp/__tests__/tier2-integration/settings/
+    </locations>
+    <ideas>
+      <test ac="1" title="ConnectionConfigDialog extends BaseSettingsModal with keyboard navigation">
+        Manual: Open connection settings on desktop browser. Press Tab key. Verify focus moves through inputs (IP → Port → Protocol → Reset → Save → Cancel). Press Enter in IP field. Verify form submits. Press Escape. Verify modal closes.
+      </test>
+      <test ac="1" title="Modal uses consistent header/footer from BaseSettingsModal">
+        Manual: Open connection settings on iOS, Android, Web. Verify header shows "Connection Settings" title with close button. Verify footer shows Cancel and Connect buttons with consistent styling across platforms.
+      </test>
+      <test ac="2" title="IP address validation displays inline error messages">
+        Manual: Enter invalid IP "999.999.999.999". Verify error appears: "IP address octets must be between 0 and 255". Enter "192.168.1". Verify error: "Invalid IP address format (expected: xxx.xxx.xxx.xxx)". Enter "192.168.1.1". Verify error clears.
+      </test>
+      <test ac="2" title="Port number validation displays inline error messages">
+        Manual: Enter invalid port "99999". Verify error: "Port must be between 1 and 65535". Enter "abc". Verify error: "Port must be a number". Enter "10110". Verify error clears.
+      </test>
+      <test ac="2" title="Protocol toggle uses PlatformToggle (hidden on Web)">
+        Manual iOS: Verify native Switch appears with "Protocol: TCP" / "Protocol: UDP" label. Manual Android: Verify Material Design toggle. Manual Web: Verify protocol toggle is hidden (websocket only).
+      </test>
+      <test ac="3" title="Cmd+S / Ctrl+S keyboard shortcut saves settings">
+        Manual Mac: Open connection settings in browser. Enter valid IP/port. Press Cmd+S. Verify settings save and modal closes. Manual Windows: Press Ctrl+S. Verify same behavior.
+      </test>
+      <test ac="3" title="Enter key from any input submits form">
+        Manual: Focus IP input field. Type "192.168.1.1". Press Enter. Verify form submits (if port valid). Focus port input. Type "10110". Press Enter. Verify form submits.
+      </test>
+      <test ac="3" title="Tab navigation cycles through inputs in logical order">
+        Manual desktop: Open settings modal. Press Tab repeatedly. Verify order: IP input → Port input → Protocol toggle → Reset button → Connect button → Cancel button → back to IP.
+      </test>
+      <test ac="4" title="Component moved to src/components/dialogs/ with updated imports">
+        Code inspection: Verify file exists at `src/components/dialogs/ConnectionConfigDialog.tsx`. Verify old file deleted: `src/widgets/ConnectionConfigDialog.tsx`. Search imports: Verify `src/mobile/App.tsx` line 13 updated to new path. Verify no references to old path remain.
+      </test>
+      <test ac="4" title="Zero functional regressions from location change">
+        Manual: Test full connection flow (open modal → enter IP/port → select TCP/UDP → connect). Verify connection establishes successfully. Test Reset to Defaults. Verify restores 192.168.1.1:10110. Test Cancel. Verify closes without saving.
+      </test>
+      <test ac="5" title="Single Cancel button in footer (duplicate removed from body)">
+        Manual: Open connection settings on all platforms. Count Cancel buttons. Verify only ONE Cancel button appears (in footer). Verify "Reset to Defaults" button remains in body (distinct from Cancel).
+      </test>
+      <test ac="5" title="Save/Cancel buttons use PlatformButton with correct variants">
+        Manual: Inspect footer buttons. Verify Connect button uses primary variant (theme.primary background). Verify Cancel button uses secondary variant. Verify touch targets: 56pt on tablet, 44pt on phone.
+      </test>
+    </ideas>
+  </tests>
+</story-context>

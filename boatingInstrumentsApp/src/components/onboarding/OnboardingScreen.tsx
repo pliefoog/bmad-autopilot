@@ -75,15 +75,15 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   const renderStepContent = () => {
     switch (currentStep) {
       case 'welcome':
-        return <WelcomeStep />;
+        return <WelcomeStep styles={styles} />;
       case 'connection':
-        return <ConnectionStep />;
+        return <ConnectionStep styles={styles} />;
       case 'widgets':
-        return <WidgetsStep />;
+        return <WidgetsStep styles={styles} />;
       case 'alarms':
-        return <AlarmsStep />;
+        return <AlarmsStep styles={styles} />;
       case 'accessibility':
-        return <AccessibilityStep />;
+        return <AccessibilityStep styles={styles} />;
       default:
         return null;
     }
@@ -155,7 +155,11 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 };
 
 // Placeholder step components - will be implemented individually
-const WelcomeStep: React.FC = () => {
+interface StepProps {
+  styles: ReturnType<typeof createStyles>;
+}
+
+const WelcomeStep: React.FC<StepProps> = ({ styles }) => {
   const theme = useTheme();
   return (
     <View style={styles.stepContainer}>
@@ -170,16 +174,16 @@ const WelcomeStep: React.FC = () => {
         autopilot control, and critical alarm monitoring.
       </Text>
       <View style={styles.featureList}>
-        <FeatureItem icon="wifi" text="WiFi bridge connectivity" theme={theme} />
-        <FeatureItem icon="speedometer" text="Real-time marine instruments" theme={theme} />
-        <FeatureItem icon="notifications" text="Critical safety alarms" theme={theme} />
-        <FeatureItem icon="compass" text="Raymarine autopilot control" theme={theme} />
+        <FeatureItem icon="wifi" text="WiFi bridge connectivity" theme={theme} styles={styles} />
+        <FeatureItem icon="speedometer" text="Real-time marine instruments" theme={theme} styles={styles} />
+        <FeatureItem icon="notifications" text="Critical safety alarms" theme={theme} styles={styles} />
+        <FeatureItem icon="compass" text="Raymarine autopilot control" theme={theme} styles={styles} />
       </View>
     </View>
   );
 };
 
-const ConnectionStep: React.FC = () => {
+const ConnectionStep: React.FC<StepProps> = ({ styles }) => {
   const theme = useTheme();
   return (
     <View style={styles.stepContainer}>
@@ -194,16 +198,16 @@ const ConnectionStep: React.FC = () => {
         from your boat's instruments.
       </Text>
       <View style={styles.instructionList}>
-        <InstructionItem number="1" text="Connect to your boat's WiFi network" theme={theme} />
-        <InstructionItem number="2" text="Enter bridge IP address (e.g., 192.168.1.1)" theme={theme} />
-        <InstructionItem number="3" text="Configure port (typically 10110)" theme={theme} />
-        <InstructionItem number="4" text="Test connection and start receiving data" theme={theme} />
+        <InstructionItem number="1" text="Connect to your boat's WiFi network" theme={theme} styles={styles} />
+        <InstructionItem number="2" text="Enter bridge IP address (e.g., 192.168.1.1)" theme={theme} styles={styles} />
+        <InstructionItem number="3" text="Configure port (typically 10110)" theme={theme} styles={styles} />
+        <InstructionItem number="4" text="Test connection and start receiving data" theme={theme} styles={styles} />
       </View>
     </View>
   );
 };
 
-const WidgetsStep: React.FC = () => {
+const WidgetsStep: React.FC<StepProps> = ({ styles }) => {
   const theme = useTheme();
   return (
     <View style={styles.stepContainer}>
@@ -218,10 +222,10 @@ const WidgetsStep: React.FC = () => {
         Monitor depth, speed, wind, GPS, heading, and more.
       </Text>
       <View style={styles.widgetGrid}>
-        <WidgetPreview icon="water" label="Depth" theme={theme} />
-        <WidgetPreview icon="speedometer" label="Speed" theme={theme} />
-        <WidgetPreview icon="navigate" label="Wind" theme={theme} />
-        <WidgetPreview icon="location" label="GPS" theme={theme} />
+        <WidgetPreview icon="water" label="Depth" theme={theme} styles={styles} />
+        <WidgetPreview icon="speedometer" label="Speed" theme={theme} styles={styles} />
+        <WidgetPreview icon="navigate" label="Wind" theme={theme} styles={styles} />
+        <WidgetPreview icon="location" label="GPS" theme={theme} styles={styles} />
       </View>
       <Text style={[styles.tipText, { color: theme.warning }]}>
         💡 Tap widgets to expand, long-press to pin important ones
@@ -230,7 +234,7 @@ const WidgetsStep: React.FC = () => {
   );
 };
 
-const AlarmsStep: React.FC = () => {
+const AlarmsStep: React.FC<StepProps> = ({ styles }) => {
   const theme = useTheme();
   return (
     <View style={styles.stepContainer}>
@@ -250,18 +254,21 @@ const AlarmsStep: React.FC = () => {
           title="Shallow Water" 
           description="Alerts when depth falls below your minimum"
           theme={theme}
+          styles={styles}
         />
         <AlarmItem 
           icon="flame" 
           title="Engine Overheat" 
           description="Warns of dangerous coolant temperatures"
           theme={theme}
+          styles={styles}
         />
         <AlarmItem 
           icon="compass" 
           title="Autopilot Failure" 
           description="Critical alert for autopilot disconnection"
           theme={theme}
+          styles={styles}
         />
       </View>
       <Text style={[styles.warningText, { color: theme.error }]}>
@@ -271,7 +278,7 @@ const AlarmsStep: React.FC = () => {
   );
 };
 
-const AccessibilityStep: React.FC = () => {
+const AccessibilityStep: React.FC<StepProps> = ({ styles }) => {
   const theme = useTheme();
   return (
     <View style={styles.stepContainer}>
@@ -291,24 +298,28 @@ const AccessibilityStep: React.FC = () => {
           title="Screen Reader Support" 
           description="VoiceOver and TalkBack compatible"
           theme={theme}
+          styles={styles}
         />
         <AccessibilityFeature 
           icon="contrast" 
           title="High Contrast Mode" 
           description="Enhanced visibility in all conditions"
           theme={theme}
+          styles={styles}
         />
         <AccessibilityFeature 
           icon="text" 
           title="Large Text Support" 
           description="Scalable fonts for readability"
           theme={theme}
+          styles={styles}
         />
         <AccessibilityFeature 
           icon="hand-left" 
           title="Marine Touch Targets" 
           description="Large buttons for wet hands & gloves"
           theme={theme}
+          styles={styles}
         />
       </View>
     </View>
@@ -320,9 +331,10 @@ interface FeatureItemProps {
   icon: string;
   text: string;
   theme: any;
+  styles: ReturnType<typeof createStyles>;
 }
 
-const FeatureItem: React.FC<FeatureItemProps> = ({ icon, text, theme }) => (
+const FeatureItem: React.FC<FeatureItemProps> = ({ icon, text, theme, styles }) => (
   <View style={styles.featureItem}>
     <Ionicons name={icon as any} size={24} color={theme.primary} />
     <Text style={[styles.featureText, { color: theme.text }]}>{text}</Text>
@@ -333,9 +345,10 @@ interface InstructionItemProps {
   number: string;
   text: string;
   theme: any;
+  styles: ReturnType<typeof createStyles>;
 }
 
-const InstructionItem: React.FC<InstructionItemProps> = ({ number, text, theme }) => (
+const InstructionItem: React.FC<InstructionItemProps> = ({ number, text, theme, styles }) => (
   <View style={styles.instructionItem}>
     <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
       <Text style={styles.instructionNumberText}>{number}</Text>
@@ -348,9 +361,10 @@ interface WidgetPreviewProps {
   icon: string;
   label: string;
   theme: any;
+  styles: ReturnType<typeof createStyles>;
 }
 
-const WidgetPreview: React.FC<WidgetPreviewProps> = ({ icon, label, theme }) => (
+const WidgetPreview: React.FC<WidgetPreviewProps> = ({ icon, label, theme, styles }) => (
   <View style={[styles.widgetPreview, { backgroundColor: theme.surface, borderColor: theme.border }]}>
     <Ionicons name={icon as any} size={32} color={theme.primary} />
     <Text style={[styles.widgetLabel, { color: theme.text }]}>{label}</Text>
@@ -362,9 +376,10 @@ interface AlarmItemProps {
   title: string;
   description: string;
   theme: any;
+  styles: ReturnType<typeof createStyles>;
 }
 
-const AlarmItem: React.FC<AlarmItemProps> = ({ icon, title, description, theme }) => (
+const AlarmItem: React.FC<AlarmItemProps> = ({ icon, title, description, theme, styles }) => (
   <View style={[styles.alarmItem, { backgroundColor: theme.surface }]}>
     <Ionicons name={icon as any} size={24} color={theme.error} />
     <View style={styles.alarmContent}>
@@ -379,9 +394,10 @@ interface AccessibilityFeatureProps {
   title: string;
   description: string;
   theme: any;
+  styles: ReturnType<typeof createStyles>;
 }
 
-const AccessibilityFeature: React.FC<AccessibilityFeatureProps> = ({ icon, title, description, theme }) => (
+const AccessibilityFeature: React.FC<AccessibilityFeatureProps> = ({ icon, title, description, theme, styles }) => (
   <View style={[styles.accessibilityFeature, { backgroundColor: theme.surface }]}>
     <Ionicons name={icon as any} size={24} color={theme.success} />
     <View style={styles.accessibilityContent}>

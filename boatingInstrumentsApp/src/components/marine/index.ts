@@ -60,10 +60,12 @@ export const MarineComponents = {
 } as const;
 
 // Marine safety color constants used by components
+// NOTE: These are day/night mode defaults. Components should use theme context
+// for automatic red-night mode compliance (e.g., theme.success, theme.warning, theme.error)
 export const MARINE_COLORS = {
-  NORMAL: '#00AA00',   // Marine standard green
-  CAUTION: '#FFAA00',  // Marine standard amber/yellow
-  ALARM: '#AA0000',    // Marine standard red
+  NORMAL: '#00AA00',   // Marine standard green (day/night only - use theme.success for red-night)
+  CAUTION: '#FFAA00',  // Marine standard amber/yellow (use theme.warning for theme-aware)
+  ALARM: '#AA0000',    // Marine standard red (use theme.error for theme-aware)
   OFF: '#2A2A2A',      // Dark gray for off state
   UNKNOWN: '#666666',  // Medium gray for unknown state
 } as const;

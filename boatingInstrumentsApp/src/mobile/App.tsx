@@ -10,7 +10,7 @@ import { DynamicDashboard } from '../widgets/DynamicDashboard';
 import HeaderBar from '../components/HeaderBar';
 import { ToastContainer } from '../components/toast';
 import { AlarmBanner } from '../widgets/AlarmBanner';
-import { ConnectionConfigDialog } from '../widgets/ConnectionConfigDialog';
+import { ConnectionConfigDialog } from '../components/dialogs/ConnectionConfigDialog';
 import { AutopilotControlScreen } from '../widgets/AutopilotControlScreen';
 import { AutopilotFooter } from '../components/organisms/AutopilotFooter';
 import { OnboardingScreen } from '../components/onboarding/OnboardingScreen';
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    marginBottom: 88, // Account for autopilot footer
+    paddingBottom: 88, // Account for absolutely positioned autopilot footer
   },
 });
 

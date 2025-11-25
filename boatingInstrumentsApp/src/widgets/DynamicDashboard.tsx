@@ -13,7 +13,12 @@ import { WidgetFactory } from '../services/WidgetFactory';
 import UniversalIcon from '../components/atoms/UniversalIcon';
 
 // Render the appropriate widget component using registry
-function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): React.ReactElement | null {
+function renderWidget(
+  key: string, 
+  onWidgetError?: (widgetId: string) => void,
+  width?: number,
+  height?: number
+): React.ReactElement | null {
   // Use the local extractBaseWidgetType function for proper multi-instance handling
   const baseType = extractBaseWidgetType(key);
   const registeredWidget = WidgetRegistry.getWidget(baseType);
@@ -21,7 +26,7 @@ function renderWidget(key: string, onWidgetError?: (widgetId: string) => void): 
   if (registeredWidget) {
     const Component = registeredWidget.component;
     const title = WidgetFactory.getWidgetTitle(key);
-    return <Component key={key} id={key} title={title} />;
+    return <Component key={key} id={key} title={title} width={width} height={height} />;
   }
   
   console.error(`[DynamicDashboard] Widget lookup failed:`, {
@@ -162,112 +167,65 @@ export const DynamicDashboard: React.FC = () => {
     };
   }, []); // Empty dependency array - only set up once
 
-  // ✨ Flow layout calculation that prevents overlapping
-  const calculateFlowLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
-    const screenWidth = dimensions.width;
-    const screenHeight = dimensions.height;
-    const margin = 0;
-    const spacing = 0;
-    const availableWidth = screenWidth - (2 * margin);
+  // ✨ NEW: Grid-based layout calculation with fixed widget sizes
+  const calculateGridLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
+    const headerHeight = 60;
+    const footerHeight = 88;
     
-    console.log('[DynamicDashboard] Layout calculation:', {
-      screenWidth,
-      availableWidth,
-      totalWidgets: widgets.length
+    // Convert store widgets to WidgetLayout format expected by service
+    const widgetLayouts = widgets.map(w => ({
+      id: w.id,
+      type: w.type || extractBaseWidgetType(w.id),
+      visible: w.layout?.visible ?? true,
+      order: w.order ?? 0,
+      position: w.layout?.position || { x: 0, y: 0 },
+      size: w.layout?.size || { width: 200, height: 140 },
+      expanded: w.layout?.expanded ?? true,
+    }));
+    
+    // Convert to DynamicWidgetLayout using new grid system
+    const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, headerHeight, footerHeight);
+    
+    const gridConfig = DynamicLayoutService.getGridConfig(headerHeight, footerHeight);
+    
+    console.log('[DynamicDashboard] Grid layout calculated:', {
+      totalWidgets: widgets.length,
+      visibleWidgets: widgetLayouts.filter(w => w.visible).length,
+      columns: gridConfig.columns,
+      rows: gridConfig.rows,
+      widgetSize: `${gridConfig.widgetWidth}x${gridConfig.widgetHeight}`,
+      widgetsPerPage: gridConfig.columns * gridConfig.rows,
+      usePagination: gridConfig.rows < 999,
+      screenWidth: dimensions.width,
+      screenHeight: dimensions.height,
+      totalPages: Math.ceil(widgetLayouts.filter(w => w.visible).length / (gridConfig.columns * gridConfig.rows)),
+      gridLayoutCount: gridLayout.length,
+      firstWidgetDimensions: gridLayout[0] ? `${gridLayout[0].width}x${gridLayout[0].height}` : 'none'
     });
     
-    // Row-based layout: widgets flow left-to-right using natural widths
-    let currentX = 0;
-    let currentY = 0;
-    let currentRow = 0;
-    let rowMaxHeight = 0;
-    let currentRowWidth = 0;
-    const rowHeights: number[] = [];
-    
-    return widgets.map((widget, index) => {
-      // Get widget's natural dimensions from registry
-      const registeredWidget = WidgetRegistry.getWidget(widget.type);
-      const baseWidth = registeredWidget?.meta.defaultSize.width || 200;
-      const baseCollapsedHeight = registeredWidget?.meta.defaultSize.height || 140;
-      const baseExpandedHeight = baseCollapsedHeight * 2.086; // Maintain ratio
-      
-      const isExpanded = widget.layout?.expanded || false;
-      const widgetWidth = baseWidth;
-      const widgetHeight = isExpanded ? baseExpandedHeight : baseCollapsedHeight;
-      
-      // Check if widget fits in current row (considering spacing)
-      const needsSpacing = currentRowWidth > 0 ? spacing : 0;
-      const wouldExceed = currentRowWidth + needsSpacing + widgetWidth > availableWidth;
-      
-      if (wouldExceed && currentRowWidth > 0) {
-        // Save current row's max height
-        rowHeights[currentRow] = rowMaxHeight;
-        
-        // Move to next row - widget doesn't fit
-        console.log('[DynamicDashboard] Starting new row:', {
-          widgetId: widget.id,
-          widgetType: widget.type,
-          currentRowWidth,
-          widgetWidth,
-          availableWidth,
-          rowNumber: currentRow + 1
-        });
-        
-        currentRow++;
-        currentX = 0;
-        currentY += rowMaxHeight + spacing;
-        currentRowWidth = 0;
-        rowMaxHeight = 0;
-      }
-      
-      // Place widget at current position
-      const position = { x: currentX, y: currentY };
-      
-      // Track tallest widget in this row
-      rowMaxHeight = Math.max(rowMaxHeight, widgetHeight);
-      
-      // Update position for next widget
-      currentX += widgetWidth + spacing;
-      currentRowWidth += (needsSpacing + widgetWidth);
-      
-      return {
-        id: widget.id,
-        position,
-        size: { 
-          width: widgetWidth, 
-          height: widgetHeight 
-        },
-        visible: widget.layout?.visible ?? true,
-        order: widget.order ?? index,
-        expanded: isExpanded,
-        gridPosition: { row: currentRow, col: 0 },
-        gridSize: { width: 1, height: 1 },
-        fixedWidth: widgetWidth,
-        collapsedHeight: baseCollapsedHeight,
-        expandedHeight: baseExpandedHeight,
-      };
-    });
+    return gridLayout;
   }, [dimensions]);
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
     console.log('[DynamicDashboard] Layout recalculation triggered:', {
-      reason: 'storeWidgets or dimensions changed',
+      reason: 'storeWidgets or dimensions or calculateGridLayout changed',
       widgetCount: storeWidgets.length,
       dimensions: dimensions,
       timestamp: Date.now()
     });
-    const dynamicLayout = calculateFlowLayout(storeWidgets);
-    console.log('[DynamicDashboard] New layout calculated:', {
-      layoutCount: dynamicLayout.length,
-      firstWidget: dynamicLayout[0] ? {
-        id: dynamicLayout[0].id,
-        position: dynamicLayout[0].position,
-        size: dynamicLayout[0].size
+    const gridLayout = calculateGridLayout(storeWidgets);
+    console.log('[DynamicDashboard] Grid layout calculated:', {
+      layoutCount: gridLayout.length,
+      firstWidget: gridLayout[0] ? {
+        id: gridLayout[0].id,
+        page: gridLayout[0].page,
+        gridPosition: gridLayout[0].gridPosition,
+        size: `${gridLayout[0].width}x${gridLayout[0].height}`
       } : null
     });
-    setLayout(dynamicLayout);
-  }, [storeWidgets, calculateFlowLayout, dimensions]);
+    setLayout(gridLayout);
+  }, [storeWidgets, calculateGridLayout, dimensions]);
 
   // Save layout to widget store (pure widget store architecture)
   const saveLayout = useCallback(async (newLayout: DynamicWidgetLayout[]) => {
@@ -321,10 +279,10 @@ export const DynamicDashboard: React.FC = () => {
     const { updateDashboard, currentDashboard } = useWidgetStore.getState();
     updateDashboard(currentDashboard, { widgets: updatedWidgets });
     
-    // Recalculate entire layout since row heights affect all subsequent rows
-    const recalculatedLayout = calculateFlowLayout(updatedWidgets);
+    // Recalculate grid layout with new expanded state
+    const recalculatedLayout = calculateGridLayout(updatedWidgets);
     setLayout(recalculatedLayout);
-  }, [storeWidgets, calculateFlowLayout]);
+  }, [storeWidgets, calculateGridLayout]);
 
   // Handle adding widgets from selector (pure widget store)
   const handleAddWidget = useCallback(async (selectedIds: string[]) => {
@@ -491,85 +449,34 @@ export const DynamicDashboard: React.FC = () => {
   }, []);
 
   // Calculate pages based on accumulated widget heights
-  const { pages, totalPages } = useMemo(() => {
-    const headerHeight = 60; // HeaderBar height
-    const footerHeight = 88; // AutopilotFooter base height (without safe area)
-    const paginationControlsHeight = 60; // Page indicators
-    const fabHeight = 100; // FAB button
-    const availableHeight = dimensions.height - headerHeight - footerHeight - paginationControlsHeight - fabHeight;
-    
-    const visibleWidgets = storeWidgets.filter(w => w.layout?.visible ?? true);
-    
-    // Group widgets into pages based on flex wrap rows and height
-    const pgs: typeof visibleWidgets[][] = [];
-    let currentPageWidgets: typeof visibleWidgets = [];
-    let currentPageHeight = 0;
-    let currentRowWidth = 0;
-    let currentRowMaxHeight = 0;
-    
-    visibleWidgets.forEach((widget) => {
-      // Get widget dimensions from registry or measured heights
-      const registeredWidget = WidgetRegistry.getWidget(widget.type);
-      const baseWidth = registeredWidget?.meta.defaultSize.width || 200;
-      const measuredHeight = widgetHeights.get(widget.id);
-      const isExpanded = widgetExpanded[widget.id] || false; // Use store's expanded state
-      const baseHeight = registeredWidget?.meta.defaultSize.height || 140;
-      const widgetHeight = measuredHeight || (isExpanded ? baseHeight * 2.086 : baseHeight);
-      
-      // Check if widget wraps to new row
-      const wouldWrapToNewRow = currentRowWidth + baseWidth > dimensions.width;
-      
-      if (wouldWrapToNewRow && currentRowWidth > 0) {
-        // Commit current row height
-        currentPageHeight += currentRowMaxHeight;
-        currentRowWidth = baseWidth;
-        currentRowMaxHeight = widgetHeight;
-        
-        // Check if new row exceeds page height
-        if (currentPageHeight + currentRowMaxHeight > availableHeight && currentPageWidgets.length > 0) {
-          // Start new page
-          pgs.push(currentPageWidgets);
-          currentPageWidgets = [widget];
-          currentPageHeight = currentRowMaxHeight;
-        } else {
-          // Add to current page
-          currentPageWidgets.push(widget);
-        }
-      } else {
-        // Add to current row
-        currentRowWidth += baseWidth;
-        currentRowMaxHeight = Math.max(currentRowMaxHeight, widgetHeight);
-        currentPageWidgets.push(widget);
-      }
-    });
-    
-    // Add final page
-    if (currentPageWidgets.length > 0) {
-      pgs.push(currentPageWidgets);
-    }
-    
-    console.log('[DynamicDashboard] Pagination:', {
-      totalPages: pgs.length,
-      availableHeight,
-      widgetHeightsCount: widgetHeights.size
-    });
-    
-    return { pages: pgs, totalPages: pgs.length };
-  }, [storeWidgets, dimensions, widgetHeights, widgetExpanded]);
+  // Calculate total pages using new grid system
+  const totalPages = useMemo(() => {
+    const headerHeight = 60;
+    const footerHeight = 88;
+    return DynamicLayoutService.getTotalPages(layout, headerHeight, footerHeight);
+  }, [layout, dimensions]);
 
-  // Get widgets for current page
+  // Get widgets for current page using new grid system  
   const currentPageWidgets = useMemo(() => {
-    if (totalPages <= 1) {
-      return storeWidgets.filter(w => w.layout?.visible ?? true);
-    }
-    return pages[currentPage] || [];
-  }, [pages, currentPage, totalPages, storeWidgets]);
+    return DynamicLayoutService.getWidgetsForPage(layout, currentPage);
+  }, [layout, currentPage]);
 
   const usePagination = totalPages > 1;
+  
+  // Determine if we should use scroll mode (mobile) or pagination (tablet/desktop)
+  const useScrollMode = useMemo(() => {
+    const isScrollMode = dimensions.width < 768;
+    console.log('[DynamicDashboard] useScrollMode recalculated:', { 
+      width: dimensions.width, 
+      isScrollMode 
+    });
+    return isScrollMode;
+  }, [dimensions.width]);
 
   console.log('[DynamicDashboard] Render mode:', {
     totalPages,
     usePagination,
+    useScrollMode,
     currentPage,
     widgetCount: currentPageWidgets.length,
     dimensions
@@ -595,43 +502,81 @@ export const DynamicDashboard: React.FC = () => {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
-      {/* Widget container with flex wrap layout */}
-      <View style={styles.pageContainer}>
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.widgetContainer}
-          showsVerticalScrollIndicator={!usePagination}
-          scrollEnabled={!usePagination}
+      {/* Widget Display Area - Conditional: ScrollView (mobile) or Fixed Grid (tablet/desktop) */}
+      {useScrollMode ? (
+        // MOBILE: Scrollable grid that fills screen height
+        <ScrollView 
+          style={styles.pageContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
         >
-          {/* Flex wrap container - widgets automatically flow into rows */}
-          <View style={styles.widgetFlexContainer}>
+          <View style={styles.widgetGridContainer}>
             {currentPageWidgets.map((widget) => (
               <View 
                 key={widget.id} 
-                style={styles.widgetWrapper}
-                onLayout={(event) => {
-                  const { height } = event.nativeEvent.layout;
-                  handleWidgetLayout(widget.id, height);
-                }}
+                style={[
+                  styles.widgetGridItem,
+                  {
+                    width: widget.width,
+                    height: widget.height,
+                  }
+                ]}
               >
                 <WidgetErrorBoundary
                   widgetId={widget.id}
+                  theme={theme}
                   onReload={() => {
                     // Force re-render
                     setLayout(prev => [...prev]);
                   }}
                   onRemove={() => handleRemoveWidget(widget.id)}
                 >
-                  {renderWidget(widget.id, handleWidgetError)}
+                  <View style={styles.widgetContentWrapper}>
+                    {renderWidget(widget.id, handleWidgetError, widget.width, widget.height)}
+                  </View>
                 </WidgetErrorBoundary>
               </View>
             ))}
           </View>
         </ScrollView>
-      </View>
-
-      {/* Pagination Controls - show when using pagination */}
-      {usePagination && (
+      ) : (
+        // TABLET/DESKTOP: Fixed grid with pagination
+        <View style={styles.pageContainer}>
+          <View style={styles.paginatedContainer}>
+            <View style={styles.widgetGridContainer}>
+              {currentPageWidgets.map((widget) => (
+                <View 
+                  key={widget.id} 
+                  style={[
+                    styles.widgetGridItem,
+                    {
+                      width: widget.width,
+                      height: widget.height,
+                    }
+                  ]}
+                >
+                  <WidgetErrorBoundary
+                    widgetId={widget.id}
+                    theme={theme}
+                    onReload={() => {
+                      // Force re-render
+                      setLayout(prev => [...prev]);
+                    }}
+                    onRemove={() => handleRemoveWidget(widget.id)}
+                  >
+                    <View style={styles.widgetContentWrapper}>
+                      {renderWidget(widget.id, handleWidgetError, widget.width, widget.height)}
+                    </View>
+                  </WidgetErrorBoundary>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
+      
+      {/* Pagination Controls - show only for tablet/desktop with multiple pages */}
+      {!useScrollMode && usePagination && (
         <View style={styles.paginationContainer}>
           {/* Previous Page Button */}
           <TouchableOpacity
@@ -715,16 +660,41 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
   pageContainer: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  paginatedContainer: {
+    flex: 1,
+    overflow: 'hidden',
+  },
   scrollContainer: {
     flex: 1,
   },
   widgetContainer: {
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   widgetFlexContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
+    paddingHorizontal: 0,
+    paddingTop: 0,
+  },
+  widgetGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
+    padding: 0,
+    gap: 0,
+  },
+  widgetGridItem: {
+    // Fixed size set inline based on grid config
+    overflow: 'hidden',
+  },
+  widgetContentWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   widgetWrapper: {
     // Let widgets size naturally based on content
@@ -750,7 +720,7 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: 0,
   },
   paginationArrowDisabled: {
     opacity: 0.3,
@@ -759,13 +729,13 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: 0,
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginHorizontal: 4,
+    marginHorizontal: 0,
   },
   paginationDotActive: {
     width: 12,

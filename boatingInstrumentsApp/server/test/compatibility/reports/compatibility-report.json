@@ -1,0 +1,18 @@
+{
+  "scenarios": {
+    "passed": 5,
+    "total": 5
+  },
+  "protocols": {
+    "passed": 3,
+    "total": 3
+  },
+  "dataFormats": {
+    "passed": 8,
+    "total": 8
+  },
+  "api": {
+    "passed": 12,
+    "total": 12
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "trends": {
+    "throughput": [
+      620,
+      635,
+      650,
+      645,
+      650
+    ],
+    "memory": [
+      88,
+      85,
+      87,
+      84,
+      85
+    ],
+    "responseTime": [
+      80,
+      78,
+      75,
+      77,
+      75
+    ]
+  },
+  "analysis": {
+    "throughputTrend": "improving",
+    "memoryTrend": "stable",
+    "responseTrend": "improving"
+  }
+}

@@ -1,4 +1,4 @@
-import { useTheme } from "../../../src/store/themeStore";
+import { useThemeStore } from "../../../src/store/themeStore";
 
 describe('ThemeStore', () => {
   beforeEach(() => {
@@ -112,6 +112,43 @@ describe('ThemeStore', () => {
         expect(colors.primary).toContain('DC2626'); // Red primary color
       }
     });
+  });
+
+  test('red-night mode should have zero green colors (Story 13.1.1 AC1)', () => {
+    const store = useThemeStore.getState();
+    store.setMode('red-night');
+    const { colors } = useThemeStore.getState();
+    
+    // Extract all color values from the theme
+    const colorValues = Object.values(colors);
+    
+    // Check each color for green violations
+    colorValues.forEach((color) => {
+      if (typeof color === 'string' && color.startsWith('#')) {
+        // Parse hex color (handle both #RGB and #RRGGBB formats)
+        const hex = color.replace('#', '');
+        const r = parseInt(hex.length === 3 ? hex[0] + hex[0] : hex.substring(0, 2), 16);
+        const g = parseInt(hex.length === 3 ? hex[1] + hex[1] : hex.substring(2, 4), 16);
+        const b = parseInt(hex.length === 3 ? hex[2] + hex[2] : hex.substring(4, 6), 16);
+        
+        // In red-night mode, check red spectrum compliance
+        // Allow some green in dark reds (e.g., #7F1D1D has R=127, G=29, B=29)
+        // But reject bright greens like #00AA00 (R=0, G=170, B=0)
+        if (g > 50) {
+          // Significant green channel - must be red-dominated
+          expect(r).toBeGreaterThan(g); // Red should be greater than green
+          // For red spectrum, R should be at least 1.5x G in bright colors
+          if (r > 100) {
+            expect(r).toBeGreaterThan(g * 1.5);
+          }
+        }
+      }
+    });
+    
+    // Specific check: success color should NOT be green (#10B981 or similar)
+    expect(colors.success).not.toContain('10B981');
+    expect(colors.success).not.toContain('00AA00');
+    expect(colors.success).toContain('DC2626'); // Should be red
   });
 
   test('theme switching performance should be smooth', () => {

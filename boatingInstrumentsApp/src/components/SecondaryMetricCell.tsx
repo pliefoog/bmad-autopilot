@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
 import { MetricDisplayData } from '../types/MetricDisplayData';
@@ -16,19 +16,29 @@ interface SecondaryMetricCellProps {
   // Common props
   state?: 'normal' | 'warning' | 'alarm'; // Inherits from parent widget
   compact?: boolean;             // Use minimal spacing for dense 2×3 layouts
-  align?: 'left' | 'right';      // Horizontal alignment (default: left)
+  align?: 'left' | 'right';      // Horizontal alignment (default: right)
   style?: any;
+  maxWidth?: number; // Optional max width constraint for dynamic sizing
+  minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
   testID?: string;               // Accessibility identifier
+  
+  // Responsive font sizes (optional - overrides defaults)
+  fontSize?: {
+    mnemonic?: number;
+    value?: number;
+    unit?: number;
+  };
 }
 
 /**
  * SecondaryMetricCell - Secondary metric display component for expanded widget views
- * Matches PrimaryMetricCell sizing but with reduced visual weight (muted colors)
- * - Mnemonic: 12pt, uppercase, semibold, theme.textSecondary
- * - Value: 36pt, monospace, bold, theme.textSecondary (MUTED - not theme.text)
- * - Unit: 12pt, regular, theme.textSecondary
- * - Compact mode: Reduced spacing for dense 2×3 layouts
+ * Matches PrimaryMetricCell sizing and positioning with responsive font sizes
+ * - Mnemonic: Responsive (default 12pt), uppercase, semibold, theme.textSecondary
+ * - Value: Responsive (default 36pt), monospace, bold, theme.textSecondary (MUTED - not theme.text)
+ * - Unit: Responsive (default 12pt), regular, theme.textSecondary
+ * - Right-aligned by default to match PrimaryMetricCell
  * - Key difference: Values use textSecondary instead of text for reduced emphasis
+ * - Responsive: fontSize prop allows dynamic scaling based on widget size
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   data,
@@ -38,9 +48,12 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   precision = 1,
   state = 'normal',
   compact = false,
-  align: legacyAlign = 'left',
+  align: legacyAlign = 'right', // Default to 'right' to match PrimaryMetricCell
   style,
+  maxWidth,
+  minWidth: legacyMinWidth,
   testID,
+  fontSize: customFontSize,
 }) => {
   const theme = useTheme();
   
@@ -50,10 +63,53 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   const unit = data?.unit ?? legacyUnit ?? '';
   
   // Use layout information from MetricDisplayData if available
+  const minWidth = data?.layout?.minWidth ?? legacyMinWidth;
   const alignment = data?.layout?.alignment === 'left' ? 'left' : 
-                   data?.layout?.alignment === 'right' ? 'right' : legacyAlign;
+                   data?.layout?.alignment === 'right' ? 'right' : 
+                   legacyAlign === 'left' ? 'left' : 'right';
+
+  // Calculate dynamic font sizes based on content length and constraints
+  const dynamicSizes = useMemo(() => {
+    const displayValue = (value !== undefined && value !== null && value !== '') 
+      ? (typeof value === 'number' ? value.toFixed(precision) : value.toString())
+      : '---';
+    
+    const baseValueSize = customFontSize?.value ?? 36;
+    const baseMnemonicSize = customFontSize?.mnemonic ?? 12;
+    const baseUnitSize = customFontSize?.unit ?? 12;
+    
+    // Adjust value font size based on text length and available width
+    let valueFontSize = baseValueSize;
+    let mnemonicFontSize = baseMnemonicSize;
+    let unitFontSize = baseUnitSize;
+    
+    if (maxWidth) {
+      // Estimate text width (rough approximation)
+      const estimatedValueWidth = displayValue.length * (baseValueSize * 0.6);
+      const estimatedMnemonicWidth = mnemonic.length * (baseMnemonicSize * 0.5);
+      const estimatedUnitWidth = unit.length * (baseUnitSize * 0.5);
+      
+      // Scale down if content would exceed max width
+      if (estimatedValueWidth > maxWidth * 0.8) {
+        valueFontSize = Math.max(20, (maxWidth * 0.8) / (displayValue.length * 0.6));
+      }
+      
+      if (estimatedMnemonicWidth + estimatedUnitWidth > maxWidth * 0.9) {
+        const scale = (maxWidth * 0.9) / (estimatedMnemonicWidth + estimatedUnitWidth);
+        mnemonicFontSize = Math.max(10, baseMnemonicSize * scale);
+        unitFontSize = Math.max(10, baseUnitSize * scale);
+      }
+    }
+    
+    return {
+      value: valueFontSize,
+      mnemonic: mnemonicFontSize,
+      unit: unitFontSize,
+    };
+  }, [value, mnemonic, unit, maxWidth, customFontSize, precision]);
   
-  const styles = createStyles(theme, compact, alignment);
+  // Pass dynamic sizes to styles
+  const styles = createStyles(theme, dynamicSizes, alignment);
 
   const getValueColor = () => {
     switch (state) {
@@ -83,15 +139,35 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
   const displayValue = formatValue(value);
 
-  // Apply layout styling from MetricDisplayData if available
+  // Apply consistent width styling - prefer MetricDisplayData layout info
   const containerStyle = [
     styles.container,
     style,
+    minWidth && { minWidth }, 
+    maxWidth && { maxWidth },
+    // Use MetricDisplayData layout info if available
     data?.layout && {
       minWidth: data.layout.minWidth,
-      alignItems: alignment === 'right' ? 'flex-end' : 'flex-start',
+      alignItems: alignment === 'center' ? 'center' as const : 
+                 alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
     }
   ];
+
+  // Value container styling with consistent width and typography for stability  
+  const valueContainerStyle = [
+    styles.valueContainer,
+    // Use MetricDisplayData layout info if available
+    data?.layout && {
+      alignItems: alignment === 'center' ? 'center' as const : 
+                 alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
+    }
+  ];
+
+  // Value text styling
+  const valueTextStyle = {
+    ...styles.value,
+    color: getValueColor(),
+  };
 
   return (
     <View style={containerStyle} testID={testID || "secondary-metric-cell"}>
@@ -100,19 +176,15 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         <Text style={styles.mnemonic} testID="secondary-metric-mnemonic">
           {mnemonic.toUpperCase()}
         </Text>
-        {unit && (
-          <Text style={styles.unit} testID="secondary-metric-unit">
-            ({unit})
-          </Text>
-        )}
+        <Text style={styles.unit} testID="secondary-metric-unit">
+          ({unit || ''})
+        </Text>
       </View>
       {/* Second line: Value */}
-      <View style={styles.valueContainer}>
+      <View style={valueContainerStyle}>
         <Text 
-          style={[styles.value, { color: getValueColor() }]} 
+          style={valueTextStyle}
           testID="secondary-metric-value"
-          numberOfLines={1}
-          ellipsizeMode="tail"
         >
           {displayValue}
         </Text>
@@ -121,46 +193,55 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   );
 };
 
-const createStyles = (theme: any, compact: boolean, align: 'left' | 'right' = 'left') =>
+const createStyles = (
+  theme: any, 
+  sizes: { value: number; mnemonic: number; unit: number },
+  align: 'left' | 'right' | 'center' = 'right'
+) =>
   StyleSheet.create({
     container: {
-      alignItems: align === 'right' ? 'flex-end' : 'flex-start',
+      alignItems: align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start'),
       justifyContent: 'center',
-      paddingVertical: compact ? 2 : 3,
-      paddingHorizontal: compact ? 4 : 6,
-      minHeight: compact ? 50 : 60,
+      paddingVertical: 4, // Match PrimaryMetricCell padding
+      paddingHorizontal: 8, // Match PrimaryMetricCell padding
+      minHeight: 70, // Match PrimaryMetricCell minHeight
     },
     mnemonicUnitRow: {
       flexDirection: 'row',
       alignItems: 'baseline',
-      marginBottom: compact ? 2 : 3,
+      justifyContent: align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start'),
+      marginBottom: 4, // Match PrimaryMetricCell spacing
     },
     mnemonic: {
-      fontSize: 12, // Match PrimaryMetricCell (was 10pt)
+      fontSize: sizes.mnemonic, // Dynamic sizing based on content and maxWidth
       fontWeight: '600',
       color: theme.textSecondary,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       marginRight: 4, // Match PrimaryMetricCell spacing
+      flexShrink: 1, // Allow shrinking if needed
     },
     unit: {
-      fontSize: 12, // Match PrimaryMetricCell (was 10pt)
+      fontSize: sizes.unit, // Dynamic sizing based on content and maxWidth
       fontWeight: '400',
       color: theme.textSecondary,
       letterSpacing: 0,
       marginLeft: 2, // Match PrimaryMetricCell spacing
+      marginTop: 0, // baseline alignment
+      flexShrink: 0, // Don't shrink units
     },
     valueContainer: {
       flexDirection: 'row',
       alignItems: 'baseline',
-      justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+      justifyContent: align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start'),
     },
     value: {
-      fontSize: 36, // Match PrimaryMetricCell (was 24pt)
+      fontSize: sizes.value, // Dynamic sizing based on content and maxWidth
       fontWeight: '700',
       fontFamily: 'monospace',
       letterSpacing: 0,
-      lineHeight: 40, // Match PrimaryMetricCell line height
+      lineHeight: sizes.value + 4, // Match PrimaryMetricCell line height calculation
+      flexShrink: 0, // Prevent shrinking to maintain consistent width
     },
   });
 

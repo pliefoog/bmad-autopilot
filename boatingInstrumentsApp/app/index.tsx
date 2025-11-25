@@ -1,5 +1,5 @@
 // Import the original boating instruments app
-import App from '../App';
+import App from '../src/mobile/App';
 
 /**
  * Expo Router Entry Point

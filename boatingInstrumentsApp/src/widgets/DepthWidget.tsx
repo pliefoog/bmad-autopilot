@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Svg, { Polyline } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -9,28 +10,30 @@ import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { DepthSensorData } from '../types/SensorData';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface DepthWidgetProps {
   id: string;
   title: string;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 /**
  * Depth Widget - Water depth sounder per ui-architecture.md v2.3
- * Primary Grid (1×1): Current depth with large value
- * Secondary Grid (1×2): Minimum depth (shoal alarm) + Maximum depth from session
+ * Primary Grid (2×1): Current depth with large value + Trend Line Graph
+ * Secondary Grid (2×1): Minimum depth (shoal alarm) + Maximum depth from session
  * Uses centralized unit system (meters/feet/fathoms) configurable via hamburger menu
  */
-export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }) => {
+export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
   
   // NEW: Clean semantic data presentation system
   const depthPresentation = useDepthPresentation();
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -99,11 +102,10 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
 
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
-    toggleWidgetExpansion(id);
     updateWidgetInteraction(id);
-  }, [id, toggleWidgetExpansion, updateWidgetInteraction]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPressOnCaret = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
@@ -203,65 +205,74 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title }
 
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPressOnCaret}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <Text style={[styles.pinIcon, { color: theme.primary }]}>📌</Text>
+              <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPressOnCaret}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={[styles.caret, { color: theme.textSecondary }]}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
-      {/* PRIMARY GRID (1×1): Current depth with large value */}
+      {/* PRIMARY GRID (2×1): Current depth with large value */}
       <View style={styles.depthContainer}>
         <PrimaryMetricCell
           mnemonic={depthSourceInfo.shortLabel || "DEPTH"}
           {...convertDepth.current}
           state={isStale ? 'warning' : depthState}
+          fontSize={{
+            mnemonic: fontSize.primaryLabel,
+            value: fontSize.primaryValue,
+            unit: fontSize.primaryUnit,
+          }}
         />
+        {/* Trend Line Graph */}
+        <View style={styles.trendLineContainer}>
+          <TrendLine 
+            data={depthHistory.depths.map(d => d.value).slice(-20)}
+            width={200}
+            height={60}
+            color={isStale ? theme.warning : depthState === 'alarm' ? theme.error : depthState === 'warning' ? theme.warning : theme.primary}
+            theme={theme}
+          />
+        </View>
       </View>
 
-      {/* SECONDARY GRID (1×2): Session minimum and maximum depths */}
-      {expanded && (
-        <View style={styles.secondaryContainer}>
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                mnemonic="MIN"
-                {...convertDepth.sessionMin}
-                state="normal"
-                compact={true}
-              />
-            </View>
-          </View>
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                mnemonic="MAX"
-                {...convertDepth.sessionMax}
-                state="normal"
-                compact={true}
-              />
-            </View>
-          </View>
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+      {/* SECONDARY GRID (2×1): Session minimum and maximum depths */}
+      <View style={styles.secondaryContainer}>
+        <View style={styles.secondaryGrid}>
+          <SecondaryMetricCell
+            mnemonic="MIN"
+            {...convertDepth.sessionMin}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <SecondaryMetricCell
+            mnemonic="MAX"
+            {...convertDepth.sessionMax}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });
@@ -270,9 +281,11 @@ DepthWidget.displayName = 'DepthWidget';
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 8,
     borderWidth: 1,
     borderColor: theme.border,
   },
@@ -313,26 +326,73 @@ const createStyles = (theme: any) => StyleSheet.create({
   pinIcon: {
     fontSize: 12,
   },
-  // Primary Grid: Depth display (1×1)
+  // Primary Grid: Depth display (2×1)
   depthContainer: {
-    marginBottom: 8,
-    minHeight: 80, // Ensure consistent height with other widgets
+    height: '50%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  // Secondary Container for expanded view
+  trendLineContainer: {
+    marginTop: 8,
+    alignItems: 'center',
+    height: 60,
+  },
+  // Horizontal separator between primary and secondary views
+  separator: {
+    height: 1,
+    marginVertical: 4,
+  },
+  // Secondary Container
   secondaryContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
+    height: '50%',
+    justifyContent: 'center',
   },
-  // Secondary Grid (1×2): Min and Max depths
+  // Secondary Grid (2R×1C): Min and Max depths
   secondaryGrid: {
-    marginBottom: 8,
-  },
-  // Grid cell wrapper for proper alignment
-  gridCell: {
-    alignItems: 'flex-end',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    width: '80%',
   },
 });
+
+// Simple trend line component
+const TrendLine: React.FC<{ 
+  data: number[]; 
+  width: number; 
+  height: number; 
+  color: string;
+  theme: any;
+}> = ({ data, width, height, color, theme }) => {
+  if (data.length < 2) {
+    return (
+      <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>No trend data</Text>
+      </View>
+    );
+  }
+  
+  const minDepth = Math.min(...data);
+  const maxDepth = Math.max(...data);
+  const range = maxDepth - minDepth || 1; // Avoid division by zero
+  
+  const points = data.map((depth, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((depth - minDepth) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+  
+  return (
+    <Svg width={width} height={height}>
+      <Polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+    </Svg>
+  );
+};
 
 export default DepthWidget;

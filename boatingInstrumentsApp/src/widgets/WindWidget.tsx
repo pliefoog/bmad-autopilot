@@ -11,10 +11,13 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface WindWidgetProps {
   id: string;
   title: string;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 /**
@@ -22,8 +25,9 @@ interface WindWidgetProps {
  * Primary Grid (2×2): AWA, AWS, Gust (apparent wind)
  * Secondary Grid (2×2): TWA, TWS, True Gust (calculated true wind)
  */
-export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) => {
+export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
   
   // NEW: Clean semantic data presentation system for wind
   const windPresentation = useWindPresentation();
@@ -36,9 +40,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
   }, [presentationStore.selectedPresentations.wind]);
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -237,7 +239,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
         value: '---',
         unit: '°', // Presentation symbol for degrees
         rawValue: 0,
-        layout: { minWidth: 50, alignment: 'right' },
+        layout: { minWidth: 70, alignment: 'right' },
         presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
         status: { isValid: false, error: 'No data', isFallback: true }
       };
@@ -267,7 +269,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
       value: Math.round(angleValue).toString(),
       unit: '°', // Presentation symbol for degrees
       rawValue: angleValue,
-      layout: { minWidth: 50, alignment: 'right' },
+      layout: { minWidth: 70, alignment: 'right' },
       presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
       status: { isValid: true, isFallback: false }
     };
@@ -315,11 +317,10 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
 
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
-    toggleWidgetExpansion(id);
     updateWidgetInteraction(id);
-  }, [id, toggleWidgetExpansion, updateWidgetInteraction]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPressOnCaret = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
@@ -348,104 +349,126 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title }) 
           </Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPressOnCaret}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={[styles.caret, { color: theme.textSecondary }]}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
       {/* PRIMARY GRID (2×2): Apparent Wind vs True Wind */}
       <View style={styles.primaryContainer}>
-        {/* First Row: AWS and TWS */}
         <View style={styles.primaryGrid}>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
               data={windDisplayData.windSpeed}
               state={isStale ? 'warning' : 'normal'}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
             />
           </View>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
               data={windDisplayData.trueWindSpeed}
               state={isStale ? 'warning' : 'normal'}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
             />
           </View>
-        </View>
-        {/* Second Row: AWA and TWA */}
-        <View style={styles.primaryGrid}>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
               data={windDisplayData.windAngle}
               state={isStale ? 'warning' : 'normal'}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
             />
           </View>
           <View style={styles.gridCell}>
             <PrimaryMetricCell
               data={windDisplayData.trueWindAngle}
               state={isStale ? 'warning' : 'normal'}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
             />
           </View>
         </View>
       </View>
 
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
       {/* SECONDARY GRID (2×2): Wind Gusts and Variations */}
-      {expanded && (
-        <View style={styles.secondaryContainer}>
-          {/* First Row: AWS Gust and TWS Gust */}
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={windDisplayData.apparentGust}
-                state="normal"
-                compact={true}
-              />
-            </View>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={windDisplayData.trueGust}
-                state="normal"
-                compact={true}
-              />
-            </View>
+      <View style={styles.secondaryContainer}>
+        <View style={styles.secondaryGrid}>
+          <View style={styles.secondaryGridCell}>
+            <SecondaryMetricCell
+              data={windDisplayData.apparentGust}
+              state="normal"
+              compact={true}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
           </View>
-          {/* Second Row: AWA Var and TWA Var */}
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={windDisplayData.apparentVariation}
-                state="normal"
-                compact={true}
-              />
-            </View>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={windDisplayData.trueVariation}
-                state="normal"
-                compact={true}
-              />
-            </View>
+          <View style={styles.secondaryGridCell}>
+            <SecondaryMetricCell
+              data={windDisplayData.trueGust}
+              state="normal"
+              compact={true}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
+          </View>
+          <View style={styles.secondaryGridCell}>
+            <SecondaryMetricCell
+              data={windDisplayData.apparentVariation}
+              state="normal"
+              compact={true}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
+          </View>
+          <View style={styles.secondaryGridCell}>
+            <SecondaryMetricCell
+              data={windDisplayData.trueVariation}
+              state="normal"
+              compact={true}
+              fontSize={{
+                mnemonic: fontSize.primaryLabel,
+                value: fontSize.primaryValue,
+                unit: fontSize.primaryUnit,
+              }}
+            />
           </View>
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });
@@ -454,9 +477,11 @@ WindWidget.displayName = 'WindWidget';
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 8,
     borderWidth: 1,
     borderColor: theme.border,
   },
@@ -489,34 +514,52 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   // Primary Container for 2x2 wind grid
   primaryContainer: {
-    marginBottom: 8,
+    height: '50%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   // Primary Grid (2×2): Apparent vs True Wind
   primaryGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    minHeight: 80, // Ensure adequate height for content
+    alignContent: 'center',
+    alignItems: 'center',
+    width: '80%',
+    alignSelf: 'center',
   },
-  // Secondary Container for expanded view
+  // Horizontal separator between primary and secondary views
+  separator: {
+    height: 1,
+    marginVertical: 4,
+  },
+  // Secondary Container
   secondaryContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
+    height: '50%',
+    justifyContent: 'center',
   },
   // Secondary Grid (2×2): Gust and Variation data
   secondaryGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    alignContent: 'center',
+    alignItems: 'center',
+    width: '80%',
+    alignSelf: 'center',
+  },
+  secondaryGridCell: {
+    width: '48%',
     marginBottom: 8,
+    alignItems: 'flex-end', // Right-align the metric cell within its grid space
   },
   emptyCell: {
     flex: 1,
   },
   // Grid cell wrapper for proper alignment within grid
   gridCell: {
-    flex: 1,
+    width: '48%',
+    marginBottom: 8,
     alignItems: 'flex-end', // Right-align the metric cell within its grid space
   },
 });

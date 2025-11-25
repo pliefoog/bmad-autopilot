@@ -574,6 +574,82 @@ class ScenarioDataSource extends EventEmitter {
           console.log(`🎛️ Added YAML RSA generator: ${generatorName} at ${frequencyHz}Hz`);
           break;
 
+        case 'DBT':
+        case 'DPT':
+        case 'DBK':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateDepthSentence(sentenceDef.type)
+          });
+          console.log(`📏 Added YAML ${sentenceDef.type} depth generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'MTW':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateMTWSentence()
+          });
+          console.log(`🌡️ Added YAML MTW water temp generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'VHW':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateVHWSentence()
+          });
+          console.log(`⛵ Added YAML VHW water speed generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'VTG':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateVTGSentence()
+          });
+          console.log(`🧭 Added YAML VTG track generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'MWV':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateMWVSentence()
+          });
+          console.log(`💨 Added YAML MWV wind generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'GGA':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateGGASentence()
+          });
+          console.log(`📍 Added YAML GGA GPS generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'RMC':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateRMCSentence()
+          });
+          console.log(`📡 Added YAML RMC GPS generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
+        case 'HDT':
+        case 'HDG':
+        case 'HDM':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generateHeadingSentence(sentenceDef.type)
+          });
+          console.log(`🧭 Added YAML ${sentenceDef.type} heading generator: ${generatorName} at ${frequencyHz}Hz`);
+          break;
+
         default:
           console.warn(`⚠️ Unknown YAML sentence type: ${sentenceDef.type}`);
       }
@@ -584,6 +660,82 @@ class ScenarioDataSource extends EventEmitter {
    * Generate comprehensive battery XDR sentences from YAML configuration
    */
   generateYAMLBatterySentence(sentenceDef) {
+    // New YAML structure: data is inside sentenceDef.instances array
+    if (!sentenceDef.instances || sentenceDef.instances.length === 0) {
+      // Fallback to old structure for backward compatibility
+      return this.generateYAMLBatterySentenceOldFormat(sentenceDef);
+    }
+
+    const messages = [];
+    
+    // Process each battery instance defined in the sentence
+    sentenceDef.instances.forEach(instanceDef => {
+      const instance = instanceDef.instance;
+      const batteryData = instanceDef.data;
+      
+      if (!batteryData) return;
+      
+      // Get voltage from nested data structure
+      const voltage = batteryData.voltage ? this.getYAMLDataValue('voltage', batteryData.voltage) : null;
+    
+      if (voltage !== null) {
+        const batteryId = `BAT_${String(instance).padStart(2, '0')}`;
+        const batteryName = instanceDef.name || `Battery ${instance}`;
+        
+        // Get other values from data structure
+        const current = batteryData.current ? this.getYAMLDataValue('current', batteryData.current) : null;
+        const temperature = batteryData.temperature ? this.getYAMLDataValue('temperature', batteryData.temperature) : null;
+        const soc = batteryData.state_of_charge ? this.getYAMLDataValue('state_of_charge', batteryData.state_of_charge) : null;
+        
+        // 1. Voltage XDR sentence
+        const voltageSentence = `$IIXDR,U,${voltage.toFixed(2)},V,${batteryId}`;
+        messages.push(voltageSentence + '*' + this.calculateChecksum(voltageSentence.substring(1)));
+        
+        // 2. Current (AMP) XDR sentence
+        if (current !== null) {
+          const currentSentence = `$IIXDR,I,${current.toFixed(2)},A,${batteryId}`;
+          messages.push(currentSentence + '*' + this.calculateChecksum(currentSentence.substring(1)));
+        }
+        
+        // 3. Temperature (TMP) XDR sentence
+        if (temperature !== null) {
+          const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${batteryId}_TMP`;
+          messages.push(tempSentence + '*' + this.calculateChecksum(tempSentence.substring(1)));
+        }
+        
+        // 4. State of Charge (SOC) XDR sentence
+        if (soc !== null) {
+          const socSentence = `$IIXDR,P,${soc.toFixed(0)},P,${batteryId}_SOC`;
+          messages.push(socSentence + '*' + this.calculateChecksum(socSentence.substring(1)));
+        }
+        
+        // 5. Nominal Voltage (NOM) XDR sentence
+        const nominalVoltage = instanceDef.nominal_voltage || 12;
+        const nomSentence = `$IIXDR,U,${nominalVoltage.toFixed(0)},V,${batteryId}_NOM`;
+        messages.push(nomSentence + '*' + this.calculateChecksum(nomSentence.substring(1)));
+        
+        // 6. Battery Capacity (CAP) XDR sentence
+        if (instanceDef.capacity) {
+          const capSentence = `$IIXDR,V,${instanceDef.capacity.toFixed(0)},H,${batteryId}_CAP`;
+          messages.push(capSentence + '*' + this.calculateChecksum(capSentence.substring(1)));
+        }
+        
+        // 7. Battery Chemistry (CHEM) XDR sentence
+        const chemistry = instanceDef.chemistry || 'Unknown';
+        const chemSentence = `$IIXDR,G,${chemistry},,${batteryId}_CHEM`;
+        messages.push(chemSentence + '*' + this.calculateChecksum(chemSentence.substring(1)));
+        
+        console.log(`🔋 Generated battery ${instance} (${batteryName}): V=${voltage.toFixed(2)}V, I=${current?.toFixed(2)}A, SOC=${soc?.toFixed(0)}%, T=${temperature?.toFixed(1)}°C`);
+      }
+    });
+
+    return messages;
+  }
+
+  /**
+   * OLD FORMAT: Generate battery XDR from top-level scenario.data.battery_voltage
+   */
+  generateYAMLBatterySentenceOldFormat(sentenceDef) {
     const instance = sentenceDef.instance || 0;
     
     if (!this.scenario?.data?.battery_voltage) {
@@ -603,36 +755,21 @@ class ScenarioDataSource extends EventEmitter {
       const messages = [];
       const batteryId = `BAT_${instance}`;
       
-      // 1. Voltage XDR sentence
+      // Generate comprehensive battery data using calculated values
       const voltageSentence = `$IIXDR,U,${voltage.toFixed(1)},V,${batteryId}`;
       messages.push(voltageSentence + '*' + this.calculateChecksum(voltageSentence.substring(1)));
       
-      // 2. Current (AMP) XDR sentence - calculate realistic current based on voltage
       const current = this.calculateBatteryCurrent(voltage, instance, batteryConfig);
       const currentSentence = `$IIXDR,I,${current.toFixed(1)},A,${batteryId}`;
       messages.push(currentSentence + '*' + this.calculateChecksum(currentSentence.substring(1)));
       
-      // 3. Temperature (TMP) XDR sentence - battery temperature
       const temperature = this.calculateBatteryTemperature(voltage, instance);
       const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${batteryId}_TMP`;
       messages.push(tempSentence + '*' + this.calculateChecksum(tempSentence.substring(1)));
       
-      // 4. State of Charge (SOC) XDR sentence - percentage
       const soc = this.calculateBatterySOC(voltage, instance);
       const socSentence = `$IIXDR,P,${soc.toFixed(0)},P,${batteryId}_SOC`;
       messages.push(socSentence + '*' + this.calculateChecksum(socSentence.substring(1)));
-      
-      // 5. Nominal Voltage (NOM) XDR sentence - rated voltage
-      const nominalVoltage = this.getBatteryNominalVoltage(instance);
-      const nomSentence = `$IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
-      messages.push(nomSentence + '*' + this.calculateChecksum(nomSentence.substring(1)));
-      
-      // 6. Battery Chemistry (CHEM) XDR sentence - battery type
-      const chemistry = this.getBatteryChemistry(instance);
-      const chemSentence = `$IIXDR,G,${chemistry},,${batteryId}_CHEM`;
-      messages.push(chemSentence + '*' + this.calculateChecksum(chemSentence.substring(1)));
-      
-      console.log(`🔋 Generated comprehensive battery data for ${batteryId}: V=${voltage.toFixed(1)}V, I=${current.toFixed(1)}A, SOC=${soc.toFixed(0)}%, T=${temperature.toFixed(1)}°C`);
       
       return messages;
     }
@@ -770,57 +907,78 @@ class ScenarioDataSource extends EventEmitter {
    * Generate tank XDR sentence from YAML configuration
    */
   generateYAMLTankSentence(sentenceDef) {
-    const instance = sentenceDef.instance || 0;
-    
-    if (!this.scenario?.data?.tank_levels) {
+    // New YAML structure: data is inside sentenceDef.instances array
+    if (!sentenceDef.instances || sentenceDef.instances.length === 0) {
       return null;
     }
 
-    const tankEntries = Object.entries(this.scenario.data.tank_levels);
-    if (instance >= tankEntries.length) {
-      return null;
-    }
-
-    const [tankKey, tankConfig] = tankEntries[instance];
-    const level = this.getYAMLDataValue(tankKey, tankConfig);
+    const messages = [];
     
-    if (level !== null) {
-      const sentence = `$IIXDR,P,${level.toFixed(1)},P,${tankKey}`;
-      const checksum = this.calculateChecksum(sentence.substring(1));
-      return `${sentence}*${checksum}`;
-    }
+    // Process each tank instance defined in the sentence
+    sentenceDef.instances.forEach(instanceDef => {
+      const instance = instanceDef.instance;
+      const tankType = instanceDef.tank_type || 'FUEL';
+      const tankData = instanceDef.data;
+      
+      if (!tankData || !tankData.level) return;
+      
+      // Get level from nested data structure (0.0-1.0 ratio)
+      const level = this.getYAMLDataValue('level', tankData.level);
+      
+      if (level !== null) {
+        // Generate tank identifier: FUEL_00, WATR_00, etc.
+        const tankId = `${tankType}_${String(instance).padStart(2, '0')}`;
+        
+        // XDR format for tank level: measurement type V (volume ratio), value, units P (percentage/ratio), identifier
+        // Parser expects 'P' for percentage/ratio format (0.0-1.0 gets converted to 0-100%)
+        const sentence = `$IIXDR,V,${level.toFixed(3)},P,${tankId}`;
+        const checksum = this.calculateChecksum(sentence.substring(1));
+        messages.push(`${sentence}*${checksum}`);
+        
+        console.log(`🪣 Generated tank ${tankId}: ${(level * 100).toFixed(1)}% (${level.toFixed(3)} ratio)`);
+      }
+    });
 
-    return null;
+    return messages.length > 0 ? messages : null;
   }
 
   /**
    * Generate temperature XDR sentence from YAML configuration
    */
   generateYAMLTemperatureSentence(sentenceDef) {
-    const instance = sentenceDef.instance || 1;
-    
-    if (!this.scenario?.data?.temperature) {
+    // New YAML structure: data is inside sentenceDef.instances array
+    if (!sentenceDef.instances || sentenceDef.instances.length === 0) {
       return null;
     }
 
-    const tempEntries = Object.entries(this.scenario.data.temperature);
-    const tempIndex = instance - 1; // Convert to 0-based index
+    const messages = [];
     
-    if (tempIndex < 0 || tempIndex >= tempEntries.length) {
-      return null;
-    }
+    // Process each temperature instance defined in the sentence
+    sentenceDef.instances.forEach(instanceDef => {
+      const instance = instanceDef.instance;
+      const location = instanceDef.location || 'TEMP';
+      const locationName = instanceDef.location_name || `Temp ${instance}`;
+      const tempData = instanceDef.data;
+      
+      if (!tempData || !tempData.temperature) return;
+      
+      // Get temperature from nested data structure
+      const temperature = this.getYAMLDataValue('temperature', tempData.temperature);
+      
+      if (temperature !== null) {
+        // Generate temperature identifier: TEMP_00, SEAW_00, AIRX_01, ENGR_02, etc.
+        const tempId = `${location}_${String(instance).padStart(2, '0')}`;
+        
+        // XDR format for temperature: measurement type C (celsius), value, units C, identifier
+        const sentence = `$IIXDR,C,${temperature.toFixed(1)},C,${tempId}`;
+        const checksum = this.calculateChecksum(sentence.substring(1));
+        messages.push(`${sentence}*${checksum}`);
+        
+        console.log(`🌡️ Generated temperature ${tempId} (${locationName}): ${temperature.toFixed(1)}°C`);
+      }
+    });
 
-    const [tempKey, tempConfig] = tempEntries[tempIndex];
-    const temperature = this.getYAMLDataValue(tempKey, tempConfig);
-    
-    if (temperature !== null) {
-      const label = sentenceDef.label || tempKey;
-      const sentence = `$IIXDR,C,${temperature.toFixed(1)},C,${label}`;
-      const checksum = this.calculateChecksum(sentence.substring(1));
-      return `${sentence}*${checksum}`;
-    }
-
-    return null;
+    return messages.length > 0 ? messages : null;
   }
 
   /**
@@ -836,6 +994,42 @@ class ScenarioDataSource extends EventEmitter {
       const sentenceWithoutChecksum = sentenceWithParams.replace(/\*XX$/, '');
       const checksum = this.calculateChecksum(sentenceWithoutChecksum.substring(1));
       return `${sentenceWithoutChecksum}*${checksum}`;
+    }
+    
+    // New YAML structure: instances array with data_path references
+    if (sentenceDef.instances && sentenceDef.instances.length > 0) {
+      const messages = [];
+      
+      sentenceDef.instances.forEach(instanceDef => {
+        const instance = instanceDef.instance || 0;
+        const source = instanceDef.source || 'E';
+        const dataPath = instanceDef.data_path;
+        
+        if (!dataPath) return;
+        
+        // Parse data path (e.g., "engine.rpm")
+        const pathParts = dataPath.split('.');
+        let dataConfig = this.scenario?.data;
+        
+        for (const part of pathParts) {
+          if (!dataConfig) break;
+          dataConfig = dataConfig[part];
+        }
+        
+        if (dataConfig) {
+          const rpm = this.getYAMLDataValue('rpm', dataConfig);
+          
+          if (rpm !== null) {
+            const sentence = `$IIRPM,${source},${instance},${rpm.toFixed(0)},A,`;
+            const checksum = this.calculateChecksum(sentence.substring(1));
+            messages.push(`${sentence}*${checksum}`);
+            
+            console.log(`⚙️ Generated RPM for engine ${instance}: ${rpm.toFixed(0)} RPM`);
+          }
+        }
+      });
+      
+      return messages.length > 0 ? messages[0] : null;  // Return first message for single-instance
     }
     
     // Legacy format support for backward compatibility
@@ -891,6 +1085,43 @@ class ScenarioDataSource extends EventEmitter {
       const sentenceWithoutChecksum = sentenceWithParams.replace(/\*XX$/, '');
       const checksum = this.calculateChecksum(sentenceWithoutChecksum.substring(1));
       return `${sentenceWithoutChecksum}*${checksum}`;
+    }
+    
+    // New YAML structure: measurements array with data_path references
+    if (sentenceDef.measurements && sentenceDef.measurements.length > 0) {
+      const messages = [];
+      
+      sentenceDef.measurements.forEach(measurement => {
+        const measurementType = measurement.measurement_type;
+        const identifier = measurement.identifier;
+        const units = measurement.units || '';
+        const dataPath = measurement.data_path;
+        
+        if (!dataPath) return;
+        
+        // Parse data path (e.g., "engine.coolant_temp")
+        const pathParts = dataPath.split('.');
+        let dataConfig = this.scenario?.data;
+        
+        for (const part of pathParts) {
+          if (!dataConfig) break;
+          dataConfig = dataConfig[part];
+        }
+        
+        if (dataConfig) {
+          const value = this.getYAMLDataValue(identifier, dataConfig);
+          
+          if (value !== null) {
+            const sentence = `$IIXDR,${measurementType},${value.toFixed(1)},${units},${identifier}`;
+            const checksum = this.calculateChecksum(sentence.substring(1));
+            messages.push(`${sentence}*${checksum}`);
+            
+            console.log(`📊 Generated XDR ${identifier}: ${value.toFixed(1)} ${units}`);
+          }
+        }
+      });
+      
+      return messages.length > 0 ? messages[0] : null;  // Return first message for single measurement
     }
     
     // Legacy format support for backward compatibility
@@ -961,10 +1192,24 @@ class ScenarioDataSource extends EventEmitter {
         case 'sine':
         case 'sine_wave':
           return this.generateSineWave(dataConfig, currentTime);
+        case 'tidal_cycle':
+          return this.generateTidalCycle(dataConfig, currentTime);
+        case 'coastal_variation':
+          return this.generateCoastalVariation(dataConfig, currentTime);
+        case 'coastal_wind':
+          return this.generateCoastalWind(dataConfig, currentTime);
+        case 'coastal_track':
+        case 'boat_movement':
+          // Position data - not a simple value
+          return null;
+        case 'polar_sailing':
+          return this.generatePolarSailing(dataConfig, currentTime);
         case 'linear':
           return this.generateLinear(dataConfig, currentTime);
         case 'gaussian':
           return this.generateGaussian(dataConfig, currentTime);
+        case 'random_walk':
+          return this.generateRandomWalk(dataConfig, currentTime);
         case 'linear_decline':
           return this.generateLinearDecline(dataConfig, currentTime);
         case 'linear_increase':
@@ -997,12 +1242,33 @@ class ScenarioDataSource extends EventEmitter {
   /**
    * Generate sine wave values
    * Supports both "base" and "start" parameter naming for compatibility
+   * Supports both "frequency" (Hz) and "period" (seconds) for wave definition
    */
   generateSineWave(config, currentTime) {
     const time = currentTime / 1000; // Convert to seconds
-    const radians = 2 * Math.PI * config.frequency * time;
+    
+    // Calculate phase: support both frequency (Hz) and period (seconds)
+    let phase;
+    if (config.period) {
+      // Period in seconds - one complete cycle
+      phase = (2 * Math.PI * time) / config.period;
+    } else if (config.frequency) {
+      // Frequency in Hz - cycles per second
+      phase = 2 * Math.PI * config.frequency * time;
+    } else {
+      // Default to 60-second period if neither specified
+      phase = (2 * Math.PI * time) / 60;
+    }
+    
     const baseValue = config.base || config.start || 0;
-    return baseValue + config.amplitude * Math.sin(radians);
+    const value = baseValue + config.amplitude * Math.sin(phase);
+    
+    // Apply min/max constraints if specified
+    if (config.min !== undefined || config.max !== undefined) {
+      return Math.max(config.min || -Infinity, Math.min(config.max || Infinity, value));
+    }
+    
+    return value;
   }
 
   /**
@@ -1044,6 +1310,109 @@ class ScenarioDataSource extends EventEmitter {
     const min = config.min || 0;
     const max = config.max || 1;
     return min + Math.random() * (max - min);
+  }
+
+  /**
+   * Generate tidal cycle depth variation
+   * Sinusoidal pattern with min/max limits
+   */
+  generateTidalCycle(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    const tidalPeriod = config.tidal_period || 600;
+    const phase = (time / tidalPeriod) * 2 * Math.PI;
+    const tidalHeight = Math.sin(phase) * (config.tidal_range / 2);
+    const depth = config.base_depth + tidalHeight;
+    
+    return Math.max(
+      config.min_depth || 0, 
+      Math.min(config.max_depth || 100, depth)
+    );
+  }
+
+  /**
+   * Generate coastal wind angle variation
+   * Base angle with thermal effects
+   */
+  generateCoastalVariation(config, currentTime) {
+    const time = currentTime / 1000;
+    const thermalPeriod = config.variation_period || 300;
+    const phase = (time / thermalPeriod) * 2 * Math.PI;
+    const thermalShift = Math.sin(phase) * (config.thermal_shift || 0);
+    
+    let angle = (config.base || 0) + thermalShift;
+    
+    // Normalize to 0-360
+    while (angle < 0) angle += 360;
+    while (angle >= 360) angle -= 360;
+    
+    return angle;
+  }
+
+  /**
+   * Generate coastal wind speed with thermal effects and gusts
+   */
+  generateCoastalWind(config, currentTime) {
+    const time = currentTime / 1000;
+    
+    // Base wind with thermal variation
+    const thermalPeriod = 300; // 5 minutes
+    const phase = (time / thermalPeriod) * 2 * Math.PI;
+    const thermalEffect = Math.sin(phase) * (config.thermal_effect || 0);
+    
+    // Add gust variation (random)
+    const gustFactor = 1 + (Math.random() - 0.5) * 2 * (config.gusts || 0);
+    
+    const speed = (config.base || 10) + thermalEffect;
+    const gustSpeed = speed * gustFactor;
+    
+    return Math.max(
+      config.min || 0,
+      Math.min(config.max || 50, gustSpeed)
+    );
+  }
+
+  /**
+   * Generate polar-based sailing speed
+   * Simplified version - actual polar lookup would need wind data
+   */
+  generatePolarSailing(config, currentTime) {
+    // For now, use base speed with variations
+    const baseSpeed = config.base_speed || 5.5;
+    const tidalCurrent = config.tidal_current || 0;
+    const leewayFactor = config.leeway_factor || 1.0;
+    
+    const speed = (baseSpeed + tidalCurrent) * leewayFactor;
+    
+    return Math.max(
+      config.min || 0,
+      Math.min(config.max || 15, speed)
+    );
+  }
+
+  /**
+   * Generate random walk values (for heading, angle variations)
+   */
+  generateRandomWalk(config, currentTime) {
+    if (!this.randomWalkState) {
+      this.randomWalkState = {};
+    }
+    
+    const key = JSON.stringify(config);
+    if (!this.randomWalkState[key]) {
+      this.randomWalkState[key] = config.start || 0;
+    }
+    
+    const stepSize = config.step_size || 1;
+    const step = (Math.random() - 0.5) * 2 * stepSize;
+    this.randomWalkState[key] += step;
+    
+    // Apply bounds if specified
+    if (config.bounds) {
+      const [min, max] = config.bounds;
+      this.randomWalkState[key] = Math.max(min, Math.min(max, this.randomWalkState[key]));
+    }
+    
+    return this.randomWalkState[key];
   }
 
   /**
@@ -1156,6 +1525,245 @@ class ScenarioDataSource extends EventEmitter {
   generateAPB() {
     const checksum = this.calculateChecksum('APB,A,A,0.00,L,N,V,V,180.0,M,DEST,180.0,M,180.0,M');
     return `$GPAPB,A,A,0.00,L,N,V,V,180.0,M,DEST,180.0,M,180.0,M*${checksum}`;
+  }
+
+  /**
+   * Generate depth sentence based on type (DBT, DPT, or DBK)
+   */
+  generateDepthSentence(type) {
+    const depthConfig = this.scenario?.data?.depth;
+    if (!depthConfig) return [];
+
+    const depth = this.getYAMLDataValue('depth', depthConfig);
+    
+    switch (type) {
+      case 'DBT':
+        return [this.generateDBT(depth)];
+      case 'DPT':
+        return [this.generateDPT(depth)];
+      case 'DBK':
+        return [this.generateDBK(depth)];
+      default:
+        return [this.generateDBT(depth)];
+    }
+  }
+
+  /**
+   * Generate DPT sentence (Depth)
+   */
+  generateDPT(depth) {
+    const offset = this.scenario?.parameters?.vessel?.keel_offset || 0;
+    const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0;
+    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
+    return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
+  }
+
+  /**
+   * Generate DBK sentence (Depth Below Keel)
+   */
+  generateDBK(depth) {
+    const keelOffset = this.scenario?.parameters?.vessel?.keel_offset || 0;
+    const depthBelowKeel = Math.max(0, depth - keelOffset);
+    const checksum = this.calculateChecksum(`DBK,${depthBelowKeel.toFixed(1)},f,${(depthBelowKeel * 0.3048).toFixed(1)},M,${(depthBelowKeel * 0.5468).toFixed(1)},F`);
+    return `$SDDBK,${depthBelowKeel.toFixed(1)},f,${(depthBelowKeel * 0.3048).toFixed(1)},M,${(depthBelowKeel * 0.5468).toFixed(1)},F*${checksum}`;
+  }
+
+  /**
+   * Generate MTW sentence (Water Temperature)
+   */
+  generateMTWSentence() {
+    const tempConfig = this.scenario?.data?.water_temp;
+    if (!tempConfig) return [];
+
+    const tempC = this.getYAMLDataValue('water_temp', tempConfig);
+    const checksum = this.calculateChecksum(`MTW,${tempC.toFixed(1)},C`);
+    return [`$SDMTW,${tempC.toFixed(1)},C*${checksum}`];
+  }
+
+  /**
+   * Generate VHW sentence (Water Speed and Heading)
+   */
+  generateVHWSentence() {
+    const speedConfig = this.scenario?.data?.speed;
+    if (!speedConfig) return [];
+
+    const speed = this.getYAMLDataValue('speed', speedConfig);
+    return [this.generateVHW(speed)];
+  }
+
+  /**
+   * Generate VTG sentence (Track Made Good and Ground Speed)
+   */
+  generateVTGSentence() {
+    const speedConfig = this.scenario?.data?.speed;
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!speedConfig) return [];
+
+    const speed = this.getYAMLDataValue('speed', speedConfig);
+    const heading = gpsConfig ? this.getCurrentHeading() : 0;
+    
+    const speedKmh = (speed * 1.852).toFixed(1);
+    const checksum = this.calculateChecksum(`VTG,${heading.toFixed(1)},T,,M,${speed.toFixed(1)},N,${speedKmh},K,A`);
+    return [`$GPVTG,${heading.toFixed(1)},T,,M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`];
+  }
+
+  /**
+   * Generate MWV sentence (Wind Speed and Angle)
+   */
+  generateMWVSentence() {
+    const windConfig = this.scenario?.data?.wind;
+    if (!windConfig || !windConfig.angle || !windConfig.speed) return [];
+
+    const angle = this.getYAMLDataValue('wind_angle', windConfig.angle);
+    const speed = this.getYAMLDataValue('wind_speed', windConfig.speed);
+    
+    return [this.generateMWV(angle, speed)];
+  }
+
+  /**
+   * Generate GGA sentence (GPS Fix Data)
+   */
+  generateGGASentence() {
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!gpsConfig) return [];
+
+    const position = this.getCurrentPosition();
+    if (!position) return [];
+
+    const time = new Date();
+    const timeStr = time.toISOString().substr(11, 8).replace(/:/g, '') + '.00';
+    
+    const latDeg = Math.abs(position.lat);
+    const latMin = ((latDeg % 1) * 60).toFixed(4);
+    const latDir = position.lat >= 0 ? 'N' : 'S';
+    
+    const lonDeg = Math.abs(position.lon);
+    const lonMin = ((lonDeg % 1) * 60).toFixed(4);
+    const lonDir = position.lon >= 0 ? 'E' : 'W';
+    
+    const sentence = `GGA,${timeStr},${Math.floor(latDeg)}${latMin},${latDir},${String(Math.floor(lonDeg)).padStart(3, '0')}${lonMin},${lonDir},1,08,1.0,0.0,M,0.0,M,,`;
+    const checksum = this.calculateChecksum(sentence);
+    return [`$GP${sentence}*${checksum}`];
+  }
+
+  /**
+   * Generate RMC sentence (Recommended Minimum)
+   */
+  generateRMCSentence() {
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!gpsConfig) return [];
+
+    const position = this.getCurrentPosition();
+    if (!position) return [];
+
+    return [this.generateRMC(position.lat, position.lon)];
+  }
+
+  /**
+   * Generate heading sentence based on type (HDT, HDG, or HDM)
+   */
+  generateHeadingSentence(type) {
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!gpsConfig) return [];
+
+    const heading = this.getCurrentHeading();
+    
+    switch (type) {
+      case 'HDT':
+        return [this.generateHDT(heading)];
+      case 'HDG':
+        return [this.generateHDG(heading)];
+      case 'HDM':
+        return [this.generateHDM(heading)];
+      default:
+        return [this.generateHDT(heading)];
+    }
+  }
+
+  /**
+   * Generate HDT sentence (True Heading)
+   */
+  generateHDT(heading) {
+    const checksum = this.calculateChecksum(`HDT,${heading.toFixed(1)},T`);
+    return `$HEHDT,${heading.toFixed(1)},T*${checksum}`;
+  }
+
+  /**
+   * Generate HDM sentence (Magnetic Heading)
+   */
+  generateHDM(heading) {
+    const checksum = this.calculateChecksum(`HDM,${heading.toFixed(1)},M`);
+    return `$HEHDM,${heading.toFixed(1)},M*${checksum}`;
+  }
+
+  /**
+   * Get current position from GPS track
+   */
+  getCurrentPosition() {
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!gpsConfig || !gpsConfig.start_position) return null;
+
+    // If waypoints exist, interpolate position
+    if (gpsConfig.waypoints && gpsConfig.waypoints.length > 0) {
+      const elapsed = (Date.now() - this.startTime) / 1000;
+      const duration = this.scenario.duration || 300;
+      const progress = (elapsed % duration) / duration;
+      const totalTime = gpsConfig.waypoints[gpsConfig.waypoints.length - 1].time;
+      const currentTime = progress * totalTime;
+
+      // Find surrounding waypoints
+      for (let i = 0; i < gpsConfig.waypoints.length - 1; i++) {
+        const wp1 = gpsConfig.waypoints[i];
+        const wp2 = gpsConfig.waypoints[i + 1];
+        
+        if (currentTime >= wp1.time && currentTime <= wp2.time) {
+          const segmentProgress = (currentTime - wp1.time) / (wp2.time - wp1.time);
+          return {
+            lat: wp1.lat + (wp2.lat - wp1.lat) * segmentProgress,
+            lon: wp1.lon + (wp2.lon - wp1.lon) * segmentProgress
+          };
+        }
+      }
+    }
+
+    // Return start position if no waypoints
+    return {
+      lat: gpsConfig.start_position.latitude,
+      lon: gpsConfig.start_position.longitude
+    };
+  }
+
+  /**
+   * Get current heading from GPS track
+   */
+  getCurrentHeading() {
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!gpsConfig || !gpsConfig.waypoints || gpsConfig.waypoints.length < 2) {
+      return 0;
+    }
+
+    const elapsed = (Date.now() - this.startTime) / 1000;
+    const duration = this.scenario.duration || 300;
+    const progress = (elapsed % duration) / duration;
+    const totalTime = gpsConfig.waypoints[gpsConfig.waypoints.length - 1].time;
+    const currentTime = progress * totalTime;
+
+    // Find surrounding waypoints
+    for (let i = 0; i < gpsConfig.waypoints.length - 1; i++) {
+      const wp1 = gpsConfig.waypoints[i];
+      const wp2 = gpsConfig.waypoints[i + 1];
+      
+      if (currentTime >= wp1.time && currentTime <= wp2.time) {
+        // Calculate heading between waypoints
+        const dLon = wp2.lon - wp1.lon;
+        const dLat = wp2.lat - wp1.lat;
+        let heading = Math.atan2(dLon, dLat) * 180 / Math.PI;
+        if (heading < 0) heading += 360;
+        return heading;
+      }
+    }
+
+    return 0;
   }
 
   /**

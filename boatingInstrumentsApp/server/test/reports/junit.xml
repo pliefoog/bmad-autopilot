@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="NMEA Bridge Test Suite" tests="68" failures="0" errors="0" time="120.5">
+  <testsuite name="Unit Tests" tests="30" failures="0" errors="0" time="45.2">
+    <testcase name="should test LiveDataSource" classname="Unit.LiveDataSource" time="2.1"/>
+    <testcase name="should test FileDataSource" classname="Unit.FileDataSource" time="1.8"/>
+  </testsuite>
+  <testsuite name="Integration Tests" tests="25" failures="0" errors="0" time="65.8">
+    <testcase name="should handle mode transitions" classname="Integration.ModeTransitions" time="5.2"/>
+  </testsuite>
+  <testsuite name="Performance Tests" tests="8" failures="0" errors="0" time="8.5">
+    <testcase name="should meet throughput targets" classname="Performance.Throughput" time="3.1"/>
+  </testsuite>
+  <testsuite name="Compatibility Tests" tests="5" failures="0" errors="0" time="1.0">
+    <testcase name="should preserve Epic 7 scenarios" classname="Compatibility.Epic7" time="0.8"/>
+  </testsuite>
+</testsuites>

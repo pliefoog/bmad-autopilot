@@ -10,20 +10,24 @@ import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TankSensorData } from '../types/SensorData';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface TanksWidgetProps {
   id: string;
   title: string;
   showUsageRate?: boolean;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 /**
  * TanksWidget - Enhanced with collapsible functionality and secondary metrics
- * Primary Metric: Level (%)
- * Secondary Metric: Available Capacity (PGN 127505 Fluid Level Capacity field x level)
+ * Primary Grid (2×1): Level (%) + Capacity (L)
+ * Secondary Grid (2×1): Available Capacity + Type
  */
-export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }) => {
+export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
   // Extract tank instance from widget ID (e.g., "tank-0", "tank-1")
   const instanceNumber = useMemo(() => {
@@ -32,9 +36,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
   }, [id]);
   
   // Widget state management
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -82,12 +84,12 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
   // Widget interaction handlers
   const handlePress = useCallback(() => {
     updateWidgetInteraction(id);
-    toggleWidgetExpansion(id);
-  }, [id, updateWidgetInteraction, toggleWidgetExpansion]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPress = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Auto-generate appropriate title based on tank data
   const getDisplayTitle = useCallback(() => {
@@ -111,12 +113,14 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
 
   const styles = StyleSheet.create({
     container: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 16,
-      marginBottom: 8,
     },
     header: {
       flexDirection: 'row',
@@ -150,13 +154,32 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
       color: theme.primary,
     },
     primaryView: {
-      marginBottom: 8,
+      height: '50%',
+      justifyContent: 'center',
+    },
+    primaryGrid: {
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      gap: 8,
+    },
+    // Horizontal separator between primary and secondary views
+    separator: {
+      height: 1,
+      marginVertical: 4,
+    },
+    secondaryContainer: {
+      height: '50%',
+      justifyContent: 'center',
+    },
+    secondaryGrid: {
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      gap: 8,
+      width: '80%',
     },
     secondaryView: {
-      marginTop: 12,
-      paddingTop: 12,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
       alignItems: 'flex-end',
     },
   });
@@ -179,53 +202,81 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title }
           <Text style={styles.title}>{getDisplayTitle()}</Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPress}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={styles.caret}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
+          </View>
+        )}
+      </View>
+
+      {/* Primary Grid (2×1): Tank Level + Capacity */}
+      <View style={styles.primaryView}>
+        <View style={styles.primaryGrid}>
+          <PrimaryMetricCell
+            mnemonic="LEVEL"
+            value={level !== null ? `${Math.round(level)}` : '---'}
+            unit="%"
+            state={tankState}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <PrimaryMetricCell
+            mnemonic="CAP"
+            value={capacity !== null ? capacity.toFixed(0) : '---'}
+            unit="L"
+            state="normal"
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
         </View>
       </View>
 
-      {/* Primary View: Tank Level */}
-      <View style={styles.primaryView}>
-        <PrimaryMetricCell
-          mnemonic="LEVEL"
-          value={level !== null ? `${Math.round(level)}` : '---'}
-          unit="%"
-          state={tankState}
-        />
-      </View>
+      {/* Secondary Grid (2×1): Available Capacity + Type */}
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
 
-      {/* Secondary View: Available Capacity (PGN 127505 capacity field × level) */}
-      {expanded && (
-        <View style={styles.secondaryView}>
+      {/* SECONDARY GRID */}
+      <View style={styles.secondaryContainer}>
+        <View style={styles.secondaryGrid}>
           <SecondaryMetricCell
             mnemonic="AVAIL"
-            value={availableCapacity !== null ? availableCapacity.toFixed(1) : '---'}
+            value={availableCapacity !== null ? availableCapacity.toFixed(0) : '---'}
             unit="L"
             state="normal"
             compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <SecondaryMetricCell
+            mnemonic="TYPE"
+            value={tankType.toUpperCase()}
+            unit=""
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
           />
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });

@@ -60,7 +60,7 @@ jest.mock('../../src/components/organisms/AutopilotFooter', () => ({
   AutopilotFooter: () => null,
 }));
 
-jest.mock('../../src/widgets/ConnectionConfigDialog', () => ({
+jest.mock('../../src/components/dialogs/ConnectionConfigDialog', () => ({
   ConnectionConfigDialog: () => null,
 }));
 

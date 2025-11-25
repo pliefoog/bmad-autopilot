@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text, Platform } from 'react-native';
 
 // Import Widget Metadata Registry for consistent icon mapping
 // Note: Dynamic import to avoid circular dependencies in mock
@@ -130,30 +131,50 @@ const Ionicons = ({ name, size = 16, color = '#000', style = {} }) => {
   const needsScaling = ['∠', '↔', '⚡', '⭣', '⇉', '›', '‹'].includes(iconSymbol);
   const scale = needsScaling ? 1.4 : 1;
   
+  // Use platform-appropriate component (Text for native, span for web)
+  if (Platform.OS === 'web') {
+    return (
+      <span
+        style={{
+          fontSize: size,
+          lineHeight: 1,
+          display: 'inline-block',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontWeight: 'normal',
+          textAlign: 'center',
+          width: size,
+          height: size,
+          transform: `scale(${scale})`,
+          // Convert emoji to grayscale and adjust brightness to match theme
+          filter: `grayscale(100%) brightness(${brightness * 2.5}) contrast(1.2)`,
+          willChange: 'filter',
+          position: 'relative',
+          isolation: 'isolate',
+          ...style,
+        }}
+      >
+        {iconSymbol}
+      </span>
+    );
+  }
+  
+  // Native platforms (iOS/Android) - use Text component
   return (
-    <span
+    <Text
       style={{
         fontSize: size,
-        lineHeight: 1,
-        display: 'inline-block',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
+        lineHeight: size,
+        fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
         fontWeight: 'normal',
         textAlign: 'center',
         width: size,
         height: size,
-        transform: `scale(${scale})`,
-        // Convert emoji to grayscale and adjust brightness to match theme
-        filter: `grayscale(100%) brightness(${brightness * 2.5}) contrast(1.2)`,
-        willChange: 'filter',
-        position: 'relative',
-        isolation: 'isolate',
+        color: color,
         ...style,
       }}
-      role="img"
-      aria-label={name}
     >
       {iconSymbol}
-    </span>
+    </Text>
   );
 };
 

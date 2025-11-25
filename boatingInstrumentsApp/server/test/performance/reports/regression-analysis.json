@@ -1,0 +1,18 @@
+{
+  "regressionDetected": false,
+  "baseline": {
+    "throughput": 600,
+    "memory": 90,
+    "responseTime": 85
+  },
+  "current": {
+    "throughput": 650,
+    "memory": 85,
+    "responseTime": 75
+  },
+  "improvements": [
+    "throughput",
+    "memory",
+    "responseTime"
+  ]
+}

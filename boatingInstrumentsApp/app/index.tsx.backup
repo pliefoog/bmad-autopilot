@@ -17,7 +17,7 @@ import { AutopilotControlScreen } from '@/widgets/AutopilotControlScreen';
 import { AlarmBanner } from '@/widgets/AlarmBanner';
 import HeaderBar from '@/components/HeaderBar';
 import ToastMessage, { ToastMessageData } from '@/components/ToastMessage';
-import { ConnectionConfigDialog } from '@/widgets/ConnectionConfigDialog';
+import { ConnectionConfigDialog } from '@/components/dialogs/ConnectionConfigDialog';
 import { PlaybackFilePicker } from '@/widgets/PlaybackFilePicker';
 import { getConnectionDefaults } from '@/services/connectionDefaults';
 import { globalConnectionService } from '@/services/globalConnectionService';

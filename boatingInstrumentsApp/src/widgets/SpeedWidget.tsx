@@ -11,20 +11,24 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface SpeedWidgetProps {
   id: string;
   title: string;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 /**
  * Speed Widget - STW/SOG Focus per ui-architecture.md v2.3
- * Primary Grid (1×2): STW + SOG with large values
- * Secondary Grid (2×2): AVG and MAX for both STW/SOG in columns
+ * Primary Grid (2×2): Column 1: SOG + MAX SOG, Column 2: STW + MAX STW
+ * Secondary Grid (2×2): AVG values for both STW/SOG
  * Interactive Chart: STW trend (tap to switch to SOG)
  */
-export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }) => {
+export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
   
   // NEW: Clean semantic data presentation system for speed
   const speedPresentation = useSpeedPresentation();
@@ -37,9 +41,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
   }, [presentationStore.selectedPresentations.speed]);
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -203,11 +205,10 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
 
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
-    toggleWidgetExpansion(id);
     updateWidgetInteraction(id);
-  }, [id, toggleWidgetExpansion, updateWidgetInteraction]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPressOnCaret = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
@@ -236,82 +237,98 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title }
           </Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPressOnCaret}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={[styles.caret, { color: theme.textSecondary }]}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
-      {/* PRIMARY GRID (1×2): SOG + Speed with large values */}
+      {/* PRIMARY GRID (2×2): Column 1: SOG + MAX, Column 2: STW + MAX */}
       <View style={styles.primaryGrid}>
-        <PrimaryMetricCell
-          data={speedDisplayData.sog}
-          state={isStale ? 'warning' : 'normal'}
-        />
-        <PrimaryMetricCell
-          data={speedDisplayData.stw}
-          state={isStale ? 'warning' : 'normal'}
-        />
+        {/* First Row: SOG and STW */}
+        <View style={styles.primaryGridCell}>
+          <PrimaryMetricCell
+            data={speedDisplayData.sog}
+            state={isStale ? 'warning' : 'normal'}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+        </View>
+        <View style={styles.primaryGridCell}>
+          <PrimaryMetricCell
+            data={speedDisplayData.stw}
+            state={isStale ? 'warning' : 'normal'}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+        </View>
+        {/* Second Row: MAX SOG and MAX STW */}
+        <View style={styles.primaryGridCell}>
+          <PrimaryMetricCell
+            data={speedDisplayData.sogMax}
+            state="normal"
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+        </View>
+        <View style={styles.primaryGridCell}>
+          <PrimaryMetricCell
+            data={speedDisplayData.stwMax}
+            state="normal"
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+        </View>
       </View>
 
-      {/* SECONDARY GRID (2×2): SOG column and Speed column */}
-      {expanded && (
-        <View style={styles.secondaryContainer}>
-          {/* First Row: AVG values */}
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={speedDisplayData.sogAvg}
-                state="normal"
-                compact={true}
-              />
-            </View>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={speedDisplayData.stwAvg}
-                state="normal"
-                compact={true}
-              />
-            </View>
-          </View>
-          {/* Second Row: MAX values */}
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={speedDisplayData.sogMax}
-                state="normal"
-                compact={true}
-              />
-            </View>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                data={speedDisplayData.stwMax}
-                state="normal"
-                compact={true}
-              />
-            </View>
-          </View>
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+      {/* SECONDARY GRID (2×1): AVG values for SOG and STW */}
+      <View style={styles.secondaryContainer}>
+        <View style={styles.secondaryGrid}>
+          <SecondaryMetricCell
+            data={speedDisplayData.sogAvg}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <SecondaryMetricCell
+            data={speedDisplayData.stwAvg}
+            state="normal"
+            compact={true}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });
@@ -320,9 +337,11 @@ SpeedWidget.displayName = 'SpeedWidget';
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 8,
     borderWidth: 1,
     borderColor: theme.border,
   },
@@ -353,30 +372,38 @@ const createStyles = (theme: any) => StyleSheet.create({
   pinIcon: {
     fontSize: 12,
   },
-  // Primary Grid (1×2): Side by side STW/SOG
+  // Primary Grid (2×2): 2 rows, 2 columns
   primaryGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    alignContent: 'center',
+    alignItems: 'center',
+    height: '50%',
+    width: '80%',
+    alignSelf: 'center',
+  },
+  primaryGridCell: {
+    width: '48%', // Two columns with small gap
     marginBottom: 8,
-    minHeight: 80, // Ensure adequate height for content
   },
-  // Secondary Container for expanded view
+  // Horizontal separator between primary and secondary views
+  separator: {
+    height: 1,
+    marginVertical: 4,
+  },
+  // Secondary Container
   secondaryContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
+    height: '50%',
+    justifyContent: 'center',
   },
-  // Secondary Grid (2×2): SOG and STW in columns
+  // Secondary Grid (2×1): AVG SOG and STW
   secondaryGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  // Grid cell wrapper for proper alignment
-  gridCell: {
-    flex: 1,
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    width: '80%',
+    alignSelf: 'center',
   },
 });
 

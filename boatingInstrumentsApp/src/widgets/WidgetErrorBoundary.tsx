@@ -1,13 +1,14 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
-import { themeStore, ThemeColors } from '../store/themeStore';
+import { useThemeStore, ThemeColors } from '../store/themeStore';
 
 interface Props {
   children: ReactNode;
   widgetId: string;
   onReload?: () => void;
   onRemove?: () => void;
+  theme?: ThemeColors; // Pass theme from parent to avoid store access in error state
 }
 
 interface State {
@@ -50,8 +51,19 @@ export class WidgetErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      const theme = themeStore.getState().colors;
-      const dynamicStyles = createStyles(theme);
+      // Use passed theme or fallback to a default dark theme
+      const theme = this.props.theme || {
+        primary: '#00A3E0',
+        error: '#FF4444',
+        warning: '#FFA500',
+        success: '#00C851',
+        text: '#FFFFFF',
+        textSecondary: '#B0B0B0',
+        background: '#1A1A1A',
+        surface: '#2A2A2A',
+        border: '#444444',
+      };
+      const dynamicStyles = createStyles(theme as ThemeColors);
       
       return (
         <View style={dynamicStyles.errorContainer}>

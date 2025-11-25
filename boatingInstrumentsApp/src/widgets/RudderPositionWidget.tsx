@@ -4,29 +4,31 @@ import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useDataPresentation } from '../presentation/useDataPresentation';
+import { useRudderPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
 interface RudderPositionWidgetProps {
   id: string;
   title: string;
+  width?: number;  // Widget width for responsive scaling
+  height?: number; // Widget height for responsive scaling
 }
 
 /**
  * RudderPositionWidget - Rudder angle display with SVG visualization per ui-architecture.md v2.3
- * Primary Grid (1×1): Rudder angle with direction
+ * Primary Grid (2×1): Rudder angle with direction + Rate
  * Secondary: SVG rudder visualization with boat outline
  */
-export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.memo(({ id, title }) => {
+export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -123,15 +125,18 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
   // Widget interaction handlers
   const handlePress = useCallback(() => {
     updateWidgetInteraction(id);
-    toggleWidgetExpansion(id);
-  }, [id, updateWidgetInteraction, toggleWidgetExpansion]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPress = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   const styles = StyleSheet.create({
     container: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
@@ -139,7 +144,6 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
                    rudderState === 'warning' ? theme.warning :
                    theme.border,
       padding: 16,
-      marginBottom: 8,
     },
     header: {
       flexDirection: 'row',
@@ -174,6 +178,13 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
     },
     primaryGrid: {
       alignItems: 'center',
+      height: '50%',
+      justifyContent: 'center',
+    },
+    // Horizontal separator between primary and secondary views
+    separator: {
+      height: 1,
+      marginVertical: 12,
     },
     rudderVisualization: {
       alignItems: 'center',
@@ -210,29 +221,18 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
       <View style={styles.header}>
         <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPress}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={styles.caret}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
       
       {/* Primary Grid (1×1): Rudder angle with direction */}
@@ -240,12 +240,20 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
         <PrimaryMetricCell
           data={rudderAngleDisplay}
           state={getRudderState(rudderAngle)}
+          fontSize={{
+            mnemonic: fontSize.primaryLabel,
+            value: fontSize.primaryValue,
+            unit: fontSize.primaryUnit,
+          }}
         />
       </View>
 
       {/* Secondary: SVG rudder visualization */}
-      {expanded && (
-        <View style={styles.rudderVisualization}>
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+      {/* RUDDER VISUALIZATION */}
+      <View style={styles.rudderVisualization}>
           <RudderIndicator angle={rudderAngle} theme={theme} />
           <Text style={styles.warningText}>
             {rudderState === 'alarm' ? 'EXTREME ANGLE!' : 
@@ -253,7 +261,6 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
              isStale ? 'No Data' : 'Normal Position'}
           </Text>
         </View>
-      )}
     </TouchableOpacity>
   );
 });

@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Svg, { Polyline } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -10,6 +11,7 @@ import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemperatureSensorData } from '../types/SensorData';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { useResponsiveScale } from '../hooks/useResponsiveScale';
 
 interface DynamicTemperatureWidgetProps {
   id: string;
@@ -18,12 +20,13 @@ interface DynamicTemperatureWidgetProps {
 
 /**
  * TemperatureWidget - Enhanced with collapsible functionality and secondary metrics
- * Primary Metric: Temperature (°C/°F)
- * Secondary Metrics: Location, Sensor Type
+ * Primary Grid (2×1): Temperature (°C/°F) + Trend Line Graph
+ * Secondary Grid (2×1): Location + Instance
  * Supports multi-instance temperature sensors (seawater, engine, cabin, exhaust, etc.)
  */
-export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> = React.memo(({ id, title }) => {
+export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
+  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
   // Extract temperature instance from widget ID (e.g., "temp-0", "temp-1")
   const instanceNumber = useMemo(() => {
@@ -32,9 +35,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   }, [id]);
   
   // Widget state management
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -46,6 +47,18 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const location = temperatureData?.location || 'unknown';
   const units = temperatureData?.units || 'C';
   const sensorName = temperatureData?.name || title;
+  
+  // Temperature history for trend line
+  const [temperatureHistory, setTemperatureHistory] = useState<number[]>([]);
+  
+  useEffect(() => {
+    if (temperature !== null && temperature !== undefined) {
+      setTemperatureHistory(prev => {
+        const newHistory = [...prev, temperature];
+        return newHistory.slice(-20); // Keep last 20 readings
+      });
+    }
+  }, [temperature]);
   
   // Presentation hooks for temperature conversion
   const tempPresentation = useTemperaturePresentation();
@@ -96,12 +109,12 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   // Widget interaction handlers
   const handlePress = useCallback(() => {
     updateWidgetInteraction(id);
-    toggleWidgetExpansion(id);
-  }, [id, updateWidgetInteraction, toggleWidgetExpansion]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPress = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Auto-generate appropriate title based on temperature data
   const getDisplayTitle = useCallback(() => {
@@ -126,12 +139,14 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
 
   const styles = StyleSheet.create({
     container: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 16,
-      marginBottom: 8,
     },
     header: {
       flexDirection: 'row',
@@ -165,22 +180,35 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       color: theme.primary,
     },
     primaryView: {
-      marginBottom: 8,
+      height: '50%',
+      justifyContent: 'center',
+    },
+    primaryGrid: {
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      gap: 8,
+      width: '80%',
+    },
+    trendLineContainer: {
+      alignItems: 'center',
+      height: 60,
+    },
+    // Horizontal separator between primary and secondary views
+    separator: {
+      height: 1,
+      marginVertical: 4,
     },
     secondaryContainer: {
-      marginTop: 12,
-      paddingTop: 12,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
+      height: '50%',
+      justifyContent: 'center',
     },
     secondaryGrid: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      marginBottom: 8,
-      gap: 16,
-    },
-    gridCell: {
-      alignItems: 'flex-end',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      gap: 8,
+      width: '80%',
     },
   });
 
@@ -202,68 +230,121 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
           <Text style={styles.title}>{getDisplayTitle()}</Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPress}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={styles.caret}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
-      {/* Primary View: Temperature */}
+      {/* Primary Grid (2×1): Temperature + Trend Line */}
       <View style={styles.primaryView}>
-        <PrimaryMetricCell
-          mnemonic="TEMP"
-          value={displayTemperature !== null ? displayTemperature.toFixed(1) : '---'}
-          unit={displayUnit}
-          state={temperatureState}
-        />
+        <View style={styles.primaryGrid}>
+          <PrimaryMetricCell
+            mnemonic="TEMP"
+            value={displayTemperature !== null ? displayTemperature.toFixed(1) : '---'}
+            unit={displayUnit}
+            state={temperatureState}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          
+          {/* Trend Line Graph */}
+          <View style={styles.trendLineContainer}>
+            <TrendLine 
+              data={temperatureHistory}
+              width={200}
+              height={60}
+              color={temperatureState === 'alarm' ? theme.error : temperatureState === 'warning' ? theme.warning : theme.primary}
+              theme={theme}
+            />
+          </View>
+        </View>
       </View>
 
       {/* Secondary View: Location and Sensor Type */}
-      {expanded && (
-        <View style={styles.secondaryContainer}>
-          <View style={styles.secondaryGrid}>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                mnemonic="LOC"
-                value={location.toUpperCase()}
-                unit=""
-                state="normal"
-                compact={true}
-                align="right"
-              />
-            </View>
-            <View style={styles.gridCell}>
-              <SecondaryMetricCell
-                mnemonic="INST"
-                value={`${instanceNumber}`}
-                unit=""
-                state="normal"
-                compact={true}
-                align="right"
-              />
-            </View>
-          </View>
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+      {/* SECONDARY CONTAINER */}
+      <View style={styles.secondaryContainer}>
+        <View style={styles.secondaryGrid}>
+          <SecondaryMetricCell
+            mnemonic="LOC"
+            value={location.toUpperCase()}
+            unit=""
+            state="normal"
+            compact={true}
+            align="right"
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+          <SecondaryMetricCell
+            mnemonic="INST"
+            value={`${instanceNumber}`}
+            unit=""
+            state="normal"
+            compact={true}
+            align="right"
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 });
+
+// Simple trend line component
+const TrendLine: React.FC<{ 
+  data: number[]; 
+  width: number; 
+  height: number; 
+  color: string;
+  theme: any;
+}> = ({ data, width, height, color, theme }) => {
+  if (data.length < 2) {
+    return (
+      <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>No trend data</Text>
+      </View>
+    );
+  }
+  
+  const minTemp = Math.min(...data);
+  const maxTemp = Math.max(...data);
+  const range = maxTemp - minTemp || 1; // Avoid division by zero
+  
+  const points = data.map((temp, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((temp - minTemp) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+  
+  return (
+    <Svg width={width} height={height}>
+      <Polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+    </Svg>
+  );
+};

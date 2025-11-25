@@ -24,9 +24,7 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
   const theme = useTheme();
   
   // Widget state management per ui-architecture.md v2.3
-  const expanded = useWidgetStore((state) => state.widgetExpanded[id] || false);
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetExpansion = useWidgetStore((state) => state.toggleWidgetExpanded);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
@@ -70,21 +68,23 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
   // Widget interaction handlers
   const handlePress = useCallback(() => {
     updateWidgetInteraction(id);
-    toggleWidgetExpansion(id);
-  }, [id, updateWidgetInteraction, toggleWidgetExpansion]);
+  }, [id, updateWidgetInteraction]);
 
-  const handleLongPress = useCallback(() => {
+  const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   const styles = StyleSheet.create({
     container: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
       backgroundColor: theme.surface,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: theme.border,
       padding: 16,
-      marginBottom: 8,
     },
     header: {
       flexDirection: 'row',
@@ -119,6 +119,11 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
     },
     primaryGrid: {
       alignItems: 'center',
+    },
+    // Horizontal separator between primary and secondary views
+    separator: {
+      height: 1,
+      marginVertical: 12,
     },
     secondaryGrid: {
       marginTop: 12,
@@ -203,7 +208,6 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
     <TouchableOpacity
       style={styles.container}
       onPress={handlePress}
-      onLongPress={handleLongPress}
       activeOpacity={0.8}
     >
       {/* Widget Header with Title and Controls */}
@@ -217,29 +221,18 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
           <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
         </View>
         
-        {/* Expansion Caret and Pin Controls */}
-        <View style={styles.controls}>
-          {pinned ? (
+        {/* Pin Control */}
+        {pinned && (
+          <View style={styles.controls}>
             <TouchableOpacity
-              onLongPress={handleLongPress}
+              onLongPress={handleLongPressOnPin}
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
               <UniversalIcon name="pin" size={16} color={theme.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handlePress}
-              onLongPress={handleLongPress}
-              style={styles.controlButton}
-              testID={`caret-button-${id}`}
-            >
-              <Text style={styles.caret}>
-                {expanded ? '⌃' : '⌄'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
       </View>
       
       {/* Primary Grid (1×1): Current theme mode */}
@@ -252,9 +245,11 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
         />
       </View>
 
+      {/* Horizontal separator */}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
       {/* Secondary Grid: Theme controls and brightness */}
-      {expanded && (
-        <View style={styles.secondaryGrid}>
+      <View style={styles.secondaryGrid}>
           {/* Secondary Grid (1×2): Current brightness */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <SecondaryMetricCell
@@ -355,7 +350,6 @@ export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = React.memo(({ id, tit
             </TouchableOpacity>
           </View>
         </View>
-      )}
     </TouchableOpacity>
   );
 });
