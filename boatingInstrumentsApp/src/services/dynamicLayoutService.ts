@@ -26,7 +26,7 @@ export class DynamicLayoutService {
   }
 
   /**
-   * Calculate optimal grid configuration based on screen size and available space
+   * Calculate optimal grid configuration based on screen size and widget count
    * Returns fixed widget dimensions and grid layout
    * 
    * Breakpoints and behavior:
@@ -37,15 +37,15 @@ export class DynamicLayoutService {
    * - 1280-1919px: 6 columns, pagination (desktop)
    * - 1920+: 8 columns, pagination (large desktop)
    */
-  static getGridConfig(headerHeight: number = 60, footerHeight: number = 88): GridConfig {
+  static getGridConfig(headerHeight: number = 60, footerHeight: number = 88, widgetCount: number = 0): GridConfig {
     const { width: screenWidth, height: screenHeight } = this.getScreenDimensions();
     
-    const spacing = 8;  // Spacing between widgets
-    const margin = 8;   // Screen edge margin
+    const spacing = 0;  // No spacing - widgets fill all space
+    const margin = 0;   // No margin - widgets extend to edges
     
-    // Calculate available space
-    const availableWidth = screenWidth - (2 * margin);
-    const availableHeight = screenHeight - headerHeight - footerHeight - (2 * margin);
+    // Calculate available space - use full viewport
+    const availableWidth = screenWidth;
+    const availableHeight = screenHeight - headerHeight - footerHeight;
     
     // Determine columns based on screen width
     let columns: number;
@@ -71,32 +71,97 @@ export class DynamicLayoutService {
       usePagination = false; // Vertical scroll
     }
     
-    // Calculate widget width
-    const totalSpacingWidth = spacing * (columns - 1);
-    const widgetWidth = Math.floor((availableWidth - totalSpacingWidth) / columns);
+    // Calculate widget width - divide available space evenly by columns
+    // But first, optimize columns based on widget count for better distribution
+    let actualColumns = columns;
     
-    // Calculate rows that fit in available height
-    // Use square aspect ratio as baseline (height = width)
-    const minWidgetHeight = widgetWidth;
-    let rows = Math.floor(availableHeight / (minWidgetHeight + spacing));
-    
-    // Ensure at least 1 row
-    if (rows < 1) {
-      rows = 1;
+    if (usePagination && widgetCount > 0) {
+      // Find optimal column count that minimizes wasted space
+      // Try reducing columns to get more even distribution
+      let bestColumns = columns;
+      let bestWaste = widgetCount % columns; // Widgets left over in last row
+      
+      // Try each column count from max down to 1
+      for (let testCols = columns; testCols >= 1; testCols--) {
+        const testRows = Math.ceil(widgetCount / testCols);
+        const testMaxRows = Math.floor(availableHeight / Math.floor(availableWidth / testCols));
+        
+        // Only consider if rows fit on screen
+        if (testRows <= testMaxRows) {
+          const waste = widgetCount % testCols;
+          
+          // Perfect fill (no waste) or better distribution
+          if (waste === 0) {
+            bestColumns = testCols;
+            bestWaste = 0;
+            break; // Perfect, stop searching
+          } else if (waste < bestWaste) {
+            bestColumns = testCols;
+            bestWaste = waste;
+          }
+        }
+      }
+      
+      actualColumns = bestColumns;
     }
     
-    // For mobile (no pagination), use flexible row count
-    // For tablet/desktop (with pagination), fix rows per page
+    const widgetWidth = Math.floor(availableWidth / actualColumns);
+    
+    // Calculate rows based on actual widget count and screen mode
+    let rows: number;
+    let maxRowsForScreen: number;
+    
     if (!usePagination) {
-      rows = 999; // Unlimited rows for vertical scroll
+      // Mobile scroll mode: unlimited rows
+      rows = 999;
+      maxRowsForScreen = 999;
+    } else {
+      // Desktop/tablet pagination: Calculate max rows that fit with square aspect ratio
+      maxRowsForScreen = Math.floor(availableHeight / widgetWidth);
+      // Ensure at least 1 row
+      if (maxRowsForScreen < 1) {
+        maxRowsForScreen = 1;
+      }
+      
+      // Calculate actual rows needed for widget count
+      // Example: 18 widgets / 6 columns (optimized) = 3.0 → ceil = 3 rows needed
+      const rowsNeeded = widgetCount > 0 ? Math.ceil(widgetCount / actualColumns) : maxRowsForScreen;
+      
+      // Use minimum of (rows needed, max rows that fit on screen)
+      // Example: min(3, 4) = 3 rows → use 3 rows, not 4
+      rows = Math.min(rowsNeeded, maxRowsForScreen);
     }
     
     // Calculate widget height to fill vertical space evenly
-    const totalSpacingHeight = spacing * (Math.min(rows, 10) - 1); // Cap at 10 for calculation
-    const widgetHeight = Math.floor((availableHeight - totalSpacingHeight) / Math.min(rows, 10));
+    // Divide available height by ACTUAL rows being used
+    // Example: 800px / 3 rows = 266px per widget
+    const widgetHeight = usePagination 
+      ? Math.floor(availableHeight / rows)
+      : widgetWidth;
+    
+    console.log('[DynamicLayoutService] Grid config calculated:', {
+      screenWidth,
+      screenHeight,
+      availableWidth,
+      availableHeight,
+      maxColumns: columns,
+      actualColumns,
+      columnsOptimized: actualColumns !== columns,
+      rows,
+      maxRowsForScreen: usePagination ? maxRowsForScreen : 'unlimited',
+      widgetCount,
+      rowsNeeded: widgetCount > 0 ? Math.ceil(widgetCount / actualColumns) : 'unknown',
+      usePagination,
+      widgetWidth,
+      widgetHeight,
+      totalWidgetsPerPage: usePagination ? actualColumns * rows : 'unlimited',
+      calculation: usePagination 
+        ? `${widgetCount} widgets / ${actualColumns} cols = ${Math.ceil(widgetCount / actualColumns)} rows needed, min(needed, ${maxRowsForScreen} max) = ${rows} rows used, ${availableHeight}px / ${rows} rows = ${widgetHeight}px height`
+        : `Square aspect: ${widgetWidth}px`
+    });
     
     return {
-      columns,
+      columns: actualColumns,
       rows: usePagination ? rows : 999, // Unlimited rows for scroll mode
       widgetWidth,
       widgetHeight,
@@ -113,13 +178,22 @@ export class DynamicLayoutService {
    * Tablet/Desktop (4-8 cols): Fixed pages, widgets sized to fill each page
    */
   static toDynamicLayout(layouts: WidgetLayout[], headerHeight: number = 60, footerHeight: number = 88): DynamicWidgetLayout[] {
-    const gridConfig = this.getGridConfig(headerHeight, footerHeight);
-    const { columns, rows, widgetWidth, widgetHeight, spacing, availableHeight } = gridConfig;
-    
-    // Filter visible widgets and sort by order
+    // Filter visible widgets first to get accurate count
     const visibleWidgets = layouts
       .filter(w => w.visible)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    const gridConfig = this.getGridConfig(headerHeight, footerHeight, visibleWidgets.length);
+    const { columns, rows, widgetWidth, widgetHeight, spacing, availableHeight } = gridConfig;
+    
+    console.log('[DynamicLayoutService] toDynamicLayout using config:', {
+      visibleWidgetCount: visibleWidgets.length,
+      columns,
+      rows,
+      widgetWidth,
+      widgetHeight,
+      widgetsPerPage: columns * rows
+    });
     
     const usePagination = rows < 999; // Pagination mode vs scroll mode
     
@@ -148,9 +222,9 @@ export class DynamicLayoutService {
         };
       });
     } else {
-      // SCROLL MODE (Mobile): Use reasonable fixed height for each widget
-      // Don't try to fit all widgets on screen - let them scroll naturally
-      const reasonableHeight = Math.max(widgetWidth * 1.2, 280); // At least 1.2:1 aspect ratio or 280px minimum
+      // SCROLL MODE (Mobile): Use widget width for height to maintain aspect ratio
+      // Widgets fill full width and scroll vertically
+      const reasonableHeight = widgetWidth; // Square aspect ratio for scrolling
       
       return visibleWidgets.map((layout, index) => {
         const page = 0; // Single page
@@ -179,16 +253,16 @@ export class DynamicLayoutService {
    * Returns 1 for mobile (scroll mode), multiple pages for tablet/desktop (pagination mode)
    */
   static getTotalPages(widgets: DynamicWidgetLayout[], headerHeight: number = 60, footerHeight: number = 88): number {
-    const gridConfig = this.getGridConfig(headerHeight, footerHeight);
+    const visibleWidgets = widgets.filter(w => w.visible);
+    const gridConfig = this.getGridConfig(headerHeight, footerHeight, visibleWidgets.length);
     const usePagination = gridConfig.rows < 999;
     
     if (!usePagination) {
       return 1; // Mobile: single scrollable page
     }
     
-    // Tablet/Desktop: calculate pages needed
+    // Tablet/Desktop: calculate pages needed based on actual rows used per page
     const widgetsPerPage = gridConfig.columns * gridConfig.rows;
-    const visibleWidgets = widgets.filter(w => w.visible);
     return Math.max(1, Math.ceil(visibleWidgets.length / widgetsPerPage));
   }
 

@@ -7,7 +7,7 @@ import { WidgetRegistry } from './WidgetRegistry';
 import { WidgetSelector } from './WidgetSelector';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { PlatformStyles } from '../utils/animationUtils';
-import { DynamicLayoutService, DynamicWidgetLayout } from '../services/dynamicLayoutService';
+import { DynamicLayoutService, DynamicWidgetLayout, GridConfig } from '../services/dynamicLayoutService';
 import { registerAllWidgets } from './registerWidgets';
 import { WidgetFactory } from '../services/WidgetFactory';
 import UniversalIcon from '../components/atoms/UniversalIcon';
@@ -116,8 +116,29 @@ export const DynamicDashboard: React.FC = () => {
   } | null>(null);
   
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
   const toast = useToast();
+  
+  // Calculate grid config for proper spacing and sizing
+  const gridConfig = useMemo(() => {
+    const headerHeight = 60;
+    const footerHeight = 88;
+    const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
+    const config = DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
+    console.log('[DynamicDashboard] Grid config calculated:', {
+      columns: config.columns,
+      rows: config.rows,
+      widgetWidth: config.widgetWidth,
+      widgetHeight: config.widgetHeight,
+      spacing: config.spacing,
+      margin: config.margin,
+      availableWidth: config.availableWidth,
+      availableHeight: config.availableHeight,
+      dimensions
+    });
+    return config;
+  }, [dimensions, storeWidgets]);
+  
+  const styles = useMemo(() => createStyles(theme, gridConfig), [theme, gridConfig]);
 
   console.log('[DynamicDashboard] Widget store state:', {
     currentDashboard,
@@ -479,7 +500,13 @@ export const DynamicDashboard: React.FC = () => {
     useScrollMode,
     currentPage,
     widgetCount: currentPageWidgets.length,
-    dimensions
+    dimensions,
+    firstWidgetDimensions: currentPageWidgets[0] ? `${currentPageWidgets[0].width}x${currentPageWidgets[0].height}` : 'none',
+    gridConfig: {
+      columns: gridConfig.columns,
+      widgetWidth: gridConfig.widgetWidth,
+      widgetHeight: gridConfig.widgetHeight
+    }
   });
 
   const goToNextPage = useCallback(() => {
@@ -541,9 +568,8 @@ export const DynamicDashboard: React.FC = () => {
         </ScrollView>
       ) : (
         // TABLET/DESKTOP: Fixed grid with pagination
-        <View style={styles.pageContainer}>
-          <View style={styles.paginatedContainer}>
-            <View style={styles.widgetGridContainer}>
+        <View style={styles.paginatedContainer}>
+          <View style={styles.widgetGridContainer}>
               {currentPageWidgets.map((widget) => (
                 <View 
                   key={widget.id} 
@@ -571,7 +597,6 @@ export const DynamicDashboard: React.FC = () => {
                 </View>
               ))}
             </View>
-          </View>
         </View>
       )}
       
@@ -653,7 +678,7 @@ export const DynamicDashboard: React.FC = () => {
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
+const createStyles = (theme: ThemeColors, gridConfig: GridConfig) => StyleSheet.create({
   root: {
     flex: 1,
   },
@@ -661,7 +686,7 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
+    // Let widgets flow naturally without forcing growth
   },
   paginatedContainer: {
     flex: 1,
@@ -681,11 +706,11 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     paddingTop: 0,
   },
   widgetGridContainer: {
+    width: '100%',
+    height: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignContent: 'flex-start',
-    padding: 0,
-    gap: 0,
+    alignContent: 'stretch',
   },
   widgetGridItem: {
     // Fixed size set inline based on grid config
