@@ -83,21 +83,31 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     let mnemonicFontSize = baseMnemonicSize;
     let unitFontSize = baseUnitSize;
     
-    if (maxWidth) {
-      // Estimate text width (rough approximation)
-      const estimatedValueWidth = displayValue.length * (baseValueSize * 0.6);
-      const estimatedMnemonicWidth = mnemonic.length * (baseMnemonicSize * 0.5);
-      const estimatedUnitWidth = unit.length * (baseUnitSize * 0.5);
+    if (maxWidth && maxWidth > 0) {
+      // More accurate character width estimation for monospace numbers
+      // Average character width is ~0.55 of font size for monospace digits
+      const charWidthRatio = 0.55;
+      const estimatedValueWidth = displayValue.length * (baseValueSize * charWidthRatio);
       
-      // Scale down if content would exceed max width
-      if (estimatedValueWidth > maxWidth * 0.8) {
-        valueFontSize = Math.max(20, (maxWidth * 0.8) / (displayValue.length * 0.6));
+      // Only scale down if content significantly exceeds available width
+      // Use 95% of maxWidth to leave some padding
+      const targetWidth = maxWidth * 0.95;
+      
+      if (estimatedValueWidth > targetWidth) {
+        // Calculate required font size to fit
+        const requiredSize = (targetWidth) / (displayValue.length * charWidthRatio);
+        // Don't scale down more than necessary, enforce minimum of 70% of base size
+        valueFontSize = Math.max(baseValueSize * 0.7, Math.min(baseValueSize, requiredSize));
       }
       
-      if (estimatedMnemonicWidth + estimatedUnitWidth > maxWidth * 0.9) {
-        const scale = (maxWidth * 0.9) / (estimatedMnemonicWidth + estimatedUnitWidth);
-        mnemonicFontSize = Math.max(10, baseMnemonicSize * scale);
-        unitFontSize = Math.max(10, baseUnitSize * scale);
+      // Labels and units use smaller font, less aggressive scaling needed
+      const labelCharWidth = baseMnemonicSize * 0.5;
+      const estimatedLabelWidth = (mnemonic.length * labelCharWidth) + (unit.length * labelCharWidth);
+      
+      if (estimatedLabelWidth > targetWidth) {
+        const scale = targetWidth / estimatedLabelWidth;
+        mnemonicFontSize = Math.max(baseMnemonicSize * 0.8, baseMnemonicSize * scale);
+        unitFontSize = Math.max(baseUnitSize * 0.8, baseUnitSize * scale);
       }
     }
     
@@ -200,7 +210,8 @@ const createStyles = (
 ) =>
   StyleSheet.create({
     container: {
-      alignItems: align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start'),
+      width: '100%', // Fill parent cell width
+      alignItems: 'flex-end', // Always right-align (UnifiedWidgetGrid v2 requirement)
       justifyContent: 'center',
       paddingVertical: 4, // Match PrimaryMetricCell padding
       paddingHorizontal: 8, // Match PrimaryMetricCell padding
@@ -209,7 +220,7 @@ const createStyles = (
     mnemonicUnitRow: {
       flexDirection: 'row',
       alignItems: 'baseline',
-      justifyContent: align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start'),
+      justifyContent: 'flex-end', // Always right-align (UnifiedWidgetGrid v2 requirement)
       marginBottom: 4, // Match PrimaryMetricCell spacing
     },
     mnemonic: {

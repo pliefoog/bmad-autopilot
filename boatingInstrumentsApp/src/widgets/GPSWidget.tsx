@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useUnitConversion } from '../hooks/useUnitConversion';
 import { useMetricDisplay } from '../hooks/useMetricDisplay';
-import { useResponsiveScale } from '../hooks/useResponsiveScale';
+import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface GPSWidgetProps {
   id: string;
@@ -26,7 +27,24 @@ interface GPSWidgetProps {
  */
 export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
-  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
+  const fontSize = useResponsiveFontSize(width || 0, height || 0);
+  
+  // Responsive header sizing
+  const headerIconSize = useMemo(() => {
+    const baseSize = 16;
+    const minSize = 12;
+    const maxSize = 20;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  const headerFontSize = useMemo(() => {
+    const baseSize = 11;
+    const minSize = 9;
+    const maxSize = 13;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
   
   // Date/time formatting still uses useUnitConversion (Story 9.6 scope)
   const { getGpsFormattedDateTime } = useUnitConversion();
@@ -42,15 +60,6 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  const gpsData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.gps[0], [])); // GPS sensor data
-  
-  // Extract GPS values from sensor data
-  const gpsPosition = gpsData?.position; // GPS position object with lat/lon
-  const gpsQuality = gpsData?.quality; // GPS quality data
-  const utcTime = gpsData?.utcTime; // UTC time from GPS
-  const gpsTimestamp = gpsData?.timestamp;
-  
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
     updateWidgetInteraction(id);
@@ -60,6 +69,15 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
     toggleWidgetPin(id);
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
+  
+  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
+  const gpsData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.gps[0], [])); // GPS sensor data
+  
+  // Extract GPS values from sensor data
+  const gpsPosition = gpsData?.position; // GPS position object with lat/lon
+  const gpsQuality = gpsData?.quality; // GPS quality data
+  const utcTime = gpsData?.utcTime; // UTC time from GPS
+  const gpsTimestamp = gpsData?.timestamp;
 
   // Use useMetricDisplay for coordinate formatting with hemisphere support
   const latMetric = useMetricDisplay(
@@ -169,176 +187,107 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   // Data staleness detection (>10s = stale for GPS)
   const isStale = gpsTimestamp ? (Date.now() - gpsTimestamp) > 10000 : true;
 
-  // Create styles with responsive scaling
-  const styles = useMemo(() => createStyles(theme, fontSize, spacing), [theme, fontSize, spacing]);
+  // Widget header component with responsive sizing
+  const headerComponent = (
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 16,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UniversalIcon 
+          name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'navigate-outline'} 
+          size={headerIconSize} 
+          color={theme.primary}
+        />
+        <Text style={{
+          fontSize: headerFontSize,
+          fontWeight: 'bold',
+          letterSpacing: 0.5,
+          color: theme.textSecondary,
+          textTransform: 'uppercase',
+        }}>{title}</Text>
+      </View>
+      
+      {pinned && (
+        <TouchableOpacity
+          onLongPress={handleLongPressOnPin}
+          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
+          testID={`pin-button-${id}`}
+        >
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
   return (
-    <TouchableOpacity
-      style={[styles.container, { backgroundColor: theme.surface }]}
+    <UnifiedWidgetGrid
+      theme={theme}
+      header={headerComponent}
+      widgetWidth={width}
+      widgetHeight={height}
+      primaryRows={2}
+      secondaryRows={2}
+      columns={1}
       onPress={handlePress}
-      activeOpacity={0.8}
       testID={`gps-widget-${id}`}
     >
-      {/* Widget Header with Title and Controls */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <UniversalIcon 
-            name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'navigate-outline'} 
-            size={12} 
-            color={theme.textSecondary}
-            style={{ marginRight: 6 }}
-          />
-          <Text style={[styles.title, { color: theme.textSecondary }]}>
-            {title.toUpperCase()}
-          </Text>
-        </View>
-        
-        {/* Pin Control */}
-        {pinned && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onLongPress={handleLongPressOnPin}
-              style={styles.controlButton}
-              testID={`pin-button-${id}`}
-            >
-              <UniversalIcon name="pin" size={16} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* PRIMARY GRID (2×1): Latitude and Longitude coordinates */}
-      <View style={styles.primaryContainer}>
-        <View style={styles.primaryGrid}>
-          <PrimaryMetricCell
-            mnemonic={latDisplay.mnemonic}
-            value={latDisplay.value}
-            unit={latDisplay.unit}
-            state={isStale ? 'warning' : 'normal'}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-          <PrimaryMetricCell
-            mnemonic={lonDisplay.mnemonic}
-            value={lonDisplay.value}
-            unit={lonDisplay.unit}
-            state={isStale ? 'warning' : 'normal'}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-
-      {/* Horizontal separator */}
-      <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-      {/* SECONDARY GRID (2×1): Date with day of week + Time with timezone */}
-      <View style={styles.secondaryContainer}>
-        <View style={styles.secondaryGrid}>
-          <SecondaryMetricCell
-            mnemonic="DATE"
-            value={dateTimeFormatted.date}
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-          <SecondaryMetricCell
-            mnemonic="TIME"
-            value={`${dateTimeFormatted.time} ${dateTimeFormatted.timezone}`}
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-    </TouchableOpacity>
+        {/* Row 1: Latitude */}
+        <PrimaryMetricCell
+          mnemonic={latDisplay.mnemonic}
+          value={latDisplay.value}
+          unit={latDisplay.unit}
+          state={isStale ? 'warning' : 'normal'}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 2: Longitude */}
+        <PrimaryMetricCell
+          mnemonic={lonDisplay.mnemonic}
+          value={lonDisplay.value}
+          unit={lonDisplay.unit}
+          state={isStale ? 'warning' : 'normal'}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Separator after row 2 */}
+        {/* Row 3: Date */}
+        <SecondaryMetricCell
+          mnemonic="DATE"
+          value={dateTimeFormatted.date}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 4: Time */}
+        <SecondaryMetricCell
+          mnemonic="TIME"
+          value={`${dateTimeFormatted.time} ${dateTimeFormatted.timezone}`}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+    </UnifiedWidgetGrid>
   );
 });
 
 GPSWidget.displayName = 'GPSWidget';
-
-const createStyles = (theme: any, fontSize: any, spacing: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  controlButton: {
-    padding: 4,
-    minWidth: 24,
-    alignItems: 'center',
-  },
-  caret: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  pinIcon: {
-    fontSize: 12,
-  },
-
-  // Primary Container for coordinate grid
-  primaryContainer: {
-    height: '50%',
-    justifyContent: 'center',
-  },
-  primaryGrid: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    gap: 8,
-  },
-
-  // Horizontal separator between primary and secondary views
-  separator: {
-    height: 1,
-    marginVertical: 4,
-  },
-  // Secondary Container
-  secondaryContainer: {
-    height: '50%',
-    justifyContent: 'center',
-  },
-  // Secondary Grid (2R×1C): Date and Time
-  secondaryGrid: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    gap: 8,
-    width: '80%',
-  },
-});
 
 export default GPSWidget;

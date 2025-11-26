@@ -9,7 +9,8 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import UniversalIcon from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
-import { useResponsiveScale } from '../hooks/useResponsiveScale';
+import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface BatteryWidgetProps {
   id: string;
@@ -27,7 +28,7 @@ interface BatteryWidgetProps {
  */
 export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, title, batteryInstance = 'house', width, height }) => {
   const theme = useTheme();
-  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
+  const fontSize = useResponsiveFontSize(width || 0, height || 0);
 
   // Extract battery instance from widget ID (e.g., "battery-0", "battery-1")
   const instanceNumber = useMemo(() => {
@@ -229,236 +230,163 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
+  // Calculate responsive header sizes based on widget dimensions
+  const headerIconSize = useMemo(() => {
+    const baseSize = 16;
+    const minSize = 12;
+    const maxSize = 20;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  const headerFontSize = useMemo(() => {
+    const baseSize = 11;
+    const minSize = 9;
+    const maxSize = 13;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  // Header component for UnifiedWidgetGrid v2
+  const headerComponent = (
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       width: '100%',
-      height: '100%',
-      backgroundColor: theme.surface,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.border,
-      padding: 16,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    title: {
-      fontSize: 11,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-      color: theme.textSecondary,
-      textTransform: 'uppercase',
-    },
-    controls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    controlButton: {
-      padding: 4,
-      minWidth: 24,
-      alignItems: 'center',
-    },
-    caret: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    pinIcon: {
-      fontSize: 12,
-      color: theme.primary,
-    },
-    primaryGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      alignContent: 'center',
-      alignItems: 'center',
-      height: '50%',
-      width: '80%',
-      alignSelf: 'center',
-    },
-    primaryGridCell: {
-      width: '48%',
-      marginBottom: 8,
-    },
-    // Horizontal separator between primary and secondary views
-    separator: {
-      height: 1,
-      marginVertical: 4,
-    },
-    // Secondary Container
-    secondaryContainer: {
-      height: '50%',
-      justifyContent: 'center',
-    },
-    // Secondary Grid (2×2): Nominal, Capacity, Chemistry, Instance
-    secondaryGrid: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
-      alignContent: 'center',
-      alignItems: 'center',
-      width: '80%',
-      alignSelf: 'center',
-    },
-    secondaryGridCell: {
-      width: '48%',
-      marginBottom: 8,
-    },
-  });
+      paddingHorizontal: 16,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UniversalIcon 
+          name={WidgetMetadataRegistry.getMetadata('battery')?.icon || 'battery-charging-outline'} 
+          size={headerIconSize} 
+          color={theme.primary}
+        />
+        <Text style={{
+          fontSize: headerFontSize,
+          fontWeight: 'bold',
+          letterSpacing: 0.5,
+          color: theme.textSecondary,
+          textTransform: 'uppercase',
+        }}>{title}</Text>
+      </View>
+      
+      {pinned && (
+        <TouchableOpacity
+          onLongPress={handleLongPressOnPin}
+          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
+          testID={`pin-button-${id}`}
+        >
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <UnifiedWidgetGrid 
+      theme={theme}
+      header={headerComponent}
+      widgetWidth={width || 400}
+      widgetHeight={height || 300}
+      columns={2}
+      primaryRows={2}
+      secondaryRows={2}
       onPress={handlePress}
-      activeOpacity={0.8}
       testID={`battery-widget-${id}`}
     >
-      {/* Widget Header with Title and Controls */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <UniversalIcon 
-            name={WidgetMetadataRegistry.getMetadata('battery')?.icon || 'battery-charging-outline'} 
-            size={16} 
-            color={theme.primary}
-          />
-          <Text style={styles.title}>{title}</Text>
-        </View>
-        
-        {/* Pin Control */}
-        {pinned && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onLongPress={handleLongPressOnPin}
-              style={styles.controlButton}
-              testID={`pin-button-${id}`}
-            >
-              <UniversalIcon name="pin" size={16} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Primary Grid (2×2): VOLT, CURR, TEMP, SOC */}
-      <View style={styles.primaryGrid}>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={voltageDisplay}
-              state={getVoltageState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={currentDisplay}
-              state={getCurrentState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={temperatureDisplay}
-              state={getTempState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              mnemonic="SOC"
-              value={stateOfCharge !== null ? `${stateOfCharge.toFixed(0)}%` : '---'}
-              unit="%"
-              state={getSOCState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-        </View>
-
-      {/* Secondary Grid (2×2): Nominal Voltage, Capacity, Chemistry, Status */}
-      {/* Horizontal separator */}
-      <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-      {/* SECONDARY GRID */}
-      <View style={styles.secondaryContainer}>
-        <View style={styles.secondaryGrid}>
-          <View style={styles.secondaryGridCell}>
-            <SecondaryMetricCell
-              mnemonic="NOM"
-              value={nominalVoltage !== null ? nominalVoltage.toFixed(1) : '---'}
-              unit="V"
-              state="normal"
-              compact={true}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.secondaryGridCell}>
-            <SecondaryMetricCell
-              mnemonic="CAP"
-              value={capacity !== null ? capacity.toFixed(0) : '---'}
-              unit="Ah"
-              state="normal"
-              compact={true}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.secondaryGridCell}>
-            <SecondaryMetricCell
-              mnemonic="CHEM"
-              value={chemistry || 'Unknown'}
-              unit=""
-              state="normal"
-              compact={true}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.secondaryGridCell}>
-            <SecondaryMetricCell
-              mnemonic="INST"
-              value={`#${instanceNumber}`}
-              unit=""
-              state="normal"
-              compact={true}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+        {/* Row 1: VOLT | CURR */}
+        <PrimaryMetricCell
+          data={voltageDisplay}
+          state={getVoltageState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <PrimaryMetricCell
+          data={currentDisplay}
+          state={getCurrentState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 2: TEMP | SOC */}
+        <PrimaryMetricCell
+          data={temperatureDisplay}
+          state={getTempState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <PrimaryMetricCell
+          mnemonic="SOC"
+          value={stateOfCharge !== null ? `${stateOfCharge.toFixed(0)}%` : '---'}
+          unit="%"
+          state={getSOCState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Separator after row 2 */}
+        {/* Row 3: NOM | CAP */}
+        <SecondaryMetricCell
+          mnemonic="NOM"
+          value={nominalVoltage !== null ? nominalVoltage.toFixed(1) : '---'}
+          unit="V"
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <SecondaryMetricCell
+          mnemonic="CAP"
+          value={capacity !== null ? capacity.toFixed(0) : '---'}
+          unit="Ah"
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 4: CHEM | INST */}
+        <SecondaryMetricCell
+          mnemonic="CHEM"
+          value={chemistry || 'Unknown'}
+          unit=""
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <SecondaryMetricCell
+          mnemonic="INST"
+          value={`#${instanceNumber}`}
+          unit=""
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+      </UnifiedWidgetGrid>
   );
 });
 

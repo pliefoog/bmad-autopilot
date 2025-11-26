@@ -10,7 +10,8 @@ import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TankSensorData } from '../types/SensorData';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
-import { useResponsiveScale } from '../hooks/useResponsiveScale';
+import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface TanksWidgetProps {
   id: string;
@@ -27,7 +28,7 @@ interface TanksWidgetProps {
  */
 export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
-  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
+  const fontSize = useResponsiveFontSize(width || 0, height || 0);
 
   // Extract tank instance from widget ID (e.g., "tank-0", "tank-1")
   const instanceNumber = useMemo(() => {
@@ -91,6 +92,23 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
+  // Calculate responsive header sizes based on widget dimensions
+  const headerIconSize = useMemo(() => {
+    const baseSize = 16;
+    const minSize = 12;
+    const maxSize = 20;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  const headerFontSize = useMemo(() => {
+    const baseSize = 11;
+    const minSize = 9;
+    const maxSize = 13;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
   // Auto-generate appropriate title based on tank data
   const getDisplayTitle = useCallback(() => {
     // Standard NMEA tank location mapping by instance number
@@ -111,173 +129,106 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
     return `${typeLabel} Tank - ${location}`;
   }, [tankType, instanceNumber]);
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      width: '100%',
-      height: '100%',
-      backgroundColor: theme.surface,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.border,
-      padding: 16,
-    },
-    header: {
+  // Header component for UnifiedWidgetGrid v2
+  const headerComponent = (
+    <View style={{
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 12,
-    },
-    title: {
-      fontSize: 11,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-      color: theme.textSecondary,
-      textTransform: 'uppercase',
-    },
-    controls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    controlButton: {
-      padding: 4,
-      minWidth: 24,
-      alignItems: 'center',
-    },
-    caret: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    pinIcon: {
-      fontSize: 12,
-      color: theme.primary,
-    },
-    primaryView: {
-      height: '50%',
-      justifyContent: 'center',
-    },
-    primaryGrid: {
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignSelf: 'center',
-      gap: 8,
-    },
-    // Horizontal separator between primary and secondary views
-    separator: {
-      height: 1,
-      marginVertical: 4,
-    },
-    secondaryContainer: {
-      height: '50%',
-      justifyContent: 'center',
-    },
-    secondaryGrid: {
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignSelf: 'center',
-      gap: 8,
-      width: '80%',
-    },
-    secondaryView: {
-      alignItems: 'flex-end',
-    },
-  });
+      width: '100%',
+      paddingHorizontal: 16,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UniversalIcon 
+          name={WidgetMetadataRegistry.getMetadata('tank')?.icon || 'cube-outline'} 
+          size={headerIconSize} 
+          color={theme.primary}
+        />
+        <Text style={{
+          fontSize: headerFontSize,
+          fontWeight: 'bold',
+          letterSpacing: 0.5,
+          color: theme.textSecondary,
+          textTransform: 'uppercase',
+        }}>{getDisplayTitle()}</Text>
+      </View>
+      
+      {pinned && (
+        <TouchableOpacity
+          onLongPress={handleLongPressOnPin}
+          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
+          testID={`pin-button-${id}`}
+        >
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <UnifiedWidgetGrid 
+      theme={theme}
+      header={headerComponent}
+      widgetWidth={width || 400}
+      widgetHeight={height || 300}
+      columns={1}
+      primaryRows={2}
+      secondaryRows={2}
       onPress={handlePress}
-      activeOpacity={0.8}
       testID={`tank-widget-${id}`}
     >
-      {/* Widget Header with Title and Controls */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <UniversalIcon 
-            name={WidgetMetadataRegistry.getMetadata('tank')?.icon || 'cube-outline'} 
-            size={16} 
-            color={theme.primary}
-          />
-          <Text style={styles.title}>{getDisplayTitle()}</Text>
-        </View>
-        
-        {/* Pin Control */}
-        {pinned && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onLongPress={handleLongPressOnPin}
-              style={styles.controlButton}
-              testID={`pin-button-${id}`}
-            >
-              <UniversalIcon name="pin" size={16} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Primary Grid (2×1): Tank Level + Capacity */}
-      <View style={styles.primaryView}>
-        <View style={styles.primaryGrid}>
-          <PrimaryMetricCell
-            mnemonic="LEVEL"
-            value={level !== null ? `${Math.round(level)}` : '---'}
-            unit="%"
-            state={tankState}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-          <PrimaryMetricCell
-            mnemonic="CAP"
-            value={capacity !== null ? capacity.toFixed(0) : '---'}
-            unit="L"
-            state="normal"
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-
-      {/* Secondary Grid (2×1): Available Capacity + Type */}
-      {/* Horizontal separator */}
-      <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-      {/* SECONDARY GRID */}
-      <View style={styles.secondaryContainer}>
-        <View style={styles.secondaryGrid}>
-          <SecondaryMetricCell
-            mnemonic="AVAIL"
-            value={availableCapacity !== null ? availableCapacity.toFixed(0) : '---'}
-            unit="L"
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-          <SecondaryMetricCell
-            mnemonic="TYPE"
-            value={tankType.toUpperCase()}
-            unit=""
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-    </TouchableOpacity>
+        {/* Row 1: Level */}
+        <PrimaryMetricCell
+          mnemonic="LEVEL"
+          value={level !== null ? `${Math.round(level)}` : '---'}
+          unit="%"
+          state={tankState}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 2: Capacity */}
+        <PrimaryMetricCell
+          mnemonic="CAP"
+          value={capacity !== null ? capacity.toFixed(0) : '---'}
+          unit="L"
+          state="normal"
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Separator after row 2 */}
+        {/* Row 3: Available */}
+        <SecondaryMetricCell
+          mnemonic="AVAIL"
+          value={availableCapacity !== null ? availableCapacity.toFixed(0) : '---'}
+          unit="L"
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 4: Type */}
+        <SecondaryMetricCell
+          mnemonic="TYPE"
+          value={tankType.toUpperCase()}
+          unit=""
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+      </UnifiedWidgetGrid>
   );
 });
 

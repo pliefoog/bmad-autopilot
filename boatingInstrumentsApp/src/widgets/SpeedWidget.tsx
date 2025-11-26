@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -11,7 +11,8 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
-import { useResponsiveScale } from '../hooks/useResponsiveScale';
+import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface SpeedWidgetProps {
   id: string;
@@ -28,7 +29,24 @@ interface SpeedWidgetProps {
  */
 export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
-  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
+  const fontSize = useResponsiveFontSize(width, height);
+  
+  // Responsive header sizing
+  const headerIconSize = useMemo(() => {
+    const baseSize = 16;
+    const minSize = 12;
+    const maxSize = 20;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  const headerFontSize = useMemo(() => {
+    const baseSize = 11;
+    const minSize = 9;
+    const maxSize = 13;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
   
   // NEW: Clean semantic data presentation system for speed
   const speedPresentation = useSpeedPresentation();
@@ -44,9 +62,6 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
-  
-  // Create theme-aware styles
-  const styles = useMemo(() => createStyles(theme), [theme]);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   const speedData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.speed[0], [])); // Speed sensor data
@@ -216,195 +231,125 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   // Data staleness detection - consider stale if no speed data (either SOG or STW)
   const isStale = (sog === undefined || sog === null) && (stw === undefined || stw === null);
 
+  // Widget header component with responsive sizing
+  const headerComponent = (
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 16,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UniversalIcon 
+          name={WidgetMetadataRegistry.getMetadata('speed')?.icon || 'speedometer-outline'} 
+          size={headerIconSize} 
+          color={theme.primary}
+        />
+        <Text style={{
+          fontSize: headerFontSize,
+          fontWeight: 'bold',
+          letterSpacing: 0.5,
+          color: theme.textSecondary,
+          textTransform: 'uppercase',
+        }}>{title}</Text>
+      </View>
+      
+      {pinned && (
+        <TouchableOpacity
+          onLongPress={handleLongPressOnPin}
+          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
+          testID={`pin-button-${id}`}
+        >
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   return (
-    <TouchableOpacity
-      style={[styles.container, { backgroundColor: theme.surface }]}
+    <UnifiedWidgetGrid
+      theme={theme}
+      header={headerComponent}
+      widgetWidth={width}
+      widgetHeight={height}
+      primaryRows={2}
+      secondaryRows={2}
+      columns={2}
       onPress={handlePress}
-      activeOpacity={0.8}
       testID={`speed-widget-${id}`}
     >
-      {/* Widget Header with Title and Controls */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <UniversalIcon 
-            name={WidgetMetadataRegistry.getMetadata('speed')?.icon || 'speedometer-outline'} 
-            size={12} 
-            color={theme.textSecondary}
-            style={{ marginRight: 6 }}
-          />
-          <Text style={[styles.title, { color: theme.textSecondary }]}>
-            {title.toUpperCase()}
-          </Text>
-        </View>
+      {/* Row 0: SOG and STW (current values) */}
+      <PrimaryMetricCell
+          data={speedDisplayData.sog}
+          state={isStale ? 'warning' : 'normal'}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <PrimaryMetricCell
+          data={speedDisplayData.stw}
+          state={isStale ? 'warning' : 'normal'}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
         
-        {/* Pin Control */}
-        {pinned && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onLongPress={handleLongPressOnPin}
-              style={styles.controlButton}
-              testID={`pin-button-${id}`}
-            >
-              <UniversalIcon name="pin" size={16} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* PRIMARY GRID (2×2): Column 1: SOG + MAX, Column 2: STW + MAX */}
-      <View style={styles.primaryGrid}>
-        {/* First Row: SOG and STW */}
-        <View style={styles.primaryGridCell}>
-          <PrimaryMetricCell
-            data={speedDisplayData.sog}
-            state={isStale ? 'warning' : 'normal'}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-        <View style={styles.primaryGridCell}>
-          <PrimaryMetricCell
-            data={speedDisplayData.stw}
-            state={isStale ? 'warning' : 'normal'}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-        {/* Second Row: MAX SOG and MAX STW */}
-        <View style={styles.primaryGridCell}>
-          <PrimaryMetricCell
-            data={speedDisplayData.sogMax}
-            state="normal"
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-        <View style={styles.primaryGridCell}>
-          <PrimaryMetricCell
-            data={speedDisplayData.stwMax}
-            state="normal"
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-
-      {/* Horizontal separator */}
-      <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-      {/* SECONDARY GRID (2×1): AVG values for SOG and STW */}
-      <View style={styles.secondaryContainer}>
-        <View style={styles.secondaryGrid}>
-          <SecondaryMetricCell
-            data={speedDisplayData.sogAvg}
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-          <SecondaryMetricCell
-            data={speedDisplayData.stwAvg}
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-    </TouchableOpacity>
+        {/* Row 1: MAX SOG and MAX STW */}
+        <PrimaryMetricCell
+          data={speedDisplayData.sogMax}
+          state="normal"
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <PrimaryMetricCell
+          data={speedDisplayData.stwMax}
+          state="normal"
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        
+        {/* Separator rendered automatically after row 1 */}
+        
+        {/* Row 2: AVG SOG and AVG STW */}
+        <SecondaryMetricCell
+          data={speedDisplayData.sogAvg}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <SecondaryMetricCell
+          data={speedDisplayData.stwAvg}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        
+        {/* Row 3: Empty space for consistent 4-row layout */}
+        <View />
+        <View />
+    </UnifiedWidgetGrid>
   );
 });
 
 SpeedWidget.displayName = 'SpeedWidget';
-
-const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  controlButton: {
-    padding: 4,
-    minWidth: 24,
-    alignItems: 'center',
-  },
-  caret: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  pinIcon: {
-    fontSize: 12,
-  },
-  // Primary Grid (2×2): 2 rows, 2 columns
-  primaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignContent: 'center',
-    alignItems: 'center',
-    height: '50%',
-    width: '80%',
-    alignSelf: 'center',
-  },
-  primaryGridCell: {
-    width: '48%', // Two columns with small gap
-    marginBottom: 8,
-  },
-  // Horizontal separator between primary and secondary views
-  separator: {
-    height: 1,
-    marginVertical: 4,
-  },
-  // Secondary Container
-  secondaryContainer: {
-    height: '50%',
-    justifyContent: 'center',
-  },
-  // Secondary Grid (2×1): AVG SOG and STW
-  secondaryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '80%',
-    alignSelf: 'center',
-  },
-});
 
 export default SpeedWidget;

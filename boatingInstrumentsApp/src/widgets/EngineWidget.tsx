@@ -11,7 +11,8 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
-import { useResponsiveScale } from '../hooks/useResponsiveScale';
+import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface EngineWidgetProps {
   id: string;
@@ -28,7 +29,7 @@ interface EngineWidgetProps {
  */
 export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
-  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
+  const fontSize = useResponsiveFontSize(width || 0, height || 0);
 
   // Extract engine instance from widget ID (e.g., "engine-0", "engine-1")
   const instanceNumber = useMemo(() => {
@@ -240,193 +241,136 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
+  // Calculate responsive header sizes based on widget dimensions
+  const headerIconSize = useMemo(() => {
+    const baseSize = 16;
+    const minSize = 12;
+    const maxSize = 20;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  const headerFontSize = useMemo(() => {
+    const baseSize = 11;
+    const minSize = 9;
+    const maxSize = 13;
+    const scaleFactor = (width || 400) / 400;
+    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
+  }, [width]);
+
+  // Header component for UnifiedWidgetGrid v2
+  const headerComponent = (
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       width: '100%',
-      height: '100%',
-      backgroundColor: theme.surface,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.border,
-      padding: 16,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    title: {
-      fontSize: 11,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-      color: theme.textSecondary,
-      textTransform: 'uppercase',
-    },
-    controls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    controlButton: {
-      padding: 4,
-      minWidth: 24,
-      alignItems: 'center',
-    },
-    caret: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    pinIcon: {
-      fontSize: 12,
-      color: theme.primary,
-    },
-    primaryGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      alignContent: 'center',
-      alignItems: 'center',
-      height: '50%',
-      width: '80%',
-      alignSelf: 'center',
-    },
-    primaryGridCell: {
-      width: '48%',
-      marginBottom: 8,
-    },
-    // Horizontal separator between primary and secondary views
-    separator: {
-      height: 1,
-      marginVertical: 4,
-    },
-    // Secondary Container
-    secondaryContainer: {
-      height: '50%',
-      justifyContent: 'center',
-    },
-    // Secondary Grid (2R×1C): Fuel and Hours
-    secondaryGrid: {
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignSelf: 'center',
-      gap: 8,
-      width: '80%',
-    },
-  });
+      paddingHorizontal: 16,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UniversalIcon 
+          name={WidgetMetadataRegistry.getMetadata('engine')?.icon || 'car-outline'} 
+          size={headerIconSize} 
+          color={theme.primary}
+        />
+        <Text style={{
+          fontSize: headerFontSize,
+          fontWeight: 'bold',
+          letterSpacing: 0.5,
+          color: theme.textSecondary,
+          textTransform: 'uppercase',
+        }}>{title}</Text>
+      </View>
+      
+      {pinned && (
+        <TouchableOpacity
+          onLongPress={handleLongPressOnPin}
+          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
+          testID={`pin-button-${id}`}
+        >
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <UnifiedWidgetGrid 
+      theme={theme}
+      header={headerComponent}
+      widgetWidth={width || 400}
+      widgetHeight={height || 300}
+      columns={2}
+      primaryRows={2}
+      secondaryRows={2}
       onPress={handlePress}
-      activeOpacity={0.8}
       testID={`engine-widget-${id}`}
     >
-      {/* Widget Header with Title and Controls */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <UniversalIcon 
-            name={WidgetMetadataRegistry.getMetadata('engine')?.icon || 'car-outline'} 
-            size={12} 
-            color={theme.textSecondary}
-            style={{ marginRight: 6 }}
-          />
-          <Text style={styles.title}>{title}</Text>
-        </View>
+        {/* Row 1: RPM | TEMP */}
+        <PrimaryMetricCell
+          data={rpmDisplay}
+          state={getRpmState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <PrimaryMetricCell
+          data={coolantTempDisplay}
+          state={getTempState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Row 2: OIL | VOLT */}
+        <PrimaryMetricCell
+          data={oilPressureDisplay}
+          state={getOilState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <PrimaryMetricCell
+          data={alternatorVoltageDisplay}
+          state={getVoltState()}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        {/* Separator after row 2 */}
+        {/* Row 3: Fuel Rate (spans 2 columns) */}
+        <SecondaryMetricCell
+          data={fuelFlowDisplay}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
+        <SecondaryMetricCell
+          data={engineHoursDisplay}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
         
-        {/* Pin Control */}
-        {pinned && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onLongPress={handleLongPressOnPin}
-              style={styles.controlButton}
-              testID={`pin-button-${id}`}
-            >
-              <UniversalIcon name="pin" size={16} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Primary Grid (2×2): RPM, TEMP, OIL, VOLT */}
-      <View style={styles.primaryGrid}>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={rpmDisplay}
-              state={getRpmState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={coolantTempDisplay}
-              state={getTempState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={oilPressureDisplay}
-              state={getOilState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-          <View style={styles.primaryGridCell}>
-            <PrimaryMetricCell
-              data={alternatorVoltageDisplay}
-              state={getVoltState()}
-              fontSize={{
-                mnemonic: fontSize.primaryLabel,
-                value: fontSize.primaryValue,
-                unit: fontSize.primaryUnit,
-              }}
-            />
-          </View>
-        </View>
-
-      {/* Secondary Grid (1×2): Fuel Rate, Engine Hours */}
-      {/* Horizontal separator */}
-      <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-      {/* SECONDARY GRID */}
-      <View style={styles.secondaryContainer}>
-        <View style={styles.secondaryGrid}>
-          <SecondaryMetricCell
-            data={fuelFlowDisplay}
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-          <SecondaryMetricCell
-            data={engineHoursDisplay}
-            state="normal"
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-      </View>
-    </TouchableOpacity>
+        {/* Row 4: Empty space for consistent 4-row layout */}
+        <View />
+        <View />
+      </UnifiedWidgetGrid>
   );
 });
 
