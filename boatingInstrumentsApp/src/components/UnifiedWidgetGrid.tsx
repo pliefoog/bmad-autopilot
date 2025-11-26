@@ -95,18 +95,15 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
   // Column gap scales but has minimum
   const colGap = Math.max(MIN_COL_GAP, centralGridWidth * 0.04);
   
-  // Calculate single column width
+  // Calculate column width
   // For 2-column: each column is half the grid width (minus gap)
-  // For 1-column: column is 2/3 of what a 2-column width would be
-  const twoColumnWidth = (centralGridWidth - colGap) / 2;
+  // For 1-column: use full grid width (no gap deduction needed)
   const singleColumnWidth = columns === 2 
-    ? twoColumnWidth
-    : twoColumnWidth * (2);
+    ? (centralGridWidth - colGap) / 2
+    : centralGridWidth;
   
-  // For 1-column layout, center the column
-  const oneColumnCenterPadding = columns === 1 
-    ? (centralGridWidth - singleColumnWidth) / 2
-    : 0;
+  // For 1-column layout, no centering padding (match 2-column behavior)
+  const oneColumnCenterPadding = 0;
   
   if (columnSpans && columnSpans.length !== childArray.length) {
     console.warn('UnifiedWidgetGrid: columnSpans length must match children length');
@@ -219,11 +216,13 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
                   {row.cells.map((cell, cellIndex) => {
                     const span = row.spans[cellIndex];
                     const cellMaxWidth = calculateCellMaxWidth(span);
+                    const cellHeight = row.isPrimary ? primaryRowHeight : secondaryRowHeight;
                     
-                    // Clone child and inject maxWidth prop
+                    // Clone child and inject maxWidth and cellHeight props
                     const enhancedCell = React.isValidElement(cell) 
                       ? React.cloneElement(cell as React.ReactElement<any>, { 
-                          maxWidth: cellMaxWidth 
+                          maxWidth: cellMaxWidth,
+                          cellHeight: cellHeight
                         })
                       : cell;
                     
@@ -293,32 +292,46 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'transparent',
+    borderWidth: 2, // Debug: show container boundaries
+    borderColor: 'rgba(255, 255, 0, 0.5)', // Debug: yellow semi-transparent
   },
   header: {
     width: '100%',
     justifyContent: 'flex-start',
     paddingTop: 16,
     paddingBottom: 8,
+    borderWidth: 1, // Debug: show header boundaries
+    borderColor: 'rgba(0, 0, 255, 0.3)', // Debug: blue semi-transparent
   },
   footer: {
     width: '100%',
+    borderWidth: 1, // Debug: show footer boundaries
+    borderColor: 'rgba(0, 0, 255, 0.3)', // Debug: blue semi-transparent
   },
   gridArea: {
     width: '100%',
+    borderWidth: 1, // Debug: show grid area with margins
+    borderColor: 'rgba(255, 0, 255, 0.4)', // Debug: magenta semi-transparent
   },
   centralGrid: {
     width: '100%',
     alignItems: 'center',
+    borderWidth: 1, // Debug: show central grid (80% width)
+    borderColor: 'rgba(0, 255, 255, 0.4)', // Debug: cyan semi-transparent
   },
   row: {
     flexDirection: 'row',
     alignItems: 'stretch', // Allow cells to fill row height
     width: '100%',
+    borderWidth: 1, // Debug: show row boundaries
+    borderColor: 'rgba(255, 0, 0, 0.3)', // Debug: red semi-transparent
   },
   cell: {
     justifyContent: 'center',
     alignItems: 'flex-end', // Right-align all cells
     height: '100%', // Explicitly fill row height
+    borderWidth: 0, // Removed: borders create visual gaps
+    borderColor: 'rgba(0, 255, 0, 0.3)', // Debug: green semi-transparent (disabled)
   },
   separator: {
     height: 2, // Thicker line for visibility

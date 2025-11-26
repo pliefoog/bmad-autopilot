@@ -18,6 +18,8 @@ interface DepthWidgetProps {
   title: string;
   width?: number;  // Widget width for responsive scaling
   height?: number; // Widget height for responsive scaling
+  maxWidth?: number; // Cell width from UnifiedWidgetGrid
+  cellHeight?: number; // Cell height from UnifiedWidgetGrid
 }
 
 /**
@@ -26,9 +28,37 @@ interface DepthWidgetProps {
  * Secondary Grid (2×1): Minimum depth (shoal alarm) + Maximum depth from session
  * Uses centralized unit system (meters/feet/fathoms) configurable via hamburger menu
  */
-export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, width, height }) => {
+export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, width, height, maxWidth, cellHeight }) => {
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width, height);
+  
+  // Wrapper component to receive injected props from UnifiedWidgetGrid
+  const TrendLineCell = ({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => (
+    <TrendLine 
+      data={depthHistory.depths
+        .filter(d => d.timestamp > Date.now() - 5 * 60 * 1000)
+        .map(d => d.value)}
+      width={cellMaxWidth || 300}
+      height={cellHeightValue || 60}
+      color={theme.primary}
+      theme={theme}
+      showXAxis={true}
+      showYAxis={true}
+      xAxisPosition="top"
+      yAxisDirection="down"
+      timeWindowMinutes={5}
+      showTimeLabels={true}
+      showGrid={true}
+      strokeWidth={2}
+      forceZero={true}
+      warningThreshold={3.0}
+      alarmThreshold={1.5}
+      thresholdType="min"
+      warningColor={theme.warning}
+      alarmColor={theme.error}
+      normalColor={theme.primary}
+    />
+  );
   
   // NEW: Clean semantic data presentation system
   const depthPresentation = useDepthPresentation();
@@ -260,32 +290,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
         />
         
         {/* Row 2: Trend Line Graph */}
-        <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-          <TrendLine 
-            data={depthHistory.depths
-              .filter(d => d.timestamp > Date.now() - 5 * 60 * 1000)
-              .map(d => d.value)}
-            width={200}
-            height={60}
-            color={theme.primary}
-            theme={theme}
-            showXAxis={true}
-            showYAxis={true}
-            xAxisPosition="top"
-            yAxisDirection="down"
-            timeWindowMinutes={5}
-            showTimeLabels={true}
-            showGrid={true}
-            strokeWidth={2}
-            forceZero={true}
-            warningThreshold={3.0}
-            alarmThreshold={1.5}
-            thresholdType="min"
-            warningColor={theme.warning}
-            alarmColor={theme.error}
-            normalColor={theme.primary}
-          />
-        </View>
+        <TrendLineCell />
         
         {/* Separator rendered automatically after row 1 (index 1) = after the trend line */}
         

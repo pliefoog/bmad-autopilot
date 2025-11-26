@@ -19,6 +19,7 @@ interface SecondaryMetricCellProps {
   align?: 'left' | 'right';      // Horizontal alignment (default: right)
   style?: any;
   maxWidth?: number; // Optional max width constraint for dynamic sizing
+  cellHeight?: number; // Cell height from UnifiedWidgetGrid
   minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
   testID?: string;               // Accessibility identifier
   
@@ -51,6 +52,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   align: legacyAlign = 'right', // Default to 'right' to match PrimaryMetricCell
   style,
   maxWidth,
+  cellHeight,
   minWidth: legacyMinWidth,
   testID,
   fontSize: customFontSize,
@@ -74,9 +76,27 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       ? (typeof value === 'number' ? value.toFixed(precision) : value.toString())
       : '---';
     
-    const baseValueSize = customFontSize?.value ?? 36;
-    const baseMnemonicSize = customFontSize?.mnemonic ?? 12;
-    const baseUnitSize = customFontSize?.unit ?? 12;
+    let baseValueSize = customFontSize?.value ?? 36;
+    let baseMnemonicSize = customFontSize?.mnemonic ?? 12;
+    let baseUnitSize = customFontSize?.unit ?? 12;
+    
+    // Scale fonts based on cellHeight if provided
+    if (cellHeight && cellHeight > 0) {
+      // Use full available height (no padding)
+      const availableHeight = cellHeight;
+      // Mnemonic + Value should fill the height with minimal gap
+      
+      // Calculate scale factor to fit content
+      const desiredTotalSize = availableHeight; // Use full height
+      const currentTotalSize = baseMnemonicSize + baseValueSize;
+      const scaleFactor = desiredTotalSize / currentTotalSize;
+      
+      // Apply scaling with reasonable limits (don't go below 50% or above 150%)
+      const clampedScale = Math.max(0.5, Math.min(1.5, scaleFactor));
+      baseValueSize = baseValueSize * clampedScale;
+      baseMnemonicSize = baseMnemonicSize * clampedScale;
+      baseUnitSize = baseUnitSize * clampedScale;
+    }
     
     // Adjust value font size based on text length and available width
     let valueFontSize = baseValueSize;
@@ -90,24 +110,32 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       const estimatedValueWidth = displayValue.length * (baseValueSize * charWidthRatio);
       
       // Only scale down if content significantly exceeds available width
-      // Use 95% of maxWidth to leave some padding
-      const targetWidth = maxWidth * 0.95;
+      // Use 90% of maxWidth to leave padding for unit text
+      const targetWidth = maxWidth * 0.90;
       
       if (estimatedValueWidth > targetWidth) {
         // Calculate required font size to fit
         const requiredSize = (targetWidth) / (displayValue.length * charWidthRatio);
-        // Don't scale down more than necessary, enforce minimum of 70% of base size
-        valueFontSize = Math.max(baseValueSize * 0.7, Math.min(baseValueSize, requiredSize));
+        // More aggressive scaling: minimum 50% of base size (was 70%)
+        valueFontSize = Math.max(baseValueSize * 0.5, Math.min(baseValueSize, requiredSize));
       }
       
-      // Labels and units use smaller font, less aggressive scaling needed
+      // Labels and units use smaller font, more aggressive scaling
       const labelCharWidth = baseMnemonicSize * 0.5;
-      const estimatedLabelWidth = (mnemonic.length * labelCharWidth) + (unit.length * labelCharWidth);
+      const unitCharWidth = baseUnitSize * 0.5;
+      const estimatedMnemonicWidth = mnemonic.length * labelCharWidth;
+      const estimatedUnitWidth = unit.length * unitCharWidth;
       
-      if (estimatedLabelWidth > targetWidth) {
-        const scale = targetWidth / estimatedLabelWidth;
-        mnemonicFontSize = Math.max(baseMnemonicSize * 0.8, baseMnemonicSize * scale);
-        unitFontSize = Math.max(baseUnitSize * 0.8, baseUnitSize * scale);
+      // Scale mnemonic if too wide
+      if (estimatedMnemonicWidth > targetWidth * 0.4) {
+        const scale = (targetWidth * 0.4) / estimatedMnemonicWidth;
+        mnemonicFontSize = Math.max(baseMnemonicSize * 0.6, baseMnemonicSize * scale);
+      }
+      
+      // Scale unit if too wide (reserve space for value)
+      if (estimatedUnitWidth > targetWidth * 0.3) {
+        const scale = (targetWidth * 0.3) / estimatedUnitWidth;
+        unitFontSize = Math.max(baseUnitSize * 0.6, baseUnitSize * scale);
       }
     }
     
@@ -116,7 +144,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       mnemonic: mnemonicFontSize,
       unit: unitFontSize,
     };
-  }, [value, mnemonic, unit, maxWidth, customFontSize, precision]);
+  }, [value, mnemonic, unit, maxWidth, cellHeight, customFontSize, precision]);
   
   // Pass dynamic sizes to styles
   const styles = createStyles(theme, dynamicSizes, alignment);
@@ -155,6 +183,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     style,
     minWidth && { minWidth }, 
     maxWidth && { maxWidth },
+    cellHeight && { height: cellHeight },
     // Use MetricDisplayData layout info if available
     data?.layout && {
       minWidth: data.layout.minWidth,
@@ -186,9 +215,11 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         <Text style={styles.mnemonic} testID="secondary-metric-mnemonic">
           {mnemonic.toUpperCase()}
         </Text>
-        <Text style={styles.unit} testID="secondary-metric-unit">
-          ({unit || ''})
-        </Text>
+        {unit && (
+          <Text style={styles.unit} testID="secondary-metric-unit">
+            ({unit})
+          </Text>
+        )}
       </View>
       {/* Second line: Value */}
       <View style={valueContainerStyle}>
@@ -211,17 +242,19 @@ const createStyles = (
   StyleSheet.create({
     container: {
       width: '100%', // Fill parent cell width
+      height: '100%', // Fill parent cell height
+      flexDirection: 'column', // Stack vertically
       alignItems: 'flex-end', // Always right-align (UnifiedWidgetGrid v2 requirement)
-      justifyContent: 'center',
-      paddingVertical: 4, // Match PrimaryMetricCell padding
-      paddingHorizontal: 8, // Match PrimaryMetricCell padding
-      minHeight: 70, // Match PrimaryMetricCell minHeight
+      justifyContent: 'space-between', // Distribute mnemonic and value to fill height
+      paddingVertical: 0, // No padding for tight fit
+      paddingHorizontal: 0,
+      paddingRight: 2, // Small inset from cell border
     },
     mnemonicUnitRow: {
       flexDirection: 'row',
       alignItems: 'baseline',
       justifyContent: 'flex-end', // Always right-align (UnifiedWidgetGrid v2 requirement)
-      marginBottom: 4, // Match PrimaryMetricCell spacing
+      marginBottom: 0, // No extra margin, let space-between handle it
     },
     mnemonic: {
       fontSize: sizes.mnemonic, // Dynamic sizing based on content and maxWidth

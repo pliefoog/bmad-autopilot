@@ -19,6 +19,8 @@ interface DynamicTemperatureWidgetProps {
   title: string;
   width?: number;
   height?: number;
+  maxWidth?: number; // Cell width from UnifiedWidgetGrid
+  cellHeight?: number; // Cell height from UnifiedWidgetGrid
 }
 
 /**
@@ -27,7 +29,7 @@ interface DynamicTemperatureWidgetProps {
  * Secondary Grid (2×1): Location + Instance
  * Supports multi-instance temperature sensors (seawater, engine, cabin, exhaust, etc.)
  */
-export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> = React.memo(({ id, title, width, height }) => {
+export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> = React.memo(({ id, title, width, height, maxWidth, cellHeight }) => {
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
 
@@ -45,14 +47,14 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   // NMEA data - get temperature data from store
   const temperatureData = useNmeaStore(useCallback((state: any) => state.getTemperatureData(instanceNumber), [instanceNumber]));
   
+  // Temperature history tracking
+  const [temperatureHistory, setTemperatureHistory] = useState<Array<{ value: number; timestamp: number }>>([]);
+  
   // Extract temperature values
   const temperature = temperatureData?.value || null; // Temperature in Celsius
   const location = temperatureData?.location || 'unknown';
   const units = temperatureData?.units || 'C';
   const sensorName = temperatureData?.name || title;
-  
-  // Temperature history for trend line
-  const [temperatureHistory, setTemperatureHistory] = useState<{ value: number; timestamp: number }[]>([]);
   
   useEffect(() => {
     if (temperature !== null && temperature !== undefined) {
@@ -110,6 +112,25 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   }, []);
 
   const temperatureState = getTemperatureState(temperature, location);
+  
+  // Wrapper component to receive injected props from UnifiedWidgetGrid
+  const TrendLineCell = ({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => (
+    <TrendLine 
+      data={temperatureHistory.map(t => t.value)}
+      width={cellMaxWidth || 300}
+      height={cellHeightValue || 60}
+      color={temperatureState === 'alarm' ? theme.error : temperatureState === 'warning' ? theme.warning : theme.primary}
+      theme={theme}
+      showXAxis={true}
+      showYAxis={true}
+      xAxisPosition="bottom"
+      yAxisDirection="up"
+      timeWindowMinutes={5}
+      showTimeLabels={true}
+      showGrid={true}
+      strokeWidth={2}
+    />
+  );
 
   // Widget interaction handlers
   const handlePress = useCallback(() => {
@@ -220,23 +241,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
         }}
       />
       {/* Primary Row 2: Trend Line */}
-      <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-        <TrendLine 
-          data={temperatureHistory.map(t => t.value)}
-          width={200}
-          height={60}
-          color={temperatureState === 'alarm' ? theme.error : temperatureState === 'warning' ? theme.warning : theme.primary}
-          theme={theme}
-          showXAxis={true}
-          showYAxis={true}
-          xAxisPosition="bottom"
-          yAxisDirection="up"
-          timeWindowMinutes={5}
-          showTimeLabels={true}
-          showGrid={true}
-          strokeWidth={2}
-        />
-      </View>
+      <TrendLineCell />
       
       {/* Secondary Row 1: Location */}
       <SecondaryMetricCell

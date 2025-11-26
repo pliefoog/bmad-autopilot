@@ -5,8 +5,8 @@ import { ThemeColors } from '../store/themeStore';
 
 export interface TrendLineProps {
   data: number[];
-  width: number;
-  height: number;
+  width: number; // Required: cell width from parent
+  height: number; // Required: cell height from parent
   color: string;
   theme: ThemeColors;
   
@@ -94,11 +94,24 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   showDataPoints = false,
   dataPointRadius = 3,
 }) => {
-  // Calculate axis dimensions
-  const AXIS_MARGIN = showYAxis ? 35 : 8;
-  const X_AXIS_HEIGHT = showXAxis ? 20 : 0;
-  const chartWidth = width - AXIS_MARGIN;
-  const chartHeight = height - X_AXIS_HEIGHT - 8;
+  // Guard against invalid dimensions
+  if (!width || !height || width <= 0 || height <= 0) {
+    return (
+      <View style={{ width: width || 100, height: height || 60, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Calculate axis dimensions - use 5px padding on all sides
+  const PADDING_LEFT = showYAxis ? 20 : 5;
+  const PADDING_RIGHT = 5;
+  const PADDING_TOP = xAxisPosition === 'top' ? 15 : 5;
+  const PADDING_BOTTOM = xAxisPosition === 'bottom' ? 15 : 5;
+  
+  const chartWidth = width - PADDING_LEFT - PADDING_RIGHT;
+  const chartHeight = height - PADDING_TOP - PADDING_BOTTOM;
+  const AXIS_MARGIN = PADDING_LEFT;
   
   const finalAxisColor = axisColor || theme.border;
   const finalLabelColor = labelColor || theme.textSecondary;
@@ -160,7 +173,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
         y = chartHeight - ((thresholdValue - dataMin) / range) * chartHeight;
       }
       if (xAxisPosition === 'top') {
-        y += X_AXIS_HEIGHT;
+        y += PADDING_TOP;
       }
       return y;
     };
@@ -189,7 +202,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       
       // Adjust for X-axis position
       if (xAxisPosition === 'top') {
-        y += X_AXIS_HEIGHT;
+        y += PADDING_TOP;
       }
       
       return { x, y, value, color: getSegmentColor(value) };
@@ -203,7 +216,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       yLabels: yAxisDirection === 'down' ? yLabels : yLabels.reverse(),
       thresholdPositions
     };
-  }, [data, minValue, maxValue, forceZero, warningThreshold, alarmThreshold, thresholdType, finalNormalColor, finalWarningColor, finalAlarmColor, chartWidth, chartHeight, AXIS_MARGIN, yAxisDirection, xAxisPosition, X_AXIS_HEIGHT]);
+  }, [data, minValue, maxValue, forceZero, warningThreshold, alarmThreshold, thresholdType, finalNormalColor, finalWarningColor, finalAlarmColor, chartWidth, chartHeight, AXIS_MARGIN, yAxisDirection, xAxisPosition, PADDING_TOP]);
 
   // Generate time labels for X-axis (0 and max time only)
   const timeLabels = useMemo(() => {
@@ -234,8 +247,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     );
   }
 
-  const xAxisY = xAxisPosition === 'top' ? X_AXIS_HEIGHT : height - X_AXIS_HEIGHT;
-  const chartStartY = xAxisPosition === 'top' ? X_AXIS_HEIGHT : 0;
+  const xAxisY = xAxisPosition === 'top' ? PADDING_TOP : height - PADDING_BOTTOM;
+  const chartStartY = xAxisPosition === 'top' ? PADDING_TOP : PADDING_TOP;
 
   return (
     <View style={{ width, height }}>
@@ -251,7 +264,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
                   key={`h-grid-${idx}`}
                   x1={AXIS_MARGIN}
                   y1={y}
-                  x2={width}
+                  x2={chartWidth + AXIS_MARGIN}
                   y2={y}
                   stroke={finalGridColor}
                   strokeWidth="0.5"
@@ -314,7 +327,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
             <Line
               x1={AXIS_MARGIN}
               y1={xAxisY}
-              x2={width}
+              x2={chartWidth + AXIS_MARGIN}
               y2={xAxisY}
               stroke={finalAxisColor}
               strokeWidth="1"
@@ -340,7 +353,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
           <Line
             x1={AXIS_MARGIN}
             y1={thresholdPositions.warning}
-            x2={width}
+            x2={chartWidth + AXIS_MARGIN}
             y2={thresholdPositions.warning}
             stroke={finalWarningColor}
             strokeWidth="1.5"
@@ -352,7 +365,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
           <Line
             x1={AXIS_MARGIN}
             y1={thresholdPositions.alarm}
-            x2={width}
+            x2={chartWidth + AXIS_MARGIN}
             y2={thresholdPositions.alarm}
             stroke={finalAlarmColor}
             strokeWidth="1.5"

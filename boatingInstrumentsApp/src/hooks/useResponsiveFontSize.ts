@@ -41,10 +41,12 @@ export const useResponsiveFontSize = (width?: number, height?: number): Responsi
     const baseSize = Math.min(width, height);
     
     // Scale factors relative to base size
-    // Reduced from original to prevent overflow and match across widgets
-    const valueFontSize = Math.floor(baseSize * 0.14); // Reduced from 0.18 to 0.14
-    const labelFontSize = Math.floor(baseSize * 0.045); // Reduced from 0.06 to 0.045
-    const unitFontSize = Math.floor(baseSize * 0.045); // Reduced from 0.06 to 0.045
+    // More aggressive scaling for smaller widgets to prevent overlap
+    // Use non-linear scaling: smaller widgets scale down more aggressively
+    const scaleFactor = baseSize < 300 ? 0.11 : baseSize < 400 ? 0.12 : 0.14;
+    const valueFontSize = Math.floor(baseSize * scaleFactor);
+    const labelFontSize = Math.floor(baseSize * 0.04); // More aggressive from 0.045
+    const unitFontSize = Math.floor(baseSize * 0.04); // More aggressive from 0.045
     
     // Calculate row height based on widget height
     // Reserve space for header (~60px fixed) and distribute remaining space among rows
@@ -55,11 +57,11 @@ export const useResponsiveFontSize = (width?: number, height?: number): Responsi
     const estimatedRows = 5;
     const rowHeight = Math.floor(availableHeight / estimatedRows);
     
-    // Enforce minimum sizes for readability
-    const minValueSize = 14;
-    const minLabelSize = 7;
-    const minUnitSize = 7;
-    const minRowHeight = 35;
+    // Enforce minimum sizes for readability - more aggressive minimums
+    const minValueSize = 10; // Reduced from 14 to allow more shrinking
+    const minLabelSize = 6; // Reduced from 7
+    const minUnitSize = 6; // Reduced from 7
+    const minRowHeight = 30; // Reduced from 35
     
     // Enforce maximum sizes for very large widgets
     const maxValueSize = 60;
