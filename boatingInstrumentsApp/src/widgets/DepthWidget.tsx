@@ -136,21 +136,34 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   
   const { depth, depthSource, depthReferencePoint, depthTimestamp } = selectedDepthData;
   
-  // Depth history for min/max calculations
+  // Depth history for min/max calculations with source tracking
   const [depthHistory, setDepthHistory] = useState<{
     depths: { value: number; timestamp: number }[];
     sessionMin: number | null;
     sessionMax: number | null;
-  }>({ depths: [], sessionMin: null, sessionMax: null });
+    currentSource?: 'DPT' | 'DBT' | 'DBK'; // Track which source we're using
+  }>({ depths: [], sessionMin: null, sessionMax: null, currentSource: undefined });
 
   // Track depth history and session min/max
   useEffect(() => {
-    if (depth !== undefined && depth !== null) {
+    if (depth !== undefined && depth !== null && depthSource) {
       const now = Date.now();
       const oneHourAgo = now - 60 * 60 * 1000;
       const timeWindowMs = 5 * 60 * 1000; // 5 minutes for trend display
       
       setDepthHistory(prev => {
+        // CRITICAL: Clear history if source changed to prevent mixing reference points
+        // (DPT=waterline, DBT=transducer, DBK=keel have different absolute values)
+        if (prev.currentSource && prev.currentSource !== depthSource) {
+          console.log(`[DepthWidget] Source changed: ${prev.currentSource} → ${depthSource}, clearing history to prevent spikes`);
+          return {
+            depths: [{ value: depth, timestamp: now }],
+            sessionMin: depth,
+            sessionMax: depth,
+            currentSource: depthSource
+          };
+        }
+        
         // Check if the last entry is the same value to avoid duplicates
         const lastEntry = prev.depths[prev.depths.length - 1];
         if (lastEntry && Math.abs(lastEntry.value - depth) < 0.01 && (now - lastEntry.timestamp) < 1000) {
@@ -167,11 +180,12 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
         return {
           depths: newDepths,
           sessionMin: currentSessionMin,
-          sessionMax: currentSessionMax
+          sessionMax: currentSessionMax,
+          currentSource: depthSource // Update current source
         };
       });
     }
-  }, [depth]);
+  }, [depth, depthSource]);
 
   // Widget interaction handlers per ui-architecture.md v2.3
   const handlePress = useCallback(() => {
