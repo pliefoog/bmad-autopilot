@@ -381,12 +381,6 @@ nmea_sentences:
   - type: "DPT"    # Depth Below Transducer (primary depth source)
     frequency: 2   # Hz (every 0.5 seconds)
   
-  - type: "DBT"    # Depth Below Transducer (alternate format for compatibility)
-    frequency: 1   # Hz (every 1 second)
-  
-  - type: "DBK"    # Depth Below Keel (safety-critical for grounding avoidance)
-    frequency: 1   # Hz (every 1 second)
-  
   # ========== WATER TEMPERATURE ==========
   - type: "MTW"    # Water Temperature
     frequency: 0.2 # Hz (every 5 seconds)
@@ -415,10 +409,7 @@ nmea_sentences:
   
   - type: "HDG"    # Magnetic Heading with Deviation & Variation
     frequency: 5   # Hz (every 0.2 seconds)
-  
-  - type: "HDM"    # Magnetic Heading (simple)
-    frequency: 2   # Hz (every 0.5 seconds)
-  
+   
   # ========== ENGINE MONITORING ==========
   # Single diesel engine configuration (typical 30-45ft coastal cruiser)
   - type: "RPM"    # Engine RPM

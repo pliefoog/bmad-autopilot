@@ -384,12 +384,55 @@ class ScenarioDataSource extends EventEmitter {
    * Start continuous generation (fallback mode)
    */
   startContinuousGeneration() {
-    // Start built-in generators
+    // Collect YAML generator types to avoid starting duplicate built-in generators
+    const yamlGeneratorTypes = new Set();
+    this.dataGenerators.forEach((generator, generatorName) => {
+      if (generatorName.startsWith('yaml_')) {
+        // Extract base type (e.g., 'dpt' from 'yaml_dpt_0')
+        const match = generatorName.match(/^yaml_([^_]+)/);
+        if (match) {
+          yamlGeneratorTypes.add(match[1]);
+        }
+      }
+    });
+    
+    console.log(`🔄 YAML generator types found:`, Array.from(yamlGeneratorTypes));
+    
+    // Start built-in generators only if no YAML generator exists for that type
     const builtInGenerators = ['depth', 'speed', 'wind', 'gps'];
     
     builtInGenerators.forEach(generatorName => {
+      // Check if YAML generator exists for this type
+      const hasYAML = yamlGeneratorTypes.has('dpt') || 
+                      yamlGeneratorTypes.has('dbt') || 
+                      yamlGeneratorTypes.has('dbk') ||
+                      yamlGeneratorTypes.has('vhw') ||
+                      yamlGeneratorTypes.has('vtg') ||
+                      yamlGeneratorTypes.has('mwv') ||
+                      yamlGeneratorTypes.has('gga') ||
+                      yamlGeneratorTypes.has('rmc');
+      
+      // Skip built-in generator if YAML version exists
+      if (generatorName === 'depth' && (yamlGeneratorTypes.has('dpt') || yamlGeneratorTypes.has('dbt') || yamlGeneratorTypes.has('dbk'))) {
+        console.log(`⏭️ Skipping built-in depth generator (YAML depth generator exists)`);
+        return;
+      }
+      if (generatorName === 'speed' && (yamlGeneratorTypes.has('vhw') || yamlGeneratorTypes.has('vtg'))) {
+        console.log(`⏭️ Skipping built-in speed generator (YAML speed generator exists)`);
+        return;
+      }
+      if (generatorName === 'wind' && yamlGeneratorTypes.has('mwv')) {
+        console.log(`⏭️ Skipping built-in wind generator (YAML wind generator exists)`);
+        return;
+      }
+      if (generatorName === 'gps' && (yamlGeneratorTypes.has('gga') || yamlGeneratorTypes.has('rmc'))) {
+        console.log(`⏭️ Skipping built-in GPS generator (YAML GPS generator exists)`);
+        return;
+      }
+      
       const generator = this.dataGenerators.get(generatorName);
       if (generator) {
+        console.log(`▶️ Starting built-in generator: ${generatorName}`);
         this.startGenerator(generatorName, generator, { name: 'continuous' });
       }
     });
