@@ -84,55 +84,93 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
     []
   ));
   
-  // Select depth source based on strict priority: DPT > DBT > DBK
+  // Track currently locked depth source to prevent unnecessary switching
+  const [lockedSource, setLockedSource] = useState<'DPT' | 'DBT' | 'DBK' | null>(null);
+  
+  // Select depth source with sticky selection: once locked, only switch if current source becomes stale
   const selectedDepthData = useMemo(() => {
     const now = Date.now();
     const STALE_THRESHOLD = 10000; // 10 seconds
     
-    // Check DPT first (highest priority)
-    if (dptDepth?.depth !== undefined && 
-        dptDepth.timestamp && 
-        (now - dptDepth.timestamp) < STALE_THRESHOLD) {
+    // Helper to check if a source is valid and fresh
+    const isSourceValid = (sourceData: DepthSensorData | undefined): boolean => {
+      return sourceData?.depth !== undefined && 
+             sourceData.timestamp !== undefined &&
+             (now - sourceData.timestamp) < STALE_THRESHOLD;
+    };
+    
+    // If we have a locked source, check if it's still valid
+    if (lockedSource) {
+      let currentSourceData: DepthSensorData | undefined;
+      
+      switch (lockedSource) {
+        case 'DPT':
+          currentSourceData = dptDepth;
+          break;
+        case 'DBT':
+          currentSourceData = dbtDepth;
+          break;
+        case 'DBK':
+          currentSourceData = dbkDepth;
+          break;
+      }
+      
+      // If current source is still valid, stick with it (STICKY SELECTION)
+      if (isSourceValid(currentSourceData)) {
+        return {
+          depth: currentSourceData!.depth,
+          depthSource: lockedSource,
+          depthReferencePoint: currentSourceData!.referencePoint,
+          depthTimestamp: currentSourceData!.timestamp
+        };
+      }
+      
+      // Current source became stale, unlock and fall through to priority selection
+      console.log(`[DepthWidget] Source ${lockedSource} became stale, re-evaluating priority`);
+      setLockedSource(null);
+    }
+    
+    // No locked source or current source stale: use priority-based selection
+    // Priority: DPT > DBT > DBK
+    if (isSourceValid(dptDepth)) {
+      setLockedSource('DPT');
       return {
-        depth: dptDepth.depth,
+        depth: dptDepth!.depth,
         depthSource: 'DPT' as const,
-        depthReferencePoint: dptDepth.referencePoint,
-        depthTimestamp: dptDepth.timestamp
+        depthReferencePoint: dptDepth!.referencePoint,
+        depthTimestamp: dptDepth!.timestamp
       };
     }
     
-    // Fall back to DBT (medium priority)
-    if (dbtDepth?.depth !== undefined && 
-        dbtDepth.timestamp && 
-        (now - dbtDepth.timestamp) < STALE_THRESHOLD) {
+    if (isSourceValid(dbtDepth)) {
+      setLockedSource('DBT');
       return {
-        depth: dbtDepth.depth,
+        depth: dbtDepth!.depth,
         depthSource: 'DBT' as const,
-        depthReferencePoint: dbtDepth.referencePoint,
-        depthTimestamp: dbtDepth.timestamp
+        depthReferencePoint: dbtDepth!.referencePoint,
+        depthTimestamp: dbtDepth!.timestamp
       };
     }
     
-    // Fall back to DBK (lowest priority)
-    if (dbkDepth?.depth !== undefined && 
-        dbkDepth.timestamp && 
-        (now - dbkDepth.timestamp) < STALE_THRESHOLD) {
+    if (isSourceValid(dbkDepth)) {
+      setLockedSource('DBK');
       return {
-        depth: dbkDepth.depth,
+        depth: dbkDepth!.depth,
         depthSource: 'DBK' as const,
-        depthReferencePoint: dbkDepth.referencePoint,
-        depthTimestamp: dbkDepth.timestamp
+        depthReferencePoint: dbkDepth!.referencePoint,
+        depthTimestamp: dbkDepth!.timestamp
       };
     }
     
     // No valid depth data available
+    setLockedSource(null);
     return { 
       depth: undefined, 
       depthSource: undefined, 
       depthReferencePoint: undefined, 
       depthTimestamp: undefined 
     };
-  }, [dptDepth, dbtDepth, dbkDepth]);
+  }, [dptDepth, dbtDepth, dbkDepth, lockedSource]);
   
   const { depth, depthSource, depthReferencePoint, depthTimestamp } = selectedDepthData;
   
