@@ -22,6 +22,7 @@ export const WidgetSelector: React.FC<{
   onClose: () => void;
 }> = ({ selected, onChange, visible, onClose }) => {
   const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [localSelected, setLocalSelected] = useState<string[]>(selected);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [activeHelpId, setActiveHelpId] = useState<string | null>(null);

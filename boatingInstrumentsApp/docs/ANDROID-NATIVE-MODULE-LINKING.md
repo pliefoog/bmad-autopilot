@@ -280,6 +280,115 @@ Add these to `.vscode/tasks.json`:
 
 ---
 
+---
+
+## 🚨 CRITICAL: Release Build Issues
+
+### Problem: Native Module Not Found in Release APK
+
+If the app works in debug but fails in release builds with:
+```
+ERROR [getTcpSocket] ⚠️ Native TCP socket module not found!
+hasTcpSockets: false, hasTcpSocket: false
+```
+
+**Root Causes:**
+1. **Expo autolinking doesn't respect `react-native.config.js`** in release builds
+2. **R8/ProGuard code shrinking** removes native modules accessed via reflection
+3. **Native classes compiled but stripped** from final APK
+
+### Solution: Manual Linking + ProGuard Rules
+
+#### Step 1: Add ProGuard Keep Rules
+
+Edit `android/app/proguard-rules.pro`:
+```proguard
+# react-native-tcp-socket
+-keep class com.asterinet.react.tcpsocket.** { *; }
+-keepclassmembers class com.asterinet.react.tcpsocket.** { *; }
+```
+
+#### Step 2: Manual Package Import
+
+Edit `android/app/src/main/java/.../MainApplication.kt`:
+```kotlin
+import expo.modules.ApplicationLifecycleDispatcher
+import expo.modules.ReactNativeHostWrapper
+import com.asterinet.react.tcpsocket.TcpSocketPackage  // ← Add this
+
+class MainApplication : Application(), ReactApplication {
+
+  override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
+      this,
+      object : DefaultReactNativeHost(this) {
+        override fun getPackages(): List<ReactPackage> =
+            PackageList(this).packages.apply {
+              add(TcpSocketPackage())  // ← Add this
+            }
+```
+
+#### Step 3: Add to settings.gradle
+
+Edit `android/settings.gradle`:
+```gradle
+include ':app'
+includeBuild(expoAutolinking.reactNativeGradlePlugin)
+include ':react-native-tcp-socket'  // ← Add this
+project(':react-native-tcp-socket').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-tcp-socket/android')  // ← Add this
+```
+
+#### Step 4: Add Gradle Dependency
+
+Edit `android/app/build.gradle`:
+```gradle
+dependencies {
+    implementation("com.facebook.react:react-android")
+    implementation project(':react-native-tcp-socket')  // ← Add this
+    
+    // ... rest of dependencies
+}
+```
+
+#### Step 5: Rebuild Release APK
+
+```bash
+cd android
+./gradlew clean assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+### Verification: Check Native Classes in APK
+
+```bash
+# Native classes are compiled into DEX bytecode
+unzip -p android/app/build/outputs/apk/release/app-release.apk classes.dex | strings | grep -i "TcpSocket"
+
+# Should output:
+# Lcom/asterinet/react/tcpsocket/TcpSocketPackage;
+# Lcom/asterinet/react/tcpsocket/TcpSocketModule;
+# ... etc
+```
+
+If you see these strings, the native module is properly linked! ✅
+
+---
+
+## Why Expo Autolinking Fails
+
+Expo SDK 52+ uses its own autolinking system that:
+- **Ignores `react-native.config.js`** in many cases
+- **Only scans packages with `expo-module.config.json`** or specific metadata
+- **Doesn't link packages missing proper Expo plugin configuration**
+
+**Evidence:**
+- `PackageList(this).packages` returns only Expo-managed packages
+- `react-native-tcp-socket` isn't in Expo's registry
+- Build logs show module compiling but not linking: `> Task :react-native-tcp-socket:bundleReleaseAar`
+
+**Solution:** Manual linking is the only reliable approach for non-Expo native modules.
+
+---
+
 ## Still Having Issues?
 
 1. Check Android device/emulator is running: `adb devices`
@@ -287,8 +396,11 @@ Add these to `.vscode/tasks.json`:
 3. Verify Android version in `android/build.gradle` matches device
 4. Check `android/app/build.gradle` for proper configurations
 5. Review logs: `adb logcat | grep -i "tcp\|udp\|native"`
+6. **For release builds:** Verify DEX contains native classes (see verification above)
+7. **For autolinking issues:** Use manual linking (see Critical section)
 
 For more help, see:
 - [Expo Autolinking Docs](https://docs.expo.dev/bare/autolinking/)
 - [React Native Modules](https://reactnative.dev/docs/native-modules-android)
 - [TCP Socket Issues](https://github.com/Rapsssito/react-native-tcp-socket/issues)
+- [ProGuard Configuration](https://developer.android.com/build/shrink-code)

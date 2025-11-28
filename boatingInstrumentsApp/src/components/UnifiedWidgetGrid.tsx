@@ -67,10 +67,10 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
   const centralGridWidth = widgetWidth * (1 - 2 * HORIZONTAL_MARGIN_PERCENT); // 90%
   
   // Header and footer heights scale with widget height
-  const headerFooterHeight = Math.max(40, widgetHeight * 0.15); // 15% of height, min 40px
+  const headerFooterHeight = Math.max(30, widgetHeight * 0.10); // 10% of height, min 30px
   
   // Calculate available height for grid
-  const availableGridHeight = widgetHeight - (2 * headerFooterHeight);
+  const availableGridHeight = widgetHeight - (headerFooterHeight + headerFooterHeight/3); // Footer is 1/3 header
   
   // Calculate gaps with minimums
   const MIN_ROW_GAP = 12;
@@ -80,12 +80,13 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
   const hasSecondary = secondaryRows > 0;
   const separatorHeight = hasSecondary ? 3 : 0;
   const separatorMargin = hasSecondary ? 16 : 0; // Fixed margin around separator
+  const headerMargin = 12; // Fixed margin below header
   
   // Row gap scales but has minimum
   const rowGap = Math.max(MIN_ROW_GAP, availableGridHeight * 0.05);
   
   // Calculate row heights - all rows get equal height for consistent separator positioning
-  const totalRowGaps = (totalRows - 1) * rowGap + (hasSecondary ? separatorMargin * 2 + separatorHeight : 0);
+  const totalRowGaps = (totalRows - 1) * rowGap + (hasSecondary ? separatorMargin * 2 + separatorHeight : 0) + headerMargin;
   const availableForRows = availableGridHeight - totalRowGaps;
   const rowHeight = availableForRows / totalRows;
   
@@ -196,6 +197,7 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
       <View style={[styles.gridArea, { 
         paddingLeft: leftMargin, 
         paddingRight: rightMargin,
+        paddingTop: headerMargin,
         flex: 1 
       }]}>
         {/* Central Grid */}
@@ -267,7 +269,7 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
       </View>
       
       {/* Footer */}
-      <View style={[styles.footer, { height: headerFooterHeight }]} />
+      <View style={[styles.footer, { height: headerFooterHeight/3 }]} />
     </View>
   );
 
@@ -297,9 +299,8 @@ const styles = StyleSheet.create({
   },
   header: {
     width: '100%',
-    justifyContent: 'flex-start',
-    paddingTop: 16,
-    paddingBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1, // Debug: show header boundaries
     borderColor: 'rgba(0, 0, 255, 0.3)', // Debug: blue semi-transparent
   },

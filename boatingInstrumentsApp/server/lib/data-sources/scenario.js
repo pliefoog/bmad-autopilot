@@ -1483,8 +1483,8 @@ class ScenarioDataSource extends EventEmitter {
    * Generate NMEA sentences
    */
   generateDBT(depth) {
-    const checksum = this.calculateChecksum(`DBT,${depth.toFixed(1)},f,${(depth * 0.3048).toFixed(1)},M,${(depth * 0.5468).toFixed(1)},F`);
-    return `$GPDBT,,f,${depth.toFixed(1)},M,${(depth * 0.5468).toFixed(1)},F*${checksum}`;
+    const checksum = this.calculateChecksum(`DBT,${depth.toFixed(2)},f,${(depth * 0.3048).toFixed(2)},M,${(depth * 0.5468).toFixed(2)},F`);
+    return `$GPDBT,,f,${depth.toFixed(2)},M,${(depth * 0.5468).toFixed(2)},F*${checksum}`;
   }
 
   generateVHW(speed) {
@@ -1554,8 +1554,8 @@ class ScenarioDataSource extends EventEmitter {
   generateDPT(depth) {
     const offset = this.scenario?.parameters?.vessel?.keel_offset || 0;
     const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0;
-    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
-    return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
+    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
+    return `$SDDPT,${depth.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
   }
 
   /**
@@ -1564,8 +1564,8 @@ class ScenarioDataSource extends EventEmitter {
   generateDBK(depth) {
     const keelOffset = this.scenario?.parameters?.vessel?.keel_offset || 0;
     const depthBelowKeel = Math.max(0, depth - keelOffset);
-    const checksum = this.calculateChecksum(`DBK,${depthBelowKeel.toFixed(1)},f,${(depthBelowKeel * 0.3048).toFixed(1)},M,${(depthBelowKeel * 0.5468).toFixed(1)},F`);
-    return `$SDDBK,${depthBelowKeel.toFixed(1)},f,${(depthBelowKeel * 0.3048).toFixed(1)},M,${(depthBelowKeel * 0.5468).toFixed(1)},F*${checksum}`;
+    const checksum = this.calculateChecksum(`DBK,${depthBelowKeel.toFixed(2)},f,${(depthBelowKeel * 0.3048).toFixed(2)},M,${(depthBelowKeel * 0.5468).toFixed(2)},F`);
+    return `$SDDBK,${depthBelowKeel.toFixed(2)},f,${(depthBelowKeel * 0.3048).toFixed(2)},M,${(depthBelowKeel * 0.5468).toFixed(2)},F*${checksum}`;
   }
 
   /**

@@ -264,7 +264,7 @@ class NmeaGenerator {
     const depthFathoms = depthMeters / 1.8288; // Convert meters to fathoms (1 fathom = 1.8288 meters)
 
     // Correct DBT format: $xxDBT,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
-    const sentence = `$IIDBT,${depthFeet.toFixed(1)},f,${depthMeters.toFixed(1)},M,${depthFathoms.toFixed(1)},F`;
+    const sentence = `$IIDBT,${depthFeet.toFixed(2)},f,${depthMeters.toFixed(2)},M,${depthFathoms.toFixed(2)},F`;
     return this.addChecksum(sentence);
   }
 
@@ -276,7 +276,7 @@ class NmeaGenerator {
     const offset = this.scenario?.parameters?.vessel?.keel_offset || 0.0; // Keel offset in meters
     const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0; // Sonar max range
     
-    const sentence = `$IIDPT,${depthMeters.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}`;
+    const sentence = `$IIDPT,${depthMeters.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}`;
     return this.addChecksum(sentence);
   }
 
@@ -292,7 +292,7 @@ class NmeaGenerator {
     const depthFathoms = depthBelowKeel * 0.546667; // Convert meters to fathoms
 
     // DBK format: $xxDBK,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
-    const sentence = `$IIDBK,${depthFeet.toFixed(1)},f,${depthBelowKeel.toFixed(1)},M,${depthFathoms.toFixed(1)},F`;
+    const sentence = `$IIDBK,${depthFeet.toFixed(2)},f,${depthBelowKeel.toFixed(2)},M,${depthFathoms.toFixed(2)},F`;
     return this.addChecksum(sentence);
   }
 

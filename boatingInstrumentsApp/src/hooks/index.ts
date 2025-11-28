@@ -28,6 +28,8 @@ export type {
   ConversionPreference 
 } from './useUnitConversion';
 
+export { useResponsiveHeader } from './useResponsiveHeader';
+
 // Story 13.2.2 - Platform Input Component Hooks
 export { useInputFocus } from './useInputFocus';
 export type { UseInputFocusReturn } from './useInputFocus';

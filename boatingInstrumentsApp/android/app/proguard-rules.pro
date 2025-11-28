@@ -11,4 +11,8 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# react-native-tcp-socket
+-keep class com.asterinet.react.tcpsocket.** { *; }
+-keepclassmembers class com.asterinet.react.tcpsocket.** { *; }
+
 # Add any project specific keep options here:

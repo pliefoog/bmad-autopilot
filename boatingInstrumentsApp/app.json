@@ -4,6 +4,7 @@
     "slug": "boating-instruments-app",
     "scheme": "boating-instruments",
     "version": "0.0.1",
+    "newArchEnabled": false,
     "platforms": [
       "ios",
       "android",

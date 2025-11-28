@@ -192,6 +192,37 @@ npm run ios -- --configuration Release --device
 
 ## Android Troubleshooting
 
+### \ud83d\udea8 Release Build Issues (CRITICAL)
+
+#### "Cannot read property 'connect' of null" in Release APK
+
+**Symptom:** App works in debug but TCP/UDP connections fail in release builds:
+```
+ERROR [getTcpSocket] ⚠️ Native TCP socket module not found!
+hasTcpSockets: false, hasTcpSocket: false
+```
+
+**Cause:** Expo autolinking fails for native modules in release builds. Native classes get compiled but stripped by R8 code shrinking.
+
+**Solution:** Manual linking required for `react-native-tcp-socket` and `react-native-udp`.
+
+**See Complete Fix:** [Android Native Module Linking Guide](boatingInstrumentsApp/docs/ANDROID-NATIVE-MODULE-LINKING.md#-critical-release-build-issues)
+
+**Quick Fix Summary:**
+1. Add ProGuard keep rules to `android/app/proguard-rules.pro`
+2. Manual package import in `MainApplication.kt`
+3. Add module to `settings.gradle`
+4. Add dependency to `app/build.gradle`
+5. Rebuild: `./gradlew clean assembleRelease`
+
+**Verification:**
+```bash
+# Check native classes are in APK
+unzip -p android/app/build/outputs/apk/release/app-release.apk classes.dex | strings | grep "TcpSocket"
+```
+
+---
+
 ### Build Errors
 
 #### "SDK location not found"

@@ -76,73 +76,63 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       ? (typeof value === 'number' ? value.toFixed(precision) : value.toString())
       : '---';
     
-    let baseValueSize = customFontSize?.value ?? 36;
-    let baseMnemonicSize = customFontSize?.mnemonic ?? 12;
-    let baseUnitSize = customFontSize?.unit ?? 12;
+    // BASE COMPOSITION - Standard sizes for MetricCell
+    const BASE_MNEMONIC_SIZE = customFontSize?.mnemonic ?? 12;
+    const BASE_VALUE_SIZE = customFontSize?.value ?? 36;
+    const BASE_UNIT_SIZE = customFontSize?.unit ?? 12; // Same as mnemonic
+    const BASE_SPACE_SIZE = 4; // Constant space between mnemonic and value
     
-    // Scale fonts based on cellHeight if provided
+    // Calculate total base height
+    const BASE_TOTAL_HEIGHT = BASE_MNEMONIC_SIZE + BASE_SPACE_SIZE + BASE_VALUE_SIZE;
+    
+    let mnemonicFontSize = BASE_MNEMONIC_SIZE;
+    let valueFontSize = BASE_VALUE_SIZE;
+    let unitFontSize = BASE_UNIT_SIZE;
+    let spaceSize = BASE_SPACE_SIZE;
+    
+    // HEIGHT SCALING - Scale all elements proportionally to fit available height
     if (cellHeight && cellHeight > 0) {
-      // Use full available height (no padding)
       const availableHeight = cellHeight;
-      // Mnemonic + Value should fill the height with minimal gap
       
-      // Calculate scale factor to fit content
-      const desiredTotalSize = availableHeight; // Use full height
-      const currentTotalSize = baseMnemonicSize + baseValueSize;
-      const scaleFactor = desiredTotalSize / currentTotalSize;
+      // Calculate height scaling factor
+      const heightScaleFactor = availableHeight / BASE_TOTAL_HEIGHT;
       
-      // Apply scaling with reasonable limits (don't go below 50% or above 150%)
-      const clampedScale = Math.max(0.5, Math.min(1.5, scaleFactor));
-      baseValueSize = baseValueSize * clampedScale;
-      baseMnemonicSize = baseMnemonicSize * clampedScale;
-      baseUnitSize = baseUnitSize * clampedScale;
+      // Apply height scaling to all elements
+      mnemonicFontSize = BASE_MNEMONIC_SIZE * heightScaleFactor;
+      valueFontSize = BASE_VALUE_SIZE * heightScaleFactor;
+      unitFontSize = BASE_UNIT_SIZE * heightScaleFactor;
+      spaceSize = BASE_SPACE_SIZE * heightScaleFactor;
     }
     
-    // Adjust value font size based on text length and available width
-    let valueFontSize = baseValueSize;
-    let mnemonicFontSize = baseMnemonicSize;
-    let unitFontSize = baseUnitSize;
-    
+    // WIDTH SCALING - Only scale value if it exceeds available width
     if (maxWidth && maxWidth > 0) {
-      // More accurate character width estimation for monospace numbers
-      // Average character width is ~0.55 of font size for monospace digits
-      const charWidthRatio = 0.55;
-      const estimatedValueWidth = displayValue.length * (baseValueSize * charWidthRatio);
+      // Account for internal container padding (paddingRight: 6)
+      const CONTAINER_PADDING_RIGHT = 0;
+      const actualAvailableWidth = maxWidth - CONTAINER_PADDING_RIGHT;
       
-      // Only scale down if content significantly exceeds available width
-      // Use 90% of maxWidth to leave padding for unit text
-      const targetWidth = maxWidth * 0.90;
+      // Character width estimation for monospace
+      // Account for degree symbols, directional letters, special characters
+      const CHAR_WIDTH_RATIO = 0.6;
+      const PADDING_RESERVE = 0.95; // Use 95% of actual width, leave 5% padding
       
-      if (estimatedValueWidth > targetWidth) {
-        // Calculate required font size to fit
-        const requiredSize = (targetWidth) / (displayValue.length * charWidthRatio);
-        // More aggressive scaling: minimum 50% of base size (was 70%)
-        valueFontSize = Math.max(baseValueSize * 0.5, Math.min(baseValueSize, requiredSize));
-      }
+      // Calculate required width for scaled value
+      const scaledValueWidth = displayValue.length * (valueFontSize * CHAR_WIDTH_RATIO);
+      const targetWidth = actualAvailableWidth * PADDING_RESERVE;
       
-      // Labels and units use smaller font, more aggressive scaling
-      const labelCharWidth = baseMnemonicSize * 0.5;
-      const unitCharWidth = baseUnitSize * 0.5;
-      const estimatedMnemonicWidth = mnemonic.length * labelCharWidth;
-      const estimatedUnitWidth = unit.length * unitCharWidth;
-      
-      // Scale mnemonic if too wide
-      if (estimatedMnemonicWidth > targetWidth * 0.4) {
-        const scale = (targetWidth * 0.4) / estimatedMnemonicWidth;
-        mnemonicFontSize = Math.max(baseMnemonicSize * 0.6, baseMnemonicSize * scale);
-      }
-      
-      // Scale unit if too wide (reserve space for value)
-      if (estimatedUnitWidth > targetWidth * 0.3) {
-        const scale = (targetWidth * 0.3) / estimatedUnitWidth;
-        unitFontSize = Math.max(baseUnitSize * 0.6, baseUnitSize * scale);
+      // If value exceeds available width, calculate width scaling factor
+      if (scaledValueWidth > targetWidth) {
+        const widthScaleFactor = targetWidth / scaledValueWidth;
+        
+        // Apply width scaling ONLY to value (not mnemonic, not unit, not space)
+        valueFontSize = valueFontSize * widthScaleFactor;
       }
     }
     
     return {
-      value: valueFontSize,
-      mnemonic: mnemonicFontSize,
-      unit: unitFontSize,
+      value: Math.max(1, valueFontSize), // Minimum 1pt to prevent zero-size
+      mnemonic: Math.max(1, mnemonicFontSize),
+      unit: Math.max(1, unitFontSize),
+      space: Math.max(1, spaceSize), // Return calculated space for layout
     };
   }, [value, mnemonic, unit, maxWidth, cellHeight, customFontSize, precision]);
   
@@ -236,7 +226,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
 const createStyles = (
   theme: any, 
-  sizes: { value: number; mnemonic: number; unit: number },
+  sizes: { value: number; mnemonic: number; unit: number; space: number },
   align: 'left' | 'right' | 'center' = 'right'
 ) =>
   StyleSheet.create({
@@ -245,19 +235,20 @@ const createStyles = (
       height: '100%', // Fill parent cell height
       flexDirection: 'column', // Stack vertically
       alignItems: 'flex-end', // Always right-align (UnifiedWidgetGrid v2 requirement)
-      justifyContent: 'space-between', // Distribute mnemonic and value to fill height
+      justifyContent: 'flex-start', // Align to top, let flex handle spacing
       paddingVertical: 0, // No padding for tight fit
       paddingHorizontal: 0,
-      paddingRight: 2, // Small inset from cell border
+      paddingRight: 6, // Inset from cell border to prevent text overflow
     },
     mnemonicUnitRow: {
       flexDirection: 'row',
       alignItems: 'baseline',
       justifyContent: 'flex-end', // Always right-align (UnifiedWidgetGrid v2 requirement)
-      marginBottom: 0, // No extra margin, let space-between handle it
+      marginBottom: sizes.space, // Constant scaled space between mnemonic and value
     },
     mnemonic: {
       fontSize: sizes.mnemonic, // Dynamic sizing based on content and maxWidth
+      lineHeight: sizes.mnemonic, // Explicit tight line height
       fontWeight: '600',
       color: theme.textSecondary,
       textTransform: 'uppercase',
@@ -267,6 +258,7 @@ const createStyles = (
     },
     unit: {
       fontSize: sizes.unit, // Dynamic sizing based on content and maxWidth
+      lineHeight: sizes.unit, // Explicit tight line height
       fontWeight: '400',
       color: theme.textSecondary,
       letterSpacing: 0,
@@ -275,8 +267,9 @@ const createStyles = (
       flexShrink: 0, // Don't shrink units
     },
     valueContainer: {
+      flex: 1, // Take all remaining space to push value to bottom
       flexDirection: 'row',
-      alignItems: 'baseline',
+      alignItems: 'flex-end', // Align text to bottom of container
       justifyContent: align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start'),
     },
     value: {
@@ -284,7 +277,7 @@ const createStyles = (
       fontWeight: '700',
       fontFamily: 'monospace',
       letterSpacing: 0,
-      lineHeight: sizes.value + 4, // Match PrimaryMetricCell line height calculation
+      lineHeight: sizes.value, // Tight line height = font size for full vertical fill
       flexShrink: 0, // Prevent shrinking to maintain consistent width
     },
   });

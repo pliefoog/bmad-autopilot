@@ -69,6 +69,7 @@ Or launch the app and skip the setup wizard to enter **Demo Mode** with syntheti
 - **[Quick Start Guide](QUICK-START.md)** - 5-minute setup for daily development
 - **[Setup and Testing Guide](SETUP-AND-TESTING.md)** - Complete installation instructions for all platforms
 - **[Platform Troubleshooting](PLATFORM-TROUBLESHOOTING.md)** - Solutions to common iOS/Android issues
+- **[Android Native Module Linking](boatingInstrumentsApp/docs/ANDROID-NATIVE-MODULE-LINKING.md)** - Critical guide for TCP/UDP native modules and release builds
 
 ### Development
 

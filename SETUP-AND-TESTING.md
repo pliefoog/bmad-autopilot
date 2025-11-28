@@ -9,6 +9,9 @@
 - [Testing Guide](#testing-guide)
 - [Development Modes](#development-modes)
 - [Troubleshooting](#troubleshooting)
+- [Android Release Builds](#android-release-builds)
+
+> **🚨 CRITICAL:** If building Android release APKs, see [Android Native Module Linking Guide](boatingInstrumentsApp/docs/ANDROID-NATIVE-MODULE-LINKING.md#-critical-release-build-issues) for required manual linking steps. TCP/UDP modules don't autolink in release builds!
 
 ---
 
@@ -1003,6 +1006,58 @@ Once setup is complete:
 5. **Run tests** to verify everything works
 
 **Ready for development?** Check out the [Architecture Documentation](docs/architecture.md) for detailed technical information.
+
+---
+
+## Android Release Builds
+
+### Building Production APKs
+
+**\ud83d\udea8 CRITICAL:** Native TCP/UDP modules require manual linking in release builds due to Expo autolinking limitations.
+
+#### Quick Build Commands
+
+```bash
+# Build release APK
+cd boatingInstrumentsApp/android
+./gradlew clean assembleRelease
+
+# Install on device
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+#### Common Release Build Issues
+
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| "Cannot read property 'connect' of null" | Native module not linked | Manual linking required (see guide below) |
+| TCP connections fail in release only | R8 code shrinking | Add ProGuard keep rules |
+| Module works in debug, not release | Expo autolinking failure | Manual package import |
+
+### Complete Release Build Guide
+
+For full instructions on:
+- Manual native module linking
+- ProGuard configuration
+- Troubleshooting release-specific issues
+- Verification steps
+
+**See:** [Android Native Module Linking Guide](boatingInstrumentsApp/docs/ANDROID-NATIVE-MODULE-LINKING.md#-critical-release-build-issues)
+
+### Quick Verification
+
+After building release APK, verify native modules are included:
+
+```bash
+# Check for TCP socket classes in compiled bytecode
+unzip -p android/app/build/outputs/apk/release/app-release.apk classes.dex | strings | grep -i "TcpSocket"
+
+# Should output class references like:
+# Lcom/asterinet/react/tcpsocket/TcpSocketPackage;
+# Lcom/asterinet/react/tcpsocket/TcpSocketModule;
+```
+
+If no output appears, native modules aren't linked - follow manual linking guide.
 
 ---
 

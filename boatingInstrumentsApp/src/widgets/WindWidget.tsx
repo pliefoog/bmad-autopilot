@@ -12,6 +12,7 @@ import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
+import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface WindWidgetProps {
@@ -323,22 +324,8 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     updateWidgetInteraction(id);
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
-  // Calculate responsive header sizes based on widget dimensions
-  const headerIconSize = useMemo(() => {
-    const baseSize = 16;
-    const minSize = 12;
-    const maxSize = 20;
-    const scaleFactor = (width || 400) / 400;
-    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
-  }, [width]);
-
-  const headerFontSize = useMemo(() => {
-    const baseSize = 11;
-    const minSize = 9;
-    const maxSize = 13;
-    const scaleFactor = (width || 400) / 400;
-    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
-  }, [width]);
+  // Responsive header sizing using proper base-size scaling
+  const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
 
   // Data staleness detection (>5s = stale)
   const isStale = windTimestamp ? (Date.now() - windTimestamp) > 5000 : true;

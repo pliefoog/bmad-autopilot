@@ -7,6 +7,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useUnitConversion } from '../hooks/useUnitConversion';
 import { useMetricDisplay } from '../hooks/useMetricDisplay';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
+import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
@@ -29,22 +30,8 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
   
-  // Responsive header sizing
-  const headerIconSize = useMemo(() => {
-    const baseSize = 16;
-    const minSize = 12;
-    const maxSize = 20;
-    const scaleFactor = (width || 400) / 400;
-    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
-  }, [width]);
-
-  const headerFontSize = useMemo(() => {
-    const baseSize = 11;
-    const minSize = 9;
-    const maxSize = 13;
-    const scaleFactor = (width || 400) / 400;
-    return Math.max(minSize, Math.min(maxSize, baseSize * scaleFactor));
-  }, [width]);
+  // Responsive header sizing using proper base-size scaling
+  const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
   
   // Date/time formatting still uses useUnitConversion (Story 9.6 scope)
   const { getGpsFormattedDateTime } = useUnitConversion();
