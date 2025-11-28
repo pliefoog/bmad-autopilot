@@ -36,6 +36,14 @@ data:
     min_depth: 1.5        # Shallow water limit
     max_depth: 30.5      # Deep water limit
   
+  water_temp:
+    type: "gaussian"
+    mean: 18.5          # Mean water temperature in °C (65°F)
+    std_dev: 1.2        # ±1.2°C variation
+    min: 14.0           # Minimum water temp (57°F)
+    max: 24.0           # Maximum water temp (75°F)
+    unit: "celsius"
+  
   speed:
     type: "polar_sailing"           # New polar-based speed calculation
     base_speed: 5.5                 # Fallback speed if polar lookup fails
