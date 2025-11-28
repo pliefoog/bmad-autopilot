@@ -277,9 +277,10 @@ export class NmeaSensorProcessor {
 
     // Create depth sensor update
     const depthData: Partial<DepthSensorData> = {
-      name: 'Depth Sounder',
+      name: 'Depth Below Transducer',
       depth: depthMeters, // Always in meters (base unit)
       referencePoint: 'transducer', // DBT is depth below transducer
+      sentenceType: 'DBT',
       timestamp: timestamp
     };
 
@@ -287,7 +288,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'depth',
-        instance: 0, // Depth is typically single instance
+        instance: 1, // DBT uses instance 1 (priority: 2nd)
         data: depthData
       }],
       messageType: 'DBT'
@@ -312,9 +313,10 @@ export class NmeaSensorProcessor {
 
     // Create depth sensor update
     const depthData: Partial<DepthSensorData> = {
-      name: 'Depth Sounder',
+      name: 'Depth (Waterline)',
       depth: fields.depth_meters, // Always in meters (base unit)
       referencePoint: 'waterline', // DPT typically represents depth from waterline
+      sentenceType: 'DPT',
       timestamp: timestamp
     };
 
@@ -322,7 +324,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'depth',
-        instance: 0,
+        instance: 0, // DPT uses instance 0 (priority: 1st - highest)
         data: depthData
       }],
       messageType: 'DPT'
@@ -355,9 +357,10 @@ export class NmeaSensorProcessor {
 
     // Create depth sensor update
     const depthData: Partial<DepthSensorData> = {
-      name: 'Depth Sounder',
+      name: 'Depth Below Keel',
       depth: depthMeters, // Always in meters (base unit)
       referencePoint: 'keel', // DBK is depth below keel
+      sentenceType: 'DBK',
       timestamp: timestamp
     };
 
@@ -365,7 +368,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'depth',
-        instance: 0,
+        instance: 2, // DBK uses instance 2 (priority: 3rd - lowest)
         data: depthData
       }],
       messageType: 'DBK'

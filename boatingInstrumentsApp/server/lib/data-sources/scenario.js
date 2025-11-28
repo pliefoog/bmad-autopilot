@@ -1483,8 +1483,11 @@ class ScenarioDataSource extends EventEmitter {
    * Generate NMEA sentences
    */
   generateDBT(depth) {
-    const checksum = this.calculateChecksum(`DBT,${depth.toFixed(2)},f,${(depth * 0.3048).toFixed(2)},M,${(depth * 0.5468).toFixed(2)},F`);
-    return `$GPDBT,,f,${depth.toFixed(2)},M,${(depth * 0.5468).toFixed(2)},F*${checksum}`;
+    const depthFeet = (depth * 3.28084).toFixed(2);
+    const depthMeters = depth.toFixed(2);
+    const depthFathoms = (depth * 0.546807).toFixed(2);
+    const checksum = this.calculateChecksum(`DBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F`);
+    return `$GPDBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
   }
 
   generateVHW(speed) {
@@ -1564,8 +1567,11 @@ class ScenarioDataSource extends EventEmitter {
   generateDBK(depth) {
     const keelOffset = this.scenario?.parameters?.vessel?.keel_offset || 0;
     const depthBelowKeel = Math.max(0, depth - keelOffset);
-    const checksum = this.calculateChecksum(`DBK,${depthBelowKeel.toFixed(2)},f,${(depthBelowKeel * 0.3048).toFixed(2)},M,${(depthBelowKeel * 0.5468).toFixed(2)},F`);
-    return `$SDDBK,${depthBelowKeel.toFixed(2)},f,${(depthBelowKeel * 0.3048).toFixed(2)},M,${(depthBelowKeel * 0.5468).toFixed(2)},F*${checksum}`;
+    const depthFeet = (depthBelowKeel * 3.28084).toFixed(2);
+    const depthMeters = depthBelowKeel.toFixed(2);
+    const depthFathoms = (depthBelowKeel * 0.546807).toFixed(2);
+    const checksum = this.calculateChecksum(`DBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F`);
+    return `$SDDBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
   }
 
   /**

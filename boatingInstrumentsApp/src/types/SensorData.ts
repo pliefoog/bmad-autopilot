@@ -75,6 +75,7 @@ export interface TemperatureSensorData extends BaseSensorData {
 export interface DepthSensorData extends BaseSensorData {
   depth?: number;         // PRIMARY metric - depth in meters
   referencePoint: 'transducer' | 'waterline' | 'keel';
+  sentenceType: 'DPT' | 'DBT' | 'DBK';  // Source NMEA sentence type for priority selection
 }
 
 export interface CompassSensorData extends BaseSensorData {

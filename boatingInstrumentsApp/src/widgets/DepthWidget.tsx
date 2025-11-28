@@ -69,27 +69,70 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Depth data with Raymarine-style priority selection
-  // Clean sensor data access - NMEA Store v2.0
-  const depthData = useNmeaStore(useCallback((state) => 
-    state.getSensorData('depth', 0) as DepthSensorData | undefined, // Primary depth sensor instance
+  // NMEA data selectors - Depth data with strict priority selection
+  // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
+  const dptDepth = useNmeaStore(useCallback((state) => 
+    state.getSensorData('depth', 0) as DepthSensorData | undefined, // DPT - highest priority
+    []
+  ));
+  const dbtDepth = useNmeaStore(useCallback((state) => 
+    state.getSensorData('depth', 1) as DepthSensorData | undefined, // DBT - medium priority
+    []
+  ));
+  const dbkDepth = useNmeaStore(useCallback((state) => 
+    state.getSensorData('depth', 2) as DepthSensorData | undefined, // DBK - lowest priority
     []
   ));
   
-  // Marine depth data with clean sensor access
+  // Select depth source based on strict priority: DPT > DBT > DBK
   const selectedDepthData = useMemo(() => {
-    if (!depthData) {
-      return { depth: undefined, depthSource: undefined, depthReferencePoint: undefined, depthTimestamp: undefined };
+    const now = Date.now();
+    const STALE_THRESHOLD = 10000; // 10 seconds
+    
+    // Check DPT first (highest priority)
+    if (dptDepth?.depth !== undefined && 
+        dptDepth.timestamp && 
+        (now - dptDepth.timestamp) < STALE_THRESHOLD) {
+      return {
+        depth: dptDepth.depth,
+        depthSource: 'DPT' as const,
+        depthReferencePoint: dptDepth.referencePoint,
+        depthTimestamp: dptDepth.timestamp
+      };
     }
     
-    // Clean sensor data directly from NMEA Store v2.0
-    return {
-      depth: depthData.depth,
-      depthSource: 'DBT' as const, // NMEA sentence type
-      depthReferencePoint: depthData.referencePoint,
-      depthTimestamp: depthData.timestamp
+    // Fall back to DBT (medium priority)
+    if (dbtDepth?.depth !== undefined && 
+        dbtDepth.timestamp && 
+        (now - dbtDepth.timestamp) < STALE_THRESHOLD) {
+      return {
+        depth: dbtDepth.depth,
+        depthSource: 'DBT' as const,
+        depthReferencePoint: dbtDepth.referencePoint,
+        depthTimestamp: dbtDepth.timestamp
+      };
+    }
+    
+    // Fall back to DBK (lowest priority)
+    if (dbkDepth?.depth !== undefined && 
+        dbkDepth.timestamp && 
+        (now - dbkDepth.timestamp) < STALE_THRESHOLD) {
+      return {
+        depth: dbkDepth.depth,
+        depthSource: 'DBK' as const,
+        depthReferencePoint: dbkDepth.referencePoint,
+        depthTimestamp: dbkDepth.timestamp
+      };
+    }
+    
+    // No valid depth data available
+    return { 
+      depth: undefined, 
+      depthSource: undefined, 
+      depthReferencePoint: undefined, 
+      depthTimestamp: undefined 
     };
-  }, [depthData]);
+  }, [dptDepth, dbtDepth, dbkDepth]);
   
   const { depth, depthSource, depthReferencePoint, depthTimestamp } = selectedDepthData;
   
