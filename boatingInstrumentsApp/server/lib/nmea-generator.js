@@ -598,8 +598,14 @@ class NmeaGenerator {
     }
 
     try {
+      // Calculate simulation elapsed time in milliseconds
+      const elapsedMs = this.startTime ? (Date.now() - this.startTime) : 0;
+      // Convert to seconds for scenario functions (tidal_cycle, polar_sailing, etc. expect seconds)
+      const currentTime = elapsedMs / 1000;
+      
       const ctx = {
-        time: Date.now(),
+        currentTime,              // Simulation elapsed time in seconds (for scenario functions)
+        time: Date.now(),         // Wall-clock time (for backward compatibility)
         scenario: this.scenario,
         autopilot: this.autopilotState
       };
