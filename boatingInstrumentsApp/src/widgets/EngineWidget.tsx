@@ -197,7 +197,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   }, []);
 
   const engineState = getEngineState(rpm, coolantTemp, oilPressure);
-  const isStale = !engineData;
+  const isStale = !engineTimestamp;
 
   // Individual metric state functions for PrimaryMetricCell
   const getRpmState = useCallback(() => {
