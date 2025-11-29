@@ -209,15 +209,19 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     }
 
     // Calculate points for the line with colors
-    // Use timestamps for X positioning to show proper time-based spacing
-    const oldestTimestamp = filteredData[0].timestamp;
-    const newestTimestamp = filteredData[filteredData.length - 1].timestamp;
-    const timeRange = newestTimestamp - oldestTimestamp || 1;
+    // Right edge = NOW, left edge = timeWindowMinutes ago
+    // X position based on age from current time (scrolling chart)
+    const now = Date.now();
+    const timeWindowMs = timeWindowMinutes * 60 * 1000;
     
     const pointsData = filteredData.map((point) => {
-      // X position based on timestamp within the time window
-      const timeOffset = point.timestamp - oldestTimestamp;
-      const x = (timeOffset / timeRange) * chartWidth + AXIS_MARGIN;
+      // Calculate age of this data point (how long ago it was recorded)
+      const age = now - point.timestamp;
+      
+      // X position: newer data (age=0) goes to right edge, older data goes left
+      // age=0 → x=chartWidth (right edge)
+      // age=timeWindowMs → x=0 (left edge)
+      const x = ((timeWindowMs - age) / timeWindowMs) * chartWidth + AXIS_MARGIN;
       
       // Calculate Y position based on direction
       let y: number;
