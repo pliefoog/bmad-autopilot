@@ -26,7 +26,22 @@ function renderWidget(
   if (registeredWidget) {
     const Component = registeredWidget.component;
     const title = WidgetFactory.getWidgetTitle(key);
-    return <Component key={key} id={key} title={title} width={width} height={height} />;
+    
+    // Wrap in React.memo to prevent re-renders when props haven't changed
+    const MemoizedWidget = React.memo(
+      ({ id, title, width, height }: { id: string; title: string; width?: number; height?: number }) => (
+        <Component key={id} id={id} title={title} width={width} height={height} />
+      ),
+      // Custom comparison: only re-render if id, title, width, or height change
+      (prevProps, nextProps) => 
+        prevProps.id === nextProps.id &&
+        prevProps.title === nextProps.title &&
+        prevProps.width === nextProps.width &&
+        prevProps.height === nextProps.height
+    );
+    MemoizedWidget.displayName = `MemoizedWidget(${key})`;
+    
+    return <MemoizedWidget id={key} title={title} width={width} height={height} />;
   }
   
   console.error(`[DynamicDashboard] Widget lookup failed:`, {
@@ -90,13 +105,15 @@ function extractBaseWidgetType(widgetId: string): string {
 }
 
 export const DynamicDashboard: React.FC = () => {
-  // ✨ NEW: Subscribe to widget store for dynamic widgets
-  const { dashboards, currentDashboard, cleanupOrphanedWidgets } = useWidgetStore();
-  const currentDashboardData = dashboards.find(d => d.id === currentDashboard);
-  const storeWidgets = currentDashboardData?.widgets || [];
+  // Selective subscriptions to prevent re-renders on widget timestamp updates
+  const currentDashboard = useWidgetStore(state => state.currentDashboard);
+  const storeWidgets = useWidgetStore(state => {
+    const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+    return dashboard?.widgets || [];
+  });
   
   // Subscribe to widget expanded state for pagination recalculation
-  const widgetExpanded = useWidgetStore((state) => state.widgetExpanded);
+  const widgetExpanded = useWidgetStore(state => state.widgetExpanded);
   
   console.log('[DynamicDashboard] Store widgets:', storeWidgets.length, 'dashboard:', currentDashboard);
   
@@ -142,7 +159,7 @@ export const DynamicDashboard: React.FC = () => {
 
   console.log('[DynamicDashboard] Widget store state:', {
     currentDashboard,
-    dashboardCount: dashboards.length,
+    dashboardCount: useWidgetStore.getState().dashboards.length,
     widgetCount: storeWidgets.length,
     widgetIds: storeWidgets.map(w => w.id)
   });
@@ -399,9 +416,9 @@ export const DynamicDashboard: React.FC = () => {
   // Handle widget rendering errors by cleaning up invalid widgets
   const handleWidgetError = useCallback((widgetId: string) => {
     console.log(`[DynamicDashboard] Handling widget error for: ${widgetId}`);
-    // Trigger cleanup of orphaned widgets
-    cleanupOrphanedWidgets();
-  }, [cleanupOrphanedWidgets]);
+    // Trigger cleanup of orphaned widgets using getState()
+    useWidgetStore.getState().cleanupOrphanedWidgets();
+  }, []);
 
   // Group widgets into rows for rendering
   const widgetRows = useMemo(() => {
