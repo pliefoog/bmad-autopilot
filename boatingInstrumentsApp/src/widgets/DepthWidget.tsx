@@ -173,9 +173,26 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   const { depth, depthSource, depthReferencePoint, depthTimestamp } = selectedDepthData;
   
   // Check if data is stale (> 5 seconds old)
-  const isStale = useMemo(() => {
-    if (!depthTimestamp) return true;
-    return Date.now() - depthTimestamp > 5000;
+  // Use state + useEffect to detect staleness without causing re-renders on every cycle
+  const [isStale, setIsStale] = useState(true);
+  
+  useEffect(() => {
+    if (!depthTimestamp) {
+      setIsStale(true);
+      return;
+    }
+    
+    const checkStale = () => {
+      const age = Date.now() - depthTimestamp;
+      setIsStale(age > 5000);
+    };
+    
+    // Check immediately
+    checkStale();
+    
+    // Then check periodically (every 1 second)
+    const interval = setInterval(checkStale, 1000);
+    return () => clearInterval(interval);
   }, [depthTimestamp]);
   
   // Depth history for min/max calculations with source tracking

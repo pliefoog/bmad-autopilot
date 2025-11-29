@@ -69,9 +69,26 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   }, [temperature]);
   
   // Check if data is stale (> 5 seconds old)
-  const isStale = useMemo(() => {
-    if (!temperatureData?.timestamp) return true;
-    return Date.now() - temperatureData.timestamp > 5000;
+  // Use state + useEffect to detect staleness without causing re-renders on every cycle
+  const [isStale, setIsStale] = useState(true);
+  
+  useEffect(() => {
+    if (!temperatureData?.timestamp) {
+      setIsStale(true);
+      return;
+    }
+    
+    const checkStale = () => {
+      const age = Date.now() - temperatureData.timestamp;
+      setIsStale(age > 5000);
+    };
+    
+    // Check immediately
+    checkStale();
+    
+    // Then check periodically (every 1 second is reasonable)
+    const interval = setInterval(checkStale, 1000);
+    return () => clearInterval(interval);
   }, [temperatureData?.timestamp]);
   
   // Presentation hooks for temperature conversion
