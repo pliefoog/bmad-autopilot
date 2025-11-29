@@ -5,22 +5,14 @@ version: "2.0"
 category: "comprehensive"
 bridge_mode: "nmea0183"  # NMEA 0183 protocol mode
 
-# Vessel parameters (configurable)
+# Generator parameters (used by NMEA sentence generation)
 parameters:
   vessel:
-    length: ${VESSEL_LENGTH:12.2}  # meters, with environment variable override
-    beam: ${VESSEL_BEAM:3.7}      # meters
-    draft: ${VESSEL_DRAFT:1.8}     # meters
-    keel_offset: 1.8              # meters below transducer to keel (for DBK calculations)
-    type: "sailboat"
-    polar_file: "vendor/polars/j35-polar.csv"  # Path to polar diagram CSV
-    displacement: 5900             # kg (for realistic sailing calculations)
-    sail_area: 45.5               # m² (main + jib area)
+    keel_offset: 1.8              # meters below transducer (used in DPT offset field)
   sonar:
-    max_range: 100.0              # meters (for DPT sentence max range field)
+    max_range: 100.0              # meters (used in DPT max range field)
 
-# Tidal depth profile with mathematical progression
-# Note: Tidal parameters are defined in data.depth section below, not in parameters
+# Data generation configuration (read by hardcoded generator methods in scenario.js)
 data:
   depth:
     type: "tidal_cycle"
@@ -480,42 +472,3 @@ nmea_sentences:
   #   min: -35
   #   max: 35
   #   typical: 0
-
-# Autopilot configuration
-autopilot:
-  enabled: false
-  initial_state:
-    mode: "STANDBY"
-    engaged: false
-    target_heading: 45
-    current_heading: 45
-
-# Use case documentation
-use_cases:
-  - "Complete widget integration testing (all 12+ widget types)"
-  - "Multi-instance sensor detection and display"
-  - "Depth alarm testing with tidal variations"
-  - "Coastal navigation widget validation"
-  - "Tidal current effect simulation"
-  - "Shallow water approach scenarios"
-  - "Wind pattern coastal effects testing"
-  - "Engine monitoring and alarm thresholds"
-  - "Dual-battery bank monitoring (house + engine)"
-  - "Tank level monitoring (fuel, water, gray, black)"
-  - "Multi-zone temperature monitoring (5 sensors)"
-  - "Rudder position feedback and autopilot testing"
-  - "Comprehensive marine data flow validation"
-  - "Realistic boat systems for development and demos"
-
-# Related acceptance criteria
-acceptance_criteria:
-  - "AC1: All supported NMEA sentence types generated"
-  - "AC2: Multi-instance sensors (2x batteries, 4x tanks, 5x temps)"
-  - "AC3: Realistic timing between related instruments"
-  - "AC4: Parameterizable vessel characteristics"
-  - "AC5: Complete coastal cruiser system representation"
-  - "AC6: Variable depth (1.5-30.5 meters) with tidal effects"
-  - "AC7: Engine parameters with safety thresholds"
-  - "AC8: Battery monitoring for dual-bank systems"
-  - "AC9: Tank monitoring for all fluid types"
-  - "AC10: Temperature monitoring across vessel zones"
