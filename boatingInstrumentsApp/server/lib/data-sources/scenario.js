@@ -1259,6 +1259,12 @@ class ScenarioDataSource extends EventEmitter {
           return this.generateLinearIncrease(dataConfig, currentTime);
         case 'random':
           return this.generateRandom(dataConfig);
+        case 'sawtooth':
+          return this.generateSawtooth(dataConfig, currentTime);
+        case 'triangle':
+          return this.generateTriangle(dataConfig, currentTime);
+        case 'square':
+          return this.generateSquare(dataConfig, currentTime);
         case 'constant':
           return dataConfig.value;
         default:
@@ -1353,6 +1359,72 @@ class ScenarioDataSource extends EventEmitter {
     const min = config.min || 0;
     const max = config.max || 1;
     return min + Math.random() * (max - min);
+  }
+
+  /**
+   * Generate sawtooth wave values
+   * Linear ramp from min to max, then sharp drop back to min
+   * Perfect for testing monotonic increases with resets
+   */
+  generateSawtooth(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    const period = config.period || 60; // Default 60-second period
+    const min = config.min || 0;
+    const max = config.max || 1;
+    
+    // Calculate position within current period (0 to 1)
+    const phase = (time % period) / period;
+    
+    // Linear ramp from min to max
+    const value = min + (max - min) * phase;
+    
+    return value;
+  }
+
+  /**
+   * Generate triangle wave values
+   * Linear ramp up from min to max, then linear ramp down to min
+   * Symmetric pattern good for testing bidirectional changes
+   */
+  generateTriangle(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    const period = config.period || 60; // Default 60-second period
+    const min = config.min || 0;
+    const max = config.max || 1;
+    
+    // Calculate position within current period (0 to 1)
+    const phase = (time % period) / period;
+    
+    // Triangle wave: ramp up for first half, ramp down for second half
+    let value;
+    if (phase < 0.5) {
+      // Rising edge: 0 to 0.5 maps to min to max
+      value = min + (max - min) * (phase * 2);
+    } else {
+      // Falling edge: 0.5 to 1 maps to max to min
+      value = max - (max - min) * ((phase - 0.5) * 2);
+    }
+    
+    return value;
+  }
+
+  /**
+   * Generate square wave values
+   * Step function alternating between min and max
+   * Perfect for testing binary state changes and thresholds
+   */
+  generateSquare(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    const period = config.period || 60; // Default 60-second period
+    const min = config.min || 0;
+    const max = config.max || 1;
+    const dutyCycle = config.duty_cycle || 0.5; // Default 50% duty cycle
+    
+    // Calculate position within current period (0 to 1)
+    const phase = (time % period) / period;
+    
+    // Square wave: high for duty_cycle portion, low for remainder
+    return phase < dutyCycle ? max : min;
   }
 
   /**

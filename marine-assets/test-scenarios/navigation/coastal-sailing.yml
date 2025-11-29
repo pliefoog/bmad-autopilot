@@ -456,11 +456,10 @@ nmea_sentences:
         location_name: "Refrigerator"
         data:
           temperature:
-            type: "gaussian"
-            mean: 4
-            std_dev: 1
-            min: 2
-            max: 8
+            type: "sawtooth"  # Linear cooling cycle with compressor restart
+            min: 2            # Compressor turns on
+            max: 8            # Compressor turns off
+            period: 120       # 2-minute cooling cycle
             unit: "C"
   
   # ========== RUDDER POSITION ==========
