@@ -293,9 +293,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
     return 'normal';
   }, [depth]);
 
-  // Data staleness detection (>10s = stale for depth)
-  const isStale = depthTimestamp ? (Date.now() - depthTimestamp) > 10000 : true;
-
   // Generate depth source info for user display
   const depthSourceInfo = useMemo(() => {
     if (!depthSource) return { 
