@@ -314,7 +314,24 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       // Update widget's last data timestamp (for expiration tracking)
+      // Only updates if widget exists to avoid unnecessary store mutations
       updateWidgetDataTimestamp: (widgetId: string) => {
+        const state = get();
+        
+        // Check if widget exists before updating to avoid unnecessary mutations
+        let widgetExists = false;
+        for (const dashboard of state.dashboards) {
+          if (dashboard.widgets.some(w => w.id === widgetId)) {
+            widgetExists = true;
+            break;
+          }
+        }
+        
+        if (!widgetExists) {
+          console.warn(`[WidgetStore] Skipping timestamp update for non-existent widget: ${widgetId}`);
+          return;
+        }
+        
         set((state) => ({
           dashboards: state.dashboards.map((dashboard) => ({
             ...dashboard,
@@ -1256,8 +1273,36 @@ export const useWidgetStore = create<WidgetStore>()(
 
         const now = Date.now();
         const timeout = state.widgetExpirationTimeout;
-        let removedCount = 0;
+        
+        // First pass: check if any widgets are actually expired
+        let hasExpiredWidgets = false;
+        const expiredWidgetIds: string[] = [];
+        
+        for (const dashboard of state.dashboards) {
+          for (const widget of dashboard.widgets) {
+            // Skip theme widget - it's a system widget
+            if (widget.id === 'themes' || widget.type === 'themes') {
+              continue;
+            }
+            
+            const lastUpdate = widget.lastDataUpdate || widget.createdAt || now;
+            const isExpired = now - lastUpdate > timeout;
+            
+            if (isExpired) {
+              hasExpiredWidgets = true;
+              expiredWidgetIds.push(widget.id);
+            }
+          }
+        }
+        
+        // Only update store if we actually have expired widgets
+        if (!hasExpiredWidgets) {
+          return;
+        }
+        
+        console.log(`[WidgetStore] 🧹 Found ${expiredWidgetIds.length} expired widgets:`, expiredWidgetIds);
 
+        // Second pass: remove expired widgets
         set((currentState) => ({
           dashboards: currentState.dashboards.map((dashboard) => ({
             ...dashboard,
@@ -1272,7 +1317,6 @@ export const useWidgetStore = create<WidgetStore>()(
               
               if (isExpired) {
                 console.log(`[WidgetStore] 🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round((now - lastUpdate) / 1000)}s)`);
-                removedCount++;
               }
               
               return !isExpired;
@@ -1288,9 +1332,7 @@ export const useWidgetStore = create<WidgetStore>()(
           }),
         }));
 
-        if (removedCount > 0) {
-          console.log(`[WidgetStore] 🧹 Removed ${removedCount} expired widgets`);
-        }
+        console.log(`[WidgetStore] ✅ Cleanup complete - removed ${expiredWidgetIds.length} widgets`);
       },
 
       // TODO: Pagination methods (Story 6.11) - temporarily disabled
