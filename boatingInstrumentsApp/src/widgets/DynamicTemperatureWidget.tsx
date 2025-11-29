@@ -45,8 +45,11 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data - get temperature data from store
-  const temperatureData = useNmeaStore(useCallback((state: any) => state.getTemperatureData(instanceNumber), [instanceNumber]));
+  // NMEA data - get temperature data from store using direct subscription
+  // This ensures the component re-renders when temperature data updates
+  const temperatureData = useNmeaStore((state) => 
+    state.nmeaData.sensors.temperature?.[instanceNumber]
+  );
   
   // Temperature history tracking
   const [temperatureHistory, setTemperatureHistory] = useState<Array<{ value: number; timestamp: number }>>([]);
@@ -83,13 +86,13 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       setIsStale(age > 5000);
     };
     
-    // Check immediately
+    // Check immediately when data changes
     checkStale();
     
-    // Then check periodically (every 1 second is reasonable)
+    // Then check periodically every second
     const interval = setInterval(checkStale, 1000);
     return () => clearInterval(interval);
-  }, [temperatureData?.timestamp]);
+  }, [temperatureData]); // Changed dependency to full temperatureData object
   
   // Presentation hooks for temperature conversion
   const tempPresentation = useTemperaturePresentation();

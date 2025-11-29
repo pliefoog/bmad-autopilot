@@ -69,18 +69,16 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   
   // NMEA data selectors - Depth data with strict priority selection
   // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
-  const dptDepth = useNmeaStore(useCallback((state) => 
-    state.getSensorData('depth', 0) as DepthSensorData | undefined, // DPT - highest priority
-    []
-  ));
-  const dbtDepth = useNmeaStore(useCallback((state) => 
-    state.getSensorData('depth', 1) as DepthSensorData | undefined, // DBT - medium priority
-    []
-  ));
-  const dbkDepth = useNmeaStore(useCallback((state) => 
-    state.getSensorData('depth', 2) as DepthSensorData | undefined, // DBK - lowest priority
-    []
-  ));
+  // Direct subscriptions without useCallback to ensure re-renders on data changes
+  const dptDepth = useNmeaStore((state) => 
+    state.nmeaData.sensors.depth?.[0] as DepthSensorData | undefined // DPT - highest priority
+  );
+  const dbtDepth = useNmeaStore((state) => 
+    state.nmeaData.sensors.depth?.[1] as DepthSensorData | undefined // DBT - medium priority
+  );
+  const dbkDepth = useNmeaStore((state) => 
+    state.nmeaData.sensors.depth?.[2] as DepthSensorData | undefined // DBK - lowest priority
+  );
   
   // Track currently locked depth source to prevent unnecessary switching
   const [lockedSource, setLockedSource] = useState<'DPT' | 'DBT' | 'DBK' | null>(null);
@@ -187,13 +185,13 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
       setIsStale(age > 5000);
     };
     
-    // Check immediately
+    // Check immediately when timestamp changes
     checkStale();
     
-    // Then check periodically (every 1 second)
+    // Then check periodically every second
     const interval = setInterval(checkStale, 1000);
     return () => clearInterval(interval);
-  }, [depthTimestamp]);
+  }, [depthTimestamp, dptDepth, dbtDepth, dbkDepth]); // Added sensor deps to detect updates
   
   // Depth history for min/max calculations with source tracking
   const [depthHistory, setDepthHistory] = useState<{
