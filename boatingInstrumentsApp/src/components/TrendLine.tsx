@@ -211,8 +211,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     // Calculate points for the line with colors
     // Right edge = NOW, left edge = timeWindowMinutes ago
     // X position based on age from current time (scrolling chart)
-    const now = Date.now();
-    const timeWindowMs = timeWindowMinutes * 60 * 1000;
+    // Note: 'now' and 'timeWindowMs' already declared above for filtering
     
     const pointsData = filteredData.map((point) => {
       // Calculate age of this data point (how long ago it was recorded)
