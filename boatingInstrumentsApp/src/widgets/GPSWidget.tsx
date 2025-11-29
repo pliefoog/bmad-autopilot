@@ -58,11 +58,12 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  // Phase 1 Optimization: Selective field subscriptions (only subscribe to fields actually used)
-  const utcTime = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.utcTime);
-  const gpsPosition = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.position);
-  const gpsQuality = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.quality);
-  const gpsTimestamp = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.timestamp);
+  // Phase 1 Optimization: Selective field subscriptions with shallow equality
+  // Use shallow() to compare field values, not object references
+  const utcTime = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.utcTime, (a, b) => a === b);
+  const gpsPosition = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.position, (a, b) => JSON.stringify(a) === JSON.stringify(b));
+  const gpsQuality = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.quality, (a, b) => JSON.stringify(a) === JSON.stringify(b));
+  const gpsTimestamp = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.timestamp, (a, b) => a === b);
 
   // Use useMetricDisplay for coordinate formatting with hemisphere support
   const latMetric = useMetricDisplay(

@@ -67,20 +67,20 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
   // Subscribe to individual fields instead of entire depth objects
-  const dptDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.depth);
-  const dptReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.referencePoint);
-  const dptTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.timestamp);
+  const dptDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.depth, (a, b) => a === b);
+  const dptReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.referencePoint, (a, b) => a === b);
+  const dptTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.timestamp, (a, b) => a === b);
   
-  const dbtDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.depth);
-  const dbtReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.referencePoint);
-  const dbtTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.timestamp);
+  const dbtDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.depth, (a, b) => a === b);
+  const dbtReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.referencePoint, (a, b) => a === b);
+  const dbtTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.timestamp, (a, b) => a === b);
   
-  const dbkDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.depth);
-  const dbkReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.referencePoint);
-  const dbkTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.timestamp);
+  const dbkDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.depth, (a, b) => a === b);
+  const dbkReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.referencePoint, (a, b) => a === b);
+  const dbkTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.timestamp, (a, b) => a === b);
   
   // Track currently locked depth source to prevent unnecessary switching
   const [lockedSource, setLockedSource] = useState<'DPT' | 'DBT' | 'DBK' | null>(null);

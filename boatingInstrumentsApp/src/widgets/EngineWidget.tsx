@@ -43,14 +43,14 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions for multi-instance engine
-  const rpm = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.rpm ?? null);
-  const coolantTemp = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.coolantTemp ?? null);
-  const oilPressure = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.oilPressure ?? null);
-  const alternatorVoltage = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.alternatorVoltage ?? null);
-  const fuelFlow = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.fuelFlow ?? null);
-  const engineHours = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.engineHours ?? null);
-  const engineTimestamp = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.timestamp);
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
+  const rpm = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.rpm ?? null, (a, b) => a === b);
+  const coolantTemp = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.coolantTemp ?? null, (a, b) => a === b);
+  const oilPressure = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.oilPressure ?? null, (a, b) => a === b);
+  const alternatorVoltage = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.alternatorVoltage ?? null, (a, b) => a === b);
+  const fuelFlow = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.fuelFlow ?? null, (a, b) => a === b);
+  const engineHours = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.engineHours ?? null, (a, b) => a === b);
+  const engineTimestamp = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.timestamp, (a, b) => a === b);
   
   // Debug logging to diagnose flickering
   React.useEffect(() => {

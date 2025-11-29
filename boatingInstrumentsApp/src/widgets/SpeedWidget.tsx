@@ -50,10 +50,10 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions
-  const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround); // SOG
-  const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater); // STW
-  const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp);
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
+  const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround, (a, b) => a === b); // SOG
+  const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater, (a, b) => a === b); // STW
+  const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp, (a, b) => a === b);
   
   // Speed history for averages and maximums
   const [speedHistory, setSpeedHistory] = useState<{

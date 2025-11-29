@@ -45,12 +45,12 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data - Phase 1 Optimization: Selective field subscriptions for multi-instance temperature
-  const temperature = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.value ?? null);
-  const location = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.location ?? 'unknown');
-  const units = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.units ?? 'C');
-  const sensorName = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.name ?? title);
-  const temperatureTimestamp = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp);
+  // NMEA data - Phase 1 Optimization: Selective field subscriptions with shallow equality
+  const temperature = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.value ?? null, (a, b) => a === b);
+  const location = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.location ?? 'unknown', (a, b) => a === b);
+  const units = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.units ?? 'C', (a, b) => a === b);
+  const sensorName = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.name ?? title, (a, b) => a === b);
+  const temperatureTimestamp = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp, (a, b) => a === b);
   
   // Temperature history tracking
   const [temperatureHistory, setTemperatureHistory] = useState<Array<{ value: number; timestamp: number }>>([]);

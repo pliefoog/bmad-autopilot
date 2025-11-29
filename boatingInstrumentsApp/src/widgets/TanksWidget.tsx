@@ -42,12 +42,12 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data - Phase 1 Optimization: Selective field subscriptions for multi-instance tank
-  const tankLevel = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.level);
-  const capacity = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.capacity ?? null);
-  const tankType = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.type ?? 'unknown');
-  const tankName = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.name ?? title);
-  const tankTimestamp = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.timestamp);
+  // NMEA data - Phase 1 Optimization: Selective field subscriptions with shallow equality
+  const tankLevel = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.level, (a, b) => a === b);
+  const capacity = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.capacity ?? null, (a, b) => a === b);
+  const tankType = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.type ?? 'unknown', (a, b) => a === b);
+  const tankName = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.name ?? title, (a, b) => a === b);
+  const tankTimestamp = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.timestamp, (a, b) => a === b);
   
   // Extract tank values
   const level = tankLevel ? tankLevel * 100 : null; // Convert ratio to percentage

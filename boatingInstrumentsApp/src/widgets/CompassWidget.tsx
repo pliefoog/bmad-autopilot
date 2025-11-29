@@ -37,12 +37,12 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions
-  const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading);
-  const magneticHeading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.magneticHeading);
-  const variation = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.magneticVariation);
-  const deviation = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.magneticDeviation);
-  const compassTimestamp = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.timestamp);
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
+  const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading, (a, b) => a === b);
+  const magneticHeading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.magneticHeading, (a, b) => a === b);
+  const variation = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.magneticVariation, (a, b) => a === b);
+  const deviation = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.magneticDeviation, (a, b) => a === b);
+  const compassTimestamp = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.timestamp, (a, b) => a === b);
   const headingTimestamp = compassTimestamp; // Use sensor timestamp
   
   // Epic 9 Enhanced Presentation System for compass angles

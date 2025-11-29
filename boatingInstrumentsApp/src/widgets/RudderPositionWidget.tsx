@@ -32,9 +32,9 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions
-  const rudderAngle = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.rudderPosition ?? 0);
-  const rudderTimestamp = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp);
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
+  const rudderAngle = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.rudderPosition ?? 0, (a, b) => a === b);
+  const rudderTimestamp = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp, (a, b) => a === b);
   
   // Extract rudder data with defaults
   const isStale = !rudderTimestamp;
