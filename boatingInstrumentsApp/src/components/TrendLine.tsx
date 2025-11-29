@@ -3,8 +3,13 @@ import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { ThemeColors } from '../store/themeStore';
 
+export interface DataPoint {
+  value: number;
+  timestamp: number;
+}
+
 export interface TrendLineProps {
-  data: number[];
+  data: DataPoint[];
   width: number; // Required: cell width from parent
   height: number; // Required: cell height from parent
   color: string;
@@ -150,8 +155,25 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       };
     }
 
-    let dataMin = minValue !== undefined ? minValue : Math.min(...data);
-    let dataMax = maxValue !== undefined ? maxValue : Math.max(...data);
+    // Filter data to only include points within the time window
+    const now = Date.now();
+    const timeWindowMs = timeWindowMinutes * 60 * 1000;
+    const filteredData = data.filter(point => point.timestamp > now - timeWindowMs);
+    
+    if (filteredData.length < 2) {
+      return { 
+        dataMin: 0, 
+        dataMax: 0, 
+        range: 1, 
+        pointsData: [] as { x: number; y: number; value: number; color: string }[],
+        yLabels: [] as string[],
+        thresholdPositions: { warning: undefined, alarm: undefined } as { warning?: number; alarm?: number }
+      };
+    }
+
+    const values = filteredData.map(p => p.value);
+    let dataMin = minValue !== undefined ? minValue : Math.min(...values);
+    let dataMax = maxValue !== undefined ? maxValue : Math.max(...values);
     
     // Force zero into the range if requested
     if (forceZero) {
@@ -187,25 +209,32 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     }
 
     // Calculate points for the line with colors
-    const pointsData = data.map((value, index) => {
-      const x = (index / (data.length - 1)) * chartWidth + AXIS_MARGIN;
+    // Use timestamps for X positioning to show proper time-based spacing
+    const oldestTimestamp = filteredData[0].timestamp;
+    const newestTimestamp = filteredData[filteredData.length - 1].timestamp;
+    const timeRange = newestTimestamp - oldestTimestamp || 1;
+    
+    const pointsData = filteredData.map((point) => {
+      // X position based on timestamp within the time window
+      const timeOffset = point.timestamp - oldestTimestamp;
+      const x = (timeOffset / timeRange) * chartWidth + AXIS_MARGIN;
       
       // Calculate Y position based on direction
       let y: number;
       if (yAxisDirection === 'down') {
         // Inverted: higher values move down
-        y = ((value - dataMin) / range) * chartHeight;
+        y = ((point.value - dataMin) / range) * chartHeight;
       } else {
         // Standard: higher values move up
-        y = chartHeight - ((value - dataMin) / range) * chartHeight;
+        y = chartHeight - ((point.value - dataMin) / range) * chartHeight;
       }
       
-      // Adjust for X-axis position
+      // Adjust Y for axis position
       if (xAxisPosition === 'top') {
         y += PADDING_TOP;
       }
       
-      return { x, y, value, color: getSegmentColor(value) };
+      return { x, y, value: point.value, color: getSegmentColor(point.value) };
     });
 
     return {

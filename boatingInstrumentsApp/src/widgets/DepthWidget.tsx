@@ -36,9 +36,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   // Wrapper component to receive injected props from UnifiedWidgetGrid
   const TrendLineCell = ({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => (
     <TrendLine 
-      data={depthHistory.depths
-        .filter(d => d.timestamp > Date.now() - 5 * 60 * 1000)
-        .map(d => d.value)}
+      data={depthHistory.depths.filter(d => d.timestamp > Date.now() - 5 * 60 * 1000)}
       width={cellMaxWidth || 300}
       height={cellHeightValue || 60}
       color={theme.primary}
@@ -173,6 +171,12 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   }, [dptDepth, dbtDepth, dbkDepth, lockedSource]);
   
   const { depth, depthSource, depthReferencePoint, depthTimestamp } = selectedDepthData;
+  
+  // Check if data is stale (> 5 seconds old)
+  const isStale = useMemo(() => {
+    if (!depthTimestamp) return true;
+    return Date.now() - depthTimestamp > 5000;
+  }, [depthTimestamp]);
   
   // Depth history for min/max calculations with source tracking
   const [depthHistory, setDepthHistory] = useState<{

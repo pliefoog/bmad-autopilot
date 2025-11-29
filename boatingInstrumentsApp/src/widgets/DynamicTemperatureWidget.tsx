@@ -68,6 +68,12 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
     }
   }, [temperature]);
   
+  // Check if data is stale (> 5 seconds old)
+  const isStale = useMemo(() => {
+    if (!temperatureData?.timestamp) return true;
+    return Date.now() - temperatureData.timestamp > 5000;
+  }, [temperatureData?.timestamp]);
+  
   // Presentation hooks for temperature conversion
   const tempPresentation = useTemperaturePresentation();
   
@@ -117,7 +123,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   // Wrapper component to receive injected props from UnifiedWidgetGrid
   const TrendLineCell = ({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => (
     <TrendLine 
-      data={temperatureHistory.map(t => t.value)}
+      data={temperatureHistory}
       width={cellMaxWidth || 300}
       height={cellHeightValue || 60}
       color={temperatureState === 'alarm' ? theme.error : temperatureState === 'warning' ? theme.warning : theme.primary}
@@ -221,7 +227,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
         mnemonic="TEMP"
         value={displayTemperature !== null ? displayTemperature.toFixed(1) : '---'}
         unit={displayUnit}
-        state={temperatureState}
+        state={isStale ? 'warning' : temperatureState}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
