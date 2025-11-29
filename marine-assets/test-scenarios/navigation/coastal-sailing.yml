@@ -400,9 +400,6 @@ nmea_sentences:
     frequency: 1   # Hz (every 1 second - standard rate)
   
   # ========== HEADING & COMPASS ==========
-  - type: "HDT"    # True Heading (primary compass)
-    frequency: 10  # Hz (every 0.1 seconds - rapid updates)
-  
   - type: "HDG"    # Magnetic Heading with Deviation & Variation
     frequency: 5   # Hz (every 0.2 seconds)
    
@@ -708,12 +705,14 @@ nmea_sentences:
             unit: "C"
   
   # ========== RUDDER POSITION ==========
-  - type: "RSA"    # Rudder Sensor Angle
-    frequency: 5   # Hz (every 0.2 seconds - responsive)
-    data_path: "rudder.angle"
-    min: -35
-    max: 35
-    typical: 0
+  # Note: RSA sentence not currently processed by NmeaSensorProcessor
+  # RudderPositionWidget uses autopilot.rudderPosition data instead
+  # - type: "RSA"    # Rudder Sensor Angle (DISABLED - not processed)
+  #   frequency: 5   # Hz (every 0.2 seconds - responsive)
+  #   data_path: "rudder.angle"
+  #   min: -35
+  #   max: 35
+  #   typical: 0
 
 # Autopilot configuration
 autopilot:
