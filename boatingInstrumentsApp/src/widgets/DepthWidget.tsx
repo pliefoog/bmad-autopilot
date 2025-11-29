@@ -191,7 +191,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
     // Then check periodically every second
     const interval = setInterval(checkStale, 1000);
     return () => clearInterval(interval);
-  }, [depthTimestamp, dptDepth, dbtDepth, dbkDepth]); // Added sensor deps to detect updates
+  }, [depthTimestamp]); // CRITICAL: Only timestamp, not full sensor objects!
   
   // Depth history for min/max calculations with source tracking
   const [depthHistory, setDepthHistory] = useState<{

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { TrendLine } from '../components/TrendLine';
 import { useNmeaStore } from '../store/nmeaStore';
@@ -60,16 +60,26 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const units = temperatureData?.units || 'C';
   const sensorName = temperatureData?.name || title;
   
+  // Track last added value to prevent duplicate entries
+  const lastAddedValueRef = useRef<{ value: number; timestamp: number } | null>(null);
+  
   useEffect(() => {
-    if (temperature !== null && temperature !== undefined) {
-      const now = Date.now();
-      setTemperatureHistory(prev => {
-        const newHistory = [...prev, { value: temperature, timestamp: now }];
-        // Keep only last 5 minutes of data
-        return newHistory.filter(entry => entry.timestamp > now - 5 * 60 * 1000);
-      });
+    if (temperature !== null && temperature !== undefined && temperatureData?.timestamp) {
+      // Only add if value changed or it's been >1 second since last add
+      const shouldAdd = !lastAddedValueRef.current ||
+        Math.abs(temperature - lastAddedValueRef.current.value) > 0.01 ||
+        temperatureData.timestamp - lastAddedValueRef.current.timestamp > 1000;
+      
+      if (shouldAdd) {
+        lastAddedValueRef.current = { value: temperature, timestamp: temperatureData.timestamp };
+        setTemperatureHistory(prev => {
+          const newHistory = [...prev, { value: temperature, timestamp: temperatureData.timestamp }];
+          // Keep only last 5 minutes of data
+          return newHistory.filter(entry => entry.timestamp > temperatureData.timestamp - 5 * 60 * 1000);
+        });
+      }
     }
-  }, [temperature]);
+  }, [temperature, temperatureData?.timestamp]);
   
   // Check if data is stale (> 5 seconds old)
   // Use state + useEffect to detect staleness without causing re-renders on every cycle
@@ -86,13 +96,13 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       setIsStale(age > 5000);
     };
     
-    // Check immediately when data changes
+    // Check immediately when timestamp changes
     checkStale();
     
     // Then check periodically every second
     const interval = setInterval(checkStale, 1000);
     return () => clearInterval(interval);
-  }, [temperatureData]); // Changed dependency to full temperatureData object
+  }, [temperatureData?.timestamp]); // CRITICAL: Only timestamp, not full object!
   
   // Presentation hooks for temperature conversion
   const tempPresentation = useTemperaturePresentation();
