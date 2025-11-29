@@ -42,26 +42,26 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data - get tank data from store
-  // NMEA data - direct subscription without useCallback
-  const tankData = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]);
+  // NMEA data - Phase 1 Optimization: Selective field subscriptions for multi-instance tank
+  const tankLevel = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.level);
+  const capacity = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.capacity ?? null);
+  const tankType = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.type ?? 'unknown');
+  const tankName = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.name ?? title);
+  const tankTimestamp = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.timestamp);
   
   // Extract tank values
-  const level = tankData?.level ? tankData.level * 100 : null; // Convert ratio to percentage
-  const capacity = tankData?.capacity || null; // Total capacity in liters
-  const tankType = tankData?.type || 'unknown';
-  const tankName = tankData?.name || title;
+  const level = tankLevel ? tankLevel * 100 : null; // Convert ratio to percentage
   
   // Calculate available capacity (capacity * level ratio)
   const availableCapacity = useMemo(() => {
-    if (capacity && tankData?.level) {
-      return capacity * tankData.level; // Available liters
+    if (capacity && tankLevel) {
+      return capacity * tankLevel; // Available liters
     }
     return null;
-  }, [capacity, tankData?.level]);
+  }, [capacity, tankLevel]);
   
   // Debug logging
-  console.log(`[TankWidget-${instanceNumber}] Raw ratio: ${tankData?.level}, Display %: ${level}, Capacity: ${capacity}L, Available: ${availableCapacity?.toFixed(1)}L`);
+  console.log(`[TankWidget-${instanceNumber}] Raw ratio: ${tankLevel}, Display %: ${level}, Capacity: ${capacity}L, Available: ${availableCapacity?.toFixed(1)}L`);
 
   // Marine safety thresholds for tank monitoring
   const getTankState = useCallback((level: number | null, tankType: string) => {

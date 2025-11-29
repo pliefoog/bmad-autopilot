@@ -42,35 +42,15 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Multi-instance Battery data
-  // NMEA data - direct subscription without useCallback
-  const batteryData = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]);
-  
-  // Extract battery data - now comes directly from NMEA store
-  const currentBatteryData = useMemo(() => {
-    if (batteryData) {
-      return {
-        voltage: batteryData.voltage,
-        current: batteryData.current,
-        temperature: batteryData.temperature,
-        stateOfCharge: batteryData.stateOfCharge,
-        nominalVoltage: batteryData.nominalVoltage,
-        capacity: batteryData.capacity,
-        chemistry: batteryData.chemistry,
-        instance: instanceNumber
-      };
-    }
-    return null;
-  }, [batteryData, instanceNumber]);
-  
-  // Extract values with fallbacks
-  const voltage = currentBatteryData?.voltage || null;
-  const current = currentBatteryData?.current || null;
-  const temperature = currentBatteryData?.temperature || null;
-  const stateOfCharge = currentBatteryData?.stateOfCharge || null;
-  const nominalVoltage = currentBatteryData?.nominalVoltage || null;
-  const capacity = currentBatteryData?.capacity || null;
-  const chemistry = currentBatteryData?.chemistry || null;
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions for multi-instance battery
+  const voltage = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.voltage ?? null);
+  const current = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.current ?? null);
+  const temperature = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.temperature ?? null);
+  const stateOfCharge = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.stateOfCharge ?? null);
+  const nominalVoltage = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.nominalVoltage ?? null);
+  const capacity = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.capacity ?? null);
+  const chemistry = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.chemistry ?? null);
+  const batteryTimestamp = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.timestamp);
   
   // Epic 9 Enhanced Presentation System for battery values
   const voltagePresentation = useDataPresentation('voltage');

@@ -47,17 +47,12 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  // NMEA data selectors - direct subscriptions without useCallback
-  const windData = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]); // Wind sensor data
-  const compassData = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]); // Compass data for heading
-  const speedData = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]); // Speed data for SOG
-  
-  // Extract wind values from sensor data
-  const windAngle = windData?.angle; // AWA (Apparent Wind Angle)
-  const windSpeed = windData?.speed; // AWS (Apparent Wind Speed)
-  const heading = compassData?.heading; // For true wind calculations
-  const sog = speedData?.overGround; // Speed Over Ground for true wind
-  const windTimestamp = windData?.timestamp;
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions
+  const windAngle = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.angle); // AWA
+  const windSpeed = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.speed); // AWS
+  const windTimestamp = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.timestamp);
+  const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading); // For true wind
+  const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround); // For true wind
   
   // Debug logging - remove after testing
   React.useEffect(() => {

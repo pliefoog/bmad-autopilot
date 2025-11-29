@@ -43,31 +43,26 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data selectors - Multi-instance Engine data
-  // FIXED: Use empty dependency array like other widgets to prevent selector recreation
-  // NMEA data - direct subscription without useCallback
-  const engineData = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]);
-  
-  // Extract engine data with defaults for multi-instance support - match WindWidget pattern exactly
-  // Convert undefined to null to prevent toFixed() errors
-  const rpm = engineData?.rpm ?? null;
-  const coolantTemp = engineData?.coolantTemp ?? null;
-  const oilPressure = engineData?.oilPressure ?? null;
-  const alternatorVoltage = engineData?.alternatorVoltage ?? null;
-  const fuelFlow = engineData?.fuelFlow ?? null;
-  const engineHours = engineData?.engineHours ?? null;
+  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions for multi-instance engine
+  const rpm = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.rpm ?? null);
+  const coolantTemp = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.coolantTemp ?? null);
+  const oilPressure = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.oilPressure ?? null);
+  const alternatorVoltage = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.alternatorVoltage ?? null);
+  const fuelFlow = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.fuelFlow ?? null);
+  const engineHours = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.engineHours ?? null);
+  const engineTimestamp = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.timestamp);
   
   // Debug logging to diagnose flickering
   React.useEffect(() => {
     console.log(`🔧 [EngineWidget-${instanceNumber}] Store data:`, {
-      hasEngineData: !!engineData,
+      hasEngineData: rpm !== null || coolantTemp !== null,
       rpm,
       coolantTemp,
       oilPressure,
       alternatorVoltage,
-      timestamp: engineData?.timestamp
+      timestamp: engineTimestamp
     });
-  }, [instanceNumber, engineData, rpm, coolantTemp, oilPressure, alternatorVoltage]);
+  }, [instanceNumber, rpm, coolantTemp, oilPressure, alternatorVoltage, engineTimestamp]);
   
   // Epic 9 Enhanced Presentation System for engine values
   const frequencyPresentation = useDataPresentation('frequency');

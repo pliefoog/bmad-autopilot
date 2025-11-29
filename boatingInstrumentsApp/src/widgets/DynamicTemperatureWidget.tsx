@@ -45,54 +45,49 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
-  // NMEA data - get temperature data from store using direct subscription
-  // This ensures the component re-renders when temperature data updates
-  const temperatureData = useNmeaStore((state) => 
-    state.nmeaData.sensors.temperature?.[instanceNumber]
-  );
+  // NMEA data - Phase 1 Optimization: Selective field subscriptions for multi-instance temperature
+  const temperature = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.value ?? null);
+  const location = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.location ?? 'unknown');
+  const units = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.units ?? 'C');
+  const sensorName = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.name ?? title);
+  const temperatureTimestamp = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp);
   
   // Temperature history tracking
   const [temperatureHistory, setTemperatureHistory] = useState<Array<{ value: number; timestamp: number }>>([]);
-  
-  // Extract temperature values
-  const temperature = temperatureData?.value || null; // Temperature in Celsius
-  const location = temperatureData?.location || 'unknown';
-  const units = temperatureData?.units || 'C';
-  const sensorName = temperatureData?.name || title;
   
   // Track last added value to prevent duplicate entries
   const lastAddedValueRef = useRef<{ value: number; timestamp: number } | null>(null);
   
   useEffect(() => {
-    if (temperature !== null && temperature !== undefined && temperatureData?.timestamp) {
+    if (temperature !== null && temperature !== undefined && temperatureTimestamp) {
       // Only add if value changed or it's been >1 second since last add
       const shouldAdd = !lastAddedValueRef.current ||
         Math.abs(temperature - lastAddedValueRef.current.value) > 0.01 ||
-        temperatureData.timestamp - lastAddedValueRef.current.timestamp > 1000;
+        temperatureTimestamp - lastAddedValueRef.current.timestamp > 1000;
       
       if (shouldAdd) {
-        lastAddedValueRef.current = { value: temperature, timestamp: temperatureData.timestamp };
+        lastAddedValueRef.current = { value: temperature, timestamp: temperatureTimestamp };
         setTemperatureHistory(prev => {
-          const newHistory = [...prev, { value: temperature, timestamp: temperatureData.timestamp }];
+          const newHistory = [...prev, { value: temperature, timestamp: temperatureTimestamp }];
           // Keep only last 5 minutes of data
-          return newHistory.filter(entry => entry.timestamp > temperatureData.timestamp - 5 * 60 * 1000);
+          return newHistory.filter(entry => entry.timestamp > temperatureTimestamp - 5 * 60 * 1000);
         });
       }
     }
-  }, [temperature, temperatureData?.timestamp]);
+  }, [temperature, temperatureTimestamp]);
   
   // Check if data is stale (> 5 seconds old)
   // Use state + useEffect to detect staleness without causing re-renders on every cycle
   const [isStale, setIsStale] = useState(true);
   
   useEffect(() => {
-    if (!temperatureData?.timestamp) {
+    if (!temperatureTimestamp) {
       setIsStale(true);
       return;
     }
     
     const checkStale = () => {
-      const age = Date.now() - temperatureData.timestamp;
+      const age = Date.now() - temperatureTimestamp;
       setIsStale(age > 5000);
     };
     
@@ -102,7 +97,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
     // Then check periodically every second
     const interval = setInterval(checkStale, 1000);
     return () => clearInterval(interval);
-  }, [temperatureData?.timestamp]); // CRITICAL: Only timestamp, not full object!
+  }, [temperatureTimestamp]); // CRITICAL: Only timestamp, not full object!
   
   // Presentation hooks for temperature conversion
   const tempPresentation = useTemperaturePresentation();
