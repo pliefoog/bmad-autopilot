@@ -43,7 +43,8 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Multi-instance Battery data
-  const batteryData = useNmeaStore(useCallback((state: any) => state.getBatteryData(instanceNumber), [instanceNumber]));
+  // NMEA data - direct subscription without useCallback
+  const batteryData = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]);
   
   // Extract battery data - now comes directly from NMEA store
   const currentBatteryData = useMemo(() => {

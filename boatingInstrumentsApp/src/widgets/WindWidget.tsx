@@ -47,9 +47,10 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  const windData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.wind[0], [])); // Wind sensor data
-  const compassData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.compass[0], [])); // Compass data for heading
-  const speedData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.speed[0], [])); // Speed data for SOG
+  // NMEA data selectors - direct subscriptions without useCallback
+  const windData = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]); // Wind sensor data
+  const compassData = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]); // Compass data for heading
+  const speedData = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]); // Speed data for SOG
   
   // Extract wind values from sensor data
   const windAngle = windData?.angle; // AWA (Apparent Wind Angle)

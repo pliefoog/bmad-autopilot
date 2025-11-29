@@ -43,7 +43,8 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data - get tank data from store
-  const tankData = useNmeaStore(useCallback((state: any) => state.getTankData(instanceNumber), [instanceNumber]));
+  // NMEA data - direct subscription without useCallback
+  const tankData = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]);
   
   // Extract tank values
   const level = tankData?.level ? tankData.level * 100 : null; // Convert ratio to percentage

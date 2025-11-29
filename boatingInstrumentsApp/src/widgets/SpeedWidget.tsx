@@ -51,7 +51,8 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  const speedData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.speed[0], [])); // Speed sensor data
+  // NMEA data selectors - direct subscription without useCallback
+  const speedData = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]); // Speed sensor data
   
   // Extract speed values from sensor data
   const sog = speedData?.overGround; // Speed Over Ground (VTG/RMC/GPS)

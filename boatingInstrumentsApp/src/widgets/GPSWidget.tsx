@@ -58,7 +58,8 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   }, [id, toggleWidgetPin, updateWidgetInteraction]);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  const gpsData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.gps[0], [])); // GPS sensor data
+  // Direct subscription without useCallback to ensure updates trigger re-renders
+  const gpsData = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]); // GPS sensor data
   
   // Extract GPS values from sensor data
   const gpsPosition = gpsData?.position; // GPS position object with lat/lon

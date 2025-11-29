@@ -33,7 +33,8 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Autopilot/rudder data from sensor store
-  const autopilotData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.autopilot?.[0], []));
+  // NMEA data - direct subscription without useCallback
+  const autopilotData = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]);
   
   // Extract rudder data with defaults
   const rudderAngle = autopilotData?.rudderPosition || 0;

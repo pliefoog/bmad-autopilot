@@ -45,7 +45,8 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   
   // NMEA data selectors - Multi-instance Engine data
   // FIXED: Use empty dependency array like other widgets to prevent selector recreation
-  const engineData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.engine[instanceNumber], []));
+  // NMEA data - direct subscription without useCallback
+  const engineData = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]);
   
   // Extract engine data with defaults for multi-instance support - match WindWidget pattern exactly
   // Convert undefined to null to prevent toFixed() errors

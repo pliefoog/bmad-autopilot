@@ -38,7 +38,8 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  const compassData = useNmeaStore(useCallback((state: any) => state.nmeaData.sensors.compass[0], [])); // Compass sensor data
+  // NMEA data selectors - direct subscription without useCallback
+  const compassData = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]); // Compass sensor data
   
   // Extract heading values from sensor data
   const heading = compassData?.heading; // True/magnetic heading
