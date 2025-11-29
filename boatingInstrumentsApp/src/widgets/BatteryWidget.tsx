@@ -154,7 +154,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
     [voltagePresentation, nominalVoltage, getBatteryDisplay]
   );
   
-  const isStale = !currentBatteryData || voltage === null;
+  const isStale = !batteryTimestamp || voltage === null;
 
   // Marine safety thresholds for battery monitoring
   const getBatteryState = useCallback((voltage: number | null, soc: number | null) => {
