@@ -29,8 +29,10 @@ import {
 const STORAGE_KEY = 'nmea-connection-config';
 
 const App = () => {
-  const { connectionStatus, lastError } = useNmeaStore();
-  const { activeAlarms } = useAlarmStore();
+  // Selective subscriptions to prevent re-renders on unrelated state changes
+  const connectionStatus = useNmeaStore(state => state.connectionStatus);
+  const lastError = useNmeaStore(state => state.lastError);
+  const activeAlarms = useAlarmStore(state => state.activeAlarms);
   const theme = useTheme();
   const toast = useToast();
   const defaults = getConnectionDefaults();
@@ -151,17 +153,17 @@ const App = () => {
   }, [lastError]);
 
   // Dynamic widget lifecycle management - ONLY create widgets when NMEA data is present
-  const { nmeaData } = useNmeaStore();
-  const { 
-    createInstanceWidget, 
-    dashboards, 
-    currentDashboard, 
-    removeWidget, 
-    addWidget, 
-    cleanupExpiredWidgetsWithConfig,
-    enableWidgetAutoRemoval,
-    widgetExpirationTimeout 
-  } = useWidgetStore();
+  // Selective subscription: only re-render when sensors actually change
+  const nmeaSensors = useNmeaStore(state => state.nmeaData?.sensors);
+  const nmeaTimestamp = useNmeaStore(state => state.nmeaData?.timestamp);
+  const nmeaMessageCount = useNmeaStore(state => state.nmeaData?.messageCount);
+  
+  // Use getState() for stable function references (don't cause re-renders)
+  // Only subscribe to data that actually needs to trigger re-renders
+  const dashboards = useWidgetStore(state => state.dashboards);
+  const currentDashboard = useWidgetStore(state => state.currentDashboard);
+  const enableWidgetAutoRemoval = useWidgetStore(state => state.enableWidgetAutoRemoval);
+  const widgetExpirationTimeout = useWidgetStore(state => state.widgetExpirationTimeout);
   
   // Dynamic widget lifecycle management - periodic cleanup of expired widgets
   useEffect(() => {
@@ -169,29 +171,29 @@ const App = () => {
     console.log(`[App] Widget auto-removal: ${enableWidgetAutoRemoval ? 'ENABLED' : 'DISABLED'}`);
     console.log(`[App] Widget expiration timeout: ${widgetExpirationTimeout}ms (${widgetExpirationTimeout / 1000}s)`);
     
-    // Run initial cleanup
-    cleanupExpiredWidgetsWithConfig();
+    // Run initial cleanup using getState() for stable reference
+    useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
     
     // Set up periodic cleanup - more frequent for responsive widget removal
     const cleanupInterval = setInterval(() => {
       console.log('[App] 🧹 Running periodic widget expiration cleanup');
-      cleanupExpiredWidgetsWithConfig();
+      useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
     }, 15000); // Check every 15 seconds for more responsive widget removal
     
     return () => clearInterval(cleanupInterval);
-  }, [cleanupExpiredWidgetsWithConfig, enableWidgetAutoRemoval, widgetExpirationTimeout]);
+  }, [enableWidgetAutoRemoval, widgetExpirationTimeout]); // Only data dependencies, functions via getState()
 
   // FULLY DYNAMIC WIDGET SYSTEM - widgets created/removed based on live NMEA data only
   useEffect(() => {
-    if (!nmeaData || !nmeaData.sensors) {
+    if (!nmeaSensors) {
       console.log('[App] No NMEA data available - no widgets to create/update');
       return;
     }
 
     console.log('[App] 🔄 DYNAMIC WIDGET LIFECYCLE - Processing NMEA sensors:', {
-      timestamp: nmeaData.timestamp,
-      messageCount: nmeaData.messageCount,
-      availableSensors: Object.keys(nmeaData.sensors),
+      timestamp: nmeaTimestamp,
+      messageCount: nmeaMessageCount,
+      availableSensors: Object.keys(nmeaSensors),
       connectionStatus
     });
 
@@ -204,7 +206,7 @@ const App = () => {
     // **1. SINGLE-INSTANCE SENSORS** (depth, gps, speed, wind, compass)
     const singleInstanceSensors = ['depth', 'gps', 'speed', 'wind', 'compass'];
     singleInstanceSensors.forEach(sensorType => {
-      const sensorData = nmeaData.sensors[sensorType];
+      const sensorData = nmeaSensors[sensorType];
       if (sensorData && Object.keys(sensorData).length > 0) {
         // Check if we have valid data for this sensor type
         const firstInstance = Object.values(sensorData)[0] as any;
@@ -232,7 +234,7 @@ const App = () => {
           const existingWidget = dashboard.widgets.find(w => w.id === sensorType);
           if (!existingWidget) {
             console.log(`[App] ➕ Creating ${sensorType} widget (single-instance)`);
-            addWidget(sensorType, { x: 0, y: 0 }); // Let layout system handle positioning
+            useWidgetStore.getState().addWidget(sensorType, { x: 0, y: 0 }); // Let layout system handle positioning
           }
         }
       }
@@ -241,71 +243,71 @@ const App = () => {
     // **2. MULTI-INSTANCE SENSORS** (engine, battery, tank, temperature)
     
     // Engine widgets
-    if (nmeaData.sensors.engine) {
-      Object.keys(nmeaData.sensors.engine).forEach(instanceStr => {
+    if (nmeaSensors.engine) {
+      Object.keys(nmeaSensors.engine).forEach(instanceStr => {
         const instance = parseInt(instanceStr);
-        const engineData = nmeaData.sensors.engine[instance];
+        const engineData = nmeaSensors.engine[instance];
         if (engineData?.rpm !== undefined) {
           const widgetId = `engine-${instance}`;
           const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
           if (!existingWidget) {
             console.log(`[App] ➕ Creating engine widget: ${widgetId}`);
-            createInstanceWidget(instanceStr, 'engine', `Engine ${instance + 1}`, { x: 0, y: 0 });
+            useWidgetStore.getState().createInstanceWidget(instanceStr, 'engine', `Engine ${instance + 1}`, { x: 0, y: 0 });
           }
         }
       });
     }
 
     // Battery widgets
-    if (nmeaData.sensors.battery) {
-      Object.keys(nmeaData.sensors.battery).forEach(instanceStr => {
+    if (nmeaSensors.battery) {
+      Object.keys(nmeaSensors.battery).forEach(instanceStr => {
         const instance = parseInt(instanceStr);
-        const batteryData = nmeaData.sensors.battery[instance];
+        const batteryData = nmeaSensors.battery[instance];
         if (batteryData?.voltage !== undefined) {
           const widgetId = `battery-${instance}`;
           const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
           if (!existingWidget) {
             console.log(`[App] ➕ Creating battery widget: ${widgetId}`);
-            createInstanceWidget(instanceStr, 'battery', `Battery ${instance + 1}`, { x: 0, y: 0 });
+            useWidgetStore.getState().createInstanceWidget(instanceStr, 'battery', `Battery ${instance + 1}`, { x: 0, y: 0 });
           }
         }
       });
     }
 
     // Tank widgets
-    if (nmeaData.sensors.tank) {
-      Object.keys(nmeaData.sensors.tank).forEach(instanceStr => {
+    if (nmeaSensors.tank) {
+      Object.keys(nmeaSensors.tank).forEach(instanceStr => {
         const instance = parseInt(instanceStr);
-        const tankData = nmeaData.sensors.tank[instance];
+        const tankData = nmeaSensors.tank[instance];
         if (tankData?.level !== undefined && tankData?.type) {
           const widgetId = `tank-${instance}`;
           const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
           if (!existingWidget) {
             console.log(`[App] ➕ Creating tank widget: ${widgetId} (${tankData.type})`);
-            createInstanceWidget(instanceStr, 'tank', `${tankData.type.toUpperCase()} Tank ${instance + 1}`, { x: 0, y: 0 });
+            useWidgetStore.getState().createInstanceWidget(instanceStr, 'tank', `${tankData.type.toUpperCase()} Tank ${instance + 1}`, { x: 0, y: 0 });
           }
         }
       });
     }
 
     // Temperature widgets (instance-based IDs for consistency with other multi-instance widgets)
-    if (nmeaData.sensors.temperature) {
-      Object.keys(nmeaData.sensors.temperature).forEach(instanceStr => {
+    if (nmeaSensors.temperature) {
+      Object.keys(nmeaSensors.temperature).forEach(instanceStr => {
         const instance = parseInt(instanceStr);
-        const tempData = nmeaData.sensors.temperature[instance];
+        const tempData = nmeaSensors.temperature[instance];
         if (tempData?.value !== undefined) {
           const widgetId = `temp-${instance}`;
           const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
           if (!existingWidget) {
             console.log(`[App] ➕ Creating temperature widget: ${widgetId} (location: ${tempData.location})`);
-            addWidget(widgetId, { x: 0, y: 0 });
+            useWidgetStore.getState().addWidget(widgetId, { x: 0, y: 0 });
           }
         }
       });
     }
 
     console.log('[App] ✅ Dynamic widget processing complete');
-  }, [nmeaData, connectionStatus, dashboards, currentDashboard, createInstanceWidget, addWidget]);
+  }, [nmeaSensors, nmeaTimestamp, connectionStatus, dashboards, currentDashboard]); // Functions via getState()
 
   // Helper functions now use global toast system
   const showSuccessToast = (message: string) => {
