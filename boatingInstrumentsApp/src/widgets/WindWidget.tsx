@@ -44,28 +44,37 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
-  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
+  
+  // Subscribe to history tracking on mount
+  useEffect(() => {
+    const subscribeToHistory = useNmeaStore.getState().subscribeToHistory;
+    const unsubscribeFromHistory = useNmeaStore.getState().unsubscribeFromHistory;
+    
+    subscribeToHistory(id, 'wind', 10 * 60 * 1000); // 10-minute window for wind trends
+    
+    return () => {
+      unsubscribeFromHistory(id, 'wind');
+    };
+  }, [id]);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const windAngle = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.angle, (a, b) => a === b); // AWA
   const windSpeed = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.speed, (a, b) => a === b); // AWS
-  const windTimestamp = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.timestamp, (a, b) => a === b);
+  const windTimestamp = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.timestamp);
   const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading, (a, b) => a === b); // For true wind
   const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround, (a, b) => a === b); // For true wind
-  
-  // Debug logging - remove after testing
-  React.useEffect(() => {
-    console.log('🎣 WindWidget - windAngle:', windAngle, 'windSpeed:', windSpeed);
-  }, [windAngle, windSpeed]);
   
   // Wind history for gust calculations
   const [windHistory, setWindHistory] = useState<{
     apparent: { speed: number; angle: number; timestamp: number }[];
     true: { speed: number; angle: number; timestamp: number }[];
   }>({ apparent: [], true: [] });
+  
+  // Get wind speed history from store (for persistence and sharing)
+  const windSpeedHistory = useNmeaStore((state) => state.sensorHistories.wind);
 
-  // Track wind history for gust calculations
+  // Track wind history for gust calculations (local state for multi-dimensional data)
   useEffect(() => {
     const now = Date.now();
     const tenMinutesAgo = now - 10 * 60 * 1000;
@@ -310,15 +319,9 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     }
   }, [trueWind.speed, trueWind.angle]); // Use specific values instead of whole object
 
-  // Widget interaction handlers per ui-architecture.md v2.3
-  const handlePress = useCallback(() => {
-    updateWidgetInteraction(id);
-  }, [id, updateWidgetInteraction]);
-
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-    updateWidgetInteraction(id);
-  }, [id, toggleWidgetPin, updateWidgetInteraction]);
+  }, [id, toggleWidgetPin]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
@@ -371,7 +374,6 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
       columns={2}
       primaryRows={2}
       secondaryRows={2}
-      onPress={handlePress}
       testID={`wind-widget-${id}`}
     >
         {/* Row 1: AWS | TWS */}

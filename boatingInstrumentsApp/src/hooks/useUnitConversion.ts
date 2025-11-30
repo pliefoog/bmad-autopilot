@@ -806,6 +806,9 @@ export function useUnitConversion(options: UseUnitConversionOptions = {}): UseUn
   const [conversionCache, setConversionCache] = useState<Map<string, number>>(new Map());
   const [marineRegion, setMarineRegionState] = useState<'eu' | 'us' | 'uk' | 'international'>(defaultMarineRegion);
 
+  // Cache size limit: 100 entries (enough for active conversions, prevents unbounded growth)
+  const MAX_CACHE_SIZE = 100;
+
   // Sync settings store units to conversion preferences
   useEffect(() => {
     const categoryMapping: Record<string, string> = {
@@ -1226,7 +1229,18 @@ export function useUnitConversion(options: UseUnitConversionOptions = {}): UseUn
     }
     
     if (cacheConversions) {
-      setConversionCache(prev => new Map(prev).set(cacheKey, result));
+      setConversionCache(prev => {
+        const newCache = new Map(prev);
+        
+        // LRU eviction: if cache is full, remove oldest entry
+        if (newCache.size >= MAX_CACHE_SIZE) {
+          const firstKey = newCache.keys().next().value;
+          newCache.delete(firstKey);
+        }
+        
+        newCache.set(cacheKey, result);
+        return newCache;
+      });
     }
     
     return result;

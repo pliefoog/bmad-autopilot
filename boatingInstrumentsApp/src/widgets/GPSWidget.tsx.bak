@@ -45,8 +45,17 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // Widget interaction handlers per ui-architecture.md v2.3
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
+  const handleLongPressOnPin = useCallback(() => {
+    toggleWidgetPin(id);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   // Phase 1 Optimization: Selective field subscriptions with shallow equality
@@ -209,6 +218,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
       primaryRows={2}
       secondaryRows={2}
       columns={1}
+      onPress={handlePress}
       testID={`gps-widget-${id}`}
     >
         {/* Row 1: Latitude */}

@@ -26,9 +26,6 @@ export interface WidgetConfig {
   order: number;
   // Enhanced state management (Story 2.15)
   isPinned?: boolean;
-  isExpanded?: boolean;
-  lastInteraction?: number;
-  autoCollapseTimeout?: number;
   // Lifecycle management for auto-detection
   createdAt?: number;
   lastDataUpdate?: number;
@@ -60,7 +57,6 @@ interface WidgetState {
   editMode: boolean;
   gridVisible: boolean;
   presets: WidgetPreset[];
-  widgetExpanded: Record<string, boolean>;
   // Dynamic widget lifecycle configuration
   widgetExpirationTimeout: number; // Milliseconds - widgets removed if no data received for this duration
   enableWidgetAutoRemoval: boolean; // Feature toggle for automatic widget removal
@@ -87,16 +83,12 @@ interface WidgetActions {
   updateDashboard: (dashboardId: string, updates: Partial<DashboardConfig>) => void;
   exportDashboard: (dashboardId: string) => DashboardConfig;
   importDashboard: (dashboard: DashboardConfig) => void;
-  toggleWidgetExpanded: (widgetId: string) => void;
-  setWidgetExpanded: (widgetId: string, expanded: boolean) => void;
-  isWidgetExpanded: (widgetId: string) => boolean;
   // Enhanced state management actions (Story 2.15)
   pinWidget: (widgetId: string) => void;
   unpinWidget: (widgetId: string) => void;
   toggleWidgetPin: (widgetId: string) => void;
   isWidgetPinned: (widgetId: string) => boolean;
   initializeWidgetStatesOnAppStart: () => void;
-  updateWidgetInteraction: (widgetId: string) => void;
   resetLayout: () => void;
   applyPreset: (presetId: string) => void;
   // Instance widget management methods
@@ -251,7 +243,6 @@ export const useWidgetStore = create<WidgetStore>()(
       presets: defaultPresets,
       editMode: false,
       gridVisible: false,
-      widgetExpanded: {},
       // Dynamic widget lifecycle configuration
       widgetExpirationTimeout: 60000, // 60 seconds - configurable timeout for widget removal
       enableWidgetAutoRemoval: true,   // Enable automatic removal of widgets when data stops flowing
@@ -360,22 +351,16 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       removeWidget: (widgetId) =>
-        set((state) => {
-          const newWidgetExpanded = { ...state.widgetExpanded };
-          delete newWidgetExpanded[widgetId];
-          
-          return {
-            dashboards: state.dashboards.map((dashboard) =>
-              dashboard.id === state.currentDashboard
-                ? {
-                    ...dashboard,
-                    widgets: dashboard.widgets.filter((w) => w.id !== widgetId),
-                  }
-                : dashboard
-            ),
-            widgetExpanded: newWidgetExpanded,
-          };
-        }),
+        set((state) => ({
+          dashboards: state.dashboards.map((dashboard) =>
+            dashboard.id === state.currentDashboard
+              ? {
+                  ...dashboard,
+                  widgets: dashboard.widgets.filter((w) => w.id !== widgetId),
+                }
+              : dashboard
+          ),
+        })),
 
       updateWidget: (widgetId, updates) =>
         set((state) => ({
@@ -499,41 +484,16 @@ export const useWidgetStore = create<WidgetStore>()(
         }));
       },
 
-      toggleWidgetExpanded: (widgetId) =>
-        set((state) => ({
-          widgetExpanded: {
-            ...state.widgetExpanded,
-            [widgetId]: !state.widgetExpanded[widgetId],
-          },
-        })),
-
-      setWidgetExpanded: (widgetId, expanded) =>
-        set((state) => ({
-          widgetExpanded: {
-            ...state.widgetExpanded,
-            [widgetId]: expanded,
-          },
-        })),
-
-      isWidgetExpanded: (widgetId) => {
-        const state = get();
-        return !!state.widgetExpanded[widgetId];
-      },
-
       // Enhanced state management implementations (Story 2.15)
       pinWidget: (widgetId) => {
         get().updateWidget(widgetId, { 
-          isPinned: true, 
-          lastInteraction: Date.now() 
+          isPinned: true
         });
-        // Update expanded state tracking
-        get().setWidgetExpanded(widgetId, true);
       },
 
       unpinWidget: (widgetId) => {
         get().updateWidget(widgetId, { 
-          isPinned: false, 
-          lastInteraction: Date.now() 
+          isPinned: false
         });
       },
 
@@ -593,22 +553,6 @@ export const useWidgetStore = create<WidgetStore>()(
             console.log('[WidgetStore] Base widgets restored. Total widgets now:', dashboard?.widgets.length);
           }
         }
-        
-        dashboard?.widgets.forEach(widget => {
-          if (widget.isPinned) {
-            // Pinned widgets start expanded
-            get().setWidgetExpanded(widget.id, true);
-          } else {
-            // Unpinned widgets start collapsed
-            get().setWidgetExpanded(widget.id, false);
-          }
-        });
-      },
-
-      updateWidgetInteraction: (widgetId) => {
-        get().updateWidget(widgetId, { 
-          lastInteraction: Date.now() 
-        });
       },
 
       resetLayout: () => {
@@ -1163,7 +1107,6 @@ export const useWidgetStore = create<WidgetStore>()(
           presets: [],
           editMode: false,
           gridVisible: false,
-          widgetExpanded: {},
           // Dynamic widget lifecycle configuration
           widgetExpirationTimeout: 60000,
           enableWidgetAutoRemoval: true,
@@ -1448,7 +1391,6 @@ export const useWidgetStore = create<WidgetStore>()(
         selectedWidgets: state.selectedWidgets,
         currentDashboard: state.currentDashboard,
         dashboards: state.dashboards,
-        widgetExpanded: state.widgetExpanded,
         // Dynamic widget lifecycle configuration
         widgetExpirationTimeout: state.widgetExpirationTimeout,
         enableWidgetAutoRemoval: state.enableWidgetAutoRemoval,

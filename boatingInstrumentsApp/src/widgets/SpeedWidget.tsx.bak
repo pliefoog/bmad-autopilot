@@ -48,6 +48,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // Subscribe to history tracking on mount
   useEffect(() => {
@@ -191,9 +192,15 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
     };
   }, [getSpeedDisplay, sog, stw, calculations]);
 
+  // Widget interaction handlers per ui-architecture.md v2.3
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Data staleness detection - consider stale if no speed data (either SOG or STW)
   const isStale = (sog === undefined || sog === null) && (stw === undefined || stw === null);
@@ -243,6 +250,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
       primaryRows={2}
       secondaryRows={2}
       columns={2}
+      onPress={handlePress}
       testID={`speed-widget-${id}`}
     >
       {/* Row 0: SOG and STW (current values) */}

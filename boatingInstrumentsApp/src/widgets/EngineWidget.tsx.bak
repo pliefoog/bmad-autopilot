@@ -41,6 +41,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const rpm = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.rpm ?? null, (a, b) => a === b);
@@ -216,9 +217,15 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
     return 'normal';
   }, [alternatorVoltage]);
 
+  // Widget interaction handlers
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
@@ -268,6 +275,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
       columns={2}
       primaryRows={2}
       secondaryRows={2}
+      onPress={handlePress}
       testID={`engine-widget-${id}`}
     >
         {/* Row 1: RPM | TEMP */}

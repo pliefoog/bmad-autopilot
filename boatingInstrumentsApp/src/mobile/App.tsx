@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
+import '../utils/logger'; // Import first to suppress all logging
+import '../utils/memoryProfiler'; // Register profiler functions
+import '../utils/memoryDiagnostics'; // Register diagnostic functions
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -17,6 +20,7 @@ import { OnboardingScreen } from '../components/onboarding/OnboardingScreen';
 import { UnitsConfigDialog } from '../components/dialogs/UnitsConfigDialog';
 import { FactoryResetDialog } from '../components/dialogs/FactoryResetDialog';
 import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
+import { MemoryMonitor } from '../components/MemoryMonitor';
 import { 
   getConnectionDefaults, 
   connectNmea, 
@@ -58,6 +62,70 @@ const App = () => {
     completeOnboarding, 
     skipOnboarding 
   } = useOnboarding();
+
+  // PHASE 3: Start/stop history pruning interval on mount/unmount
+  useEffect(() => {
+    const startHistoryPruning = useNmeaStore.getState().startHistoryPruning;
+    const stopHistoryPruning = useNmeaStore.getState().stopHistoryPruning;
+    
+    startHistoryPruning();
+    
+    return () => {
+      stopHistoryPruning();
+    };
+  }, []);
+
+  // Memory profiling: Start on mount (Chrome/Edge only)
+  useEffect(() => {
+    // Access via window to ensure they're registered
+    const profiler = (window as any).memoryProfiler || (window as any).__memoryProfiler;
+    
+    if (profiler && profiler.isAvailable && profiler.isAvailable()) {
+      profiler.start(1000); // Take snapshot every second
+      
+      // Use logger.always to bypass suppression for this message
+      const showMessage = () => {
+        const msg = [
+          '',
+          '═══════════════════════════════════════════════════',
+          '🔇 LOGGING SUPPRESSED - Memory profiling active',
+          '═══════════════════════════════════════════════════',
+          '',
+          '📊 DIAGNOSTIC COMMANDS:',
+          '  getCleanMemoryStats()    - Memory usage & growth rate',
+          '  getCleanDiagnostics()    - Store/DOM diagnostics',
+          '',
+          '🔊 LOGGING CONTROL:',
+          '  enableLogging()          - Enable all console output',
+          '  showReactErrors()        - Show React errors only',
+          '  disableLogging()         - Disable all output',
+          '',
+          '═══════════════════════════════════════════════════',
+        ].join('\n');
+        
+        // Use original console before suppression
+        const _console = (window as any).__originalConsole || console;
+        if (_console && _console.log) {
+          _console.log(msg);
+        }
+      };
+      
+      // Delay to ensure logger has initialized
+      setTimeout(showMessage, 100);
+    }
+    
+    return () => {
+      if (profiler && profiler.stop) {
+        const stats = profiler.stop();
+        if (stats) {
+          const _console = (window as any).__originalConsole || console;
+          if (_console && _console.log) {
+            _console.log(profiler.formatStats(stats));
+          }
+        }
+      }
+    };
+  }, []);
 
   // Factory reset handler
   const handleFactoryResetConfirm = async () => {
@@ -462,6 +530,9 @@ const App = () => {
         visible={showTestSwitchDialog}
         onClose={() => setShowTestSwitchDialog(false)}
       />
+
+      {/* Memory Monitor - Real-time memory usage display */}
+      <MemoryMonitor position="bottom-right" updateInterval={1000} />
 
       {/* Temporary Test Button - Floating */}
       <TouchableOpacity

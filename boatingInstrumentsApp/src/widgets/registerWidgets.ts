@@ -10,7 +10,7 @@ import { TanksWidget } from './TanksWidget';
 import { AutopilotStatusWidget } from './AutopilotStatusWidget';
 import { RudderPositionWidget } from './RudderPositionWidget';
 import { DynamicTemperatureWidget } from './DynamicTemperatureWidget';
-import { ThemeSwitcher } from './ThemeSwitcher';
+import { ThemeWidget } from './ThemeWidget';
 
 /**
  * Register all available widgets with the registry system
@@ -203,9 +203,9 @@ export function registerAllWidgets(): void {
       icon: 'color-palette-outline',
       description: 'Day/night theme switcher',
       category: 'navigation', // Default category for utility
-      defaultSize: { width: 160, height: 160 },
-      configurable: false,
+      defaultSize: { width: 400, height: 300 },
+      configurable: true,
     },
-    ThemeSwitcher
+    ThemeWidget
   );
 }

@@ -27,21 +27,8 @@ function renderWidget(
     const Component = registeredWidget.component;
     const title = WidgetFactory.getWidgetTitle(key);
     
-    // Wrap in React.memo to prevent re-renders when props haven't changed
-    const MemoizedWidget = React.memo(
-      ({ id, title, width, height }: { id: string; title: string; width?: number; height?: number }) => (
-        <Component key={id} id={id} title={title} width={width} height={height} />
-      ),
-      // Custom comparison: only re-render if id, title, width, or height change
-      (prevProps, nextProps) => 
-        prevProps.id === nextProps.id &&
-        prevProps.title === nextProps.title &&
-        prevProps.width === nextProps.width &&
-        prevProps.height === nextProps.height
-    );
-    MemoizedWidget.displayName = `MemoizedWidget(${key})`;
-    
-    return <MemoizedWidget id={key} title={title} width={width} height={height} />;
+    // Components are already memoized, just return directly with stable key
+    return <Component key={key} id={key} title={title} width={width} height={height} />;
   }
   
   console.error(`[DynamicDashboard] Widget lookup failed:`, {
@@ -111,9 +98,6 @@ export const DynamicDashboard: React.FC = () => {
     const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
     return dashboard?.widgets || [];
   });
-  
-  // Subscribe to widget expanded state for pagination recalculation
-  const widgetExpanded = useWidgetStore(state => state.widgetExpanded);
   
   console.log('[DynamicDashboard] Store widgets:', storeWidgets.length, 'dashboard:', currentDashboard);
   

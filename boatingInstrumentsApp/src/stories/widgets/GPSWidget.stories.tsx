@@ -46,7 +46,6 @@ const MockStoreProvider: React.FC<{
 
     // Initialize widget store with default state
     useWidgetStore.setState({
-      widgetExpanded: {},
       pinnedWidgets: [],
     });
 

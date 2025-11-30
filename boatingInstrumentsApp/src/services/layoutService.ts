@@ -99,38 +99,6 @@ export class LayoutService {
       { id: 'theme', position: { x: 170, y: 340 }, size: { width: 160, height: 160 }, visible: true, order: 5, expanded: false },
     ];
   }
-
-  /**
-   * AC 3: Update widget expanded state and persist
-   */
-  static async updateWidgetExpanded(widgetId: string, expanded: boolean): Promise<void> {
-    try {
-      const layout = await this.loadLayout();
-      const widgetIndex = layout.findIndex(widget => widget.id === widgetId);
-      
-      if (widgetIndex !== -1) {
-        layout[widgetIndex].expanded = expanded;
-        await this.saveLayout(layout);
-      }
-    } catch (error) {
-      console.error('Failed to update widget expanded state:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get specific widget's expanded state
-   */
-  static async getWidgetExpanded(widgetId: string): Promise<boolean> {
-    try {
-      const layout = await this.loadLayout();
-      const widget = layout.find(widget => widget.id === widgetId);
-      return widget?.expanded || false;
-    } catch (error) {
-      console.error('Failed to get widget expanded state:', error);
-      return false;
-    }
-  }
   
   /**
    * Update widget position in layout

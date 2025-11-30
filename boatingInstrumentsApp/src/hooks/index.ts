@@ -10,8 +10,6 @@ export type { UseConnectionOptions, UseConnectionReturn } from './useConnection'
 export { useWidgetConfig } from './useWidgetConfig';
 export type { UseWidgetConfigOptions, UseWidgetConfigReturn } from './useWidgetConfig';
 
-export { useWidgetExpanded } from './useWidgetExpanded';
-
 export { useAlarmThreshold } from './useAlarmThreshold';
 export type { 
   UseAlarmThresholdOptions, 

@@ -12,7 +12,6 @@ export interface UnifiedWidgetGridProps {
   primaryRows: number; // Always 2 for standard layout
   secondaryRows: number; // 0, 1, or 2
   columnSpans?: number[]; // Optional: How many columns each child should span
-  onPress?: () => void; // Optional press handler for widget interaction
   testID?: string; // Optional test ID
 }
 
@@ -54,7 +53,6 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
   primaryRows,
   secondaryRows,
   columnSpans,
-  onPress,
   testID
 }) => {
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -194,27 +192,36 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
       </View>
       
       {/* Main Grid Area with Margins */}
-      <View style={[styles.gridArea, { 
-        paddingLeft: leftMargin, 
-        paddingRight: rightMargin,
-        paddingTop: headerMargin,
-        flex: 1 
-      }]}>
+      <View 
+        style={[styles.gridArea, { 
+          paddingLeft: leftMargin, 
+          paddingRight: rightMargin,
+          paddingTop: headerMargin,
+          flex: 1 
+        }]}
+        pointerEvents="box-none"
+      >
         {/* Central Grid */}
-        <View style={[
-          styles.centralGrid,
-          columns === 1 && { paddingHorizontal: oneColumnCenterPadding }
-        ]}>
+        <View 
+          style={[
+            styles.centralGrid,
+            columns === 1 && { paddingHorizontal: oneColumnCenterPadding }
+          ]}
+          pointerEvents="box-none"
+        >
           {rows.map((row, rowIndex) => {
             const isPrimaryEnd = rowIndex === primaryRows - 1 && hasSecondary;
             
             return (
               <React.Fragment key={`row-${rowIndex}`}>
                 {/* Row */}
-                <View style={[styles.row, { 
-                  height: row.isPrimary ? primaryRowHeight : secondaryRowHeight, 
-                  gap: colGap 
-                }]}>
+                <View 
+                  style={[styles.row, { 
+                    height: row.isPrimary ? primaryRowHeight : secondaryRowHeight, 
+                    gap: colGap 
+                  }]}
+                  pointerEvents="box-none"
+                >
                   {row.cells.map((cell, cellIndex) => {
                     const span = row.spans[cellIndex];
                     const cellMaxWidth = calculateCellMaxWidth(span);
@@ -235,6 +242,7 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
                           styles.cell,
                           { width: cellMaxWidth }
                         ]}
+                        pointerEvents="box-none"
                       >
                         {enhancedCell}
                       </View>
@@ -273,21 +281,6 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
     </View>
   );
 
-  // If onPress is provided, wrap in TouchableOpacity
-  if (onPress) {
-    return (
-      <TouchableOpacity 
-        activeOpacity={0.7} 
-        onPress={onPress}
-        testID={testID}
-        style={{ alignSelf: 'flex-start' }}
-      >
-        {containerContent}
-      </TouchableOpacity>
-    );
-  }
-
-  // Otherwise return plain container
   return containerContent;
 };
 

@@ -43,6 +43,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   // Widget state management
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // Subscribe to history tracking on mount
   useEffect(() => {
@@ -167,9 +168,15 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   );
   }, [temperatureHistory, temperatureState, theme]);
 
+  // Widget interaction handlers
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Auto-generate appropriate title based on temperature data
   const getDisplayTitle = useCallback(() => {
@@ -241,6 +248,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       columns={1}
       primaryRows={2}
       secondaryRows={2}
+      onPress={handlePress}
       testID={`temperature-widget-${instanceNumber}`}
     >
       {/* Primary Row 1: Temperature */}

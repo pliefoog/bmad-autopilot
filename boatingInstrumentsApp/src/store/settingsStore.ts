@@ -222,10 +222,10 @@ const defaultSettings: SettingsState = {
     exportFormat: 'csv',
   },
   developer: {
-    debugMode: false,
-    showRawData: false,
+    debugMode: true,
+    showRawData: true,
     simulationMode: false,
-    logLevel: 'info',
+    logLevel: 'debug',
   },
 };
 

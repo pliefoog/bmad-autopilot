@@ -30,6 +30,7 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const rudderAngle = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.rudderPosition ?? 0, (a, b) => a === b);
@@ -121,9 +122,15 @@ export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.m
     };
   }, [rudderAngleDisplay]);
 
+  // Widget interaction handlers
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   const styles = StyleSheet.create({
     container: {

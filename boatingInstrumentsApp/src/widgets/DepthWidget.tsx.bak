@@ -39,6 +39,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // Subscribe to history tracking on mount
   useEffect(() => {
@@ -217,9 +218,15 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
     );
   }, [depthHistory, theme]);
 
+  // Widget interaction handlers per ui-architecture.md v2.3
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
@@ -331,6 +338,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
       columns={1}
       primaryRows={2}
       secondaryRows={2}
+      onPress={handlePress}
       testID={`depth-widget-${id}`}
     >
         {/* Row 1: Current depth with large value */}

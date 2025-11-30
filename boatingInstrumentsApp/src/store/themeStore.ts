@@ -324,11 +324,38 @@ export const useThemeStore = create<ThemeStore>()(
 export const useTheme = () => {
   const { colors, brightness } = useThemeStore();
   
-  // Apply brightness to colors (mainly affects backgrounds and surfaces)
-  const adjustedColors = {
+  // Apply brightness to all colors for comprehensive brightness control
+  const adjustedColors: ThemeColors = {
     ...colors,
+    primary: adjustBrightness(colors.primary, brightness),
+    secondary: adjustBrightness(colors.secondary, brightness),
     background: adjustBrightness(colors.background, brightness),
-    surface: adjustBrightness(colors.surface, brightness)
+    surface: adjustBrightness(colors.surface, brightness),
+    appBackground: adjustBrightness(colors.appBackground, brightness),
+    text: adjustBrightness(colors.text, brightness),
+    textSecondary: adjustBrightness(colors.textSecondary, brightness),
+    textTertiary: adjustBrightness(colors.textTertiary, brightness),
+    accent: adjustBrightness(colors.accent, brightness),
+    warning: adjustBrightness(colors.warning, brightness),
+    error: adjustBrightness(colors.error, brightness),
+    success: adjustBrightness(colors.success, brightness),
+    border: adjustBrightness(colors.border, brightness),
+    borderLight: adjustBrightness(colors.borderLight, brightness),
+    borderDark: adjustBrightness(colors.borderDark, brightness),
+    shadow: adjustBrightness(colors.shadow, brightness),
+    shadowDark: adjustBrightness(colors.shadowDark, brightness),
+    surfaceHighlight: adjustBrightness(colors.surfaceHighlight, brightness),
+    surfaceDim: adjustBrightness(colors.surfaceDim, brightness),
+    overlay: adjustBrightness(colors.overlay, brightness),
+    overlayDark: adjustBrightness(colors.overlayDark, brightness),
+    iconPrimary: adjustBrightness(colors.iconPrimary, brightness),
+    iconSecondary: adjustBrightness(colors.iconSecondary, brightness),
+    iconAccent: adjustBrightness(colors.iconAccent, brightness),
+    iconDisabled: adjustBrightness(colors.iconDisabled, brightness),
+    interactive: adjustBrightness(colors.interactive, brightness),
+    interactiveHover: adjustBrightness(colors.interactiveHover, brightness),
+    interactiveActive: adjustBrightness(colors.interactiveActive, brightness),
+    interactiveDisabled: adjustBrightness(colors.interactiveDisabled, brightness),
   };
   
   return adjustedColors;
@@ -338,6 +365,18 @@ export const useTheme = () => {
 const adjustBrightness = (color: string, factor: number): string => {
   // Simple brightness adjustment - in production might use more sophisticated color manipulation
   if (factor === 1.0) return color;
+  
+  // Handle rgba colors
+  if (color.startsWith('rgba')) {
+    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),?\s*([\d.]+)?\)/);
+    if (match) {
+      const r = Math.round(parseInt(match[1]) * factor);
+      const g = Math.round(parseInt(match[2]) * factor);
+      const b = Math.round(parseInt(match[3]) * factor);
+      const a = match[4] || '1';
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+  }
   
   const hex = color.replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);

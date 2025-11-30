@@ -35,8 +35,6 @@ export interface WidgetConfig {
   order: number;
   // Enhanced state management
   isPinned?: boolean;
-  isExpanded?: boolean;
-  lastInteraction?: number;
 }
 
 /**
@@ -258,8 +256,6 @@ export class WidgetFactory {
       enabled: true,
       order: instance.priority,
       isPinned: false,
-      isExpanded: false,
-      lastInteraction: 0,
       ...overrides,
     };
   }

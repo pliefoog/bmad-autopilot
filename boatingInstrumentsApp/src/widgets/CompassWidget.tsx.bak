@@ -35,6 +35,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   // Widget state management per ui-architecture.md v2.3
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
+  const updateWidgetInteraction = useWidgetStore((state) => state.updateWidgetInteraction);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading, (a, b) => a === b);
@@ -136,9 +137,15 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   // Compass mode state with toggle capability
   const [compassMode, setCompassMode] = useState<CompassMode>('TRUE'); // Default to TRUE per marine standards
 
+  // Widget interaction handlers per ui-architecture.md v2.3
+  const handlePress = useCallback(() => {
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
+
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+    updateWidgetInteraction(id);
+  }, [id, toggleWidgetPin, updateWidgetInteraction]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
@@ -146,7 +153,8 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   // Mode toggle handler (tap compass to switch TRUE ↔ MAGNETIC)
   const handleModeToggle = useCallback(() => {
     setCompassMode(prev => prev === 'TRUE' ? 'MAGNETIC' : 'TRUE');
-  }, []);
+    updateWidgetInteraction(id);
+  }, [id, updateWidgetInteraction]);
 
   // Current heading based on selected mode
   const currentHeading = useMemo(() => {
@@ -225,6 +233,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
       columns={1}
       primaryRows={2}
       secondaryRows={2}
+      onPress={handlePress}
       testID={`compass-widget-${id}`}
     >
         {/* Row 1: True Heading */}
