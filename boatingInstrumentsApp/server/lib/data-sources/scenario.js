@@ -504,9 +504,23 @@ class ScenarioDataSource extends EventEmitter {
       }
     });
     
-    console.log(`🔄 YAML generator types found:`, Array.from(yamlGeneratorTypes));
+    // Collect sensor generator types
+    const sensorGeneratorTypes = new Set();
+    this.dataGenerators.forEach((generator, generatorName) => {
+      if (generatorName.startsWith('sensor_')) {
+        // Extract sensor type from generator name: sensor_depth_sensor_0 -> depth_sensor
+        const parts = generatorName.split('_');
+        if (parts.length >= 3) {
+          const sensorType = parts[1] + '_' + parts[2]; // depth_sensor, speed_sensor, etc.
+          sensorGeneratorTypes.add(sensorType);
+        }
+      }
+    });
     
-    // Start built-in generators only if no YAML generator exists for that type
+    console.log(`🔄 YAML generator types found:`, Array.from(yamlGeneratorTypes));
+    console.log(`📡 Sensor generator types found:`, Array.from(sensorGeneratorTypes));
+    
+    // Start built-in generators only if no YAML or sensor generator exists for that type
     const builtInGenerators = ['depth', 'speed', 'wind', 'gps'];
     
     builtInGenerators.forEach(generatorName => {
@@ -520,21 +534,21 @@ class ScenarioDataSource extends EventEmitter {
                       yamlGeneratorTypes.has('gga') ||
                       yamlGeneratorTypes.has('rmc');
       
-      // Skip built-in generator if YAML version exists
-      if (generatorName === 'depth' && (yamlGeneratorTypes.has('dpt') || yamlGeneratorTypes.has('dbt') || yamlGeneratorTypes.has('dbk'))) {
-        console.log(`⏭️ Skipping built-in depth generator (YAML depth generator exists)`);
+      // Skip built-in generator if YAML or sensor version exists
+      if (generatorName === 'depth' && (yamlGeneratorTypes.has('dpt') || yamlGeneratorTypes.has('dbt') || yamlGeneratorTypes.has('dbk') || sensorGeneratorTypes.has('depth_sensor'))) {
+        console.log(`⏭️ Skipping built-in depth generator (YAML/sensor depth generator exists)`);
         return;
       }
-      if (generatorName === 'speed' && (yamlGeneratorTypes.has('vhw') || yamlGeneratorTypes.has('vtg'))) {
-        console.log(`⏭️ Skipping built-in speed generator (YAML speed generator exists)`);
+      if (generatorName === 'speed' && (yamlGeneratorTypes.has('vhw') || yamlGeneratorTypes.has('vtg') || sensorGeneratorTypes.has('speed_sensor'))) {
+        console.log(`⏭️ Skipping built-in speed generator (YAML/sensor speed generator exists)`);
         return;
       }
-      if (generatorName === 'wind' && yamlGeneratorTypes.has('mwv')) {
-        console.log(`⏭️ Skipping built-in wind generator (YAML wind generator exists)`);
+      if (generatorName === 'wind' && (yamlGeneratorTypes.has('mwv') || sensorGeneratorTypes.has('wind_sensor'))) {
+        console.log(`⏭️ Skipping built-in wind generator (YAML/sensor wind generator exists)`);
         return;
       }
-      if (generatorName === 'gps' && (yamlGeneratorTypes.has('gga') || yamlGeneratorTypes.has('rmc'))) {
-        console.log(`⏭️ Skipping built-in GPS generator (YAML GPS generator exists)`);
+      if (generatorName === 'gps' && (yamlGeneratorTypes.has('gga') || yamlGeneratorTypes.has('rmc') || sensorGeneratorTypes.has('gps_sensor'))) {
+        console.log(`⏭️ Skipping built-in GPS generator (YAML/sensor GPS generator exists)`);
         return;
       }
       
@@ -549,6 +563,14 @@ class ScenarioDataSource extends EventEmitter {
     this.dataGenerators.forEach((generator, generatorName) => {
       if (generatorName.startsWith('yaml_')) {
         console.log(`🔄 Starting YAML generator: ${generatorName}`);
+        this.startGenerator(generatorName, generator, { name: 'continuous' });
+      }
+    });
+    
+    // Start all sensor-based generators
+    this.dataGenerators.forEach((generator, generatorName) => {
+      if (generatorName.startsWith('sensor_')) {
+        console.log(`📡 Starting sensor generator: ${generatorName}`);
         this.startGenerator(generatorName, generator, { name: 'continuous' });
       }
     });

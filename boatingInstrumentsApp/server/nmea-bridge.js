@@ -285,6 +285,7 @@ class UnifiedNMEABridge {
       scenarioName: scenarioName,
       loop: options.loop || false,
       speed: options.speed || 1.0,
+      bridgeMode: options.bridgeMode || 'nmea0183',
       options
     };
   }
@@ -297,6 +298,9 @@ class UnifiedNMEABridge {
     
     for (let i = 0; i < args.length; i++) {
       switch (args[i]) {
+        case '--bridge-mode':
+          options.bridgeMode = args[++i];
+          break;
         case '--rate':
           options.rate = parseInt(args[++i]);
           break;
