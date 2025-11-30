@@ -13,6 +13,114 @@ const yaml = require('js-yaml');
 const EventEmitter = require('events');
 const ScenarioSchemaValidator = require('../scenario-schema');
 
+/**
+ * Sensor Type Registry - Protocol-agnostic sensor definitions
+ * Maps sensor types to NMEA 0183 sentences and NMEA 2000 PGNs with field mappings
+ */
+const SENSOR_TYPE_REGISTRY = {
+  depth_sensor: {
+    nmea0183: ['DBT', 'DPT', 'DBK'],
+    nmea2000: [128267],
+    physical_properties: {
+      transducer_depth: { unit: 'm', description: 'Depth of transducer below waterline', nmea0183_field: 'DPT.offset', nmea2000_field: 'byte[8]' },
+      keel_offset: { unit: 'm', description: 'Distance from transducer to keel', derived: true },
+      max_range: { unit: 'm', description: 'Maximum sensor range' },
+      mounting_location: { type: 'string', description: 'Physical mounting position (bow/stern/center)' }
+    }
+  },
+  speed_sensor: {
+    nmea0183: ['VHW', 'VTG'],
+    nmea2000: [128259],
+    physical_properties: {
+      sensor_type: { type: 'enum', values: ['paddle_wheel', 'electromagnetic', 'pitot_tube'], description: 'Speed sensor technology' },
+      mounting_location: { type: 'string', description: 'Hull mounting position' },
+      calibration_factor: { unit: 'ratio', description: 'Speed calibration multiplier', nmea0183_field: 'applied_to_knots', nmea2000_field: 'byte[2-3]' }
+    }
+  },
+  wind_sensor: {
+    nmea0183: ['MWV', 'MWD'],
+    nmea2000: [130306],
+    physical_properties: {
+      sensor_height: { unit: 'm', description: 'Height above deck', nmea2000_field: 'byte[6]' },
+      mounting_location: { type: 'string', description: 'Masthead/deck position' },
+      reference_type: { type: 'enum', values: ['apparent', 'true', 'ground'], description: 'Wind reference frame', nmea0183_field: 'MWV.reference', nmea2000_field: 'byte[5].bits[0-2]' }
+    }
+  },
+  gps_sensor: {
+    nmea0183: ['GGA', 'GLL', 'RMC', 'GSA', 'GSV'],
+    nmea2000: [129025, 129026, 129029, 129539],
+    physical_properties: {
+      antenna_height: { unit: 'm', description: 'GPS antenna height above water' },
+      horizontal_accuracy: { unit: 'm', description: 'Expected GPS accuracy', nmea0183_field: 'GGA.hdop', nmea2000_field: 'byte[14-15]' },
+      mounting_location: { type: 'string', description: 'Antenna position' }
+    }
+  },
+  heading_sensor: {
+    nmea0183: ['HDG', 'HDM', 'HDT'],
+    nmea2000: [127250, 127251],
+    physical_properties: {
+      sensor_type: { type: 'enum', values: ['magnetic_compass', 'fluxgate', 'gyro', 'gps_derived'], description: 'Heading sensor technology' },
+      deviation: { unit: 'degrees', description: 'Magnetic deviation', nmea0183_field: 'HDG.deviation', nmea2000_field: 'byte[4-5]' },
+      variation: { unit: 'degrees', description: 'Magnetic variation', nmea0183_field: 'HDG.variation', nmea2000_field: 'byte[6-7]' },
+      mounting_location: { type: 'string', description: 'Sensor mounting position' }
+    }
+  },
+  temperature_sensor: {
+    nmea0183: ['MTW', 'XDR'],
+    nmea2000: [130310, 130311, 130312, 130316],
+    physical_properties: {
+      sensor_location: { type: 'enum', values: ['sea_water', 'engine_room', 'cabin', 'refrigeration', 'exhaust', 'oil'], description: 'Temperature sensor location', nmea0183_field: 'XDR.transducer_name', nmea2000_field: 'byte[4]' },
+      sensor_depth: { unit: 'm', description: 'Depth of water temperature sensor' },
+      calibration_offset: { unit: '°C', description: 'Temperature calibration offset', nmea0183_field: 'applied_to_celsius', nmea2000_field: 'applied_to_kelvin' }
+    }
+  },
+  engine_sensor: {
+    nmea0183: ['RPM', 'XDR'],
+    nmea2000: [127488, 127489, 127493, 127505],
+    physical_properties: {
+      engine_instance: { type: 'integer', description: 'Engine number (0=port, 1=starboard)', nmea0183_field: 'RPM.source', nmea2000_field: 'byte[0]' },
+      rpm_calibration: { unit: 'ratio', description: 'RPM calibration factor' },
+      sensor_types: { type: 'array', description: 'Available sensors: rpm, coolant_temp, oil_pressure, alternator_voltage, fuel_rate, engine_hours' }
+    }
+  },
+  battery_sensor: {
+    nmea0183: ['XDR'],
+    nmea2000: [127508, 127513],
+    physical_properties: {
+      battery_instance: { type: 'integer', description: 'Battery bank number', nmea0183_field: 'XDR.transducer_name', nmea2000_field: 'byte[0]' },
+      nominal_voltage: { unit: 'V', description: 'Battery bank voltage (12V/24V/48V)' },
+      capacity: { unit: 'Ah', description: 'Battery capacity in amp-hours' }
+    }
+  },
+  tank_sensor: {
+    nmea0183: ['RSA'],
+    nmea2000: [127505],
+    physical_properties: {
+      tank_instance: { type: 'integer', description: 'Tank number', nmea0183_field: 'derived', nmea2000_field: 'byte[0]' },
+      fluid_type: { type: 'enum', values: ['fuel', 'fresh_water', 'gray_water', 'black_water', 'oil'], description: 'Tank contents', nmea0183_field: 'none', nmea2000_field: 'byte[1]' },
+      capacity: { unit: 'L', description: 'Total tank capacity', nmea2000_field: 'byte[2-5]' },
+      sensor_type: { type: 'enum', values: ['resistive', 'capacitive', 'ultrasonic'], description: 'Level sensor technology' }
+    }
+  },
+  rudder_sensor: {
+    nmea0183: ['RSA'],
+    nmea2000: [127245],
+    physical_properties: {
+      rudder_instance: { type: 'integer', description: 'Rudder number (0=main)', nmea0183_field: 'RSA.position', nmea2000_field: 'byte[0]' },
+      max_angle: { unit: 'degrees', description: 'Maximum rudder deflection' },
+      calibration_offset: { unit: 'degrees', description: 'Zero position offset' }
+    }
+  },
+  autopilot: {
+    nmea0183: ['APB', 'APA'],
+    nmea2000: [65288, 126208],
+    physical_properties: {
+      control_type: { type: 'enum', values: ['compass', 'gps', 'wind'], description: 'Autopilot control mode' },
+      max_rudder_angle: { unit: 'degrees', description: 'Maximum autopilot rudder command' }
+    }
+  }
+};
+
 class ScenarioDataSource extends EventEmitter {
   constructor(config) {
     super();
@@ -545,7 +653,15 @@ class ScenarioDataSource extends EventEmitter {
     console.log(`🔍 Checking for YAML sentences in scenario...`);
     console.log(`   Scenario exists: ${!!this.scenario}`);
     
-    // Standard field name is 'nmea_sentences'
+    // NEW: Check for sensor-based schema first (protocol-agnostic)
+    const sensors = this.scenario?.sensors;
+    if (sensors && Array.isArray(sensors)) {
+      console.log(`✨ Found sensor-based schema with ${sensors.length} sensors`);
+      this.initializeSensorGenerators(sensors);
+      return;
+    }
+    
+    // LEGACY: Fall back to nmea_sentences schema (protocol-specific)
     const sentences = this.scenario?.nmea_sentences;
     
     console.log(`   nmea_sentences exists: ${!!sentences}`);
@@ -553,7 +669,7 @@ class ScenarioDataSource extends EventEmitter {
     console.log(`   nmea_sentences count: ${sentences?.length || 0}`);
     
     if (!sentences || !Array.isArray(sentences)) {
-      console.log(`⚠️ No YAML sentences found in scenario (expected 'nmea_sentences' array)`);
+      console.log(`⚠️ No YAML sentences found in scenario (expected 'sensors' or 'nmea_sentences' array)`);
       return;
     }
 
@@ -706,6 +822,167 @@ class ScenarioDataSource extends EventEmitter {
           console.warn(`⚠️ Unknown YAML sentence type: ${sentenceDef.type}`);
       }
     });
+  }
+
+  /**
+   * Initialize generators from sensor-based schema (protocol-agnostic)
+   */
+  initializeSensorGenerators(sensors) {
+    const bridgeMode = this.scenario.bridge_mode || this.config.bridgeMode || 'nmea0183';
+    console.log(`🎯 Initializing sensor generators in ${bridgeMode} mode`);
+
+    sensors.forEach((sensor, index) => {
+      const generatorName = `sensor_${sensor.type}_${sensor.instance || index}`;
+      const updateRateHz = sensor.update_rate || 1;
+      const intervalMs = Math.round(1000 / updateRateHz);
+
+      // Validate sensor type
+      if (!SENSOR_TYPE_REGISTRY[sensor.type]) {
+        console.warn(`⚠️ Unknown sensor type: ${sensor.type}`);
+        return;
+      }
+
+      // Create generator that routes to appropriate protocol handler
+      this.dataGenerators.set(generatorName, {
+        interval: intervalMs,
+        sensor: sensor,
+        bridgeMode: bridgeMode,
+        generate: () => this.processSensorDefinition(sensor, bridgeMode)
+      });
+
+      console.log(`📡 Added sensor generator: ${generatorName} (${sensor.type}) at ${updateRateHz}Hz in ${bridgeMode} mode`);
+    });
+  }
+
+  /**
+   * Process sensor definition and route to appropriate protocol generator
+   * This is the core adapter that maps sensor-level data to protocol-specific messages
+   */
+  processSensorDefinition(sensor, bridgeMode) {
+    const sensorType = SENSOR_TYPE_REGISTRY[sensor.type];
+    if (!sensorType) {
+      console.warn(`⚠️ Unknown sensor type: ${sensor.type}`);
+      return null;
+    }
+
+    // Route to protocol-specific generator based on bridge mode
+    switch (bridgeMode) {
+      case 'nmea2000':
+        return this.generateNMEA2000FromSensor(sensor, sensorType);
+      
+      case 'nmea0183':
+        return this.generateNMEA0183FromSensor(sensor, sensorType);
+      
+      case 'hybrid':
+        // Generate both protocols
+        const nmea0183 = this.generateNMEA0183FromSensor(sensor, sensorType);
+        const nmea2000 = this.generateNMEA2000FromSensor(sensor, sensorType);
+        return [nmea0183, nmea2000].filter(m => m !== null);
+      
+      default:
+        console.warn(`⚠️ Unknown bridge mode: ${bridgeMode}`);
+        return null;
+    }
+  }
+
+  /**
+   * Generate NMEA 0183 sentences from sensor definition
+   */
+  generateNMEA0183FromSensor(sensor, sensorType) {
+    const sentenceTypes = sensorType.nmea0183;
+    if (!sentenceTypes || sentenceTypes.length === 0) {
+      return null;
+    }
+
+    // Use the first (primary) sentence type for this sensor
+    const primarySentence = sentenceTypes[0];
+    
+    // Route to specific generator based on sensor type
+    switch (sensor.type) {
+      case 'depth_sensor':
+        return this.generateDepthFromSensor(sensor, primarySentence);
+      
+      case 'speed_sensor':
+        return this.generateSpeedFromSensor(sensor, primarySentence);
+      
+      case 'wind_sensor':
+        return this.generateWindFromSensor(sensor, primarySentence);
+      
+      case 'gps_sensor':
+        return this.generateGPSFromSensor(sensor, primarySentence);
+      
+      case 'heading_sensor':
+        return this.generateHeadingFromSensor(sensor, primarySentence);
+      
+      case 'temperature_sensor':
+        return this.generateTemperatureFromSensor(sensor, primarySentence);
+      
+      case 'engine_sensor':
+        return this.generateEngineFromSensor(sensor, primarySentence);
+      
+      case 'battery_sensor':
+        return this.generateBatteryFromSensor(sensor, primarySentence);
+      
+      case 'tank_sensor':
+        return this.generateTankFromSensor(sensor, primarySentence);
+      
+      case 'rudder_sensor':
+        return this.generateRudderFromSensor(sensor, primarySentence);
+      
+      default:
+        console.warn(`⚠️ No NMEA 0183 generator for sensor type: ${sensor.type}`);
+        return null;
+    }
+  }
+
+  /**
+   * Generate NMEA 2000 PGN messages from sensor definition
+   */
+  generateNMEA2000FromSensor(sensor, sensorType) {
+    const pgnNumbers = sensorType.nmea2000;
+    if (!pgnNumbers || pgnNumbers.length === 0) {
+      return null;
+    }
+
+    // Use the first (primary) PGN for this sensor
+    const primaryPGN = pgnNumbers[0];
+    
+    // Route to specific PGN generator based on sensor type
+    switch (sensor.type) {
+      case 'depth_sensor':
+        return this.generatePCDIN_128267(sensor); // Water Depth
+      
+      case 'speed_sensor':
+        return this.generatePCDIN_128259(sensor); // Speed
+      
+      case 'wind_sensor':
+        return this.generatePCDIN_130306(sensor); // Wind Data
+      
+      case 'gps_sensor':
+        return this.generatePCDIN_129029(sensor); // GNSS Position Data
+      
+      case 'heading_sensor':
+        return this.generatePCDIN_127250(sensor); // Vessel Heading
+      
+      case 'temperature_sensor':
+        return this.generatePCDIN_130310(sensor); // Environmental Parameters
+      
+      case 'engine_sensor':
+        return this.generatePCDIN_127488(sensor); // Engine Parameters, Rapid Update
+      
+      case 'battery_sensor':
+        return this.generatePCDIN_127508(sensor); // Battery Status
+      
+      case 'tank_sensor':
+        return this.generatePCDIN_127505(sensor); // Fluid Level
+      
+      case 'rudder_sensor':
+        return this.generatePCDIN_127245(sensor); // Rudder
+      
+      default:
+        console.warn(`⚠️ No NMEA 2000 generator for sensor type: ${sensor.type}`);
+        return null;
+    }
   }
 
   /**
@@ -1604,7 +1881,223 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   /**
-   * Generate NMEA sentences
+   * Sensor-based NMEA 0183 generators (protocol-agnostic)
+   */
+  
+  generateDepthFromSensor(sensor, sentenceType) {
+    let depth = 10.0; // meters below transducer
+    
+    // Get depth from sensor data_generation
+    if (sensor.data_generation?.depth) {
+      depth = this.getYAMLDataValue('depth', sensor.data_generation.depth);
+    }
+    
+    // Get physical properties
+    const transducerDepth = sensor.physical_properties?.transducer_depth || 0;
+    const keelOffset = sensor.physical_properties?.keel_offset || 0;
+    
+    // Generate appropriate sentence type
+    if (sentenceType === 'DPT') {
+      return this.generateDPT(depth, transducerDepth);
+    } else if (sentenceType === 'DBK') {
+      // DBK = depth below keel = measured depth - transducer depth - keel offset
+      const depthBelowKeel = Math.max(0, depth - transducerDepth - keelOffset);
+      return this.generateDBK(depthBelowKeel);
+    } else {
+      // Default to DBT
+      return this.generateDBT(depth);
+    }
+  }
+  
+  generateSpeedFromSensor(sensor, sentenceType) {
+    let speedKnots = 5.0;
+    
+    // Get speed from sensor data_generation
+    if (sensor.data_generation?.speed) {
+      speedKnots = this.getYAMLDataValue('speed', sensor.data_generation.speed);
+    }
+    
+    // Apply calibration factor
+    const calibrationFactor = sensor.physical_properties?.calibration_factor || 1.0;
+    speedKnots *= calibrationFactor;
+    
+    // Generate VHW sentence (primary for water speed)
+    if (sentenceType === 'VTG') {
+      return this.generateVTGSentence(); // Use existing method
+    } else {
+      return this.generateVHW(speedKnots);
+    }
+  }
+  
+  generateWindFromSensor(sensor, sentenceType) {
+    let windSpeed = 10.0;
+    let windAngle = 45.0;
+    
+    // Get wind data from sensor data_generation
+    if (sensor.data_generation?.wind_speed) {
+      windSpeed = this.getYAMLDataValue('wind_speed', sensor.data_generation.wind_speed);
+    }
+    if (sensor.data_generation?.wind_angle) {
+      windAngle = this.getYAMLDataValue('wind_angle', sensor.data_generation.wind_angle);
+    }
+    
+    return this.generateMWV(windAngle, windSpeed);
+  }
+  
+  generateGPSFromSensor(sensor, sentenceType) {
+    let latitude = 37.7749;
+    let longitude = -122.4194;
+    
+    // Get position from sensor data_generation
+    if (sensor.data_generation?.latitude) {
+      latitude = this.getYAMLDataValue('latitude', sensor.data_generation.latitude);
+    }
+    if (sensor.data_generation?.longitude) {
+      longitude = this.getYAMLDataValue('longitude', sensor.data_generation.longitude);
+    }
+    
+    // Generate appropriate sentence type
+    if (sentenceType === 'GGA') {
+      return this.generateGGASentence(); // Use existing method that reads scenario data
+    } else {
+      return this.generateRMC(latitude, longitude);
+    }
+  }
+  
+  generateHeadingFromSensor(sensor, sentenceType) {
+    let heading = 180.0;
+    
+    // Get heading from sensor data_generation
+    if (sensor.data_generation?.heading) {
+      heading = this.getYAMLDataValue('heading', sensor.data_generation.heading);
+    }
+    
+    // Get deviation and variation from physical properties
+    const deviation = sensor.physical_properties?.deviation || 0;
+    const variation = sensor.physical_properties?.variation || 0;
+    
+    // Generate HDG sentence with deviation and variation
+    return this.generateHDG(heading, deviation, variation);
+  }
+  
+  generateTemperatureFromSensor(sensor, sentenceType) {
+    let temperature = 20.0;
+    
+    // Get temperature from sensor data_generation
+    if (sensor.data_generation?.temperature) {
+      temperature = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
+    }
+    
+    // Apply calibration offset
+    const calibrationOffset = sensor.physical_properties?.calibration_offset || 0;
+    temperature += calibrationOffset;
+    
+    // Get sensor location for XDR transducer name
+    const location = sensor.physical_properties?.sensor_location || 'sea_water';
+    const instance = sensor.instance || 0;
+    
+    if (sentenceType === 'MTW' && location === 'sea_water') {
+      // MTW is specifically for water temperature
+      const checksum = this.calculateChecksum(`MTW,${temperature.toFixed(1)},C`);
+      return `$IIMTW,${temperature.toFixed(1)},C*${checksum}`;
+    } else {
+      // XDR format for other temperature sensors
+      const transducerName = `TEMP_${location.toUpperCase()}_${String(instance).padStart(2, '0')}`;
+      const sentence = `IIXDR,C,${temperature.toFixed(1)},C,${transducerName}`;
+      const checksum = this.calculateChecksum(sentence);
+      return `$${sentence}*${checksum}`;
+    }
+  }
+  
+  generateEngineFromSensor(sensor, sentenceType) {
+    let rpm = 1800.0;
+    
+    // Get RPM from sensor data_generation
+    if (sensor.data_generation?.rpm) {
+      rpm = this.getYAMLDataValue('rpm', sensor.data_generation.rpm);
+    }
+    
+    // Apply calibration
+    const rpmCalibration = sensor.physical_properties?.rpm_calibration || 1.0;
+    rpm *= rpmCalibration;
+    
+    // Get engine instance
+    const engineInstance = sensor.physical_properties?.engine_instance || sensor.instance || 0;
+    const source = engineInstance === 0 ? 'E' : 'E1';
+    
+    // Generate RPM sentence
+    const sentence = `IIRPM,${source},0,${rpm.toFixed(0)},100,A`;
+    const checksum = this.calculateChecksum(sentence);
+    return `$${sentence}*${checksum}`;
+  }
+  
+  generateBatteryFromSensor(sensor, sentenceType) {
+    let voltage = 12.6;
+    let current = 5.0;
+    
+    // Get battery parameters from sensor data_generation
+    if (sensor.data_generation?.voltage) {
+      voltage = this.getYAMLDataValue('voltage', sensor.data_generation.voltage);
+    }
+    if (sensor.data_generation?.current) {
+      current = this.getYAMLDataValue('current', sensor.data_generation.current);
+    }
+    
+    // Get battery instance
+    const batteryInstance = sensor.physical_properties?.battery_instance || sensor.instance || 0;
+    const batteryId = `BAT_${String(batteryInstance).padStart(2, '0')}`;
+    
+    // Generate XDR sentences for voltage and current
+    const messages = [];
+    const voltageSentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId}`;
+    messages.push(`$${voltageSentence}*${this.calculateChecksum(voltageSentence)}`);
+    
+    const currentSentence = `IIXDR,I,${current.toFixed(2)},A,${batteryId}`;
+    messages.push(`$${currentSentence}*${this.calculateChecksum(currentSentence)}`);
+    
+    return messages;
+  }
+  
+  generateTankFromSensor(sensor, sentenceType) {
+    let level = 50.0; // percentage
+    
+    // Get level from sensor data_generation
+    if (sensor.data_generation?.level) {
+      level = this.getYAMLDataValue('level', sensor.data_generation.level);
+    }
+    
+    // Get tank properties
+    const tankInstance = sensor.physical_properties?.tank_instance || sensor.instance || 0;
+    const fluidType = sensor.physical_properties?.fluid_type || 'fuel';
+    const capacity = sensor.physical_properties?.capacity || 200;
+    
+    // NMEA 0183 doesn't have standard tank sentences, use XDR
+    const tankId = `TANK_${fluidType.toUpperCase()}_${String(tankInstance).padStart(2, '0')}`;
+    const sentence = `IIXDR,V,${level.toFixed(1)},%,${tankId}`;
+    const checksum = this.calculateChecksum(sentence);
+    return `$${sentence}*${checksum}`;
+  }
+  
+  generateRudderFromSensor(sensor, sentenceType) {
+    let angle = 0.0;
+    
+    // Get rudder angle from sensor data_generation
+    if (sensor.data_generation?.angle) {
+      angle = this.getYAMLDataValue('angle', sensor.data_generation.angle);
+    }
+    
+    // Apply calibration offset
+    const calibrationOffset = sensor.physical_properties?.calibration_offset || 0;
+    angle += calibrationOffset;
+    
+    // Generate RSA sentence
+    const sentence = `IIRSA,${angle.toFixed(1)},A,,`;
+    const checksum = this.calculateChecksum(sentence);
+    return `$${sentence}*${checksum}`;
+  }
+
+  /**
+   * Generate NMEA sentences (legacy simple generators)
    */
   generateDBT(depth) {
     const depthFeet = (depth * 3.28084).toFixed(2);
@@ -1644,9 +2137,11 @@ class ScenarioDataSource extends EventEmitter {
     return `$GP${sentence}*${checksum}`;
   }
 
-  generateHDG(heading) {
-    const checksum = this.calculateChecksum(`HDG,${heading.toFixed(1)},,,,`);
-    return `$IIHDG,${heading.toFixed(1)},,,,*${checksum}`;
+  generateHDG(heading, deviation = 0, variation = 0) {
+    const devStr = deviation !== 0 ? `${Math.abs(deviation).toFixed(1)},${deviation >= 0 ? 'E' : 'W'}` : ',';
+    const varStr = variation !== 0 ? `${Math.abs(variation).toFixed(1)},${variation >= 0 ? 'E' : 'W'}` : ',';
+    const checksum = this.calculateChecksum(`HDG,${heading.toFixed(1)},${devStr},${varStr}`);
+    return `$IIHDG,${heading.toFixed(1)},${devStr},${varStr}*${checksum}`;
   }
 
   generateAPB() {
@@ -1678,8 +2173,8 @@ class ScenarioDataSource extends EventEmitter {
   /**
    * Generate DPT sentence (Depth)
    */
-  generateDPT(depth) {
-    const offset = this.scenario?.parameters?.vessel?.keel_offset || 0;
+  generateDPT(depth, transducerDepth = null) {
+    const offset = transducerDepth !== null ? transducerDepth : (this.scenario?.parameters?.vessel?.keel_offset || 0);
     const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0;
     const checksum = this.calculateChecksum(`DPT,${depth.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
     return `$SDDPT,${depth.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
@@ -1938,23 +2433,39 @@ class ScenarioDataSource extends EventEmitter {
    * Generate PGN 127488: Engine Parameters, Rapid Update
    * Format: $PCDIN,01F200,{instance},{rpm_low},{rpm_high},FF,FF,FF,FF,FF*{checksum}
    */
-  generatePCDIN_127488(sentenceDef) {
-    const engineData = this.scenario?.data?.engine;
-    if (!engineData) return [];
-
-    // Get RPM from scenario data
+  generatePCDIN_127488(sensorOrSentenceDef) {
+    // Support both sensor objects (new) and sentenceDef (legacy)
+    const isSensor = sensorOrSentenceDef.type && sensorOrSentenceDef.type === 'engine_sensor';
+    
     let rpm = 0;
-    if (engineData.rpm) {
-      rpm = this.getYAMLDataValue('rpm', engineData.rpm);
+    let instance = 0;
+    let rpmCalibration = 1.0;
+
+    if (isSensor) {
+      // New sensor-based format
+      const sensor = sensorOrSentenceDef;
+      instance = sensor.physical_properties?.engine_instance || sensor.instance || 0;
+      rpmCalibration = sensor.physical_properties?.rpm_calibration || 1.0;
+      
+      // Get RPM from sensor data_generation
+      if (sensor.data_generation?.rpm) {
+        rpm = this.getYAMLDataValue('rpm', sensor.data_generation.rpm) * rpmCalibration;
+      }
+    } else {
+      // Legacy sentenceDef format
+      const engineData = this.scenario?.data?.engine;
+      if (!engineData) return [];
+      
+      instance = sensorOrSentenceDef.instance || 0;
+      if (engineData.rpm) {
+        rpm = this.getYAMLDataValue('rpm', engineData.rpm);
+      }
     }
 
     // Convert RPM to NMEA 2000 format (0.25 RPM resolution)
     const rpmRaw = Math.round(rpm / 0.25);
     const rpmLow = rpmRaw & 0xFF;
     const rpmHigh = (rpmRaw >> 8) & 0xFF;
-
-    // Instance (default to 0 if not specified)
-    const instance = sentenceDef.instance || 0;
 
     // Build PCDIN sentence
     const data = `PCDIN,01F200,${this.toHex(instance)},${this.toHex(rpmLow)},${this.toHex(rpmHigh)},FF,FF,FF,FF,FF`;
@@ -1967,23 +2478,45 @@ class ScenarioDataSource extends EventEmitter {
    * Generate PGN 127508: Battery Status
    * Format: $PCDIN,01F214,{instance},{volt_low},{volt_high},{curr_low},{curr_high},{temp_low},{temp_high},FF*{checksum}
    */
-  generatePCDIN_127508(sentenceDef) {
-    const batteryData = this.scenario?.data?.battery;
-    if (!batteryData) return [];
-
-    // Get battery parameters from scenario data
+  generatePCDIN_127508(sensorOrSentenceDef) {
+    // Support both sensor objects (new) and sentenceDef (legacy)
+    const isSensor = sensorOrSentenceDef.type && sensorOrSentenceDef.type === 'battery_sensor';
+    
     let voltage = 0;
     let current = 0;
     let temperature = 298.15; // Default 25°C in Kelvin
+    let instance = 0;
 
-    if (batteryData.voltage) {
-      voltage = this.getYAMLDataValue('voltage', batteryData.voltage);
-    }
-    if (batteryData.current) {
-      current = this.getYAMLDataValue('current', batteryData.current);
-    }
-    if (batteryData.temperature) {
-      temperature = this.getYAMLDataValue('temperature', batteryData.temperature);
+    if (isSensor) {
+      // New sensor-based format
+      const sensor = sensorOrSentenceDef;
+      instance = sensor.physical_properties?.battery_instance || sensor.instance || 0;
+      
+      // Get battery parameters from sensor data_generation
+      if (sensor.data_generation?.voltage) {
+        voltage = this.getYAMLDataValue('voltage', sensor.data_generation.voltage);
+      }
+      if (sensor.data_generation?.current) {
+        current = this.getYAMLDataValue('current', sensor.data_generation.current);
+      }
+      if (sensor.data_generation?.temperature) {
+        temperature = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
+      }
+    } else {
+      // Legacy sentenceDef format
+      const batteryData = this.scenario?.data?.battery;
+      if (!batteryData) return [];
+      
+      instance = sensorOrSentenceDef.instance || 0;
+      if (batteryData.voltage) {
+        voltage = this.getYAMLDataValue('voltage', batteryData.voltage);
+      }
+      if (batteryData.current) {
+        current = this.getYAMLDataValue('current', batteryData.current);
+      }
+      if (batteryData.temperature) {
+        temperature = this.getYAMLDataValue('temperature', batteryData.temperature);
+      }
     }
 
     // Convert to NMEA 2000 format
@@ -1999,9 +2532,6 @@ class ScenarioDataSource extends EventEmitter {
     const tempLow = tempRaw & 0xFF;
     const tempHigh = (tempRaw >> 8) & 0xFF;
 
-    // Instance (default to 0 if not specified)
-    const instance = sentenceDef.instance || 0;
-
     // Build PCDIN sentence
     const data = `PCDIN,01F214,${this.toHex(instance)},${this.toHex(voltLow)},${this.toHex(voltHigh)},${this.toHex(currLow)},${this.toHex(currHigh)},${this.toHex(tempLow)},${this.toHex(tempHigh)},FF`;
     const checksum = this.calculateChecksum(data);
@@ -2013,23 +2543,51 @@ class ScenarioDataSource extends EventEmitter {
    * Generate PGN 127505: Fluid Level
    * Format: $PCDIN,01F211,{instance},{type},{level_low},{level_high},{cap_b0},{cap_b1},{cap_b2},{cap_b3}*{checksum}
    */
-  generatePCDIN_127505(sentenceDef) {
-    const tankData = this.scenario?.data?.tank;
-    if (!tankData) return [];
-
-    // Get tank parameters from scenario data
+  generatePCDIN_127505(sensorOrSentenceDef) {
+    // Support both sensor objects (new) and sentenceDef (legacy)
+    const isSensor = sensorOrSentenceDef.type && sensorOrSentenceDef.type === 'tank_sensor';
+    
     let level = 50; // Default 50%
     let capacity = 200; // Default 200L
     let fluidType = 0; // Default fuel
+    let instance = 0;
 
-    if (tankData.level || tankData.fuel_level) {
-      level = this.getYAMLDataValue('level', tankData.level || tankData.fuel_level);
-    }
-    if (tankData.capacity) {
-      capacity = tankData.capacity;
-    }
-    if (tankData.type !== undefined) {
-      fluidType = tankData.type;
+    if (isSensor) {
+      // New sensor-based format
+      const sensor = sensorOrSentenceDef;
+      instance = sensor.physical_properties?.tank_instance || sensor.instance || 0;
+      capacity = sensor.physical_properties?.capacity || 200;
+      
+      // Map fluid type string to NMEA 2000 code
+      const fluidTypeMap = {
+        'fuel': 0,
+        'fresh_water': 1,
+        'gray_water': 2,
+        'black_water': 3,
+        'oil': 14
+      };
+      const fluidTypeStr = sensor.physical_properties?.fluid_type || 'fuel';
+      fluidType = fluidTypeMap[fluidTypeStr] !== undefined ? fluidTypeMap[fluidTypeStr] : 0;
+      
+      // Get level from sensor data_generation
+      if (sensor.data_generation?.level) {
+        level = this.getYAMLDataValue('level', sensor.data_generation.level);
+      }
+    } else {
+      // Legacy sentenceDef format
+      const tankData = this.scenario?.data?.tank;
+      if (!tankData) return [];
+      
+      instance = sensorOrSentenceDef.instance || 0;
+      if (tankData.level || tankData.fuel_level) {
+        level = this.getYAMLDataValue('level', tankData.level || tankData.fuel_level);
+      }
+      if (tankData.capacity) {
+        capacity = tankData.capacity;
+      }
+      if (tankData.type !== undefined) {
+        fluidType = tankData.type;
+      }
     }
 
     // Convert to NMEA 2000 format
@@ -2042,9 +2600,6 @@ class ScenarioDataSource extends EventEmitter {
     const capB1 = (capRaw >> 8) & 0xFF;
     const capB2 = (capRaw >> 16) & 0xFF;
     const capB3 = (capRaw >> 24) & 0xFF;
-
-    // Instance (default to 0 if not specified)
-    const instance = sentenceDef.instance || 0;
 
     // Build PCDIN sentence
     const data = `PCDIN,01F211,${this.toHex(instance)},${this.toHex(fluidType)},${this.toHex(levelLow)},${this.toHex(levelHigh)},${this.toHex(capB0)},${this.toHex(capB1)},${this.toHex(capB2)},${this.toHex(capB3)}`;
@@ -2060,6 +2615,265 @@ class ScenarioDataSource extends EventEmitter {
   generatePCDIN_127489(sentenceDef) {
     console.warn('⚠️ PGN 127489 (Engine Dynamic) not yet implemented');
     return [];
+  }
+
+  /**
+   * Generate PGN 128267: Water Depth
+   * Format: $PCDIN,01F503,FF,{depth_b0},{depth_b1},{depth_b2},{depth_b3},{offset_b0},{offset_b1},FF*{checksum}
+   */
+  generatePCDIN_128267(sensor) {
+    let depth = 10.0; // meters
+    let offset = 0.0; // transducer offset from waterline (positive = below waterline)
+    
+    // Get depth from sensor data_generation
+    if (sensor.data_generation?.depth) {
+      depth = this.getYAMLDataValue('depth', sensor.data_generation.depth);
+    }
+    
+    // Get transducer depth from physical properties
+    if (sensor.physical_properties?.transducer_depth) {
+      offset = sensor.physical_properties.transducer_depth;
+    }
+    
+    // Convert to NMEA 2000 format (0.01m resolution, 32-bit)
+    const depthRaw = Math.round(depth * 100); // cm
+    const depthB0 = depthRaw & 0xFF;
+    const depthB1 = (depthRaw >> 8) & 0xFF;
+    const depthB2 = (depthRaw >> 16) & 0xFF;
+    const depthB3 = (depthRaw >> 24) & 0xFF;
+    
+    const offsetRaw = Math.round(offset * 100); // cm (signed 16-bit)
+    const offsetB0 = offsetRaw & 0xFF;
+    const offsetB1 = (offsetRaw >> 8) & 0xFF;
+    
+    // Build PCDIN sentence
+    const data = `PCDIN,01F503,FF,${this.toHex(depthB0)},${this.toHex(depthB1)},${this.toHex(depthB2)},${this.toHex(depthB3)},${this.toHex(offsetB0)},${this.toHex(offsetB1)},FF`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 128259: Speed (Water Referenced)
+   * Format: $PCDIN,01F503,FF,{speed_b0},{speed_b1},FF,FF,FF,FF,FF,FF*{checksum}
+   */
+  generatePCDIN_128259(sensor) {
+    let speedKnots = 5.0;
+    
+    // Get speed from sensor data_generation
+    if (sensor.data_generation?.speed) {
+      speedKnots = this.getYAMLDataValue('speed', sensor.data_generation.speed);
+    }
+    
+    // Apply calibration factor
+    const calibrationFactor = sensor.physical_properties?.calibration_factor || 1.0;
+    speedKnots *= calibrationFactor;
+    
+    // Convert to NMEA 2000 format (0.01 m/s resolution)
+    const speedMs = speedKnots * 0.5144; // knots to m/s
+    const speedRaw = Math.round(speedMs * 100);
+    const speedB0 = speedRaw & 0xFF;
+    const speedB1 = (speedRaw >> 8) & 0xFF;
+    
+    // Build PCDIN sentence
+    const data = `PCDIN,01F503,FF,${this.toHex(speedB0)},${this.toHex(speedB1)},FF,FF,FF,FF,FF,FF`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 130306: Wind Data
+   * Format: $PCDIN,01FD02,FF,{speed_b0},{speed_b1},{angle_b0},{angle_b1},{reference}*{checksum}
+   */
+  generatePCDIN_130306(sensor) {
+    let windSpeed = 10.0; // knots
+    let windAngle = 45.0; // degrees
+    let reference = 2; // 0=True, 1=Magnetic, 2=Apparent, 3=True (ground)
+    
+    // Get wind data from sensor data_generation
+    if (sensor.data_generation?.wind_speed) {
+      windSpeed = this.getYAMLDataValue('wind_speed', sensor.data_generation.wind_speed);
+    }
+    if (sensor.data_generation?.wind_angle) {
+      windAngle = this.getYAMLDataValue('wind_angle', sensor.data_generation.wind_angle);
+    }
+    
+    // Get reference type from physical properties
+    const referenceMap = { 'true': 0, 'magnetic': 1, 'apparent': 2, 'ground': 3 };
+    const referenceType = sensor.physical_properties?.reference_type || 'apparent';
+    reference = referenceMap[referenceType] !== undefined ? referenceMap[referenceType] : 2;
+    
+    // Convert to NMEA 2000 format
+    const speedMs = windSpeed * 0.5144; // knots to m/s
+    const speedRaw = Math.round(speedMs * 100); // 0.01 m/s resolution
+    const speedB0 = speedRaw & 0xFF;
+    const speedB1 = (speedRaw >> 8) & 0xFF;
+    
+    const angleRaw = Math.round(windAngle * 10000 / 360); // radians * 10000
+    const angleB0 = angleRaw & 0xFF;
+    const angleB1 = (angleRaw >> 8) & 0xFF;
+    
+    // Build PCDIN sentence
+    const data = `PCDIN,01FD02,FF,${this.toHex(speedB0)},${this.toHex(speedB1)},${this.toHex(angleB0)},${this.toHex(angleB1)},${this.toHex(reference)}`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 129029: GNSS Position Data
+   * Format: $PCDIN,01F805,{instance},{date_b0-b1},{time_b0-b3},{lat_b0-b7},{lon_b0-b7}*{checksum}
+   */
+  generatePCDIN_129029(sensor) {
+    let latitude = 37.7749; // degrees
+    let longitude = -122.4194; // degrees
+    
+    // Get position from sensor data_generation
+    if (sensor.data_generation?.latitude) {
+      latitude = this.getYAMLDataValue('latitude', sensor.data_generation.latitude);
+    }
+    if (sensor.data_generation?.longitude) {
+      longitude = this.getYAMLDataValue('longitude', sensor.data_generation.longitude);
+    }
+    
+    // Convert to NMEA 2000 format (1e-16 resolution for lat/lon)
+    // Simplified version - just send basic position
+    const latRaw = Math.round(latitude * 1e7); // Scale to fit in 32-bit
+    const lonRaw = Math.round(longitude * 1e7);
+    
+    const latB0 = latRaw & 0xFF;
+    const latB1 = (latRaw >> 8) & 0xFF;
+    const latB2 = (latRaw >> 16) & 0xFF;
+    const latB3 = (latRaw >> 24) & 0xFF;
+    
+    const lonB0 = lonRaw & 0xFF;
+    const lonB1 = (lonRaw >> 8) & 0xFF;
+    const lonB2 = (lonRaw >> 16) & 0xFF;
+    const lonB3 = (lonRaw >> 24) & 0xFF;
+    
+    // Build PCDIN sentence (simplified)
+    const data = `PCDIN,01F805,00,FF,FF,FF,FF,FF,FF,${this.toHex(latB0)},${this.toHex(latB1)},${this.toHex(latB2)},${this.toHex(latB3)},${this.toHex(lonB0)},${this.toHex(lonB1)},${this.toHex(lonB2)},${this.toHex(lonB3)}`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 127250: Vessel Heading
+   * Format: $PCDIN,01F112,FF,{heading_b0},{heading_b1},{deviation_b0},{deviation_b1},{variation_b0},{variation_b1}*{checksum}
+   */
+  generatePCDIN_127250(sensor) {
+    let heading = 180.0; // degrees
+    let deviation = 0.0; // degrees
+    let variation = 0.0; // degrees
+    
+    // Get heading from sensor data_generation
+    if (sensor.data_generation?.heading) {
+      heading = this.getYAMLDataValue('heading', sensor.data_generation.heading);
+    }
+    
+    // Get deviation and variation from physical properties
+    if (sensor.physical_properties?.deviation) {
+      deviation = sensor.physical_properties.deviation;
+    }
+    if (sensor.physical_properties?.variation) {
+      variation = sensor.physical_properties.variation;
+    }
+    
+    // Convert to NMEA 2000 format (0.0001 radians resolution)
+    const headingRad = heading * Math.PI / 180;
+    const headingRaw = Math.round(headingRad * 10000);
+    const headingB0 = headingRaw & 0xFF;
+    const headingB1 = (headingRaw >> 8) & 0xFF;
+    
+    const deviationRad = deviation * Math.PI / 180;
+    const deviationRaw = Math.round(deviationRad * 10000);
+    const deviationB0 = deviationRaw & 0xFF;
+    const deviationB1 = (deviationRaw >> 8) & 0xFF;
+    
+    const variationRad = variation * Math.PI / 180;
+    const variationRaw = Math.round(variationRad * 10000);
+    const variationB0 = variationRaw & 0xFF;
+    const variationB1 = (variationRaw >> 8) & 0xFF;
+    
+    // Build PCDIN sentence
+    const data = `PCDIN,01F112,FF,${this.toHex(headingB0)},${this.toHex(headingB1)},${this.toHex(deviationB0)},${this.toHex(deviationB1)},${this.toHex(variationB0)},${this.toHex(variationB1)}`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 130310: Environmental Parameters (Temperature)
+   * Format: $PCDIN,01FD06,FF,{temp_source},{temp_b0},{temp_b1},{humidity_b0},{humidity_b1}*{checksum}
+   */
+  generatePCDIN_130310(sensor) {
+    let temperature = 20.0; // Celsius
+    let tempSource = 0; // 0=Sea, 1=Outside, 2=Inside, 3=Engine Room, 4=Main Cabin
+    
+    // Get temperature from sensor data_generation
+    if (sensor.data_generation?.temperature) {
+      temperature = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
+    }
+    
+    // Apply calibration offset
+    const calibrationOffset = sensor.physical_properties?.calibration_offset || 0;
+    temperature += calibrationOffset;
+    
+    // Map sensor location to temperature source
+    const locationMap = {
+      'sea_water': 0,
+      'outside': 1,
+      'cabin': 2,
+      'engine_room': 3,
+      'refrigeration': 2
+    };
+    const location = sensor.physical_properties?.sensor_location || 'sea_water';
+    tempSource = locationMap[location] !== undefined ? locationMap[location] : 0;
+    
+    // Convert to NMEA 2000 format (0.01K resolution)
+    const tempK = temperature + 273.15; // Celsius to Kelvin
+    const tempRaw = Math.round(tempK * 100);
+    const tempB0 = tempRaw & 0xFF;
+    const tempB1 = (tempRaw >> 8) & 0xFF;
+    
+    // Build PCDIN sentence
+    const data = `PCDIN,01FD06,FF,${this.toHex(tempSource)},${this.toHex(tempB0)},${this.toHex(tempB1)},FF,FF`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 127245: Rudder
+   * Format: $PCDIN,01F0FD,{instance},{angle_b0},{angle_b1}*{checksum}
+   */
+  generatePCDIN_127245(sensor) {
+    let angle = 0.0; // degrees
+    let instance = 0;
+    
+    // Get rudder angle from sensor data_generation
+    if (sensor.data_generation?.angle) {
+      angle = this.getYAMLDataValue('angle', sensor.data_generation.angle);
+    }
+    
+    // Get instance and calibration from physical properties
+    instance = sensor.physical_properties?.rudder_instance || sensor.instance || 0;
+    const calibrationOffset = sensor.physical_properties?.calibration_offset || 0;
+    angle += calibrationOffset;
+    
+    // Convert to NMEA 2000 format (0.0001 radians resolution)
+    const angleRad = angle * Math.PI / 180;
+    const angleRaw = Math.round(angleRad * 10000);
+    const angleB0 = angleRaw & 0xFF;
+    const angleB1 = (angleRaw >> 8) & 0xFF;
+    
+    // Build PCDIN sentence
+    const data = `PCDIN,01F0FD,${this.toHex(instance)},${this.toHex(angleB0)},${this.toHex(angleB1)}`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
   }
 
   /**

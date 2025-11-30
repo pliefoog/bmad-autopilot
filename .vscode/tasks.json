@@ -277,6 +277,78 @@
 			}
 		},
 		{
+			"label": "Start NMEA Bridge: Sensor-Based Coastal Sailing (NMEA 0183)",
+			"type": "shell",
+			"comment": "Protocol-agnostic coastal sailing using sensor definitions - NMEA 0183 mode",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/coastal-sailing-sensor-based.yml --bridge-mode nmea0183 --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Sensor-Based Coastal Sailing (NMEA 2000)",
+			"type": "shell",
+			"comment": "Protocol-agnostic coastal sailing using sensor definitions - NMEA 2000 mode (PCDIN messages)",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/coastal-sailing-sensor-based.yml --bridge-mode nmea2000 --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Sensor-Based Coastal Sailing (Hybrid Mode)",
+			"type": "shell",
+			"comment": "Protocol-agnostic coastal sailing using sensor definitions - Hybrid mode (both NMEA 0183 and 2000)",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/coastal-sailing-sensor-based.yml --bridge-mode hybrid --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Stop NMEA Bridge Simulator",
 			"type": "shell",
 			"command": "pkill",
