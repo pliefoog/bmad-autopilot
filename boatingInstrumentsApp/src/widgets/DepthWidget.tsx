@@ -40,18 +40,9 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
-  // Subscribe to history tracking on mount
-  useEffect(() => {
-    const subscribeToHistory = useNmeaStore.getState().subscribeToHistory;
-    const unsubscribeFromHistory = useNmeaStore.getState().unsubscribeFromHistory;
-    
-    // Subscribe with 5-minute window (for trendline display)
-    subscribeToHistory(id, 'depth', 5 * 60 * 1000);
-    
-    return () => {
-      unsubscribeFromHistory(id, 'depth');
-    };
-  }, [id]);
+  // NEW: Get history and stats methods from store
+  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
+  const getSessionStats = useNmeaStore((state) => state.getSessionStats);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
@@ -170,26 +161,29 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   // Simple stale check without interval
   const isStale = !depthTimestamp || (Date.now() - depthTimestamp) > 5000;
   
-  // Get depth history from store
-  const depthHistory = useNmeaStore((state) => state.sensorHistories.depth);
-
-  // PHASE 3: Calculate session stats locally from history.values
+  // NEW: Get session stats efficiently from store
   const sessionStats = useMemo(() => {
-    if (!depthHistory || depthHistory.values.length === 0) {
-      return { min: null, max: null };
+    // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
+    // Try to get stats from the primary source
+    let stats = getSessionStats('depth', 0);
+    
+    // Fallback to other sources if primary has no data
+    if (stats.count === 0) {
+      stats = getSessionStats('depth', 1);
+    }
+    if (stats.count === 0) {
+      stats = getSessionStats('depth', 2);
     }
     
-    const values = depthHistory.values.map(dp => dp.value);
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values)
-    };
-  }, [depthHistory.values]);
+    return stats;
+  }, [getSessionStats]);
 
   // Wrapper component to receive injected props from UnifiedWidgetGrid
-  // This references depthHistory directly, so it updates when the parent re-renders
   const TrendLineCell = useCallback(({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => {
-    const trendData = depthHistory.values.filter(d => d.timestamp > Date.now() - 5 * 60 * 1000);
+    // Get all data points in 5 minute window
+    const trendData = getSensorHistory('depth', 0, {
+      timeWindowMs: 5 * 60 * 1000
+    });
     
     return (
       <TrendLine 
@@ -215,7 +209,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
         normalColor={theme.primary}
       />
     );
-  }, [depthHistory, theme]);
+  }, [getSensorHistory, theme]);
 
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);

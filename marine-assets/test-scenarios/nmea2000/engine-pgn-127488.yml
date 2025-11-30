@@ -1,0 +1,80 @@
+name: "NMEA 2000 Engine PGN 127488 Test"
+description: "Test engine RPM via NMEA 2000 PGN 127488 (Engine Parameters, Rapid Update) wrapped in PCDIN"
+duration: 120  # 2 minutes
+version: "1.0"
+category: "nmea2000"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:40}
+    type: "powerboat"
+
+# NMEA 2000 PGN Configuration
+# PGN 127488: Engine Parameters, Rapid Update
+# Format: Instance (1 byte) + Engine Speed (2 bytes, 0.25 RPM resolution)
+pgn_config:
+  pgn_number: 127488
+  description: "Engine Parameters, Rapid Update"
+  fields:
+    - name: "instance"
+      byte: 0
+      value: 0  # Engine 0
+    - name: "engine_speed"
+      bytes: [1, 2]
+      resolution: 0.25
+      unit: "RPM"
+
+# Data generation parameters
+data:
+  engine:
+    rpm:
+      type: "sine_wave"
+      base: 2000     # RPM
+      amplitude: 500 # ±500 RPM
+      frequency: 0.05 # Hz (slow variation)
+      
+# NMEA sentence configuration
+sentences:
+  - type: "PCDIN"  # NMEA 2000 PGN wrapper
+    frequency: 2   # Hz (2 updates per second)
+    pgn: 127488    # Engine Parameters, Rapid Update
+    format: "$PCDIN,{pgn_hex},{instance:02X},{rpm_low:02X},{rpm_high:02X},FF,FF,FF,FF,FF*{checksum}"
+    
+# Test phases
+phases:
+  - phase: "idle"
+    duration: 30  # 30 seconds
+    description: "Engine at idle (800 RPM)"
+    engine_rpm: 800
+    
+  - phase: "cruise"
+    duration: 60  # 1 minute
+    description: "Engine at cruise speed (2000 RPM with variation)"
+    engine_rpm_range: [1500, 2500]
+    
+  - phase: "shutdown"
+    duration: 30  # 30 seconds
+    description: "Engine shutdown (RPM declining to 0)"
+    engine_rpm_decline: true
+
+# Expected NMEA 2000 messages (examples)
+expected_messages:
+  - pgn: 127488
+    instance: 0
+    example: "$PCDIN,01F200,00,C807,FF,FF,FF,FF,FF,FF*4A"
+    description: "Engine 0, RPM = 2000 (0x07C8 * 0.25)"
+    
+  - pgn: 127488
+    instance: 0
+    example: "$PCDIN,01F200,00,0C03,FF,FF,FF,FF,FF,FF*3B"
+    description: "Engine 0, RPM = 780 (0x030C * 0.25)"
+
+# Validation criteria
+validation:
+  - check: "engine_widget_displays_rpm"
+    expected: "Engine widget shows RPM from PGN 127488"
+  - check: "rpm_updates_smooth"
+    expected: "RPM values update smoothly at 2 Hz"
+  - check: "no_console_errors"
+    expected: "No parsing errors in console"

@@ -49,25 +49,17 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
-  // Subscribe to history tracking on mount
-  useEffect(() => {
-    const subscribeToHistory = useNmeaStore.getState().subscribeToHistory;
-    const unsubscribeFromHistory = useNmeaStore.getState().unsubscribeFromHistory;
-    
-    subscribeToHistory(id, 'speed', 10 * 60 * 1000); // 10-minute window
-    
-    return () => {
-      unsubscribeFromHistory(id, 'speed');
-    };
-  }, [id]);
+  // NOTE: History now tracked automatically in sensor data - no subscription needed
+  
+  // NEW: Get history and stats methods from store
+  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround, (a, b) => a === b); // SOG
   const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater, (a, b) => a === b); // STW
   const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp); // No equality check - must update!
   
-  // Get SOG history from store (primary speed metric)
-  const sogHistory = useNmeaStore((state) => state.sensorHistories.speed);
+  // NOTE: SOG history now auto-managed in sensor data - access via getSensorHistory when needed
 
   // Local state for STW (Speed Through Water - secondary metric)
   const [stwHistory, setStwHistory] = useState<{ value: number; timestamp: number }[]>([]);
@@ -93,6 +85,11 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
 
   // Calculate averages and maximums for secondary view
   const calculations = useMemo(() => {
+    // Get SOG history from store
+    const sogHistoryData = getSensorHistory('speed', 0, {
+      timeWindowMs: 10 * 60 * 1000
+    });
+    
     const calculateStats = (data: { value: number; timestamp: number }[]) => {
       if (data.length === 0) return { avg: null, max: null };
       const values = data.map(d => d.value);
@@ -103,10 +100,10 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
     };
 
     return {
-      sog: calculateStats(sogHistory.values),
+      sog: calculateStats(sogHistoryData),
       stw: calculateStats(stwHistory)
     };
-  }, [sogHistory.values, stwHistory]);
+  }, [getSensorHistory, stwHistory]);
 
   // NEW: Speed conversion using semantic presentation system
   const getSpeedDisplay = useCallback((speedValue: number | null | undefined, label: string = 'Speed'): MetricDisplayData => {

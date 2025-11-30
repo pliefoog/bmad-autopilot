@@ -45,17 +45,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
-  // Subscribe to history tracking on mount
-  useEffect(() => {
-    const subscribeToHistory = useNmeaStore.getState().subscribeToHistory;
-    const unsubscribeFromHistory = useNmeaStore.getState().unsubscribeFromHistory;
-    
-    subscribeToHistory(id, 'wind', 10 * 60 * 1000); // 10-minute window for wind trends
-    
-    return () => {
-      unsubscribeFromHistory(id, 'wind');
-    };
-  }, [id]);
+  // NOTE: History now tracked automatically in sensor data - no subscription needed
   
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
@@ -71,8 +61,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     true: { speed: number; angle: number; timestamp: number }[];
   }>({ apparent: [], true: [] });
   
-  // Get wind speed history from store (for persistence and sharing)
-  const windSpeedHistory = useNmeaStore((state) => state.sensorHistories.wind);
+  // NOTE: Wind speed history now auto-managed in sensor data - access via getSensorHistory when needed
 
   // Track wind history for gust calculations (local state for multi-dimensional data)
   useEffect(() => {

@@ -63,17 +63,7 @@ const App = () => {
     skipOnboarding 
   } = useOnboarding();
 
-  // PHASE 3: Start/stop history pruning interval on mount/unmount
-  useEffect(() => {
-    const startHistoryPruning = useNmeaStore.getState().startHistoryPruning;
-    const stopHistoryPruning = useNmeaStore.getState().stopHistoryPruning;
-    
-    startHistoryPruning();
-    
-    return () => {
-      stopHistoryPruning();
-    };
-  }, []);
+  // NOTE: History pruning removed - now handled automatically by TimeSeriesBuffer
 
   // Memory profiling: Start on mount (Chrome/Edge only)
   useEffect(() => {

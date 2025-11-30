@@ -1,0 +1,101 @@
+name: "NMEA 2000 Battery PGN 127508 Test"
+description: "Test battery monitoring via NMEA 2000 PGN 127508 (Battery Status) wrapped in PCDIN"
+duration: 120  # 2 minutes
+version: "1.0"
+category: "nmea2000"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:40}
+    type: "sailboat"
+
+# NMEA 2000 PGN Configuration
+# PGN 127508: Battery Status
+# Format: Instance (1 byte) + Voltage (2 bytes, 0.01V) + Current (2 bytes, 0.1A) + Temperature (2 bytes, 0.01K)
+pgn_config:
+  pgn_number: 127508
+  description: "Battery Status"
+  fields:
+    - name: "instance"
+      byte: 0
+      value: 0  # Battery 0 (House bank)
+    - name: "voltage"
+      bytes: [1, 2]
+      resolution: 0.01
+      unit: "V"
+    - name: "current"
+      bytes: [3, 4]
+      resolution: 0.1
+      unit: "A"
+    - name: "temperature"
+      bytes: [5, 6]
+      resolution: 0.01
+      unit: "K"
+
+# Data generation parameters
+data:
+  battery:
+    voltage:
+      type: "constant_with_variation"
+      base: 12.6     # Volts (healthy battery)
+      variation: 0.2 # ±0.2V
+    current:
+      type: "sine_wave"
+      base: 5.0      # Amperes (charging)
+      amplitude: 3.0 # ±3A
+      frequency: 0.02 # Hz
+    temperature:
+      type: "constant_with_variation"
+      base: 298.15   # Kelvin (25°C)
+      variation: 2.0 # ±2K
+      
+# NMEA sentence configuration
+sentences:
+  - type: "PCDIN"  # NMEA 2000 PGN wrapper
+    frequency: 1   # Hz (1 update per second)
+    pgn: 127508    # Battery Status
+    format: "$PCDIN,01F214,{instance:02X},{voltage_low:02X},{voltage_high:02X},{current_low:02X},{current_high:02X},{temp_low:02X},{temp_high:02X},FF*{checksum}"
+    
+# Test phases
+phases:
+  - phase: "charging"
+    duration: 60  # 1 minute
+    description: "Battery charging (positive current)"
+    battery_current: [3.0, 8.0]  # Charging range
+    battery_voltage: [12.8, 13.2]
+    
+  - phase: "discharging"
+    duration: 60  # 1 minute
+    description: "Battery discharging (negative current)"
+    battery_current: [-5.0, -2.0]  # Discharging range
+    battery_voltage: [12.2, 12.6]
+
+# Expected NMEA 2000 messages (examples)
+expected_messages:
+  - pgn: 127508
+    instance: 0
+    example: "$PCDIN,01F214,00,E804,FF,1E00,FF,6F11,FF*2C"
+    description: "Battery 0: 12.64V, 3.0A charging, 25.03°C (298.15K)"
+    voltage: 12.64  # 0x04E8 * 0.01
+    current: 3.0    # 0x001E * 0.1
+    temperature: 298.15  # 0x116F * 0.01
+    
+  - pgn: 127508
+    instance: 0
+    example: "$PCDIN,01F214,00,DC04,FF,E2FF,FF,6F11,FF*5A"
+    description: "Battery 0: 12.52V, -3.0A discharging, 25.03°C"
+    voltage: 12.52  # 0x04DC * 0.01
+    current: -3.0   # 0xFFE2 * 0.1 (two's complement)
+    temperature: 298.15
+
+# Validation criteria
+validation:
+  - check: "battery_widget_displays_voltage"
+    expected: "Battery widget shows voltage from PGN 127508"
+  - check: "battery_widget_displays_current"
+    expected: "Battery widget shows current with correct sign"
+  - check: "battery_widget_displays_temperature"
+    expected: "Battery widget shows temperature in Celsius (converted from Kelvin)"
+  - check: "no_console_errors"
+    expected: "No parsing errors in console"

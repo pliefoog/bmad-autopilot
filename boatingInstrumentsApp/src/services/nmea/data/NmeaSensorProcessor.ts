@@ -15,6 +15,7 @@
 
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import { normalizeApparentWindAngle, normalizeTrueWindAngle } from '../../../utils/marineAngles';
+import { pgnParser } from '../pgnParser';
 import type { 
   SensorType,
   EngineSensorData,
@@ -155,8 +156,15 @@ export class NmeaSensorProcessor {
         case 'MTW':
           result = this.processMTW(parsedMessage, timestamp);
           break;
+        case 'ZDA':
+          result = this.processZDA(parsedMessage, timestamp);
+          break;
         case 'XDR':
           result = this.processXDR(parsedMessage, timestamp);
+          break;
+        case 'DIN':
+        case 'PCDIN':
+          result = this.processPgnMessage(parsedMessage, timestamp);
           break;
         default:
           result = {
@@ -406,8 +414,17 @@ export class NmeaSensorProcessor {
         satellites: fields.satellites || 0,
         hdop: fields.hdop || 99.9
       },
+      timeSource: 'GGA', // Priority 3 (lowest)
       timestamp: timestamp
     };
+
+    // Extract UTC time from GGA (time only, use today's date)
+    if (fields.time) {
+      const utcTime = this.parseGGATime(fields.time);
+      if (utcTime) {
+        gpsData.utcTime = utcTime.getTime();
+      }
+    }
 
     return {
       success: true,
@@ -440,6 +457,7 @@ export class NmeaSensorProcessor {
             latitude: latitude, // Decimal degrees (base unit)
             longitude: longitude // Decimal degrees (base unit)
           },
+          timeSource: 'RMC', // Priority 1 (highest - has date+time)
           timestamp: timestamp
         };
 
@@ -1297,6 +1315,354 @@ export class NmeaSensorProcessor {
       return utcDate;
     } catch (error) {
       console.warn(`[NmeaSensorProcessor] Failed to parse RMC date/time: ${date}/${time}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Process NMEA 2000 PGN messages (via PCDIN wrapper)
+   * PCDIN format: $PCDIN,<pgn_hex>,<data_fields...>*checksum
+   */
+  private processPgnMessage(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    console.log('[NmeaSensorProcessor] 🔍 Processing PGN message:', message.fields);
+    const fields = message.fields;
+    
+    // Extract PGN number and data fields from PCDIN sentence
+    const pgnNumber = fields.pgn_number as number;
+    const dataFields = fields.data_fields as string[];
+    
+    if (!pgnNumber || !dataFields || dataFields.length === 0) {
+      return {
+        success: false,
+        errors: ['Invalid PCDIN format: missing PGN number or data fields'],
+        messageType: message.messageType
+      };
+    }
+    
+    // Join data fields into hex string for pgnParser
+    const hexData = dataFields.join('');
+    
+    console.log(`[NmeaSensorProcessor] 📦 Parsing PGN ${pgnNumber} with data: ${hexData}`);
+    
+    // Route to appropriate PGN handler based on PGN number
+    switch (pgnNumber) {
+      case 127488: // Engine Parameters, Rapid Update
+      case 127489: // Engine Parameters, Dynamic
+        return this.mapPgnEngine(pgnNumber, hexData, timestamp);
+      
+      case 127508: // Battery Status
+      case 127513: // Battery Configuration Status
+        return this.mapPgnBattery(pgnNumber, hexData, timestamp);
+      
+      case 127505: // Fluid Level (Tanks)
+        return this.mapPgnTank(pgnNumber, hexData, timestamp);
+      
+      default:
+        console.log(`[NmeaSensorProcessor] ⚠️ Unsupported PGN: ${pgnNumber}`);
+        return {
+          success: false,
+          errors: [`Unsupported PGN: ${pgnNumber}`],
+          messageType: message.messageType
+        };
+    }
+  }
+
+  /**
+   * Map Engine PGN data to SensorUpdate
+   * PGN 127488: Engine Parameters, Rapid Update
+   * PGN 127489: Engine Parameters, Dynamic
+   */
+  private mapPgnEngine(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const pgnData = pgnParser.parseEnginePgn(pgnNumber, hexData, 0);
+      
+      if (!pgnData) {
+        return {
+          success: false,
+          errors: [`Failed to parse engine PGN ${pgnNumber}`]
+        };
+      }
+      
+      // Extract instance from source address or use default
+      const instance = pgnData.instance ?? pgnData.sourceAddress ?? 0;
+      
+      const engineUpdate: Partial<EngineSensorData> = {
+        name: `Engine ${instance}`,
+        timestamp
+      };
+      
+      // Map engine speed (RPM)
+      if (pgnData.engineSpeed !== undefined && pgnData.engineSpeed !== null) {
+        engineUpdate.rpm = pgnData.engineSpeed;
+        console.log(`[NmeaSensorProcessor] 🔧 Engine ${instance} RPM: ${pgnData.engineSpeed}`);
+      }
+      
+      // Map boost pressure if available
+      if (pgnData.engineBoostPressure !== undefined) {
+        // Store as additional data - could extend EngineSensorData interface later
+        console.log(`[NmeaSensorProcessor] 🔧 Engine ${instance} Boost: ${pgnData.engineBoostPressure} kPa`);
+      }
+      
+      const updates: SensorUpdate[] = [{
+        sensorType: 'engine',
+        instance,
+        data: engineUpdate
+      }];
+      
+      return {
+        success: true,
+        updates,
+        messageType: `PGN${pgnNumber}`
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Error mapping engine PGN ${pgnNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Battery PGN data to SensorUpdate
+   * PGN 127508: Battery Status
+   * PGN 127513: Battery Configuration Status
+   */
+  private mapPgnBattery(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const pgnData = pgnParser.parseBatteryPgn(pgnNumber, hexData);
+      
+      if (!pgnData || pgnData.instance === undefined) {
+        return {
+          success: false,
+          errors: [`Failed to parse battery PGN ${pgnNumber} or missing instance`]
+        };
+      }
+      
+      const instance = pgnData.instance;
+      
+      const batteryUpdate: Partial<BatterySensorData> = {
+        name: `Battery ${instance}`,
+        timestamp
+      };
+      
+      // Map voltage
+      if (pgnData.batteryVoltage !== undefined && pgnData.batteryVoltage !== null) {
+        batteryUpdate.voltage = pgnData.batteryVoltage;
+        console.log(`[NmeaSensorProcessor] 🔋 Battery ${instance} Voltage: ${pgnData.batteryVoltage}V`);
+      }
+      
+      // Map current
+      if (pgnData.batteryCurrent !== undefined && pgnData.batteryCurrent !== null) {
+        batteryUpdate.current = pgnData.batteryCurrent;
+        console.log(`[NmeaSensorProcessor] 🔋 Battery ${instance} Current: ${pgnData.batteryCurrent}A`);
+      }
+      
+      // Map temperature (convert from Kelvin to Celsius)
+      if (pgnData.batteryTemperature !== undefined && pgnData.batteryTemperature !== null) {
+        batteryUpdate.temperature = pgnData.batteryTemperature - 273.15;
+        console.log(`[NmeaSensorProcessor] 🔋 Battery ${instance} Temp: ${batteryUpdate.temperature}°C`);
+      }
+      
+      const updates: SensorUpdate[] = [{
+        sensorType: 'battery',
+        instance,
+        data: batteryUpdate
+      }];
+      
+      return {
+        success: true,
+        updates,
+        messageType: `PGN${pgnNumber}`
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Error mapping battery PGN ${pgnNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Tank PGN data to SensorUpdate
+   * PGN 127505: Fluid Level
+   */
+  private mapPgnTank(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const pgnData = pgnParser.parseTankPgn(pgnNumber, hexData);
+      
+      if (!pgnData || pgnData.instance === undefined) {
+        return {
+          success: false,
+          errors: [`Failed to parse tank PGN ${pgnNumber} or missing instance`]
+        };
+      }
+      
+      const instance = pgnData.instance;
+      
+      // Map fluid type to our TankSensorData type
+      const fluidTypeMap: Record<number, 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater'> = {
+        0: 'fuel',
+        1: 'water',
+        2: 'waste',      // Gray water
+        3: 'water',      // Live well (treat as water)
+        4: 'fuel',       // Oil (treat as fuel)
+        5: 'blackwater'  // Black water
+      };
+      
+      const tankType = fluidTypeMap[pgnData.fluidType] || 'fuel';
+      
+      const tankUpdate: Partial<TankSensorData> = {
+        name: `${tankType.charAt(0).toUpperCase() + tankType.slice(1)} Tank ${instance}`,
+        type: tankType,
+        timestamp
+      };
+      
+      // Map level (convert from percentage to ratio 0-1)
+      if (pgnData.level !== undefined && pgnData.level !== null) {
+        tankUpdate.level = pgnData.level / 100.0;
+        console.log(`[NmeaSensorProcessor] 🛢️ Tank ${instance} (${tankType}) Level: ${pgnData.level}%`);
+      }
+      
+      // Map capacity
+      if (pgnData.capacity !== undefined && pgnData.capacity !== null) {
+        tankUpdate.capacity = pgnData.capacity;
+        console.log(`[NmeaSensorProcessor] 🛢️ Tank ${instance} Capacity: ${pgnData.capacity}L`);
+      }
+      
+      const updates: SensorUpdate[] = [{
+        sensorType: 'tank',
+        instance,
+        data: tankUpdate
+      }];
+      
+      return {
+        success: true,
+        updates,
+        messageType: `PGN${pgnNumber}`
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Error mapping tank PGN ${pgnNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Parse GGA time field to UTC Date object (uses today's date)
+   * @param time GGA time field (HHMMSS.SSS format)
+   * @returns Date object in UTC or null if parsing fails
+   */
+  private parseGGATime(time: string): Date | null {
+    if (!time || time.length < 6) {
+      return null;
+    }
+
+    try {
+      // Parse time (HHMMSS.SSS format)
+      const hours = parseInt(time.substr(0, 2), 10);
+      const minutes = parseInt(time.substr(2, 2), 10);
+      const seconds = parseFloat(time.substr(4));
+
+      // Use today's date in UTC
+      const now = new Date();
+      const utcDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        hours,
+        minutes,
+        seconds
+      ));
+      
+      // Validate the parsed time
+      if (isNaN(utcDate.getTime())) {
+        console.warn(`[NmeaSensorProcessor] Invalid GGA time: ${time}`);
+        return null;
+      }
+
+      return utcDate;
+    } catch (error) {
+      console.warn(`[NmeaSensorProcessor] Failed to parse GGA time: ${time}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Process ZDA (Time & Date) message
+   * Provides complete UTC date and time
+   */
+  private processZDA(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+
+    // Extract UTC date/time from ZDA fields
+    if (fields.time && fields.day != null && fields.month != null && fields.year != null) {
+      const utcDateTime = this.parseZDADateTime(fields.time, fields.day, fields.month, fields.year);
+      
+      if (utcDateTime) {
+        const gpsData: Partial<GpsSensorData> = {
+          name: 'GPS Receiver',
+          utcTime: utcDateTime.getTime(),
+          timeSource: 'ZDA', // Priority 2
+          timestamp: timestamp
+        };
+
+        return {
+          success: true,
+          updates: [{
+            sensorType: 'gps',
+            instance: 0,
+            data: gpsData
+          }],
+          messageType: 'ZDA'
+        };
+      }
+    }
+
+    return {
+      success: false,
+      errors: ['Invalid ZDA date/time fields'],
+      messageType: 'ZDA'
+    };
+  }
+
+  /**
+   * Parse ZDA date/time fields to UTC Date object
+   * @param time ZDA time field (HHMMSS.SSS format)
+   * @param day Day (1-31)
+   * @param month Month (1-12)
+   * @param year Full year (YYYY)
+   * @returns Date object in UTC or null if parsing fails
+   */
+  private parseZDADateTime(time: string, day: number, month: number, year: number): Date | null {
+    if (!time || time.length < 6) {
+      return null;
+    }
+
+    try {
+      // Parse time (HHMMSS.SSS format)
+      const hours = parseInt(time.substr(0, 2), 10);
+      const minutes = parseInt(time.substr(2, 2), 10);
+      const seconds = parseFloat(time.substr(4));
+
+      // Create UTC date object (month is 0-based in JavaScript)
+      const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+      
+      // Validate the parsed date
+      if (isNaN(utcDate.getTime()) ||
+          utcDate.getUTCFullYear() !== year ||
+          utcDate.getUTCMonth() !== month - 1 ||
+          utcDate.getUTCDate() !== day) {
+        console.warn(`[NmeaSensorProcessor] Invalid ZDA date/time: ${year}-${month}-${day} ${time}`);
+        return null;
+      }
+
+      return utcDate;
+    } catch (error) {
+      console.warn(`[NmeaSensorProcessor] Failed to parse ZDA date/time: ${year}-${month}-${day} ${time}`, error);
       return null;
     }
   }

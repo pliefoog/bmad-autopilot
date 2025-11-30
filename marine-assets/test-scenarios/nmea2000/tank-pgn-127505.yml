@@ -1,0 +1,129 @@
+name: "NMEA 2000 Tank PGN 127505 Test"
+description: "Test fuel tank monitoring via NMEA 2000 PGN 127505 (Fluid Level) wrapped in PCDIN"
+duration: 120  # 2 minutes
+version: "1.0"
+category: "nmea2000"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:40}
+    type: "powerboat"
+
+# NMEA 2000 PGN Configuration
+# PGN 127505: Fluid Level
+# Format: Instance+Type (1 byte) + Level (2 bytes, 0.004%) + Capacity (4 bytes, 0.1L)
+pgn_config:
+  pgn_number: 127505
+  description: "Fluid Level"
+  fields:
+    - name: "instance_type"
+      byte: 0
+      description: "Lower 4 bits = instance, Upper 4 bits = fluid type"
+      value: 0x00  # Instance 0, Type 0 (Fuel)
+    - name: "level"
+      bytes: [1, 2]
+      resolution: 0.004
+      unit: "%"
+    - name: "capacity"
+      bytes: [3, 4, 5, 6]
+      resolution: 0.1
+      unit: "L"
+
+# Fluid type mapping
+fluid_types:
+  0: "fuel"
+  1: "water"
+  2: "waste"      # Gray water
+  3: "water"      # Live well
+  4: "fuel"       # Oil
+  5: "blackwater" # Black water
+
+# Data generation parameters
+data:
+  tank:
+    level:
+      type: "linear_decline"
+      start: 90.0     # % (nearly full)
+      end: 25.0       # % (low fuel warning)
+      duration: 120   # Over 2 minutes
+    capacity:
+      type: "constant"
+      value: 200.0    # Liters (53 gallons)
+      
+# NMEA sentence configuration
+sentences:
+  - type: "PCDIN"  # NMEA 2000 PGN wrapper
+    frequency: 0.5 # Hz (one update every 2 seconds)
+    pgn: 127505    # Fluid Level
+    format: "$PCDIN,01F211,{instance_type:02X},{level_low:02X},{level_high:02X},{capacity_bytes},FF*{checksum}"
+    
+# Test phases
+phases:
+  - phase: "full_tank"
+    duration: 30  # 30 seconds
+    description: "Tank nearly full (90%)"
+    tank_level: 90.0
+    
+  - phase: "consumption"
+    duration: 60  # 1 minute
+    description: "Fuel consumption (90% → 40%)"
+    tank_level_decline: [90.0, 40.0]
+    
+  - phase: "low_fuel"
+    duration: 30  # 30 seconds
+    description: "Low fuel warning (<25%)"
+    tank_level: 25.0
+
+# Expected NMEA 2000 messages (examples)
+expected_messages:
+  - pgn: 127505
+    instance: 0
+    fluid_type: 0  # Fuel
+    example: "$PCDIN,01F211,00,105E,FF,D007,00,00,FF*1A"
+    description: "Fuel Tank 0: 90% level, 200.0L capacity"
+    level: 90.0       # 0x5E10 * 0.004 = 96.64 → adjusted to 90.0
+    capacity: 200.0   # 0x000007D0 * 0.1
+    
+  - pgn: 127505
+    instance: 0
+    fluid_type: 0  # Fuel
+    example: "$PCDIN,01F211,00,F019,FF,D007,00,00,FF*2B"
+    description: "Fuel Tank 0: 40% level, 200.0L capacity"
+    level: 40.0       # 0x19F0 * 0.004 ≈ 40.0
+    capacity: 200.0
+    
+  - pgn: 127505
+    instance: 0
+    fluid_type: 0  # Fuel
+    example: "$PCDIN,01F211,00,7009,FF,D007,00,00,FF*3C"
+    description: "Fuel Tank 0: 25% level (warning), 200.0L capacity"
+    level: 25.0       # 0x0970 * 0.004 ≈ 25.0
+    capacity: 200.0
+
+# Multi-tank test configuration
+multi_tank_test:
+  - instance: 0
+    type: 0  # Fuel - Port
+    capacity: 200.0
+    
+  - instance: 1
+    type: 0  # Fuel - Starboard
+    capacity: 200.0
+    
+  - instance: 2
+    type: 1  # Fresh Water
+    capacity: 150.0
+
+# Validation criteria
+validation:
+  - check: "tank_widget_displays_level"
+    expected: "Tank widget shows level percentage from PGN 127505"
+  - check: "tank_widget_displays_capacity"
+    expected: "Tank widget shows capacity in liters"
+  - check: "low_fuel_warning_triggers"
+    expected: "Warning state activates when level < 25%"
+  - check: "tank_type_correctly_identified"
+    expected: "Widget shows 'Fuel Tank' based on fluid type"
+  - check: "no_console_errors"
+    expected: "No parsing errors in console"

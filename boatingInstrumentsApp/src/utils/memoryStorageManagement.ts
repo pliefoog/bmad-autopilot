@@ -519,6 +519,57 @@ export class TimeSeriesBuffer<T> {
       totalCount: this.recentData.getSize() + this.oldData.getSize(),
     };
   }
+  
+  /**
+   * Get data for chart rendering
+   * Returns all data points in the time window (no downsampling)
+   */
+  getForChart(
+    pixelWidth: number, 
+    timeWindowMs?: number
+  ): Array<{ timestamp: number; value: T }> {
+    // Return all raw data points - no sampling/decimation
+    return timeWindowMs 
+      ? this.getRange(Date.now() - timeWindowMs, Date.now())
+      : this.getAll();
+  }
+  
+  /**
+   * Get data statistics without full array copy
+   * Efficiently calculates min/max/avg from ring buffers
+   */
+  getDataStats(): { min: T; max: T; avg: T; count: number } | null {
+    const allData = this.getAll();
+    if (allData.length === 0) return null;
+    
+    let min = allData[0].value;
+    let max = allData[0].value;
+    let sum = 0;
+    
+    for (const point of allData) {
+      const val = point.value as any;
+      if (typeof val === 'number') {
+        if (val < (min as any)) min = point.value;
+        if (val > (max as any)) max = point.value;
+        sum += val;
+      }
+    }
+    
+    return {
+      min,
+      max,
+      avg: (sum / allData.length) as T,
+      count: allData.length
+    };
+  }
+  
+  /**
+   * Clear all data
+   */
+  clear(): void {
+    this.recentData.clear();
+    this.oldData.clear();
+  }
 }
 
 // ============================================================================

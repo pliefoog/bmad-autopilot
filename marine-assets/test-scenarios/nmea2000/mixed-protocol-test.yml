@@ -1,0 +1,172 @@
+name: "Mixed Protocol Test - NMEA 0183 + NMEA 2000"
+description: "Test protocol-agnostic store with simultaneous NMEA 0183 and NMEA 2000 data sources"
+duration: 180  # 3 minutes
+version: "1.0"
+category: "nmea2000"
+
+# Vessel parameters
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:40}
+    type: "motor-yacht"
+    description: "Dual protocol test - some sensors via 0183, others via 2000"
+
+# Data sources configuration
+# Simulates a real-world scenario where legacy NMEA 0183 instruments coexist with modern NMEA 2000 devices
+data_sources:
+  nmea_0183:
+    - depth: "DBT"      # Legacy depth sounder
+    - speed: "VHW"      # Legacy speed log
+    - wind: "MWV"       # Legacy wind instrument
+    - gps: "GGA/RMC"    # Legacy GPS
+    
+  nmea_2000:
+    - engine: "PGN 127488"  # Modern engine monitor
+    - battery: "PGN 127508" # Modern battery monitor
+    - tank: "PGN 127505"    # Modern tank monitor
+
+# Data generation parameters
+data:
+  # NMEA 0183 sources
+  depth:
+    type: "constant_with_variation"
+    base: 25.0     # feet
+    variation: 2.0
+    unit: "feet"
+    protocol: "NMEA 0183 - DBT"
+  
+  speed:
+    type: "constant_with_variation"
+    base: 8.5      # knots
+    variation: 0.5
+    unit: "knots"
+    protocol: "NMEA 0183 - VHW"
+  
+  wind:
+    angle:
+      type: "constant_with_drift"
+      start: 45    # degrees
+      drift_rate: 0.2
+    speed:
+      type: "gaussian"
+      mean: 15
+      std_dev: 2
+      unit: "knots"
+    protocol: "NMEA 0183 - MWV"
+  
+  # NMEA 2000 sources (via PCDIN)
+  engine:
+    rpm:
+      type: "sine_wave"
+      base: 2200
+      amplitude: 300
+      frequency: 0.05
+    protocol: "NMEA 2000 - PGN 127488"
+  
+  battery:
+    voltage: 12.8
+    current: 5.5
+    temperature: 25.0
+    protocol: "NMEA 2000 - PGN 127508"
+  
+  tank:
+    level: 65.0  # %
+    capacity: 300.0  # L
+    protocol: "NMEA 2000 - PGN 127505"
+
+# NMEA sentence configuration (mixed protocols)
+sentences:
+  # NMEA 0183 sentences
+  - type: "DBT"
+    frequency: 1   # Hz
+    
+  - type: "VHW"
+    frequency: 1
+    
+  - type: "MWV"
+    frequency: 2
+    
+  - type: "GGA"
+    frequency: 1
+    
+  # NMEA 2000 sentences (via PCDIN wrapper)
+  - type: "PCDIN"
+    pgn: 127488  # Engine
+    frequency: 2
+    
+  - type: "PCDIN"
+    pgn: 127508  # Battery
+    frequency: 1
+    
+  - type: "PCDIN"
+    pgn: 127505  # Tank
+    frequency: 0.5
+
+# Test phases
+phases:
+  - phase: "protocol_coexistence"
+    duration: 60  # 1 minute
+    description: "Both protocols active simultaneously"
+    
+  - phase: "nmea_2000_priority"
+    duration: 60  # 1 minute
+    description: "Test if NMEA 2000 data takes precedence when both sources available"
+    # Simulate scenario where same engine has both 0183 RPM and 2000 PGN 127488
+    
+  - phase: "mixed_updates"
+    duration: 60  # 1 minute
+    description: "Varying update rates - 0183 faster than 2000"
+
+# Protocol priority strategy (for discussion)
+protocol_priority:
+  strategy: "last_received_wins"
+  notes: |
+    For sensors receiving data from both NMEA 0183 and NMEA 2000:
+    - Last-received-wins: Most recent update takes precedence regardless of protocol
+    - Protocol-priority: Could implement NMEA 2000 > NMEA 0183 (more data fields)
+    - Source-locking: Once locked to a source, ignore other protocol for that sensor
+    
+    Current implementation: Last-received-wins (simplest approach)
+
+# Expected behavior
+expected_behavior:
+  - description: "Widgets display data from both protocols seamlessly"
+  - description: "No duplicate sensors - instance numbers prevent conflicts"
+  - description: "Update rates differ per protocol but both work"
+  - description: "Store remains protocol-agnostic - widgets don't know source"
+  - description: "History tracking works for both protocols"
+
+# Validation criteria
+validation:
+  - check: "all_widgets_receive_data"
+    expected: "Depth, Speed, Wind widgets show NMEA 0183 data"
+    expected2: "Engine, Battery, Tank widgets show NMEA 2000 data"
+    
+  - check: "no_sensor_conflicts"
+    expected: "No duplicate instances or data corruption"
+    
+  - check: "protocol_transparent_to_widgets"
+    expected: "Widgets function identically regardless of data source"
+    
+  - check: "mixed_update_rates_handled"
+    expected: "Different update frequencies don't cause issues"
+    
+  - check: "console_logs_show_both_protocols"
+    expected: "Console shows successful processing of both 0183 and 2000 messages"
+    
+  - check: "no_parsing_errors"
+    expected: "No errors for either protocol"
+
+# Test scenarios for protocol switching
+protocol_switch_tests:
+  - scenario: "0183_to_2000_transition"
+    description: "Start with NMEA 0183, switch to NMEA 2000 mid-stream"
+    expected: "Smooth transition, no data loss"
+    
+  - scenario: "simultaneous_dual_source"
+    description: "Same sensor type from both protocols (e.g., engine RPM)"
+    expected: "Last received value wins, no conflicts"
+    
+  - scenario: "2000_failure_fallback"
+    description: "NMEA 2000 stops, NMEA 0183 continues"
+    expected: "Widgets continue to function with 0183 data"

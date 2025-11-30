@@ -39,14 +39,14 @@ class MemoryDiagnostics {
   generateReport(): DiagnosticReport {
     const state = useNmeaStore.getState();
     
-    // Count history entries
+    // Count history entries from sensor.history TimeSeriesBuffers
     const historyArrays = {
-      depth: state.sensorHistories.depth?.values?.length || 0,
-      wind: state.sensorHistories.wind?.values?.length || 0,
-      speed: state.sensorHistories.speed?.values?.length || 0,
-      engine: this.countMultiInstanceHistory(state.sensorHistories.engine),
-      battery: this.countMultiInstanceHistory(state.sensorHistories.battery),
-      temperature: this.countMultiInstanceHistory(state.sensorHistories.temperature),
+      depth: this.countSensorHistory(state.nmeaData.sensors.depth),
+      wind: this.countSensorHistory(state.nmeaData.sensors.wind),
+      speed: this.countSensorHistory(state.nmeaData.sensors.speed),
+      engine: this.countMultiInstanceHistory(state.nmeaData.sensors.engine),
+      battery: this.countMultiInstanceHistory(state.nmeaData.sensors.battery),
+      temperature: this.countMultiInstanceHistory(state.nmeaData.sensors.temperature),
     };
 
     const totalHistoryEntries = 
@@ -66,7 +66,7 @@ class MemoryDiagnostics {
       timestamp: Date.now(),
       storeStats: {
         historyArrays,
-        subscriptions: state.historySubscriptions.length,
+        subscriptions: 0, // Subscriptions removed - history is auto-managed
         totalHistoryEntries,
       },
       domStats: {
@@ -84,16 +84,35 @@ class MemoryDiagnostics {
   }
 
   /**
+   * Count entries in a sensor type's history (single-instance sensors)
+   */
+  private countSensorHistory(sensorGroup: Record<number, any>): number {
+    if (!sensorGroup) return 0;
+    
+    let total = 0;
+    Object.values(sensorGroup).forEach((sensor: any) => {
+      if (sensor?.history) {
+        const stats = sensor.history.getStats();
+        total += stats?.totalCount || 0;
+      }
+    });
+    
+    return total;
+  }
+
+  /**
    * Count entries in multi-instance history
    */
-  private countMultiInstanceHistory(instanceMap: Record<string, any>): Record<string, number> {
+  private countMultiInstanceHistory(sensorGroup: Record<number, any>): Record<string, number> {
     const counts: Record<string, number> = {};
     
-    if (!instanceMap) return counts;
+    if (!sensorGroup) return counts;
     
-    Object.keys(instanceMap).forEach(key => {
-      const history = instanceMap[key];
-      counts[key] = history?.values?.length || 0;
+    Object.entries(sensorGroup).forEach(([instance, sensor]: [string, any]) => {
+      if (sensor?.history) {
+        const stats = sensor.history.getStats();
+        counts[instance] = stats?.totalCount || 0;
+      }
     });
     
     return counts;

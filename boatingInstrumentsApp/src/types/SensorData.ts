@@ -7,9 +7,13 @@
  * Each interface matches exactly what the corresponding widget displays.
  */
 
+import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
+
 export interface BaseSensorData {
   name: string;           // Human-readable instance name
   timestamp: number;      // When this data was last updated
+  history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
+  historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
 }
 
 export interface TankSensorData extends BaseSensorData {
@@ -64,6 +68,7 @@ export interface GpsSensorData extends BaseSensorData {
     hdop: number;         // Horizontal dilution of precision
   };
   utcTime?: number;       // UTC timestamp from GPS
+  timeSource?: 'RMC' | 'ZDA' | 'GGA';  // Source sentence for priority selection (RMC > ZDA > GGA)
 }
 
 export interface TemperatureSensorData extends BaseSensorData {

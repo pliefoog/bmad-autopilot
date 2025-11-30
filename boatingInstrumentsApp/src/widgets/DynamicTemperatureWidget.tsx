@@ -44,17 +44,9 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
   const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
-  // Subscribe to history tracking on mount
-  useEffect(() => {
-    const subscribeToHistory = useNmeaStore.getState().subscribeToHistory;
-    const unsubscribeFromHistory = useNmeaStore.getState().unsubscribeFromHistory;
-    
-    subscribeToHistory(id, 'temperature', 5 * 60 * 1000);
-    
-    return () => {
-      unsubscribeFromHistory(id, 'temperature');
-    };
-  }, [id]);
+  // NEW: Get history and stats methods from store
+  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
+  const getSessionStats = useNmeaStore((state) => state.getSessionStats);
   
   // NMEA data - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const temperature = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.value ?? null, (a, b) => a === b);
@@ -62,22 +54,6 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   const units = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.units ?? 'C', (a, b) => a === b);
   const sensorName = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.name ?? title, (a, b) => a === b);
   const temperatureTimestamp = useNmeaStore((state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp);
-  
-  // Get temperature history from store (per-instance)
-  // CRITICAL FIX: Memoize instanceKey to prevent useEffect loop
-  const instanceKey = useMemo(() => `temp-${instanceNumber}`, [instanceNumber]);
-  
-  // MEMORY LEAK FIX: Use stable empty object reference to prevent constant re-renders
-  const emptyHistory = useMemo(() => ({ 
-    values: [] as Array<{value: number; timestamp: number}>,
-    timeWindow: 5 * 60 * 1000,
-    maxEntries: 600
-  }), []);
-  
-  const temperatureHistory = useNmeaStore((state) => {
-    const tempHistories = state.sensorHistories.temperature as Record<string, any>;
-    return tempHistories[instanceKey] || emptyHistory;
-  });
   
   // Check if data is stale (> 5 seconds old)
   // Use state + useEffect to detect staleness without causing re-renders on every cycle
@@ -147,10 +123,14 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
   
   // Wrapper component to receive injected props from UnifiedWidgetGrid
   const TrendLineCell = useCallback(({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => {
-    const filteredData = temperatureHistory.values.filter(d => d.timestamp > Date.now() - 5 * 60 * 1000);
+    // Get all data points in 5 minute window
+    const trendData = getSensorHistory('temperature', instanceNumber, {
+      timeWindowMs: 5 * 60 * 1000
+    });
+    
     return (
       <TrendLine 
-        data={filteredData}
+        data={trendData}
       width={cellMaxWidth || 300}
       height={cellHeightValue || 60}
       color={temperatureState === 'alarm' ? theme.error : temperatureState === 'warning' ? theme.warning : theme.primary}
@@ -165,7 +145,7 @@ export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> =
       strokeWidth={2}
     />
   );
-  }, [temperatureHistory, temperatureState, theme]);
+  }, [getSensorHistory, instanceNumber, temperatureState, theme]);
 
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);

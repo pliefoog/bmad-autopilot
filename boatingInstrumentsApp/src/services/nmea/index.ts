@@ -12,9 +12,6 @@ export type { ConnectionConfig, ConnectionStatus } from './connection/PureConnec
 export { PureNmeaParser } from './parsing/PureNmeaParser';
 export type { ParsedNmeaMessage } from './parsing/PureNmeaParser';
 
-export { PureDataTransformer } from './data/PureDataTransformer';
-export type { TransformedNmeaData } from './data/PureDataTransformer';
-
 export { PureStoreUpdater } from './data/PureStoreUpdater';
 export type { UpdateResult } from './data/PureStoreUpdater';
 

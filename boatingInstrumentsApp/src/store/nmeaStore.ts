@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 import type { 
   SensorsData, 
   SensorType, 
@@ -15,9 +16,6 @@ import type {
   AutopilotSensorData
 } from '../types/SensorData';
 
-// PHASE 2: History pruning moved to 1-second interval
-let historyPruneInterval: NodeJS.Timeout | null = null;
-
 // MEMORY LEAK FIX: Throttle alarm evaluation (expensive operation)
 let lastAlarmEvaluation = 0;
 const ALARM_EVALUATION_THROTTLE_MS = 1000; // Max 1 alarm check per second
@@ -30,47 +28,6 @@ export interface Alarm {
   message: string;
   level: AlarmLevel;
   timestamp: number;
-}
-
-/**
- * Historical data point for sensor readings
- */
-export interface HistoryDataPoint {
-  value: number;
-  timestamp: number;
-}
-
-/**
- * History tracking for a single sensor type
- */
-export interface SensorHistory {
-  values: HistoryDataPoint[];
-  currentSource?: string; // Track which source is providing data (e.g., 'DPT', 'DBT', 'DBK')
-  maxEntries: number; // Maximum number of entries to keep
-  timeWindow: number; // Time window in milliseconds (dynamically adjusted based on subscriptions)
-}
-
-/**
- * Subscription to sensor history
- */
-export interface HistorySubscription {
-  widgetId: string;
-  sensorType: SensorType;
-  timeWindowMs: number;
-}
-
-/**
- * Collection of sensor histories
- * For multi-instance sensors (temperature, engine, battery), use instanceId as key
- * For single-instance sensors (depth, wind, speed), use sensor type as key
- */
-export interface SensorHistories {
-  depth: SensorHistory;
-  wind: SensorHistory;
-  speed: SensorHistory;
-  engine: Record<string, SensorHistory>; // Per-instance: 'engine-0', 'engine-1'
-  battery: Record<string, SensorHistory>; // Per-instance: 'battery-0', 'battery-1'
-  temperature: Record<string, SensorHistory>; // Per-instance: 'temp-0', 'temp-1', etc.
 }
 
 /**
@@ -101,10 +58,6 @@ interface NmeaStore {
   lastError?: string;
   debugMode: boolean;
   
-  // Historical data
-  sensorHistories: SensorHistories;
-  historySubscriptions: HistorySubscription[];
-  
   // Connection management
   setConnectionStatus: (status: ConnectionStatus) => void;
   setLastError: (err?: string) => void;
@@ -115,14 +68,21 @@ interface NmeaStore {
   getSensorData: <T extends SensorType>(sensorType: T, instance: number) => SensorData | undefined;
   getSensorInstances: <T extends SensorType>(sensorType: T) => Array<{ instance: number; data: SensorData }>;
   
-  // History management - CLEANED UP: addHistoryReading removed, handled automatically
-  getHistory: (sensorType: keyof SensorHistories) => SensorHistory;
-  subscribeToHistory: (widgetId: string, sensorType: SensorType, timeWindowMs: number) => void;
-  unsubscribeFromHistory: (widgetId: string, sensorType: SensorType) => void;
-  pruneHistory: (sensorType: keyof SensorHistories) => void;
-  clearSensorHistory: (sensorType: keyof SensorHistories) => void;
-  startHistoryPruning: () => void;
-  stopHistoryPruning: () => void;
+  // History management - NEW: Auto-managed history with adaptive sampling
+  getSensorHistory: <T extends SensorType>(
+    sensorType: T,
+    instance: number,
+    options?: {
+      timeWindowMs?: number;
+      resolution?: 'full' | 'decimated' | 'auto';
+      chartWidth?: number;
+    }
+  ) => Array<{ value: number | Record<string, number>; timestamp: number }>;
+  getSessionStats: <T extends SensorType>(
+    sensorType: T,
+    instance: number
+  ) => { min: number | null; max: number | null; avg: number | null; count: number };
+  clearSensorHistory: <T extends SensorType>(sensorType: T, instance: number) => void;
   
   // System methods
   updateAlarms: (alarms: Alarm[]) => void;
@@ -180,183 +140,18 @@ function evaluateAlarms(nmeaData: NmeaData): Alarm[] {
 }
 
 /**
- * PHASE 2: Just append data point - pruning handled by interval
- * Widgets calculate session min/max from history.values
+ * Extract trackable value from sensor data for history
  */
-function addHistoryDataPoint(state: NmeaStore, sensorType: SensorType, instance: number, sensorData: any): NmeaStore {
-  // Only track history for sensors with subscriptions
-  const hasSubscription = state.historySubscriptions.some(sub => sub.sensorType === sensorType);
-  if (!hasSubscription) {
-    return state;
+function extractTrackableValue(sensorType: SensorType, data: any): number | null {
+  switch(sensorType) {
+    case 'depth': return data.depth ?? null;
+    case 'speed': return data.overGround ?? data.throughWater ?? null;
+    case 'wind': return data.speed ?? null;
+    case 'engine': return data.rpm ?? null;
+    case 'battery': return data.voltage ?? null;
+    case 'temperature': return data.value ?? null;
+    default: return null;
   }
-
-  // Extract trackable value based on sensor type
-  let value: number | null = null;
-  let source: string | undefined;
-
-  switch (sensorType) {
-    case 'depth':
-      value = sensorData.depth;
-      source = sensorData.referencePoint || 'DPT';
-      break;
-    case 'temperature':
-      value = sensorData.value;
-      source = `temp-${instance}`;
-      break;
-    case 'wind':
-      value = sensorData.speed;
-      break;
-    case 'speed':
-      value = sensorData.sog || sensorData.stw;
-      break;
-    case 'engine':
-      value = sensorData.rpm;
-      source = `engine-${instance}`;
-      break;
-    case 'battery':
-      value = sensorData.voltage;
-      source = `battery-${instance}`;
-      break;
-    default:
-      return state;
-  }
-
-  if (value === null || value === undefined || isNaN(value)) {
-    return state;
-  }
-
-  const timestamp = sensorData.timestamp || Date.now();
-  const isMultiInstance = ['temperature', 'engine', 'battery'].includes(sensorType);
-
-  let history: SensorHistory;
-  if (isMultiInstance) {
-    const instanceKey = source || 'default';
-    const instanceMap = state.sensorHistories[sensorType as keyof SensorHistories] as Record<string, SensorHistory>;
-    history = instanceMap[instanceKey] || createInitialHistory();
-  } else {
-    history = state.sensorHistories[sensorType as keyof SensorHistories] as SensorHistory;
-  }
-
-  // Check for duplicate
-  const lastEntry = history.values[history.values.length - 1];
-  if (lastEntry && Math.abs(lastEntry.value - value) < 0.01 && (timestamp - lastEntry.timestamp) < 100) {
-    return state;
-  }
-
-  // Just append - no inline pruning
-  const newValues = [...history.values, { value, timestamp }];
-
-  const updatedHistory = {
-    ...history,
-    values: newValues,
-    currentSource: source || history.currentSource,
-  };
-
-  if (isMultiInstance) {
-    const instanceKey = source || 'default';
-    return {
-      ...state,
-      sensorHistories: {
-        ...state.sensorHistories,
-        [sensorType]: {
-          ...(state.sensorHistories[sensorType as keyof SensorHistories] as Record<string, SensorHistory>),
-          [instanceKey]: updatedHistory,
-        },
-      },
-    };
-  } else {
-    return {
-      ...state,
-      sensorHistories: {
-        ...state.sensorHistories,
-        [sensorType]: updatedHistory,
-      },
-    };
-  }
-}
-
-/**
- * Create initial sensor history structure
- */
-function createInitialHistory(): SensorHistory {
-  return {
-    values: [],
-    currentSource: undefined,
-    maxEntries: 600, // Reduced from 1000 for better mobile performance
-    timeWindow: 60 * 60 * 1000, // 1 hour default, adjusted dynamically
-  };
-}
-
-/**
- * PHASE 2: Prune all sensor histories in a single pass (runs every 1 second)
- * Only prunes sensors with active subscriptions
- */
-function pruneAllHistories(state: NmeaStore): NmeaStore {
-  const now = Date.now();
-  let hasChanges = false;
-  const newHistories = { ...state.sensorHistories };
-
-  // Prune single-instance sensors (depth, wind, speed)
-  (['depth', 'wind', 'speed'] as const).forEach(sensorType => {
-    const history = newHistories[sensorType] as SensorHistory;
-    if (!history || !history.values || history.values.length === 0) {
-      return; // Skip if no history data
-    }
-    
-    const cutoffTime = now - history.timeWindow;
-    const prunedValues = history.values
-      .filter(entry => entry.timestamp > cutoffTime)
-      .slice(-history.maxEntries);
-
-    if (prunedValues.length !== history.values.length) {
-      newHistories[sensorType] = { ...history, values: prunedValues };
-      hasChanges = true;
-    }
-  });
-
-  // Prune multi-instance sensors (engine, battery, temperature)
-  (['engine', 'battery', 'temperature'] as const).forEach(sensorType => {
-    const instanceMap = newHistories[sensorType] as Record<string, SensorHistory>;
-    if (!instanceMap || Object.keys(instanceMap).length === 0) {
-      return; // Skip if no instances
-    }
-    
-    const newInstanceMap = { ...instanceMap };
-
-    Object.keys(instanceMap).forEach(instanceKey => {
-      const history = instanceMap[instanceKey];
-      if (!history || !history.values || history.values.length === 0) {
-        return; // Skip if no history data
-      }
-      
-      const cutoffTime = now - history.timeWindow;
-      const prunedValues = history.values
-        .filter(entry => entry.timestamp > cutoffTime)
-        .slice(-history.maxEntries);
-
-      if (prunedValues.length !== history.values.length) {
-        newInstanceMap[instanceKey] = { ...history, values: prunedValues };
-        hasChanges = true;
-      }
-    });
-
-    if (hasChanges) {
-      newHistories[sensorType] = newInstanceMap;
-    }
-  });
-
-  return hasChanges ? { ...state, sensorHistories: newHistories } : state;
-}
-
-/**
- * Calculate optimal time window based on active subscriptions
- */
-function calculateTimeWindow(subscriptions: HistorySubscription[], sensorType: SensorType): number {
-  const relevantSubs = subscriptions.filter(sub => sub.sensorType === sensorType);
-  if (relevantSubs.length === 0) return 0; // No subscriptions
-  
-  const maxWindow = Math.max(...relevantSubs.map(sub => sub.timeWindowMs));
-  return Math.min(maxWindow, 60 * 60 * 1000); // Cap at 1 hour
 }
 
 export const useNmeaStore = create<NmeaStore>((set, get) => ({
@@ -382,47 +177,73 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
   lastError: undefined,
   debugMode: false,
 
-  // Initial sensor histories
-  sensorHistories: {
-    depth: createInitialHistory(),
-    wind: createInitialHistory(),
-    speed: createInitialHistory(),
-    engine: {},
-    battery: {},
-    temperature: {},
-  },
-  historySubscriptions: [],
-
   // Connection management
   setConnectionStatus: (status: ConnectionStatus) => set({ connectionStatus: status }),
   setLastError: (err?: string) => set({ lastError: err }),
   setDebugMode: (enabled: boolean) => set({ debugMode: enabled }),
 
-  // Core sensor data management
+  // Core sensor data management with inline history tracking
   updateSensorData: <T extends SensorType>(sensorType: T, instance: number, data: Partial<SensorData>) => 
     set((state) => {
       const now = Date.now();
-      const currentSensorData = state.nmeaData.sensors[sensorType][instance] || {};
+      const currentSensorData = state.nmeaData.sensors[sensorType][instance];
+      
+      // Initialize history buffer if this is a new sensor
+      let history = currentSensorData?.history;
+      if (!history) {
+        history = new TimeSeriesBuffer<number>(
+          600,  // maxRecentEntries
+          60,   // maxOldEntries
+          60000, // oldDataThresholdMs (1 minute)
+          10    // decimationFactor
+        );
+      }
+      
+      // GPS-specific priority logic for UTC time updates
+      let finalData = data;
+      if (sensorType === 'gps' && (data as any).timeSource && (data as any).utcTime) {
+        const currentGps = currentSensorData as any;
+        const newTimeSource = (data as any).timeSource;
+        const currentTimeSource = currentGps?.timeSource;
+        
+        // Priority: RMC (1) > ZDA (2) > GGA (3)
+        const priorities: Record<string, number> = { 'RMC': 1, 'ZDA': 2, 'GGA': 3 };
+        const newPriority = priorities[newTimeSource] || 99;
+        const currentPriority = currentTimeSource ? (priorities[currentTimeSource] || 99) : 99;
+        
+        // Only update UTC time if new source has equal or higher priority (lower number)
+        if (newPriority > currentPriority && currentGps?.utcTime) {
+          // Lower priority source - preserve existing utcTime and timeSource
+          finalData = { ...data };
+          delete (finalData as any).utcTime;
+          delete (finalData as any).timeSource;
+        }
+      }
+      
       const updatedSensorData = {
         ...currentSensorData,
-        ...data,
+        ...finalData,
+        history, // Explicitly preserve history reference
         timestamp: now
       };
-
-      // PHASE 2: Just append data point - no inline pruning
-      const newState = addHistoryDataPoint(state, sensorType, instance, updatedSensorData);
-
+      
+      // AUTO-ADD to history (based on sensor type)
+      const trackableValue = extractTrackableValue(sensorType, updatedSensorData);
+      if (trackableValue !== null && history) {
+        history.add(trackableValue, now);
+      }
+      
       const newNmeaData = {
-        ...newState.nmeaData,
+        ...state.nmeaData,
         sensors: {
-          ...newState.nmeaData.sensors,
+          ...state.nmeaData.sensors,
           [sensorType]: {
-            ...newState.nmeaData.sensors[sensorType],
+            ...state.nmeaData.sensors[sensorType],
             [instance]: updatedSensorData
           }
         },
         timestamp: Date.now(),
-        messageCount: newState.nmeaData.messageCount + 1
+        messageCount: state.nmeaData.messageCount + 1
       };
 
       // MEMORY LEAK FIX: Throttle alarm evaluation to prevent 80+ evaluations per second
@@ -453,151 +274,50 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     }));
   },
 
-  updateAlarms: (alarms: Alarm[]) => set({ alarms }),
-
-  // REMOVED: addHistoryReading - now handled automatically in updateSensorData
-
-  getHistory: (sensorType: keyof SensorHistories) => {
-    const state = get();
-    return state.sensorHistories[sensorType];
-  },
-
-  /**
-   * PHASE 2: Start interval-based history pruning (runs every 1 second)
-   * Only prunes if there are active subscriptions
-   */
-  startHistoryPruning: () => {
-    if (historyPruneInterval !== null) return; // Already running
+  // Get sensor history - returns ALL data points in time window (no downsampling)
+  getSensorHistory: <T extends SensorType>(sensorType: T, instance: number, options?: { timeWindowMs?: number }) => {
+    const sensor = get().nmeaData.sensors[sensorType][instance];
+    if (!sensor || !(sensor as any).history) return [];
     
-    historyPruneInterval = setInterval(() => {
-      const state = get();
-      if (state.historySubscriptions.length > 0) {
-        set(pruneAllHistories(state));
-      }
-    }, 1000);
+    const history = (sensor as any).history as TimeSeriesBuffer<number>;
+    
+    // Return all data points in time window - no sampling, no decimation
+    return options?.timeWindowMs 
+      ? history.getRange(Date.now() - options.timeWindowMs, Date.now())
+      : history.getAll();
   },
 
-  /**
-   * PHASE 2: Stop interval-based history pruning
-   */
-  stopHistoryPruning: () => {
-    if (historyPruneInterval !== null) {
-      clearInterval(historyPruneInterval);
-      historyPruneInterval = null;
+  // NEW: Get session statistics efficiently
+  getSessionStats: <T extends SensorType>(sensorType: T, instance: number) => {
+    const sensor = get().nmeaData.sensors[sensorType][instance];
+    if (!sensor || !(sensor as any).history) {
+      return { min: null, max: null, avg: null, count: 0 };
     }
+    
+    const history = (sensor as any).history as TimeSeriesBuffer<number>;
+    const stats = history.getDataStats();
+    
+    if (!stats) {
+      return { min: null, max: null, avg: null, count: 0 };
+    }
+    
+    return {
+      min: stats.min as number,
+      max: stats.max as number,
+      avg: stats.avg as number,
+      count: stats.count
+    };
   },
 
-  subscribeToHistory: (widgetId: string, sensorType: SensorType, timeWindowMs: number) => 
+  // NEW: Clear specific sensor history
+  clearSensorHistory: <T extends SensorType>(sensorType: T, instance: number) => 
     set((state) => {
-      // Check if subscription already exists
-      const exists = state.historySubscriptions.some(
-        sub => sub.widgetId === widgetId && sub.sensorType === sensorType
-      );
-      
-      if (exists) return state; // Already subscribed
-      
-      const newSubscriptions = [
-        ...state.historySubscriptions,
-        { widgetId, sensorType, timeWindowMs },
-      ];
-      
-      // Calculate new time window for this sensor type
-      const newTimeWindow = calculateTimeWindow(newSubscriptions, sensorType);
-      
-      // Update history configuration if the sensor type exists in histories
-      const sensorHistories = { ...state.sensorHistories };
-      const historyKey = sensorType as keyof SensorHistories;
-      if (sensorHistories[historyKey]) {
-        sensorHistories[historyKey] = {
-          ...sensorHistories[historyKey],
-          timeWindow: newTimeWindow,
-        };
+      const sensor = state.nmeaData.sensors[sensorType][instance];
+      if (sensor && (sensor as any).history) {
+        ((sensor as any).history as TimeSeriesBuffer<number>).clear();
       }
-      
-      return {
-        historySubscriptions: newSubscriptions,
-        sensorHistories,
-      };
+      return state;
     }),
-
-  unsubscribeFromHistory: (widgetId: string, sensorType: SensorType) => 
-    set((state) => {
-      const newSubscriptions = state.historySubscriptions.filter(
-        sub => !(sub.widgetId === widgetId && sub.sensorType === sensorType)
-      );
-      
-      // Calculate new time window for this sensor type
-      const newTimeWindow = calculateTimeWindow(newSubscriptions, sensorType);
-      
-      // Update history configuration
-      const sensorHistories = { ...state.sensorHistories };
-      const historyKey = sensorType as keyof SensorHistories;
-      if (sensorHistories[historyKey]) {
-        sensorHistories[historyKey] = {
-          ...sensorHistories[historyKey],
-          timeWindow: newTimeWindow,
-        };
-        
-        // If no more subscriptions, schedule cleanup after grace period (5 minutes)
-        // MEMORY LEAK FIX: Avoid holding store reference in closure
-        if (newTimeWindow === 0) {
-          const timeoutId = setTimeout(() => {
-            try {
-              const currentState = get();
-              const stillNoSubscriptions = calculateTimeWindow(currentState.historySubscriptions, sensorType) === 0;
-              if (stillNoSubscriptions) {
-                if (currentState.debugMode) {
-                  console.log(`[Store History] Grace period expired, clearing ${historyKey} history`);
-                }
-                get().clearSensorHistory(historyKey);
-              }
-            } catch (error) {
-              console.error('[Store History] Cleanup error:', error);
-            }
-          }, 5 * 60 * 1000);
-          
-          // Store timeout ID for potential cleanup (future enhancement)
-          if (typeof window !== 'undefined') {
-            (window as any).__storeHistoryTimeouts = (window as any).__storeHistoryTimeouts || [];
-            (window as any).__storeHistoryTimeouts.push(timeoutId);
-          }
-        }
-      }
-      
-      return {
-        historySubscriptions: newSubscriptions,
-        sensorHistories,
-      };
-    }),
-
-  pruneHistory: (sensorType: keyof SensorHistories) => 
-    set((state) => {
-      const history = state.sensorHistories[sensorType];
-      const now = Date.now();
-      const cutoffTime = now - history.timeWindow;
-      
-      const prunedValues = history.values
-        .filter(entry => entry.timestamp > cutoffTime)
-        .slice(-history.maxEntries);
-      
-      return {
-        sensorHistories: {
-          ...state.sensorHistories,
-          [sensorType]: {
-            ...history,
-            values: prunedValues,
-          },
-        },
-      };
-    }),
-
-  clearSensorHistory: (sensorType: keyof SensorHistories) => 
-    set((state) => ({
-      sensorHistories: {
-        ...state.sensorHistories,
-        [sensorType]: createInitialHistory(),
-      },
-    })),
 
   updateAlarms: (alarms: Alarm[]) => set({ alarms }),
 
@@ -622,15 +342,6 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     alarms: [],
     lastError: undefined,
     debugMode: false,
-    sensorHistories: {
-      depth: createInitialHistory(),
-      wind: createInitialHistory(),
-      speed: createInitialHistory(),
-      engine: {},
-      battery: {},
-      temperature: {},
-    },
-    historySubscriptions: [],
   }),
 
   // Legacy compatibility methods (will be removed after migration)

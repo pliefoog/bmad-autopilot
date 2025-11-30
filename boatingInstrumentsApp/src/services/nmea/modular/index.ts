@@ -20,9 +20,6 @@ export type { ConnectionConfig, ConnectionStatus, ConnectionEvents } from '../co
 export { PureNmeaParser, pureNmeaParser } from '../parsing/PureNmeaParser';
 export type { ParsedNmeaMessage, ParsingResult } from '../parsing/PureNmeaParser';
 
-export { PureDataTransformer, pureDataTransformer } from '../data/PureDataTransformer';
-export type { TransformedNmeaData, TransformationResult } from '../data/PureDataTransformer';
-
 export { PureStoreUpdater, pureStoreUpdater } from '../data/PureStoreUpdater';
 export type { UpdateResult, UpdateOptions } from '../data/PureStoreUpdater';
 
