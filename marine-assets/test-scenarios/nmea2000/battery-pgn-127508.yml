@@ -3,6 +3,7 @@ description: "Test battery monitoring via NMEA 2000 PGN 127508 (Battery Status) 
 duration: 120  # 2 minutes
 version: "1.0"
 category: "nmea2000"
+bridge_mode: "nmea2000"  # NMEA 2000 mode
 
 # Vessel parameters
 parameters:
@@ -37,21 +38,25 @@ pgn_config:
 data:
   battery:
     voltage:
-      type: "constant_with_variation"
-      base: 12.6     # Volts (healthy battery)
-      variation: 0.2 # ±0.2V
+      type: "gaussian"
+      mean: 12.6     # Volts (healthy battery)
+      std_dev: 0.1   # ±0.2V
+      min: 12.2
+      max: 13.0
     current:
       type: "sine_wave"
       base: 5.0      # Amperes (charging)
       amplitude: 3.0 # ±3A
       frequency: 0.02 # Hz
     temperature:
-      type: "constant_with_variation"
-      base: 298.15   # Kelvin (25°C)
-      variation: 2.0 # ±2K
+      type: "gaussian"
+      mean: 298.15   # Kelvin (25°C)
+      std_dev: 1.0   # ±2K
+      min: 293.15    # 20°C
+      max: 303.15    # 30°C
       
 # NMEA sentence configuration
-sentences:
+nmea_sentences:
   - type: "PCDIN"  # NMEA 2000 PGN wrapper
     frequency: 1   # Hz (1 update per second)
     pgn: 127508    # Battery Status

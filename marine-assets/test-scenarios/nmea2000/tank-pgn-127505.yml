@@ -3,6 +3,7 @@ description: "Test fuel tank monitoring via NMEA 2000 PGN 127505 (Fluid Level) w
 duration: 120  # 2 minutes
 version: "1.0"
 category: "nmea2000"
+bridge_mode: "nmea2000"  # NMEA 2000 mode
 
 # Vessel parameters
 parameters:
@@ -52,7 +53,7 @@ data:
       value: 200.0    # Liters (53 gallons)
       
 # NMEA sentence configuration
-sentences:
+nmea_sentences:
   - type: "PCDIN"  # NMEA 2000 PGN wrapper
     frequency: 0.5 # Hz (one update every 2 seconds)
     pgn: 127505    # Fluid Level

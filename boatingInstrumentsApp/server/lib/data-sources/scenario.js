@@ -693,6 +693,15 @@ class ScenarioDataSource extends EventEmitter {
           console.log(`🧭 Added YAML ${sentenceDef.type} heading generator: ${generatorName} at ${frequencyHz}Hz`);
           break;
 
+        case 'PCDIN':
+          this.dataGenerators.set(generatorName, {
+            interval: intervalMs,
+            sentenceDef: sentenceDef,
+            generate: () => this.generatePCDINSentence(sentenceDef)
+          });
+          console.log(`🔧 Added YAML PCDIN (NMEA 2000) generator: ${generatorName} at ${frequencyHz}Hz (PGN ${sentenceDef.pgn})`);
+          break;
+
         default:
           console.warn(`⚠️ Unknown YAML sentence type: ${sentenceDef.type}`);
       }
@@ -1896,6 +1905,168 @@ class ScenarioDataSource extends EventEmitter {
       checksum ^= sentence.charCodeAt(i);
     }
     return checksum.toString(16).toUpperCase().padStart(2, '0');
+  }
+
+  /**
+   * Generate PCDIN sentence (NMEA 2000 PGN wrapped in NMEA 0183)
+   * Supports PGN 127488 (Engine), 127508 (Battery), 127505 (Tank)
+   */
+  generatePCDINSentence(sentenceDef) {
+    const pgn = sentenceDef.pgn;
+    
+    if (!pgn) {
+      console.warn('⚠️ PCDIN sentence missing PGN number');
+      return [];
+    }
+
+    switch (pgn) {
+      case 127488: // Engine Parameters, Rapid Update
+        return this.generatePCDIN_127488(sentenceDef);
+      case 127489: // Engine Parameters, Dynamic
+        return this.generatePCDIN_127489(sentenceDef);
+      case 127508: // Battery Status
+        return this.generatePCDIN_127508(sentenceDef);
+      case 127505: // Fluid Level
+        return this.generatePCDIN_127505(sentenceDef);
+      default:
+        console.warn(`⚠️ Unsupported PCDIN PGN: ${pgn}`);
+        return [];
+    }
+  }
+
+  /**
+   * Generate PGN 127488: Engine Parameters, Rapid Update
+   * Format: $PCDIN,01F200,{instance},{rpm_low},{rpm_high},FF,FF,FF,FF,FF*{checksum}
+   */
+  generatePCDIN_127488(sentenceDef) {
+    const engineData = this.scenario?.data?.engine;
+    if (!engineData) return [];
+
+    // Get RPM from scenario data
+    let rpm = 0;
+    if (engineData.rpm) {
+      rpm = this.getYAMLDataValue('rpm', engineData.rpm);
+    }
+
+    // Convert RPM to NMEA 2000 format (0.25 RPM resolution)
+    const rpmRaw = Math.round(rpm / 0.25);
+    const rpmLow = rpmRaw & 0xFF;
+    const rpmHigh = (rpmRaw >> 8) & 0xFF;
+
+    // Instance (default to 0 if not specified)
+    const instance = sentenceDef.instance || 0;
+
+    // Build PCDIN sentence
+    const data = `PCDIN,01F200,${this.toHex(instance)},${this.toHex(rpmLow)},${this.toHex(rpmHigh)},FF,FF,FF,FF,FF`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 127508: Battery Status
+   * Format: $PCDIN,01F214,{instance},{volt_low},{volt_high},{curr_low},{curr_high},{temp_low},{temp_high},FF*{checksum}
+   */
+  generatePCDIN_127508(sentenceDef) {
+    const batteryData = this.scenario?.data?.battery;
+    if (!batteryData) return [];
+
+    // Get battery parameters from scenario data
+    let voltage = 0;
+    let current = 0;
+    let temperature = 298.15; // Default 25°C in Kelvin
+
+    if (batteryData.voltage) {
+      voltage = this.getYAMLDataValue('voltage', batteryData.voltage);
+    }
+    if (batteryData.current) {
+      current = this.getYAMLDataValue('current', batteryData.current);
+    }
+    if (batteryData.temperature) {
+      temperature = this.getYAMLDataValue('temperature', batteryData.temperature);
+    }
+
+    // Convert to NMEA 2000 format
+    const voltRaw = Math.round(voltage / 0.01); // 0.01V resolution
+    const voltLow = voltRaw & 0xFF;
+    const voltHigh = (voltRaw >> 8) & 0xFF;
+
+    const currRaw = Math.round(current / 0.1); // 0.1A resolution (signed)
+    const currLow = currRaw & 0xFF;
+    const currHigh = (currRaw >> 8) & 0xFF;
+
+    const tempRaw = Math.round(temperature / 0.01); // 0.01K resolution
+    const tempLow = tempRaw & 0xFF;
+    const tempHigh = (tempRaw >> 8) & 0xFF;
+
+    // Instance (default to 0 if not specified)
+    const instance = sentenceDef.instance || 0;
+
+    // Build PCDIN sentence
+    const data = `PCDIN,01F214,${this.toHex(instance)},${this.toHex(voltLow)},${this.toHex(voltHigh)},${this.toHex(currLow)},${this.toHex(currHigh)},${this.toHex(tempLow)},${this.toHex(tempHigh)},FF`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 127505: Fluid Level
+   * Format: $PCDIN,01F211,{instance},{type},{level_low},{level_high},{cap_b0},{cap_b1},{cap_b2},{cap_b3}*{checksum}
+   */
+  generatePCDIN_127505(sentenceDef) {
+    const tankData = this.scenario?.data?.tank;
+    if (!tankData) return [];
+
+    // Get tank parameters from scenario data
+    let level = 50; // Default 50%
+    let capacity = 200; // Default 200L
+    let fluidType = 0; // Default fuel
+
+    if (tankData.level || tankData.fuel_level) {
+      level = this.getYAMLDataValue('level', tankData.level || tankData.fuel_level);
+    }
+    if (tankData.capacity) {
+      capacity = tankData.capacity;
+    }
+    if (tankData.type !== undefined) {
+      fluidType = tankData.type;
+    }
+
+    // Convert to NMEA 2000 format
+    const levelRaw = Math.round(level / 0.004); // 0.004% resolution
+    const levelLow = levelRaw & 0xFF;
+    const levelHigh = (levelRaw >> 8) & 0xFF;
+
+    const capRaw = Math.round(capacity / 0.1); // 0.1L resolution
+    const capB0 = capRaw & 0xFF;
+    const capB1 = (capRaw >> 8) & 0xFF;
+    const capB2 = (capRaw >> 16) & 0xFF;
+    const capB3 = (capRaw >> 24) & 0xFF;
+
+    // Instance (default to 0 if not specified)
+    const instance = sentenceDef.instance || 0;
+
+    // Build PCDIN sentence
+    const data = `PCDIN,01F211,${this.toHex(instance)},${this.toHex(fluidType)},${this.toHex(levelLow)},${this.toHex(levelHigh)},${this.toHex(capB0)},${this.toHex(capB1)},${this.toHex(capB2)},${this.toHex(capB3)}`;
+    const checksum = this.calculateChecksum(data);
+    
+    return [`$${data}*${checksum}`];
+  }
+
+  /**
+   * Generate PGN 127489: Engine Parameters, Dynamic
+   * Placeholder for future implementation
+   */
+  generatePCDIN_127489(sentenceDef) {
+    console.warn('⚠️ PGN 127489 (Engine Dynamic) not yet implemented');
+    return [];
+  }
+
+  /**
+   * Convert number to 2-digit hex string
+   */
+  toHex(num) {
+    return num.toString(16).toUpperCase().padStart(2, '0');
   }
 
   /**

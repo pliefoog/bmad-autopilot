@@ -3,6 +3,7 @@ description: "Test protocol-agnostic store with simultaneous NMEA 0183 and NMEA 
 duration: 180  # 3 minutes
 version: "1.0"
 category: "nmea2000"
+bridge_mode: "hybrid"  # Mixed NMEA 0183 + NMEA 2000 mode
 
 # Vessel parameters
 parameters:
@@ -75,7 +76,7 @@ data:
     protocol: "NMEA 2000 - PGN 127505"
 
 # NMEA sentence configuration (mixed protocols)
-sentences:
+nmea_sentences:
   # NMEA 0183 sentences
   - type: "DBT"
     frequency: 1   # Hz

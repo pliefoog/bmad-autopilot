@@ -3,6 +3,7 @@ description: "Test engine RPM via NMEA 2000 PGN 127488 (Engine Parameters, Rapid
 duration: 120  # 2 minutes
 version: "1.0"
 category: "nmea2000"
+bridge_mode: "nmea2000"  # NMEA 2000 mode
 
 # Vessel parameters
 parameters:
@@ -35,7 +36,7 @@ data:
       frequency: 0.05 # Hz (slow variation)
       
 # NMEA sentence configuration
-sentences:
+nmea_sentences:
   - type: "PCDIN"  # NMEA 2000 PGN wrapper
     frequency: 2   # Hz (2 updates per second)
     pgn: 127488    # Engine Parameters, Rapid Update
