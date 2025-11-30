@@ -14,6 +14,8 @@
 import { useNmeaStore } from '../../../store/nmeaStore';
 import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
+import type { BinaryPgnFrame } from '../connection/PureConnectionManager';
+import { pgnParser } from '../pgnParser';
 
 export interface UpdateResult {
   updated: boolean;
@@ -115,6 +117,246 @@ export class PureStoreUpdater {
         reason: `Exception: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
+  }
+
+  /**
+   * Process binary NMEA 2000 PGN frame directly
+   */
+  processBinaryPgnFrame(frame: BinaryPgnFrame, options: UpdateOptions = {}): UpdateResult {
+    try {
+      const hexData = Array.from(frame.data)
+        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+        .join('');
+      
+      console.log(`[PureStoreUpdater] Processing binary PGN ${frame.pgn} (0x${frame.pgn.toString(16).toUpperCase()}), data: ${hexData}`);
+      
+      // Convert binary frame to sensor updates based on PGN
+      const updates = this.parseBinaryPgnToUpdates(frame);
+      
+      if (updates.length > 0) {
+        return this.applySensorUpdates(updates, options);
+      }
+      
+      return {
+        updated: false,
+        throttled: false,
+        batchedFields: [],
+        reason: 'No sensor updates generated from binary PGN'
+      };
+
+    } catch (error) {
+      console.error('[PureStoreUpdater] Error processing binary PGN frame:', error);
+      return {
+        updated: false,
+        throttled: false,
+        batchedFields: [],
+        reason: `Binary frame exception: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /**
+   * Parse binary PGN frame to sensor updates
+   */
+  private parseBinaryPgnToUpdates(frame: BinaryPgnFrame): SensorUpdate[] {
+    const hexData = Array.from(frame.data)
+      .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+      .join('');
+    
+    const timestamp = Date.now();
+    const updates: SensorUpdate[] = [];
+
+    try {
+      switch (frame.pgn) {
+        case 128267: { // Water Depth
+          const depthData = pgnParser.parseDepthPgn(hexData);
+          if (depthData) {
+            updates.push({
+              sensorType: 'depth',
+              instance: 0,
+              value: depthData.depth,
+              unit: 'meters',
+              timestamp,
+              data: {
+                depth: depthData.depth,
+                referencePoint: 'transducer' as const,
+                sentenceType: 'DPT' as const
+              }
+            });
+          }
+          break;
+        }
+
+        case 128259: { // Speed
+          const speedData = pgnParser.parseSpeedPgn(hexData);
+          if (speedData) {
+            updates.push({
+              sensorType: 'speed',
+              instance: 0,
+              value: speedData.speed,
+              unit: 'knots',
+              timestamp,
+              data: {
+                throughWater: speedData.speed
+              }
+            });
+          }
+          break;
+        }
+
+        case 130306: { // Wind
+          const windData = pgnParser.parseWindPgn(hexData);
+          if (windData) {
+            updates.push({
+              sensorType: 'wind',
+              instance: 0,
+              value: windData.windSpeed,
+              unit: 'knots',
+              timestamp,
+              data: {
+                speed: windData.windSpeed,
+                direction: windData.windAngle
+              }
+            });
+          }
+          break;
+        }
+
+        case 129029: { // GPS
+          const gpsData = pgnParser.parseGPSPgn(hexData);
+          if (gpsData) {
+            updates.push({
+              sensorType: 'gps',
+              instance: 0,
+              value: gpsData.latitude, // Primary value for tracking
+              unit: 'degrees',
+              timestamp,
+              data: {
+                position: {
+                  latitude: gpsData.latitude,
+                  longitude: gpsData.longitude
+                }
+              }
+            });
+          }
+          break;
+        }
+
+        case 127250: { // Heading
+          const headingData = pgnParser.parseHeadingPgn(hexData);
+          if (headingData) {
+            updates.push({
+              sensorType: 'compass',
+              instance: 0,
+              value: headingData.heading,
+              unit: 'degrees',
+              timestamp,
+              data: {
+                heading: headingData.heading
+              }
+            });
+          }
+          break;
+        }
+
+        case 130310: { // Temperature
+          const tempData = pgnParser.parseTemperaturePgn(hexData);
+          if (tempData) {
+            updates.push({
+              sensorType: 'temperature',
+              instance: 0,
+              value: tempData.temperature,
+              unit: 'celsius',
+              timestamp,
+              data: {
+                value: tempData.temperature,
+                location: 'seawater' as const,
+                units: 'C' as const
+              }
+            });
+          }
+          break;
+        }
+
+        case 127245: { // Rudder
+          const rudderData = pgnParser.parseRudderPgn(hexData);
+          if (rudderData) {
+            updates.push({
+              sensorType: 'autopilot',
+              instance: 0,
+              value: rudderData.rudderAngle,
+              unit: 'degrees',
+              timestamp,
+              data: {
+                rudderAngle: rudderData.rudderAngle
+              }
+            });
+          }
+          break;
+        }
+
+        case 127488: // Engine Rapid
+        case 127489: { // Engine Dynamic
+          const engineData = pgnParser.parseEnginePgn(frame.pgn, hexData, frame.source);
+          if (engineData && engineData.engineSpeed !== undefined) {
+            updates.push({
+              sensorType: 'engine',
+              instance: frame.source, // Engine instance from source address
+              value: engineData.engineSpeed,
+              unit: 'rpm',
+              timestamp,
+              data: {
+                rpm: engineData.engineSpeed
+              }
+            });
+          }
+          break;
+        }
+
+        case 127508: { // Battery
+          const batteryData = pgnParser.parseBatteryPgn(frame.pgn, hexData, frame.source);
+          if (batteryData) {
+            updates.push({
+              sensorType: 'battery',
+              instance: batteryData.instance,
+              value: batteryData.batteryVoltage || 0,
+              unit: 'volts',
+              timestamp,
+              data: {
+                voltage: batteryData.batteryVoltage,
+                current: batteryData.batteryCurrent,
+                stateOfCharge: batteryData.stateOfCharge,
+                temperature: batteryData.temperature
+              }
+            });
+          }
+          break;
+        }
+
+        case 127505: { // Tank
+          const tankData = pgnParser.parseTankPgn(frame.pgn, hexData, frame.source);
+          if (tankData && tankData.level !== undefined) {
+            updates.push({
+              sensorType: 'tank',
+              instance: tankData.instance,
+              value: tankData.level,
+              unit: 'percent',
+              timestamp,
+              data: { 
+                level: tankData.level,
+                type: tankData.fluidType,
+                capacity: tankData.capacity
+              }
+            });
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      console.error(`[PureStoreUpdater] Error parsing PGN ${frame.pgn}:`, error);
+    }
+
+    return updates;
   }
 
   /**

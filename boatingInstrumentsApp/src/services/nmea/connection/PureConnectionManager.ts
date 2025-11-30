@@ -104,9 +104,17 @@ export interface ConnectionStatus {
   messagesReceived: number;
 }
 
+export interface BinaryPgnFrame {
+  pgn: number;
+  source: number;
+  priority: number;
+  data: Uint8Array;
+}
+
 export interface ConnectionEvents {
   onStateChange: (status: ConnectionStatus) => void;
   onDataReceived: (data: string) => void;
+  onBinaryDataReceived?: (frame: BinaryPgnFrame) => void;
   onError: (error: string) => void;
 }
 
@@ -276,7 +284,12 @@ export class PureConnectionManager {
         };
 
         ws.onmessage = (event) => {
-          this.handleDataReceived(event.data);
+          // Handle both text (NMEA 0183) and binary (NMEA 2000) frames
+          if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+            this.handleBinaryDataReceived(event.data);
+          } else {
+            this.handleDataReceived(event.data);
+          }
         };
 
         ws.onerror = (error) => {
@@ -544,6 +557,79 @@ export class PureConnectionManager {
         this.events.onDataReceived(sentence);
       }
     });
+  }
+
+  /**
+   * Handle received binary data (NMEA 2000 PGN frames)
+   */
+  private async handleBinaryDataReceived(data: ArrayBuffer | Blob): Promise<void> {
+    try {
+      // Convert Blob to ArrayBuffer if needed
+      let arrayBuffer: ArrayBuffer;
+      if (data instanceof Blob) {
+        arrayBuffer = await data.arrayBuffer();
+      } else {
+        arrayBuffer = data;
+      }
+
+      this.bytesReceived += arrayBuffer.byteLength;
+
+      // Parse binary NMEA 2000 frame
+      const frame = this.parseBinaryFrame(arrayBuffer);
+      if (frame) {
+        this.messagesReceived++;
+        
+        console.log(`[ConnectionManager] 📦 Binary PGN ${frame.pgn} (0x${frame.pgn.toString(16).toUpperCase()})`);
+        
+        // Process binary frame directly (bypass text sentence parsing)
+        if (this.events.onBinaryDataReceived) {
+          this.events.onBinaryDataReceived(frame);
+        }
+      }
+    } catch (error) {
+      console.error('[ConnectionManager] Error processing binary data:', error);
+    }
+  }
+
+  /**
+   * Parse binary NMEA 2000 frame
+   * Frame format: [CAN_ID(4 bytes BE), LENGTH(1 byte), DATA(0-8 bytes)]
+   */
+  private parseBinaryFrame(buffer: ArrayBuffer): BinaryPgnFrame | null {
+    try {
+      const view = new DataView(buffer);
+      if (buffer.byteLength < 5) {
+        console.warn('[ConnectionManager] Binary frame too short:', buffer.byteLength);
+        return null;
+      }
+
+      // Extract CAN ID (29-bit, stored in 32-bit big-endian)
+      const canId = view.getUint32(0, false); // Big-endian
+      
+      // Extract fields from CAN ID
+      const priority = (canId >> 26) & 0x07;
+      const dataPage = (canId >> 24) & 0x01;
+      const pduFormat = (canId >> 16) & 0xFF;
+      const pduSpecific = (canId >> 8) & 0xFF;
+      const source = canId & 0xFF;
+      
+      // Reconstruct PGN from CAN ID
+      const pgn = (dataPage << 16) | (pduFormat << 8) | pduSpecific;
+      
+      // Extract data length and payload
+      const dataLength = view.getUint8(4);
+      if (buffer.byteLength < 5 + dataLength) {
+        console.warn('[ConnectionManager] Binary frame data truncated');
+        return null;
+      }
+      
+      const data = new Uint8Array(buffer, 5, dataLength);
+      
+      return { pgn, source, priority, data };
+    } catch (error) {
+      console.error('[ConnectionManager] Error parsing binary frame:', error);
+      return null;
+    }
   }
 
   /**

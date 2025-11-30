@@ -186,7 +186,9 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
   updateSensorData: <T extends SensorType>(sensorType: T, instance: number, data: Partial<SensorData>) => 
     set((state) => {
       const now = Date.now();
-      const currentSensorData = state.nmeaData.sensors[sensorType][instance];
+      // Safely access sensor instance (may not exist yet)
+      const sensorTypeObj = state.nmeaData.sensors[sensorType] || {};
+      const currentSensorData = sensorTypeObj[instance];
       
       // Initialize history buffer if this is a new sensor
       let history = currentSensorData?.history;

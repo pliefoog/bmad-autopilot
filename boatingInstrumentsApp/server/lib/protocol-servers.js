@@ -176,22 +176,43 @@ class ProtocolServers {
 
   /**
    * Broadcast message to all connected clients
-   * @param {string} message - Message to broadcast
+   * @param {string|Buffer|Array<Buffer>} message - Message to broadcast (string for NMEA 0183, Buffer for NMEA 2000)
    */
   broadcast(message) {
     let successCount = 0;
     let errorCount = 0;
 
+    // Handle array of messages/frames (for fast packet NMEA 2000)
+    if (Array.isArray(message)) {
+      message.forEach(msg => this.broadcast(msg));
+      return { successCount: message.length, errorCount: 0 };
+    }
+
+    // Detect if message is binary NMEA 2000 frame (Buffer) or text NMEA 0183 (string)
+    const isBinary = Buffer.isBuffer(message);
+
     for (const [clientId, client] of this.clients) {
       try {
         if (client.type === 'tcp' && client.socket && !client.socket.destroyed) {
-          client.socket.write(message + '\r\n');
+          if (isBinary) {
+            client.socket.write(message); // Binary frame
+          } else {
+            client.socket.write(message + '\r\n'); // Text sentence
+          }
           successCount++;
         } else if (client.type === 'udp' && client.remote) {
-          this.udpServer.send(message + '\r\n', client.remote.port, client.remote.address);
+          if (isBinary) {
+            this.udpServer.send(message, client.remote.port, client.remote.address);
+          } else {
+            this.udpServer.send(message + '\r\n', client.remote.port, client.remote.address);
+          }
           successCount++;
         } else if (client.type === 'websocket' && client.socket && client.socket.readyState === WebSocket.OPEN) {
-          client.socket.send(message + '\r\n');
+          if (isBinary) {
+            client.socket.send(message, { binary: true }); // Binary WebSocket frame
+          } else {
+            client.socket.send(message + '\r\n'); // Text WebSocket frame
+          }
           successCount++;
         }
       } catch (error) {

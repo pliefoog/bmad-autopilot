@@ -9,7 +9,7 @@
  * 5. Removed getPerformanceMetrics() and clearMetrics()
  */
 
-import { PureConnectionManager, type ConnectionConfig, type ConnectionStatus } from './connection/PureConnectionManager';
+import { PureConnectionManager, type ConnectionConfig, type ConnectionStatus, type BinaryPgnFrame } from './connection/PureConnectionManager';
 import { PureNmeaParser, type ParsedNmeaMessage } from './parsing/PureNmeaParser';
 import { PureStoreUpdater, type UpdateResult } from './data/PureStoreUpdater';
 
@@ -188,6 +188,10 @@ export class NmeaService {
         this.processNmeaMessage(data);
       },
       
+      onBinaryDataReceived: (frame) => {
+        this.processBinaryPgnFrame(frame);
+      },
+      
       onError: (error) => {
         console.error('[NmeaService] Connection error:', error);
         this.storeUpdater.updateError(error);
@@ -221,6 +225,25 @@ export class NmeaService {
     } catch (error) {
       console.error('[NmeaService] Processing error:', error);
       this.storeUpdater.updateError(`Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Process binary NMEA 2000 PGN frame directly
+   */
+  private processBinaryPgnFrame(frame: BinaryPgnFrame): void {
+    this.messageCount++;
+
+    try {
+      console.log(`[NmeaService] Processing binary PGN ${frame.pgn} (0x${frame.pgn.toString(16).toUpperCase()})`);
+      
+      // Process the binary frame directly through the store updater
+      const updateOptions = this.currentConfig?.updates || {};
+      this.storeUpdater.processBinaryPgnFrame(frame, updateOptions);
+
+    } catch (error) {
+      console.error('[NmeaService] Binary frame processing error:', error);
+      this.storeUpdater.updateError(`Binary frame error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

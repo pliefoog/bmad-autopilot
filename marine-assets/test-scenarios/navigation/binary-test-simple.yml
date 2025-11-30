@@ -1,0 +1,151 @@
+name: "Simple Binary NMEA 2000 Test"
+description: "Simplified sensor-based scenario for testing binary NMEA 2000 without advanced data generation types"
+version: 1.0
+loop: true
+
+sensors:
+  - id: depth_sensor_0
+    type: depth_sensor
+    position: { x: 0, y: 0, z: -0.5 }
+    update_rate: 2
+    data:
+      depth:
+        type: sine_wave
+        min: 5.0
+        max: 15.0
+        period: 60
+
+  - id: speed_sensor_1
+    type: speed_sensor
+    position: { x: 0, y: 0, z: -0.3 }
+    update_rate: 1
+    data:
+      speed:
+        type: sine_wave
+        min: 2.5
+        max: 6.5
+        period: 120
+
+  - id: wind_sensor_2
+    type: wind_sensor
+    position: { x: 0, y: 0, z: 2.5 }
+    update_rate: 2
+    data:
+      wind_speed:
+        type: sine_wave
+        min: 5.0
+        max: 15.0
+        period: 180
+      wind_angle:
+        type: sine_wave
+        min: 0
+        max: 359
+        period: 240
+
+  - id: gps_sensor_3
+    type: gps_sensor
+    position: { x: 0, y: 0, z: 1.0 }
+    update_rate: 1
+    data:
+      latitude:
+        type: constant
+        value: 37.7749
+      longitude:
+        type: constant
+        value: -122.4194
+
+  - id: heading_sensor_4
+    type: heading_sensor
+    position: { x: 0, y: 0, z: 0 }
+    update_rate: 5
+    data:
+      heading:
+        type: sine_wave
+        min: 0
+        max: 359
+        period: 300
+
+  - id: temperature_sensor_5
+    type: temperature_sensor
+    position: { x: 0, y: 0, z: -1.0 }
+    update_rate: 0.2
+    data:
+      current:
+        type: random
+        min: -0.5
+        max: 0.5
+      temperature:
+        type: sine_wave
+        min: 15.0
+        max: 20.0
+        period: 600
+
+  - id: engine_sensor_6
+    type: engine_sensor
+    instance: 0
+    position: { x: -2.0, y: 0, z: 0 }
+    update_rate: 1
+    data:
+      rpm:
+        type: sine_wave
+        min: 800
+        max: 2200
+        period: 120
+      temperature:
+        type: sine_wave
+        min: 70.0
+        max: 95.0
+        period: 180
+      oil_pressure:
+        type: sine_wave
+        min: 40.0
+        max: 65.0
+        period: 90
+      boost_pressure:
+        type: constant
+        value: 0
+      tilt_trim:
+        type: constant
+        value: 0
+
+  - id: battery_sensor_7
+    type: battery_sensor
+    instance: 0
+    position: { x: -1.5, y: 0.5, z: -0.5 }
+    update_rate: 0.5
+    data:
+      voltage:
+        type: sine_wave
+        min: 12.2
+        max: 14.4
+        period: 300
+      current:
+        type: random
+        min: -5.0
+        max: 15.0
+
+  - id: tank_sensor_9
+    type: tank_sensor
+    instance: 0
+    tank_type: fuel
+    position: { x: -2.0, y: 0, z: -1.0 }
+    capacity: 200
+    update_rate: 0.1
+    data:
+      level:
+        type: sine_wave
+        min: 0.2
+        max: 0.95
+        period: 600
+
+  - id: rudder_sensor_13
+    type: rudder_sensor
+    instance: 0
+    position: { x: -4.0, y: 0, z: -0.5 }
+    update_rate: 2
+    data:
+      angle:
+        type: sine_wave
+        min: -30
+        max: 30
+        period: 60

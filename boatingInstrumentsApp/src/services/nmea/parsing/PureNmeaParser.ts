@@ -141,6 +141,14 @@ export class PureNmeaParser {
       
       if (header.length < 5) return null;
 
+      // Handle BINARY format (NMEA 2000 binary PGN pseudo-sentence)
+      if (header === 'BINARY') {
+        return {
+          talker: '',
+          messageType: 'BINARY'
+        };
+      }
+
       // Handle PCDIN (Proprietary) format: PCDIN
       if (header.startsWith('PC')) {
         return {

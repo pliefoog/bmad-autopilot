@@ -12,6 +12,7 @@ const path = require('path');
 const yaml = require('js-yaml');
 const EventEmitter = require('events');
 const ScenarioSchemaValidator = require('../scenario-schema');
+const NMEA2000BinaryGenerator = require('../nmea2000-binary');
 
 /**
  * Sensor Type Registry - Protocol-agnostic sensor definitions
@@ -141,6 +142,9 @@ class ScenarioDataSource extends EventEmitter {
     // NMEA data generators for common scenarios
     this.dataGenerators = new Map();
     this.initializeDataGenerators();
+    
+    // Binary NMEA 2000 PGN generator
+    this.binaryGenerator = new NMEA2000BinaryGenerator();
   }
 
   /**
@@ -469,9 +473,12 @@ class ScenarioDataSource extends EventEmitter {
         // Handle both single messages and arrays of messages
         const messageArray = Array.isArray(messages) ? messages : [messages];
         messageArray.forEach(message => {
-          if (message && message.trim()) {
-            this.stats.messagesGenerated++;
-            this.emit('data', message);
+          if (message) {
+            // Check if it's a Buffer (binary NMEA 2000) or string (NMEA 0183)
+            if (Buffer.isBuffer(message) || (typeof message === 'string' && message.trim())) {
+              this.stats.messagesGenerated++;
+              this.emit('data', message);
+            }
           }
         });
       }
@@ -850,7 +857,7 @@ class ScenarioDataSource extends EventEmitter {
    * Initialize generators from sensor-based schema (protocol-agnostic)
    */
   initializeSensorGenerators(sensors) {
-    const bridgeMode = this.scenario.bridge_mode || this.config.bridgeMode || 'nmea0183';
+    const bridgeMode = this.config.bridgeMode || this.scenario.bridge_mode || 'nmea0183';
     console.log(`🎯 Initializing sensor generators in ${bridgeMode} mode`);
 
     sensors.forEach((sensor, index) => {
@@ -959,6 +966,7 @@ class ScenarioDataSource extends EventEmitter {
 
   /**
    * Generate NMEA 2000 PGN messages from sensor definition
+   * Returns binary Buffer frames (not PCDIN text encapsulation)
    */
   generateNMEA2000FromSensor(sensor, sensorType) {
     const pgnNumbers = sensorType.nmea2000;
@@ -969,37 +977,41 @@ class ScenarioDataSource extends EventEmitter {
     // Use the first (primary) PGN for this sensor
     const primaryPGN = pgnNumbers[0];
     
-    // Route to specific PGN generator based on sensor type
+    // Route to specific binary PGN generator based on sensor type
+    // These return Buffer objects containing binary NMEA 2000 frames
     switch (sensor.type) {
       case 'depth_sensor':
-        return this.generatePCDIN_128267(sensor); // Water Depth
+        return this.binaryGenerator.generatePGN_128267(sensor); // Water Depth
       
       case 'speed_sensor':
-        return this.generatePCDIN_128259(sensor); // Speed
+        return this.binaryGenerator.generatePGN_128259(sensor); // Speed
       
       case 'wind_sensor':
-        return this.generatePCDIN_130306(sensor); // Wind Data
+        return this.binaryGenerator.generatePGN_130306(sensor); // Wind Data
       
       case 'gps_sensor':
-        return this.generatePCDIN_129029(sensor); // GNSS Position Data
+        return this.binaryGenerator.generatePGN_129029(sensor); // GNSS Position Data
       
       case 'heading_sensor':
-        return this.generatePCDIN_127250(sensor); // Vessel Heading
+        return this.binaryGenerator.generatePGN_127250(sensor); // Vessel Heading
       
       case 'temperature_sensor':
-        return this.generatePCDIN_130310(sensor); // Environmental Parameters
+        return this.binaryGenerator.generatePGN_130310(sensor); // Environmental Parameters
       
       case 'engine_sensor':
-        return this.generatePCDIN_127488(sensor); // Engine Parameters, Rapid Update
+        // Try rapid update first (127488), fall back to dynamic (127489)
+        const rapidUpdate = this.binaryGenerator.generatePGN_127488(sensor);
+        if (rapidUpdate) return rapidUpdate;
+        return this.binaryGenerator.generatePGN_127489(sensor);
       
       case 'battery_sensor':
-        return this.generatePCDIN_127508(sensor); // Battery Status
+        return this.binaryGenerator.generatePGN_127508(sensor); // Battery Status
       
       case 'tank_sensor':
-        return this.generatePCDIN_127505(sensor); // Fluid Level
+        return this.binaryGenerator.generatePGN_127505(sensor); // Fluid Level
       
       case 'rudder_sensor':
-        return this.generatePCDIN_127245(sensor); // Rudder
+        return this.binaryGenerator.generatePGN_127245(sensor); // Rudder
       
       default:
         console.warn(`⚠️ No NMEA 2000 generator for sensor type: ${sensor.type}`);

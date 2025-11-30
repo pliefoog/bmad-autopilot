@@ -166,6 +166,9 @@ export class NmeaSensorProcessor {
         case 'PCDIN':
           result = this.processPgnMessage(parsedMessage, timestamp);
           break;
+        case 'BINARY':
+          result = this.processBinaryPgnMessage(parsedMessage, timestamp);
+          break;
         default:
           result = {
             success: false,
@@ -1368,6 +1371,85 @@ export class NmeaSensorProcessor {
   }
 
   /**
+   * Process binary NMEA 2000 PGN messages
+   * Format: $BINARY,<PGN_HEX>,<SOURCE_HEX>,<DATA_HEX_BYTES>
+   */
+  private processBinaryPgnMessage(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    console.log('[NmeaSensorProcessor] 🔍 Processing binary PGN message:', message.fields);
+    const fields = message.fields;
+    
+    // Extract PGN, source, and data from fields
+    // field_1 = PGN in hex, field_2 = source in hex, field_3 = continuous hex data string
+    const pgnHex = fields.field_1 as string;
+    const sourceHex = fields.field_2 as string;
+    const hexData = fields.field_3 as string;
+    
+    if (!pgnHex) {
+      return {
+        success: false,
+        errors: ['Invalid BINARY format: missing PGN'],
+        messageType: message.messageType
+      };
+    }
+    
+    if (!hexData) {
+      return {
+        success: false,
+        errors: ['Invalid BINARY format: missing data'],
+        messageType: message.messageType
+      };
+    }
+    
+    // Parse PGN number from hex
+    const pgnNumber = parseInt(pgnHex, 16);
+    
+    console.log(`[NmeaSensorProcessor] 📦 Parsing binary PGN ${pgnNumber} (0x${pgnHex}) with data: ${hexData}`);
+    
+    // Route to appropriate PGN handler based on PGN number
+    switch (pgnNumber) {
+      case 128267: // Water Depth
+        return this.mapPgnDepth(pgnNumber, hexData, timestamp);
+      
+      case 128259: // Speed (Water Referenced)
+        return this.mapPgnSpeed(pgnNumber, hexData, timestamp);
+      
+      case 130306: // Wind Data
+        return this.mapPgnWind(pgnNumber, hexData, timestamp);
+      
+      case 129029: // GNSS Position Data
+        return this.mapPgnGPS(pgnNumber, hexData, timestamp);
+      
+      case 127250: // Vessel Heading
+        return this.mapPgnHeading(pgnNumber, hexData, timestamp);
+      
+      case 130310: // Environmental Parameters (Temperature)
+        return this.mapPgnTemperature(pgnNumber, hexData, timestamp);
+      
+      case 127245: // Rudder
+        return this.mapPgnRudder(pgnNumber, hexData, timestamp);
+      
+      case 127488: // Engine Parameters, Rapid Update
+      case 127489: // Engine Parameters, Dynamic
+        return this.mapPgnEngine(pgnNumber, hexData, timestamp);
+      
+      case 127508: // Battery Status
+      case 127513: // Battery Configuration Status
+        return this.mapPgnBattery(pgnNumber, hexData, timestamp);
+      
+      case 127505: // Fluid Level (Tanks)
+        return this.mapPgnTank(pgnNumber, hexData, timestamp);
+      
+      default:
+        console.log(`[NmeaSensorProcessor] ⚠️ Unsupported binary PGN: ${pgnNumber} (0x${pgnHex})`);
+        return {
+          success: false,
+          errors: [`Unsupported binary PGN: ${pgnNumber}`],
+          messageType: message.messageType
+        };
+    }
+  }
+
+  /**
    * Map Engine PGN data to SensorUpdate
    * PGN 127488: Engine Parameters, Rapid Update
    * PGN 127489: Engine Parameters, Dynamic
@@ -1682,6 +1764,241 @@ export class NmeaSensorProcessor {
       successfulMessages: 0,
       failedMessages: 0
     };
+  }
+
+  /**
+   * Map Depth PGN data to SensorUpdate (PGN 128267)
+   */
+  private mapPgnDepth(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const depthData = pgnParser.parseDepthPgn(hexData);
+      if (!depthData) {
+        return { success: false, errors: ['Failed to parse depth PGN'] };
+      }
+
+      const update: SensorUpdate = {
+        sensorType: 'depth',
+        instance: 0,
+        value: depthData.depth,
+        unit: 'meters',
+        timestamp
+      };
+
+      return {
+        success: true,
+        updates: [update],
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Depth PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Speed PGN data to SensorUpdate (PGN 128259)
+   */
+  private mapPgnSpeed(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const speedData = pgnParser.parseSpeedPgn(hexData);
+      if (!speedData) {
+        return { success: false, errors: ['Failed to parse speed PGN'] };
+      }
+
+      const update: SensorUpdate = {
+        sensorType: 'speed',
+        instance: 0,
+        value: speedData.speed,
+        unit: 'knots',
+        timestamp
+      };
+
+      return {
+        success: true,
+        updates: [update],
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Speed PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Wind PGN data to SensorUpdate (PGN 130306)
+   */
+  private mapPgnWind(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const windData = pgnParser.parseWindPgn(hexData);
+      if (!windData) {
+        return { success: false, errors: ['Failed to parse wind PGN'] };
+      }
+
+      const updates: SensorUpdate[] = [
+        {
+          sensorType: 'wind_speed',
+          instance: 0,
+          value: windData.windSpeed,
+          unit: 'knots',
+          timestamp
+        },
+        {
+          sensorType: 'wind_direction',
+          instance: 0,
+          value: windData.windAngle,
+          unit: 'degrees',
+          timestamp
+        }
+      ];
+
+      return {
+        success: true,
+        updates,
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Wind PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map GPS PGN data to SensorUpdate (PGN 129029)
+   */
+  private mapPgnGPS(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const gpsData = pgnParser.parseGPSPgn(hexData);
+      if (!gpsData) {
+        return { success: false, errors: ['Failed to parse GPS PGN'] };
+      }
+
+      const updates: SensorUpdate[] = [
+        {
+          sensorType: 'gps_latitude',
+          instance: 0,
+          value: gpsData.latitude,
+          unit: 'degrees',
+          timestamp
+        },
+        {
+          sensorType: 'gps_longitude',
+          instance: 0,
+          value: gpsData.longitude,
+          unit: 'degrees',
+          timestamp
+        }
+      ];
+
+      return {
+        success: true,
+        updates,
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`GPS PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Heading PGN data to SensorUpdate (PGN 127250)
+   */
+  private mapPgnHeading(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const headingData = pgnParser.parseHeadingPgn(hexData);
+      if (!headingData) {
+        return { success: false, errors: ['Failed to parse heading PGN'] };
+      }
+
+      const update: SensorUpdate = {
+        sensorType: 'heading',
+        instance: 0,
+        value: headingData.heading,
+        unit: 'degrees',
+        timestamp
+      };
+
+      return {
+        success: true,
+        updates: [update],
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Heading PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Temperature PGN data to SensorUpdate (PGN 130310)
+   */
+  private mapPgnTemperature(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const tempData = pgnParser.parseTemperaturePgn(hexData);
+      if (!tempData) {
+        return { success: false, errors: ['Failed to parse temperature PGN'] };
+      }
+
+      const update: SensorUpdate = {
+        sensorType: 'water_temperature',
+        instance: 0,
+        value: tempData.temperature,
+        unit: 'celsius',
+        timestamp
+      };
+
+      return {
+        success: true,
+        updates: [update],
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Temperature PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Rudder PGN data to SensorUpdate (PGN 127245)
+   */
+  private mapPgnRudder(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const rudderData = pgnParser.parseRudderPgn(hexData);
+      if (!rudderData) {
+        return { success: false, errors: ['Failed to parse rudder PGN'] };
+      }
+
+      const update: SensorUpdate = {
+        sensorType: 'rudder',
+        instance: 0,
+        value: rudderData.rudderAngle,
+        unit: 'degrees',
+        timestamp
+      };
+
+      return {
+        success: true,
+        updates: [update],
+        messageType: 'BINARY'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Rudder PGN parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
   }
 }
 

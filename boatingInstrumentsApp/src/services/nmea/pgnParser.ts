@@ -178,6 +178,119 @@ export class PgnParser {
   }
 
   /**
+   * Parse depth PGN (128267)
+   */
+  public parseDepthPgn(data: string): { depth: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 5) return null;
+    
+    // Depth in 0.01m resolution (bytes 1-4, little-endian 32-bit)
+    const depthRaw = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
+    if (depthRaw === 0xFFFFFFFF) return null; // Invalid
+    
+    return { depth: depthRaw * 0.01 };
+  }
+
+  /**
+   * Parse speed PGN (128259)
+   */
+  public parseSpeedPgn(data: string): { speed: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 5) return null;
+    
+    // Speed in 0.01 m/s resolution (bytes 1-2, little-endian 16-bit)
+    const speedRaw = bytes[1] | (bytes[2] << 8);
+    if (speedRaw === 0xFFFF) return null; // Invalid
+    
+    return { speed: speedRaw * 0.01 * 1.94384 }; // Convert m/s to knots
+  }
+
+  /**
+   * Parse wind PGN (130306)
+   */
+  public parseWindPgn(data: string): { windSpeed: number; windAngle: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 6) return null;
+    
+    // Wind speed in 0.01 m/s resolution (bytes 1-2, little-endian 16-bit)
+    const speedRaw = bytes[1] | (bytes[2] << 8);
+    // Wind angle in 0.0001 radians resolution (bytes 3-4, little-endian 16-bit)
+    const angleRaw = bytes[3] | (bytes[4] << 8);
+    
+    if (speedRaw === 0xFFFF || angleRaw === 0xFFFF) return null;
+    
+    return {
+      windSpeed: speedRaw * 0.01 * 1.94384, // Convert m/s to knots
+      windAngle: angleRaw * 0.0001 * (180 / Math.PI) // Convert radians to degrees
+    };
+  }
+
+  /**
+   * Parse GPS PGN (129029) - Fast Packet
+   */
+  public parseGPSPgn(data: string): { latitude: number; longitude: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 13) return null;
+    
+    // Latitude in 1e-7 degree resolution (bytes 5-8, little-endian 32-bit signed)
+    const latRaw = bytes[5] | (bytes[6] << 8) | (bytes[7] << 16) | (bytes[8] << 24);
+    // Longitude in 1e-7 degree resolution (bytes 9-12, little-endian 32-bit signed)
+    const lonRaw = bytes[9] | (bytes[10] << 8) | (bytes[11] << 16) | (bytes[12] << 24);
+    
+    if (latRaw === 0x7FFFFFFF || lonRaw === 0x7FFFFFFF) return null;
+    
+    // Convert to signed 32-bit
+    const latitude = (latRaw > 0x7FFFFFFF ? latRaw - 0x100000000 : latRaw) * 1e-7;
+    const longitude = (lonRaw > 0x7FFFFFFF ? lonRaw - 0x100000000 : lonRaw) * 1e-7;
+    
+    return { latitude, longitude };
+  }
+
+  /**
+   * Parse heading PGN (127250)
+   */
+  public parseHeadingPgn(data: string): { heading: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 3) return null;
+    
+    // Heading in 0.0001 radians resolution (bytes 1-2, little-endian 16-bit)
+    const headingRaw = bytes[1] | (bytes[2] << 8);
+    if (headingRaw === 0xFFFF) return null;
+    
+    return { heading: headingRaw * 0.0001 * (180 / Math.PI) }; // Convert radians to degrees
+  }
+
+  /**
+   * Parse temperature PGN (130310)
+   */
+  public parseTemperaturePgn(data: string): { temperature: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 5) return null;
+    
+    // Temperature in 0.01K resolution (bytes 3-4, little-endian 16-bit)
+    const tempRaw = bytes[3] | (bytes[4] << 8);
+    if (tempRaw === 0xFFFF) return null;
+    
+    return { temperature: tempRaw * 0.01 - 273.15 }; // Convert Kelvin to Celsius
+  }
+
+  /**
+   * Parse rudder PGN (127245)
+   */
+  public parseRudderPgn(data: string): { rudderAngle: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 6) return null;
+    
+    // Rudder angle in 0.0001 radians resolution (bytes 4-5, little-endian 16-bit signed)
+    const angleRaw = bytes[4] | (bytes[5] << 8);
+    if (angleRaw === 0xFFFF) return null;
+    
+    // Convert to signed 16-bit
+    const angleSigned = angleRaw > 0x7FFF ? angleRaw - 0x10000 : angleRaw;
+    return { rudderAngle: angleSigned * 0.0001 * (180 / Math.PI) }; // Convert radians to degrees
+  }
+
+  /**
    * Extract fields from canboat parsed data
    */
   private extractFieldsFromCanboat(fields: any): Record<string, any> {
