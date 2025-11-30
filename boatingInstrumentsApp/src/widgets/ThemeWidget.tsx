@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemeStore } from '../store/themeStore';
 import * as Brightness from 'expo-brightness';
@@ -81,6 +81,28 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
     useThemeStore.getState().toggleNativeBrightnessControl();
   }, []);
 
+  const setBrightnessToMax = React.useCallback(() => {
+    useThemeStore.getState().setBrightness(1.0);
+    if (!useThemeStore.getState().nativeBrightnessControl && Platform.OS !== 'web') {
+      Brightness.setBrightnessAsync(1.0);
+    }
+  }, []);
+
+  // Double-click detection for brightness bar
+  const lastTapRef = React.useRef<number>(0);
+  const handleBrightnessBarPress = React.useCallback(() => {
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300; // ms
+    
+    if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
+      // Double click detected
+      setBrightnessToMax();
+      lastTapRef.current = 0; // Reset to avoid triple-click
+    } else {
+      lastTapRef.current = now;
+    }
+  }, [setBrightnessToMax]);
+
   // Calculate responsive header sizes based on widget dimensions
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
 
@@ -114,7 +136,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
     themeButton: {
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
+      borderWidth: 0,
       borderRadius: 0,
       width: '100%',
       height: '100%',
@@ -124,9 +146,6 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
     brightnessSection: {
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      paddingVertical: 4,
-      paddingHorizontal: 8,
       width: '100%',
       height: '100%',
     },
@@ -138,24 +157,23 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
       flexDirection: 'row',
       alignItems: 'center',
       width: '100%',
-      gap: 8,
     },
     brightnessButton: {
-      width: 28,
-      height: 28,
-      borderWidth: 1,
+      width: 40,
+      height: 40,
+      borderWidth: 2,
       borderColor: unadjustedColors.border,
-      borderRadius: 14,
+      borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
     },
     brightnessBar: {
       flex: 1,
-      height: 10,
+      height: 15,
       borderRadius: 5,
       backgroundColor: theme.surface,
       overflow: 'hidden',
-      borderWidth: 2,
+      borderWidth: 0,
       borderColor: theme.border,
     },
     brightnessFill: {
@@ -167,7 +185,6 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingVertical: 4,
-      paddingHorizontal: 8,
       borderRadius: 0,
       borderWidth: 0,
       borderColor: theme.border,
@@ -203,7 +220,14 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
           styles.themeButton,
           {
             backgroundColor: mode === 'day' ? theme.text : 'transparent',
-            borderColor: mode === 'day' ? theme.text : theme.border,
+            borderLeftWidth: 1,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderRightWidth: 1,
+            borderLeftColor: mode === 'day' ? theme.text : theme.border,
+            borderTopColor: mode === 'day' ? theme.text : theme.border,
+            borderBottomColor: mode === 'day' ? theme.text : theme.border,
+            borderRightColor: mode === 'day' ? theme.text : theme.border,
           }
         ]}
         onPress={handleDayPress}
@@ -220,7 +244,13 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
           styles.themeButton,
           {
             backgroundColor: mode === 'night' ? theme.text : 'transparent',
-            borderColor: mode === 'night' ? theme.text : theme.border,
+            borderLeftWidth: 1,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderRightWidth: 0,
+            borderLeftColor: mode === 'night' ? theme.text : theme.border,
+            borderTopColor: mode === 'night' ? theme.text : theme.border,
+            borderBottomColor: mode === 'night' ? theme.text : theme.border,
           }
         ]}
         onPress={handleNightPress}
@@ -237,7 +267,14 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
           styles.themeButton,
           {
             backgroundColor: mode === 'red-night' ? theme.text : 'transparent',
-            borderColor: mode === 'red-night' ? theme.text : theme.border,
+            borderLeftWidth: 1,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderRightWidth: 1,
+            borderLeftColor: mode === 'red-night' ? theme.text : theme.border,
+            borderTopColor: mode === 'red-night' ? theme.text : theme.border,
+            borderBottomColor: mode === 'red-night' ? theme.text : theme.border,
+            borderRightColor: mode === 'red-night' ? theme.text : theme.border,
           }
         ]}
         onPress={handleRedPress}
@@ -254,7 +291,13 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
           styles.themeButton,
           {
             backgroundColor: mode === 'auto' ? theme.text : 'transparent',
-            borderColor: mode === 'auto' ? theme.text : theme.border,
+            borderLeftWidth: 1,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderRightWidth: 0,
+            borderLeftColor: mode === 'auto' ? theme.text : theme.border,
+            borderTopColor: mode === 'auto' ? theme.text : theme.border,
+            borderBottomColor: mode === 'auto' ? theme.text : theme.border,
           }
         ]}
         onPress={handleAutoPress}
@@ -267,10 +310,10 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
       </TouchableOpacity>
 
       {/* Row 2: Brightness Controls (spans 2 columns in secondary) */}
-      <View style={styles.brightnessSection}>
-        <Text style={styles.brightnessLabel}>
-          {Math.round(brightness * 100)}%
-        </Text>
+      <Pressable 
+        style={styles.brightnessSection}
+        onPress={handleBrightnessBarPress}
+      >
         <View style={styles.brightnessControls}>
           <TouchableOpacity
             style={styles.brightnessButton}
@@ -279,7 +322,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
           >
             <Ionicons 
               name="remove" 
-              size={16} 
+              size={20} 
               color={brightness <= 0.1 ? unadjustedColors.textSecondary : unadjustedColors.text} 
             />
           </TouchableOpacity>
@@ -300,12 +343,12 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
           >
             <Ionicons 
               name="add" 
-              size={16} 
+              size={20} 
               color={brightness >= 1.0 ? unadjustedColors.textSecondary : unadjustedColors.text} 
             />
           </TouchableOpacity>
         </View>
-      </View>
+      </Pressable>
 
       {/* Row 3: Native Control Toggle (spans 2 columns, non-web only) */}
       {Platform.OS !== 'web' && (
