@@ -11,6 +11,7 @@ import { TanksWidget } from './TanksWidget';
 import { AutopilotStatusWidget } from './AutopilotStatusWidget';
 import { RudderPositionWidget } from './RudderPositionWidget';
 import { DynamicTemperatureWidget } from './DynamicTemperatureWidget';
+import { TemperatureWidget } from './TemperatureWidget';
 import { ThemeWidget } from './ThemeWidget';
 
 /**
@@ -96,6 +97,19 @@ export function registerAllWidgets(): void {
       configurable: true,
     },
     WindWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'temperature',
+      title: 'Temperature',
+      icon: 'thermometer-outline',
+      description: 'Multi-sensor temperature display',
+      category: 'environment',
+      defaultSize: { width: 160, height: 200 },
+      configurable: true,
+    },
+    TemperatureWidget
   );
 
   WidgetRegistry.register(
