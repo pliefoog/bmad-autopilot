@@ -53,7 +53,7 @@ const getStatusColor = (autopilotData: any, theme: any) => {
   return theme.warning;
 };
 
-describe('AutopilotStatusWidget', () => {
+describe('AutopilotWidget', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseTheme.mockReturnValue(mockTheme);

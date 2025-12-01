@@ -10,7 +10,7 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import { useResponsiveScale } from '../hooks/useResponsiveScale';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
-interface RudderPositionWidgetProps {
+interface RudderWidgetProps {
   id: string;
   title: string;
   width?: number;  // Widget width for responsive scaling
@@ -18,11 +18,11 @@ interface RudderPositionWidgetProps {
 }
 
 /**
- * RudderPositionWidget - Rudder angle display with SVG visualization per ui-architecture.md v2.3
+ * RudderWidget - Rudder angle display with SVG visualization per ui-architecture.md v2.3
  * Primary Grid (2×1): Rudder angle with direction + Rate
  * Secondary: SVG rudder visualization with boat outline
  */
-export const RudderPositionWidget: React.FC<RudderPositionWidgetProps> = React.memo(({ id, title, width, height }) => {
+export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
   const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
@@ -332,4 +332,4 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
   );
 };
 
-export default RudderPositionWidget;
+export default RudderWidget;

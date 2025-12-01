@@ -9,11 +9,11 @@ import { useMetricDisplay } from '../hooks/useMetricDisplay';
 import { AutopilotCommandManager, AutopilotMode } from '../services/autopilotService';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
-interface AutopilotStatusWidgetProps {
+interface AutopilotWidgetProps {
   showControls?: boolean;
 }
 
-export const AutopilotStatusWidget: React.FC<AutopilotStatusWidgetProps> = ({ showControls = false }) => {
+export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ showControls = false }) => {
   // Clean sensor data access - NMEA Store v2.0
   const autopilot = useNmeaStore((state) => state.getSensorData('autopilot', 0));
   const compass = useNmeaStore((state) => state.getSensorData('compass', 0));

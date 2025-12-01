@@ -15,7 +15,7 @@ import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
-interface DynamicTemperatureWidgetProps {
+interface TemperatureWidgetProps {
   id: string;
   title: string;
   width?: number;
@@ -30,7 +30,7 @@ interface DynamicTemperatureWidgetProps {
  * Secondary Grid (2×1): Location + Instance
  * Supports multi-instance temperature sensors (seawater, engine, cabin, exhaust, etc.)
  */
-export const DynamicTemperatureWidget: React.FC<DynamicTemperatureWidgetProps> = React.memo(({ id, title, width, height, maxWidth, cellHeight }) => {
+export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({ id, title, width, height, maxWidth, cellHeight }) => {
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
 

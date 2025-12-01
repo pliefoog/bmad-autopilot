@@ -48,7 +48,7 @@ const getRudderColor = (angle: number, theme: any) => {
   return theme.primary;
 };
 
-describe('RudderPositionWidget', () => {
+describe('RudderWidget', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseTheme.mockReturnValue(mockTheme);

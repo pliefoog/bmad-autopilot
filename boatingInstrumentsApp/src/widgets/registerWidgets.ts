@@ -8,9 +8,9 @@ import { NavigationWidget } from './NavigationWidget';
 import { EngineWidget } from './EngineWidget';
 import { BatteryWidget } from './BatteryWidget';
 import { TanksWidget } from './TanksWidget';
-import { AutopilotStatusWidget } from './AutopilotStatusWidget';
-import { RudderPositionWidget } from './RudderPositionWidget';
-import { DynamicTemperatureWidget } from './DynamicTemperatureWidget';
+import { AutopilotWidget } from './AutopilotWidget';
+import { RudderWidget } from './RudderWidget';
+import { TemperatureWidget } from './TemperatureWidget';
 import { ThemeWidget } from './ThemeWidget';
 
 /**
@@ -98,19 +98,6 @@ export function registerAllWidgets(): void {
     WindWidget
   );
 
-  WidgetRegistry.register(
-    {
-      id: 'watertemp',
-      title: 'Water Temp',
-      icon: 'thermometer-outline',
-      description: 'Water temperature sensor',
-      category: 'environment',
-      defaultSize: { width: 160, height: 160 },
-      configurable: true,
-    },
-    DynamicTemperatureWidget
-  );
-
   // Register multi-instance temperature widget (supports all NMEA temperature zones)
   WidgetRegistry.register(
     {
@@ -122,7 +109,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    DynamicTemperatureWidget
+    TemperatureWidget
   );
 
   // Engine widgets
@@ -193,7 +180,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    AutopilotStatusWidget
+    AutopilotWidget
   );
 
   WidgetRegistry.register(
@@ -206,7 +193,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    RudderPositionWidget
+    RudderWidget
   );
 
   // Utility widgets

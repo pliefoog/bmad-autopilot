@@ -32,7 +32,7 @@ import { CompassWidget } from '../../widgets/CompassWidget';
 import { EngineWidget } from '../../widgets/EngineWidget';
 import { BatteryWidget } from '../../widgets/BatteryWidget';
 import { TanksWidget } from '../../widgets/TanksWidget';
-import { AutopilotStatusWidget } from '../../widgets/AutopilotStatusWidget';
+import { AutopilotWidget } from '../../widgets/AutopilotWidget';
 
 interface ResponsiveDashboardProps {
   headerHeight?: number;
@@ -107,7 +107,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     engine: EngineWidget,
     battery: BatteryWidget,
     tanks: TanksWidget,
-    autopilot: AutopilotStatusWidget,
+    autopilot: AutopilotWidget,
   };
 
   // AC 4: Real-time adaptation - recalculate pages when grid changes

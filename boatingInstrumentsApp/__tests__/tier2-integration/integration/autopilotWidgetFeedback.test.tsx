@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { AutopilotStatusWidget } from "../../../src/widgets/AutopilotStatusWidget";
+import { AutopilotWidget } from "../../../src/widgets/AutopilotWidget";
 import { useNmeaStore } from "../../../src/store/nmeaStore";
 
 // Mock the autopilot service
@@ -51,7 +51,7 @@ describe('Autopilot Widget Command Status Integration', () => {
 
       // STEP 2: Render the autopilot widget with controls
       const { getByText, getByTestId, rerender } = render(
-        <AutopilotStatusWidget showControls={true} />
+        <AutopilotWidget showControls={true} />
       );
 
       // STEP 3: Verify initial state shows widget is rendered
@@ -69,7 +69,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       // STEP 5: Re-render to reflect command status update
-      rerender(<AutopilotStatusWidget showControls={true} />);
+      rerender(<AutopilotWidget showControls={true} />);
 
       // STEP 6: Verify widget shows command in progress
       expect(getByText(/Engaging autopilot/i)).toBeTruthy();
@@ -87,7 +87,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       // STEP 8: Re-render to show final status
-      rerender(<AutopilotStatusWidget showControls={true} />);
+      rerender(<AutopilotWidget showControls={true} />);
 
       // STEP 9: Verify widget reflects successful engagement
       expect(getByText(/success/i)).toBeTruthy();
@@ -104,7 +104,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       const { getByText, rerender } = render(
-        <AutopilotStatusWidget showControls={true} />
+        <AutopilotWidget showControls={true} />
       );
 
       // Simulate command error
@@ -118,7 +118,7 @@ describe('Autopilot Widget Command Status Integration', () => {
         }
       });
 
-      rerender(<AutopilotStatusWidget showControls={true} />);
+      rerender(<AutopilotWidget showControls={true} />);
 
       // Verify error status is displayed
       expect(getByText(/error/i) || getByText(/failed/i)).toBeTruthy();
@@ -134,7 +134,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       const { getByText, rerender } = render(
-        <AutopilotStatusWidget showControls={true} />
+        <AutopilotWidget showControls={true} />
       );
 
       // Simulate command timeout
@@ -149,7 +149,7 @@ describe('Autopilot Widget Command Status Integration', () => {
         }
       });
 
-      rerender(<AutopilotStatusWidget showControls={true} />);
+      rerender(<AutopilotWidget showControls={true} />);
 
       // Verify timeout status is communicated
       expect(getByText(/timeout/i) || getByText(/timed out/i)).toBeTruthy();
@@ -167,7 +167,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       const { getByText, rerender, queryByText } = render(
-        <AutopilotStatusWidget showControls={true} />
+        <AutopilotWidget showControls={true} />
       );
 
       // Verify command status is shown
@@ -184,7 +184,7 @@ describe('Autopilot Widget Command Status Integration', () => {
         }
       });
 
-      rerender(<AutopilotStatusWidget showControls={true} />);
+      rerender(<AutopilotWidget showControls={true} />);
 
       // Verify command status is no longer displayed
       expect(queryByText(/Processing command/i)).toBeNull();
@@ -196,7 +196,7 @@ describe('Autopilot Widget Command Status Integration', () => {
   describe('Real-time Status Updates', () => {
     it('should update widget when autopilot data changes in store', () => {
       const { getByText, getByTestId, rerender } = render(
-        <AutopilotStatusWidget showControls={false} />
+        <AutopilotWidget showControls={false} />
       );
 
       // Initially should show autopilot widget
@@ -214,7 +214,7 @@ describe('Autopilot Widget Command Status Integration', () => {
         }
       });
 
-      rerender(<AutopilotStatusWidget showControls={false} />);
+      rerender(<AutopilotWidget showControls={false} />);
 
       // Verify widget displays current autopilot status
       expect(getByText(/AUTO/i)).toBeTruthy();
@@ -233,7 +233,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       const { getByText, rerender } = render(
-        <AutopilotStatusWidget showControls={false} />
+        <AutopilotWidget showControls={false} />
       );
 
       // Verify initial heading
@@ -249,7 +249,7 @@ describe('Autopilot Widget Command Status Integration', () => {
         }
       });
 
-      rerender(<AutopilotStatusWidget showControls={false} />);
+      rerender(<AutopilotWidget showControls={false} />);
 
       // Verify updated heading is displayed
       expect(getByText(/190/)).toBeTruthy();
@@ -269,7 +269,7 @@ describe('Autopilot Widget Command Status Integration', () => {
       });
 
       const { rerender, getByText } = render(
-        <AutopilotStatusWidget showControls={true} />
+        <AutopilotWidget showControls={true} />
       );
 
       // Simulate confirmation dialog state (would be triggered by user interaction)
@@ -282,7 +282,7 @@ describe('Autopilot Widget Command Status Integration', () => {
         }
       });
 
-      rerender(<AutopilotStatusWidget showControls={true} />);
+      rerender(<AutopilotWidget showControls={true} />);
 
       // Widget should show confirmation is pending
       expect(getByText(/confirmation/i) || getByText(/Awaiting/i)).toBeTruthy();
