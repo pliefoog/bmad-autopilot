@@ -31,21 +31,12 @@ function renderWidget(
     return <Component key={key} id={key} title={title} width={width} height={height} />;
   }
   
-  console.error(`[DynamicDashboard] Widget lookup failed:`, {
-    originalKey: key,
-    baseType,
-    registryCount: WidgetRegistry.getCount(),
-    availableWidgets: WidgetRegistry.getAllWidgets().map(w => w.id)
-  });
-  
   // Trigger cleanup if callback provided
   if (onWidgetError) {
-    console.log(`[DynamicDashboard] Triggering cleanup for invalid widget: ${key}`);
     onWidgetError(key);
   }
   
   // Return null instead of throwing to prevent crashes
-  console.warn(`[DynamicDashboard] Rendering placeholder for missing widget: ${key}`);
   return null;
 }
 
@@ -99,8 +90,6 @@ export const DynamicDashboard: React.FC = () => {
     return dashboard?.widgets || [];
   });
   
-  console.log('[DynamicDashboard] Store widgets:', storeWidgets.length, 'dashboard:', currentDashboard);
-  
   const [layout, setLayout] = useState<DynamicWidgetLayout[]>([]);
   const [showSelector, setShowSelector] = useState(false);
   const [isDragMode, setIsDragMode] = useState(false);
@@ -125,45 +114,20 @@ export const DynamicDashboard: React.FC = () => {
     const footerHeight = 88;
     const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
     const config = DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
-    console.log('[DynamicDashboard] Grid config calculated:', {
-      columns: config.columns,
-      rows: config.rows,
-      widgetWidth: config.widgetWidth,
-      widgetHeight: config.widgetHeight,
-      spacing: config.spacing,
-      margin: config.margin,
-      availableWidth: config.availableWidth,
-      availableHeight: config.availableHeight,
-      dimensions
-    });
     return config;
   }, [dimensions, storeWidgets]);
   
   const styles = useMemo(() => createStyles(theme, gridConfig), [theme, gridConfig]);
 
-  console.log('[DynamicDashboard] Widget store state:', {
-    currentDashboard,
-    dashboardCount: useWidgetStore.getState().dashboards.length,
-    widgetCount: storeWidgets.length,
-    widgetIds: storeWidgets.map(w => w.id)
-  });
-
   // Register all widgets on mount
   useEffect(() => {
-    console.log('[DynamicDashboard] Registering all widgets...');
     registerAllWidgets();
-    console.log('[DynamicDashboard] Widget registry count:', WidgetRegistry.getCount());
-    console.log('[DynamicDashboard] Registered widgets:', WidgetRegistry.getAllWidgets().map(w => w.id));
   }, []);
 
   // Listen for dimension changes (window resize)
   useEffect(() => {
     // React Native Dimensions API listener
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      console.log('[DynamicDashboard] RN Dimensions changed:', { 
-        width: window.width, 
-        height: window.height
-      });
       setDimensions({ width: window.width, height: window.height });
       setCurrentPage(0);
     });
@@ -171,7 +135,6 @@ export const DynamicDashboard: React.FC = () => {
     // Web-specific window resize listener for more reliable updates
     const handleResize = () => {
       const { width, height } = Dimensions.get('window');
-      console.log('[DynamicDashboard] Web window resize:', { width, height });
       setDimensions({ width, height });
       setCurrentPage(0);
     };
@@ -208,44 +171,12 @@ export const DynamicDashboard: React.FC = () => {
     // Convert to DynamicWidgetLayout using new grid system
     const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, headerHeight, footerHeight);
     
-    const gridConfig = DynamicLayoutService.getGridConfig(headerHeight, footerHeight);
-    
-    console.log('[DynamicDashboard] Grid layout calculated:', {
-      totalWidgets: widgets.length,
-      visibleWidgets: widgetLayouts.filter(w => w.visible).length,
-      columns: gridConfig.columns,
-      rows: gridConfig.rows,
-      widgetSize: `${gridConfig.widgetWidth}x${gridConfig.widgetHeight}`,
-      widgetsPerPage: gridConfig.columns * gridConfig.rows,
-      usePagination: gridConfig.rows < 999,
-      screenWidth: dimensions.width,
-      screenHeight: dimensions.height,
-      totalPages: Math.ceil(widgetLayouts.filter(w => w.visible).length / (gridConfig.columns * gridConfig.rows)),
-      gridLayoutCount: gridLayout.length,
-      firstWidgetDimensions: gridLayout[0] ? `${gridLayout[0].width}x${gridLayout[0].height}` : 'none'
-    });
-    
     return gridLayout;
   }, [dimensions]);
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
-    console.log('[DynamicDashboard] Layout recalculation triggered:', {
-      reason: 'storeWidgets or dimensions or calculateGridLayout changed',
-      widgetCount: storeWidgets.length,
-      dimensions: dimensions,
-      timestamp: Date.now()
-    });
     const gridLayout = calculateGridLayout(storeWidgets);
-    console.log('[DynamicDashboard] Grid layout calculated:', {
-      layoutCount: gridLayout.length,
-      firstWidget: gridLayout[0] ? {
-        id: gridLayout[0].id,
-        page: gridLayout[0].page,
-        gridPosition: gridLayout[0].gridPosition,
-        size: `${gridLayout[0].width}x${gridLayout[0].height}`
-      } : null
-    });
     setLayout(gridLayout);
   }, [storeWidgets, calculateGridLayout, dimensions]);
 
@@ -275,10 +206,8 @@ export const DynamicDashboard: React.FC = () => {
       const { updateDashboard, currentDashboard } = useWidgetStore.getState();
       updateDashboard(currentDashboard, { widgets: updatedWidgets });
       setLayout(newLayout);
-      
-      console.log('[DynamicDashboard] Layout saved to widget store');
     } catch (error) {
-      console.error('[DynamicDashboard] Failed to save layout:', error);
+      // Silent fail - layout updates are non-critical
     }
   }, [storeWidgets]);
 
@@ -338,7 +267,6 @@ export const DynamicDashboard: React.FC = () => {
     });
     
     setShowSelector(false);
-    console.log('[DynamicDashboard] Added', newIds.length, 'widgets to store');
   }, [storeWidgets]);
 
   // Handle removing widgets (pure widget store)
@@ -371,7 +299,6 @@ export const DynamicDashboard: React.FC = () => {
         }
       });
     }
-    console.log('[DynamicDashboard] Removed widget:', widgetId);
   }, [storeWidgets]);
 
   // Handle undo remove (pure widget store)
@@ -381,7 +308,6 @@ export const DynamicDashboard: React.FC = () => {
     // Find the removed widget in the original store state
     const originalWidget = storeWidgets.find(w => w.id === removedWidget.widget.id);
     if (!originalWidget) {
-      console.error('[DynamicDashboard] Cannot restore widget - not found in store');
       return;
     }
 
@@ -394,12 +320,10 @@ export const DynamicDashboard: React.FC = () => {
     
     setRemovedWidget(null);
     toast.showSuccess(`Restored ${originalWidget.id} widget`, { source: 'dashboard' });
-    console.log('[DynamicDashboard] Restored widget:', originalWidget.id);
   }, [removedWidget, storeWidgets]);
 
   // Handle widget rendering errors by cleaning up invalid widgets
   const handleWidgetError = useCallback((widgetId: string) => {
-    console.log(`[DynamicDashboard] Handling widget error for: ${widgetId}`);
     // Trigger cleanup of orphaned widgets using getState()
     useWidgetStore.getState().cleanupOrphanedWidgets();
   }, []);
@@ -415,12 +339,6 @@ export const DynamicDashboard: React.FC = () => {
     let currentRow: DynamicWidgetLayout[] = [];
     let currentRowWidth = 0;
     
-    console.log('[DynamicDashboard] Grouping widgets into rows:', {
-      totalWidgets: layout.filter(w => w.visible).length,
-      screenWidth,
-      availableWidth
-    });
-    
     layout.filter(w => w.visible).forEach((widget, index) => {
       const widgetWidth = widget.size.width;
       
@@ -430,13 +348,6 @@ export const DynamicDashboard: React.FC = () => {
       
       if (wouldExceed && currentRow.length > 0) {
         // Start new row - widget doesn't fit
-        console.log('[DynamicDashboard] Row completed, starting new row:', {
-          completedRowWidgets: currentRow.length,
-          completedRowWidth: currentRowWidth,
-          carryoverWidget: widget.id,
-          carryoverWidth: widgetWidth,
-          availableWidth
-        });
         rows.push(currentRow);
         currentRow = [widget];
         currentRowWidth = widgetWidth;
@@ -450,13 +361,7 @@ export const DynamicDashboard: React.FC = () => {
     // Add last row
     if (currentRow.length > 0) {
       rows.push(currentRow);
-      console.log('[DynamicDashboard] Final row:', {
-        widgetCount: currentRow.length,
-        rowWidth: currentRowWidth
-      });
     }
-    
-    console.log('[DynamicDashboard] Total rows created:', rows.length);
     
     return rows;
   }, [layout, dimensions]);
@@ -488,27 +393,8 @@ export const DynamicDashboard: React.FC = () => {
   // Determine if we should use scroll mode (mobile) or pagination (tablet/desktop)
   const useScrollMode = useMemo(() => {
     const isScrollMode = dimensions.width < 768;
-    console.log('[DynamicDashboard] useScrollMode recalculated:', { 
-      width: dimensions.width, 
-      isScrollMode 
-    });
     return isScrollMode;
   }, [dimensions.width]);
-
-  console.log('[DynamicDashboard] Render mode:', {
-    totalPages,
-    usePagination,
-    useScrollMode,
-    currentPage,
-    widgetCount: currentPageWidgets.length,
-    dimensions,
-    firstWidgetDimensions: currentPageWidgets[0] ? `${currentPageWidgets[0].width}x${currentPageWidgets[0].height}` : 'none',
-    gridConfig: {
-      columns: gridConfig.columns,
-      widgetWidth: gridConfig.widgetWidth,
-      widgetHeight: gridConfig.widgetHeight
-    }
-  });
 
   const goToNextPage = useCallback(() => {
     if (currentPage < totalPages - 1) {

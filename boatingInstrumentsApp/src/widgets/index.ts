@@ -1,5 +1,6 @@
-// Widgets module entry point
-export const initWidgets = () => {
-  // TODO: Implement widgets initialization
-  return 'Widgets initialized';
-};
+// Widgets module entry point - exports for widget registry and initialization
+export { WidgetRegistry } from './WidgetRegistry';
+export { registerAllWidgets } from './registerWidgets';
+export { DynamicDashboard } from './DynamicDashboard';
+export { WidgetSelector } from './WidgetSelector';
+export { WidgetErrorBoundary } from './WidgetErrorBoundary';
