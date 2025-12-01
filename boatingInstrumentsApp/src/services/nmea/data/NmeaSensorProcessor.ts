@@ -26,7 +26,8 @@ import type {
   CompassSensorData,
   TemperatureSensorData,
   BatterySensorData,
-  TankSensorData
+  TankSensorData,
+  AutopilotSensorData
 } from '../../../types/SensorData';
 import { useWidgetStore } from '../../../store/widgetStore';
 
@@ -161,6 +162,15 @@ export class NmeaSensorProcessor {
           break;
         case 'XDR':
           result = this.processXDR(parsedMessage, timestamp);
+          break;
+        case 'RSA':
+          result = this.processRSA(parsedMessage, timestamp);
+          break;
+        case 'APB':
+          result = this.processAPB(parsedMessage, timestamp);
+          break;
+        case 'APA':
+          result = this.processAPA(parsedMessage, timestamp);
           break;
         case 'DIN':
         case 'PCDIN':
@@ -653,14 +663,16 @@ export class NmeaSensorProcessor {
     // Create wind sensor update
     const windData: Partial<WindSensorData> = {
       name: 'Wind Sensor',
-      angle: normalizedAngle, // Normalized wind angle in degrees
+      direction: normalizedAngle, // Normalized wind direction in degrees
+      angle: normalizedAngle, // @deprecated - kept for backward compatibility
       speed: windSpeedKnots, // Wind speed in knots (base unit)
       timestamp: timestamp
     };
 
     // Set true or apparent wind based on reference
     if (fields.reference === 'T') {
-      windData.trueAngle = fields.wind_angle;
+      windData.trueDirection = fields.wind_angle;
+      windData.trueAngle = fields.wind_angle; // @deprecated - kept for backward compatibility
       windData.trueSpeed = windSpeedKnots;
     }
 
@@ -1368,6 +1380,141 @@ export class NmeaSensorProcessor {
           messageType: message.messageType
         };
     }
+  }
+
+  /**
+   * Process RSA (Rudder Sensor Angle) message
+   * Format: $xxRSA,<starboard>,<status>,<port>,<status>*hh
+   */
+  private processRSA(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    // RSA can have starboard rudder, port rudder, or both
+    let rudderAngle: number | null = null;
+    
+    // Prefer starboard angle if valid
+    if (fields.starboard_status === 'A' && fields.starboard_angle !== null && !isNaN(fields.starboard_angle)) {
+      rudderAngle = fields.starboard_angle;
+    }
+    // Fall back to port angle if starboard not available
+    else if (fields.port_status === 'A' && fields.port_angle !== null && !isNaN(fields.port_angle)) {
+      rudderAngle = fields.port_angle;
+    }
+    
+    if (rudderAngle === null) {
+      return {
+        success: false,
+        errors: ['No valid rudder angle data'],
+        messageType: 'RSA'
+      };
+    }
+    
+    const autopilotData: Partial<AutopilotSensorData> = {
+      name: 'Autopilot',
+      rudderAngle: rudderAngle, // Degrees (+ = starboard, - = port)
+      engaged: false, // RSA doesn't provide engagement status
+      timestamp: timestamp
+    };
+    
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'autopilot',
+        instance: 0,
+        data: autopilotData
+      }],
+      messageType: 'RSA'
+    };
+  }
+
+  /**
+   * Process APB (Autopilot Sentence B) message
+   * Provides autopilot navigation information
+   */
+  private processAPB(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    const updates: SensorUpdate[] = [];
+    
+    // Extract autopilot data
+    const autopilotData: Partial<AutopilotSensorData> = {
+      name: 'Autopilot',
+      timestamp: timestamp
+    };
+    
+    // Status indicators
+    if (fields.status_cycle_lock === 'A') {
+      autopilotData.locked = true;
+    }
+    
+    // Heading to steer
+    if (fields.heading_to_steer !== null && !isNaN(fields.heading_to_steer)) {
+      autopilotData.targetHeading = fields.heading_to_steer;
+    }
+    
+    // Bearing to destination
+    if (fields.bearing_present_to_dest !== null && !isNaN(fields.bearing_present_to_dest)) {
+      autopilotData.mode = 'nav'; // APB indicates navigation mode
+    }
+    
+    // Arrival status
+    if (fields.status_arrival === 'A') {
+      autopilotData.alarm = true; // Arrival alarm
+    }
+    
+    updates.push({
+      sensorType: 'autopilot',
+      instance: 0,
+      data: autopilotData
+    });
+    
+    return {
+      success: true,
+      updates: updates,
+      messageType: 'APB'
+    };
+  }
+
+  /**
+   * Process APA (Autopilot Sentence A) message  
+   * Provides autopilot navigation information (simplified APB)
+   */
+  private processAPA(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    const updates: SensorUpdate[] = [];
+    
+    // Extract autopilot data
+    const autopilotData: Partial<AutopilotSensorData> = {
+      name: 'Autopilot',
+      timestamp: timestamp
+    };
+    
+    // Status indicators
+    if (fields.status_cycle_lock === 'A') {
+      autopilotData.locked = true;
+    }
+    
+    // Bearing to destination indicates navigation mode
+    if (fields.bearing_to_dest !== null && !isNaN(fields.bearing_to_dest)) {
+      autopilotData.mode = 'nav';
+      autopilotData.targetHeading = fields.bearing_to_dest;
+    }
+    
+    // Arrival status
+    if (fields.status_arrival === 'A') {
+      autopilotData.alarm = true;
+    }
+    
+    updates.push({
+      sensorType: 'autopilot',
+      instance: 0,
+      data: autopilotData
+    });
+    
+    return {
+      success: true,
+      updates: updates,
+      messageType: 'APA'
+    };
   }
 
   /**

@@ -215,7 +215,8 @@ export class PureStoreUpdater {
               timestamp,
               data: {
                 speed: windData.windSpeed,
-                direction: windData.windAngle
+                direction: windData.windAngle,
+                angle: windData.windAngle // @deprecated - kept for backward compatibility
               }
             });
           }

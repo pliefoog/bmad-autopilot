@@ -190,6 +190,12 @@ export class PureNmeaParser {
 
     // Add message-specific parsing
     switch (messageType) {
+      case 'RSA':
+        return this.parseRSAFields(parts);
+      case 'APB':
+        return this.parseAPBFields(parts);
+      case 'APA':
+        return this.parseAPAFields(parts);
       case 'GGA':
         return this.parseGGAFields(parts);
       case 'VTG':
@@ -506,6 +512,92 @@ export class PureNmeaParser {
       instance: parts[2] || '',
       rpm: parts[3] || '',
       status: parts[4] || ''
+    };
+  }
+
+  /**
+   * Parse RSA (Rudder Sensor Angle) fields
+   * Format: $xxRSA,<starboard>,<status>,<port>,<status>*hh
+   * Fields: 1=Starboard rudder angle, 2=Status (A=valid), 3=Port rudder angle, 4=Status
+   */
+  private parseRSAFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],
+      field_2: parts[2],
+      field_3: parts[3],
+      field_4: parts[4],
+      starboard_angle: parts[1] ? parseFloat(parts[1]) : null,
+      starboard_status: parts[2],
+      port_angle: parts[3] ? parseFloat(parts[3]) : null,
+      port_status: parts[4]
+    };
+  }
+
+  /**
+   * Parse APB (Autopilot Sentence B) fields
+   * Format: $xxAPB,<status1>,<status2>,<xte_mag>,<dir>,<xte_units>,<status3>,<status4>,<bearing_origin>,<dir>,<dest_id>,<bearing_dest>,<dir>,<heading>,<dir>,<status5>*hh
+   */
+  private parseAPBFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],
+      field_2: parts[2],
+      field_3: parts[3],
+      field_4: parts[4],
+      field_5: parts[5],
+      field_6: parts[6],
+      field_7: parts[7],
+      field_8: parts[8],
+      field_9: parts[9],
+      field_10: parts[10],
+      field_11: parts[11],
+      field_12: parts[12],
+      field_13: parts[13],
+      field_14: parts[14],
+      field_15: parts[15],
+      status_general: parts[1],
+      status_cycle_lock: parts[2],
+      cross_track_error: parts[3] ? parseFloat(parts[3]) : null,
+      direction_to_steer: parts[4],
+      cross_track_units: parts[5],
+      status_arrival: parts[6],
+      status_perpendicular: parts[7],
+      bearing_origin_to_dest: parts[8] ? parseFloat(parts[8]) : null,
+      bearing_type: parts[9],
+      destination_id: parts[10],
+      bearing_present_to_dest: parts[11] ? parseFloat(parts[11]) : null,
+      bearing_present_type: parts[12],
+      heading_to_steer: parts[13] ? parseFloat(parts[13]) : null,
+      heading_type: parts[14],
+      status_faa_mode: parts[15]
+    };
+  }
+
+  /**
+   * Parse APA (Autopilot Sentence A) fields  
+   * Format: $xxAPA,<status1>,<status2>,<xte_mag>,<dir>,<xte_units>,<status3>,<status4>,<bearing>,<dir>,<dest_id>*hh
+   */
+  private parseAPAFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],
+      field_2: parts[2],
+      field_3: parts[3],
+      field_4: parts[4],
+      field_5: parts[5],
+      field_6: parts[6],
+      field_7: parts[7],
+      field_8: parts[8],
+      field_9: parts[9],
+      field_10: parts[10],
+      status_general: parts[1],
+      status_cycle_lock: parts[2],
+      cross_track_error: parts[3] ? parseFloat(parts[3]) : null,
+      direction_to_steer: parts[4],
+      cross_track_units: parts[5],
+      status_arrival: parts[6],
+      status_perpendicular: parts[7],
+      bearing_to_dest: parts[8] ? parseFloat(parts[8]) : null,
+      bearing_type: parts[9],
+      destination_id: parts[10]
     };
   }
 

@@ -1,0 +1,66 @@
+name: "Complete NMEA 0183 Autopilot Test"
+description: "Tests RSA, APB, APA sentences for autopilot functionality"
+version: 1.0
+bridge_mode: nmea0183
+loop: true
+
+# Scenario to test complete NMEA 0183 autopilot support:
+# - RSA: Rudder Sensor Angle (rudder position)
+# - APB: Autopilot Sentence B (navigation to waypoint)
+# - APA: Autopilot Sentence A (simplified navigation)
+
+phases:
+  - name: "Rudder Movement Test"
+    duration: 30
+    messages:
+      # RSA sentences showing rudder sweep
+      - sentence: "$IIRSA,-10.5,A,,V*XX"
+        interval: 1.0
+        description: "Port rudder 10.5°"
+      
+      - sentence: "$IIRSA,-5.0,A,,V*XX"
+        interval: 1.0
+        description: "Port rudder 5°"
+      
+      - sentence: "$IIRSA,0.0,A,,V*XX"
+        interval: 1.0
+        description: "Rudder amidships"
+      
+      - sentence: "$IIRSA,5.0,A,,V*XX"
+        interval: 1.0
+        description: "Starboard rudder 5°"
+      
+      - sentence: "$IIRSA,10.5,A,,V*XX"
+        interval: 1.0
+        description: "Starboard rudder 10.5°"
+
+  - name: "Autopilot Navigation Test"
+    duration: 30
+    messages:
+      # APB sentence - autopilot navigation to waypoint
+      - sentence: "$GPAPB,A,A,0.10,R,N,V,V,011,M,DEST,011,M,011,M,A*XX"
+        interval: 2.0
+        description: "APB: Navigate to waypoint DEST, heading 011°M"
+      
+      # APA sentence - simplified autopilot navigation
+      - sentence: "$GPAPA,A,A,0.05,R,N,V,V,045,M,DEST*XX"
+        interval: 2.0
+        description: "APA: Navigate to waypoint DEST, bearing 045°M"
+      
+      # RSA showing autopilot correcting rudder
+      - sentence: "$IIRSA,2.5,A,,V*XX"
+        interval: 0.5
+        description: "Autopilot applying 2.5° starboard correction"
+
+  - name: "Autopilot Arrival Test"
+    duration: 20
+    messages:
+      # APB showing arrival at waypoint
+      - sentence: "$GPAPB,A,A,0.01,L,N,A,A,000,M,DEST,000,M,000,M,A*XX"
+        interval: 1.0
+        description: "APB: Arriving at waypoint (arrival flag set)"
+      
+      # RSA showing rudder centering
+      - sentence: "$IIRSA,0.0,A,,V*XX"
+        interval: 1.0
+        description: "Rudder returning to center"

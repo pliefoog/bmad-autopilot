@@ -9,6 +9,14 @@
 
 import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 
+// NMEA 0183 Autopilot Support:
+// - RSA: Rudder Sensor Angle (rudder position)
+// - APB: Autopilot Sentence B (navigation to waypoint)
+// - APA: Autopilot Sentence A (simplified navigation)
+// NMEA 2000 Autopilot Support:
+// - PGN 127245: Rudder position
+// - PGN 65288: Autopilot status (via PCDIN/binary)
+
 export interface BaseSensorData {
   name: string;           // Human-readable instance name
   timestamp: number;      // When this data was last updated
@@ -43,11 +51,13 @@ export interface BatterySensorData extends BaseSensorData {
 }
 
 export interface WindSensorData extends BaseSensorData {
-  angle?: number;         // PRIMARY metric (0-360°) - apparent wind angle
+  direction?: number;     // PRIMARY metric (0-360° or ±180°) - apparent wind direction
   speed?: number;         // PRIMARY metric - apparent wind speed
-  trueAngle?: number;     // Secondary metric - true wind angle
+  trueDirection?: number; // Secondary metric - true wind direction
   trueSpeed?: number;     // Secondary metric - true wind speed
-  direction?: number;     // Secondary metric - true wind direction
+  // Legacy fields for backward compatibility
+  angle?: number;         // @deprecated Use 'direction' instead
+  trueAngle?: number;     // @deprecated Use 'trueDirection' instead
 }
 
 export interface SpeedSensorData extends BaseSensorData {
@@ -81,6 +91,11 @@ export interface DepthSensorData extends BaseSensorData {
   depth?: number;         // PRIMARY metric - depth in meters
   referencePoint: 'transducer' | 'waterline' | 'keel';
   sentenceType: 'DPT' | 'DBT' | 'DBK';  // Source NMEA sentence type for priority selection
+  // Instance Priority System:
+  // - instance 0: DPT (Depth from waterline) - HIGHEST PRIORITY
+  // - instance 1: DBT (Depth below transducer) - MEDIUM PRIORITY  
+  // - instance 2: DBK (Depth below keel) - LOWEST PRIORITY
+  // - NMEA 2000 PGN 128267 → instance 0 (transducer, equivalent to DPT)
 }
 
 export interface CompassSensorData extends BaseSensorData {
