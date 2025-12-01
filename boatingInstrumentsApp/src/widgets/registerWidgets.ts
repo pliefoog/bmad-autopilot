@@ -4,6 +4,7 @@ import { SpeedWidget } from './SpeedWidget';
 import { WindWidget } from './WindWidget';
 import { GPSWidget } from './GPSWidget';
 import { CompassWidget } from './CompassWidget';
+import { NavigationWidget } from './NavigationWidget';
 import { EngineWidget } from './EngineWidget';
 import { BatteryWidget } from './BatteryWidget';
 import { TanksWidget } from './TanksWidget';
@@ -68,6 +69,19 @@ export function registerAllWidgets(): void {
       configurable: true,
     },
     CompassWidget
+  );
+
+  WidgetRegistry.register(
+    {
+      id: 'navigation',
+      title: 'Navigation',
+      icon: 'navigate-circle-outline',
+      description: 'Waypoint navigation and course tracking',
+      category: 'navigation',
+      defaultSize: { width: 200, height: 200 },
+      configurable: true,
+    },
+    NavigationWidget
   );
 
   // Environment widgets
