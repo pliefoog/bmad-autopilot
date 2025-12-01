@@ -27,7 +27,8 @@ import type {
   TemperatureSensorData,
   BatterySensorData,
   TankSensorData,
-  AutopilotSensorData
+  AutopilotSensorData,
+  NavigationSensorData
 } from '../../../types/SensorData';
 import { useWidgetStore } from '../../../store/widgetStore';
 
@@ -186,6 +187,21 @@ export class NmeaSensorProcessor {
           break;
         case 'HDT':
           result = this.processHDT(parsedMessage, timestamp);
+          break;
+        case 'BWC':
+          result = this.processBWC(parsedMessage, timestamp);
+          break;
+        case 'RMB':
+          result = this.processRMB(parsedMessage, timestamp);
+          break;
+        case 'XTE':
+          result = this.processXTE(parsedMessage, timestamp);
+          break;
+        case 'BOD':
+          result = this.processBOD(parsedMessage, timestamp);
+          break;
+        case 'WPL':
+          result = this.processWPL(parsedMessage, timestamp);
           break;
         case 'DIN':
         case 'PCDIN':
@@ -943,6 +959,227 @@ export class NmeaSensorProcessor {
         data: compassData
       }],
       messageType: 'HDT'
+    };
+  }
+
+  /**
+   * Process BWC (Bearing and Distance to Waypoint) message
+   */
+  private processBWC(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (!fields.waypoint_id || fields.distance_nm === null || fields.bearing_true === null) {
+      return {
+        success: false,
+        errors: ['Invalid BWC navigation data'],
+        messageType: 'BWC'
+      };
+    }
+
+    // Parse waypoint coordinates if present
+    let waypointPosition;
+    if (fields.waypoint_lat && fields.waypoint_lon) {
+      const lat = this.parseCoordinate(fields.waypoint_lat, fields.waypoint_lat_dir);
+      const lon = this.parseCoordinate(fields.waypoint_lon, fields.waypoint_lon_dir);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        waypointPosition = { latitude: lat, longitude: lon };
+      }
+    }
+
+    const navData: Partial<NavigationSensorData> = {
+      name: 'Navigation',
+      waypointId: fields.waypoint_id,
+      waypointPosition: waypointPosition,
+      bearingToWaypoint: fields.bearing_true,
+      distanceToWaypoint: fields.distance_nm,
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'navigation',
+        instance: 0,
+        data: navData
+      }],
+      messageType: 'BWC'
+    };
+  }
+
+  /**
+   * Process RMB (Recommended Minimum Navigation Information) message
+   * Provides comprehensive navigation data including XTE, bearing, VMG
+   */
+  private processRMB(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.status !== 'A') {
+      return {
+        success: false,
+        errors: ['Invalid RMB status'],
+        messageType: 'RMB'
+      };
+    }
+
+    // Parse destination coordinates
+    let destPosition;
+    if (fields.dest_lat && fields.dest_lon) {
+      const lat = this.parseCoordinate(fields.dest_lat, fields.dest_lat_dir);
+      const lon = this.parseCoordinate(fields.dest_lon, fields.dest_lon_dir);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        destPosition = { latitude: lat, longitude: lon };
+      }
+    }
+
+    // Convert cross-track error to signed value (negative = steer left, positive = steer right)
+    let xte = fields.cross_track_error;
+    if (xte !== null && fields.steer_direction === 'L') {
+      xte = -xte;
+    }
+
+    const navData: Partial<NavigationSensorData> = {
+      name: 'Navigation',
+      originWaypointId: fields.origin_waypoint,
+      destinationWaypointId: fields.dest_waypoint,
+      waypointId: fields.dest_waypoint,
+      waypointPosition: destPosition,
+      bearingToWaypoint: fields.bearing,
+      distanceToWaypoint: fields.range_nm,
+      crossTrackError: xte,
+      steerDirection: fields.steer_direction === 'L' ? 'left' : 'right',
+      velocityMadeGood: fields.vmg,
+      arrivalStatus: fields.arrival_status === 'A' ? 'arrived' : 'active',
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'navigation',
+        instance: 0,
+        data: navData
+      }],
+      messageType: 'RMB'
+    };
+  }
+
+  /**
+   * Process XTE (Cross-Track Error) message
+   * Focused on cross-track error only
+   */
+  private processXTE(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.status !== 'A' || fields.cross_track_error === null) {
+      return {
+        success: false,
+        errors: ['Invalid XTE data'],
+        messageType: 'XTE'
+      };
+    }
+
+    // Convert to signed value (negative = steer left, positive = steer right)
+    let xte = fields.cross_track_error;
+    if (fields.steer_direction === 'L') {
+      xte = -xte;
+    }
+
+    const navData: Partial<NavigationSensorData> = {
+      name: 'Navigation',
+      crossTrackError: xte,
+      steerDirection: fields.steer_direction === 'L' ? 'left' : 'right',
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'navigation',
+        instance: 0,
+        data: navData
+      }],
+      messageType: 'XTE'
+    };
+  }
+
+  /**
+   * Process BOD (Bearing Origin to Destination) message
+   * Provides bearing information for route planning
+   */
+  private processBOD(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.bearing_true === null) {
+      return {
+        success: false,
+        errors: ['Invalid BOD bearing data'],
+        messageType: 'BOD'
+      };
+    }
+
+    const navData: Partial<NavigationSensorData> = {
+      name: 'Navigation',
+      originWaypointId: fields.origin_waypoint,
+      destinationWaypointId: fields.dest_waypoint,
+      bearingOriginToDest: fields.bearing_true,
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'navigation',
+        instance: 0,
+        data: navData
+      }],
+      messageType: 'BOD'
+    };
+  }
+
+  /**
+   * Process WPL (Waypoint Location) message
+   * Defines waypoint positions
+   */
+  private processWPL(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (!fields.waypoint_id || !fields.latitude || !fields.longitude) {
+      return {
+        success: false,
+        errors: ['Invalid WPL waypoint data'],
+        messageType: 'WPL'
+      };
+    }
+
+    const lat = this.parseCoordinate(fields.latitude, fields.latitude_dir);
+    const lon = this.parseCoordinate(fields.longitude, fields.longitude_dir);
+    
+    if (isNaN(lat) || isNaN(lon)) {
+      return {
+        success: false,
+        errors: ['Invalid WPL coordinates'],
+        messageType: 'WPL'
+      };
+    }
+
+    const navData: Partial<NavigationSensorData> = {
+      name: 'Navigation',
+      waypointId: fields.waypoint_id,
+      waypointPosition: {
+        latitude: lat,
+        longitude: lon
+      },
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'navigation',
+        instance: 0,
+        data: navData
+      }],
+      messageType: 'WPL'
     };
   }
 

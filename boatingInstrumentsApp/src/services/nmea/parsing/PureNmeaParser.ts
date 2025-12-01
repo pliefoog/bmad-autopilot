@@ -232,6 +232,16 @@ export class PureNmeaParser {
         return this.parseHDMFields(parts);
       case 'HDT':
         return this.parseHDTFields(parts);
+      case 'BWC':
+        return this.parseBWCFields(parts);
+      case 'RMB':
+        return this.parseRMBFields(parts);
+      case 'XTE':
+        return this.parseXTEFields(parts);
+      case 'BOD':
+        return this.parseBODFields(parts);
+      case 'WPL':
+        return this.parseWPLFields(parts);
       default:
         // Return generic field mapping for unknown types
         return fields;
@@ -556,6 +566,137 @@ export class PureNmeaParser {
       field_2: parts[2],  // T indicator
       // Parsed values
       true_heading: parts[1] ? parseFloat(parts[1]) : null
+    };
+  }
+
+  /**
+   * Parse BWC (Bearing and Distance to Waypoint) fields
+   * Format: $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c*hh
+   * Example: $GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*11
+   */
+  private parseBWCFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],   // UTC time
+      field_2: parts[2],   // Waypoint latitude
+      field_3: parts[3],   // Latitude direction
+      field_4: parts[4],   // Waypoint longitude
+      field_5: parts[5],   // Longitude direction
+      field_6: parts[6],   // Bearing true
+      field_7: parts[7],   // T indicator
+      field_8: parts[8],   // Bearing magnetic
+      field_9: parts[9],   // M indicator
+      field_10: parts[10], // Distance nautical miles
+      field_11: parts[11], // N indicator
+      field_12: parts[12], // Waypoint ID
+      // Parsed values
+      time: parts[1],
+      waypoint_lat: parts[2],
+      waypoint_lat_dir: parts[3],
+      waypoint_lon: parts[4],
+      waypoint_lon_dir: parts[5],
+      bearing_true: parts[6] ? parseFloat(parts[6]) : null,
+      bearing_magnetic: parts[8] ? parseFloat(parts[8]) : null,
+      distance_nm: parts[10] ? parseFloat(parts[10]) : null,
+      waypoint_id: parts[12]
+    };
+  }
+
+  /**
+   * Parse RMB (Recommended Minimum Navigation Information) fields
+   * Format: $--RMB,A,x.x,a,c--c,c--c,llll.ll,a,yyyyy.yy,a,x.x,x.x,x.x,A*hh
+   * Example: $GPRMB,A,0.66,L,003,004,4917.24,N,12309.57,W,001.3,052.5,000.5,V*20
+   */
+  private parseRMBFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],   // Status (A=valid, V=warning)
+      field_2: parts[2],   // Cross track error
+      field_3: parts[3],   // Steer direction (L/R)
+      field_4: parts[4],   // Origin waypoint ID
+      field_5: parts[5],   // Destination waypoint ID
+      field_6: parts[6],   // Destination latitude
+      field_7: parts[7],   // Latitude direction
+      field_8: parts[8],   // Destination longitude
+      field_9: parts[9],   // Longitude direction
+      field_10: parts[10], // Range to destination
+      field_11: parts[11], // Bearing to destination
+      field_12: parts[12], // Velocity toward destination
+      field_13: parts[13], // Arrival status (A=arrived, V=not arrived)
+      // Parsed values
+      status: parts[1],
+      cross_track_error: parts[2] ? parseFloat(parts[2]) : null,
+      steer_direction: parts[3],
+      origin_waypoint: parts[4],
+      dest_waypoint: parts[5],
+      dest_lat: parts[6],
+      dest_lat_dir: parts[7],
+      dest_lon: parts[8],
+      dest_lon_dir: parts[9],
+      range_nm: parts[10] ? parseFloat(parts[10]) : null,
+      bearing: parts[11] ? parseFloat(parts[11]) : null,
+      vmg: parts[12] ? parseFloat(parts[12]) : null,
+      arrival_status: parts[13]
+    };
+  }
+
+  /**
+   * Parse XTE (Cross-Track Error) fields
+   * Format: $--XTE,A,A,x.x,a,N*hh
+   * Example: $GPXTE,A,A,0.67,L,N*6F
+   */
+  private parseXTEFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Status 1 (A=valid, V=warning)
+      field_2: parts[2],  // Status 2 (A=valid, V=warning)
+      field_3: parts[3],  // Cross track error magnitude
+      field_4: parts[4],  // Direction to steer (L/R)
+      field_5: parts[5],  // Units (N=nautical miles)
+      // Parsed values
+      status: parts[1],
+      cross_track_error: parts[3] ? parseFloat(parts[3]) : null,
+      steer_direction: parts[4],
+      units: parts[5]
+    };
+  }
+
+  /**
+   * Parse BOD (Bearing Origin to Destination) fields
+   * Format: $--BOD,x.x,T,x.x,M,c--c,c--c*hh
+   * Example: $GPBOD,099.3,T,105.6,M,POINTB,POINTA*48
+   */
+  private parseBODFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Bearing true
+      field_2: parts[2],  // T indicator
+      field_3: parts[3],  // Bearing magnetic
+      field_4: parts[4],  // M indicator
+      field_5: parts[5],  // Destination waypoint ID
+      field_6: parts[6],  // Origin waypoint ID
+      // Parsed values
+      bearing_true: parts[1] ? parseFloat(parts[1]) : null,
+      bearing_magnetic: parts[3] ? parseFloat(parts[3]) : null,
+      dest_waypoint: parts[5],
+      origin_waypoint: parts[6]
+    };
+  }
+
+  /**
+   * Parse WPL (Waypoint Location) fields
+   * Format: $--WPL,llll.ll,a,yyyyy.yy,a,c--c*hh
+   * Example: $GPWPL,4917.16,N,12310.64,W,003*65
+   */
+  private parseWPLFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Latitude
+      field_2: parts[2],  // Latitude direction
+      field_3: parts[3],  // Longitude
+      field_4: parts[4],  // Longitude direction
+      field_5: parts[5],  // Waypoint ID
+      // Parsed values
+      latitude: parts[1],
+      latitude_dir: parts[2],
+      longitude: parts[3],
+      longitude_dir: parts[4],
+      waypoint_id: parts[5]
     };
   }
 
