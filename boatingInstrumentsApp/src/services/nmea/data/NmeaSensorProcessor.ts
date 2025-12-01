@@ -178,6 +178,9 @@ export class NmeaSensorProcessor {
         case 'VWT':
           result = this.processVWT(parsedMessage, timestamp);
           break;
+        case 'GLL':
+          result = this.processGLL(parsedMessage, timestamp);
+          break;
         case 'DIN':
         case 'PCDIN':
           result = this.processPgnMessage(parsedMessage, timestamp);
@@ -453,6 +456,64 @@ export class NmeaSensorProcessor {
         data: gpsData
       }],
       messageType: 'GGA'
+    };
+  }
+
+  /**
+   * Process GLL (Geographic Position - Latitude/Longitude) message
+   * GLL provides essential GPS position data with timestamp
+   */
+  private processGLL(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    // Check status validity
+    if (fields.status !== 'A') {
+      return {
+        success: false,
+        errors: ['Invalid GPS status (V=invalid)'],
+        messageType: 'GLL'
+      };
+    }
+
+    // Parse coordinates
+    const latitude = this.parseCoordinate(fields.latitude_raw, fields.latitude_dir);
+    const longitude = this.parseCoordinate(fields.longitude_raw, fields.longitude_dir);
+    
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return {
+        success: false,
+        errors: ['Invalid GPS coordinates'],
+        messageType: 'GLL'
+      };
+    }
+
+    // Create GPS sensor update
+    const gpsData: Partial<GpsSensorData> = {
+      name: 'GPS Receiver',
+      position: {
+        latitude: latitude,
+        longitude: longitude
+      },
+      timeSource: 'GLL', // Priority 2 (medium)
+      timestamp: timestamp
+    };
+
+    // Extract UTC time from GLL
+    if (fields.time) {
+      const utcTime = this.parseGGATime(fields.time);
+      if (utcTime) {
+        gpsData.utcTime = utcTime.getTime();
+      }
+    }
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'gps',
+        instance: 0,
+        data: gpsData
+      }],
+      messageType: 'GLL'
     };
   }
 

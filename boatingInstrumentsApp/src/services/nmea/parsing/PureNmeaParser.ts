@@ -226,6 +226,8 @@ export class PureNmeaParser {
         return this.parseVWRFields(parts);
       case 'VWT':
         return this.parseVWTFields(parts);
+      case 'GLL':
+        return this.parseGLLFields(parts);
       default:
         // Return generic field mapping for unknown types
         return fields;
@@ -498,6 +500,30 @@ export class PureNmeaParser {
       wind_speed_knots: parts[3] ? parseFloat(parts[3]) : null,
       wind_speed_ms: parts[5] ? parseFloat(parts[5]) : null,
       wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null
+    };
+  }
+
+  /**
+   * Parse GLL (Geographic Position - Latitude/Longitude) fields
+   * Format: $--GLL,llll.ll,a,yyyyy.yy,a,hhmmss.ss,A,a*hh
+   * Example: $GPGLL,4916.45,N,12311.12,W,225444,A,A*5C
+   */
+  private parseGLLFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Latitude
+      field_2: parts[2],  // Latitude direction (N/S)
+      field_3: parts[3],  // Longitude
+      field_4: parts[4],  // Longitude direction (E/W)
+      field_5: parts[5],  // UTC time
+      field_6: parts[6],  // Status (A=valid, V=invalid)
+      field_7: parts[7],  // Mode indicator (optional)
+      // Parsed values
+      latitude_raw: parts[1],
+      latitude_dir: parts[2],
+      longitude_raw: parts[3],
+      longitude_dir: parts[4],
+      time: parts[5],
+      status: parts[6]
     };
   }
 
