@@ -1,0 +1,44 @@
+name: "VWR/VWT Wind Speed and Angle Test"
+description: "Tests VWR (Relative Wind) and VWT (True Wind) sentence parsing with L/R directional format"
+interval: 1000
+loop: true
+
+sentences:
+  # Relative Wind (VWR) - Starboard side (R)
+  # 148° starboard, 10.4 knots
+  - sentence: "$IIVWR,148.0,R,10.4,N,5.4,M,19.3,K*4A"
+    delay: 0
+  
+  # Relative Wind (VWR) - Port side (L)
+  # 135° port, 12.8 knots
+  - sentence: "$IIVWR,135.0,L,12.8,N,6.6,M,23.7,K*45"
+    delay: 500
+  
+  # True Wind (VWT) - Starboard side (R)
+  # 120° starboard, 15.2 knots
+  - sentence: "$IIVWT,120.0,R,15.2,N,7.8,M,28.1,K*5C"
+    delay: 1000
+  
+  # True Wind (VWT) - Port side (L)
+  # 95° port, 18.5 knots
+  - sentence: "$IIVWT,95.0,L,18.5,N,9.5,M,34.3,K*63"
+    delay: 1500
+  
+  # Combined apparent and true wind data
+  # Shows how VWR (apparent) and VWT (true) work together
+  - sentence: "$IIVWR,145.0,R,11.2,N,5.8,M,20.8,K*49"
+    delay: 2000
+  - sentence: "$IIVWT,115.0,R,16.1,N,8.3,M,29.9,K*54"
+    delay: 2100
+  
+  # Low wind conditions
+  - sentence: "$IIVWR,32.0,R,3.5,N,1.8,M,6.5,K*7F"
+    delay: 2500
+  - sentence: "$IIVWT,28.0,R,4.2,N,2.2,M,7.8,K*65"
+    delay: 2600
+  
+  # High wind conditions
+  - sentence: "$IIVWR,165.0,R,22.8,N,11.7,M,42.2,K*42"
+    delay: 3000
+  - sentence: "$IIVWT,155.0,R,28.3,N,14.6,M,52.5,K*5A"
+    delay: 3100

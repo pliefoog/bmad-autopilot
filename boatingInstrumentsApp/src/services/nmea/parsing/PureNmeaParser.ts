@@ -222,6 +222,10 @@ export class PureNmeaParser {
         return this.parseMTWFields(parts);
       case 'VHW':
         return this.parseVHWFields(parts);
+      case 'VWR':
+        return this.parseVWRFields(parts);
+      case 'VWT':
+        return this.parseVWTFields(parts);
       default:
         // Return generic field mapping for unknown types
         return fields;
@@ -446,6 +450,54 @@ export class PureNmeaParser {
       heading_magnetic: parts[3] ? parseFloat(parts[3]) : null,
       speed_knots: parts[5] ? parseFloat(parts[5]) : null,
       speed_kmh: parts[7] ? parseFloat(parts[7]) : null
+    };
+  }
+
+  /**
+   * Parse VWR (Relative Wind Speed and Angle) fields
+   * Format: $--VWR,x.x,a,x.x,N,x.x,M,x.x,K*hh
+   * Example: $IIVWR,148.0,R,10.4,N,5.4,M,19.3,K*4A
+   */
+  private parseVWRFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Wind angle (0-180)
+      field_2: parts[2],  // Direction (L/R)
+      field_3: parts[3],  // Wind speed knots
+      field_4: parts[4],  // Knots indicator
+      field_5: parts[5],  // Wind speed m/s
+      field_6: parts[6],  // m/s indicator
+      field_7: parts[7],  // Wind speed km/h
+      field_8: parts[8],  // km/h indicator
+      // Parsed values
+      wind_angle: parts[1] ? parseFloat(parts[1]) : null,
+      direction: parts[2],
+      wind_speed_knots: parts[3] ? parseFloat(parts[3]) : null,
+      wind_speed_ms: parts[5] ? parseFloat(parts[5]) : null,
+      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null
+    };
+  }
+
+  /**
+   * Parse VWT (True Wind Speed and Angle) fields
+   * Format: $--VWT,x.x,a,x.x,N,x.x,M,x.x,K*hh
+   * Example: $IIVWT,120.0,L,15.2,N,7.8,M,28.1,K*5C
+   */
+  private parseVWTFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Wind angle (0-180)
+      field_2: parts[2],  // Direction (L/R)
+      field_3: parts[3],  // Wind speed knots
+      field_4: parts[4],  // Knots indicator
+      field_5: parts[5],  // Wind speed m/s
+      field_6: parts[6],  // m/s indicator
+      field_7: parts[7],  // Wind speed km/h
+      field_8: parts[8],  // km/h indicator
+      // Parsed values
+      wind_angle: parts[1] ? parseFloat(parts[1]) : null,
+      direction: parts[2],
+      wind_speed_knots: parts[3] ? parseFloat(parts[3]) : null,
+      wind_speed_ms: parts[5] ? parseFloat(parts[5]) : null,
+      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null
     };
   }
 

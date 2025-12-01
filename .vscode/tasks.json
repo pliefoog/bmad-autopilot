@@ -277,6 +277,30 @@
 			}
 		},
 		{
+			"label": "Start NMEA Bridge: VWR/VWT Wind Test",
+			"type": "shell",
+			"comment": "Tests VWR (Relative Wind) and VWT (True Wind) sentences with L/R directional format",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/wind/vwr-vwt-wind-test.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": ["-c"]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Start NMEA Bridge: Sensor-Based Coastal Sailing (NMEA 0183)",
 			"type": "shell",
 			"comment": "Protocol-agnostic coastal sailing using sensor definitions - NMEA 0183 mode",

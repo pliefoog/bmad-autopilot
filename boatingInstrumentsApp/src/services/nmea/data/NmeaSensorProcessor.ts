@@ -172,6 +172,12 @@ export class NmeaSensorProcessor {
         case 'APA':
           result = this.processAPA(parsedMessage, timestamp);
           break;
+        case 'VWR':
+          result = this.processVWR(parsedMessage, timestamp);
+          break;
+        case 'VWT':
+          result = this.processVWT(parsedMessage, timestamp);
+          break;
         case 'DIN':
         case 'PCDIN':
           result = this.processPgnMessage(parsedMessage, timestamp);
@@ -684,6 +690,96 @@ export class NmeaSensorProcessor {
         data: windData
       }],
       messageType: 'MWV'
+    };
+  }
+
+  /**
+   * Process VWR (Relative Wind Speed and Angle) message
+   * VWR provides apparent wind data in L/R format (0-180° with direction)
+   * Always store wind speed in knots (base unit)
+   */
+  private processVWR(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.wind_angle === null || fields.wind_speed_knots === null) {
+      return {
+        success: false,
+        errors: ['Invalid VWR wind data'],
+        messageType: 'VWR'
+      };
+    }
+
+    // Convert L/R direction to full 360° angle
+    // R = starboard (0-180°), L = port (180-360° or -180° to 0°)
+    let relativeAngle = fields.wind_angle;
+    if (fields.direction === 'L') {
+      relativeAngle = -fields.wind_angle; // Port side is negative
+    }
+
+    // Normalize to ±180° range
+    const normalizedAngle = normalizeApparentWindAngle(relativeAngle);
+
+    const windData: Partial<WindSensorData> = {
+      name: 'Wind Sensor',
+      direction: normalizedAngle,
+      angle: normalizedAngle, // @deprecated
+      speed: fields.wind_speed_knots,
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'wind',
+        instance: 0,
+        data: windData
+      }],
+      messageType: 'VWR'
+    };
+  }
+
+  /**
+   * Process VWT (True Wind Speed and Angle) message
+   * VWT provides true wind data in L/R format (0-180° with direction)
+   * Always store wind speed in knots (base unit)
+   */
+  private processVWT(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.wind_angle === null || fields.wind_speed_knots === null) {
+      return {
+        success: false,
+        errors: ['Invalid VWT wind data'],
+        messageType: 'VWT'
+      };
+    }
+
+    // Convert L/R direction to full 360° angle
+    // R = starboard (0-180°), L = port (180-360° or -180° to 0°)
+    let trueAngle = fields.wind_angle;
+    if (fields.direction === 'L') {
+      trueAngle = 360 - fields.wind_angle; // Convert to 0-360° range
+    }
+
+    // Normalize to 0-360° range
+    const normalizedAngle = normalizeTrueWindAngle(trueAngle);
+
+    const windData: Partial<WindSensorData> = {
+      name: 'Wind Sensor',
+      trueDirection: normalizedAngle,
+      trueAngle: normalizedAngle, // @deprecated
+      trueSpeed: fields.wind_speed_knots,
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'wind',
+        instance: 0,
+        data: windData
+      }],
+      messageType: 'VWT'
     };
   }
 
