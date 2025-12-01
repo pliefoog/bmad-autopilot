@@ -228,6 +228,10 @@ export class PureNmeaParser {
         return this.parseVWTFields(parts);
       case 'GLL':
         return this.parseGLLFields(parts);
+      case 'HDM':
+        return this.parseHDMFields(parts);
+      case 'HDT':
+        return this.parseHDTFields(parts);
       default:
         // Return generic field mapping for unknown types
         return fields;
@@ -524,6 +528,34 @@ export class PureNmeaParser {
       longitude_dir: parts[4],
       time: parts[5],
       status: parts[6]
+    };
+  }
+
+  /**
+   * Parse HDM (Heading - Magnetic) fields
+   * Format: $--HDM,x.x,M*hh
+   * Example: $IIHDM,235.5,M*2E
+   */
+  private parseHDMFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // Magnetic heading
+      field_2: parts[2],  // M indicator
+      // Parsed values
+      magnetic_heading: parts[1] ? parseFloat(parts[1]) : null
+    };
+  }
+
+  /**
+   * Parse HDT (Heading - True) fields
+   * Format: $--HDT,x.x,T*hh
+   * Example: $IIHDT,274.5,T*1C
+   */
+  private parseHDTFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1],  // True heading
+      field_2: parts[2],  // T indicator
+      // Parsed values
+      true_heading: parts[1] ? parseFloat(parts[1]) : null
     };
   }
 

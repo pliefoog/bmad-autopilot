@@ -181,6 +181,12 @@ export class NmeaSensorProcessor {
         case 'GLL':
           result = this.processGLL(parsedMessage, timestamp);
           break;
+        case 'HDM':
+          result = this.processHDM(parsedMessage, timestamp);
+          break;
+        case 'HDT':
+          result = this.processHDT(parsedMessage, timestamp);
+          break;
         case 'DIN':
         case 'PCDIN':
           result = this.processPgnMessage(parsedMessage, timestamp);
@@ -873,6 +879,70 @@ export class NmeaSensorProcessor {
         data: compassData
       }],
       messageType: 'HDG'
+    };
+  }
+
+  /**
+   * Process HDM (Heading - Magnetic) message
+   * Simpler than HDG, only provides magnetic heading
+   */
+  private processHDM(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.magnetic_heading === null || isNaN(fields.magnetic_heading)) {
+      return {
+        success: false,
+        errors: ['Invalid magnetic heading'],
+        messageType: 'HDM'
+      };
+    }
+
+    const compassData: Partial<CompassSensorData> = {
+      name: 'Compass',
+      heading: fields.magnetic_heading,
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'compass',
+        instance: 0,
+        data: compassData
+      }],
+      messageType: 'HDM'
+    };
+  }
+
+  /**
+   * Process HDT (Heading - True) message
+   * Provides true heading (corrected for magnetic variation)
+   */
+  private processHDT(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    
+    if (fields.true_heading === null || isNaN(fields.true_heading)) {
+      return {
+        success: false,
+        errors: ['Invalid true heading'],
+        messageType: 'HDT'
+      };
+    }
+
+    const compassData: Partial<CompassSensorData> = {
+      name: 'Compass',
+      heading: fields.true_heading, // True heading
+      timestamp: timestamp
+    };
+
+    return {
+      success: true,
+      updates: [{
+        sensorType: 'compass',
+        instance: 0,
+        data: compassData
+      }],
+      messageType: 'HDT'
     };
   }
 
