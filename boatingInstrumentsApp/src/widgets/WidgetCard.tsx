@@ -51,12 +51,6 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   const widgetStyles = createWidgetStyles(theme);
   const displayColor = getStateColor(state, theme);
 
-  // DEBUG: Log widget rendering
-  if (typeof window !== 'undefined' && !window.__widgetDebugLogged) {
-    console.log('🔧 WidgetCard rendering with icon:', icon);
-    window.__widgetDebugLogged = true;
-  }
-
   // Build comprehensive accessibility label if not provided
   const defaultAccessibilityLabel = React.useMemo(() => {
     if (accessibilityLabel) return accessibilityLabel;

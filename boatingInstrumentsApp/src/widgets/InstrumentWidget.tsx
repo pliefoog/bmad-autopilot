@@ -42,3 +42,5 @@ const createStyles = (theme: typeof useTheme extends () => infer R ? R : never) 
     color: theme.text,
   },
 });
+
+export default InstrumentWidget;

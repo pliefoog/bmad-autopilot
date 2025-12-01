@@ -154,7 +154,6 @@ export function registerAllWidgets(): void {
   );
 
   // Register individual tank widget (for multi-instance tank-0, tank-1, etc.)
-  console.log('[registerAllWidgets] Registering tank widget...');
   WidgetRegistry.register(
     {
       id: 'tank',
@@ -167,7 +166,6 @@ export function registerAllWidgets(): void {
     },
     TanksWidget
   );
-  console.log('[registerAllWidgets] Tank widget registered successfully');
 
   // Autopilot widgets
   WidgetRegistry.register(

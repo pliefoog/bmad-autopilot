@@ -10,10 +10,14 @@ import { AutopilotCommandManager, AutopilotMode } from '../services/autopilotSer
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 interface AutopilotWidgetProps {
+  id: string;
+  title: string;
+  width?: number;
+  height?: number;
   showControls?: boolean;
 }
 
-export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ showControls = false }) => {
+export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, width, height, showControls = false }) => {
   // Clean sensor data access - NMEA Store v2.0
   const autopilot = useNmeaStore((state) => state.getSensorData('autopilot', 0));
   const compass = useNmeaStore((state) => state.getSensorData('compass', 0));
@@ -652,3 +656,5 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
 });
+
+export default AutopilotWidget;

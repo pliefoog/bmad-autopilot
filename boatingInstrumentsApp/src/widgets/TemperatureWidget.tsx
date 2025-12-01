@@ -268,3 +268,5 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
   );
 });
 
+export default TemperatureWidget;
+
