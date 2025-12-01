@@ -291,6 +291,134 @@ export class PgnParser {
   }
 
   /**
+   * Parse Cross Track Error PGN (129283)
+   * Navigation - Cross Track Error
+   */
+  public parseCrossTrackErrorPgn(data: string): { crossTrackError: number; steerDirection?: 'left' | 'right' } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 6) return null;
+    
+    // XTE Mode (byte 0): 0=Autonomous, 1=Differential, 2=Estimated, 3=Simulator, 4=Manual
+    // Navigation Terminated (byte 1): 0=No, 1=Yes
+    
+    // Cross Track Error in meters (bytes 2-5, little-endian 32-bit signed)
+    const xteRaw = bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24);
+    if (xteRaw === 0x7FFFFFFF) return null;
+    
+    // Convert to signed 32-bit and convert meters to nautical miles
+    const xteSigned = xteRaw > 0x7FFFFFFF ? xteRaw - 0x100000000 : xteRaw;
+    const xteNauticalMiles = xteSigned / 1852.0; // 1 nautical mile = 1852 meters
+    
+    return {
+      crossTrackError: xteNauticalMiles,
+      steerDirection: xteSigned < 0 ? 'left' : 'right'
+    };
+  }
+
+  /**
+   * Parse Navigation Data PGN (129284)
+   * Navigation - Navigation Data
+   */
+  public parseNavigationDataPgn(data: string): {
+    distanceToWaypoint?: number;
+    bearingToWaypoint?: number;
+    originWaypointId?: number;
+    destinationWaypointId?: number;
+    waypointClosingVelocity?: number;
+    perpendicularPassed?: boolean;
+    arrivalCircleEntered?: boolean;
+  } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 21) return null;
+    
+    const result: any = {};
+    
+    // Distance to waypoint (bytes 0-3, little-endian 32-bit unsigned) in meters
+    const distRaw = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+    if (distRaw !== 0xFFFFFFFF) {
+      result.distanceToWaypoint = distRaw / 1852.0; // Convert meters to nautical miles
+    }
+    
+    // Bearing reference (byte 4): 0=True, 1=Magnetic
+    // Perpendicular Crossed (byte 5): 0=No, 1=Yes
+    result.perpendicularPassed = bytes[5] === 1;
+    
+    // Arrival Circle Entered (byte 6): 0=No, 1=Yes
+    result.arrivalCircleEntered = bytes[6] === 1;
+    
+    // Bearing to waypoint (bytes 8-9, little-endian 16-bit unsigned) in 0.0001 radians
+    const bearingRaw = bytes[8] | (bytes[9] << 8);
+    if (bearingRaw !== 0xFFFF) {
+      result.bearingToWaypoint = bearingRaw * 0.0001 * (180 / Math.PI); // Convert to degrees
+    }
+    
+    // Origin waypoint ID (bytes 10-13, little-endian 32-bit)
+    const originId = bytes[10] | (bytes[11] << 8) | (bytes[12] << 16) | (bytes[13] << 24);
+    if (originId !== 0xFFFFFFFF) {
+      result.originWaypointId = originId;
+    }
+    
+    // Destination waypoint ID (bytes 14-17, little-endian 32-bit)
+    const destId = bytes[14] | (bytes[15] << 8) | (bytes[16] << 16) | (bytes[17] << 24);
+    if (destId !== 0xFFFFFFFF) {
+      result.destinationWaypointId = destId;
+    }
+    
+    // Waypoint closing velocity (bytes 18-19, little-endian 16-bit signed) in 0.01 m/s
+    const velocityRaw = bytes[18] | (bytes[19] << 8);
+    if (velocityRaw !== 0xFFFF) {
+      const velocitySigned = velocityRaw > 0x7FFF ? velocityRaw - 0x10000 : velocityRaw;
+      result.waypointClosingVelocity = (velocitySigned * 0.01) * 1.94384; // Convert m/s to knots
+    }
+    
+    return Object.keys(result).length > 0 ? result : null;
+  }
+
+  /**
+   * Parse Route/WP Information PGN (129285)
+   * Navigation - Route/Waypoint Information
+   */
+  public parseRouteWaypointPgn(data: string): {
+    waypointId?: number;
+    waypointName?: string;
+    waypointLatitude?: number;
+    waypointLongitude?: number;
+  } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 21) return null;
+    
+    const result: any = {};
+    
+    // Start RPS# (bytes 0-1, little-endian 16-bit)
+    // nItems (byte 2)
+    // Database ID (bytes 3-4, little-endian 16-bit)
+    // Route ID (bytes 5-6, little-endian 16-bit)
+    // Navigation direction (byte 7): 0=Forward, 1=Reverse
+    // Supplementary Route/WP data available (byte 8)
+    
+    // Waypoint ID (bytes 10-13, little-endian 32-bit)
+    const waypointId = bytes[10] | (bytes[11] << 8) | (bytes[12] << 16) | (bytes[13] << 24);
+    if (waypointId !== 0xFFFFFFFF) {
+      result.waypointId = waypointId;
+    }
+    
+    // Waypoint Name (bytes 14+, variable length string)
+    // Try to extract ASCII name from remaining bytes
+    let nameEndIndex = 14;
+    while (nameEndIndex < bytes.length && bytes[nameEndIndex] !== 0 && bytes[nameEndIndex] !== 0xFF) {
+      nameEndIndex++;
+    }
+    if (nameEndIndex > 14) {
+      result.waypointName = String.fromCharCode(...bytes.slice(14, nameEndIndex));
+    }
+    
+    // Note: Latitude/Longitude would follow name in variable-length message
+    // For now, we'll handle just ID and name as these are most critical
+    
+    return Object.keys(result).length > 0 ? result : null;
+  }
+
+  /**
    * Extract fields from canboat parsed data
    */
   private extractFieldsFromCanboat(fields: any): Record<string, any> {

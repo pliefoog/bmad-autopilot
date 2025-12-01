@@ -1836,6 +1836,11 @@ export class NmeaSensorProcessor {
       case 127505: // Fluid Level (Tanks)
         return this.mapPgnTank(pgnNumber, hexData, timestamp);
       
+      case 129283: // Cross Track Error
+      case 129284: // Navigation Data
+      case 129285: // Route/WP Information
+        return this.mapPgnNavigation(pgnNumber, hexData, timestamp);
+      
       default:
         console.log(`[NmeaSensorProcessor] ⚠️ Unsupported PGN: ${pgnNumber}`);
         return {
@@ -2050,6 +2055,11 @@ export class NmeaSensorProcessor {
       case 127505: // Fluid Level (Tanks)
         return this.mapPgnTank(pgnNumber, hexData, timestamp);
       
+      case 129283: // Cross Track Error
+      case 129284: // Navigation Data
+      case 129285: // Route/WP Information
+        return this.mapPgnNavigation(pgnNumber, hexData, timestamp);
+      
       default:
         console.log(`[NmeaSensorProcessor] ⚠️ Unsupported binary PGN: ${pgnNumber} (0x${pgnHex})`);
         return {
@@ -2240,6 +2250,105 @@ export class NmeaSensorProcessor {
       return {
         success: false,
         errors: [`Error mapping tank PGN ${pgnNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Map Navigation PGN data to SensorUpdate
+   * PGN 129283: Cross Track Error
+   * PGN 129284: Navigation Data  
+   * PGN 129285: Route/Waypoint Information
+   */
+  private mapPgnNavigation(pgnNumber: number, hexData: string, timestamp: number): ProcessingResult {
+    try {
+      const instance = 0; // Navigation data typically uses instance 0
+      
+      // Get current navigation data or initialize
+      const currentNav = useNmeaStore.getState().nmeaData.sensors.navigation?.[instance] || {};
+      const navigationUpdate: Partial<NavigationSensorData> = {
+        ...currentNav,
+        timestamp
+      };
+      
+      // Parse based on PGN type
+      switch (pgnNumber) {
+        case 129283: { // Cross Track Error
+          const xteData = pgnParser.parseCrossTrackErrorPgn(hexData);
+          if (xteData) {
+            navigationUpdate.crossTrackError = xteData.crossTrackError;
+            navigationUpdate.steerDirection = xteData.steerDirection;
+            console.log(`[NmeaSensorProcessor] 🧭 XTE: ${xteData.crossTrackError.toFixed(3)} nm, Steer: ${xteData.steerDirection || 'N/A'}`);
+          }
+          break;
+        }
+        
+        case 129284: { // Navigation Data
+          const navData = pgnParser.parseNavigationDataPgn(hexData);
+          if (navData) {
+            if (navData.distanceToWaypoint !== undefined) {
+              navigationUpdate.distanceToWaypoint = navData.distanceToWaypoint;
+            }
+            if (navData.bearingToWaypoint !== undefined) {
+              navigationUpdate.bearingToWaypoint = navData.bearingToWaypoint;
+            }
+            if (navData.waypointClosingVelocity !== undefined) {
+              navigationUpdate.velocityMadeGood = navData.waypointClosingVelocity;
+            }
+            if (navData.originWaypointId !== undefined) {
+              navigationUpdate.originWaypointId = navData.originWaypointId.toString();
+            }
+            if (navData.destinationWaypointId !== undefined) {
+              navigationUpdate.waypointId = navData.destinationWaypointId.toString();
+            }
+            // Determine arrival status
+            if (navData.arrivalCircleEntered) {
+              navigationUpdate.arrivalStatus = 'arrived';
+            } else if (navData.perpendicularPassed) {
+              navigationUpdate.arrivalStatus = 'perpendicular';
+            }
+            console.log(`[NmeaSensorProcessor] 🧭 Nav: BRG=${navData.bearingToWaypoint?.toFixed(0)}°, DIST=${navData.distanceToWaypoint?.toFixed(2)} nm, VMG=${navData.waypointClosingVelocity?.toFixed(1)} kts`);
+          }
+          break;
+        }
+        
+        case 129285: { // Route/Waypoint Information
+          const wpData = pgnParser.parseRouteWaypointPgn(hexData);
+          if (wpData) {
+            if (wpData.waypointId !== undefined) {
+              navigationUpdate.waypointId = wpData.waypointId.toString();
+            }
+            if (wpData.waypointName) {
+              navigationUpdate.waypointName = wpData.waypointName;
+            }
+            if (wpData.waypointLatitude !== undefined && wpData.waypointLongitude !== undefined) {
+              navigationUpdate.waypointPosition = {
+                latitude: wpData.waypointLatitude,
+                longitude: wpData.waypointLongitude
+              };
+            }
+            console.log(`[NmeaSensorProcessor] 🧭 Waypoint: ${wpData.waypointName || wpData.waypointId || 'Unknown'}`);
+          }
+          break;
+        }
+      }
+      
+      const updates: SensorUpdate[] = [{
+        sensorType: 'navigation',
+        instance,
+        data: navigationUpdate
+      }];
+      
+      return {
+        success: true,
+        updates,
+        messageType: `PGN${pgnNumber}`
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Error mapping navigation PGN ${pgnNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`]
       };
     }
   }
