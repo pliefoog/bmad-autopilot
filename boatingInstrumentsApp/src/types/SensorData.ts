@@ -115,6 +115,34 @@ export interface AutopilotSensorData extends BaseSensorData {
   alarm?: boolean;        // Autopilot alarm condition
 }
 
+export interface NavigationSensorData extends BaseSensorData {
+  // Waypoint information
+  waypointId?: string;            // PRIMARY - waypoint identifier
+  waypointName?: string;          // Waypoint name/description
+  waypointPosition?: {
+    latitude: number;
+    longitude: number;
+  };
+  
+  // Navigation metrics
+  bearingToWaypoint?: number;     // PRIMARY metric - bearing to destination (0-360°)
+  distanceToWaypoint?: number;    // PRIMARY metric - distance to destination (nautical miles)
+  crossTrackError?: number;       // PRIMARY metric - XTE in nautical miles (negative = left, positive = right)
+  
+  // Course information
+  originWaypointId?: string;      // Origin waypoint for current leg
+  destinationWaypointId?: string; // Destination waypoint for current leg
+  bearingOriginToDest?: number;   // Bearing from origin to destination
+  
+  // Speed/time estimates
+  velocityMadeGood?: number;      // Speed toward waypoint (knots)
+  timeToWaypoint?: number;        // Estimated time to arrival (seconds)
+  
+  // Navigation status
+  arrivalStatus?: 'active' | 'arrived' | 'perpendicular';
+  steerDirection?: 'left' | 'right'; // Which way to steer to correct XTE
+}
+
 // Union type for all sensor data
 export type SensorData = 
   | TankSensorData
@@ -126,7 +154,8 @@ export type SensorData =
   | TemperatureSensorData
   | DepthSensorData
   | CompassSensorData
-  | AutopilotSensorData;
+  | AutopilotSensorData
+  | NavigationSensorData;
 
 // Sensor type identifiers
 export type SensorType = 
@@ -139,7 +168,8 @@ export type SensorType =
   | 'temperature'
   | 'depth'
   | 'compass'
-  | 'autopilot';
+  | 'autopilot'
+  | 'navigation';
 
 // Main sensors data structure
 export interface SensorsData {
@@ -153,4 +183,5 @@ export interface SensorsData {
   depth: { [instance: number]: DepthSensorData };
   compass: { [instance: number]: CompassSensorData };
   autopilot: { [instance: number]: AutopilotSensorData };
+  navigation: { [instance: number]: NavigationSensorData };
 }

@@ -13,7 +13,8 @@ import type {
   TemperatureSensorData,
   DepthSensorData,
   CompassSensorData,
-  AutopilotSensorData
+  AutopilotSensorData,
+  NavigationSensorData
 } from '../types/SensorData';
 
 // MEMORY LEAK FIX: Throttle alarm evaluation (expensive operation)
@@ -168,7 +169,8 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       temperature: {},
       depth: {},
       compass: {},
-      autopilot: {}
+      autopilot: {},
+      navigation: {}
     },
     timestamp: Date.now(),
     messageCount: 0
@@ -336,7 +338,8 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         temperature: {},
         depth: {},
         compass: {},
-        autopilot: {}
+        autopilot: {},
+        navigation: {}
       },
       timestamp: Date.now(),
       messageCount: 0
