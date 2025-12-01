@@ -1,11 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { Dimensions } from 'react-native';
 import { instanceDetectionService, type DetectedInstance } from '../services/nmea/instanceDetection';
+
+// System widgets that must always be present and never expire
+const SYSTEM_WIDGETS = [
+  { id: 'theme', type: 'theme', title: 'Theme' }
+];
 
 export interface WidgetLayout {
   id: string;
-  x: number;
-  y: number;
+  x: number;              // DEPRECATED: Use page + positionOrder in user-arranged mode
+  y: number;              // DEPRECATED: Use page + positionOrder in user-arranged mode
   width: number;
   height: number;
   minWidth?: number;
@@ -14,6 +20,9 @@ export interface WidgetLayout {
   maxHeight?: number;
   locked?: boolean;
   visible?: boolean;
+  // User-arranged positioning (when userPositioned = true)
+  page?: number;          // Page number (0-indexed)
+  positionOrder?: number; // Position within page (0-indexed)
 }
 
 export interface WidgetConfig {
@@ -24,8 +33,8 @@ export interface WidgetConfig {
   layout: WidgetLayout;
   enabled: boolean;
   order: number;
-  // Enhanced state management (Story 2.15)
-  isPinned?: boolean;
+  // System widget protection
+  isSystemWidget?: boolean;
   // Lifecycle management for auto-detection
   createdAt?: number;
   lastDataUpdate?: number;
@@ -40,6 +49,8 @@ export interface DashboardConfig {
   columns: number;
   rows: number;
   backgroundColor?: string;
+  // Positioning mode flag
+  userPositioned?: boolean; // false = auto-discovery order, true = user-arranged with page/positionOrder
 }
 
 export interface WidgetPreset {
@@ -83,14 +94,17 @@ interface WidgetActions {
   updateDashboard: (dashboardId: string, updates: Partial<DashboardConfig>) => void;
   exportDashboard: (dashboardId: string) => DashboardConfig;
   importDashboard: (dashboard: DashboardConfig) => void;
-  // Enhanced state management actions (Story 2.15)
-  pinWidget: (widgetId: string) => void;
-  unpinWidget: (widgetId: string) => void;
-  toggleWidgetPin: (widgetId: string) => void;
-  isWidgetPinned: (widgetId: string) => boolean;
+  // Enhanced state management actions
   initializeWidgetStatesOnAppStart: () => void;
   resetLayout: () => void;
   applyPreset: (presetId: string) => void;
+  // User-arranged positioning actions (Phase 3)
+  enableUserPositioning: () => void;
+  resetLayoutToAutoDiscovery: () => void;
+  reorderWidgetsOnPage: (pageIndex: number, widgetIds: string[]) => void;
+  moveWidgetToPage: (widgetId: string, targetPage: number, targetPosition: number) => void;
+  compactPagePositions: (pageIndex: number) => void;
+  redistributeWidgetsAcrossPages: () => void;
   // Instance widget management methods
   createInstanceWidget: (instanceId: string, instanceType: 'engine' | 'battery' | 'tank', title: string, position?: { x: number; y: number }) => void;
   removeInstanceWidget: (instanceId: string) => void;
@@ -109,11 +123,31 @@ interface WidgetActions {
 type WidgetStore = WidgetState & WidgetActions;
 
 // FULLY DYNAMIC DASHBOARD - No static widgets, all based on detected NMEA data
+// FULLY DYNAMIC DASHBOARD - No static widgets, all based on detected NMEA data
 const defaultDashboard: DashboardConfig = {
   id: 'default',
   name: 'Main Dashboard',
   widgets: [
-    // All widgets are now dynamically detected from NMEA messages:
+    // 🛡️ SYSTEM WIDGET: ThemeWidget is always present and never expires
+    {
+      id: 'theme',
+      type: 'theme',
+      title: 'Theme',
+      settings: {},
+      layout: {
+        id: 'theme',
+        x: 0,
+        y: 0,
+        width: 2,
+        height: 2,
+        visible: true,
+      },
+      enabled: true,
+      order: -1000,
+      isSystemWidget: true,
+      createdAt: Date.now(),
+    },
+    // All other widgets are now dynamically detected from NMEA messages:
     // - GPS widgets appear when GPS NMEA sentences are detected
     // - Speed widgets appear when SOG/STW data is detected  
     // - Wind widgets appear when wind data is detected
@@ -484,38 +518,7 @@ export const useWidgetStore = create<WidgetStore>()(
         }));
       },
 
-      // Enhanced state management implementations (Story 2.15)
-      pinWidget: (widgetId) => {
-        get().updateWidget(widgetId, { 
-          isPinned: true
-        });
-      },
-
-      unpinWidget: (widgetId) => {
-        get().updateWidget(widgetId, { 
-          isPinned: false
-        });
-      },
-
-      toggleWidgetPin: (widgetId) => {
-        const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-        const widget = dashboard?.widgets.find(w => w.id === widgetId);
-        
-        if (widget?.isPinned) {
-          get().unpinWidget(widgetId);
-        } else {
-          get().pinWidget(widgetId);
-        }
-      },
-
-      isWidgetPinned: (widgetId) => {
-        const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-        const widget = dashboard?.widgets.find(w => w.id === widgetId);
-        return widget?.isPinned || false;
-      },
-
+      // Enhanced state management implementations
       initializeWidgetStatesOnAppStart: () => {
         const state = get();
         let dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
@@ -526,31 +529,59 @@ export const useWidgetStore = create<WidgetStore>()(
           widgetIds: dashboard?.widgets.map(w => w.id)
         });
         
-        // 🔧 MIGRATION: Ensure base widgets are always present
+        // 🛡️ SYSTEM WIDGET PROTECTION: Ensure system widgets are always present
         if (dashboard) {
-          // NO static base widgets - all widgets are dynamically detected from NMEA data
-          const baseWidgetIds: string[] = []; // Fully dynamic detection system
           const existingWidgetIds = new Set(dashboard.widgets.map(w => w.id));
-          const missingBaseWidgets = baseWidgetIds.filter(id => !existingWidgetIds.has(id));
+          const missingSystemWidgets = SYSTEM_WIDGETS.filter(sw => !existingWidgetIds.has(sw.id));
           
-          if (missingBaseWidgets.length > 0) {
-            console.log('[WidgetStore] Missing base widgets detected:', missingBaseWidgets);
-            console.log('[WidgetStore] Adding missing base widgets to dashboard');
+          if (missingSystemWidgets.length > 0) {
+            console.log('[WidgetStore] 🛡️ Missing system widgets detected:', missingSystemWidgets.map(w => w.id));
             
-            // Get base widgets from default dashboard
-            const defaultBaseWidgets = defaultDashboard.widgets.filter(w => 
-              missingBaseWidgets.includes(w.id)
-            );
+            // Create system widget configs
+            const systemWidgetConfigs = missingSystemWidgets.map((sw, index) => ({
+              id: sw.id,
+              type: sw.type,
+              title: sw.title,
+              settings: {},
+              layout: {
+                id: sw.id,
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 2,
+                visible: true,
+              },
+              enabled: true,
+              order: -1000 + index, // System widgets appear first
+              isSystemWidget: true, // Mark as protected system widget
+              createdAt: Date.now(),
+            }));
             
-            // Add missing base widgets
-            const updatedWidgets = [...dashboard.widgets, ...defaultBaseWidgets];
+            // Add missing system widgets at the start
+            const updatedWidgets = [...systemWidgetConfigs, ...dashboard.widgets];
             get().updateDashboard(state.currentDashboard, {
               widgets: updatedWidgets
             });
             
-            // Update local reference
-            dashboard = get().dashboards.find(d => d.id === state.currentDashboard);
-            console.log('[WidgetStore] Base widgets restored. Total widgets now:', dashboard?.widgets.length);
+            console.log('[WidgetStore] ✅ System widgets restored. Total widgets now:', updatedWidgets.length);
+          }
+          
+          // Mark existing system widgets if not already marked
+          const needsSystemWidgetFlag = dashboard.widgets.some(w => 
+            SYSTEM_WIDGETS.some(sw => sw.id === w.id) && !w.isSystemWidget
+          );
+          
+          if (needsSystemWidgetFlag) {
+            console.log('[WidgetStore] 🔧 Marking existing system widgets');
+            const updatedWidgets = dashboard.widgets.map(widget => {
+              if (SYSTEM_WIDGETS.some(sw => sw.id === widget.id)) {
+                return { ...widget, isSystemWidget: true };
+              }
+              return widget;
+            });
+            get().updateDashboard(state.currentDashboard, {
+              widgets: updatedWidgets
+            });
           }
         }
       },
@@ -587,6 +618,198 @@ export const useWidgetStore = create<WidgetStore>()(
 
         get().updateDashboard(get().currentDashboard, { widgets });
         set({ selectedWidgets: widgets.map((w) => w.type) });
+      },
+
+      // User-arranged positioning actions (Phase 3: Drag-and-Drop)
+      enableUserPositioning: () => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard || dashboard.userPositioned) return;
+
+        console.log('[WidgetStore] 🎯 Enabling user positioning mode');
+        
+        // Switch to user-arranged mode
+        get().updateDashboard(state.currentDashboard, {
+          userPositioned: true
+        });
+      },
+
+      resetLayoutToAutoDiscovery: () => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard) return;
+
+        console.log('[WidgetStore] 🔄 Resetting to auto-discovery layout');
+        
+        // Clear page and positionOrder from all widgets
+        const resetWidgets = dashboard.widgets.map(widget => ({
+          ...widget,
+          layout: {
+            ...widget.layout,
+            page: undefined,
+            positionOrder: undefined,
+          }
+        }));
+        
+        // Switch back to auto-discovery mode
+        get().updateDashboard(state.currentDashboard, {
+          widgets: resetWidgets,
+          userPositioned: false
+        });
+      },
+
+      reorderWidgetsOnPage: (pageIndex, widgetIds) => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard) return;
+
+        console.log(`[WidgetStore] 📝 Reordering ${widgetIds.length} widgets on page ${pageIndex}`);
+        
+        // Update positionOrder for widgets on this page
+        const updatedWidgets = dashboard.widgets.map(widget => {
+          const newPosition = widgetIds.indexOf(widget.id);
+          if (newPosition !== -1) {
+            return {
+              ...widget,
+              layout: {
+                ...widget.layout,
+                page: pageIndex,
+                positionOrder: newPosition,
+              }
+            };
+          }
+          return widget;
+        });
+        
+        get().updateDashboard(state.currentDashboard, {
+          widgets: updatedWidgets
+        });
+      },
+
+      moveWidgetToPage: (widgetId, targetPage, targetPosition) => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard) return;
+
+        console.log(`[WidgetStore] 🔀 Moving widget ${widgetId} to page ${targetPage}, position ${targetPosition}`);
+        
+        const updatedWidgets = dashboard.widgets.map(widget => {
+          if (widget.id === widgetId) {
+            return {
+              ...widget,
+              layout: {
+                ...widget.layout,
+                page: targetPage,
+                positionOrder: targetPosition,
+              }
+            };
+          }
+          return widget;
+        });
+        
+        get().updateDashboard(state.currentDashboard, {
+          widgets: updatedWidgets
+        });
+        
+        // Compact positions on target page
+        get().compactPagePositions(targetPage);
+      },
+
+      compactPagePositions: (pageIndex) => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard) return;
+
+        // Get widgets on this page, sorted by positionOrder
+        const pageWidgets = dashboard.widgets
+          .filter(w => w.layout.page === pageIndex)
+          .sort((a, b) => (a.layout.positionOrder || 0) - (b.layout.positionOrder || 0));
+        
+        if (pageWidgets.length === 0) return;
+
+        console.log(`[WidgetStore] 🗜️ Compacting ${pageWidgets.length} widgets on page ${pageIndex}`);
+        
+        // Reassign sequential positions
+        const updatedWidgets = dashboard.widgets.map(widget => {
+          const pageIndex = pageWidgets.findIndex(pw => pw.id === widget.id);
+          if (pageIndex !== -1) {
+            return {
+              ...widget,
+              layout: {
+                ...widget.layout,
+                positionOrder: pageIndex,
+              }
+            };
+          }
+          return widget;
+        });
+        
+        get().updateDashboard(state.currentDashboard, {
+          widgets: updatedWidgets
+        });
+      },
+
+      redistributeWidgetsAcrossPages: () => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard || !dashboard.userPositioned) return;
+
+        console.log('[WidgetStore] 📐 Redistributing widgets across pages after orientation change');
+        
+        // Get all positioned widgets, sorted by page then position
+        const positionedWidgets = dashboard.widgets
+          .filter(w => w.layout.page !== undefined && w.layout.positionOrder !== undefined)
+          .sort((a, b) => {
+            const pageDiff = (a.layout.page || 0) - (b.layout.page || 0);
+            if (pageDiff !== 0) return pageDiff;
+            return (a.layout.positionOrder || 0) - (b.layout.positionOrder || 0);
+          });
+        
+        if (positionedWidgets.length === 0) {
+          console.log('[WidgetStore] No positioned widgets to redistribute');
+          return;
+        }
+
+        // Calculate new grid config to determine widgets per page
+        // Note: This is a simplified calculation - real grid config comes from DynamicLayoutService
+        const { width } = Dimensions.get('window');
+        const columns = width < 600 ? 1 : width < 768 ? 2 : width < 1024 ? 3 : width < 1280 ? 5 : width < 1920 ? 6 : 8;
+        const rows = 4; // Approximate rows per page
+        const widgetsPerPage = columns * rows;
+
+        console.log(`[WidgetStore] New grid: ${columns} cols × ${rows} rows = ${widgetsPerPage} widgets/page`);
+
+        // Redistribute widgets maintaining their relative order
+        const updatedWidgets = dashboard.widgets.map(widget => {
+          const index = positionedWidgets.findIndex(w => w.id === widget.id);
+          
+          if (index === -1) {
+            // Widget not in positioned list, keep as is
+            return widget;
+          }
+
+          // Calculate new page and position
+          const newPage = Math.floor(index / widgetsPerPage);
+          const newPosition = index % widgetsPerPage;
+
+          console.log(`[WidgetStore]   Widget ${widget.id}: page ${widget.layout.page} → ${newPage}, pos ${widget.layout.positionOrder} → ${newPosition}`);
+
+          return {
+            ...widget,
+            layout: {
+              ...widget.layout,
+              page: newPage,
+              positionOrder: newPosition,
+            },
+          };
+        });
+
+        // Update dashboard with new positions
+        get().updateDashboard(state.currentDashboard, {
+          widgets: updatedWidgets,
+        });
+
+        console.log(`[WidgetStore] ✅ Redistributed ${positionedWidgets.length} widgets across pages`);
       },
 
       // Instance widget management methods
@@ -1096,12 +1319,31 @@ export const useWidgetStore = create<WidgetStore>()(
             {
               id: 'default',
               name: 'Default Dashboard',
-              widgets: [],
+              widgets: [
+                // 🛡️ SYSTEM WIDGET: ThemeWidget is always present
+                {
+                  id: 'theme',
+                  type: 'theme',
+                  title: 'Theme',
+                  settings: {},
+                  layout: {
+                    id: 'theme',
+                    x: 0,
+                    y: 0,
+                    width: 2,
+                    height: 2,
+                    visible: true,
+                  },
+                  enabled: true,
+                  order: -1000,
+                  isSystemWidget: true,
+                  createdAt: Date.now(),
+                },
+              ],
               gridSize: 20,
               snapToGrid: true,
               columns: 12,
               rows: 8,
-              backgroundColor: themeStore.getState().colors.surface
             }
           ],
           presets: [],
@@ -1117,6 +1359,10 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Force a small delay to let persist middleware complete
         await new Promise(resolve => setTimeout(resolve, 100));
+
+        // 🛡️ CRITICAL: Restore system widgets after reset
+        console.log('[WidgetStore] Restoring system widgets after factory reset...');
+        get().initializeWidgetStatesOnAppStart();
 
         // Double-check that localStorage is cleared after state reset
         try {
@@ -1223,8 +1469,8 @@ export const useWidgetStore = create<WidgetStore>()(
         
         for (const dashboard of state.dashboards) {
           for (const widget of dashboard.widgets) {
-            // Skip theme widget - it's a system widget
-            if (widget.id === 'themes' || widget.type === 'themes') {
+            // 🛡️ Skip system widgets - they never expire
+            if (widget.isSystemWidget) {
               continue;
             }
             
@@ -1247,11 +1493,10 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Second pass: remove expired widgets
         set((currentState) => ({
-          dashboards: currentState.dashboards.map((dashboard) => ({
-            ...dashboard,
-            widgets: dashboard.widgets.filter((widget) => {
-              // Skip theme widget - it's a system widget
-              if (widget.id === 'themes' || widget.type === 'themes') {
+          dashboards: currentState.dashboards.map((dashboard) => {
+            const updatedWidgets = dashboard.widgets.filter((widget) => {
+              // 🛡️ System widgets are always protected
+              if (widget.isSystemWidget) {
                 return true;
               }
 
@@ -1263,14 +1508,57 @@ export const useWidgetStore = create<WidgetStore>()(
               }
               
               return !isExpired;
-            }),
-          })),
+            });
+
+            // If in user-positioned mode, compact positions after removal
+            if (dashboard.userPositioned) {
+              // Group widgets by page
+              const pageMap = new Map<number, typeof updatedWidgets>();
+              
+              for (const widget of updatedWidgets) {
+                const page = widget.layout.page ?? 0;
+                if (!pageMap.has(page)) {
+                  pageMap.set(page, []);
+                }
+                pageMap.get(page)!.push(widget);
+              }
+
+              // Compact each page
+              const compactedWidgets = updatedWidgets.map(widget => {
+                const page = widget.layout.page ?? 0;
+                const pageWidgets = pageMap.get(page)!;
+                const sortedPageWidgets = pageWidgets.sort((a, b) => 
+                  (a.layout.positionOrder ?? 0) - (b.layout.positionOrder ?? 0)
+                );
+                const newPosition = sortedPageWidgets.indexOf(widget);
+
+                return {
+                  ...widget,
+                  layout: {
+                    ...widget.layout,
+                    positionOrder: newPosition,
+                  },
+                };
+              });
+
+              console.log(`[WidgetStore] 📐 Compacted ${compactedWidgets.length} widgets after removal`);
+
+              return {
+                ...dashboard,
+                widgets: compactedWidgets,
+              };
+            }
+
+            return {
+              ...dashboard,
+              widgets: updatedWidgets,
+            };
+          }),
           selectedWidgets: currentState.selectedWidgets.filter((widgetType) => {
             // Keep widget type if any widget of that type still exists after cleanup
             return currentState.dashboards.some((dashboard) =>
               dashboard.widgets.some((widget) => widget.type === widgetType && 
-                (widget.id === 'themes' || widget.type === 'themes' || 
-                 now - (widget.lastDataUpdate || widget.createdAt || now) <= timeout))
+                (widget.isSystemWidget || now - (widget.lastDataUpdate || widget.createdAt || now) <= timeout))
             );
           }),
         }));

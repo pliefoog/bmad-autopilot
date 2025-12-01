@@ -2,5 +2,4 @@
 export { WidgetRegistry } from './WidgetRegistry';
 export { registerAllWidgets } from './registerWidgets';
 export { DynamicDashboard } from './DynamicDashboard';
-export { WidgetSelector } from './WidgetSelector';
 export { WidgetErrorBoundary } from './WidgetErrorBoundary';

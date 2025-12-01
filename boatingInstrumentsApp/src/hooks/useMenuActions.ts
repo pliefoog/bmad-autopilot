@@ -41,10 +41,10 @@ export const useMenuActions = () => {
         Alert.alert('Layout Preferences', 'Layout settings coming soon');
         break;
 
-      // Widget Management Actions
+      // Widget Management Actions (auto-discovery only)
       case 'openWidgetSelector':
-        // This will be handled by parent component
-        console.log('Opening widget selector');
+        // REMOVED: Manual widget addition
+        Alert.alert('Auto-Discovery', 'Widgets automatically appear when NMEA data is detected');
         break;
       
       case 'openWidgetConfig':

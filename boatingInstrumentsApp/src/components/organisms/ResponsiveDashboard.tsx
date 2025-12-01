@@ -21,7 +21,6 @@ import {
   type PageLayout,
   createPageTransitionConfig,
 } from '../../utils/layoutUtils';
-import { WidgetSelector } from '../../widgets/WidgetSelector';
 
 // Import widget components
 import { DepthWidget } from '../../widgets/DepthWidget';
@@ -85,9 +84,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     footerHeight,
     pageIndicatorHeight
   );
-
-  // Widget selector modal state
-  const [showWidgetSelector, setShowWidgetSelector] = useState(false);
 
   // Animation values for page transitions (AC 10)
   const scrollViewRef = useRef<ScrollView>(null);
@@ -173,10 +169,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         case 'ArrowRight':
           navigateToNextPage();
           break;
-        case 'Enter':
-        case ' ':
-          setShowWidgetSelector(true);
-          break;
+        // REMOVED: Manual widget addition keyboard shortcut
       }
     }
   }, [navigateToNextPage, navigateToPreviousPage]);
@@ -248,15 +241,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           )}
         </View>
 
-        {/* Add widget button at end of flow (AC 7) */}
-        {isLastPage && (
-          <AddWidgetButtonPositioned
-            position="end-of-grid"
-            onPress={() => setShowWidgetSelector(true)}
-            testID="add-widget-button"
-            accessibilityLabel="Add new widget to dashboard"
-          />
-        )}
+        {/* REMOVED: Manual widget addition button - Now pure auto-discovery */}
       </View>
     );
   }, [
@@ -266,16 +251,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     renderWidget,
   ]);
 
-  // AC 14: Empty State Display
+  // AC 14: Empty State Display (auto-discovery handles widget creation)
   if (selectedWidgets.length === 0) {
     return (
       <View style={styles.emptyStateContainer} testID="dashboard-empty-state">
-        <AddWidgetButton
-          onPress={() => setShowWidgetSelector(true)}
-          size={80}
-          testID="add-first-widget-button"
-          accessibilityLabel="Add your first widget to get started"
-        />
+        {/* Widgets will auto-appear when NMEA data detected */}
       </View>
     );
   }
@@ -329,16 +309,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         testID="dashboard-pagination"
       />
 
-      {/* Widget selector modal */}
-      <WidgetSelector
-        visible={showWidgetSelector}
-        selected={selectedWidgets}
-        onChange={(newSelectedWidgets) => {
-          // Handle widget selection changes here
-          setShowWidgetSelector(false);
-        }}
-        onClose={() => setShowWidgetSelector(false)}
-      />
+      {/* REMOVED: Manual widget addition via WidgetSelector - Now pure auto-discovery */}
     </View>
   );
 };

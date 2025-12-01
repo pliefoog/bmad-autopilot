@@ -4,13 +4,14 @@ import { useTheme, ThemeColors } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useToast } from '../hooks/useToast';
 import { WidgetRegistry } from './WidgetRegistry';
-import { WidgetSelector } from './WidgetSelector';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { PlatformStyles } from '../utils/animationUtils';
 import { DynamicLayoutService, DynamicWidgetLayout, GridConfig } from '../services/dynamicLayoutService';
 import { registerAllWidgets } from './registerWidgets';
 import { WidgetFactory } from '../services/WidgetFactory';
 import UniversalIcon from '../components/atoms/UniversalIcon';
+import { DraggableWidgetGrid } from '../components/DraggableWidgetGrid';
+import { DashboardSettingsMenu } from '../components/DashboardSettingsMenu';
 
 // Render the appropriate widget component using registry
 function renderWidget(
@@ -19,8 +20,8 @@ function renderWidget(
   width?: number,
   height?: number
 ): React.ReactElement | null {
-  // Use the local extractBaseWidgetType function for proper multi-instance handling
-  const baseType = extractBaseWidgetType(key);
+  // Use WidgetFactory for proper multi-instance handling
+  const { baseType } = WidgetFactory.parseWidgetId(key);
   const registeredWidget = WidgetRegistry.getWidget(baseType);
   
   if (registeredWidget) {
@@ -40,48 +41,6 @@ function renderWidget(
   return null;
 }
 
-// Extract base widget type from instance ID
-function extractBaseWidgetType(widgetId: string): string {
-  // Handle legacy widget ID mappings
-  if (widgetId === 'water-temperature') {
-    return 'watertemp';
-  }
-  
-  // Check if this is a multi-instance widget ID (e.g., "engine-0", "battery-1", "tank-0", "temp-0") 
-  const multiInstancePatterns = [
-    /^engine-\d+$/, // "engine-0", "engine-1", etc.
-    /^battery-\d+$/, // "battery-0", "battery-1", etc.
-    /^tank-\d+$/, // "tank-0", "tank-1", etc. (new simulator format)
-    /^tank-\w+-\d+$/, // "tank-fuel-0", "tank-freshWater-1", etc. (legacy format)
-    /^temp-\d+$/, // "temp-0", "temp-1", etc.
-  ];
-  
-  const isMultiInstance = multiInstancePatterns.some(pattern => pattern.test(widgetId));
-  
-  if (isMultiInstance) {
-    const parts = widgetId.split('-');
-    const baseType = parts[0];
-    
-    // Map base types to registered widget types
-    switch (baseType) {
-      case 'tank': return 'tanks'; // 'tank-0' or 'tank-fuel-0' -> use 'tanks' widget
-      case 'engine': return 'engine'; // 'engine-0' -> use 'engine' widget  
-      case 'battery': return 'battery'; // 'battery-0' -> use 'battery' widget
-      case 'temp': return 'temperature'; // 'temp-0' -> use 'temperature' widget
-      default: return baseType;
-    }
-  }
-  
-  // Additional legacy widget ID mappings
-  const legacyMappings: Record<string, string> = {
-    'water-temperature': 'watertemp',
-    'water-temp': 'watertemp',
-    'temperature': 'watertemp',
-  };
-  
-  return legacyMappings[widgetId] || widgetId;
-}
-
 export const DynamicDashboard: React.FC = () => {
   // Selective subscriptions to prevent re-renders on widget timestamp updates
   const currentDashboard = useWidgetStore(state => state.currentDashboard);
@@ -89,21 +48,23 @@ export const DynamicDashboard: React.FC = () => {
     const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
     return dashboard?.widgets || [];
   });
+  const dashboardConfig = useWidgetStore(state => 
+    state.dashboards.find(d => d.id === state.currentDashboard)
+  );
+  const { moveWidgetToPage, redistributeWidgetsAcrossPages } = useWidgetStore();
   
   const [layout, setLayout] = useState<DynamicWidgetLayout[]>([]);
-  const [showSelector, setShowSelector] = useState(false);
-  const [isDragMode, setIsDragMode] = useState(false);
-  const [currentProfile, setCurrentProfile] = useState<string>('default');
   const [currentPage, setCurrentPage] = useState(0);
   const [dimensions, setDimensions] = useState(() => {
     const { width, height } = Dimensions.get('window');
     return { width, height };
   });
-  const [widgetHeights, setWidgetHeights] = useState<Map<string, number>>(new Map());
   const [removedWidget, setRemovedWidget] = useState<{
     widget: DynamicWidgetLayout;
     index: number;
   } | null>(null);
+  const [failedWidgets, setFailedWidgets] = useState<Set<string>>(new Set());
+  const [settingsVisible, setSettingsVisible] = useState(false);
   
   const theme = useTheme();
   const toast = useToast();
@@ -115,9 +76,9 @@ export const DynamicDashboard: React.FC = () => {
     const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
     const config = DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
     return config;
-  }, [dimensions, storeWidgets]);
+  }, [dimensions.width, dimensions.height, storeWidgets.length]);
   
-  const styles = useMemo(() => createStyles(theme, gridConfig), [theme, gridConfig]);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // Register all widgets on mount
   useEffect(() => {
@@ -128,13 +89,22 @@ export const DynamicDashboard: React.FC = () => {
   useEffect(() => {
     // React Native Dimensions API listener
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      // Clear grid config cache on orientation change
+      DynamicLayoutService.clearCache();
       setDimensions({ width: window.width, height: window.height });
       setCurrentPage(0);
+      
+      // Redistribute widgets if in user-positioned mode
+      if (dashboardConfig?.userPositioned) {
+        redistributeWidgetsAcrossPages();
+      }
     });
 
     // Web-specific window resize listener for more reliable updates
     const handleResize = () => {
       const { width, height } = Dimensions.get('window');
+      // Clear grid config cache on resize
+      DynamicLayoutService.clearCache();
       setDimensions({ width, height });
       setCurrentPage(0);
     };
@@ -172,13 +142,13 @@ export const DynamicDashboard: React.FC = () => {
     const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, headerHeight, footerHeight);
     
     return gridLayout;
-  }, [dimensions]);
+  }, [dimensions.width, dimensions.height]);
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
     const gridLayout = calculateGridLayout(storeWidgets);
     setLayout(gridLayout);
-  }, [storeWidgets, calculateGridLayout, dimensions]);
+  }, [storeWidgets, calculateGridLayout]);
 
   // Save layout to widget store (pure widget store architecture)
   const saveLayout = useCallback(async (newLayout: DynamicWidgetLayout[]) => {
@@ -235,40 +205,6 @@ export const DynamicDashboard: React.FC = () => {
     setLayout(recalculatedLayout);
   }, [storeWidgets, calculateGridLayout]);
 
-  // Handle adding widgets from selector (pure widget store)
-  const handleAddWidget = useCallback(async (selectedIds: string[]) => {
-    const currentIds = storeWidgets.map(w => w.id);
-    const newIds = selectedIds.filter(id => !currentIds.includes(id));
-    
-    if (newIds.length === 0) return;
-
-    // Create new widget configs for widget store
-    const newWidgetConfigs = newIds.map((id, index) => ({
-      id,
-      type: id,
-      title: id.charAt(0).toUpperCase() + id.slice(1), // Simple title capitalization
-      settings: {},
-      layout: {
-        id,
-        x: (storeWidgets.length + index) % 3 * 2, // Simple grid positioning
-        y: Math.floor((storeWidgets.length + index) / 3) * 2,
-        width: 2,
-        height: 2,
-        visible: true,
-      },
-      enabled: true,
-      order: storeWidgets.length + index,
-    }));
-
-    // Add to widget store directly
-    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
-    updateDashboard(currentDashboard, {
-      widgets: [...storeWidgets, ...newWidgetConfigs]
-    });
-    
-    setShowSelector(false);
-  }, [storeWidgets]);
-
   // Handle removing widgets (pure widget store)
   const handleRemoveWidget = useCallback(async (widgetId: string) => {
     const widgetIndex = storeWidgets.findIndex(w => w.id === widgetId);
@@ -277,9 +213,9 @@ export const DynamicDashboard: React.FC = () => {
     const widget = storeWidgets[widgetIndex];
     const updatedWidgets = storeWidgets.filter(w => w.id !== widgetId);
     
-    // Store removed widget for undo functionality
+    // Store full widget snapshot (not reference) for reliable undo
     setRemovedWidget({ 
-      widget: { id: widgetId, order: widgetIndex } as any, // Simplified for undo
+      widget: JSON.parse(JSON.stringify(widget)), // Deep clone to prevent stale references
       index: widgetIndex 
     });
     
@@ -288,43 +224,54 @@ export const DynamicDashboard: React.FC = () => {
     updateDashboard(currentDashboard, { widgets: updatedWidgets });
     
     // Show undo toast using global toast system
-    if (removedWidget) {
-      toast.showInfo(`Removed ${removedWidget.widget.id} widget`, {
-        duration: 5000,
-        source: 'dashboard',
-        action: {
-          label: 'Undo',
-          action: () => handleUndoRemove(),
-          style: 'primary'
-        }
-      });
-    }
-  }, [storeWidgets]);
+    toast.showInfo(`Removed ${widget.title || widget.id} widget`, {
+      duration: 5000,
+      source: 'dashboard',
+      action: {
+        label: 'Undo',
+        action: () => handleUndoRemove(),
+        style: 'primary'
+      }
+    });
+  }, [storeWidgets, toast]);
 
   // Handle undo remove (pure widget store)
   const handleUndoRemove = useCallback(async () => {
     if (!removedWidget) return;
 
-    // Find the removed widget in the original store state
-    const originalWidget = storeWidgets.find(w => w.id === removedWidget.widget.id);
-    if (!originalWidget) {
-      return;
-    }
-
-    // Restore widget to store
-    const restoredWidgets = [...storeWidgets];
-    restoredWidgets.splice(removedWidget.index, 0, originalWidget);
+    // Use the stored snapshot directly (no lookup needed)
+    const restoredWidget = removedWidget.widget;
+    
+    // Restore widget to store at original position
+    const currentWidgets = useWidgetStore.getState().dashboards.find(
+      d => d.id === useWidgetStore.getState().currentDashboard
+    )?.widgets || [];
+    
+    const restoredWidgets = [...currentWidgets];
+    restoredWidgets.splice(removedWidget.index, 0, restoredWidget);
     
     const { updateDashboard, currentDashboard } = useWidgetStore.getState();
     updateDashboard(currentDashboard, { widgets: restoredWidgets });
     
     setRemovedWidget(null);
-    toast.showSuccess(`Restored ${originalWidget.id} widget`, { source: 'dashboard' });
-  }, [removedWidget, storeWidgets]);
+    toast.showSuccess(`Restored ${restoredWidget.title || restoredWidget.id} widget`, { source: 'dashboard' });
+  }, [removedWidget, toast]);
 
-  // Handle widget rendering errors by cleaning up invalid widgets
+  // Handle widget rendering errors with isolated recovery (no full layout recalc)
   const handleWidgetError = useCallback((widgetId: string) => {
-    // Trigger cleanup of orphaned widgets using getState()
+    // Add to failed widgets set for isolated handling
+    setFailedWidgets(prev => new Set(prev).add(widgetId));
+    
+    // Schedule automatic retry after 2 seconds
+    setTimeout(() => {
+      setFailedWidgets(prev => {
+        const next = new Set(prev);
+        next.delete(widgetId);
+        return next;
+      });
+    }, 2000);
+    
+    // Only cleanup orphaned widgets (don't force full layout recalc)
     useWidgetStore.getState().cleanupOrphanedWidgets();
   }, []);
 
@@ -416,80 +363,60 @@ export const DynamicDashboard: React.FC = () => {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
+      {/* Mode Indicator - show when in user-positioned mode */}
+      {dashboardConfig?.userPositioned && (
+        <View style={[styles.modeIndicator, { backgroundColor: theme.primaryLight || theme.surface, borderColor: theme.primary }]}>
+          <UniversalIcon 
+            name="lock" 
+            size={14} 
+            color={theme.primary} 
+            style={styles.modeIndicatorIcon}
+          />
+          <Text style={[styles.modeIndicatorText, { color: theme.primary }]}>
+            Custom Layout
+          </Text>
+        </View>
+      )}
+      
       {/* Widget Display Area - Conditional: ScrollView (mobile) or Fixed Grid (tablet/desktop) */}
       {useScrollMode ? (
-        // MOBILE: Scrollable grid that fills screen height
+        // MOBILE: Scrollable draggable grid
         <ScrollView 
           style={styles.pageContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
         >
-          <View style={styles.widgetGridContainer}>
-            {currentPageWidgets.map((widget) => (
-              <View 
-                key={widget.id} 
-                style={[
-                  styles.widgetGridItem,
-                  {
-                    width: widget.width,
-                    height: widget.height,
-                  }
-                ]}
-              >
-                <WidgetErrorBoundary
-                  widgetId={widget.id}
-                  theme={theme}
-                  onReload={() => {
-                    // Force re-render
-                    setLayout(prev => [...prev]);
-                  }}
-                  onRemove={() => handleRemoveWidget(widget.id)}
-                >
-                  <View style={styles.widgetContentWrapper}>
-                    {renderWidget(widget.id, handleWidgetError, widget.width, widget.height)}
-                  </View>
-                </WidgetErrorBoundary>
-              </View>
-            ))}
-          </View>
+          <DraggableWidgetGrid
+            pageIndex={currentPage}
+            onMoveToPage={moveWidgetToPage}
+          />
         </ScrollView>
       ) : (
-        // TABLET/DESKTOP: Fixed grid with pagination
+        // TABLET/DESKTOP: Fixed grid with pagination and drag-and-drop
         <View style={styles.paginatedContainer}>
-          <View style={styles.widgetGridContainer}>
-              {currentPageWidgets.map((widget) => (
-                <View 
-                  key={widget.id} 
-                  style={[
-                    styles.widgetGridItem,
-                    {
-                      width: widget.width,
-                      height: widget.height,
-                    }
-                  ]}
-                >
-                  <WidgetErrorBoundary
-                    widgetId={widget.id}
-                    theme={theme}
-                    onReload={() => {
-                      // Force re-render
-                      setLayout(prev => [...prev]);
-                    }}
-                    onRemove={() => handleRemoveWidget(widget.id)}
-                  >
-                    <View style={styles.widgetContentWrapper}>
-                      {renderWidget(widget.id, handleWidgetError, widget.width, widget.height)}
-                    </View>
-                  </WidgetErrorBoundary>
-                </View>
-              ))}
-            </View>
+          <DraggableWidgetGrid
+            pageIndex={currentPage}
+            onMoveToPage={moveWidgetToPage}
+          />
         </View>
       )}
       
       {/* Pagination Controls - show only for tablet/desktop with multiple pages */}
       {!useScrollMode && usePagination && (
         <View style={styles.paginationContainer}>
+          {/* Settings Button */}
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => setSettingsVisible(true)}
+            activeOpacity={0.7}
+          >
+            <UniversalIcon 
+              name="settings-outline" 
+              size={20} 
+              color={theme.textSecondary} 
+            />
+          </TouchableOpacity>
+          
           {/* Previous Page Button */}
           <TouchableOpacity
             style={[styles.paginationArrow, currentPage === 0 && styles.paginationArrowDisabled]}
@@ -537,37 +464,43 @@ export const DynamicDashboard: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-
-      {/* FAB Container */}
-      <View style={styles.fabContainer}>
-        {/* Add Widget FAB */}
-        <TouchableOpacity
-          style={[styles.fab, styles.addFab, { backgroundColor: theme.primary }]}
-          onPress={() => setShowSelector(true)}
-          activeOpacity={0.8}
-        >
-          <UniversalIcon name="add" size={24} color={theme.surface} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Widget Selector Modal */}
-      {showSelector && (
-        <WidgetSelector
-          visible={showSelector}
-          onClose={() => setShowSelector(false)}
-          selected={[]}
-          onChange={handleAddWidget}
-        />
-      )}
-
-
+      
+      {/* Dashboard Settings Menu */}
+      <DashboardSettingsMenu
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+      />
     </View>
   );
 };
 
-const createStyles = (theme: ThemeColors, gridConfig: GridConfig) => StyleSheet.create({
+const createStyles = (theme: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
+  },
+  modeIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  modeIndicatorIcon: {
+    marginRight: 4,
+  },
+  modeIndicatorText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   pageContainer: {
     flex: 1,
@@ -626,6 +559,17 @@ const createStyles = (theme: ThemeColors, gridConfig: GridConfig) => StyleSheet.
     borderTopColor: theme.border,
     backgroundColor: theme.surface,
   },
+  settingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
   paginationArrow: {
     width: 44,
     height: 44,
@@ -653,24 +597,5 @@ const createStyles = (theme: ThemeColors, gridConfig: GridConfig) => StyleSheet.
     width: 12,
     height: 12,
     borderRadius: 6,
-  },
-  fabContainer: {
-    position: 'absolute',
-    right: 24,
-    bottom: 80, // Moved up to make room for pagination
-    flexDirection: 'column',
-    gap: 16,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...PlatformStyles.boxShadow(theme.shadowDark, { x: 0, y: 2 }, 4, 0.3),
-    elevation: 6,
-  },
-  addFab: {
-    // Uses base fab styles
   },
 });

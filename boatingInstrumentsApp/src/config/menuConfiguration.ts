@@ -91,8 +91,8 @@ export const menuConfiguration: MenuConfiguration = {
       items: [
         {
           id: 'add-widgets',
-          label: 'Add/Remove Widgets',
-          icon: '➕',
+          label: 'Auto-Discovery Info',
+          icon: 'ℹ️',
           action: 'openWidgetSelector',
           testId: 'menu-add-widgets',
         },

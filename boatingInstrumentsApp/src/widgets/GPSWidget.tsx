@@ -161,6 +161,10 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
     };
   }, [utcTime, gpsDateFormat, gpsTimeFormat]);
 
+  const handleLongPressOnPin = useCallback(() => {
+    toggleWidgetPin(id);
+  }, [id, toggleWidgetPin]);
+
   // Data staleness detection (>10s = stale for GPS)
   const isStale = gpsTimestamp ? (Date.now() - gpsTimestamp) > 10000 : true;
 
