@@ -13,6 +13,7 @@ const SHOW_REACT_ERRORS = false;
 
 // Selective logging flags
 let THEME_LOGGING_ENABLED = false;
+let DRAG_LOGGING_ENABLED = false;
 
 // Create silent no-op functions
 const noop = () => {};
@@ -29,6 +30,14 @@ export const logger = {
     const _console = console;
     return _console.log.bind(_console);
   })(),
+  
+  // Selective logging functions
+  drag: (...args: any[]) => {
+    if (typeof window !== 'undefined' && (window as any).isDragLoggingEnabled?.()) {
+      const _console = (window as any).__originalConsole || console;
+      _console.log(...args);
+    }
+  },
 };
 
 // Override global console in production
@@ -87,11 +96,22 @@ if (typeof window !== 'undefined' && !ENABLE_LOGGING) {
 
   (window as any).hideThemeLogging = () => {
     THEME_LOGGING_ENABLED = false;
-    logger.always('🔇 Theme logging disabled');
+    logger.always('🔇 Theme logging hidden');
+  };
+
+  (window as any).showDragLogging = () => {
+    DRAG_LOGGING_ENABLED = true;
+    logger.always('✅ Drag logging enabled');
+  };
+
+  (window as any).hideDragLogging = () => {
+    DRAG_LOGGING_ENABLED = false;
+    logger.always('🔇 Drag logging hidden');
   };
 
   (window as any).isThemeLoggingEnabled = () => THEME_LOGGING_ENABLED;
+  (window as any).isDragLoggingEnabled = () => DRAG_LOGGING_ENABLED;
   
   // Initial message using original error (before suppression)
-  originalConsole.error('🔇 All console output suppressed. Commands: enableLogging() | disableLogging() | showReactErrors() | hideReactErrors() | showThemeLogging() | hideThemeLogging()');
+  originalConsole.error('🔇 All console output suppressed. Commands: enableLogging() | disableLogging() | showReactErrors() | hideReactErrors() | showThemeLogging() | hideThemeLogging() | showDragLogging() | hideDragLogging()');
 }

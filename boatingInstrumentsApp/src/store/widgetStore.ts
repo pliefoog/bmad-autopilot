@@ -10,8 +10,8 @@ const SYSTEM_WIDGETS = [
 
 export interface WidgetLayout {
   id: string;
-  x: number;              // DEPRECATED: Use page + positionOrder in user-arranged mode
-  y: number;              // DEPRECATED: Use page + positionOrder in user-arranged mode
+  x: number;              // DEPRECATED: Legacy positioning
+  y: number;              // DEPRECATED: Legacy positioning
   width: number;
   height: number;
   minWidth?: number;
@@ -20,9 +20,9 @@ export interface WidgetLayout {
   maxHeight?: number;
   locked?: boolean;
   visible?: boolean;
-  // User-arranged positioning (when userPositioned = true)
-  page?: number;          // Page number (0-indexed)
-  positionOrder?: number; // Position within page (0-indexed)
+  // Array-based positioning: index in widgets array determines position
+  // Page calculated as: Math.floor(index / widgetsPerPage)
+  // Position within page: index % widgetsPerPage
 }
 
 export interface WidgetConfig {
@@ -101,6 +101,7 @@ interface WidgetActions {
   // User-arranged positioning actions (Phase 3)
   enableUserPositioning: () => void;
   resetLayoutToAutoDiscovery: () => void;
+  reorderWidget: (fromIndex: number, toIndex: number) => void;
   reorderWidgetsOnPage: (pageIndex: number, widgetIds: string[]) => void;
   moveWidgetToPage: (widgetId: string, targetPage: number, targetPosition: number) => void;
   compactPagePositions: (pageIndex: number) => void;
@@ -641,20 +642,31 @@ export const useWidgetStore = create<WidgetStore>()(
 
         console.log('[WidgetStore] 🔄 Resetting to auto-discovery layout');
         
-        // Clear page and positionOrder from all widgets
-        const resetWidgets = dashboard.widgets.map(widget => ({
-          ...widget,
-          layout: {
-            ...widget.layout,
-            page: undefined,
-            positionOrder: undefined,
-          }
-        }));
-        
-        // Switch back to auto-discovery mode
+        // Switch back to auto-discovery mode (array stays as-is)
         get().updateDashboard(state.currentDashboard, {
-          widgets: resetWidgets,
           userPositioned: false
+        });
+      },
+
+      // Simple array-based widget reordering using global indices
+      reorderWidget: (fromIndex: number, toIndex: number) => {
+        const state = get();
+        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        if (!dashboard) return;
+
+        console.log(`[WidgetStore] 🔄 Reordering widget: index ${fromIndex} → ${toIndex}`);
+        
+        // Pure array splice
+        const widgets = [...dashboard.widgets];
+        const [movedWidget] = widgets.splice(fromIndex, 1);
+        widgets.splice(toIndex, 0, movedWidget);
+        
+        console.log(`[WidgetStore] ✅ Moved widget ${movedWidget.id} from ${fromIndex} to ${toIndex}`);
+        console.log(`[WidgetStore] New array:`, widgets.map((w, i) => `${i}:${w.id}`).join(', '));
+        
+        get().updateDashboard(state.currentDashboard, {
+          widgets,
+          userPositioned: true,
         });
       },
 
@@ -664,25 +676,38 @@ export const useWidgetStore = create<WidgetStore>()(
         if (!dashboard) return;
 
         console.log(`[WidgetStore] 📝 Reordering ${widgetIds.length} widgets on page ${pageIndex}`);
+        console.log(`[WidgetStore] New order:`, widgetIds);
         
-        // Update positionOrder for widgets on this page
-        const updatedWidgets = dashboard.widgets.map(widget => {
-          const newPosition = widgetIds.indexOf(widget.id);
-          if (newPosition !== -1) {
-            return {
-              ...widget,
-              layout: {
-                ...widget.layout,
-                page: pageIndex,
-                positionOrder: newPosition,
-              }
-            };
-          }
-          return widget;
-        });
+        // Calculate widgets per page based on current grid
+        const { width } = Dimensions.get('window');
+        const columns = width < 600 ? 1 : width < 768 ? 2 : width < 1024 ? 3 : width < 1280 ? 5 : width < 1920 ? 6 : 8;
+        const rows = 4;
+        const widgetsPerPage = columns * rows;
+        
+        // Get current page range in the full array
+        const pageStartIndex = pageIndex * widgetsPerPage;
+        const pageEndIndex = pageStartIndex + widgetIds.length;
+        
+        console.log(`[WidgetStore] Page ${pageIndex} range: ${pageStartIndex} to ${pageEndIndex}`);
+        
+        // Build new array by replacing the page range with reordered widgets
+        const widgetIdSet = new Set(widgetIds);
+        const reorderedWidgets = widgetIds
+          .map(id => dashboard.widgets.find(w => w.id === id))
+          .filter((w): w is WidgetConfig => w !== undefined);
+        
+        // Build new array: before page + reordered page + after page
+        const newWidgets = [
+          ...dashboard.widgets.slice(0, pageStartIndex),
+          ...reorderedWidgets,
+          ...dashboard.widgets.slice(pageEndIndex)
+        ];
+        
+        console.log(`[WidgetStore] ✅ Reordered ${reorderedWidgets.length} widgets at page ${pageIndex}`);
+        console.log(`[WidgetStore] Widget IDs in new array:`, newWidgets.map(w => w.id));
         
         get().updateDashboard(state.currentDashboard, {
-          widgets: updatedWidgets
+          widgets: newWidgets
         });
       },
 
@@ -693,123 +718,40 @@ export const useWidgetStore = create<WidgetStore>()(
 
         console.log(`[WidgetStore] 🔀 Moving widget ${widgetId} to page ${targetPage}, position ${targetPosition}`);
         
-        const updatedWidgets = dashboard.widgets.map(widget => {
-          if (widget.id === widgetId) {
-            return {
-              ...widget,
-              layout: {
-                ...widget.layout,
-                page: targetPage,
-                positionOrder: targetPosition,
-              }
-            };
-          }
-          return widget;
-        });
+        // Calculate absolute index from page + position
+        // widgetsPerPage is calculated from grid config in DynamicLayoutService
+        const { width } = Dimensions.get('window');
+        const columns = width < 600 ? 1 : width < 768 ? 2 : width < 1024 ? 3 : width < 1280 ? 5 : width < 1920 ? 6 : 8;
+        const rows = 4;
+        const widgetsPerPage = columns * rows;
+        const targetIndex = targetPage * widgetsPerPage + targetPosition;
+        
+        // Remove widget from current position
+        const widgets = [...dashboard.widgets];
+        const currentIndex = widgets.findIndex(w => w.id === widgetId);
+        if (currentIndex === -1) return;
+        
+        const [movedWidget] = widgets.splice(currentIndex, 1);
+        
+        // Insert at target index
+        widgets.splice(Math.min(targetIndex, widgets.length), 0, movedWidget);
         
         get().updateDashboard(state.currentDashboard, {
-          widgets: updatedWidgets
+          widgets
         });
-        
-        // Compact positions on target page
-        get().compactPagePositions(targetPage);
       },
 
       compactPagePositions: (pageIndex) => {
-        const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-        if (!dashboard) return;
-
-        // Get widgets on this page, sorted by positionOrder
-        const pageWidgets = dashboard.widgets
-          .filter(w => w.layout.page === pageIndex)
-          .sort((a, b) => (a.layout.positionOrder || 0) - (b.layout.positionOrder || 0));
-        
-        if (pageWidgets.length === 0) return;
-
-        console.log(`[WidgetStore] 🗜️ Compacting ${pageWidgets.length} widgets on page ${pageIndex}`);
-        
-        // Reassign sequential positions
-        const updatedWidgets = dashboard.widgets.map(widget => {
-          const pageIndex = pageWidgets.findIndex(pw => pw.id === widget.id);
-          if (pageIndex !== -1) {
-            return {
-              ...widget,
-              layout: {
-                ...widget.layout,
-                positionOrder: pageIndex,
-              }
-            };
-          }
-          return widget;
-        });
-        
-        get().updateDashboard(state.currentDashboard, {
-          widgets: updatedWidgets
-        });
+        // No-op: Array-based positioning is inherently compact
+        // Index in array IS the position - no gaps possible
+        console.log(`[WidgetStore] 🗜️ Compact requested for page ${pageIndex} - skipped (array-based positioning)`);
       },
 
       redistributeWidgetsAcrossPages: () => {
-        const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-        if (!dashboard || !dashboard.userPositioned) return;
-
-        console.log('[WidgetStore] 📐 Redistributing widgets across pages after orientation change');
-        
-        // Get all positioned widgets, sorted by page then position
-        const positionedWidgets = dashboard.widgets
-          .filter(w => w.layout.page !== undefined && w.layout.positionOrder !== undefined)
-          .sort((a, b) => {
-            const pageDiff = (a.layout.page || 0) - (b.layout.page || 0);
-            if (pageDiff !== 0) return pageDiff;
-            return (a.layout.positionOrder || 0) - (b.layout.positionOrder || 0);
-          });
-        
-        if (positionedWidgets.length === 0) {
-          console.log('[WidgetStore] No positioned widgets to redistribute');
-          return;
-        }
-
-        // Calculate new grid config to determine widgets per page
-        // Note: This is a simplified calculation - real grid config comes from DynamicLayoutService
-        const { width } = Dimensions.get('window');
-        const columns = width < 600 ? 1 : width < 768 ? 2 : width < 1024 ? 3 : width < 1280 ? 5 : width < 1920 ? 6 : 8;
-        const rows = 4; // Approximate rows per page
-        const widgetsPerPage = columns * rows;
-
-        console.log(`[WidgetStore] New grid: ${columns} cols × ${rows} rows = ${widgetsPerPage} widgets/page`);
-
-        // Redistribute widgets maintaining their relative order
-        const updatedWidgets = dashboard.widgets.map(widget => {
-          const index = positionedWidgets.findIndex(w => w.id === widget.id);
-          
-          if (index === -1) {
-            // Widget not in positioned list, keep as is
-            return widget;
-          }
-
-          // Calculate new page and position
-          const newPage = Math.floor(index / widgetsPerPage);
-          const newPosition = index % widgetsPerPage;
-
-          console.log(`[WidgetStore]   Widget ${widget.id}: page ${widget.layout.page} → ${newPage}, pos ${widget.layout.positionOrder} → ${newPosition}`);
-
-          return {
-            ...widget,
-            layout: {
-              ...widget.layout,
-              page: newPage,
-              positionOrder: newPosition,
-            },
-          };
-        });
-
-        // Update dashboard with new positions
-        get().updateDashboard(state.currentDashboard, {
-          widgets: updatedWidgets,
-        });
-
-        console.log(`[WidgetStore] ✅ Redistributed ${positionedWidgets.length} widgets across pages`);
+        // No-op: Array-based positioning automatically redistributes
+        // Page is calculated on-the-fly from index: Math.floor(index / widgetsPerPage)
+        // No need to update metadata - array order is the source of truth
+        console.log('[WidgetStore] 📐 Redistribute requested - skipped (array-based positioning calculates pages on-the-fly)');
       },
 
       // Instance widget management methods
@@ -1510,44 +1452,8 @@ export const useWidgetStore = create<WidgetStore>()(
               return !isExpired;
             });
 
-            // If in user-positioned mode, compact positions after removal
-            if (dashboard.userPositioned) {
-              // Group widgets by page
-              const pageMap = new Map<number, typeof updatedWidgets>();
-              
-              for (const widget of updatedWidgets) {
-                const page = widget.layout.page ?? 0;
-                if (!pageMap.has(page)) {
-                  pageMap.set(page, []);
-                }
-                pageMap.get(page)!.push(widget);
-              }
-
-              // Compact each page
-              const compactedWidgets = updatedWidgets.map(widget => {
-                const page = widget.layout.page ?? 0;
-                const pageWidgets = pageMap.get(page)!;
-                const sortedPageWidgets = pageWidgets.sort((a, b) => 
-                  (a.layout.positionOrder ?? 0) - (b.layout.positionOrder ?? 0)
-                );
-                const newPosition = sortedPageWidgets.indexOf(widget);
-
-                return {
-                  ...widget,
-                  layout: {
-                    ...widget.layout,
-                    positionOrder: newPosition,
-                  },
-                };
-              });
-
-              console.log(`[WidgetStore] 📐 Compacted ${compactedWidgets.length} widgets after removal`);
-
-              return {
-                ...dashboard,
-                widgets: compactedWidgets,
-              };
-            }
+            // Array-based positioning: removal automatically compacts (index = position)
+            console.log(`[WidgetStore] ✅ Updated widget array: ${updatedWidgets.length} widgets remaining`);
 
             return {
               ...dashboard,
