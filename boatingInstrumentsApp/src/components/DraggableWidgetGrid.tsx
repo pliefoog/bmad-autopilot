@@ -40,6 +40,7 @@ interface DraggableWidgetProps {
   width: number;
   height: number;
   initialPosition?: { x: number; y: number };
+  touchOffset?: { x: number; y: number };
   children: React.ReactNode;
 }
 
@@ -49,6 +50,7 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   width,
   height,
   initialPosition,
+  touchOffset,
   children,
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
@@ -72,10 +74,11 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({
   
   const containerStyle = isActive ? {
     position: 'absolute' as const,
-    left: initialPosition ? initialPosition.x - width / 2 : 0,
-    top: initialPosition ? initialPosition.y - height / 2 : 0,
+    // Position widget so the touch point stays under the pointer
+    left: (initialPosition?.x || 0) - (touchOffset?.x || 0),
+    top: (initialPosition?.y || 0) - (touchOffset?.y || 0),
     zIndex: 999,
-    opacity: 0.9,
+    opacity: 0.7,
   } : {};
   
   return (
@@ -123,6 +126,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Track initial position for calculations
   const [activeWidgetInitialPosition, setActiveWidgetInitialPosition] = useState({ x: 0, y: 0 });
   const [activeWidgetGlobalIndex, setActiveWidgetGlobalIndex] = useState<number>(-1);
+  const [initialTouchOffset, setInitialTouchOffset] = useState({ x: 0, y: 0 });
   
   // Refs to track current values without causing re-renders that interfere with gestures
   const pressedWidgetIdRef = useRef<string | null>(null);
@@ -205,8 +209,8 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   }, [activeWidgetInitialPosition, ROW_HEIGHT, gridConfig.columns, TILE_WITH_MARGIN_SIZE, pageWidgets.length]);
 
   // Enable dragging for a widget (called on long press)
-  const enableDragging = useCallback((widgetId: string) => {
-    logger.drag('[DraggableWidgetGrid] 🟢 Enabling drag for:', widgetId);
+  const enableDragging = useCallback((widgetId: string, touchX: number, touchY: number) => {
+    logger.drag('[DraggableWidgetGrid] 🟢 Enabling drag for:', widgetId, 'touch at:', touchX, touchY);
     const localIndex = pageWidgets.findIndex(w => w.id === widgetId);
     const globalIndex = pageStartIndex + localIndex;
     
@@ -216,12 +220,25 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     setActiveWidgetGlobalIndex(globalIndex);
     setDragActive(true);
     
-    // Set initial position based on local widget index
-    const centerPosition = getWidgetCenterPosition(localIndex);
-    logger.drag('[DraggableWidgetGrid] Center position:', centerPosition);
-    if (centerPosition) {
-      setActiveWidgetInitialPosition(centerPosition);
-    }
+    // Calculate widget's top-left position in grid
+    const row = Math.floor(localIndex / gridConfig.columns);
+    const col = localIndex % gridConfig.columns;
+    const widgetLeft = col * TILE_WITH_MARGIN_SIZE;
+    const widgetTop = row * ROW_HEIGHT;
+    
+    // Touch offset is where user pressed relative to widget's top-left
+    const touchOffsetX = touchX;
+    const touchOffsetY = touchY;
+    
+    logger.drag('[DraggableWidgetGrid] Widget position:', { left: widgetLeft, top: widgetTop });
+    logger.drag('[DraggableWidgetGrid] Touch offset:', { x: touchOffsetX, y: touchOffsetY });
+    
+    // Store the touch point in grid coordinates
+    const touchPointX = widgetLeft + touchOffsetX;
+    const touchPointY = widgetTop + touchOffsetY;
+    
+    setActiveWidgetInitialPosition({ x: touchPointX, y: touchPointY });
+    setInitialTouchOffset({ x: touchOffsetX, y: touchOffsetY });
     setPlaceholderIndex(localIndex);
     placeholderIndexRef.current = localIndex;
     
@@ -229,7 +246,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(50);
     }
-  }, [pageWidgets, pageStartIndex, getWidgetCenterPosition]);
+  }, [pageWidgets, pageStartIndex, gridConfig.columns, ROW_HEIGHT, TILE_WITH_MARGIN_SIZE]);
   
   // Handle position update during drag
   const onPositionUpdate = useCallback((translationX: number, translationY: number) => {
@@ -365,6 +382,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Render widgets with gesture handlers (gesture-handler pattern)
   const renderWidgetList = () => {
     const activeIndex = pageWidgets.findIndex(w => w.id === activeWidgetId);
+    const activeWidget = pageWidgets.find(w => w.id === activeWidgetId);
     
     return (
       <View style={styles.widgetListContainer}>
@@ -388,7 +406,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
             );
           }
           
-          // Hide the active widget at its original position (it's rendered as floating)
+          // Hide the active widget at its original position
           if (dragActive && isActiveWidget && index === activeIndex) {
             return (
               <View
@@ -413,9 +431,9 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
           
           const longPressGesture = Gesture.LongPress()
             .minDuration(500)
-            .onStart(() => {
-              logger.drag('[DraggableWidgetGrid] 🔴 Long press started for:', widgetId);
-              runOnJS(enableDragging)(widgetId);
+            .onStart((event) => {
+              logger.drag('[DraggableWidgetGrid] 🔴 Long press started for:', widgetId, 'at:', event.x, event.y);
+              runOnJS(enableDragging)(widgetId, event.x, event.y);
               pressedWidgetIdRef.current = widgetId;
             })
             .simultaneousWithExternalGesture(dragGesture)
@@ -424,7 +442,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
           return (
             <GestureDetector key={widget.id} gesture={longPressGesture}>
               <DraggableWidget
-                isActive={isActiveWidget && dragActive}
+                isActive={false}
                 translation={activeWidgetTranslation}
                 width={gridConfig.widgetWidth}
                 height={gridConfig.widgetHeight}
@@ -435,6 +453,20 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
             </GestureDetector>
           );
         })}
+        
+        {/* Render floating translucent widget outside the grid - always visible during drag */}
+        {dragActive && activeWidget && (
+          <DraggableWidget
+            isActive={true}
+            translation={activeWidgetTranslation}
+            width={gridConfig.widgetWidth}
+            height={gridConfig.widgetHeight}
+            initialPosition={activeWidgetInitialPosition}
+            touchOffset={initialTouchOffset}
+          >
+            {renderWidgetComponent(activeWidget, gridConfig.widgetWidth, gridConfig.widgetHeight)}
+          </DraggableWidget>
+        )}
       </View>
     );
   };
