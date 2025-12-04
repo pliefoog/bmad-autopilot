@@ -363,21 +363,6 @@ export const DynamicDashboard: React.FC = () => {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
-      {/* Mode Indicator - show when in user-positioned mode */}
-      {dashboardConfig?.userPositioned && (
-        <View style={[styles.modeIndicator, { backgroundColor: theme.primaryLight || theme.surface, borderColor: theme.primary }]}>
-          <UniversalIcon 
-            name="lock" 
-            size={14} 
-            color={theme.primary} 
-            style={styles.modeIndicatorIcon}
-          />
-          <Text style={[styles.modeIndicatorText, { color: theme.primary }]}>
-            Custom Layout
-          </Text>
-        </View>
-      )}
-      
       {/* Widget Display Area - Conditional: ScrollView (mobile) or Fixed Grid (tablet/desktop) */}
       {useScrollMode ? (
         // MOBILE: Scrollable draggable grid
