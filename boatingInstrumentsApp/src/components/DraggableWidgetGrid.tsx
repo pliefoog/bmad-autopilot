@@ -135,7 +135,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Calculate grid config for consistent widget sizing
   const gridConfig = useMemo(() => {
     const headerHeight = 60;
-    const footerHeight = 88;
+    const footerHeight = 0; // No footer - widgets extend to bottom
     const visibleWidgetCount = (dashboard?.widgets || []).filter(w => w.layout?.visible !== false).length;
     return DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
   }, [dashboard?.widgets]);
@@ -155,14 +155,18 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     
     const widgets = dashboard.widgets || [];
     
+    // Calculate widgets per page
+    const widgetsPerPage = gridConfig.columns * gridConfig.rows;
+    
     if (!dashboard.userPositioned) {
-      // Auto-discovery mode: all widgets in creation order
-      return widgets.sort((a, b) => (a.order || 0) - (b.order || 0));
+      // Auto-discovery mode: paginate widgets in creation order
+      const sortedWidgets = [...widgets].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const startIndex = pageIndex * widgetsPerPage;
+      const endIndex = startIndex + widgetsPerPage;
+      return sortedWidgets.slice(startIndex, endIndex);
     }
 
     // User-positioned mode: calculate page from array index
-    const widgetsPerPage = gridConfig.columns * gridConfig.rows;
-    
     return widgets.filter((widget, index) => {
       const widgetPage = Math.floor(index / widgetsPerPage);
       return widgetPage === pageIndex;
@@ -364,7 +368,6 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     })
     .onEnd(() => {
       if (dragActive) {
-        logger.drag('[DraggableWidgetGrid] 🛑 Pan ended');
         runOnJS(onDragEnd)();
       }
     });
@@ -374,7 +377,6 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     .runOnJS(true)
     .onEnd((_, isFinished) => {
       if (isFinished && dragActive) {
-        logger.drag('[DraggableWidgetGrid] 👆 Tap to cancel');
         runOnJS(updateDataOnEnd)();
       }
     });
@@ -431,8 +433,8 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
           
           const longPressGesture = Gesture.LongPress()
             .minDuration(500)
+            .runOnJS(true)
             .onStart((event) => {
-              logger.drag('[DraggableWidgetGrid] 🔴 Long press started for:', widgetId, 'at:', event.x, event.y);
               runOnJS(enableDragging)(widgetId, event.x, event.y);
               pressedWidgetIdRef.current = widgetId;
             })

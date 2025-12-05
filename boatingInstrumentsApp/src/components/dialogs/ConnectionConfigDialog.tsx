@@ -7,6 +7,18 @@
  * - Platform Input Components (Story 13.2.2) for cross-platform inputs
  * - Unified keyboard shortcuts and validation
  * 
+ * iOS-Native Features (HIG Compliance):
+ * - formSheet presentation on iPad (centered, appropriate width)
+ * - pageSheet presentation on iPhone (bottom sheet, swipe dismissible)
+ * - SF Pro typography with proper weights and sizes
+ * - Uppercase section headers with letter spacing
+ * - Grouped list style with 10pt corner radius
+ * - Native UISwitch component for protocol toggle
+ * - Proper safe area insets and spacing (16-20pt)
+ * - Keyboard avoidance with behavior="padding"
+ * - Light shadow instead of borders for inputs
+ * - Theme-aware colors (adapts to dark mode)
+ * 
  * Features:
  * - IP address validation with real-time error display
  * - Port number validation (1-65535)
@@ -23,18 +35,19 @@ import {
   StyleSheet,
   Platform,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { BaseSettingsModal } from './base/BaseSettingsModal';
 import { 
   PlatformTextInput, 
-  PlatformToggle, 
-  PlatformButton 
+  PlatformToggle,
 } from './inputs';
 import { validators } from '../../utils/inputValidation';
 import { getConnectionDefaults } from '../../services/connectionDefaults';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useTheme } from '../../store/themeStore';
-import { hasKeyboard } from '../../utils/platformDetection';
+import { hasKeyboard, isTablet } from '../../utils/platformDetection';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 /**
  * Connection Config Dialog Props
@@ -59,10 +72,15 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
 }) => {
   const defaults = getConnectionDefaults();
   const theme = useTheme();
+  const platformTokens = getPlatformTokens();
   const connectionStatus = useNmeaStore(state => state.connectionStatus);
   const isConnected = connectionStatus === 'connected';
   const isWeb = Platform.OS === 'web';
   const keyboardEnabled = hasKeyboard();
+  const tablet = isTablet();
+  
+  // Create styles with theme and platform tokens
+  const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
   
   // Form state
   const [ip, setIp] = useState(currentConfig?.ip || defaults.ip);
@@ -242,15 +260,16 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
           </View>
         )}
 
-        {/* Reset to Defaults Button */}
-        <View style={styles.resetContainer}>
-          <PlatformButton
-            variant="secondary"
-            onPress={handleReset}
-            title="Reset to Defaults"
-            testID="connection-reset-button"
-          />
-        </View>
+        {/* Reset to Defaults Link */}
+        <TouchableOpacity
+          onPress={handleReset}
+          style={styles.resetLink}
+          testID="connection-reset-button"
+        >
+          <Text style={[styles.resetLinkText, { color: theme.interactive }]}>
+            Reset to Defaults
+          </Text>
+        </TouchableOpacity>
 
         {/* Keyboard Shortcuts Hint (desktop only) */}
         {keyboardEnabled && Platform.OS === 'web' && (
@@ -263,27 +282,43 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, platformTokens: ReturnType<typeof getPlatformTokens>) => StyleSheet.create({
   content: {
-    padding: 20,
+    // iOS uses native modal padding, others need explicit padding
+    ...(Platform.OS !== 'ios' && {
+      paddingHorizontal: platformTokens.spacing.inset,
+    }),
   },
   description: {
-    fontSize: 14,
-    marginBottom: 24,
-    lineHeight: 20,
+    fontSize: platformTokens.typography.caption.fontSize,
+    fontWeight: platformTokens.typography.caption.fontWeight,
+    lineHeight: platformTokens.typography.caption.lineHeight,
+    marginBottom: platformTokens.spacing.section,
+    textTransform: Platform.OS === 'ios' ? 'uppercase' : 'none',
+    letterSpacing: Platform.OS === 'ios' ? 0.5 : 0,
   },
   protocolSection: {
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: platformTokens.spacing.row,
+    marginBottom: platformTokens.spacing.section,
   },
-  resetContainer: {
-    marginTop: 32,
-    marginBottom: 16,
+  resetLink: {
+    marginTop: platformTokens.spacing.section,
+    marginBottom: platformTokens.spacing.row,
+    alignSelf: 'center',
+    paddingVertical: platformTokens.spacing.row,
+    paddingHorizontal: platformTokens.spacing.section,
+  },
+  resetLinkText: {
+    fontSize: platformTokens.typography.body.fontSize,
+    fontWeight: '500' as const,
+    fontFamily: platformTokens.typography.fontFamily,
+    textAlign: 'center' as const,
   },
   keyboardHint: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 16,
-    fontStyle: 'italic',
+    fontSize: platformTokens.typography.caption.fontSize,
+    textAlign: 'center' as const,
+    marginTop: platformTokens.spacing.section,
+    fontStyle: 'italic' as const,
+    opacity: 0.7,
   },
 });

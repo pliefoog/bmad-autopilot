@@ -1,11 +1,13 @@
 /**
  * PlatformToggle Component
  * Story 13.2.2 - Task 2: Platform-native toggle/switch rendering
+ * Epic 8 - Phase 1: TV Support Extension
  * 
  * Features:
  * - iOS: Native Switch component
  * - Android: Material Design toggle
  * - Web: Custom styled toggle with hover states
+ * - TV: Enlarged toggle with focus border (2x scale)
  * - Accessible label integration
  * - Disabled state (opacity 0.5)
  * - Theme integration
@@ -22,8 +24,9 @@ import {
   Animated,
 } from 'react-native';
 import { useTheme } from '../../../store/themeStore';
-import { settingsTokens } from '../../../theme/settingsTokens';
+import { settingsTokens, getPlatformTokens } from '../../../theme/settingsTokens';
 import { useHapticFeedback } from '../../../hooks';
+import { isTV } from '../../../utils/platformDetection';
 
 /**
  * PlatformToggle Props
@@ -43,6 +46,9 @@ export interface PlatformToggleProps {
   
   /** Custom active color (defaults to theme.primary) */
   color?: string;
+  
+  /** TV focus state (for TV navigation) */
+  focused?: boolean;
   
   /** Test ID for testing */
   testID?: string;
@@ -153,10 +159,16 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   label,
   disabled = false,
   color,
+  focused = false,
   testID = 'platform-toggle',
 }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const tvMode = isTV();
+  const styles = React.useMemo(
+    () => createStyles(theme, platformTokens, tvMode, focused),
+    [theme, platformTokens, tvMode, focused]
+  );
   const haptics = useHapticFeedback();
   
   const activeColor = color || theme.primary;
@@ -212,19 +224,32 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
 /**
  * Create themed styles
  */
-const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
+const createStyles = (
+  theme: ReturnType<typeof useTheme>,
+  platformTokens: ReturnType<typeof getPlatformTokens>,
+  tvMode: boolean,
+  focused: boolean
+) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: settingsTokens.spacing.sm,
-    minHeight: settingsTokens.touchTargets.phone,
+    minHeight: tvMode ? platformTokens.touchTarget : settingsTokens.touchTargets.phone,
+    // TV focus border
+    ...(tvMode && focused && {
+      borderWidth: 4,
+      borderColor: theme.interactive,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+    }),
   },
   
   label: {
     flex: 1,
-    fontSize: settingsTokens.typography.body.fontSize,
-    fontWeight: settingsTokens.typography.body.fontWeight,
+    fontSize: platformTokens.typography.body.fontSize,
+    fontWeight: platformTokens.typography.body.fontWeight,
+    fontFamily: platformTokens.typography.fontFamily,
     color: theme.text,
     marginRight: settingsTokens.spacing.md,
   },

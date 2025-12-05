@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LoadingProvider } from '../src/services/loading/LoadingContext';
 import LoadingOverlay from '../src/components/molecules/LoadingOverlay';
 import { useEffect } from 'react';
@@ -24,8 +25,9 @@ export default function RootLayout() {
   }, [initializeWidgetStates]);
 
   return (
-    <SafeAreaProvider>
-      <LoadingProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <LoadingProvider>
           <Stack screenOptions={{ 
             headerShown: true, // Enable native iOS headers for HIG compliance
             animation: 'slide_from_right',
@@ -72,6 +74,7 @@ export default function RootLayout() {
           </Stack>
           <LoadingOverlay />
         </LoadingProvider>
-    </SafeAreaProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,117 +1,115 @@
 /**
- * Centralized Logger - Disable all logging by default
+ * Centralized Logger - Selective console output control
  * 
  * Replace all console.log/warn/info with this logger to control output.
- * Set ENABLE_LOGGING = true to see logs again.
+ * Set category flags to enable specific logging areas.
  */
 
-// Toggle this to enable/disable all logging
-const ENABLE_LOGGING = false;
+// Master toggle - set to false to disable ALL logging
+const ENABLE_LOGGING = false; // ✅ DISABLED BY DEFAULT - enable categories as needed
 
-// Toggle this to show React errors/warnings (separate from general logging)
-const SHOW_REACT_ERRORS = false;
+// Selective logging categories
+const LOG_CATEGORIES = {
+  LAYOUT: false,        // DynamicLayoutService, grid calculations
+  DIMENSIONS: false,    // Screen dimensions, orientation changes
+  PLATFORM: false,      // Platform detection (iPad, iPhone, etc.)
+  WIDGETS: false,       // Widget lifecycle, rendering
+  THEME: false,         // Theme changes
+  DRAG: false,          // Drag and drop operations
+  NAVIGATION: false,    // Navigation, routing
+  NETWORK: false,       // NMEA connections, data
+  PERFORMANCE: false,   // Performance metrics
+  REACT_ERRORS: true,   // React error boundaries
+};
 
-// Selective logging flags
-let THEME_LOGGING_ENABLED = false;
-let DRAG_LOGGING_ENABLED = false;
-
-// Create silent no-op functions
+// Create logger with category support
 const noop = () => {};
 
 export const logger = {
+  // General logging (use sparingly)
   log: ENABLE_LOGGING ? console.log.bind(console) : noop,
   warn: ENABLE_LOGGING ? console.warn.bind(console) : noop,
   info: ENABLE_LOGGING ? console.info.bind(console) : noop,
   debug: ENABLE_LOGGING ? console.debug.bind(console) : noop,
   error: ENABLE_LOGGING ? console.error.bind(console) : noop,
   
-  // Special: Always show (for diagnostics)
-  always: (() => {
-    const _console = console;
-    return _console.log.bind(_console);
-  })(),
+  // Always show (for critical diagnostics)
+  always: console.log.bind(console),
   
-  // Selective logging functions
-  drag: (...args: any[]) => {
-    if (typeof window !== 'undefined' && (window as any).isDragLoggingEnabled?.()) {
-      const _console = (window as any).__originalConsole || console;
-      _console.log(...args);
-    }
-  },
+  // Category-specific logging
+  layout: (...args: any[]) => LOG_CATEGORIES.LAYOUT && ENABLE_LOGGING && console.log('[Layout]', ...args),
+  dimensions: (...args: any[]) => LOG_CATEGORIES.DIMENSIONS && ENABLE_LOGGING && console.log('[Dimensions]', ...args),
+  platform: (...args: any[]) => LOG_CATEGORIES.PLATFORM && ENABLE_LOGGING && console.log('[Platform]', ...args),
+  widgets: (...args: any[]) => LOG_CATEGORIES.WIDGETS && ENABLE_LOGGING && console.log('[Widgets]', ...args),
+  theme: (...args: any[]) => LOG_CATEGORIES.THEME && ENABLE_LOGGING && console.log('[Theme]', ...args),
+  drag: (...args: any[]) => LOG_CATEGORIES.DRAG && ENABLE_LOGGING && console.log('[Drag]', ...args),
+  navigation: (...args: any[]) => LOG_CATEGORIES.NAVIGATION && ENABLE_LOGGING && console.log('[Navigation]', ...args),
+  network: (...args: any[]) => LOG_CATEGORIES.NETWORK && ENABLE_LOGGING && console.log('[Network]', ...args),
+  performance: (...args: any[]) => LOG_CATEGORIES.PERFORMANCE && ENABLE_LOGGING && console.log('[Performance]', ...args),
 };
 
-// Override global console in production
-if (typeof window !== 'undefined' && !ENABLE_LOGGING) {
-  // Save original console before any overrides
-  (window as any).__originalConsole = {
-    log: console.log.bind(console),
-    warn: console.warn.bind(console),
-    info: console.info.bind(console),
-    debug: console.debug.bind(console),
-    error: console.error.bind(console),
+// Runtime control functions (available in dev console)
+if (typeof window !== 'undefined' && __DEV__) {
+  (window as any).enableLog = (category: keyof typeof LOG_CATEGORIES) => {
+    if (category in LOG_CATEGORIES) {
+      LOG_CATEGORIES[category] = true;
+      console.log(`✅ ${category} logging enabled`);
+    } else {
+      console.log(`❌ Unknown category: ${category}. Available:`, Object.keys(LOG_CATEGORIES));
+    }
   };
   
-  const originalConsole = (window as any).__originalConsole;
-  
-  // Suppress everything
-  console.log = noop;
-  console.warn = noop;
-  console.info = noop;
-  console.debug = noop;
-  console.error = SHOW_REACT_ERRORS ? originalConsole.error : noop;
-  
-  // Provide way to restore
-  (window as any).enableLogging = () => {
-    console.log = originalConsole.log;
-    console.warn = originalConsole.warn;
-    console.info = originalConsole.info;
-    console.debug = originalConsole.debug;
-    console.error = originalConsole.error;
-    logger.always('✅ Logging enabled');
+  (window as any).disableLog = (category: keyof typeof LOG_CATEGORIES) => {
+    if (category in LOG_CATEGORIES) {
+      LOG_CATEGORIES[category] = false;
+      console.log(`🔇 ${category} logging disabled`);
+    }
   };
   
-  (window as any).disableLogging = () => {
-    console.log = noop;
-    console.warn = noop;
-    console.info = noop;
-    console.debug = noop;
-    console.error = noop;
-    logger.always('🔇 Logging disabled');
+  (window as any).enableAllLogs = () => {
+    Object.keys(LOG_CATEGORIES).forEach(key => {
+      LOG_CATEGORIES[key as keyof typeof LOG_CATEGORIES] = true;
+    });
+    console.log('✅ All logging categories enabled');
   };
   
-  (window as any).showReactErrors = () => {
-    console.error = originalConsole.error;
-    logger.always('✅ React errors visible');
+  (window as any).disableAllLogs = () => {
+    Object.keys(LOG_CATEGORIES).forEach(key => {
+      LOG_CATEGORIES[key as keyof typeof LOG_CATEGORIES] = false;
+    });
+    console.log('🔇 All logging categories disabled');
   };
   
-  (window as any).hideReactErrors = () => {
-    console.error = noop;
-    logger.always('🔇 React errors hidden');
+  (window as any).showLogStatus = () => {
+    console.log('📊 Logging Status:', LOG_CATEGORIES);
   };
+  
+  console.log('📝 Logging controls: enableLog("LAYOUT") | disableLog("LAYOUT") | enableAllLogs() | disableAllLogs() | showLogStatus()');
+}
 
-  (window as any).showThemeLogging = () => {
-    THEME_LOGGING_ENABLED = true;
-    logger.always('✅ Theme logging enabled');
+// 🚨 NUCLEAR OPTION: Override global console to respect ENABLE_LOGGING flag
+// This catches ALL console.log/warn/info calls throughout the entire app
+if (!ENABLE_LOGGING && typeof window !== 'undefined' && __DEV__) {
+  const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    info: console.info,
   };
-
-  (window as any).hideThemeLogging = () => {
-    THEME_LOGGING_ENABLED = false;
-    logger.always('🔇 Theme logging hidden');
-  };
-
-  (window as any).showDragLogging = () => {
-    DRAG_LOGGING_ENABLED = true;
-    logger.always('✅ Drag logging enabled');
-  };
-
-  (window as any).hideDragLogging = () => {
-    DRAG_LOGGING_ENABLED = false;
-    logger.always('🔇 Drag logging hidden');
-  };
-
-  (window as any).isThemeLoggingEnabled = () => THEME_LOGGING_ENABLED;
-  (window as any).isDragLoggingEnabled = () => DRAG_LOGGING_ENABLED;
   
-  // Initial message using original error (before suppression)
-  originalConsole.error('🔇 All console output suppressed. Commands: enableLogging() | disableLogging() | showReactErrors() | hideReactErrors() | showThemeLogging() | hideThemeLogging() | showDragLogging() | hideDragLogging()');
+  // Save original console for logger to use
+  (window as any).__originalConsole = originalConsole;
+  
+  // Override console methods - only allow errors and explicitly allowed messages
+  console.log = (...args: any[]) => {
+    // Allow messages that start with ✅, 📝, 🔇, 📊 (our logger controls)
+    const firstArg = String(args[0] || '');
+    if (firstArg.match(/^[✅📝🔇📊❌⚠️]/)) {
+      originalConsole.log(...args);
+    }
+    // Otherwise silently drop
+  };
+  
+  console.warn = () => {}; // Silence all warnings
+  console.info = () => {}; // Silence all info
+  // Keep console.error untouched for critical errors
 }

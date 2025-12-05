@@ -1,12 +1,22 @@
+/**
+ * Units Configuration Dialog
+ * Epic 8 - Phase 2: Platform-Native Dialog Migration
+ * Epic 9: Enhanced Presentation System
+ * 
+ * Features:
+ * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
+ * - Preset selection (Nautical EU/UK/US, Custom)
+ * - Individual unit configuration per category
+ * - TV remote navigation support
+ * - Comprehensive marine data unit coverage
+ */
+
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  Modal,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Alert,
   Platform,
 } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -14,6 +24,10 @@ import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
 import { UniversalIcon } from '../atoms/UniversalIcon';
+import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { PlatformSettingsSection } from '../settings';
+import { getPlatformTokens } from '../../theme/settingsTokens';
+import { isTV } from '../../utils/platformDetection';
 
 interface UnitsConfigDialogProps {
   visible: boolean;
@@ -160,7 +174,12 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const tvMode = isTV();
+  const styles = useMemo(
+    () => createStyles(theme, platformTokens, tvMode),
+    [theme, platformTokens, tvMode]
+  );
   const presentationStore = usePresentationStore();
   const {
     getPresentationForCategory,
@@ -276,237 +295,176 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   }, [selectedPreset, customUnits]);
 
   return (
-    <Modal
+    <BaseSettingsModal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-      transparent={false}
+      title="Units & Format"
+      onClose={onClose}
+      onSave={handleSave}
+      saveButtonText="Save"
+      cancelButtonText="Cancel"
+      showFooter={true}
+      testID="units-config-dialog"
     >
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* iOS modal drag indicator */}
-        <View style={styles.dragHandle} />
-        
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity onPress={onClose} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Units</Text>
-          <TouchableOpacity 
-            onPress={handleSave} 
-            style={styles.headerButton}
-            disabled={!hasChanges}
-          >
-            <Text style={[
-              styles.headerButtonText, 
-              { color: hasChanges ? theme.text : theme.textSecondary },
-              hasChanges && { fontWeight: '600' }
-            ]}>
-              Save
-            </Text>
-          </TouchableOpacity>
+      {/* Preset Selector */}
+      <PlatformSettingsSection title="Preset">
+        <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
+          Choose a standard preset or customize individual units
+        </Text>
+        <View style={styles.presetRow}>
+          {PRESENTATION_PRESETS.map((preset) => (
+            <TouchableOpacity
+              key={preset.id}
+              style={[
+                styles.presetChip,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+                selectedPreset === preset.id && { 
+                  borderColor: theme.interactive,
+                  backgroundColor: `${theme.interactive}15`
+                }
+              ]}
+              onPress={() => handlePresetSelect(preset.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selectedPreset === preset.id }}
+              accessibilityLabel={`${preset.name}: ${preset.description}`}
+            >
+              <Text style={[
+                styles.presetChipText,
+                { color: theme.textSecondary },
+                selectedPreset === preset.id && { color: theme.text, fontWeight: '600' }
+              ]}>
+                {preset.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </PlatformSettingsSection>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Preset Selector */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Preset</Text>
-            <View style={styles.presetRow}>
-              {PRESENTATION_PRESETS.map((preset) => (
-                <TouchableOpacity
-                  key={preset.id}
-                  style={[
-                    styles.presetChip,
-                    { backgroundColor: theme.surface, borderColor: theme.border },
-                    selectedPreset === preset.id && { 
-                      borderColor: theme.text,
-                      backgroundColor: `${theme.text}15`
-                    }
-                  ]}
-                  onPress={() => handlePresetSelect(preset.id)}
-                >
-                  <Text style={[
-                    styles.presetChipText,
-                    { color: theme.textSecondary },
-                    selectedPreset === preset.id && { color: theme.text }
-                  ]}>
-                    {preset.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Unit Configuration - Unified view for all presets and custom */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Unit and Format Settings
-            </Text>
-            <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
-              {selectedPreset === 'custom' 
-                ? 'Select preset to use predefined settings.' 
-                : 'Switch to Custom to modify.'}
-            </Text>
-            {UNIT_CATEGORIES.map((category) => {
-              const presentations = getPresentationsForCategory(category.key);
-              const selectedUnit = getSelectedUnit(category.key);
-              const isCustomMode = selectedPreset === 'custom';
+      {/* Unit Configuration */}
+      <PlatformSettingsSection title="Unit & Format Settings">
+        <Text style={[styles.sectionNote, { color: theme.textSecondary }]}>
+          {selectedPreset === 'custom' 
+            ? 'Customize individual units for each category' 
+            : `Using ${PRESENTATION_PRESETS.find(p => p.id === selectedPreset)?.name} preset. Switch to Custom to modify.`}
+        </Text>
+        {UNIT_CATEGORIES.map((category) => {
+          const presentations = getPresentationsForCategory(category.key);
+          const selectedUnit = getSelectedUnit(category.key);
+          const isCustomMode = selectedPreset === 'custom';
+          
+          return (
+            <View key={category.key} style={styles.categoryRow}>
+              <View style={styles.categoryLabel}>
+                <UniversalIcon 
+                  name={category.iconName} 
+                  size={platformTokens.typography.body.fontSize * 1.4} 
+                  color={theme.textSecondary} 
+                />
+                <Text style={[
+                  styles.categoryName, 
+                  { color: isCustomMode ? theme.text : theme.textSecondary }
+                ]}>
+                  {category.name}
+                </Text>
+              </View>
               
-              return (
-                <View key={category.key} style={styles.categoryRow}>
-                  <View style={styles.categoryLabel}>
-                    <UniversalIcon 
-                      name={category.iconName} 
-                      size={20} 
-                      color={theme.textSecondary} 
-                    />
+              <View style={styles.unitsGrid}>
+                {presentations.map((presentation) => (
+                  <TouchableOpacity
+                    key={presentation.id}
+                    style={[
+                      styles.unitButton,
+                      { backgroundColor: theme.surface, borderColor: theme.border },
+                      selectedUnit === presentation.id && {
+                        borderColor: theme.interactive,
+                        backgroundColor: `${theme.interactive}15`
+                      },
+                      !isCustomMode && { opacity: 0.5 }
+                    ]}
+                    onPress={() => isCustomMode && handleUnitSelect(category.key, presentation.id)}
+                    disabled={!isCustomMode}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selectedUnit === presentation.id, disabled: !isCustomMode }}
+                    accessibilityLabel={getPresentationConfigLabel(presentation)}
+                  >
                     <Text style={[
-                      styles.categoryName, 
-                      { color: isCustomMode ? theme.text : theme.textSecondary }
+                      styles.unitSymbol,
+                      { color: theme.textSecondary },
+                      selectedUnit === presentation.id && { color: theme.text, fontWeight: '600' }
                     ]}>
-                      {category.name}
+                      {getPresentationConfigLabel(presentation)}
                     </Text>
-                  </View>
-                  
-                  <View style={styles.unitsGrid}>
-                    {presentations.map((presentation) => (
-                      <TouchableOpacity
-                        key={presentation.id}
-                        style={[
-                          styles.unitButton,
-                          { backgroundColor: theme.surface, borderColor: theme.border },
-                          selectedUnit === presentation.id && {
-                            borderColor: theme.text,
-                            backgroundColor: `${theme.text}15`
-                          },
-                          !isCustomMode && { opacity: 0.6 }
-                        ]}
-                        onPress={() => isCustomMode && handleUnitSelect(category.key, presentation.id)}
-                        disabled={!isCustomMode}
-                      >
-                        <Text style={[
-                          styles.unitSymbol,
-                          { color: theme.textSecondary },
-                          selectedUnit === presentation.id && { color: theme.text }
-                        ]}>
-                          {getPresentationConfigLabel(presentation)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </ScrollView>
-
-        {/* Extra padding at bottom for safe area */}
-        <View style={styles.bottomPadding} />
-      </View>
-    </Modal>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+      </PlatformSettingsSection>
+    </BaseSettingsModal>
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: theme.overlay,
-    alignSelf: 'center',
-    marginTop: 5,
-    marginBottom: 8,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  headerButtonText: {
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  section: {
-    marginVertical: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
+/**
+ * Create platform-aware styles
+ */
+const createStyles = (
+  theme: ThemeColors,
+  platformTokens: ReturnType<typeof getPlatformTokens>,
+  tvMode: boolean
+) => StyleSheet.create({
   sectionNote: {
-    fontSize: 13,
-    marginBottom: 12,
+    fontSize: platformTokens.typography.caption.fontSize,
+    fontFamily: platformTokens.typography.fontFamily,
+    marginBottom: platformTokens.spacing.row,
     fontStyle: 'italic',
+    lineHeight: platformTokens.typography.caption.lineHeight,
   },
   presetRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: platformTokens.spacing.row,
+    marginTop: platformTokens.spacing.row,
   },
   presetChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: tvMode ? 24 : 16,
+    paddingVertical: tvMode ? 16 : 10,
     borderRadius: 20,
     borderWidth: 2,
   },
   presetChipText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: platformTokens.typography.label.fontSize,
+    fontFamily: platformTokens.typography.fontFamily,
   },
   categoryRow: {
-    marginBottom: 16,
+    marginBottom: platformTokens.spacing.section,
   },
   categoryLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
+    marginBottom: platformTokens.spacing.row,
+    gap: platformTokens.spacing.row,
   },
   categoryName: {
-    fontSize: 15,
+    fontSize: platformTokens.typography.label.fontSize,
+    fontFamily: platformTokens.typography.fontFamily,
     fontWeight: '500',
   },
   unitsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginLeft: 28,
+    gap: platformTokens.spacing.row,
+    marginLeft: platformTokens.spacing.section,
   },
   unitButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: tvMode ? 18 : 12,
+    paddingVertical: tvMode ? 12 : 8,
     borderRadius: 6,
     borderWidth: 1,
-    minWidth: 60,
+    minWidth: tvMode ? 80 : 60,
     alignItems: 'center',
   },
   unitSymbol: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  bottomPadding: {
-    height: Platform.OS === 'ios' ? 32 : 16,
+    fontSize: platformTokens.typography.body.fontSize,
+    fontFamily: platformTokens.typography.fontFamily,
   },
 });

@@ -21,8 +21,9 @@ import {
   KeyboardTypeOptions,
 } from 'react-native';
 import { useTheme } from '../../../store/themeStore';
-import { settingsTokens } from '../../../theme/settingsTokens';
+import { settingsTokens, getPlatformTokens } from '../../../theme/settingsTokens';
 import { useInputFocus, useTouchTargetSize, useInputValidation } from '../../../hooks';
+import { isTablet } from '../../../utils/platformDetection';
 import type { ValidatorFunction } from '../../../hooks/useInputValidation';
 
 /**
@@ -95,7 +96,9 @@ export const PlatformTextInput: React.FC<PlatformTextInputProps> = ({
   testID = 'platform-text-input',
 }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const tablet = isTablet();
+  const styles = React.useMemo(() => createStyles(theme, platformTokens, tablet), [theme, platformTokens, tablet]);
   
   const touchTargetSize = useTouchTargetSize();
   const { inputRef, focus, keyboardEnabled } = useInputFocus();
@@ -189,37 +192,69 @@ export const PlatformTextInput: React.FC<PlatformTextInputProps> = ({
 };
 
 /**
- * Create themed styles
+ * Create themed styles with platform-specific adjustments
  */
-const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
+const createStyles = (
+  theme: ReturnType<typeof useTheme>,
+  platformTokens: ReturnType<typeof getPlatformTokens>,
+  tablet: boolean
+) => StyleSheet.create({
   container: {
-    marginBottom: settingsTokens.spacing.md,
+    marginBottom: platformTokens.spacing.section,
   },
   
   label: {
-    fontSize: settingsTokens.typography.label.fontSize,
-    fontWeight: settingsTokens.typography.label.fontWeight,
+    fontSize: platformTokens.typography.caption.fontSize,
+    fontWeight: platformTokens.typography.caption.fontWeight,
     color: theme.text,
-    marginBottom: settingsTokens.spacing.xs,
+    marginBottom: platformTokens.spacing.row * 0.5,
+    // iOS uses uppercase section headers
+    ...(Platform.OS === 'ios' && {
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      fontSize: 13,
+    }),
   },
   
   input: {
-    backgroundColor: theme.surface,
-    borderWidth: 1,
+    backgroundColor: Platform.OS === 'ios' ? theme.surface : theme.appBackground,
+    borderWidth: Platform.OS === 'ios' ? 0 : 1,
     borderColor: theme.border,
-    borderRadius: settingsTokens.borderRadius.input,
-    paddingHorizontal: settingsTokens.spacing.md,
-    fontSize: settingsTokens.typography.body.fontSize,
+    // iOS uses larger corner radius (10pt) for grouped lists
+    borderRadius: Platform.OS === 'ios' ? 10 : settingsTokens.borderRadius.input,
+    paddingHorizontal: platformTokens.spacing.inset,
+    fontSize: platformTokens.typography.body.fontSize,
+    fontWeight: platformTokens.typography.body.fontWeight,
     color: theme.text,
+    // iOS uses subtle shadow instead of border
+    ...(Platform.OS === 'ios' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    }),
   },
   
   focusedInput: {
-    borderWidth: 2,
-    borderColor: theme.primary,
+    // iOS: Increase shadow on focus
+    ...(Platform.OS === 'ios' ? {
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      borderWidth: 0,
+    } : {
+      borderWidth: 2,
+      borderColor: theme.primary,
+    }),
   },
   
   errorInput: {
-    borderColor: theme.error,
+    ...(Platform.OS === 'ios' ? {
+      borderWidth: 1,
+      borderColor: theme.error,
+    } : {
+      borderColor: theme.error,
+    }),
   },
   
   disabledInput: {
@@ -228,8 +263,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   
   errorText: {
-    fontSize: settingsTokens.typography.caption.fontSize,
+    fontSize: platformTokens.typography.caption.fontSize,
     color: theme.error,
-    marginTop: settingsTokens.spacing.xs,
+    marginTop: platformTokens.spacing.row * 0.5,
+    marginLeft: Platform.OS === 'ios' ? platformTokens.spacing.inset : 0,
   },
 });

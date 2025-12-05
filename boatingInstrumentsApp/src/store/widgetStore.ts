@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Dimensions } from 'react-native';
 import { instanceDetectionService, type DetectedInstance } from '../services/nmea/instanceDetection';
+import { logger } from '../utils/logger';
+
+// Master toggle for widgetStore logging (currently produces 68+ logs)
+const ENABLE_WIDGET_STORE_LOGGING = false;
+const log = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && log(...args);
+const warn = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && warn(...args);
 
 // System widgets that must always be present and never expire
 const SYSTEM_WIDGETS = [
@@ -300,7 +306,7 @@ export const useWidgetStore = create<WidgetStore>()(
           // Single-instance widget - check if one already exists
           const existingWidget = currentDashboard?.widgets.find(w => w.type === widgetType);
           if (existingWidget) {
-            console.warn(`[addWidget] Widget of type '${widgetType}' already exists: ${existingWidget.id}`);
+            warn(`[addWidget] Widget of type '${widgetType}' already exists: ${existingWidget.id}`);
             return; // Don't create duplicate single-instance widgets
           }
           widgetId = widgetType; // Simple ID for single-instance (depth, gps, speed, compass)
@@ -354,7 +360,7 @@ export const useWidgetStore = create<WidgetStore>()(
         }
         
         if (!widgetExists) {
-          console.warn(`[WidgetStore] Skipping timestamp update for non-existent widget: ${widgetId}`);
+          warn(`[WidgetStore] Skipping timestamp update for non-existent widget: ${widgetId}`);
           return;
         }
         
@@ -524,7 +530,7 @@ export const useWidgetStore = create<WidgetStore>()(
         const state = get();
         let dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
         
-        console.log('[WidgetStore] initializeWidgetStatesOnAppStart - Dashboard widgets:', {
+        log('[WidgetStore] initializeWidgetStatesOnAppStart - Dashboard widgets:', {
           dashboardId: state.currentDashboard,
           widgetCount: dashboard?.widgets.length,
           widgetIds: dashboard?.widgets.map(w => w.id)
@@ -536,7 +542,7 @@ export const useWidgetStore = create<WidgetStore>()(
           const missingSystemWidgets = SYSTEM_WIDGETS.filter(sw => !existingWidgetIds.has(sw.id));
           
           if (missingSystemWidgets.length > 0) {
-            console.log('[WidgetStore] 🛡️ Missing system widgets detected:', missingSystemWidgets.map(w => w.id));
+            log('[WidgetStore] 🛡️ Missing system widgets detected:', missingSystemWidgets.map(w => w.id));
             
             // Create system widget configs
             const systemWidgetConfigs = missingSystemWidgets.map((sw, index) => ({
@@ -564,7 +570,7 @@ export const useWidgetStore = create<WidgetStore>()(
               widgets: updatedWidgets
             });
             
-            console.log('[WidgetStore] ✅ System widgets restored. Total widgets now:', updatedWidgets.length);
+            log('[WidgetStore] ✅ System widgets restored. Total widgets now:', updatedWidgets.length);
           }
           
           // Mark existing system widgets if not already marked
@@ -573,7 +579,7 @@ export const useWidgetStore = create<WidgetStore>()(
           );
           
           if (needsSystemWidgetFlag) {
-            console.log('[WidgetStore] 🔧 Marking existing system widgets');
+            log('[WidgetStore] 🔧 Marking existing system widgets');
             const updatedWidgets = dashboard.widgets.map(widget => {
               if (SYSTEM_WIDGETS.some(sw => sw.id === widget.id)) {
                 return { ...widget, isSystemWidget: true };
@@ -627,7 +633,7 @@ export const useWidgetStore = create<WidgetStore>()(
         const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
         if (!dashboard || dashboard.userPositioned) return;
 
-        console.log('[WidgetStore] 🎯 Enabling user positioning mode');
+        log('[WidgetStore] 🎯 Enabling user positioning mode');
         
         // Switch to user-arranged mode
         get().updateDashboard(state.currentDashboard, {
@@ -640,7 +646,7 @@ export const useWidgetStore = create<WidgetStore>()(
         const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
         if (!dashboard) return;
 
-        console.log('[WidgetStore] 🔄 Resetting to auto-discovery layout');
+        log('[WidgetStore] 🔄 Resetting to auto-discovery layout');
         
         // Switch back to auto-discovery mode (array stays as-is)
         get().updateDashboard(state.currentDashboard, {
@@ -654,15 +660,15 @@ export const useWidgetStore = create<WidgetStore>()(
         const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
         if (!dashboard) return;
 
-        console.log(`[WidgetStore] 🔄 Reordering widget: index ${fromIndex} → ${toIndex}`);
+        log(`[WidgetStore] 🔄 Reordering widget: index ${fromIndex} → ${toIndex}`);
         
         // Pure array splice
         const widgets = [...dashboard.widgets];
         const [movedWidget] = widgets.splice(fromIndex, 1);
         widgets.splice(toIndex, 0, movedWidget);
         
-        console.log(`[WidgetStore] ✅ Moved widget ${movedWidget.id} from ${fromIndex} to ${toIndex}`);
-        console.log(`[WidgetStore] New array:`, widgets.map((w, i) => `${i}:${w.id}`).join(', '));
+        log(`[WidgetStore] ✅ Moved widget ${movedWidget.id} from ${fromIndex} to ${toIndex}`);
+        log(`[WidgetStore] New array:`, widgets.map((w, i) => `${i}:${w.id}`).join(', '));
         
         get().updateDashboard(state.currentDashboard, {
           widgets,
@@ -675,8 +681,8 @@ export const useWidgetStore = create<WidgetStore>()(
         const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
         if (!dashboard) return;
 
-        console.log(`[WidgetStore] 📝 Reordering ${widgetIds.length} widgets on page ${pageIndex}`);
-        console.log(`[WidgetStore] New order:`, widgetIds);
+        log(`[WidgetStore] 📝 Reordering ${widgetIds.length} widgets on page ${pageIndex}`);
+        log(`[WidgetStore] New order:`, widgetIds);
         
         // Calculate widgets per page based on current grid
         const { width } = Dimensions.get('window');
@@ -688,7 +694,7 @@ export const useWidgetStore = create<WidgetStore>()(
         const pageStartIndex = pageIndex * widgetsPerPage;
         const pageEndIndex = pageStartIndex + widgetIds.length;
         
-        console.log(`[WidgetStore] Page ${pageIndex} range: ${pageStartIndex} to ${pageEndIndex}`);
+        log(`[WidgetStore] Page ${pageIndex} range: ${pageStartIndex} to ${pageEndIndex}`);
         
         // Build new array by replacing the page range with reordered widgets
         const widgetIdSet = new Set(widgetIds);
@@ -703,8 +709,8 @@ export const useWidgetStore = create<WidgetStore>()(
           ...dashboard.widgets.slice(pageEndIndex)
         ];
         
-        console.log(`[WidgetStore] ✅ Reordered ${reorderedWidgets.length} widgets at page ${pageIndex}`);
-        console.log(`[WidgetStore] Widget IDs in new array:`, newWidgets.map(w => w.id));
+        log(`[WidgetStore] ✅ Reordered ${reorderedWidgets.length} widgets at page ${pageIndex}`);
+        log(`[WidgetStore] Widget IDs in new array:`, newWidgets.map(w => w.id));
         
         get().updateDashboard(state.currentDashboard, {
           widgets: newWidgets
@@ -716,7 +722,7 @@ export const useWidgetStore = create<WidgetStore>()(
         const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
         if (!dashboard) return;
 
-        console.log(`[WidgetStore] 🔀 Moving widget ${widgetId} to page ${targetPage}, position ${targetPosition}`);
+        log(`[WidgetStore] 🔀 Moving widget ${widgetId} to page ${targetPage}, position ${targetPosition}`);
         
         // Calculate absolute index from page + position
         // widgetsPerPage is calculated from grid config in DynamicLayoutService
@@ -744,14 +750,14 @@ export const useWidgetStore = create<WidgetStore>()(
       compactPagePositions: (pageIndex) => {
         // No-op: Array-based positioning is inherently compact
         // Index in array IS the position - no gaps possible
-        console.log(`[WidgetStore] 🗜️ Compact requested for page ${pageIndex} - skipped (array-based positioning)`);
+        log(`[WidgetStore] 🗜️ Compact requested for page ${pageIndex} - skipped (array-based positioning)`);
       },
 
       redistributeWidgetsAcrossPages: () => {
         // No-op: Array-based positioning automatically redistributes
         // Page is calculated on-the-fly from index: Math.floor(index / widgetsPerPage)
         // No need to update metadata - array order is the source of truth
-        console.log('[WidgetStore] 📐 Redistribute requested - skipped (array-based positioning calculates pages on-the-fly)');
+        log('[WidgetStore] 📐 Redistribute requested - skipped (array-based positioning calculates pages on-the-fly)');
       },
 
       // Instance widget management methods
@@ -806,7 +812,7 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       updateInstanceWidgets: (detectedInstances) => {
-        console.log('[WidgetStore] updateInstanceWidgets called with:', {
+        log('[WidgetStore] updateInstanceWidgets called with:', {
           engines: detectedInstances.engines.length,
           batteries: detectedInstances.batteries.length,
           tanks: detectedInstances.tanks.length,
@@ -816,13 +822,13 @@ export const useWidgetStore = create<WidgetStore>()(
         
         const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
         if (!currentDashboard) {
-          console.log('[WidgetStore] No current dashboard found');
+          log('[WidgetStore] No current dashboard found');
           return;
         }
 
         // Keep ALL existing widgets (both instance and non-instance)
         const allExistingWidgets = [...currentDashboard.widgets];
-        console.log('[WidgetStore] All existing widgets:', allExistingWidgets.map(w => ({
+        log('[WidgetStore] All existing widgets:', allExistingWidgets.map(w => ({
           id: w.id,
           type: w.type,
           hasInstanceId: !!w.settings?.instanceId,
@@ -844,7 +850,7 @@ export const useWidgetStore = create<WidgetStore>()(
           return !(hasInstanceId && hasInstanceType);
         });
         
-        console.log('[WidgetStore] Classification result:', {
+        log('[WidgetStore] Classification result:', {
           allCount: allExistingWidgets.length,
           nonInstanceCount: nonInstanceWidgets.length,
           instanceCount: existingInstanceWidgets.length,
@@ -852,7 +858,7 @@ export const useWidgetStore = create<WidgetStore>()(
           instanceWidgets: existingInstanceWidgets.map(w => w.id)
         });
 
-        console.log('[WidgetStore] Dashboard state:', {
+        log('[WidgetStore] Dashboard state:', {
           total: allExistingWidgets.length,
           nonInstance: nonInstanceWidgets.length,
           existingInstance: existingInstanceWidgets.length,
@@ -882,25 +888,25 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Add new widgets for newly detected instances
         const existingInstanceIds = new Set(validInstanceWidgets.map(w => w.settings?.instanceId));
-        console.log('[WidgetStore] Existing instance IDs:', Array.from(existingInstanceIds));
+        log('[WidgetStore] Existing instance IDs:', Array.from(existingInstanceIds));
 
         // Helper to find next available position (considering ALL existing widgets)
         const findNextPosition = (allWidgets: WidgetConfig[]) => {
           const maxX = Math.max(0, ...allWidgets.map(w => w.layout.x + w.layout.width));
           const maxY = Math.max(0, ...allWidgets.map(w => w.layout.y + w.layout.height));
           const position = { x: maxX > 8 ? 0 : maxX, y: maxX > 8 ? maxY : 0 };
-          console.log('[WidgetStore] Next position calculated:', position, 'from', allWidgets.length, 'total widgets');
+          log('[WidgetStore] Next position calculated:', position, 'from', allWidgets.length, 'total widgets');
           return position;
         };
 
         // Start with valid instance widgets (keep existing instance widgets)
         let updatedInstanceWidgets = [...validInstanceWidgets];
-        console.log('[WidgetStore] Starting with', updatedInstanceWidgets.length, 'valid instance widgets');
+        log('[WidgetStore] Starting with', updatedInstanceWidgets.length, 'valid instance widgets');
 
         // Add engine widgets
         detectedInstances.engines.forEach(engine => {
           if (!existingInstanceIds.has(engine.id)) {
-            console.log('[WidgetStore] Creating engine widget for:', engine.id, engine.title);
+            log('[WidgetStore] Creating engine widget for:', engine.id, engine.title);
             const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
             const position = findNextPosition(allCurrentWidgets);
             const widgetId = engine.id; // Use instance ID directly (already includes type)
@@ -924,15 +930,15 @@ export const useWidgetStore = create<WidgetStore>()(
               order: updatedInstanceWidgets.length,
             });
           } else {
-            console.log('[WidgetStore] Engine widget already exists:', engine.id);
+            log('[WidgetStore] Engine widget already exists:', engine.id);
           }
         });
-        console.log('[WidgetStore] After adding engines:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding engines:', updatedInstanceWidgets.length, 'instance widgets');
 
         // Add battery widgets  
         detectedInstances.batteries.forEach(battery => {
           if (!existingInstanceIds.has(battery.id)) {
-            console.log('[WidgetStore] Creating battery widget for:', battery.id, battery.title);
+            log('[WidgetStore] Creating battery widget for:', battery.id, battery.title);
             const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
             const position = findNextPosition(allCurrentWidgets);
             const widgetId = battery.id; // Use instance ID directly (already includes type)
@@ -956,10 +962,10 @@ export const useWidgetStore = create<WidgetStore>()(
               order: updatedInstanceWidgets.length,
             });
           } else {
-            console.log('[WidgetStore] Battery widget already exists:', battery.id);
+            log('[WidgetStore] Battery widget already exists:', battery.id);
           }
         });
-        console.log('[WidgetStore] After adding batteries:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding batteries:', updatedInstanceWidgets.length, 'instance widgets');
 
         // Add tank widgets
         detectedInstances.tanks.forEach(tank => {
@@ -992,7 +998,7 @@ export const useWidgetStore = create<WidgetStore>()(
         // Add temperature widgets
         detectedInstances.temperatures.forEach(temperature => {
           if (!existingInstanceIds.has(temperature.id)) {
-            console.log('[WidgetStore] Creating temperature widget for:', temperature.id, temperature.title);
+            log('[WidgetStore] Creating temperature widget for:', temperature.id, temperature.title);
             const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
             const position = findNextPosition(allCurrentWidgets);
             const widgetId = temperature.id; // Use instance ID directly (already includes type)
@@ -1017,15 +1023,15 @@ export const useWidgetStore = create<WidgetStore>()(
               order: updatedInstanceWidgets.length,
             });
           } else {
-            console.log('[WidgetStore] Temperature widget already exists:', temperature.id);
+            log('[WidgetStore] Temperature widget already exists:', temperature.id);
           }
         });
-        console.log('[WidgetStore] After adding temperatures:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding temperatures:', updatedInstanceWidgets.length, 'instance widgets');
 
         // Add marine instrument widgets
         detectedInstances.instruments.forEach(instrument => {
           if (!existingInstanceIds.has(instrument.id)) {
-            console.log('[WidgetStore] Creating marine instrument widget for:', instrument.id, instrument.title);
+            log('[WidgetStore] Creating marine instrument widget for:', instrument.id, instrument.title);
             const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
             const position = findNextPosition(allCurrentWidgets);
             const widgetId = instrument.id; // Use instance ID directly (already includes type)
@@ -1049,14 +1055,14 @@ export const useWidgetStore = create<WidgetStore>()(
               order: updatedInstanceWidgets.length,
             });
           } else {
-            console.log('[WidgetStore] Marine instrument widget already exists:', instrument.id);
+            log('[WidgetStore] Marine instrument widget already exists:', instrument.id);
           }
         });
-        console.log('[WidgetStore] After adding marine instruments:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding marine instruments:', updatedInstanceWidgets.length, 'instance widgets');
 
         // Combine all widgets: non-instance (original) + instance (detected)
         const finalWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
-        console.log('[WidgetStore] Final widget update:', {
+        log('[WidgetStore] Final widget update:', {
           nonInstance: nonInstanceWidgets.length,
           instanceWidgets: updatedInstanceWidgets.length,
           total: finalWidgets.length
@@ -1066,15 +1072,15 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets: finalWidgets
         });
         
-        console.log('[WidgetStore] Dashboard updated with new widgets');
+        log('[WidgetStore] Dashboard updated with new widgets');
       },
 
       startInstanceMonitoring: () => {
-        console.log('[WidgetStore] Starting instance monitoring...');
+        log('[WidgetStore] Starting instance monitoring...');
         
         // Subscribe to instance detection updates
         instanceDetectionService.onInstancesDetected((detectedInstances) => {
-          console.log('[WidgetStore] Instances detected callback triggered:', {
+          log('[WidgetStore] Instances detected callback triggered:', {
             engines: detectedInstances.engines.length,
             batteries: detectedInstances.batteries.length, 
             tanks: detectedInstances.tanks.length,
@@ -1094,7 +1100,7 @@ export const useWidgetStore = create<WidgetStore>()(
           instanceDetectionService.startScanning();
         }
 
-        console.log('[WidgetStore] Instance monitoring started with automatic cleanup');
+        log('[WidgetStore] Instance monitoring started with automatic cleanup');
       },
 
       stopInstanceMonitoring: () => {
@@ -1135,7 +1141,7 @@ export const useWidgetStore = create<WidgetStore>()(
           } catch (error) {
             // Widget cannot be resolved - it's invalid
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.log(`[WidgetStore] Invalid widget found: ${widget.id} - ${errorMessage}`);
+            log(`[WidgetStore] Invalid widget found: ${widget.id} - ${errorMessage}`);
             return true;
           }
         });
@@ -1157,7 +1163,7 @@ export const useWidgetStore = create<WidgetStore>()(
         );
 
         if (uniqueOrphanedWidgets.length > 0) {
-          console.log(`[WidgetStore] Cleaning up ${uniqueOrphanedWidgets.length} orphaned widgets:`, 
+          log(`[WidgetStore] Cleaning up ${uniqueOrphanedWidgets.length} orphaned widgets:`, 
             uniqueOrphanedWidgets.map(w => `${w.id} (${w.type})`));
           
           // Remove orphaned widgets
@@ -1207,11 +1213,11 @@ export const useWidgetStore = create<WidgetStore>()(
         // Cleanup orphaned widgets in the widget store
         get().cleanupOrphanedWidgets();
         
-        console.log('[WidgetStore] Force cleanup completed for instances and widgets');
+        log('[WidgetStore] Force cleanup completed for instances and widgets');
       },
 
       resetAppToDefaults: async () => {
-        console.log('[WidgetStore] Executing factory reset...');
+        log('[WidgetStore] Executing factory reset...');
 
         // First, clear ALL storage comprehensively
         try {
@@ -1235,7 +1241,7 @@ export const useWidgetStore = create<WidgetStore>()(
               }
             }
             keysToRemove.forEach(key => window.localStorage.removeItem(key));
-            console.log('[WidgetStore] Cleared localStorage keys:', keysToRemove);
+            log('[WidgetStore] Cleared localStorage keys:', keysToRemove);
             
             // Force storage event to trigger persist middleware cleanup
             window.dispatchEvent(new StorageEvent('storage', {
@@ -1303,14 +1309,14 @@ export const useWidgetStore = create<WidgetStore>()(
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // 🛡️ CRITICAL: Restore system widgets after reset
-        console.log('[WidgetStore] Restoring system widgets after factory reset...');
+        log('[WidgetStore] Restoring system widgets after factory reset...');
         get().initializeWidgetStatesOnAppStart();
 
         // Double-check that localStorage is cleared after state reset
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
             window.localStorage.removeItem('widget-store');
-            console.log('[WidgetStore] Double-cleared widget-store key after state reset');
+            log('[WidgetStore] Double-cleared widget-store key after state reset');
           }
         } catch (error) {
           console.error('[WidgetStore] Error in double-clear:', error);
@@ -1346,11 +1352,11 @@ export const useWidgetStore = create<WidgetStore>()(
           console.error('[WidgetStore] Error resetting other stores:', error);
         }
 
-        console.log('[WidgetStore] Factory reset completed');
+        log('[WidgetStore] Factory reset completed');
         
         // Final verification - log current state after reset
         const finalState = get();
-        console.log('[WidgetStore] Final state after reset:', {
+        log('[WidgetStore] Final state after reset:', {
           selectedWidgets: finalState.selectedWidgets,
           dashboards: finalState.dashboards,
           currentDashboard: finalState.currentDashboard
@@ -1359,7 +1365,7 @@ export const useWidgetStore = create<WidgetStore>()(
       
       // Emergency reset method that completely bypasses persist middleware
       emergencyReset: () => {
-        console.log('[WidgetStore] EMERGENCY RESET - Bypassing persist middleware');
+        log('[WidgetStore] EMERGENCY RESET - Bypassing persist middleware');
         
         // Clear localStorage aggressively
         if (typeof window !== 'undefined' && window.localStorage) {
@@ -1368,7 +1374,7 @@ export const useWidgetStore = create<WidgetStore>()(
           allKeys.forEach(key => {
             if (key.includes('widget') || key.includes('dashboard') || key.includes('bmad')) {
               window.localStorage.removeItem(key);
-              console.log(`[WidgetStore] Emergency cleared: ${key}`);
+              log(`[WidgetStore] Emergency cleared: ${key}`);
             }
           });
           
@@ -1378,7 +1384,7 @@ export const useWidgetStore = create<WidgetStore>()(
         
         // Force page reload to completely reset all stores
         if (typeof window !== 'undefined') {
-          console.log('[WidgetStore] Forcing page reload to complete reset');
+          log('[WidgetStore] Forcing page reload to complete reset');
           window.location.reload();
         }
       },
@@ -1386,19 +1392,19 @@ export const useWidgetStore = create<WidgetStore>()(
       // Dynamic widget lifecycle actions
       setWidgetExpirationTimeout: (timeoutMs: number) => {
         set({ widgetExpirationTimeout: timeoutMs });
-        console.log(`[WidgetStore] Widget expiration timeout set to ${timeoutMs}ms`);
+        log(`[WidgetStore] Widget expiration timeout set to ${timeoutMs}ms`);
       },
 
       setEnableWidgetAutoRemoval: (enabled: boolean) => {
         set({ enableWidgetAutoRemoval: enabled });
-        console.log(`[WidgetStore] Widget auto-removal ${enabled ? 'enabled' : 'disabled'}`);
+        log(`[WidgetStore] Widget auto-removal ${enabled ? 'enabled' : 'disabled'}`);
       },
 
       // Enhanced cleanup system with configurable expiration
       cleanupExpiredWidgetsWithConfig: () => {
         const state = get();
         if (!state.enableWidgetAutoRemoval) {
-          console.log('[WidgetStore] Widget auto-removal is disabled');
+          log('[WidgetStore] Widget auto-removal is disabled');
           return;
         }
 
@@ -1431,7 +1437,7 @@ export const useWidgetStore = create<WidgetStore>()(
           return;
         }
         
-        console.log(`[WidgetStore] 🧹 Found ${expiredWidgetIds.length} expired widgets:`, expiredWidgetIds);
+        log(`[WidgetStore] 🧹 Found ${expiredWidgetIds.length} expired widgets:`, expiredWidgetIds);
 
         // Second pass: remove expired widgets
         set((currentState) => ({
@@ -1446,14 +1452,14 @@ export const useWidgetStore = create<WidgetStore>()(
               const isExpired = now - lastUpdate > timeout;
               
               if (isExpired) {
-                console.log(`[WidgetStore] 🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round((now - lastUpdate) / 1000)}s)`);
+                log(`[WidgetStore] 🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round((now - lastUpdate) / 1000)}s)`);
               }
               
               return !isExpired;
             });
 
             // Array-based positioning: removal automatically compacts (index = position)
-            console.log(`[WidgetStore] ✅ Updated widget array: ${updatedWidgets.length} widgets remaining`);
+            log(`[WidgetStore] ✅ Updated widget array: ${updatedWidgets.length} widgets remaining`);
 
             return {
               ...dashboard,
@@ -1469,7 +1475,7 @@ export const useWidgetStore = create<WidgetStore>()(
           }),
         }));
 
-        console.log(`[WidgetStore] ✅ Cleanup complete - removed ${expiredWidgetIds.length} widgets`);
+        log(`[WidgetStore] ✅ Cleanup complete - removed ${expiredWidgetIds.length} widgets`);
       },
 
       // TODO: Pagination methods (Story 6.11) - temporarily disabled

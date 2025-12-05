@@ -3,7 +3,6 @@
 
 export { default as MarineWidget } from './MarineWidget';
 export { default as NavigationBar } from './NavigationBar';
-export { AutopilotFooter } from './AutopilotFooter';
 export { HamburgerMenu } from './HamburgerMenu';
 
 // Legacy exports - to be migrated to atomic design

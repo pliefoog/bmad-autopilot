@@ -11,6 +11,13 @@
  * - Data freshness validation
  */
 
+// Master toggle for PureStoreUpdater logging (produces hundreds of logs per minute)
+const ENABLE_STORE_UPDATER_LOGGING = false;
+const log = (...args: any[]) => ENABLE_STORE_UPDATER_LOGGING && console.log(...args);
+const warn = (...args: any[]) => ENABLE_STORE_UPDATER_LOGGING && console.warn(...args);
+// Errors ALWAYS show regardless of logging toggle
+const error = console.error.bind(console);
+
 import { useNmeaStore } from '../../../store/nmeaStore';
 import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
@@ -71,7 +78,7 @@ export class PureStoreUpdater {
     // NMEA Store v2.0 focuses on clean sensor data - raw sentences not stored
     // Log for debugging if needed
     if (useNmeaStore.getState().debugMode) {
-      console.log('[PureStoreUpdater] Raw NMEA:', sentence);
+      log('[PureStoreUpdater] Raw NMEA:', sentence);
     }
   }
 
@@ -87,7 +94,7 @@ export class PureStoreUpdater {
       if (!result.success) {
         // Log processing errors but don't treat as failures
         if (useNmeaStore.getState().debugMode) {
-          console.warn('[PureStoreUpdater] NMEA processing:', result.errors?.join(', '));
+          warn('[PureStoreUpdater] NMEA processing:', result.errors?.join(', '));
         }
         return {
           updated: false,
@@ -109,7 +116,7 @@ export class PureStoreUpdater {
       };
 
     } catch (error) {
-      console.error('[PureStoreUpdater] Error processing NMEA message:', error);
+      error('[PureStoreUpdater] Error processing NMEA message:', error);
       return {
         updated: false,
         throttled: false,
@@ -145,7 +152,7 @@ export class PureStoreUpdater {
       };
 
     } catch (error) {
-      console.error('[PureStoreUpdater] Error processing binary PGN frame:', error);
+      error('[PureStoreUpdater] Error processing binary PGN frame:', error);
       return {
         updated: false,
         throttled: false,

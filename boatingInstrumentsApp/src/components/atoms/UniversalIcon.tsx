@@ -84,12 +84,15 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'car-outline', 'battery-charging-outline', 'cube-outline',
       // Alarm configuration icons
       'arrow-down-outline', 'arrow-forward-outline', 'swap-horizontal-outline',
-      'chevron-back-outline', 'chevron-forward-outline',
+      'chevron-back-outline', 'chevron-forward-outline', 'chevron-down-outline',
+      'volume-high-outline',
       // UI elements
-      'add', 'pin', 'close-outline', 'checkmark-circle-outline',
+      'add', 'pin', 'close', 'close-outline', 'checkmark-circle-outline',
       'refresh-outline', 'remove', 'layers-outline', 'settings-outline',
       'grid-outline', 'alert-circle-outline', 'wifi-outline', 
-      'information-circle-outline', 'notifications-outline', 'warning-outline'
+      'information-circle-outline', 'notifications-outline', 'warning-outline',
+      // Menu and navigation
+      'menu-outline', 'home-outline', 'list-outline'
     ];
 
     if (!validIcons.includes(name)) {

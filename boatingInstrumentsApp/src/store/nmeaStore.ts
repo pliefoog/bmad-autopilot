@@ -155,6 +155,9 @@ function extractTrackableValue(sensorType: SensorType, data: any): number | null
   }
 }
 
+// Throttle map to prevent infinite loops from rapid duplicate updates
+const lastUpdateTimes = new Map<string, number>();
+
 export const useNmeaStore = create<NmeaStore>((set, get) => ({
   // Initial state
   connectionStatus: 'disconnected',
@@ -185,12 +188,50 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
   setDebugMode: (enabled: boolean) => set({ debugMode: enabled }),
 
   // Core sensor data management with inline history tracking
-  updateSensorData: <T extends SensorType>(sensorType: T, instance: number, data: Partial<SensorData>) => 
-    set((state) => {
-      const now = Date.now();
+  updateSensorData: <T extends SensorType>(sensorType: T, instance: number, data: Partial<SensorData>) => {
+    // 🛡️ PREVENT INFINITE LOOPS: Throttle duplicate updates
+    // If the same sensor data comes in within 100ms, skip it entirely
+    const updateKey = `${sensorType}-${instance}`;
+    const now = Date.now();
+    const lastUpdate = lastUpdateTimes.get(updateKey);
+    
+    if (lastUpdate && (now - lastUpdate) < 100) {
+      // Too soon - skip this update to prevent infinite loops
+      return;
+    }
+    
+    lastUpdateTimes.set(updateKey, now);
+    
+    return set((state) => {
       // Safely access sensor instance (may not exist yet)
       const sensorTypeObj = state.nmeaData.sensors[sensorType] || {};
       const currentSensorData = sensorTypeObj[instance];
+      
+      // 🛡️ PREVENT INFINITE LOOPS: Skip if data hasn't changed
+      // CRITICAL: Check this BEFORE any mutations (like history.add())
+      if (currentSensorData && Object.keys(data).length > 0) {
+        const hasChanges = Object.keys(data).some(key => {
+          const oldVal = (currentSensorData as any)[key];
+          const newVal = (data as any)[key];
+          // Skip history and timestamp fields in comparison
+          if (key === 'history' || key === 'timestamp') {
+            return false;
+          }
+          // Deep comparison for objects, shallow for primitives
+          if (typeof newVal === 'object' && newVal !== null && typeof oldVal === 'object' && oldVal !== null) {
+            return JSON.stringify(oldVal) !== JSON.stringify(newVal);
+          }
+          return oldVal !== newVal;
+        });
+        
+        if (!hasChanges) {
+          // NO CHANGES: Return existing state without mutations
+          // This prevents infinite loops from history buffer mutations
+          return state;
+        }
+      }
+      
+      const updateNow = Date.now();
       
       // Initialize history buffer if this is a new sensor
       let history = currentSensorData?.history;
@@ -228,13 +269,13 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         ...currentSensorData,
         ...finalData,
         history, // Explicitly preserve history reference
-        timestamp: now
+        timestamp: updateNow
       };
       
       // AUTO-ADD to history (based on sensor type)
       const trackableValue = extractTrackableValue(sensorType, updatedSensorData);
       if (trackableValue !== null && history) {
-        history.add(trackableValue, now);
+        history.add(trackableValue, updateNow);
       }
       
       const newNmeaData = {
@@ -253,16 +294,17 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       // MEMORY LEAK FIX: Throttle alarm evaluation to prevent 80+ evaluations per second
       let alarms = state.alarms; // Keep existing alarms by default
       
-      if ((now - lastAlarmEvaluation) > ALARM_EVALUATION_THROTTLE_MS) {
+      if ((updateNow - lastAlarmEvaluation) > ALARM_EVALUATION_THROTTLE_MS) {
         alarms = evaluateAlarms(newNmeaData);
-        lastAlarmEvaluation = now;
+        lastAlarmEvaluation = updateNow;
       }
 
       return {
         nmeaData: newNmeaData,
         alarms
       };
-    }),
+    });
+  },
 
   getSensorData: <T extends SensorType>(sensorType: T, instance: number) => {
     const state = get();

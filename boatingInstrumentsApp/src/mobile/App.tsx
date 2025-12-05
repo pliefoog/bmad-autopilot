@@ -9,16 +9,24 @@ import { useWidgetStore } from '../store/widgetStore';
 import { useAlarmStore } from '../store/alarmStore';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useToast } from '../hooks/useToast';
+
+// Master toggle for App.tsx logging
+const ENABLE_APP_LOGGING = false;
+const log = (...args: any[]) => ENABLE_APP_LOGGING && console.log(...args);
 import { DynamicDashboard } from '../widgets/DynamicDashboard';
 import HeaderBar from '../components/HeaderBar';
 import { ToastContainer } from '../components/toast';
 import { AlarmBanner } from '../widgets/AlarmBanner';
 import { ConnectionConfigDialog } from '../components/dialogs/ConnectionConfigDialog';
 import { AutopilotControlScreen } from '../widgets/AutopilotControlScreen';
-import { AutopilotFooter } from '../components/organisms/AutopilotFooter';
+
 import { OnboardingScreen } from '../components/onboarding/OnboardingScreen';
 import { UnitsConfigDialog } from '../components/dialogs/UnitsConfigDialog';
 import { FactoryResetDialog } from '../components/dialogs/FactoryResetDialog';
+import { LayoutSettingsDialog } from '../components/dialogs/LayoutSettingsDialog';
+import { DisplayThemeDialog } from '../components/dialogs/DisplayThemeDialog';
+import { AlarmConfigDialog } from '../components/dialogs/AlarmConfigDialog';
+import { AlarmHistoryDialog } from '../components/dialogs/AlarmHistoryDialog';
 import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
 import { MemoryMonitor } from '../components/MemoryMonitor';
 import { 
@@ -47,6 +55,10 @@ const App = () => {
   const [showConnectionDialog, setShowConnectionDialog] = useState(false);
   const [showUnitsDialog, setShowUnitsDialog] = useState(false);
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false);
+  const [showLayoutSettingsDialog, setShowLayoutSettingsDialog] = useState(false);
+  const [showDisplayThemeDialog, setShowDisplayThemeDialog] = useState(false);
+  const [showAlarmConfigDialog, setShowAlarmConfigDialog] = useState(false);
+  const [showAlarmHistoryDialog, setShowAlarmHistoryDialog] = useState(false);
   const [showTestSwitchDialog, setShowTestSwitchDialog] = useState(false);
   
   // Navigation session state
@@ -120,7 +132,7 @@ const App = () => {
   // Factory reset handler
   const handleFactoryResetConfirm = async () => {
     setShowFactoryResetDialog(false);
-    console.log('[App] User confirmed factory reset');
+    log('[App] User confirmed factory reset');
     
     try {
       // Import the widget store and perform complete factory reset
@@ -129,7 +141,7 @@ const App = () => {
       
       await resetAppToDefaults();
       
-      console.log('[App] Factory reset complete - forcing complete app restart');
+      log('[App] Factory reset complete - forcing complete app restart');
       
       // For web: Force a complete page reload to restart the app
       if (Platform.OS === 'web') {
@@ -149,7 +161,7 @@ const App = () => {
         }, 100);
       } else {
         // For mobile: The app should restart automatically when AsyncStorage is cleared
-        console.log('[App] Factory reset complete - app should restart automatically');
+        log('[App] Factory reset complete - app should restart automatically');
       }
       
     } catch (error) {
@@ -225,7 +237,7 @@ const App = () => {
   
   // Dynamic widget lifecycle management - periodic cleanup of expired widgets
   useEffect(() => {
-    console.log('[App] 🧹 Setting up dynamic widget lifecycle management');
+    log('[App] 🧹 Setting up dynamic widget lifecycle management');
     console.log(`[App] Widget auto-removal: ${enableWidgetAutoRemoval ? 'ENABLED' : 'DISABLED'}`);
     console.log(`[App] Widget expiration timeout: ${widgetExpirationTimeout}ms (${widgetExpirationTimeout / 1000}s)`);
     
@@ -234,7 +246,7 @@ const App = () => {
     
     // Set up periodic cleanup - more frequent for responsive widget removal
     const cleanupInterval = setInterval(() => {
-      console.log('[App] 🧹 Running periodic widget expiration cleanup');
+      log('[App] 🧹 Running periodic widget expiration cleanup');
       useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
     }, 15000); // Check every 15 seconds for more responsive widget removal
     
@@ -244,11 +256,11 @@ const App = () => {
   // FULLY DYNAMIC WIDGET SYSTEM - widgets created/removed based on live NMEA data only
   useEffect(() => {
     if (!nmeaSensors) {
-      console.log('[App] No NMEA data available - no widgets to create/update');
+      log('[App] No NMEA data available - no widgets to create/update');
       return;
     }
 
-    console.log('[App] 🔄 DYNAMIC WIDGET LIFECYCLE - Processing NMEA sensors:', {
+    log('[App] 🔄 DYNAMIC WIDGET LIFECYCLE - Processing NMEA sensors:', {
       timestamp: nmeaTimestamp,
       messageCount: nmeaMessageCount,
       availableSensors: Object.keys(nmeaSensors),
@@ -364,7 +376,7 @@ const App = () => {
       });
     }
 
-    console.log('[App] ✅ Dynamic widget processing complete');
+    log('[App] ✅ Dynamic widget processing complete');
   }, [nmeaSensors, nmeaTimestamp, connectionStatus, dashboards, currentDashboard]); // Functions via getState()
 
   // Helper functions now use global toast system
@@ -392,7 +404,7 @@ const App = () => {
         // Initialize NMEA sensor processor with widget store for timestamp updates
         const { nmeaSensorProcessor } = await import('../services/nmea/data/NmeaSensorProcessor');
         nmeaSensorProcessor.initializeWidgetStore();
-        console.log('[App] ✅ NMEA sensor processor initialized with widget lifecycle management');
+        log('[App] ✅ NMEA sensor processor initialized with widget lifecycle management');
         
         toast.showConnectionSuccess('Auto-connecting to NMEA Bridge...');
       } catch (error) {
@@ -462,8 +474,13 @@ const App = () => {
         onShowConnectionSettings={() => setShowConnectionDialog(true)}
         onShowUnitsDialog={() => setShowUnitsDialog(true)}
         onShowFactoryResetDialog={() => setShowFactoryResetDialog(true)}
+        onShowLayoutSettings={() => setShowLayoutSettingsDialog(true)}
+        onShowDisplayThemeSettings={() => setShowDisplayThemeDialog(true)}
+        onShowAlarmConfiguration={() => setShowAlarmConfigDialog(true)}
+        onShowAlarmHistory={() => setShowAlarmHistoryDialog(true)}
         navigationSession={navigationSession}
         onToggleNavigationSession={handleToggleNavigationSession}
+        onShowAutopilotControl={() => setShowAutopilotControl(true)}
       />
 
       {/* Alarm Banner - Top Priority Display */}
@@ -480,11 +497,6 @@ const App = () => {
       <View style={styles.contentArea}>
         <DynamicDashboard />
       </View>
-
-      {/* Autopilot Footer */}
-      <AutopilotFooter
-        onOpenAutopilotControl={() => setShowAutopilotControl(true)}
-      />
       
       {/* Modals */}
       <AutopilotControlScreen
@@ -514,6 +526,26 @@ const App = () => {
         visible={showFactoryResetDialog}
         onConfirm={handleFactoryResetConfirm}
         onCancel={() => setShowFactoryResetDialog(false)}
+      />
+
+      <LayoutSettingsDialog
+        visible={showLayoutSettingsDialog}
+        onClose={() => setShowLayoutSettingsDialog(false)}
+      />
+
+      <DisplayThemeDialog
+        visible={showDisplayThemeDialog}
+        onClose={() => setShowDisplayThemeDialog(false)}
+      />
+
+      <AlarmConfigDialog
+        visible={showAlarmConfigDialog}
+        onClose={() => setShowAlarmConfigDialog(false)}
+      />
+
+      <AlarmHistoryDialog
+        visible={showAlarmHistoryDialog}
+        onClose={() => setShowAlarmHistoryDialog(false)}
       />
 
       <TestSwitchDialog
@@ -553,7 +585,6 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    paddingBottom: 88, // Account for absolutely positioned autopilot footer
   },
 });
 

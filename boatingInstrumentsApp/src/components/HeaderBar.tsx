@@ -10,17 +10,22 @@ import {
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore, ConnectionStatus } from '../store/nmeaStore';
 import { HamburgerMenu } from './organisms/HamburgerMenu';
-import { UndoRedoControls } from './undo/UndoRedoControls';
+import { Ionicons } from '@expo/vector-icons';
 
 interface HeaderBarProps {
   onShowConnectionSettings?: () => void;
   onShowUnitsDialog?: () => void;
   onShowFactoryResetDialog?: () => void;
+  onShowLayoutSettings?: () => void;
+  onShowDisplayThemeSettings?: () => void;
+  onShowAlarmConfiguration?: () => void;
+  onShowAlarmHistory?: () => void;
   navigationSession?: {
     isRecording: boolean;
     startTime?: Date;
   };
   onToggleNavigationSession?: () => void;
+  onShowAutopilotControl?: () => void;
   // Developer tools props (development only)
   onStartPlayback?: () => void;
   onStopPlayback?: () => void;
@@ -32,8 +37,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onShowConnectionSettings,
   onShowUnitsDialog,
   onShowFactoryResetDialog,
+  onShowLayoutSettings,
+  onShowDisplayThemeSettings,
+  onShowAlarmConfiguration,
+  onShowAlarmHistory,
   navigationSession,
   onToggleNavigationSession,
+  onShowAutopilotControl,
   onStartPlayback,
   onStopPlayback,
   onStartStressTest,
@@ -133,14 +143,24 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <Text style={styles.appTitle}>Boat Instruments</Text>
         </View>
 
-        {/* Right: Combined Status + Navigation Control + Undo/Redo */}
+        {/* Right: Autopilot + Connection Status */}
         <View style={styles.rightContent}>
-          {/* AC13: Undo/Redo Controls */}
-          <UndoRedoControls compact showShortcutHints={false} />
+          {/* Discrete Autopilot Button */}
+          {onShowAutopilotControl && (
+            <TouchableOpacity
+              style={styles.autopilotButton}
+              onPress={onShowAutopilotControl}
+              accessibilityRole="button"
+              accessibilityLabel="Open autopilot controls"
+              testID="autopilot-button"
+            >
+              <Ionicons name="boat" size={20} color={theme.primary} />
+            </TouchableOpacity>
+          )}
           
           {/* Combined Connection Status + Navigation Session Button */}
           <TouchableOpacity
-            style={[styles.combinedStatusButton, { marginLeft: 12 }]}
+            style={[styles.combinedStatusButton, { marginLeft: 8 }]}
             onPress={handleCombinedButtonPress}
             onLongPress={handleConnectionLEDPress}
             accessibilityRole="button"
@@ -177,6 +197,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         onShowUnitsDialog={onShowUnitsDialog}
         onShowFactoryResetDialog={onShowFactoryResetDialog}
         onShowConnectionSettings={onShowConnectionSettings}
+        onShowLayoutSettings={onShowLayoutSettings}
+        onShowDisplayThemeSettings={onShowDisplayThemeSettings}
+        onShowAlarmConfiguration={onShowAlarmConfiguration}
+        onShowAlarmHistory={onShowAlarmHistory}
       />
     </>
   );
@@ -222,7 +246,13 @@ const createStyles = (theme: any) =>
     rightContent: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8, // Space between session button and LED
+      gap: 8,
+    },
+    autopilotButton: {
+      width: 44,
+      height: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     sessionButton: {
       width: 44, // Minimum touch target

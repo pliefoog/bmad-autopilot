@@ -26,6 +26,10 @@ interface HamburgerMenuProps {
   onShowUnitsDialog?: () => void;
   onShowFactoryResetDialog?: () => void;
   onShowConnectionSettings?: () => void;
+  onShowLayoutSettings?: () => void;
+  onShowDisplayThemeSettings?: () => void;
+  onShowAlarmConfiguration?: () => void;
+  onShowAlarmHistory?: () => void;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -38,6 +42,10 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onShowUnitsDialog,
   onShowFactoryResetDialog,
   onShowConnectionSettings,
+  onShowLayoutSettings,
+  onShowDisplayThemeSettings,
+  onShowAlarmConfiguration,
+  onShowAlarmHistory,
 }) => {
   const theme = useTheme();
   const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible);
@@ -53,10 +61,34 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         requestAnimationFrame(() => onShowConnectionSettings?.());
       });
     },
-    toggleUnits: () => {
+    openDisplayThemeSettings: () => {
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowDisplayThemeSettings?.());
+      });
+    },
+    openUnitsConfig: () => {
       animateOut(() => {
         onClose();
         requestAnimationFrame(() => onShowUnitsDialog?.());
+      });
+    },
+    openLayoutSettings: () => {
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowLayoutSettings?.());
+      });
+    },
+    openAlarmConfiguration: () => {
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowAlarmConfiguration?.());
+      });
+    },
+    openAlarmHistory: () => {
+      animateOut(() => {
+        onClose();
+        requestAnimationFrame(() => onShowAlarmHistory?.());
       });
     },
     performFactoryReset: async () => {
@@ -68,23 +100,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     // Backwards compatibility - redirect to new name
     resetAppToDefaults: async () => {
       await actionHandlers.performFactoryReset();
-    },
-    openAlarmConfiguration: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => {
-          const router = require('expo-router');
-          router.router.push('/settings/alarms');
-        });
-      });
-    },
-    openAlarmHistory: () => {
-      // Navigate to alarm history (placeholder for now)
-      animateOut(() => {
-        onClose();
-        // TODO: Implement alarm history screen
-        console.log('Alarm History - coming soon');
-      });
     },
     openFeatureFlags: () => {
       // Trigger close animation, then open feature flags

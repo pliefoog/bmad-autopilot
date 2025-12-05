@@ -1,15 +1,28 @@
+/**
+ * Factory Reset Dialog
+ * Epic 8 - Phase 2: Platform-Native Dialog Migration
+ * 
+ * Features:
+ * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
+ * - Destructive action confirmation
+ * - Clear warning message with bullet points
+ */
+
 import React, { useMemo } from 'react';
 import {
-  Modal,
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  ScrollView,
   Alert,
   Platform,
 } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
+import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { PlatformSettingsSection } from '../settings';
+import { PlatformButton } from './inputs/PlatformButton';
+import { UniversalIcon } from '../atoms/UniversalIcon';
+import { getPlatformTokens } from '../../theme/settingsTokens';
+import { isTV } from '../../utils/platformDetection';
 
 interface FactoryResetDialogProps {
   visible: boolean;
@@ -23,7 +36,12 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   onCancel,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const tvMode = isTV();
+  const styles = useMemo(
+    () => createStyles(theme, platformTokens, tvMode),
+    [theme, platformTokens, tvMode]
+  );
 
   const handleConfirm = async () => {
     // For mobile platforms, use React Native Alert instead of the modal
@@ -59,228 +77,169 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
     await onConfirm();
   };
 
-  // Use styled modal for all platforms, with higher z-index for proper layering
+  // Use platform-native modal
   return (
-    <Modal
+    <BaseSettingsModal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onCancel}
-      transparent={false}
-      style={Platform.OS === 'web' ? { zIndex: 10001 } : undefined}
+      title="Factory Reset"
+      onClose={onCancel}
+      showFooter={false}
+      testID="factory-reset-dialog"
     >
-      <View style={[
-        styles.container, 
-        { backgroundColor: theme.background },
-        Platform.OS === 'web' && { position: 'relative', zIndex: 10002 }
-      ]}>
-        {/* iOS Drag Handle */}
-        <View style={styles.dragHandle} />
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity onPress={onCancel} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Factory Reset</Text>
-          <TouchableOpacity 
-            onPress={handleConfirm} 
-            style={styles.headerButton}
-          >
-            <Text style={[styles.headerButtonText, { color: theme.error }]}>Reset</Text>
-          </TouchableOpacity>
+      {/* Warning Section */}
+      <PlatformSettingsSection title="Warning">
+        <View style={styles.warningBox}>
+          <UniversalIcon 
+            name="warning-outline" 
+            size={platformTokens.typography.body.fontSize * 2} 
+            color={theme.error} 
+            style={styles.warningIcon}
+          />
+          <View style={styles.warningTextContainer}>
+            <Text style={styles.warningTitle}>⚠️ Complete Factory Reset</Text>
+            <Text style={styles.warningDescription}>
+              This action will permanently delete all your custom settings and configurations.
+              This cannot be undone!
+            </Text>
+          </View>
         </View>
+      </PlatformSettingsSection>
 
-        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.warningSection}>
-            <Text style={[styles.warningIcon, { color: theme.warning }]}>⚠️</Text>
-            <Text style={[styles.warningTitle, { color: theme.warning }]}>
-              Warning: Complete Factory Reset
-            </Text>
+      {/* What Will Be Reset Section */}
+      <PlatformSettingsSection title="What Will Be Reset">
+        <View style={styles.bulletList}>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>All widget positions and sizes</Text>
           </View>
-
-          <Text style={[styles.description, { color: theme.text }]}>
-            This action will completely restore the app to its initial state, as if you just installed it for the first time.
-          </Text>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>What will be reset:</Text>
-            
-            <View style={styles.bulletList}>
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.error }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>All widgets will be removed</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.error }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>Dashboard layouts will be reset</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.error }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>All user preferences and settings</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.error }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>NMEA connection configurations</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.error }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>Theme and display preferences</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.error }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>All stored alarms and notifications</Text>
-              </View>
-            </View>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>Display units (speed, depth, wind, etc.)</Text>
           </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>After reset:</Text>
-            
-            <View style={styles.bulletList}>
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.success }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>App will restart automatically</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.success }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>Setup wizard will guide you through initial configuration</Text>
-              </View>
-              
-              <View style={styles.bulletItem}>
-                <Text style={[styles.bulletIcon, { color: theme.success }]}>•</Text>
-                <Text style={[styles.bulletText, { color: theme.text }]}>All features will be available for fresh setup</Text>
-              </View>
-            </View>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>Widget lifecycle settings</Text>
           </View>
-
-          <View style={styles.finalWarning}>
-            <Text style={[styles.finalWarningText, { color: theme.error }]}>
-              ⚠️ This action cannot be undone! ⚠️
-            </Text>
-            <Text style={[styles.finalWarningSubtext, { color: theme.textSecondary }]}>
-              Make sure you want to completely reset the app before proceeding.
-            </Text>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>Alarm configurations</Text>
           </View>
-        </ScrollView>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>Connection settings (IP address, port)</Text>
+          </View>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.bulletText}>Display theme preferences</Text>
+          </View>
+        </View>
+      </PlatformSettingsSection>
+
+      {/* What Will Be Preserved Section */}
+      <PlatformSettingsSection title="What Will Be Preserved">
+        <View style={styles.bulletList}>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>✓</Text>
+            <Text style={styles.bulletText}>App installation and data</Text>
+          </View>
+          <View style={styles.bulletItem}>
+            <Text style={styles.bullet}>✓</Text>
+            <Text style={styles.bulletText}>Device system settings</Text>
+          </View>
+        </View>
+      </PlatformSettingsSection>
+
+      {/* Action Buttons */}
+      <View style={styles.actionContainer}>
+        <View style={styles.buttonRow}>
+          <View style={styles.buttonWrapper}>
+            <PlatformButton
+              variant="secondary"
+              onPress={onCancel}
+              title="Cancel"
+              testID="factory-reset-cancel-button"
+            />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <PlatformButton
+              variant="danger"
+              onPress={handleConfirm}
+              title="Factory Reset"
+              icon="warning-outline"
+              testID="factory-reset-confirm-button"
+            />
+          </View>
+        </View>
       </View>
-    </Modal>
+    </BaseSettingsModal>
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    zIndex: 10000, // Higher than hamburger menu to ensure it appears on top
-    elevation: 50, // For Android
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    backgroundColor: theme.overlay,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  headerButtonText: {
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-  },
-  warningSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingVertical: 16,
-    borderRadius: 8,
-    backgroundColor: theme.surfaceHighlight,
-  },
-  warningIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  warningTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  bulletList: {
-    paddingLeft: 8,
-  },
-  bulletItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  bulletIcon: {
-    fontSize: 16,
-    marginRight: 12,
-    width: 16,
-    textAlign: 'center',
-  },
-  bulletText: {
-    fontSize: 16,
-    lineHeight: 22,
-    flex: 1,
-  },
-  finalWarning: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: theme.surfaceDim,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  finalWarningText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  finalWarningSubtext: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
+/**
+ * Create platform-aware styles
+ */
+const createStyles = (
+  theme: ThemeColors,
+  platformTokens: ReturnType<typeof getPlatformTokens>,
+  tvMode: boolean
+) =>
+  StyleSheet.create({
+    warningBox: {
+      flexDirection: 'row',
+      backgroundColor: theme.background,
+      borderRadius: 8,
+      padding: platformTokens.spacing.inset,
+      borderWidth: 2,
+      borderColor: theme.error,
+    },
+    warningIcon: {
+      marginRight: platformTokens.spacing.row,
+      marginTop: 2,
+    },
+    warningTextContainer: {
+      flex: 1,
+    },
+    warningTitle: {
+      fontSize: platformTokens.typography.body.fontSize * 1.1,
+      fontWeight: '700',
+      color: theme.error,
+      marginBottom: platformTokens.spacing.row * 0.5,
+    },
+    warningDescription: {
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.text,
+      lineHeight: platformTokens.typography.body.lineHeight * 1.5,
+    },
+    bulletList: {
+      gap: platformTokens.spacing.row * 0.75,
+    },
+    bulletItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    bullet: {
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: '700',
+      color: theme.text,
+      marginRight: platformTokens.spacing.row * 0.75,
+      minWidth: 16,
+    },
+    bulletText: {
+      flex: 1,
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.text,
+      lineHeight: platformTokens.typography.body.lineHeight * 1.5,
+    },
+    actionContainer: {
+      marginTop: platformTokens.spacing.row,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap: platformTokens.spacing.row,
+    },
+    buttonWrapper: {
+      flex: 1,
+    },
+  });

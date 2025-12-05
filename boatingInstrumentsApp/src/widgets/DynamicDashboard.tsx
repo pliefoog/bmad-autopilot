@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Dimensions, Alert } from 'react-native';
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useTheme, ThemeColors } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useToast } from '../hooks/useToast';
+import { logger } from '../utils/logger';
 import { WidgetRegistry } from './WidgetRegistry';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { PlatformStyles } from '../utils/animationUtils';
@@ -57,8 +59,10 @@ export const DynamicDashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [dimensions, setDimensions] = useState(() => {
     const { width, height } = Dimensions.get('window');
+    logger.dimensions(`Initial dimensions: ${width}×${height}`);
     return { width, height };
   });
+  const [dimensionsReady, setDimensionsReady] = useState(false);
   const [removedWidget, setRemovedWidget] = useState<{
     widget: DynamicWidgetLayout;
     index: number;
@@ -72,13 +76,32 @@ export const DynamicDashboard: React.FC = () => {
   // Calculate grid config for proper spacing and sizing
   const gridConfig = useMemo(() => {
     const headerHeight = 60;
-    const footerHeight = 88;
+    const footerHeight = 0; // No footer - widgets extend to bottom
     const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
     const config = DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
     return config;
   }, [dimensions.width, dimensions.height, storeWidgets.length]);
   
   const styles = useMemo(() => createStyles(theme), [theme]);
+
+  // Force dimension re-read on mount BEFORE first render (useLayoutEffect runs synchronously)
+  useLayoutEffect(() => {
+    const { width, height } = Dimensions.get('window');
+    logger.dimensions(`useLayoutEffect dimensions: ${width}×${height}`);
+    
+    // Only update if dimensions changed from initial
+    if (width !== dimensions.width || height !== dimensions.height) {
+      logger.always(`⚠️ Correcting dimensions from ${dimensions.width}×${dimensions.height} to ${width}×${height}`);
+      DynamicLayoutService.clearCache();
+      setDimensions({ width, height });
+    }
+    
+    // Mark dimensions as ready after a small delay to ensure iOS has settled
+    // iOS sometimes takes a frame or two to report accurate dimensions
+    setTimeout(() => {
+      setDimensionsReady(true);
+    }, 100);
+  }, []);
 
   // Register all widgets on mount
   useEffect(() => {
@@ -326,7 +349,7 @@ export const DynamicDashboard: React.FC = () => {
   // Calculate total pages using new grid system
   const totalPages = useMemo(() => {
     const headerHeight = 60;
-    const footerHeight = 88;
+    const footerHeight = 0; // No footer - widgets extend to bottom
     return DynamicLayoutService.getTotalPages(layout, headerHeight, footerHeight);
   }, [layout, dimensions]);
 
@@ -361,6 +384,27 @@ export const DynamicDashboard: React.FC = () => {
     }
   }, [totalPages]);
 
+  // Swipe gesture handling for page navigation
+  const panGestureRef = useRef(null);
+  const handleSwipeGesture = useCallback((event: any) => {
+    const { translationX, velocityX, state } = event.nativeEvent;
+
+    if (state === State.END) {
+      const swipeThreshold = 50; // Minimum swipe distance
+      const velocityThreshold = 500; // Minimum swipe velocity
+
+      if (Math.abs(translationX) > swipeThreshold || Math.abs(velocityX) > velocityThreshold) {
+        if (translationX > 0 || velocityX > 0) {
+          // Swipe right - previous page
+          goToPrevPage();
+        } else {
+          // Swipe left - next page
+          goToNextPage();
+        }
+      }
+    }
+  }, [goToNextPage, goToPrevPage]);
+
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       {/* Widget Display Area - Conditional: ScrollView (mobile) or Fixed Grid (tablet/desktop) */}
@@ -378,30 +422,23 @@ export const DynamicDashboard: React.FC = () => {
         </ScrollView>
       ) : (
         // TABLET/DESKTOP: Fixed grid with pagination and drag-and-drop
-        <View style={styles.paginatedContainer}>
-          <DraggableWidgetGrid
-            pageIndex={currentPage}
-            onMoveToPage={moveWidgetToPage}
-          />
-        </View>
+        <PanGestureHandler
+          ref={panGestureRef}
+          onHandlerStateChange={handleSwipeGesture}
+          enabled={usePagination} // Only enable swipe when multiple pages
+        >
+          <View style={styles.paginatedContainer}>
+            <DraggableWidgetGrid
+              pageIndex={currentPage}
+              onMoveToPage={moveWidgetToPage}
+            />
+          </View>
+        </PanGestureHandler>
       )}
       
       {/* Pagination Controls - show only for tablet/desktop with multiple pages */}
       {!useScrollMode && usePagination && (
-        <View style={styles.paginationContainer}>
-          {/* Settings Button */}
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => setSettingsVisible(true)}
-            activeOpacity={0.7}
-          >
-            <UniversalIcon 
-              name="settings-outline" 
-              size={20} 
-              color={theme.textSecondary} 
-            />
-          </TouchableOpacity>
-          
+        <View style={styles.paginationContainer} pointerEvents="box-none">
           {/* Previous Page Button */}
           <TouchableOpacity
             style={[styles.paginationArrow, currentPage === 0 && styles.paginationArrowDisabled]}
@@ -410,14 +447,14 @@ export const DynamicDashboard: React.FC = () => {
             activeOpacity={0.7}
           >
             <UniversalIcon 
-              name="chevron-left" 
-              size={24} 
+              name="chevron-back-outline" 
+              size={28} 
               color={currentPage === 0 ? theme.textSecondary : theme.text} 
             />
           </TouchableOpacity>
 
           {/* Page Dots */}
-          <View style={styles.paginationDots}>
+          <View style={styles.paginationDots} pointerEvents="auto">
             {Array.from({ length: totalPages }).map((_, index) => (
               <TouchableOpacity
                 key={index}
@@ -442,8 +479,8 @@ export const DynamicDashboard: React.FC = () => {
             activeOpacity={0.7}
           >
             <UniversalIcon 
-              name="chevron-right" 
-              size={24} 
+              name="chevron-forward-outline" 
+              size={28} 
               color={currentPage === totalPages - 1 ? theme.textSecondary : theme.text} 
             />
           </TouchableOpacity>
@@ -496,6 +533,7 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
   paginatedContainer: {
     flex: 1,
     overflow: 'hidden',
+    paddingBottom: 0, // No padding - let pagination float over content
   },
   scrollContainer: {
     flex: 1,
@@ -535,33 +573,22 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     alignItems: 'flex-start',
   },
   paginationContainer: {
+    position: 'absolute', // Float over content
+    bottom: 20,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
-    backgroundColor: theme.surface,
-  },
-  settingsButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
+    paddingVertical: 8,
+    pointerEvents: 'box-none', // Allow touches to pass through to widgets below
   },
   paginationArrow: {
     width: 44,
     height: 44,
-    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 0,
+    marginHorizontal: 16, // More space on iPad per HIG
   },
   paginationArrowDisabled: {
     opacity: 0.3,
@@ -570,17 +597,18 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 0,
+    marginHorizontal: 20, // Space from arrows
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginHorizontal: 0,
+    marginHorizontal: 6, // Apple HIG: 12pt spacing between dots (6pt each side)
   },
   paginationDotActive: {
     width: 12,
     height: 12,
     borderRadius: 6,
+    marginHorizontal: 4, // Adjust for larger size to keep visual spacing consistent
   },
 });

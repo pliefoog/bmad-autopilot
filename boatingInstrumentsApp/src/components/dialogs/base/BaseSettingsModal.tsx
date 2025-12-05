@@ -2,15 +2,19 @@
  * Base Settings Modal Component
  * Story 13.2.1 - Phase 3: BaseSettingsModal Component
  * Story 13.2.1 - Phase 4: Keyboard Navigation
+ * Epic 8 - Phase 1: Cross-Platform Dialog Unification
  * 
  * Reusable foundation for all settings dialogs
  * Features:
- * - Cross-platform consistency (iOS, Android, Web, Desktop)
+ * - Platform-native presentation (iOS card, Android bottom sheet, TV centered)
+ * - Cross-platform consistency (iOS, Android, Web, Desktop, TV)
  * - Keyboard navigation (Tab, Enter, Esc)
+ * - TV remote navigation (D-pad, Siri Remote)
  * - Glove-friendly touch targets
  * - Theme integration (day, night, red-night)
  * - Dismissible/non-dismissible modes
  * - Focus trap for modal accessibility
+ * - Viewing-distance-optimized typography
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
@@ -25,16 +29,27 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Animated,
+  InteractionManager,
 } from 'react-native';
+
+// iPad pointer interaction types
+type PointerStyle = 'auto' | 'highlight' | 'lift';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
-import { settingsTokens, getButtonHeight } from '../../../theme/settingsTokens';
+import { 
+  settingsTokens, 
+  getButtonHeight, 
+  getPlatformTokens 
+} from '../../../theme/settingsTokens';
 import {
   detectPlatform,
   hasKeyboard,
   isGloveMode,
   isTablet,
+  getPlatformVariant,
+  isTV,
 } from '../../../utils/platformDetection';
 
 /**
@@ -126,16 +141,17 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
  * Displays cancel and save buttons
  */
 interface SettingsFooterProps {
-  onCancel: () => void;
+  onClose: () => void;
   onSave?: () => void;
-  cancelButtonText: string;
-  saveButtonText: string;
+  cancelButtonText?: string;
+  saveButtonText?: string;
   theme: ThemeColors;
   styles: ReturnType<typeof createStyles>;
+  tvMode?: boolean;
 }
 
 const SettingsFooter: React.FC<SettingsFooterProps> = ({
-  onCancel,
+  onClose,
   onSave,
   cancelButtonText,
   saveButtonText,
@@ -148,26 +164,56 @@ const SettingsFooter: React.FC<SettingsFooterProps> = ({
 
   return (
     <View style={styles.footer}>
-      <TouchableOpacity
-        onPress={onCancel}
-        style={[styles.footerButton, styles.cancelButton, { height: buttonHeight }]}
-        accessibilityLabel={cancelButtonText}
+      <Pressable
+        onPress={onClose}
+        style={({ pressed }) => [
+          styles.footerButton,
+          styles.cancelButton,
+          { height: buttonHeight },
+          pressed && styles.buttonPressed,
+        ]}
+        accessibilityLabel={cancelButtonText || 'Cancel'}
         accessibilityRole="button"
         testID="settings-modal-cancel-button"
       >
-        <Text style={styles.cancelButtonText}>{cancelButtonText}</Text>
-      </TouchableOpacity>
+        <Text 
+          style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: theme.text || '#000000',
+            textAlign: 'center',
+          }}
+          allowFontScaling={false}
+        >
+          {cancelButtonText || 'Cancel'}
+        </Text>
+      </Pressable>
       
       {onSave && (
-        <TouchableOpacity
+        <Pressable
           onPress={onSave}
-          style={[styles.footerButton, styles.saveButton, { height: buttonHeight }]}
+          style={({ pressed }) => [
+            styles.footerButton,
+            styles.saveButton,
+            { height: buttonHeight },
+            pressed && styles.buttonPressed,
+          ]}
           accessibilityLabel={saveButtonText}
           accessibilityRole="button"
           testID="settings-modal-save-button"
         >
-          <Text style={styles.saveButtonText}>{saveButtonText}</Text>
-        </TouchableOpacity>
+          <Text 
+            style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#FFFFFF',
+              textAlign: 'center',
+            }}
+            allowFontScaling={false}
+          >
+            {saveButtonText || 'Save'}
+          </Text>
+        </Pressable>
       )}
     </View>
   );
@@ -209,13 +255,51 @@ export const BaseSettingsModal: React.FC<BaseSettingsModalProps> = ({
   testID = 'base-settings-modal',
 }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
   
   const scrollViewRef = useRef<ScrollView>(null);
   const modalContentRef = useRef<View>(null);
   
+  // Animation for TV modal entrance
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  
   const platform = detectPlatform();
   const keyboardEnabled = hasKeyboard();
+  const tvMode = isTV();
+
+  /**
+   * Animate modal entrance on TV platforms
+   * Uses InteractionManager to defer animation after layout
+   */
+  useEffect(() => {
+    if (!tvMode || !visible) {
+      return;
+    }
+
+    // Reset animations
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.95);
+
+    // Defer animation until layout is complete
+    const handle = InteractionManager.runAfterInteractions(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: platformTokens.animations.modalEntrance,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: platformTokens.animations.modalEntrance,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+
+    return () => handle.cancel();
+  }, [visible, tvMode, fadeAnim, scaleAnim, platformTokens.animations.modalEntrance]);
 
   /**
    * Handle backdrop press
@@ -312,73 +396,142 @@ export const BaseSettingsModal: React.FC<BaseSettingsModalProps> = ({
     }
   }, [dismissible, onClose]);
 
+  const tablet = isTablet();
+  
+  // iOS presentation styles based on device
+  // iPad: 'formSheet' - centered, rounded corners, appropriate size
+  // iPhone: 'pageSheet' - slides from bottom, dismissible by swipe
+  const iOSPresentationStyle = tablet ? 'formSheet' : 'pageSheet';
+  
+  // Debug logging (disabled by default - logs 6 times per render)
+  // console.log(`[BaseSettingsModal] tablet: ${tablet}, presentationStyle: ${iOSPresentationStyle}, Platform.isPad: ${Platform.isPad}`);
+  
   return (
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
+      animationType={tvMode ? 'none' : 'fade'} // Custom animation for TV
       onRequestClose={handleRequestClose}
       statusBarTranslucent={Platform.OS === 'android'}
+      // @ts-ignore - presentationStyle exists on iOS
+      presentationStyle={
+        Platform.OS === 'ios' && !tvMode 
+          ? iOSPresentationStyle
+          : undefined
+      }
       testID={testID}
     >
-      {/* Backdrop */}
-      <Pressable
-        style={styles.backdrop}
-        onPress={handleBackdropPress}
-        testID={`${testID}-backdrop`}
-      >
-        {/* Modal Container - KeyboardAvoidingView for iOS */}
+      {/* Only render backdrop for Android/TV - iOS pageSheet provides its own */}
+      {Platform.OS === 'ios' && !tvMode ? (
+        // iOS pageSheet - no backdrop needed, direct content
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
           style={styles.keyboardAvoidingView}
         >
-          {/* Prevent backdrop press from propagating to modal content */}
-          <Pressable
-            style={styles.modalContainer}
-            onPress={(e) => e.stopPropagation()}
-            testID={`${testID}-container`}
+          <View
+            ref={modalContentRef}
+            style={styles.modalContent}
+            // @ts-ignore - tabIndex is web-only
+            tabIndex={keyboardEnabled ? 0 : undefined}
           >
-            <View
-              ref={modalContentRef}
-              style={styles.modalContent}
-              // @ts-ignore - tabIndex is web-only
-              tabIndex={keyboardEnabled ? 0 : undefined}
+            {/* Header */}
+            <SettingsHeader
+              title={title}
+              onClose={onClose}
+              theme={theme}
+              styles={styles}
+            />
+
+            {/* Content */}
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.contentScrollView}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
             >
-              {/* Header */}
-              <SettingsHeader
-                title={title}
-                onClose={onClose}
+              {children}
+            </ScrollView>
+
+            {/* Footer */}
+            {showFooter && (
+              <SettingsFooter
                 theme={theme}
                 styles={styles}
+                tvMode={tvMode}
+                onClose={onClose}
+                onSave={onSave}
               />
-
-              {/* Content */}
-              <ScrollView
-                ref={scrollViewRef}
-                style={styles.contentScrollView}
-                contentContainerStyle={styles.contentContainer}
-                showsVerticalScrollIndicator={true}
-                keyboardShouldPersistTaps="handled"
-                testID={`${testID}-content`}
-              >
-                {children}
-              </ScrollView>
-
-              {/* Footer */}
-              {showFooter && (
-                <SettingsFooter
-                  onCancel={onClose}
-                  onSave={onSave}
-                  cancelButtonText={cancelButtonText}
-                  saveButtonText={saveButtonText}
-                  theme={theme}
-                  styles={styles}
-                />
-              )}
-            </View>
-          </Pressable>
+            )}
+          </View>
         </KeyboardAvoidingView>
-      </Pressable>
+      ) : (
+        // Android/TV/Web - use backdrop
+        <Pressable
+          style={styles.backdrop}
+          onPress={handleBackdropPress}
+          testID={`${testID}-backdrop`}
+        >
+          {/* Modal Container - KeyboardAvoidingView for other platforms */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.keyboardAvoidingView}
+          >
+            {/* Prevent backdrop press from propagating to modal content */}
+            <Animated.View
+              style={[
+                styles.modalContainer,
+                tvMode && {
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+            >
+              <Pressable
+                onPress={(e) => e.stopPropagation()}
+                testID={`${testID}-container`}
+              >
+                <View
+                  ref={modalContentRef}
+                  style={styles.modalContent}
+                  // @ts-ignore - tabIndex is web-only
+                  tabIndex={keyboardEnabled ? 0 : undefined}
+                >
+                  {/* Header */}
+                  <SettingsHeader
+                    title={title}
+                    onClose={onClose}
+                    theme={theme}
+                    styles={styles}
+                  />
+
+                  {/* Content */}
+                  <ScrollView
+                    ref={scrollViewRef}
+                    style={styles.contentScrollView}
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={true}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {children}
+                  </ScrollView>
+
+                  {/* Footer */}
+                  {showFooter && (
+                    <SettingsFooter
+                      theme={theme}
+                      styles={styles}
+                      tvMode={tvMode}
+                      onClose={onClose}
+                      onSave={onSave}
+                    />
+                  )}
+                </View>
+              </Pressable>
+            </Animated.View>
+          </KeyboardAvoidingView>
+        </Pressable>
+      )}
     </Modal>
   );
 };
@@ -386,8 +539,16 @@ export const BaseSettingsModal: React.FC<BaseSettingsModalProps> = ({
 /**
  * Create styles for BaseSettingsModal
  * Theme-aware styling for day, night, and red-night modes
+ * Platform-native presentation (iOS HIG, Material Design 3, TV optimized)
  */
-function createStyles(theme: ThemeColors) {
+function createStyles(theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) {
+  const variant = getPlatformVariant();
+  const tvMode = isTV();
+  const tablet = isTablet();
+  
+  // Get platform-specific modal styles
+  const modalStyle = platformTokens.modal;
+  
   return StyleSheet.create({
     backdrop: {
       flex: 1,
@@ -402,64 +563,91 @@ function createStyles(theme: ThemeColors) {
       width: '100%',
     },
     modalContainer: {
-      width: Platform.OS === 'web' 
-        ? settingsTokens.modal.width.desktop 
-        : settingsTokens.modal.width.phone,
-      maxWidth: settingsTokens.modal.maxWidth,
-      maxHeight: settingsTokens.modal.maxHeight,
+      // Platform-specific width (not used for iOS native presentation)
+      ...(Platform.OS !== 'ios' && modalStyle.width && {
+        width: modalStyle.width,
+      }),
+      maxWidth: modalStyle.maxWidth || settingsTokens.modal.maxWidth,
+      maxHeight: modalStyle.maxHeight || settingsTokens.modal.maxHeight,
       minHeight: settingsTokens.modal.minHeight,
+      // Platform-specific margins (iOS phone insets)
+      ...(variant === 'ios-phone' && !tvMode && {
+        marginHorizontal: modalStyle.marginHorizontal,
+        marginVertical: modalStyle.marginVertical,
+      }),
     },
     modalContent: {
-      flex: 1,
+      // iOS formSheet/pageSheet handle outer sizing, but we constrain inner content
+      width: '100%',
+      maxWidth: Platform.OS === 'ios' && tablet ? 540 : undefined,
+      alignSelf: 'center',
       backgroundColor: theme.surface,
-      borderRadius: settingsTokens.borderRadius.modal,
+      borderRadius: modalStyle.borderRadius,
       overflow: 'hidden',
-      ...settingsTokens.shadows.modal,
-      // Ensure proper shadow rendering on Android
-      ...(Platform.OS === 'android' && {
-        elevation: settingsTokens.shadows.modal.elevation,
+      // Platform-specific shadows
+      ...(!tvMode && modalStyle.shadow && modalStyle.shadow),
+      // Android elevation (Material Design)
+      ...(Platform.OS === 'android' && !tvMode && modalStyle.elevation && {
+        elevation: modalStyle.elevation,
+      }),
+      // TV focus border
+      ...(tvMode && modalStyle.focusBorder && {
+        borderWidth: modalStyle.focusBorder.width,
+        borderColor: theme.interactive, // Theme-aware focus color
       }),
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      height: settingsTokens.layout.headerHeight,
-      paddingHorizontal: settingsTokens.spacing.lg,
+      height: settingsTokens.layout.headerHeight * platformTokens.viewingDistanceScale,
+      paddingHorizontal: platformTokens.spacing.inset,
       backgroundColor: theme.background,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
     },
     title: {
       flex: 1,
-      fontSize: settingsTokens.typography.title.fontSize,
-      fontWeight: settingsTokens.typography.title.fontWeight,
-      lineHeight: settingsTokens.typography.title.lineHeight,
+      fontSize: platformTokens.typography.title.fontSize,
+      fontWeight: platformTokens.typography.title.fontWeight,
+      lineHeight: platformTokens.typography.title.lineHeight,
       color: theme.text,
+      fontFamily: platformTokens.typography.fontFamily,
     },
     closeButton: {
       justifyContent: 'center',
       alignItems: 'center',
       borderRadius: settingsTokens.borderRadius.button,
-      marginLeft: settingsTokens.spacing.sm,
+      marginLeft: platformTokens.spacing.section,
+      // iPad cursor support
+      ...Platform.select({
+        ios: {
+          cursor: 'pointer' as any,
+        },
+      }),
     },
     contentScrollView: {
-      flex: 1,
+      // Let content determine height naturally for iOS formSheet/pageSheet
+      flexGrow: 0,
+      flexShrink: 1,
     },
     contentContainer: {
-      padding: settingsTokens.spacing.lg,
+      // iOS: Use system spacing (16-20pt) for grouped lists
+      // Android: Use Material spacing (16-24pt)
+      paddingHorizontal: Platform.OS === 'ios' ? (tablet ? 20 : 16) : platformTokens.spacing.inset,
+      paddingVertical: platformTokens.spacing.section,
     },
     footer: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      height: settingsTokens.layout.footerHeight,
-      paddingHorizontal: settingsTokens.spacing.lg,
-      paddingVertical: settingsTokens.spacing.md,
+      height: settingsTokens.layout.footerHeight * platformTokens.viewingDistanceScale,
+      paddingHorizontal: platformTokens.spacing.inset,
+      paddingVertical: platformTokens.spacing.row,
       backgroundColor: theme.background,
       borderTopWidth: 1,
       borderTopColor: theme.border,
-      gap: settingsTokens.spacing.md,
+      gap: platformTokens.spacing.row,
     },
     footerButton: {
       flex: 1,
@@ -467,7 +655,34 @@ function createStyles(theme: ThemeColors) {
       justifyContent: 'center',
       alignItems: 'center',
       borderRadius: settingsTokens.borderRadius.button,
-      ...settingsTokens.shadows.button,
+      // Platform-specific shadows
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 2,
+        },
+        default: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+      }),
+      // iPad cursor support
+      ...Platform.select({
+        ios: {
+          cursor: 'pointer' as any,
+        },
+      }),
+    },
+    buttonPressed: {
+      opacity: 0.7,
+      transform: [{ scale: 0.98 }],
     },
     cancelButton: {
       backgroundColor: theme.surface,
@@ -475,17 +690,33 @@ function createStyles(theme: ThemeColors) {
       borderColor: theme.border,
     },
     cancelButtonText: {
-      fontSize: settingsTokens.typography.label.fontSize,
-      fontWeight: settingsTokens.typography.label.fontWeight,
+      fontSize: platformTokens.typography.label.fontSize,
+      fontWeight: platformTokens.typography.label.fontWeight as any,
       color: theme.text,
+      textAlign: 'center' as const,
+      // Explicit font family only if available
+      ...(Platform.OS === 'ios' && {
+        fontFamily: 'System',
+      }),
+      ...(Platform.OS === 'android' && {
+        fontFamily: 'Roboto',
+      }),
     },
     saveButton: {
       backgroundColor: theme.interactive,
     },
     saveButtonText: {
-      fontSize: settingsTokens.typography.label.fontSize,
-      fontWeight: settingsTokens.typography.label.fontWeight,
+      fontSize: platformTokens.typography.label.fontSize,
+      fontWeight: platformTokens.typography.label.fontWeight as any,
       color: '#FFFFFF',
+      textAlign: 'center' as const,
+      // Explicit font family only if available
+      ...(Platform.OS === 'ios' && {
+        fontFamily: 'System',
+      }),
+      ...(Platform.OS === 'android' && {
+        fontFamily: 'Roboto',
+      }),
     },
   });
 }

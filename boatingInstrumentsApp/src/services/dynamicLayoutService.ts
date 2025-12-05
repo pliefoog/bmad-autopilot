@@ -1,5 +1,6 @@
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 import { WidgetLayout } from './layoutService';
+import { logger } from '../utils/logger';
 import {
   BREAKPOINTS,
   GRID_COLUMNS,
@@ -54,7 +55,7 @@ export class DynamicLayoutService {
    */
   static clearCache(): void {
     this.gridConfigCache.clear();
-    console.log('[DynamicLayoutService] Grid config cache cleared');
+    logger.layout('Grid config cache cleared');
   }
 
   /**
@@ -74,17 +75,36 @@ export class DynamicLayoutService {
   static getGridConfig(headerHeight: number = 60, footerHeight: number = 88, widgetCount: number = 0): GridConfig {
     const { width: screenWidth, height: screenHeight } = this.getScreenDimensions();
     
+    // Debug logging for iPad detection
+    logger.layout(`Screen dimensions: ${screenWidth}×${screenHeight}`);
+    
+    // iPad multitasking detection - adjust effective width for Split View/Slide Over
+    if (Platform.OS === 'ios') {
+      try {
+        const { getIPadMultitaskingMode } = require('../utils/platformDetection');
+        const { isSplitView, isSlideOver, widthPercentage } = getIPadMultitaskingMode();
+        
+        if (isSlideOver || (isSplitView && screenWidth < 600)) {
+          // Slide Over or narrow Split View: Force phone mode (1-2 columns)
+          logger.layout(`iPad multitasking - Using constrained layout for ${screenWidth}pt width`);
+        }
+      } catch (error) {
+        // Ignore if multitasking detection fails
+        logger.layout(`Multitasking detection not available`);
+      }
+    }
+    
     // Check cache first (excluding widgetCount for better hit rate)
     const cacheKey = this.getCacheKey(screenWidth, screenHeight, headerHeight, footerHeight);
     const cached = this.gridConfigCache.get(cacheKey);
     
     if (cached) {
-      // console.log('[DynamicLayoutService] Cache HIT:', cacheKey);
+      logger.layout(`Cache HIT - Using ${cached.columns} columns`);
       return cached;
     }
     
     // Cache miss - calculate new config
-    // console.log('[DynamicLayoutService] Cache MISS - calculating:', cacheKey);
+    logger.layout('Cache MISS - calculating:', cacheKey);
     
     const spacing = SPACING.WIDGET;  // No spacing - widgets fill all space
     const margin = SPACING.MARGIN;   // No margin - widgets extend to edges
@@ -96,6 +116,8 @@ export class DynamicLayoutService {
     // Determine columns based on screen width using helper
     const columns = getColumnsForWidth(screenWidth);
     const usePagination = shouldUsePagination(screenWidth);
+    
+    logger.layout(`Calculated layout: ${columns} columns, usePagination: ${usePagination}`);
     
     // Calculate widget width - divide available space evenly by columns
     // But first, optimize columns based on widget count for better distribution
@@ -149,13 +171,10 @@ export class DynamicLayoutService {
         maxRowsForScreen = 1;
       }
       
-      // Calculate actual rows needed for widget count
-      // Example: 18 widgets / 6 columns (optimized) = 3.0 → ceil = 3 rows needed
-      const rowsNeeded = widgetCount > 0 ? Math.ceil(widgetCount / actualColumns) : maxRowsForScreen;
-      
-      // Use minimum of (rows needed, max rows that fit on screen)
-      // Example: min(3, 4) = 3 rows → use 3 rows, not 4
-      rows = Math.min(rowsNeeded, maxRowsForScreen);
+      // Always use maxRowsForScreen to fill the screen with a consistent grid
+      // This ensures widgets are evenly sized regardless of how many are currently visible
+      // Example: 5×3 grid always shows 15 widget slots, even if only 5 widgets exist
+      rows = maxRowsForScreen;
     }
     
     // Calculate widget height to fill vertical space evenly
@@ -165,7 +184,7 @@ export class DynamicLayoutService {
       ? Math.floor(availableHeight / rows)
       : widgetWidth;
     
-    console.log('[DynamicLayoutService] Grid config calculated:', {
+    logger.layout('Grid config calculated:', {
       screenWidth,
       screenHeight,
       availableWidth,
@@ -176,13 +195,12 @@ export class DynamicLayoutService {
       rows,
       maxRowsForScreen: usePagination ? maxRowsForScreen : 'unlimited',
       widgetCount,
-      rowsNeeded: widgetCount > 0 ? Math.ceil(widgetCount / actualColumns) : 'unknown',
       usePagination,
       widgetWidth,
       widgetHeight,
       totalWidgetsPerPage: usePagination ? actualColumns * rows : 'unlimited',
       calculation: usePagination 
-        ? `${widgetCount} widgets / ${actualColumns} cols = ${Math.ceil(widgetCount / actualColumns)} rows needed, min(needed, ${maxRowsForScreen} max) = ${rows} rows used, ${availableHeight}px / ${rows} rows = ${widgetHeight}px height`
+        ? `${actualColumns} cols × ${rows} rows = ${actualColumns * rows} slots per page, ${availableHeight}px / ${rows} rows = ${widgetHeight}px height`
         : `Square aspect: ${widgetWidth}px`
     });
     
@@ -217,7 +235,7 @@ export class DynamicLayoutService {
     const gridConfig = this.getGridConfig(headerHeight, footerHeight, visibleWidgets.length);
     const { columns, rows, widgetWidth, widgetHeight, spacing, availableHeight } = gridConfig;
     
-    console.log('[DynamicLayoutService] toDynamicLayout using config:', {
+    logger.layout('toDynamicLayout using config:', {
       visibleWidgetCount: visibleWidgets.length,
       columns,
       rows,

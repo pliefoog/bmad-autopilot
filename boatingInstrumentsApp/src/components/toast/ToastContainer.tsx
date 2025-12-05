@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
   
   position_bottom: {
-    bottom: Platform.OS === 'web' ? 100 : 120, // Account for AutopilotFooter
+    bottom: Platform.OS === 'web' ? 20 : 40,
   },
   
   // Stack direction styles

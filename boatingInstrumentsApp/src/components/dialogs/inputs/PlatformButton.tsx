@@ -1,13 +1,15 @@
 /**
  * PlatformButton Component
  * Story 13.2.2 - Task 4: Consistent button with platform feel
+ * Epic 8 - Phase 1: TV Support Extension
  * 
  * Features:
- * - Adaptive touch target sizing (44pt phone, 56pt tablet)
+ * - Adaptive touch target sizing (44pt phone, 56pt tablet, 60pt TV)
  * - Variants: primary, secondary, danger
  * - Press state animation (opacity 0.7, 100ms)
  * - Haptic feedback on mobile
  * - Loading state with spinner
+ * - TV focus border (4px interactive color)
  * - Theme integration
  */
 
@@ -18,11 +20,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   View,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../../../store/themeStore';
-import { settingsTokens } from '../../../theme/settingsTokens';
+import { settingsTokens, getPlatformTokens } from '../../../theme/settingsTokens';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
 import { useTouchTargetSize, useHapticFeedback } from '../../../hooks';
+import { isTV } from '../../../utils/platformDetection';
 
 /**
  * Button variant types
@@ -53,6 +57,9 @@ export interface PlatformButtonProps {
   
   /** Optional icon name (from Ionicons) */
   icon?: string;
+  
+  /** TV focus state (for TV navigation) */
+  focused?: boolean;
   
   /** Test ID for testing */
   testID?: string;
@@ -90,11 +97,17 @@ export const PlatformButton: React.FC<PlatformButtonProps> = ({
   fullWidth = false,
   loading = false,
   icon,
+  focused = false,
   testID = 'platform-button',
 }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
-  const touchTargetSize = useTouchTargetSize();
+  const platformTokens = getPlatformTokens();
+  const tvMode = isTV();
+  const styles = React.useMemo(
+    () => createStyles(theme, platformTokens, tvMode, focused),
+    [theme, platformTokens, tvMode, focused]
+  );
+  const touchTargetSize = tvMode ? platformTokens.touchTarget : useTouchTargetSize();
   const haptics = useHapticFeedback();
   
   /**
@@ -146,8 +159,17 @@ export const PlatformButton: React.FC<PlatformButtonProps> = ({
               style={styles.icon}
             />
           )}
-          <Text style={[styles.text, variantStyles.text]}>
-            {title}
+          <Text 
+            style={[
+              styles.text, 
+              variantStyles.text,
+              // Force visibility with inline color as last resort
+              { color: variantStyles.text.color }
+            ]}
+            numberOfLines={1}
+            allowFontScaling={false}
+          >
+            {title || 'Button'}
           </Text>
         </View>
       )}
@@ -179,7 +201,7 @@ const getVariantStyles = (variant: ButtonVariant, theme: ReturnType<typeof useTh
           borderColor: theme.border,
         },
         text: {
-          color: theme.text,
+          color: theme.text || '#000000', // Fallback to black if theme.text is undefined
           fontWeight: '500' as const,
         },
       };
@@ -211,14 +233,23 @@ const getVariantStyles = (variant: ButtonVariant, theme: ReturnType<typeof useTh
 /**
  * Create themed styles
  */
-const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
+const createStyles = (
+  theme: ReturnType<typeof useTheme>,
+  platformTokens: ReturnType<typeof getPlatformTokens>,
+  tvMode: boolean,
+  focused: boolean
+) => StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: settingsTokens.spacing.lg,
     borderRadius: settingsTokens.borderRadius.button,
-    // Minimum touch target is handled by height prop from useTouchTargetSize
+    // TV focus border
+    ...(tvMode && focused && {
+      borderWidth: 4,
+      borderColor: theme.interactive,
+    }),
   },
   
   fullWidth: {
@@ -239,6 +270,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   
   text: {
-    fontSize: settingsTokens.typography.body.fontSize,
+    fontSize: platformTokens.typography.body.fontSize,
+    fontWeight: '500' as const,
+    fontFamily: platformTokens.typography.fontFamily,
+    // Ensure text is always visible with explicit color
+    ...(Platform.OS === 'web' && {
+      WebkitFontSmoothing: 'antialiased' as any,
+    }),
   },
 });

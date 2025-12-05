@@ -13,6 +13,11 @@
  * - Instance support built-in for multi-device scenarios
  */
 
+// Master toggle for NmeaSensorProcessor logging (produces hundreds of logs per minute)
+const ENABLE_NMEA_PROCESSOR_LOGGING = false;
+const log = (...args: any[]) => ENABLE_NMEA_PROCESSOR_LOGGING && console.log(...args);
+const warn = (...args: any[]) => ENABLE_NMEA_PROCESSOR_LOGGING && console.warn(...args);
+
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import { normalizeApparentWindAngle, normalizeTrueWindAngle } from '../../../utils/marineAngles';
 import { pgnParser } from '../pgnParser';
@@ -62,9 +67,9 @@ export class NmeaSensorProcessor {
   initializeWidgetStore(): void {
     try {
       this.widgetStore = useWidgetStore.getState();
-      console.log('[NmeaSensorProcessor] ✅ Widget store initialized for dynamic widget lifecycle');
+      log('[NmeaSensorProcessor] ✅ Widget store initialized for dynamic widget lifecycle');
     } catch (error) {
-      console.warn('[NmeaSensorProcessor] ⚠️ Could not initialize widget store:', error);
+      warn('[NmeaSensorProcessor] ⚠️ Could not initialize widget store:', error);
     }
   }
   
@@ -110,7 +115,7 @@ export class NmeaSensorProcessor {
       }
       
     } catch (error) {
-      console.warn('[NmeaSensorProcessor] Failed to update widget timestamp:', error);
+      warn('[NmeaSensorProcessor] Failed to update widget timestamp:', error);
     }
   }
 
@@ -120,7 +125,7 @@ export class NmeaSensorProcessor {
   processMessage(parsedMessage: ParsedNmeaMessage): ProcessingResult {
     try {
       const timestamp = Date.now();
-      console.log('[NmeaSensorProcessor] Processing message:', parsedMessage.messageType);
+      log('[NmeaSensorProcessor] Processing message:', parsedMessage.messageType);
       
       let result: ProcessingResult;
       
@@ -241,12 +246,12 @@ export class NmeaSensorProcessor {
    * Where: S = Source (E=Engine), n = Instance, x.x = RPM value, A = Valid
    */
   private processRPM(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
-    console.log('[NmeaSensorProcessor] 🔍 Processing RPM - Raw fields:', message.fields);
+    log('[NmeaSensorProcessor] 🔍 Processing RPM - Raw fields:', message.fields);
     const fields = message.fields;
     
     // Check if this is engine RPM (source = 'E')
     if (fields.source !== 'E') {
-      console.log('[NmeaSensorProcessor] ❌ RPM not for engine, source:', fields.source);
+      log('[NmeaSensorProcessor] ❌ RPM not for engine, source:', fields.source);
       return {
         success: false,
         errors: ['RPM message is not for engine (source not E)'],
@@ -259,7 +264,7 @@ export class NmeaSensorProcessor {
     const rpmValue = parseFloat(fields.rpm);
     const status = fields.status;
 
-    console.log('[NmeaSensorProcessor] 🔧 RPM parsing:', {
+    log('[NmeaSensorProcessor] 🔧 RPM parsing:', {
       engineInstance,
       rpmValue,
       status,
@@ -269,7 +274,7 @@ export class NmeaSensorProcessor {
 
     // Validate data
     if (isNaN(rpmValue) || status !== 'A') {
-      console.log('[NmeaSensorProcessor] ❌ RPM validation failed:', {
+      log('[NmeaSensorProcessor] ❌ RPM validation failed:', {
         rpmValue,
         rpmIsNaN: isNaN(rpmValue),
         status,
@@ -1224,7 +1229,7 @@ export class NmeaSensorProcessor {
    */
   private processXDR(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
     const fields = message.fields;
-    console.log('[NmeaSensorProcessor] XDR fields:', fields);
+    log('[NmeaSensorProcessor] XDR fields:', fields);
     
     // XDR format: Each measurement has 4 fields (type, value, units, identifier)
     // Message can contain multiple measurements: field_1...field_4, field_5...field_8, etc.
@@ -1803,7 +1808,7 @@ export class NmeaSensorProcessor {
    * PCDIN format: $PCDIN,<pgn_hex>,<data_fields...>*checksum
    */
   private processPgnMessage(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
-    console.log('[NmeaSensorProcessor] 🔍 Processing PGN message:', message.fields);
+    log('[NmeaSensorProcessor] 🔍 Processing PGN message:', message.fields);
     const fields = message.fields;
     
     // Extract PGN number and data fields from PCDIN sentence
@@ -1991,7 +1996,7 @@ export class NmeaSensorProcessor {
    * Format: $BINARY,<PGN_HEX>,<SOURCE_HEX>,<DATA_HEX_BYTES>
    */
   private processBinaryPgnMessage(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
-    console.log('[NmeaSensorProcessor] 🔍 Processing binary PGN message:', message.fields);
+    log('[NmeaSensorProcessor] 🔍 Processing binary PGN message:', message.fields);
     const fields = message.fields;
     
     // Extract PGN, source, and data from fields

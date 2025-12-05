@@ -5,6 +5,12 @@
  * - Maintainability
  * - Consistency
  * - Easy updates across codebase
+ * 
+ * Nautical Context Optimizations:
+ * - Viewing distance: 2-3 feet typical (helm station)
+ * - Environment: Bright sunlight, motion/vibration, wet hands possible
+ * - Priority: Quick glanceability over information density
+ * - Touch targets: Larger than iOS minimum (wet/gloved hands)
  */
 
 // ===== SCREEN BREAKPOINTS =====
@@ -13,9 +19,9 @@ export const BREAKPOINTS = {
   MOBILE_PORTRAIT: 0,
   /** Mobile landscape - 2 columns vertical scroll */
   MOBILE_LANDSCAPE: 600,
-  /** Tablet portrait - 3 columns with pagination */
+  /** Tablet portrait - 3 columns with pagination (iPad: 768pt minimum) */
   TABLET_PORTRAIT: 768,
-  /** Tablet landscape - 5 columns with pagination */
+  /** Tablet landscape - 5 columns with pagination (iPad: 1024pt landscape) */
   TABLET_LANDSCAPE: 1024,
   /** Desktop - 6 columns with pagination */
   DESKTOP: 1280,
@@ -24,21 +30,22 @@ export const BREAKPOINTS = {
 } as const;
 
 // ===== GRID COLUMNS BY BREAKPOINT =====
+// Optimized for nautical viewing: Fewer columns = larger widgets = better glanceability
 export const GRID_COLUMNS = {
-  /** Mobile portrait: 1 column */
+  /** Mobile portrait: 1 column (full screen per widget) */
   MOBILE_PORTRAIT: 1,
-  /** Mobile landscape: 2 columns */
+  /** Mobile landscape: 2 columns (side-by-side comparison) */
   MOBILE_LANDSCAPE: 2,
-  /** Tablet portrait: 3 columns */
+  /** Tablet portrait: 3 columns (iPad 768pt+ in portrait) */
   TABLET_PORTRAIT: 3,
-  /** Tablet landscape: 5 columns */
-  TABLET_LANDSCAPE: 5,
-  /** Desktop: 6 columns */
-  DESKTOP: 6,
-  /** Large desktop: 8 columns (max) */
-  LARGE_DESKTOP: 8,
-  /** Absolute maximum columns */
-  MAX: 8,
+  /** Tablet landscape: 4 columns (iPad 1024pt+ landscape - reduced from 5 for larger widgets) */
+  TABLET_LANDSCAPE: 4,
+  /** Desktop: 5 columns (reduced from 6 for better readability at distance) */
+  DESKTOP: 5,
+  /** Large desktop: 6 columns (reduced from 8 - max for glanceability) */
+  LARGE_DESKTOP: 6,
+  /** Absolute maximum columns (safety limit) */
+  MAX: 6,
 } as const;
 
 // ===== LAYOUT SPACING =====
@@ -133,21 +140,26 @@ export const Z_INDEX = {
 
 /**
  * Determine grid columns based on screen width
+ * Optimized for nautical use: Larger widgets for better glanceability at 2-3 foot viewing distance
  */
 export function getColumnsForWidth(screenWidth: number): number {
+  let columns = 1;
+  
   if (screenWidth >= BREAKPOINTS.LARGE_DESKTOP) {
-    return GRID_COLUMNS.LARGE_DESKTOP;
+    columns = GRID_COLUMNS.LARGE_DESKTOP;  // 6 cols (reduced from 8 for readability)
   } else if (screenWidth >= BREAKPOINTS.DESKTOP) {
-    return GRID_COLUMNS.DESKTOP;
+    columns = GRID_COLUMNS.DESKTOP;  // 5 cols (reduced from 6)
   } else if (screenWidth >= BREAKPOINTS.TABLET_LANDSCAPE) {
-    return GRID_COLUMNS.TABLET_LANDSCAPE;
+    columns = GRID_COLUMNS.TABLET_LANDSCAPE;  // 4 cols (reduced from 5)
   } else if (screenWidth >= BREAKPOINTS.TABLET_PORTRAIT) {
-    return GRID_COLUMNS.TABLET_PORTRAIT;
+    columns = GRID_COLUMNS.TABLET_PORTRAIT;  // 3 cols
   } else if (screenWidth >= BREAKPOINTS.MOBILE_LANDSCAPE) {
-    return GRID_COLUMNS.MOBILE_LANDSCAPE;
+    columns = GRID_COLUMNS.MOBILE_LANDSCAPE;  // 2 cols
   } else {
-    return GRID_COLUMNS.MOBILE_PORTRAIT;
+    columns = GRID_COLUMNS.MOBILE_PORTRAIT;  // 1 col
   }
+  
+  return columns;
 }
 
 /**

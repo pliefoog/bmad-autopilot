@@ -4,7 +4,8 @@
     "slug": "boating-instruments-app",
     "scheme": "boating-instruments",
     "version": "0.0.1",
-    "newArchEnabled": false,
+    "icon": "./assets/icon.png",
+    "newArchEnabled": true,
     "platforms": [
       "ios",
       "android",
@@ -37,7 +38,13 @@
       "package": "com.anonymous.boatinginstrumentsapp"
     },
     "ios": {
-      "bundleIdentifier": "com.anonymous.boatinginstrumentsapp"
+      "bundleIdentifier": "com.anonymous.boatinginstrumentsapp",
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "infoPlist": {
+        "UISupportedDevices": ["iPad"],
+        "UIDeviceFamily": [2]
+      }
     }
   }
 }

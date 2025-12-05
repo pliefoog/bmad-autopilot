@@ -586,35 +586,6 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      {/* Web-specific: Hide the green overlay element */}
-      {typeof window !== 'undefined' && (
-        // @ts-ignore
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            /* Nuclear option - hide ALL elements with the exact green color */
-            div[style*="rgb(0, 150, 136)"] {
-              display: none !important;
-              visibility: hidden !important;
-              opacity: 0 !important;
-              width: 0 !important;
-              height: 0 !important;
-              position: absolute !important;
-              z-index: -9999 !important;
-            }
-            
-            /* Also target by background-color specifically */
-            div[style*="background-color: rgb(0, 150, 136)"] {
-              display: none !important;
-            }
-            
-            /* Class-based targeting */
-            .r-insetInlineStart-rci37q[style*="rgb(0, 150, 136)"] {
-              display: none !important;
-            }
-          `
-        }} />
-      )}
-      
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* iOS Drag Handle */}
         <View style={styles.dragHandle} />

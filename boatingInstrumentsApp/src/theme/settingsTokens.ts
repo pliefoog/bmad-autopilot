@@ -1,12 +1,14 @@
 /**
  * Settings Design Tokens
  * Story 13.2.1 - Phase 1: Create Settings Design Tokens
+ * Enhanced with platform-specific variants for iOS, Android, and TV
  * 
  * Centralized design system for all settings modals
  * Ensures cross-platform consistency with marine-optimized touch targets
  */
 
 import { Platform } from 'react-native';
+import { getPlatformVariant, getViewingDistanceScale } from '../utils/platformDetection';
 
 /**
  * Modal dimension configuration
@@ -181,4 +183,196 @@ export function getButtonHeight(gloveMode: boolean, isTablet: boolean = false): 
     return settingsTokens.layout.buttonHeight.tablet;
   }
   return settingsTokens.layout.buttonHeight.phone;
+}
+
+/**
+ * Platform-Specific Modal Presentation Styles
+ * Follows iOS HIG and Material Design 3 guidelines
+ */
+export const modalPresentationStyles = {
+  ios: {
+    phone: {
+      borderRadius: 16,
+      marginHorizontal: 20,
+      marginVertical: 40,
+      shadow: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+      },
+    },
+    tablet: {
+      borderRadius: 16,
+      width: 540,
+      maxHeight: '85%',
+      centered: true,
+      shadow: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+      },
+    },
+  },
+  android: {
+    phone: {
+      borderRadius: 28, // Material Design 3 large radius
+      elevation: 8,
+      bottomSheet: true, // Slide up from bottom
+    },
+    tablet: {
+      borderRadius: 28,
+      width: 560,
+      maxHeight: '85%',
+      centered: true,
+      elevation: 8,
+    },
+  },
+  tv: {
+    borderRadius: 12, // Simpler for TV
+    width: '80%',
+    maxWidth: 1200,
+    maxHeight: '80%',
+    centered: true,
+    // No shadows on TV (performance)
+    focusBorder: {
+      width: 4,
+      color: '#007AFF', // Will be theme-aware at runtime
+    },
+  },
+} as const;
+
+/**
+ * Platform-Specific Typography
+ * Based on viewing distance scaling
+ */
+export const platformTypography = {
+  ios: {
+    // SF Pro Text family
+    fontFamily: Platform.select({
+      ios: 'System',
+      default: 'sans-serif',
+    }),
+    title: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28 },
+    sectionHeader: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24 },
+    label: { fontSize: 14, fontWeight: '500' as const, lineHeight: 20 },
+    body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
+    caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
+  },
+  android: {
+    // Roboto family
+    fontFamily: 'Roboto',
+    title: { fontSize: 22, fontWeight: '500' as const, lineHeight: 28 }, // Material title-large
+    sectionHeader: { fontSize: 16, fontWeight: '500' as const, lineHeight: 24 }, // Material title-medium
+    label: { fontSize: 14, fontWeight: '500' as const, lineHeight: 20 }, // Material label-large
+    body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 }, // Material body-medium
+    caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 }, // Material body-small
+  },
+  tv: {
+    // 2x scale for 10-foot viewing
+    fontFamily: Platform.select({
+      ios: 'System',
+      default: 'sans-serif',
+    }),
+    title: { fontSize: 32, fontWeight: '600' as const, lineHeight: 40 },
+    sectionHeader: { fontSize: 24, fontWeight: '600' as const, lineHeight: 32 },
+    label: { fontSize: 20, fontWeight: '500' as const, lineHeight: 28 },
+    body: { fontSize: 20, fontWeight: '400' as const, lineHeight: 28 },
+    caption: { fontSize: 18, fontWeight: '400' as const, lineHeight: 24 },
+  },
+} as const;
+
+/**
+ * Platform-Specific Spacing
+ */
+export const platformSpacing = {
+  phone: {
+    section: 16,
+    row: 12,
+    inset: 16,
+  },
+  tablet: {
+    section: 20,
+    row: 16,
+    inset: 20,
+  },
+  tv: {
+    section: 32, // 2x for TV
+    row: 24,
+    inset: 24,
+  },
+} as const;
+
+/**
+ * Touch Target Sizes (Marine-optimized)
+ */
+export const touchTargets = {
+  phone: 44, // iOS minimum
+  tablet: 56, // Marine-optimized
+  tv: 60, // D-pad/remote navigation
+  glove: 64, // Enhanced for glove use (all platforms)
+} as const;
+
+/**
+ * Platform-Specific Animation Settings
+ * TV uses shorter, simpler animations for low-end devices
+ */
+export const platformAnimations = {
+  phone: {
+    modalEntrance: 300,
+    modalExit: 250,
+    focusTransition: 200,
+    useNativeDriver: true,
+  },
+  tablet: {
+    modalEntrance: 300,
+    modalExit: 250,
+    focusTransition: 200,
+    useNativeDriver: true,
+  },
+  tv: {
+    modalEntrance: 150, // 50% faster on TV
+    modalExit: 150,
+    focusTransition: 100, // Snappy focus changes
+    useNativeDriver: true,
+    reducedMotion: true, // Simpler animations
+  },
+} as const;
+
+/**
+ * Get tokens for current platform
+ * Returns platform-specific design tokens based on current device
+ */
+export function getPlatformTokens() {
+  const variant = getPlatformVariant();
+  const scale = getViewingDistanceScale();
+  const isTV = variant === 'tvos' || variant === 'androidtv';
+  const isTablet = variant.includes('tablet');
+  const isIOS = variant.startsWith('ios');
+  
+  return {
+    modal: isTV 
+      ? modalPresentationStyles.tv 
+      : isIOS
+        ? modalPresentationStyles.ios[isTablet ? 'tablet' : 'phone']
+        : modalPresentationStyles.android[isTablet ? 'tablet' : 'phone'],
+    typography: isTV
+      ? platformTypography.tv
+      : isIOS
+        ? platformTypography.ios
+        : platformTypography.android,
+    spacing: isTV
+      ? platformSpacing.tv
+      : isTablet
+        ? platformSpacing.tablet
+        : platformSpacing.phone,
+    touchTarget: isTV ? touchTargets.tv : isTablet ? touchTargets.tablet : touchTargets.phone,
+    animations: isTV
+      ? platformAnimations.tv
+      : isTablet
+        ? platformAnimations.tablet
+        : platformAnimations.phone,
+    viewingDistanceScale: scale,
+  };
 }

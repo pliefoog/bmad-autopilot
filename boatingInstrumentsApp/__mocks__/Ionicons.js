@@ -47,10 +47,13 @@ const IconMap = {
   'pin': '📌',
   'checkmark-circle-outline': '✅',
   'close-outline': '❌',
+  'close': '✕',                    // Close button (simpler X)
   'refresh-outline': '🔄',
   'remove': '➖',
   'chevron-forward-outline': '›',  // Right chevron for navigation
   'chevron-back-outline': '‹',     // Left chevron for back navigation
+  'chevron-down-outline': '⌄',     // Down chevron for dropdowns
+  'volume-high-outline': '🔊',     // Sound/volume
   'layers-outline': '📚',
   'trash-outline': '🗑️',          // Undo/Redo clear history
   'help-circle-outline': '❓',     // Help button
