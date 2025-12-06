@@ -235,6 +235,14 @@ const App = () => {
   const enableWidgetAutoRemoval = useWidgetStore(state => state.enableWidgetAutoRemoval);
   const widgetExpirationTimeout = useWidgetStore(state => state.widgetExpirationTimeout);
   
+  // Start instance monitoring when connected
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      log('[App] 🔍 Starting instance monitoring for auto-detection');
+      useWidgetStore.getState().startInstanceMonitoring();
+    }
+  }, [connectionStatus]);
+
   // Dynamic widget lifecycle management - periodic cleanup of expired widgets
   useEffect(() => {
     log('[App] 🧹 Setting up dynamic widget lifecycle management');

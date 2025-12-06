@@ -121,6 +121,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   const handleHamburgerPress = () => {
+    console.log('[HeaderBar] Hamburger menu button pressed');
     setShowHamburgerMenu(true);
   };
 
@@ -154,7 +155,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               accessibilityLabel="Open autopilot controls"
               testID="autopilot-button"
             >
-              <Ionicons name="boat-outline" size={20} color={theme.primary} />
+              <Ionicons name="boat-outline" size={20} color={theme.iconPrimary} />
             </TouchableOpacity>
           )}
           

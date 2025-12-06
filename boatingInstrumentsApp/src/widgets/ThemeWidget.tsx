@@ -119,7 +119,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
         <UniversalIcon 
           name="color-palette-outline" 
           size={headerIconSize} 
-          color={unadjustedColors.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,

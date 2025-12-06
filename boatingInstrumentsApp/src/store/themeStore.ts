@@ -48,6 +48,17 @@ export interface ThemeColors {
   iconSecondary: string;   // Secondary icon color (muted)
   iconAccent: string;      // Accent icon color for important elements
   iconDisabled: string;    // Disabled/inactive icon color
+  // Trendline colors (nested for better organization)
+  trendline: {
+    primary: string;        // Primary trendline color (solid)
+    secondary: string;      // Secondary trendline color (can be dashed)
+    thresholdMin: string;   // Minimum threshold line color
+    thresholdWarning: string; // Warning threshold line color
+    thresholdMax: string;   // Maximum threshold line color
+    axis: string;           // Axis line color
+    grid: string;           // Grid line color
+    label: string;          // Label text color
+  };
   // Interactive states
   interactive: string;     // Interactive elements (buttons, links)
   interactiveHover: string; // Hover state
@@ -83,6 +94,17 @@ const dayTheme: ThemeColors = {
   iconSecondary: '#64748B', // Medium gray for secondary icons
   iconAccent: '#0284C7',   // Primary blue for accent icons
   iconDisabled: '#CBD5E1', // Light gray for disabled state
+  // Trendline colors for day theme
+  trendline: {
+    primary: '#0284C7',      // Sky blue for primary trendlines
+    secondary: '#64748B',    // Medium gray for secondary trendlines
+    thresholdMin: '#DC2626',     // Red for minimum thresholds
+    thresholdWarning: '#D97706', // Amber for warning thresholds
+    thresholdMax: '#059669',     // Green for maximum thresholds
+    axis: '#CBD5E1',         // Light slate for axis lines
+    grid: '#E2E8F0',         // Very light gray for grid lines
+    label: '#64748B',        // Medium gray for labels
+  },
   // Interactive states
   interactive: '#0284C7',  // Primary blue
   interactiveHover: '#0369A1', // Darker blue
@@ -92,7 +114,7 @@ const dayTheme: ThemeColors = {
 
 // Night theme - dark background, reduced brightness for night use
 const nightTheme: ThemeColors = {
-  primary: '#38BDF8',      // Light blue
+  primary: '#F1F5F9',      // Light color
   secondary: '#22D3EE',    // Cyan
   background: '#0F172A',   // Dark slate
   surface: '#1E293B',      // Darker slate
@@ -118,6 +140,17 @@ const nightTheme: ThemeColors = {
   iconSecondary: '#94A3B8', // Medium gray for secondary icons
   iconAccent: '#38BDF8',   // Light blue for accent icons
   iconDisabled: '#64748B', // Dark gray for disabled state
+  // Trendline colors for night theme
+  trendline: {
+    primary: '#F1F5F9',      // Light blue for primary trendlines
+    secondary: '#94A3B8',    // Medium gray for secondary trendlines
+    thresholdMin: '#F87171',     // Light red for minimum thresholds
+    thresholdWarning: '#FBBF24', // Light amber for warning thresholds
+    thresholdMax: '#22D3EE',     // Cyan for maximum thresholds
+    axis: '#475569',         // Lighter border for axis lines
+    grid: '#334155',         // Dark border for grid lines
+    label: '#94A3B8',        // Medium gray for labels
+  },
   // Interactive states
   interactive: '#38BDF8',  // Light blue
   interactiveHover: '#22D3EE', // Cyan
@@ -153,6 +186,17 @@ const redNightTheme: ThemeColors = {
   iconSecondary: '#DC2626', // Dark red for secondary icons
   iconAccent: '#EF4444',   // Red accent for important icons
   iconDisabled: '#7F1D1D', // Very dark red for disabled icons
+  // Trendline colors for red-night theme
+  trendline: {
+    primary: '#FCA5A5',      // Light red for primary trendlines
+    secondary: '#DC2626',    // Dark red for secondary trendlines
+    thresholdMin: '#EF4444',     // Red for minimum thresholds
+    thresholdWarning: '#DC2626', // Dark red for warning thresholds
+    thresholdMax: '#991B1B',     // Darker red for maximum thresholds
+    axis: '#991B1B',         // Lighter red border for axis lines
+    grid: '#7F1D1D',         // Dark red border for grid lines
+    label: '#DC2626',        // Dark red for labels
+  },
   // Interactive states
   interactive: '#EF4444',  // Red accent
   interactiveHover: '#DC2626', // Dark red
@@ -315,7 +359,19 @@ export const useThemeStore = create<ThemeStore>()(
         brightness: state.brightness,
         autoMode: state.autoMode,
         nativeBrightnessControl: state.nativeBrightnessControl
-      })
+      }),
+      onRehydrateStorage: (state) => {
+        // After rehydration completes, re-apply the theme to trigger color updates
+        return (rehydratedState, error) => {
+          if (!error && rehydratedState) {
+            // Use a microtask to ensure store is fully initialized
+            Promise.resolve().then(() => {
+              // Calling setMode will properly update colors and notify all subscribers
+              rehydratedState.setMode(rehydratedState.mode);
+            });
+          }
+        };
+      }
     }
   )
 );
@@ -352,6 +408,16 @@ export const useTheme = () => {
     iconSecondary: adjustBrightness(colors.iconSecondary, brightness),
     iconAccent: adjustBrightness(colors.iconAccent, brightness),
     iconDisabled: adjustBrightness(colors.iconDisabled, brightness),
+    trendline: {
+      primary: adjustBrightness(colors.trendline.primary, brightness),
+      secondary: adjustBrightness(colors.trendline.secondary, brightness),
+      thresholdMin: adjustBrightness(colors.trendline.thresholdMin, brightness),
+      thresholdWarning: adjustBrightness(colors.trendline.thresholdWarning, brightness),
+      thresholdMax: adjustBrightness(colors.trendline.thresholdMax, brightness),
+      axis: adjustBrightness(colors.trendline.axis, brightness),
+      grid: adjustBrightness(colors.trendline.grid, brightness),
+      label: adjustBrightness(colors.trendline.label, brightness),
+    },
     interactive: adjustBrightness(colors.interactive, brightness),
     interactiveHover: adjustBrightness(colors.interactiveHover, brightness),
     interactiveActive: adjustBrightness(colors.interactiveActive, brightness),

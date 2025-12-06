@@ -33,7 +33,7 @@ interface HamburgerMenuProps {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const MENU_WIDTH = screenWidth * 0.8; // 80% of screen width, max 320pt
+const MENU_WIDTH = Math.min(screenWidth * 0.8, 320); // 80% of screen width, max 320pt
 const MAX_MENU_WIDTH = 320;
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
@@ -48,10 +48,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onShowAlarmHistory,
 }) => {
   const theme = useTheme();
-  const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible);
+  const menuWidth = Math.min(screenWidth * 0.8, MAX_MENU_WIDTH);
+  const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible, menuWidth);
   const { resetAppToDefaults } = useWidgetStore();
   const nmeaStore = useNmeaStore();
   const [showFeatureFlags, setShowFeatureFlags] = useState(false);
+  
+  // Log menu state for debugging
+  React.useEffect(() => {
+    console.log('[HamburgerMenu] Visibility changed:', visible);
+  }, [visible]);
   
   // Custom action handlers
   const actionHandlers = {
@@ -126,9 +132,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const handleMenuPress = useCallback((event: any) => {
     event.stopPropagation();
   }, []);
-
-  // Calculate menu width (responsive with maximum)
-  const menuWidth = Math.min(MENU_WIDTH, MAX_MENU_WIDTH);
 
   // Get menu sections from configuration
   const { sections, devSections } = menuConfiguration;

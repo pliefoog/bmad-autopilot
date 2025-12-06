@@ -22,6 +22,7 @@ export interface AlarmConfigurationOptions {
 
 export class CriticalAlarmConfiguration {
   private static instance: CriticalAlarmConfiguration | null = null;
+  private static initPromise: Promise<CriticalAlarmConfiguration> | null = null;
   
   private config: AlarmConfigurationOptions;
   private alarmConfigs: Map<CriticalAlarmType, CriticalAlarmConfig> = new Map();
@@ -30,9 +31,9 @@ export class CriticalAlarmConfiguration {
   private testConfig: AlarmTestConfig;
   
   private saveTimeout?: NodeJS.Timeout;
-  private configChangedCallback?: (type: CriticalAlarmType, config: CriticalAlarmConfig) => void;
+  private configChangedListeners: Set<(type: CriticalAlarmType, config: CriticalAlarmConfig) => void> = new Set();
   
-  constructor(options?: Partial<AlarmConfigurationOptions>) {
+  private constructor(options?: Partial<AlarmConfigurationOptions>) {
     this.config = {
       storageKey: 'critical-alarm-configuration',
       validateMarineStandards: true,
@@ -46,17 +47,35 @@ export class CriticalAlarmConfiguration {
     this.testConfig = this.getDefaultTestConfig();
     
     this.initializeDefaultConfigurations();
-    this.loadConfigurationsFromStorage();
+    // Note: loadConfigurationsFromStorage() must be called explicitly
   }
   
   /**
-   * Get singleton instance
+   * Get singleton instance (synchronous - may return instance before storage loads)
+   * Use getInstanceAsync() if you need to ensure storage is loaded first
    */
   public static getInstance(): CriticalAlarmConfiguration {
     if (!CriticalAlarmConfiguration.instance) {
       CriticalAlarmConfiguration.instance = new CriticalAlarmConfiguration();
+      // Start async initialization but don't block
+      CriticalAlarmConfiguration.instance.loadConfigurationsFromStorage();
     }
     return CriticalAlarmConfiguration.instance;
+  }
+  
+  /**
+   * Get singleton instance and wait for storage to load
+   */
+  public static async getInstanceAsync(): Promise<CriticalAlarmConfiguration> {
+    if (!CriticalAlarmConfiguration.initPromise) {
+      CriticalAlarmConfiguration.initPromise = (async () => {
+        const instance = new CriticalAlarmConfiguration();
+        await instance.loadConfigurationsFromStorage();
+        CriticalAlarmConfiguration.instance = instance;
+        return instance;
+      })();
+    }
+    return CriticalAlarmConfiguration.initPromise;
   }
   
   /**
@@ -111,10 +130,14 @@ export class CriticalAlarmConfiguration {
       // Schedule auto-save
       this.scheduleAutoSave();
       
-      // Notify callback
-      if (this.configChangedCallback) {
-        this.configChangedCallback(type, newConfig);
-      }
+      // Notify all listeners
+      this.configChangedListeners.forEach(listener => {
+        try {
+          listener(type, newConfig);
+        } catch (error) {
+          console.error('[CriticalAlarmConfiguration] Listener error:', error);
+        }
+      });
       
       result.success = true;
       
@@ -444,28 +467,43 @@ export class CriticalAlarmConfiguration {
   }
   
   /**
-   * Set callback for configuration changes
+   * Subscribe to configuration changes
+   * @returns unsubscribe function
+   */
+  public subscribe(
+    callback: (type: CriticalAlarmType, config: CriticalAlarmConfig) => void
+  ): () => void {
+    this.configChangedListeners.add(callback);
+    return () => {
+      this.configChangedListeners.delete(callback);
+    };
+  }
+
+  /**
+   * @deprecated Use subscribe() instead
    */
   public setConfigChangedCallback(
     callback: (type: CriticalAlarmType, config: CriticalAlarmConfig) => void
   ): void {
-    this.configChangedCallback = callback;
+    // Backward compatibility - convert to subscription
+    this.configChangedListeners.add(callback);
   }
   
   // Private helper methods
   
   private initializeDefaultConfigurations(): void {
-    // Shallow Water Alarm Configuration
+    // ==== NAVIGATION ALARMS ====
+    
+    // Shallow Water - min threshold critical
     this.alarmConfigs.set(CriticalAlarmType.SHALLOW_WATER, {
       type: CriticalAlarmType.SHALLOW_WATER,
       enabled: true,
       thresholds: {
-        warning: 3.0, // meters
-        caution: 2.0,
-        critical: 1.5,
-        emergency: 1.0,
+        min: 1.5,    // Critical minimum depth (meters)
+        max: 9999,   // N/A - no maximum depth alarm
+        warning: 3.0 // Warning at 3m depth
       },
-      hysteresis: 0.1, // 10cm hysteresis
+      hysteresis: 0.1,
       debounceMs: 1000,
       escalationTimeoutMs: 10000,
       audioEnabled: true,
@@ -475,24 +513,79 @@ export class CriticalAlarmConfiguration {
       notificationEnabled: true,
       marineSafetyClassification: 'NAVIGATION_HAZARD',
       requiresConfirmation: true,
-      allowSnooze: false, // Critical navigation safety
+      allowSnooze: false,
       maxResponseTimeMs: 500,
       minAudioLevelDb: 85,
       failSafeBehavior: 'alarm',
       redundantAlerting: true,
     });
+
+    // Deep Water - max threshold for inland/coastal (optional)
+    this.alarmConfigs.set(CriticalAlarmType.DEEP_WATER, {
+      type: CriticalAlarmType.DEEP_WATER,
+      enabled: false, // Disabled by default
+      thresholds: {
+        min: 9999,    // N/A
+        max: 50.0,    // Alert if depth exceeds 50m (customizable)
+        warning: 30.0 // Warning at 30m
+      },
+      hysteresis: 1.0,
+      debounceMs: 5000,
+      escalationTimeoutMs: 30000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'NAVIGATION_INFO',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 1800000,
+      maxResponseTimeMs: 1000,
+      minAudioLevelDb: 75,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // High Speed - max threshold
+    this.alarmConfigs.set(CriticalAlarmType.HIGH_SPEED, {
+      type: CriticalAlarmType.HIGH_SPEED,
+      enabled: false, // User configurable
+      thresholds: {
+        min: 9999,    // N/A
+        max: 25.0,    // Max speed 25 knots (customizable)
+        warning: 20.0 // Warning at 20 knots
+      },
+      hysteresis: 0.5,
+      debounceMs: 3000,
+      escalationTimeoutMs: 10000,
+      audioEnabled: true,
+      audioPattern: 'warble',
+      visualEnabled: true,
+      vibrationEnabled: true,
+      notificationEnabled: true,
+      marineSafetyClassification: 'NAVIGATION_SAFETY',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 600000,
+      maxResponseTimeMs: 500,
+      minAudioLevelDb: 80,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
     
-    // Engine Overheat Alarm Configuration
+    // ==== ENGINE ALARMS ====
+    
+    // Engine Overheat - max threshold critical
     this.alarmConfigs.set(CriticalAlarmType.ENGINE_OVERHEAT, {
       type: CriticalAlarmType.ENGINE_OVERHEAT,
       enabled: true,
       thresholds: {
-        warning: 85, // Celsius
-        caution: 90,
-        critical: 95,
-        emergency: 100,
+        min: 9999,   // N/A
+        max: 95,     // Critical max temp 95°C
+        warning: 85  // Warning at 85°C
       },
-      hysteresis: 2, // 2°C hysteresis
+      hysteresis: 2,
       debounceMs: 2000,
       escalationTimeoutMs: 15000,
       audioEnabled: true,
@@ -502,25 +595,105 @@ export class CriticalAlarmConfiguration {
       notificationEnabled: true,
       marineSafetyClassification: 'MACHINERY_FAILURE',
       requiresConfirmation: true,
-      allowSnooze: false, // Engine protection critical
+      allowSnooze: false,
       maxResponseTimeMs: 500,
       minAudioLevelDb: 85,
       failSafeBehavior: 'alarm',
       redundantAlerting: true,
     });
+
+    // Engine Low Temperature
+    this.alarmConfigs.set(CriticalAlarmType.ENGINE_LOW_TEMP, {
+      type: CriticalAlarmType.ENGINE_LOW_TEMP,
+      enabled: false, // Optional monitoring
+      thresholds: {
+        min: 40,     // Min operating temp 40°C
+        max: 9999,   // N/A
+        warning: 50  // Warning below 50°C
+      },
+      hysteresis: 2,
+      debounceMs: 30000, // Longer debounce for warm-up
+      escalationTimeoutMs: 60000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'MACHINERY_INFO',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 1800000,
+      maxResponseTimeMs: 1000,
+      minAudioLevelDb: 70,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // Engine High RPM
+    this.alarmConfigs.set(CriticalAlarmType.ENGINE_HIGH_RPM, {
+      type: CriticalAlarmType.ENGINE_HIGH_RPM,
+      enabled: false, // User configurable
+      thresholds: {
+        min: 9999,    // N/A
+        max: 3600,    // Max RPM (customizable per engine)
+        warning: 3300 // Warning RPM
+      },
+      hysteresis: 50,
+      debounceMs: 2000,
+      escalationTimeoutMs: 10000,
+      audioEnabled: true,
+      audioPattern: 'rapid_pulse',
+      visualEnabled: true,
+      vibrationEnabled: true,
+      notificationEnabled: true,
+      marineSafetyClassification: 'MACHINERY_PROTECTION',
+      requiresConfirmation: false,
+      allowSnooze: false,
+      maxResponseTimeMs: 500,
+      minAudioLevelDb: 85,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: true,
+    });
+
+    // Engine Low Oil Pressure
+    this.alarmConfigs.set(CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE, {
+      type: CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE,
+      enabled: true,
+      thresholds: {
+        min: 20,     // Critical min pressure (PSI)
+        max: 9999,   // N/A
+        warning: 30  // Warning pressure
+      },
+      hysteresis: 2,
+      debounceMs: 1000,
+      escalationTimeoutMs: 5000,
+      audioEnabled: true,
+      audioPattern: 'rapid_pulse',
+      visualEnabled: true,
+      vibrationEnabled: true,
+      notificationEnabled: true,
+      marineSafetyClassification: 'MACHINERY_CRITICAL',
+      requiresConfirmation: true,
+      allowSnooze: false,
+      maxResponseTimeMs: 250,
+      minAudioLevelDb: 90,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: true,
+    });
     
-    // Low Battery Alarm Configuration
+    // ==== ELECTRICAL ALARMS ====
+    
+    // Low Battery - min threshold
     this.alarmConfigs.set(CriticalAlarmType.LOW_BATTERY, {
       type: CriticalAlarmType.LOW_BATTERY,
       enabled: true,
       thresholds: {
-        warning: 12.0, // Volts (12V system)
-        caution: 11.5,
-        critical: 11.0,
-        emergency: 10.5,
+        min: 11.0,    // Critical min voltage (12V system)
+        max: 9999,    // N/A
+        warning: 12.0 // Warning voltage
       },
-      hysteresis: 0.2, // 0.2V hysteresis
-      debounceMs: 5000, // Longer debounce for battery voltage fluctuations
+      hysteresis: 0.2,
+      debounceMs: 5000,
       escalationTimeoutMs: 30000,
       audioEnabled: true,
       audioPattern: 'intermittent',
@@ -529,23 +702,164 @@ export class CriticalAlarmConfiguration {
       notificationEnabled: true,
       marineSafetyClassification: 'POWER_SYSTEM',
       requiresConfirmation: false,
-      allowSnooze: true, // Can be snoozed for planned power management
-      maxSnoozeTime: 1800000, // 30 minutes max
+      allowSnooze: true,
+      maxSnoozeTime: 1800000,
       maxResponseTimeMs: 500,
-      minAudioLevelDb: 75, // Lower priority than navigation alarms
+      minAudioLevelDb: 75,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // High Battery - max threshold
+    this.alarmConfigs.set(CriticalAlarmType.HIGH_BATTERY, {
+      type: CriticalAlarmType.HIGH_BATTERY,
+      enabled: true,
+      thresholds: {
+        min: 9999,    // N/A
+        max: 15.0,    // Max voltage (overcharge)
+        warning: 14.5 // Warning voltage
+      },
+      hysteresis: 0.2,
+      debounceMs: 5000,
+      escalationTimeoutMs: 30000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'POWER_SYSTEM',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 1800000,
+      maxResponseTimeMs: 500,
+      minAudioLevelDb: 75,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // Low Alternator Output
+    this.alarmConfigs.set(CriticalAlarmType.LOW_ALTERNATOR, {
+      type: CriticalAlarmType.LOW_ALTERNATOR,
+      enabled: false,
+      thresholds: {
+        min: 13.0,    // Min alternator output
+        max: 9999,    // N/A
+        warning: 13.5 // Warning threshold
+      },
+      hysteresis: 0.2,
+      debounceMs: 10000,
+      escalationTimeoutMs: 60000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'POWER_INFO',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 3600000,
+      maxResponseTimeMs: 1000,
+      minAudioLevelDb: 70,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // High Current Draw
+    this.alarmConfigs.set(CriticalAlarmType.HIGH_CURRENT, {
+      type: CriticalAlarmType.HIGH_CURRENT,
+      enabled: false,
+      thresholds: {
+        min: 9999,    // N/A
+        max: 100,     // Max current (Amps, customizable)
+        warning: 80   // Warning current
+      },
+      hysteresis: 5,
+      debounceMs: 3000,
+      escalationTimeoutMs: 15000,
+      audioEnabled: true,
+      audioPattern: 'warble',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'POWER_WARNING',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 600000,
+      maxResponseTimeMs: 500,
+      minAudioLevelDb: 75,
       failSafeBehavior: 'alarm',
       redundantAlerting: false,
     });
     
-    // Autopilot Failure Alarm Configuration
+    // ==== WIND ALARMS ====
+    
+    // High Wind Speed
+    this.alarmConfigs.set(CriticalAlarmType.HIGH_WIND, {
+      type: CriticalAlarmType.HIGH_WIND,
+      enabled: false,
+      thresholds: {
+        min: 9999,    // N/A
+        max: 35,      // Max wind speed (knots)
+        warning: 25   // Warning wind speed
+      },
+      hysteresis: 2,
+      debounceMs: 10000,
+      escalationTimeoutMs: 30000,
+      audioEnabled: true,
+      audioPattern: 'warble',
+      visualEnabled: true,
+      vibrationEnabled: true,
+      notificationEnabled: true,
+      marineSafetyClassification: 'WEATHER_WARNING',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 1800000,
+      maxResponseTimeMs: 1000,
+      minAudioLevelDb: 80,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // Wind Gust Detection
+    this.alarmConfigs.set(CriticalAlarmType.WIND_GUST, {
+      type: CriticalAlarmType.WIND_GUST,
+      enabled: false,
+      thresholds: {
+        min: 9999,    // N/A
+        max: 40,      // Max gust speed (knots)
+        warning: 30   // Warning gust
+      },
+      hysteresis: 3,
+      debounceMs: 5000,
+      escalationTimeoutMs: 15000,
+      audioEnabled: true,
+      audioPattern: 'triple_blast',
+      visualEnabled: true,
+      vibrationEnabled: true,
+      notificationEnabled: true,
+      marineSafetyClassification: 'WEATHER_WARNING',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 900000,
+      maxResponseTimeMs: 500,
+      minAudioLevelDb: 80,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+    
+    // ==== SYSTEM ALARMS ====
+    
+    // Autopilot Failure
     this.alarmConfigs.set(CriticalAlarmType.AUTOPILOT_FAILURE, {
       type: CriticalAlarmType.AUTOPILOT_FAILURE,
       enabled: true,
       thresholds: {
-        critical: 1, // Binary: failure detected
+        min: 9999,   // N/A
+        max: 9999,   // N/A
+        warning: 1   // Binary: any failure triggers
       },
       hysteresis: 0,
-      debounceMs: 500, // Quick response for navigation safety
+      debounceMs: 500,
       escalationTimeoutMs: 5000,
       audioEnabled: true,
       audioPattern: 'triple_blast',
@@ -554,24 +868,24 @@ export class CriticalAlarmConfiguration {
       notificationEnabled: true,
       marineSafetyClassification: 'NAVIGATION_SYSTEM',
       requiresConfirmation: true,
-      allowSnooze: false, // Navigation safety critical
-      maxResponseTimeMs: 250, // Faster response for navigation
-      minAudioLevelDb: 90, // Highest priority
+      allowSnooze: false,
+      maxResponseTimeMs: 250,
+      minAudioLevelDb: 90,
       failSafeBehavior: 'alarm',
       redundantAlerting: true,
     });
     
-    // GPS Loss Alarm Configuration
+    // GPS Loss
     this.alarmConfigs.set(CriticalAlarmType.GPS_LOSS, {
       type: CriticalAlarmType.GPS_LOSS,
       enabled: true,
       thresholds: {
-        warning: 30, // seconds without valid fix
-        critical: 60,
-        emergency: 120,
+        min: 9999,   // N/A
+        max: 9999,   // N/A
+        warning: 30  // Seconds without GPS (warning level)
       },
-      hysteresis: 5, // 5 second hysteresis
-      debounceMs: 10000, // 10 seconds to account for temporary signal loss
+      hysteresis: 5,
+      debounceMs: 10000,
       escalationTimeoutMs: 20000,
       audioEnabled: true,
       audioPattern: 'continuous_descending',
@@ -580,15 +894,95 @@ export class CriticalAlarmConfiguration {
       notificationEnabled: true,
       marineSafetyClassification: 'NAVIGATION_SYSTEM',
       requiresConfirmation: true,
-      allowSnooze: false, // Navigation safety critical
+      allowSnooze: false,
       maxResponseTimeMs: 500,
       minAudioLevelDb: 85,
       failSafeBehavior: 'alarm',
       redundantAlerting: true,
     });
     
-    // Initialize corresponding thresholds
-    this.initializeDefaultThresholds();
+    // ==== TANK ALARMS ====
+    
+    // Low Fuel
+    this.alarmConfigs.set(CriticalAlarmType.LOW_FUEL, {
+      type: CriticalAlarmType.LOW_FUEL,
+      enabled: true,
+      thresholds: {
+        min: 10,      // Critical minimum fuel percentage
+        max: 9999,    // N/A
+        warning: 25   // Warning at 25%
+      },
+      hysteresis: 2,
+      debounceMs: 30000,
+      escalationTimeoutMs: 300000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'RESOURCE_WARNING',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 3600000,
+      maxResponseTimeMs: 1000,
+      minAudioLevelDb: 75,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // Low Fresh Water
+    this.alarmConfigs.set(CriticalAlarmType.LOW_WATER, {
+      type: CriticalAlarmType.LOW_WATER,
+      enabled: false,
+      thresholds: {
+        min: 10,      // Min water percentage
+        max: 9999,    // N/A
+        warning: 25   // Warning at 25%
+      },
+      hysteresis: 2,
+      debounceMs: 60000,
+      escalationTimeoutMs: 300000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'RESOURCE_INFO',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 3600000,
+      maxResponseTimeMs: 2000,
+      minAudioLevelDb: 70,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
+
+    // High Waste Water
+    this.alarmConfigs.set(CriticalAlarmType.HIGH_WASTE_WATER, {
+      type: CriticalAlarmType.HIGH_WASTE_WATER,
+      enabled: false,
+      thresholds: {
+        min: 9999,    // N/A
+        max: 90,      // Max waste water percentage
+        warning: 75   // Warning at 75%
+      },
+      hysteresis: 3,
+      debounceMs: 60000,
+      escalationTimeoutMs: 300000,
+      audioEnabled: true,
+      audioPattern: 'intermittent',
+      visualEnabled: true,
+      vibrationEnabled: false,
+      notificationEnabled: true,
+      marineSafetyClassification: 'SANITATION_WARNING',
+      requiresConfirmation: false,
+      allowSnooze: true,
+      maxSnoozeTime: 3600000,
+      maxResponseTimeMs: 2000,
+      minAudioLevelDb: 70,
+      failSafeBehavior: 'alarm',
+      redundantAlerting: false,
+    });
   }
   
   private initializeDefaultThresholds(): void {
@@ -800,14 +1194,19 @@ export class CriticalAlarmConfiguration {
   
   private async loadConfigurationsFromStorage(): Promise<void> {
     try {
+      console.log('[CriticalAlarmConfiguration] Loading from storage key:', this.config.storageKey);
       const storedConfig = await AsyncStorage.getItem(this.config.storageKey);
+      
       if (storedConfig) {
+        console.log('[CriticalAlarmConfiguration] Found stored config');
         const parsed = JSON.parse(storedConfig);
         
         // Load alarm configurations
         if (parsed.alarmConfigs) {
+          console.log('[CriticalAlarmConfiguration] Loading alarm configs:', Object.keys(parsed.alarmConfigs));
           for (const [typeStr, config] of Object.entries(parsed.alarmConfigs)) {
             this.alarmConfigs.set(typeStr as CriticalAlarmType, config as CriticalAlarmConfig);
+            console.log(`[CriticalAlarmConfiguration] Loaded ${typeStr}:`, (config as CriticalAlarmConfig).thresholds);
           }
         }
         
@@ -827,10 +1226,14 @@ export class CriticalAlarmConfiguration {
           this.testConfig = parsed.testConfig;
         }
         
-        console.log('CriticalAlarmConfiguration: Configuration loaded from storage');
+        console.log('[CriticalAlarmConfiguration] Configuration loaded from storage successfully');
+        console.log('[CriticalAlarmConfiguration] SHALLOW_WATER config:', this.alarmConfigs.get(CriticalAlarmType.SHALLOW_WATER)?.thresholds);
+      } else {
+        console.log('[CriticalAlarmConfiguration] No stored config found, using defaults');
+        console.log('[CriticalAlarmConfiguration] Default SHALLOW_WATER:', this.alarmConfigs.get(CriticalAlarmType.SHALLOW_WATER)?.thresholds);
       }
     } catch (error) {
-      console.error('CriticalAlarmConfiguration: Failed to load from storage', error);
+      console.error('[CriticalAlarmConfiguration] Failed to load from storage', error);
     }
   }
   

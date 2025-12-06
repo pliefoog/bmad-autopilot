@@ -193,7 +193,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
         <UniversalIcon 
           name={WidgetMetadataRegistry.getMetadata('compass')?.icon || 'compass-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -210,7 +210,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>
@@ -291,7 +291,7 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
   const radius = 45;
   
   // Compass rose color based on state
-  const strokeColor = isStale ? theme.textSecondary : theme.primary;
+  const strokeColor = isStale ? theme.textSecondary : theme.iconPrimary;
   const fillColor = isStale ? theme.textSecondary : theme.text;
   
   // Calculate rotation (north up, heading rotates clockwise)

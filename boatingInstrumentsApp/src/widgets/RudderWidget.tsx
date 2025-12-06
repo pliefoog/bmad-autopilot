@@ -222,7 +222,7 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
               style={styles.controlButton}
               testID={`pin-button-${id}`}
             >
-              <UniversalIcon name="pin" size={16} color={theme.primary} />
+              <UniversalIcon name="pin" size={16} color={theme.iconPrimary} />
             </TouchableOpacity>
           </View>
         )}

@@ -16,6 +16,7 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import Switch from '../atoms/Switch';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -23,10 +24,59 @@ import { UniversalIcon } from '../atoms/UniversalIcon';
 import { CriticalAlarmConfiguration } from '../../services/alarms/CriticalAlarmConfiguration';
 import { CriticalAlarmType, CriticalAlarmConfig, AlarmEscalationLevel } from '../../services/alarms/types';
 import { MarineAudioAlertManager } from '../../services/alarms/MarineAudioAlertManager';
+import { useDataPresentation } from '../../presentation/useDataPresentation';
+import { DataCategory } from '../../presentation/categories';
 
 // Use shared singleton instances
 const alarmConfig = CriticalAlarmConfiguration.getInstance();
 const audioManager = MarineAudioAlertManager.getInstance();
+
+// Critical alarms that cannot be disabled
+const CRITICAL_ALARMS_NO_DISABLE = [CriticalAlarmType.SHALLOW_WATER];
+
+// Helper function to check if alarm can be disabled
+const canDisableAlarm = (type: CriticalAlarmType) => 
+  !CRITICAL_ALARMS_NO_DISABLE.includes(type);
+
+// Map alarm types to presentation categories for unit conversion
+const ALARM_TYPE_TO_CATEGORY: Partial<Record<CriticalAlarmType, DataCategory>> = {
+  [CriticalAlarmType.SHALLOW_WATER]: 'depth',
+  [CriticalAlarmType.DEEP_WATER]: 'depth',
+  [CriticalAlarmType.HIGH_SPEED]: 'speed',
+  [CriticalAlarmType.ENGINE_OVERHEAT]: 'temperature',
+  [CriticalAlarmType.ENGINE_LOW_TEMP]: 'temperature',
+  [CriticalAlarmType.LOW_BATTERY]: 'voltage',
+  [CriticalAlarmType.HIGH_BATTERY]: 'voltage',
+  [CriticalAlarmType.LOW_ALTERNATOR]: 'voltage',
+  [CriticalAlarmType.HIGH_CURRENT]: 'current',
+};
+
+// Smart step size calculation based on unit and value range
+const getSmartStep = (unit: string, rangeSize: number): number => {
+  // RPM needs large steps
+  if (unit === 'rpm') return 50;
+  
+  // Percentages use 1% steps
+  if (unit === '%') return 1;
+  
+  // Pressure (PSI) uses 1 PSI steps
+  if (unit === 'PSI') return 1;
+  
+  // Current (Amps) uses 5A steps
+  if (unit === 'A' || unit.toLowerCase().includes('amp')) return 5;
+  
+  // Speed (knots) uses 1 knot steps
+  if (unit === 'kn' || unit === 'kts') return 1;
+  
+  // Large ranges (>100) use integer steps
+  if (rangeSize > 100) return 1;
+  
+  // Temperature uses 1 degree steps
+  if (unit === '°C' || unit === '°F') return 1;
+  
+  // Small ranges use 0.1 steps
+  return 0.1;
+};
 
 // Local Switch component to bypass any rendering issues
 const LocalSwitch: React.FC<{
@@ -43,19 +93,28 @@ const LocalSwitch: React.FC<{
   
   const finalThumbColor = theme.surface;
   
+  const handlePress = () => {
+    if (!disabled) {
+      console.log('[LocalSwitch] Current value:', value, '-> New value:', !value);
+      onValueChange(!value);
+    } else {
+      console.log('[LocalSwitch] Press ignored - switch is disabled');
+    }
+  };
+  
   return (
-    <View
-      // @ts-ignore
-      onClick={disabled ? undefined : () => onValueChange(!value)}
-      style={{
+    <Pressable
+      onPress={handlePress}
+      disabled={disabled}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={({ pressed }) => ({
         width: 36,
         height: 20,
         borderRadius: 10,
         padding: 2,
         backgroundColor: finalTrackColor,
-        opacity: disabled ? 0.5 : 1,
-        cursor: disabled ? 'default' : 'pointer',
-      }}
+        opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+      })}
     >
       <View
         style={{
@@ -65,123 +124,490 @@ const LocalSwitch: React.FC<{
           backgroundColor: finalThumbColor,
           transform: [{ translateX: value ? 14 : 0 }],
         }}
+        pointerEvents="none"
       />
-    </View>
+    </Pressable>
   );
 };
 
-// Alarm list configuration
-const ALARM_LIST = [
+// Alarm list configuration - ALL 19 alarm types organized by category
+const ALARM_CATEGORIES = [
   {
-    type: CriticalAlarmType.SHALLOW_WATER,
-    label: 'Shallow Water',
-    iconName: 'arrow-down-outline',
-    unit: 'm',
+    title: 'Navigation',
+    alarms: [
+      {
+        type: CriticalAlarmType.SHALLOW_WATER,
+        label: 'Shallow Water',
+        iconName: 'arrow-down-outline',
+        unit: 'm',
+      },
+      {
+        type: CriticalAlarmType.DEEP_WATER,
+        label: 'Deep Water',
+        iconName: 'arrow-up-outline',
+        unit: 'm',
+      },
+      {
+        type: CriticalAlarmType.HIGH_SPEED,
+        label: 'High Speed',
+        iconName: 'speedometer-outline',
+        unit: 'kn',
+      },
+    ],
   },
   {
-    type: CriticalAlarmType.ENGINE_OVERHEAT,
-    label: 'Engine Overheat',
-    iconName: 'thermometer-outline',
-    unit: '°C',
+    title: 'Engine',
+    alarms: [
+      {
+        type: CriticalAlarmType.ENGINE_OVERHEAT,
+        label: 'Engine Overheat',
+        iconName: 'thermometer-outline',
+        unit: '°C',
+      },
+      {
+        type: CriticalAlarmType.ENGINE_LOW_TEMP,
+        label: 'Engine Low Temp',
+        iconName: 'thermometer-outline',
+        unit: '°C',
+      },
+      {
+        type: CriticalAlarmType.ENGINE_HIGH_RPM,
+        label: 'Engine High RPM',
+        iconName: 'speedometer-outline',
+        unit: 'rpm',
+      },
+      {
+        type: CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE,
+        label: 'Low Oil Pressure',
+        iconName: 'water-outline',
+        unit: 'PSI',
+      },
+    ],
   },
   {
-    type: CriticalAlarmType.LOW_BATTERY,
-    label: 'Low Battery',
-    iconName: 'battery-charging-outline',
-    unit: 'V',
+    title: 'Electrical',
+    alarms: [
+      {
+        type: CriticalAlarmType.LOW_BATTERY,
+        label: 'Low Battery',
+        iconName: 'battery-dead-outline',
+        unit: 'V',
+      },
+      {
+        type: CriticalAlarmType.HIGH_BATTERY,
+        label: 'High Battery',
+        iconName: 'battery-charging-outline',
+        unit: 'V',
+      },
+      {
+        type: CriticalAlarmType.LOW_ALTERNATOR,
+        label: 'Low Alternator',
+        iconName: 'flash-outline',
+        unit: 'V',
+      },
+      {
+        type: CriticalAlarmType.HIGH_CURRENT,
+        label: 'High Current',
+        iconName: 'flash-outline',
+        unit: 'A',
+      },
+    ],
   },
   {
-    type: CriticalAlarmType.AUTOPILOT_FAILURE,
-    label: 'Autopilot Failure',
-    iconName: 'swap-horizontal-outline',
-    unit: '',
+    title: 'Wind',
+    alarms: [
+      {
+        type: CriticalAlarmType.HIGH_WIND,
+        label: 'High Wind',
+        iconName: 'cloudy-outline',
+        unit: 'kn',
+      },
+      {
+        type: CriticalAlarmType.WIND_GUST,
+        label: 'Wind Gust',
+        iconName: 'cloudy-outline',
+        unit: 'kn',
+      },
+    ],
   },
   {
-    type: CriticalAlarmType.GPS_LOSS,
-    label: 'GPS Signal Loss',
-    iconName: 'navigate-outline',
-    unit: 's',
+    title: 'System',
+    alarms: [
+      {
+        type: CriticalAlarmType.AUTOPILOT_FAILURE,
+        label: 'Autopilot Failure',
+        iconName: 'swap-horizontal-outline',
+        unit: '',
+      },
+      {
+        type: CriticalAlarmType.GPS_LOSS,
+        label: 'GPS Signal Loss',
+        iconName: 'navigate-outline',
+        unit: 's',
+      },
+    ],
+  },
+  {
+    title: 'Tanks',
+    alarms: [
+      {
+        type: CriticalAlarmType.LOW_FUEL,
+        label: 'Low Fuel',
+        iconName: 'beaker-outline',
+        unit: '%',
+      },
+      {
+        type: CriticalAlarmType.LOW_WATER,
+        label: 'Low Fresh Water',
+        iconName: 'water-outline',
+        unit: '%',
+      },
+      {
+        type: CriticalAlarmType.HIGH_WASTE_WATER,
+        label: 'High Waste Water',
+        iconName: 'warning-outline',
+        unit: '%',
+      },
+    ],
   },
 ];
 
-// Alarm metadata for detail view
-const ALARM_METADATA: Record<string, {
+// Flatten for backward compatibility
+const ALARM_LIST = ALARM_CATEGORIES.flatMap(cat => cat.alarms);
+
+// Alarm metadata for detail view - comprehensive configuration
+interface AlarmMetadata {
   label: string;
   description: string;
   iconName: string;
-  thresholdLabel: string;
-  unit: string;
-  min: number;
-  max: number;
-  defaultValue: number;
-  hasThreshold: boolean;
+  baseUnit: string; // Reference unit (meters, celsius, etc.)
+  hasMin: boolean;
+  hasMax: boolean;
+  hasWarning: boolean;
+  minLabel?: string;
+  maxLabel?: string;
+  warningLabel?: string;
+  // Ranges always in reference units (will be converted for display)
+  minRange: { min: number; max: number; default: number };
+  maxRange: { min: number; max: number; default: number };
+  warningRange: { min: number; max: number; default: number };
   defaultPattern: 'rapid_pulse' | 'warble' | 'intermittent' | 'triple_blast' | 'morse_u' | 'continuous_descending';
   patternDescription: string;
-}> = {
+  allowDecimals?: boolean; // False for RPM, integers only
+}
+
+const ALARM_METADATA: Record<string, AlarmMetadata> = {
+  // === NAVIGATION ===
   [CriticalAlarmType.SHALLOW_WATER]: {
     label: 'Shallow Water',
     description: 'Alert when depth falls below configured threshold. Critical for preventing grounding in shallow waters.',
     iconName: 'arrow-down-outline',
-    thresholdLabel: 'Minimum Depth',
-    unit: 'm',
-    min: 0.5,
-    max: 10.0,
-    defaultValue: 2.0,
-    hasThreshold: true,
-    defaultPattern: 'rapid_pulse' as const,
+    baseUnit: 'm',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Critical Minimum Depth',
+    warningLabel: 'Warning Depth',
+    minRange: { min: 0.5, max: 10.0, default: 2.0 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 1.0, max: 15.0, default: 2.5 },
+    defaultPattern: 'rapid_pulse',
     patternDescription: 'Rapid pulse - ISO Priority 1 immediate danger',
+    allowDecimals: true,
   },
+  [CriticalAlarmType.DEEP_WATER]: {
+    label: 'Deep Water',
+    description: 'Alert when depth exceeds configured threshold. Useful for inland/coastal navigation.',
+    iconName: 'arrow-up-outline',
+    baseUnit: 'm',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Depth',
+    warningLabel: 'Warning Depth',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 20.0, max: 100.0, default: 50.0 },
+    warningRange: { min: 15.0, max: 80.0, default: 30.0 },
+    defaultPattern: 'intermittent',
+    patternDescription: 'Intermittent - Information alert',
+    allowDecimals: true,
+  },
+  [CriticalAlarmType.HIGH_SPEED]: {
+    label: 'High Speed',
+    description: 'Alert when vessel speed exceeds safe operating limit.',
+    iconName: 'speedometer-outline',
+    baseUnit: 'm/s',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Speed',
+    warningLabel: 'Warning Speed',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 10.0, max: 50.0, default: 25.0 },
+    warningRange: { min: 8.0, max: 45.0, default: 20.0 },
+    defaultPattern: 'warble',
+    patternDescription: 'Warble - Equipment warning',
+    allowDecimals: true,
+  },
+  
+  // === ENGINE ===
   [CriticalAlarmType.ENGINE_OVERHEAT]: {
     label: 'Engine Overheat',
     description: 'Alert when engine temperature exceeds safe operating limits. Prevents engine damage from overheating.',
     iconName: 'thermometer-outline',
-    thresholdLabel: 'Maximum Temperature',
-    unit: '°C',
-    min: 80,
-    max: 120,
-    defaultValue: 100,
-    hasThreshold: true,
-    defaultPattern: 'warble' as const,
+    baseUnit: '°C',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Temperature',
+    warningLabel: 'Warning Temperature',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 80, max: 120, default: 95 },
+    warningRange: { min: 75, max: 110, default: 85 },
+    defaultPattern: 'warble',
     patternDescription: 'Warble - ISO Priority 3 equipment warning',
+    allowDecimals: false,
   },
+  [CriticalAlarmType.ENGINE_LOW_TEMP]: {
+    label: 'Engine Low Temperature',
+    description: 'Alert when engine temperature is below normal operating range.',
+    iconName: 'thermometer-outline',
+    baseUnit: '°C',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Minimum Temperature',
+    warningLabel: 'Warning Temperature',
+    minRange: { min: 20, max: 60, default: 40 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 30, max: 70, default: 50 },
+    defaultPattern: 'intermittent',
+    patternDescription: 'Intermittent - Information',
+    allowDecimals: false,
+  },
+  [CriticalAlarmType.ENGINE_HIGH_RPM]: {
+    label: 'Engine High RPM',
+    description: 'Alert when engine RPM exceeds safe operating limit.',
+    iconName: 'speedometer-outline',
+    baseUnit: 'rpm',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum RPM',
+    warningLabel: 'Warning RPM',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 2000, max: 5000, default: 3600 },
+    warningRange: { min: 1800, max: 4500, default: 3300 },
+    defaultPattern: 'rapid_pulse',
+    patternDescription: 'Rapid pulse - Machinery protection',
+    allowDecimals: false,
+  },
+  [CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE]: {
+    label: 'Low Oil Pressure',
+    description: 'Critical alert for low engine oil pressure. Immediate attention required.',
+    iconName: 'water-outline',
+    baseUnit: 'PSI',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Critical Minimum Pressure',
+    warningLabel: 'Warning Pressure',
+    minRange: { min: 10, max: 40, default: 20 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 15, max: 50, default: 30 },
+    defaultPattern: 'rapid_pulse',
+    patternDescription: 'Rapid pulse - Critical machinery alarm',
+    allowDecimals: false,
+  },
+  
+  // === ELECTRICAL ===
   [CriticalAlarmType.LOW_BATTERY]: {
     label: 'Low Battery',
     description: 'Alert when battery voltage drops below safe level. Ensures sufficient power for critical systems.',
-    iconName: 'battery-charging-outline',
-    thresholdLabel: 'Minimum Voltage',
-    unit: 'V',
-    min: 10.5,
-    max: 14.0,
-    defaultValue: 12.0,
-    hasThreshold: true,
-    defaultPattern: 'triple_blast' as const,
+    iconName: 'battery-dead-outline',
+    baseUnit: 'V',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Critical Minimum Voltage',
+    warningLabel: 'Warning Voltage',
+    minRange: { min: 10.0, max: 12.5, default: 11.0 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 11.0, max: 13.0, default: 12.0 },
+    defaultPattern: 'triple_blast',
     patternDescription: 'Triple blast - General alert pattern',
+    allowDecimals: true,
   },
+  [CriticalAlarmType.HIGH_BATTERY]: {
+    label: 'High Battery',
+    description: 'Alert when battery voltage exceeds safe limit. Indicates overcharging.',
+    iconName: 'battery-charging-outline',
+    baseUnit: 'V',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Voltage',
+    warningLabel: 'Warning Voltage',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 14.0, max: 16.0, default: 15.0 },
+    warningRange: { min: 13.5, max: 15.5, default: 14.5 },
+    defaultPattern: 'intermittent',
+    patternDescription: 'Intermittent - Equipment warning',
+    allowDecimals: true,
+  },
+  [CriticalAlarmType.LOW_ALTERNATOR]: {
+    label: 'Low Alternator Output',
+    description: 'Alert when alternator output voltage is below expected charging level.',
+    iconName: 'flash-outline',
+    baseUnit: 'V',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Minimum Alternator Voltage',
+    warningLabel: 'Warning Voltage',
+    minRange: { min: 12.5, max: 14.0, default: 13.0 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 13.0, max: 14.5, default: 13.5 },
+    defaultPattern: 'triple_blast',
+    patternDescription: 'Triple blast - Charging system alert',
+    allowDecimals: true,
+  },
+  [CriticalAlarmType.HIGH_CURRENT]: {
+    label: 'High Current Draw',
+    description: 'Alert when electrical current draw exceeds safe limit.',
+    iconName: 'flash-outline',
+    baseUnit: 'A',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Current',
+    warningLabel: 'Warning Current',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 50, max: 300, default: 150 },
+    warningRange: { min: 40, max: 250, default: 120 },
+    defaultPattern: 'warble',
+    patternDescription: 'Warble - Electrical system warning',
+    allowDecimals: false,
+  },
+  
+  // === WIND ===
+  [CriticalAlarmType.HIGH_WIND]: {
+    label: 'High Wind Speed',
+    description: 'Alert when wind speed exceeds safe operating conditions.',
+    iconName: 'cloudy-outline',
+    baseUnit: 'm/s',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Wind Speed',
+    warningLabel: 'Warning Wind Speed',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 20, max: 60, default: 35 },
+    warningRange: { min: 15, max: 50, default: 25 },
+    defaultPattern: 'warble',
+    patternDescription: 'Warble - Weather warning',
+    allowDecimals: true,
+  },
+  [CriticalAlarmType.WIND_GUST]: {
+    label: 'Wind Gust',
+    description: 'Alert on sudden wind gusts that may affect vessel stability.',
+    iconName: 'cloudy-outline',
+    baseUnit: 'm/s',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: false,
+    maxLabel: 'Maximum Gust Speed',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 25, max: 70, default: 45 },
+    warningRange: { min: 0, max: 0, default: 9999 },
+    defaultPattern: 'rapid_pulse',
+    patternDescription: 'Rapid pulse - Immediate weather threat',
+    allowDecimals: false,
+  },
+  
+  // === SYSTEM ===
   [CriticalAlarmType.AUTOPILOT_FAILURE]: {
     label: 'Autopilot Failure',
     description: 'Alert on autopilot disconnection or malfunction. Critical for safe navigation when using autopilot.',
     iconName: 'swap-horizontal-outline',
-    thresholdLabel: 'Detection Enabled',
-    unit: '',
-    min: 0,
-    max: 1,
-    defaultValue: 1,
-    hasThreshold: false,
-    defaultPattern: 'morse_u' as const,
+    baseUnit: '',
+    hasMin: false,
+    hasMax: false,
+    hasWarning: false,
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 0, max: 0, default: 9999 },
+    defaultPattern: 'morse_u',
     patternDescription: 'Morse "U" - Maritime standard for "You are in danger"',
+    allowDecimals: false,
   },
   [CriticalAlarmType.GPS_LOSS]: {
     label: 'GPS Signal Loss',
     description: 'Alert when GPS signal quality degrades or is lost. Essential for navigation safety.',
     iconName: 'navigate-outline',
-    thresholdLabel: 'Timeout Duration',
-    unit: 's',
-    min: 5,
-    max: 60,
-    defaultValue: 10,
-    hasThreshold: true,
-    defaultPattern: 'intermittent' as const,
-    patternDescription: 'Intermittent - ISO Priority 2 urgent',
+    baseUnit: 's',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: false,
+    maxLabel: 'Signal Loss Timeout',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 5, max: 60, default: 10 },
+    warningRange: { min: 0, max: 0, default: 9999 },
+    defaultPattern: 'intermittent',
+    patternDescription: 'Intermittent - Navigation system alert',
+    allowDecimals: false,
+  },
+  
+  // === TANKS ===
+  [CriticalAlarmType.LOW_FUEL]: {
+    label: 'Low Fuel Level',
+    description: 'Alert when fuel level drops below safe reserve.',
+    iconName: 'beaker-outline',
+    baseUnit: '%',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Critical Minimum Level',
+    warningLabel: 'Warning Level',
+    minRange: { min: 5, max: 30, default: 10 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 10, max: 40, default: 25 },
+    defaultPattern: 'triple_blast',
+    patternDescription: 'Triple blast - Fuel system alert',
+    allowDecimals: false,
+  },
+  [CriticalAlarmType.LOW_WATER]: {
+    label: 'Low Fresh Water',
+    description: 'Alert when fresh water tank level is low.',
+    iconName: 'water-outline',
+    baseUnit: '%',
+    hasMin: true,
+    hasMax: false,
+    hasWarning: true,
+    minLabel: 'Critical Minimum Level',
+    warningLabel: 'Warning Level',
+    minRange: { min: 5, max: 30, default: 10 },
+    maxRange: { min: 0, max: 0, default: 9999 },
+    warningRange: { min: 10, max: 40, default: 25 },
+    defaultPattern: 'intermittent',
+    patternDescription: 'Intermittent - Tank level alert',
+    allowDecimals: false,
+  },
+  [CriticalAlarmType.HIGH_WASTE_WATER]: {
+    label: 'High Waste Water',
+    description: 'Alert when waste water tank is approaching full capacity.',
+    iconName: 'warning-outline',
+    baseUnit: '%',
+    hasMin: false,
+    hasMax: true,
+    hasWarning: true,
+    maxLabel: 'Maximum Level',
+    warningLabel: 'Warning Level',
+    minRange: { min: 0, max: 0, default: 9999 },
+    maxRange: { min: 70, max: 95, default: 90 },
+    warningRange: { min: 60, max: 90, default: 75 },
+    defaultPattern: 'intermittent',
+    patternDescription: 'Intermittent - Tank level alert',
   },
 };
 
@@ -208,24 +634,35 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Presentation hooks for unit conversion (called at component level)
+  const depthPresentation = useDataPresentation('depth');
+  const speedPresentation = useDataPresentation('speed');
+  const temperaturePresentation = useDataPresentation('temperature');
+  const voltagePresentation = useDataPresentation('voltage');
+  const currentPresentation = useDataPresentation('current');
+
   // Load all alarm configurations
   useEffect(() => {
     if (visible) {
       loadConfigurations();
       
       // Web-specific: Remove green overlay elements from DOM
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         const removeGreenElements = () => {
-          const elements = document.querySelectorAll('div[style*="rgb(0, 150, 136)"]');
-          elements.forEach(el => {
-            if (el instanceof HTMLElement) {
-              el.style.display = 'none';
-              el.style.visibility = 'hidden';
-              el.style.opacity = '0';
-              el.style.width = '0';
-              el.style.height = '0';
-            }
-          });
+          try {
+            const elements = document.querySelectorAll('div[style*="rgb(0, 150, 136)"]');
+            elements.forEach(el => {
+              if (el instanceof HTMLElement) {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.style.opacity = '0';
+                el.style.width = '0';
+                el.style.height = '0';
+              }
+            });
+          } catch (error) {
+            // Silently ignore on non-web platforms
+          }
         };
         
         // Run multiple times to catch dynamically added elements
@@ -262,7 +699,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
 
   // Quick toggle from list view
   const handleQuickToggle = async (type: CriticalAlarmType, enabled: boolean) => {
-    if (!enabled && type === CriticalAlarmType.SHALLOW_WATER) {
+    if (!enabled && !canDisableAlarm(type)) {
       Alert.alert(
         'Critical Safety Alarm',
         'This alarm cannot be disabled for safety compliance.',
@@ -333,6 +770,34 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
   const handleSave = async () => {
     if (!config || !selectedAlarmType) return;
 
+    // Validate threshold ordering
+    const metadata = ALARM_METADATA[selectedAlarmType];
+    if (metadata) {
+      // For alarms with both min and warning (like SHALLOW_WATER): warning should be greater than min
+      if (metadata.hasMin && metadata.hasWarning && 
+          config.thresholds.min !== 9999 && config.thresholds.warning !== 9999 &&
+          config.thresholds.warning <= config.thresholds.min) {
+        Alert.alert(
+          'Invalid Threshold Order',
+          'Warning threshold must be greater than critical minimum threshold.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // For alarms with both max and warning (like HIGH_WASTE_WATER): warning should be less than max
+      if (metadata.hasMax && metadata.hasWarning &&
+          config.thresholds.max !== 9999 && config.thresholds.warning !== 9999 &&
+          config.thresholds.warning >= config.thresholds.max) {
+        Alert.alert(
+          'Invalid Threshold Order',
+          'Warning threshold must be less than critical maximum threshold.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const result = await alarmConfig.updateAlarmConfig(selectedAlarmType, config);
@@ -343,6 +808,10 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
           return updated;
         });
         setHasChanges(false);
+        
+        // Configuration automatically propagates to widgets via CriticalAlarmConfiguration event system
+        console.log('[AlarmConfigDialog] Alarm configuration saved:', selectedAlarmType, config.thresholds);
+        
         Alert.alert('Success', 'Alarm configuration saved', [{ text: 'OK' }]);
       } else {
         const errorMsg = result.errors?.join(', ') || 'Failed to save alarm configuration';
@@ -355,6 +824,9 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
       setSaving(false);
     }
   };
+
+  // No longer need to sync to alarm store - CriticalAlarmConfiguration is the single source of truth
+  // Widgets now use useAlarmThresholds hook which queries CriticalAlarmConfiguration directly
 
   // Handle close
   const handleClose = () => {
@@ -392,15 +864,37 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
     );
   };
 
-  // Get alarm summary text
+  // Get alarm summary text (without unit conversion for list view - uses baseUnit)
+  // Unit conversion happens in detail view where presentation hooks are available
   const getAlarmSummary = (type: CriticalAlarmType, config: CriticalAlarmConfig | undefined): string => {
     if (!config) return 'Not configured';
     if (!config.enabled) return '';
 
-    const alarm = ALARM_LIST.find(a => a.type === type);
-    if (!alarm || type === CriticalAlarmType.AUTOPILOT_FAILURE) return '';
+    const metadata = ALARM_METADATA[type];
+    if (!metadata) return '';
 
-    return `Alert: ${config.thresholds.critical}${alarm.unit}`;
+    // System alarms without thresholds
+    if (type === CriticalAlarmType.AUTOPILOT_FAILURE) {
+      return 'Enabled';
+    }
+
+    // Build summary based on active thresholds (showing reference units)
+    const parts: string[] = [];
+    const decimals = metadata.allowDecimals === false ? 0 : 1;
+    
+    if (metadata.hasMin && config.thresholds?.min != null && config.thresholds.min !== 9999) {
+      parts.push(`Min: ${config.thresholds.min.toFixed(decimals)}${metadata.baseUnit}`);
+    }
+    
+    if (metadata.hasMax && config.thresholds?.max != null && config.thresholds.max !== 9999) {
+      parts.push(`Max: ${config.thresholds.max.toFixed(decimals)}${metadata.baseUnit}`);
+    }
+    
+    if (metadata.hasWarning && config.thresholds?.warning != null && config.thresholds.warning !== 9999) {
+      parts.push(`Warn: ${config.thresholds.warning.toFixed(decimals)}${metadata.baseUnit}`);
+    }
+
+    return parts.join(' • ') || 'Configured';
   };
 
   // Render list view
@@ -417,48 +911,36 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
     return (
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.description, { color: theme.textSecondary }]}>
-          Tap any alarm to customize its settings.
+          Configure alarm thresholds for all marine sensors. Tap any alarm for detailed settings.
         </Text>
+        {ALARM_CATEGORIES.map((category) => (
+          <View key={category.title} style={styles.categorySection}>
+            <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.title}</Text>
+            {category.alarms.map((alarm) => {
+              const alarmConfig = configs.get(alarm.type);
+              const isEnabled = alarmConfig?.enabled ?? false;
+              const summary = getAlarmSummary(alarm.type, alarmConfig);
 
-        {ALARM_LIST.map((alarm) => {
-          const alarmConfig = configs.get(alarm.type);
-          const isEnabled = alarmConfig?.enabled ?? false;
-          const summary = getAlarmSummary(alarm.type, alarmConfig);
-
-          return (
-            <Pressable
-              key={alarm.type}
-              style={[styles.alarmCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-              onPress={() => handleNavigateToDetail(alarm.type)}
-            >
-              <View style={styles.alarmIcon}>
-                <UniversalIcon name={alarm.iconName} size={32} color={theme.text} />
-              </View>
-              <View style={styles.alarmInfo}>
-                <View style={styles.alarmHeader}>
-                  <Text style={[styles.alarmLabel, { color: theme.text }]}>{alarm.label}</Text>
-                  <View style={styles.alarmStatus}>
-                    {isEnabled && <View style={[styles.statusDot, { backgroundColor: theme.success }]} />}
-                    <TouchableOpacity
-                      onPress={() => handleQuickToggle(alarm.type, !isEnabled)}
-                      disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
-                      activeOpacity={1}
-                    >
-                      <LocalSwitch
-                        value={isEnabled}
-                        onValueChange={(value) => handleQuickToggle(alarm.type, value)}
-                        trackColor={{ false: theme.border, true: theme.interactive }}
-                        disabled={alarm.type === CriticalAlarmType.SHALLOW_WATER && !isEnabled}
-                      />
-                    </TouchableOpacity>
+              return (
+                <Pressable
+                  key={alarm.type}
+                  style={[styles.alarmCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                  onPress={() => handleNavigateToDetail(alarm.type)}
+                >
+                  <View style={styles.alarmIcon}>
+                    <UniversalIcon name={alarm.iconName} size={28} color={theme.text} />
                   </View>
-                </View>
-                {summary && <Text style={[styles.alarmSummary, { color: theme.textSecondary }]}>{summary}</Text>}
-              </View>
-              <UniversalIcon name="chevron-forward-outline" size={20} color={theme.textSecondary} />
-            </Pressable>
-          );
-        })}
+                  <View style={styles.alarmInfo}>
+                    <Text style={[styles.alarmLabel, { color: theme.text }]}>{alarm.label}</Text>
+                    {summary && <Text style={[styles.alarmSummary, { color: theme.textSecondary }]}>{summary}</Text>}
+                  </View>
+                  {isEnabled && <View style={[styles.statusDot, { backgroundColor: theme.success }]} />}
+                  <UniversalIcon name="chevron-forward-outline" size={20} color={theme.textSecondary} />
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
 
         <Pressable
           style={[styles.resetButton, { borderColor: theme.border }]}
@@ -478,14 +960,69 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
     const metadata = ALARM_METADATA[selectedAlarmType];
     if (!metadata) return null;
 
+    // Get presentation for unit conversion (use pre-initialized hooks)
+    const category = ALARM_TYPE_TO_CATEGORY[selectedAlarmType];
+    let presentation = null;
+    
+    if (category === 'depth') presentation = depthPresentation;
+    else if (category === 'speed') presentation = speedPresentation;
+    else if (category === 'temperature') presentation = temperaturePresentation;
+    else if (category === 'voltage') presentation = voltagePresentation;
+    else if (category === 'current') presentation = currentPresentation;
+    
+    // Use display unit from presentation or fallback to base unit
+    const displayUnit = presentation?.presentation?.symbol || metadata.baseUnit;
+    
+    // Conversion helpers
+    const toDisplay = (referenceValue: number) => 
+      presentation ? presentation.convert(referenceValue) : referenceValue;
+    const toReference = (displayValue: number) => 
+      presentation ? presentation.convertBack(displayValue) : displayValue;
+
     const updateConfig = (updates: Partial<CriticalAlarmConfig>) => {
-      setConfig(prev => prev ? { ...prev, ...updates } : null);
+      console.log('[AlarmConfigDialog] updateConfig called with:', updates);
+      console.log('[AlarmConfigDialog] Current config.enabled:', config?.enabled);
+      console.log('[AlarmConfigDialog] selectedAlarmType:', selectedAlarmType);
+      console.log('[AlarmConfigDialog] canDisableAlarm:', canDisableAlarm(selectedAlarmType));
+      
+      // If disabling a critical alarm, show confirmation dialog
+      if (updates.enabled === false && !canDisableAlarm(selectedAlarmType)) {
+        console.log('[AlarmConfigDialog] Showing confirmation dialog for critical alarm');
+        Alert.alert(
+          'Disable Critical Safety Alarm?',
+          `${metadata.label} is a critical safety alarm. Disabling it may put your vessel at risk.\n\nAre you sure you want to disable this alarm?`,
+          [
+            { text: 'Cancel', style: 'cancel', onPress: () => console.log('[AlarmConfigDialog] User cancelled') },
+            {
+              text: 'Disable',
+              style: 'destructive',
+              onPress: () => {
+                console.log('[AlarmConfigDialog] User confirmed, disabling alarm');
+                setConfig(prev => {
+                  const newConfig = prev ? { ...prev, ...updates } : null;
+                  console.log('[AlarmConfigDialog] New config:', newConfig);
+                  return newConfig;
+                });
+                setHasChanges(true);
+              },
+            },
+          ]
+        );
+        return;
+      }
+      
+      // For all other changes, update immediately
+      console.log('[AlarmConfigDialog] Updating config immediately');
+      setConfig(prev => {
+        const newConfig = prev ? { ...prev, ...updates } : null;
+        console.log('[AlarmConfigDialog] New config:', newConfig);
+        return newConfig;
+      });
       setHasChanges(true);
     };
 
     return (
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Icon and Description */}
         <View style={styles.iconSection}>
           <View style={[styles.iconContainer, { backgroundColor: theme.surface }]}>
             <UniversalIcon name={metadata.iconName} size={48} color={theme.textSecondary} />
@@ -495,86 +1032,318 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
           </Text>
         </View>
 
-        {/* Enable/Disable */}
         <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.sectionRow}>
-            <Text style={[styles.sectionLabel, { color: theme.text }]}>Enable Alarm</Text>
-            <TouchableOpacity
-              onPress={() => updateConfig({ enabled: !config.enabled })}
-              disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
-              activeOpacity={1}
-            >
-              <LocalSwitch
-                value={config.enabled}
-                onValueChange={(value) => updateConfig({ enabled: value })}
-                trackColor={{ false: theme.border, true: theme.interactive }}
-                disabled={selectedAlarmType === CriticalAlarmType.SHALLOW_WATER && config.enabled}
-              />
-            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionLabel, { color: theme.text }]}>Enable Alarm</Text>
+              {!canDisableAlarm(selectedAlarmType) && (
+                <Text style={[styles.hint, { color: theme.textSecondary, marginTop: 2 }]}>
+                  Critical safety alarm - confirmation required to disable
+                </Text>
+              )}
+            </View>
+            <LocalSwitch
+              value={config.enabled}
+              onValueChange={(value) => updateConfig({ enabled: value })}
+              trackColor={{ false: theme.border, true: theme.interactive }}
+            />
           </View>
         </View>
 
-        {/* Threshold Configuration */}
-        {metadata.hasThreshold && (
+        {config.enabled && metadata && (metadata.hasMin || metadata.hasMax || metadata.hasWarning) && (
           <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              {metadata.thresholdLabel}
-            </Text>
-            <View style={styles.thresholdInput}>
-              <TextInput
-                style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-                value={String(config.thresholds.critical)}
-                onChangeText={(text) => {
-                  const value = parseFloat(text);
-                  if (!isNaN(value) && value >= metadata.min && value <= metadata.max) {
-                    updateConfig({
-                      thresholds: { ...config.thresholds, critical: value }
-                    });
-                  }
-                }}
-                keyboardType="decimal-pad"
-                editable={config.enabled}
-              />
-              <Text style={[styles.unit, { color: theme.textSecondary }]}>{metadata.unit}</Text>
-            </View>
-            <Text style={[styles.hint, { color: theme.textSecondary }]}>
-              Range: {metadata.min} - {metadata.max} {metadata.unit}
-            </Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Threshold Configuration</Text>
+            {metadata.hasMin && (() => {
+              // Convert reference values to display units
+              const minValue = config.thresholds?.min ?? metadata.minRange.default;
+              const minDisplay = toDisplay(minValue === 9999 ? metadata.minRange.default : minValue);
+              const rangeMinDisplay = toDisplay(metadata.minRange.min);
+              const rangeMaxDisplay = toDisplay(metadata.minRange.max);
+              const rangeSize = rangeMaxDisplay - rangeMinDisplay;
+              const step = getSmartStep(displayUnit, rangeSize);
+              
+              return (
+                <View style={styles.thresholdSection}>
+                  <Text style={[styles.thresholdLabel, { color: theme.text }]}>
+                    {metadata.minLabel} ({displayUnit})
+                  </Text>
+                  <View style={styles.thresholdControl}>
+                    <Pressable
+                      style={[styles.adjustButton, { borderColor: theme.border, backgroundColor: theme.background }]}
+                      onPress={() => {
+                        const newDisplayValue = Math.max(rangeMinDisplay, minDisplay - step);
+                        const newReferenceValue = toReference(newDisplayValue);
+                        const precision = metadata.allowDecimals === false ? 0 : (step < 1 ? 1 : 0);
+                        updateConfig({
+                          thresholds: { ...config.thresholds, min: parseFloat(newReferenceValue.toFixed(precision)) }
+                        });
+                      }}
+                    >
+                      <Text style={[styles.adjustButtonText, { color: theme.text }]}>−</Text>
+                    </Pressable>
+                    
+                    <TextInput
+                      style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+                      value={metadata.allowDecimals === false ? String(Math.round(minDisplay || 0)) : String((minDisplay || 0).toFixed(1))}
+                      onChangeText={(text) => {
+                        const displayValue = metadata.allowDecimals === false ? parseInt(text) : parseFloat(text);
+                        if (!isNaN(displayValue) && displayValue >= rangeMinDisplay && displayValue <= rangeMaxDisplay) {
+                          const referenceValue = toReference(displayValue);
+                          updateConfig({
+                            thresholds: { ...config.thresholds, min: referenceValue }
+                          });
+                        }
+                      }}
+                      keyboardType={metadata.allowDecimals === false ? "number-pad" : "decimal-pad"}
+                      editable={config.enabled}
+                    />
+                    
+                    <Pressable
+                      style={[styles.adjustButton, { borderColor: theme.border, backgroundColor: theme.background }]}
+                      onPress={() => {
+                        const newDisplayValue = Math.min(rangeMaxDisplay, minDisplay + step);
+                        const newReferenceValue = toReference(newDisplayValue);
+                        const precision = metadata.allowDecimals === false ? 0 : (step < 1 ? 1 : 0);
+                        updateConfig({
+                          thresholds: { ...config.thresholds, min: parseFloat(newReferenceValue.toFixed(precision)) }
+                        });
+                      }}
+                    >
+                      <Text style={[styles.adjustButtonText, { color: theme.text }]}>+</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={[styles.hint, { color: theme.textSecondary }]}>
+                    Range: {rangeMinDisplay.toFixed(metadata.allowDecimals === false ? 0 : 1)} - {rangeMaxDisplay.toFixed(metadata.allowDecimals === false ? 0 : 1)} {displayUnit}
+                  </Text>
+                </View>
+              );
+            })()}
+
+            {metadata.hasMax && (() => {
+              // Convert reference values to display units
+              const maxValue = config.thresholds?.max ?? metadata.maxRange.default;
+              const maxDisplay = toDisplay(maxValue === 9999 ? metadata.maxRange.default : maxValue);
+              const rangeMinDisplay = toDisplay(metadata.maxRange.min);
+              const rangeMaxDisplay = toDisplay(metadata.maxRange.max);
+              const rangeSize = rangeMaxDisplay - rangeMinDisplay;
+              const step = getSmartStep(displayUnit, rangeSize);
+              
+              return (
+                <View style={styles.thresholdSection}>
+                  <Text style={[styles.thresholdLabel, { color: theme.text }]}>
+                    {metadata.maxLabel} ({displayUnit})
+                  </Text>
+                  <View style={styles.thresholdControl}>
+                    <Pressable
+                      style={[styles.adjustButton, { borderColor: theme.border, backgroundColor: theme.background }]}
+                      onPress={() => {
+                        const newDisplayValue = Math.max(rangeMinDisplay, maxDisplay - step);
+                        const newReferenceValue = toReference(newDisplayValue);
+                        const precision = metadata.allowDecimals === false ? 0 : (step < 1 ? 1 : 0);
+                        updateConfig({
+                          thresholds: { ...config.thresholds, max: parseFloat(newReferenceValue.toFixed(precision)) }
+                        });
+                      }}
+                    >
+                      <Text style={[styles.adjustButtonText, { color: theme.text }]}>−</Text>
+                    </Pressable>
+                    
+                    <TextInput
+                      style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+                      value={metadata.allowDecimals === false ? String(Math.round(maxDisplay || 0)) : String((maxDisplay || 0).toFixed(1))}
+                      onChangeText={(text) => {
+                        const displayValue = metadata.allowDecimals === false ? parseInt(text) : parseFloat(text);
+                        if (!isNaN(displayValue) && displayValue >= rangeMinDisplay && displayValue <= rangeMaxDisplay) {
+                          const referenceValue = toReference(displayValue);
+                          updateConfig({
+                            thresholds: { ...config.thresholds, max: referenceValue }
+                          });
+                        }
+                      }}
+                      keyboardType={metadata.allowDecimals === false ? "number-pad" : "decimal-pad"}
+                      editable={config.enabled}
+                    />
+                    
+                    <Pressable
+                      style={[styles.adjustButton, { borderColor: theme.border, backgroundColor: theme.background }]}
+                      onPress={() => {
+                        const newDisplayValue = Math.min(rangeMaxDisplay, maxDisplay + step);
+                        const newReferenceValue = toReference(newDisplayValue);
+                        const precision = metadata.allowDecimals === false ? 0 : (step < 1 ? 1 : 0);
+                        updateConfig({
+                          thresholds: { ...config.thresholds, max: parseFloat(newReferenceValue.toFixed(precision)) }
+                        });
+                      }}
+                    >
+                      <Text style={[styles.adjustButtonText, { color: theme.text }]}>+</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={[styles.hint, { color: theme.textSecondary }]}>
+                    Range: {rangeMinDisplay.toFixed(metadata.allowDecimals === false ? 0 : 1)} - {rangeMaxDisplay.toFixed(metadata.allowDecimals === false ? 0 : 1)} {displayUnit}
+                  </Text>
+                </View>
+              );
+            })()}
+
+            {metadata.hasWarning && (() => {
+              // Convert reference values to display units
+              const warningValue = config.thresholds?.warning ?? metadata.warningRange.default;
+              const warningDisplay = toDisplay(warningValue === 9999 ? metadata.warningRange.default : warningValue);
+              const rangeMinDisplay = toDisplay(metadata.warningRange.min);
+              const rangeMaxDisplay = toDisplay(metadata.warningRange.max);
+              const rangeSize = rangeMaxDisplay - rangeMinDisplay;
+              const step = getSmartStep(displayUnit, rangeSize);
+              
+              return (
+                <View style={styles.thresholdSection}>
+                  <Text style={[styles.thresholdLabel, { color: theme.text }]}>
+                    {metadata.warningLabel} ({displayUnit})
+                  </Text>
+                  <View style={styles.thresholdControl}>
+                    <Pressable
+                      style={[styles.adjustButton, { borderColor: theme.border, backgroundColor: theme.background }]}
+                      onPress={() => {
+                        const newDisplayValue = Math.max(rangeMinDisplay, warningDisplay - step);
+                        const newReferenceValue = toReference(newDisplayValue);
+                        const precision = metadata.allowDecimals === false ? 0 : (step < 1 ? 1 : 0);
+                        updateConfig({
+                          thresholds: { ...config.thresholds, warning: parseFloat(newReferenceValue.toFixed(precision)) }
+                        });
+                      }}
+                    >
+                      <Text style={[styles.adjustButtonText, { color: theme.text }]}>−</Text>
+                    </Pressable>
+                    
+                    <TextInput
+                      style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+                      value={metadata.allowDecimals === false ? String(Math.round(warningDisplay || 0)) : String((warningDisplay || 0).toFixed(1))}
+                      onChangeText={(text) => {
+                        const displayValue = metadata.allowDecimals === false ? parseInt(text) : parseFloat(text);
+                        if (!isNaN(displayValue) && displayValue >= rangeMinDisplay && displayValue <= rangeMaxDisplay) {
+                          const referenceValue = toReference(displayValue);
+                          updateConfig({
+                            thresholds: { ...config.thresholds, warning: referenceValue }
+                          });
+                        }
+                      }}
+                      keyboardType={metadata.allowDecimals === false ? "number-pad" : "decimal-pad"}
+                      editable={config.enabled}
+                    />
+                    
+                    <Pressable
+                      style={[styles.adjustButton, { borderColor: theme.border, backgroundColor: theme.background }]}
+                      onPress={() => {
+                        const newDisplayValue = Math.min(rangeMaxDisplay, warningDisplay + step);
+                        const newReferenceValue = toReference(newDisplayValue);
+                        const precision = metadata.allowDecimals === false ? 0 : (step < 1 ? 1 : 0);
+                        updateConfig({
+                          thresholds: { ...config.thresholds, warning: parseFloat(newReferenceValue.toFixed(precision)) }
+                        });
+                      }}
+                    >
+                      <Text style={[styles.adjustButtonText, { color: theme.text }]}>+</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={[styles.hint, { color: theme.textSecondary }]}>
+                    Range: {rangeMinDisplay.toFixed(metadata.allowDecimals === false ? 0 : 1)} - {rangeMaxDisplay.toFixed(metadata.allowDecimals === false ? 0 : 1)} {displayUnit}
+                  </Text>
+                </View>
+              );
+            })()}
           </View>
         )}
 
-        {/* Sound Pattern */}
-        <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Sound Pattern</Text>
-          <Text style={[styles.patternDescription, { color: theme.textSecondary }]}>
-            {metadata.patternDescription}
-          </Text>
-        </View>
+        {config.enabled && (
+          <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 4 }]}>
+                  Audio Alerts
+                </Text>
+                <Text style={[styles.patternDescription, { fontSize: 13, marginBottom: 0 }]}>
+                  Enable audible alarm sounds
+                </Text>
+              </View>
+              <LocalSwitch
+                value={config.audioEnabled}
+                onValueChange={(enabled) => updateConfig({ audioEnabled: enabled })}
+                trackColor={{ false: theme.border, true: theme.interactive }}
+              />
+            </View>
+          </View>
+        )}
 
-        {/* Test Alarm */}
-        <Pressable
-          style={[styles.testButton, { backgroundColor: theme.primary }]}
-          onPress={() => {
-            Alert.alert(
-              'Test Alarm',
-              `This will trigger the ${metadata.label} alarm sound.`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Test',
-                  onPress: () => {
-                    // Trigger test alarm sound
-                    console.log(`Testing alarm: ${selectedAlarmType}`);
-                  }
-                },
-              ]
-            );
-          }}
-          disabled={!config.enabled}
-        >
-          <UniversalIcon name="volume-high-outline" size={20} color={theme.text} />
-          <Text style={styles.testButtonText}>Test Alarm Sound</Text>
-        </Pressable>
+        {config.enabled && config.audioEnabled && (
+          <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Alarm Sound Pattern</Text>
+            <Text style={[styles.patternDescription, { color: theme.textSecondary }]}>
+              {metadata.patternDescription}
+            </Text>
+            <View style={styles.patternOptions}>
+              {[
+                { value: 'rapid_pulse', label: 'Rapid Pulse', description: 'ISO Priority 1 - Immediate danger' },
+                { value: 'morse_u', label: 'Morse "U" (·· —)', description: 'ISO Priority 2 - "You are in danger"' },
+                { value: 'warble', label: 'Warble', description: 'ISO Priority 3 - Equipment warning' },
+                { value: 'triple_blast', label: 'Triple Blast', description: 'ISO Priority 4 - General alert' },
+                { value: 'intermittent', label: 'Intermittent', description: 'ISO Priority 5 - Information' },
+                { value: 'continuous_descending', label: 'Descending', description: 'Signal degradation (custom)' },
+              ].map((pattern) => (
+                <Pressable
+                  key={pattern.value}
+                  style={[
+                    styles.patternOption,
+                    { 
+                      backgroundColor: theme.background,
+                      borderColor: config.audioPattern === pattern.value ? theme.primary : theme.border,
+                      borderWidth: config.audioPattern === pattern.value ? 2 : 1,
+                    }
+                  ]}
+                  onPress={() => updateConfig({ audioPattern: pattern.value as any })}
+                >
+                  <View style={styles.patternOptionContent}>
+                    <View style={styles.patternRadio}>
+                      {config.audioPattern === pattern.value && (
+                        <View style={[styles.patternRadioSelected, { backgroundColor: theme.primary }]} />
+                      )}
+                    </View>
+                    <View style={styles.patternText}>
+                      <Text style={[styles.patternLabel, { color: theme.text }]}>
+                        {pattern.label}
+                      </Text>
+                      <Text style={[styles.patternDesc, { color: theme.textSecondary }]}>
+                        {pattern.description}
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {config.enabled && config.audioEnabled && (
+          <Pressable
+            style={[styles.testButton, { backgroundColor: theme.primary, opacity: config.enabled ? 1 : 0.5 }]}
+            onPress={async () => {
+              try {
+                const played = await audioManager.testAlarmSound(
+                  selectedAlarmType,
+                  AlarmEscalationLevel.WARNING,
+                  3000
+                );
+                if (!played) {
+                  Alert.alert('Test Failed', 'Failed to play alarm sound. Check audio permissions.');
+                }
+              } catch (error) {
+                Alert.alert('Error', 'Failed to test alarm');
+              }
+            }}
+            disabled={!config.enabled}
+          >
+            <UniversalIcon name="volume-high-outline" size={24} color={theme.background} />
+            <Text style={[styles.testButtonText, { color: theme.background }]}>Test Alarm Sound</Text>
+          </Pressable>
+        )}
       </ScrollView>
     );
   };
@@ -587,10 +1356,7 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
       onRequestClose={handleClose}
     >
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* iOS Drag Handle */}
         <View style={styles.dragHandle} />
-        
-        {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity
             onPress={viewMode === 'detail' ? handleBackToList : handleClose}
@@ -631,8 +1397,6 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({
             <View style={styles.headerButton} />
           )}
         </View>
-
-        {/* Content */}
         {viewMode === 'list' ? renderListView() : renderDetailView()}
       </View>
     </Modal>
@@ -694,6 +1458,17 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  categorySection: {
+    marginBottom: 24,
+  },
+  categoryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
   alarmCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -708,25 +1483,15 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
   alarmInfo: {
     flex: 1,
   },
-  alarmHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
   alarmLabel: {
     fontSize: 17,
     fontWeight: '600',
   },
-  alarmStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
   },
   alarmSummary: {
     fontSize: 14,
@@ -782,6 +1547,38 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  thresholdSection: {
+    marginBottom: 16,
+  },
+  thresholdLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  thresholdControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  adjustButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adjustButtonText: {
+    fontSize: 32,
+    fontWeight: '700',
+  },
   thresholdInput: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -789,10 +1586,13 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 17,
+    height: 60,
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   unit: {
     fontSize: 17,
@@ -800,23 +1600,65 @@ const createStyles = (theme: ThemeColors) => StyleSheet.create({
   },
   hint: {
     fontSize: 13,
-    marginTop: 8,
+    marginTop: 0,
   },
   patternDescription: {
     fontSize: 15,
     lineHeight: 22,
+    marginBottom: 12,
+  },
+  patternOptions: {
+    gap: 12,
+  },
+  patternOption: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 0,
+    minHeight: 72,
+  },
+  patternOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  patternRadio: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  patternRadioSelected: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  patternText: {
+    flex: 1,
+  },
+  patternLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  patternDesc: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   testButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: 10,
+    paddingVertical: 18,
+    borderRadius: 12,
+    minHeight: 60,
+    borderWidth: 2,
     gap: 8,
   },
   testButtonText: {
-    color: theme.text,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

@@ -179,9 +179,9 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <UniversalIcon 
-          name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'navigate-outline'} 
+          name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'location-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -198,7 +198,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

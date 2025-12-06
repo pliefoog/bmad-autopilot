@@ -221,7 +221,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
         <UniversalIcon 
           name={WidgetMetadataRegistry.getMetadata('battery')?.icon || 'battery-charging-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -238,7 +238,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

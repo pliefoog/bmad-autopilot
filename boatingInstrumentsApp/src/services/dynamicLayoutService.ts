@@ -120,38 +120,9 @@ export class DynamicLayoutService {
     logger.layout(`Calculated layout: ${columns} columns, usePagination: ${usePagination}`);
     
     // Calculate widget width - divide available space evenly by columns
-    // But first, optimize columns based on widget count for better distribution
-    let actualColumns = columns;
-    
-    if (usePagination && widgetCount > 0) {
-      // Find optimal column count that minimizes wasted space
-      // Try reducing columns to get more even distribution
-      let bestColumns = columns;
-      let bestWaste = widgetCount % columns; // Widgets left over in last row
-      
-      // Try each column count from max down to 1
-      for (let testCols = columns; testCols >= 1; testCols--) {
-        const testRows = Math.ceil(widgetCount / testCols);
-        const testMaxRows = Math.floor(availableHeight / Math.floor(availableWidth / testCols));
-        
-        // Only consider if rows fit on screen
-        if (testRows <= testMaxRows) {
-          const waste = widgetCount % testCols;
-          
-          // Perfect fill (no waste) or better distribution
-          if (waste === 0) {
-            bestColumns = testCols;
-            bestWaste = 0;
-            break; // Perfect, stop searching
-          } else if (waste < bestWaste) {
-            bestColumns = testCols;
-            bestWaste = waste;
-          }
-        }
-      }
-      
-      actualColumns = bestColumns;
-    }
+    // Always use full column count based on screen width, not widget count
+    // This ensures consistent grid regardless of how many widgets are present
+    const actualColumns = columns;
     
     const widgetWidth = Math.floor(availableWidth / actualColumns);
     

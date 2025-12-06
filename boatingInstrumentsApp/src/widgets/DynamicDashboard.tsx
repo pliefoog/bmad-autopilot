@@ -80,7 +80,7 @@ export const DynamicDashboard: React.FC = () => {
     const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
     const config = DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
     return config;
-  }, [dimensions.width, dimensions.height, storeWidgets.length]);
+  }, [dimensions.width, dimensions.height]);
   
   const styles = useMemo(() => createStyles(theme), [theme]);
 

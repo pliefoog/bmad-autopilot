@@ -4,6 +4,7 @@ import { TrendLine } from '../components/TrendLine';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
+import { useDepthAlarmThresholds } from '../hooks/useAlarmThresholds';
 import { useDepthPresentation } from '../presentation/useDataPresentation';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -178,6 +179,9 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
     return stats;
   }, [getSessionStats]);
 
+  // Get alarm thresholds for depth from CriticalAlarmConfiguration
+  const alarmThresholds = useDepthAlarmThresholds();
+
   // Wrapper component to receive injected props from UnifiedWidgetGrid
   const TrendLineCell = useCallback(({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => {
     // Get all data points in 5 minute window
@@ -185,13 +189,20 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
       timeWindowMs: 5 * 60 * 1000
     });
     
+    // Convert alarm thresholds to display units for TrendLine
+    const convertedWarningThreshold = alarmThresholds.warning !== 9999 
+      ? depthPresentation.convert(alarmThresholds.warning) 
+      : undefined;
+    const convertedAlarmThreshold = alarmThresholds.min !== 9999 
+      ? depthPresentation.convert(alarmThresholds.min) 
+      : undefined;
+    
     return (
       <TrendLine 
         data={trendData}
         width={cellMaxWidth || 300}
         height={cellHeightValue || 60}
-        color={theme.primary}
-        theme={theme}
+        usePrimaryLine={true}
         showXAxis={true}
         showYAxis={true}
         xAxisPosition="top"
@@ -201,15 +212,12 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
         showGrid={true}
         strokeWidth={2}
         forceZero={true}
-        warningThreshold={3.0}
-        alarmThreshold={1.5}
-        thresholdType="min"
-        warningColor={theme.warning}
-        alarmColor={theme.error}
-        normalColor={theme.primary}
+        warningThreshold={convertedWarningThreshold}
+        alarmThreshold={convertedAlarmThreshold}
+        thresholdType={alarmThresholds.thresholdType}
       />
     );
-  }, [getSensorHistory, theme]);
+  }, [getSensorHistory, alarmThresholds, depthPresentation]);
 
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
@@ -293,7 +301,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
         <UniversalIcon 
           name={WidgetMetadataRegistry.getMetadata('depth')?.icon || 'water-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -310,7 +318,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

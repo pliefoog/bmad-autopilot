@@ -110,9 +110,9 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <UniversalIcon 
-          name={WidgetMetadataRegistry.getMetadata('navigation')?.icon || 'navigate-circle-outline'} 
+          name={WidgetMetadataRegistry.getMetadata('navigation')?.icon || 'navigate-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -129,7 +129,7 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, Platform } from 'react-native';
+import { Pressable, View, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 interface SwitchProps {
@@ -44,32 +44,28 @@ const Switch: React.FC<SwitchProps> = ({
   
   const handlePress = () => {
     if (!disabled) {
+      console.log('[Switch] Toggle from', value, 'to', !value, 'Platform:', Platform.OS);
       onValueChange(!value);
     }
   };
 
   return (
-    <View
-      // @ts-ignore - web-specific props
-      onClick={disabled ? undefined : handlePress}
-      onTouchStart={disabled ? undefined : handlePress}
+    <Pressable
+      onPress={handlePress}
+      disabled={disabled}
       testID={testID}
-      style={[
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={({ pressed }) => [
         styles.toggle,
         {
           backgroundColor: finalTrackColor,
-          opacity: disabled ? 0.5 : 1,
-          cursor: disabled ? 'default' : 'pointer',
-          // Web-specific: hide injected checkbox
-          // @ts-ignore
-          overflow: 'hidden',
-        },
+          opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+          cursor: Platform.OS === 'web' ? 'pointer' : undefined,
+        } as any,
         style,
       ]}
-      // @ts-ignore - web-specific inline style to target injected checkbox
-      {...(typeof window !== 'undefined' && {
-        dataSet: { hideCheckbox: 'true' },
-      })}
+      // @ts-ignore - web-specific props
+      onClick={Platform.OS === 'web' ? handlePress : undefined}
     >
       <View
         style={[
@@ -77,38 +73,11 @@ const Switch: React.FC<SwitchProps> = ({
           {
             backgroundColor: finalThumbColor,
             transform: [{ translateX: value ? 14 : 0 }],
-            // @ts-ignore - ensure thumb is on top
-            zIndex: 1,
-            position: 'relative',
           },
         ]}
+        pointerEvents="none"
       />
-      {/* Web-specific: inject style to hide checkbox */}
-      {Platform.OS === 'web' && (
-        // @ts-ignore
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            /* Hide React Native Web's injected checkbox in all contexts */
-            input[type="checkbox"][role="switch"],
-            input[type="checkbox"][role="switch"] + *,
-            input[type="checkbox"][role="switch"] > * {
-              opacity: 0 !important;
-              pointer-events: none !important;
-              visibility: hidden !important;
-              display: none !important;
-            }
-            
-            /* Target checkboxes within ScrollViews specifically */
-            [data-focusable="true"] input[type="checkbox"][role="switch"] {
-              opacity: 0 !important;
-              pointer-events: none !important;
-              visibility: hidden !important;
-              display: none !important;
-            }
-          `
-        }} />
-      )}
-    </View>
+    </Pressable>
   );
 };
 

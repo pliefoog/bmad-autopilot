@@ -208,7 +208,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
         <UniversalIcon 
           name={WidgetMetadataRegistry.getMetadata('speed')?.icon || 'speedometer-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -225,7 +225,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

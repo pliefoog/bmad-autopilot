@@ -6,13 +6,38 @@
 /**
  * Critical alarm types for marine safety monitoring
  * Based on marine industry standards and safety requirements
+ * Expanded to cover all sensor metrics requiring threshold monitoring
  */
 export enum CriticalAlarmType {
+  // Navigation alarms
   SHALLOW_WATER = 'SHALLOW_WATER',
+  DEEP_WATER = 'DEEP_WATER',
+  HIGH_SPEED = 'HIGH_SPEED',
+  
+  // Engine alarms
   ENGINE_OVERHEAT = 'ENGINE_OVERHEAT',
+  ENGINE_LOW_TEMP = 'ENGINE_LOW_TEMP',
+  ENGINE_HIGH_RPM = 'ENGINE_HIGH_RPM',
+  ENGINE_LOW_OIL_PRESSURE = 'ENGINE_LOW_OIL_PRESSURE',
+  
+  // Electrical alarms
   LOW_BATTERY = 'LOW_BATTERY',
+  HIGH_BATTERY = 'HIGH_BATTERY',
+  LOW_ALTERNATOR = 'LOW_ALTERNATOR',
+  HIGH_CURRENT = 'HIGH_CURRENT',
+  
+  // Wind alarms
+  HIGH_WIND = 'HIGH_WIND',
+  WIND_GUST = 'WIND_GUST',
+  
+  // System alarms
   AUTOPILOT_FAILURE = 'AUTOPILOT_FAILURE',
   GPS_LOSS = 'GPS_LOSS',
+  
+  // Tank alarms
+  LOW_FUEL = 'LOW_FUEL',
+  LOW_WATER = 'LOW_WATER',
+  HIGH_WASTE_WATER = 'HIGH_WASTE_WATER',
 }
 
 /**
@@ -56,17 +81,18 @@ export interface CriticalAlarmEvent {
 
 /**
  * Configuration for critical alarm types with marine safety validation
+ * Standardized threshold structure: min, max, warning
+ * Use 9999 for thresholds that don't apply to the specific alarm type
  */
 export interface CriticalAlarmConfig {
   type: CriticalAlarmType;
   enabled: boolean;
   
-  // Threshold configuration with marine safety validation
+  // Standardized threshold configuration (use 9999 for N/A)
   thresholds: {
-    warning?: number;
-    caution?: number;
-    critical?: number;
-    emergency?: number;
+    min: number;      // Minimum acceptable value (9999 if not applicable)
+    max: number;      // Maximum acceptable value (9999 if not applicable)
+    warning: number;  // Warning threshold value (9999 if not applicable)
   };
   
   // Hysteresis to prevent alarm flickering (marine stability requirement)

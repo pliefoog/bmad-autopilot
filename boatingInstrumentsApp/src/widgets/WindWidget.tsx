@@ -329,9 +329,9 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <UniversalIcon 
-          name={WidgetMetadataRegistry.getMetadata('wind')?.icon || 'cloud-outline'} 
+          name={WidgetMetadataRegistry.getMetadata('wind')?.icon || 'navigate-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -348,7 +348,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

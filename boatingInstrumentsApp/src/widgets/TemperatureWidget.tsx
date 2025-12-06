@@ -4,6 +4,7 @@ import { TrendLine } from '../components/TrendLine';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
+import { useEngineTemperatureAlarmThresholds } from '../hooks/useAlarmThresholds';
 import { useTemperaturePresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
@@ -121,6 +122,9 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
 
   const temperatureState = getTemperatureState(temperature, location);
   
+  // Get alarm thresholds for engine temperature
+  const alarmThresholds = useEngineTemperatureAlarmThresholds();
+  
   // Wrapper component to receive injected props from UnifiedWidgetGrid
   const TrendLineCell = useCallback(({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => {
     // Get all data points in 5 minute window
@@ -128,24 +132,34 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
       timeWindowMs: 5 * 60 * 1000
     });
     
+    // Convert alarm thresholds to display units for TrendLine
+    const convertedWarningThreshold = alarmThresholds.warning !== 9999 
+      ? tempPresentation.convert(alarmThresholds.warning) 
+      : undefined;
+    const convertedAlarmThreshold = alarmThresholds.max !== 9999 
+      ? tempPresentation.convert(alarmThresholds.max) 
+      : undefined;
+    
     return (
       <TrendLine 
         data={trendData}
-      width={cellMaxWidth || 300}
-      height={cellHeightValue || 60}
-      color={temperatureState === 'alarm' ? theme.error : temperatureState === 'warning' ? theme.warning : theme.primary}
-      theme={theme}
-      showXAxis={true}
-      showYAxis={true}
-      xAxisPosition="bottom"
-      yAxisDirection="up"
-      timeWindowMinutes={5}
-      showTimeLabels={true}
-      showGrid={true}
-      strokeWidth={2}
-    />
-  );
-  }, [getSensorHistory, instanceNumber, temperatureState, theme]);
+        width={cellMaxWidth || 300}
+        height={cellHeightValue || 60}
+        usePrimaryLine={temperatureState === 'normal'}
+        showXAxis={true}
+        showYAxis={true}
+        xAxisPosition="bottom"
+        yAxisDirection="up"
+        timeWindowMinutes={5}
+        showTimeLabels={true}
+        showGrid={true}
+        strokeWidth={2}
+        warningThreshold={convertedWarningThreshold}
+        alarmThreshold={convertedAlarmThreshold}
+        thresholdType={alarmThresholds.thresholdType}
+      />
+    );
+  }, [getSensorHistory, instanceNumber, temperatureState, alarmThresholds, tempPresentation]);
 
   const handleLongPressOnPin = useCallback(() => {
     toggleWidgetPin(id);
@@ -189,7 +203,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
         <UniversalIcon 
           name={WidgetMetadataRegistry.getMetadata('temperature')?.icon || 'thermometer-outline'} 
           size={headerIconSize} 
-          color={theme.primary}
+          color={theme.iconPrimary}
         />
         <Text style={{
           fontSize: headerFontSize,
@@ -206,7 +220,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
           style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
           testID={`pin-button-${id}`}
         >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.primary} />
+          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
         </TouchableOpacity>
       )}
     </View>

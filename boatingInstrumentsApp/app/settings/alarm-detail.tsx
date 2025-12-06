@@ -425,71 +425,127 @@ export default function AlarmDetailScreen() {
 
         {/* Audio Pattern Selection */}
         {config.enabled && (
-          <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.sectionLabel, { color: theme.text }]}>
-              Alarm Sound Pattern
-            </Text>
-            <Text style={[styles.patternDescription, { color: theme.textSecondary }]}>
-              {metadata.patternDescription}
-            </Text>
-            
-            <View style={styles.patternOptions}>
-              {[
-                { value: 'rapid_pulse', label: 'Rapid Pulse', description: 'ISO Priority 1 - Immediate danger' },
-                { value: 'morse_u', label: 'Morse "U" (·· —)', description: 'ISO Priority 2 - "You are in danger"' },
-                { value: 'warble', label: 'Warble', description: 'ISO Priority 3 - Equipment warning' },
-                { value: 'triple_blast', label: 'Triple Blast', description: 'ISO Priority 4 - General alert' },
-                { value: 'intermittent', label: 'Intermittent', description: 'ISO Priority 5 - Information' },
-                { value: 'continuous_descending', label: 'Descending', description: 'Signal degradation (custom)' },
-              ].map((pattern) => (
-                <Pressable
-                  key={pattern.value}
-                  style={[
-                    styles.patternOption,
-                    { 
-                      backgroundColor: theme.background,
-                      borderColor: selectedPattern === pattern.value ? theme.primary : theme.border,
-                      borderWidth: selectedPattern === pattern.value ? 2 : 1,
+          <>
+            {/* Audio Enable Toggle */}
+            <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.sectionLabel, { color: theme.text, marginBottom: 4 }]}>
+                    Audio Alerts
+                  </Text>
+                  <Text style={[styles.patternDescription, { fontSize: 13, marginBottom: 0 }]}>
+                    Enable audible alarm sounds
+                  </Text>
+                </View>
+                <Switch
+                  value={config.audioEnabled}
+                  onValueChange={async (enabled) => {
+                    try {
+                      await alarmConfig.updateAlarmConfig(alarmType, { audioEnabled: enabled });
+                      setConfig(prev => prev ? { ...prev, audioEnabled: enabled } : null);
+                    } catch (error) {
+                      console.error('[AlarmDetail] Failed to update audio enabled:', error);
+                      Alert.alert('Error', 'Failed to update audio setting');
                     }
-                  ]}
-                  onPress={() => handlePatternChange(pattern.value as typeof selectedPattern)}
-                >
-                  <View style={styles.patternOptionContent}>
-                    <View style={styles.patternRadio}>
-                      {selectedPattern === pattern.value && (
-                        <View style={[styles.patternRadioSelected, { backgroundColor: theme.primary }]} />
-                      )}
-                    </View>
-                    <View style={styles.patternText}>
-                      <Text style={[styles.patternLabel, { color: theme.text }]}>
-                        {pattern.label}
-                      </Text>
-                      <Text style={[styles.patternDesc, { color: theme.textSecondary }]}>
-                        {pattern.description}
-                      </Text>
-                    </View>
-                  </View>
-                </Pressable>
-              ))}
+                  }}
+                  trackColor={{ false: theme.border, true: theme.textSecondary }}
+                  thumbColor={config.audioEnabled ? theme.text : theme.textSecondary}
+                />
+              </View>
             </View>
-          </View>
+
+            {/* Sound Pattern Selection */}
+            {config.audioEnabled && (
+              <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>
+                  Alarm Sound Pattern
+                </Text>
+                <Text style={[styles.patternDescription, { color: theme.textSecondary }]}>
+                  {metadata.patternDescription}
+                </Text>
+                
+                <View style={styles.patternOptions}>
+                  {[
+                    { value: 'rapid_pulse', label: 'Rapid Pulse', description: 'ISO Priority 1 - Immediate danger' },
+                    { value: 'morse_u', label: 'Morse "U" (·· —)', description: 'ISO Priority 2 - "You are in danger"' },
+                    { value: 'warble', label: 'Warble', description: 'ISO Priority 3 - Equipment warning' },
+                    { value: 'triple_blast', label: 'Triple Blast', description: 'ISO Priority 4 - General alert' },
+                    { value: 'intermittent', label: 'Intermittent', description: 'ISO Priority 5 - Information' },
+                    { value: 'continuous_descending', label: 'Descending', description: 'Signal degradation (custom)' },
+                  ].map((pattern) => (
+                    <Pressable
+                      key={pattern.value}
+                      style={[
+                        styles.patternOption,
+                        { 
+                          backgroundColor: theme.background,
+                          borderColor: selectedPattern === pattern.value ? theme.primary : theme.border,
+                          borderWidth: selectedPattern === pattern.value ? 2 : 1,
+                        }
+                      ]}
+                      onPress={() => handlePatternChange(pattern.value as typeof selectedPattern)}
+                    >
+                      <View style={styles.patternOptionContent}>
+                        <View style={styles.patternRadio}>
+                          {selectedPattern === pattern.value && (
+                            <View style={[styles.patternRadioSelected, { backgroundColor: theme.primary }]} />
+                          )}
+                        </View>
+                        <View style={styles.patternText}>
+                          <Text style={[styles.patternLabel, { color: theme.text }]}>
+                            {pattern.label}
+                          </Text>
+                          <Text style={[styles.patternDesc, { color: theme.textSecondary }]}>
+                            {pattern.description}
+                          </Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
         )}
 
         {/* Test Button */}
-        {config.enabled && (
-          <Pressable
-            style={[
-              styles.testButton,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-              testing && { opacity: 0.5 }
-            ]}
-            onPress={handleTestAlarm}
-            disabled={testing}
-          >
-            <Text style={[styles.testButtonText, { color: theme.text }]}>
-              {testing ? 'Testing...' : 'Test Alarm'}
-            </Text>
-          </Pressable>
+        {config.enabled && config.audioEnabled && (
+          <>
+            <Pressable
+              style={[
+                styles.testButton,
+                { backgroundColor: theme.primary, borderColor: theme.primary },
+                testing && { opacity: 0.6 }
+              ]}
+              onPress={handleTestAlarm}
+              disabled={testing}
+            >
+              <UniversalIcon 
+                name="volume-high-outline" 
+                size={24} 
+                color={theme.background}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={[styles.testButtonText, { color: theme.background }]}>
+                {testing ? 'Playing Test Sound...' : 'Test Alarm Sound'}
+              </Text>
+            </Pressable>
+            
+            {/* Platform-specific notice */}
+            {Platform.OS === 'ios' && (
+              <View style={[styles.notice, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <UniversalIcon 
+                  name="information-circle-outline" 
+                  size={20} 
+                  color={theme.textSecondary}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={[styles.noticeText, { color: theme.textSecondary, flex: 1 }]}>
+                  Note: Alarm sounds may not play in iOS Simulator. Test on a physical device for accurate audio testing.
+                </Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -572,24 +628,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   adjustButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    borderWidth: 1,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   adjustButtonText: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 32,
+    fontWeight: '700',
   },
   input: {
     flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderRadius: 8,
+    height: 60,
+    borderWidth: 2,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 20,
+    fontWeight: '600',
     textAlign: 'center',
   },
   rangeInfo: {
@@ -605,28 +662,29 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   patternOption: {
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    minHeight: 72,
   },
   patternOptionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   patternRadio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: '#94A3B8',
     alignItems: 'center',
     justifyContent: 'center',
   },
   patternRadioSelected: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   patternText: {
     flex: 1,
@@ -641,21 +699,26 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   testButton: {
-    paddingVertical: 14,
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 2,
+    minHeight: 60,
   },
   testButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   notice: {
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   noticeTitle: {
     fontSize: 16,

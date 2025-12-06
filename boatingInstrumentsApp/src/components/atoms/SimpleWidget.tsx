@@ -107,7 +107,7 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
         {/* Header with title, value, and chevron */}
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <Ionicons name={icon as any} size={16} color={theme.primary} />
+            <Ionicons name={icon as any} size={16} color={theme.iconPrimary} />
             <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
             {!expanded && (
               <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>

@@ -167,7 +167,7 @@ const WelcomeStep: React.FC<StepProps> = ({ styles }) => {
         <Ionicons name="boat-outline" size={80} color={theme.primary} />
       </View>
       <Text style={[styles.stepTitle, { color: theme.text }]}>
-        Welcome to BMad Autopilot
+        Welcome to NavDash
       </Text>
       <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
         Transform your device into a comprehensive marine display with real-time NMEA data, 

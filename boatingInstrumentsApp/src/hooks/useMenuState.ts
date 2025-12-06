@@ -6,11 +6,12 @@ import { getUseNativeDriver } from '../utils/animationUtils';
  * Custom hook for managing hamburger menu animation state
  * Provides slide-in/slide-out animations with 300ms timing
  */
-export const useMenuState = (visible: boolean) => {
-  const slideAnimation = useRef(new Animated.Value(-400)).current; // Start off-screen
+export const useMenuState = (visible: boolean, menuWidth: number = 320) => {
+  const slideAnimation = useRef(new Animated.Value(-menuWidth)).current; // Start off-screen based on menu width
   const fadeAnimation = useRef(new Animated.Value(0)).current;
 
   const animateIn = useCallback(() => {
+    console.log('[useMenuState] Animating in, menuWidth:', menuWidth);
     // Slide in from left and fade in overlay
     Animated.parallel([
       Animated.timing(slideAnimation, {
@@ -24,13 +25,14 @@ export const useMenuState = (visible: boolean) => {
         useNativeDriver: getUseNativeDriver(),
       }),
     ]).start();
-  }, [slideAnimation, fadeAnimation]);
+  }, [slideAnimation, fadeAnimation, menuWidth]);
 
   const animateOut = useCallback((callback?: () => void) => {
+    console.log('[useMenuState] Animating out, menuWidth:', menuWidth);
     // Slide out to left and fade out overlay
     Animated.parallel([
       Animated.timing(slideAnimation, {
-        toValue: -400,
+        toValue: -menuWidth,
         duration: 300,
         useNativeDriver: getUseNativeDriver(),
       }),
@@ -44,7 +46,7 @@ export const useMenuState = (visible: boolean) => {
         callback();
       }
     });
-  }, [slideAnimation, fadeAnimation]);
+  }, [slideAnimation, fadeAnimation, menuWidth]);
 
   return {
     slideAnimation,
