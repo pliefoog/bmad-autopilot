@@ -20,7 +20,7 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface OnboardingScreenProps {
@@ -174,10 +174,10 @@ const WelcomeStep: React.FC<StepProps> = ({ styles }) => {
         autopilot control, and critical alarm monitoring.
       </Text>
       <View style={styles.featureList}>
-        <FeatureItem icon="wifi" text="WiFi bridge connectivity" theme={theme} styles={styles} />
-        <FeatureItem icon="speedometer" text="Real-time marine instruments" theme={theme} styles={styles} />
-        <FeatureItem icon="notifications" text="Critical safety alarms" theme={theme} styles={styles} />
-        <FeatureItem icon="compass" text="Raymarine autopilot control" theme={theme} styles={styles} />
+        <FeatureItem icon="wifi-outline" text="WiFi bridge connectivity" theme={theme} styles={styles} />
+        <FeatureItem icon="speedometer-outline" text="Real-time marine instruments" theme={theme} styles={styles} />
+        <FeatureItem icon="notifications-outline" text="Critical safety alarms" theme={theme} styles={styles} />
+        <FeatureItem icon="compass-outline" text="Raymarine autopilot control" theme={theme} styles={styles} />
       </View>
     </View>
   );
@@ -188,7 +188,7 @@ const ConnectionStep: React.FC<StepProps> = ({ styles }) => {
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="wifi" size={80} color={theme.primary} />
+        <Ionicons name="wifi-outline" size={80} color={theme.primary} />
       </View>
       <Text style={[styles.stepTitle, { color: theme.text }]}>
         Connect to Your Boat
@@ -222,10 +222,10 @@ const WidgetsStep: React.FC<StepProps> = ({ styles }) => {
         Monitor depth, speed, wind, GPS, heading, and more.
       </Text>
       <View style={styles.widgetGrid}>
-        <WidgetPreview icon="water" label="Depth" theme={theme} styles={styles} />
-        <WidgetPreview icon="speedometer" label="Speed" theme={theme} styles={styles} />
-        <WidgetPreview icon="navigate" label="Wind" theme={theme} styles={styles} />
-        <WidgetPreview icon="location" label="GPS" theme={theme} styles={styles} />
+        <WidgetPreview icon="water-outline" label="Depth" theme={theme} styles={styles} />
+        <WidgetPreview icon="speedometer-outline" label="Speed" theme={theme} styles={styles} />
+        <WidgetPreview icon="navigate-outline" label="Wind" theme={theme} styles={styles} />
+        <WidgetPreview icon="location-outline" label="GPS" theme={theme} styles={styles} />
       </View>
       <Text style={[styles.tipText, { color: theme.warning }]}>
         💡 Tap widgets to expand, long-press to pin important ones
@@ -250,21 +250,21 @@ const AlarmsStep: React.FC<StepProps> = ({ styles }) => {
       </Text>
       <View style={styles.alarmList}>
         <AlarmItem 
-          icon="water" 
+          icon="water-outline" 
           title="Shallow Water" 
           description="Alerts when depth falls below your minimum"
           theme={theme}
           styles={styles}
         />
         <AlarmItem 
-          icon="flame" 
+          icon="flame-outline" 
           title="Engine Overheat" 
           description="Warns of dangerous coolant temperatures"
           theme={theme}
           styles={styles}
         />
         <AlarmItem 
-          icon="compass" 
+          icon="compass-outline" 
           title="Autopilot Failure" 
           description="Critical alert for autopilot disconnection"
           theme={theme}
@@ -294,28 +294,28 @@ const AccessibilityStep: React.FC<StepProps> = ({ styles }) => {
       </Text>
       <View style={styles.accessibilityList}>
         <AccessibilityFeature 
-          icon="volume-high" 
+          icon="volume-high-outline" 
           title="Screen Reader Support" 
           description="VoiceOver and TalkBack compatible"
           theme={theme}
           styles={styles}
         />
         <AccessibilityFeature 
-          icon="contrast" 
+          icon="contrast-outline" 
           title="High Contrast Mode" 
           description="Enhanced visibility in all conditions"
           theme={theme}
           styles={styles}
         />
         <AccessibilityFeature 
-          icon="text" 
+          icon="text-outline" 
           title="Large Text Support" 
           description="Scalable fonts for readability"
           theme={theme}
           styles={styles}
         />
         <AccessibilityFeature 
-          icon="hand-left" 
+          icon="hand-left-outline" 
           title="Marine Touch Targets" 
           description="Large buttons for wet hands & gloves"
           theme={theme}

@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 
 export interface HelpButtonProps {

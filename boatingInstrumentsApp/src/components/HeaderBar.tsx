@@ -139,7 +139,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </TouchableOpacity>
 
         {/* Center: App Title */}
-        <View style={styles.centerContent}>
+        <View style={styles.centerContent} pointerEvents="none">
           <Text style={styles.appTitle}>Boat Instruments</Text>
         </View>
 
@@ -154,7 +154,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               accessibilityLabel="Open autopilot controls"
               testID="autopilot-button"
             >
-              <Ionicons name="boat" size={20} color={theme.primary} />
+              <Ionicons name="boat-outline" size={20} color={theme.primary} />
             </TouchableOpacity>
           )}
           
@@ -232,10 +232,11 @@ const createStyles = (theme: any) =>
       fontWeight: 'normal',
     },
     centerContent: {
-      flex: 1,
+      position: 'absolute',
+      left: 0,
+      right: 0,
       alignItems: 'center',
       justifyContent: 'center',
-      marginHorizontal: 8,
     },
     appTitle: {
       fontSize: 16, // AC 3: 16pt

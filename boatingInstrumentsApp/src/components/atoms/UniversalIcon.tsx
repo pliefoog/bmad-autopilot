@@ -15,8 +15,8 @@ import { Platform } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 
 // Platform-specific icon imports
-// Use the module alias so metro/babel resolve to mock on web
-import Ionicons from 'react-native-vector-icons/Ionicons';
+// Use @expo/vector-icons for better web compatibility
+import { Ionicons } from '@expo/vector-icons';
 
 export interface UniversalIconProps {
   /** Ionicon name (e.g., 'navigate-outline', 'water-outline') */

@@ -33,6 +33,16 @@ const IconMap = {
   'boat-outline': '⛵',            // Sailboat for trip widget
   'color-palette-outline': '🎨',   // Theme switcher
   
+  // Additional marine icons from Widget Metadata Registry
+  'cloudy-outline': '☁️',          // Outside air temperature
+  'home-outline': '🏠',            // Inside air / main cabin
+  'bed-outline': '🛏️',             // Cabin locations
+  'fish-outline': '🐟',            // Live well / bait well
+  'snow-outline': '❄️',            // Freezer / refrigeration / wind chill
+  'flame-outline': '🔥',           // Heating system / exhaust gas
+  'rainy-outline': '🌧️',          // Dew point
+  'sunny-outline': '☀️',           // Heat index
+  
   // UI/Navigation icons (actively used)
   'settings-outline': '⚙️',
   'grid-outline': '▦',
@@ -53,10 +63,21 @@ const IconMap = {
   'chevron-forward-outline': '›',  // Right chevron for navigation
   'chevron-back-outline': '‹',     // Left chevron for back navigation
   'chevron-down-outline': '⌄',     // Down chevron for dropdowns
+  'chevron-down': '⌄',             // Down chevron (non-outline variant)
+  'chevron-up': '⌃',               // Up chevron for collapse
   'volume-high-outline': '🔊',     // Sound/volume
   'layers-outline': '📚',
   'trash-outline': '🗑️',          // Undo/Redo clear history
   'help-circle-outline': '❓',     // Help button
+  
+  // Onboarding icons
+  'arrow-back': '←',               // Back arrow
+  'arrow-forward': '→',            // Forward arrow
+  'accessibility-outline': '♿',   // Accessibility
+  'contrast-outline': '◐',        // Contrast/half circle
+  'text-outline': 'T',             // Text icon
+  'hand-left-outline': '✋',       // Hand gesture
+  'location-outline': '📍',        // GPS/location pin
   
   // Undo/Redo icons
   'arrow-undo': '↶',

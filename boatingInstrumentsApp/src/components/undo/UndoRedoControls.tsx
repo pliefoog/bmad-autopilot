@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 import { useUndoRedo, useKeyboardShortcuts } from '../../hooks/useUndoRedo';
 

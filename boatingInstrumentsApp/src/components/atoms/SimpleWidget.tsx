@@ -6,7 +6,7 @@ import {
   Animated, 
   StyleSheet,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 import { getUseNativeDriver } from '../../utils/animationUtils';
 
