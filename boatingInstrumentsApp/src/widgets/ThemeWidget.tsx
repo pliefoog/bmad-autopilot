@@ -366,10 +366,9 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
               Native
             </Text>
           </View>
-          <Switch
+          <ThemedSwitch
             value={nativeBrightnessControl}
             onValueChange={toggleNativeControl}
-            trackColor={{ false: theme.border, true: theme.text }}
           />
         </TouchableOpacity>
       )}
