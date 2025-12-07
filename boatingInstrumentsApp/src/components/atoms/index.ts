@@ -10,7 +10,7 @@ export { default as Input } from './Input';
 export { default as Label } from './Label';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as StatusIndicator } from './StatusIndicator';
-export { default as Switch } from './Switch';
+export { ThemedSwitch } from './ThemedSwitch';
 export { default as Tooltip } from './Tooltip';
 export { SimpleWidget } from './SimpleWidget';
 

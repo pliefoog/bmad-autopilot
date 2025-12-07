@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemeStore } from '../store/themeStore';
 import * as Brightness from 'expo-brightness';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
-import Switch from '../components/atoms/Switch';
+import { ThemedSwitch } from '../components/atoms/ThemedSwitch';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 

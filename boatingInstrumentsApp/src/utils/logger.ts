@@ -5,8 +5,8 @@
  * Set category flags to enable specific logging areas.
  */
 
-// Master toggle - set to false to disable ALL logging
-const ENABLE_LOGGING = false; // ✅ DISABLED BY DEFAULT - enable categories as needed
+// Master toggle - can be enabled at runtime
+let ENABLE_LOGGING = false; // ✅ DISABLED BY DEFAULT - enable categories as needed
 
 // Selective logging categories
 const LOG_CATEGORIES = {
@@ -19,97 +19,117 @@ const LOG_CATEGORIES = {
   NAVIGATION: false,    // Navigation, routing
   NETWORK: false,       // NMEA connections, data
   PERFORMANCE: false,   // Performance metrics
+  ALARM: false,         // Alarm configuration, triggers, audio
   REACT_ERRORS: true,   // React error boundaries
 };
 
 // Create logger with category support
+// All functions check flags DYNAMICALLY at call time
 const noop = () => {};
 
+// Store original console before any overrides
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  info: console.info,
+  error: console.error,
+};
+
 export const logger = {
-  // General logging (use sparingly)
-  log: ENABLE_LOGGING ? console.log.bind(console) : noop,
-  warn: ENABLE_LOGGING ? console.warn.bind(console) : noop,
-  info: ENABLE_LOGGING ? console.info.bind(console) : noop,
-  debug: ENABLE_LOGGING ? console.debug.bind(console) : noop,
-  error: ENABLE_LOGGING ? console.error.bind(console) : noop,
+  // General logging (use sparingly) - check flag dynamically
+  log: (...args: any[]) => ENABLE_LOGGING && originalConsole.log(...args),
+  warn: (...args: any[]) => ENABLE_LOGGING && originalConsole.warn(...args),
+  info: (...args: any[]) => ENABLE_LOGGING && originalConsole.info(...args),
+  debug: (...args: any[]) => ENABLE_LOGGING && originalConsole.log('[DEBUG]', ...args),
+  error: (...args: any[]) => ENABLE_LOGGING && originalConsole.error(...args),
   
   // Always show (for critical diagnostics)
-  always: console.log.bind(console),
+  always: (...args: any[]) => originalConsole.log(...args),
   
-  // Category-specific logging
-  layout: (...args: any[]) => LOG_CATEGORIES.LAYOUT && ENABLE_LOGGING && console.log('[Layout]', ...args),
-  dimensions: (...args: any[]) => LOG_CATEGORIES.DIMENSIONS && ENABLE_LOGGING && console.log('[Dimensions]', ...args),
-  platform: (...args: any[]) => LOG_CATEGORIES.PLATFORM && ENABLE_LOGGING && console.log('[Platform]', ...args),
-  widgets: (...args: any[]) => LOG_CATEGORIES.WIDGETS && ENABLE_LOGGING && console.log('[Widgets]', ...args),
-  theme: (...args: any[]) => LOG_CATEGORIES.THEME && ENABLE_LOGGING && console.log('[Theme]', ...args),
-  drag: (...args: any[]) => LOG_CATEGORIES.DRAG && ENABLE_LOGGING && console.log('[Drag]', ...args),
-  navigation: (...args: any[]) => LOG_CATEGORIES.NAVIGATION && ENABLE_LOGGING && console.log('[Navigation]', ...args),
-  network: (...args: any[]) => LOG_CATEGORIES.NETWORK && ENABLE_LOGGING && console.log('[Network]', ...args),
-  performance: (...args: any[]) => LOG_CATEGORIES.PERFORMANCE && ENABLE_LOGGING && console.log('[Performance]', ...args),
+  // Category-specific logging - check ONLY category flag, not master flag
+  layout: (...args: any[]) => LOG_CATEGORIES.LAYOUT && originalConsole.log('[Layout]', ...args),
+  dimensions: (...args: any[]) => LOG_CATEGORIES.DIMENSIONS && originalConsole.log('[Dimensions]', ...args),
+  platform: (...args: any[]) => LOG_CATEGORIES.PLATFORM && originalConsole.log('[Platform]', ...args),
+  widgets: (...args: any[]) => LOG_CATEGORIES.WIDGETS && originalConsole.log('[Widgets]', ...args),
+  theme: (...args: any[]) => LOG_CATEGORIES.THEME && originalConsole.log('[Theme]', ...args),
+  drag: (...args: any[]) => LOG_CATEGORIES.DRAG && originalConsole.log('[Drag]', ...args),
+  navigation: (...args: any[]) => LOG_CATEGORIES.NAVIGATION && originalConsole.log('[Navigation]', ...args),
+  network: (...args: any[]) => LOG_CATEGORIES.NETWORK && originalConsole.log('[Network]', ...args),
+  performance: (...args: any[]) => LOG_CATEGORIES.PERFORMANCE && originalConsole.log('[Performance]', ...args),
+  alarm: (...args: any[]) => LOG_CATEGORIES.ALARM && originalConsole.log('[Alarm]', ...args),
 };
 
 // Runtime control functions (available in dev console)
 if (typeof window !== 'undefined' && __DEV__) {
+  (window as any).getLogCategories = () => {
+    const categories = Object.keys(LOG_CATEGORIES);
+    originalConsole.log('📋 Available log categories:', categories.join(', '));
+    originalConsole.log('💡 Usage: enableLog("ALARM") or disableLog("ALARM")');
+    return categories;
+  };
+  
   (window as any).enableLog = (category: keyof typeof LOG_CATEGORIES) => {
     if (category in LOG_CATEGORIES) {
       LOG_CATEGORIES[category] = true;
-      console.log(`✅ ${category} logging enabled`);
+      // Don't set ENABLE_LOGGING = true globally, keep it selective
+      originalConsole.log(`✅ ${category} logging enabled`);
     } else {
-      console.log(`❌ Unknown category: ${category}. Available:`, Object.keys(LOG_CATEGORIES));
+      originalConsole.log(`❌ Unknown category: ${category}. Available:`, Object.keys(LOG_CATEGORIES));
     }
   };
   
   (window as any).disableLog = (category: keyof typeof LOG_CATEGORIES) => {
     if (category in LOG_CATEGORIES) {
       LOG_CATEGORIES[category] = false;
-      console.log(`🔇 ${category} logging disabled`);
+      originalConsole.log(`🔇 ${category} logging disabled`);
     }
   };
   
   (window as any).enableAllLogs = () => {
+    ENABLE_LOGGING = true; // Enable master flag
     Object.keys(LOG_CATEGORIES).forEach(key => {
       LOG_CATEGORIES[key as keyof typeof LOG_CATEGORIES] = true;
     });
-    console.log('✅ All logging categories enabled');
+    originalConsole.log('✅ All logging categories enabled');
   };
   
   (window as any).disableAllLogs = () => {
     Object.keys(LOG_CATEGORIES).forEach(key => {
       LOG_CATEGORIES[key as keyof typeof LOG_CATEGORIES] = false;
     });
-    console.log('🔇 All logging categories disabled');
+    originalConsole.log('🔇 All logging categories disabled');
   };
   
   (window as any).showLogStatus = () => {
-    console.log('📊 Logging Status:', LOG_CATEGORIES);
+    originalConsole.log('📊 Logging Status:', LOG_CATEGORIES);
+    originalConsole.log('📊 Master flag ENABLE_LOGGING:', ENABLE_LOGGING);
   };
   
-  console.log('📝 Logging controls: enableLog("LAYOUT") | disableLog("LAYOUT") | enableAllLogs() | disableAllLogs() | showLogStatus()');
-}
-
-// 🚨 NUCLEAR OPTION: Override global console to respect ENABLE_LOGGING flag
-// This catches ALL console.log/warn/info calls throughout the entire app
-if (!ENABLE_LOGGING && typeof window !== 'undefined' && __DEV__) {
-  const originalConsole = {
-    log: console.log,
-    warn: console.warn,
-    info: console.info,
-  };
+  originalConsole.log('📝 Logging controls: getLogCategories() | enableLog("ALARM") | disableLog("ALARM") | enableAllLogs() | disableAllLogs() | showLogStatus()');
   
-  // Save original console for logger to use
-  (window as any).__originalConsole = originalConsole;
-  
-  // Override console methods - only allow errors and explicitly allowed messages
+  // Override global console to block unwanted logs when ENABLE_LOGGING is false
   console.log = (...args: any[]) => {
-    // Allow messages that start with ✅, 📝, 🔇, 📊 (our logger controls)
+    // Always allow logger control messages
     const firstArg = String(args[0] || '');
-    if (firstArg.match(/^[✅📝🔇📊❌⚠️]/)) {
+    if (firstArg.match(/^[✅📝🔇📊❌⚠️💡]/)) {
+      originalConsole.log(...args);
+      return;
+    }
+    // Only allow other logs when ENABLE_LOGGING is true
+    if (ENABLE_LOGGING) {
       originalConsole.log(...args);
     }
-    // Otherwise silently drop
   };
   
-  console.warn = () => {}; // Silence all warnings
-  console.info = () => {}; // Silence all info
-  // Keep console.error untouched for critical errors
+  console.warn = (...args: any[]) => {
+    if (ENABLE_LOGGING) {
+      originalConsole.warn(...args);
+    }
+  };
+  
+  console.info = (...args: any[]) => {
+    if (ENABLE_LOGGING) {
+      originalConsole.info(...args);
+    }
+  };
 }

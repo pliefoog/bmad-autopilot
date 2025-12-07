@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '../../store/themeStore';
-import Switch from '../atoms/Switch';
+import { ThemedSwitch } from '../atoms/ThemedSwitch';
 
 interface TestSwitchDialogProps {
   visible: boolean;
@@ -63,7 +63,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
             <Text style={[styles.label, { color: theme.text }]}>
               Switch 1 (ON)
             </Text>
-            <Switch
+            <ThemedSwitch
               value={testSwitch1}
               onValueChange={setTestSwitch1}
               testID="test-switch-1"
@@ -74,7 +74,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
             <Text style={[styles.label, { color: theme.text }]}>
               Switch 2 (OFF)
             </Text>
-            <Switch
+            <ThemedSwitch
               value={testSwitch2}
               onValueChange={setTestSwitch2}
               testID="test-switch-2"
@@ -92,7 +92,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
             <Text style={[styles.label, { color: theme.text }]}>
               Switch 3 (ON) - ScrollView
             </Text>
-            <Switch
+            <ThemedSwitch
               value={testSwitch3}
               onValueChange={setTestSwitch3}
               testID="test-switch-3"
@@ -103,7 +103,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
             <Text style={[styles.label, { color: theme.text }]}>
               Switch 4 (OFF) - ScrollView
             </Text>
-            <Switch
+            <ThemedSwitch
               value={testSwitch4}
               onValueChange={setTestSwitch4}
               testID="test-switch-4"
@@ -129,7 +129,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
               onPress={() => setTestSwitch5(!testSwitch5)}
               activeOpacity={1}
             >
-              <Switch
+              <ThemedSwitch
                 value={testSwitch5}
                 onValueChange={setTestSwitch5}
                 testID="test-switch-5"
@@ -145,7 +145,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
               onPress={() => setTestSwitch6(!testSwitch6)}
               activeOpacity={1}
             >
-              <Switch
+              <ThemedSwitch
                 value={testSwitch6}
                 onValueChange={setTestSwitch6}
                 testID="test-switch-6"
@@ -181,7 +181,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
                   onPress={() => setDetailSwitch(!detailSwitch)}
                   activeOpacity={1}
                 >
-                  <Switch
+                  <ThemedSwitch
                     value={detailSwitch}
                     onValueChange={setDetailSwitch}
                     trackColor={{ false: theme.border, true: theme.interactive }}

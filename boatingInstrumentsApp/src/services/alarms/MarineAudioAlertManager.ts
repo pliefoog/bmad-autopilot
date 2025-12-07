@@ -183,7 +183,8 @@ export class MarineAudioAlertManager {
    */
   public async playAlarmSound(
     alarmType: CriticalAlarmType,
-    escalationLevel: AlarmEscalationLevel
+    escalationLevel: AlarmEscalationLevel,
+    overridePattern?: string
   ): Promise<boolean> {
     try {
       // Stop any existing sound for this alarm type
@@ -197,7 +198,7 @@ export class MarineAudioAlertManager {
       // Get user-configured audio pattern from alarm configuration
       const alarmConfig = CriticalAlarmConfiguration.getInstance();
       const config = alarmConfig.getAlarmConfig(alarmType);
-      const configuredPattern = config?.audioPattern;
+      const configuredPattern = overridePattern || config?.audioPattern;
       
       // Get sound configuration for this alarm type with user preference
       const soundConfig = this.getAlarmSoundConfig(alarmType, escalationLevel, configuredPattern);
@@ -324,13 +325,14 @@ export class MarineAudioAlertManager {
   public async testAlarmSound(
     alarmType: CriticalAlarmType,
     escalationLevel: AlarmEscalationLevel = AlarmEscalationLevel.WARNING,
-    duration: number = 3000
+    duration: number = 3000,
+    audioPattern?: string
   ): Promise<boolean> {
     try {
-      console.log('MarineAudioAlertManager: Testing alarm sound', { alarmType, escalationLevel, duration });
+      console.log('MarineAudioAlertManager: Testing alarm sound', { alarmType, escalationLevel, duration, audioPattern });
       
-      // Play the test sound
-      const result = await this.playAlarmSound(alarmType, escalationLevel);
+      // Play the test sound with optional pattern override
+      const result = await this.playAlarmSound(alarmType, escalationLevel, audioPattern);
       
       if (result) {
         // Stop the test sound after specified duration

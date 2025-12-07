@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Switch from '../atoms/Switch';
+import { ThemedSwitch } from '../atoms/ThemedSwitch';
 import { useTheme } from '../../store/themeStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { marineTouchService } from '../../services/marine/MarineTouchService';
@@ -35,11 +35,9 @@ export const GloveModeSettings: React.FC = () => {
             Enhanced touch targets and gesture tolerances for wearing gloves at sea
           </Text>
         </View>
-        <Switch
+        <ThemedSwitch
           value={gloveMode}
           onValueChange={handleToggle}
-          trackColor={{ false: theme.border, true: theme.interactive }}
-          ios_backgroundColor={theme.border}
         />
       </View>
       
