@@ -673,9 +673,10 @@ export class MarineAudioAlertManager {
     soundConfig: any,
     escalationLevel: AlarmEscalationLevel
   ): Promise<boolean> {
-    if (Platform.OS === 'web' && this.audioContext) {
+    // Prefer web audio if context is available (handles web and fallback cases)
+    if (this.audioContext) {
       return await this.generateWebAudioAlarm(alarmType, soundConfig, escalationLevel);
-    } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    } else if ((Platform.OS === 'ios' || Platform.OS === 'android') && Audio) {
       return await this.generateMobileAudioAlarm(alarmType, soundConfig, escalationLevel);
     } else {
       console.log('MarineAudioAlertManager: Algorithmic sound generation not supported for platform');
@@ -745,6 +746,11 @@ export class MarineAudioAlertManager {
     escalationLevel: AlarmEscalationLevel
   ): Promise<boolean> {
     try {
+      if (!Audio) {
+        console.error('MarineAudioAlertManager: expo-av Audio not available for mobile alarm generation');
+        return false;
+      }
+      
       // Get frequency based on alarm type and marine standards
       const frequency = soundConfig.frequency || this.getMarineAlarmFrequency(alarmType);
       
