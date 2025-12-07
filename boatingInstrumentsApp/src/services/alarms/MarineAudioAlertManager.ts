@@ -11,7 +11,11 @@ import { CriticalAlarmConfiguration } from './CriticalAlarmConfiguration';
 // Conditionally import expo-av only on mobile platforms
 let Audio: any = null;
 if (Platform.OS === 'ios' || Platform.OS === 'android') {
-  Audio = require('expo-av').Audio;
+  try {
+    Audio = require('expo-av').Audio;
+  } catch (error) {
+    console.warn('MarineAudioAlertManager: expo-av not available on this platform');
+  }
 }
 
 interface AudioSystemCapabilities {
