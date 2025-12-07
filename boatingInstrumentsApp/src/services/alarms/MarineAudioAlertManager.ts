@@ -5,9 +5,14 @@
  */
 
 import { Platform } from 'react-native';
-import { Audio } from 'expo-av';
 import { CriticalAlarmType, AlarmEscalationLevel, MarineAudioConfig } from './types';
 import { CriticalAlarmConfiguration } from './CriticalAlarmConfiguration';
+
+// Conditionally import expo-av only on mobile platforms
+let Audio: any = null;
+if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  Audio = require('expo-av').Audio;
+}
 
 interface AudioSystemCapabilities {
   maxVolume: number;
