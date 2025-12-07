@@ -131,6 +131,11 @@ export class MarineAudioAlertManager {
    */
   private async initializeIOSAudio(): Promise<void> {
     try {
+      if (!Audio) {
+        console.warn('MarineAudioAlertManager: expo-av Audio not available');
+        return;
+      }
+      
       // Configure expo-av audio mode for iOS alarms
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -151,6 +156,11 @@ export class MarineAudioAlertManager {
    */
   private async initializeAndroidAudio(): Promise<void> {
     try {
+      if (!Audio) {
+        console.warn('MarineAudioAlertManager: expo-av Audio not available');
+        return;
+      }
+      
       // Configure expo-av audio mode for Android alarms
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
