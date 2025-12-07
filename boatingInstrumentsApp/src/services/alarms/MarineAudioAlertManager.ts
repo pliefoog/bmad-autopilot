@@ -5,6 +5,7 @@
  */
 
 import { Platform } from 'react-native';
+import { Audio } from 'expo-av';
 import { CriticalAlarmType, AlarmEscalationLevel, MarineAudioConfig } from './types';
 import { CriticalAlarmConfiguration } from './CriticalAlarmConfiguration';
 
@@ -121,20 +122,16 @@ export class MarineAudioAlertManager {
    */
   private async initializeIOSAudio(): Promise<void> {
     try {
-      // This would use react-native-sound or expo-av with native iOS configuration
-      // Set audio session category to AVAudioSessionCategoryPlayback for alarm priority
+      // Configure expo-av audio mode for iOS alarms
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true, // Critical: play alarms even in silent mode
+        staysActiveInBackground: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
       
-      // Example configuration (requires native module):
-      // await AudioSession.setCategory('playback', {
-      //   mixWithOthers: false, // Override other audio for alarms
-      //   allowAirPlay: false,
-      //   allowBluetooth: true,
-      //   allowBluetoothA2DP: true,
-      // });
-      
-      // await AudioSession.setActive(true);
-      
-      console.log('MarineAudioAlertManager: iOS AVAudioSession initialized');
+      console.log('MarineAudioAlertManager: iOS AVAudioSession initialized with expo-av');
     } catch (error) {
       console.error('MarineAudioAlertManager: iOS audio initialization failed', error);
     }
@@ -145,14 +142,16 @@ export class MarineAudioAlertManager {
    */
   private async initializeAndroidAudio(): Promise<void> {
     try {
-      // This would use react-native-sound or expo-av with native Android configuration
-      // Set audio stream type to STREAM_ALARM for maximum priority
+      // Configure expo-av audio mode for Android alarms
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: false, // Don't lower alarm volume for other audio
+        playThroughEarpieceAndroid: false, // Use speaker for alarms
+      });
       
-      // Example configuration (requires native module):
-      // await AudioManager.setStreamType('ALARM');
-      // await AudioManager.setVolumeControlStream('ALARM');
-      
-      console.log('MarineAudioAlertManager: Android AudioManager initialized');
+      console.log('MarineAudioAlertManager: Android AudioManager initialized with expo-av');
     } catch (error) {
       console.error('MarineAudioAlertManager: Android audio initialization failed', error);
     }
@@ -242,8 +241,16 @@ export class MarineAudioAlertManager {
             gainNode.disconnect();
             this.gainNodes.delete(alarmType.toString());
           }
+        } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
+          // Stop expo-av Sound object
+          if (activeSound.stopAsync) {
+            await activeSound.stopAsync();
+          }
+          if (activeSound.unloadAsync) {
+            await activeSound.unloadAsync();
+          }
         } else {
-          // Stop native audio (React Native Sound or Expo AV)
+          // Fallback for other platforms
           if (activeSound.stop) {
             activeSound.stop();
           }
@@ -649,9 +656,10 @@ export class MarineAudioAlertManager {
   ): Promise<boolean> {
     if (Platform.OS === 'web' && this.audioContext) {
       return await this.generateWebAudioAlarm(alarmType, soundConfig, escalationLevel);
+    } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      return await this.generateMobileAudioAlarm(alarmType, soundConfig, escalationLevel);
     } else {
-      // For mobile platforms, would use platform-specific tone generation
-      console.log('MarineAudioAlertManager: Algorithmic sound generation not yet implemented for mobile');
+      console.log('MarineAudioAlertManager: Algorithmic sound generation not supported for platform');
       return false;
     }
   }
@@ -707,6 +715,120 @@ export class MarineAudioAlertManager {
       console.error('MarineAudioAlertManager: Web Audio alarm generation failed', error);
       return false;
     }
+  }
+
+  /**
+   * Generate alarm sound for iOS/Android using expo-av
+   */
+  private async generateMobileAudioAlarm(
+    alarmType: CriticalAlarmType,
+    soundConfig: any,
+    escalationLevel: AlarmEscalationLevel
+  ): Promise<boolean> {
+    try {
+      // Get frequency based on alarm type and marine standards
+      const frequency = soundConfig.frequency || this.getMarineAlarmFrequency(alarmType);
+      
+      // Calculate volume for marine environment (>85dB requirement)
+      const volume = this.calculateVolumeForEscalation(escalationLevel);
+      
+      // Generate tone using data URI with WAV audio
+      const audioUri = this.generateToneDataUri(frequency, volume, soundConfig.pattern || 'continuous');
+      
+      // Create and configure sound object
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { 
+          shouldPlay: true,
+          volume: volume,
+          isLooping: soundConfig.pattern === 'continuous',
+        }
+      );
+      
+      // Store sound reference for cleanup
+      this.activeSounds.set(alarmType, sound);
+      
+      console.log(`MarineAudioAlertManager: Mobile alarm generated for ${alarmType} at ${frequency}Hz`);
+      return true;
+      
+    } catch (error) {
+      console.error('MarineAudioAlertManager: Mobile audio alarm generation failed', error);
+      return false;
+    }
+  }
+
+  /**
+   * Generate a WAV audio data URI for a tone at specified frequency
+   * Creates a simple tone that can be played via expo-av
+   */
+  private generateToneDataUri(frequency: number, volume: number, pattern: string): string {
+    const sampleRate = 44100;
+    const duration = pattern === 'continuous' ? 2 : 0.5; // 2s for continuous, 0.5s for intermittent
+    const numSamples = Math.floor(sampleRate * duration);
+    
+    // Create WAV file in memory
+    const wavHeader = this.createWavHeader(numSamples, sampleRate);
+    const samples = new Int16Array(numSamples);
+    
+    // Generate square wave samples (better penetration through marine noise)
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
+      samples[i] = Math.floor(value * volume * 32767); // 16-bit PCM
+    }
+    
+    // Combine header and samples
+    const wavData = new Uint8Array(wavHeader.length + samples.length * 2);
+    wavData.set(wavHeader, 0);
+    wavData.set(new Uint8Array(samples.buffer), wavHeader.length);
+    
+    // Convert to base64 data URI
+    const base64 = this.arrayBufferToBase64(wavData.buffer);
+    return `data:audio/wav;base64,${base64}`;
+  }
+
+  /**
+   * Create WAV file header
+   */
+  private createWavHeader(numSamples: number, sampleRate: number): Uint8Array {
+    const header = new ArrayBuffer(44);
+    const view = new DataView(header);
+    
+    // RIFF chunk descriptor
+    this.writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    this.writeString(view, 8, 'WAVE');
+    
+    // fmt sub-chunk
+    this.writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true); // subchunk1 size
+    view.setUint16(20, 1, true); // audio format (1 = PCM)
+    view.setUint16(22, 1, true); // num channels
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true); // byte rate
+    view.setUint16(32, 2, true); // block align
+    view.setUint16(34, 16, true); // bits per sample
+    
+    // data sub-chunk
+    this.writeString(view, 36, 'data');
+    view.setUint32(40, numSamples * 2, true);
+    
+    return new Uint8Array(header);
+  }
+
+  private writeString(view: DataView, offset: number, str: string): void {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  }
+
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   }
   
   private getMarineAlarmFrequency(alarmType: CriticalAlarmType): number {
