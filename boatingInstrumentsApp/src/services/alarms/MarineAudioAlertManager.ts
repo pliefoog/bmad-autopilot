@@ -1011,9 +1011,6 @@ export class MarineAudioAlertManager {
     
     return samples;
   }
-    const base64 = this.arrayBufferToBase64(wavData.buffer);
-    return `data:audio/wav;base64,${base64}`;
-  }
 
   /**
    * Create WAV file header
