@@ -262,11 +262,18 @@ export class MarineAudioAlertManager {
           }
         } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
           // Stop expo-av Sound object
-          if (activeSound.stopAsync) {
-            await activeSound.stopAsync();
-          }
-          if (activeSound.unloadAsync) {
-            await activeSound.unloadAsync();
+          try {
+            if (activeSound.stopAsync) {
+              await activeSound.stopAsync();
+            }
+            if (activeSound.unloadAsync) {
+              await activeSound.unloadAsync();
+            }
+          } catch (error: any) {
+            // Sound may already be unloaded if it finished playing
+            if (!error.message?.includes('not loaded')) {
+              console.error('MarineAudioAlertManager: Error stopping mobile sound', error);
+            }
           }
         } else {
           // Fallback for other platforms
@@ -757,6 +764,8 @@ export class MarineAudioAlertManager {
       // Calculate volume for marine environment (>85dB requirement)
       const volume = this.calculateVolumeForEscalation(escalationLevel);
       
+      console.log(`MarineAudioAlertManager: Generating mobile alarm - Type: ${alarmType}, Freq: ${frequency}Hz, Vol: ${volume.toFixed(2)}, Pattern: ${soundConfig.pattern || 'continuous'}`);
+      
       // Generate tone using data URI with WAV audio
       const audioUri = this.generateToneDataUri(frequency, volume, soundConfig.pattern || 'continuous');
       
@@ -858,12 +867,37 @@ export class MarineAudioAlertManager {
   
   private getMarineAlarmFrequency(alarmType: CriticalAlarmType): number {
     // Frequencies chosen for maximum penetration through marine noise
+    // Different frequency ranges help distinguish alarm types audibly
     const frequencyMap = {
-      [CriticalAlarmType.SHALLOW_WATER]: 800, // Mid-frequency for urgent navigation
-      [CriticalAlarmType.ENGINE_OVERHEAT]: 1200, // Higher frequency for engine alerts
-      [CriticalAlarmType.LOW_BATTERY]: 600, // Lower frequency for power alerts
-      [CriticalAlarmType.AUTOPILOT_FAILURE]: 1000, // Standard alarm frequency
-      [CriticalAlarmType.GPS_LOSS]: 900, // Distinct from other navigation alarms
+      // Navigation alarms (700-900 Hz range)
+      [CriticalAlarmType.SHALLOW_WATER]: 800,
+      [CriticalAlarmType.DEEP_WATER]: 750,
+      [CriticalAlarmType.HIGH_SPEED]: 850,
+      
+      // Engine alarms (1000-1200 Hz range - higher for urgency)
+      [CriticalAlarmType.ENGINE_OVERHEAT]: 1200,
+      [CriticalAlarmType.ENGINE_LOW_TEMP]: 1050,
+      [CriticalAlarmType.ENGINE_HIGH_RPM]: 1150,
+      [CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE]: 1100,
+      
+      // Electrical alarms (600-700 Hz range - lower for power issues)
+      [CriticalAlarmType.LOW_BATTERY]: 600,
+      [CriticalAlarmType.HIGH_BATTERY]: 650,
+      [CriticalAlarmType.LOW_ALTERNATOR]: 620,
+      [CriticalAlarmType.HIGH_CURRENT]: 680,
+      
+      // Wind alarms (900-950 Hz range)
+      [CriticalAlarmType.HIGH_WIND]: 920,
+      [CriticalAlarmType.WIND_GUST]: 950,
+      
+      // System alarms (950-1050 Hz range)
+      [CriticalAlarmType.AUTOPILOT_FAILURE]: 1000,
+      [CriticalAlarmType.GPS_LOSS]: 980,
+      
+      // Tank alarms (700-750 Hz range)
+      [CriticalAlarmType.LOW_FUEL]: 720,
+      [CriticalAlarmType.LOW_WATER]: 740,
+      [CriticalAlarmType.HIGH_WASTE_WATER]: 760,
     };
     
     return frequencyMap[alarmType] || 1000;
