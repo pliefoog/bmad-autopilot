@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
@@ -476,7 +477,7 @@ const App = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.appBackground }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.appBackground }]} edges={['bottom']}>
       {/* Header */}
       <HeaderBar
         onShowConnectionSettings={() => setShowConnectionDialog(true)}
@@ -582,7 +583,7 @@ const App = () => {
           TEST SWITCH
         </Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

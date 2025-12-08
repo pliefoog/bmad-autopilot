@@ -134,8 +134,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         style={[
           styles.headerContainer, 
           { 
-            paddingTop: insets.top + 8, // Safe area + 8pt padding
-            paddingBottom: 8, // 8pt bottom padding
+            paddingTop: insets.top + 2, // Safe area + 2pt padding (Apple HIG: compact header)
+            paddingBottom: 2, // 2pt bottom padding
           }
         ]} 
         testID="header-container"
@@ -222,9 +222,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 const createStyles = (theme: any, insets: { top: number; bottom: number; left: number; right: number }) =>
   StyleSheet.create({
     headerContainer: {
-      // Remove fixed height - use padding to create space
+      // Remove fixed height - use minimal padding per Apple HIG
       // This ensures content is centered within the visible area, not the entire container
-      paddingVertical: 8, // 8pt top + 8pt bottom = 16pt total padding
+      paddingVertical: 2, // 2pt top + 2pt bottom = compact header
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -249,7 +249,7 @@ const createStyles = (theme: any, insets: { top: number; bottom: number; left: n
       position: 'absolute',
       left: 0,
       right: 0,
-      top: insets.top + 8, // Match the container's top padding
+      top: insets.top + 2, // Match the container's top padding
       height: 44, // Match button heights for proper vertical alignment
       alignItems: 'center',
       justifyContent: 'center',
