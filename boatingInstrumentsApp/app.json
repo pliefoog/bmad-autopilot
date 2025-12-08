@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Boating Instruments App",
-    "slug": "boating-instruments-app",
-    "scheme": "boating-instruments",
+    "name": "easyNAV.pro",
+    "slug": "easynav-pro",
+    "scheme": "easynav",
     "version": "0.0.1",
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
@@ -35,10 +35,10 @@
       ]
     ],
     "android": {
-      "package": "com.anonymous.boatinginstrumentsapp"
+      "package": "com.easynav.pro"
     },
     "ios": {
-      "bundleIdentifier": "com.anonymous.boatinginstrumentsapp",
+      "bundleIdentifier": "com.easynav.pro",
       "supportsTablet": true,
       "requireFullScreen": false,
       "infoPlist": {

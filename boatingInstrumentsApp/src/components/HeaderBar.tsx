@@ -144,7 +144,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* Center: App Title */}
         <View style={styles.centerContent} pointerEvents="none">
-          <Text style={styles.appTitle}>Boat Instruments</Text>
+          <Text style={styles.appTitle}>easyNAV.pro</Text>
         </View>
 
         {/* Right: Autopilot + Connection Status */}
