@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
@@ -63,6 +63,7 @@ const App = () => {
   const activeAlarms = useAlarmStore(state => state.activeAlarms);
   const theme = useTheme();
   const toast = useToast();
+  const insets = useSafeAreaInsets(); // For bottom spacer only
   const defaults = getConnectionDefaults();
   const [ip, setIp] = useState(defaults.ip);
   const [port, setPort] = useState(defaults.port.toString());
@@ -492,7 +493,7 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <DashboardLayoutProvider>
         <View style={[styles.appContent, { backgroundColor: theme.appBackground }]}>
           {/* Header */}
@@ -521,6 +522,11 @@ const App = () => {
 
           {/* Main Dashboard - Dynamic Widget Loading */}
           <DashboardContent />
+          
+          {/* Bottom Safe Area Spacer - ensures content doesn't go under home indicator */}
+          {insets.bottom > 0 && (
+            <View style={{ height: insets.bottom, backgroundColor: theme.appBackground }} />
+          )}
       
       {/* Modals */}
       <AutopilotControlScreen
