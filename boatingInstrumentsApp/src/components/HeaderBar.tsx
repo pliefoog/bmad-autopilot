@@ -6,7 +6,9 @@ import {
   StyleSheet,
   Dimensions,
   AccessibilityInfo,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore, ConnectionStatus } from '../store/nmeaStore';
 import { HamburgerMenu } from './organisms/HamburgerMenu';
@@ -52,6 +54,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const theme = useTheme();
   const { connectionStatus } = useNmeaStore();
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const getStatusColor = (status: ConnectionStatus): string => {
     switch (status) {
@@ -127,7 +130,16 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   return (
     <>
-      <View style={styles.headerContainer} testID="header-container">
+      <View 
+        style={[
+          styles.headerContainer, 
+          { 
+            paddingTop: insets.top + 8, // Safe area + 8pt padding
+            paddingBottom: 8, // 8pt bottom padding
+          }
+        ]} 
+        testID="header-container"
+      >
         {/* Left: Hamburger Menu Icon */}
         <TouchableOpacity
           style={styles.hamburgerButton}
@@ -210,7 +222,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 const createStyles = (theme: any) =>
   StyleSheet.create({
     headerContainer: {
-      height: 60, // AC 1: 60pt height
+      // Remove fixed height - use padding to create space
+      // This ensures content is centered within the visible area, not the entire container
+      paddingVertical: 8, // 8pt top + 8pt bottom = 16pt total padding
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -218,8 +232,7 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.surface, // AC 5: theme.surface
       borderBottomWidth: 1,
       borderBottomColor: theme.border, // AC 5: theme.border
-      // Handle notches/safe areas automatically with React Native
-      paddingTop: 0, // Let React Native handle safe area padding
+      // paddingTop will be overridden by inline style with safe area inset
     },
     hamburgerButton: {
       width: 44, // AC 2: 44×44pt touchable area
