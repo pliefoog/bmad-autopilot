@@ -792,31 +792,224 @@ export class MarineAudioAlertManager {
   }
 
   /**
-   * Generate a WAV audio data URI for a tone at specified frequency
-   * Creates a simple tone that can be played via expo-av
+   * Generate a WAV audio data URI for a tone at specified frequency with pattern
+   * Creates marine-standard alarm patterns (ISO 9692)
    */
   private generateToneDataUri(frequency: number, volume: number, pattern: string): string {
     const sampleRate = 44100;
-    const duration = pattern === 'continuous' ? 2 : 0.5; // 2s for continuous, 0.5s for intermittent
-    const numSamples = Math.floor(sampleRate * duration);
     
-    // Create WAV file in memory
-    const wavHeader = this.createWavHeader(numSamples, sampleRate);
-    const samples = new Int16Array(numSamples);
+    // Pattern-specific durations and configurations
+    let duration: number;
+    let samples: Int16Array;
     
-    // Generate square wave samples (better penetration through marine noise)
-    for (let i = 0; i < numSamples; i++) {
-      const t = i / sampleRate;
-      const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
-      samples[i] = Math.floor(value * volume * 32767); // 16-bit PCM
+    switch (pattern) {
+      case 'continuous':
+        duration = 2; // 2 second continuous tone
+        samples = this.generateContinuousTone(frequency, volume, duration, sampleRate);
+        break;
+        
+      case 'intermittent':
+        duration = 2; // 2 seconds: 0.5s on, 0.5s off, 0.5s on, 0.5s off
+        samples = this.generateIntermittentTone(frequency, volume, duration, sampleRate);
+        break;
+        
+      case 'pulsing':
+      case 'rapid_pulse':
+        duration = 2; // 2 seconds of rapid pulses
+        samples = this.generatePulsingTone(frequency, volume, duration, sampleRate);
+        break;
+        
+      case 'warble':
+        duration = 2; // 2 seconds of warble
+        samples = this.generateWarbleTone(frequency, volume, duration, sampleRate);
+        break;
+        
+      case 'morse_u':
+        duration = 1.5; // One Morse "U" group: ·· — (short short long)
+        samples = this.generateMorseUTone(frequency, volume, sampleRate);
+        break;
+        
+      case 'triple_blast':
+        duration = 2; // Three short blasts with gaps
+        samples = this.generateTripleBlastTone(frequency, volume, sampleRate);
+        break;
+        
+      case 'continuous_descending':
+        duration = 2; // 2 second descending tone
+        samples = this.generateDescendingTone(frequency, volume, duration, sampleRate);
+        break;
+        
+      default:
+        duration = 2;
+        samples = this.generateContinuousTone(frequency, volume, duration, sampleRate);
     }
     
-    // Combine header and samples
+    // Create WAV file
+    const wavHeader = this.createWavHeader(samples.length, sampleRate);
     const wavData = new Uint8Array(wavHeader.length + samples.length * 2);
     wavData.set(wavHeader, 0);
     wavData.set(new Uint8Array(samples.buffer), wavHeader.length);
     
     // Convert to base64 data URI
+    const base64 = this.arrayBufferToBase64(wavData.buffer);
+    return `data:audio/wav;base64,${base64}`;
+  }
+  
+  private generateContinuousTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
+      samples[i] = Math.floor(value * volume * 32767);
+    }
+    
+    return samples;
+  }
+  
+  private generateIntermittentTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    const onTime = 0.5; // 500ms on
+    const offTime = 0.5; // 500ms off
+    const cycleTime = onTime + offTime;
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const cyclePosition = t % cycleTime;
+      
+      if (cyclePosition < onTime) {
+        const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
+        samples[i] = Math.floor(value * volume * 32767);
+      } else {
+        samples[i] = 0; // Silence during off period
+      }
+    }
+    
+    return samples;
+  }
+  
+  private generatePulsingTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    const pulseRate = 4; // 4 Hz (4 pulses per second)
+    const dutyCycle = 0.3; // 30% on, 70% off
+    const pulsePeriod = 1 / pulseRate;
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const pulsePosition = (t % pulsePeriod) / pulsePeriod;
+      
+      if (pulsePosition < dutyCycle) {
+        const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
+        samples[i] = Math.floor(value * volume * 32767);
+      } else {
+        samples[i] = 0;
+      }
+    }
+    
+    return samples;
+  }
+  
+  private generateWarbleTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    const warbleRate = 4; // 4 Hz warble
+    const warbleDepth = 150; // ±150 Hz modulation
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const modulation = Math.sin(2 * Math.PI * warbleRate * t) * warbleDepth;
+      const modulatedFreq = frequency + modulation;
+      const value = Math.sin(2 * Math.PI * modulatedFreq * t) > 0 ? 1 : -1;
+      samples[i] = Math.floor(value * volume * 32767);
+    }
+    
+    return samples;
+  }
+  
+  private generateMorseUTone(frequency: number, volume: number, sampleRate: number): Int16Array {
+    // Morse "U": ·· — (dit dit dah) - ISO maritime "You are in danger"
+    const dit = 0.15;  // Short beep
+    const dah = 0.45;  // Long beep  
+    const gap = 0.15;  // Gap between elements
+    const duration = dit + gap + dit + gap + dah;
+    
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    
+    const timeline = [
+      { start: 0, end: dit, on: true },          // First dit
+      { start: dit, end: dit + gap, on: false },  // Gap
+      { start: dit + gap, end: dit + gap + dit, on: true },  // Second dit
+      { start: dit + gap + dit, end: dit + gap + dit + gap, on: false }, // Gap
+      { start: dit + gap + dit + gap, end: duration, on: true }  // Dah
+    ];
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const segment = timeline.find(s => t >= s.start && t < s.end);
+      
+      if (segment && segment.on) {
+        const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
+        samples[i] = Math.floor(value * volume * 32767);
+      } else {
+        samples[i] = 0;
+      }
+    }
+    
+    return samples;
+  }
+  
+  private generateTripleBlastTone(frequency: number, volume: number, sampleRate: number): Int16Array {
+    // Three short blasts: blast-gap-blast-gap-blast
+    const blastDuration = 0.4;  // 400ms blast
+    const gapDuration = 0.2;    // 200ms gap
+    const duration = (blastDuration * 3) + (gapDuration * 2);
+    
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    
+    const timeline = [
+      { start: 0, end: blastDuration, on: true },
+      { start: blastDuration, end: blastDuration + gapDuration, on: false },
+      { start: blastDuration + gapDuration, end: (blastDuration * 2) + gapDuration, on: true },
+      { start: (blastDuration * 2) + gapDuration, end: (blastDuration * 2) + (gapDuration * 2), on: false },
+      { start: (blastDuration * 2) + (gapDuration * 2), end: duration, on: true }
+    ];
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const segment = timeline.find(s => t >= s.start && t < s.end);
+      
+      if (segment && segment.on) {
+        const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
+        samples[i] = Math.floor(value * volume * 32767);
+      } else {
+        samples[i] = 0;
+      }
+    }
+    
+    return samples;
+  }
+  
+  private generateDescendingTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+    const numSamples = Math.floor(sampleRate * duration);
+    const samples = new Int16Array(numSamples);
+    const startFreq = frequency;
+    const endFreq = frequency * 0.5; // Descend to half frequency
+    
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      const progress = t / duration;
+      const currentFreq = startFreq + (endFreq - startFreq) * progress;
+      const value = Math.sin(2 * Math.PI * currentFreq * t) > 0 ? 1 : -1;
+      samples[i] = Math.floor(value * volume * 32767);
+    }
+    
+    return samples;
+  }
     const base64 = this.arrayBufferToBase64(wavData.buffer);
     return `data:audio/wav;base64,${base64}`;
   }
