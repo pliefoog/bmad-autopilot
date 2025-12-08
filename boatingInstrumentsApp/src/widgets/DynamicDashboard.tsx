@@ -355,6 +355,15 @@ export const DynamicDashboard: React.FC = () => {
     }
   }, [goToNextPage, goToPrevPage]);
 
+  // Wait for context dimensions before rendering
+  if (!contextReady || dimensions.width === 0 || dimensions.height === 0) {
+    return (
+      <View style={[styles.root, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.text }}>Loading dashboard...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       {/* Widget Display Area - Conditional: ScrollView (mobile) or Fixed Grid (tablet/desktop) */}
