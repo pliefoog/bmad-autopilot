@@ -107,7 +107,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     return session?.isRecording ? '■' : '●';
   };
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, insets);
 
   const handleConnectionLEDPress = () => {
     if (onShowConnectionSettings) {
@@ -219,7 +219,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   );
 };
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: any, insets: { top: number; bottom: number; left: number; right: number }) =>
   StyleSheet.create({
     headerContainer: {
       // Remove fixed height - use padding to create space
@@ -249,6 +249,8 @@ const createStyles = (theme: any) =>
       position: 'absolute',
       left: 0,
       right: 0,
+      top: insets.top + 8, // Match the container's top padding
+      height: 44, // Match button heights for proper vertical alignment
       alignItems: 'center',
       justifyContent: 'center',
     },
