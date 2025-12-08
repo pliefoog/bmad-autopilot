@@ -8,7 +8,6 @@ import {
   AccessibilityInfo,
   Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore, ConnectionStatus } from '../store/nmeaStore';
 import { HamburgerMenu } from './organisms/HamburgerMenu';
@@ -54,7 +53,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const theme = useTheme();
   const { connectionStatus } = useNmeaStore();
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
-  const insets = useSafeAreaInsets();
+  const styles = createStyles(theme);
 
   const getStatusColor = (status: ConnectionStatus): string => {
     switch (status) {
@@ -107,8 +106,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     return session?.isRecording ? '■' : '●';
   };
 
-  const styles = createStyles(theme, insets);
-
   const handleConnectionLEDPress = () => {
     if (onShowConnectionSettings) {
       onShowConnectionSettings();
@@ -131,13 +128,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <>
       <View 
-        style={[
-          styles.headerContainer, 
-          { 
-            paddingTop: insets.top + 2, // Safe area + 2pt padding (Apple HIG: compact header)
-            paddingBottom: 2, // 2pt bottom padding
-          }
-        ]} 
+        style={styles.headerContainer}
         testID="header-container"
       >
         {/* Left: Hamburger Menu Icon */}
@@ -219,12 +210,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   );
 };
 
-const createStyles = (theme: any, insets: { top: number; bottom: number; left: number; right: number }) =>
+const createStyles = (theme: any) =>
   StyleSheet.create({
     headerContainer: {
-      // Remove fixed height - use minimal padding per Apple HIG
-      // This ensures content is centered within the visible area, not the entire container
-      paddingVertical: 2, // 2pt top + 2pt bottom = compact header
+      // SafeAreaView at root handles top inset padding
+      paddingVertical: 8, // Standard vertical padding
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -232,7 +222,6 @@ const createStyles = (theme: any, insets: { top: number; bottom: number; left: n
       backgroundColor: theme.surface, // AC 5: theme.surface
       borderBottomWidth: 1,
       borderBottomColor: theme.border, // AC 5: theme.border
-      // paddingTop will be overridden by inline style with safe area inset
     },
     hamburgerButton: {
       width: 44, // AC 2: 44×44pt touchable area
@@ -249,7 +238,6 @@ const createStyles = (theme: any, insets: { top: number; bottom: number; left: n
       position: 'absolute',
       left: 0,
       right: 0,
-      top: insets.top + 2, // Match the container's top padding
       height: 44, // Match button heights for proper vertical alignment
       alignItems: 'center',
       justifyContent: 'center',

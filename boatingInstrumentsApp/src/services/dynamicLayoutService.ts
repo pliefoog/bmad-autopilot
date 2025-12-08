@@ -71,9 +71,26 @@ export class DynamicLayoutService {
    * - 1024-1279px: 5 columns, pagination (tablet landscape)
    * - 1280-1919px: 6 columns, pagination (desktop)
    * - 1920+: 8 columns, pagination (large desktop)
+   * 
+   * @param headerHeight - Height reserved for header (default: 60, pass 0 if measured dimensions exclude header)
+   * @param footerHeight - Height reserved for footer (default: 0)
+   * @param widgetCount - Number of widgets to display
+   * @param width - Optional measured width (defaults to Dimensions.get('window').width)
+   * @param height - Optional measured height (defaults to Dimensions.get('window').height)
    */
-  static getGridConfig(headerHeight: number = 60, footerHeight: number = 88, widgetCount: number = 0): GridConfig {
-    const { width: screenWidth, height: screenHeight } = this.getScreenDimensions();
+  static getGridConfig(
+    headerHeight: number = 60, 
+    footerHeight: number = 0, 
+    widgetCount: number = 0,
+    width?: number,
+    height?: number
+  ): GridConfig {
+    // Use provided dimensions or fall back to window dimensions
+    const screenDimensions = width !== undefined && height !== undefined 
+      ? { width, height }
+      : this.getScreenDimensions();
+    const screenWidth = screenDimensions.width;
+    const screenHeight = screenDimensions.height;
     
     // Debug logging for iPad detection
     logger.layout(`Screen dimensions: ${screenWidth}×${screenHeight}`);

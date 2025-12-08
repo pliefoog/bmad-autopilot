@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
@@ -15,6 +15,7 @@ import { useToast } from '../hooks/useToast';
 const ENABLE_APP_LOGGING = false;
 const log = (...args: any[]) => ENABLE_APP_LOGGING && console.log(...args);
 import { DynamicDashboard } from '../widgets/DynamicDashboard';
+import { DashboardLayoutProvider, useDashboardLayout } from '../contexts/DashboardLayoutContext';
 import HeaderBar from '../components/HeaderBar';
 import { ToastContainer } from '../components/toast';
 import { AlarmBanner } from '../widgets/AlarmBanner';
@@ -41,6 +42,20 @@ import {
 
 const STORAGE_KEY = 'nmea-connection-config';
 
+/**
+ * DashboardContent - Measures layout and provides dimensions via context
+ * Must be inside DashboardLayoutProvider to access updateLayout callback
+ */
+const DashboardContent: React.FC = () => {
+  const { updateLayout } = useDashboardLayout();
+  
+  return (
+    <View style={styles.contentArea} onLayout={updateLayout}>
+      <DynamicDashboard />
+    </View>
+  );
+};
+
 const App = () => {
   // Selective subscriptions to prevent re-renders on unrelated state changes
   const connectionStatus = useNmeaStore(state => state.connectionStatus);
@@ -48,7 +63,6 @@ const App = () => {
   const activeAlarms = useAlarmStore(state => state.activeAlarms);
   const theme = useTheme();
   const toast = useToast();
-  const insets = useSafeAreaInsets();
   const defaults = getConnectionDefaults();
   const [ip, setIp] = useState(defaults.ip);
   const [port, setPort] = useState(defaults.port.toString());
@@ -478,38 +492,35 @@ const App = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.appBackground }]}>
-      {/* Header */}
-      <HeaderBar
-        onShowConnectionSettings={() => setShowConnectionDialog(true)}
-        onShowUnitsDialog={() => setShowUnitsDialog(true)}
-        onShowFactoryResetDialog={() => setShowFactoryResetDialog(true)}
-        onShowLayoutSettings={() => setShowLayoutSettingsDialog(true)}
-        onShowDisplayThemeSettings={() => setShowDisplayThemeDialog(true)}
-        onShowAlarmConfiguration={() => setShowAlarmConfigDialog(true)}
-        onShowAlarmHistory={() => setShowAlarmHistoryDialog(true)}
-        navigationSession={navigationSession}
-        onToggleNavigationSession={handleToggleNavigationSession}
-        onShowAutopilotControl={() => setShowAutopilotControl(true)}
-      />
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <DashboardLayoutProvider>
+        <View style={[styles.appContent, { backgroundColor: theme.appBackground }]}>
+          {/* Header */}
+          <HeaderBar
+            onShowConnectionSettings={() => setShowConnectionDialog(true)}
+            onShowUnitsDialog={() => setShowUnitsDialog(true)}
+            onShowFactoryResetDialog={() => setShowFactoryResetDialog(true)}
+            onShowLayoutSettings={() => setShowLayoutSettingsDialog(true)}
+            onShowDisplayThemeSettings={() => setShowDisplayThemeDialog(true)}
+            onShowAlarmConfiguration={() => setShowAlarmConfigDialog(true)}
+            onShowAlarmHistory={() => setShowAlarmHistoryDialog(true)}
+            navigationSession={navigationSession}
+            onToggleNavigationSession={handleToggleNavigationSession}
+            onShowAutopilotControl={() => setShowAutopilotControl(true)}
+          />
 
-      {/* Alarm Banner - Top Priority Display */}
-      <AlarmBanner alarms={activeAlarms} />
+          {/* Alarm Banner - Top Priority Display */}
+          <AlarmBanner alarms={activeAlarms} />
 
-      {/* Global Toast Container */}
-      <ToastContainer 
-        position="top"
-        maxToasts={3}
-        stackDirection="vertical"
-      />
+          {/* Global Toast Container */}
+          <ToastContainer 
+            position="top"
+            maxToasts={3}
+            stackDirection="vertical"
+          />
 
-      {/* Main Dashboard - Dynamic Widget Loading */}
-      <View style={[styles.contentArea, { paddingBottom: insets.bottom }]}>
-        <DynamicDashboard 
-          headerHeight={insets.top + 2 + 44 + 2} 
-          bottomPadding={insets.bottom}
-        />
-      </View>
+          {/* Main Dashboard - Dynamic Widget Loading */}
+          <DashboardContent />
       
       {/* Modals */}
       <AutopilotControlScreen
@@ -587,7 +598,9 @@ const App = () => {
           TEST SWITCH
         </Text>
       </TouchableOpacity>
-    </View>
+        </View>
+      </DashboardLayoutProvider>
+    </SafeAreaView>
   );
 };
 
@@ -595,6 +608,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f1419',
+  },
+  appContent: {
+    flex: 1,
   },
   contentArea: {
     flex: 1,

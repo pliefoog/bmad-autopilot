@@ -5,6 +5,7 @@ import { useTheme, ThemeColors } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useToast } from '../hooks/useToast';
 import { logger } from '../utils/logger';
+import { useDashboardLayout } from '../contexts/DashboardLayoutContext';
 import { WidgetRegistry } from './WidgetRegistry';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 import { PlatformStyles } from '../utils/animationUtils';
@@ -43,12 +44,10 @@ function renderWidget(
   return null;
 }
 
-interface DynamicDashboardProps {
-  headerHeight?: number;
-  bottomPadding?: number;
-}
-
-export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ headerHeight = 60, bottomPadding = 0 }) => {
+export const DynamicDashboard: React.FC = () => {
+  // Get measured dimensions from context
+  const { width: contextWidth, height: contextHeight, isReady: contextReady } = useDashboardLayout();
+  
   // Selective subscriptions to prevent re-renders on widget timestamp updates
   const currentDashboard = useWidgetStore(state => state.currentDashboard);
   const storeWidgets = useWidgetStore(state => {
@@ -62,11 +61,7 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ headerHeight
   
   const [layout, setLayout] = useState<DynamicWidgetLayout[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [dimensions, setDimensions] = useState(() => {
-    const { width, height } = Dimensions.get('window');
-    logger.dimensions(`Initial dimensions: ${width}×${height}`);
-    return { width, height };
-  });
+  const [dimensions, setDimensions] = useState({ width: contextWidth, height: contextHeight });
   const [dimensionsReady, setDimensionsReady] = useState(false);
   const [removedWidget, setRemovedWidget] = useState<{
     widget: DynamicWidgetLayout;
@@ -78,76 +73,30 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ headerHeight
   const theme = useTheme();
   const toast = useToast();
   
+  // Update dimensions when context provides new measurements
+  useEffect(() => {
+    if (contextReady && (contextWidth !== dimensions.width || contextHeight !== dimensions.height)) {
+      logger.dimensions(`Context dimensions updated: ${contextWidth}×${contextHeight}`);
+      DynamicLayoutService.clearCache();
+      setDimensions({ width: contextWidth, height: contextHeight });
+      setDimensionsReady(true);
+    }
+  }, [contextWidth, contextHeight, contextReady]);
+  
   // Calculate grid config for proper spacing and sizing
   const gridConfig = useMemo(() => {
     const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
-    // Use actual header height + bottom padding from props (includes safe area insets)
-    const config = DynamicLayoutService.getGridConfig(headerHeight, bottomPadding, visibleWidgetCount);
+    // Pass measured dimensions from context - no header/footer needed as dimensions already exclude them
+    const config = DynamicLayoutService.getGridConfig(0, 0, visibleWidgetCount, dimensions.width, dimensions.height);
     return config;
-  }, [dimensions.width, dimensions.height, headerHeight, bottomPadding]);
+  }, [dimensions.width, dimensions.height, storeWidgets]);
   
   const styles = useMemo(() => createStyles(theme), [theme]);
-
-  // Force dimension re-read on mount BEFORE first render (useLayoutEffect runs synchronously)
-  useLayoutEffect(() => {
-    const { width, height } = Dimensions.get('window');
-    logger.dimensions(`useLayoutEffect dimensions: ${width}×${height}`);
-    
-    // Only update if dimensions changed from initial
-    if (width !== dimensions.width || height !== dimensions.height) {
-      logger.always(`⚠️ Correcting dimensions from ${dimensions.width}×${dimensions.height} to ${width}×${height}`);
-      DynamicLayoutService.clearCache();
-      setDimensions({ width, height });
-    }
-    
-    // Mark dimensions as ready after a small delay to ensure iOS has settled
-    // iOS sometimes takes a frame or two to report accurate dimensions
-    setTimeout(() => {
-      setDimensionsReady(true);
-    }, 100);
-  }, []);
 
   // Register all widgets on mount
   useEffect(() => {
     registerAllWidgets();
   }, []);
-
-  // Listen for dimension changes (window resize)
-  useEffect(() => {
-    // React Native Dimensions API listener
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      // Clear grid config cache on orientation change
-      DynamicLayoutService.clearCache();
-      setDimensions({ width: window.width, height: window.height });
-      setCurrentPage(0);
-      
-      // Redistribute widgets if in user-positioned mode
-      if (dashboardConfig?.userPositioned) {
-        redistributeWidgetsAcrossPages();
-      }
-    });
-
-    // Web-specific window resize listener for more reliable updates
-    const handleResize = () => {
-      const { width, height } = Dimensions.get('window');
-      // Clear grid config cache on resize
-      DynamicLayoutService.clearCache();
-      setDimensions({ width, height });
-      setCurrentPage(0);
-    };
-
-    // Add web listener if running on web (check for addEventListener method)
-    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-      window.addEventListener('resize', handleResize);
-    }
-
-    return () => {
-      subscription?.remove();
-      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
-        window.removeEventListener('resize', handleResize);
-      }
-    };
-  }, []); // Empty dependency array - only set up once
 
   // ✨ NEW: Grid-based layout calculation with fixed widget sizes
   const calculateGridLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
@@ -164,10 +113,10 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ headerHeight
     }));
     
     // Convert to DynamicWidgetLayout using new grid system
-    const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, headerHeight, bottomPadding);
+    const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, 0, 0);
     
     return gridLayout;
-  }, [dimensions.width, dimensions.height, headerHeight, bottomPadding]);
+  }, [dimensions.width, dimensions.height]);
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
@@ -350,9 +299,8 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ headerHeight
   // Calculate pages based on accumulated widget heights
   // Calculate total pages using new grid system
   const totalPages = useMemo(() => {
-    const headerHeight = 60;
     const footerHeight = 0; // No footer - widgets extend to bottom
-    return DynamicLayoutService.getTotalPages(layout, headerHeight, footerHeight);
+    return DynamicLayoutService.getTotalPages(layout, 0, footerHeight);
   }, [layout, dimensions]);
 
   // Get widgets for current page using new grid system  
