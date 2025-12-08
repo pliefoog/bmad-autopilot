@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, StyleSheet, Platform, TouchableOpacity, Text, LayoutChangeEvent } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
 import '../utils/memoryProfiler'; // Register profiler functions
@@ -45,13 +45,41 @@ const STORAGE_KEY = 'nmea-connection-config';
 /**
  * DashboardContent - Measures layout and provides dimensions via context
  * Must be inside DashboardLayoutProvider to access updateLayout callback
+ * Uses absolute positioning to constrain dashboard and adjusts measured height
+ * to match the actual available space above bottom safe area
  */
 const DashboardContent: React.FC = () => {
   const { updateLayout } = useDashboardLayout();
+  const insets = useSafeAreaInsets();
+  
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    // The measured height is AFTER SafeAreaView has already applied top padding
+    // We only need to subtract the bottom inset for the home indicator area
+    const adjustedHeight = height - insets.bottom;
+    
+    updateLayout({ 
+      nativeEvent: { 
+        layout: { width, height: adjustedHeight } 
+      } 
+    } as LayoutChangeEvent);
+  }, [insets.bottom, updateLayout]);
   
   return (
-    <View style={styles.contentArea} onLayout={updateLayout}>
-      <DynamicDashboard />
+    <View 
+      style={styles.contentArea} 
+      onLayout={handleLayout}
+    >
+      {/* Absolutely positioned container keeps dashboard above safe area */}
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: insets.bottom 
+      }}>
+        <DynamicDashboard />
+      </View>
     </View>
   );
 };
@@ -522,11 +550,6 @@ const App = () => {
 
           {/* Main Dashboard - Dynamic Widget Loading */}
           <DashboardContent />
-          
-          {/* Bottom Safe Area Spacer - ensures content doesn't go under home indicator */}
-          {insets.bottom > 0 && (
-            <View style={{ height: insets.bottom, backgroundColor: theme.appBackground }} />
-          )}
       
       {/* Modals */}
       <AutopilotControlScreen

@@ -64,22 +64,20 @@ export class DynamicLayoutService {
    * 
    * Performance: Uses caching for 2000× faster lookups (0.1ms vs 200ms)
    * 
-   * Breakpoints and behavior:
-   * - < 600px: 1 column, vertical scroll (mobile portrait)
-   * - 600-767px: 2 columns, vertical scroll (mobile landscape)
-   * - 768-1023px: 3 columns, pagination (tablet portrait)
-   * - 1024-1279px: 5 columns, pagination (tablet landscape)
-   * - 1280-1919px: 6 columns, pagination (desktop)
-   * - 1920+: 8 columns, pagination (large desktop)
+   * Grid Philosophy: Fill available space completely, border-to-border, top-to-bottom
+   * - No spacing between widgets (SPACING.WIDGET = 0)
+   * - No margins at screen edges (SPACING.MARGIN = 0)
+   * - Widgets sized to fill 100% of available space with no gaps
+   * - Remaining pixels distributed evenly to avoid rounding losses
    * 
-   * @param headerHeight - Height reserved for header (default: 60, pass 0 if measured dimensions exclude header)
-   * @param footerHeight - Height reserved for footer (default: 0)
-   * @param widgetCount - Number of widgets to display
-   * @param width - Optional measured width (defaults to Dimensions.get('window').width)
-   * @param height - Optional measured height (defaults to Dimensions.get('window').height)
+   * @param headerHeight - Height reserved for header (pass 0 if dimensions already exclude header)
+   * @param footerHeight - Height reserved for footer (pass 0 if dimensions already exclude footer)
+   * @param widgetCount - Number of widgets to display (informational only)
+   * @param width - Measured width from context (required for accurate calculation)
+   * @param height - Measured height from context (required for accurate calculation)
    */
   static getGridConfig(
-    headerHeight: number = 60, 
+    headerHeight: number = 0, 
     footerHeight: number = 0, 
     widgetCount: number = 0,
     width?: number,
@@ -91,25 +89,6 @@ export class DynamicLayoutService {
       : this.getScreenDimensions();
     const screenWidth = screenDimensions.width;
     const screenHeight = screenDimensions.height;
-    
-    // Debug logging for iPad detection
-    logger.layout(`Screen dimensions: ${screenWidth}×${screenHeight}`);
-    
-    // iPad multitasking detection - adjust effective width for Split View/Slide Over
-    if (Platform.OS === 'ios') {
-      try {
-        const { getIPadMultitaskingMode } = require('../utils/platformDetection');
-        const { isSplitView, isSlideOver, widthPercentage } = getIPadMultitaskingMode();
-        
-        if (isSlideOver || (isSplitView && screenWidth < 600)) {
-          // Slide Over or narrow Split View: Force phone mode (1-2 columns)
-          logger.layout(`iPad multitasking - Using constrained layout for ${screenWidth}pt width`);
-        }
-      } catch (error) {
-        // Ignore if multitasking detection fails
-        logger.layout(`Multitasking detection not available`);
-      }
-    }
     
     // Check cache first (excluding widgetCount for better hit rate)
     const cacheKey = this.getCacheKey(screenWidth, screenHeight, headerHeight, footerHeight);
@@ -123,82 +102,60 @@ export class DynamicLayoutService {
     // Cache miss - calculate new config
     logger.layout('Cache MISS - calculating:', cacheKey);
     
-    const spacing = SPACING.WIDGET;  // No spacing - widgets fill all space
-    const margin = SPACING.MARGIN;   // No margin - widgets extend to edges
-    
-    // Calculate available space - use full viewport
+    // Calculate available space (no spacing or margins - fill completely)
     const availableWidth = screenWidth;
     const availableHeight = screenHeight - headerHeight - footerHeight;
     
-    // Determine columns based on screen width using helper
+    // Determine columns based on screen width
     const columns = getColumnsForWidth(screenWidth);
     const usePagination = shouldUsePagination(screenWidth);
     
-    logger.layout(`Calculated layout: ${columns} columns, usePagination: ${usePagination}`);
+    logger.layout(`Layout mode: ${columns} columns, pagination: ${usePagination}`);
     
-    // Calculate widget width - divide available space evenly by columns
-    // Always use full column count based on screen width, not widget count
-    // This ensures consistent grid regardless of how many widgets are present
-    const actualColumns = columns;
+    // ===== WIDGET WIDTH CALCULATION (Border-to-Border, No Gaps) =====
+    // Divide width evenly - any remaining pixels will overflow slightly (clipped by container)
+    const widgetWidth = Math.ceil(availableWidth / columns);
     
-    const widgetWidth = Math.floor(availableWidth / actualColumns);
-    
-    // Calculate rows based on actual widget count and screen mode
+    // ===== ROW CALCULATION =====
     let rows: number;
-    let maxRowsForScreen: number;
     
     if (!usePagination) {
-      // Mobile scroll mode: unlimited rows
+      // Mobile scroll mode: unlimited rows (widgets flow vertically)
       rows = 999;
-      maxRowsForScreen = 999;
     } else {
-      // Desktop/tablet pagination: Calculate max rows that fit with square aspect ratio
-      maxRowsForScreen = Math.floor(availableHeight / widgetWidth);
-      // Ensure at least 1 row
-      if (maxRowsForScreen < 1) {
-        maxRowsForScreen = 1;
+      // Tablet/Desktop pagination: calculate rows based on orientation
+      const isLandscape = screenWidth > screenHeight;
+      
+      if (isLandscape) {
+        // Landscape: Use 4:3 aspect ratio (width:height)
+        // This provides wider widgets suitable for landscape viewing
+        const targetHeight = Math.floor(widgetWidth * 0.75);
+        rows = Math.floor(availableHeight / targetHeight);
+        // Ensure minimum 3 rows for usable grid
+        rows = Math.max(3, rows);
+      } else {
+        // Portrait: Use square aspect ratio (1:1)
+        // Height equals width for balanced square widgets
+        rows = Math.floor(availableHeight / widgetWidth);
       }
       
-      // Always use maxRowsForScreen to fill the screen with a consistent grid
-      // This ensures widgets are evenly sized regardless of how many are currently visible
-      // Example: 5×3 grid always shows 15 widget slots, even if only 5 widgets exist
-      rows = maxRowsForScreen;
+      // Safety: ensure at least 1 row
+      rows = Math.max(1, rows);
     }
     
-    // Calculate widget height to fill vertical space evenly
-    // Divide available height by ACTUAL rows being used
-    // Example: 800px / 3 rows = 266px per widget
+    // ===== WIDGET HEIGHT CALCULATION (Top-to-Bottom Fill, No Gaps) =====
+    // Divide height evenly - ceiling ensures we fill to bottom (slight overflow clipped)
     const widgetHeight = usePagination 
-      ? Math.floor(availableHeight / rows)
-      : widgetWidth;
-    
-    logger.layout('Grid config calculated:', {
-      screenWidth,
-      screenHeight,
-      availableWidth,
-      availableHeight,
-      maxColumns: columns,
-      actualColumns,
-      columnsOptimized: actualColumns !== columns,
-      rows,
-      maxRowsForScreen: usePagination ? maxRowsForScreen : 'unlimited',
-      widgetCount,
-      usePagination,
-      widgetWidth,
-      widgetHeight,
-      totalWidgetsPerPage: usePagination ? actualColumns * rows : 'unlimited',
-      calculation: usePagination 
-        ? `${actualColumns} cols × ${rows} rows = ${actualColumns * rows} slots per page, ${availableHeight}px / ${rows} rows = ${widgetHeight}px height`
-        : `Square aspect: ${widgetWidth}px`
-    });
+      ? Math.ceil(availableHeight / rows)
+      : widgetWidth; // Square widgets for scroll mode
     
     const config: GridConfig = {
-      columns: actualColumns,
-      rows: usePagination ? rows : 999, // Unlimited rows for scroll mode
+      columns,
+      rows: usePagination ? rows : 999,
       widgetWidth,
       widgetHeight,
-      spacing,
-      margin,
+      spacing: 0, // Always 0 - no gaps between widgets
+      margin: 0,  // Always 0 - widgets extend to edges
       availableHeight,
       availableWidth,
     };

@@ -9,7 +9,7 @@ interface DashboardSettingsMenuProps {
   onClose: () => void;
 }
 
-export const DashboardSettingsMenu: React.FC<DashboardSettingsMenuProps> = ({
+const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
   visible,
   onClose,
 }) => {
@@ -342,3 +342,5 @@ const createStyles = (theme: ThemeColors) =>
       color: '#FFFFFF',
     },
   });
+
+export const DashboardSettingsMenu = React.memo(DashboardSettingsMenuComponent);

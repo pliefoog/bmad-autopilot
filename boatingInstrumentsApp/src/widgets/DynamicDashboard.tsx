@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Dimensions, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useTheme, ThemeColors } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
@@ -50,10 +50,17 @@ export const DynamicDashboard: React.FC = () => {
   
   // Selective subscriptions to prevent re-renders on widget timestamp updates
   const currentDashboard = useWidgetStore(state => state.currentDashboard);
-  const storeWidgets = useWidgetStore(state => {
-    const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-    return dashboard?.widgets || [];
-  });
+  const storeWidgets = useWidgetStore(
+    state => {
+      const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+      return dashboard?.widgets || [];
+    },
+    (prev, next) => {
+      // Only update if widget array actually changed (deep comparison of widget IDs and visibility)
+      if (prev.length !== next.length) return false;
+      return prev.every((w, i) => w.id === next[i].id && w.layout?.visible === next[i].layout?.visible);
+    }
+  );
   const dashboardConfig = useWidgetStore(state => 
     state.dashboards.find(d => d.id === state.currentDashboard)
   );
@@ -61,8 +68,6 @@ export const DynamicDashboard: React.FC = () => {
   
   const [layout, setLayout] = useState<DynamicWidgetLayout[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [dimensions, setDimensions] = useState({ width: contextWidth, height: contextHeight });
-  const [dimensionsReady, setDimensionsReady] = useState(false);
   const [removedWidget, setRemovedWidget] = useState<{
     widget: DynamicWidgetLayout;
     index: number;
@@ -73,23 +78,33 @@ export const DynamicDashboard: React.FC = () => {
   const theme = useTheme();
   const toast = useToast();
   
-  // Update dimensions when context provides new measurements
-  useEffect(() => {
-    if (contextReady && (contextWidth !== dimensions.width || contextHeight !== dimensions.height)) {
-      logger.dimensions(`Context dimensions updated: ${contextWidth}×${contextHeight}`);
-      DynamicLayoutService.clearCache();
-      setDimensions({ width: contextWidth, height: contextHeight });
-      setDimensionsReady(true);
-    }
-  }, [contextWidth, contextHeight, contextReady]);
+  // Compute visible widget count separately to avoid array reference changes
+  const visibleWidgetCount = useMemo(
+    () => storeWidgets.filter(w => w.layout?.visible !== false).length,
+    [storeWidgets]
+  );
   
   // Calculate grid config for proper spacing and sizing
+  // Use valid fallback dimensions to prevent crashes when context isn't ready
   const gridConfig = useMemo(() => {
-    const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
+    // Don't calculate if dimensions aren't ready yet
+    if (!contextReady || contextWidth === 0 || contextHeight === 0) {
+      return {
+        columns: 1,
+        rows: 1,
+        widgetWidth: 100,
+        widgetHeight: 100,
+        spacing: 0,
+        margin: 0,
+        availableHeight: 100,
+        availableWidth: 100,
+      };
+    }
+    
     // Pass measured dimensions from context - no header/footer needed as dimensions already exclude them
-    const config = DynamicLayoutService.getGridConfig(0, 0, visibleWidgetCount, dimensions.width, dimensions.height);
+    const config = DynamicLayoutService.getGridConfig(0, 0, visibleWidgetCount, contextWidth, contextHeight);
     return config;
-  }, [dimensions.width, dimensions.height, storeWidgets]);
+  }, [contextReady, contextWidth, contextHeight, visibleWidgetCount]); // Only recalculate when dimensions or widget count changes
   
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -116,7 +131,7 @@ export const DynamicDashboard: React.FC = () => {
     const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, 0, 0);
     
     return gridLayout;
-  }, [dimensions.width, dimensions.height]);
+  }, []); // Empty deps - function is stable and doesn't need context dimensions
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
@@ -251,7 +266,7 @@ export const DynamicDashboard: React.FC = () => {
 
   // Group widgets into rows for rendering
   const widgetRows = useMemo(() => {
-    const screenWidth = dimensions.width;
+    const screenWidth = contextWidth;
     const margin = 0;
     const spacing = 0;
     const availableWidth = screenWidth - (2 * margin);
@@ -285,7 +300,7 @@ export const DynamicDashboard: React.FC = () => {
     }
     
     return rows;
-  }, [layout, dimensions]);
+  }, [layout, contextWidth, contextHeight]);
 
   // Measure widget height when it renders
   const handleWidgetLayout = useCallback((widgetId: string, height: number) => {
@@ -301,7 +316,7 @@ export const DynamicDashboard: React.FC = () => {
   const totalPages = useMemo(() => {
     const footerHeight = 0; // No footer - widgets extend to bottom
     return DynamicLayoutService.getTotalPages(layout, 0, footerHeight);
-  }, [layout, dimensions]);
+  }, [layout]);
 
   // Get widgets for current page using new grid system  
   const currentPageWidgets = useMemo(() => {
@@ -312,9 +327,9 @@ export const DynamicDashboard: React.FC = () => {
   
   // Determine if we should use scroll mode (mobile) or pagination (tablet/desktop)
   const useScrollMode = useMemo(() => {
-    const isScrollMode = dimensions.width < 768;
+    const isScrollMode = contextWidth < 768;
     return isScrollMode;
-  }, [dimensions.width]);
+  }, [contextWidth]);
 
   const goToNextPage = useCallback(() => {
     if (currentPage < totalPages - 1) {
@@ -355,10 +370,10 @@ export const DynamicDashboard: React.FC = () => {
     }
   }, [goToNextPage, goToPrevPage]);
 
-  // Wait for context dimensions before rendering
-  if (!contextReady || dimensions.width === 0 || dimensions.height === 0) {
+  // Wait for context dimensions before rendering dashboard
+  if (!contextReady || contextWidth === 0 || contextHeight === 0) {
     return (
-      <View style={[styles.root, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ color: theme.text }}>Loading dashboard...</Text>
       </View>
     );
@@ -377,6 +392,8 @@ export const DynamicDashboard: React.FC = () => {
           <DraggableWidgetGrid
             pageIndex={currentPage}
             onMoveToPage={moveWidgetToPage}
+            availableWidth={contextWidth}
+            availableHeight={contextHeight}
           />
         </ScrollView>
       ) : (
@@ -390,6 +407,8 @@ export const DynamicDashboard: React.FC = () => {
             <DraggableWidgetGrid
               pageIndex={currentPage}
               onMoveToPage={moveWidgetToPage}
+              availableWidth={contextWidth}
+              availableHeight={contextHeight}
             />
           </View>
         </PanGestureHandler>
@@ -457,7 +476,11 @@ export const DynamicDashboard: React.FC = () => {
 
 const createStyles = (theme: ThemeColors) => StyleSheet.create({
   root: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modeIndicator: {
     position: 'absolute',

@@ -17,6 +17,8 @@ import { logger } from '../utils/logger';
 interface DraggableWidgetGridProps {
   pageIndex: number;
   onMoveToPage?: (widgetId: string, targetPage: number) => void;
+  availableWidth?: number;
+  availableHeight?: number;
 }
 
 // Render widget component with fixed grid dimensions
@@ -98,6 +100,8 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = ({
 export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   pageIndex,
   onMoveToPage,
+  availableWidth,
+  availableHeight,
 }) => {
   const theme = useTheme();
   
@@ -131,14 +135,33 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Refs to track current values without causing re-renders that interfere with gestures
   const pressedWidgetIdRef = useRef<string | null>(null);
   const placeholderIndexRef = useRef<number | null>(null);
+  
+  // Compute visible widget count separately to avoid array reference changes
+  const visibleWidgetCount = useMemo(
+    () => (dashboard?.widgets || []).filter(w => w.layout?.visible !== false).length,
+    [dashboard?.widgets]
+  );
 
   // Calculate grid config for consistent widget sizing
   const gridConfig = useMemo(() => {
-    const headerHeight = 60;
+    // Don't calculate if dimensions aren't available yet
+    if (!availableWidth || !availableHeight || availableWidth === 0 || availableHeight === 0) {
+      return {
+        columns: 1,
+        rows: 1,
+        widgetWidth: 100,
+        widgetHeight: 100,
+        spacing: 0,
+        margin: 0,
+        availableHeight: 100,
+        availableWidth: 100,
+      };
+    }
+    
+    const headerHeight = 0; // Dimensions already exclude header
     const footerHeight = 0; // No footer - widgets extend to bottom
-    const visibleWidgetCount = (dashboard?.widgets || []).filter(w => w.layout?.visible !== false).length;
-    return DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
-  }, [dashboard?.widgets]);
+    return DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount, availableWidth, availableHeight);
+  }, [visibleWidgetCount, availableWidth, availableHeight]);
   
   // Grid sizing constants (must come after gridConfig)
   const TILE_SIZE = gridConfig.widgetWidth;
@@ -489,9 +512,10 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   widgetListContainer: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    position: 'relative',
+    alignContent: 'flex-start',
   },
   autoDiscoveryWidget: {
     margin: 0,

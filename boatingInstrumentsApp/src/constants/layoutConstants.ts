@@ -23,8 +23,8 @@ export const BREAKPOINTS = {
   TABLET_PORTRAIT: 768,
   /** Tablet landscape - 5 columns with pagination (iPad: 1024pt landscape) */
   TABLET_LANDSCAPE: 1024,
-  /** Desktop - 6 columns with pagination */
-  DESKTOP: 1280,
+  /** Desktop - 6 columns with pagination (raised to 1440 to keep iPads at 4 columns) */
+  DESKTOP: 1440,
   /** Large desktop - 8 columns with pagination */
   LARGE_DESKTOP: 1920,
 } as const;
@@ -56,32 +56,6 @@ export const SPACING = {
   MARGIN: 0,
   /** Minimum touch target size (iOS HIG) */
   MIN_TOUCH_TARGET: 44,
-} as const;
-
-// ===== HEADER/FOOTER HEIGHTS =====
-export const UI_HEIGHTS = {
-  /** Default header height */
-  HEADER: 60,
-  /** Default footer height (navigation bar) */
-  FOOTER: 88,
-  /** Pagination controls height */
-  PAGINATION: 60,
-  /** FAB button size */
-  FAB: 56,
-  /** FAB button radius */
-  FAB_RADIUS: 28,
-} as const;
-
-// ===== WIDGET DIMENSIONS =====
-export const WIDGET_SIZE = {
-  /** Default widget width in grid units */
-  DEFAULT_WIDTH: 2,
-  /** Default widget height in grid units */
-  DEFAULT_HEIGHT: 2,
-  /** Minimum widget width */
-  MIN_WIDTH: 1,
-  /** Minimum widget height */
-  MIN_HEIGHT: 1,
 } as const;
 
 // ===== PAGINATION BEHAVIOR =====
@@ -167,24 +141,6 @@ export function getColumnsForWidth(screenWidth: number): number {
  */
 export function shouldUsePagination(screenWidth: number): boolean {
   return screenWidth >= PAGINATION.MIN_WIDTH_FOR_PAGINATION;
-}
-
-/**
- * Calculate available height for widgets
- */
-export function getAvailableHeight(
-  screenHeight: number,
-  headerHeight: number = UI_HEIGHTS.HEADER,
-  footerHeight: number = UI_HEIGHTS.FOOTER
-): number {
-  return screenHeight - headerHeight - footerHeight;
-}
-
-/**
- * Calculate widget width for given screen width and columns
- */
-export function getWidgetWidth(screenWidth: number, columns: number): number {
-  return Math.floor(screenWidth / columns);
 }
 
 /**

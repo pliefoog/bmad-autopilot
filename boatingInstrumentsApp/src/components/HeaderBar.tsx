@@ -214,7 +214,7 @@ const createStyles = (theme: any) =>
   StyleSheet.create({
     headerContainer: {
       // SafeAreaView at root handles top inset padding
-      paddingVertical: 8, // Standard vertical padding
+      height: 44, // Apple HIG standard: exactly 44pt navigation bar height
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
