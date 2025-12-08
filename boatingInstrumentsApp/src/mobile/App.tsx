@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
@@ -48,6 +48,7 @@ const App = () => {
   const activeAlarms = useAlarmStore(state => state.activeAlarms);
   const theme = useTheme();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
   const defaults = getConnectionDefaults();
   const [ip, setIp] = useState(defaults.ip);
   const [port, setPort] = useState(defaults.port.toString());
@@ -477,7 +478,7 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.appBackground }]} edges={['bottom']}>
+    <View style={[styles.container, { backgroundColor: theme.appBackground }]}>
       {/* Header */}
       <HeaderBar
         onShowConnectionSettings={() => setShowConnectionDialog(true)}
@@ -503,7 +504,7 @@ const App = () => {
       />
 
       {/* Main Dashboard - Dynamic Widget Loading */}
-      <View style={styles.contentArea}>
+      <View style={[styles.contentArea, { paddingBottom: insets.bottom }]}>
         <DynamicDashboard />
       </View>
       
@@ -583,7 +584,7 @@ const App = () => {
           TEST SWITCH
         </Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 
