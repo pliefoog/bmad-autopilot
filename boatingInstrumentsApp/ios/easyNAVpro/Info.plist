@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>Boating Instruments App</string>
+    <string>easyNAV.pro</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,14 +27,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>boating-instruments</string>
-          <string>com.anonymous.boatinginstrumentsapp</string>
+          <string>easynav</string>
+          <string>com.easynav.pro</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+boating-instruments-app</string>
+          <string>exp+easynav-pro</string>
         </array>
       </dict>
     </array>
@@ -51,6 +51,8 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

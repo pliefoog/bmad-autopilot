@@ -1,4 +1,4 @@
-package com.anonymous.boatinginstrumentsapp
+package com.easynav.pro
 
 import android.os.Build
 import android.os.Bundle

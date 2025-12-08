@@ -1,4 +1,4 @@
-package com.anonymous.boatinginstrumentsapp
+package com.easynav.pro
 
 import android.app.Application
 import android.content.res.Configuration
@@ -15,7 +15,6 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
-import com.asterinet.react.tcpsocket.TcpSocketPackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -26,7 +25,6 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
-              add(TcpSocketPackage())
             }
 
           override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"
