@@ -893,8 +893,8 @@ export class MarineAudioAlertManager {
   private generatePulsingTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
-    const pulseRate = 4; // 4 Hz (4 pulses per second)
-    const dutyCycle = 0.3; // 30% on, 70% off
+    const pulseRate = 2; // 2 Hz (2 pulses per second) - matches web
+    const dutyCycle = 0.5; // 50% on, 50% off - matches web
     const pulsePeriod = 1 / pulseRate;
     
     for (let i = 0; i < numSamples; i++) {
@@ -916,7 +916,7 @@ export class MarineAudioAlertManager {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
     const warbleRate = 4; // 4 Hz warble
-    const warbleDepth = 150; // ±150 Hz modulation
+    const warbleDepth = 100; // ±100 Hz modulation - matches web
     
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
@@ -931,9 +931,9 @@ export class MarineAudioAlertManager {
   
   private generateMorseUTone(frequency: number, volume: number, sampleRate: number): Int16Array {
     // Morse "U": ·· — (dit dit dah) - ISO maritime "You are in danger"
-    const dit = 0.15;  // Short beep
-    const dah = 0.45;  // Long beep  
-    const gap = 0.15;  // Gap between elements
+    const dit = 0.2;  // Short beep - matches web
+    const dah = 0.6;  // Long beep - matches web
+    const gap = 0.2;  // Gap between elements - matches web
     const duration = dit + gap + dit + gap + dah;
     
     const numSamples = Math.floor(sampleRate * duration);
@@ -964,8 +964,8 @@ export class MarineAudioAlertManager {
   
   private generateTripleBlastTone(frequency: number, volume: number, sampleRate: number): Int16Array {
     // Three short blasts: blast-gap-blast-gap-blast
-    const blastDuration = 0.4;  // 400ms blast
-    const gapDuration = 0.2;    // 200ms gap
+    const blastDuration = 0.2;  // 200ms blast - matches web
+    const gapDuration = 0.1;    // 100ms gap - matches web
     const duration = (blastDuration * 3) + (gapDuration * 2);
     
     const numSamples = Math.floor(sampleRate * duration);
@@ -998,7 +998,8 @@ export class MarineAudioAlertManager {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
     const startFreq = frequency;
-    const endFreq = frequency * 0.5; // Descend to half frequency
+    const frequencyRange = 300; // Descend by 300Hz - matches web
+    const endFreq = startFreq - frequencyRange;
     
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
