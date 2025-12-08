@@ -775,7 +775,7 @@ export class MarineAudioAlertManager {
         { 
           shouldPlay: true,
           volume: volume,
-          isLooping: soundConfig.pattern === 'continuous',
+          isLooping: true, // Always loop - will be stopped by timeout or manual stop
         }
       );
       
