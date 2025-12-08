@@ -505,7 +505,10 @@ const App = () => {
 
       {/* Main Dashboard - Dynamic Widget Loading */}
       <View style={[styles.contentArea, { paddingBottom: insets.bottom }]}>
-        <DynamicDashboard />
+        <DynamicDashboard 
+          headerHeight={insets.top + 2 + 44 + 2} 
+          bottomPadding={insets.bottom}
+        />
       </View>
       
       {/* Modals */}

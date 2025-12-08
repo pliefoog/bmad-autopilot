@@ -43,7 +43,12 @@ function renderWidget(
   return null;
 }
 
-export const DynamicDashboard: React.FC = () => {
+interface DynamicDashboardProps {
+  headerHeight?: number;
+  bottomPadding?: number;
+}
+
+export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ headerHeight = 60, bottomPadding = 0 }) => {
   // Selective subscriptions to prevent re-renders on widget timestamp updates
   const currentDashboard = useWidgetStore(state => state.currentDashboard);
   const storeWidgets = useWidgetStore(state => {
@@ -75,12 +80,11 @@ export const DynamicDashboard: React.FC = () => {
   
   // Calculate grid config for proper spacing and sizing
   const gridConfig = useMemo(() => {
-    const headerHeight = 60;
-    const footerHeight = 0; // No footer - widgets extend to bottom
     const visibleWidgetCount = storeWidgets.filter(w => w.layout?.visible !== false).length;
-    const config = DynamicLayoutService.getGridConfig(headerHeight, footerHeight, visibleWidgetCount);
+    // Use actual header height + bottom padding from props (includes safe area insets)
+    const config = DynamicLayoutService.getGridConfig(headerHeight, bottomPadding, visibleWidgetCount);
     return config;
-  }, [dimensions.width, dimensions.height]);
+  }, [dimensions.width, dimensions.height, headerHeight, bottomPadding]);
   
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -147,8 +151,6 @@ export const DynamicDashboard: React.FC = () => {
 
   // ✨ NEW: Grid-based layout calculation with fixed widget sizes
   const calculateGridLayout = useCallback((widgets: any[]): DynamicWidgetLayout[] => {
-    const headerHeight = 60;
-    const footerHeight = 88;
     
     // Convert store widgets to WidgetLayout format expected by service
     const widgetLayouts = widgets.map(w => ({
@@ -162,10 +164,10 @@ export const DynamicDashboard: React.FC = () => {
     }));
     
     // Convert to DynamicWidgetLayout using new grid system
-    const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, headerHeight, footerHeight);
+    const gridLayout = DynamicLayoutService.toDynamicLayout(widgetLayouts, headerHeight, bottomPadding);
     
     return gridLayout;
-  }, [dimensions.width, dimensions.height]);
+  }, [dimensions.width, dimensions.height, headerHeight, bottomPadding]);
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
