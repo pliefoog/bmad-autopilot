@@ -348,6 +348,14 @@ class InstanceDetectionService {
     const sensors = nmeaData.sensors || {};
     const engineSensors = sensors.engine || {};
     
+    console.log('🔧 [scanForEngineInstances] Checking for engines:', {
+      hasSensors: !!sensors,
+      hasEngine: !!sensors.engine,
+      engineInstanceCount: Object.keys(engineSensors).length,
+      engineInstances: Object.keys(engineSensors),
+      sampleData: Object.keys(engineSensors).length > 0 ? engineSensors[Object.keys(engineSensors)[0]] : null
+    });
+    
     // Check each engine instance for recent data
     Object.entries(engineSensors).forEach(([instanceStr, engineData]: [string, any]) => {
       const instance = parseInt(instanceStr);
@@ -461,6 +469,13 @@ class InstanceDetectionService {
   private scanForBatteryInstances(nmeaData: any, currentTime: number): void {
     const pgnData = nmeaData.pgnData || {};
     
+    console.log('🔧 [scanForBatteryInstances] Checking for batteries:', {
+      hasPgnData: !!pgnData,
+      pgnKeys: Object.keys(pgnData),
+      has127508: !!pgnData['127508'],
+      has127513: !!pgnData['127513']
+    });
+    
     // PGN 127508: Battery Status
     // PGN 127513: Battery Configuration Status
     const batteryPgns = ['127508', '127513'];
@@ -541,6 +556,13 @@ class InstanceDetectionService {
     // NMEA Store v2.0: Check sensor data first
     const sensors = nmeaData.sensors || {};
     const tankSensors = sensors.tank || {};
+    
+    console.log('🔧 [scanForTankInstances] Checking for tanks:', {
+      hasSensors: !!sensors,
+      hasTank: !!sensors.tank,
+      tankInstanceCount: Object.keys(tankSensors).length,
+      tankInstances: Object.keys(tankSensors)
+    });
     
     // Check each tank instance for recent data
     Object.entries(tankSensors).forEach(([instanceStr, tankData]: [string, any]) => {

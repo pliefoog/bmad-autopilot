@@ -718,6 +718,17 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       updateInstanceWidgets: (detectedInstances) => {
+        console.log('🔧 [updateInstanceWidgets] CALLED WITH:', {
+          engines: detectedInstances.engines.length,
+          batteries: detectedInstances.batteries.length,
+          tanks: detectedInstances.tanks.length,
+          temperatures: detectedInstances.temperatures.length,
+          instruments: detectedInstances.instruments.length,
+          engineIds: detectedInstances.engines.map(e => e.id),
+          batteryIds: detectedInstances.batteries.map(b => b.id),
+          tankIds: detectedInstances.tanks.map(t => t.id),
+          temperatureIds: detectedInstances.temperatures.map(t => t.id),
+        });
         log('[WidgetStore] updateInstanceWidgets called with:', {
           engines: detectedInstances.engines.length,
           batteries: detectedInstances.batteries.length,
