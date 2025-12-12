@@ -84,8 +84,6 @@ interface WidgetActions {
   setEditMode: (enabled: boolean) => void;
   setGridVisible: (visible: boolean) => void;
   updateDashboard: (updates: Partial<DashboardConfig>) => void;
-  exportDashboard: (dashboardId: string) => DashboardConfig;
-  importDashboard: (dashboard: DashboardConfig) => void;
   // Enhanced state management actions
   initializeWidgetStatesOnAppStart: () => void;
   resetLayout: () => void;
@@ -445,23 +443,6 @@ export const useWidgetStore = create<WidgetStore>()(
           dashboards: state.dashboards.map((dashboard) =>
             dashboard.id === dashboardId ? { ...dashboard, ...updates } : dashboard
           ),
-        }));
-      },
-
-      exportDashboard: (dashboardId) => {
-        const dashboard = get().dashboards.find((d) => d.id === dashboardId);
-        if (!dashboard) throw new Error('Dashboard not found');
-        return dashboard;
-      },
-
-      importDashboard: (dashboard) => {
-        const newDashboard = {
-          ...dashboard,
-          id: `imported-${Date.now()}`,
-        };
-        
-        set((state) => ({
-          dashboards: [...state.dashboards, newDashboard],
         }));
       },
 
