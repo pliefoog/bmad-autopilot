@@ -1538,14 +1538,29 @@ export const useWidgetStore = create<WidgetStore>()(
     }),
     {
       name: 'widget-store',
+      version: 2, // Bumped version to force migration from multi-dashboard to single dashboard
       partialize: (state) => ({
         selectedWidgets: state.selectedWidgets,
-        currentDashboard: state.currentDashboard,
-        dashboards: state.dashboards,
-        // Dynamic widget lifecycle configuration
-        widgetExpirationTimeout: state.widgetExpirationTimeout,
-        enableWidgetAutoRemoval: state.enableWidgetAutoRemoval,
+        dashboard: state.dashboard,
       }),
+      migrate: (persistedState: any, version: number) => {
+        // Migrate from old multi-dashboard structure to single dashboard
+        if (version < 2) {
+          console.log('🔄 Migrating widget store from version', version, 'to version 2');
+          const oldState = persistedState as any;
+          
+          // Find the current dashboard or use the first one
+          const currentDashboard = oldState.dashboards?.find((d: any) => d.id === oldState.currentDashboard) 
+            || oldState.dashboards?.[0]
+            || defaultDashboard;
+          
+          return {
+            selectedWidgets: oldState.selectedWidgets || [],
+            dashboard: currentDashboard,
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
@@ -1555,24 +1570,17 @@ export const useWidgetStore = create<WidgetStore>()(
 // Clean up any persisted 'themeswitcher' widgets from storage
 setTimeout(() => {
   const state = useWidgetStore.getState();
-  const dashboards = state.dashboards;
-  let modified = false;
+  const dashboard = state.dashboard;
   
-  const cleanedDashboards = dashboards.map(dashboard => {
-    const themeswitcherWidget = dashboard.widgets.find(w => w.id === 'themeswitcher');
-    if (themeswitcherWidget) {
-      console.log(`🧹 Removing legacy 'themeswitcher' widget from dashboard: ${dashboard.id}`);
-      modified = true;
-      return {
+  const themeswitcherWidget = dashboard.widgets.find(w => w.id === 'themeswitcher');
+  if (themeswitcherWidget) {
+    console.log(`🧹 Removing legacy 'themeswitcher' widget from dashboard`);
+    useWidgetStore.setState({ 
+      dashboard: {
         ...dashboard,
         widgets: dashboard.widgets.filter(w => w.id !== 'themeswitcher')
-      };
-    }
-    return dashboard;
-  });
-  
-  if (modified) {
-    useWidgetStore.setState({ dashboards: cleanedDashboards });
+      }
+    });
     console.log('✅ Legacy themeswitcher widget removed successfully');
   }
 }, 100); // Small delay to ensure store is fully hydrated
