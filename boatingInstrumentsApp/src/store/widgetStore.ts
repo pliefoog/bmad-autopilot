@@ -758,7 +758,7 @@ export const useWidgetStore = create<WidgetStore>()(
           return;
         }
 
-        // Keep ALL existing widgets (both instance and non-instance)
+        // Keep ALL existing widgets (all widgets are now instance-based)
         const allExistingWidgets = [...currentDashboard.widgets];
         console.log('🔍 [updateInstanceWidgets] ALL EXISTING WIDGETS:', allExistingWidgets.map(w => ({
           id: w.id,
@@ -775,44 +775,21 @@ export const useWidgetStore = create<WidgetStore>()(
           settings: w.settings
         })));
         
-        // Track existing instance widgets separately for updates
+        // Track existing instance widgets
         const existingInstanceWidgets = allExistingWidgets.filter(w => {
           const hasInstanceId = w.settings && typeof w.settings.instanceId === 'string' && w.settings.instanceId.length > 0;
           const hasInstanceType = w.settings && typeof w.settings.instanceType === 'string' && w.settings.instanceType.length > 0;
           return hasInstanceId && hasInstanceType;
         });
         
-        // Keep all non-instance widgets (Speed, Wind, GPS, etc.)
-        const nonInstanceWidgets = allExistingWidgets.filter(w => {
-          const hasInstanceId = w.settings && typeof w.settings.instanceId === 'string' && w.settings.instanceId.length > 0;
-          const hasInstanceType = w.settings && typeof w.settings.instanceType === 'string' && w.settings.instanceType.length > 0;
-          const isNonInstance = !(hasInstanceId && hasInstanceType);
-          console.log(`🔍 Widget "${w.id}" (${w.type}): hasInstanceId=${hasInstanceId}, hasInstanceType=${hasInstanceType}, isNonInstance=${isNonInstance}`);
-          return isNonInstance;
+        console.log('🎯 [updateInstanceWidgets] EXISTING INSTANCE WIDGETS:', {
+          count: existingInstanceWidgets.length,
+          widgets: existingInstanceWidgets.map(w => ({ id: w.id, type: w.type, instanceId: w.settings?.instanceId }))
         });
         
-        console.log('🎯 [updateInstanceWidgets] CLASSIFICATION RESULT:', {
-          allCount: allExistingWidgets.length,
-          nonInstanceCount: nonInstanceWidgets.length,
-          instanceCount: existingInstanceWidgets.length,
-          nonInstanceWidgets: nonInstanceWidgets.map(w => w.id),
-          instanceWidgets: existingInstanceWidgets.map(w => w.id)
-        });
-        
-        log('[WidgetStore] Classification result:', {
-          allCount: allExistingWidgets.length,
-          nonInstanceCount: nonInstanceWidgets.length,
-          instanceCount: existingInstanceWidgets.length,
-          nonInstanceWidgets: nonInstanceWidgets.map(w => w.id),
-          instanceWidgets: existingInstanceWidgets.map(w => w.id)
-        });
-
-        log('[WidgetStore] Dashboard state:', {
-          total: allExistingWidgets.length,
-          nonInstance: nonInstanceWidgets.length,
-          existingInstance: existingInstanceWidgets.length,
-          nonInstanceIds: nonInstanceWidgets.map(w => w.id),
-          instanceIds: existingInstanceWidgets.map(w => w.id)
+        log('[WidgetStore] Existing instance widgets:', {
+          count: existingInstanceWidgets.length,
+          widgets: existingInstanceWidgets.map(w => ({ id: w.id, type: w.type, instanceId: w.settings?.instanceId }))
         });
 
         // Create sets of current instance IDs for comparison
@@ -854,18 +831,17 @@ export const useWidgetStore = create<WidgetStore>()(
           return position;
         };
 
-        // Start with valid instance widgets (keep existing instance widgets)
-        let updatedInstanceWidgets = [...validInstanceWidgets];
-        log('[WidgetStore] Starting with', updatedInstanceWidgets.length, 'valid instance widgets');
+        // Start with all existing widgets (all are instance-based now)
+        let updatedWidgets = [...allExistingWidgets];
+        log('[WidgetStore] Starting with', updatedWidgets.length, 'existing widgets');
 
         // Add engine widgets
         detectedInstances.engines.forEach(engine => {
           if (!existingInstanceIds.has(engine.id)) {
             log('[WidgetStore] Creating engine widget for:', engine.id, engine.title);
-            const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
-            const position = findNextPosition(allCurrentWidgets);
+            const position = findNextPosition(updatedWidgets);
             const widgetId = engine.id; // Use instance ID directly (already includes type)
-            updatedInstanceWidgets.push({
+            updatedWidgets.push({
               id: widgetId,
               type: 'engine',
               title: engine.title,
@@ -882,22 +858,22 @@ export const useWidgetStore = create<WidgetStore>()(
                 visible: true,
               },
               enabled: true,
-              order: updatedInstanceWidgets.length,
+              order: updatedWidgets.length,
             });
+            existingInstanceIds.add(engine.id); // Track newly added
           } else {
             log('[WidgetStore] Engine widget already exists:', engine.id);
           }
         });
-        log('[WidgetStore] After adding engines:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding engines:', updatedWidgets.length, 'widgets');
 
         // Add battery widgets  
         detectedInstances.batteries.forEach(battery => {
           if (!existingInstanceIds.has(battery.id)) {
             log('[WidgetStore] Creating battery widget for:', battery.id, battery.title);
-            const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
-            const position = findNextPosition(allCurrentWidgets);
+            const position = findNextPosition(updatedWidgets);
             const widgetId = battery.id; // Use instance ID directly (already includes type)
-            updatedInstanceWidgets.push({
+            updatedWidgets.push({
               id: widgetId,
               type: 'battery',
               title: battery.title,
@@ -914,21 +890,22 @@ export const useWidgetStore = create<WidgetStore>()(
                 visible: true,
               },
               enabled: true,
-              order: updatedInstanceWidgets.length,
+              order: updatedWidgets.length,
             });
+            existingInstanceIds.add(battery.id); // Track newly added
           } else {
             log('[WidgetStore] Battery widget already exists:', battery.id);
           }
         });
-        log('[WidgetStore] After adding batteries:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding batteries:', updatedWidgets.length, 'widgets');
 
         // Add tank widgets
         detectedInstances.tanks.forEach(tank => {
           if (!existingInstanceIds.has(tank.id)) {
-            const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
-            const position = findNextPosition(allCurrentWidgets);
+            log('[WidgetStore] Creating tank widget for:', tank.id, tank.title);
+            const position = findNextPosition(updatedWidgets);
             const widgetId = tank.id; // Use instance ID directly (already includes type)
-            updatedInstanceWidgets.push({
+            updatedWidgets.push({
               id: widgetId,
               type: 'tanks',
               title: tank.title,
@@ -945,19 +922,22 @@ export const useWidgetStore = create<WidgetStore>()(
                 visible: true,
               },
               enabled: true,
-              order: updatedInstanceWidgets.length,
+              order: updatedWidgets.length,
             });
+            existingInstanceIds.add(tank.id); // Track newly added
+          } else {
+            log('[WidgetStore] Tank widget already exists:', tank.id);
           }
         });
+        log('[WidgetStore] After adding tanks:', updatedWidgets.length, 'widgets');
 
         // Add temperature widgets
         detectedInstances.temperatures.forEach(temperature => {
           if (!existingInstanceIds.has(temperature.id)) {
             log('[WidgetStore] Creating temperature widget for:', temperature.id, temperature.title);
-            const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
-            const position = findNextPosition(allCurrentWidgets);
+            const position = findNextPosition(updatedWidgets);
             const widgetId = temperature.id; // Use instance ID directly (already includes type)
-            updatedInstanceWidgets.push({
+            updatedWidgets.push({
               id: widgetId,
               type: 'watertemp', // Use existing water temperature widget type
               title: temperature.title,
@@ -975,22 +955,22 @@ export const useWidgetStore = create<WidgetStore>()(
                 visible: true,
               },
               enabled: true,
-              order: updatedInstanceWidgets.length,
+              order: updatedWidgets.length,
             });
+            existingInstanceIds.add(temperature.id); // Track newly added
           } else {
             log('[WidgetStore] Temperature widget already exists:', temperature.id);
           }
         });
-        log('[WidgetStore] After adding temperatures:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding temperatures:', updatedWidgets.length, 'widgets');
 
         // Add marine instrument widgets
         detectedInstances.instruments.forEach(instrument => {
           if (!existingInstanceIds.has(instrument.id)) {
             log('[WidgetStore] Creating marine instrument widget for:', instrument.id, instrument.title);
-            const allCurrentWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
-            const position = findNextPosition(allCurrentWidgets);
+            const position = findNextPosition(updatedWidgets);
             const widgetId = instrument.id; // Use instance ID directly (already includes type)
-            updatedInstanceWidgets.push({
+            updatedWidgets.push({
               id: widgetId,
               type: instrument.type, // Use the detected instrument type (gps, speed, wind, depth, compass)
               title: instrument.title,
@@ -1007,33 +987,28 @@ export const useWidgetStore = create<WidgetStore>()(
                 visible: true,
               },
               enabled: true,
-              order: updatedInstanceWidgets.length,
+              order: updatedWidgets.length,
             });
+            existingInstanceIds.add(instrument.id); // Track newly added
           } else {
             log('[WidgetStore] Marine instrument widget already exists:', instrument.id);
           }
         });
-        log('[WidgetStore] After adding marine instruments:', updatedInstanceWidgets.length, 'instance widgets');
+        log('[WidgetStore] After adding marine instruments:', updatedWidgets.length, 'widgets');
 
-        // Combine all widgets: non-instance (original) + instance (detected)
-        const finalWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
+        // All widgets are instance-based now
         console.log('🎯 [updateInstanceWidgets] FINAL WIDGET UPDATE:', {
-          nonInstance: nonInstanceWidgets.length,
-          nonInstanceIds: nonInstanceWidgets.map(w => w.id),
-          instanceWidgets: updatedInstanceWidgets.length,
-          instanceIds: updatedInstanceWidgets.map(w => w.id),
-          total: finalWidgets.length,
-          finalIds: finalWidgets.map(w => w.id)
+          total: updatedWidgets.length,
+          widgetIds: updatedWidgets.map(w => ({ id: w.id, type: w.type, instanceId: w.settings?.instanceId }))
         });
         
         log('[WidgetStore] Final widget update:', {
-          nonInstance: nonInstanceWidgets.length,
-          instanceWidgets: updatedInstanceWidgets.length,
-          total: finalWidgets.length
+          total: updatedWidgets.length,
+          widgetIds: updatedWidgets.map(w => w.id)
         });
 
         get().updateDashboard({
-          widgets: finalWidgets
+          widgets: updatedWidgets
         });
         
         log('[WidgetStore] Dashboard updated with new widgets');

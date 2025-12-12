@@ -103,9 +103,6 @@ class InstanceDetectionService {
   private readonly MAX_INSTANCES_PER_TYPE = 16;
   private readonly INSTANCE_TIMEOUT = 30000; // 30 seconds
 
-  // Track processed XDR tank data to prevent infinite loops
-  private processedXdrData: Map<string, { level: number; timestamp: number }> = new Map();
-
   // Callback system for instance updates
   private instanceCallbacks: Array<(instances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void> = [];
 
@@ -185,9 +182,6 @@ class InstanceDetectionService {
       this.scanTimer = null;
     }
     
-    // Clear processed XDR data to prevent stale state
-    this.processedXdrData.clear();
-    
     console.log('[InstanceDetection] Stopped NMEA instance scanning.');
   }
 
@@ -199,8 +193,9 @@ class InstanceDetectionService {
     const currentTime = Date.now();
     
     try {
-      // Get current NMEA data from store
-      const nmeaData = useNmeaStore.getState();
+      // Get current NMEA data from store (use the nested nmeaData object)
+      const storeState = useNmeaStore.getState();
+      const nmeaData = storeState.nmeaData;
       
       // Scan for all NMEA instruments and instances
       this.scanForMarineInstruments(nmeaData, currentTime);
@@ -232,7 +227,7 @@ class InstanceDetectionService {
 
   /**
    * Scan for marine instruments (GPS, compass, speed, wind, depth) from NMEA data
-   * Updated for NMEA Store v2.0 sensor-based architecture
+   * Updated for instance-based architecture - creates separate widgets for each instance
    */
   private scanForMarineInstruments(nmeaData: any, currentTime: number): void {
     const sensors = nmeaData.sensors || {};
@@ -249,80 +244,45 @@ class InstanceDetectionService {
 
     Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
       const sensorInstances = sensors[sensorType] || {};
-      let instrumentDetected = false;
-
-      // Check if any instance of this sensor type has data
-      Object.values(sensorInstances).forEach((sensorData: any) => {
+      
+      // Check each instance of this sensor type
+      Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
         if (sensorData && sensorData.timestamp) {
           // Check if data is recent (within last 30 seconds)
           const dataAge = currentTime - sensorData.timestamp;
           if (dataAge < 30000) {
-            instrumentDetected = true;
+            // Create instance-specific ID using WidgetFactory format: "gps-0", "compass-0", "depth-0", etc.
+            const instance = parseInt(instanceNum, 10);
+            const instanceId = WidgetFactory.generateInstanceWidgetId(instrumentType, instance);
+            
+            try {
+              const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
+              
+              const detectedInstance: DetectedInstance = {
+                id: instanceId,
+                type: instrumentType as DetectedInstance['type'],
+                instance: instance,
+                title: widgetInstance.title,
+                icon: widgetInstance.icon,
+                priority: this.getInstrumentPriority(instrumentType),
+                lastSeen: currentTime,
+                category: widgetInstance.category as DetectedInstance['category'],
+              };
+
+              // Log first detection
+              const isFirstDetection = !this.state.instruments.has(instanceId);
+              
+              this.state.instruments.set(instanceId, detectedInstance);
+              
+              if (isFirstDetection) {
+                console.log(`🔧 [InstanceDetection] Detected marine instrument: ${widgetInstance.title} (instance ${instance}) from sensor data`);
+              }
+            } catch (error) {
+              console.warn(`[InstanceDetection] Failed to create widget instance for ${instanceId}:`, error);
+            }
           }
         }
       });
-
-      // For legacy support, also check the old structure during migration
-      if (!instrumentDetected) {
-        const pgnData = nmeaData.pgnData || {};
-        const rawSentences = nmeaData.rawSentences || [];
-        const config = NMEA_INSTRUMENT_DETECTION[instrumentType as keyof typeof NMEA_INSTRUMENT_DETECTION];
-        
-        if (config) {
-          // Check for NMEA 2000 PGNs
-          for (const pgn of config.pgns) {
-            if (pgnData[pgn.toString()]) {
-              instrumentDetected = true;
-              break;
-            }
-          }
-
-          // Check for NMEA 0183 sentences
-          if (!instrumentDetected) {
-            for (const sentence of rawSentences) {
-              if (sentence && typeof sentence === 'string') {
-                for (const sentenceType of config.sentences) {
-                  if (sentence.match(new RegExp(`^\\$..${sentenceType},`))) {
-                    instrumentDetected = true;
-                    break;
-                  }
-                }
-                if (instrumentDetected) break;
-              }
-            }
-          }
-        }
-      }
-
-      // Create or update instrument detection using WidgetFactory
-      if (instrumentDetected) {
-        const instanceId = instrumentType; // Single instrument per type
-        
-        try {
-          const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
-          
-          const detectedInstance: DetectedInstance = {
-            id: instanceId,
-            type: instrumentType as DetectedInstance['type'],
-            title: widgetInstance.title,
-            icon: widgetInstance.icon,
-            priority: this.getInstrumentPriority(instrumentType),
-            lastSeen: currentTime,
-            category: widgetInstance.category as DetectedInstance['category'],
-          };
-
-          // Log first detection
-          const isFirstDetection = !this.state.instruments.has(instanceId);
-          
-          this.state.instruments.set(instanceId, detectedInstance);
-          
-          if (isFirstDetection) {
-            console.log(`[InstanceDetection] Detected marine instrument: ${widgetInstance.title} via NMEA data`);
-          }
-        } catch (error) {
-          console.warn(`[InstanceDetection] Failed to create widget instance for ${instrumentType}:`, error);
-        }
-      }
     });
   }
 
@@ -464,93 +424,48 @@ class InstanceDetectionService {
   }
 
   /**
-   * Scan for battery instances from PGN 127508/127513 data and NMEA 0183 XDR sentences
+   * Scan for battery instances using sensor data
    */
   private scanForBatteryInstances(nmeaData: any, currentTime: number): void {
-    const pgnData = nmeaData.pgnData || {};
+    const sensors = nmeaData.sensors || {};
+    const batterySensors = sensors.battery || {};
     
     console.log('🔧 [scanForBatteryInstances] Checking for batteries:', {
-      hasPgnData: !!pgnData,
-      pgnKeys: Object.keys(pgnData),
-      has127508: !!pgnData['127508'],
-      has127513: !!pgnData['127513']
+      hasSensors: !!sensors,
+      batteryInstanceCount: Object.keys(batterySensors).length,
+      batteryInstances: Object.keys(batterySensors)
     });
     
-    // PGN 127508: Battery Status
-    // PGN 127513: Battery Configuration Status
-    const batteryPgns = ['127508', '127513'];
-    
-    for (const pgn of batteryPgns) {
-      if (pgnData[pgn]) {
-        const batteryDataArray = Array.isArray(pgnData[pgn]) ? pgnData[pgn] : [pgnData[pgn]];
-        
-        for (const batteryData of batteryDataArray) {
-          // Check for instance in the batteryData object or its data property
-          const dataObject = batteryData.data || batteryData;
-          const instance = batteryData.instance !== undefined ? batteryData.instance : dataObject.instance;
-          
-          if (instance !== undefined) {
-            const instanceId = this.generateInstanceId('battery', instance);
-            const title = WidgetFactory.getWidgetTitle(`battery-${instance}`);
-            
-            // Get priority from WidgetFactory
-            const priority = instance + 1;
-            
-            const detectedInstance: DetectedInstance = {
-              id: instanceId,
-              type: 'battery',
-              instance,
-              title,
-              icon: 'battery-charging-outline',
-              priority,
-              lastSeen: currentTime,
-              category: 'power',
-            };
-            
-            this.state.batteries.set(instanceId, detectedInstance);
-            
-            if (this.state.batteries.size === 1) {
-              console.log(`[InstanceDetection] Detected battery instance: ${title}`);
-            }
-          }
-        }
-      }
-    }
-    
-    // NMEA 0183: XDR sentences with battery voltage ($--XDR,U,voltage,V,BAT_instance,*checksum)
-    const rawSentences = nmeaData.rawSentences || [];
-    for (const sentence of rawSentences) {
-      if (sentence && typeof sentence === 'string') {
-        const batteryMatch = sentence.match(/^\$..XDR,U,[\d.]+,V,BAT_(\d+)/);
-        if (batteryMatch) {
-          const instance = parseInt(batteryMatch[1]);
-          const instanceId = this.generateInstanceId('battery', instance);
-          const title = WidgetFactory.getWidgetTitle(`battery-${instance}`);
-          
-          // Get priority from WidgetFactory
-          const priority = instance + 1;
-          
+    // First, use sensor data (preferred in NMEA Store v2)
+    Object.entries(batterySensors).forEach(([instanceStr, batteryData]: [string, any]) => {
+      const instance = parseInt(instanceStr, 10);
+      if (batteryData && batteryData.timestamp) {
+        const dataAge = currentTime - batteryData.timestamp;
+        if (dataAge < 30000) {
+          const instanceId = WidgetFactory.generateInstanceWidgetId('battery', instance);
+          const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
           const detectedInstance: DetectedInstance = {
             id: instanceId,
             type: 'battery',
             instance,
-            title,
-            icon: 'battery-charging-outline',
-            priority,
+            title: widgetInstance.title,
+            icon: widgetInstance.icon,
+            priority: instance + 1,
             lastSeen: currentTime,
-            category: 'power',
+            category: widgetInstance.category as DetectedInstance['category'],
           };
-          
+          const isFirstDetection = !this.state.batteries.has(instanceId);
           this.state.batteries.set(instanceId, detectedInstance);
-          console.log(`[InstanceDetection] Battery ${instance} detected via XDR sentence`);
+          if (isFirstDetection) {
+            console.log(`[InstanceDetection] Detected battery instance from sensor data: ${widgetInstance.title}`);
+          }
         }
       }
-    }
+    });
   }
 
   /**
-   * Scan for tank instances from sensor data, PGN 127505 data and NMEA 0183 XDR sentences
-   * Updated for NMEA Store v2.0 sensor-based architecture
+  * Scan for tank instances from sensor data (NMEA Store v2.0)
    */
   private scanForTankInstances(nmeaData: any, currentTime: number): void {
     // NMEA Store v2.0: Check sensor data first
@@ -600,160 +515,6 @@ class InstanceDetectionService {
         }
       }
     });
-    
-    // Legacy fallback: Look for PGN data in the old NMEA store structure
-    const pgnData = nmeaData.pgnData || {};
-    
-    // PGN 127505: Fluid Level
-    if (pgnData['127505']) {
-      const tankDataArray = Array.isArray(pgnData['127505']) ? pgnData['127505'] : [pgnData['127505']];
-      
-      for (const tankData of tankDataArray) {
-        // Check if we have the required data in the tankData.data object
-        const dataObject = tankData.data || tankData;
-        if (dataObject.instance !== undefined && dataObject.fluidType !== undefined) {
-          const instance = dataObject.instance;
-          const fluidType = this.mapFluidTypeFromPgn(dataObject.fluidType);
-          const position = this.determinePosition(instance, fluidType);
-          const instanceId = this.generateInstanceId('tank', instance);
-          const fluidTypeStr = fluidType || 'unknown';
-          const title = WidgetFactory.getWidgetTitle(`tank-${fluidTypeStr}-${instance}`);
-          
-          const detectedInstance: DetectedInstance = {
-            id: instanceId,
-            type: 'tank',
-            instance,
-            title,
-            icon: WidgetFactory.getWidgetIcon(`tank-${fluidTypeStr}-${instance}`),
-            priority: this.getTankPriority(fluidType || 'unknown', instance),
-            lastSeen: currentTime,
-            category: 'fluid',
-            fluidType,
-            position,
-          };
-          
-          this.state.tanks.set(instanceId, detectedInstance);
-          
-          // Note: PGN data is already in the store, no need to re-add it
-          // The data is accessible via getTankData(instance)
-          
-          console.log(`[InstanceDetection] Detected tank via PGN 127505: ${title} (level: ${dataObject.level}%)`);
-        }
-      }
-    }
-    
-    // NMEA 0183: XDR sentences with tank levels ($--XDR,V,level,P,TANK_TYPE_instance,*checksum)
-    const rawSentences = nmeaData.rawSentences || [];
-    for (const sentence of rawSentences) {
-      if (sentence && typeof sentence === 'string') {
-        // Parse XDR tank data: $xxXDR,V,level,P,TANK_IDENTIFIER*checksum
-        const xdrTankMatch = sentence.match(/^\$..XDR,V,([\d.]+),P,([A-Z]+)_(\d+)/);
-        if (xdrTankMatch) {
-          const level = parseFloat(xdrTankMatch[1]); // Tank level percentage
-          const tankType = xdrTankMatch[2]; // Tank type: FUEL, WATR, WAST, etc.
-          const instance = parseInt(xdrTankMatch[3]); // Tank instance number
-          
-          // Map NMEA tank type to our fluid type
-          let fluidType: string;
-          let widgetInstanceId: string;
-          
-          switch (tankType) {
-            case 'FUEL':
-              fluidType = 'fuel';
-              widgetInstanceId = `tank-fuel-${instance}`;
-              break;
-            case 'WATR':
-              fluidType = 'freshWater';
-              widgetInstanceId = `tank-freshWater-${instance}`;
-              break;
-            case 'WAST':
-              fluidType = 'grayWater';  
-              widgetInstanceId = `tank-grayWater-${instance}`;
-              break;
-            case 'BWAT': // Black water
-              fluidType = 'blackWater';
-              widgetInstanceId = `tank-blackWater-${instance}`;
-              break;
-            case 'LIVE': // Live well
-              fluidType = 'liveWell';
-              widgetInstanceId = `tank-liveWell-${instance}`;
-              break;
-            case 'BALL': // Ballast
-              fluidType = 'ballast';
-              widgetInstanceId = `tank-ballast-${instance}`;
-              break;
-            default:
-              console.warn(`[InstanceDetection] Unknown tank type in XDR: ${tankType}`);
-              continue;
-          }
-          
-          // Create/update detected tank instance
-          const title = WidgetFactory.getWidgetTitle(widgetInstanceId);
-          const icon = WidgetFactory.getWidgetIcon(widgetInstanceId);
-          
-          const detectedInstance: DetectedInstance = {
-            id: widgetInstanceId,
-            type: 'tank',
-            instance,
-            title,
-            icon,
-            priority: this.getTankPriority(fluidType, instance),
-            lastSeen: currentTime,
-            category: 'fluid',
-            fluidType,
-            position: this.determinePosition(instance, fluidType),
-          };
-          
-          this.state.tanks.set(widgetInstanceId, detectedInstance);
-          
-          // **CRITICAL FIX**: Store tank data values in NMEA store by instance
-          // Add deduplication to prevent infinite update loops
-          const xdrDataKey = `${fluidType}-${instance}`;
-          const previousData = this.processedXdrData.get(xdrDataKey);
-          
-          // Only update store if data has changed or it's been more than 5 seconds since last update
-          const shouldUpdate = !previousData || 
-            previousData.level !== level || 
-            (currentTime - previousData.timestamp) > 5000;
-          
-          if (shouldUpdate) {
-            this.updateTankDataInStore(instance, fluidType, {
-              level: level,
-              capacity: undefined, // XDR doesn't provide capacity, only level
-              fluidType: this.getFluidTypeCode(fluidType),
-              lastUpdate: currentTime
-            });
-            
-            // Track this data to prevent duplicate processing
-            this.processedXdrData.set(xdrDataKey, {
-              level: level,
-              timestamp: currentTime
-            });
-            
-            console.log(`[InstanceDetection] Tank ${fluidType} ${instance} detected via XDR: ${level}% (${title}) - DATA UPDATED`);
-          } else {
-            console.log(`[InstanceDetection] Tank ${fluidType} ${instance} detected via XDR: ${level}% (${title}) - DATA UNCHANGED`);
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Map NMEA fluid type codes to our fluid type names
-   */
-  private mapFluidTypeFromPgn(fluidTypeCode: number): string | undefined {
-    // NMEA 2000 fluid type mapping (based on standard)
-    const fluidTypeMap: Record<number, string> = {
-      0: 'fuel',
-      1: 'freshWater',
-      2: 'grayWater', 
-      3: 'blackWater',
-      4: 'liveWell',
-      5: 'ballast',
-    };
-    
-    return fluidTypeMap[fluidTypeCode];
   }
 
   /**
@@ -795,38 +556,6 @@ class InstanceDetectionService {
   }
 
   /**
-   * Get numeric fluid type code for NMEA compatibility
-   */
-  private getFluidTypeCode(fluidType: string): number {
-    const fluidTypeCodes: Record<string, number> = {
-      fuel: 0,
-      freshWater: 1,
-      grayWater: 2,
-      blackWater: 3,
-      liveWell: 4,
-      ballast: 5,
-    };
-    
-    return fluidTypeCodes[fluidType] || 0;
-  }
-
-  /**
-   * Map fluid type strings to TankSensorData.type values
-   */
-  private mapFluidTypeToSensorType(fluidType: string): 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater' {
-    const typeMap: Record<string, 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater'> = {
-      fuel: 'fuel',
-      freshWater: 'water',
-      grayWater: 'waste',
-      blackWater: 'blackwater',
-      liveWell: 'water',
-      ballast: 'ballast',
-    };
-    
-    return typeMap[fluidType] || 'fuel';
-  }
-
-  /**
    * Map TankSensorData.type values back to fluid type strings
    */
   private mapSensorTypeToFluidType(sensorType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater'): string {
@@ -839,35 +568,6 @@ class InstanceDetectionService {
     };
     
     return reverseMap[sensorType || 'fuel'] || 'fuel';
-  }
-
-  /**
-   * Update tank data in NMEA store for specific instance
-   * Updated for NMEA Store v2.0 sensor-based architecture
-   */
-  private updateTankDataInStore(instance: number, fluidType: string, tankData: {
-    level?: number;
-    capacity?: number;
-    fluidType: number;
-    lastUpdate: number;
-  }): void {
-    try {
-      // Get the NMEA store and update sensor data directly
-      const store = useNmeaStore.getState();
-      
-      // Update tank sensor data using the new v2.0 structure
-      store.updateSensorData('tank', instance, {
-        name: `${fluidType} Tank ${instance}`,
-        level: tankData.level ? tankData.level / 100 : undefined, // Convert percentage to 0-1 ratio
-        capacity: tankData.capacity,
-        type: this.mapFluidTypeToSensorType(fluidType),
-        timestamp: tankData.lastUpdate,
-      });
-      
-      console.log(`[InstanceDetection] Updated tank sensor data from XDR: instance=${instance}, fluidType=${fluidType}, level=${tankData.level}%`);
-    } catch (error) {
-      console.error(`[InstanceDetection] Failed to update tank sensor data from XDR:`, error);
-    }
   }
 
   /**
@@ -1018,14 +718,6 @@ class InstanceDetectionService {
           console.log(`[InstanceDetection] Removed stale ${instance.type} instance: ${id}`);
         }
       });
-    });
-    
-    // Also cleanup stale XDR data to prevent memory leaks
-    this.processedXdrData.forEach((data, key) => {
-      if (data.timestamp < staleThreshold) {
-        this.processedXdrData.delete(key);
-        console.log(`[InstanceDetection] Removed stale XDR data: ${key}`);
-      }
     });
   }
 

@@ -88,8 +88,17 @@ export class PureStoreUpdater {
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
     try {
+      console.log('🚨 [processNmeaMessage] Processing:', parsedMessage.messageType);
+      
       // Process message using new NmeaSensorProcessor
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
+      
+      console.log('🚨 [processNmeaMessage] Result:', {
+        success: result.success,
+        hasUpdates: !!result.updates,
+        updateCount: result.updates?.length || 0,
+        updates: result.updates?.map(u => `${u.sensorType}.${u.instance}`) || []
+      });
       
       if (!result.success) {
         // Log processing errors but don't treat as failures
@@ -106,15 +115,17 @@ export class PureStoreUpdater {
 
       // Apply sensor updates to store
       if (result.updates && result.updates.length > 0) {
+        console.log('🚨 [processNmeaMessage] Calling applySensorUpdates with', result.updates.length, 'updates');
         return this.applySensorUpdates(result.updates, options);
       }
+      console.log('🚨 [processNmeaMessage] No updates to apply');
       return {
         updated: false,
         throttled: false,
         batchedFields: [],
         reason: 'No sensor updates generated'
       };
-
+    
     } catch (error) {
       error('[PureStoreUpdater] Error processing NMEA message:', error);
       return {

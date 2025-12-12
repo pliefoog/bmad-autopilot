@@ -179,38 +179,54 @@ export class PgnParser {
 
   /**
    * Parse depth PGN (128267)
+   * Byte 0: SID (Sequence ID / Instance)
+   * Bytes 1-4: Depth in 0.01m resolution
    */
-  public parseDepthPgn(data: string): { depth: number } | null {
+  public parseDepthPgn(data: string): { depth: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 5) return null;
+    
+    // Instance from SID byte (byte 0)
+    const instance = bytes[0] || 0;
     
     // Depth in 0.01m resolution (bytes 1-4, little-endian 32-bit)
     const depthRaw = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
     if (depthRaw === 0xFFFFFFFF) return null; // Invalid
     
-    return { depth: depthRaw * 0.01 };
+    return { depth: depthRaw * 0.01, instance };
   }
 
   /**
    * Parse speed PGN (128259)
+   * Byte 0: SID (Sequence ID / Instance)
+   * Bytes 1-2: Speed in 0.01 m/s resolution
    */
-  public parseSpeedPgn(data: string): { speed: number } | null {
+  public parseSpeedPgn(data: string): { speed: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 5) return null;
+    
+    // Instance from SID byte (byte 0)
+    const instance = bytes[0] || 0;
     
     // Speed in 0.01 m/s resolution (bytes 1-2, little-endian 16-bit)
     const speedRaw = bytes[1] | (bytes[2] << 8);
     if (speedRaw === 0xFFFF) return null; // Invalid
     
-    return { speed: speedRaw * 0.01 * 1.94384 }; // Convert m/s to knots
+    return { speed: speedRaw * 0.01 * 1.94384, instance }; // Convert m/s to knots
   }
 
   /**
    * Parse wind PGN (130306)
+   * Byte 0: SID (Sequence ID / Instance)
+   * Bytes 1-2: Wind speed in 0.01 m/s resolution
+   * Bytes 3-4: Wind angle in 0.0001 radians resolution
    */
-  public parseWindPgn(data: string): { windSpeed: number; windAngle: number } | null {
+  public parseWindPgn(data: string): { windSpeed: number; windAngle: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 6) return null;
+    
+    // Instance from SID byte (byte 0)
+    const instance = bytes[0] || 0;
     
     // Wind speed in 0.01 m/s resolution (bytes 1-2, little-endian 16-bit)
     const speedRaw = bytes[1] | (bytes[2] << 8);
@@ -221,16 +237,23 @@ export class PgnParser {
     
     return {
       windSpeed: speedRaw * 0.01 * 1.94384, // Convert m/s to knots
-      windAngle: angleRaw * 0.0001 * (180 / Math.PI) // Convert radians to degrees
+      windAngle: angleRaw * 0.0001 * (180 / Math.PI), // Convert radians to degrees
+      instance
     };
   }
 
   /**
    * Parse GPS PGN (129029) - Fast Packet
+   * Byte 0: SID (Sequence ID / Instance)
+   * Bytes 5-8: Latitude in 1e-7 degree resolution
+   * Bytes 9-12: Longitude in 1e-7 degree resolution
    */
-  public parseGPSPgn(data: string): { latitude: number; longitude: number } | null {
+  public parseGPSPgn(data: string): { latitude: number; longitude: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 13) return null;
+    
+    // Instance from SID byte (byte 0)
+    const instance = bytes[0] || 0;
     
     // Latitude in 1e-7 degree resolution (bytes 5-8, little-endian 32-bit signed)
     const latRaw = bytes[5] | (bytes[6] << 8) | (bytes[7] << 16) | (bytes[8] << 24);
@@ -243,35 +266,52 @@ export class PgnParser {
     const latitude = (latRaw > 0x7FFFFFFF ? latRaw - 0x100000000 : latRaw) * 1e-7;
     const longitude = (lonRaw > 0x7FFFFFFF ? lonRaw - 0x100000000 : lonRaw) * 1e-7;
     
-    return { latitude, longitude };
+    return { latitude, longitude, instance };
   }
 
   /**
    * Parse heading PGN (127250)
+   * Byte 0: SID (Sequence ID / Instance)
+   * Bytes 1-2: Heading in 0.0001 radians resolution
    */
-  public parseHeadingPgn(data: string): { heading: number } | null {
+  public parseHeadingPgn(data: string): { heading: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 3) return null;
+    
+    // Instance from SID byte (byte 0)
+    const instance = bytes[0] || 0;
     
     // Heading in 0.0001 radians resolution (bytes 1-2, little-endian 16-bit)
     const headingRaw = bytes[1] | (bytes[2] << 8);
     if (headingRaw === 0xFFFF) return null;
     
-    return { heading: headingRaw * 0.0001 * (180 / Math.PI) }; // Convert radians to degrees
+    return { heading: headingRaw * 0.0001 * (180 / Math.PI), instance }; // Convert radians to degrees
   }
 
   /**
    * Parse temperature PGN (130310)
+   * Byte 0: SID (Sequence ID / Instance)
+   * Byte 1: Temperature Instance/Source (0=Sea, 1=Outside, 2=Inside, 3=Engine Room, 4=Main Cabin, etc.)
+   * Bytes 3-4: Temperature in 0.01K resolution
    */
-  public parseTemperaturePgn(data: string): { temperature: number } | null {
+  public parseTemperaturePgn(data: string): { temperature: number; instance: number; source: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 5) return null;
+    
+    // Instance from SID byte (byte 0) - can be used to differentiate multiple temp sensors
+    const instance = bytes[0] || 0;
+    // Temperature source (byte 1) - identifies location/type of temperature sensor
+    const source = bytes[1] || 0;
     
     // Temperature in 0.01K resolution (bytes 3-4, little-endian 16-bit)
     const tempRaw = bytes[3] | (bytes[4] << 8);
     if (tempRaw === 0xFFFF) return null;
     
-    return { temperature: tempRaw * 0.01 - 273.15 }; // Convert Kelvin to Celsius
+    return { 
+      temperature: tempRaw * 0.01 - 273.15, // Convert Kelvin to Celsius
+      instance: source, // Use source as instance for temperature differentiation
+      source 
+    };
   }
 
   /**

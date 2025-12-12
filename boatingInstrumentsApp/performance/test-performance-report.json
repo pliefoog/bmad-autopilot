@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-24T13:15:36.485Z",
+  "timestamp": "2025-12-12T17:00:55.489Z",
   "thresholds": {
     "maxRenderTimeMs": 16,
     "maxMemoryIncreaseMb": 50,
@@ -8,196 +8,100 @@
   },
   "metrics": [
     {
-      "renderTime": 15.036833999999999,
-      "memoryUsage": 22.20476531982422,
-      "dataLatency": 42.58504932479465,
-      "throughput": 473.1002836979526,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render modal when visible is true",
-      "timestamp": 1763990136183
+      "renderTime": 11952.856750000035,
+      "memoryUsage": -4.292701721191406,
+      "dataLatency": 28.477954341939327,
+      "throughput": 535.7465501720872,
+      "testName": "React Native App Compatibility Tests Protocol Server Compatibility should maintain TCP server on port 2000 for React Native app connection",
+      "timestamp": 1765558703573
     },
     {
-      "renderTime": 3.2814579999999296,
-      "memoryUsage": 20.943702697753906,
-      "dataLatency": 70.96489377093721,
-      "throughput": 464.47949034453865,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render header with title",
-      "timestamp": 1763990136206
+      "renderTime": 11757.652750000008,
+      "memoryUsage": -3.11322021484375,
+      "dataLatency": 54.63440902312598,
+      "throughput": 525.5796290874158,
+      "testName": "React Native App Compatibility Tests Protocol Server Compatibility should maintain UDP server on port 2000 for React Native app broadcasts",
+      "timestamp": 1765558716419
     },
     {
-      "renderTime": 4.302874999999858,
-      "memoryUsage": 18.748321533203125,
-      "dataLatency": 74.17883281781678,
-      "throughput": 612.3552596734661,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render close button in header",
-      "timestamp": 1763990136215
+      "renderTime": 13140.25583400001,
+      "memoryUsage": -2.9594879150390625,
+      "dataLatency": 39.279787198319724,
+      "throughput": 600.7569053534818,
+      "testName": "React Native App Compatibility Tests Protocol Server Compatibility should maintain WebSocket server on port 8080 for React Native web app",
+      "timestamp": 1765558729762
     },
     {
-      "renderTime": 3.164167000000134,
-      "memoryUsage": 22.096115112304688,
-      "dataLatency": 51.47367491526481,
-      "throughput": 564.1096546191816,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render footer with cancel and save buttons by default",
-      "timestamp": 1763990136218
+      "renderTime": 11399.197999999975,
+      "memoryUsage": -2.43048095703125,
+      "dataLatency": 73.25407562121617,
+      "throughput": 494.9887289092245,
+      "testName": "React Native App Compatibility Tests NMEA Data Format Compatibility should provide NMEA data in expected format for GPS widgets",
+      "timestamp": 1765558741405
     },
     {
-      "renderTime": 3.3221669999998085,
-      "memoryUsage": 25.43714141845703,
-      "dataLatency": 41.37295052211726,
-      "throughput": 470.8616699473088,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should not render footer when showFooter is false",
-      "timestamp": 1763990136222
+      "renderTime": 14858.155792000005,
+      "memoryUsage": -2.1542282104492188,
+      "dataLatency": 69.4142948367414,
+      "throughput": 517.1597852392922,
+      "testName": "React Native App Compatibility Tests NMEA Data Format Compatibility should provide wind data in expected format for wind widgets",
+      "timestamp": 1765558758208
     },
     {
-      "renderTime": 4.555124999999862,
-      "memoryUsage": 22.24829864501953,
-      "dataLatency": 30.82397777380632,
-      "throughput": 546.0521576519402,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render custom button text",
-      "timestamp": 1763990136232
+      "renderTime": 12668.627791000006,
+      "memoryUsage": -2.0709075927734375,
+      "dataLatency": 70.78221656772095,
+      "throughput": 622.0498416253869,
+      "testName": "React Native App Compatibility Tests NMEA Data Format Compatibility should provide depth data in expected format for depth widgets",
+      "timestamp": 1765558772794
     },
     {
-      "renderTime": 3.575833999999986,
-      "memoryUsage": 25.585906982421875,
-      "dataLatency": 49.44355548408336,
-      "throughput": 555.6954026799534,
-      "testName": "BaseSettingsModal AC1: Modal Appearance and Layout should render children content",
-      "timestamp": 1763990136236
+      "renderTime": 13495.090958000044,
+      "memoryUsage": -1.0315017700195312,
+      "dataLatency": 70.54381890791704,
+      "throughput": 642.8479615417164,
+      "testName": "React Native App Compatibility Tests Multi-Protocol Concurrent Connection Compatibility should handle React Native app connecting via multiple protocols simultaneously",
+      "timestamp": 1765558787061
     },
     {
-      "renderTime": 181.15262500000017,
-      "memoryUsage": 30.688690185546875,
-      "dataLatency": 26.477622938926913,
-      "throughput": 458.5223088223494,
-      "testName": "BaseSettingsModal AC2: Keyboard Navigation should call onClose when Escape key is pressed",
-      "timestamp": 1763990136418
+      "renderTime": 11893.263375000039,
+      "memoryUsage": -1.1619338989257812,
+      "dataLatency": 74.98657629123011,
+      "throughput": 517.7132218706167,
+      "testName": "React Native App Compatibility Tests Scenario Data Compatibility should provide scenario data compatible with React Native app widgets",
+      "timestamp": 1765558799851
     },
     {
-      "renderTime": 2.804583999999977,
-      "memoryUsage": 30.172103881835938,
-      "dataLatency": 43.58018232390071,
-      "throughput": 571.1441471100738,
-      "testName": "BaseSettingsModal AC2: Keyboard Navigation should call onSave when Enter key is pressed",
-      "timestamp": 1763990136428
+      "renderTime": 11841.75679200003,
+      "memoryUsage": -3.2711029052734375,
+      "dataLatency": 38.306581540679495,
+      "throughput": 518.9021656975948,
+      "testName": "React Native App Compatibility Tests Scenario Data Compatibility should handle engine monitoring scenario for React Native engine widgets",
+      "timestamp": 1765558812206
     },
     {
-      "renderTime": 2.5428329999999733,
-      "memoryUsage": 33.4952392578125,
-      "dataLatency": 52.28885001356559,
-      "throughput": 476.24140244380595,
-      "testName": "BaseSettingsModal AC2: Keyboard Navigation should not trigger keyboard handlers when modal is not visible",
-      "timestamp": 1763990136431
+      "renderTime": 11549.807665999979,
+      "memoryUsage": -2.8041229248046875,
+      "dataLatency": 31.04469782865966,
+      "throughput": 466.4218503770987,
+      "testName": "React Native App Compatibility Tests Performance and Responsiveness Compatibility should maintain acceptable data rates for React Native app real-time display",
+      "timestamp": 1765558823901
     },
     {
-      "renderTime": 0.3919170000001486,
-      "memoryUsage": 27.207061767578125,
-      "dataLatency": 66.04270618535432,
-      "throughput": 476.2714343223036,
-      "testName": "BaseSettingsModal AC2: Keyboard Navigation should not setup keyboard listeners on mobile platforms",
-      "timestamp": 1763990136436
-    },
-    {
-      "renderTime": 2.6963329999998678,
-      "memoryUsage": 35.37806701660156,
-      "dataLatency": 28.238361400786026,
-      "throughput": 518.4154844517027,
-      "testName": "BaseSettingsModal AC3: Glove-Friendly Touch Targets should use 44pt touch targets when glove mode is disabled",
-      "timestamp": 1763990136443
-    },
-    {
-      "renderTime": 2.380957999999964,
-      "memoryUsage": 38.696739196777344,
-      "dataLatency": 33.94623647407907,
-      "throughput": 504.113632358953,
-      "testName": "BaseSettingsModal AC3: Glove-Friendly Touch Targets should use 64pt touch targets when glove mode is enabled",
-      "timestamp": 1763990136446
-    },
-    {
-      "renderTime": 3.4967079999998987,
-      "memoryUsage": 30.445419311523438,
-      "dataLatency": 42.0772448155498,
-      "throughput": 644.5220212279207,
-      "testName": "BaseSettingsModal AC3: Glove-Friendly Touch Targets should apply correct button heights based on glove mode",
-      "timestamp": 1763990136450
-    },
-    {
-      "renderTime": 2.494333000000097,
-      "memoryUsage": 33.90019226074219,
-      "dataLatency": 50.08419863857441,
-      "throughput": 506.0504495326393,
-      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onClose when backdrop is pressed and dismissible is true",
-      "timestamp": 1763990136453
-    },
-    {
-      "renderTime": 2.411333999999897,
-      "memoryUsage": 37.10883331298828,
-      "dataLatency": 31.272929343565913,
-      "throughput": 544.1614418430395,
-      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should NOT call onClose when backdrop is pressed and dismissible is false",
-      "timestamp": 1763990136456
-    },
-    {
-      "renderTime": 2.8476670000000013,
-      "memoryUsage": 40.49090576171875,
-      "dataLatency": 74.15494702769823,
-      "throughput": 489.5482944055,
-      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onClose when close button is pressed",
-      "timestamp": 1763990136459
-    },
-    {
-      "renderTime": 2.3674170000001595,
-      "memoryUsage": 37.39696502685547,
-      "dataLatency": 64.13751247612491,
-      "throughput": 630.7667282979822,
-      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onClose when cancel button is pressed",
-      "timestamp": 1763990136467
-    },
-    {
-      "renderTime": 2.320207999999866,
-      "memoryUsage": 40.80939483642578,
-      "dataLatency": 64.15317001421609,
-      "throughput": 617.8031915678214,
-      "testName": "BaseSettingsModal AC4: Dismissible Modal Behavior should call onSave when save button is pressed",
-      "timestamp": 1763990136470
-    },
-    {
-      "renderTime": 4.076625000000149,
-      "memoryUsage": 32.715126037597656,
-      "dataLatency": 42.3098818892924,
-      "throughput": 592.3724942218743,
-      "testName": "BaseSettingsModal AC5: Theme Integration should use theme colors for modal styling",
-      "timestamp": 1763990136475
-    },
-    {
-      "renderTime": 2.8765840000000935,
-      "memoryUsage": 35.99608612060547,
-      "dataLatency": 66.81400669139845,
-      "throughput": 647.4507239263362,
-      "testName": "BaseSettingsModal AC5: Theme Integration should apply theme colors to buttons",
-      "timestamp": 1763990136478
-    },
-    {
-      "renderTime": 2.375833000000057,
-      "memoryUsage": 39.36285400390625,
-      "dataLatency": 49.55850446345541,
-      "throughput": 640.1640521745348,
-      "testName": "BaseSettingsModal AC5: Theme Integration should work with red-night theme",
-      "timestamp": 1763990136481
-    },
-    {
-      "renderTime": 2.252875000000131,
-      "memoryUsage": 42.67469787597656,
-      "dataLatency": 44.54283069015218,
-      "throughput": 625.6671540195589,
-      "testName": "BaseSettingsModal Accessibility should have proper accessibility labels",
-      "timestamp": 1763990136484
+      "renderTime": 14331.932499999995,
+      "memoryUsage": -2.1928863525390625,
+      "dataLatency": 72.51799089692335,
+      "throughput": 649.9851012328555,
+      "testName": "React Native App Compatibility Tests Performance and Responsiveness Compatibility should handle React Native app connection/disconnection gracefully",
+      "timestamp": 1765558843732
     }
   ],
   "summary": {
-    "totalTests": 23,
-    "averageRenderTime": 11.162056260869566,
-    "averageMemoryUsage": 31.46967945928159,
-    "averageDataLatency": 49.58791826067221,
-    "averageThroughput": 549.1247338843798,
-    "thresholdViolations": 7
+    "totalTests": 11,
+    "averageRenderTime": 12626.236200727284,
+    "averageMemoryUsage": -2.498415860262784,
+    "averageDataLatency": 56.658400277679384,
+    "averageThroughput": 553.8319764642519,
+    "thresholdViolations": 11
   }
 }

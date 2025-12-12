@@ -78,6 +78,59 @@ export class NmeaSensorProcessor {
   private readonly TIMESTAMP_UPDATE_THROTTLE_MS = 5000; // 5 seconds
 
   /**
+   * Extract instance ID from NMEA message
+   * Uses talker ID, explicit instance field, or defaults to 0
+   * 
+   * Examples:
+   * - GP (GPS) → 0
+   * - GL (GLONASS) → 1  
+   * - EC (ECDIS) → 2
+   * - HC (Heading - magnetic compass) → 0
+   * - HE (Heading - gyro) → 1
+   */
+  private extractInstanceId(message: ParsedNmeaMessage): number {
+    // Priority 1: Explicit instance field (RPM, XDR)
+    if (message.fields.instance !== undefined && message.fields.instance !== null) {
+      return parseInt(String(message.fields.instance), 10) || 0;
+    }
+    
+    // Priority 2: Talker ID mapping for common multi-device scenarios
+    const talker = message.talker?.toUpperCase();
+    const talkerInstanceMap: Record<string, number> = {
+      // GPS receivers
+      'GP': 0,  // GPS
+      'GL': 1,  // GLONASS
+      'GA': 2,  // Galileo
+      'GB': 3,  // BeiDou
+      'GN': 4,  // Combined GNSS
+      
+      // Heading sensors
+      'HC': 0,  // Magnetic compass
+      'HE': 1,  // Gyro compass
+      'HN': 2,  // North seeking gyro
+      
+      // Depth sounders
+      'SD': 0,  // Depth sounder (primary)
+      'YX': 1,  // Transducer (secondary)
+      
+      // Wind instruments  
+      'WI': 0,  // Wind instrument (primary)
+      'VW': 1,  // Wind sensor (secondary)
+      
+      // Speed sensors
+      'VD': 0,  // Speed sensor (primary)
+      'VM': 1,  // Speed sensor (secondary)
+    };
+    
+    if (talker && talkerInstanceMap[talker] !== undefined) {
+      return talkerInstanceMap[talker];
+    }
+    
+    // Priority 3: Default to instance 0
+    return 0;
+  }
+
+  /**
    * Update widget timestamp for data freshness tracking
    */
   private updateWidgetTimestamp(sensorType: SensorType, instance: number): void {
@@ -385,8 +438,9 @@ export class NmeaSensorProcessor {
     }
 
     // Create depth sensor update
+    const instance = this.extractInstanceId(message);
     const depthData: Partial<DepthSensorData> = {
-      name: 'Depth (Waterline)',
+      name: `Depth ${instance > 0 ? `#${instance}` : ''}`.trim(),
       depth: fields.depth_meters, // Always in meters (base unit)
       referencePoint: 'waterline', // DPT typically represents depth from waterline
       sentenceType: 'DPT',
@@ -397,7 +451,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'depth',
-        instance: 0, // DPT uses instance 0 (priority: 1st - highest)
+        instance: instance,
         data: depthData
       }],
       messageType: 'DPT'
@@ -491,11 +545,14 @@ export class NmeaSensorProcessor {
       }
     }
 
+    const instance = this.extractInstanceId(message);
+    gpsData.name = `GPS ${instance > 0 ? `#${instance}` : 'Receiver'}`.trim();
+
     return {
       success: true,
       updates: [{
         sensorType: 'gps',
-        instance: 0, // GPS is typically single instance
+        instance: instance,
         data: gpsData
       }],
       messageType: 'GGA'
@@ -638,8 +695,9 @@ export class NmeaSensorProcessor {
 
     // Speed over ground - VTG provides SOG specifically
     if (fields.speed_knots !== null && !isNaN(fields.speed_knots)) {
+      const instance = this.extractInstanceId(message);
       const speedData: Partial<SpeedSensorData> = {
-        name: 'GPS Speed',
+        name: `Speed ${instance > 0 ? `#${instance}` : ''}`.trim(),
         overGround: fields.speed_knots, // Speed over ground in knots (base unit)
         timestamp: timestamp
       };
@@ -648,7 +706,7 @@ export class NmeaSensorProcessor {
         success: true,
         updates: [{
           sensorType: 'speed',
-          instance: 0,
+          instance: instance,
           data: speedData
         }],
         messageType: 'VTG'
@@ -669,17 +727,19 @@ export class NmeaSensorProcessor {
     const fields = message.fields;
     const updates: SensorUpdate[] = [];
 
+    const instance = this.extractInstanceId(message);
+    
     // Speed through water - VHW provides STW specifically
     if (fields.speed_knots !== null && !isNaN(fields.speed_knots)) {
       const speedData: Partial<SpeedSensorData> = {
-        name: 'Log Speed',
+        name: `Speed ${instance > 0 ? `#${instance}` : ''}`.trim(),
         throughWater: fields.speed_knots, // Speed through water in knots (base unit)
         timestamp: timestamp
       };
 
       updates.push({
         sensorType: 'speed',
-        instance: 0,
+        instance: instance,
         data: speedData
       });
     }
@@ -687,26 +747,26 @@ export class NmeaSensorProcessor {
     // Heading (true or magnetic)
     if (fields.heading_true !== null && !isNaN(fields.heading_true)) {
       const compassData: Partial<CompassSensorData> = {
-        name: 'Compass',
+        name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
         heading: fields.heading_true, // True heading in degrees (base unit)
         timestamp: timestamp
       };
 
       updates.push({
         sensorType: 'compass',
-        instance: 0,
+        instance: instance,
         data: compassData
       });
     } else if (fields.heading_magnetic !== null && !isNaN(fields.heading_magnetic)) {
       const compassData: Partial<CompassSensorData> = {
-        name: 'Compass',
+        name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
         heading: fields.heading_magnetic, // Magnetic heading in degrees (base unit)
         timestamp: timestamp
       };
 
       updates.push({
         sensorType: 'compass',
-        instance: 0,
+        instance: instance,
         data: compassData
       });
     }
@@ -771,8 +831,9 @@ export class NmeaSensorProcessor {
     }
 
     // Create wind sensor update
+    const instance = this.extractInstanceId(message);
     const windData: Partial<WindSensorData> = {
-      name: 'Wind Sensor',
+      name: `Wind ${instance > 0 ? `#${instance}` : 'Sensor'}`.trim(),
       direction: normalizedAngle, // Normalized wind direction in degrees
       angle: normalizedAngle, // @deprecated - kept for backward compatibility
       speed: windSpeedKnots, // Wind speed in knots (base unit)
@@ -790,7 +851,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'wind',
-        instance: 0, // Wind is typically single instance
+        instance: instance,
         data: windData
       }],
       messageType: 'MWV'
@@ -902,8 +963,9 @@ export class NmeaSensorProcessor {
     }
 
     // Create compass sensor update
+    const instance = this.extractInstanceId(message);
     const compassData: Partial<CompassSensorData> = {
-      name: 'Compass',
+      name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
       heading: fields.magnetic_heading, // Magnetic heading in degrees (base unit)
       timestamp: timestamp
     };
@@ -912,7 +974,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'compass',
-        instance: 0,
+        instance: instance,
         data: compassData
       }],
       messageType: 'HDG'
@@ -934,8 +996,9 @@ export class NmeaSensorProcessor {
       };
     }
 
+    const instance = this.extractInstanceId(message);
     const compassData: Partial<CompassSensorData> = {
-      name: 'Compass',
+      name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
       heading: fields.magnetic_heading,
       timestamp: timestamp
     };
@@ -944,7 +1007,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'compass',
-        instance: 0,
+        instance: instance,
         data: compassData
       }],
       messageType: 'HDM'
@@ -966,8 +1029,9 @@ export class NmeaSensorProcessor {
       };
     }
 
+    const instance = this.extractInstanceId(message);
     const compassData: Partial<CompassSensorData> = {
-      name: 'Compass',
+      name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
       heading: fields.true_heading, // True heading
       timestamp: timestamp
     };
@@ -976,7 +1040,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'compass',
-        instance: 0,
+        instance: instance,
         data: compassData
       }],
       messageType: 'HDT'
@@ -2519,7 +2583,7 @@ export class NmeaSensorProcessor {
 
       const update: SensorUpdate = {
         sensorType: 'depth',
-        instance: 0,
+        instance: depthData.instance,
         value: depthData.depth,
         unit: 'meters',
         timestamp
@@ -2550,7 +2614,7 @@ export class NmeaSensorProcessor {
 
       const update: SensorUpdate = {
         sensorType: 'speed',
-        instance: 0,
+        instance: speedData.instance,
         value: speedData.speed,
         unit: 'knots',
         timestamp
@@ -2582,14 +2646,14 @@ export class NmeaSensorProcessor {
       const updates: SensorUpdate[] = [
         {
           sensorType: 'wind_speed',
-          instance: 0,
+          instance: windData.instance,
           value: windData.windSpeed,
           unit: 'knots',
           timestamp
         },
         {
           sensorType: 'wind_direction',
-          instance: 0,
+          instance: windData.instance,
           value: windData.windAngle,
           unit: 'degrees',
           timestamp
@@ -2622,14 +2686,14 @@ export class NmeaSensorProcessor {
       const updates: SensorUpdate[] = [
         {
           sensorType: 'gps_latitude',
-          instance: 0,
+          instance: gpsData.instance,
           value: gpsData.latitude,
           unit: 'degrees',
           timestamp
         },
         {
           sensorType: 'gps_longitude',
-          instance: 0,
+          instance: gpsData.instance,
           value: gpsData.longitude,
           unit: 'degrees',
           timestamp
@@ -2661,7 +2725,7 @@ export class NmeaSensorProcessor {
 
       const update: SensorUpdate = {
         sensorType: 'heading',
-        instance: 0,
+        instance: headingData.instance,
         value: headingData.heading,
         unit: 'degrees',
         timestamp
@@ -2692,7 +2756,7 @@ export class NmeaSensorProcessor {
 
       const update: SensorUpdate = {
         sensorType: 'water_temperature',
-        instance: 0,
+        instance: tempData.instance,
         value: tempData.temperature,
         unit: 'celsius',
         timestamp

@@ -5,7 +5,9 @@
 			"label": "Run Jest Tests - VS Code Test Explorer",
 			"type": "shell",
 			"command": "npm",
-			"args": ["test"],
+			"args": [
+				"test"
+			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
 			},
@@ -27,7 +29,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -51,7 +55,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -74,7 +80,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -97,7 +105,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -120,7 +130,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -143,7 +155,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -166,7 +180,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -189,7 +205,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -213,7 +231,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -237,7 +257,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -261,7 +283,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -285,7 +309,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -309,7 +335,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -333,7 +361,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -357,7 +387,9 @@
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"shell": {
 					"executable": "/bin/zsh",
-					"args": ["-c"]
+					"args": [
+						"-c"
+					]
 				}
 			},
 			"isBackground": true,
@@ -394,7 +426,10 @@
 			"label": "Start Web Dev Server",
 			"type": "shell",
 			"command": "npm",
-			"args": ["run", "web"],
+			"args": [
+				"run",
+				"web"
+			],
 			"options": {
 				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
 				"env": {
@@ -507,6 +542,16 @@
 				"clear": true
 			},
 			"problemMatcher": []
+		},
+		{
+			"label": "Run Jest Tests - VS Code Test Explorer",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"test"
+			],
+			"isBackground": false,
+			"group": "test"
 		}
 	]
 }
