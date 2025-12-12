@@ -136,7 +136,6 @@ const defaultDashboard: DashboardConfig = {
       enabled: true,
       order: -1000,
       isSystemWidget: true,
-      createdAt: Date.now(),
     },
     // All other widgets are now dynamically detected from NMEA messages:
     // - GPS widgets appear when GPS NMEA sentences are detected
@@ -263,19 +262,15 @@ export const useWidgetStore = create<WidgetStore>()(
         'battery', 'tanks', 'autopilot', 'weather', 'navigation'
       ],
       selectedWidgets: ['depth', 'speed', 'wind', 'gps', 'compass'],
-      currentDashboard: 'default',
-      dashboards: [defaultDashboard],
+      dashboard: defaultDashboard,
       presets: defaultPresets,
       editMode: false,
       gridVisible: false,
-      // Dynamic widget lifecycle configuration
-      widgetExpirationTimeout: 60000, // 60 seconds - configurable timeout for widget removal
-      enableWidgetAutoRemoval: true,   // Enable automatic removal of widgets when data stops flowing
 
       // Actions
       addWidget: (widgetType, position = { x: 0, y: 0 }, options?: { instance?: number, sensorSource?: string }) => {
         const currentState = get();
-        const currentDashboard = currentState.dashboards.find(d => d.id === currentState.currentDashboard);
+        const currentDashboard = currentState.dashboard;
         
         // Generate proper instance-based ID
         let widgetId: string;
@@ -288,7 +283,7 @@ export const useWidgetStore = create<WidgetStore>()(
           }
         } else {
           // Single-instance widget - check if one already exists
-          const existingWidget = currentDashboard?.widgets.find(w => w.type === widgetType);
+          const existingWidget = currentDashboard.widgets.find(w => w.type === widgetType);
           if (existingWidget) {
             warn(`[addWidget] Widget of type '${widgetType}' already exists: ${existingWidget.id}`);
             return; // Don't create duplicate single-instance widgets
@@ -311,17 +306,10 @@ export const useWidgetStore = create<WidgetStore>()(
           },
           enabled: true,
           order: currentState.selectedWidgets.length,
-          // Add timestamp for expiration/lifecycle management
-          createdAt: Date.now(),
-          lastDataUpdate: Date.now(),
         };
 
         set((state) => ({
-          dashboards: state.dashboards.map((dashboard) =>
-            dashboard.id === state.currentDashboard
-              ? { ...dashboard, widgets: [...dashboard.widgets, widget] }
-              : dashboard
-          ),
+          dashboard: { ...state.dashboard, widgets: [...state.dashboard.widgets, widget] },
           selectedWidgets: [...state.selectedWidgets, widgetType],
         }));
         
@@ -425,31 +413,28 @@ export const useWidgetStore = create<WidgetStore>()(
       switchDashboard: (dashboardId) =>
         set({ currentDashboard: dashboardId }),
 
-      updateDashboard: (dashboardId, updates) => {
+      updateDashboard: (updates) => {
         if (__DEV__ && updates.widgets) {
-          const current = get().dashboards.find(d => d.id === dashboardId);
-          if (current && current.widgets.length !== updates.widgets.length) {
+          const current = get().dashboard;
+          if (current.widgets.length !== updates.widgets.length) {
             const stack = new Error().stack;
             console.log('🔧 updateDashboard called - widget count changed:', {
               from: current.widgets.length,
               to: updates.widgets.length,
-              dashboardId,
               caller: stack?.split('\n')[2]?.trim()
             });
           }
         }
         
         set((state) => ({
-          dashboards: state.dashboards.map((dashboard) =>
-            dashboard.id === dashboardId ? { ...dashboard, ...updates } : dashboard
-          ),
+          dashboard: { ...state.dashboard, ...updates },
         }));
       },
 
       // Enhanced state management implementations
       initializeWidgetStatesOnAppStart: () => {
         const state = get();
-        let dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        let dashboard = state.dashboard;
         
         log('[WidgetStore] initializeWidgetStatesOnAppStart - Dashboard widgets:', {
           dashboardId: state.currentDashboard,
@@ -487,7 +472,7 @@ export const useWidgetStore = create<WidgetStore>()(
             
             // Add missing system widgets at the start
             const updatedWidgets = [...systemWidgetConfigs, ...dashboard.widgets];
-            get().updateDashboard(state.currentDashboard, {
+            get().updateDashboard({
               widgets: updatedWidgets
             });
             
@@ -507,7 +492,7 @@ export const useWidgetStore = create<WidgetStore>()(
               }
               return widget;
             });
-            get().updateDashboard(state.currentDashboard, {
+            get().updateDashboard({
               widgets: updatedWidgets
             });
           }
@@ -531,7 +516,7 @@ export const useWidgetStore = create<WidgetStore>()(
           },
         }));
 
-        get().updateDashboard(get().currentDashboard, { widgets: resetWidgets });
+        get().updateDashboard({ widgets: resetWidgets });
       },
 
       applyPreset: (presetId) => {
@@ -544,33 +529,33 @@ export const useWidgetStore = create<WidgetStore>()(
           layout: { ...w.layout, id: `${w.type}-${Date.now()}-${index}` },
         }));
 
-        get().updateDashboard(get().currentDashboard, { widgets });
+        get().updateDashboard({ widgets });
         set({ selectedWidgets: widgets.map((w) => w.type) });
       },
 
       // User-arranged positioning actions (Phase 3: Drag-and-Drop)
       enableUserPositioning: () => {
         const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        const dashboard = state.dashboard;
         if (!dashboard || dashboard.userPositioned) return;
 
         log('[WidgetStore] 🎯 Enabling user positioning mode');
         
         // Switch to user-arranged mode
-        get().updateDashboard(state.currentDashboard, {
+        get().updateDashboard({
           userPositioned: true
         });
       },
 
       resetLayoutToAutoDiscovery: () => {
         const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        const dashboard = state.dashboard;
         if (!dashboard) return;
 
         log('[WidgetStore] 🔄 Resetting to auto-discovery layout');
         
         // Switch back to auto-discovery mode (array stays as-is)
-        get().updateDashboard(state.currentDashboard, {
+        get().updateDashboard({
           userPositioned: false
         });
       },
@@ -578,7 +563,7 @@ export const useWidgetStore = create<WidgetStore>()(
       // Simple array-based widget reordering using global indices
       reorderWidget: (fromIndex: number, toIndex: number) => {
         const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        const dashboard = state.dashboard;
         if (!dashboard) return;
 
         log(`[WidgetStore] 🔄 Reordering widget: index ${fromIndex} → ${toIndex}`);
@@ -591,7 +576,7 @@ export const useWidgetStore = create<WidgetStore>()(
         log(`[WidgetStore] ✅ Moved widget ${movedWidget.id} from ${fromIndex} to ${toIndex}`);
         log(`[WidgetStore] New array:`, widgets.map((w, i) => `${i}:${w.id}`).join(', '));
         
-        get().updateDashboard(state.currentDashboard, {
+        get().updateDashboard({
           widgets,
           userPositioned: true,
         });
@@ -599,7 +584,7 @@ export const useWidgetStore = create<WidgetStore>()(
 
       reorderWidgetsOnPage: (pageIndex, widgetIds) => {
         const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        const dashboard = state.dashboard;
         if (!dashboard) return;
 
         log(`[WidgetStore] 📝 Reordering ${widgetIds.length} widgets on page ${pageIndex}`);
@@ -633,14 +618,14 @@ export const useWidgetStore = create<WidgetStore>()(
         log(`[WidgetStore] ✅ Reordered ${reorderedWidgets.length} widgets at page ${pageIndex}`);
         log(`[WidgetStore] Widget IDs in new array:`, newWidgets.map(w => w.id));
         
-        get().updateDashboard(state.currentDashboard, {
+        get().updateDashboard({
           widgets: newWidgets
         });
       },
 
       moveWidgetToPage: (widgetId, targetPage, targetPosition) => {
         const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
+        const dashboard = state.dashboard;
         if (!dashboard) return;
 
         log(`[WidgetStore] 🔀 Moving widget ${widgetId} to page ${targetPage}, position ${targetPosition}`);
@@ -663,7 +648,7 @@ export const useWidgetStore = create<WidgetStore>()(
         // Insert at target index
         widgets.splice(Math.min(targetIndex, widgets.length), 0, movedWidget);
         
-        get().updateDashboard(state.currentDashboard, {
+        get().updateDashboard({
           widgets
         });
       },
@@ -686,7 +671,7 @@ export const useWidgetStore = create<WidgetStore>()(
         const widgetId = `${instanceType}-${instanceId}`;
         
         // Check if widget already exists
-        const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
+        const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
 
         const existingWidget = currentDashboard.widgets.find(w => w.id === widgetId);
@@ -713,13 +698,13 @@ export const useWidgetStore = create<WidgetStore>()(
           order: currentDashboard.widgets.length,
         };
 
-        get().updateDashboard(get().currentDashboard, {
+        get().updateDashboard({
           widgets: [...currentDashboard.widgets, newWidget]
         });
       },
 
       removeInstanceWidget: (instanceId) => {
-        const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
+        const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
 
         // Remove widgets that match any instance type for this instanceId
@@ -727,7 +712,7 @@ export const useWidgetStore = create<WidgetStore>()(
           !w.settings?.instanceId || w.settings.instanceId !== instanceId
         );
 
-        get().updateDashboard(get().currentDashboard, {
+        get().updateDashboard({
           widgets: filteredWidgets
         });
       },
@@ -756,7 +741,7 @@ export const useWidgetStore = create<WidgetStore>()(
           return; // Don't modify widgets when no instances detected
         }
         
-        const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
+        const currentDashboard = get().dashboard;
         if (!currentDashboard) {
           log('[WidgetStore] No current dashboard found');
           return;
@@ -1010,7 +995,7 @@ export const useWidgetStore = create<WidgetStore>()(
           total: finalWidgets.length
         });
 
-        get().updateDashboard(get().currentDashboard, {
+        get().updateDashboard({
           widgets: finalWidgets
         });
         
@@ -1051,7 +1036,7 @@ export const useWidgetStore = create<WidgetStore>()(
 
       cleanupOrphanedWidgets: () => {
         log('[WidgetStore] 🧹 cleanupOrphanedWidgets TRIGGERED');
-        const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
+        const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
 
         // Get currently detected instances
@@ -1137,14 +1122,14 @@ export const useWidgetStore = create<WidgetStore>()(
             !uniqueOrphanedWidgets.some(orphan => orphan.id === widget.id)
           );
 
-          get().updateDashboard(get().currentDashboard, {
+          get().updateDashboard({
             widgets: cleanWidgets
           });
         }
       },
 
       getInstanceWidgetMetrics: () => {
-        const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
+        const currentDashboard = get().dashboard;
         if (!currentDashboard) return { totalInstanceWidgets: 0, orphanedWidgets: 0, lastCleanupTime: 0 };
 
         const instanceWidgets = currentDashboard.widgets.filter(widget => 

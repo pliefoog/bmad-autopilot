@@ -48,16 +48,12 @@ export const DynamicDashboard: React.FC = () => {
   // Get measured dimensions from context
   const { width: contextWidth, height: contextHeight, isReady: contextReady } = useDashboardLayout();
   
-  // Selective subscriptions to prevent re-renders on widget timestamp updates
-  const currentDashboard = useWidgetStore(state => state.currentDashboard);
-  
   // Track previous widget array to detect what changed
   const prevWidgetsRef = useRef<any[]>([]);
   
   const storeWidgets = useWidgetStore(
     state => {
-      const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-      const widgets = dashboard?.widgets || [];
+      const widgets = state.dashboard?.widgets || [];
       
       // Debug: Log what actually changed
       if (__DEV__ && prevWidgetsRef.current.length !== widgets.length) {
