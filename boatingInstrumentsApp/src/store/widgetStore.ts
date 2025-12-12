@@ -749,6 +749,13 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Keep ALL existing widgets (both instance and non-instance)
         const allExistingWidgets = [...currentDashboard.widgets];
+        console.log('🔍 [updateInstanceWidgets] ALL EXISTING WIDGETS:', allExistingWidgets.map(w => ({
+          id: w.id,
+          type: w.type,
+          hasInstanceId: !!w.settings?.instanceId,
+          hasInstanceType: !!w.settings?.instanceType,
+          settings: w.settings
+        })));
         log('[WidgetStore] All existing widgets:', allExistingWidgets.map(w => ({
           id: w.id,
           type: w.type,
@@ -768,7 +775,17 @@ export const useWidgetStore = create<WidgetStore>()(
         const nonInstanceWidgets = allExistingWidgets.filter(w => {
           const hasInstanceId = w.settings && typeof w.settings.instanceId === 'string' && w.settings.instanceId.length > 0;
           const hasInstanceType = w.settings && typeof w.settings.instanceType === 'string' && w.settings.instanceType.length > 0;
-          return !(hasInstanceId && hasInstanceType);
+          const isNonInstance = !(hasInstanceId && hasInstanceType);
+          console.log(`🔍 Widget "${w.id}" (${w.type}): hasInstanceId=${hasInstanceId}, hasInstanceType=${hasInstanceType}, isNonInstance=${isNonInstance}`);
+          return isNonInstance;
+        });
+        
+        console.log('🎯 [updateInstanceWidgets] CLASSIFICATION RESULT:', {
+          allCount: allExistingWidgets.length,
+          nonInstanceCount: nonInstanceWidgets.length,
+          instanceCount: existingInstanceWidgets.length,
+          nonInstanceWidgets: nonInstanceWidgets.map(w => w.id),
+          instanceWidgets: existingInstanceWidgets.map(w => w.id)
         });
         
         log('[WidgetStore] Classification result:', {
@@ -989,6 +1006,15 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Combine all widgets: non-instance (original) + instance (detected)
         const finalWidgets = [...nonInstanceWidgets, ...updatedInstanceWidgets];
+        console.log('🎯 [updateInstanceWidgets] FINAL WIDGET UPDATE:', {
+          nonInstance: nonInstanceWidgets.length,
+          nonInstanceIds: nonInstanceWidgets.map(w => w.id),
+          instanceWidgets: updatedInstanceWidgets.length,
+          instanceIds: updatedInstanceWidgets.map(w => w.id),
+          total: finalWidgets.length,
+          finalIds: finalWidgets.map(w => w.id)
+        });
+        
         log('[WidgetStore] Final widget update:', {
           nonInstance: nonInstanceWidgets.length,
           instanceWidgets: updatedInstanceWidgets.length,
@@ -1064,6 +1090,11 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Find invalid registry widgets (widgets that don't exist in the widget registry)
         const invalidRegistryWidgets = currentDashboard.widgets.filter(widget => {
+          // Skip system widgets - they don't need to be in the registry
+          if (widget.isSystemWidget) {
+            return false;
+          }
+          
           try {
             // Import WidgetFactory to check if widget can be resolved
             const { WidgetFactory } = require('../services/WidgetFactory');
