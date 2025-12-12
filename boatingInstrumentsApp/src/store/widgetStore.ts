@@ -1538,49 +1538,10 @@ export const useWidgetStore = create<WidgetStore>()(
     }),
     {
       name: 'widget-store',
-      version: 2, // Bumped version to force migration from multi-dashboard to single dashboard
       partialize: (state) => ({
         selectedWidgets: state.selectedWidgets,
         dashboard: state.dashboard,
       }),
-      migrate: (persistedState: any, version: number) => {
-        // Migrate from old multi-dashboard structure to single dashboard
-        if (version < 2) {
-          console.log('🔄 Migrating widget store from version', version, 'to version 2');
-          const oldState = persistedState as any;
-          
-          // Find the current dashboard or use the first one
-          const currentDashboard = oldState.dashboards?.find((d: any) => d.id === oldState.currentDashboard) 
-            || oldState.dashboards?.[0]
-            || defaultDashboard;
-          
-          return {
-            selectedWidgets: oldState.selectedWidgets || [],
-            dashboard: currentDashboard,
-          };
-        }
-        return persistedState;
-      },
     }
   )
 );
-
-// **MIGRATION: Remove legacy 'themeswitcher' widget**
-// The old ThemeSwitcher widget has been replaced by the 'theme' widget
-// Clean up any persisted 'themeswitcher' widgets from storage
-setTimeout(() => {
-  const state = useWidgetStore.getState();
-  const dashboard = state.dashboard;
-  
-  const themeswitcherWidget = dashboard.widgets.find(w => w.id === 'themeswitcher');
-  if (themeswitcherWidget) {
-    console.log(`🧹 Removing legacy 'themeswitcher' widget from dashboard`);
-    useWidgetStore.setState({ 
-      dashboard: {
-        ...dashboard,
-        widgets: dashboard.widgets.filter(w => w.id !== 'themeswitcher')
-      }
-    });
-    console.log('✅ Legacy themeswitcher widget removed successfully');
-  }
-}, 100); // Small delay to ensure store is fully hydrated
