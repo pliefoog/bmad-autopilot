@@ -84,9 +84,7 @@ export const DynamicDashboard: React.FC = () => {
       return true; // Same widgets, same order - don't trigger update
     }
   );
-  const dashboardConfig = useWidgetStore(state => 
-    state.dashboards.find(d => d.id === state.currentDashboard)
-  );
+  const dashboardConfig = useWidgetStore(state => state.dashboard);
   const { moveWidgetToPage, redistributeWidgetsAcrossPages } = useWidgetStore();
   
   const [layout, setLayout] = useState<DynamicWidgetLayout[]>([]);
@@ -168,7 +166,7 @@ export const DynamicDashboard: React.FC = () => {
     }
     const gridLayout = calculateGridLayout(storeWidgets);
     setLayout(gridLayout);
-  }, [storeWidgets, calculateGridLayout, currentDashboard]);
+  }, [storeWidgets, calculateGridLayout]);
 
   // Save layout to widget store (pure widget store architecture)
   const saveLayout = useCallback(async (newLayout: DynamicWidgetLayout[]) => {
@@ -193,8 +191,8 @@ export const DynamicDashboard: React.FC = () => {
         return widget;
       });
       
-      const { updateDashboard, currentDashboard } = useWidgetStore.getState();
-      updateDashboard(currentDashboard, { widgets: updatedWidgets });
+      const { updateDashboard } = useWidgetStore.getState();
+      updateDashboard({ widgets: updatedWidgets });
       setLayout(newLayout);
     } catch (error) {
       // Silent fail - layout updates are non-critical
@@ -217,8 +215,8 @@ export const DynamicDashboard: React.FC = () => {
       return widget;
     });
     
-    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
-    updateDashboard(currentDashboard, { widgets: updatedWidgets });
+    const { updateDashboard } = useWidgetStore.getState();
+    updateDashboard({ widgets: updatedWidgets });
     
     // Recalculate grid layout with new expanded state
     const recalculatedLayout = calculateGridLayout(updatedWidgets);
@@ -240,8 +238,8 @@ export const DynamicDashboard: React.FC = () => {
     });
     
     // Update widget store directly
-    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
-    updateDashboard(currentDashboard, { widgets: updatedWidgets });
+    const { updateDashboard } = useWidgetStore.getState();
+    updateDashboard({ widgets: updatedWidgets });
     
     // Show undo toast using global toast system
     toast.showInfo(`Removed ${widget.title || widget.id} widget`, {
@@ -263,15 +261,13 @@ export const DynamicDashboard: React.FC = () => {
     const restoredWidget = removedWidget.widget;
     
     // Restore widget to store at original position
-    const currentWidgets = useWidgetStore.getState().dashboards.find(
-      d => d.id === useWidgetStore.getState().currentDashboard
-    )?.widgets || [];
+    const currentWidgets = useWidgetStore.getState().dashboard.widgets || [];
     
     const restoredWidgets = [...currentWidgets];
     restoredWidgets.splice(removedWidget.index, 0, restoredWidget);
     
-    const { updateDashboard, currentDashboard } = useWidgetStore.getState();
-    updateDashboard(currentDashboard, { widgets: restoredWidgets });
+    const { updateDashboard } = useWidgetStore.getState();
+    updateDashboard({ widgets: restoredWidgets });
     
     setRemovedWidget(null);
     toast.showSuccess(`Restored ${restoredWidget.title || restoredWidget.id} widget`, { source: 'dashboard' });
