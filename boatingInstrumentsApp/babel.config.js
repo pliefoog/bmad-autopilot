@@ -30,6 +30,8 @@ module.exports = function(api) {
           },
         },
       ],
+      // Reanimated plugin MUST be last in plugins array
+      'react-native-reanimated/plugin',
     ],
     env: {
       test: {
