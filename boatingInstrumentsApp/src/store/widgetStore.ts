@@ -805,8 +805,26 @@ export const useWidgetStore = create<WidgetStore>()(
           ...detectedInstances.instruments.map(inst => inst.id)
         ]);
         
+        console.log('🔍 [Phase 2] Built newWidgetIds Set:', {
+          size: newWidgetIds.size,
+          ids: Array.from(newWidgetIds),
+          breakdown: {
+            system: SYSTEM_WIDGETS.length,
+            engines: detectedInstances.engines.length,
+            batteries: detectedInstances.batteries.length,
+            tanks: detectedInstances.tanks.length,
+            temps: detectedInstances.temperatures.length,
+            instruments: detectedInstances.instruments.length
+          }
+        });
+        
         // Phase 2 optimization: Early exit if no changes detected
         const currentIds = get().currentWidgetIds;
+        console.log('🔍 [Phase 2] Current widget IDs:', {
+          size: currentIds.size,
+          ids: Array.from(currentIds)
+        });
+        
         if (setsEqual(currentIds, newWidgetIds)) {
           console.log('✨ [Phase 2] No widget changes detected - skipping update (optimization)');
           metrics.skippedUpdates++;
@@ -888,6 +906,10 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Add new widgets for newly detected instances
         const existingInstanceIds = new Set(validInstanceWidgets.map(w => w.settings?.instanceId));
+        console.log('🔍 [Phase 2] Existing instance IDs in dashboard:', {
+          count: existingInstanceIds.size,
+          ids: Array.from(existingInstanceIds)
+        });
         log('[WidgetStore] Existing instance IDs:', Array.from(existingInstanceIds));
 
         // Helper to find next available position (considering ALL existing widgets)
@@ -904,8 +926,10 @@ export const useWidgetStore = create<WidgetStore>()(
         log('[WidgetStore] Starting with', updatedWidgets.length, 'existing widgets');
 
         // Add engine widgets
+        console.log(`🔧 [Phase 2] Processing ${detectedInstances.engines.length} engine instances...`);
         detectedInstances.engines.forEach(engine => {
           if (!existingInstanceIds.has(engine.id)) {
+            console.log(`  ✅ Creating NEW engine widget: ${engine.id} - ${engine.title}`);
             log('[WidgetStore] Creating engine widget for:', engine.id, engine.title);
             const position = findNextPosition(updatedWidgets);
             const widgetId = engine.id; // Use instance ID directly (already includes type)
