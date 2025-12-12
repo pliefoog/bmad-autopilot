@@ -1598,3 +1598,30 @@ export const useWidgetStore = create<WidgetStore>()(
     }
   )
 );
+
+// **MIGRATION: Remove legacy 'themeswitcher' widget**
+// The old ThemeSwitcher widget has been replaced by the 'theme' widget
+// Clean up any persisted 'themeswitcher' widgets from storage
+setTimeout(() => {
+  const state = useWidgetStore.getState();
+  const dashboards = state.dashboards;
+  let modified = false;
+  
+  const cleanedDashboards = dashboards.map(dashboard => {
+    const themeswitcherWidget = dashboard.widgets.find(w => w.id === 'themeswitcher');
+    if (themeswitcherWidget) {
+      console.log(`🧹 Removing legacy 'themeswitcher' widget from dashboard: ${dashboard.id}`);
+      modified = true;
+      return {
+        ...dashboard,
+        widgets: dashboard.widgets.filter(w => w.id !== 'themeswitcher')
+      };
+    }
+    return dashboard;
+  });
+  
+  if (modified) {
+    useWidgetStore.setState({ dashboards: cleanedDashboards });
+    console.log('✅ Legacy themeswitcher widget removed successfully');
+  }
+}, 100); // Small delay to ensure store is fully hydrated

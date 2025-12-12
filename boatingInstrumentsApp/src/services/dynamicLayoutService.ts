@@ -96,6 +96,27 @@ export class DynamicLayoutService {
     
     if (cached) {
       logger.layout(`Cache HIT - Using ${cached.columns} columns`);
+      
+      // **ADJUST ROWS BASED ON WIDGET COUNT (even for cached configs)**
+      if (widgetCount > 0 && cached.rows !== 999) {
+        const neededRows = Math.ceil(widgetCount / cached.columns);
+        const widgetsInLastRow = widgetCount % cached.columns || cached.columns;
+        const lastRowFillPercent = (widgetsInLastRow / cached.columns) * 100;
+        
+        // Only adjust if we can reduce rows without creating sparse last row
+        // Allow adjustment if last row is at least 33% full (2+ widgets in 6-column layout)
+        if (neededRows < cached.rows && lastRowFillPercent >= 33) {
+          logger.layout(`Adjusting cached rows from ${cached.rows} to ${neededRows} (${widgetCount} widgets, last row ${lastRowFillPercent.toFixed(0)}% full)`);
+          // Recalculate height with adjusted rows
+          const adjustedHeight = Math.floor(cached.availableHeight / neededRows);
+          return {
+            ...cached,
+            rows: neededRows,
+            widgetHeight: adjustedHeight
+          };
+        }
+      }
+      
       return cached;
     }
     
@@ -110,11 +131,36 @@ export class DynamicLayoutService {
     const columns = getColumnsForWidth(screenWidth);
     const usePagination = shouldUsePagination(screenWidth);
     
+    // TEMP 4K DEBUG: Log dimensions for ultra-wide displays
+    if (screenWidth >= 1920) {
+      const debugWidgetWidth = Math.floor(availableWidth / columns);
+      const totalWidth = debugWidgetWidth * columns;
+      const gap = totalWidth - availableWidth;
+      
+      console.log('🖥️ GRID CONFIG:', {
+        screen: `${screenWidth}×${screenHeight}`,
+        available: `${availableWidth}×${availableHeight}`,
+        columns,
+        widgetWidth: debugWidgetWidth,
+        totalWidth,
+        gap: gap === 0 ? '✅ perfect fit' : `${gap}px ${gap < 0 ? 'small gaps' : 'OVERFLOW!'}`
+      });
+      
+      // Warning if measured width seems wrong for 4K display
+      if (screenWidth < 3840 && screenWidth >= 3000) {
+        console.warn(`⚠️ DISPLAY WARNING: Measured ${screenWidth}px but expected 3840px for 4K`);
+        console.warn('   Possible causes:');
+        console.warn('   1. Browser zoom not at 100% (press Cmd+0 to reset)');
+        console.warn('   2. Browser window not in true fullscreen (press F11)');
+        console.warn('   3. OS display scaling affecting measurements');
+      }
+    }
+    
     logger.layout(`Layout mode: ${columns} columns, pagination: ${usePagination}`);
     
     // ===== WIDGET WIDTH CALCULATION (Border-to-Border, No Gaps) =====
-    // Divide width evenly - any remaining pixels will overflow slightly (clipped by container)
-    const widgetWidth = Math.ceil(availableWidth / columns);
+    // Divide width evenly - floor ensures widgets stay within bounds (small gaps instead of overflow)
+    const widgetWidth = Math.floor(availableWidth / columns);
     
     // ===== ROW CALCULATION =====
     let rows: number;
@@ -141,12 +187,27 @@ export class DynamicLayoutService {
       
       // Safety: ensure at least 1 row
       rows = Math.max(1, rows);
+      
+      // **OPTIMIZE ROWS BASED ON ACTUAL WIDGET COUNT**
+      // If we have fewer widgets than calculated grid capacity, reduce rows to fit content
+      // But avoid creating sparse last rows (less than 50% full)
+      if (widgetCount > 0) {
+        const neededRows = Math.ceil(widgetCount / columns);
+        const widgetsInLastRow = widgetCount % columns || columns;
+        const lastRowFillPercent = (widgetsInLastRow / columns) * 100;
+        
+        // Only reduce rows if last row is at least 33% full (2+ widgets in 6-column layout)
+        if (neededRows < rows && lastRowFillPercent >= 33) {
+          logger.layout(`Reducing rows from ${rows} to ${neededRows} (${widgetCount} widgets, last row ${lastRowFillPercent.toFixed(0)}% full)`);
+          rows = neededRows;
+        }
+      }
     }
     
     // ===== WIDGET HEIGHT CALCULATION (Top-to-Bottom Fill, No Gaps) =====
-    // Divide height evenly - ceiling ensures we fill to bottom (slight overflow clipped)
+    // Divide height evenly - floor ensures widgets stay within bounds
     const widgetHeight = usePagination 
-      ? Math.ceil(availableHeight / rows)
+      ? Math.floor(availableHeight / rows)
       : widgetWidth; // Square widgets for scroll mode
     
     const config: GridConfig = {

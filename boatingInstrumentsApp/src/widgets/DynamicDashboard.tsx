@@ -79,10 +79,10 @@ export const DynamicDashboard: React.FC = () => {
   const toast = useToast();
   
   // Compute visible widget count separately to avoid array reference changes
-  const visibleWidgetCount = useMemo(
-    () => storeWidgets.filter(w => w.layout?.visible !== false).length,
-    [storeWidgets]
-  );
+  const visibleWidgetCount = useMemo(() => {
+    const visible = storeWidgets.filter(w => w.layout?.visible !== false);
+    return visible.length;
+  }, [storeWidgets.length]);
   
   // Calculate grid config for proper spacing and sizing
   // Use valid fallback dimensions to prevent crashes when context isn't ready
@@ -103,6 +103,7 @@ export const DynamicDashboard: React.FC = () => {
     
     // Pass measured dimensions from context - no header/footer needed as dimensions already exclude them
     const config = DynamicLayoutService.getGridConfig(0, 0, visibleWidgetCount, contextWidth, contextHeight);
+    console.log('📊 DynamicDashboard widget count:', visibleWidgetCount, 'visible widgets from', storeWidgets.length, 'total');
     return config;
   }, [contextReady, contextWidth, contextHeight, visibleWidgetCount]); // Only recalculate when dimensions or widget count changes
   
