@@ -912,25 +912,14 @@ export const useWidgetStore = create<WidgetStore>()(
           });
         }
 
-        // Remove widgets for instances that no longer exist
-        const validInstanceWidgets = existingInstanceWidgets.filter(widget => {
-          const { instanceId, instanceType } = widget.settings;
-          const isValid = (() => {
-            switch (instanceType) {
-              case 'engine': return currentEngineIds.has(instanceId);
-              case 'battery': return currentBatteryIds.has(instanceId);
-              case 'tank': return currentTankIds.has(instanceId);
-              case 'temperature': return currentTemperatureIds.has(instanceId);
-              case 'instrument': return currentInstrumentIds.has(instanceId);
-              default: return true;
-            }
-          })();
-          
-          if (!isValid && __DEV__) {
-            console.warn(`⚠️ Filtering out widget ${widget.id} (${instanceType}) - instance not detected`);
-          }
-          return isValid;
-        });
+        // KEEP ALL existing instance widgets - never auto-remove them
+        // Auto-removal was causing issues when instanceDetectionService temporarily returns empty arrays
+        // Users should manually remove widgets they don't need
+        const validInstanceWidgets = existingInstanceWidgets;
+        
+        if (__DEV__) {
+          console.log(`✅ Keeping all ${existingInstanceWidgets.length} existing instance widgets (no auto-removal)`);
+        }
 
         // Add new widgets for newly detected instances
         const existingInstanceIds = new Set(validInstanceWidgets.map(w => w.settings?.instanceId));
