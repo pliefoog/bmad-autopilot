@@ -159,7 +159,7 @@ export const DynamicDashboard: React.FC = () => {
     // Debug: Log when storeWidgets actually changes
     if (__DEV__) {
       const widgetIds = storeWidgets.map(w => w.id).join(', ');
-      console.log('🔄 storeWidgets changed:', storeWidgets.length, 'widgets, dashboard:', currentDashboard);
+      console.log('🔄 storeWidgets changed:', storeWidgets.length, 'widgets');
       if (storeWidgets.length === 11) {
         console.warn('⚠️ ONLY 11 WIDGETS! Missing:', widgetIds);
       }
