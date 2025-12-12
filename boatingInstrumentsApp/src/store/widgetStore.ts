@@ -1154,6 +1154,7 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       cleanupOrphanedWidgets: () => {
+        log('[WidgetStore] 🧹 cleanupOrphanedWidgets TRIGGERED');
         const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
         if (!currentDashboard) return;
 
@@ -1185,23 +1186,40 @@ export const useWidgetStore = create<WidgetStore>()(
           try {
             // Import WidgetFactory to check if widget can be resolved
             const { WidgetFactory } = require('../services/WidgetFactory');
-            const { baseType } = WidgetFactory.parseWidgetId(widget.id);
+            const parseResult = WidgetFactory.parseWidgetId(widget.id);
             
             // Check if widget is resolvable via WidgetFactory
-            WidgetFactory.getWidgetMetadata(widget.id);
+            const metadata = WidgetFactory.getWidgetMetadata(widget.id);
+            
+            if (!metadata) {
+              log(`[WidgetStore] ⚠️ Invalid registry widget (no metadata): ${widget.id} (baseType: ${parseResult.baseType})`);
+              return true; // Widget is invalid
+            }
+            
             return false; // Widget is valid
           } catch (error) {
             // Widget cannot be resolved - it's invalid
             const errorMessage = error instanceof Error ? error.message : String(error);
-            log(`[WidgetStore] Invalid widget found: ${widget.id} - ${errorMessage}`);
+            log(`[WidgetStore] ⚠️ Invalid registry widget (parse error): ${widget.id} - ${errorMessage}`);
             return true;
           }
         });
 
         // Find timestamp-based widget IDs (legacy from preset/duplication operations)
-        const timestampBasedWidgets = currentDashboard.widgets.filter(widget => 
-          /^[a-z]+-[0-9]{13}-[0-9]+$/.test(widget.id) // Pattern: type-timestamp-index
-        );
+        const timestampBasedWidgets = currentDashboard.widgets.filter(widget => {
+          const isTimestampBased = /^[a-z]+-[0-9]{13}-[0-9]+$/.test(widget.id); // Pattern: type-timestamp-index
+          if (isTimestampBased) {
+            log(`[WidgetStore] ⚠️ Timestamp-based widget found: ${widget.id}`);
+          }
+          return isTimestampBased;
+        });
+
+        if (invalidRegistryWidgets.length > 0) {
+          log(`[WidgetStore] 🗑️ cleanupOrphanedWidgets found ${invalidRegistryWidgets.length} invalid registry widgets:`, invalidRegistryWidgets.map(w => w.id));
+        }
+        if (timestampBasedWidgets.length > 0) {
+          log(`[WidgetStore] 🗑️ cleanupOrphanedWidgets found ${timestampBasedWidgets.length} timestamp-based widgets:`, timestampBasedWidgets.map(w => w.id));
+        }
 
         const allOrphanedWidgets = [
           ...orphanedInstanceWidgets,
