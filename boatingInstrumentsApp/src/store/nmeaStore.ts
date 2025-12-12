@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { EventEmitter } from 'events';
 import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 import type { 
   SensorsData, 
@@ -58,6 +59,9 @@ interface NmeaStore {
   alarms: Alarm[];
   lastError?: string;
   debugMode: boolean;
+  
+  // Event system for real-time updates
+  sensorEventEmitter: EventEmitter;
   
   // Connection management
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -181,6 +185,9 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
   alarms: [],
   lastError: undefined,
   debugMode: false,
+  
+  // Event system for real-time sensor updates
+  sensorEventEmitter: new EventEmitter(),
 
   // Connection management
   setConnectionStatus: (status: ConnectionStatus) => set({ connectionStatus: status }),
@@ -276,6 +283,19 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       const trackableValue = extractTrackableValue(sensorType, updatedSensorData);
       if (trackableValue !== null && history) {
         history.add(trackableValue, updateNow);
+      }
+      
+      // Emit sensor update event for real-time detection (Phase 1 optimization)
+      // Only emit if this is a new instance or data has actually changed
+      if (!currentSensorData || Object.keys(finalData).length > 0) {
+        // Use setImmediate to emit event asynchronously (prevent blocking)
+        setImmediate(() => {
+          state.sensorEventEmitter.emit('sensorUpdate', {
+            sensorType,
+            instance,
+            timestamp: updateNow
+          });
+        });
       }
       
       const newNmeaData = {
