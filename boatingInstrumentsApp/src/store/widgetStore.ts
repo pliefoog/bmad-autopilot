@@ -41,9 +41,6 @@ export interface WidgetConfig {
   order: number;
   // System widget protection
   isSystemWidget?: boolean;
-  // Lifecycle management for auto-detection
-  createdAt?: number;
-  lastDataUpdate?: number;
 }
 
 export interface DashboardConfig {
@@ -68,15 +65,11 @@ export interface WidgetPreset {
 }
 
 interface WidgetState {
-  dashboards: DashboardConfig[];
-  currentDashboard: string;
+  dashboard: DashboardConfig; // Single dashboard
   selectedWidgets: string[];
   editMode: boolean;
   gridVisible: boolean;
   presets: WidgetPreset[];
-  // Dynamic widget lifecycle configuration
-  widgetExpirationTimeout: number; // Milliseconds - widgets removed if no data received for this duration
-  enableWidgetAutoRemoval: boolean; // Feature toggle for automatic widget removal
 }
 
 interface WidgetActions {
@@ -90,14 +83,7 @@ interface WidgetActions {
   reorderWidgets: (widgets: WidgetConfig[]) => void;
   setEditMode: (enabled: boolean) => void;
   setGridVisible: (visible: boolean) => void;
-  createDashboard: (name: string, preset?: string) => void;
-  deleteDashboard: (dashboardId: string) => void;
-  switchDashboard: (dashboardId: string) => void;
-  // Dynamic widget lifecycle actions
-  setWidgetExpirationTimeout: (timeoutMs: number) => void;
-  setEnableWidgetAutoRemoval: (enabled: boolean) => void;
-  cleanupExpiredWidgetsWithConfig: () => void;
-  updateDashboard: (dashboardId: string, updates: Partial<DashboardConfig>) => void;
+  updateDashboard: (updates: Partial<DashboardConfig>) => void;
   exportDashboard: (dashboardId: string) => DashboardConfig;
   importDashboard: (dashboard: DashboardConfig) => void;
   // Enhanced state management actions
@@ -345,82 +331,26 @@ export const useWidgetStore = create<WidgetStore>()(
         setTimeout(() => get().cleanupOrphanedWidgets(), 100);
       },
 
-      // Update widget's last data timestamp (for expiration tracking)
-      // Only updates if widget exists to avoid unnecessary store mutations
-      updateWidgetDataTimestamp: (widgetId: string) => {
-        const state = get();
-        
-        // Check if widget exists before updating to avoid unnecessary mutations
-        let widgetExists = false;
-        for (const dashboard of state.dashboards) {
-          if (dashboard.widgets.some(w => w.id === widgetId)) {
-            widgetExists = true;
-            break;
-          }
-        }
-        
-        if (!widgetExists) {
-          warn(`[WidgetStore] Skipping timestamp update for non-existent widget: ${widgetId}`);
-          return;
-        }
-        
-        set((state) => ({
-          dashboards: state.dashboards.map((dashboard) => ({
-            ...dashboard,
-            widgets: dashboard.widgets.map((widget) =>
-              widget.id === widgetId
-                ? { ...widget, lastDataUpdate: Date.now() }
-                : widget
-            ),
-          })),
-        }));
-      },
-
-      // Clean up expired widgets (no data for specified duration) - LEGACY METHOD
-      cleanupExpiredWidgets: (maxAge?: number) => {
-        // Use configurable cleanup system instead
-        const state = get();
-        if (maxAge) {
-          // Temporarily override the timeout for this call
-          const originalTimeout = state.widgetExpirationTimeout;
-          get().setWidgetExpirationTimeout(maxAge);
-          get().cleanupExpiredWidgetsWithConfig();
-          get().setWidgetExpirationTimeout(originalTimeout);
-        } else {
-          get().cleanupExpiredWidgetsWithConfig();
-        }
-      },
-
       removeWidget: (widgetId) =>
         set((state) => ({
-          dashboards: state.dashboards.map((dashboard) =>
-            dashboard.id === state.currentDashboard
-              ? {
-                  ...dashboard,
-                  widgets: dashboard.widgets.filter((w) => w.id !== widgetId),
-                }
-              : dashboard
-          ),
+          dashboard: {
+            ...state.dashboard,
+            widgets: state.dashboard.widgets.filter((w) => w.id !== widgetId),
+          },
         })),
 
       updateWidget: (widgetId, updates) =>
         set((state) => ({
-          dashboards: state.dashboards.map((dashboard) =>
-            dashboard.id === state.currentDashboard
-              ? {
-                  ...dashboard,
-                  widgets: dashboard.widgets.map((w) =>
-                    w.id === widgetId ? { ...w, ...updates } : w
-                  ),
-                }
-              : dashboard
-          ),
+          dashboard: {
+            ...state.dashboard,
+            widgets: state.dashboard.widgets.map((w) =>
+              w.id === widgetId ? { ...w, ...updates } : w
+            ),
+          },
         })),
 
       updateWidgetLayout: (widgetId, layout) => {
-        const state = get();
-        const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-        const widget = dashboard?.widgets.find(w => w.id === widgetId);
+        const widget = get().dashboard.widgets.find(w => w.id === widgetId);
         if (widget?.layout) {
           get().updateWidget(widgetId, { 
             layout: { ...widget.layout, ...layout } 
@@ -443,11 +373,7 @@ export const useWidgetStore = create<WidgetStore>()(
 
       reorderWidgets: (widgets) =>
         set((state) => ({
-          dashboards: state.dashboards.map((dashboard) =>
-            dashboard.id === state.currentDashboard
-              ? { ...dashboard, widgets }
-              : dashboard
-          ),
+          dashboard: { ...state.dashboard, widgets },
         })),
 
       setEditMode: (enabled) =>
