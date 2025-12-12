@@ -21,19 +21,34 @@ interface DraggableWidgetGridProps {
   availableHeight?: number;
 }
 
-// Render widget component with fixed grid dimensions
-function renderWidgetComponent(widget: WidgetConfig, width: number, height: number): React.ReactElement | null {
-  const { baseType } = WidgetFactory.parseWidgetId(widget.id);
-  const registeredWidget = WidgetRegistry.getWidget(baseType);
-  
-  if (registeredWidget) {
-    const Component = registeredWidget.component;
-    const title = WidgetFactory.getWidgetTitle(widget.id);
-    return <Component key={widget.id} id={widget.id} title={title} width={width} height={height} />;
-  }
-  
-  return null;
+// Memoized widget component to prevent unnecessary re-renders
+interface MemoizedWidgetProps {
+  widgetId: string;
+  width: number;
+  height: number;
 }
+
+const MemoizedWidget = React.memo<MemoizedWidgetProps>(
+  ({ widgetId, width, height }) => {
+    const { baseType } = WidgetFactory.parseWidgetId(widgetId);
+    const registeredWidget = WidgetRegistry.getWidget(baseType);
+    
+    if (!registeredWidget) return null;
+    
+    const Component = registeredWidget.component;
+    const title = WidgetFactory.getWidgetTitle(widgetId);
+    
+    return <Component id={widgetId} title={title} width={width} height={height} />;
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if dimensions or widget ID change
+    return (
+      prevProps.widgetId === nextProps.widgetId &&
+      prevProps.width === nextProps.width &&
+      prevProps.height === nextProps.height
+    );
+  }
+);
 
 // Draggable widget wrapper with animations (gesture-handler pattern)
 interface DraggableWidgetProps {
@@ -105,10 +120,14 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
 }) => {
   const theme = useTheme();
   
-  // Get current dashboard config
+  // Get current dashboard config - subscribe to dashboards array once, then use useMemo for find
   const currentDashboardId = useWidgetStore(state => state.currentDashboard);
-  const dashboard = useWidgetStore(state => 
-    state.dashboards.find(d => d.id === state.currentDashboard)
+  const dashboards = useWidgetStore(state => state.dashboards);
+  
+  // Use useMemo to find dashboard - only recalculates when dashboards array or ID changes
+  const dashboard = useMemo(
+    () => dashboards.find(d => d.id === currentDashboardId),
+    [dashboards, currentDashboardId]
   );
   
   const reorderWidgetsOnPage = useWidgetStore(state => state.reorderWidgetsOnPage);
@@ -135,7 +154,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Refs to track current values without causing re-renders that interfere with gestures
   const pressedWidgetIdRef = useRef<string | null>(null);
   const placeholderIndexRef = useRef<number | null>(null);
-  
+
   // Compute visible widget count separately to avoid array reference changes
   const visibleWidgetCount = useMemo(
     () => (dashboard?.widgets || []).filter(w => w.layout?.visible !== false).length,
@@ -177,15 +196,17 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     if (!dashboard) return [];
     
     const widgets = dashboard.widgets || [];
-    
-    // Calculate widgets per page
     const widgetsPerPage = gridConfig.columns * gridConfig.rows;
     
     if (!dashboard.userPositioned) {
-      // Auto-discovery mode: paginate widgets in creation order
-      const sortedWidgets = [...widgets].sort((a, b) => (a.order || 0) - (b.order || 0));
+      // Auto-discovery mode: sort by creation order, then paginate
+      const sortedWidgets = widgets.sort((a, b) => (a.order || 0) - (b.order || 0));
+      
+      // Calculate page bounds
       const startIndex = pageIndex * widgetsPerPage;
       const endIndex = startIndex + widgetsPerPage;
+      
+      // Return only widgets for this page
       return sortedWidgets.slice(startIndex, endIndex);
     }
 
@@ -391,6 +412,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     })
     .onEnd(() => {
       if (dragActive) {
+        logger.drag('[DraggableWidgetGrid] 🛑 Pan ended');
         runOnJS(onDragEnd)();
       }
     });
@@ -400,6 +422,7 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     .runOnJS(true)
     .onEnd((_, isFinished) => {
       if (isFinished && dragActive) {
+        logger.drag('[DraggableWidgetGrid] 👆 Tap to cancel');
         runOnJS(updateDataOnEnd)();
       }
     });
@@ -448,15 +471,11 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
             );
           }
           
-          const widgetComponent = renderWidgetComponent(widget, gridConfig.widgetWidth, gridConfig.widgetHeight);
-          if (!widgetComponent) return null;
-          
           // Create long-press gesture for this widget (gesture-handler pattern)
           const widgetId = widget.id;
           
           const longPressGesture = Gesture.LongPress()
             .minDuration(500)
-            .runOnJS(true)
             .onStart((event) => {
               runOnJS(enableDragging)(widgetId, event.x, event.y);
               pressedWidgetIdRef.current = widgetId;
@@ -473,7 +492,11 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
                 height={gridConfig.widgetHeight}
                 initialPosition={isActiveWidget ? activeWidgetInitialPosition : undefined}
               >
-                {widgetComponent}
+                <MemoizedWidget 
+                  widgetId={widget.id}
+                  width={gridConfig.widgetWidth}
+                  height={gridConfig.widgetHeight}
+                />
               </DraggableWidget>
             </GestureDetector>
           );
@@ -489,7 +512,11 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
             initialPosition={activeWidgetInitialPosition}
             touchOffset={initialTouchOffset}
           >
-            {renderWidgetComponent(activeWidget, gridConfig.widgetWidth, gridConfig.widgetHeight)}
+            <MemoizedWidget 
+              widgetId={activeWidget.id}
+              width={gridConfig.widgetWidth}
+              height={gridConfig.widgetHeight}
+            />
           </DraggableWidget>
         )}
       </View>
@@ -512,10 +539,9 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   widgetListContainer: {
-    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignContent: 'flex-start',
+    position: 'relative',
   },
   autoDiscoveryWidget: {
     margin: 0,
