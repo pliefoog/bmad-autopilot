@@ -319,6 +319,15 @@ class InstanceDetectionService {
   private scanForMarineInstruments(nmeaData: any, currentTime: number): void {
     const sensors = nmeaData.sensors || {};
 
+    console.log('🔍 [scanForMarineInstruments] Sensor data available:', {
+      hasSensors: !!sensors,
+      availableTypes: Object.keys(sensors),
+      instanceCounts: Object.keys(sensors).reduce((acc, type) => {
+        acc[type] = Object.keys(sensors[type] || {}).length;
+        return acc;
+      }, {} as Record<string, number>)
+    });
+
     // Check each sensor type for presence of data
     const sensorTypeMap: Record<string, string> = {
       'gps': 'gps',
@@ -331,13 +340,27 @@ class InstanceDetectionService {
 
     Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
       const sensorInstances = sensors[sensorType] || {};
+      console.log(`  🔎 Checking ${instrumentType}: ${Object.keys(sensorInstances).length} instances`);
       
       // Check each instance of this sensor type
       Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
+        console.log(`    📊 ${instrumentType}-${instanceNum}:`, {
+          hasData: !!sensorData,
+          hasTimestamp: !!sensorData?.timestamp,
+          dataKeys: sensorData ? Object.keys(sensorData) : [],
+          sensorDataSample: sensorData ? Object.keys(sensorData).reduce((acc, key) => {
+            if (key !== 'history') acc[key] = sensorData[key];
+            return acc;
+          }, {} as any) : null
+        });
+        
         if (sensorData && sensorData.timestamp) {
           // CRITICAL FIX: Verify actual measurement data exists (not just timestamp)
           const hasMeasurementData = this.hasValidMeasurementData(instrumentType, sensorData);
+          console.log(`    ✅ Validation for ${instrumentType}-${instanceNum}: ${hasMeasurementData}`);
+          
           if (!hasMeasurementData) {
+            console.warn(`    ⚠️ SKIPPED ${instrumentType}-${instanceNum}: No measurement data found`);
             return; // Skip - sensor has timestamp but no actual readings yet
           }
           
@@ -368,7 +391,9 @@ class InstanceDetectionService {
               this.state.instruments.set(instanceId, detectedInstance);
               
               if (isFirstDetection) {
-                console.log(`🔧 [InstanceDetection] Detected marine instrument: ${widgetInstance.title} (instance ${instance}) from sensor data`);
+                console.log(`🎉 [InstanceDetection] ✅ CREATED marine instrument: ${widgetInstance.title} (instance ${instance}) - ID: ${instanceId}`);
+              } else {
+                console.log(`♻️ [InstanceDetection] Updated marine instrument: ${widgetInstance.title} (instance ${instance})`);
               }
             } catch (error) {
               console.warn(`[InstanceDetection] Failed to create widget instance for ${instanceId}:`, error);
@@ -805,7 +830,7 @@ class InstanceDetectionService {
    */
   private notifyInstanceCallbacks(): void {
     if (this.instanceCallbacks.length === 0) {
-      console.log('[InstanceDetection] No callbacks registered for instance updates');
+      console.log('[InstanceDetection] ⚠️ No callbacks registered for instance updates');
       return;
     }
 
@@ -817,12 +842,21 @@ class InstanceDetectionService {
       instruments: Array.from(this.state.instruments.values()),
     };
 
-    console.log('[InstanceDetection] Notifying callbacks with instances:', {
+    const totalInstances = instances.engines.length + instances.batteries.length + 
+                          instances.tanks.length + instances.temperatures.length + 
+                          instances.instruments.length;
+
+    console.log(`📢 [InstanceDetection] Notifying ${this.instanceCallbacks.length} callbacks with ${totalInstances} total instances:`, {
       engines: instances.engines.length,
       batteries: instances.batteries.length,
       tanks: instances.tanks.length,
       temperatures: instances.temperatures.length,
       instruments: instances.instruments.length,
+      engineIds: instances.engines.map(e => e.id),
+      batteryIds: instances.batteries.map(b => b.id),
+      tankIds: instances.tanks.map(t => t.id),
+      temperatureIds: instances.temperatures.map(t => t.id),
+      instrumentIds: instances.instruments.map(i => i.id),
       callbacks: this.instanceCallbacks.length
     });
 
