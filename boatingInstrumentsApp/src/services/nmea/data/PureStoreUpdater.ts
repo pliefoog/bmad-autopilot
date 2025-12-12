@@ -376,6 +376,8 @@ export class PureStoreUpdater {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
+    console.log('🚨 [applySensorUpdates] CALLED with', updates.length, 'updates:', updates.map(u => `${u.sensorType}.${u.instance}`));
+
     const {
       throttleMs = this.DEFAULT_THROTTLE_MS,
       skipThrottling = false
@@ -412,6 +414,7 @@ export class PureStoreUpdater {
 
       // Update sensor data in store
       try {
+        console.log(`🚨 [applySensorUpdates] Calling updateSensorData(${update.sensorType}, ${update.instance}, ...)`, update.data);
         useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data);
         updatedFields.push(fieldKey);
         anyUpdated = true;
@@ -419,8 +422,10 @@ export class PureStoreUpdater {
         // Update throttle timestamp
         this.lastUpdateTimes.set(fieldKey, Date.now());
         
+        console.log(`🚨 [applySensorUpdates] ✅ Store updated successfully for ${fieldKey}`);
         console.log(`[PureStoreUpdater] ✅ Updated ${fieldKey}:`, Object.keys(update.data));
       } catch (error) {
+        console.error(`🚨 [applySensorUpdates] ❌ Store update FAILED for ${fieldKey}:`, error);
         console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
       }
     }    return {
