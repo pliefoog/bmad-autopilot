@@ -887,17 +887,34 @@ export const useWidgetStore = create<WidgetStore>()(
         const currentTemperatureIds = new Set(detectedInstances.temperatures.map(t => t.id));
         const currentInstrumentIds = new Set(detectedInstances.instruments.map(i => i.id));
 
+        if (__DEV__) {
+          console.log('🔍 Detected instances:', {
+            engines: Array.from(currentEngineIds),
+            batteries: Array.from(currentBatteryIds),
+            tanks: Array.from(currentTankIds),
+            temperatures: Array.from(currentTemperatureIds),
+            instruments: Array.from(currentInstrumentIds)
+          });
+        }
+
         // Remove widgets for instances that no longer exist
         const validInstanceWidgets = existingInstanceWidgets.filter(widget => {
           const { instanceId, instanceType } = widget.settings;
-          switch (instanceType) {
-            case 'engine': return currentEngineIds.has(instanceId);
-            case 'battery': return currentBatteryIds.has(instanceId);
-            case 'tank': return currentTankIds.has(instanceId);
-            case 'temperature': return currentTemperatureIds.has(instanceId);
-            case 'instrument': return currentInstrumentIds.has(instanceId);
-            default: return true;
+          const isValid = (() => {
+            switch (instanceType) {
+              case 'engine': return currentEngineIds.has(instanceId);
+              case 'battery': return currentBatteryIds.has(instanceId);
+              case 'tank': return currentTankIds.has(instanceId);
+              case 'temperature': return currentTemperatureIds.has(instanceId);
+              case 'instrument': return currentInstrumentIds.has(instanceId);
+              default: return true;
+            }
+          })();
+          
+          if (!isValid && __DEV__) {
+            console.warn(`⚠️ Filtering out widget ${widget.id} (${instanceType}) - instance not detected`);
           }
+          return isValid;
         });
 
         // Add new widgets for newly detected instances
