@@ -213,6 +213,32 @@ class InstanceDetectionService {
   };
   
   /**
+   * Check if sensor has actual measurement data (not just timestamp)
+   * Prevents creating widgets for "empty" sensor entries
+   */
+  private hasValidMeasurementData(instrumentType: string, sensorData: any): boolean {
+    switch (instrumentType) {
+      case 'gps':
+        return sensorData.position?.latitude != null && sensorData.position?.longitude != null;
+      case 'compass':
+        return sensorData.heading != null;
+      case 'speed':
+        return sensorData.speedOverGround != null || sensorData.speedThroughWater != null;
+      case 'wind':
+        return sensorData.apparentWindAngle != null || sensorData.apparentWindSpeed != null;
+      case 'depth':
+        return sensorData.depth != null;
+      case 'autopilot':
+        return sensorData.mode != null || sensorData.targetHeading != null;
+      default:
+        // For unknown types, require any non-timestamp, non-history field
+        return Object.keys(sensorData).some(key => 
+          key !== 'timestamp' && key !== 'history' && sensorData[key] != null
+        );
+    }
+  }
+  
+  /**
    * Get total instance count for performance monitoring
    */
   private getTotalInstanceCount(): number {
@@ -309,6 +335,12 @@ class InstanceDetectionService {
       // Check each instance of this sensor type
       Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
         if (sensorData && sensorData.timestamp) {
+          // CRITICAL FIX: Verify actual measurement data exists (not just timestamp)
+          const hasMeasurementData = this.hasValidMeasurementData(instrumentType, sensorData);
+          if (!hasMeasurementData) {
+            return; // Skip - sensor has timestamp but no actual readings yet
+          }
+          
           // Check if data is recent (within last 30 seconds)
           const dataAge = currentTime - sensorData.timestamp;
           if (dataAge < 30000) {
@@ -381,6 +413,14 @@ class InstanceDetectionService {
     Object.entries(engineSensors).forEach(([instanceStr, engineData]: [string, any]) => {
       const instance = parseInt(instanceStr);
       if (engineData && engineData.timestamp) {
+        // CRITICAL FIX: Verify actual measurement data exists
+        const hasEngineData = engineData.rpm != null || engineData.coolantTemperature != null || 
+                             engineData.oilPressure != null || engineData.alternatorVoltage != null ||
+                             engineData.engineHours != null;
+        if (!hasEngineData) {
+          return; // Skip - sensor has timestamp but no actual readings yet
+        }
+        
         // Check if data is recent (within last 30 seconds)
         const dataAge = currentTime - engineData.timestamp;
         if (dataAge < 30000) {
@@ -501,6 +541,13 @@ class InstanceDetectionService {
     Object.entries(batterySensors).forEach(([instanceStr, batteryData]: [string, any]) => {
       const instance = parseInt(instanceStr, 10);
       if (batteryData && batteryData.timestamp) {
+        // CRITICAL FIX: Verify actual measurement data exists
+        const hasBatteryData = batteryData.voltage != null || batteryData.current != null || 
+                              batteryData.stateOfCharge != null;
+        if (!hasBatteryData) {
+          return; // Skip - sensor has timestamp but no actual readings yet
+        }
+        
         const dataAge = currentTime - batteryData.timestamp;
         if (dataAge < 30000) {
           const instanceId = WidgetFactory.generateInstanceWidgetId('battery', instance);
@@ -544,6 +591,12 @@ class InstanceDetectionService {
     Object.entries(tankSensors).forEach(([instanceStr, tankData]: [string, any]) => {
       const instance = parseInt(instanceStr);
       if (tankData && tankData.timestamp) {
+        // CRITICAL FIX: Verify actual measurement data exists
+        const hasTankData = tankData.level != null || tankData.capacity != null;
+        if (!hasTankData) {
+          return; // Skip - sensor has timestamp but no actual readings yet
+        }
+        
         // Check if data is recent (within last 30 seconds)
         const dataAge = currentTime - tankData.timestamp;
         if (dataAge < 30000) {
@@ -637,6 +690,50 @@ class InstanceDetectionService {
    * NMEA 0183 MTW (Mean Temperature of Water), and XDR temperature sensors
    */
   private scanForTemperatureInstances(nmeaData: any, currentTime: number): void {
+    // NMEA Store v2.0: Check sensor data first (preferred approach)
+    const sensors = nmeaData.sensors || {};
+    const temperatureSensors = sensors.temperature || {};
+    
+    Object.entries(temperatureSensors).forEach(([instanceStr, tempData]: [string, any]) => {
+      const instance = parseInt(instanceStr);
+      if (tempData && tempData.timestamp) {
+        // CRITICAL FIX: Verify actual measurement data exists
+        const hasTemperatureData = tempData.temperature != null;
+        if (!hasTemperatureData) {
+          return; // Skip - sensor has timestamp but no actual readings yet
+        }
+        
+        // Check if data is recent (within last 30 seconds)
+        const dataAge = currentTime - tempData.timestamp;
+        if (dataAge < 30000) {
+          const instanceId = `temperature-${instance}`;
+          const instanceMapping = NMEA_TEMPERATURE_INSTANCES[instance as keyof typeof NMEA_TEMPERATURE_INSTANCES];
+          const title = instanceMapping ? instanceMapping.title : `TEMP SENSOR ${instance + 1}`;
+          const icon = instanceMapping ? instanceMapping.icon : 'thermometer-outline';
+          const location = tempData.location || (instanceMapping ? instanceMapping.location : `sensor${instance}`);
+          
+          const detectedInstance: DetectedInstance = {
+            id: instanceId,
+            type: 'temperature',
+            instance,
+            title,
+            icon,
+            priority: instanceMapping ? instanceMapping.priority : instance + 20,
+            lastSeen: currentTime,
+            category: 'environment',
+            location,
+          };
+
+          const isFirstDetection = !this.state.temperatures.has(instanceId);
+          this.state.temperatures.set(instanceId, detectedInstance);
+          
+          if (isFirstDetection) {
+            console.log(`[InstanceDetection] Temperature sensor ${instance} detected from sensor data: ${title} (${tempData.temperature}°C)`);
+          }
+        }
+      }
+    });
+    
     // Check for NMEA 2000 temperature PGNs with instance data
     if (nmeaData.pgns) {
       // PGN 130311 - Environmental Parameters (instance-based)
