@@ -519,7 +519,8 @@ export const useWidgetStore = create<WidgetStore>()(
           dashboards: state.dashboards.map((dashboard) =>
             dashboard.id === dashboardId ? { ...dashboard, ...updates } : dashboard
           ),
-        })),
+        }));
+      },
 
       exportDashboard: (dashboardId) => {
         const dashboard = get().dashboards.find((d) => d.id === dashboardId);
