@@ -70,6 +70,18 @@ interface WidgetState {
   editMode: boolean;
   gridVisible: boolean;
   presets: WidgetPreset[];
+  
+  // Phase 2 optimization: Track current widget IDs for fast comparison
+  currentWidgetIds: Set<string>;
+  
+  // Phase 2 optimization: Performance metrics
+  widgetUpdateMetrics: {
+    totalUpdates: number;
+    skippedUpdates: number;
+    widgetsAdded: number;
+    widgetsRemoved: number;
+    lastUpdateTime: number;
+  };
 }
 
 interface WidgetActions {
@@ -253,6 +265,19 @@ const defaultPresets: WidgetPreset[] = [
   },
 ];
 
+// Phase 2 optimization: Set utility functions for widget ID comparison
+function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
+  if (a.size !== b.size) return false;
+  for (const item of a) {
+    if (!b.has(item)) return false;
+  }
+  return true;
+}
+
+function setDifference<T>(a: Set<T>, b: Set<T>): Set<T> {
+  return new Set([...a].filter(x => !b.has(x)));
+}
+
 export const useWidgetStore = create<WidgetStore>()(
   persist(
     (set, get) => ({
@@ -266,6 +291,16 @@ export const useWidgetStore = create<WidgetStore>()(
       presets: defaultPresets,
       editMode: false,
       gridVisible: false,
+      
+      // Phase 2 optimization: Initialize tracking structures
+      currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
+      widgetUpdateMetrics: {
+        totalUpdates: 0,
+        skippedUpdates: 0,
+        widgetsAdded: 0,
+        widgetsRemoved: 0,
+        lastUpdateTime: Date.now()
+      },
 
       // Actions
       addWidget: (widgetType, position = { x: 0, y: 0 }, options?: { instance?: number, sensorSource?: string }) => {
@@ -716,8 +751,15 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets: filteredWidgets
         });
       },
+      
+      // Phase 2 optimization: Set helper functions
+      // These are defined here to avoid polluting global scope
 
       updateInstanceWidgets: (detectedInstances) => {
+        // Phase 2 optimization: Increment total update counter
+        const metrics = get().widgetUpdateMetrics;
+        metrics.totalUpdates++;
+        
         console.log('🔧 [updateInstanceWidgets] CALLED WITH:', {
           engines: detectedInstances.engines.length,
           batteries: detectedInstances.batteries.length,
@@ -749,7 +791,33 @@ export const useWidgetStore = create<WidgetStore>()(
           if (__DEV__) {
             console.warn('⚠️ updateInstanceWidgets called with NO instances - skipping to prevent widget removal');
           }
+          metrics.skippedUpdates++;
           return; // Don't modify widgets when no instances detected
+        }
+        
+        // Phase 2 optimization: Build set of required widget IDs
+        const newWidgetIds = new Set<string>([
+          ...SYSTEM_WIDGETS.map(w => w.id), // Always include system widgets
+          ...detectedInstances.engines.map(e => e.id),
+          ...detectedInstances.batteries.map(b => b.id),
+          ...detectedInstances.tanks.map(t => t.id),
+          ...detectedInstances.temperatures.map(temp => temp.id),
+          ...detectedInstances.instruments.map(inst => inst.id)
+        ]);
+        
+        // Phase 2 optimization: Early exit if no changes detected
+        const currentIds = get().currentWidgetIds;
+        if (setsEqual(currentIds, newWidgetIds)) {
+          console.log('✨ [Phase 2] No widget changes detected - skipping update (optimization)');
+          metrics.skippedUpdates++;
+          
+          // Log efficiency metrics every 100 updates
+          if (metrics.totalUpdates % 100 === 0) {
+            const efficiency = ((metrics.skippedUpdates / metrics.totalUpdates) * 100).toFixed(1);
+            console.log(`📊 [Phase 2] Widget update efficiency: ${efficiency}% skipped (${metrics.totalUpdates} total, +${metrics.widgetsAdded}/-${metrics.widgetsRemoved} changes)`);
+          }
+          
+          return; // No changes - skip expensive update
         }
         
         const currentDashboard = get().dashboard;
@@ -1006,10 +1074,29 @@ export const useWidgetStore = create<WidgetStore>()(
           total: updatedWidgets.length,
           widgetIds: updatedWidgets.map(w => w.id)
         });
+        
+        // Phase 2 optimization: Calculate diff and update metrics
+        const toAdd = setDifference(newWidgetIds, currentIds);
+        const toRemove = setDifference(currentIds, newWidgetIds);
+        
+        metrics.widgetsAdded += toAdd.size;
+        metrics.widgetsRemoved += toRemove.size;
+        metrics.lastUpdateTime = Date.now();
+        
+        console.log(`✅ [Phase 2] Updating dashboard: +${toAdd.size} -${toRemove.size} widgets`);
 
         get().updateDashboard({
           widgets: updatedWidgets
         });
+        
+        // Phase 2 optimization: Update tracked widget IDs AFTER successful update
+        set({ currentWidgetIds: newWidgetIds });
+        
+        // Log efficiency metrics every 100 updates
+        if (metrics.totalUpdates % 100 === 0) {
+          const efficiency = ((metrics.skippedUpdates / metrics.totalUpdates) * 100).toFixed(1);
+          console.log(`📊 [Phase 2] Widget update efficiency: ${efficiency}% skipped (${metrics.totalUpdates} total, +${metrics.widgetsAdded}/-${metrics.widgetsRemoved} changes)`);
+        }
         
         log('[WidgetStore] Dashboard updated with new widgets');
       },
