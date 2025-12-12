@@ -834,6 +834,21 @@ export const useWidgetStore = create<WidgetStore>()(
           instruments: detectedInstances.instruments.length
         });
         
+        // Guard: Don't process if ALL instance arrays are empty
+        // This prevents removing widgets during initial startup or temporary data loss
+        const totalInstances = detectedInstances.engines.length + 
+                              detectedInstances.batteries.length +
+                              detectedInstances.tanks.length +
+                              detectedInstances.temperatures.length +
+                              detectedInstances.instruments.length;
+        
+        if (totalInstances === 0) {
+          if (__DEV__) {
+            console.warn('⚠️ updateInstanceWidgets called with NO instances - skipping to prevent widget removal');
+          }
+          return; // Don't modify widgets when no instances detected
+        }
+        
         const currentDashboard = get().dashboards.find(d => d.id === get().currentDashboard);
         if (!currentDashboard) {
           log('[WidgetStore] No current dashboard found');
