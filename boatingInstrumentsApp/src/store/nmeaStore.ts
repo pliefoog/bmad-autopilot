@@ -209,7 +209,10 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     
     lastUpdateTimes.set(updateKey, now);
     
-    return set((state) => {
+    // Track if this is a new sensor instance (for event emission)
+    const isNewInstance = !get().nmeaData.sensors[sensorType]?.[instance];
+    
+    set((state) => {
       // Safely access sensor instance (may not exist yet)
       const sensorTypeObj = state.nmeaData.sensors[sensorType] || {};
       const currentSensorData = sensorTypeObj[instance];
@@ -285,19 +288,6 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         history.add(trackableValue, updateNow);
       }
       
-      // Emit sensor update event for real-time detection (Phase 1 optimization)
-      // Only emit if this is a new instance or data has actually changed
-      if (!currentSensorData || Object.keys(finalData).length > 0) {
-        // Use setImmediate to emit event asynchronously (prevent blocking)
-        setImmediate(() => {
-          state.sensorEventEmitter.emit('sensorUpdate', {
-            sensorType,
-            instance,
-            timestamp: updateNow
-          });
-        });
-      }
-      
       const newNmeaData = {
         ...state.nmeaData,
         sensors: {
@@ -324,6 +314,20 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         alarms
       };
     });
+    
+    // Emit sensor update event AFTER state update completes (Phase 1 optimization)
+    // Only emit if this is a new instance or data has fields to update
+    if (isNewInstance || Object.keys(data).length > 0) {
+      // Use setTimeout 0 for async emission (React Native compatible)
+      setTimeout(() => {
+        const currentStore = get();
+        currentStore.sensorEventEmitter.emit('sensorUpdate', {
+          sensorType,
+          instance,
+          timestamp: Date.now()
+        });
+      }, 0);
+    }
   },
 
   getSensorData: <T extends SensorType>(sensorType: T, instance: number) => {
