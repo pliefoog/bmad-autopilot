@@ -846,7 +846,6 @@ export const useWidgetStore = create<WidgetStore>()(
         console.log(`📊 [Phase 2] Instance metadata map: ${instanceMetadata.size} entries`);
         
         // STEP 1: Remove widgets that are no longer detected (except system widgets)
-        const toRemove = setDifference(currentIds, newWidgetIds);
         let widgets = currentDashboard.widgets.filter(w => 
           !toRemove.has(w.id) || w.isSystemWidget
         );
@@ -856,7 +855,6 @@ export const useWidgetStore = create<WidgetStore>()(
         }
         
         // STEP 2: Add widgets for newly detected instances
-        const toAdd = setDifference(newWidgetIds, currentIds);
         
         if (toAdd.size > 0) {
           console.log(`➕ [Phase 2] Adding ${toAdd.size} widgets:`, Array.from(toAdd));
