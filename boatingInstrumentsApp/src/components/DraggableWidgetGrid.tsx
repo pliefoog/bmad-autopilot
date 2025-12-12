@@ -120,15 +120,8 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
 }) => {
   const theme = useTheme();
   
-  // Get current dashboard config - subscribe to dashboards array once, then use useMemo for find
-  const currentDashboardId = useWidgetStore(state => state.currentDashboard);
-  const dashboards = useWidgetStore(state => state.dashboards);
-  
-  // Use useMemo to find dashboard - only recalculates when dashboards array or ID changes
-  const dashboard = useMemo(
-    () => dashboards.find(d => d.id === currentDashboardId),
-    [dashboards, currentDashboardId]
-  );
+  // Get current dashboard config
+  const dashboard = useWidgetStore(state => state.dashboard);
   
   const reorderWidgetsOnPage = useWidgetStore(state => state.reorderWidgetsOnPage);
   const moveWidgetToPage = useWidgetStore(state => state.moveWidgetToPage);

@@ -25,7 +25,7 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
   } = useWidgetStore();
 
   const dashboardConfig = useWidgetStore(state => 
-    state.dashboards.find(d => d.id === state.currentDashboard)
+    state.dashboard
   );
 
   // Convert timeout from ms to minutes for display

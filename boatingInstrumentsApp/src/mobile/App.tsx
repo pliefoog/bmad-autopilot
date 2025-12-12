@@ -275,8 +275,7 @@ const App = () => {
   
   // Use getState() for stable function references (don't cause re-renders)
   // Only subscribe to data that actually needs to trigger re-renders
-  const dashboards = useWidgetStore(state => state.dashboards);
-  const currentDashboard = useWidgetStore(state => state.currentDashboard);
+  const dashboard = useWidgetStore(state => state.dashboard);
   const enableWidgetAutoRemoval = useWidgetStore(state => state.enableWidgetAutoRemoval);
   const widgetExpirationTimeout = useWidgetStore(state => state.widgetExpirationTimeout);
   
@@ -320,9 +319,8 @@ const App = () => {
       connectionStatus
     });
 
-    const dashboard = dashboards.find(d => d.id === currentDashboard);
     if (!dashboard) {
-      console.warn('[App] No current dashboard found');
+      console.warn('[App] No dashboard found');
       return;
     }
 
@@ -436,7 +434,7 @@ const App = () => {
     }
 
     log('[App] ✅ Dynamic widget processing complete');
-  }, [nmeaSensors, nmeaTimestamp, connectionStatus, dashboards, currentDashboard]); // Functions via getState()
+  }, [nmeaSensors, nmeaTimestamp, connectionStatus, dashboard]); // Functions via getState()
 
   // Helper functions now use global toast system
   const showSuccessToast = (message: string) => {

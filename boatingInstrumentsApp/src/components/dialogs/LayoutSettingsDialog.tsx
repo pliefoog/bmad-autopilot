@@ -51,9 +51,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
     setWidgetExpirationTimeout,
   } = useWidgetStore();
 
-  const dashboardConfig = useWidgetStore(state => 
-    state.dashboards.find(d => d.id === state.currentDashboard)
-  );
+  const dashboardConfig = useWidgetStore(state => state.dashboard);
 
   const timeoutMinutes = Math.round(widgetExpirationTimeout / 60000);
   const [selectedTimeout, setSelectedTimeout] = React.useState(timeoutMinutes);
