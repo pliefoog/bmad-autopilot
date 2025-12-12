@@ -756,31 +756,19 @@ export const useWidgetStore = create<WidgetStore>()(
       // These are defined here to avoid polluting global scope
 
       updateInstanceWidgets: (detectedInstances) => {
-        // Phase 2 optimization: Increment total update counter
+        // Phase 2 CLEAN IMPLEMENTATION: Set-based widget diffing
         const metrics = get().widgetUpdateMetrics;
         metrics.totalUpdates++;
         
-        console.log('🔧 [updateInstanceWidgets] CALLED WITH:', {
+        console.log('🔧 [Phase 2] Widget update triggered:', {
           engines: detectedInstances.engines.length,
           batteries: detectedInstances.batteries.length,
           tanks: detectedInstances.tanks.length,
           temperatures: detectedInstances.temperatures.length,
           instruments: detectedInstances.instruments.length,
-          engineIds: detectedInstances.engines.map(e => e.id),
-          batteryIds: detectedInstances.batteries.map(b => b.id),
-          tankIds: detectedInstances.tanks.map(t => t.id),
-          temperatureIds: detectedInstances.temperatures.map(t => t.id),
-        });
-        log('[WidgetStore] updateInstanceWidgets called with:', {
-          engines: detectedInstances.engines.length,
-          batteries: detectedInstances.batteries.length,
-          tanks: detectedInstances.tanks.length,
-          temperatures: detectedInstances.temperatures.length,
-          instruments: detectedInstances.instruments.length
         });
         
         // Guard: Don't process if ALL instance arrays are empty
-        // This prevents removing widgets during initial startup or temporary data loss
         const totalInstances = detectedInstances.engines.length + 
                               detectedInstances.batteries.length +
                               detectedInstances.tanks.length +
@@ -788,330 +776,142 @@ export const useWidgetStore = create<WidgetStore>()(
                               detectedInstances.instruments.length;
         
         if (totalInstances === 0) {
-          if (__DEV__) {
-            console.warn('⚠️ updateInstanceWidgets called with NO instances - skipping to prevent widget removal');
-          }
+          console.warn('⚠️ [Phase 2] No instances detected - skipping to prevent widget removal');
           metrics.skippedUpdates++;
-          return; // Don't modify widgets when no instances detected
-        }
-        
-        // Phase 2 optimization: Build set of required widget IDs
-        const newWidgetIds = new Set<string>([
-          ...SYSTEM_WIDGETS.map(w => w.id), // Always include system widgets
-          ...detectedInstances.engines.map(e => e.id),
-          ...detectedInstances.batteries.map(b => b.id),
-          ...detectedInstances.tanks.map(t => t.id),
-          ...detectedInstances.temperatures.map(temp => temp.id),
-          ...detectedInstances.instruments.map(inst => inst.id)
-        ]);
-        
-        console.log('🔍 [Phase 2] Built newWidgetIds Set:', {
-          size: newWidgetIds.size,
-          ids: Array.from(newWidgetIds),
-          breakdown: {
-            system: SYSTEM_WIDGETS.length,
-            engines: detectedInstances.engines.length,
-            batteries: detectedInstances.batteries.length,
-            tanks: detectedInstances.tanks.length,
-            temps: detectedInstances.temperatures.length,
-            instruments: detectedInstances.instruments.length
-          }
-        });
-        
-        // Phase 2 optimization: Early exit if no changes detected
-        const currentIds = get().currentWidgetIds;
-        console.log('🔍 [Phase 2] Current widget IDs:', {
-          size: currentIds.size,
-          ids: Array.from(currentIds)
-        });
-        
-        if (setsEqual(currentIds, newWidgetIds)) {
-          console.log('✨ [Phase 2] No widget changes detected - skipping update (optimization)');
-          metrics.skippedUpdates++;
-          
-          // Log efficiency metrics every 100 updates
-          if (metrics.totalUpdates % 100 === 0) {
-            const efficiency = ((metrics.skippedUpdates / metrics.totalUpdates) * 100).toFixed(1);
-            console.log(`📊 [Phase 2] Widget update efficiency: ${efficiency}% skipped (${metrics.totalUpdates} total, +${metrics.widgetsAdded}/-${metrics.widgetsRemoved} changes)`);
-          }
-          
-          return; // No changes - skip expensive update
-        }
-        
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) {
-          log('[WidgetStore] No current dashboard found');
           return;
         }
-
-        // Keep ALL existing widgets (all widgets are now instance-based)
-        const allExistingWidgets = [...currentDashboard.widgets];
-        console.log('🔍 [updateInstanceWidgets] ALL EXISTING WIDGETS:', allExistingWidgets.map(w => ({
-          id: w.id,
-          type: w.type,
-          hasInstanceId: !!w.settings?.instanceId,
-          hasInstanceType: !!w.settings?.instanceType,
-          settings: w.settings
-        })));
-        log('[WidgetStore] All existing widgets:', allExistingWidgets.map(w => ({
-          id: w.id,
-          type: w.type,
-          hasInstanceId: !!w.settings?.instanceId,
-          hasInstanceType: !!w.settings?.instanceType,
-          settings: w.settings
-        })));
         
-        // Track existing instance widgets
-        const existingInstanceWidgets = allExistingWidgets.filter(w => {
-          const hasInstanceId = w.settings && typeof w.settings.instanceId === 'string' && w.settings.instanceId.length > 0;
-          const hasInstanceType = w.settings && typeof w.settings.instanceType === 'string' && w.settings.instanceType.length > 0;
-          return hasInstanceId && hasInstanceType;
-        });
+        // Build Set of all required widget IDs from detected instances
+        const allDetectedInstances = [
+          ...detectedInstances.engines,
+          ...detectedInstances.batteries,
+          ...detectedInstances.tanks,
+          ...detectedInstances.temperatures,
+          ...detectedInstances.instruments
+        ];
         
-        console.log('🎯 [updateInstanceWidgets] EXISTING INSTANCE WIDGETS:', {
-          count: existingInstanceWidgets.length,
-          widgets: existingInstanceWidgets.map(w => ({ id: w.id, type: w.type, instanceId: w.settings?.instanceId }))
-        });
+        const newWidgetIds = new Set<string>([
+          ...SYSTEM_WIDGETS.map(w => w.id), // Always include system widgets
+          ...allDetectedInstances.map(inst => inst.id)
+        ]);
         
-        log('[WidgetStore] Existing instance widgets:', {
-          count: existingInstanceWidgets.length,
-          widgets: existingInstanceWidgets.map(w => ({ id: w.id, type: w.type, instanceId: w.settings?.instanceId }))
-        });
-
-        // Create sets of current instance IDs for comparison
-        const currentEngineIds = new Set(detectedInstances.engines.map(e => e.id));
-        const currentBatteryIds = new Set(detectedInstances.batteries.map(b => b.id));
-        const currentTankIds = new Set(detectedInstances.tanks.map(t => t.id));
-        const currentTemperatureIds = new Set(detectedInstances.temperatures.map(t => t.id));
-        const currentInstrumentIds = new Set(detectedInstances.instruments.map(i => i.id));
-
-        if (__DEV__) {
-          console.log('🔍 Detected instances:', {
-            engines: Array.from(currentEngineIds),
-            batteries: Array.from(currentBatteryIds),
-            tanks: Array.from(currentTankIds),
-            temperatures: Array.from(currentTemperatureIds),
-            instruments: Array.from(currentInstrumentIds)
-          });
+        console.log(`📊 [Phase 2] Required widgets: ${newWidgetIds.size} (${totalInstances} instances + ${SYSTEM_WIDGETS.length} system)`);
+        
+        // Early exit: No changes detected
+        const currentIds = get().currentWidgetIds;
+        if (setsEqual(currentIds, newWidgetIds)) {
+          metrics.skippedUpdates++;
+          
+          // Log efficiency every 100 updates
+          if (metrics.totalUpdates % 100 === 0) {
+            const efficiency = ((metrics.skippedUpdates / metrics.totalUpdates) * 100).toFixed(1);
+            console.log(`📈 [Phase 2] Efficiency: ${efficiency}% skipped (${metrics.totalUpdates} total, +${metrics.widgetsAdded}/-${metrics.widgetsRemoved})`);
+          }
+          
+          return; // No changes
         }
-
-        // KEEP ALL existing instance widgets - never auto-remove them
-        // Auto-removal was causing issues when instanceDetectionService temporarily returns empty arrays
-        // Users should manually remove widgets they don't need
-        const validInstanceWidgets = existingInstanceWidgets;
         
-        if (__DEV__) {
-          console.log(`✅ Keeping all ${existingInstanceWidgets.length} existing instance widgets (no auto-removal)`);
-        }
-
-        // Add new widgets for newly detected instances
-        const existingInstanceIds = new Set(validInstanceWidgets.map(w => w.settings?.instanceId));
-        console.log('🔍 [Phase 2] Existing instance IDs in dashboard:', {
-          count: existingInstanceIds.size,
-          ids: Array.from(existingInstanceIds)
-        });
-        log('[WidgetStore] Existing instance IDs:', Array.from(existingInstanceIds));
-
-        // Helper to find next available position (considering ALL existing widgets)
-        const findNextPosition = (allWidgets: WidgetConfig[]) => {
-          const maxX = Math.max(0, ...allWidgets.map(w => w.layout.x + w.layout.width));
-          const maxY = Math.max(0, ...allWidgets.map(w => w.layout.y + w.layout.height));
-          const position = { x: maxX > 8 ? 0 : maxX, y: maxX > 8 ? maxY : 0 };
-          log('[WidgetStore] Next position calculated:', position, 'from', allWidgets.length, 'total widgets');
-          return position;
-        };
-
-        // Start with all existing widgets (all are instance-based now)
-        let updatedWidgets = [...allExistingWidgets];
-        log('[WidgetStore] Starting with', updatedWidgets.length, 'existing widgets');
-
-        // Add engine widgets
-        console.log(`🔧 [Phase 2] Processing ${detectedInstances.engines.length} engine instances...`);
-        detectedInstances.engines.forEach(engine => {
-          if (!existingInstanceIds.has(engine.id)) {
-            console.log(`  ✅ Creating NEW engine widget: ${engine.id} - ${engine.title}`);
-            log('[WidgetStore] Creating engine widget for:', engine.id, engine.title);
-            const position = findNextPosition(updatedWidgets);
-            const widgetId = engine.id; // Use instance ID directly (already includes type)
-            updatedWidgets.push({
-              id: widgetId,
-              type: 'engine',
-              title: engine.title,
-              settings: {
-                instanceId: engine.id,
-                instanceType: 'engine',
-              },
-              layout: {
-                id: widgetId,
-                x: position.x,
-                y: position.y,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: updatedWidgets.length,
-            });
-            existingInstanceIds.add(engine.id); // Track newly added
-          } else {
-            log('[WidgetStore] Engine widget already exists:', engine.id);
-          }
-        });
-        log('[WidgetStore] After adding engines:', updatedWidgets.length, 'widgets');
-
-        // Add battery widgets  
-        detectedInstances.batteries.forEach(battery => {
-          if (!existingInstanceIds.has(battery.id)) {
-            log('[WidgetStore] Creating battery widget for:', battery.id, battery.title);
-            const position = findNextPosition(updatedWidgets);
-            const widgetId = battery.id; // Use instance ID directly (already includes type)
-            updatedWidgets.push({
-              id: widgetId,
-              type: 'battery',
-              title: battery.title,
-              settings: {
-                instanceId: battery.id,
-                instanceType: 'battery',
-              },
-              layout: {
-                id: widgetId,
-                x: position.x,
-                y: position.y,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: updatedWidgets.length,
-            });
-            existingInstanceIds.add(battery.id); // Track newly added
-          } else {
-            log('[WidgetStore] Battery widget already exists:', battery.id);
-          }
-        });
-        log('[WidgetStore] After adding batteries:', updatedWidgets.length, 'widgets');
-
-        // Add tank widgets
-        detectedInstances.tanks.forEach(tank => {
-          if (!existingInstanceIds.has(tank.id)) {
-            log('[WidgetStore] Creating tank widget for:', tank.id, tank.title);
-            const position = findNextPosition(updatedWidgets);
-            const widgetId = tank.id; // Use instance ID directly (already includes type)
-            updatedWidgets.push({
-              id: widgetId,
-              type: 'tanks',
-              title: tank.title,
-              settings: {
-                instanceId: tank.id,
-                instanceType: 'tank',
-              },
-              layout: {
-                id: widgetId,
-                x: position.x,
-                y: position.y,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: updatedWidgets.length,
-            });
-            existingInstanceIds.add(tank.id); // Track newly added
-          } else {
-            log('[WidgetStore] Tank widget already exists:', tank.id);
-          }
-        });
-        log('[WidgetStore] After adding tanks:', updatedWidgets.length, 'widgets');
-
-        // Add temperature widgets
-        detectedInstances.temperatures.forEach(temperature => {
-          if (!existingInstanceIds.has(temperature.id)) {
-            log('[WidgetStore] Creating temperature widget for:', temperature.id, temperature.title);
-            const position = findNextPosition(updatedWidgets);
-            const widgetId = temperature.id; // Use instance ID directly (already includes type)
-            updatedWidgets.push({
-              id: widgetId,
-              type: 'watertemp', // Use existing water temperature widget type
-              title: temperature.title,
-              settings: {
-                instanceId: temperature.id,
-                instanceType: 'temperature',
-                location: temperature.location, // Store sensor location
-              },
-              layout: {
-                id: widgetId,
-                x: position.x,
-                y: position.y,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: updatedWidgets.length,
-            });
-            existingInstanceIds.add(temperature.id); // Track newly added
-          } else {
-            log('[WidgetStore] Temperature widget already exists:', temperature.id);
-          }
-        });
-        log('[WidgetStore] After adding temperatures:', updatedWidgets.length, 'widgets');
-
-        // Add marine instrument widgets
-        detectedInstances.instruments.forEach(instrument => {
-          if (!existingInstanceIds.has(instrument.id)) {
-            log('[WidgetStore] Creating marine instrument widget for:', instrument.id, instrument.title);
-            const position = findNextPosition(updatedWidgets);
-            const widgetId = instrument.id; // Use instance ID directly (already includes type)
-            updatedWidgets.push({
-              id: widgetId,
-              type: instrument.type, // Use the detected instrument type (gps, speed, wind, depth, compass)
-              title: instrument.title,
-              settings: {
-                instanceId: instrument.id,
-                instanceType: 'instrument',
-              },
-              layout: {
-                id: widgetId,
-                x: position.x,
-                y: position.y,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: updatedWidgets.length,
-            });
-            existingInstanceIds.add(instrument.id); // Track newly added
-          } else {
-            log('[WidgetStore] Marine instrument widget already exists:', instrument.id);
-          }
-        });
-        log('[WidgetStore] After adding marine instruments:', updatedWidgets.length, 'widgets');
-
-        // All widgets are instance-based now
-        console.log('🎯 [updateInstanceWidgets] FINAL WIDGET UPDATE:', {
-          total: updatedWidgets.length,
-          widgetIds: updatedWidgets.map(w => ({ id: w.id, type: w.type, instanceId: w.settings?.instanceId }))
-        });
-        
-        log('[WidgetStore] Final widget update:', {
-          total: updatedWidgets.length,
-          widgetIds: updatedWidgets.map(w => w.id)
-        });
-        
-        // Phase 2 optimization: Calculate diff and update metrics
+        // Calculate Set diff: which widgets to add/remove
         const toAdd = setDifference(newWidgetIds, currentIds);
         const toRemove = setDifference(currentIds, newWidgetIds);
         
+        console.log(`🔄 [Phase 2] Widget diff: +${toAdd.size} to add, -${toRemove.size} to remove`);
+        
+        // Phase 2: Clean Set-based implementation - NO legacy forEach loops
+        const currentDashboard = get().dashboard;
+        if (!currentDashboard) {
+          console.error('❌ [Phase 2] No dashboard found');
+          return;
+        }
+
+        // Build instance metadata map for fast lookup during widget creation
+        const instanceMetadata = new Map<string, { 
+          title: string; 
+          type: string; 
+          instanceType: string;
+          location?: string;
+        }>();
+        
+        detectedInstances.engines.forEach(e => 
+          instanceMetadata.set(e.id, { title: e.title, type: 'engine', instanceType: 'engine' }));
+        detectedInstances.batteries.forEach(b => 
+          instanceMetadata.set(b.id, { title: b.title, type: 'battery', instanceType: 'battery' }));
+        detectedInstances.tanks.forEach(t => 
+          instanceMetadata.set(t.id, { title: t.title, type: 'tanks', instanceType: 'tank' }));
+        detectedInstances.temperatures.forEach(t => 
+          instanceMetadata.set(t.id, { title: t.title, type: 'watertemp', instanceType: 'temperature', location: t.location }));
+        detectedInstances.instruments.forEach(i => 
+          instanceMetadata.set(i.id, { title: i.title, type: i.type, instanceType: 'instrument' }));
+        
+        console.log(`📊 [Phase 2] Instance metadata map: ${instanceMetadata.size} entries`);
+        
+        // STEP 1: Remove widgets that are no longer detected (except system widgets)
+        const toRemove = setDifference(currentIds, newWidgetIds);
+        let widgets = currentDashboard.widgets.filter(w => 
+          !toRemove.has(w.id) || w.isSystemWidget
+        );
+        
+        if (toRemove.size > 0) {
+          console.log(`🗑️ [Phase 2] Removing ${toRemove.size} widgets:`, Array.from(toRemove));
+        }
+        
+        // STEP 2: Add widgets for newly detected instances
+        const toAdd = setDifference(newWidgetIds, currentIds);
+        
+        if (toAdd.size > 0) {
+          console.log(`➕ [Phase 2] Adding ${toAdd.size} widgets:`, Array.from(toAdd));
+          
+          // Helper to find next available position
+          const findNextPosition = () => {
+            const maxX = Math.max(0, ...widgets.map(w => w.layout.x + w.layout.width));
+            const maxY = Math.max(0, ...widgets.map(w => w.layout.y + w.layout.height));
+            return { x: maxX > 8 ? 0 : maxX, y: maxX > 8 ? maxY : 0 };
+          };
+          
+          // Create widgets for all instances in toAdd set
+          toAdd.forEach(instanceId => {
+            const metadata = instanceMetadata.get(instanceId);
+            if (!metadata) {
+              console.warn(`⚠️ [Phase 2] No metadata for instance: ${instanceId}`);
+              return;
+            }
+            
+            const position = findNextPosition();
+            const newWidget: WidgetConfig = {
+              id: instanceId,
+              type: metadata.type as any,
+              title: metadata.title,
+              settings: {
+                instanceId,
+                instanceType: metadata.instanceType,
+                ...(metadata.location && { location: metadata.location }),
+              },
+              layout: {
+                id: instanceId,
+                x: position.x,
+                y: position.y,
+                width: 2,
+                height: 2,
+                visible: true,
+              },
+              enabled: true,
+              order: widgets.length,
+            };
+            
+            widgets.push(newWidget);
+            console.log(`  ✅ Created ${metadata.type} widget: ${instanceId}`);
+          });
+        }
+        
+        console.log(`🎯 [Phase 2] Final dashboard: ${widgets.length} widgets (${allExistingWidgets.length} existing)`);
+        
+        // Update metrics
         metrics.widgetsAdded += toAdd.size;
         metrics.widgetsRemoved += toRemove.size;
         metrics.lastUpdateTime = Date.now();
         
-        console.log(`✅ [Phase 2] Updating dashboard: +${toAdd.size} -${toRemove.size} widgets`);
-
-        get().updateDashboard({
-          widgets: updatedWidgets
-        });
+        // Update dashboard with new widget array
+        get().updateDashboard({ widgets });
         
         // Phase 2 optimization: Update tracked widget IDs AFTER successful update
         set({ currentWidgetIds: newWidgetIds });
