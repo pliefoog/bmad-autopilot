@@ -363,6 +363,11 @@ const App = () => {
       }
     });
 
+    // **DISABLED**: Old auto-discovery code - now handled by startInstanceMonitoring()
+    // The instance monitoring system in widgetStore batches all updates properly
+    // to avoid multiple re-renders. This old code was causing 11/18 widget toggle.
+    
+    /*
     // **2. MULTI-INSTANCE SENSORS** (engine, battery, tank, temperature)
     
     // Engine widgets
@@ -412,6 +417,7 @@ const App = () => {
         }
       });
     }
+    */
 
     // Temperature widgets (instance-based IDs for consistency with other multi-instance widgets)
     if (nmeaSensors.temperature) {
