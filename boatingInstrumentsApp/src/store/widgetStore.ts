@@ -1122,11 +1122,17 @@ export const useWidgetStore = create<WidgetStore>()(
         ]);
 
         // Find orphaned instance widgets (widgets with instanceId but no matching detected instance)
-        const orphanedInstanceWidgets = currentDashboard.widgets.filter(widget => 
-          widget.settings?.instanceId && 
-          widget.settings?.instanceType && 
-          !activeInstanceIds.has(widget.settings.instanceId)
-        );
+        // NOTE: Only remove if instance has been missing for a significant time to avoid
+        // removing widgets during temporary NMEA dropouts
+        const orphanedInstanceWidgets = currentDashboard.widgets.filter(widget => {
+          if (!widget.settings?.instanceId || !widget.settings?.instanceType) return false;
+          const isOrphaned = !activeInstanceIds.has(widget.settings.instanceId);
+          if (isOrphaned && __DEV__) {
+            console.warn(`⚠️ Orphaned instance widget detected: ${widget.id} (instanceId: ${widget.settings.instanceId})`);
+          }
+          // TODO: Add timestamp-based cleanup - only remove after 5+ minutes missing
+          return false; // DISABLED: Don't auto-remove instance widgets for now
+        });
 
         // Find invalid registry widgets (widgets that don't exist in the widget registry)
         const invalidRegistryWidgets = currentDashboard.widgets.filter(widget => {
