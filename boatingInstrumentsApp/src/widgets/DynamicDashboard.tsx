@@ -50,10 +50,33 @@ export const DynamicDashboard: React.FC = () => {
   
   // Selective subscriptions to prevent re-renders on widget timestamp updates
   const currentDashboard = useWidgetStore(state => state.currentDashboard);
+  
+  // Track previous widget array to detect what changed
+  const prevWidgetsRef = useRef<any[]>([]);
+  
   const storeWidgets = useWidgetStore(
     state => {
       const dashboard = state.dashboards.find(d => d.id === state.currentDashboard);
-      return dashboard?.widgets || [];
+      const widgets = dashboard?.widgets || [];
+      
+      // Debug: Log what actually changed
+      if (__DEV__ && prevWidgetsRef.current.length !== widgets.length) {
+        const prevIds = new Set(prevWidgetsRef.current.map(w => w.id));
+        const currentIds = new Set(widgets.map(w => w.id));
+        
+        const added = widgets.filter(w => !prevIds.has(w.id));
+        const removed = prevWidgetsRef.current.filter(w => !currentIds.has(w.id));
+        
+        console.log('📦 WIDGETS ARRAY CHANGED:', {
+          prev: prevWidgetsRef.current.length,
+          current: widgets.length,
+          added: added.map(w => w.id),
+          removed: removed.map(w => w.id)
+        });
+      }
+      prevWidgetsRef.current = widgets;
+      
+      return widgets;
     },
     (prev, next) => {
       // Only update if widget count or IDs change (ignore layout/visibility changes that happen during drag)

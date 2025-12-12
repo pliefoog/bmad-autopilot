@@ -501,7 +501,20 @@ export const useWidgetStore = create<WidgetStore>()(
       switchDashboard: (dashboardId) =>
         set({ currentDashboard: dashboardId }),
 
-      updateDashboard: (dashboardId, updates) =>
+      updateDashboard: (dashboardId, updates) => {
+        if (__DEV__ && updates.widgets) {
+          const current = get().dashboards.find(d => d.id === dashboardId);
+          if (current && current.widgets.length !== updates.widgets.length) {
+            const stack = new Error().stack;
+            console.log('🔧 updateDashboard called - widget count changed:', {
+              from: current.widgets.length,
+              to: updates.widgets.length,
+              dashboardId,
+              caller: stack?.split('\n')[2]?.trim()
+            });
+          }
+        }
+        
         set((state) => ({
           dashboards: state.dashboards.map((dashboard) =>
             dashboard.id === dashboardId ? { ...dashboard, ...updates } : dashboard
