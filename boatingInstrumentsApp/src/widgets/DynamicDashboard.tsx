@@ -56,9 +56,13 @@ export const DynamicDashboard: React.FC = () => {
       return dashboard?.widgets || [];
     },
     (prev, next) => {
-      // Only update if widget array actually changed (deep comparison of widget IDs and visibility)
+      // Only update if widget count or IDs change (ignore layout/visibility changes that happen during drag)
       if (prev.length !== next.length) return false;
-      return prev.every((w, i) => w.id === next[i].id && w.layout?.visible === next[i].layout?.visible);
+      // Check if same widgets in same order
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i].id !== next[i].id) return false;
+      }
+      return true; // Same widgets, same order - don't trigger update
     }
   );
   const dashboardConfig = useWidgetStore(state => 
@@ -103,7 +107,6 @@ export const DynamicDashboard: React.FC = () => {
     
     // Pass measured dimensions from context - no header/footer needed as dimensions already exclude them
     const config = DynamicLayoutService.getGridConfig(0, 0, visibleWidgetCount, contextWidth, contextHeight);
-    console.log('📊 DynamicDashboard widget count:', visibleWidgetCount, 'visible widgets from', storeWidgets.length, 'total');
     return config;
   }, [contextReady, contextWidth, contextHeight, visibleWidgetCount]); // Only recalculate when dimensions or widget count changes
   
@@ -136,9 +139,13 @@ export const DynamicDashboard: React.FC = () => {
 
   // ✨ PURE WIDGET STORE: Update layout when widget store changes or dimensions change
   useEffect(() => {
+    // Debug: Log when storeWidgets actually changes
+    if (__DEV__) {
+      console.log('🔄 storeWidgets changed:', storeWidgets.length, 'widgets, dashboard:', currentDashboard);
+    }
     const gridLayout = calculateGridLayout(storeWidgets);
     setLayout(gridLayout);
-  }, [storeWidgets, calculateGridLayout]);
+  }, [storeWidgets, calculateGridLayout, currentDashboard]);
 
   // Save layout to widget store (pure widget store architecture)
   const saveLayout = useCallback(async (newLayout: DynamicWidgetLayout[]) => {
