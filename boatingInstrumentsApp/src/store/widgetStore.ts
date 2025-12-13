@@ -767,6 +767,20 @@ export const useWidgetStore = create<WidgetStore>()(
                               detectedInstances.temperatures.length +
                               detectedInstances.instruments.length;
         
+        console.log('📊 [updateInstanceWidgets] Detected instances:', {
+          engines: detectedInstances.engines.length,
+          batteries: detectedInstances.batteries.length,
+          tanks: detectedInstances.tanks.length,
+          temperatures: detectedInstances.temperatures.length,
+          instruments: detectedInstances.instruments.length,
+          total: totalInstances,
+          engineIds: detectedInstances.engines.map(e => e.id),
+          batteryIds: detectedInstances.batteries.map(b => b.id),
+          tankIds: detectedInstances.tanks.map(t => t.id),
+          temperatureIds: detectedInstances.temperatures.map(t => t.id),
+          instrumentIds: detectedInstances.instruments.map(i => i.id)
+        });
+        
         if (totalInstances === 0) {
           metrics.skippedUpdates++;
           return;
