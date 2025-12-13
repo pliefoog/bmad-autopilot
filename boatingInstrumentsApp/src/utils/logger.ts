@@ -111,7 +111,7 @@ if (typeof window !== 'undefined' && __DEV__) {
   console.log = (...args: any[]) => {
     // Always allow logger control messages
     const firstArg = String(args[0] || '');
-    if (firstArg.match(/^[✅📝🔇📊❌⚠️💡]/)) {
+    if (firstArg.match(/^[✅📝🔇📊❌⚠️💡🎯]/)) {
       originalConsole.log(...args);
       return;
     }
