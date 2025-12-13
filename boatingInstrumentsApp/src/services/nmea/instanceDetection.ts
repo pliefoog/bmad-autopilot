@@ -431,14 +431,6 @@ class InstanceDetectionService {
     const sensors = nmeaData.sensors || {};
     const engineSensors = sensors.engine || {};
     
-    console.log('🔧 [scanForEngineInstances] Checking for engines:', {
-      hasSensors: !!sensors,
-      hasEngine: !!sensors.engine,
-      engineInstanceCount: Object.keys(engineSensors).length,
-      engineInstances: Object.keys(engineSensors),
-      sampleData: Object.keys(engineSensors).length > 0 ? engineSensors[Object.keys(engineSensors)[0]] : null
-    });
-    
     // Check each engine instance for recent data
     Object.entries(engineSensors).forEach(([instanceStr, engineData]: [string, any]) => {
       const instance = parseInt(instanceStr);
@@ -490,12 +482,6 @@ class InstanceDetectionService {
     const sensors = nmeaData.sensors || {};
     const batterySensors = sensors.battery || {};
     
-    console.log('🔧 [scanForBatteryInstances] Checking for batteries:', {
-      hasSensors: !!sensors,
-      batteryInstanceCount: Object.keys(batterySensors).length,
-      batteryInstances: Object.keys(batterySensors)
-    });
-    
     // First, use sensor data (preferred in NMEA Store v2)
     Object.entries(batterySensors).forEach(([instanceStr, batteryData]: [string, any]) => {
       const instance = parseInt(instanceStr, 10);
@@ -538,13 +524,6 @@ class InstanceDetectionService {
     // NMEA Store v2.0: Check sensor data first
     const sensors = nmeaData.sensors || {};
     const tankSensors = sensors.tank || {};
-    
-    console.log('🔧 [scanForTankInstances] Checking for tanks:', {
-      hasSensors: !!sensors,
-      hasTank: !!sensors.tank,
-      tankInstanceCount: Object.keys(tankSensors).length,
-      tankInstances: Object.keys(tankSensors)
-    });
     
     // Check each tank instance for recent data
     Object.entries(tankSensors).forEach(([instanceStr, tankData]: [string, any]) => {

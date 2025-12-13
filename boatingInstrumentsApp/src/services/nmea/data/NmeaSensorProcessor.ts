@@ -299,14 +299,10 @@ export class NmeaSensorProcessor {
    * Where: S = Source (E=Engine), n = Instance, x.x = RPM value, A = Valid
    */
   private processRPM(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
-    console.log('🚨 [processRPM] CALLED - Raw fields:', message.fields);
-    log('[NmeaSensorProcessor] 🔍 Processing RPM - Raw fields:', message.fields);
     const fields = message.fields;
     
     // Check if this is engine RPM (source = 'E')
     if (fields.source !== 'E') {
-      console.log('🚨 [processRPM] REJECTED - Source not E:', fields.source);
-      log('[NmeaSensorProcessor] ❌ RPM not for engine, source:', fields.source);
       return {
         success: false,
         errors: ['RPM message is not for engine (source not E)'],
@@ -319,35 +315,8 @@ export class NmeaSensorProcessor {
     const rpmValue = parseFloat(fields.rpm);
     const status = fields.status;
 
-    console.log('🚨 [processRPM] PARSING:', {
-      engineInstance,
-      rpmValue,
-      status,
-      rpmIsNaN: isNaN(rpmValue),
-      statusValid: status === 'A'
-    });
-    log('[NmeaSensorProcessor] 🔧 RPM parsing:', {
-      engineInstance,
-      rpmValue,
-      status,
-      rpmIsNaN: isNaN(rpmValue),
-      statusValid: status === 'A'
-    });
-
     // Validate data
     if (isNaN(rpmValue) || status !== 'A') {
-      console.log('🚨 [processRPM] VALIDATION FAILED:', {
-        rpmValue,
-        rpmIsNaN: isNaN(rpmValue),
-        status,
-        statusValid: status === 'A'
-      });
-      log('[NmeaSensorProcessor] ❌ RPM validation failed:', {
-        rpmValue,
-        rpmIsNaN: isNaN(rpmValue),
-        status,
-        statusValid: status === 'A'
-      });
       return {
         success: false,
         errors: ['Invalid RPM data or status not valid'],
@@ -361,9 +330,6 @@ export class NmeaSensorProcessor {
       rpm: rpmValue, // Raw RPM value (no unit conversion needed)
       timestamp: timestamp
     };
-
-    console.log(`🚨 [processRPM] SUCCESS - Engine ${engineInstance} = ${rpmValue} RPM - Returning updates`);
-    console.log(`[NmeaSensorProcessor] ✅ RPM SUCCESS: Engine ${engineInstance} = ${rpmValue} RPM`);
 
     return {
       success: true,
