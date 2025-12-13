@@ -28,6 +28,7 @@ import { FactoryResetDialog } from '../components/dialogs/FactoryResetDialog';
 import { LayoutSettingsDialog } from '../components/dialogs/LayoutSettingsDialog';
 import { DisplayThemeDialog } from '../components/dialogs/DisplayThemeDialog';
 import { AlarmConfigDialog } from '../components/dialogs/AlarmConfigDialog';
+import { initializeWidgetSystem } from '../services/initializeWidgetSystem';
 import { AlarmHistoryDialog } from '../components/dialogs/AlarmHistoryDialog';
 import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
 import { MemoryMonitor } from '../components/MemoryMonitor';
@@ -285,7 +286,6 @@ const App = () => {
       log('[App] 🔍 Starting instance monitoring for auto-detection');
       
       // Initialize the new event-driven widget registration system
-      const { initializeWidgetSystem } = require('../services/initializeWidgetSystem');
       initializeWidgetSystem();
       
       // Keep legacy instance monitoring for backward compatibility
