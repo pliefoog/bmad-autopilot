@@ -3,7 +3,6 @@
  * Central registry for dependency injection and service management
  */
 
-import { widgetStorageService } from './storage/widgetStorage';
 import { settingsStorageService } from './storage/settingsStorage';
 import { secureStorageService } from './storage/secureStorage';
 import { autopilotCommandService } from './nmea/AutopilotCommands';
@@ -12,7 +11,6 @@ import { sampleDataService } from './playback/sampleData';
 
 export interface ServiceRegistry {
   // Storage Services
-  widgetStorage: typeof widgetStorageService;
   settingsStorage: typeof settingsStorageService;
   secureStorage: typeof secureStorageService;
   
@@ -35,7 +33,6 @@ class ServiceRegistryImpl implements ServiceRegistry {
   }
 
   // Storage Services
-  public readonly widgetStorage = widgetStorageService;
   public readonly settingsStorage = settingsStorageService;
   public readonly secureStorage = secureStorageService;
   
