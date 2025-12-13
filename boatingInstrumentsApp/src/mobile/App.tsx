@@ -14,7 +14,7 @@ import { useToast } from '../hooks/useToast';
 // Master toggle for App.tsx logging
 const ENABLE_APP_LOGGING = false;
 const log = (...args: any[]) => ENABLE_APP_LOGGING && console.log(...args);
-import { DynamicDashboard } from '../widgets/DynamicDashboard';
+import ResponsiveDashboard from '../components/organisms/ResponsiveDashboard';
 import { DashboardLayoutProvider, useDashboardLayout } from '../contexts/DashboardLayoutContext';
 import HeaderBar from '../components/HeaderBar';
 import { ToastContainer } from '../components/toast';
@@ -79,7 +79,7 @@ const DashboardContent: React.FC = () => {
         right: 0, 
         bottom: insets.bottom 
       }}>
-        <DynamicDashboard />
+        <ResponsiveDashboard />
       </View>
     </View>
   );

@@ -12,7 +12,6 @@ export interface WidgetConfig {
   type: string;
   title: string;
   settings: Record<string, any>;
-  enabled: boolean;
   isSystemWidget?: boolean;
   createdAt?: number;
   lastDataUpdate?: number;
@@ -49,7 +48,6 @@ const defaultDashboard: DashboardConfig = {
       type: 'theme',
       title: 'Theme',
       settings: {},
-      enabled: true,
       isSystemWidget: true,
       createdAt: Date.now(),
       lastDataUpdate: Date.now(),
@@ -155,7 +153,6 @@ export const useWidgetStore = create<WidgetStore>()(
                 ...(instance.location && { location: instance.location }),
                 ...(instance.fluidType && { fluidType: instance.fluidType }),
               },
-              enabled: true,
               createdAt: now,
               lastDataUpdate: now,
             };
@@ -208,7 +205,6 @@ export const useWidgetStore = create<WidgetStore>()(
           type: sw.type,
           title: sw.title,
           settings: {},
-          enabled: true,
           isSystemWidget: true,
           createdAt: now,
           lastDataUpdate: now,
@@ -260,28 +256,16 @@ export const useWidgetStore = create<WidgetStore>()(
 
         const now = Date.now();
         const timeout = state.widgetExpirationTimeout;
-        const GRACE_PERIOD = 30000; // 30s hysteresis to prevent flapping
-        let expiredCount = 0;
+        const GRACE_PERIOD = 30000;
         
-        // Filter expired widgets with grace period
         const updatedWidgets = currentDashboard.widgets.filter((widget) => {
-          // 🛡️ System widgets are always protected
-          if (widget.isSystemWidget) {
-            return true;
-          }
-
-          // Use lastDataUpdate or createdAt, fall back to 0 (not 'now') to catch missing timestamps
+          if (widget.isSystemWidget) return true;
           const lastUpdate = widget.lastDataUpdate || widget.createdAt || 0;
           const age = now - lastUpdate;
-          const isExpired = age > (timeout + GRACE_PERIOD);
-          
-          if (isExpired) expiredCount++;
-          
-          return !isExpired;
+          return age <= (timeout + GRACE_PERIOD);
         });
 
-        // Early exit if no widgets expired
-        if (expiredCount === 0) return;
+        if (updatedWidgets.length === currentDashboard.widgets.length) return;
 
         set({
           dashboard: {
