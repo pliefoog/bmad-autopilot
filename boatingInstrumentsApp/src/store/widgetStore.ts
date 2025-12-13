@@ -7,25 +7,15 @@ const SYSTEM_WIDGETS = [
   { id: 'theme', type: 'theme', title: 'Theme' }
 ];
 
-export interface WidgetLayout {
-  id: string;
-  width: number;
-  height: number;
-  visible?: boolean;
-}
-
 export interface WidgetConfig {
   id: string;
   type: string;
   title: string;
   settings: Record<string, any>;
-  layout: WidgetLayout;
   enabled: boolean;
-  // System widget protection
   isSystemWidget?: boolean;
-  // Widget lifecycle timestamps
-  createdAt?: number;        // When widget was created
-  lastDataUpdate?: number;   // Last time widget received sensor data update
+  createdAt?: number;
+  lastDataUpdate?: number;
 }
 
 export interface DashboardConfig {
@@ -59,12 +49,6 @@ const defaultDashboard: DashboardConfig = {
       type: 'theme',
       title: 'Theme',
       settings: {},
-      layout: {
-        id: 'theme',
-        width: 2,
-        height: 2,
-        visible: true,
-      },
       enabled: true,
       isSystemWidget: true,
       createdAt: Date.now(),
@@ -171,12 +155,6 @@ export const useWidgetStore = create<WidgetStore>()(
                 ...(instance.location && { location: instance.location }),
                 ...(instance.fluidType && { fluidType: instance.fluidType }),
               },
-              layout: {
-                id: instance.id,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
               enabled: true,
               createdAt: now,
               lastDataUpdate: now,
@@ -230,12 +208,6 @@ export const useWidgetStore = create<WidgetStore>()(
           type: sw.type,
           title: sw.title,
           settings: {},
-          layout: {
-            id: sw.id,
-            width: 2,
-            height: 2,
-            visible: true,
-          },
           enabled: true,
           isSystemWidget: true,
           createdAt: now,
