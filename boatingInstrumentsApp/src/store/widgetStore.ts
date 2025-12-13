@@ -405,51 +405,6 @@ export const useWidgetStore = create<WidgetStore>()(
       setGridVisible: (visible) =>
         set({ gridVisible: visible }),
 
-      createDashboard: (name, presetId) => {
-        const dashboard: DashboardConfig = {
-          id: `dashboard-${Date.now()}`,
-          name,
-          widgets: [],
-          gridSize: 10,
-          snapToGrid: true,
-          columns: 6,
-          rows: 8,
-        };
-
-        if (presetId) {
-          const preset = get().presets.find((p) => p.id === presetId);
-          if (preset) {
-            dashboard.widgets = preset.widgets.map((w, index) => ({
-              ...w,
-              id: `${w.type}-${Date.now()}-${index}`,
-              layout: { ...w.layout, id: `${w.type}-${Date.now()}-${index}` },
-            }));
-          }
-        }
-
-        set((state) => ({
-          dashboards: [...state.dashboards, dashboard],
-          currentDashboard: dashboard.id,
-        }));
-      },
-
-      deleteDashboard: (dashboardId) => {
-        if (dashboardId === 'default') return; // Protect default dashboard
-        
-        set((state) => {
-          const remaining = state.dashboards.filter((d) => d.id !== dashboardId);
-          return {
-            dashboards: remaining,
-            currentDashboard: state.currentDashboard === dashboardId 
-              ? remaining[0]?.id || 'default' 
-              : state.currentDashboard,
-          };
-        });
-      },
-
-      switchDashboard: (dashboardId) =>
-        set({ currentDashboard: dashboardId }),
-
       updateDashboard: (updates) => {
         if (__DEV__ && updates.widgets) {
           const current = get().dashboard;
@@ -474,7 +429,6 @@ export const useWidgetStore = create<WidgetStore>()(
         let dashboard = state.dashboard;
         
         log('[WidgetStore] initializeWidgetStatesOnAppStart - Dashboard widgets:', {
-          dashboardId: state.currentDashboard,
           widgetCount: dashboard?.widgets.length,
           widgetIds: dashboard?.widgets.map(w => w.id)
         });
@@ -537,9 +491,7 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       resetLayout: () => {
-        const currentDashboard = get().dashboards.find(
-          (d) => d.id === get().currentDashboard
-        );
+        const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
 
         const resetWidgets = currentDashboard.widgets.map((widget, index) => ({
@@ -888,7 +840,7 @@ export const useWidgetStore = create<WidgetStore>()(
               enabled: true,
               order: widgets.length,
               createdAt: now,
-              lastDataUpdate: now,  // Initialize to now since we're creating based on detected data
+              lastDataUpdate: now,  // Initialize both timestamps to prevent race condition
             };
             
             widgets.push(newWidget);
@@ -997,13 +949,11 @@ export const useWidgetStore = create<WidgetStore>()(
             'battery', 'tanks', 'autopilot', 'weather', 'navigation'
           ],
           selectedWidgets: [],
-          currentDashboard: 'default',
           dashboard: resetDashboard,
-          dashboards: [resetDashboard],
           presets: [],
           editMode: false,
           gridVisible: false,
-          widgetExpirationTimeout: 60000,
+          widgetExpirationTimeout: 300000,  // 5 minutes - appropriate for intermittent marine data
           enableWidgetAutoRemoval: true,
           currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
           widgetUpdateMetrics: {
@@ -1076,47 +1026,55 @@ export const useWidgetStore = create<WidgetStore>()(
           return;
         }
 
+        const currentDashboard = state.dashboard;
+        if (!currentDashboard) {
+          return;
+        }
+
         const now = Date.now();
         const timeout = state.widgetExpirationTimeout;
+        const GRACE_PERIOD = 30000; // 30s hysteresis to prevent flapping
         let expiredCount = 0;
         
-        // Single-pass: filter and count expired widgets
-        set((currentState) => ({
-          dashboards: currentState.dashboards.map((dashboard) => {
-            const updatedWidgets = dashboard.widgets.filter((widget) => {
-              // 🛡️ System widgets are always protected
-              if (widget.isSystemWidget) {
-                return true;
-              }
+        // Filter expired widgets with grace period
+        const updatedWidgets = currentDashboard.widgets.filter((widget) => {
+          // 🛡️ System widgets are always protected
+          if (widget.isSystemWidget) {
+            return true;
+          }
 
-              const lastUpdate = widget.lastDataUpdate || widget.createdAt || now;
-              const isExpired = now - lastUpdate > timeout;
-              
-              if (isExpired) {
-                expiredCount++;
-                log(`🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round((now - lastUpdate) / 1000)}s)`);
-              }
-              
-              return !isExpired;
-            });
+          // Use lastDataUpdate or createdAt, fall back to 0 (not 'now') to catch missing timestamps
+          const lastUpdate = widget.lastDataUpdate || widget.createdAt || 0;
+          const age = now - lastUpdate;
+          const isExpired = age > (timeout + GRACE_PERIOD);
+          
+          if (isExpired) {
+            expiredCount++;
+            log(`🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round(age / 1000)}s)`);
+          }
+          
+          return !isExpired;
+        });
 
-            return {
-              ...dashboard,
-              widgets: updatedWidgets,
-            };
-          }),
-          selectedWidgets: currentState.selectedWidgets.filter((widgetType) => {
-            // Keep widget type if any widget of that type still exists after cleanup
-            return currentState.dashboards.some((dashboard) =>
-              dashboard.widgets.some((widget) => widget.type === widgetType && 
-                (widget.isSystemWidget || now - (widget.lastDataUpdate || widget.createdAt || now) <= timeout))
-            );
-          }),
-        }));
-
-        if (expiredCount > 0) {
-          log(`✅ Cleanup complete - removed ${expiredCount} expired widget(s)`);
+        // Early exit if no widgets expired - prevents unnecessary state updates
+        if (expiredCount === 0) {
+          return;
         }
+
+        // Update selectedWidgets using the NEW filtered widget list (not stale currentState)
+        const updatedSelectedWidgets = state.selectedWidgets.filter((widgetType) => {
+          return updatedWidgets.some((widget) => widget.type === widgetType);
+        });
+
+        set({
+          dashboard: {
+            ...currentDashboard,
+            widgets: updatedWidgets,
+          },
+          selectedWidgets: updatedSelectedWidgets,
+        });
+
+        log(`✅ Cleanup complete - removed ${expiredCount} expired widget(s)`);
       },
 
       // TODO: Pagination methods (Story 6.11) - temporarily disabled

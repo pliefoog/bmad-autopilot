@@ -296,6 +296,12 @@ const App = () => {
     console.log(`[App] Widget auto-removal: ${enableWidgetAutoRemoval ? 'ENABLED' : 'DISABLED'}`);
     console.log(`[App] Widget expiration timeout: ${widgetExpirationTimeout}ms (${widgetExpirationTimeout / 1000}s)`);
     
+    // Don't start cleanup if auto-removal is disabled
+    if (!enableWidgetAutoRemoval) {
+      log('[App] Widget auto-removal disabled - skipping cleanup timer');
+      return;
+    }
+    
     // Run initial cleanup using getState() for stable reference
     useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
     
