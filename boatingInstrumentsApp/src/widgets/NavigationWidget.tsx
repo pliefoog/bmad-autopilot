@@ -91,11 +91,6 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
   // Data staleness detection
   const isStale = navTimestamp ? (Date.now() - navTimestamp) > 10000 : true;
   
-  const handleLongPressOnPin = () => {
-    if (toggleWidgetPin) {
-    }
-  };
-  
   // Widget header component
   const headerComponent = (
     <View style={{

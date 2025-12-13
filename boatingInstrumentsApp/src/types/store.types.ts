@@ -220,24 +220,9 @@ export interface AlarmActions {
   reset: () => void;
 }
 
-export interface WidgetActions {
-  addWidget: (widgetType: string, position?: { x: number; y: number }) => void;
-  removeWidget: (id: string) => void;
-  updateWidget: (id: string, updates: Partial<WidgetConfig>) => void;
-  moveWidget: (id: string, position: { x: number; y: number }) => void;
-  resizeWidget: (id: string, dimensions: { width: number; height: number }) => void;
-  toggleWidget: (widgetType: string) => void;
-  selectWidget: (id?: string) => void;
-  setEditMode: (enabled: boolean) => void;
-  createDashboard: (name: string, description?: string) => void;
-  deleteDashboard: (id: string) => void;
-  setActiveDashboard: (id: string) => void;
-  updateDashboard: (id: string, updates: Partial<DashboardConfig>) => void;
-  importDashboard: (dashboard: DashboardConfig) => void;
-  exportDashboard: (id: string) => DashboardConfig;
-  resetLayout: () => void;
-  updateGridSettings: (settings: Partial<WidgetState['gridSettings']>) => void;
-}
+// REMOVED: Legacy WidgetActions interface
+// Current widget actions are defined in src/store/widgetStore.ts
+// No manual widget addition - pure auto-discovery architecture
 
 export interface SettingsActions {
   updateTheme: (theme: Partial<ThemeSettings>) => void;
@@ -257,7 +242,7 @@ export interface SettingsActions {
 export type ConnectionStore = ConnectionState & ConnectionActions;
 export type NmeaStore = NmeaState & NmeaActions;
 export type AlarmStore = AlarmState & AlarmActions;
-export type WidgetStore = WidgetState & WidgetActions;
+// WidgetStore: See src/store/widgetStore.ts for current implementation
 export type SettingsStore = SettingsState & SettingsActions;
 
 /**
@@ -321,9 +306,9 @@ export interface StoreSubscription {
 /**
  * Export utility types
  */
-export type StoreState = ConnectionState | NmeaState | AlarmState | WidgetState | SettingsState;
-export type StoreActions = ConnectionActions | NmeaActions | AlarmActions | WidgetActions | SettingsActions;
-export type Store = ConnectionStore | NmeaStore | AlarmStore | WidgetStore | SettingsStore;
+export type StoreState = ConnectionState | NmeaState | AlarmState | SettingsState;
+export type StoreActions = ConnectionActions | NmeaActions | AlarmActions | SettingsActions;
+export type Store = ConnectionStore | NmeaStore | AlarmStore | SettingsStore;
 
 /**
  * Story 6.6 Specific Store Interfaces
@@ -341,9 +326,6 @@ export interface NMEAStoreActions {
   resetAllData: () => void;
 }
 
-export interface WidgetStoreActions {
-  addWidget: (type: import('./widget.types').WidgetType) => void;
-  removeWidget: (id: string) => void;
-  updateWidgetConfig: (id: string, config: Partial<Record<string, any>>) => void;
-  updateWidgetPosition: (id: string, position: { x: number; y: number }) => void;
-}
+// REMOVED: Legacy WidgetStoreActions interface
+// Current widget actions are defined in src/store/widgetStore.ts
+// Event-driven widget lifecycle with auto-discovery

@@ -13,7 +13,6 @@ import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useResponsiveGrid, type ResponsiveGridState } from '../../hooks/useResponsiveGrid';
 import { PaginationDots } from '../molecules/PaginationDots';
-import { AddWidgetButton, AddWidgetButtonPositioned } from '../atoms/AddWidgetButton';
 import {
   calculatePageLayouts,
   calculateGridPositions,

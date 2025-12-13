@@ -6,23 +6,15 @@ import LoadingOverlay from '../src/components/molecules/LoadingOverlay';
 import { useEffect } from 'react';
 import { AccessibilityService } from '../src/services/accessibility/AccessibilityService';
 import { Platform } from 'react-native';
-import { useWidgetStore } from '../src/store/widgetStore';
-
 export default function RootLayout() {
-  const initializeWidgetStates = useWidgetStore(state => state.initializeWidgetStatesOnAppStart);
-  
-  // Initialize accessibility service and widget states on app mount
+  // Initialize accessibility service on app mount
   useEffect(() => {
     AccessibilityService.initialize();
-    
-    // 🛡️ Initialize widget states and restore system widgets
-    console.log('[RootLayout] Initializing widget states on app start...');
-    initializeWidgetStates();
     
     return () => {
       AccessibilityService.cleanup();
     };
-  }, [initializeWidgetStates]);
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
