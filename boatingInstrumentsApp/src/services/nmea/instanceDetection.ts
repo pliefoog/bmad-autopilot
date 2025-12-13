@@ -362,13 +362,7 @@ class InstanceDetectionService {
 
     Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
       const sensorInstances = sensors[sensorType] || {};
-      console.log(`  🔎 Checking ${instrumentType}: ${Object.keys(sensorInstances).length} instances`, {
-        sensorType,
-        hasSensorInstances: !!sensorInstances,
-        instanceKeys: Object.keys(sensorInstances),
-        isArray: Array.isArray(sensorInstances),
-        typeofSensorInstances: typeof sensorInstances
-      });
+      console.log(`  🔎 Checking ${instrumentType}: ${Object.keys(sensorInstances).length} instances`);
       
       // Check each instance of this sensor type
       Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
