@@ -506,11 +506,13 @@ export class NmeaSensorProcessor {
       }
     }
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'gps',
-        instance: 0,
+        instance,
         data: gpsData
       }],
       messageType: 'GLL'
@@ -549,9 +551,11 @@ export class NmeaSensorProcessor {
           }
         }
 
+        const instance = this.extractInstanceId(message);
+        
         updates.push({
           sensorType: 'gps',
-          instance: 0,
+          instance,
           data: gpsData
         });
       }
@@ -565,9 +569,11 @@ export class NmeaSensorProcessor {
         timestamp: timestamp
       };
 
+      const instance = this.extractInstanceId(message);
+      
       updates.push({
         sensorType: 'speed',
-        instance: 0,
+        instance,
         data: speedData
       });
     }
@@ -601,6 +607,8 @@ export class NmeaSensorProcessor {
         overGround: fields.speed_knots, // Speed over ground in knots (base unit)
         timestamp: timestamp
       };
+
+      console.log(`🎯 VTG Processor: Setting overGround=${fields.speed_knots.toFixed(2)} knots (instance ${instance})`);
 
       return {
         success: true,
@@ -636,6 +644,8 @@ export class NmeaSensorProcessor {
         throughWater: fields.speed_knots, // Speed through water in knots (base unit)
         timestamp: timestamp
       };
+
+      console.log(`🎯 VHW Processor: Setting throughWater=${fields.speed_knots.toFixed(2)} knots (instance ${instance})`);
 
       updates.push({
         sensorType: 'speed',
@@ -792,11 +802,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'wind',
-        instance: 0,
+        instance,
         data: windData
       }],
       messageType: 'VWR'
@@ -837,11 +849,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'wind',
-        instance: 0,
+        instance,
         data: windData
       }],
       messageType: 'VWT'
@@ -980,11 +994,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'navigation',
-        instance: 0,
+        instance,
         data: navData
       }],
       messageType: 'BWC'
@@ -1037,11 +1053,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'navigation',
-        instance: 0,
+        instance,
         data: navData
       }],
       messageType: 'RMB'
@@ -1076,11 +1094,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'navigation',
-        instance: 0,
+        instance,
         data: navData
       }],
       messageType: 'XTE'
@@ -1110,11 +1130,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'navigation',
-        instance: 0,
+        instance,
         data: navData
       }],
       messageType: 'BOD'
@@ -1157,11 +1179,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'navigation',
-        instance: 0,
+        instance,
         data: navData
       }],
       messageType: 'WPL'
@@ -1192,11 +1216,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    const instance = this.extractInstanceId(message); // Typically 0 for sea water temperature
+    
     return {
       success: true,
       updates: [{
         sensorType: 'temperature',
-        instance: 0, // Sea water temperature is instance 0
+        instance,
         data: temperatureData
       }],
       messageType: 'MTW'
@@ -1870,11 +1896,13 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
     
+    const instance = this.extractInstanceId(message);
+    
     return {
       success: true,
       updates: [{
         sensorType: 'autopilot',
-        instance: 0,
+        instance,
         data: autopilotData
       }],
       messageType: 'RSA'
@@ -1915,9 +1943,11 @@ export class NmeaSensorProcessor {
       autopilotData.alarm = true; // Arrival alarm
     }
     
+    const instance = this.extractInstanceId(message);
+    
     updates.push({
       sensorType: 'autopilot',
-      instance: 0,
+      instance,
       data: autopilotData
     });
     
@@ -1958,9 +1988,11 @@ export class NmeaSensorProcessor {
       autopilotData.alarm = true;
     }
     
+    const instance = this.extractInstanceId(message);
+    
     updates.push({
       sensorType: 'autopilot',
-      instance: 0,
+      instance,
       data: autopilotData
     });
     
@@ -2397,11 +2429,13 @@ export class NmeaSensorProcessor {
           timestamp: timestamp
         };
 
+        const instance = this.extractInstanceId(message);
+        
         return {
           success: true,
           updates: [{
             sensorType: 'gps',
-            instance: 0,
+            instance,
             data: gpsData
           }],
           messageType: 'ZDA'
@@ -2685,9 +2719,12 @@ export class NmeaSensorProcessor {
         return { success: false, errors: ['Failed to parse rudder PGN'] };
       }
 
+      // Extract instance from PGN data if available, otherwise default to 0
+      const instance = rudderData.instance ?? 0;
+      
       const update: SensorUpdate = {
         sensorType: 'rudder',
-        instance: 0,
+        instance,
         value: rudderData.rudderAngle,
         unit: 'degrees',
         timestamp

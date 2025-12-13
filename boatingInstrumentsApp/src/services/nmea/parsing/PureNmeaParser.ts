@@ -452,6 +452,12 @@ export class PureNmeaParser {
    * Fields: 1=Heading True, 2=T, 3=Heading Magnetic, 4=M, 5=Speed Knots, 6=N, 7=Speed Km/h, 8=K
    */
   private parseVHWFields(parts: string[]): Record<string, any> {
+    // Debug: Log VHW parsing
+    if (Math.random() < 0.02) {
+      console.log(`🔍 VHW parts:`, parts);
+      console.log(`🔍 VHW parts[5]="${parts[5]}" parts[7]="${parts[7]}"`);
+    }
+    
     return {
       field_1: parts[1],  // Heading degrees true
       field_2: parts[2],  // True indicator

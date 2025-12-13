@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { DetectedInstance } from '../services/nmea/instanceDetection';
+import type { DetectedWidgetInstance } from '../services/WidgetRegistrationService';
 
 // System widgets that must always be present and never expire
 const SYSTEM_WIDGETS = [
@@ -29,7 +29,7 @@ interface WidgetState {
 }
 
 interface WidgetActions {
-  updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
+  updateInstanceWidgets: (detectedInstances: DetectedWidgetInstance[]) => void;
   updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   setWidgetExpirationTimeout: (timeoutMs: number) => void;
   setEnableWidgetAutoRemoval: (enabled: boolean) => void;
@@ -76,38 +76,37 @@ export const useWidgetStore = create<WidgetStore>()(
 
       updateInstanceWidgets: (detectedInstances) => {
         // Set-based widget diffing for efficient updates
+        console.log(`🔧 [WidgetStore] updateInstanceWidgets called with ${detectedInstances.length} instances`);
+        console.log(`🔧 [WidgetStore] Instances:`, detectedInstances.map(i => i.id).join(', '));
         
-        // Guard: Don't process if ALL instance arrays are empty
-        const totalInstances = detectedInstances.engines.length + 
-                              detectedInstances.batteries.length +
-                              detectedInstances.tanks.length +
-                              detectedInstances.temperatures.length +
-                              detectedInstances.instruments.length;
-        
-        if (totalInstances === 0) return;
-        
-        // Build Set of all required widget IDs from detected instances
-        const allDetectedInstances = [
-          ...detectedInstances.engines,
-          ...detectedInstances.batteries,
-          ...detectedInstances.tanks,
-          ...detectedInstances.temperatures,
-          ...detectedInstances.instruments
-        ];
+        // Guard: Don't process if no instances detected
+        if (detectedInstances.length === 0) {
+          console.log('⚠️ [WidgetStore] No instances to process');
+          return;
+        }
         
         const newWidgetIds = new Set<string>([
           ...SYSTEM_WIDGETS.map(w => w.id), // Always include system widgets
-          ...allDetectedInstances.map(inst => inst.id)
+          ...detectedInstances.map(inst => inst.id)
         ]);
+        
+        console.log(`🔧 [WidgetStore] newWidgetIds:`, Array.from(newWidgetIds).join(', '));
         
         // Early exit: No changes detected
         const currentIds = get().currentWidgetIds;
+        console.log(`🔧 [WidgetStore] currentIds:`, Array.from(currentIds).join(', '));
         
-        if (setsEqual(currentIds, newWidgetIds)) return;
+        if (setsEqual(currentIds, newWidgetIds)) {
+          console.log('🔧 [WidgetStore] Sets are equal, no changes needed');
+          return;
+        }
         
         // Calculate Set diff: which widgets to add/remove
         const toAdd = setDifference(newWidgetIds, currentIds);
         const toRemove = setDifference(currentIds, newWidgetIds);
+        
+        console.log(`🔧 [WidgetStore] toAdd (${toAdd.size}):`, Array.from(toAdd).join(', '));
+        console.log(`🔧 [WidgetStore] toRemove (${toRemove.size}):`, Array.from(toRemove).join(', '));
         
         const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
@@ -119,7 +118,7 @@ export const useWidgetStore = create<WidgetStore>()(
         
         // STEP 2: Add widgets for newly detected instances
         const existingWidgetIds = new Set(widgets.map(w => w.id));
-        const instancesToAdd = allDetectedInstances.filter(inst => 
+        const instancesToAdd = detectedInstances.filter(inst => 
           toAdd.has(inst.id) && !existingWidgetIds.has(inst.id)
         );
         
@@ -128,13 +127,11 @@ export const useWidgetStore = create<WidgetStore>()(
           instancesToAdd.forEach(instance => {
             const newWidget: WidgetConfig = {
               id: instance.id,
-              type: instance.type,
+              type: instance.widgetType, // DetectedWidgetInstance uses widgetType not type
               title: instance.title,
               settings: {
                 instanceId: instance.id,
                 ...(instance.instance !== undefined && { instance: instance.instance }),
-                ...(instance.location && { location: instance.location }),
-                ...(instance.fluidType && { fluidType: instance.fluidType }),
               },
               createdAt: now,
               lastDataUpdate: now,
@@ -171,11 +168,20 @@ export const useWidgetStore = create<WidgetStore>()(
         }),
 
       resetAppToDefaults: async () => {
-        // Cleanup widget registration system
+        // Step 1: Cleanup widget registration system first
         const { cleanupWidgetSystem, initializeWidgetSystem } = await import('../services/initializeWidgetSystem');
         cleanupWidgetSystem();
 
-        // Create clean dashboard with only system widgets
+        // Step 2: Clear localStorage (fail silently if not available)
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.removeItem('widget-store');
+          }
+        } catch {
+          // localStorage not available or blocked - continue without error
+        }
+
+        // Step 3: Create clean dashboard with only system widgets
         const now = Date.now();
         const systemWidgets = SYSTEM_WIDGETS.map(sw => ({
           id: sw.id,
@@ -191,6 +197,7 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets: systemWidgets,
         };
 
+        // Step 4: Reset state synchronously (no delay)
         set({
           dashboard: resetDashboard,
           widgetExpirationTimeout: 300000,
@@ -198,17 +205,9 @@ export const useWidgetStore = create<WidgetStore>()(
           currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
         });
 
-        // Clear localStorage (fail silently if not available)
-        try {
-          if (typeof window !== 'undefined' && window.localStorage) {
-            window.localStorage.removeItem('widget-store');
-          }
-        } catch {
-          // localStorage not available or blocked - continue without error
-        }
-
-        // Reinitialize widget system
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Step 5: Reinitialize widget system immediately (synchronous)
+        // Use Promise.resolve().then() to defer to next microtask but keep it fast
+        await Promise.resolve();
         initializeWidgetSystem();
       },
       

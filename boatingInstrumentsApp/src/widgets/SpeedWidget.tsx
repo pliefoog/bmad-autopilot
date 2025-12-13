@@ -57,6 +57,13 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater, (a, b) => a === b); // STW
   const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp); // No equality check - must update!
   
+  // Debug: Log actual values from store
+  useEffect(() => {
+    if (Math.random() < 0.05) { // Log ~5% of the time
+      console.log(`📊 SpeedWidget: SOG=${sog?.toFixed(2) ?? 'null'} knots, STW=${stw?.toFixed(2) ?? 'null'} knots`);
+    }
+  }, [sog, stw]);
+  
   // NOTE: SOG history now auto-managed in sensor data - access via getSensorHistory when needed
 
   // Local state for STW (Speed Through Water - secondary metric)

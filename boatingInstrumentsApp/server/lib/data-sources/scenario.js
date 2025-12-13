@@ -467,6 +467,11 @@ class ScenarioDataSource extends EventEmitter {
     const baseInterval = generator.interval || 1000;
     const interval = Math.round(baseInterval / this.config.speed);
     
+    // Debug: Log timer setup for VHW/VTG
+    if (name.includes('vhw') || name.includes('vtg')) {
+      console.log(`⏱️ Starting timer for ${name}: baseInterval=${baseInterval}ms, speed=${this.config.speed}, actualInterval=${interval}ms`);
+    }
+    
     const timer = setInterval(() => {
       const messages = generator.generate();
       if (messages) {
@@ -788,7 +793,7 @@ class ScenarioDataSource extends EventEmitter {
             sentenceDef: sentenceDef,
             generate: () => this.generateVHWSentence()
           });
-          console.log(`⛵ Added YAML VHW water speed generator: ${generatorName} at ${frequencyHz}Hz`);
+          console.log(`⛵ Added YAML VHW water speed generator: ${generatorName} at ${frequencyHz}Hz (interval: ${intervalMs}ms)`);
           break;
 
         case 'VTG':
@@ -797,7 +802,7 @@ class ScenarioDataSource extends EventEmitter {
             sentenceDef: sentenceDef,
             generate: () => this.generateVTGSentence()
           });
-          console.log(`🧭 Added YAML VTG track generator: ${generatorName} at ${frequencyHz}Hz`);
+          console.log(`🧭 Added YAML VTG track generator: ${generatorName} at ${frequencyHz}Hz (interval: ${intervalMs}ms)`);
           break;
 
         case 'MWV':
@@ -2144,8 +2149,11 @@ class ScenarioDataSource extends EventEmitter {
   generateVHW(speed) {
     const speedKnots = speed.toFixed(1);
     const speedKmh = (speed * 1.852).toFixed(1);
-    const checksum = this.calculateChecksum(`VHW,,,${speedKnots},N,${speedKmh},K`);
-    return `$IIVHW,,,${speedKnots},N,${speedKmh},K*${checksum}`;
+    // FIX: VHW format is: heading_true,T,heading_mag,M,speed_knots,N,speed_kmh,K
+    // With empty headings, keep T/M indicators so speed_knots lands at parts[5]
+    const checksum = this.calculateChecksum(`VHW,,T,,M,${speedKnots},N,${speedKmh},K`);
+    const sentence = `$IIVHW,,T,,M,${speedKnots},N,${speedKmh},K*${checksum}`;
+    return sentence;
   }
 
   generateMWV(angle, speed) {
@@ -2244,9 +2252,20 @@ class ScenarioDataSource extends EventEmitter {
    */
   generateVHWSentence() {
     const speedConfig = this.scenario?.data?.speed;
-    if (!speedConfig) return [];
+    
+    // Debug: Always log to diagnose missing STW
+    console.log(`🌊 VHW called - speedConfig: ${!!speedConfig}`);
+    
+    if (!speedConfig) {
+      console.log(`⚠️ VHW: No speedConfig, returning empty`);
+      return [];
+    }
 
     const speed = this.getYAMLDataValue('speed', speedConfig);
+    
+    // Always log the actual speed value
+    console.log(`🌊 VHW STW: ${speed.toFixed(2)} knots`);
+    
     return [this.generateVHW(speed)];
   }
 
@@ -2256,10 +2275,20 @@ class ScenarioDataSource extends EventEmitter {
   generateVTGSentence() {
     const speedConfig = this.scenario?.data?.speed;
     const gpsConfig = this.scenario?.data?.gps;
-    if (!speedConfig) return [];
+    
+    // Debug: Always log to see if this is being called
+    console.log(`🚤 VTG called - speedConfig: ${!!speedConfig}, gpsConfig: ${!!gpsConfig}`);
+    
+    if (!speedConfig) {
+      console.log(`⚠️ VTG: No speedConfig, returning empty`);
+      return [];
+    }
 
     const speed = this.getYAMLDataValue('speed', speedConfig);
     const heading = gpsConfig ? this.getCurrentHeading() : 0;
+    
+    // Always log the actual speed value
+    console.log(`🚤 VTG SOG: ${speed.toFixed(2)} knots, heading: ${heading.toFixed(1)}°`);
     
     const speedKmh = (speed * 1.852).toFixed(1);
     const checksum = this.calculateChecksum(`VTG,${heading.toFixed(1)},T,,M,${speed.toFixed(1)},N,${speedKmh},K,A`);

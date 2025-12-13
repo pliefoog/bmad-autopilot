@@ -47,7 +47,7 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, title
   
   // Get custom widget definition from widget settings
   const widgetConfig = useWidgetStore((state) => 
-    state.widgets.find(w => w.id === id)
+    state.dashboard?.widgets?.find(w => w.id === id)
   );
   
   const customDefinition = useMemo(() => {

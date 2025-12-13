@@ -91,7 +91,7 @@ function createCustomWidgetConfig(
   
   return {
     id: widgetId,
-    type: 'custom',
+    type: definition.id, // Use definition.id as type so it matches registration widgetType
     title: definition.name,
     enabled: true,
     settings: {
@@ -102,7 +102,7 @@ function createCustomWidgetConfig(
     },
     layout: {
       id: widgetId,
-      type: 'custom',
+      type: definition.id, // Use definition.id as type
       position: { x: 0, y: 0 },
       dimensions: { width: 2, height: 2 },
       visible: true,
@@ -120,9 +120,9 @@ function createCustomWidgetConfig(
  * 
  * This widget is deletable (unlike ThemeWidget) and demonstrates the custom widget system.
  */
-export const SAILING_DASHBOARD_DEFINITION: CustomWidgetDefinition = {
-  id: 'sailing-dashboard',
-  name: 'Sailing Dashboard',
+export const CUSTOM_T1_DEFINITION: CustomWidgetDefinition = {
+  id: 'customT1',
+  name: 'Custom T1',
   description: 'Essential sailing metrics: Depth and Speed',
   category: 'navigation',
   icon: 'analytics-outline',
@@ -208,7 +208,7 @@ export function customWidgetToRegistration(
  * All default custom widget definitions
  */
 export const DEFAULT_CUSTOM_WIDGETS: CustomWidgetDefinition[] = [
-  SAILING_DASHBOARD_DEFINITION,
+  CUSTOM_T1_DEFINITION,
 ];
 
 /**

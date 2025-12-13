@@ -30,12 +30,12 @@ const GRID_DENSITY = {
 } as const;
 
 /**
- * Widget constraints - 8pt grid system per AC 5
+ * Widget constraints - grid system
  */
 const WIDGET_CONSTRAINTS = {
   minSize: { width: 140, height: 140 },
   maxSize: { width: 300, height: 300 },
-  gap: 8, // 8pt gaps between cells per AC 5
+  gap: 0, // No gaps between cells - widgets are border to border
   padding: 16, // Container padding
 } as const;
 
@@ -115,20 +115,16 @@ export const useResponsiveGrid = (
     const totalGapWidth = (cols - 1) * WIDGET_CONSTRAINTS.gap;
     const totalGapHeight = (rows - 1) * WIDGET_CONSTRAINTS.gap;
     
+    // Calculate cell size to fit available space exactly
+    // Remove maxSize constraint to prevent overflow
     const cellWidth = Math.max(
       WIDGET_CONSTRAINTS.minSize.width,
-      Math.min(
-        WIDGET_CONSTRAINTS.maxSize.width,
-        (availableSpace.width - totalGapWidth) / cols
-      )
+      (availableSpace.width - totalGapWidth) / cols
     );
     
     const cellHeight = Math.max(
       WIDGET_CONSTRAINTS.minSize.height,
-      Math.min(
-        WIDGET_CONSTRAINTS.maxSize.height,
-        (availableSpace.height - totalGapHeight) / rows
-      )
+      (availableSpace.height - totalGapHeight) / rows
     );
 
     // Calculate actual container dimensions needed

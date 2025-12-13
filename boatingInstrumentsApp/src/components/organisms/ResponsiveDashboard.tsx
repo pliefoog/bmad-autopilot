@@ -31,6 +31,7 @@ import { ThemeWidget } from '../../widgets/ThemeWidget';
 import { NavigationWidget } from '../../widgets/NavigationWidget';
 import { TemperatureWidget } from '../../widgets/TemperatureWidget';
 import { RudderWidget } from '../../widgets/RudderWidget';
+import CustomWidget from '../../widgets/CustomWidget';
 
 interface ResponsiveDashboardProps {
   headerHeight?: number;
@@ -63,7 +64,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   
   // Widget store integration - use actual widget array
   const dashboard = useWidgetStore((state) => state.dashboard);
-  const widgets = dashboard.widgets;
+  const widgets = dashboard?.widgets || [];
 
   // Responsive grid system (AC 1-5)
   const responsiveGrid: ResponsiveGridState = useResponsiveGrid(
@@ -90,12 +91,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     compass: CompassWidget,
     engine: EngineWidget,
     battery: BatteryWidget,
-    tanks: TanksWidget,
+    tank: TanksWidget,  // Note: type is 'tank' (singular) but component is TanksWidget
     autopilot: AutopilotWidget,
     theme: ThemeWidget,
     navigation: NavigationWidget,
     temperature: TemperatureWidget,
     rudder: RudderWidget,
+    customT1: CustomWidget,  // Custom T1 Widget
   }), []);
 
   // Update scroll position when page changes (AC 9: Page State Persistence)
@@ -109,8 +111,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Calculate layout constraints and page layouts - memoized for performance
   // Uses widget store array order as source of truth (array index = display position)
   const { pageLayouts, totalPages } = React.useMemo(() => {
-    // Calculate gap from grid constraints: gap = (containerWidth - (cellWidth * cols)) / (cols - 1)
-    // This ensures widgets are sized and positioned exactly as useResponsiveGrid calculated
+    // useResponsiveGrid already calculated optimal cellWidth and cellHeight
+    // It accounts for gaps: cellWidth = (containerWidth - totalGapWidth) / cols
+    // where totalGapWidth = (cols - 1) * gap
+    // So we can back-calculate the gap: gap = (containerWidth - cellWidth * cols) / (cols - 1)
     const gap = responsiveGrid.layout.cols > 1 
       ? (responsiveGrid.layout.containerWidth - (responsiveGrid.layout.cellWidth * responsiveGrid.layout.cols)) / (responsiveGrid.layout.cols - 1)
       : 0;
@@ -239,6 +243,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         <WidgetComponent
           id={widgetId}
           title={widgetConfig.title}
+          width={position.width}
+          height={position.height}
           onPress={() => onWidgetPress?.(widgetId)}
           onLongPress={() => onWidgetLongPress?.(widgetId)}
         />

@@ -203,8 +203,16 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     const lastUpdate = lastUpdateTimes.get(updateKey);
     
     if (lastUpdate && (now - lastUpdate) < 100) {
-      // Too soon - skip this update to prevent infinite loops
+      // Debug: Log throttled updates for speed sensor
+      if (sensorType === 'speed') {
+        console.log(`⏱️ THROTTLED: ${sensorType}-${instance} update (${now - lastUpdate}ms since last)`);
+      }
       return;
+    }
+    
+    // Debug: Log all speed sensor updates
+    if (sensorType === 'speed') {
+      console.log(`📥 Store update: ${sensorType}-${instance}`, data);
     }
     
     lastUpdateTimes.set(updateKey, now);
@@ -235,6 +243,10 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         });
         
         if (!hasChanges) {
+          // Debug: Log rejected updates for speed sensor
+          if (sensorType === 'speed') {
+            console.log(`❌ NO CHANGES: Rejected update for ${sensorType}-${instance}`, { current: currentSensorData, new: data });
+          }
           // NO CHANGES: Return existing state without mutations
           // This prevents infinite loops from history buffer mutations
           return state;

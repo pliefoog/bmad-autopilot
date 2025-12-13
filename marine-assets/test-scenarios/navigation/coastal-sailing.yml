@@ -32,15 +32,11 @@ data:
     unit: "celsius"
   
   speed:
-    type: "polar_sailing"           # New polar-based speed calculation
-    base_speed: 5.5                 # Fallback speed if polar lookup fails
-    tidal_current: 1.2              # knots current effect (added to polar speed)
-    leeway_factor: 0.95             # Speed reduction due to leeway (0.9-1.0)
-    heel_speed_loss: 0.02           # Speed loss per degree of heel
-    current_efficiency: 1.0         # Current assistance/resistance factor
+    type: "sawtooth"                # Sawtooth pattern for realistic speed variation
+    period: 60                      # 1-minute cycle (60 seconds)
     unit: "knots"
-    min: 0.5                        # Minimum possible speed (near zero wind)
-    max: 9.5                        # Maximum possible speed (storm conditions)
+    min: 2.0                        # Minimum speed: 2 knots
+    max: 6.0                        # Maximum speed: 6 knots
   
   wind:
     angle:
