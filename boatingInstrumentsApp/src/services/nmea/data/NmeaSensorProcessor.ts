@@ -52,7 +52,6 @@ export interface ProcessingResult {
 
 export class NmeaSensorProcessor {
   private static instance: NmeaSensorProcessor;
-  private widgetStore: ReturnType<typeof useWidgetStore.getState> | null = null;
   
   static getInstance(): NmeaSensorProcessor {
     if (!NmeaSensorProcessor.instance) {
@@ -60,22 +59,6 @@ export class NmeaSensorProcessor {
     }
     return NmeaSensorProcessor.instance;
   }
-  
-  /**
-   * Initialize widget store connection for dynamic widget lifecycle management
-   */
-  initializeWidgetStore(): void {
-    try {
-      this.widgetStore = useWidgetStore.getState();
-      log('[NmeaSensorProcessor] ✅ Widget store initialized for dynamic widget lifecycle');
-    } catch (error) {
-      warn('[NmeaSensorProcessor] ⚠️ Could not initialize widget store:', error);
-    }
-  }
-  
-  // Throttle timestamp updates to prevent React infinite loops
-  private lastTimestampUpdate: Map<string, number> = new Map();
-  private readonly TIMESTAMP_UPDATE_THROTTLE_MS = 5000; // 5 seconds
 
   /**
    * Extract instance ID from NMEA message
@@ -128,48 +111,6 @@ export class NmeaSensorProcessor {
     
     // Priority 3: Default to instance 0
     return 0;
-  }
-
-  /**
-   * Update widget timestamp for data freshness tracking
-   */
-  private updateWidgetTimestamp(sensorType: SensorType, instance: number): void {
-    try {
-      // Map sensor type to widget ID for timestamp tracking
-      let widgetId: string;
-      if (sensorType === 'tank' || sensorType === 'engine' || sensorType === 'battery') {
-        // Multi-instance widgets need instance-specific IDs
-        if (sensorType === 'tank') {
-          widgetId = `tank-${instance}`;
-        } else if (sensorType === 'engine') {
-          widgetId = `engine-${instance}`;
-        } else {
-          widgetId = `battery-${instance}`;
-        }
-      } else {
-        // Single-instance widgets (depth, gps, speed, wind, compass)
-        widgetId = sensorType;
-      }
-      
-      // Check if widget store is initialized
-      if (!this.widgetStore) {
-        console.warn(`[NmeaSensorProcessor] Widget store not initialized, skipping timestamp update for ${widgetId}`);
-        return;
-      }
-      
-      // Throttle timestamp updates to prevent React infinite loops
-      const now = Date.now();
-      const lastUpdate = this.lastTimestampUpdate.get(widgetId) || 0;
-      
-      if (now - lastUpdate >= this.TIMESTAMP_UPDATE_THROTTLE_MS) {
-        this.widgetStore.updateWidgetDataTimestamp(widgetId);
-        this.lastTimestampUpdate.set(widgetId, now);
-        console.log(`[NmeaSensorProcessor] 📅 Updated timestamp for widget: ${widgetId}`);
-      }
-      
-    } catch (error) {
-      warn('[NmeaSensorProcessor] Failed to update widget timestamp:', error);
-    }
   }
 
   /**
@@ -274,13 +215,6 @@ export class NmeaSensorProcessor {
             errors: [`Unsupported message type: ${parsedMessage.messageType}`],
             messageType: parsedMessage.messageType
           };
-      }
-      
-      // Update widget timestamps for successful processing
-      if (result.success && result.updates) {
-        result.updates.forEach(update => {
-          this.updateWidgetTimestamp(update.sensorType, update.instance);
-        });
       }
       
       return result;
