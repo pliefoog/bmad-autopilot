@@ -341,23 +341,6 @@ class InstanceDetectionService {
   private scanForMarineInstruments(nmeaData: any, currentTime: number): void {
     const sensors = nmeaData.sensors || {};
 
-    const instanceCounts = Object.keys(sensors).reduce((acc, type) => {
-      acc[type] = Object.keys(sensors[type] || {}).length;
-      return acc;
-    }, {} as Record<string, number>);
-
-    console.log('🔍 [scanForMarineInstruments] Sensor data available:', {
-      hasSensors: !!sensors,
-      availableTypes: Object.keys(sensors),
-      instanceCounts: JSON.stringify(instanceCounts),
-      sensorsStructure: Object.keys(sensors).map(type => ({
-        type,
-        isObject: typeof sensors[type] === 'object',
-        isNull: sensors[type] === null,
-        keys: sensors[type] ? Object.keys(sensors[type]) : []
-      }))
-    });
-
     // Check each sensor type for presence of data
     const sensorTypeMap: Record<string, string> = {
       'gps': 'gps',
@@ -368,65 +351,20 @@ class InstanceDetectionService {
       'autopilot': 'autopilot'
     };
 
-    console.log('🚀 [scanForMarineInstruments] About to iterate sensorTypeMap:', Object.keys(sensorTypeMap));
-    
-    const sensorTypeMapEntries = Object.entries(sensorTypeMap);
-    console.log('🔍 [scanForMarineInstruments] sensorTypeMapEntries:', {
-      length: sensorTypeMapEntries.length,
-      entries: sensorTypeMapEntries,
-      isArray: Array.isArray(sensorTypeMapEntries)
-    });
-
     try {
-      sensorTypeMapEntries.forEach((entry) => {
-        try {
-          console.log(`  ⭐ ENTERING forEach, entry:`, entry);
-          const [instrumentType, sensorType] = entry;
-          console.log(`  ⭐ Destructured: instrumentType=${instrumentType}, sensorType=${sensorType}`);
-        } catch (err) {
-          console.error('❌ [scanForMarineInstruments] ERROR in forEach callback:', err);
-          throw err; // Re-throw to see full stack
-        }
-
-      const sensorInstances = sensors[sensorType] || {};
-      const entries = Object.entries(sensorInstances);
-      console.log(`  🔎 Checking ${instrumentType}: ${Object.keys(sensorInstances).length} instances`, {
-        sensorType,
-        sensorInstances,
-        entriesLength: entries.length,
-        entries: entries.map(([k, v]) => ({ key: k, hasTimestamp: !!v?.timestamp }))
-      });
+      Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
+        const sensorInstances = sensors[sensorType] || {};
       
       // Check each instance of this sensor type
-      entries.forEach(([instanceNum, sensorData]: [string, any]) => {
-        console.log(`    📊 ${instrumentType}-${instanceNum}:`, {
-          hasData: !!sensorData,
-          hasTimestamp: !!sensorData?.timestamp,
-          dataKeys: sensorData ? Object.keys(sensorData) : [],
-          sensorDataSample: sensorData ? Object.keys(sensorData).reduce((acc, key) => {
-            if (key !== 'history') acc[key] = sensorData[key];
-            return acc;
-          }, {} as any) : null
-        });
+      Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
         
         if (sensorData && sensorData.timestamp) {
           // CRITICAL FIX: Verify actual measurement data exists (not just timestamp)
           const hasMeasurementData = this.hasValidMeasurementData(instrumentType, sensorData);
           
           if (!hasMeasurementData) {
-            console.warn(`    ⚠️ SKIPPED ${instrumentType}-${instanceNum}: No measurement data found`, {
-              instrumentType,
-              expectedFields: this.getExpectedFields(instrumentType),
-              actualFields: Object.keys(sensorData).filter(k => k !== 'history' && k !== 'timestamp'),
-              sampleData: Object.keys(sensorData).reduce((acc, key) => {
-                if (key !== 'history' && key !== 'timestamp') acc[key] = sensorData[key];
-                return acc;
-              }, {} as any)
-            });
             return; // Skip - sensor has timestamp but no actual readings yet
           }
-          
-          console.log(`    ✅ Validation PASSED for ${instrumentType}-${instanceNum}`);
           
           // Check if data is recent (within last 30 seconds)
           const dataAge = currentTime - sensorData.timestamp;
@@ -465,9 +403,7 @@ class InstanceDetectionService {
           }
         }
       });
-      console.log(`  ⭐ EXITING forEach for ${instrumentType}`);
     });
-      console.log('✅ [scanForMarineInstruments] Completed iteration of all sensor types');
     } catch (error) {
       console.error('❌ [scanForMarineInstruments] ERROR during forEach:', error);
     }
