@@ -29,7 +29,6 @@ export interface WidgetConfig {
   settings: Record<string, any>;
   layout: WidgetLayout;
   enabled: boolean;
-  order: number;
   // System widget protection
   isSystemWidget?: boolean;
   // Widget lifecycle timestamps
@@ -116,25 +115,15 @@ const defaultDashboard: DashboardConfig = {
         visible: true,
       },
       enabled: true,
-      order: -1000,
       isSystemWidget: true,
       createdAt: Date.now(),
       lastDataUpdate: Date.now(),
     },
-    // All other widgets are now dynamically detected from NMEA messages:
-    // - GPS widgets appear when GPS NMEA sentences are detected
-    // - Speed widgets appear when SOG/STW data is detected  
-    // - Wind widgets appear when wind data is detected
-    // - Depth widgets appear when depth data is detected
-    // - Temperature widgets appear when temperature sensors are detected
-    // - Engine widgets appear when engine data is detected
-    // - Battery widgets appear when battery data is detected
-    // - Tank widgets appear when tank data is detected
-    // User layout preferences are preserved across sessions
+    // All other widgets dynamically detected from NMEA messages
   ],
-  gridSize: 10,
+  gridSize: 20,
   snapToGrid: true,
-  columns: 6,
+  columns: 12,
   rows: 8,
 };
 
@@ -203,7 +192,6 @@ export const useWidgetStore = create<WidgetStore>()(
             visible: true,
           },
           enabled: true,
-          order: currentDashboard.widgets.length,
           createdAt: now,
           lastDataUpdate: now,
         };
@@ -253,8 +241,6 @@ export const useWidgetStore = create<WidgetStore>()(
 
       updateInstanceWidgets: (detectedInstances) => {
         // Set-based widget diffing for efficient updates
-        const metrics = get().widgetUpdateMetrics;
-        metrics.totalUpdates++;
         
         // Guard: Don't process if ALL instance arrays are empty
         const totalInstances = detectedInstances.engines.length + 
@@ -264,7 +250,13 @@ export const useWidgetStore = create<WidgetStore>()(
                               detectedInstances.instruments.length;
         
         if (totalInstances === 0) {
-          metrics.skippedUpdates++;
+          set((state) => ({
+            widgetUpdateMetrics: {
+              ...state.widgetUpdateMetrics,
+              totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
+              skippedUpdates: state.widgetUpdateMetrics.skippedUpdates + 1,
+            },
+          }));
           return;
         }
         
@@ -286,8 +278,14 @@ export const useWidgetStore = create<WidgetStore>()(
         const currentIds = get().currentWidgetIds;
         
         if (setsEqual(currentIds, newWidgetIds)) {
-          metrics.skippedUpdates++;
-          return; // No changes
+          set((state) => ({
+            widgetUpdateMetrics: {
+              ...state.widgetUpdateMetrics,
+              totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
+              skippedUpdates: state.widgetUpdateMetrics.skippedUpdates + 1,
+            },
+          }));
+          return;
         }
         
         // Calculate Set diff: which widgets to add/remove
@@ -355,7 +353,6 @@ export const useWidgetStore = create<WidgetStore>()(
                 visible: true,
               },
               enabled: true,
-              order: widgets.length,
               createdAt: now,
               lastDataUpdate: now,
             };
@@ -367,20 +364,22 @@ export const useWidgetStore = create<WidgetStore>()(
         // Verify no duplicates in final array
         const finalWidgetIds = new Set(widgets.map(w => w.id));
         if (finalWidgetIds.size !== widgets.length) {
-          // Deduplicate: keep only first occurrence of each ID
           widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
-        // Update metrics
-        metrics.widgetsAdded += actualToAdd.size;
-        metrics.widgetsRemoved += toRemove.size;
-        metrics.lastUpdateTime = Date.now();
-        
-        // Update dashboard with new widget array
+        // Update dashboard and metrics atomically
         get().updateDashboard({ widgets });
         
-        // Update tracked widget IDs after successful update
-        set({ currentWidgetIds: newWidgetIds });
+        set((state) => ({
+          currentWidgetIds: newWidgetIds,
+          widgetUpdateMetrics: {
+            ...state.widgetUpdateMetrics,
+            totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
+            widgetsAdded: state.widgetUpdateMetrics.widgetsAdded + actualToAdd.size,
+            widgetsRemoved: state.widgetUpdateMetrics.widgetsRemoved + toRemove.size,
+            lastUpdateTime: Date.now(),
+          },
+        }));
       },
 
       updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => {
@@ -424,7 +423,6 @@ export const useWidgetStore = create<WidgetStore>()(
             visible: true,
           },
           enabled: true,
-          order: -1000,
           isSystemWidget: true,
           createdAt: now,
           lastDataUpdate: now,
@@ -457,13 +455,13 @@ export const useWidgetStore = create<WidgetStore>()(
           },
         });
 
-        // Clear localStorage
+        // Clear localStorage (fail silently if not available)
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
             window.localStorage.removeItem('widget-store');
           }
-        } catch (error) {
-          console.error('[WidgetStore] Error clearing localStorage:', error);
+        } catch {
+          // localStorage not available or blocked - continue without error
         }
 
         // Reinitialize widget system
@@ -528,6 +526,9 @@ export const useWidgetStore = create<WidgetStore>()(
       name: 'widget-store',
       partialize: (state) => ({
         dashboard: state.dashboard,
+        widgetExpirationTimeout: state.widgetExpirationTimeout,
+        enableWidgetAutoRemoval: state.enableWidgetAutoRemoval,
+        // Exclude: editMode, gridVisible, currentWidgetIds, widgetUpdateMetrics (transient)
       }),
     }
   )
