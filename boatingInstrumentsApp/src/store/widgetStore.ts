@@ -799,8 +799,18 @@ export const useWidgetStore = create<WidgetStore>()(
         
         // Early exit: No changes detected
         const currentIds = get().currentWidgetIds;
+        
+        console.log(`🔍 [Phase 2] Set comparison:`, {
+          currentIdsSize: currentIds.size,
+          newIdsSize: newWidgetIds.size,
+          currentIds: Array.from(currentIds).sort(),
+          newIds: Array.from(newWidgetIds).sort(),
+          areEqual: setsEqual(currentIds, newWidgetIds)
+        });
+        
         if (setsEqual(currentIds, newWidgetIds)) {
           metrics.skippedUpdates++;
+          console.log(`✅ [Phase 2] SKIPPED - No widget changes detected`);
           
           // Log efficiency every 100 updates
           if (metrics.totalUpdates % 100 === 0) {
