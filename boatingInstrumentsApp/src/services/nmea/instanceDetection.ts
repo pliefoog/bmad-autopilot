@@ -239,6 +239,28 @@ class InstanceDetectionService {
   }
   
   /**
+   * Helper to show expected fields for debugging
+   */
+  private getExpectedFields(instrumentType: string): string[] {
+    switch (instrumentType) {
+      case 'gps':
+        return ['position.latitude', 'position.longitude'];
+      case 'compass':
+        return ['heading'];
+      case 'speed':
+        return ['speedOverGround', 'speedThroughWater'];
+      case 'wind':
+        return ['apparentWindAngle', 'apparentWindSpeed'];
+      case 'depth':
+        return ['depth'];
+      case 'autopilot':
+        return ['mode', 'targetHeading'];
+      default:
+        return ['any non-timestamp field'];
+    }
+  }
+  
+  /**
    * Get total instance count for performance monitoring
    */
   private getTotalInstanceCount(): number {
@@ -357,12 +379,21 @@ class InstanceDetectionService {
         if (sensorData && sensorData.timestamp) {
           // CRITICAL FIX: Verify actual measurement data exists (not just timestamp)
           const hasMeasurementData = this.hasValidMeasurementData(instrumentType, sensorData);
-          console.log(`    ✅ Validation for ${instrumentType}-${instanceNum}: ${hasMeasurementData}`);
           
           if (!hasMeasurementData) {
-            console.warn(`    ⚠️ SKIPPED ${instrumentType}-${instanceNum}: No measurement data found`);
+            console.warn(`    ⚠️ SKIPPED ${instrumentType}-${instanceNum}: No measurement data found`, {
+              instrumentType,
+              expectedFields: this.getExpectedFields(instrumentType),
+              actualFields: Object.keys(sensorData).filter(k => k !== 'history' && k !== 'timestamp'),
+              sampleData: Object.keys(sensorData).reduce((acc, key) => {
+                if (key !== 'history' && key !== 'timestamp') acc[key] = sensorData[key];
+                return acc;
+              }, {} as any)
+            });
             return; // Skip - sensor has timestamp but no actual readings yet
           }
+          
+          console.log(`    ✅ Validation PASSED for ${instrumentType}-${instanceNum}`);
           
           // Check if data is recent (within last 30 seconds)
           const dataAge = currentTime - sensorData.timestamp;
