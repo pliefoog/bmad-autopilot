@@ -25,7 +25,7 @@ import { LayoutChangeEvent } from 'react-native';
  * // Provider (in App.tsx)
  * <DashboardLayoutProvider>
  *   <View onLayout={handleLayout}>
- *     <DynamicDashboard />
+ *     <ResponsiveDashboard />
  *   </View>
  * </DashboardLayoutProvider>
  * 

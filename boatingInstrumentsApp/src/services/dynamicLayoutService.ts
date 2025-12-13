@@ -1,5 +1,6 @@
 import { Dimensions, Platform } from 'react-native';
-import { WidgetLayout } from './layoutService';
+// REMOVED: WidgetLayout import - layoutService was deleted
+// Type is now defined inline below
 import { logger } from '../utils/logger';
 import {
   BREAKPOINTS,
@@ -8,6 +9,16 @@ import {
   getColumnsForWidth,
   shouldUsePagination,
 } from '../constants/layoutConstants';
+
+// Legacy type for backward compatibility with old layout system
+export interface WidgetLayout {
+  id: string;
+  type: string;
+  visible: boolean;
+  order?: number;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+}
 
 export interface GridConfig {
   columns: number;           // Number of columns (1, 2, 4, or 8)

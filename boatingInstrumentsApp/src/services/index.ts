@@ -22,7 +22,7 @@ export * from './autopilotCommandQueue';
 export * from './autopilotMonitoringService';
 export * from './gracefulDegradationService';
 export * from './autopilotReconnectionService';
-export * from './layoutService';
+// REMOVED: layoutService - deleted during architectural cleanup
 export * from './playbackService';
 export * from './connectionDefaults';
 export * from './mockServer';

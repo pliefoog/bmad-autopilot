@@ -1,8 +1,8 @@
 // UI Domain Services  
 // Services responsible for layout management, widget positioning, and user interface state
 
-// Core UI services
-export { layoutService } from './layoutService';
+// REMOVED: layoutService - deleted during architectural cleanup
+// Layout now handled by ResponsiveDashboard + useResponsiveGrid
 
 // UI utilities
 export * from './widgetManager';
