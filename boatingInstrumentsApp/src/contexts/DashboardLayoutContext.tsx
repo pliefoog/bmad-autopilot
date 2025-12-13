@@ -61,6 +61,11 @@ export const DashboardLayoutProvider: React.FC<DashboardLayoutProviderProps> = (
   const updateLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     
+    // TEMP 4K DEBUG: Log measured dimensions
+    if (width >= 1920) {
+      console.log('📐 CONTEXT DIMENSIONS:', { width, height, ratio: (width/height).toFixed(2) });
+    }
+    
     // Only update if dimensions actually changed (avoid unnecessary re-renders)
     setDimensions(prev => {
       if (prev.width !== width || prev.height !== height) {

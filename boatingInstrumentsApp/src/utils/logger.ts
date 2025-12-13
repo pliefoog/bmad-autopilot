@@ -105,6 +105,8 @@ if (typeof window !== 'undefined' && __DEV__) {
     originalConsole.log('📊 Master flag ENABLE_LOGGING:', ENABLE_LOGGING);
   };
   
+  originalConsole.log('📝 Logging controls: getLogCategories() | enableLog("ALARM") | disableLog("ALARM") | enableAllLogs() | disableAllLogs() | showLogStatus()');
+  
   // Override global console to block unwanted logs when ENABLE_LOGGING is false
   console.log = (...args: any[]) => {
     // Always allow logger control messages

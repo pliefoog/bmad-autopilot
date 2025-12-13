@@ -134,6 +134,18 @@ export class DynamicLayoutService {
     // TEMP 4K DEBUG: Log dimensions for ultra-wide displays
     if (screenWidth >= 1920) {
       const debugWidgetWidth = Math.floor(availableWidth / columns);
+      const totalWidth = debugWidgetWidth * columns;
+      const gap = totalWidth - availableWidth;
+      
+      console.log('🖥️ GRID CONFIG:', {
+        screen: `${screenWidth}×${screenHeight}`,
+        available: `${availableWidth}×${availableHeight}`,
+        columns,
+        widgetWidth: debugWidgetWidth,
+        totalWidth,
+        gap: gap === 0 ? '✅ perfect fit' : `${gap}px ${gap < 0 ? 'small gaps' : 'OVERFLOW!'}`
+      });
+      
       // Warning if measured width seems wrong for 4K display
       if (screenWidth < 3840 && screenWidth >= 3000) {
         console.warn(`⚠️ DISPLAY WARNING: Measured ${screenWidth}px but expected 3840px for 4K`);

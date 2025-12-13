@@ -450,6 +450,15 @@ export const useWidgetStore = create<WidgetStore>()(
 
       updateDashboard: (updates) => {
         if (__DEV__ && updates.widgets) {
+          const current = get().dashboard;
+          if (current.widgets.length !== updates.widgets.length) {
+            const stack = new Error().stack;
+            console.log('🔧 updateDashboard called - widget count changed:', {
+              from: current.widgets.length,
+              to: updates.widgets.length,
+              caller: stack?.split('\n')[2]?.trim()
+            });
+          }
         }
         
         set((state) => ({

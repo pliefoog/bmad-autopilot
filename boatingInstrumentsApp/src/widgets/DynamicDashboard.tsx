@@ -60,6 +60,15 @@ export const DynamicDashboard: React.FC = () => {
         const prevIds = new Set(prevWidgetsRef.current.map(w => w.id));
         const currentIds = new Set(widgets.map(w => w.id));
         
+        const added = widgets.filter(w => !prevIds.has(w.id));
+        const removed = prevWidgetsRef.current.filter(w => !currentIds.has(w.id));
+        
+        console.log('📦 WIDGETS ARRAY CHANGED:', {
+          prev: prevWidgetsRef.current.length,
+          current: widgets.length,
+          added: added.map(w => w.id),
+          removed: removed.map(w => w.id)
+        });
       }
       prevWidgetsRef.current = widgets;
       
@@ -149,8 +158,9 @@ export const DynamicDashboard: React.FC = () => {
   useEffect(() => {
     // Debug: Log when storeWidgets actually changes
     if (__DEV__) {
+      const widgetIds = storeWidgets.map(w => w.id).join(', ');
+      console.log('🔄 storeWidgets changed:', storeWidgets.length, 'widgets');
       if (storeWidgets.length === 11) {
-        const widgetIds = storeWidgets.map(w => w.id).join(', ');
         console.warn('⚠️ ONLY 11 WIDGETS! Missing:', widgetIds);
       }
     }

@@ -933,6 +933,16 @@ export function useUnitConversion(options: UseUnitConversionOptions = {}): UseUn
     });
 
     setPreferences(newPreferences);
+    console.log('🔄 Unit preferences synced:', { 
+      units, 
+      gps,
+      shipTime,
+      newPreferences,
+      currentWindUnit: units.wind,
+      mappedWindPref: newPreferences.find(p => p.category === 'wind_speed'),
+      allMappings: Object.fromEntries(newPreferences.map(p => [p.category, p.preferredUnit])),
+      timestamp: new Date().toISOString()
+    });
   }, [units, gps, shipTime, marineRegion]); // Add gps and shipTime dependencies
 
   // Infer current system from unit preferences
