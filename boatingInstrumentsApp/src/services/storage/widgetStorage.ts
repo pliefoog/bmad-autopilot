@@ -5,6 +5,10 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Legacy storage service - no longer used
+// widgetStore.ts now handles persistence via Zustand persist middleware
+// This file kept for migration/compatibility only
+
 export interface WidgetConfig {
   id: string;
   type: string;

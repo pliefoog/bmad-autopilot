@@ -7,9 +7,6 @@ export type { UseNMEADataOptions, UseNMEADataReturn } from './useNMEAData';
 export { useConnection } from './useConnection';
 export type { UseConnectionOptions, UseConnectionReturn } from './useConnection';
 
-export { useWidgetConfig } from './useWidgetConfig';
-export type { UseWidgetConfigOptions, UseWidgetConfigReturn } from './useWidgetConfig';
-
 export { useAlarmThreshold } from './useAlarmThreshold';
 export type { 
   UseAlarmThresholdOptions, 
@@ -46,7 +43,6 @@ export type { UseHapticFeedbackReturn } from './useHapticFeedback';
 // Import hooks for combined usage
 import { useConnection } from './useConnection';
 import { useNMEAData } from './useNMEAData';
-import { useWidgetConfig } from './useWidgetConfig';
 import { useUnitConversion } from './useUnitConversion';
 
 // Re-export commonly used hook combinations
@@ -63,14 +59,4 @@ export const useDataWithConnection = () => {
   };
 };
 
-export const useWidgetWithUnits = (widgetId: string) => {
-  const widgetHook = useWidgetConfig({ widgetId });
-  const unitsHook = useUnitConversion();
-  
-  return {
-    ...widgetHook,
-    ...unitsHook,
-    formatValue: (value: number, unit: string) => 
-      unitsHook.formatWithPreferred(value, unit),
-  };
-};
+// useWidgetWithUnits removed - useWidgetConfig was deleted

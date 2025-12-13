@@ -360,34 +360,16 @@ const App = () => {
             break;
         }
 
-        if (hasValidData) {
-          const existingWidget = dashboard.widgets.find(w => w.id === sensorType);
-          if (!existingWidget) {
-            console.log(`[App] ➕ Creating ${sensorType} widget (single-instance)`);
-            useWidgetStore.getState().addWidget(sensorType, { x: 0, y: 0 }); // Let layout system handle positioning
-          }
-        }
+        // Widget auto-discovery now handled by WidgetRegistrationService
+        // No manual widget creation needed - widgets appear automatically when NMEA data detected
       }
     });
 
     // NOTE: Multi-instance widget auto-discovery is now handled by the event-driven
     // WidgetRegistrationService via initializeWidgetSystem(). No manual widget creation needed.
 
-    // Temperature widgets (instance-based IDs for consistency with other multi-instance widgets)
-    if (nmeaSensors.temperature) {
-      Object.keys(nmeaSensors.temperature).forEach(instanceStr => {
-        const instance = parseInt(instanceStr);
-        const tempData = nmeaSensors.temperature[instance];
-        if (tempData?.value !== undefined) {
-          const widgetId = `temp-${instance}`;
-          const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
-          if (!existingWidget) {
-            console.log(`[App] ➕ Creating temperature widget: ${widgetId} (location: ${tempData.location})`);
-            useWidgetStore.getState().addWidget(widgetId, { x: 0, y: 0 });
-          }
-        }
-      });
-    }
+    // Multi-instance widget auto-discovery (engines, batteries, tanks, temperatures)
+    // now handled entirely by WidgetRegistrationService - no manual creation needed
 
     log('[App] ✅ Dynamic widget processing complete');
   }, [nmeaSensors, nmeaTimestamp, connectionStatus, dashboard]); // Functions via getState()

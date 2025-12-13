@@ -24,18 +24,8 @@ export interface WidgetInstance {
   metadata: InstanceMapping; // Full instance metadata
 }
 
-export interface WidgetConfig {
-  id: string;
-  type: string;
-  title: string;
-  icon: string;
-  category: string;
-  settings: Record<string, any>;
-  enabled: boolean;
-  order: number;
-  // Enhanced state management
-  isPinned?: boolean;
-}
+// WidgetConfig imported from store - single source of truth
+// DO NOT redefine here - use import from '../store/widgetStore' or '../types/widget.types'
 
 /**
  * Widget Factory Service
@@ -238,24 +228,31 @@ export class WidgetFactory {
 
   /**
    * Create a complete widget configuration
+   * Returns WidgetConfig matching widgetStore.ts schema
    */
   static createWidgetConfig(
     widgetId: string,
     instanceData?: any,
-    overrides?: Partial<WidgetConfig>
-  ): WidgetConfig {
+    overrides?: any
+  ): {
+    id: string;
+    type: string;
+    title: string;
+    settings: Record<string, any>;
+    createdAt?: number;
+    lastDataUpdate?: number;
+    isSystemWidget?: boolean;
+  } {
     const instance = this.createWidgetInstance(widgetId, instanceData);
+    const now = Date.now();
     
     return {
       id: widgetId,
       type: instance.baseType,
       title: instance.title,
-      icon: instance.icon,
-      category: instance.category,
-      settings: {},
-      enabled: true,
-      order: instance.priority,
-      isPinned: false,
+      settings: overrides?.settings || {},
+      createdAt: now,
+      lastDataUpdate: now,
       ...overrides,
     };
   }

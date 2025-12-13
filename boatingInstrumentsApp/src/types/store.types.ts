@@ -136,9 +136,12 @@ export interface AlarmState {
   silencedUntil?: number;
 }
 
-export interface WidgetState {
+// Legacy WidgetState - no longer used
+// widgetStore.ts now has simpler state: { dashboard, widgetExpirationTimeout, enableWidgetAutoRemoval, currentWidgetIds }
+// This interface kept for backwards compatibility only
+export interface WidgetStateLegacy {
   widgets: WidgetConfig[];
-  dashboards: DashboardConfig[];
+  dashboards: import('./widget.types').DashboardConfigLegacy[];
   activeDashboard: string;
   editMode: boolean;
   selectedWidget?: string;

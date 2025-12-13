@@ -92,9 +92,11 @@ export interface WidgetRegistry {
 }
 
 /**
- * Dashboard layout and management
+ * Dashboard configuration - matches widgetStore.ts
+ * NOTE: DashboardConfig in widgetStore is simpler - just { widgets: WidgetConfig[] }
+ * This extended version is for legacy compatibility only
  */
-export interface DashboardConfig {
+export interface DashboardConfigLegacy {
   id: string;
   name: string;
   description?: string;
@@ -117,6 +119,11 @@ export interface DashboardLayoutConfig {
   };
   responsive: boolean;
   snapToGrid: boolean;
+}
+
+// Actual DashboardConfig used by widgetStore
+export interface DashboardConfig {
+  widgets: WidgetConfig[];
 }
 
 /**
