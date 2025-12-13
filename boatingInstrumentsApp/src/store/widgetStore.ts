@@ -285,25 +285,6 @@ export const useWidgetStore = create<WidgetStore>()(
         
         const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
-
-        // Build instance metadata map for fast lookup during widget creation
-        const instanceMetadata = new Map<string, { 
-          title: string; 
-          type: string; 
-          instanceType: string;
-          location?: string;
-        }>();
-        
-        detectedInstances.engines.forEach(e => 
-          instanceMetadata.set(e.id, { title: e.title, type: 'engine', instanceType: 'engine' }));
-        detectedInstances.batteries.forEach(b => 
-          instanceMetadata.set(b.id, { title: b.title, type: 'battery', instanceType: 'battery' }));
-        detectedInstances.tanks.forEach(t => 
-          instanceMetadata.set(t.id, { title: t.title, type: 'tanks', instanceType: 'tank' }));
-        detectedInstances.temperatures.forEach(t => 
-          instanceMetadata.set(t.id, { title: t.title, type: 'watertemp', instanceType: 'temperature', location: t.location }));
-        detectedInstances.instruments.forEach(i => 
-          instanceMetadata.set(i.id, { title: i.title, type: i.type, instanceType: 'instrument' }));
         
         // STEP 1: Remove widgets that are no longer detected (except system widgets)
         let widgets = currentDashboard.widgets.filter(w => 
@@ -317,28 +298,25 @@ export const useWidgetStore = create<WidgetStore>()(
         }
         
         // STEP 2: Add widgets for newly detected instances
-        // CRITICAL: Recalculate toAdd after deduplication to exclude widgets that already exist
         const existingWidgetIds = new Set(widgets.map(w => w.id));
-        const actualToAdd = new Set([...toAdd].filter(id => !existingWidgetIds.has(id)));
+        const instancesToAdd = allDetectedInstances.filter(inst => 
+          toAdd.has(inst.id) && !existingWidgetIds.has(inst.id)
+        );
         
-        if (actualToAdd.size > 0) {
-          // Create widgets for new instances
-          actualToAdd.forEach(instanceId => {
-            const metadata = instanceMetadata.get(instanceId);
-            if (!metadata) return;
-            
-            const now = Date.now();
+        if (instancesToAdd.length > 0) {
+          const now = Date.now();
+          instancesToAdd.forEach(instance => {
             const newWidget: WidgetConfig = {
-              id: instanceId,
-              type: metadata.type as any,
-              title: metadata.title,
+              id: instance.id,
+              type: instance.type,
+              title: instance.title,
               settings: {
-                instanceId,
-                instanceType: metadata.instanceType,
-                ...(metadata.location && { location: metadata.location }),
+                instanceId: instance.id,
+                instanceType: instance.instanceType,
+                ...(instance.location && { location: instance.location }),
               },
               layout: {
-                id: instanceId,
+                id: instance.id,
                 width: 2,
                 height: 2,
                 visible: true,
@@ -366,7 +344,7 @@ export const useWidgetStore = create<WidgetStore>()(
           widgetUpdateMetrics: {
             ...state.widgetUpdateMetrics,
             totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
-            widgetsAdded: state.widgetUpdateMetrics.widgetsAdded + actualToAdd.size,
+            widgetsAdded: state.widgetUpdateMetrics.widgetsAdded + instancesToAdd.length,
             widgetsRemoved: state.widgetUpdateMetrics.widgetsRemoved + toRemove.size,
             lastUpdateTime: Date.now(),
           },
