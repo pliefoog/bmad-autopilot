@@ -353,6 +353,14 @@ export const DynamicDashboard: React.FC = () => {
 
   const usePagination = totalPages > 1;
   
+  console.log('📄 [DynamicDashboard] Pagination status:', {
+    totalPages,
+    currentPage,
+    usePagination,
+    widgetCount: storeWidgets.length,
+    contextWidth
+  });
+  
   // Determine if we should use scroll mode (mobile) or pagination (tablet/desktop)
   const useScrollMode = useMemo(() => {
     const isScrollMode = contextWidth < 768;
