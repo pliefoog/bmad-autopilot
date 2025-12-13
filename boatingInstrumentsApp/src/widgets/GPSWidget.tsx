@@ -43,8 +43,6 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   const gpsTimezone = useSettingsStore((state) => state.gps.timezone); // eslint-disable-line @typescript-eslint/no-unused-vars
   
   // Widget state management per ui-architecture.md v2.3
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // Widget interaction handlers per ui-architecture.md v2.3
   
@@ -162,8 +160,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   }, [utcTime, gpsDateFormat, gpsTimeFormat]);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Data staleness detection (>10s = stale for GPS)
   const isStale = gpsTimestamp ? (Date.now() - gpsTimestamp) > 10000 : true;

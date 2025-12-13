@@ -38,8 +38,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   const depthPresentation = useDepthPresentation();
   
   // Widget state management per ui-architecture.md v2.3
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NEW: Get history and stats methods from store
   const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
@@ -220,8 +218,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   }, [getSensorHistory, alarmThresholds, depthPresentation]);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

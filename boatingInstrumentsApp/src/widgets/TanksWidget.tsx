@@ -38,8 +38,6 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
   }, [id]);
   
   // Widget state management
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NMEA data - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const tankLevel = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]?.level, (a, b) => a === b);
@@ -81,8 +79,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, title, 
   const tankState = getTankState(level, tankType);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

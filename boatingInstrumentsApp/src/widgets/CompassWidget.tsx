@@ -33,8 +33,6 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
   
   // Widget state management per ui-architecture.md v2.3
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading, (a, b) => a === b);
@@ -137,8 +135,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
   const [compassMode, setCompassMode] = useState<CompassMode>('TRUE'); // Default to TRUE per marine standards
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

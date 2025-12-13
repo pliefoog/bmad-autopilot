@@ -46,8 +46,6 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   }, [presentationStore.selectedPresentations.speed]);
   
   // Widget state management per ui-architecture.md v2.3
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NOTE: History now tracked automatically in sensor data - no subscription needed
   
@@ -189,8 +187,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   }, [getSpeedDisplay, sog, stw, calculations]);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Data staleness detection - consider stale if no speed data (either SOG or STW)
   const isStale = (sog === undefined || sog === null) && (stw === undefined || stw === null);

@@ -42,8 +42,6 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
   }, [id]);
   
   // Widget state management
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NEW: Get history and stats methods from store
   const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
@@ -162,8 +160,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
   }, [getSensorHistory, instanceNumber, temperatureState, alarmThresholds, tempPresentation]);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Auto-generate appropriate title based on temperature data
   const getDisplayTitle = useCallback(() => {

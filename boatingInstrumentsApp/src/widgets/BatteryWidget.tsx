@@ -38,8 +38,6 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
   }, [id]);
   
   // Widget state management
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const voltage = useNmeaStore((state) => state.nmeaData.sensors.battery?.[instanceNumber]?.voltage ?? null, (a, b) => a === b);
@@ -202,8 +200,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, tit
   const batteryState = getBatteryState(voltage, stateOfCharge);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

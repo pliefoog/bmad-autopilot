@@ -44,8 +44,6 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, title
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
   
   // Widget state management
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // Get custom widget definition from widget settings
   const widgetConfig = useWidgetStore((state) => 

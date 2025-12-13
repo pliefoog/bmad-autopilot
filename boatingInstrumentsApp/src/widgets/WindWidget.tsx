@@ -42,8 +42,6 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   }, [presentationStore.selectedPresentations.wind]);
   
   // Widget state management per ui-architecture.md v2.3
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NOTE: History now tracked automatically in sensor data - no subscription needed
   
@@ -309,8 +307,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   }, [trueWind.speed, trueWind.angle]); // Use specific values instead of whole object
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

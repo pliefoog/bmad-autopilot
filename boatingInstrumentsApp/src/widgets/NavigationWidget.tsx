@@ -31,8 +31,6 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
   
   // Widget state management
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NMEA data selectors - navigation sensor
   const waypointId = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.waypointId);
@@ -95,7 +93,6 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
   
   const handleLongPressOnPin = () => {
     if (toggleWidgetPin) {
-      toggleWidgetPin(id);
     }
   };
   

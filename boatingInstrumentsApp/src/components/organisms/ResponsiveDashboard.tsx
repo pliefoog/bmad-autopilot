@@ -62,21 +62,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 }) => {
   const theme = useTheme();
   
-  // Widget store integration
-  const {
-    selectedWidgets,
-    currentPage,
-    totalPages,
-    pageWidgets,
-    maxWidgetsPerPage,
-    isAnimatingPageTransition,
-    navigateToPage,
-    navigateToNextPage,
-    navigateToPreviousPage,
-    recalculatePages,
-    getWidgetsForPage,
-    addWidgetToOptimalPage,
-  } = useWidgetStore();
+  // Widget store integration - use actual widget array
+  const dashboard = useWidgetStore((state) => state.dashboard);
+  const widgetIds = dashboard.widgets.map(w => w.id);
 
   // Responsive grid system (AC 1-5)
   const responsiveGrid: ResponsiveGridState = useResponsiveGrid(
@@ -84,6 +72,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     footerHeight,
     pageIndicatorHeight
   );
+
+  // Local page state management
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isAnimatingPageTransition, setIsAnimatingPageTransition] = useState(false);
 
   // Animation values for page transitions (AC 10)
   const scrollViewRef = useRef<ScrollView>(null);
@@ -136,8 +128,30 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     cellHeight: responsiveGrid.layout.cellHeight,
   };
 
-  // Calculate page layouts
-  const pageLayouts: PageLayout[] = calculatePageLayouts(selectedWidgets, layoutConstraints);
+  // Calculate page layouts from widget array
+  const pageLayouts: PageLayout[] = calculatePageLayouts(widgetIds, layoutConstraints);
+  const totalPages = pageLayouts.length;
+
+  // Page navigation functions
+  const navigateToPage = useCallback((page: number) => {
+    if (page >= 0 && page < totalPages) {
+      setIsAnimatingPageTransition(true);
+      setCurrentPage(page);
+      setTimeout(() => setIsAnimatingPageTransition(false), 300);
+    }
+  }, [totalPages]);
+
+  const navigateToNextPage = useCallback(() => {
+    if (currentPage < totalPages - 1) {
+      navigateToPage(currentPage + 1);
+    }
+  }, [currentPage, totalPages, navigateToPage]);
+
+  const navigateToPreviousPage = useCallback(() => {
+    if (currentPage > 0) {
+      navigateToPage(currentPage - 1);
+    }
+  }, [currentPage, navigateToPage]);
 
   // Handle swipe gestures for page navigation (AC 8)
   const handleSwipeGesture = useCallback((event: PanGestureHandlerGestureEvent) => {
@@ -252,7 +266,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   ]);
 
   // AC 14: Empty State Display (auto-discovery handles widget creation)
-  if (selectedWidgets.length === 0) {
+  if (widgetIds.length === 0) {
     return (
       <View style={styles.emptyStateContainer} testID="dashboard-empty-state">
         {/* Widgets will auto-appear when NMEA data detected */}

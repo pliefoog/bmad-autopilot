@@ -39,8 +39,6 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   }, [id]);
   
   // Widget state management per ui-architecture.md v2.3
-  const pinned = useWidgetStore((state) => state.isWidgetPinned ? state.isWidgetPinned(id) : false);
-  const toggleWidgetPin = useWidgetStore((state) => state.toggleWidgetPin);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const rpm = useNmeaStore((state) => state.nmeaData.sensors.engine?.[instanceNumber]?.rpm ?? null, (a, b) => a === b);
@@ -217,8 +215,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, title
   }, [alternatorVoltage]);
 
   const handleLongPressOnPin = useCallback(() => {
-    toggleWidgetPin(id);
-  }, [id, toggleWidgetPin]);
+  }, [id]);
 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

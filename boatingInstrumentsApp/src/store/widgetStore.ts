@@ -213,14 +213,6 @@ export const useWidgetStore = create<WidgetStore>()(
         }));
       },
 
-      removeWidget: (widgetId: string) =>
-        set((state) => ({
-          dashboard: {
-            ...state.dashboard,
-            widgets: state.dashboard.widgets.filter((w) => w.id !== widgetId),
-          },
-        })),
-
       updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) =>
         set((state) => ({
           dashboard: {
@@ -248,40 +240,19 @@ export const useWidgetStore = create<WidgetStore>()(
           dashboard: { ...state.dashboard, widgets },
         })),
 
-      setEditMode: (enabled) =>
+      setEditMode: (enabled: boolean) =>
         set({ editMode: enabled }),
 
-      setGridVisible: (visible) =>
+      setGridVisible: (visible: boolean) =>
         set({ gridVisible: visible }),
 
-      updateDashboard: (updates) => {
-        if (__DEV__ && updates.widgets) {
-          const current = get().dashboard;
-          if (current.widgets.length !== updates.widgets.length) {
-            const stack = new Error().stack;
-            console.log('🔧 updateDashboard called - widget count changed:', {
-              from: current.widgets.length,
-              to: updates.widgets.length,
-              caller: stack?.split('\n')[2]?.trim()
-            });
-          }
-        }
-        
+      updateDashboard: (updates: Partial<DashboardConfig>) =>
         set((state) => ({
           dashboard: { ...state.dashboard, ...updates },
-        }));
-      },
-
-      // Enhanced state management implementations
-      // All positioning and manual instance methods removed:
-      // - User positioning is automatic via array index
-      // - Instance widgets managed via updateInstanceWidgets event-driven flow
-      
-      // Phase 2 optimization: Set helper functions
-      // These are defined here to avoid polluting global scope
+        })),
 
       updateInstanceWidgets: (detectedInstances) => {
-        // Phase 2 CLEAN IMPLEMENTATION: Set-based widget diffing
+        // Set-based widget diffing for efficient updates
         const metrics = get().widgetUpdateMetrics;
         metrics.totalUpdates++;
         
@@ -323,11 +294,8 @@ export const useWidgetStore = create<WidgetStore>()(
         const toAdd = setDifference(newWidgetIds, currentIds);
         const toRemove = setDifference(currentIds, newWidgetIds);
         
-        // Phase 2: Clean Set-based implementation - NO legacy forEach loops
         const currentDashboard = get().dashboard;
-        if (!currentDashboard) {
-          return;
-        }
+        if (!currentDashboard) return;
 
         // Build instance metadata map for fast lookup during widget creation
         const instanceMetadata = new Map<string, { 
@@ -353,15 +321,9 @@ export const useWidgetStore = create<WidgetStore>()(
           !toRemove.has(w.id) || w.isSystemWidget
         );
         
-        // Verify no duplicates after removal
+        // Deduplicate if needed
         const widgetIds = new Set(widgets.map(w => w.id));
         if (widgetIds.size !== widgets.length) {
-          console.error('❌ [Phase 2] DUPLICATE WIDGETS AFTER REMOVAL:', {
-            total: widgets.length,
-            unique: widgetIds.size,
-            duplicates: widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) !== i).map(w => w.id)
-          });
-          // Deduplicate: keep only first occurrence of each ID
           widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
