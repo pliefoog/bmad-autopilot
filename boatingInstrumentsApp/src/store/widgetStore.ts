@@ -115,9 +115,6 @@ interface WidgetActions {
   startInstanceMonitoring: () => void;
   stopInstanceMonitoring: () => void;
   // Runtime management methods
-  cleanupOrphanedWidgets: () => void;
-  getInstanceWidgetMetrics: () => { totalInstanceWidgets: number; orphanedWidgets: number; lastCleanupTime: number };
-  forceInstanceCleanup: () => void;
   resetAppToDefaults: () => Promise<void>;
   emergencyReset: () => void;
   // TODO: Pagination methods (Story 6.11) - temporarily disabled for dynamic widget focus
@@ -347,9 +344,6 @@ export const useWidgetStore = create<WidgetStore>()(
           dashboard: { ...state.dashboard, widgets: [...state.dashboard.widgets, widget] },
           selectedWidgets: [...state.selectedWidgets, widgetType],
         }));
-        
-        // Clean up any invalid widgets after adding new ones
-        setTimeout(() => get().cleanupOrphanedWidgets(), 100);
       },
 
       removeWidget: (widgetId) =>
@@ -925,10 +919,6 @@ export const useWidgetStore = create<WidgetStore>()(
           });
           
           get().updateInstanceWidgets(detectedInstances);
-          
-          // Perform periodic cleanup of orphaned widgets
-          // This runs every time instances are detected to maintain sync
-          get().cleanupOrphanedWidgets();
         });
 
         // NOTE: The new widget registration system is initialized separately
@@ -940,148 +930,6 @@ export const useWidgetStore = create<WidgetStore>()(
 
       stopInstanceMonitoring: () => {
         instanceDetectionService.stopScanning();
-      },
-
-      cleanupOrphanedWidgets: () => {
-        log('[WidgetStore] 🧹 cleanupOrphanedWidgets TRIGGERED - TEMPORARILY DISABLED');
-        // TEMPORARY: Disable cleanup while debugging new widget system
-        return;
-        
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) return;
-
-        // Get currently detected instances
-        const detectedInstances = instanceDetectionService.getDetectedInstances();
-        const activeInstanceIds = new Set([
-          ...detectedInstances.engines.map(e => e.id),
-          ...detectedInstances.batteries.map(b => b.id),
-          ...detectedInstances.tanks.map(t => t.id),
-          ...detectedInstances.instruments.map(i => i.id), // Include new system widgets
-          ...detectedInstances.temperatures.map(t => t.id),
-          ...detectedInstances.instruments.map(i => i.id)
-        ]);
-
-        // Find orphaned instance widgets (widgets with instanceId but no matching detected instance)
-        // NOTE: Only remove if instance has been missing for a significant time to avoid
-        // removing widgets during temporary NMEA dropouts
-        const orphanedInstanceWidgets = currentDashboard.widgets.filter(widget => {
-          if (!widget.settings?.instanceId || !widget.settings?.instanceType) return false;
-          const isOrphaned = !activeInstanceIds.has(widget.settings.instanceId);
-          if (isOrphaned && __DEV__) {
-            console.warn(`⚠️ Orphaned instance widget detected: ${widget.id} (instanceId: ${widget.settings.instanceId})`);
-          }
-          // TODO: Add timestamp-based cleanup - only remove after 5+ minutes missing
-          return false; // DISABLED: Don't auto-remove instance widgets for now
-        });
-
-        // Find invalid registry widgets (widgets that don't exist in the widget registry)
-        const invalidRegistryWidgets = currentDashboard.widgets.filter(widget => {
-          // Skip system widgets - they don't need to be in the registry
-          if (widget.isSystemWidget) {
-            return false;
-          }
-          
-          try {
-            // Import WidgetFactory to check if widget can be resolved
-            const { WidgetFactory } = require('../services/WidgetFactory');
-            const parseResult = WidgetFactory.parseWidgetId(widget.id);
-            
-            // Check if widget is resolvable via WidgetFactory
-            const metadata = WidgetFactory.getWidgetMetadata(widget.id);
-            
-            if (!metadata) {
-              log(`[WidgetStore] ⚠️ Invalid registry widget (no metadata): ${widget.id} (baseType: ${parseResult.baseType})`);
-              return true; // Widget is invalid
-            }
-            
-            return false; // Widget is valid
-          } catch (error) {
-            // Widget cannot be resolved - it's invalid
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            log(`[WidgetStore] ⚠️ Invalid registry widget (parse error): ${widget.id} - ${errorMessage}`);
-            return true;
-          }
-        });
-
-        // Find timestamp-based widget IDs (legacy from preset/duplication operations)
-        const timestampBasedWidgets = currentDashboard.widgets.filter(widget => {
-          const isTimestampBased = /^[a-z]+-[0-9]{13}-[0-9]+$/.test(widget.id); // Pattern: type-timestamp-index
-          if (isTimestampBased) {
-            log(`[WidgetStore] ⚠️ Timestamp-based widget found: ${widget.id}`);
-          }
-          return isTimestampBased;
-        });
-
-        if (invalidRegistryWidgets.length > 0) {
-          log(`[WidgetStore] 🗑️ cleanupOrphanedWidgets found ${invalidRegistryWidgets.length} invalid registry widgets:`, invalidRegistryWidgets.map(w => w.id));
-        }
-        if (timestampBasedWidgets.length > 0) {
-          log(`[WidgetStore] 🗑️ cleanupOrphanedWidgets found ${timestampBasedWidgets.length} timestamp-based widgets:`, timestampBasedWidgets.map(w => w.id));
-        }
-
-        const allOrphanedWidgets = [
-          ...orphanedInstanceWidgets,
-          ...invalidRegistryWidgets,
-          ...timestampBasedWidgets
-        ];
-
-        // Remove duplicates by ID
-        const uniqueOrphanedWidgets = allOrphanedWidgets.filter((widget, index, arr) => 
-          arr.findIndex(w => w.id === widget.id) === index
-        );
-
-        if (uniqueOrphanedWidgets.length > 0) {
-          log(`[WidgetStore] Cleaning up ${uniqueOrphanedWidgets.length} orphaned widgets:`, 
-            uniqueOrphanedWidgets.map(w => `${w.id} (${w.type})`));
-          
-          // Remove orphaned widgets
-          const cleanWidgets = currentDashboard.widgets.filter(widget => 
-            !uniqueOrphanedWidgets.some(orphan => orphan.id === widget.id)
-          );
-
-          get().updateDashboard({
-            widgets: cleanWidgets
-          });
-        }
-      },
-
-      getInstanceWidgetMetrics: () => {
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) return { totalInstanceWidgets: 0, orphanedWidgets: 0, lastCleanupTime: 0 };
-
-        const instanceWidgets = currentDashboard.widgets.filter(widget => 
-          widget.settings?.instanceId && widget.settings?.instanceType
-        );
-
-        // Get currently detected instances to check for orphans
-        const detectedInstances = instanceDetectionService.getDetectedInstances();
-        const activeInstanceIds = new Set([
-          ...detectedInstances.engines.map(e => e.id),
-          ...detectedInstances.batteries.map(b => b.id),
-          ...detectedInstances.tanks.map(t => t.id),
-          ...detectedInstances.temperatures.map(t => t.id),
-          ...detectedInstances.instruments.map(i => i.id)
-        ]);
-
-        const orphanedWidgets = instanceWidgets.filter(widget => 
-          !activeInstanceIds.has(widget.settings.instanceId)
-        );
-
-        return {
-          totalInstanceWidgets: instanceWidgets.length,
-          orphanedWidgets: orphanedWidgets.length,
-          lastCleanupTime: Date.now() // Could be enhanced to track actual cleanup time
-        };
-      },
-
-      forceInstanceCleanup: () => {
-        // Force cleanup of expired instances in detection service
-        instanceDetectionService.forceCleanup();
-        
-        // Cleanup orphaned widgets in the widget store
-        get().cleanupOrphanedWidgets();
-        
-        log('[WidgetStore] Force cleanup completed for instances and widgets');
       },
 
       resetAppToDefaults: async () => {
