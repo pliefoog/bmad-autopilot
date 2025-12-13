@@ -369,9 +369,16 @@ class InstanceDetectionService {
     };
 
     console.log('🚀 [scanForMarineInstruments] About to iterate sensorTypeMap:', Object.keys(sensorTypeMap));
+    
+    const sensorTypeMapEntries = Object.entries(sensorTypeMap);
+    console.log('🔍 [scanForMarineInstruments] sensorTypeMapEntries:', {
+      length: sensorTypeMapEntries.length,
+      entries: sensorTypeMapEntries,
+      isArray: Array.isArray(sensorTypeMapEntries)
+    });
 
     try {
-      Object.entries(sensorTypeMap).forEach((entry) => {
+      sensorTypeMapEntries.forEach((entry) => {
         console.log(`  ⭐ ENTERING forEach, entry:`, entry);
         const [instrumentType, sensorType] = entry;
         console.log(`  ⭐ Destructured: instrumentType=${instrumentType}, sensorType=${sensorType}`);
