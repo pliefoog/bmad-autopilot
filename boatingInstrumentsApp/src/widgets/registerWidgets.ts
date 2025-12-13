@@ -12,6 +12,7 @@ import { AutopilotWidget } from './AutopilotWidget';
 import { RudderWidget } from './RudderWidget';
 import { TemperatureWidget } from './TemperatureWidget';
 import { ThemeWidget } from './ThemeWidget';
+import CustomWidget from './CustomWidget';
 
 /**
  * Register all available widgets with the registry system
@@ -206,5 +207,19 @@ export function registerAllWidgets(): void {
       configurable: true,
     },
     ThemeWidget
+  );
+
+  // Custom widgets
+  WidgetRegistry.register(
+    {
+      id: 'custom',
+      title: 'Custom Widget',
+      icon: 'analytics-outline',
+      description: 'User-defined multi-sensor widget',
+      category: 'utility',
+      defaultSize: { width: 160, height: 160 },
+      configurable: true,
+    },
+    CustomWidget
   );
 }
