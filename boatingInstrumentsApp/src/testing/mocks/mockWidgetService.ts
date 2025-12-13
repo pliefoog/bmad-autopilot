@@ -6,7 +6,6 @@ import type {
   WidgetConfig, 
   WidgetMeta, 
   WidgetState,
-  WidgetLayout,
   WidgetType 
 } from '../../types';
 
@@ -199,16 +198,9 @@ export class MockWidgetService {
     this.recordError(widgetId, new Error(errorMessage));
   }
 
-  simulateLayoutChange(newLayout: Partial<WidgetLayout>): void {
-    // Update all widgets with new layout
-    Array.from(this.widgets.values()).forEach(widget => {
-      this.updateWidget(widget.id, {
-        layout: {
-          ...widget.layout,
-          ...newLayout,
-        },
-      });
-    });
+  simulateLayoutChange(): void {
+    // No-op: Layout is now managed by ResponsiveDashboard, not widget metadata
+    // Widgets are positioned by array index, not layout properties
   }
 
   // Bulk operations for testing

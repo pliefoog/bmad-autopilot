@@ -4,42 +4,17 @@
 import { ReactNode } from 'react';
 
 /**
- * Core widget positioning and layout types
- */
-export interface WidgetPosition {
-  x: number;
-  y: number;
-}
-
-export interface WidgetDimensions {
-  width: number;
-  height: number;
-}
-
-export interface WidgetLayout {
-  id: string;
-  type: string;
-  position: WidgetPosition;
-  dimensions: WidgetDimensions;
-  zIndex?: number;
-  visible: boolean;
-  locked?: boolean;
-  minimized?: boolean;
-}
-
-/**
- * Widget configuration and metadata
+ * Widget configuration - matches widgetStore.ts
+ * Array index = position (no layout metadata)
  */
 export interface WidgetConfig {
   id: string;
   type: string;
   title: string;
-  enabled: boolean;
   settings: Record<string, any>;
-  layout: WidgetLayout;
-  dataSource?: string;
-  refreshRate?: number;
-  alarmThresholds?: Record<string, number>;
+  isSystemWidget?: boolean;
+  createdAt?: number;
+  lastDataUpdate?: number;
 }
 
 /**
@@ -62,10 +37,6 @@ export interface WidgetMeta {
   description: string;
   icon: string;
   category: WidgetCategory;
-  defaultSize: WidgetDimensions;
-  minSize: WidgetDimensions;
-  maxSize?: WidgetDimensions;
-  resizable: boolean;
   configurable: boolean;
   dataRequirements: string[];
   supportedUnits?: string[];
