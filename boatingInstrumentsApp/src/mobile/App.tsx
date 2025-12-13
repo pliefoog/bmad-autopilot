@@ -364,61 +364,8 @@ const App = () => {
       }
     });
 
-    // **DISABLED**: Old auto-discovery code - now handled by startInstanceMonitoring()
-    // The instance monitoring system in widgetStore batches all updates properly
-    // to avoid multiple re-renders. This old code was causing 11/18 widget toggle.
-    
-    /*
-    // **2. MULTI-INSTANCE SENSORS** (engine, battery, tank, temperature)
-    
-    // Engine widgets
-    if (nmeaSensors.engine) {
-      Object.keys(nmeaSensors.engine).forEach(instanceStr => {
-        const instance = parseInt(instanceStr);
-        const engineData = nmeaSensors.engine[instance];
-        if (engineData?.rpm !== undefined) {
-          const widgetId = `engine-${instance}`;
-          const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
-          if (!existingWidget) {
-            console.log(`[App] ➕ Creating engine widget: ${widgetId}`);
-            useWidgetStore.getState().createInstanceWidget(instanceStr, 'engine', `Engine ${instance + 1}`, { x: 0, y: 0 });
-          }
-        }
-      });
-    }
-
-    // Battery widgets
-    if (nmeaSensors.battery) {
-      Object.keys(nmeaSensors.battery).forEach(instanceStr => {
-        const instance = parseInt(instanceStr);
-        const batteryData = nmeaSensors.battery[instance];
-        if (batteryData?.voltage !== undefined) {
-          const widgetId = `battery-${instance}`;
-          const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
-          if (!existingWidget) {
-            console.log(`[App] ➕ Creating battery widget: ${widgetId}`);
-            useWidgetStore.getState().createInstanceWidget(instanceStr, 'battery', `Battery ${instance + 1}`, { x: 0, y: 0 });
-          }
-        }
-      });
-    }
-
-    // Tank widgets
-    if (nmeaSensors.tank) {
-      Object.keys(nmeaSensors.tank).forEach(instanceStr => {
-        const instance = parseInt(instanceStr);
-        const tankData = nmeaSensors.tank[instance];
-        if (tankData?.level !== undefined && tankData?.type) {
-          const widgetId = `tank-${instance}`;
-          const existingWidget = dashboard.widgets.find(w => w.id === widgetId);
-          if (!existingWidget) {
-            console.log(`[App] ➕ Creating tank widget: ${widgetId} (${tankData.type})`);
-            useWidgetStore.getState().createInstanceWidget(instanceStr, 'tank', `${tankData.type.toUpperCase()} Tank ${instance + 1}`, { x: 0, y: 0 });
-          }
-        }
-      });
-    }
-    */
+    // NOTE: Multi-instance widget auto-discovery is now handled by the event-driven
+    // WidgetRegistrationService via initializeWidgetSystem(). No manual widget creation needed.
 
     // Temperature widgets (instance-based IDs for consistency with other multi-instance widgets)
     if (nmeaSensors.temperature) {

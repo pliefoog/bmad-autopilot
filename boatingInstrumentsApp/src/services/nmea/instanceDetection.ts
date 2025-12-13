@@ -42,10 +42,6 @@ const NMEA_INSTRUMENT_DETECTION = {
   }
 } as const;
 
-// Legacy constants exported for backward compatibility during transition
-// TODO: Remove these exports once all references are updated to use WidgetFactory
-export const NMEA_TEMPERATURE_INSTANCES = {} as any; // Deprecated - use WidgetMetadataRegistry
-
 // Types for detected instances
 export interface DetectedInstance {
   id: string;
@@ -645,10 +641,10 @@ class InstanceDetectionService {
         const dataAge = currentTime - tempData.timestamp;
         if (dataAge < 30000) {
           const instanceId = `temperature-${instance}`;
-          const instanceMapping = NMEA_TEMPERATURE_INSTANCES[instance as keyof typeof NMEA_TEMPERATURE_INSTANCES];
-          const title = instanceMapping ? instanceMapping.title : `TEMP SENSOR ${instance + 1}`;
-          const icon = instanceMapping ? instanceMapping.icon : 'thermometer-outline';
-          const location = tempData.location || (instanceMapping ? instanceMapping.location : `sensor${instance}`);
+          // Use default titles and icons - custom mappings handled by WidgetMetadataRegistry
+          const title = `TEMP SENSOR ${instance + 1}`;
+          const icon = 'thermometer-outline';
+          const location = tempData.location || `sensor${instance}`;
           
           const detectedInstance: DetectedInstance = {
             id: instanceId,
@@ -656,7 +652,7 @@ class InstanceDetectionService {
             instance,
             title,
             icon,
-            priority: instanceMapping ? instanceMapping.priority : instance + 20,
+            priority: instance + 20,
             lastSeen: currentTime,
             category: 'environment',
             location,

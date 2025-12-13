@@ -184,12 +184,6 @@ export function getDetectedInstancesByType(): {
 }
 
 /**
- * Legacy export for backward compatibility
- * TODO: Remove once all references updated
- */
-export const NMEA_TEMPERATURE_INSTANCES = {} as any;
-
-/**
  * Cleanup function for shutdown
  */
 export function shutdownInstanceDetection(): void {
