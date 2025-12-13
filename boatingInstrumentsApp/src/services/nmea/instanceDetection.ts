@@ -341,13 +341,21 @@ class InstanceDetectionService {
   private scanForMarineInstruments(nmeaData: any, currentTime: number): void {
     const sensors = nmeaData.sensors || {};
 
+    const instanceCounts = Object.keys(sensors).reduce((acc, type) => {
+      acc[type] = Object.keys(sensors[type] || {}).length;
+      return acc;
+    }, {} as Record<string, number>);
+
     console.log('🔍 [scanForMarineInstruments] Sensor data available:', {
       hasSensors: !!sensors,
       availableTypes: Object.keys(sensors),
-      instanceCounts: Object.keys(sensors).reduce((acc, type) => {
-        acc[type] = Object.keys(sensors[type] || {}).length;
-        return acc;
-      }, {} as Record<string, number>)
+      instanceCounts: JSON.stringify(instanceCounts),
+      sensorsStructure: Object.keys(sensors).map(type => ({
+        type,
+        isObject: typeof sensors[type] === 'object',
+        isNull: sensors[type] === null,
+        keys: sensors[type] ? Object.keys(sensors[type]) : []
+      }))
     });
 
     // Check each sensor type for presence of data
@@ -360,7 +368,12 @@ class InstanceDetectionService {
       'autopilot': 'autopilot'
     };
 
-    Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
+    console.log('🚀 [scanForMarineInstruments] About to iterate sensorTypeMap:', Object.keys(sensorTypeMap));
+
+    try {
+      Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
+        console.log(`  ⭐ ENTERING forEach for ${instrumentType}`);
+
       const sensorInstances = sensors[sensorType] || {};
       const entries = Object.entries(sensorInstances);
       console.log(`  🔎 Checking ${instrumentType}: ${Object.keys(sensorInstances).length} instances`, {
@@ -438,7 +451,12 @@ class InstanceDetectionService {
           }
         }
       });
+      console.log(`  ⭐ EXITING forEach for ${instrumentType}`);
     });
+      console.log('✅ [scanForMarineInstruments] Completed iteration of all sensor types');
+    } catch (error) {
+      console.error('❌ [scanForMarineInstruments] ERROR during forEach:', error);
+    }
   }
 
   /**
