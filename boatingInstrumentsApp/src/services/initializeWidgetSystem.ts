@@ -80,7 +80,22 @@ export function initializeWidgetSystem(): void {
     });
   });
 
-  // Step 5: Subscribe to widget update events to track data freshness
+  // Step 5: Subscribe to widget detection events to track initial data arrival
+  // This ensures timestamps are updated when widgets are first detected
+  widgetRegistrationService.onWidgetDetected((instance: DetectedWidgetInstance) => {
+    const widgetId = `${instance.widgetType}-${instance.instance}`;
+    
+    // Import widgetStore dynamically to avoid circular dependency
+    import('../store/widgetStore').then(({ useWidgetStore }) => {
+      const store = useWidgetStore.getState();
+      if (store.updateWidgetDataTimestamp) {
+        // Update timestamp on initial detection
+        store.updateWidgetDataTimestamp(widgetId, Date.now());
+      }
+    });
+  });
+
+  // Step 6: Subscribe to widget update events to track data freshness
   // This updates lastDataUpdate timestamp when widgets receive new sensor data
   widgetRegistrationService.onWidgetUpdated((instance: DetectedWidgetInstance) => {
     const widgetId = `${instance.widgetType}-${instance.instance}`;

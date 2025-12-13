@@ -954,7 +954,13 @@ export const useWidgetStore = create<WidgetStore>()(
         if (!currentDashboard) return;
         
         const widgetIndex = currentDashboard.widgets.findIndex(w => w.id === widgetId);
-        if (widgetIndex === -1) return;
+        if (widgetIndex === -1) {
+          // Widget doesn't exist yet - this can happen if detection event fires
+          // before widget creation completes. Not an error - widget will have
+          // timestamp set during creation.
+          log(`updateWidgetDataTimestamp: Widget ${widgetId} not found (may not be created yet)`);
+          return;
+        }
         
         // Update lastDataUpdate timestamp
         const updatedWidgets = [...currentDashboard.widgets];
@@ -969,6 +975,8 @@ export const useWidgetStore = create<WidgetStore>()(
             widgets: updatedWidgets
           }
         }));
+        
+        log(`Updated timestamp for widget ${widgetId}`);
       },
 
       resetAppToDefaults: async () => {
