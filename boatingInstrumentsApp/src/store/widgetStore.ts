@@ -312,8 +312,9 @@ export const useWidgetStore = create<WidgetStore>()(
               title: instance.title,
               settings: {
                 instanceId: instance.id,
-                instanceType: instance.instanceType,
+                ...(instance.instance !== undefined && { instance: instance.instance }),
                 ...(instance.location && { location: instance.location }),
+                ...(instance.fluidType && { fluidType: instance.fluidType }),
               },
               layout: {
                 id: instance.id,
