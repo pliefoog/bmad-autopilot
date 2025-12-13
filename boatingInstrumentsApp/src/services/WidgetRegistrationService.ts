@@ -232,8 +232,11 @@ export class WidgetRegistrationService {
     sensorData: Partial<SensorData>,
     allSensors: any // Full sensor state from nmeaStore
   ): void {
+    console.log(`[WidgetRegistration] 📡 Sensor update: ${sensorType}.${instance}`);
+    
     // Find all widget types that depend on this sensor
     const affectedWidgets = this.findAffectedWidgets(sensorType, instance);
+    console.log(`[WidgetRegistration] 🎯 ${affectedWidgets.length} widget(s) affected by ${sensorType}.${instance}`);
 
     affectedWidgets.forEach(registration => {
       // Build sensor value map for this widget type
@@ -243,8 +246,12 @@ export class WidgetRegistrationService {
         allSensors
       );
 
+      console.log(`[WidgetRegistration] 🔍 Checking ${registration.widgetType} widget creation...`);
+      console.log(`[WidgetRegistration]   Sensor map:`, Object.keys(sensorValueMap));
+      
       // Check if widget can be created
       if (this.canCreateWidget(registration.widgetType, sensorValueMap)) {
+        console.log(`[WidgetRegistration] ✅ Can create ${registration.widgetType}-${instance}`);
         // Calculate any derived fields
         const calculatedFields = this.calculateFields(registration, sensorValueMap);
 
