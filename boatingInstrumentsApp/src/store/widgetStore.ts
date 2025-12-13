@@ -150,6 +150,8 @@ const defaultDashboard: DashboardConfig = {
       enabled: true,
       order: -1000,
       isSystemWidget: true,
+      createdAt: Date.now(),
+      lastDataUpdate: Date.now(),
     },
     // All other widgets are now dynamically detected from NMEA messages:
     // - GPS widgets appear when GPS NMEA sentences are detected
@@ -328,6 +330,7 @@ export const useWidgetStore = create<WidgetStore>()(
           widgetId = widgetType; // Simple ID for single-instance (depth, gps, speed, compass)
         }
 
+        const now = Date.now();
         const widget: WidgetConfig = {
           id: widgetId,
           type: widgetType,
@@ -343,6 +346,8 @@ export const useWidgetStore = create<WidgetStore>()(
           },
           enabled: true,
           order: currentState.selectedWidgets.length,
+          createdAt: now,
+          lastDataUpdate: now,
         };
 
         set((state) => ({
@@ -712,6 +717,7 @@ export const useWidgetStore = create<WidgetStore>()(
         if (existingWidget) return;
 
         // Create new instance widget
+        const now = Date.now();
         const newWidget: WidgetConfig = {
           id: widgetId,
           type: instanceType,
@@ -730,6 +736,8 @@ export const useWidgetStore = create<WidgetStore>()(
           },
           enabled: true,
           order: currentDashboard.widgets.length,
+          createdAt: now,
+          lastDataUpdate: now,
         };
 
         get().updateDashboard({
@@ -861,6 +869,7 @@ export const useWidgetStore = create<WidgetStore>()(
             }
             
             const position = findNextPosition();
+            const now = Date.now();
             const newWidget: WidgetConfig = {
               id: instanceId,
               type: metadata.type as any,
@@ -880,6 +889,8 @@ export const useWidgetStore = create<WidgetStore>()(
               },
               enabled: true,
               order: widgets.length,
+              createdAt: now,
+              lastDataUpdate: now,  // Initialize to now since we're creating based on detected data
             };
             
             widgets.push(newWidget);
@@ -968,6 +979,7 @@ export const useWidgetStore = create<WidgetStore>()(
         cleanupWidgetSystem();
 
         // Create clean dashboard with only system widgets
+        const now = Date.now();
         const systemWidgets = SYSTEM_WIDGETS.map(sw => ({
           id: sw.id,
           type: sw.type,
@@ -984,7 +996,8 @@ export const useWidgetStore = create<WidgetStore>()(
           enabled: true,
           order: -1000,
           isSystemWidget: true,
-          createdAt: Date.now(),
+          createdAt: now,
+          lastDataUpdate: now,  // System widgets never expire
         }));
 
         const resetDashboard: DashboardConfig = {
