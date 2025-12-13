@@ -123,6 +123,14 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Get current dashboard config
   const dashboard = useWidgetStore(state => state.dashboard);
   
+  console.log('🎯 [DraggableWidgetGrid] COMPONENT RENDER:', {
+    pageIndex,
+    hasDashboard: !!dashboard,
+    widgetCount: dashboard?.widgets?.length || 0,
+    availableWidth,
+    availableHeight
+  });
+  
   const reorderWidgetsOnPage = useWidgetStore(state => state.reorderWidgetsOnPage);
   const moveWidgetToPage = useWidgetStore(state => state.moveWidgetToPage);
   const widgetExpirationTimeout = useWidgetStore(state => state.widgetExpirationTimeout);
