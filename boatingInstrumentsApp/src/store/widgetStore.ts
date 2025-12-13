@@ -16,8 +16,6 @@ const SYSTEM_WIDGETS = [
 
 export interface WidgetLayout {
   id: string;
-  x: number;              // DEPRECATED: Legacy positioning
-  y: number;              // DEPRECATED: Legacy positioning
   width: number;
   height: number;
   minWidth?: number;
@@ -26,7 +24,7 @@ export interface WidgetLayout {
   maxHeight?: number;
   locked?: boolean;
   visible?: boolean;
-  // Array-based positioning: index in widgets array determines position
+  // Position determined by index in widgets array
   // Page calculated as: Math.floor(index / widgetsPerPage)
   // Position within page: index % widgetsPerPage
 }
@@ -49,14 +47,12 @@ export interface WidgetConfig {
 export interface DashboardConfig {
   id: string;
   name: string;
-  widgets: WidgetConfig[];
+  widgets: WidgetConfig[];  // Array order determines position
   gridSize: number;
   snapToGrid: boolean;
   columns: number;
   rows: number;
   backgroundColor?: string;
-  // Positioning mode flag
-  userPositioned?: boolean; // false = auto-discovery order, true = user-arranged with page/positionOrder
 }
 
 export interface WidgetPreset {
@@ -72,7 +68,10 @@ interface WidgetState {
   selectedWidgets: string[];
   editMode: boolean;
   gridVisible: boolean;
-  presets: WidgetPreset[];
+  
+  // Widget expiration configuration
+  widgetExpirationTimeout: number;
+  enableWidgetAutoRemoval: boolean;
   
   // Phase 2 optimization: Track current widget IDs for fast comparison
   currentWidgetIds: Set<string>;
@@ -88,39 +87,29 @@ interface WidgetState {
 }
 
 interface WidgetActions {
+  // Core widget management (used)
   addWidget: (widgetType: string, position?: { x: number; y: number }, options?: { instance?: number, sensorSource?: string }) => void;
-  removeWidget: (widgetId: string) => void;
   updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
   updateWidgetLayout: (widgetId: string, layout: Partial<WidgetLayout>) => void;
   updateWidgetSettings: (widgetId: string, settings: Record<string, any>) => void;
-  setSelectedWidgets: (widgets: string[]) => void;
-  toggleWidget: (widgetType: string) => void;
-  reorderWidgets: (widgets: WidgetConfig[]) => void;
+  reorderWidgets: (widgets: WidgetConfig[]) => void;  // Array reordering for drag-drop
+  
+  // UI state (used)
   setEditMode: (enabled: boolean) => void;
   setGridVisible: (visible: boolean) => void;
   updateDashboard: (updates: Partial<DashboardConfig>) => void;
-  // Enhanced state management actions
-  initializeWidgetStatesOnAppStart: () => void;
-  resetLayout: () => void;
-  applyPreset: (presetId: string) => void;
-  // User-arranged positioning actions (Phase 3)
-  enableUserPositioning: () => void;
-  resetLayoutToAutoDiscovery: () => void;
-  reorderWidget: (fromIndex: number, toIndex: number) => void;
-  reorderWidgetsOnPage: (pageIndex: number, widgetIds: string[]) => void;
-  moveWidgetToPage: (widgetId: string, targetPage: number, targetPosition: number) => void;
-  compactPagePositions: (pageIndex: number) => void;
-  redistributeWidgetsAcrossPages: () => void;
-  // Instance widget management methods
-  createInstanceWidget: (instanceId: string, instanceType: 'engine' | 'battery' | 'tank', title: string, position?: { x: number; y: number }) => void;
-  removeInstanceWidget: (instanceId: string) => void;
+  
+  // Event-driven instance management (used)
   updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
-  // Widget data lifecycle methods
+  
+  // Widget lifecycle (used)
   updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
-  // Runtime management methods
+  setWidgetExpirationTimeout: (timeoutMs: number) => void;
+  setEnableWidgetAutoRemoval: (enabled: boolean) => void;
+  cleanupExpiredWidgetsWithConfig: () => void;
+  
+  // Runtime management (used)
   resetAppToDefaults: () => Promise<void>;
-  emergencyReset: () => void;
-  // TODO: Pagination methods (Story 6.11) - temporarily disabled for dynamic widget focus
 }
 
 type WidgetStore = WidgetState & WidgetActions;
@@ -139,8 +128,6 @@ const defaultDashboard: DashboardConfig = {
       settings: {},
       layout: {
         id: 'theme',
-        x: 0,
-        y: 0,
         width: 2,
         height: 2,
         visible: true,
@@ -168,104 +155,7 @@ const defaultDashboard: DashboardConfig = {
   rows: 8,
 };
 
-const defaultPresets: WidgetPreset[] = [
-  {
-    id: 'sailing-basic',
-    name: 'Basic Sailing',
-    description: 'Essential widgets for sailing',
-    category: 'sailing',
-    widgets: [
-      {
-        type: 'wind',
-        title: 'Wind',
-        settings: {},
-        layout: { id: '', x: 0, y: 0, width: 2, height: 2 },
-        enabled: true,
-        order: 0,
-      },
-      {
-        type: 'depth',
-        title: 'Depth',
-        settings: {},
-        layout: { id: '', x: 2, y: 0, width: 2, height: 2 },
-        enabled: true,
-        order: 1,
-      },
-      {
-        type: 'speed',
-        title: 'Speed',
-        settings: {},
-        layout: { id: '', x: 4, y: 0, width: 2, height: 2 },
-        enabled: true,
-        order: 2,
-      },
-      {
-        type: 'compass',
-        title: 'Compass',
-        settings: {},
-        layout: { id: '', x: 0, y: 2, width: 3, height: 3 },
-        enabled: true,
-        order: 3,
-      },
-      {
-        type: 'gps',
-        title: 'GPS',
-        settings: {},
-        layout: { id: '', x: 3, y: 2, width: 3, height: 3 },
-        enabled: true,
-        order: 4,
-      },
-    ],
-  },
-  {
-    id: 'motoring-full',
-    name: 'Full Motoring',
-    description: 'Complete setup for power boating',
-    category: 'motoring',
-    widgets: [
-      {
-        type: 'engine',
-        title: 'Engine',
-        settings: {},
-        layout: { id: '', x: 0, y: 0, width: 3, height: 3 },
-        enabled: true,
-        order: 0,
-      },
-      {
-        type: 'tanks',
-        title: 'Tanks',
-        settings: {},
-        layout: { id: '', x: 3, y: 0, width: 3, height: 3 },
-        enabled: true,
-        order: 1,
-      },
-      {
-        type: 'speed',
-        title: 'Speed',
-        settings: {},
-        layout: { id: '', x: 0, y: 3, width: 2, height: 2 },
-        enabled: true,
-        order: 2,
-      },
-      {
-        type: 'depth',
-        title: 'Depth',
-        settings: {},
-        layout: { id: '', x: 2, y: 3, width: 2, height: 2 },
-        enabled: true,
-        order: 3,
-      },
-      {
-        type: 'battery',
-        title: 'Battery',
-        settings: {},
-        layout: { id: '', x: 4, y: 3, width: 2, height: 2 },
-        enabled: true,
-        order: 4,
-      },
-    ],
-  },
-];
+// Preset system removed - event-driven widget discovery handles all use cases
 
 // Phase 2 optimization: Set utility functions for widget ID comparison
 function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
@@ -284,15 +174,12 @@ export const useWidgetStore = create<WidgetStore>()(
   persist(
     (set, get) => ({
       // State
-      availableWidgets: [
-        'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 
-        'battery', 'tanks', 'autopilot', 'weather', 'navigation'
-      ],
       selectedWidgets: ['depth', 'speed', 'wind', 'gps', 'compass'],
       dashboard: defaultDashboard,
-      presets: defaultPresets,
       editMode: false,
       gridVisible: false,
+      widgetExpirationTimeout: 300000,  // 5 minutes
+      enableWidgetAutoRemoval: true,
       
       // Phase 2 optimization: Initialize tracking structures
       currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
@@ -336,8 +223,6 @@ export const useWidgetStore = create<WidgetStore>()(
           settings: {},
           layout: {
             id: widgetId,
-            x: position.x,
-            y: position.y,
             width: 2,
             height: 2,
             visible: true,
@@ -354,7 +239,7 @@ export const useWidgetStore = create<WidgetStore>()(
         }));
       },
 
-      removeWidget: (widgetId) =>
+      removeWidget: (widgetId: string) =>
         set((state) => ({
           dashboard: {
             ...state.dashboard,
@@ -362,7 +247,7 @@ export const useWidgetStore = create<WidgetStore>()(
           },
         })),
 
-      updateWidget: (widgetId, updates) =>
+      updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) =>
         set((state) => ({
           dashboard: {
             ...state.dashboard,
@@ -384,10 +269,10 @@ export const useWidgetStore = create<WidgetStore>()(
       updateWidgetSettings: (widgetId, settings) =>
         get().updateWidget(widgetId, { settings }),
 
-      setSelectedWidgets: (widgets) =>
+      setSelectedWidgets: (widgets: string[]) =>
         set({ selectedWidgets: widgets }),
 
-      toggleWidget: (widgetType) =>
+      toggleWidget: (widgetType: string) =>
         set((state) => ({
           selectedWidgets: state.selectedWidgets.includes(widgetType)
             ? state.selectedWidgets.filter((w) => w !== widgetType)
@@ -424,290 +309,9 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       // Enhanced state management implementations
-      initializeWidgetStatesOnAppStart: () => {
-        const state = get();
-        let dashboard = state.dashboard;
-        
-        log('[WidgetStore] initializeWidgetStatesOnAppStart - Dashboard widgets:', {
-          widgetCount: dashboard?.widgets.length,
-          widgetIds: dashboard?.widgets.map(w => w.id)
-        });
-        
-        // 🛡️ SYSTEM WIDGET PROTECTION: Ensure system widgets are always present
-        if (dashboard) {
-          const existingWidgetIds = new Set(dashboard.widgets.map(w => w.id));
-          const missingSystemWidgets = SYSTEM_WIDGETS.filter(sw => !existingWidgetIds.has(sw.id));
-          
-          if (missingSystemWidgets.length > 0) {
-            log('[WidgetStore] 🛡️ Missing system widgets detected:', missingSystemWidgets.map(w => w.id));
-            
-            // Create system widget configs
-            const systemWidgetConfigs = missingSystemWidgets.map((sw, index) => ({
-              id: sw.id,
-              type: sw.type,
-              title: sw.title,
-              settings: {},
-              layout: {
-                id: sw.id,
-                x: 0,
-                y: 0,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: -1000 + index, // System widgets appear first
-              isSystemWidget: true, // Mark as protected system widget
-              createdAt: Date.now(),
-            }));
-            
-            // Add missing system widgets at the start
-            const updatedWidgets = [...systemWidgetConfigs, ...dashboard.widgets];
-            get().updateDashboard({
-              widgets: updatedWidgets
-            });
-            
-            log('[WidgetStore] ✅ System widgets restored. Total widgets now:', updatedWidgets.length);
-          }
-          
-          // Mark existing system widgets if not already marked
-          const needsSystemWidgetFlag = dashboard.widgets.some(w => 
-            SYSTEM_WIDGETS.some(sw => sw.id === w.id) && !w.isSystemWidget
-          );
-          
-          if (needsSystemWidgetFlag) {
-            log('[WidgetStore] 🔧 Marking existing system widgets');
-            const updatedWidgets = dashboard.widgets.map(widget => {
-              if (SYSTEM_WIDGETS.some(sw => sw.id === widget.id)) {
-                return { ...widget, isSystemWidget: true };
-              }
-              return widget;
-            });
-            get().updateDashboard({
-              widgets: updatedWidgets
-            });
-          }
-        }
-      },
-
-      resetLayout: () => {
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) return;
-
-        const resetWidgets = currentDashboard.widgets.map((widget, index) => ({
-          ...widget,
-          layout: {
-            ...widget.layout,
-            x: (index % 3) * 2,
-            y: Math.floor(index / 3) * 2,
-            width: 2,
-            height: 2,
-          },
-        }));
-
-        get().updateDashboard({ widgets: resetWidgets });
-      },
-
-      applyPreset: (presetId) => {
-        const preset = get().presets.find((p) => p.id === presetId);
-        if (!preset) return;
-
-        const widgets = preset.widgets.map((w, index) => ({
-          ...w,
-          id: `${w.type}-${Date.now()}-${index}`,
-          layout: { ...w.layout, id: `${w.type}-${Date.now()}-${index}` },
-        }));
-
-        get().updateDashboard({ widgets });
-        set({ selectedWidgets: widgets.map((w) => w.type) });
-      },
-
-      // User-arranged positioning actions (Phase 3: Drag-and-Drop)
-      enableUserPositioning: () => {
-        const state = get();
-        const dashboard = state.dashboard;
-        if (!dashboard || dashboard.userPositioned) return;
-
-        log('[WidgetStore] 🎯 Enabling user positioning mode');
-        
-        // Switch to user-arranged mode
-        get().updateDashboard({
-          userPositioned: true
-        });
-      },
-
-      resetLayoutToAutoDiscovery: () => {
-        const state = get();
-        const dashboard = state.dashboard;
-        if (!dashboard) return;
-
-        log('[WidgetStore] 🔄 Resetting to auto-discovery layout');
-        
-        // Switch back to auto-discovery mode (array stays as-is)
-        get().updateDashboard({
-          userPositioned: false
-        });
-      },
-
-      // Simple array-based widget reordering using global indices
-      reorderWidget: (fromIndex: number, toIndex: number) => {
-        const state = get();
-        const dashboard = state.dashboard;
-        if (!dashboard) return;
-
-        log(`[WidgetStore] 🔄 Reordering widget: index ${fromIndex} → ${toIndex}`);
-        
-        // Pure array splice
-        const widgets = [...dashboard.widgets];
-        const [movedWidget] = widgets.splice(fromIndex, 1);
-        widgets.splice(toIndex, 0, movedWidget);
-        
-        log(`[WidgetStore] ✅ Moved widget ${movedWidget.id} from ${fromIndex} to ${toIndex}`);
-        log(`[WidgetStore] New array:`, widgets.map((w, i) => `${i}:${w.id}`).join(', '));
-        
-        get().updateDashboard({
-          widgets,
-          userPositioned: true,
-        });
-      },
-
-      reorderWidgetsOnPage: (pageIndex, widgetIds) => {
-        const state = get();
-        const dashboard = state.dashboard;
-        if (!dashboard) return;
-
-        log(`[WidgetStore] 📝 Reordering ${widgetIds.length} widgets on page ${pageIndex}`);
-        log(`[WidgetStore] New order:`, widgetIds);
-        
-        // Calculate widgets per page based on current grid
-        const { width } = Dimensions.get('window');
-        const columns = width < 600 ? 1 : width < 768 ? 2 : width < 1024 ? 3 : width < 1280 ? 5 : width < 1920 ? 6 : 8;
-        const rows = 4;
-        const widgetsPerPage = columns * rows;
-        
-        // Get current page range in the full array
-        const pageStartIndex = pageIndex * widgetsPerPage;
-        const pageEndIndex = pageStartIndex + widgetIds.length;
-        
-        log(`[WidgetStore] Page ${pageIndex} range: ${pageStartIndex} to ${pageEndIndex}`);
-        
-        // Build new array by replacing the page range with reordered widgets
-        const widgetIdSet = new Set(widgetIds);
-        const reorderedWidgets = widgetIds
-          .map(id => dashboard.widgets.find(w => w.id === id))
-          .filter((w): w is WidgetConfig => w !== undefined);
-        
-        // Build new array: before page + reordered page + after page
-        const newWidgets = [
-          ...dashboard.widgets.slice(0, pageStartIndex),
-          ...reorderedWidgets,
-          ...dashboard.widgets.slice(pageEndIndex)
-        ];
-        
-        log(`[WidgetStore] ✅ Reordered ${reorderedWidgets.length} widgets at page ${pageIndex}`);
-        log(`[WidgetStore] Widget IDs in new array:`, newWidgets.map(w => w.id));
-        
-        get().updateDashboard({
-          widgets: newWidgets
-        });
-      },
-
-      moveWidgetToPage: (widgetId, targetPage, targetPosition) => {
-        const state = get();
-        const dashboard = state.dashboard;
-        if (!dashboard) return;
-
-        log(`[WidgetStore] 🔀 Moving widget ${widgetId} to page ${targetPage}, position ${targetPosition}`);
-        
-        // Calculate absolute index from page + position
-        // widgetsPerPage is calculated from grid config in DynamicLayoutService
-        const { width } = Dimensions.get('window');
-        const columns = width < 600 ? 1 : width < 768 ? 2 : width < 1024 ? 3 : width < 1280 ? 5 : width < 1920 ? 6 : 8;
-        const rows = 4;
-        const widgetsPerPage = columns * rows;
-        const targetIndex = targetPage * widgetsPerPage + targetPosition;
-        
-        // Remove widget from current position
-        const widgets = [...dashboard.widgets];
-        const currentIndex = widgets.findIndex(w => w.id === widgetId);
-        if (currentIndex === -1) return;
-        
-        const [movedWidget] = widgets.splice(currentIndex, 1);
-        
-        // Insert at target index
-        widgets.splice(Math.min(targetIndex, widgets.length), 0, movedWidget);
-        
-        get().updateDashboard({
-          widgets
-        });
-      },
-
-      compactPagePositions: (pageIndex) => {
-        // No-op: Array-based positioning is inherently compact
-        // Index in array IS the position - no gaps possible
-        log(`[WidgetStore] 🗜️ Compact requested for page ${pageIndex} - skipped (array-based positioning)`);
-      },
-
-      redistributeWidgetsAcrossPages: () => {
-        // No-op: Array-based positioning automatically redistributes
-        // Page is calculated on-the-fly from index: Math.floor(index / widgetsPerPage)
-        // No need to update metadata - array order is the source of truth
-        log('[WidgetStore] 📐 Redistribute requested - skipped (array-based positioning calculates pages on-the-fly)');
-      },
-
-      // Instance widget management methods
-      createInstanceWidget: (instanceId, instanceType, title, position) => {
-        const widgetId = `${instanceType}-${instanceId}`;
-        
-        // Check if widget already exists
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) return;
-
-        const existingWidget = currentDashboard.widgets.find(w => w.id === widgetId);
-        if (existingWidget) return;
-
-        // Create new instance widget
-        const now = Date.now();
-        const newWidget: WidgetConfig = {
-          id: widgetId,
-          type: instanceType,
-          title,
-          settings: {
-            instanceId,
-            instanceType,
-          },
-          layout: {
-            id: widgetId,
-            x: position?.x ?? 0,
-            y: position?.y ?? 0,
-            width: 2,
-            height: 2,
-            visible: true,
-          },
-          enabled: true,
-          order: currentDashboard.widgets.length,
-          createdAt: now,
-          lastDataUpdate: now,
-        };
-
-        get().updateDashboard({
-          widgets: [...currentDashboard.widgets, newWidget]
-        });
-      },
-
-      removeInstanceWidget: (instanceId) => {
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) return;
-
-        // Remove widgets that match any instance type for this instanceId
-        const filteredWidgets = currentDashboard.widgets.filter(w => 
-          !w.settings?.instanceId || w.settings.instanceId !== instanceId
-        );
-
-        get().updateDashboard({
-          widgets: filteredWidgets
-        });
-      },
+      // All positioning and manual instance methods removed:
+      // - User positioning is automatic via array index
+      // - Instance widgets managed via updateInstanceWidgets event-driven flow
       
       // Phase 2 optimization: Set helper functions
       // These are defined here to avoid polluting global scope
@@ -803,12 +407,9 @@ export const useWidgetStore = create<WidgetStore>()(
         const actualToAdd = new Set([...toAdd].filter(id => !existingWidgetIds.has(id)));
         
         if (actualToAdd.size > 0) {
-          // Helper to find next available position
-          const findNextPosition = () => {
-            const maxX = Math.max(0, ...widgets.map(w => w.layout.x + w.layout.width));
-            const maxY = Math.max(0, ...widgets.map(w => w.layout.y + w.layout.height));
-            return { x: maxX > 8 ? 0 : maxX, y: maxX > 8 ? maxY : 0 };
-          };
+          // Helper - not used since array position determines placement
+          // Kept for compatibility with old addWidget signature
+          const findNextPosition = () => ({ x: 0, y: 0 });
           
           // Create widgets for all instances in actualToAdd set
           actualToAdd.forEach(instanceId => {
@@ -818,7 +419,6 @@ export const useWidgetStore = create<WidgetStore>()(
               return;
             }
             
-            const position = findNextPosition();
             const now = Date.now();
             const newWidget: WidgetConfig = {
               id: instanceId,
@@ -831,8 +431,6 @@ export const useWidgetStore = create<WidgetStore>()(
               },
               layout: {
                 id: instanceId,
-                x: position.x,
-                y: position.y,
                 width: 2,
                 height: 2,
                 visible: true,
@@ -939,18 +537,12 @@ export const useWidgetStore = create<WidgetStore>()(
           snapToGrid: true,
           columns: 12,
           rows: 8,
-          userPositioned: false, // Reset to auto-detect and auto-placement mode
         };
 
         // Reset store state to defaults
         set({
-          availableWidgets: [
-            'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 
-            'battery', 'tanks', 'autopilot', 'weather', 'navigation'
-          ],
           selectedWidgets: [],
           dashboard: resetDashboard,
-          presets: [],
           editMode: false,
           gridVisible: false,
           widgetExpirationTimeout: 300000,  // 5 minutes - appropriate for intermittent marine data
@@ -981,32 +573,6 @@ export const useWidgetStore = create<WidgetStore>()(
         log('[WidgetStore] Factory reset completed - dashboard reset to system widgets only');
       },
       
-      // Emergency reset method that completely bypasses persist middleware
-      emergencyReset: () => {
-        log('[WidgetStore] EMERGENCY RESET - Bypassing persist middleware');
-        
-        // Clear localStorage aggressively
-        if (typeof window !== 'undefined' && window.localStorage) {
-          // Clear absolutely everything widget-related
-          const allKeys = Object.keys(window.localStorage);
-          allKeys.forEach(key => {
-            if (key.includes('widget') || key.includes('dashboard') || key.includes('bmad')) {
-              window.localStorage.removeItem(key);
-              log(`[WidgetStore] Emergency cleared: ${key}`);
-            }
-          });
-          
-          // Also clear the persist key
-          window.localStorage.removeItem('widget-store');
-        }
-        
-        // Force page reload to completely reset all stores
-        if (typeof window !== 'undefined') {
-          log('[WidgetStore] Forcing page reload to complete reset');
-          window.location.reload();
-        }
-      },
-
       // Dynamic widget lifecycle actions
       setWidgetExpirationTimeout: (timeoutMs: number) => {
         set({ widgetExpirationTimeout: timeoutMs });
@@ -1077,112 +643,7 @@ export const useWidgetStore = create<WidgetStore>()(
         log(`✅ Cleanup complete - removed ${expiredCount} expired widget(s)`);
       },
 
-      // TODO: Pagination methods (Story 6.11) - temporarily disabled
-      /* Pagination features will be re-implemented after dynamic widget lifecycle is stable
-      setCurrentPage: (page) => {
-        const { totalPages } = get();
-        const clampedPage = Math.max(0, Math.min(totalPages - 1, page));
-        set({ currentPage: clampedPage });
-      },
-
-      navigateToPage: (page) => {
-        const { totalPages, setCurrentPage } = get();
-        if (page >= 0 && page < totalPages) {
-          set({ isAnimatingPageTransition: true });
-          setCurrentPage(page);
-          // Reset animation flag after transition
-          setTimeout(() => set({ isAnimatingPageTransition: false }), 300);
-        }
-      },
-
-      navigateToNextPage: () => {
-        const { currentPage, totalPages, navigateToPage } = get();
-        if (currentPage < totalPages - 1) {
-          navigateToPage(currentPage + 1);
-        }
-      },
-
-      navigateToPreviousPage: () => {
-        const { currentPage, navigateToPage } = get();
-        if (currentPage > 0) {
-          navigateToPage(currentPage - 1);
-        }
-      },
-
-      addWidgetToOptimalPage: (widgetType) => {
-        const { pageWidgets, maxWidgetsPerPage, recalculatePages } = get();
-        
-        // Find first page with available space
-        let targetPage = 0;
-        for (const [pageIndex, widgets] of Object.entries(pageWidgets)) {
-          if (widgets.length < maxWidgetsPerPage) {
-            targetPage = parseInt(pageIndex);
-            break;
-          }
-          targetPage = parseInt(pageIndex) + 1;
-        }
-
-        // Add widget using existing method
-        get().addWidget(widgetType);
-        
-        // Recalculate pages to ensure proper distribution
-        recalculatePages(maxWidgetsPerPage);
-      },
-
-      recalculatePages: (maxWidgetsPerPage) => {
-        const { selectedWidgets } = get();
-        const newPageWidgets: Record<number, string[]> = {};
-        let pageIndex = 0;
-        
-        for (let i = 0; i < selectedWidgets.length; i += maxWidgetsPerPage) {
-          newPageWidgets[pageIndex] = selectedWidgets.slice(i, i + maxWidgetsPerPage);
-          pageIndex++;
-        }
-        
-        const totalPages = Math.max(1, Object.keys(newPageWidgets).length);
-        const currentPage = Math.min(get().currentPage, totalPages - 1);
-        
-        set({
-          pageWidgets: newPageWidgets,
-          totalPages,
-          currentPage,
-          maxWidgetsPerPage,
-        });
-      },
-
-      getWidgetsForPage: (pageIndex) => {
-        const { pageWidgets } = get();
-        return pageWidgets[pageIndex] || [];
-      },
-
-      moveWidgetToPage: (widgetId, targetPage) => {
-        const { pageWidgets, totalPages } = get();
-        const clampedTargetPage = Math.max(0, Math.min(totalPages - 1, targetPage));
-        
-        // Remove widget from current page
-        let sourcePageIndex = -1;
-        const newPageWidgets = { ...pageWidgets };
-        
-        for (const [pageIndex, widgets] of Object.entries(newPageWidgets)) {
-          const widgetIndex = widgets.findIndex(id => id === widgetId);
-          if (widgetIndex !== -1) {
-            sourcePageIndex = parseInt(pageIndex);
-            widgets.splice(widgetIndex, 1);
-            break;
-          }
-        }
-        
-        // Add to target page
-        if (sourcePageIndex !== -1) {
-          if (!newPageWidgets[clampedTargetPage]) {
-            newPageWidgets[clampedTargetPage] = [];
-          }
-          newPageWidgets[clampedTargetPage].push(widgetId);
-          
-          set({ pageWidgets: newPageWidgets });
-        }
-      */ 
-      // End of commented pagination methods
+      // Pagination removed - array-based positioning calculates pages on-the-fly
     }),
     {
       name: 'widget-store',
