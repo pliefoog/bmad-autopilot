@@ -957,7 +957,10 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       cleanupOrphanedWidgets: () => {
-        log('[WidgetStore] 🧹 cleanupOrphanedWidgets TRIGGERED');
+        log('[WidgetStore] 🧹 cleanupOrphanedWidgets TRIGGERED - TEMPORARILY DISABLED');
+        // TEMPORARY: Disable cleanup while debugging new widget system
+        return;
+        
         const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
 
