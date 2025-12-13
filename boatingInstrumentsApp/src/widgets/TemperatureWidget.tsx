@@ -211,15 +211,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
         }}>{getDisplayTitle()}</Text>
       </View>
       
-      {pinned && (
-        <TouchableOpacity
-          onLongPress={handleLongPressOnPin}
-          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
-          testID={`pin-button-${id}`}
-        >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
-        </TouchableOpacity>
-      )}
+
     </View>
   );
 

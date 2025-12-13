@@ -120,15 +120,7 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
         }}>{title}</Text>
       </View>
       
-      {pinned && (
-        <TouchableOpacity
-          onLongPress={handleLongPressOnPin}
-          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
-          testID={`pin-button-${id}`}
-        >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
-        </TouchableOpacity>
-      )}
+
     </View>
   );
 

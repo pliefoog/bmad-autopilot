@@ -308,16 +308,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
           textTransform: 'uppercase',
         }}>{title}</Text>
       </View>
-      
-      {pinned && (
-        <TouchableOpacity
-          onLongPress={handleLongPressOnPin}
-          style={{ padding: 4, minWidth: 24, alignItems: 'center' }}
-          testID={`pin-button-${id}`}
-        >
-          <UniversalIcon name="pin" size={headerIconSize} color={theme.iconPrimary} />
-        </TouchableOpacity>
-      )}
     </View>
   );
 

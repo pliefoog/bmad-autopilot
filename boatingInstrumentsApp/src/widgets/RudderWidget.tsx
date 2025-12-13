@@ -207,22 +207,9 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
       onLongPress={handleLongPress}
       activeOpacity={0.8}
     >
-      {/* Widget Header with Title and Controls */}
+      {/* Widget Header with Title */}
       <View style={styles.header}>
         <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
-        
-        {/* Pin Control */}
-        {pinned && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onLongPress={handleLongPressOnPin}
-              style={styles.controlButton}
-              testID={`pin-button-${id}`}
-            >
-              <UniversalIcon name="pin" size={16} color={theme.iconPrimary} />
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
       
       {/* Primary Grid (1×1): Rudder angle with direction */}
