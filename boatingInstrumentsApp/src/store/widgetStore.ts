@@ -39,12 +39,7 @@ export interface WidgetConfig {
 export interface DashboardConfig {
   id: string;
   name: string;
-  widgets: WidgetConfig[];  // Array order determines position
-  gridSize: number;
-  snapToGrid: boolean;
-  columns: number;
-  rows: number;
-  backgroundColor?: string;
+  widgets: WidgetConfig[];  // Array order determines position, layout computed dynamically
 }
 
 interface WidgetState {
@@ -121,10 +116,6 @@ const defaultDashboard: DashboardConfig = {
     },
     // All other widgets dynamically detected from NMEA messages
   ],
-  gridSize: 20,
-  snapToGrid: true,
-  columns: 12,
-  rows: 8,
 };
 
 // Set utility functions for widget ID comparison
@@ -432,10 +423,6 @@ export const useWidgetStore = create<WidgetStore>()(
           id: 'default',
           name: 'Default Dashboard',
           widgets: systemWidgets,
-          gridSize: 20,
-          snapToGrid: true,
-          columns: 12,
-          rows: 8,
         };
 
         // Reset store state to defaults
