@@ -10,7 +10,7 @@ let ENABLE_LOGGING = false; // ✅ DISABLED BY DEFAULT - enable categories as ne
 
 // Selective logging categories
 const LOG_CATEGORIES = {
-  LAYOUT: false,        // DynamicLayoutService, grid calculations
+  LAYOUT: false,        // Layout calculations (ResponsiveDashboard, layoutUtils)
   DIMENSIONS: false,    // Screen dimensions, orientation changes
   PLATFORM: false,      // Platform detection (iPad, iPhone, etc.)
   WIDGETS: false,       // Widget lifecycle, rendering
