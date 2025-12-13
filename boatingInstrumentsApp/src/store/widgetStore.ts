@@ -841,8 +841,11 @@ export const useWidgetStore = create<WidgetStore>()(
         }
         
         // STEP 2: Add widgets for newly detected instances
+        // CRITICAL: Recalculate toAdd after deduplication to exclude widgets that already exist
+        const existingWidgetIds = new Set(widgets.map(w => w.id));
+        const actualToAdd = new Set([...toAdd].filter(id => !existingWidgetIds.has(id)));
         
-        if (toAdd.size > 0) {
+        if (actualToAdd.size > 0) {
           // Helper to find next available position
           const findNextPosition = () => {
             const maxX = Math.max(0, ...widgets.map(w => w.layout.x + w.layout.width));
@@ -850,8 +853,8 @@ export const useWidgetStore = create<WidgetStore>()(
             return { x: maxX > 8 ? 0 : maxX, y: maxX > 8 ? maxY : 0 };
           };
           
-          // Create widgets for all instances in toAdd set
-          toAdd.forEach(instanceId => {
+          // Create widgets for all instances in actualToAdd set
+          actualToAdd.forEach(instanceId => {
             const metadata = instanceMetadata.get(instanceId);
             if (!metadata) {
               console.warn(`⚠️ [Phase 2] No metadata for instance: ${instanceId}`);
@@ -896,8 +899,8 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
-        // Update metrics
-        metrics.widgetsAdded += toAdd.size;
+        // Update metrics (use actualToAdd if it was calculated, otherwise toAdd)
+        metrics.widgetsAdded += actualToAdd?.size || toAdd.size;
         metrics.widgetsRemoved += toRemove.size;
         metrics.lastUpdateTime = Date.now();
         
