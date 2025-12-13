@@ -850,19 +850,6 @@ class InstanceDetectionService {
     const totalInstances = instances.engines.length + instances.batteries.length + 
                           instances.tanks.length + instances.temperatures.length + 
                           instances.instruments.length;
-
-    console.log(`📢 [InstanceDetection] Notifying ${this.instanceCallbacks.length} callbacks with ${totalInstances} total instances:`, {
-      engines: instances.engines.length,
-      batteries: instances.batteries.length,
-      tanks: instances.tanks.length,
-      temperatures: instances.temperatures.length,
-      instruments: instances.instruments.length,
-      engineIds: instances.engines.map(e => e.id),
-      batteryIds: instances.batteries.map(b => b.id),
-      tankIds: instances.tanks.map(t => t.id),
-      temperatureIds: instances.temperatures.map(t => t.id),
-      instrumentIds: instances.instruments.map(i => i.id),
-      callbacks: this.instanceCallbacks.length
     });
 
     for (const callback of this.instanceCallbacks) {

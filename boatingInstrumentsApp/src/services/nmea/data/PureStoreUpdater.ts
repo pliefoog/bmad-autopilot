@@ -88,17 +88,8 @@ export class PureStoreUpdater {
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
     try {
-      console.log('🚨 [processNmeaMessage] Processing:', parsedMessage.messageType);
-      
       // Process message using new NmeaSensorProcessor
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
-      
-      console.log('🚨 [processNmeaMessage] Result:', {
-        success: result.success,
-        hasUpdates: !!result.updates,
-        updateCount: result.updates?.length || 0,
-        updates: result.updates?.map(u => `${u.sensorType}.${u.instance}`) || []
-      });
       
       if (!result.success) {
         // Log processing errors but don't treat as failures
@@ -115,10 +106,8 @@ export class PureStoreUpdater {
 
       // Apply sensor updates to store
       if (result.updates && result.updates.length > 0) {
-        console.log('🚨 [processNmeaMessage] Calling applySensorUpdates with', result.updates.length, 'updates');
         return this.applySensorUpdates(result.updates, options);
       }
-      console.log('🚨 [processNmeaMessage] No updates to apply');
       return {
         updated: false,
         throttled: false,
@@ -387,8 +376,6 @@ export class PureStoreUpdater {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
-    console.log('🚨 [applySensorUpdates] CALLED with', updates.length, 'updates:', updates.map(u => `${u.sensorType}.${u.instance}`));
-
     const {
       throttleMs = this.DEFAULT_THROTTLE_MS,
       skipThrottling = false
@@ -419,24 +406,18 @@ export class PureStoreUpdater {
       const effectiveThrottle = skipThrottling ? 0 : fieldThrottle;
       
       if (effectiveThrottle > 0 && this.isThrottled(fieldKey, effectiveThrottle)) {
-        console.log(`[PureStoreUpdater] Throttled ${fieldKey} (${effectiveThrottle}ms interval)`);
         continue;
       }
 
       // Update sensor data in store
       try {
-        console.log(`🚨 [applySensorUpdates] Calling updateSensorData(${update.sensorType}, ${update.instance}, ...)`, update.data);
         useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data);
         updatedFields.push(fieldKey);
         anyUpdated = true;
         
         // Update throttle timestamp
         this.lastUpdateTimes.set(fieldKey, Date.now());
-        
-        console.log(`🚨 [applySensorUpdates] ✅ Store updated successfully for ${fieldKey}`);
-        console.log(`[PureStoreUpdater] ✅ Updated ${fieldKey}:`, Object.keys(update.data));
       } catch (error) {
-        console.error(`🚨 [applySensorUpdates] ❌ Store update FAILED for ${fieldKey}:`, error);
         console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
       }
     }    return {

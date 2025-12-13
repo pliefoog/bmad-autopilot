@@ -760,14 +760,6 @@ export const useWidgetStore = create<WidgetStore>()(
         const metrics = get().widgetUpdateMetrics;
         metrics.totalUpdates++;
         
-        console.log('🔧 [Phase 2] Widget update triggered:', {
-          engines: detectedInstances.engines.length,
-          batteries: detectedInstances.batteries.length,
-          tanks: detectedInstances.tanks.length,
-          temperatures: detectedInstances.temperatures.length,
-          instruments: detectedInstances.instruments.length,
-        });
-        
         // Guard: Don't process if ALL instance arrays are empty
         const totalInstances = detectedInstances.engines.length + 
                               detectedInstances.batteries.length +
@@ -776,7 +768,6 @@ export const useWidgetStore = create<WidgetStore>()(
                               detectedInstances.instruments.length;
         
         if (totalInstances === 0) {
-          console.warn('⚠️ [Phase 2] No instances detected - skipping to prevent widget removal');
           metrics.skippedUpdates++;
           return;
         }
@@ -795,29 +786,11 @@ export const useWidgetStore = create<WidgetStore>()(
           ...allDetectedInstances.map(inst => inst.id)
         ]);
         
-        console.log(`📊 [Phase 2] Required widgets: ${newWidgetIds.size} (${totalInstances} instances + ${SYSTEM_WIDGETS.length} system)`);
-        
         // Early exit: No changes detected
         const currentIds = get().currentWidgetIds;
         
-        console.log(`🔍 [Phase 2] Set comparison:`, {
-          currentIdsSize: currentIds.size,
-          newIdsSize: newWidgetIds.size,
-          currentIds: Array.from(currentIds).sort(),
-          newIds: Array.from(newWidgetIds).sort(),
-          areEqual: setsEqual(currentIds, newWidgetIds)
-        });
-        
         if (setsEqual(currentIds, newWidgetIds)) {
           metrics.skippedUpdates++;
-          console.log(`✅ [Phase 2] SKIPPED - No widget changes detected`);
-          
-          // Log efficiency every 100 updates
-          if (metrics.totalUpdates % 100 === 0) {
-            const efficiency = ((metrics.skippedUpdates / metrics.totalUpdates) * 100).toFixed(1);
-            console.log(`📈 [Phase 2] Efficiency: ${efficiency}% skipped (${metrics.totalUpdates} total, +${metrics.widgetsAdded}/-${metrics.widgetsRemoved})`);
-          }
-          
           return; // No changes
         }
         
@@ -825,12 +798,9 @@ export const useWidgetStore = create<WidgetStore>()(
         const toAdd = setDifference(newWidgetIds, currentIds);
         const toRemove = setDifference(currentIds, newWidgetIds);
         
-        console.log(`🔄 [Phase 2] Widget diff: +${toAdd.size} to add, -${toRemove.size} to remove`);
-        
         // Phase 2: Clean Set-based implementation - NO legacy forEach loops
         const currentDashboard = get().dashboard;
         if (!currentDashboard) {
-          console.error('❌ [Phase 2] No dashboard found');
           return;
         }
 
@@ -853,22 +823,26 @@ export const useWidgetStore = create<WidgetStore>()(
         detectedInstances.instruments.forEach(i => 
           instanceMetadata.set(i.id, { title: i.title, type: i.type, instanceType: 'instrument' }));
         
-        console.log(`📊 [Phase 2] Instance metadata map: ${instanceMetadata.size} entries`);
-        
         // STEP 1: Remove widgets that are no longer detected (except system widgets)
         let widgets = currentDashboard.widgets.filter(w => 
           !toRemove.has(w.id) || w.isSystemWidget
         );
         
-        if (toRemove.size > 0) {
-          console.log(`🗑️ [Phase 2] Removing ${toRemove.size} widgets:`, Array.from(toRemove));
+        // Verify no duplicates after removal
+        const widgetIds = new Set(widgets.map(w => w.id));
+        if (widgetIds.size !== widgets.length) {
+          console.error('❌ [Phase 2] DUPLICATE WIDGETS AFTER REMOVAL:', {
+            total: widgets.length,
+            unique: widgetIds.size,
+            duplicates: widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) !== i).map(w => w.id)
+          });
+          // Deduplicate: keep only first occurrence of each ID
+          widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
         // STEP 2: Add widgets for newly detected instances
         
         if (toAdd.size > 0) {
-          console.log(`➕ [Phase 2] Adding ${toAdd.size} widgets:`, Array.from(toAdd));
-          
           // Helper to find next available position
           const findNextPosition = () => {
             const maxX = Math.max(0, ...widgets.map(w => w.layout.x + w.layout.width));
@@ -907,11 +881,20 @@ export const useWidgetStore = create<WidgetStore>()(
             };
             
             widgets.push(newWidget);
-            console.log(`  ✅ Created ${metadata.type} widget: ${instanceId}`);
           });
         }
         
-        console.log(`🎯 [Phase 2] Final dashboard: ${widgets.length} widgets (was ${currentDashboard.widgets.length})`);
+        // Verify no duplicates in final array
+        const finalWidgetIds = new Set(widgets.map(w => w.id));
+        if (finalWidgetIds.size !== widgets.length) {
+          console.error('❌ [Phase 2] DUPLICATE WIDGETS IN FINAL ARRAY:', {
+            total: widgets.length,
+            unique: finalWidgetIds.size,
+            duplicates: widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) !== i).map(w => w.id)
+          });
+          // Deduplicate: keep only first occurrence of each ID
+          widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
+        }
         
         // Update metrics
         metrics.widgetsAdded += toAdd.size;
@@ -923,14 +906,6 @@ export const useWidgetStore = create<WidgetStore>()(
         
         // Phase 2 optimization: Update tracked widget IDs AFTER successful update
         set({ currentWidgetIds: newWidgetIds });
-        
-        // Log efficiency metrics every 100 updates
-        if (metrics.totalUpdates % 100 === 0) {
-          const efficiency = ((metrics.skippedUpdates / metrics.totalUpdates) * 100).toFixed(1);
-          console.log(`📊 [Phase 2] Widget update efficiency: ${efficiency}% skipped (${metrics.totalUpdates} total, +${metrics.widgetsAdded}/-${metrics.widgetsRemoved} changes)`);
-        }
-        
-        log('[WidgetStore] Dashboard updated with new widgets');
       },
 
       startInstanceMonitoring: () => {
