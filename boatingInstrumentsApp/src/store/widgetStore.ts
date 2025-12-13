@@ -967,6 +967,7 @@ export const useWidgetStore = create<WidgetStore>()(
           ...detectedInstances.engines.map(e => e.id),
           ...detectedInstances.batteries.map(b => b.id),
           ...detectedInstances.tanks.map(t => t.id),
+          ...detectedInstances.instruments.map(i => i.id), // Include new system widgets
           ...detectedInstances.temperatures.map(t => t.id),
           ...detectedInstances.instruments.map(i => i.id)
         ]);
