@@ -1101,6 +1101,10 @@ export const useWidgetStore = create<WidgetStore>()(
       resetAppToDefaults: async () => {
         log('[WidgetStore] Executing factory reset...');
 
+        // Cleanup new widget registration system
+        const { cleanupWidgetSystem, initializeWidgetSystem } = await import('../services/initializeWidgetSystem');
+        cleanupWidgetSystem();
+
         // First, clear ALL storage comprehensively
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
@@ -1233,6 +1237,9 @@ export const useWidgetStore = create<WidgetStore>()(
         } catch (error) {
           console.error('[WidgetStore] Error resetting other stores:', error);
         }
+
+        // Reinitialize widget system after factory reset
+        initializeWidgetSystem();
 
         log('[WidgetStore] Factory reset completed');
         

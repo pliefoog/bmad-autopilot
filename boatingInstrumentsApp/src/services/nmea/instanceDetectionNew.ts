@@ -21,6 +21,10 @@ import { useNmeaStore } from '../../store/nmeaStore';
 import { widgetRegistrationService } from '../WidgetRegistrationService';
 import type { DetectedWidgetInstance } from '../WidgetRegistrationService';
 
+// Track if we've already initialized to prevent duplicate listeners
+let isInitialized = false;
+let sensorUpdateHandler: ((event: any) => void) | null = null;
+
 /**
  * Initialize event-driven instance detection
  * 
@@ -28,12 +32,17 @@ import type { DetectedWidgetInstance } from '../WidgetRegistrationService';
  * that delegates widget creation to the registration service.
  */
 export function initializeInstanceDetection(): void {
+  if (isInitialized) {
+    console.log('[InstanceDetection] ⚠️ Already initialized, skipping');
+    return;
+  }
+  
   console.log('[InstanceDetection] 🚀 Initializing event-driven widget detection...');
   
   // Subscribe to real-time sensor update events from nmeaStore
   const store = useNmeaStore.getState();
   
-  store.sensorEventEmitter.on('sensorUpdate', (event: { 
+  sensorUpdateHandler = (event: { 
     sensorType: string; 
     instance: number; 
     timestamp: number;
@@ -46,8 +55,7 @@ export function initializeInstanceDetection(): void {
     const sensorData = (allSensors as any)[event.sensorType]?.[event.instance];
     
     if (!sensorData) {
-      console.warn(`[InstanceDetection] ⚠️ Sensor data not found for ${event.sensorType}.${event.instance}`);
-      return;
+      return; // Silently skip missing data
     }
     
     // Notify registration service about sensor update
@@ -58,8 +66,11 @@ export function initializeInstanceDetection(): void {
       sensorData,
       allSensors
     );
-  });
+  };
   
+  store.sensorEventEmitter.on('sensorUpdate', sensorUpdateHandler);
+  
+  isInitialized = true;
   console.log('[InstanceDetection] ✅ Event-driven detection active');
   
   // Perform initial scan of existing sensor data
@@ -67,33 +78,40 @@ export function initializeInstanceDetection(): void {
 }
 
 /**
+ * Cleanup event-driven detection (for factory reset)
+ */
+export function cleanupInstanceDetection(): void {
+  if (!isInitialized || !sensorUpdateHandler) return;
+  
+  const store = useNmeaStore.getState();
+  store.sensorEventEmitter.removeListener('sensorUpdate', sensorUpdateHandler);
+  
+  sensorUpdateHandler = null;
+  isInitialized = false;
+  console.log('[InstanceDetection] 🧹 Event-driven detection cleaned up');
+}
+
+/**
  * Scan existing sensor data on startup
  * This handles sensors that arrived before detection was initialized
  */
 function performInitialScan(): void {
-  console.log('[InstanceDetection] 🔍 Performing initial sensor scan...');
-  
   const state = useNmeaStore.getState();
   const allSensors = state.nmeaData.sensors;
   
   // Scan all sensor categories
   const sensorCategories = Object.keys(allSensors) as Array<keyof typeof allSensors>;
-  console.log('[InstanceDetection] 📋 Sensor categories:', sensorCategories);
   
   sensorCategories.forEach(category => {
     const categoryData = allSensors[category];
     if (!categoryData) return;
     
-    const instances = Object.keys(categoryData);
-    console.log(`[InstanceDetection] 📊 ${category}: ${instances.length} instance(s) [${instances.join(', ')}]`);
-    
     // Scan all instances in this category
-    instances.forEach(instanceKey => {
+    Object.keys(categoryData).forEach(instanceKey => {
       const instance = parseInt(instanceKey, 10);
       const sensorData = (categoryData as any)[instance];
       
       if (sensorData && sensorData.timestamp) {
-        console.log(`[InstanceDetection] ✅ Notifying registration service: ${category}.${instance}`);
         // Notify registration service
         widgetRegistrationService.handleSensorUpdate(
           category as any,
@@ -101,13 +119,9 @@ function performInitialScan(): void {
           sensorData,
           allSensors
         );
-      } else {
-        console.log(`[InstanceDetection] ⚠️ Skipping ${category}.${instance}: no timestamp`);
       }
     });
   });
-  
-  console.log('[InstanceDetection] ✅ Initial scan complete');
 }
 
 /**

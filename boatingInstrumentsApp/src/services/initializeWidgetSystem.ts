@@ -16,12 +16,31 @@ import { widgetRegistrationService } from '../services/WidgetRegistrationService
 import { registerBuiltInWidgets } from '../config/builtInWidgetRegistrations';
 import { registerDefaultCustomWidgets } from '../config/defaultCustomWidgets';
 import { 
-  initializeInstanceDetection, 
+  initializeInstanceDetection,
+  cleanupInstanceDetection,
   onWidgetInstancesDetected 
 } from '../services/nmea/instanceDetectionNew';
 import type { DetectedWidgetInstance } from '../services/WidgetRegistrationService';
 
 let isInitialized = false;
+
+/**
+ * Cleanup widget system (for factory reset or app cleanup)
+ */
+export function cleanupWidgetSystem(): void {
+  if (!isInitialized) return;
+  
+  console.log('[WidgetSystem] 🧹 Cleaning up widget system...');
+  
+  // Cleanup event-driven detection
+  cleanupInstanceDetection();
+  
+  // Clear all detected instances
+  widgetRegistrationService.clearDetectedInstances();
+  
+  isInitialized = false;
+  console.log('[WidgetSystem] ✅ Widget system cleaned up');
+}
 
 /**
  * Initialize the widget system
