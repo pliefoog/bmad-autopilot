@@ -78,17 +78,22 @@ function performInitialScan(): void {
   
   // Scan all sensor categories
   const sensorCategories = Object.keys(allSensors) as Array<keyof typeof allSensors>;
+  console.log('[InstanceDetection] 📋 Sensor categories:', sensorCategories);
   
   sensorCategories.forEach(category => {
     const categoryData = allSensors[category];
     if (!categoryData) return;
     
+    const instances = Object.keys(categoryData);
+    console.log(`[InstanceDetection] 📊 ${category}: ${instances.length} instance(s) [${instances.join(', ')}]`);
+    
     // Scan all instances in this category
-    Object.keys(categoryData).forEach(instanceKey => {
+    instances.forEach(instanceKey => {
       const instance = parseInt(instanceKey, 10);
       const sensorData = (categoryData as any)[instance];
       
       if (sensorData && sensorData.timestamp) {
+        console.log(`[InstanceDetection] ✅ Notifying registration service: ${category}.${instance}`);
         // Notify registration service
         widgetRegistrationService.handleSensorUpdate(
           category as any,
@@ -96,6 +101,8 @@ function performInitialScan(): void {
           sensorData,
           allSensors
         );
+      } else {
+        console.log(`[InstanceDetection] ⚠️ Skipping ${category}.${instance}: no timestamp`);
       }
     });
   });
