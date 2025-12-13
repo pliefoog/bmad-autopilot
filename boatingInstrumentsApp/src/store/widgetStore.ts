@@ -901,7 +901,7 @@ export const useWidgetStore = create<WidgetStore>()(
           });
         }
         
-        console.log(`🎯 [Phase 2] Final dashboard: ${widgets.length} widgets (${allExistingWidgets.length} existing)`);
+        console.log(`🎯 [Phase 2] Final dashboard: ${widgets.length} widgets (was ${currentDashboard.widgets.length})`);
         
         // Update metrics
         metrics.widgetsAdded += toAdd.size;
