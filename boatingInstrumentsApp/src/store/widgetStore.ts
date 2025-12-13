@@ -945,10 +945,9 @@ export const useWidgetStore = create<WidgetStore>()(
           get().cleanupOrphanedWidgets();
         });
 
-        // Start the detection service if not already running
-        if (!instanceDetectionService.isScanning()) {
-          instanceDetectionService.startScanning();
-        }
+        // NOTE: The new widget registration system is initialized separately
+        // via initializeWidgetSystem() to avoid circular dependencies
+        // This method now only handles legacy instance detection events
 
         log('[WidgetStore] Instance monitoring started with automatic cleanup');
       },

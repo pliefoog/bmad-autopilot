@@ -283,6 +283,12 @@ const App = () => {
   useEffect(() => {
     if (connectionStatus === 'connected') {
       log('[App] 🔍 Starting instance monitoring for auto-detection');
+      
+      // Initialize the new event-driven widget registration system
+      const { initializeWidgetSystem } = require('../services/initializeWidgetSystem');
+      initializeWidgetSystem();
+      
+      // Keep legacy instance monitoring for backward compatibility
       useWidgetStore.getState().startInstanceMonitoring();
     }
   }, [connectionStatus]);
