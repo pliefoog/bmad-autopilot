@@ -1124,6 +1124,36 @@ export const useWidgetStore = create<WidgetStore>()(
           console.error('[WidgetStore] Error clearing localStorage:', error);
         }
 
+        const resetDashboard: DashboardConfig = {
+          id: 'default',
+          name: 'Default Dashboard',
+          widgets: [
+            // 🛡️ SYSTEM WIDGET: ThemeWidget is always present
+            {
+              id: 'theme',
+              type: 'theme',
+              title: 'Theme',
+              settings: {},
+              layout: {
+                id: 'theme',
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 2,
+                visible: true,
+              },
+              enabled: true,
+              order: -1000,
+              isSystemWidget: true,
+              createdAt: Date.now(),
+            },
+          ],
+          gridSize: 20,
+          snapToGrid: true,
+          columns: 12,
+          rows: 8,
+        };
+
         const initialState = {
           // Core widget state
           availableWidgets: [
@@ -1132,49 +1162,29 @@ export const useWidgetStore = create<WidgetStore>()(
           ],
           selectedWidgets: [],
           currentDashboard: 'default',
-          dashboards: [
-            {
-              id: 'default',
-              name: 'Default Dashboard',
-              widgets: [
-                // 🛡️ SYSTEM WIDGET: ThemeWidget is always present
-                {
-                  id: 'theme',
-                  type: 'theme',
-                  title: 'Theme',
-                  settings: {},
-                  layout: {
-                    id: 'theme',
-                    x: 0,
-                    y: 0,
-                    width: 2,
-                    height: 2,
-                    visible: true,
-                  },
-                  enabled: true,
-                  order: -1000,
-                  isSystemWidget: true,
-                  createdAt: Date.now(),
-                },
-              ],
-              gridSize: 20,
-              snapToGrid: true,
-              columns: 12,
-              rows: 8,
-            }
-          ],
+          dashboard: resetDashboard,
+          dashboards: [resetDashboard],
           presets: [],
           editMode: false,
           gridVisible: false,
           // Dynamic widget lifecycle configuration
           widgetExpirationTimeout: 60000,
           enableWidgetAutoRemoval: true,
+          // Phase 2 optimization: Initialize tracking structures
+          currentWidgetIds: new Set(['theme']),
+          widgetUpdateMetrics: {
+            totalUpdates: 0,
+            skippedUpdates: 0,
+            widgetsAdded: 0,
+            widgetsRemoved: 0,
+            lastUpdateTime: 0,
+          },
         };
 
         // CRITICAL: Clear the entire store state first (including any cached widget positions)
         set(() => ({
           ...initialState,
-          dashboard: null, // Force clear current dashboard reference
+          // Dashboard is properly set from initialState.dashboards[0]
         }));
 
         // Force a small delay to let persist middleware complete
