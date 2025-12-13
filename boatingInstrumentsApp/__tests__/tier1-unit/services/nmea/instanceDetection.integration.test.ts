@@ -977,11 +977,9 @@ describe('Instance Detection Integration', () => {
 
   // Task G: Widget Store Runtime Management Integration Tests
   describe('Task G: Widget Store Runtime Management Integration', () => {
-    test('should clean up orphaned widgets correctly', async () => {
+    test('should provide runtime metrics', async () => {
       const service = new InstanceDetectionService();
       
-      // This test would require widget store integration
-      // For now, we'll test the service side of runtime management
       const metrics = service.getRuntimeMetrics();
       expect(metrics).toBeDefined();
       expect(typeof metrics.totalInstances).toBe('number');

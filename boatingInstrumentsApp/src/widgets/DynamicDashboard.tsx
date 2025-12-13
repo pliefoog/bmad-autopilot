@@ -287,9 +287,6 @@ export const DynamicDashboard: React.FC = () => {
         return next;
       });
     }, 2000);
-    
-    // Only cleanup orphaned widgets (don't force full layout recalc)
-    useWidgetStore.getState().cleanupOrphanedWidgets();
   }, []);
 
   // Group widgets into rows for rendering
