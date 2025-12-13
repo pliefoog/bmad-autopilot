@@ -6,8 +6,8 @@ import { logger } from '../utils/logger';
 
 // Master toggle for widgetStore logging (currently produces 68+ logs)
 const ENABLE_WIDGET_STORE_LOGGING = false;
-const log = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && log(...args);
-const warn = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && warn(...args);
+const log = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && console.log('[WidgetStore]', ...args);
+const warn = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && console.warn('[WidgetStore]', ...args);
 
 // System widgets that must always be present and never expire
 const SYSTEM_WIDGETS = [
@@ -41,6 +41,9 @@ export interface WidgetConfig {
   order: number;
   // System widget protection
   isSystemWidget?: boolean;
+  // Widget lifecycle timestamps
+  createdAt?: number;        // When widget was created
+  lastDataUpdate?: number;   // Last time widget received sensor data update
 }
 
 export interface DashboardConfig {
@@ -114,6 +117,8 @@ interface WidgetActions {
   updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
   startInstanceMonitoring: () => void;
   stopInstanceMonitoring: () => void;
+  // Widget data lifecycle methods
+  updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   // Runtime management methods
   resetAppToDefaults: () => Promise<void>;
   emergencyReset: () => void;
@@ -932,6 +937,29 @@ export const useWidgetStore = create<WidgetStore>()(
         instanceDetectionService.stopScanning();
       },
 
+      updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => {
+        const now = timestamp || Date.now();
+        const currentDashboard = get().dashboard;
+        if (!currentDashboard) return;
+        
+        const widgetIndex = currentDashboard.widgets.findIndex(w => w.id === widgetId);
+        if (widgetIndex === -1) return;
+        
+        // Update lastDataUpdate timestamp
+        const updatedWidgets = [...currentDashboard.widgets];
+        updatedWidgets[widgetIndex] = {
+          ...updatedWidgets[widgetIndex],
+          lastDataUpdate: now
+        };
+        
+        set((state) => ({
+          dashboard: {
+            ...state.dashboard,
+            widgets: updatedWidgets
+          }
+        }));
+      },
+
       resetAppToDefaults: async () => {
         log('[WidgetStore] Factory reset initiated');
         
@@ -1052,42 +1080,15 @@ export const useWidgetStore = create<WidgetStore>()(
       cleanupExpiredWidgetsWithConfig: () => {
         const state = get();
         if (!state.enableWidgetAutoRemoval) {
-          log('[WidgetStore] Widget auto-removal is disabled');
+          log('Widget auto-removal is disabled');
           return;
         }
 
         const now = Date.now();
         const timeout = state.widgetExpirationTimeout;
+        let expiredCount = 0;
         
-        // First pass: check if any widgets are actually expired
-        let hasExpiredWidgets = false;
-        const expiredWidgetIds: string[] = [];
-        
-        for (const dashboard of state.dashboards) {
-          for (const widget of dashboard.widgets) {
-            // 🛡️ Skip system widgets - they never expire
-            if (widget.isSystemWidget) {
-              continue;
-            }
-            
-            const lastUpdate = widget.lastDataUpdate || widget.createdAt || now;
-            const isExpired = now - lastUpdate > timeout;
-            
-            if (isExpired) {
-              hasExpiredWidgets = true;
-              expiredWidgetIds.push(widget.id);
-            }
-          }
-        }
-        
-        // Only update store if we actually have expired widgets
-        if (!hasExpiredWidgets) {
-          return;
-        }
-        
-        log(`[WidgetStore] 🧹 Found ${expiredWidgetIds.length} expired widgets:`, expiredWidgetIds);
-
-        // Second pass: remove expired widgets
+        // Single-pass: filter and count expired widgets
         set((currentState) => ({
           dashboards: currentState.dashboards.map((dashboard) => {
             const updatedWidgets = dashboard.widgets.filter((widget) => {
@@ -1100,14 +1101,12 @@ export const useWidgetStore = create<WidgetStore>()(
               const isExpired = now - lastUpdate > timeout;
               
               if (isExpired) {
-                log(`[WidgetStore] 🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round((now - lastUpdate) / 1000)}s)`);
+                expiredCount++;
+                log(`🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round((now - lastUpdate) / 1000)}s)`);
               }
               
               return !isExpired;
             });
-
-            // Array-based positioning: removal automatically compacts (index = position)
-            log(`[WidgetStore] ✅ Updated widget array: ${updatedWidgets.length} widgets remaining`);
 
             return {
               ...dashboard,
@@ -1123,7 +1122,9 @@ export const useWidgetStore = create<WidgetStore>()(
           }),
         }));
 
-        log(`[WidgetStore] ✅ Cleanup complete - removed ${expiredWidgetIds.length} widgets`);
+        if (expiredCount > 0) {
+          log(`✅ Cleanup complete - removed ${expiredCount} expired widget(s)`);
+        }
       },
 
       // TODO: Pagination methods (Story 6.11) - temporarily disabled

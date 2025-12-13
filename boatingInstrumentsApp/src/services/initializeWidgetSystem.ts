@@ -79,6 +79,20 @@ export function initializeWidgetSystem(): void {
       }
     });
   });
+
+  // Step 5: Subscribe to widget update events to track data freshness
+  // This updates lastDataUpdate timestamp when widgets receive new sensor data
+  widgetRegistrationService.onWidgetUpdated((instance: DetectedWidgetInstance) => {
+    const widgetId = `${instance.widgetType}-${instance.instance}`;
+    
+    // Import widgetStore dynamically to avoid circular dependency
+    import('../store/widgetStore').then(({ useWidgetStore }) => {
+      const store = useWidgetStore.getState();
+      if (store.updateWidgetDataTimestamp) {
+        store.updateWidgetDataTimestamp(widgetId, Date.now());
+      }
+    });
+  });
   
   isInitialized = true;
   console.log('[WidgetSystem] ✅ Widget system initialized successfully');
