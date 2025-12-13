@@ -280,13 +280,17 @@ const App = () => {
   const enableWidgetAutoRemoval = useWidgetStore(state => state.enableWidgetAutoRemoval);
   const widgetExpirationTimeout = useWidgetStore(state => state.widgetExpirationTimeout);
   
+  // Initialize widget system ONCE on app mount (before connection)
+  useEffect(() => {
+    console.log('[App] 🚀 Initializing widget registration system...');
+    initializeWidgetSystem();
+    console.log('[App] ✅ Widget registration system initialized');
+  }, []); // Empty deps = run once on mount
+  
   // Start instance monitoring when connected
   useEffect(() => {
     if (connectionStatus === 'connected') {
       log('[App] 🔍 Starting instance monitoring for auto-detection');
-      
-      // Initialize the new event-driven widget registration system
-      initializeWidgetSystem();
       
       // Keep legacy instance monitoring for backward compatibility
       useWidgetStore.getState().startInstanceMonitoring();
