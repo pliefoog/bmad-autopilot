@@ -123,13 +123,15 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
   // Get current dashboard config
   const dashboard = useWidgetStore(state => state.dashboard);
   
-  console.log('🎯 [DraggableWidgetGrid] COMPONENT RENDER:', {
-    pageIndex,
-    hasDashboard: !!dashboard,
-    widgetCount: dashboard?.widgets?.length || 0,
-    availableWidth,
-    availableHeight
-  });
+  if (typeof window !== 'undefined' && (window as any).originalConsole) {
+    (window as any).originalConsole.log('🎯 [DraggableWidgetGrid] COMPONENT RENDER:', {
+      pageIndex,
+      hasDashboard: !!dashboard,
+      widgetCount: dashboard?.widgets?.length || 0,
+      availableWidth,
+      availableHeight
+    });
+  }
   
   const reorderWidgetsOnPage = useWidgetStore(state => state.reorderWidgetsOnPage);
   const moveWidgetToPage = useWidgetStore(state => state.moveWidgetToPage);
@@ -199,15 +201,17 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     const widgets = dashboard.widgets || [];
     const widgetsPerPage = gridConfig.columns * gridConfig.rows;
     
-    console.log('🎯 [DraggableWidgetGrid] Page widgets calculation:', {
-      pageIndex,
-      totalWidgets: widgets.length,
-      widgetsPerPage,
-      columns: gridConfig.columns,
-      rows: gridConfig.rows,
-      userPositioned: dashboard.userPositioned,
-      allWidgetIds: widgets.map(w => w.id)
-    });
+    if (typeof window !== 'undefined' && (window as any).originalConsole) {
+      (window as any).originalConsole.log('🎯 [DraggableWidgetGrid] Page widgets calculation:', {
+        pageIndex,
+        totalWidgets: widgets.length,
+        widgetsPerPage,
+        columns: gridConfig.columns,
+        rows: gridConfig.rows,
+        userPositioned: dashboard.userPositioned,
+        allWidgetIds: widgets.map(w => w.id)
+      });
+    }
     
     if (!dashboard.userPositioned) {
       // Auto-discovery mode: sort by creation order, then paginate
@@ -219,12 +223,14 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
       
       // Return only widgets for this page
       const pageWidgets = sortedWidgets.slice(startIndex, endIndex);
-      console.log('🎯 [DraggableWidgetGrid] Auto-discovery page widgets:', {
-        startIndex,
-        endIndex,
-        pageWidgetIds: pageWidgets.map(w => w.id),
-        pageWidgetCount: pageWidgets.length
-      });
+      if (typeof window !== 'undefined' && (window as any).originalConsole) {
+        (window as any).originalConsole.log('🎯 [DraggableWidgetGrid] Auto-discovery page widgets:', {
+          startIndex,
+          endIndex,
+          pageWidgetIds: pageWidgets.map(w => w.id),
+          pageWidgetCount: pageWidgets.length
+        });
+      }
       return pageWidgets;
     }
 
@@ -233,10 +239,12 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
       const widgetPage = Math.floor(index / widgetsPerPage);
       return widgetPage === pageIndex;
     });
-    console.log('🎯 [DraggableWidgetGrid] User-positioned page widgets:', {
-      pageWidgetIds: pageWidgets.map(w => w.id),
-      pageWidgetCount: pageWidgets.length
-    });
+    if (typeof window !== 'undefined' && (window as any).originalConsole) {
+      (window as any).originalConsole.log('🎯 [DraggableWidgetGrid] User-positioned page widgets:', {
+        pageWidgetIds: pageWidgets.map(w => w.id),
+        pageWidgetCount: pageWidgets.length
+      });
+    }
     return pageWidgets;
   }, [dashboard, pageIndex, gridConfig.columns, gridConfig.rows]);
 
