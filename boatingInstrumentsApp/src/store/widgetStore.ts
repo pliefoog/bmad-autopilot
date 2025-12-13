@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Dimensions } from 'react-native';
-import { instanceDetectionService, type DetectedInstance } from '../services/nmea/instanceDetection';
+import type { DetectedInstance } from '../services/nmea/instanceDetection';
 import { logger } from '../utils/logger';
 
 // Master toggle for widgetStore logging (currently produces 68+ logs)
@@ -115,8 +115,6 @@ interface WidgetActions {
   createInstanceWidget: (instanceId: string, instanceType: 'engine' | 'battery' | 'tank', title: string, position?: { x: number; y: number }) => void;
   removeInstanceWidget: (instanceId: string) => void;
   updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
-  startInstanceMonitoring: () => void;
-  stopInstanceMonitoring: () => void;
   // Widget data lifecycle methods
   updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   // Runtime management methods
@@ -919,33 +917,6 @@ export const useWidgetStore = create<WidgetStore>()(
         
         // Phase 2 optimization: Update tracked widget IDs AFTER successful update
         set({ currentWidgetIds: newWidgetIds });
-      },
-
-      startInstanceMonitoring: () => {
-        log('[WidgetStore] Starting instance monitoring...');
-        
-        // Subscribe to instance detection updates
-        instanceDetectionService.onInstancesDetected((detectedInstances) => {
-          log('[WidgetStore] Instances detected callback triggered:', {
-            engines: detectedInstances.engines.length,
-            batteries: detectedInstances.batteries.length, 
-            tanks: detectedInstances.tanks.length,
-            temperatures: detectedInstances.temperatures.length,
-            instruments: detectedInstances.instruments.length
-          });
-          
-          get().updateInstanceWidgets(detectedInstances);
-        });
-
-        // NOTE: The new widget registration system is initialized separately
-        // via initializeWidgetSystem() to avoid circular dependencies
-        // This method now only handles legacy instance detection events
-
-        log('[WidgetStore] Instance monitoring started with automatic cleanup');
-      },
-
-      stopInstanceMonitoring: () => {
-        instanceDetectionService.stopScanning();
       },
 
       updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => {

@@ -614,14 +614,10 @@ describe('Instance Detection Integration', () => {
     // Mock widget store for testing
     const mockWidgetStore = {
       updateInstanceWidgets: jest.fn(),
-      startInstanceMonitoring: jest.fn(),
-      stopInstanceMonitoring: jest.fn(),
     };
 
     beforeEach(() => {
       mockWidgetStore.updateInstanceWidgets.mockClear();
-      mockWidgetStore.startInstanceMonitoring.mockClear();
-      mockWidgetStore.stopInstanceMonitoring.mockClear();
     });
 
     test('should notify widget store when instances are detected', async () => {

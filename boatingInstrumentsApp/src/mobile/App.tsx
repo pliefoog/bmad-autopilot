@@ -287,15 +287,8 @@ const App = () => {
     console.log('[App] ✅ Widget registration system initialized');
   }, []); // Empty deps = run once on mount
   
-  // Start instance monitoring when connected
-  useEffect(() => {
-    if (connectionStatus === 'connected') {
-      log('[App] 🔍 Starting instance monitoring for auto-detection');
-      
-      // Keep legacy instance monitoring for backward compatibility
-      useWidgetStore.getState().startInstanceMonitoring();
-    }
-  }, [connectionStatus]);
+  // Instance monitoring is now fully event-driven via WidgetRegistrationService
+  // No manual start/stop needed - initialized once on mount in initializeWidgetSystem()
 
   // Dynamic widget lifecycle management - periodic cleanup of expired widgets
   useEffect(() => {
@@ -468,10 +461,8 @@ const App = () => {
           setProtocol(currentConfig.protocol);
         }
         
-        // Initialize NMEA sensor processor with widget store for timestamp updates
-        const { nmeaSensorProcessor } = await import('../services/nmea/data/NmeaSensorProcessor');
-        nmeaSensorProcessor.initializeWidgetStore();
-        log('[App] ✅ NMEA sensor processor initialized with widget lifecycle management');
+        // Note: Widget lifecycle management is now fully event-driven via WidgetRegistrationService
+        // No explicit initialization needed - widgets update via onWidgetDetected/onWidgetUpdated events
         
         toast.showConnectionSuccess('Auto-connecting to NMEA Bridge...');
       } catch (error) {
