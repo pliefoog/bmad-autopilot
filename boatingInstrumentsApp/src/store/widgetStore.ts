@@ -1108,26 +1108,23 @@ export const useWidgetStore = create<WidgetStore>()(
         // First, clear ALL storage comprehensively
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
-            // Clear the specific Zustand persist key first
-            window.localStorage.removeItem('widget-store');
-            
-            // Clear all widget-related localStorage
-            const keysToRemove = [];
-            for (let i = 0; i < window.localStorage.length; i++) {
-              const key = window.localStorage.key(i);
-              if (key && (
+            // CRITICAL: Clear EVERYTHING first to prevent any cached data
+            const allKeys = Object.keys(window.localStorage);
+            allKeys.forEach(key => {
+              if (
                 key.startsWith('widget-') || 
                 key.startsWith('dashboard-') || 
                 key.startsWith('nmea-') ||
                 key.includes('WidgetStore') ||
                 key.includes('widgetStore') ||
-                key.startsWith('@bmad_autopilot:')
-              )) {
-                keysToRemove.push(key);
+                key.startsWith('@bmad_autopilot:') ||
+                key === 'widget-store'
+              ) {
+                window.localStorage.removeItem(key);
               }
-            }
-            keysToRemove.forEach(key => window.localStorage.removeItem(key));
-            log('[WidgetStore] Cleared localStorage keys:', keysToRemove);
+            });
+            
+            log('[WidgetStore] Cleared all widget-related localStorage keys');
             
             // Force storage event to trigger persist middleware cleanup
             window.dispatchEvent(new StorageEvent('storage', {
@@ -1188,8 +1185,11 @@ export const useWidgetStore = create<WidgetStore>()(
           enableWidgetAutoRemoval: true,
         };
 
-        // Apply the reset state - this will trigger persist middleware to save the clean state
-        set(initialState);
+        // CRITICAL: Clear the entire store state first (including any cached widget positions)
+        set(() => ({
+          ...initialState,
+          dashboard: null, // Force clear current dashboard reference
+        }));
 
         // Force a small delay to let persist middleware complete
         await new Promise(resolve => setTimeout(resolve, 100));
