@@ -67,7 +67,8 @@ export const DynamicDashboard: React.FC = () => {
           prev: prevWidgetsRef.current.length,
           current: widgets.length,
           added: added.map(w => w.id),
-          removed: removed.map(w => w.id)
+          removed: removed.map(w => w.id),
+          allWidgetIds: widgets.map(w => w.id)
         });
       }
       prevWidgetsRef.current = widgets;

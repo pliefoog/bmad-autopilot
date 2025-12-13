@@ -191,6 +191,16 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
     const widgets = dashboard.widgets || [];
     const widgetsPerPage = gridConfig.columns * gridConfig.rows;
     
+    console.log('🎯 [DraggableWidgetGrid] Page widgets calculation:', {
+      pageIndex,
+      totalWidgets: widgets.length,
+      widgetsPerPage,
+      columns: gridConfig.columns,
+      rows: gridConfig.rows,
+      userPositioned: dashboard.userPositioned,
+      allWidgetIds: widgets.map(w => w.id)
+    });
+    
     if (!dashboard.userPositioned) {
       // Auto-discovery mode: sort by creation order, then paginate
       const sortedWidgets = widgets.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -200,14 +210,26 @@ export const DraggableWidgetGrid: React.FC<DraggableWidgetGridProps> = ({
       const endIndex = startIndex + widgetsPerPage;
       
       // Return only widgets for this page
-      return sortedWidgets.slice(startIndex, endIndex);
+      const pageWidgets = sortedWidgets.slice(startIndex, endIndex);
+      console.log('🎯 [DraggableWidgetGrid] Auto-discovery page widgets:', {
+        startIndex,
+        endIndex,
+        pageWidgetIds: pageWidgets.map(w => w.id),
+        pageWidgetCount: pageWidgets.length
+      });
+      return pageWidgets;
     }
 
     // User-positioned mode: calculate page from array index
-    return widgets.filter((widget, index) => {
+    const pageWidgets = widgets.filter((widget, index) => {
       const widgetPage = Math.floor(index / widgetsPerPage);
       return widgetPage === pageIndex;
     });
+    console.log('🎯 [DraggableWidgetGrid] User-positioned page widgets:', {
+      pageWidgetIds: pageWidgets.map(w => w.id),
+      pageWidgetCount: pageWidgets.length
+    });
+    return pageWidgets;
   }, [dashboard, pageIndex, gridConfig.columns, gridConfig.rows]);
 
   // Calculate grid position from gesture coordinates (gesture-handler pattern)
