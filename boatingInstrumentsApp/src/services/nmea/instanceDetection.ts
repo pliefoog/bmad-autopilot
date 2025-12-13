@@ -850,7 +850,6 @@ class InstanceDetectionService {
     const totalInstances = instances.engines.length + instances.batteries.length + 
                           instances.tanks.length + instances.temperatures.length + 
                           instances.instruments.length;
-    });
 
     for (const callback of this.instanceCallbacks) {
       try {
