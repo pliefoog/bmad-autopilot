@@ -249,9 +249,12 @@ GitHub Copilot - Analysis and Documentation Agent
 
 **Integration Points:**
 - Enhanced widget store with `createInstanceWidget`, `removeInstanceWidget`, `updateInstanceWidgets` methods
-- Enhanced widget store with `startInstanceMonitoring`, `cleanupOrphanedWidgets`, `getInstanceWidgetMetrics` methods
-- Callback system integration for real-time instance updates
+- Event-driven architecture via `WidgetRegistrationService` (replaces old callback system)
+- Automatic widget lifecycle management with timestamp-based expiration
 - Dashboard layout accommodation for dynamic widget additions
+
+**DEPRECATED (Removed Dec 2025):**
+- ~~`startInstanceMonitoring`, `cleanupOrphanedWidgets`, `getInstanceWidgetMetrics`~~ - Replaced by event-driven system
 
 ## QA Results
 
