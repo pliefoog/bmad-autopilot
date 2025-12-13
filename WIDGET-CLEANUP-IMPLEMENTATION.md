@@ -1,4 +1,17 @@
-## ✅ Comprehensive Widget Cleanup Implementation - COMPLETED
+## ⚠️ DEPRECATED - OUTDATED DOCUMENTATION
+
+**NOTE:** This document describes the old structure-based cleanup system that has been **removed** as of December 2025.
+
+**Current System:** Event-driven widget registration (WidgetRegistrationService) with time-based expiration cleanup only.
+
+**See commits:**
+- `e6c5925` - Removed redundant widget timestamp tracking
+- `98c5878` - Removed obsolete cleanupOrphanedWidgets and related methods  
+- `13ee5a7` - Removed orphaned references
+
+---
+
+## ✅ Comprehensive Widget Cleanup Implementation - COMPLETED (DEPRECATED)
 
 ### Problem Analysis
 The error `Widget "depth-1761428948688" (base type: "depth-1761428948688") not found in registry` was caused by:
