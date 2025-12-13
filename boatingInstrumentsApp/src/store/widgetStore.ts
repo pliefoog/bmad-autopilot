@@ -11,15 +11,7 @@ export interface WidgetLayout {
   id: string;
   width: number;
   height: number;
-  minWidth?: number;
-  minHeight?: number;
-  maxWidth?: number;
-  maxHeight?: number;
-  locked?: boolean;
   visible?: boolean;
-  // Position determined by index in widgets array
-  // Page calculated as: Math.floor(index / widgetsPerPage)
-  // Position within page: index % widgetsPerPage
 }
 
 export interface WidgetConfig {
@@ -37,67 +29,31 @@ export interface WidgetConfig {
 }
 
 export interface DashboardConfig {
-  id: string;
-  name: string;
-  widgets: WidgetConfig[];  // Array order determines position, layout computed dynamically
+  widgets: WidgetConfig[];
 }
 
 interface WidgetState {
-  dashboard: DashboardConfig; // Single dashboard
-  editMode: boolean;
-  gridVisible: boolean;
-  
-  // Widget expiration configuration
+  dashboard: DashboardConfig;
   widgetExpirationTimeout: number;
   enableWidgetAutoRemoval: boolean;
-  
-  // Track current widget IDs for fast Set-based diffing
   currentWidgetIds: Set<string>;
-  
-  // Performance metrics
-  widgetUpdateMetrics: {
-    totalUpdates: number;
-    skippedUpdates: number;
-    widgetsAdded: number;
-    widgetsRemoved: number;
-    lastUpdateTime: number;
-  };
 }
 
 interface WidgetActions {
-  // Core widget management
-  addWidget: (widgetType: string, options?: { instance?: number, sensorSource?: string }) => void;
   updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
-  updateWidgetLayout: (widgetId: string, layout: Partial<WidgetLayout>) => void;
-  updateWidgetSettings: (widgetId: string, settings: Record<string, any>) => void;
-  reorderWidgets: (widgets: WidgetConfig[]) => void;
-  
-  // UI state
-  setEditMode: (enabled: boolean) => void;
-  setGridVisible: (visible: boolean) => void;
   updateDashboard: (updates: Partial<DashboardConfig>) => void;
-  
-  // Event-driven instance management
   updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
-  
-  // Widget lifecycle
   updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   setWidgetExpirationTimeout: (timeoutMs: number) => void;
   setEnableWidgetAutoRemoval: (enabled: boolean) => void;
   cleanupExpiredWidgetsWithConfig: () => void;
-  
-  // Runtime management
   resetAppToDefaults: () => Promise<void>;
 }
 
 type WidgetStore = WidgetState & WidgetActions;
 
-// Dynamic dashboard with event-driven widget detection from NMEA data
 const defaultDashboard: DashboardConfig = {
-  id: 'default',
-  name: 'Main Dashboard',
   widgets: [
-    // 🛡️ SYSTEM WIDGET: ThemeWidget is always present and never expires
     {
       id: 'theme',
       type: 'theme',
@@ -114,7 +70,6 @@ const defaultDashboard: DashboardConfig = {
       createdAt: Date.now(),
       lastDataUpdate: Date.now(),
     },
-    // All other widgets dynamically detected from NMEA messages
   ],
 };
 
@@ -134,63 +89,10 @@ function setDifference<T>(a: Set<T>, b: Set<T>): Set<T> {
 export const useWidgetStore = create<WidgetStore>()(
   persist(
     (set, get) => ({
-      // State
       dashboard: defaultDashboard,
-      editMode: false,
-      gridVisible: false,
-      widgetExpirationTimeout: 300000,  // 5 minutes
+      widgetExpirationTimeout: 300000,
       enableWidgetAutoRemoval: true,
-      
-      // Initialize tracking structures
       currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
-      widgetUpdateMetrics: {
-        totalUpdates: 0,
-        skippedUpdates: 0,
-        widgetsAdded: 0,
-        widgetsRemoved: 0,
-        lastUpdateTime: Date.now()
-      },
-
-      // Actions
-      addWidget: (widgetType: string, options?: { instance?: number, sensorSource?: string }) => {
-        const currentDashboard = get().dashboard;
-        
-        // Generate instance-based ID
-        let widgetId: string;
-        if (options?.instance !== undefined) {
-          if (options.sensorSource) {
-            widgetId = `${widgetType}-${options.sensorSource}`;
-          } else {
-            widgetId = options.instance === 0 ? widgetType : `${widgetType}-${options.instance}`;
-          }
-        } else {
-          // Single-instance widget - check if one already exists
-          const existingWidget = currentDashboard.widgets.find(w => w.type === widgetType);
-          if (existingWidget) return;
-          widgetId = widgetType;
-        }
-
-        const now = Date.now();
-        const widget: WidgetConfig = {
-          id: widgetId,
-          type: widgetType,
-          title: widgetType.charAt(0).toUpperCase() + widgetType.slice(1),
-          settings: {},
-          layout: {
-            id: widgetId,
-            width: 2,
-            height: 2,
-            visible: true,
-          },
-          enabled: true,
-          createdAt: now,
-          lastDataUpdate: now,
-        };
-
-        set((state) => ({
-          dashboard: { ...state.dashboard, widgets: [...state.dashboard.widgets, widget] },
-        }));
-      },
 
       updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) =>
         set((state) => ({
@@ -201,29 +103,6 @@ export const useWidgetStore = create<WidgetStore>()(
             ),
           },
         })),
-
-      updateWidgetLayout: (widgetId: string, layout: Partial<WidgetLayout>) => {
-        const widget = get().dashboard.widgets.find(w => w.id === widgetId);
-        if (widget?.layout) {
-          get().updateWidget(widgetId, { 
-            layout: { ...widget.layout, ...layout } 
-          });
-        }
-      },
-
-      updateWidgetSettings: (widgetId: string, settings: Record<string, any>) =>
-        get().updateWidget(widgetId, { settings }),
-
-      reorderWidgets: (widgets: WidgetConfig[]) =>
-        set((state) => ({
-          dashboard: { ...state.dashboard, widgets },
-        })),
-
-      setEditMode: (enabled: boolean) =>
-        set({ editMode: enabled }),
-
-      setGridVisible: (visible: boolean) =>
-        set({ gridVisible: visible }),
 
       updateDashboard: (updates: Partial<DashboardConfig>) =>
         set((state) => ({
@@ -240,16 +119,7 @@ export const useWidgetStore = create<WidgetStore>()(
                               detectedInstances.temperatures.length +
                               detectedInstances.instruments.length;
         
-        if (totalInstances === 0) {
-          set((state) => ({
-            widgetUpdateMetrics: {
-              ...state.widgetUpdateMetrics,
-              totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
-              skippedUpdates: state.widgetUpdateMetrics.skippedUpdates + 1,
-            },
-          }));
-          return;
-        }
+        if (totalInstances === 0) return;
         
         // Build Set of all required widget IDs from detected instances
         const allDetectedInstances = [
@@ -268,16 +138,7 @@ export const useWidgetStore = create<WidgetStore>()(
         // Early exit: No changes detected
         const currentIds = get().currentWidgetIds;
         
-        if (setsEqual(currentIds, newWidgetIds)) {
-          set((state) => ({
-            widgetUpdateMetrics: {
-              ...state.widgetUpdateMetrics,
-              totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
-              skippedUpdates: state.widgetUpdateMetrics.skippedUpdates + 1,
-            },
-          }));
-          return;
-        }
+        if (setsEqual(currentIds, newWidgetIds)) return;
         
         // Calculate Set diff: which widgets to add/remove
         const toAdd = setDifference(newWidgetIds, currentIds);
@@ -290,12 +151,6 @@ export const useWidgetStore = create<WidgetStore>()(
         let widgets = currentDashboard.widgets.filter(w => 
           !toRemove.has(w.id) || w.isSystemWidget
         );
-        
-        // Deduplicate if needed
-        const widgetIds = new Set(widgets.map(w => w.id));
-        if (widgetIds.size !== widgets.length) {
-          widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
-        }
         
         // STEP 2: Add widgets for newly detected instances
         const existingWidgetIds = new Set(widgets.map(w => w.id));
@@ -337,19 +192,8 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
-        // Update dashboard and metrics atomically
         get().updateDashboard({ widgets });
-        
-        set((state) => ({
-          currentWidgetIds: newWidgetIds,
-          widgetUpdateMetrics: {
-            ...state.widgetUpdateMetrics,
-            totalUpdates: state.widgetUpdateMetrics.totalUpdates + 1,
-            widgetsAdded: state.widgetUpdateMetrics.widgetsAdded + instancesToAdd.length,
-            widgetsRemoved: state.widgetUpdateMetrics.widgetsRemoved + toRemove.size,
-            lastUpdateTime: Date.now(),
-          },
-        }));
+        set({ currentWidgetIds: newWidgetIds });
       },
 
       updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => {
@@ -399,26 +243,14 @@ export const useWidgetStore = create<WidgetStore>()(
         }));
 
         const resetDashboard: DashboardConfig = {
-          id: 'default',
-          name: 'Default Dashboard',
           widgets: systemWidgets,
         };
 
-        // Reset store state to defaults
         set({
           dashboard: resetDashboard,
-          editMode: false,
-          gridVisible: false,
           widgetExpirationTimeout: 300000,
           enableWidgetAutoRemoval: true,
           currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
-          widgetUpdateMetrics: {
-            totalUpdates: 0,
-            skippedUpdates: 0,
-            widgetsAdded: 0,
-            widgetsRemoved: 0,
-            lastUpdateTime: 0,
-          },
         });
 
         // Clear localStorage (fail silently if not available)
@@ -494,7 +326,6 @@ export const useWidgetStore = create<WidgetStore>()(
         dashboard: state.dashboard,
         widgetExpirationTimeout: state.widgetExpirationTimeout,
         enableWidgetAutoRemoval: state.enableWidgetAutoRemoval,
-        // Exclude: editMode, gridVisible, currentWidgetIds, widgetUpdateMetrics (transient)
       }),
     }
   )
