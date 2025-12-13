@@ -107,18 +107,25 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   }, [currentPage, scrollViewWidth, isAnimatingPageTransition]);
 
   // Calculate layout constraints and page layouts - memoized for performance
+  // Uses widget store array order as source of truth (array index = display position)
   const { pageLayouts, totalPages } = React.useMemo(() => {
+    // Calculate gap from grid constraints: gap = (containerWidth - (cellWidth * cols)) / (cols - 1)
+    // This ensures widgets are sized and positioned exactly as useResponsiveGrid calculated
+    const gap = responsiveGrid.layout.cols > 1 
+      ? (responsiveGrid.layout.containerWidth - (responsiveGrid.layout.cellWidth * responsiveGrid.layout.cols)) / (responsiveGrid.layout.cols - 1)
+      : 0;
+    
     const constraints: LayoutConstraints = {
       containerWidth: responsiveGrid.layout.containerWidth,
       containerHeight: responsiveGrid.layout.containerHeight,
       cols: responsiveGrid.layout.cols,
       rows: responsiveGrid.layout.rows,
-      gap: 8,
+      gap,
       cellWidth: responsiveGrid.layout.cellWidth,
       cellHeight: responsiveGrid.layout.cellHeight,
     };
     
-    // Use widget IDs for layout calculation
+    // Use widget IDs from store array - ORDER MATTERS: array[0] = top-left, array[n] = bottom-right
     const widgetIds = widgets.map(w => w.id);
     const layouts = calculatePageLayouts(widgetIds, constraints);
     return { pageLayouts: layouts, totalPages: layouts.length };
@@ -240,6 +247,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   }, [widgets, widgetComponents, onWidgetPress, onWidgetLongPress]);
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
+  // Widgets flow left-to-right, top-to-bottom based on widget store array order
   const renderPage = useCallback((pageLayout: PageLayout, pageIndex: number) => {
     return (
       <View
@@ -253,18 +261,15 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         ]}
         testID={`dashboard-page-${pageIndex}`}
       >
-        {/* Widget grid */}
+        {/* Widget grid - positioned via calculateGridPositions (row-by-row, left-to-right) */}
         <View style={styles.gridContainer}>
           {pageLayout.widgets.map((widgetId, index) =>
             renderWidget(widgetId, index, pageLayout)
           )}
         </View>
-
-        {/* REMOVED: Manual widget addition button - Now pure auto-discovery */}
       </View>
     );
   }, [
-    totalPages,
     scrollViewWidth,
     responsiveGrid.layout.containerHeight,
     renderWidget,
