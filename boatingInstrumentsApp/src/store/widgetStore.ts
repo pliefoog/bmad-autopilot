@@ -1,13 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Dimensions } from 'react-native';
 import type { DetectedInstance } from '../services/nmea/instanceDetection';
-import { logger } from '../utils/logger';
-
-// Master toggle for widgetStore logging (currently produces 68+ logs)
-const ENABLE_WIDGET_STORE_LOGGING = false;
-const log = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && console.log('[WidgetStore]', ...args);
-const warn = (...args: any[]) => ENABLE_WIDGET_STORE_LOGGING && console.warn('[WidgetStore]', ...args);
 
 // System widgets that must always be present and never expire
 const SYSTEM_WIDGETS = [
@@ -55,17 +48,8 @@ export interface DashboardConfig {
   backgroundColor?: string;
 }
 
-export interface WidgetPreset {
-  id: string;
-  name: string;
-  description: string;
-  widgets: Omit<WidgetConfig, 'id'>[];
-  category: 'sailing' | 'motoring' | 'fishing' | 'racing' | 'custom';
-}
-
 interface WidgetState {
   dashboard: DashboardConfig; // Single dashboard
-  selectedWidgets: string[];
   editMode: boolean;
   gridVisible: boolean;
   
@@ -73,10 +57,10 @@ interface WidgetState {
   widgetExpirationTimeout: number;
   enableWidgetAutoRemoval: boolean;
   
-  // Phase 2 optimization: Track current widget IDs for fast comparison
+  // Track current widget IDs for fast Set-based diffing
   currentWidgetIds: Set<string>;
   
-  // Phase 2 optimization: Performance metrics
+  // Performance metrics
   widgetUpdateMetrics: {
     totalUpdates: number;
     skippedUpdates: number;
@@ -87,35 +71,34 @@ interface WidgetState {
 }
 
 interface WidgetActions {
-  // Core widget management (used)
-  addWidget: (widgetType: string, position?: { x: number; y: number }, options?: { instance?: number, sensorSource?: string }) => void;
+  // Core widget management
+  addWidget: (widgetType: string, options?: { instance?: number, sensorSource?: string }) => void;
   updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
   updateWidgetLayout: (widgetId: string, layout: Partial<WidgetLayout>) => void;
   updateWidgetSettings: (widgetId: string, settings: Record<string, any>) => void;
-  reorderWidgets: (widgets: WidgetConfig[]) => void;  // Array reordering for drag-drop
+  reorderWidgets: (widgets: WidgetConfig[]) => void;
   
-  // UI state (used)
+  // UI state
   setEditMode: (enabled: boolean) => void;
   setGridVisible: (visible: boolean) => void;
   updateDashboard: (updates: Partial<DashboardConfig>) => void;
   
-  // Event-driven instance management (used)
+  // Event-driven instance management
   updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
   
-  // Widget lifecycle (used)
+  // Widget lifecycle
   updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   setWidgetExpirationTimeout: (timeoutMs: number) => void;
   setEnableWidgetAutoRemoval: (enabled: boolean) => void;
   cleanupExpiredWidgetsWithConfig: () => void;
   
-  // Runtime management (used)
+  // Runtime management
   resetAppToDefaults: () => Promise<void>;
 }
 
 type WidgetStore = WidgetState & WidgetActions;
 
-// FULLY DYNAMIC DASHBOARD - No static widgets, all based on detected NMEA data
-// FULLY DYNAMIC DASHBOARD - No static widgets, all based on detected NMEA data
+// Dynamic dashboard with event-driven widget detection from NMEA data
 const defaultDashboard: DashboardConfig = {
   id: 'default',
   name: 'Main Dashboard',
@@ -155,9 +138,7 @@ const defaultDashboard: DashboardConfig = {
   rows: 8,
 };
 
-// Preset system removed - event-driven widget discovery handles all use cases
-
-// Phase 2 optimization: Set utility functions for widget ID comparison
+// Set utility functions for widget ID comparison
 function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false;
   for (const item of a) {
@@ -174,14 +155,13 @@ export const useWidgetStore = create<WidgetStore>()(
   persist(
     (set, get) => ({
       // State
-      selectedWidgets: ['depth', 'speed', 'wind', 'gps', 'compass'],
       dashboard: defaultDashboard,
       editMode: false,
       gridVisible: false,
       widgetExpirationTimeout: 300000,  // 5 minutes
       enableWidgetAutoRemoval: true,
       
-      // Phase 2 optimization: Initialize tracking structures
+      // Initialize tracking structures
       currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
       widgetUpdateMetrics: {
         totalUpdates: 0,
@@ -192,14 +172,12 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       // Actions
-      addWidget: (widgetType, position = { x: 0, y: 0 }, options?: { instance?: number, sensorSource?: string }) => {
-        const currentState = get();
-        const currentDashboard = currentState.dashboard;
+      addWidget: (widgetType: string, options?: { instance?: number, sensorSource?: string }) => {
+        const currentDashboard = get().dashboard;
         
-        // Generate proper instance-based ID
+        // Generate instance-based ID
         let widgetId: string;
         if (options?.instance !== undefined) {
-          // Multi-instance widget (e.g., engine-0, engine-1, temperature-engine, temperature-seawater)
           if (options.sensorSource) {
             widgetId = `${widgetType}-${options.sensorSource}`;
           } else {
@@ -208,11 +186,8 @@ export const useWidgetStore = create<WidgetStore>()(
         } else {
           // Single-instance widget - check if one already exists
           const existingWidget = currentDashboard.widgets.find(w => w.type === widgetType);
-          if (existingWidget) {
-            warn(`[addWidget] Widget of type '${widgetType}' already exists: ${existingWidget.id}`);
-            return; // Don't create duplicate single-instance widgets
-          }
-          widgetId = widgetType; // Simple ID for single-instance (depth, gps, speed, compass)
+          if (existingWidget) return;
+          widgetId = widgetType;
         }
 
         const now = Date.now();
@@ -228,14 +203,13 @@ export const useWidgetStore = create<WidgetStore>()(
             visible: true,
           },
           enabled: true,
-          order: currentState.selectedWidgets.length,
+          order: currentDashboard.widgets.length,
           createdAt: now,
           lastDataUpdate: now,
         };
 
         set((state) => ({
           dashboard: { ...state.dashboard, widgets: [...state.dashboard.widgets, widget] },
-          selectedWidgets: [...state.selectedWidgets, widgetType],
         }));
       },
 
@@ -257,7 +231,7 @@ export const useWidgetStore = create<WidgetStore>()(
           },
         })),
 
-      updateWidgetLayout: (widgetId, layout) => {
+      updateWidgetLayout: (widgetId: string, layout: Partial<WidgetLayout>) => {
         const widget = get().dashboard.widgets.find(w => w.id === widgetId);
         if (widget?.layout) {
           get().updateWidget(widgetId, { 
@@ -266,20 +240,10 @@ export const useWidgetStore = create<WidgetStore>()(
         }
       },
 
-      updateWidgetSettings: (widgetId, settings) =>
+      updateWidgetSettings: (widgetId: string, settings: Record<string, any>) =>
         get().updateWidget(widgetId, { settings }),
 
-      setSelectedWidgets: (widgets: string[]) =>
-        set({ selectedWidgets: widgets }),
-
-      toggleWidget: (widgetType: string) =>
-        set((state) => ({
-          selectedWidgets: state.selectedWidgets.includes(widgetType)
-            ? state.selectedWidgets.filter((w) => w !== widgetType)
-            : [...state.selectedWidgets, widgetType],
-        })),
-
-      reorderWidgets: (widgets) =>
+      reorderWidgets: (widgets: WidgetConfig[]) =>
         set((state) => ({
           dashboard: { ...state.dashboard, widgets },
         })),
@@ -407,17 +371,10 @@ export const useWidgetStore = create<WidgetStore>()(
         const actualToAdd = new Set([...toAdd].filter(id => !existingWidgetIds.has(id)));
         
         if (actualToAdd.size > 0) {
-          // Helper - not used since array position determines placement
-          // Kept for compatibility with old addWidget signature
-          const findNextPosition = () => ({ x: 0, y: 0 });
-          
-          // Create widgets for all instances in actualToAdd set
+          // Create widgets for new instances
           actualToAdd.forEach(instanceId => {
             const metadata = instanceMetadata.get(instanceId);
-            if (!metadata) {
-              console.warn(`⚠️ [Phase 2] No metadata for instance: ${instanceId}`);
-              return;
-            }
+            if (!metadata) return;
             
             const now = Date.now();
             const newWidget: WidgetConfig = {
@@ -438,7 +395,7 @@ export const useWidgetStore = create<WidgetStore>()(
               enabled: true,
               order: widgets.length,
               createdAt: now,
-              lastDataUpdate: now,  // Initialize both timestamps to prevent race condition
+              lastDataUpdate: now,
             };
             
             widgets.push(newWidget);
@@ -448,24 +405,19 @@ export const useWidgetStore = create<WidgetStore>()(
         // Verify no duplicates in final array
         const finalWidgetIds = new Set(widgets.map(w => w.id));
         if (finalWidgetIds.size !== widgets.length) {
-          console.error('❌ [Phase 2] DUPLICATE WIDGETS IN FINAL ARRAY:', {
-            total: widgets.length,
-            unique: finalWidgetIds.size,
-            duplicates: widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) !== i).map(w => w.id)
-          });
           // Deduplicate: keep only first occurrence of each ID
           widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
-        // Update metrics (use actualToAdd if it was calculated, otherwise toAdd)
-        metrics.widgetsAdded += actualToAdd?.size || toAdd.size;
+        // Update metrics
+        metrics.widgetsAdded += actualToAdd.size;
         metrics.widgetsRemoved += toRemove.size;
         metrics.lastUpdateTime = Date.now();
         
         // Update dashboard with new widget array
         get().updateDashboard({ widgets });
         
-        // Phase 2 optimization: Update tracked widget IDs AFTER successful update
+        // Update tracked widget IDs after successful update
         set({ currentWidgetIds: newWidgetIds });
       },
 
@@ -475,15 +427,8 @@ export const useWidgetStore = create<WidgetStore>()(
         if (!currentDashboard) return;
         
         const widgetIndex = currentDashboard.widgets.findIndex(w => w.id === widgetId);
-        if (widgetIndex === -1) {
-          // Widget doesn't exist yet - this can happen if detection event fires
-          // before widget creation completes. Not an error - widget will have
-          // timestamp set during creation.
-          log(`updateWidgetDataTimestamp: Widget ${widgetId} not found (may not be created yet)`);
-          return;
-        }
+        if (widgetIndex === -1) return;
         
-        // Update lastDataUpdate timestamp
         const updatedWidgets = [...currentDashboard.widgets];
         updatedWidgets[widgetIndex] = {
           ...updatedWidgets[widgetIndex],
@@ -496,13 +441,9 @@ export const useWidgetStore = create<WidgetStore>()(
             widgets: updatedWidgets
           }
         }));
-        
-        log(`Updated timestamp for widget ${widgetId}`);
       },
 
       resetAppToDefaults: async () => {
-        log('[WidgetStore] Factory reset initiated');
-        
         // Cleanup widget registration system
         const { cleanupWidgetSystem, initializeWidgetSystem } = await import('../services/initializeWidgetSystem');
         cleanupWidgetSystem();
@@ -516,8 +457,6 @@ export const useWidgetStore = create<WidgetStore>()(
           settings: {},
           layout: {
             id: sw.id,
-            x: 0,
-            y: 0,
             width: 2,
             height: 2,
             visible: true,
@@ -526,7 +465,7 @@ export const useWidgetStore = create<WidgetStore>()(
           order: -1000,
           isSystemWidget: true,
           createdAt: now,
-          lastDataUpdate: now,  // System widgets never expire
+          lastDataUpdate: now,
         }));
 
         const resetDashboard: DashboardConfig = {
@@ -541,11 +480,10 @@ export const useWidgetStore = create<WidgetStore>()(
 
         // Reset store state to defaults
         set({
-          selectedWidgets: [],
           dashboard: resetDashboard,
           editMode: false,
           gridVisible: false,
-          widgetExpirationTimeout: 300000,  // 5 minutes - appropriate for intermittent marine data
+          widgetExpirationTimeout: 300000,
           enableWidgetAutoRemoval: true,
           currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
           widgetUpdateMetrics: {
@@ -569,28 +507,21 @@ export const useWidgetStore = create<WidgetStore>()(
         // Reinitialize widget system
         await new Promise(resolve => setTimeout(resolve, 100));
         initializeWidgetSystem();
-
-        log('[WidgetStore] Factory reset completed - dashboard reset to system widgets only');
       },
       
       // Dynamic widget lifecycle actions
       setWidgetExpirationTimeout: (timeoutMs: number) => {
         set({ widgetExpirationTimeout: timeoutMs });
-        log(`[WidgetStore] Widget expiration timeout set to ${timeoutMs}ms`);
       },
 
       setEnableWidgetAutoRemoval: (enabled: boolean) => {
         set({ enableWidgetAutoRemoval: enabled });
-        log(`[WidgetStore] Widget auto-removal ${enabled ? 'enabled' : 'disabled'}`);
       },
 
-      // Enhanced cleanup system with configurable expiration
+      // Cleanup expired widgets
       cleanupExpiredWidgetsWithConfig: () => {
         const state = get();
-        if (!state.enableWidgetAutoRemoval) {
-          log('Widget auto-removal is disabled');
-          return;
-        }
+        if (!state.enableWidgetAutoRemoval) return;
 
         const currentDashboard = state.dashboard;
         if (!currentDashboard) {
@@ -614,41 +545,26 @@ export const useWidgetStore = create<WidgetStore>()(
           const age = now - lastUpdate;
           const isExpired = age > (timeout + GRACE_PERIOD);
           
-          if (isExpired) {
-            expiredCount++;
-            log(`🗑️ Removing expired widget: ${widget.id} (no data for ${Math.round(age / 1000)}s)`);
-          }
+          if (isExpired) expiredCount++;
           
           return !isExpired;
         });
 
-        // Early exit if no widgets expired - prevents unnecessary state updates
-        if (expiredCount === 0) {
-          return;
-        }
-
-        // Update selectedWidgets using the NEW filtered widget list (not stale currentState)
-        const updatedSelectedWidgets = state.selectedWidgets.filter((widgetType) => {
-          return updatedWidgets.some((widget) => widget.type === widgetType);
-        });
+        // Early exit if no widgets expired
+        if (expiredCount === 0) return;
 
         set({
           dashboard: {
             ...currentDashboard,
             widgets: updatedWidgets,
           },
-          selectedWidgets: updatedSelectedWidgets,
         });
-
-        log(`✅ Cleanup complete - removed ${expiredCount} expired widget(s)`);
       },
 
-      // Pagination removed - array-based positioning calculates pages on-the-fly
     }),
     {
       name: 'widget-store',
       partialize: (state) => ({
-        selectedWidgets: state.selectedWidgets,
         dashboard: state.dashboard,
       }),
     }
