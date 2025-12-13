@@ -1085,77 +1085,45 @@ export const useWidgetStore = create<WidgetStore>()(
       },
 
       resetAppToDefaults: async () => {
-        log('[WidgetStore] Executing factory reset...');
-
-        // Cleanup new widget registration system
+        log('[WidgetStore] Factory reset initiated');
+        
+        // Cleanup widget registration system
         const { cleanupWidgetSystem, initializeWidgetSystem } = await import('../services/initializeWidgetSystem');
         cleanupWidgetSystem();
 
-        // First, clear ALL storage comprehensively
-        try {
-          if (typeof window !== 'undefined' && window.localStorage) {
-            // CRITICAL: Clear EVERYTHING first to prevent any cached data
-            const allKeys = Object.keys(window.localStorage);
-            allKeys.forEach(key => {
-              if (
-                key.startsWith('widget-') || 
-                key.startsWith('dashboard-') || 
-                key.startsWith('nmea-') ||
-                key.includes('WidgetStore') ||
-                key.includes('widgetStore') ||
-                key.startsWith('@bmad_autopilot:') ||
-                key === 'widget-store'
-              ) {
-                window.localStorage.removeItem(key);
-              }
-            });
-            
-            log('[WidgetStore] Cleared all widget-related localStorage keys');
-            
-            // Force storage event to trigger persist middleware cleanup
-            window.dispatchEvent(new StorageEvent('storage', {
-              key: 'widget-store',
-              oldValue: null,
-              newValue: null,
-              url: window.location.href
-            }));
-          }
-        } catch (error) {
-          console.error('[WidgetStore] Error clearing localStorage:', error);
-        }
+        // Create clean dashboard with only system widgets
+        const systemWidgets = SYSTEM_WIDGETS.map(sw => ({
+          id: sw.id,
+          type: sw.type,
+          title: sw.title,
+          settings: {},
+          layout: {
+            id: sw.id,
+            x: 0,
+            y: 0,
+            width: 2,
+            height: 2,
+            visible: true,
+          },
+          enabled: true,
+          order: -1000,
+          isSystemWidget: true,
+          createdAt: Date.now(),
+        }));
 
         const resetDashboard: DashboardConfig = {
           id: 'default',
           name: 'Default Dashboard',
-          widgets: [
-            // 🛡️ SYSTEM WIDGET: ThemeWidget is always present
-            {
-              id: 'theme',
-              type: 'theme',
-              title: 'Theme',
-              settings: {},
-              layout: {
-                id: 'theme',
-                x: 0,
-                y: 0,
-                width: 2,
-                height: 2,
-                visible: true,
-              },
-              enabled: true,
-              order: -1000,
-              isSystemWidget: true,
-              createdAt: Date.now(),
-            },
-          ],
+          widgets: systemWidgets,
           gridSize: 20,
           snapToGrid: true,
           columns: 12,
           rows: 8,
+          userPositioned: true, // Switch to static positions after reset
         };
 
-        const initialState = {
-          // Core widget state
+        // Reset store state to defaults
+        set({
           availableWidgets: [
             'depth', 'speed', 'wind', 'gps', 'compass', 'engine', 
             'battery', 'tanks', 'autopilot', 'weather', 'navigation'
@@ -1167,11 +1135,9 @@ export const useWidgetStore = create<WidgetStore>()(
           presets: [],
           editMode: false,
           gridVisible: false,
-          // Dynamic widget lifecycle configuration
           widgetExpirationTimeout: 60000,
           enableWidgetAutoRemoval: true,
-          // Phase 2 optimization: Initialize tracking structures
-          currentWidgetIds: new Set(['theme']),
+          currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
           widgetUpdateMetrics: {
             totalUpdates: 0,
             skippedUpdates: 0,
@@ -1179,73 +1145,22 @@ export const useWidgetStore = create<WidgetStore>()(
             widgetsRemoved: 0,
             lastUpdateTime: 0,
           },
-        };
+        });
 
-        // CRITICAL: Clear the entire store state first (including any cached widget positions)
-        set(() => ({
-          ...initialState,
-          // Dashboard is properly set from initialState.dashboards[0]
-        }));
-
-        // Force a small delay to let persist middleware complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // 🛡️ CRITICAL: Restore system widgets after reset
-        log('[WidgetStore] Restoring system widgets after factory reset...');
-        get().initializeWidgetStatesOnAppStart();
-
-        // Double-check that localStorage is cleared after state reset
+        // Clear localStorage
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
             window.localStorage.removeItem('widget-store');
-            log('[WidgetStore] Double-cleared widget-store key after state reset');
           }
         } catch (error) {
-          console.error('[WidgetStore] Error in double-clear:', error);
+          console.error('[WidgetStore] Error clearing localStorage:', error);
         }
 
-        // Clear AsyncStorage (React Native)
-        try {
-          if (typeof window === 'undefined') {
-            // React Native environment
-            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-            AsyncStorage.clear().catch((error: Error) => {
-              console.error('[WidgetStore] Error clearing AsyncStorage:', error);
-            });
-          }
-        } catch (error) {
-          console.error('[WidgetStore] Error accessing AsyncStorage:', error);
-        }
-
-        // Reset other stores
-        try {
-          // Import and reset other stores
-          const { useNmeaStore } = require('./nmeaStore');
-          const { useConnectionStore } = require('./connectionStore');
-          const { useSettingsStore } = require('./settingsStore');
-          const { useAlarmStore } = require('./alarmStore');
-
-          // Reset all stores to their initial state
-          useNmeaStore.getState().reset?.();
-          useConnectionStore.getState().reset?.();
-          useSettingsStore.getState().reset?.();
-          useAlarmStore.getState().reset?.();
-        } catch (error) {
-          console.error('[WidgetStore] Error resetting other stores:', error);
-        }
-
-        // Reinitialize widget system after factory reset
+        // Reinitialize widget system
+        await new Promise(resolve => setTimeout(resolve, 100));
         initializeWidgetSystem();
 
-        log('[WidgetStore] Factory reset completed');
-        
-        // Final verification - log current state after reset
-        const finalState = get();
-        log('[WidgetStore] Final state after reset:', {
-          selectedWidgets: finalState.selectedWidgets,
-          dashboards: finalState.dashboards,
-          currentDashboard: finalState.currentDashboard
-        });
+        log('[WidgetStore] Factory reset completed - dashboard reset to system widgets only');
       },
       
       // Emergency reset method that completely bypasses persist middleware
