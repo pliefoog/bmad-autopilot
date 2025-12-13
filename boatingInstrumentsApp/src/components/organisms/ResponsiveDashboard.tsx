@@ -31,6 +31,10 @@ import { EngineWidget } from '../../widgets/EngineWidget';
 import { BatteryWidget } from '../../widgets/BatteryWidget';
 import { TanksWidget } from '../../widgets/TanksWidget';
 import { AutopilotWidget } from '../../widgets/AutopilotWidget';
+import { ThemeWidget } from '../../widgets/ThemeWidget';
+import { NavigationWidget } from '../../widgets/NavigationWidget';
+import { TemperatureWidget } from '../../widgets/TemperatureWidget';
+import { RudderWidget } from '../../widgets/RudderWidget';
 
 interface ResponsiveDashboardProps {
   headerHeight?: number;
@@ -63,7 +67,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   
   // Widget store integration - use actual widget array
   const dashboard = useWidgetStore((state) => state.dashboard);
-  const widgetIds = dashboard.widgets.map(w => w.id);
+  const widgets = dashboard.widgets;
 
   // Responsive grid system (AC 1-5)
   const responsiveGrid: ResponsiveGridState = useResponsiveGrid(
@@ -95,6 +99,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     battery: BatteryWidget,
     tanks: TanksWidget,
     autopilot: AutopilotWidget,
+    theme: ThemeWidget,
+    navigation: NavigationWidget,
+    temperature: TemperatureWidget,
+    rudder: RudderWidget,
   }), []);
 
   // Update scroll position when page changes (AC 9: Page State Persistence)
@@ -117,10 +125,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       cellHeight: responsiveGrid.layout.cellHeight,
     };
     
+    // Use widget IDs for layout calculation
+    const widgetIds = widgets.map(w => w.id);
     const layouts = calculatePageLayouts(widgetIds, constraints);
     return { pageLayouts: layouts, totalPages: layouts.length };
   }, [
-    widgetIds, 
+    widgets,
     responsiveGrid.layout.containerWidth,
     responsiveGrid.layout.containerHeight,
     responsiveGrid.layout.cols,
@@ -200,7 +210,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Render individual widget
   const renderWidget = useCallback((widgetId: string, index: number, pageLayout: PageLayout) => {
-    const WidgetComponent = widgetComponents[widgetId];
+    // Find the widget config from store
+    const widgetConfig = widgets.find(w => w.id === widgetId);
+    if (!widgetConfig) return null;
+
+    // Use widget TYPE to look up component
+    const WidgetComponent = widgetComponents[widgetConfig.type];
     if (!WidgetComponent) return null;
 
     const position = pageLayout.cells[index];
@@ -222,12 +237,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         testID={`widget-${widgetId}`}
       >
         <WidgetComponent
+          id={widgetId}
+          title={widgetConfig.title}
           onPress={() => onWidgetPress?.(widgetId)}
           onLongPress={() => onWidgetLongPress?.(widgetId)}
         />
       </View>
     );
-  }, [widgetComponents, onWidgetPress, onWidgetLongPress]);
+  }, [widgets, widgetComponents, onWidgetPress, onWidgetLongPress]);
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
   const renderPage = useCallback((pageLayout: PageLayout, pageIndex: number) => {
@@ -263,7 +280,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   ]);
 
   // AC 14: Empty State Display (auto-discovery handles widget creation)
-  if (widgetIds.length === 0) {
+  if (widgets.length === 0) {
     return (
       <View style={styles.emptyStateContainer} testID="dashboard-empty-state">
         {/* Widgets will auto-appear when NMEA data detected */}
