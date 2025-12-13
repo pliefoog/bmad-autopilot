@@ -85,8 +85,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Gesture handling for swipe navigation (AC 8)
   const panResponderRef = useRef<PanGestureHandler>(null);
 
-  // Widget component mapping
-  const widgetComponents: Record<string, React.ComponentType<any>> = {
+  // Widget component mapping - memoized to prevent recreation on every render
+  const widgetComponents = React.useMemo(() => ({
     depth: DepthWidget,
     speed: SpeedWidget,
     wind: WindWidget,
@@ -96,18 +96,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     battery: BatteryWidget,
     tanks: TanksWidget,
     autopilot: AutopilotWidget,
-  };
-
-  // AC 4: Real-time adaptation - recalculate pages when grid changes
-  useEffect(() => {
-    if (!responsiveGrid.isLoading) {
-      recalculatePages(responsiveGrid.layout.widgetsPerPage);
-    }
-  }, [
-    responsiveGrid.layout.widgetsPerPage,
-    responsiveGrid.isLoading,
-    recalculatePages,
-  ]);
+  }), []);
 
   // Update scroll position when page changes (AC 9: Page State Persistence)
   useEffect(() => {
@@ -117,20 +106,29 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     }
   }, [currentPage, scrollViewWidth, isAnimatingPageTransition]);
 
-  // Calculate layout constraints from responsive grid
-  const layoutConstraints: LayoutConstraints = {
-    containerWidth: responsiveGrid.layout.containerWidth,
-    containerHeight: responsiveGrid.layout.containerHeight,
-    cols: responsiveGrid.layout.cols,
-    rows: responsiveGrid.layout.rows,
-    gap: 8, // From WIDGET_CONSTRAINTS in useResponsiveGrid
-    cellWidth: responsiveGrid.layout.cellWidth,
-    cellHeight: responsiveGrid.layout.cellHeight,
-  };
-
-  // Calculate page layouts from widget array
-  const pageLayouts: PageLayout[] = calculatePageLayouts(widgetIds, layoutConstraints);
-  const totalPages = pageLayouts.length;
+  // Calculate layout constraints and page layouts - memoized for performance
+  const { pageLayouts, totalPages } = React.useMemo(() => {
+    const constraints: LayoutConstraints = {
+      containerWidth: responsiveGrid.layout.containerWidth,
+      containerHeight: responsiveGrid.layout.containerHeight,
+      cols: responsiveGrid.layout.cols,
+      rows: responsiveGrid.layout.rows,
+      gap: 8,
+      cellWidth: responsiveGrid.layout.cellWidth,
+      cellHeight: responsiveGrid.layout.cellHeight,
+    };
+    
+    const layouts = calculatePageLayouts(widgetIds, constraints);
+    return { pageLayouts: layouts, totalPages: layouts.length };
+  }, [
+    widgetIds, 
+    responsiveGrid.layout.containerWidth,
+    responsiveGrid.layout.containerHeight,
+    responsiveGrid.layout.cols,
+    responsiveGrid.layout.rows,
+    responsiveGrid.layout.cellWidth,
+    responsiveGrid.layout.cellHeight
+  ]);
 
   // Page navigation functions
   const navigateToPage = useCallback((page: number) => {

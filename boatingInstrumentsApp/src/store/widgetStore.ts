@@ -29,8 +29,6 @@ interface WidgetState {
 }
 
 interface WidgetActions {
-  updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) => void;
-  updateDashboard: (updates: Partial<DashboardConfig>) => void;
   updateInstanceWidgets: (detectedInstances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void;
   updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   setWidgetExpirationTimeout: (timeoutMs: number) => void;
@@ -75,21 +73,6 @@ export const useWidgetStore = create<WidgetStore>()(
       widgetExpirationTimeout: 300000,
       enableWidgetAutoRemoval: true,
       currentWidgetIds: new Set(SYSTEM_WIDGETS.map(w => w.id)),
-
-      updateWidget: (widgetId: string, updates: Partial<WidgetConfig>) =>
-        set((state) => ({
-          dashboard: {
-            ...state.dashboard,
-            widgets: state.dashboard.widgets.map((w) =>
-              w.id === widgetId ? { ...w, ...updates } : w
-            ),
-          },
-        })),
-
-      updateDashboard: (updates: Partial<DashboardConfig>) =>
-        set((state) => ({
-          dashboard: { ...state.dashboard, ...updates },
-        })),
 
       updateInstanceWidgets: (detectedInstances) => {
         // Set-based widget diffing for efficient updates
@@ -167,31 +150,25 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets = widgets.filter((w, i, arr) => arr.findIndex(x => x.id === w.id) === i);
         }
         
-        get().updateDashboard({ widgets });
-        set({ currentWidgetIds: newWidgetIds });
+        set({ 
+          dashboard: { widgets },
+          currentWidgetIds: newWidgetIds 
+        });
       },
 
-      updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => {
-        const now = timestamp || Date.now();
-        const currentDashboard = get().dashboard;
-        if (!currentDashboard) return;
-        
-        const widgetIndex = currentDashboard.widgets.findIndex(w => w.id === widgetId);
-        if (widgetIndex === -1) return;
-        
-        const updatedWidgets = [...currentDashboard.widgets];
-        updatedWidgets[widgetIndex] = {
-          ...updatedWidgets[widgetIndex],
-          lastDataUpdate: now
-        };
-        
-        set((state) => ({
-          dashboard: {
-            ...state.dashboard,
-            widgets: updatedWidgets
-          }
-        }));
-      },
+      updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) =>
+        set((state) => {
+          const widgetIndex = state.dashboard.widgets.findIndex(w => w.id === widgetId);
+          if (widgetIndex === -1) return state;
+          
+          const widgets = [...state.dashboard.widgets];
+          widgets[widgetIndex] = {
+            ...widgets[widgetIndex],
+            lastDataUpdate: timestamp || Date.now()
+          };
+          
+          return { dashboard: { widgets } };
+        }),
 
       resetAppToDefaults: async () => {
         // Cleanup widget registration system
