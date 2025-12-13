@@ -4,8 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   Animated,
-  GestureResponderEvent,
-  Dimensions,
   Platform,
 } from 'react-native';
 import { PanGestureHandler, State, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
@@ -15,10 +13,8 @@ import { useResponsiveGrid, type ResponsiveGridState } from '../../hooks/useResp
 import { PaginationDots } from '../molecules/PaginationDots';
 import {
   calculatePageLayouts,
-  calculateGridPositions,
   type LayoutConstraints,
   type PageLayout,
-  createPageTransitionConfig,
 } from '../../utils/layoutUtils';
 
 // Import widget components
@@ -84,9 +80,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const scrollViewRef = useRef<ScrollView>(null);
   const pageAnimatedValue = useRef(new Animated.Value(0)).current;
   const [scrollViewWidth, setScrollViewWidth] = useState(0);
-
-  // Gesture handling for swipe navigation (AC 8)
-  const panResponderRef = useRef<PanGestureHandler>(null);
 
   // Widget component mapping - memoized to prevent recreation on every render
   const widgetComponents = React.useMemo(() => ({
@@ -248,8 +241,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
   const renderPage = useCallback((pageLayout: PageLayout, pageIndex: number) => {
-    const isLastPage = pageIndex === totalPages - 1;
-    
     return (
       <View
         key={`page-${pageIndex}`}
@@ -304,7 +295,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     >
       {/* Main dashboard area - AC 11: Header-Dashboard-Footer Hierarchy */}
       <PanGestureHandler
-        ref={panResponderRef}
         onHandlerStateChange={handleSwipeGesture}
         enabled={totalPages > 1} // Only enable swipe when multiple pages
       >
