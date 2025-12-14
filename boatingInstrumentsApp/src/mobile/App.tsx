@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text, LayoutChangeEvent } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
+import { logger } from '../utils/logger'; // Import logger for selective category logging
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
 import { useTheme } from '../store/themeStore';
@@ -27,9 +28,9 @@ import { UnitsConfigDialog } from '../components/dialogs/UnitsConfigDialog';
 import { FactoryResetDialog } from '../components/dialogs/FactoryResetDialog';
 import { LayoutSettingsDialog } from '../components/dialogs/LayoutSettingsDialog';
 import { DisplayThemeDialog } from '../components/dialogs/DisplayThemeDialog';
-import { AlarmConfigDialog } from '../components/dialogs/AlarmConfigDialog';
 import { initializeWidgetSystem } from '../services/initializeWidgetSystem';
 import { AlarmHistoryDialog } from '../components/dialogs/AlarmHistoryDialog';
+import { AlarmConfigDialog } from '../components/dialogs/AlarmConfigDialog';
 import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
 import { MemoryMonitor } from '../components/MemoryMonitor';
 import { 
@@ -103,8 +104,9 @@ const App = () => {
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false);
   const [showLayoutSettingsDialog, setShowLayoutSettingsDialog] = useState(false);
   const [showDisplayThemeDialog, setShowDisplayThemeDialog] = useState(false);
-  const [showAlarmConfigDialog, setShowAlarmConfigDialog] = useState(false);
   const [showAlarmHistoryDialog, setShowAlarmHistoryDialog] = useState(false);
+  const [showAlarmConfigDialog, setShowAlarmConfigDialog] = useState(false);
+  const [alarmConfigSensor, setAlarmConfigSensor] = useState<'depth' | 'temperature' | 'engine' | 'battery' | undefined>(undefined);
   const [showTestSwitchDialog, setShowTestSwitchDialog] = useState(false);
   
   // Navigation session state
@@ -471,8 +473,12 @@ const App = () => {
             onShowFactoryResetDialog={() => setShowFactoryResetDialog(true)}
             onShowLayoutSettings={() => setShowLayoutSettingsDialog(true)}
             onShowDisplayThemeSettings={() => setShowDisplayThemeDialog(true)}
-            onShowAlarmConfiguration={() => setShowAlarmConfigDialog(true)}
             onShowAlarmHistory={() => setShowAlarmHistoryDialog(true)}
+            onShowAlarmConfiguration={() => {
+              logger.alarm('App: onShowAlarmConfiguration called from HamburgerMenu');
+              logger.alarm('App: Setting showAlarmConfigDialog to true');
+              setShowAlarmConfigDialog(true);
+            }}
             navigationSession={navigationSession}
             onToggleNavigationSession={handleToggleNavigationSession}
             onShowAutopilotControl={() => setShowAutopilotControl(true)}
@@ -531,14 +537,18 @@ const App = () => {
         onClose={() => setShowDisplayThemeDialog(false)}
       />
 
-      <AlarmConfigDialog
-        visible={showAlarmConfigDialog}
-        onClose={() => setShowAlarmConfigDialog(false)}
-      />
-
       <AlarmHistoryDialog
         visible={showAlarmHistoryDialog}
         onClose={() => setShowAlarmHistoryDialog(false)}
+      />
+
+      <AlarmConfigDialog
+        visible={showAlarmConfigDialog}
+        onClose={() => {
+          logger.alarm('App: Closing AlarmConfigDialog');
+          setShowAlarmConfigDialog(false);
+        }}
+        sensorType={alarmConfigSensor}
       />
 
       <TestSwitchDialog

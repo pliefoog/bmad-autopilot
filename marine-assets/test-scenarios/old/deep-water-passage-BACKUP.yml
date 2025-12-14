@@ -1,0 +1,137 @@
+name: "Deep Water Passage Scenario"
+description: "Ocean conditions with consistent deep water (>305 meters)"
+duration: 900  # 15 minutes
+version: "1.0"
+category: "basic"
+
+# Vessel parameters (configurable)
+parameters:
+  vessel:
+    length: ${VESSEL_LENGTH:12.2}  # meters
+    beam: ${VESSEL_BEAM:3.7}      # meters  
+    draft: ${VESSEL_DRAFT:1.8}     # meters
+    type: "sailboat"
+  conditions:
+    ocean_depth_base: 609.6    # meters (deep ocean)
+    ocean_swell_period: 8     # seconds
+    trade_wind_direction: 60  # degrees (typical trade winds)
+    trade_wind_speed: 18      # knots
+
+# Deep ocean data patterns
+data:
+  depth:
+    type: "deep_ocean"
+    base_depth: 609.6      # Deep ocean baseline
+    variation: 61.0        # ±61 meters (seafloor topology)
+    swell_effect: 0.9      # ±0.9 meters from wave action
+    frequency: 0.02       # Very slow variation (deep ocean)
+    unit: "meters"
+    min: 305.0             # Always >305 meters as per AC1
+    max: 914.4
+  
+  speed:
+    type: "ocean_passage"
+    base_speed: 7.2       # knots (steady passage speed)
+    ocean_current: 0.8    # knots current assistance
+    wave_effect: 0.3      # ±0.3 knots from wave action
+    unit: "knots"
+    variation: 0.2        # Very stable speed
+    min: 6.0
+    max: 8.5
+  
+  wind:
+    angle:
+      type: "trade_winds"
+      base: 60            # degrees (steady trade wind direction)
+      variation: 8        # ±8 degrees variation (very stable)
+      shift_period: 1800  # 30-minute gradual shifts
+    speed:
+      type: "steady_trade"
+      base: 18            # knots (consistent trade winds)
+      variation: 2        # ±2 knots (very stable)
+      gust_factor: 0.1    # Minimal gusting in open ocean
+      unit: "knots"
+      min: 15
+      max: 22
+  
+  gps:
+    type: "ocean_passage"
+    start_position:
+      latitude: 35.2000   # Mid-Atlantic passage
+      longitude: -65.0000
+    track_type: "great_circle"
+    target_position:
+      latitude: 35.4000   # 15-minute passage segment
+      longitude: -64.8000
+    speed_over_ground: "calculated"
+    course_over_ground: 45  # degrees (steady northeast course)
+
+# Ocean environment conditions
+conditions:
+  sea_state: 3          # Moderate seas (3-5 foot waves)
+  visibility: 10        # nautical miles (good visibility)
+  barometric_pressure: 1013.2  # mb (stable high pressure)
+  air_temperature: 78   # degrees F (tropical passage)
+  water_temperature: 82 # degrees F (warm ocean current)
+
+# NMEA sentence timing (ocean passage rates)
+timing:
+  depth: 0.5      # Hz (every 2 seconds) - less critical in deep water
+  speed: 1        # Hz (every 1 second) - passage monitoring
+  wind: 1         # Hz (every 1 second) - steady conditions
+  gps: 1          # Hz (every 1 second) - navigation critical
+  compass: 5      # Hz (every 0.2 seconds) - course monitoring
+  barometric: 0.033  # Every 30 seconds - weather monitoring
+
+# Mathematical functions for ocean patterns
+functions:
+  deep_ocean: |
+    // Deep ocean depth with minimal variation
+    const seafloorVariation = Math.sin((currentTime / 900) * 2 * Math.PI) * variation;
+    const swellEffect = Math.sin((currentTime / 8) * 2 * Math.PI) * swellEffect;
+    const totalDepth = baseDepth + seafloorVariation + swellEffect;
+    return Math.max(min, Math.min(max, totalDepth));
+    
+  ocean_passage: |
+    // Steady passage speed with minimal ocean effects
+    const currentEffect = oceanCurrent * Math.cos((currentTime / 1800) * 2 * Math.PI);
+    const waveEffect = Math.sin((currentTime / 8) * 2 * Math.PI) * waveEffect;
+    const speedWithEffects = baseSpeed + currentEffect + waveEffect;
+    return Math.max(min, Math.min(max, speedWithEffects));
+    
+  trade_winds: |
+    // Very stable trade wind direction
+    const gradualShift = Math.sin((currentTime / shiftPeriod) * 2 * Math.PI) * variation;
+    return (base + gradualShift + 360) % 360;
+    
+  steady_trade: |
+    // Consistent trade wind speed
+    const naturalVariation = Math.sin((currentTime / 600) * 2 * Math.PI) * variation;
+    const gustEffect = (Math.random() - 0.5) * 2 * gustFactor * base;
+    const windSpeed = base + naturalVariation + gustEffect;
+    return Math.max(min, Math.min(max, windSpeed));
+
+# Use case documentation
+use_cases:
+  - "Ocean passage navigation testing"
+  - "Deep water widgets validation (>305 meters always)"
+  - "Steady-state performance testing"
+  - "Long-range GPS track validation"
+  - "Stable wind condition testing"
+  - "Weather monitoring widget testing"
+
+# Related acceptance criteria  
+acceptance_criteria:
+  - "AC1: Ocean conditions with consistent deep water (>305 meters)"
+  - "AC1: Mathematically coherent NMEA data streams"
+  - "AC1: Realistic timing between related instruments"
+  - "AC1: Parameterizable vessel characteristics"
+
+# Ocean-specific NMEA sentences
+additional_sentences:
+  - "MWV"  # Wind speed and angle
+  - "GLL"  # Geographic position (lat/lon)
+  - "VTG"  # Track made good and ground speed
+  - "DBT"  # Depth below transducer
+  - "VHW"  # Water speed and heading
+  - "XDR"  # Transducer measurements (barometric pressure, temperature)

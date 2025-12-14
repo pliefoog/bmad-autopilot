@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { DetectedWidgetInstance } from '../services/WidgetRegistrationService';
 
+// Debug logging toggle - set to true to enable verbose widget store logs
+const DEBUG_WIDGET_STORE = false;
+
 // System widgets that must always be present and never expire
 const SYSTEM_WIDGETS = [
   { id: 'theme', type: 'theme', title: 'Theme' }
@@ -14,7 +17,6 @@ export interface WidgetConfig {
   settings: Record<string, any>;
   isSystemWidget?: boolean;
   createdAt?: number;
-  lastDataUpdate?: number;
 }
 
 export interface DashboardConfig {
@@ -30,7 +32,6 @@ interface WidgetState {
 
 interface WidgetActions {
   updateInstanceWidgets: (detectedInstances: DetectedWidgetInstance[]) => void;
-  updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) => void;
   setWidgetExpirationTimeout: (timeoutMs: number) => void;
   setEnableWidgetAutoRemoval: (enabled: boolean) => void;
   cleanupExpiredWidgetsWithConfig: () => void;
@@ -48,7 +49,6 @@ const defaultDashboard: DashboardConfig = {
       settings: {},
       isSystemWidget: true,
       createdAt: Date.now(),
-      lastDataUpdate: Date.now(),
     },
   ],
 };
@@ -76,8 +76,10 @@ export const useWidgetStore = create<WidgetStore>()(
 
       updateInstanceWidgets: (detectedInstances) => {
         // Set-based widget diffing for efficient updates
-        console.log(`🔧 [WidgetStore] updateInstanceWidgets called with ${detectedInstances.length} instances`);
-        console.log(`🔧 [WidgetStore] Instances:`, detectedInstances.map(i => i.id).join(', '));
+        if (DEBUG_WIDGET_STORE) {
+          console.log(`🔧 [WidgetStore] updateInstanceWidgets called with ${detectedInstances.length} instances`);
+          console.log(`🔧 [WidgetStore] Instances:`, detectedInstances.map(i => i.id).join(', '));
+        }
         
         // Guard: Don't process if no instances detected
         if (detectedInstances.length === 0) {
@@ -90,14 +92,14 @@ export const useWidgetStore = create<WidgetStore>()(
           ...detectedInstances.map(inst => inst.id)
         ]);
         
-        console.log(`🔧 [WidgetStore] newWidgetIds:`, Array.from(newWidgetIds).join(', '));
+        if (DEBUG_WIDGET_STORE) console.log(`🔧 [WidgetStore] newWidgetIds:`, Array.from(newWidgetIds).join(', '));
         
         // Early exit: No changes detected
         const currentIds = get().currentWidgetIds;
-        console.log(`🔧 [WidgetStore] currentIds:`, Array.from(currentIds).join(', '));
+        if (DEBUG_WIDGET_STORE) console.log(`🔧 [WidgetStore] currentIds:`, Array.from(currentIds).join(', '));
         
         if (setsEqual(currentIds, newWidgetIds)) {
-          console.log('🔧 [WidgetStore] Sets are equal, no changes needed');
+          if (DEBUG_WIDGET_STORE) console.log('🔧 [WidgetStore] Sets are equal, no changes needed');
           return;
         }
         
@@ -105,8 +107,10 @@ export const useWidgetStore = create<WidgetStore>()(
         const toAdd = setDifference(newWidgetIds, currentIds);
         const toRemove = setDifference(currentIds, newWidgetIds);
         
-        console.log(`🔧 [WidgetStore] toAdd (${toAdd.size}):`, Array.from(toAdd).join(', '));
-        console.log(`🔧 [WidgetStore] toRemove (${toRemove.size}):`, Array.from(toRemove).join(', '));
+        if (DEBUG_WIDGET_STORE) {
+          console.log(`🔧 [WidgetStore] toAdd (${toAdd.size}):`, Array.from(toAdd).join(', '));
+          console.log(`🔧 [WidgetStore] toRemove (${toRemove.size}):`, Array.from(toRemove).join(', '));
+        }
         
         const currentDashboard = get().dashboard;
         if (!currentDashboard) return;
@@ -134,7 +138,6 @@ export const useWidgetStore = create<WidgetStore>()(
                 ...(instance.instance !== undefined && { instance: instance.instance }),
               },
               createdAt: now,
-              lastDataUpdate: now,
             };
             
             widgets.push(newWidget);
@@ -152,20 +155,6 @@ export const useWidgetStore = create<WidgetStore>()(
           currentWidgetIds: newWidgetIds 
         });
       },
-
-      updateWidgetDataTimestamp: (widgetId: string, timestamp?: number) =>
-        set((state) => {
-          const widgetIndex = state.dashboard.widgets.findIndex(w => w.id === widgetId);
-          if (widgetIndex === -1) return state;
-          
-          const widgets = [...state.dashboard.widgets];
-          widgets[widgetIndex] = {
-            ...widgets[widgetIndex],
-            lastDataUpdate: timestamp || Date.now()
-          };
-          
-          return { dashboard: { widgets } };
-        }),
 
       resetAppToDefaults: async () => {
         // Step 1: Cleanup widget registration system first
@@ -190,7 +179,6 @@ export const useWidgetStore = create<WidgetStore>()(
           settings: {},
           isSystemWidget: true,
           createdAt: now,
-          lastDataUpdate: now,
         }));
 
         const resetDashboard: DashboardConfig = {
@@ -220,29 +208,64 @@ export const useWidgetStore = create<WidgetStore>()(
         set({ enableWidgetAutoRemoval: enabled });
       },
 
-      // Cleanup expired widgets
+      // Cleanup expired widgets based on sensor data freshness
       cleanupExpiredWidgetsWithConfig: () => {
         const state = get();
         if (!state.enableWidgetAutoRemoval) return;
 
         const currentDashboard = state.dashboard;
-        if (!currentDashboard) {
-          return;
-        }
+        if (!currentDashboard) return;
 
         const now = Date.now();
-        const timeout = state.widgetExpirationTimeout;
         const GRACE_PERIOD = 30000;
         
+        // Import services for widget registration and sensor data
+        const { widgetRegistrationService } = require('../services/WidgetRegistrationService');
+        const { useNmeaStore } = require('./nmeaStore');
+        const nmeaState = useNmeaStore.getState();
+        
+        // Import SensorDependency type
+        type SensorDependency = import('../services/WidgetRegistrationService').SensorDependency;
+        
         const updatedWidgets = currentDashboard.widgets.filter((widget) => {
+          // Always keep system widgets
           if (widget.isSystemWidget) return true;
-          const lastUpdate = widget.lastDataUpdate || widget.createdAt || 0;
-          const age = now - lastUpdate;
-          return age <= (timeout + GRACE_PERIOD);
+          
+          // Get widget type registration
+          const registration = widgetRegistrationService.getWidgetRegistration(widget.type);
+          if (!registration) {
+            console.warn(`⚠️ No registration found for widget type: ${widget.type}`);
+            return true; // Keep unknown widget types
+          }
+          
+          // Determine timeout (per-widget or global default)
+          const timeout = registration.expirationTimeout ?? state.widgetExpirationTimeout;
+          
+          // Parse instance from widget settings (e.g., engine-0 has instance: 0)
+          const instance = widget.settings?.instance ?? 0;
+          
+          // Check all REQUIRED sensors have fresh data
+          const allRequiredFresh = registration.requiredSensors.every((dep: SensorDependency) => {
+            const targetInstance = dep.instance ?? instance;
+            const sensorData = nmeaState.nmeaData.sensors[dep.category]?.[targetInstance];
+            
+            if (!sensorData) return false; // Sensor not found
+            
+            const value = (sensorData as any)[dep.measurementType];
+            if (value === undefined || value === null) return false; // No value
+            
+            const sensorTimestamp = sensorData.timestamp || 0;
+            const age = now - sensorTimestamp;
+            return age <= (timeout + GRACE_PERIOD); // Fresh enough
+          });
+          
+          return allRequiredFresh;
         });
 
         if (updatedWidgets.length === currentDashboard.widgets.length) return;
 
+        console.log(`🧹 Removed ${currentDashboard.widgets.length - updatedWidgets.length} expired widget(s)`);
+        
         set({
           dashboard: {
             ...currentDashboard,

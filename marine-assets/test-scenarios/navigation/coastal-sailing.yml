@@ -1,469 +1,420 @@
 name: "Comprehensive Coastal Sailing Scenario"
-description: "Complete coastal cruiser simulation with all marine systems: depth, speed, wind, GPS, compass, engine, batteries (2x), tanks (4x), temperatures (5x), and rudder position. Realistic tidal effects, thermal wind patterns, and multi-instance sensor configurations typical of a 30-45ft coastal cruising vessel."
+description: "Complete coastal cruiser simulation with all marine systems using sensor-based definitions. Works with both NMEA 0183 and NMEA 2000 protocols. Includes depth, speed (STW/SOG), wind, GPS, compass, engine, batteries (2x), tanks (4x), temperatures, and rudder position."
 duration: 600  # 10 minutes
 version: "2.0"
-category: "comprehensive"
-bridge_mode: "nmea0183"  # NMEA 0183 protocol mode
+category: "navigation"
+bridge_mode: "nmea0183"  # Can be: nmea0183 | nmea2000 | hybrid
 
-# Generator parameters (used by NMEA sentence generation)
+# Generator parameters (required by schema for NMEA 0183 sentence generation)
 parameters:
   vessel:
-    keel_offset: 1.8              # meters below transducer (used in DPT offset field)
+    keel_offset: 1.8              # meters below transducer (required - used in DPT/DBK offset field)
   sonar:
-    max_range: 100.0              # meters (used in DPT max range field)
-
-# Data generation configuration (read by hardcoded generator methods in scenario.js)
-data:
-  depth:
-    type: "tidal_cycle"
-    base_depth: 9.1      # Mean depth in meters
-    tidal_range: 7.6     # ±7.6 meters variation (1.5-16.7 meters range)
-    tidal_period: 600   # Full tidal cycle over scenario duration
-    unit: "meters"
-    min_depth: 1.5        # Shallow water limit
-    max_depth: 30.5      # Deep water limit
-  
-  water_temp:
-    type: "gaussian"
-    mean: 18.5          # Mean water temperature in °C (65°F)
-    std_dev: 1.2        # ±1.2°C variation
-    min: 14.0           # Minimum water temp (57°F)
-    max: 24.0           # Maximum water temp (75°F)
-    unit: "celsius"
-  
-  speed:
-    type: "sawtooth"                # Sawtooth pattern for realistic speed variation
-    period: 60                      # 1-minute cycle (60 seconds)
-    unit: "knots"
-    min: 2.0                        # Minimum speed: 2 knots
-    max: 6.0                        # Maximum speed: 6 knots
-  
-  wind:
-    angle:
-      type: "coastal_variation"
-      base: 120         # degrees (from shore effects)
-      thermal_shift: 30 # degrees (sea breeze effects)
-      variation_period: 300  # 5-minute thermal cycles
-    speed:
-      type: "coastal_wind"
-      base: 14          # knots
-      thermal_effect: 4  # ±4 knots thermal variation
-      gusts: 0.3        # 30% gust factor
-      unit: "knots"
-      min: 8
-      max: 22
-  
+    max_range: 100.0              # meters (required - used in DPT max range field)
   gps:
-    type: "coastal_track"
-    start_position:
-      latitude: 41.4800   # Lake Erie coastal area
-      longitude: -81.6900
-    track_type: "coastal_navigation"
-    waypoints:
-      - {lat: 41.4800, lon: -81.6900, time: 0}      # Start
-      - {lat: 41.4850, lon: -81.6800, time: 150}    # 2.5 min
-      - {lat: 41.4900, lon: -81.6750, time: 300}    # 5 min
-      - {lat: 41.4950, lon: -81.6700, time: 450}    # 7.5 min
-      - {lat: 41.5000, lon: -81.6650, time: 600}    # 10 min end
-    speed_over_ground: "calculated"  # Based on speed data
-  
-  # ========== ENGINE DATA ==========
-  engine:
-    rpm:
-      type: "sine_wave"
-      base: 1800        # Cruising RPM (typical diesel)
-      amplitude: 200    # ±200 RPM variation
-      period: 120       # 2-minute cycle
-      min: 500
-      max: 3200
-    
-    coolant_temp:
-      type: "gaussian"
-      mean: 180         # Normal operating temperature (°F) - parser converts to C
-      std_dev: 4
-      min: 140
-      max: 203
-    
-    oil_pressure:
-      type: "gaussian"
-      mean: 55          # Normal oil pressure (PSI) - parser converts to Pascals
-      std_dev: 5
-      min: 30
-      max: 80
-    
-    alternator_voltage:
-      type: "sine_wave"
-      base: 14.2        # Charging voltage
-      amplitude: 0.4    # ±0.4V variation
-      period: 180       # 3-minute cycle
-      min: 12.0
-      max: 14.8
-    
-    fuel_rate:
-      type: "gaussian"
-      mean: 4.5         # Liters per hour
-      std_dev: 0.5
-      min: 0.5
-      max: 12.0
-    
-    hours:
-      type: "linear"
-      start: 1250.0     # Starting engine hours
-      end: 1250.2       # Ending engine hours (0.2 hours = 12 minutes runtime)
-      min: 0
-      max: 10000
-  
-  # ========== RUDDER DATA ==========
-  rudder:
-    angle:
-      type: "sine_wave"
-      base: 0           # Centered rudder
-      amplitude: 8      # ±8 degrees for course corrections
-      period: 45        # 45-second steering cycle
-      min: -35
-      max: 35
+    quality: 1                    # GPS fix quality (required - 0=invalid, 1=GPS fix, 2=DGPS)
+    satellites: 8                 # Number of satellites (required - used in GGA sentence)
+    hdop: 1.0                     # Horizontal dilution of precision (required - used in GGA sentence)
+    altitude: 0.0                 # Altitude above MSL in meters (optional - used in GGA sentence)
+  compass:
+    magnetic_deviation: 0.0       # Magnetic deviation in degrees (required - used in HDG sentence)
+    magnetic_variation: -15.0     # Magnetic variation in degrees (required - used in HDG sentence)
+  autopilot:
+    max_heading_rate: 10          # Maximum heading rate in degrees/second for smooth transitions
+    cross_track_tolerance: 0.1    # Cross-track error tolerance in nautical miles
+    arrival_radius: 0.2           # Waypoint arrival circle radius in nautical miles
 
-# NMEA sentence definitions - Comprehensive coastal cruiser configuration
-# Note: Data generation uses hardcoded functions in scenario.js (generateTidalCycle,
-# generateCoastalVariation, generateCoastalWind, etc.) that read parameters from
-# the data section above. The functions section previously defined here was unused.
-nmea_sentences:
-  # ========== DEPTH MONITORING ==========
-  - type: "DPT"    # Depth Below Transducer (primary depth source)
-    frequency: 2   # Hz (every 0.5 seconds)
-  
-  # ========== WATER TEMPERATURE ==========
-  - type: "MTW"    # Water Temperature
-    frequency: 0.2 # Hz (every 5 seconds)
-  
-  # ========== SPEED & NAVIGATION ==========
-  - type: "VHW"    # Water Speed and Heading (through water)
-    frequency: 1   # Hz (every 1 second)
-  
-  - type: "VTG"    # Track Made Good and Ground Speed (over ground)
-    frequency: 1   # Hz (every 1 second)
-  
-  # ========== WIND INSTRUMENTS ==========
-  - type: "MWV"    # Wind Speed and Angle (apparent/true wind)
-    frequency: 2   # Hz (every 0.5 seconds)
-  
-  # ========== GPS POSITION ==========
-  - type: "GGA"    # GPS Fix Data (position, quality, satellites)
-    frequency: 5   # Hz (every 0.2 seconds - rapid updates)
-  
-  - type: "RMC"    # Recommended Minimum GPS Data (position, speed, date/time)
-    frequency: 1   # Hz (every 1 second - standard rate)
-  
-  # ========== HEADING & COMPASS ==========
-  - type: "HDG"    # Magnetic Heading with Deviation & Variation
-    frequency: 5   # Hz (every 0.2 seconds)
-   
-  # ========== ENGINE MONITORING ==========
-  # Single diesel engine configuration (typical 30-45ft coastal cruiser)
-  - type: "RPM"    # Engine RPM
-    frequency: 1   # Hz (every 1 second)
-    instances:
-      - instance: 0  # Main engine
-        source: "E"  # Engine
-        data_path: "engine.rpm"
-        min: 500
-        max: 3200
-        typical: 1800
-  
-  # Engine parameters via XDR sentences
-  - type: "XDR"    # Engine Coolant Temperature
-    frequency: 0.5 # Hz (every 2 seconds)
-    measurements:
-      - measurement_type: "C"           # Temperature in Celsius
-        identifier: "ENGINE#1"            # Parser expects ENGINE#X format
-        data_path: "engine.coolant_temp"
-        units: "F"                       # Parser expects Fahrenheit for engine temp
-        min: 140
-        max: 203
-        typical: 180
-        warning_high: 194
-  
-  - type: "XDR"    # Engine Oil Pressure
-    frequency: 0.5 # Hz (every 2 seconds)
-    measurements:
-      - measurement_type: "P"           # Pressure
-        identifier: "ENGINE#1"            # Parser expects ENGINE#X format (same as coolant)
-        data_path: "engine.oil_pressure"
-        units: "P"  # PSI (parser expects PSI, not Bar)
-        min: 36
-        max: 73
-        typical: 55
-        warning_low: 44
-  
-  - type: "XDR"    # Engine Alternator Voltage
-    frequency: 0.5 # Hz (every 2 seconds)
-    measurements:
-      - measurement_type: "U"           # Voltage (U not V)
-        identifier: "ALTERNATOR"           # Parser expects ALTERNATOR format
-        data_path: "engine.alternator_voltage"
-        units: "V"
-        min: 12.0
-        max: 14.8
-        typical: 14.2
-  
-  - type: "XDR"    # Engine Fuel Flow Rate
-    frequency: 0.5 # Hz (every 2 seconds)
-    measurements:
-      - measurement_type: "V"           # Volume (flow rate)
-        identifier: "ENGINE#1_FUEL"        # Parser expects ENGINE#X_FUEL format
-        data_path: "engine.fuel_rate"
-        units: "L"  # Liters per hour
-        min: 3.0
-        max: 6.0
-        typical: 4.5
-  
-  - type: "XDR"    # Engine Hours Meter
-    frequency: 0.1 # Hz (every 10 seconds - slow update)
-    measurements:
-      - measurement_type: "G"           # Generic numeric (not T)
-        identifier: "ENGINE#1_HOURS"       # Parser expects ENGINE#X_HOURS format
-        data_path: "engine.hours"
-        units: "H"  # Hours
-        min: 0
-        max: 10000
-        typical: 1250
-  
-  # ========== BATTERY MONITORING ==========
-  # Typical dual-battery setup: House bank + Engine/starter battery
-  # Using single-sentence XDR format (proven working from battery-drain-scenario.yml)
-  
-  # House Battery Bank (Instance 0) - primary electrical system
-  - sentence: "$IIXDR,U,{house_voltage},V,BAT_0,I,{house_current},A,BAT_0,C,{house_temp},C,BAT_0_TMP,P,{house_soc},P,BAT_0_SOC,U,12.0,V,BAT_0_NOM,V,400,H,BAT_0_CAP,G,AGM,N,BAT_0_CHEM*XX"
-    sentence_type: "XDR"
-    description: "House Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
-    source: "BATTERY_HOUSE"
-    interval: 2.0  # Every 2 seconds
-    type: "XDR"
-    parameters:
-      house_voltage:
-        type: "sine"
-        start: 12.6
-        amplitude: 0.8
-        frequency: 0.0033  # Period ~300 seconds
-        min: 11.8
-        max: 14.4
-        format: "00.0"
-      house_current:
-        type: "sine"
-        start: -5.2
-        amplitude: 5.0
-        frequency: 0.005
-        min: -15.0
-        max: 2.0
-        format: "00.0"
-      house_temp:
-        type: "sine"
-        start: 22
-        amplitude: 3
-        frequency: 0.003
-        min: 15
-        max: 35
-        format: "00.0"
-      house_soc:
-        type: "linear"
-        start: 85
-        end: 75
-        duration: 600
-        format: "000"
-  
-  # Engine/Starter Battery (Instance 1) - dedicated starting battery
-  - sentence: "$IIXDR,U,{engine_voltage},V,BAT_1,I,{engine_current},A,BAT_1,C,{engine_temp},C,BAT_1_TMP,P,{engine_soc},P,BAT_1_SOC,U,12.0,V,BAT_1_NOM,V,100,H,BAT_1_CAP,G,FLA,N,BAT_1_CHEM*XX"
-    sentence_type: "XDR"
-    description: "Engine Battery voltage, current, temperature, SOC, nominal voltage, capacity, and chemistry"
-    source: "BATTERY_ENGINE"
-    interval: 2.0  # Every 2 seconds
-    type: "XDR"
-    parameters:
-      engine_voltage:
-        type: "sine"
-        start: 13.2
-        amplitude: 0.6
-        frequency: 0.004  # Period ~250 seconds
-        min: 12.4
-        max: 14.6
-        format: "00.0"
-      engine_current:
-        type: "sine"
-        start: -1.5
-        amplitude: 3.0
-        frequency: 0.008
-        min: -8.0
-        max: 5.0
-        format: "00.0"
-      engine_temp:
-        type: "sine"
-        start: 28
-        amplitude: 4
-        frequency: 0.004
-        min: 18
-        max: 45
-        format: "00.0"
-      engine_soc:
-        type: "sine"
-        start: 92
-        amplitude: 8
-        frequency: 0.0025  # Period ~400 seconds
-        min: 75
-        max: 100
-        format: "000"
-  
-  # ========== TANK LEVELS ==========
-  # Typical coastal cruiser tank configuration
-  
-  # Fuel Tank (diesel)
-  - type: "XDR_TANK"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 0
-        tank_type: "FUEL"
-        capacity: 200  # Liters
-        data:
-          level:
-            type: "linear"
-            start: 0.75
-            end: 0.68
-            min: 0.0
-            max: 1.0
-  
-  # Fresh Water Tank
-  - type: "XDR_TANK"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 1
-        tank_type: "WATR"
-        capacity: 150  # Liters
-        data:
-          level:
-            type: "linear"
-            start: 0.60
-            end: 0.55
-            min: 0.0
-            max: 1.0
-  
-  # Gray Water Tank (sink/shower waste)
-  - type: "XDR_TANK"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 2
-        tank_type: "WAST"
-        capacity: 80   # Liters
-        data:
-          level:
-            type: "linear"
-            start: 0.15
-            end: 0.25
-            min: 0.0
-            max: 1.0
-  
-  # Black Water Tank (toilet waste)
-  - type: "XDR_TANK"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 3
-        tank_type: "BWAT"
-        capacity: 60   # Liters
-        data:
-          level:
-            type: "linear"
-            start: 0.10
-            end: 0.18
-            min: 0.0
-            max: 1.0
-  
-  # ========== TEMPERATURE SENSORS ==========
+# PROTOCOL-AGNOSTIC SENSOR DEFINITIONS
+# Physical sensors with data generation and physical properties
+# No NMEA 0183 or NMEA 2000 references - bridge code handles protocol mapping
+sensors:
+  # ========== DEPTH SENSOR ==========
+  - type: depth_sensor
+    instance: 0
+    name: "Primary Depth Sounder"
+    update_rate: 2  # Hz
+    physical_properties:
+      transducer_depth: 1.8        # meters below waterline (maps to DPT offset or PGN 128267 byte[8])
+      keel_offset: 0.5              # meters below transducer (for DBK calculation)
+      max_range: 100.0              # meters
+      mounting_location: "bow"
+    data_generation:
+      depth:
+        type: "sawtooth"            # Sawtooth pattern for testing trendline visualization
+        min: 1.5                    # meters - shallow water
+        max: 6.0                    # meters - deeper water
+        period: 60                  # 60 seconds - one full cycle per minute
+        phase: 0                    # Start at minimum depth
+
+  # ========== SPEED THROUGH WATER SENSOR (STW) ==========
+  # Paddlewheel/log sensor measuring speed relative to water mass
+  - type: speed_sensor
+    instance: 0
+    name: "Paddle Wheel Speed Log (STW)"
+    update_rate: 1  # Hz
+    physical_properties:
+      speed_type: "STW"
+      unit: "knots"
+      precision: 0.1
+    data_generation:
+      speed:
+        type: "sine_wave"           # Sine wave for smooth speed variation
+        base: 4.5                   # Average speed: 4.5 knots
+        amplitude: 1.2              # ±1.2 knots variation (3.3-5.7 knots)
+        period: 120                 # 2-minute cycle for wave motion effects
+        min: 2.5
+        max: 6.5
+
+  # NOTE: SOG (Speed Over Ground) comes from GPS sensor via VTG sentence
+  # No separate "SOG sensor" needed - GPS calculates speed from position changes
+
+  # ========== WIND SENSOR ==========
+  - type: wind_sensor
+    instance: 0
+    name: "Masthead Wind Instrument"
+    update_rate: 2  # Hz
+    physical_properties:
+      sensor_height: 12.5           # meters above deck (maps to PGN 130306 byte[6])
+      mounting_location: "masthead"
+      reference_type: "apparent"    # Maps to MWV.reference or PGN 130306 byte[5]
+    data_generation:
+      wind_speed:
+        type: "sine_wave"
+        base: 14                    # knots
+        amplitude: 4                # ±4 knots thermal variation
+        period: 300                 # 5-minute cycles
+        min: 8
+        max: 22
+        noise:
+          type: "gaussian"
+          std_dev: 0.5              # Gust effect
+      wind_angle:
+        type: "sine_wave"
+        base: 120                   # degrees
+        amplitude: 30               # ±30 degrees thermal shift
+        period: 300                 # 5-minute cycles
+
+  # ========== GPS SENSOR ==========
+  - type: gps_sensor
+    instance: 0
+    name: "Primary GPS Antenna"
+    update_rate: 1  # Hz (RMC), 5 Hz (GGA fast updates)
+    physical_properties:
+      antenna_height: 3.2           # meters above water
+      horizontal_accuracy: 2.5      # meters (maps to GGA.hdop or PGN 129025)
+      mounting_location: "stern_arch"
+    data_generation:
+      position:
+        type: "gps_track"           # GPS track with waypoint interpolation
+        start_position:
+          latitude: 41.4800         # Lake Erie coastal area
+          longitude: -81.6900
+        track_type: "coastal_navigation"
+        waypoints:
+          - latitude: 41.4800
+            longitude: -81.6900
+            time: 0      # Start (Cleveland Harbor)
+          - latitude: 41.4850
+            longitude: -81.6800
+            time: 150    # 2.5 min - heading ~52° NE
+          - latitude: 41.4900
+            longitude: -81.6750
+            time: 300    # 5 min - heading ~56° NE
+          - latitude: 41.4950
+            longitude: -81.6700
+            time: 450    # 7.5 min - heading ~56° NE
+          - latitude: 41.5000
+            longitude: -81.6650
+            time: 600    # 10 min end - heading ~56° NE
+
+  # ========== HEADING SENSOR ==========
+  - type: heading_sensor
+    instance: 0
+    name: "Fluxgate Compass"
+    update_rate: 5  # Hz
+    physical_properties:
+      reference: "magnetic"
+      deviation: 0.0                # degrees (maps to HDG.deviation or PGN 127250 byte[4-5])
+      variation: -15.0              # degrees west (maps to HDG.variation or PGN 127250 byte[6-7])
+      precision: 0.5
+    data_generation:
+      heading:
+        type: "gps_track"           # Calculate heading from GPS waypoints (great circle bearing)
+        source: "gps_track"         # Uses GPS waypoints for heading calculation
+        smooth_transitions: true    # Enable 10°/s rate limiting for realistic heading changes
+
+  # ========== TEMPERATURE SENSORS (5x) ==========
   # Multiple temperature monitoring points
   
   # Seawater Temperature (from through-hull sensor)
-  - type: "XDR_TEMPERATURE"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 0
-        location: "SEAW"
-        location_name: "Seawater"
-        data:
-          temperature:
-            type: "gaussian"
-            mean: 18.5
-            std_dev: 0.5
-            min: 16
-            max: 22
-            unit: "C"
-  
+  - type: temperature_sensor
+    instance: 0
+    name: "Seawater Temperature"
+    update_rate: 0.2  # Hz (every 5 seconds)
+    physical_properties:
+      sensor_type: "water"
+      location: "SEAW"
+      location_name: "Seawater"
+      unit: "celsius"
+      precision: 0.1
+    data_generation:
+      temperature:
+        type: "gaussian"
+        mean: 18.5                  # °C
+        std_dev: 0.5
+        min: 16.0
+        max: 22.0
+
   # Outside Air Temperature (from mast sensor)
-  - type: "XDR_TEMPERATURE"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 1
-        location: "AIRX"
-        location_name: "Outside Air"
-        data:
-          temperature:
-            type: "sine_wave"
-            base: 22
-            amplitude: 4
-            period: 600
-            min: 15
-            max: 28
-            unit: "C"
-  
+  - type: temperature_sensor
+    instance: 1
+    name: "Outside Air Temperature"
+    update_rate: 0.2  # Hz (every 5 seconds)
+    physical_properties:
+      sensor_type: "air"
+      location: "AIRX"
+      location_name: "Outside Air"
+      unit: "celsius"
+      precision: 0.1
+    data_generation:
+      temperature:
+        type: "sine_wave"
+        base: 22.0                  # °C
+        amplitude: 4.0              # ±4°C
+        period: 600                 # 10-minute thermal cycle
+        min: 15.0
+        max: 28.0
+
   # Engine Room Temperature (from bilge sensor)
-  - type: "XDR_TEMPERATURE"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 2
-        location: "ENGR"
-        location_name: "Engine Room"
-        data:
-          temperature:
-            type: "gaussian"
-            mean: 35
-            std_dev: 3
-            min: 25
-            max: 50
-            unit: "C"
-  
+  - type: temperature_sensor
+    instance: 2
+    name: "Engine Room Temperature"
+    update_rate: 0.2  # Hz (every 5 seconds)
+    physical_properties:
+      sensor_type: "engine"
+      location: "ENGR"
+      location_name: "Engine Room"
+      unit: "celsius"
+      precision: 0.5
+    data_generation:
+      temperature:
+        type: "gaussian"
+        mean: 35.0                  # °C (hot engine room)
+        std_dev: 3.0
+        min: 25.0
+        max: 50.0
+
   # Main Cabin Temperature (from salon sensor)
-  - type: "XDR_TEMPERATURE"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 3
-        location: "TEMP"
-        location_name: "Main Cabin"
-        data:
-          temperature:
-            type: "gaussian"
-            mean: 21
-            std_dev: 1.5
-            min: 18
-            max: 26
-            unit: "C"
-  
+  - type: temperature_sensor
+    instance: 3
+    name: "Main Cabin Temperature"
+    update_rate: 0.2  # Hz (every 5 seconds)
+    physical_properties:
+      sensor_type: "cabin"
+      location: "TEMP"
+      location_name: "Main Cabin"
+      unit: "celsius"
+      precision: 0.1
+    data_generation:
+      temperature:
+        type: "gaussian"
+        mean: 21.0                  # °C (comfortable cabin)
+        std_dev: 1.5
+        min: 18.0
+        max: 26.0
+
   # Refrigerator Temperature (from fridge sensor)
-  - type: "XDR_TEMPERATURE"
-    frequency: 0.2 # Hz (every 5 seconds)
-    instances:
-      - instance: 4
-        location: "TEMP"
-        location_name: "Refrigerator"
-        data:
-          temperature:
-            type: "sawtooth"  # Linear cooling cycle with compressor restart
-            min: 2            # Compressor turns on
-            max: 8            # Compressor turns off
-            period: 120       # 2-minute cooling cycle
-            unit: "C"
-  
-  # ========== RUDDER POSITION ==========
-  # Note: RSA sentence not currently processed by NmeaSensorProcessor
-  # RudderPositionWidget uses autopilot.rudderPosition data instead
-  # - type: "RSA"    # Rudder Sensor Angle (DISABLED - not processed)
-  #   frequency: 5   # Hz (every 0.2 seconds - responsive)
-  #   data_path: "rudder.angle"
-  #   min: -35
-  #   max: 35
-  #   typical: 0
+  - type: temperature_sensor
+    instance: 4
+    name: "Refrigerator Temperature"
+    update_rate: 0.2  # Hz (every 5 seconds)
+    physical_properties:
+      sensor_type: "refrigeration"
+      location: "TEMP"
+      location_name: "Refrigerator"
+      unit: "celsius"
+      precision: 0.5
+    data_generation:
+      temperature:
+        type: "sawtooth"            # Linear cooling cycle with compressor restart
+        min: 2.0                    # Compressor turns on
+        max: 8.0                    # Compressor turns off
+        period: 120                 # 2-minute cooling cycle
+
+  # ========== ENGINE SENSOR ==========
+  - type: engine_sensor
+    instance: 0
+    name: "Main Diesel Engine"
+    update_rate: 1  # Hz
+    physical_properties:
+      engine_instance: 0            # 0=port/single, 1=starboard (maps to RPM.source or PGN 127488 byte[0])
+      rpm_calibration: 1.02         # RPM multiplier
+      sensor_types: ["rpm", "coolant_temp", "oil_pressure", "alternator_voltage", "fuel_rate"]
+    data_generation:
+      rpm:
+        type: "sine_wave"
+        base: 1800                  # RPM
+        amplitude: 200              # ±200 RPM
+        period: 120                 # 2-minute cycle
+        min: 500
+        max: 3200
+
+  # ========== BATTERY SENSORS (2x) ==========
+  - type: battery_sensor
+    instance: 0
+    name: "House Battery Bank"
+    update_rate: 0.5  # Hz (every 2 seconds)
+    physical_properties:
+      battery_instance: 0           # Maps to XDR.transducer_name (0183) or PGN 127508 byte[0] (2000)
+      nominal_voltage: 12           # V
+      capacity: 400                 # Ah
+      chemistry: "AGM"              # Battery chemistry: FLA (Flooded Lead-Acid), AGM (Absorbed Glass Mat), GEL, LiFePO4
+      xdr_format: "compound"        # XDR format: "compound" (single sentence, all params) or "individual" (separate sentences per param)
+    data_generation:
+      voltage:
+        type: "sine_wave"
+        base: 12.6                  # V
+        amplitude: 0.4              # ±0.4V
+        period: 300
+        min: 11.8
+        max: 14.4
+      current:
+        type: "gaussian"
+        mean: -15.0                 # A (negative = discharging)
+        std_dev: 5.0
+        min: -40.0
+        max: 20.0
+      temperature:
+        type: "gaussian"
+        mean: 298.15                # K (25°C)
+        std_dev: 2.0
+        min: 288.15
+        max: 308.15
+
+  - type: battery_sensor
+    instance: 1
+    name: "Starter Battery"
+    update_rate: 0.5  # Hz
+    physical_properties:
+      battery_instance: 1
+      nominal_voltage: 12
+      capacity: 100
+      chemistry: "FLA"              # Battery chemistry
+      xdr_format: "compound"        # XDR format
+    data_generation:
+      voltage:
+        type: "gaussian"
+        mean: 14.2                  # V (charging)
+        std_dev: 0.2
+        min: 12.0
+        max: 14.8
+      current:
+        type: "gaussian"
+        mean: 8.0                   # A (charging)
+        std_dev: 2.0
+        min: -10.0
+        max: 30.0
+      temperature:
+        type: "gaussian"
+        mean: 298.15
+        std_dev: 1.5
+        min: 290.15
+        max: 305.15
+
+  # ========== TANK SENSORS (4x) ==========
+  - type: tank_sensor
+    instance: 0
+    name: "Fuel Tank - Starboard"
+    update_rate: 0.4  # Hz (2.5 seconds - NMEA 2000 PGN 127505 standard)
+    physical_properties:
+      tank_type: "fuel"
+      tank_capacity: 150
+      unit: "percent"
+      precision: 1
+    data_generation:
+      level:
+        type: "linear"
+        start: 85.0                 # % full
+        end: 82.0                   # % full (3% decline over scenario)
+        min: 0
+        max: 100
+
+  - type: tank_sensor
+    instance: 1
+    name: "Fuel Tank - Port"
+    update_rate: 0.4  # Hz (2.5 seconds - NMEA 2000 standard)
+    physical_properties:
+      tank_type: "fuel"
+      tank_capacity: 150
+      unit: "percent"
+      precision: 1
+    data_generation:
+      level:
+        type: "linear"
+        start: 82.0
+        end: 79.0
+        min: 0
+        max: 100
+
+  - type: tank_sensor
+    instance: 2
+    name: "Fresh Water Tank"
+    update_rate: 0.4  # Hz (2.5 seconds - NMEA 2000 standard)
+    physical_properties:
+      tank_type: "fresh_water"
+      tank_capacity: 200
+      unit: "percent"
+      precision: 1
+    data_generation:
+      level:
+        type: "gaussian"
+        mean: 65.0
+        std_dev: 2.0
+        min: 60.0
+        max: 70.0
+
+  - type: tank_sensor
+    instance: 3
+    name: "Gray Water Tank"
+    update_rate: 0.4  # Hz (2.5 seconds - NMEA 2000 standard)
+    physical_properties:
+      tank_type: "gray_water"
+      tank_capacity: 80
+      unit: "percent"
+      precision: 1
+    data_generation:
+      level:
+        type: "linear"
+        start: 15.0
+        end: 20.0
+        min: 0
+        max: 100
+
+  # ========== RUDDER SENSOR ==========
+  - type: rudder_sensor
+    instance: 0
+    name: "Rudder Position Sensor"
+    update_rate: 2  # Hz
+    physical_properties:
+      rudder_instance: 0            # 0=main rudder (maps to RSA.position or PGN 127245 byte[0])
+      max_angle: 35                 # degrees
+      calibration_offset: 0.5       # degrees (zero position adjustment)
+    data_generation:
+      angle:
+        type: "sine_wave"
+        base: 0                     # degrees (centered)
+        amplitude: 8                # ±8 degrees
+        period: 45                  # 45-second steering cycle
+        min: -35
+        max: 35
+
+# IMPLEMENTATION NOTES:
+# ======================
+# 1. The bridge code (scenario.js) reads this sensors: array
+# 2. For each sensor, it looks up the sensor type in SENSOR_TYPE_REGISTRY
+# 3. Based on bridge_mode (nmea0183/nmea2000/hybrid), it routes to appropriate generators
+# 4. Physical properties are mapped to protocol-specific fields:
+#    - transducer_depth → DPT.offset (0183) or PGN 128267 byte[8] (2000)
+#    - reference_type → MWV.reference (0183) or PGN 130306 byte[5] (2000)
+#    - fluid_type → none (0183) or PGN 127505 byte[1] (2000)
+# 5. Data generation remains protocol-agnostic - same tidal_cycle works for both DBT and PGN 128267

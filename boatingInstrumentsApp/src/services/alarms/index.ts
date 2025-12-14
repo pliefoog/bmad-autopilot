@@ -19,11 +19,10 @@ export { MarineAudioAlertManager, DEFAULT_MARINE_AUDIO_CONFIG } from './MarineAu
 // History logging for marine incident documentation
 export { AlarmHistoryLogger } from './AlarmHistoryLogger';
 
-// Configuration management with marine safety validation
-export { CriticalAlarmConfiguration } from './CriticalAlarmConfiguration';
-
 // Active monitoring for GPS and autopilot systems
 export { CriticalAlarmMonitors } from './CriticalAlarmMonitors';
+
+// TODO: Sensor-instance-based alarm configuration will be added here
 
 // Types and interfaces
 export type {

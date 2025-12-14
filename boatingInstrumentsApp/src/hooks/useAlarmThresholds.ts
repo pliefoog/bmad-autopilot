@@ -1,173 +1,98 @@
 /**
- * useAlarmThresholds Hook
- * Queries CriticalAlarmConfiguration for alarm thresholds to display on trendlines
- * Uses standardized min/max/warning threshold structure (9999 = N/A)
+ * useAlarmThresholds Hook - Per-Instance Alarm Thresholds
+ * Reads alarm thresholds from sensor instances in NMEA store
+ * Subscribes to threshold updates for reactive UI changes
  */
 
-import { useMemo, useEffect, useState } from 'react';
-import { CriticalAlarmConfiguration } from '../services/alarms/CriticalAlarmConfiguration';
-import { CriticalAlarmType } from '../services/alarms/types';
+import { useEffect, useState } from 'react';
+import { useNmeaStore } from '../store/nmeaStore';
+import type { SensorType, SensorAlarmThresholds } from '../types/SensorData';
 
 export interface AlarmThresholdValues {
   warning?: number;
   min?: number;
   max?: number;
   thresholdType: 'min' | 'max';
+  enabled: boolean;
   status: 'loading' | 'loaded' | 'disabled' | 'error';
   message?: string;
 }
 
-// Map data paths to CriticalAlarmType
-const DATA_PATH_TO_ALARM_TYPE: Record<string, CriticalAlarmType> = {
-  // Navigation
-  'depth': CriticalAlarmType.SHALLOW_WATER,
-  'depth.belowTransducer': CriticalAlarmType.SHALLOW_WATER,
-  'speed.overGround': CriticalAlarmType.HIGH_SPEED,
-  
-  // Engine
-  'engine.coolantTemp': CriticalAlarmType.ENGINE_OVERHEAT,
-  'engine.temperature': CriticalAlarmType.ENGINE_OVERHEAT,
-  'engine.rpm': CriticalAlarmType.ENGINE_HIGH_RPM,
-  'engine.oilPressure': CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE,
-  
-  // Electrical
-  'electrical.batteryVoltage': CriticalAlarmType.LOW_BATTERY,
-  'electrical.voltage': CriticalAlarmType.LOW_BATTERY,
-  'electrical.current': CriticalAlarmType.HIGH_CURRENT,
-  'electrical.alternatorVoltage': CriticalAlarmType.LOW_ALTERNATOR,
-  
-  // Wind
-  'wind.speed': CriticalAlarmType.HIGH_WIND,
-  'wind.apparentSpeed': CriticalAlarmType.HIGH_WIND,
-  
-  // Tanks
-  'tanks.fuel.level': CriticalAlarmType.LOW_FUEL,
-  'tanks.freshWater.level': CriticalAlarmType.LOW_WATER,
-  'tanks.wasteWater.level': CriticalAlarmType.HIGH_WASTE_WATER,
-};
-
 /**
- * Get alarm threshold values for a specific data path
- * @param dataPath - The NMEA data path (e.g., 'depth', 'engine.coolantTemp', 'electrical.batteryVoltage')
- * @returns Object containing warning, min, max threshold values, and threshold type
+ * Get alarm threshold values for a specific sensor instance
+ * @param sensorType - The sensor type (e.g., 'depth', 'temperature', 'engine')
+ * @param instance - The sensor instance number (default: 0)
+ * @returns Object containing warning, min, max threshold values, enabled state, and threshold type
  */
-export function useAlarmThresholds(dataPath: string): AlarmThresholdValues {
-  // Force re-render when config changes
+export function useAlarmThresholds(
+  sensorType: SensorType,
+  instance: number = 0
+): AlarmThresholdValues {
+  // Get threshold retrieval method from store
+  const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
+  const sensorEventEmitter = useNmeaStore((state) => state.sensorEventEmitter);
+  
+  // Local state to trigger re-renders on threshold updates
   const [updateTrigger, setUpdateTrigger] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Wait for storage to load on mount
+  // Subscribe to threshold updates for this sensor instance
   useEffect(() => {
-    const init = async () => {
-      await CriticalAlarmConfiguration.getInstanceAsync();
-      setIsLoading(false);
-    };
-    init();
-  }, []);
-  
-  // Subscribe to configuration changes
-  useEffect(() => {
-    const alarmConfig = CriticalAlarmConfiguration.getInstance();
-    const unsubscribe = alarmConfig.subscribe((type, config) => {
-      // Check if this change affects our dataPath
-      const alarmType = DATA_PATH_TO_ALARM_TYPE[dataPath];
-      if (type === alarmType) {
-        console.log(`[useAlarmThresholds] Config changed for ${type}, updating thresholds`);
-        setUpdateTrigger(prev => prev + 1);
+    const handleThresholdUpdate = (event: { sensorType: string; instance: number }) => {
+      if (event.sensorType === sensorType && event.instance === instance) {
+        setUpdateTrigger((prev) => prev + 1);
       }
-    });
-    
-    return unsubscribe;
-  }, [dataPath]);
-  
-  return useMemo(() => {
-    if (isLoading) {
-      return { 
-        thresholdType: 'min', 
-        status: 'loading' as const,
-        message: 'Loading alarm configuration...'
-      };
-    }
-    
-    console.log(`[useAlarmThresholds] Querying thresholds for dataPath: ${dataPath}`);
-    
-    const alarmConfig = CriticalAlarmConfiguration.getInstance();
-    const alarmType = DATA_PATH_TO_ALARM_TYPE[dataPath];
-    
-    if (!alarmType) {
-      console.log(`[useAlarmThresholds] No alarm type mapped for dataPath: ${dataPath}`);
-      return { 
-        thresholdType: 'min',
-        status: 'error' as const,
-        message: `No alarm type mapped for ${dataPath}`
-      };
-    }
-    
-    const config = alarmConfig.getAlarmConfig(alarmType);
-    
-    if (!config) {
-      console.log(`[useAlarmThresholds] Alarm ${alarmType} not found`);
-      return { 
-        thresholdType: 'min',
-        status: 'error' as const,
-        message: `Alarm configuration not found for ${alarmType}`
-      };
-    }
-    
-    if (!config.enabled) {
-      console.log(`[useAlarmThresholds] Alarm ${alarmType} is disabled`);
-      return { 
-        thresholdType: 'min',
-        status: 'disabled' as const,
-        message: `Alarm ${alarmType} is disabled`
-      };
-    }
-    
-    console.log(`[useAlarmThresholds] Found config for ${alarmType}:`, {
-      min: config.thresholds.min,
-      max: config.thresholds.max,
-      warning: config.thresholds.warning
-    });
-    
-    // Determine threshold type based on which thresholds are active (not 9999)
-    const hasMin = config.thresholds.min !== 9999;
-    const hasMax = config.thresholds.max !== 9999;
-    const thresholdType = hasMax ? 'max' : 'min';
-    
-    // Return threshold values (undefined if 9999 = N/A)
-    const result: AlarmThresholdValues = {
-      warning: config.thresholds.warning !== 9999 ? config.thresholds.warning : undefined,
-      min: hasMin ? config.thresholds.min : undefined,
-      max: hasMax ? config.thresholds.max : undefined,
-      thresholdType,
-      status: 'loaded',
     };
     
-    console.log(`[useAlarmThresholds] Returning for ${dataPath}:`, result);
+    sensorEventEmitter.on('threshold-update', handleThresholdUpdate);
     
-    return result;
-  }, [dataPath, updateTrigger, isLoading]);
+    return () => {
+      sensorEventEmitter.off('threshold-update', handleThresholdUpdate);
+    };
+  }, [sensorType, instance, sensorEventEmitter]);
+  
+  // Get current thresholds from store (updateTrigger ensures re-fetch)
+  const thresholds = getSensorThresholds(sensorType, instance);
+  
+  // Return disabled state if no thresholds configured
+  if (!thresholds) {
+    return {
+      thresholdType: 'min',
+      enabled: false,
+      status: 'disabled',
+      message: `No alarm thresholds configured for ${sensorType}[${instance}]`,
+    };
+  }
+  
+  // Return loaded thresholds
+  return {
+    warning: thresholds.warning,
+    min: thresholds.min,
+    max: thresholds.max,
+    thresholdType: thresholds.thresholdType,
+    enabled: thresholds.enabled,
+    status: 'loaded',
+  };
 }
 
 /**
  * Convenience hooks for common marine sensors
+ * Usage: const thresholds = useDepthAlarmThresholds(0); // instance 0
  */
 // Navigation
-export const useDepthAlarmThresholds = () => useAlarmThresholds('depth');
-export const useSpeedAlarmThresholds = () => useAlarmThresholds('speed.overGround');
+export const useDepthAlarmThresholds = (instance: number = 0) => useAlarmThresholds('depth', instance);
+export const useSpeedAlarmThresholds = (instance: number = 0) => useAlarmThresholds('speed', instance);
 
 // Engine
-export const useEngineTemperatureAlarmThresholds = () => useAlarmThresholds('engine.coolantTemp');
-export const useEngineRPMAlarmThresholds = () => useAlarmThresholds('engine.rpm');
-export const useEngineOilPressureAlarmThresholds = () => useAlarmThresholds('engine.oilPressure');
+export const useEngineAlarmThresholds = (instance: number = 0) => useAlarmThresholds('engine', instance);
 
-// Electrical
-export const useBatteryVoltageAlarmThresholds = () => useAlarmThresholds('electrical.batteryVoltage');
-export const useAlternatorVoltageAlarmThresholds = () => useAlarmThresholds('electrical.alternatorVoltage');
-export const useCurrentAlarmThresholds = () => useAlarmThresholds('electrical.current');
+// Temperature
+export const useTemperatureAlarmThresholds = (instance: number = 0) => useAlarmThresholds('temperature', instance);
+
+// Battery
+export const useBatteryAlarmThresholds = (instance: number = 0) => useAlarmThresholds('battery', instance);
 
 // Wind
-export const useWindSpeedAlarmThresholds = () => useAlarmThresholds('wind.speed');
+export const useWindAlarmThresholds = (instance: number = 0) => useAlarmThresholds('wind', instance);
 
 // Tanks
 export const useFuelLevelAlarmThresholds = () => useAlarmThresholds('tanks.fuel.level');

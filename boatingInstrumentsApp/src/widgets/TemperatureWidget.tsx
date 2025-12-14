@@ -4,7 +4,7 @@ import { TrendLine } from '../components/TrendLine';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useEngineTemperatureAlarmThresholds } from '../hooks/useAlarmThresholds';
+// Note: Alarm thresholds now auto-subscribed in TrendLine component
 import { useTemperaturePresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
@@ -35,16 +35,15 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
 
-  // Extract temperature instance from widget ID (e.g., "temp-0", "temp-1")
+  // Extract temperature instance from widget ID (e.g., "temp-0", "temp-1", "temperature-0", "temperature-1")
   const instanceNumber = useMemo(() => {
-    const match = id.match(/temp-(\d+)/);
+    const match = id.match(/temp(?:erature)?-(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
   
   // Widget state management
   
-  // NEW: Get history and stats methods from store
-  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
+  // NEW: Get session stats method from store
   const getSessionStats = useNmeaStore((state) => state.getSessionStats);
   
   // NMEA data - Phase 1 Optimization: Selective field subscriptions with shallow equality
@@ -120,44 +119,8 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
 
   const temperatureState = getTemperatureState(temperature, location);
   
-  // Get alarm thresholds for engine temperature
-  const alarmThresholds = useEngineTemperatureAlarmThresholds();
-  
-  // Wrapper component to receive injected props from UnifiedWidgetGrid
-  const TrendLineCell = useCallback(({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => {
-    // Get all data points in 5 minute window
-    const trendData = getSensorHistory('temperature', instanceNumber, {
-      timeWindowMs: 5 * 60 * 1000
-    });
-    
-    // Convert alarm thresholds to display units for TrendLine
-    const convertedWarningThreshold = alarmThresholds.warning !== 9999 
-      ? tempPresentation.convert(alarmThresholds.warning) 
-      : undefined;
-    const convertedAlarmThreshold = alarmThresholds.max !== 9999 
-      ? tempPresentation.convert(alarmThresholds.max) 
-      : undefined;
-    
-    return (
-      <TrendLine 
-        data={trendData}
-        width={cellMaxWidth || 300}
-        height={cellHeightValue || 60}
-        usePrimaryLine={temperatureState === 'normal'}
-        showXAxis={true}
-        showYAxis={true}
-        xAxisPosition="bottom"
-        yAxisDirection="up"
-        timeWindowMinutes={5}
-        showTimeLabels={true}
-        showGrid={true}
-        strokeWidth={2}
-        warningThreshold={convertedWarningThreshold}
-        alarmThreshold={convertedAlarmThreshold}
-        thresholdType={alarmThresholds.thresholdType}
-      />
-    );
-  }, [getSensorHistory, instanceNumber, temperatureState, alarmThresholds, tempPresentation]);
+  // Note: Alarm thresholds for TrendLine are now auto-subscribed within the component
+  // No need to fetch and convert them here
 
   const handleLongPressOnPin = useCallback(() => {
   }, [id]);
@@ -166,15 +129,18 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
   const getDisplayTitle = useCallback(() => {
     // Standard NMEA temperature location mapping
     const locationMap: Record<string, string> = {
-      'engine': 'Engine Room',
+      'engine': 'Engine',
+      'engineRoom': 'Engine Room',
       'seawater': 'Sea Water',
       'outside': 'Outside Air',
       'cabin': 'Main Cabin',
       'exhaust': 'Exhaust',
+      'refrigeration': 'Refrigerator',
       'refrigerator': 'Refrigerator',
       'freezer': 'Freezer',
       'battery': 'Battery Bay',
-      'engineRoom': 'Engine Room',
+      'liveWell': 'Live Well',
+      'baitWell': 'Bait Well',
     };
     
     const locationName = locationMap[location] || (location && location.length > 0 ? location.charAt(0).toUpperCase() + location.slice(1) : 'Unknown');
@@ -238,8 +204,21 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
           unit: fontSize.unit,
         }}
       />
-      {/* Primary Row 2: Trend Line */}
-      <TrendLineCell />
+      {/* Primary Row 2: Trend Line - Self-subscribing pattern with auto-subscribed thresholds */}
+      <TrendLine 
+        sensor="temperature"
+        instance={instanceNumber}
+        timeWindowMs={5 * 60 * 1000}
+        usePrimaryLine={temperatureState === 'normal'}
+        showXAxis={true}
+        showYAxis={true}
+        xAxisPosition="bottom"
+        yAxisDirection="up"
+        timeWindowMinutes={5}
+        showTimeLabels={true}
+        showGrid={true}
+        strokeWidth={2}
+      />
       
       {/* Secondary Row 1: Location */}
       <SecondaryMetricCell

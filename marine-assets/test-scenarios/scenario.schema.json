@@ -36,8 +36,15 @@
     
     "category": {
       "type": "string",
-      "enum": ["basic", "autopilot", "safety", "performance", "recorded", "physics"],
-      "description": "Scenario category for organization"
+      "enum": ["basic", "navigation", "autopilot", "safety", "performance", "recorded", "physics", "comprehensive", "engine", "battery", "tank", "temperature", "multi-instance"],
+      "description": "Scenario category for organization and classification"
+    },
+    
+    "bridge_mode": {
+      "type": "string",
+      "enum": ["nmea0183", "nmea2000", "hybrid"],
+      "default": "nmea0183",
+      "description": "Protocol output mode: nmea0183 (ASCII sentences), nmea2000 (binary PGNs), or hybrid (both)"
     },
     
     "parameters": {
@@ -56,9 +63,101 @@
             },
             "beam": {"type": "number", "minimum": 1, "maximum": 15, "description": "Vessel beam in meters (Nautical EU units)"},
             "draft": {"type": "number", "minimum": 0.3, "maximum": 6, "description": "Vessel draft in meters (Nautical EU units)"},
+            "keel_offset": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Keel offset in meters below transducer (used in DPT/DBK sentences)"
+            },
             "type": {
               "type": "string",
               "enum": ["sailboat", "powerboat", "motoryacht", "catamaran"]
+            }
+          },
+          "required": ["keel_offset"]
+        },
+        "sonar": {
+          "type": "object",
+          "properties": {
+            "max_range": {
+              "type": "number",
+              "minimum": 10,
+              "maximum": 1000,
+              "description": "Maximum sonar range in meters (used in DPT sentence)"
+            }
+          },
+          "required": ["max_range"]
+        },
+        "gps": {
+          "type": "object",
+          "properties": {
+            "quality": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9,
+              "description": "GPS fix quality (0=invalid, 1=GPS fix, 2=DGPS, etc.)"
+            },
+            "satellites": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 24,
+              "description": "Number of satellites in view"
+            },
+            "hdop": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 50,
+              "description": "Horizontal dilution of precision"
+            },
+            "altitude": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 10000,
+              "description": "Altitude above mean sea level in meters"
+            }
+          },
+          "required": ["quality", "satellites", "hdop"]
+        },
+        "compass": {
+          "type": "object",
+          "properties": {
+            "magnetic_deviation": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "description": "Magnetic deviation in degrees (+ East, - West)"
+            },
+            "magnetic_variation": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "description": "Magnetic variation in degrees (+ East, - West)"
+            }
+          },
+          "required": ["magnetic_deviation", "magnetic_variation"]
+        },
+        "autopilot": {
+          "type": "object",
+          "description": "Autopilot parameters for APB sentence generation and heading smoothing (optional)",
+          "properties": {
+            "cross_track_tolerance": {
+              "type": "number",
+              "description": "Cross-track error tolerance in nautical miles",
+              "minimum": 0.01,
+              "maximum": 10.0
+            },
+            "arrival_radius": {
+              "type": "number",
+              "description": "Waypoint arrival circle radius in nautical miles",
+              "minimum": 0.01,
+              "maximum": 5.0
+            },
+            "max_heading_rate": {
+              "type": "number",
+              "description": "Maximum heading rate of change in degrees per second for smooth transitions",
+              "minimum": 1,
+              "maximum": 30,
+              "default": 10
             }
           }
         },
@@ -194,14 +293,33 @@
       }
     },
     
+    "sensors": {
+      "type": "array",
+      "description": "Protocol-agnostic sensor definitions that generate NMEA 0183 or NMEA 2000 messages based on bridge_mode",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/sensorDefinition"
+      }
+    },
+    
     "data": {
       "type": "object",
-      "description": "Data generation configuration",
+      "description": "DEPRECATED: Use 'sensors' array instead. Data generation configuration. Use 'speed_through_water' (STW, VHW) for water speed sensor and 'speed_over_ground' (SOG, VTG/RMC) for GPS speed.",
+      "deprecated": true,
       "properties": {
         "depth": {
           "$ref": "#/definitions/dataSource"
         },
         "speed": {
+          "description": "DEPRECATED: Use speed_through_water or speed_over_ground instead",
+          "$ref": "#/definitions/dataSource"
+        },
+        "speed_through_water": {
+          "description": "Speed Through Water (STW) - paddlewheel/log sensor, VHW sentence",
+          "$ref": "#/definitions/dataSource"
+        },
+        "speed_over_ground": {
+          "description": "Speed Over Ground (SOG) - GPS-derived, VTG/RMC sentences. Supports 'gps_track' source for calculation from waypoint distances.",
           "$ref": "#/definitions/dataSource"
         },
         "wind": {
@@ -258,39 +376,303 @@
   },
   
   "definitions": {
+    "sensorDefinition": {
+      "type": "object",
+      "required": ["type", "instance", "update_rate", "physical_properties", "data_generation"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Sensor type that determines NMEA message generation",
+          "enum": [
+            "depth_sensor",
+            "speed_sensor",
+            "wind_sensor",
+            "gps_sensor",
+            "heading_sensor",
+            "temperature_sensor",
+            "pressure_sensor",
+            "engine_sensor",
+            "battery_sensor",
+            "tank_sensor",
+            "rudder_sensor",
+            "rate_of_turn_sensor",
+            "pitch_roll_sensor"
+          ]
+        },
+        "instance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "Sensor instance number for multiple sensors of the same type"
+        },
+        "source_address": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "NMEA 2000 source address (0-255)"
+        },
+        "manufacturer": {
+          "type": "string",
+          "description": "Equipment manufacturer name"
+        },
+        "model": {
+          "type": "string",
+          "description": "Equipment model name/number"
+        },
+        "update_rate": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 100,
+          "description": "Sensor update rate in Hz (messages per second)"
+        },
+        "physical_properties": {
+          "type": "object",
+          "description": "Physical sensor properties and configuration",
+          "properties": {
+            "unit": {
+              "type": "string",
+              "enum": ["meters", "feet", "knots", "mps", "kph", "degrees", "radians", "celsius", "fahrenheit", "kelvin", "mbar", "bar", "psi", "volts", "amps", "rpm", "liters", "gallons", "percent"]
+            },
+            "precision": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Sensor precision/resolution"
+            },
+            "speed_type": {
+              "type": "string",
+              "enum": ["STW", "SOG"],
+              "description": "Speed type: STW (Speed Through Water) or SOG (Speed Over Ground)"
+            },
+            "sensor_type": {
+              "type": "string",
+              "enum": ["water", "air", "engine", "exhaust", "cabin", "refrigeration", "atmospheric"],
+              "description": "Temperature/pressure sensor type"
+            },
+            "location": {
+              "type": "string",
+              "description": "Sensor physical location"
+            },
+            "reference": {
+              "type": "string",
+              "enum": ["true", "magnetic", "apparent", "relative"],
+              "description": "Reference frame for angles (wind/heading)"
+            },
+            "mount_height": {
+              "type": "number",
+              "description": "Sensor mount height above waterline (meters)"
+            },
+            "deviation": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "description": "Compass deviation in degrees"
+            },
+            "variation": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "description": "Magnetic variation in degrees"
+            },
+            "quality": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9,
+              "description": "GPS quality indicator"
+            },
+            "satellites": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 24,
+              "description": "Number of satellites in view"
+            },
+            "hdop": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Horizontal dilution of precision"
+            },
+            "antenna_height": {
+              "type": "number",
+              "description": "GPS antenna height above sea level (meters)"
+            },
+            "dgps_enabled": {
+              "type": "boolean",
+              "description": "Differential GPS enabled"
+            },
+            "angle_unit": {
+              "type": "string",
+              "enum": ["degrees", "radians"],
+              "description": "Angle measurement unit"
+            },
+            "tank_type": {
+              "type": "string",
+              "enum": ["fuel", "fresh_water", "gray_water", "black_water", "oil", "live_well"],
+              "description": "Type of tank"
+            },
+            "tank_capacity": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Tank capacity in liters"
+            },
+            "engine_instance": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Engine instance number"
+            },
+            "battery_instance": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Battery instance number"
+            },
+            "nominal_voltage": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Battery nominal voltage (V)"
+            },
+            "capacity": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Battery capacity (Ah)"
+            },
+            "chemistry": {
+              "type": "string",
+              "enum": ["FLA", "AGM", "GEL", "LiFePO4", "Li-Ion"],
+              "description": "Battery chemistry type (FLA=Flooded Lead-Acid, AGM=Absorbed Glass Mat)"
+            },
+            "xdr_format": {
+              "type": "string",
+              "enum": ["compound", "individual"],
+              "default": "compound",
+              "description": "XDR message format: 'compound' (all parameters in single sentence per NMEA 0183 standard) or 'individual' (separate sentences per parameter)"
+            }
+          }
+        },
+        "data_generation": {
+          "type": "object",
+          "description": "Data generation patterns for sensor values",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/definitions/dataPattern"
+          }
+        }
+      }
+    },
+    
+    "dataPattern": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["sine_wave", "gaussian", "random_walk", "constant", "linear", "sawtooth", "triangle", "square", "tidal_cycle", "boat_movement", "great_circle", "waypoint_sequence", "gps_track", "smooth_transitions"]
+        },
+        "base": {"type": "number"},
+        "amplitude": {"type": "number"},
+        "period": {"type": "number", "minimum": 0.1},
+        "phase_shift": {"type": "number"},
+        "mean": {"type": "number"},
+        "std_dev": {"type": "number", "minimum": 0},
+        "min": {"type": "number"},
+        "max": {"type": "number"},
+        "start": {"type": "number"},
+        "end": {"type": "number"},
+        "rate": {"type": "number"},
+        "step_size": {"type": "number"},
+        "value": {"type": "number"},
+        "variation": {"type": "number"},
+        "duty_cycle": {"type": "number", "minimum": 0, "maximum": 1},
+        "start_position": {
+          "type": "object",
+          "properties": {
+            "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+            "longitude": {"type": "number", "minimum": -180, "maximum": 180}
+          }
+        },
+        "end_position": {
+          "type": "object",
+          "properties": {
+            "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+            "longitude": {"type": "number", "minimum": -180, "maximum": 180}
+          }
+        },
+        "duration": {"type": "number", "minimum": 1},
+        "course_over_ground": {"type": "number"},
+        "speed_over_ground": {"type": "number"},
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["latitude", "longitude"],
+            "properties": {
+              "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+              "longitude": {"type": "number", "minimum": -180, "maximum": 180},
+              "time": {"type": "number"}
+            }
+          }
+        },
+        "noise": {
+          "type": "object",
+          "description": "Additional noise pattern",
+          "properties": {
+            "type": {"type": "string", "enum": ["sine_wave", "gaussian"]},
+            "amplitude": {"type": "number"},
+            "std_dev": {"type": "number", "minimum": 0},
+            "period": {"type": "number", "minimum": 0.1}
+          }
+        }
+      }
+    },
+    
     "dataSource": {
       "type": "object",
       "required": ["type", "unit"],
       "properties": {
         "type": {
           "type": "string",
+          "description": "Data generation pattern type",
           "enum": [
             "sine_wave", "gaussian", "random_walk", "constant",
             "tidal_cycle", "coastal_sailing", "ocean_passage",
             "autopilot_track", "progressive_shallow", "failure_simulation",
-            "physics_calculated", "polar_interpolation", "sailing_dynamics"
+            "physics_calculated", "polar_interpolation", "sailing_dynamics",
+            "gps_track", "sawtooth", "triangle", "square", "linear"
           ]
+        },
+        "source": {
+          "type": "string",
+          "description": "Alternative speed source: 'gps_track' calculates speed from waypoint distances",
+          "enum": ["yaml_pattern", "gps_track"]
         },
         "unit": {
           "type": "string",
           "description": "Nautical (EU) units only - as defined in Boating Instruments App unit configuration",
           "enum": ["meters", "knots", "degrees", "volts", "amps", "bar", "celsius", "rpm", "liters", "kg", "nm"]
         },
-        "base": {"type": "number"},
-        "amplitude": {"type": "number"},
-        "frequency": {"type": "number", "minimum": 0},
-        "mean": {"type": "number"},
-        "std_dev": {"type": "number", "minimum": 0},
-        "min": {"type": "number"},
-        "max": {"type": "number"},
-        "start": {"type": "number"},
-        "step_size": {"type": "number"},
+        "base": {"type": "number", "description": "Base value for sine_wave, coastal patterns"},
+        "amplitude": {"type": "number", "description": "Amplitude for sine_wave patterns"},
+        "frequency": {"type": "number", "minimum": 0, "description": "Frequency in Hz for sine_wave"},
+        "period": {"type": "number", "minimum": 1, "description": "Period in seconds for sine_wave, sawtooth, triangle, square patterns"},
+        "mean": {"type": "number", "description": "Mean value for gaussian distribution"},
+        "std_dev": {"type": "number", "minimum": 0, "description": "Standard deviation for gaussian distribution"},
+        "min": {"type": "number", "description": "Minimum value constraint"},
+        "max": {"type": "number", "description": "Maximum value constraint"},
+        "start": {"type": "number", "description": "Starting value for linear, random_walk patterns"},
+        "end": {"type": "number", "description": "Ending value for linear patterns"},
+        "rate": {"type": "number", "description": "Rate of change for linear patterns"},
+        "step_size": {"type": "number", "description": "Step size for random_walk"},
         "bounds": {
           "type": "array",
           "items": {"type": "number"},
           "minItems": 2,
-          "maxItems": 2
-        }
+          "maxItems": 2,
+          "description": "Value bounds [min, max] for random_walk"
+        },
+        "base_depth": {"type": "number", "description": "Base depth for tidal_cycle"},
+        "tidal_range": {"type": "number", "description": "Tidal range for tidal_cycle"},
+        "tidal_period": {"type": "number", "description": "Tidal period in seconds"},
+        "min_depth": {"type": "number", "description": "Minimum depth constraint"},
+        "max_depth": {"type": "number", "description": "Maximum depth constraint"},
+        "variation_period": {"type": "number", "description": "Variation period for patterns"},
+        "duty_cycle": {"type": "number", "minimum": 0, "maximum": 1, "description": "Duty cycle (0-1) for square wave"}
       }
     },
     "gpsPositionData": {

@@ -31,6 +31,10 @@ class SimulatorControlAPI {
       startTime: Date.now()
     };
     
+    // Latency tracking: store recent message timestamps
+    this.messageLatencies = [];
+    this.maxLatencySamples = 100; // Keep last 100 samples
+    
     // Active test sessions
     this.activeSessions = new Map();
     this.currentSession = null;
@@ -523,7 +527,7 @@ class SimulatorControlAPI {
     this.app.get('/api/metrics', (req, res) => {
       const metrics = {
         messagesPerSecond: this.simulator.stats.messagesPerSecond || 0,
-        averageLatency: 0, // TODO: Implement latency tracking
+        averageLatency: this.calculateAverageLatency(),
         memoryUsage: this.simulator.stats.memoryUsage || 0,
         cpuUtilization: process.cpuUsage().user / 1000000, // Convert to percentage
         activeConnections: this.simulator.clients.size,
@@ -882,6 +886,28 @@ class SimulatorControlAPI {
   }
 
   /**
+   * Calculate average latency from recent message samples
+   */
+  calculateAverageLatency() {
+    if (this.messageLatencies.length === 0) return 0;
+    const sum = this.messageLatencies.reduce((acc, val) => acc + val, 0);
+    return (sum / this.messageLatencies.length).toFixed(2);
+  }
+  
+  /**
+   * Track message latency (call when message is sent)
+   */
+  trackMessageLatency(messageTimestamp) {
+    const latency = Date.now() - messageTimestamp;
+    this.messageLatencies.push(latency);
+    
+    // Keep only recent samples
+    if (this.messageLatencies.length > this.maxLatencySamples) {
+      this.messageLatencies.shift();
+    }
+  }
+
+  /**
    * Start performance monitoring
    */
   startPerformanceMonitoring() {
@@ -890,6 +916,7 @@ class SimulatorControlAPI {
       const memUsage = process.memoryUsage();
       this.performanceMetrics.memoryUsage = Math.round(memUsage.heapUsed / 1024 / 1024); // MB
       this.performanceMetrics.activeConnections = this.simulator.clients.size;
+      this.performanceMetrics.averageLatency = this.calculateAverageLatency();
       
       // Calculate messages per second (simple moving average)
       const currentTotal = this.simulator.stats.totalMessages;

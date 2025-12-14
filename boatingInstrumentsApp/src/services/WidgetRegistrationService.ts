@@ -23,6 +23,9 @@ const _console = typeof window !== 'undefined' && (window as any)._console
   ? (window as any)._console 
   : console;
 
+// Debug logging toggle - set to true to enable verbose widget registration logs
+const DEBUG_WIDGET_REGISTRATION = false;
+
 /**
  * Sensor dependency declaration
  * Describes which sensor data a widget requires or optionally uses
@@ -114,6 +117,9 @@ export interface WidgetRegistration {
   
   /** Maximum number of instances (-1 = unlimited) */
   maxInstances?: number;
+  
+  /** How long without data before widget expires (ms). If not specified, uses global default (5 minutes) */
+  expirationTimeout?: number;
 }
 
 /**
@@ -356,11 +362,11 @@ export class WidgetRegistrationService {
     sensorData: Partial<SensorData>,
     allSensors: any // Full sensor state from nmeaStore
   ): void {
-    console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
+    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
     
     // Find all widget types that depend on this sensor
     const affectedWidgets = this.findAffectedWidgets(sensorType, instance);
-    console.log(`🔧 [WidgetRegistrationService] Found ${affectedWidgets.length} affected widgets`);
+    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] Found ${affectedWidgets.length} affected widgets`);
 
     affectedWidgets.forEach(registration => {
       const instanceKey = `${registration.widgetType}-${instance}`;
@@ -422,7 +428,7 @@ export class WidgetRegistrationService {
     });
 
     // Directly update widgetStore with all detected instances
-    console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate complete, calling updateWidgetStore()`);
+    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate complete, calling updateWidgetStore()`);
     this.updateWidgetStore();
   }
 
@@ -606,13 +612,13 @@ export class WidgetRegistrationService {
     }
     
     const instances = this.getDetectedInstances();
-    console.log(`🔧 [WidgetRegistrationService] Updating store with ${instances.length} instances`);
+    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] Updating store with ${instances.length} instances`);
     
     // Import dynamically to avoid circular dependency
     import('../store/widgetStore').then(({ useWidgetStore }) => {
       const store = useWidgetStore.getState();
       if (store.updateInstanceWidgets) {
-        console.log(`🔧 [WidgetRegistrationService] Calling store.updateInstanceWidgets with ${instances.length} instances`);
+        if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] Calling store.updateInstanceWidgets with ${instances.length} instances`);
         store.updateInstanceWidgets(instances as any);
       } else {
         console.log('⚠️ [WidgetRegistrationService] store.updateInstanceWidgets not available');

@@ -17,11 +17,27 @@ import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 // - PGN 127245: Rudder position
 // - PGN 65288: Autopilot status (via PCDIN/binary)
 
+/**
+ * Alarm threshold configuration for sensor instances
+ * Values are in SI units (meters, celsius, volts, etc.)
+ */
+export interface SensorAlarmThresholds {
+  min?: number;          // Minimum safe value (SI units)
+  max?: number;          // Maximum safe value (SI units)
+  warning?: number;      // Warning level (SI units)
+  enabled: boolean;      // Whether alarms are active for this instance
+  thresholdType: 'min' | 'max';  // Whether to alarm on low or high values
+  audioEnabled?: boolean; // Whether to play sound when alarm triggers
+  soundPattern?: string;  // Sound pattern type (rapid_pulse, morse_u, warble, etc.)
+  lastModified?: number; // Timestamp of last threshold change
+}
+
 export interface BaseSensorData {
   name: string;           // Human-readable instance name
   timestamp: number;      // When this data was last updated
   history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
   historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
+  alarmThresholds?: SensorAlarmThresholds; // Per-instance alarm configuration
 }
 
 export interface TankSensorData extends BaseSensorData {
@@ -88,14 +104,19 @@ export interface TemperatureSensorData extends BaseSensorData {
 }
 
 export interface DepthSensorData extends BaseSensorData {
-  depth?: number;         // PRIMARY metric - depth in meters
-  referencePoint: 'transducer' | 'waterline' | 'keel';
-  sentenceType: 'DPT' | 'DBT' | 'DBK';  // Source NMEA sentence type for priority selection
-  // Instance Priority System:
-  // - instance 0: DPT (Depth from waterline) - HIGHEST PRIORITY
-  // - instance 1: DBT (Depth below transducer) - MEDIUM PRIORITY  
-  // - instance 2: DBK (Depth below keel) - LOWEST PRIORITY
-  // - NMEA 2000 PGN 128267 → instance 0 (transducer, equivalent to DPT)
+  // PRIMARY metric - Widget selects based on priority: DPT > DBT > DBK
+  depth?: number;         // Consolidated depth value in meters
+  
+  // All depth measurements from the same physical sensor
+  // Different NMEA sentence types update different fields, all merged into same instance
+  depthBelowWaterline?: number;   // DPT - Depth from waterline (HIGHEST PRIORITY)
+  depthBelowTransducer?: number;  // DBT - Depth below transducer (MEDIUM PRIORITY)
+  depthBelowKeel?: number;        // DBK - Depth below keel (LOWEST PRIORITY)
+  
+  // Instance mapping: Based on talker ID (physical sensor)
+  // - Multiple physical sensors distinguished by talker ID (SD, II, etc.)
+  // - Each sensor can send DPT, DBT, DBK - all update same instance
+  // - Widget uses priority logic to select which measurement to display
 }
 
 export interface CompassSensorData extends BaseSensorData {

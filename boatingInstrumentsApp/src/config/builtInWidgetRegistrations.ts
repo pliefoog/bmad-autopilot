@@ -39,6 +39,7 @@ export const DEPTH_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 3, // DPT, DBT, DBK
   priority: 90,
+  expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
       category: 'depth',
@@ -62,6 +63,7 @@ export const SPEED_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 2, // GPS speed, log speed
   priority: 95,
+  expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
       category: 'speed',
@@ -92,6 +94,7 @@ export const WIND_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 2,
   priority: 85,
+  expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
       category: 'wind',
@@ -267,6 +270,7 @@ export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 8,
   priority: 70,
+  expirationTimeout: 600000, // 10 minutes - engine can idle
   requiredSensors: [
     {
       category: 'engine',

@@ -1,0 +1,74 @@
+name: "Basic Navigation Scenario"
+description: "Standard depth, speed, wind, GPS data (5-minute duration)"
+duration: 300  # 5 minutes as per AC1
+version: "1.0"
+category: "basic"
+
+# Data generation parameters
+data:
+  depth:
+    type: "sine_wave"
+    base: 4.6      # meters
+    amplitude: 1.5  # ±1.5 meters
+    frequency: 0.1 # Hz
+    unit: "meters"
+  
+  speed:
+    type: "gaussian"
+    mean: 6.0     # knots
+    std_dev: 0.5
+    min: 4.0
+    max: 8.0
+    unit: "knots"
+  
+  wind:
+    angle:
+      type: "random_walk"
+      start: 45    # degrees
+      step_size: 10
+      bounds: [0, 360]
+    speed:
+      type: "gaussian"
+      mean: 15     # knots
+      std_dev: 2
+      min: 5
+      max: 25
+      unit: "knots"
+  
+  gps:
+    type: "boat_movement"
+    start_position:
+      latitude: 41.4145
+      longitude: -81.8610
+    speed_range: [4, 8]  # knots
+    heading_variance: 5   # degrees
+
+# NMEA sentence definitions
+nmea_sentences:
+  - type: "DBT"    # Depth Below Transducer
+    frequency: 1   # Hz
+  - type: "VTG"    # Track Made Good and Ground Speed
+    frequency: 1
+  - type: "MWV"    # Wind Speed and Angle
+    frequency: 2
+  - type: "GGA"    # Global Positioning System Fix Data
+    frequency: 1
+
+# Autopilot configuration
+autopilot:
+  enabled: false
+  initial_state:
+    mode: "STANDBY"
+    engaged: false
+    target_heading: 180
+    current_heading: 175
+
+# Phase progression (optional)
+phases:
+  - name: "startup"
+    duration: 60    # seconds
+    description: "Initial data stabilization"
+  
+  - name: "steady_cruise"
+    duration: 3540  # remaining time
+    description: "Steady cruising with normal variations"

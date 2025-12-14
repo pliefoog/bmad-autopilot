@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 import { EventEmitter } from 'events';
 import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
+
+// Debug logging toggle - set to true to enable verbose store update logs
+const DEBUG_STORE_UPDATES = false;
+
 import type { 
   SensorsData, 
   SensorType, 
   SensorData,
+  SensorAlarmThresholds,
   TankSensorData,
   EngineSensorData,
   BatterySensorData,
@@ -17,6 +22,7 @@ import type {
   AutopilotSensorData,
   NavigationSensorData
 } from '../types/SensorData';
+import { getDefaultThresholds } from '../registry/AlarmThresholdDefaults';
 
 // MEMORY LEAK FIX: Throttle alarm evaluation (expensive operation)
 let lastAlarmEvaluation = 0;
@@ -89,6 +95,22 @@ interface NmeaStore {
   ) => { min: number | null; max: number | null; avg: number | null; count: number };
   clearSensorHistory: <T extends SensorType>(sensorType: T, instance: number) => void;
   
+  // Alarm threshold management
+  updateSensorThresholds: <T extends SensorType>(
+    sensorType: T,
+    instance: number,
+    thresholds: Partial<import('../types/SensorData').SensorAlarmThresholds>
+  ) => void;
+  getSensorThresholds: <T extends SensorType>(
+    sensorType: T,
+    instance: number
+  ) => import('../types/SensorData').SensorAlarmThresholds | undefined;
+  initializeDefaultThresholds: <T extends SensorType>(
+    sensorType: T,
+    instance: number,
+    location?: string
+  ) => void;
+  
   // System methods
   updateAlarms: (alarms: Alarm[]) => void;
   reset: () => void;
@@ -146,11 +168,13 @@ function evaluateAlarms(nmeaData: NmeaData): Alarm[] {
 
 /**
  * Extract trackable value from sensor data for history
+ * Each sensor tracks its PRIMARY metric as defined in SensorData.ts
  */
 function extractTrackableValue(sensorType: SensorType, data: any): number | null {
   switch(sensorType) {
     case 'depth': return data.depth ?? null;
-    case 'speed': return data.overGround ?? data.throughWater ?? null;
+    case 'speed': return data.throughWater ?? null; // STW from paddlewheel (VHW)
+    case 'gps': return data.speedOverGround ?? null; // SOG from GPS (VTG/RMC)
     case 'wind': return data.speed ?? null;
     case 'engine': return data.rpm ?? null;
     case 'battery': return data.voltage ?? null;
@@ -212,7 +236,7 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     
     // Debug: Log all speed sensor updates
     if (sensorType === 'speed') {
-      console.log(`📥 Store update: ${sensorType}-${instance}`, data);
+      if (DEBUG_STORE_UPDATES) console.log(`📥 Store update: ${sensorType}-${instance}`, data);
     }
     
     lastUpdateTimes.set(updateKey, now);
@@ -245,7 +269,7 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         if (!hasChanges) {
           // Debug: Log rejected updates for speed sensor
           if (sensorType === 'speed') {
-            console.log(`❌ NO CHANGES: Rejected update for ${sensorType}-${instance}`, { current: currentSensorData, new: data });
+            if (DEBUG_STORE_UPDATES) console.log(`❌ NO CHANGES: Rejected update for ${sensorType}-${instance}`, { current: currentSensorData, new: data });
           }
           // NO CHANGES: Return existing state without mutations
           // This prevents infinite loops from history buffer mutations
@@ -259,10 +283,10 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       let history = currentSensorData?.history;
       if (!history) {
         history = new TimeSeriesBuffer<number>(
-          600,  // maxRecentEntries
-          60,   // maxOldEntries
-          60000, // oldDataThresholdMs (1 minute)
-          10    // decimationFactor
+          600,   // maxRecentEntries (600 entries for full 5-minute window)
+          60,    // maxOldEntries (decimated historical data)
+          300000, // recentThresholdMs (5 minutes - matches TrendLine display window)
+          10     // decimationFactor (reduce to 1/10th resolution after 5 minutes)
         );
       }
       
@@ -298,6 +322,15 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       const trackableValue = extractTrackableValue(sensorType, updatedSensorData);
       if (trackableValue !== null && history) {
         history.add(trackableValue, updateNow);
+        
+        // Debug: Log depth history updates occasionally
+        if (sensorType === 'depth' && Math.random() < 0.05) {
+          const stats = history.getStats();
+          if (DEBUG_STORE_UPDATES) console.log(`📊 Depth history: value=${trackableValue.toFixed(2)}, total=${stats.totalCount} points`);
+        }
+      } else if (sensorType === 'depth') {
+        // Debug: Log if depth value is null
+        console.log(`⚠️ Depth trackable value is null:`, updatedSensorData);
       }
       
       const newNmeaData = {
@@ -327,16 +360,37 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       };
     });
     
+    // Auto-initialize default thresholds for new sensor instances
+    if (isNewInstance) {
+      // New sensor instance detected - initialize default thresholds
+      const sensor = get().nmeaData.sensors[sensorType][instance];
+      const location = (sensor as any)?.location;
+      
+      // Only auto-initialize if thresholds don't exist
+      if (!sensor?.alarmThresholds) {
+        const defaults = getDefaultThresholds(sensorType, location);
+        if (defaults) {
+          get().updateSensorThresholds(sensorType, instance, {
+            ...defaults,
+            lastModified: Date.now(),
+          });
+          console.log(`✅ Auto-initialized default thresholds for ${sensorType}[${instance}] at ${location || 'default'}`);
+        }
+      }
+    }
+    
     // Emit sensor update event AFTER state update completes (Phase 1 optimization)
     // Only emit if this is a new instance or data has fields to update
     if (isNewInstance || Object.keys(data).length > 0) {
+      const currentTimestamp = Date.now();
+      
       // Use setTimeout 0 for async emission (React Native compatible)
       setTimeout(() => {
         const currentStore = get();
         currentStore.sensorEventEmitter.emit('sensorUpdate', {
           sensorType,
           instance,
-          timestamp: Date.now()
+          timestamp: currentTimestamp
         });
       }, 0);
     }
@@ -350,23 +404,63 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
   getSensorInstances: <T extends SensorType>(sensorType: T) => {
     const state = get();
     const sensorGroup = state.nmeaData.sensors[sensorType];
-    return Object.entries(sensorGroup).map(([instance, data]) => ({
-      instance: parseInt(instance, 10),
-      data: data as SensorData
-    }));
+    
+    console.log(`[getSensorInstances] Checking ${sensorType}:`, {
+      hasSensorGroup: !!sensorGroup,
+      sensorGroupType: typeof sensorGroup,
+      sensorGroupKeys: sensorGroup ? Object.keys(sensorGroup) : [],
+      sensorGroupData: sensorGroup
+    });
+    
+    if (!sensorGroup || typeof sensorGroup !== 'object') return [];
+    
+    const instances = Object.entries(sensorGroup)
+      .filter(([_, data]) => {
+        const hasData = data && data.timestamp;
+        console.log(`[getSensorInstances] Instance check:`, { 
+          hasData,
+          data: data,
+          timestamp: data?.timestamp
+        });
+        return hasData;
+      })
+      .map(([instance, data]) => ({
+        instance: parseInt(instance, 10),
+        data: data as SensorData
+      }));
+      
+    console.log(`[getSensorInstances] Result for ${sensorType}:`, {
+      count: instances.length,
+      instances: instances.map(i => ({ instance: i.instance, name: i.data.name }))
+    });
+    
+    return instances;
   },
 
   // Get sensor history - returns ALL data points in time window (no downsampling)
   getSensorHistory: <T extends SensorType>(sensorType: T, instance: number, options?: { timeWindowMs?: number }) => {
     const sensor = get().nmeaData.sensors[sensorType][instance];
-    if (!sensor || !(sensor as any).history) return [];
+    if (!sensor || !(sensor as any).history) {
+      // Debug: Log if sensor or history missing
+      if (sensorType === 'depth' && Math.random() < 0.1) {
+        console.log(`⚠️ getSensorHistory: ${sensorType}[${instance}] - sensor=${!!sensor}, history=${!!(sensor as any)?.history}`);
+      }
+      return [];
+    }
     
     const history = (sensor as any).history as TimeSeriesBuffer<number>;
     
     // Return all data points in time window - no sampling, no decimation
-    return options?.timeWindowMs 
+    const data = options?.timeWindowMs 
       ? history.getRange(Date.now() - options.timeWindowMs, Date.now())
       : history.getAll();
+    
+    // Debug: Log data retrieval occasionally
+    if (sensorType === 'depth' && Math.random() < 0.1) {
+      if (DEBUG_STORE_UPDATES) console.log(`📊 getSensorHistory(${sensorType}, ${instance}): ${data.length} points`);
+    }
+    
+    return data;
   },
 
   // NEW: Get session statistics efficiently
@@ -400,6 +494,90 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
       }
       return state;
     }),
+
+  // Alarm threshold management
+  updateSensorThresholds: <T extends SensorType>(
+    sensorType: T,
+    instance: number,
+    thresholds: Partial<SensorAlarmThresholds>
+  ) => {
+    set((state) => {
+      const sensor = state.nmeaData.sensors[sensorType][instance];
+      if (!sensor) {
+        console.warn(`Cannot update thresholds: ${sensorType}[${instance}] not found`);
+        return state;
+      }
+
+      // Merge new thresholds with existing
+      const updatedThresholds: SensorAlarmThresholds = {
+        ...sensor.alarmThresholds,
+        ...thresholds,
+        lastModified: Date.now(),
+      } as SensorAlarmThresholds;
+
+      // Update sensor data with new thresholds
+      const updatedSensor = {
+        ...sensor,
+        alarmThresholds: updatedThresholds,
+      };
+
+      return {
+        nmeaData: {
+          ...state.nmeaData,
+          sensors: {
+            ...state.nmeaData.sensors,
+            [sensorType]: {
+              ...state.nmeaData.sensors[sensorType],
+              [instance]: updatedSensor,
+            },
+          },
+        },
+      };
+    });
+
+    // Emit event for threshold update
+    get().sensorEventEmitter.emit('threshold-update', { sensorType, instance });
+  },
+
+  getSensorThresholds: <T extends SensorType>(
+    sensorType: T,
+    instance: number
+  ): SensorAlarmThresholds | undefined => {
+    const sensor = get().nmeaData.sensors[sensorType][instance];
+    return sensor?.alarmThresholds;
+  },
+
+  initializeDefaultThresholds: <T extends SensorType>(
+    sensorType: T,
+    instance: number,
+    location?: string
+  ) => {
+    const sensor = get().nmeaData.sensors[sensorType][instance];
+    
+    // Don't overwrite existing thresholds
+    if (sensor?.alarmThresholds) {
+      return;
+    }
+
+    // Get location from sensor metadata if not provided
+    const sensorLocation = location || sensor?.location;
+    
+    // Get default thresholds for this sensor type and location
+    const defaults = getDefaultThresholds(sensorType, sensorLocation);
+    
+    if (!defaults) {
+      console.log(`No default thresholds available for ${sensorType} at ${sensorLocation || 'default'}`);
+      return;
+    }
+
+    // Apply defaults with timestamp
+    get().updateSensorThresholds(sensorType, instance, {
+      ...defaults,
+      lastModified: Date.now(),
+    });
+
+    console.log(`✅ Initialized default thresholds for ${sensorType}[${instance}] at ${sensorLocation || 'default'}`);
+  },
 
   updateAlarms: (alarms: Alarm[]) => set({ alarms }),
 

@@ -18,6 +18,9 @@ const ENABLE_NMEA_PROCESSOR_LOGGING = false;
 const log = (...args: any[]) => ENABLE_NMEA_PROCESSOR_LOGGING && console.log(...args);
 const warn = (...args: any[]) => ENABLE_NMEA_PROCESSOR_LOGGING && console.warn(...args);
 
+// Debug toggle for verbose VTG/VHW processor logs
+const DEBUG_NMEA_PROCESSING = false;
+
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import { normalizeApparentWindAngle, normalizeTrueWindAngle } from '../../../utils/marineAngles';
 import { pgnParser } from '../pgnParser';
@@ -301,12 +304,17 @@ export class NmeaSensorProcessor {
       };
     }
 
-    // Create depth sensor update
+    // Extract instance from talker ID - all depth sentence types from same sensor use same instance
+    const instance = this.extractInstanceId(message);
+
+    // Round to 1 decimal place (marine instrument standard)
+    const depthRounded = Math.round(depthMeters * 10) / 10;
+
+    // DBT measures depth below transducer (MEDIUM PRIORITY)
     const depthData: Partial<DepthSensorData> = {
-      name: 'Depth Below Transducer',
-      depth: depthMeters, // Always in meters (base unit)
-      referencePoint: 'transducer', // DBT is depth below transducer
-      sentenceType: 'DBT',
+      name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
+      depth: depthRounded, // PRIMARY metric: use if DPT not available
+      depthBelowTransducer: depthRounded, // DBT-specific measurement
       timestamp: timestamp
     };
 
@@ -314,7 +322,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'depth',
-        instance: 1, // DBT uses instance 1 (priority: 2nd)
+        instance: instance, // Use talker ID for instance, not hardcoded
         data: depthData
       }],
       messageType: 'DBT'
@@ -337,13 +345,17 @@ export class NmeaSensorProcessor {
       };
     }
 
-    // Create depth sensor update
+    // Extract instance from talker ID - all depth sentence types from same sensor use same instance
     const instance = this.extractInstanceId(message);
+    
+    // Round to 1 decimal place (marine instrument standard)
+    const depthRounded = Math.round(fields.depth_meters * 10) / 10;
+    
+    // DPT measures depth from waterline (HIGHEST PRIORITY)
     const depthData: Partial<DepthSensorData> = {
-      name: `Depth ${instance > 0 ? `#${instance}` : ''}`.trim(),
-      depth: fields.depth_meters, // Always in meters (base unit)
-      referencePoint: 'waterline', // DPT typically represents depth from waterline
-      sentenceType: 'DPT',
+      name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
+      depth: depthRounded, // PRIMARY metric: prefer DPT (from waterline)
+      depthBelowWaterline: depthRounded, // DPT-specific measurement
       timestamp: timestamp
     };
 
@@ -382,12 +394,17 @@ export class NmeaSensorProcessor {
       };
     }
 
-    // Create depth sensor update
+    // Extract instance from talker ID - all depth sentence types from same sensor use same instance
+    const instance = this.extractInstanceId(message);
+
+    // Round to 1 decimal place (marine instrument standard)
+    const depthRounded = Math.round(depthMeters * 10) / 10;
+
+    // DBK measures depth below keel (LOWEST PRIORITY)
     const depthData: Partial<DepthSensorData> = {
-      name: 'Depth Below Keel',
-      depth: depthMeters, // Always in meters (base unit)
-      referencePoint: 'keel', // DBK is depth below keel
-      sentenceType: 'DBK',
+      name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
+      depth: depthRounded, // PRIMARY metric: use if DPT/DBT not available
+      depthBelowKeel: depthRounded, // DBK-specific measurement
       timestamp: timestamp
     };
 
@@ -395,7 +412,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [{
         sensorType: 'depth',
-        instance: 2, // DBK uses instance 2 (priority: 3rd - lowest)
+        instance: instance, // Use talker ID for instance, not hardcoded
         data: depthData
       }],
       messageType: 'DBK'
@@ -561,21 +578,31 @@ export class NmeaSensorProcessor {
       }
     }
 
-    // Speed over ground
+    // Speed over ground and course over ground (GPS-calculated)
     if (fields.speed_knots !== null && !isNaN(fields.speed_knots)) {
-      const speedData: Partial<SpeedSensorData> = {
-        name: 'GPS Speed',
-        overGround: fields.speed_knots, // Speed over ground in knots (base unit)
-        timestamp: timestamp
-      };
-
       const instance = this.extractInstanceId(message);
       
-      updates.push({
-        sensorType: 'speed',
-        instance,
-        data: speedData
-      });
+      // Update the same GPS sensor instance with speed/course
+      const existingUpdate = updates.find(u => u.sensorType === 'gps' && u.instance === instance);
+      if (existingUpdate) {
+        // Add SOG/COG to existing GPS update
+        existingUpdate.data.speedOverGround = fields.speed_knots;
+        if (fields.course !== null && !isNaN(fields.course)) {
+          existingUpdate.data.courseOverGround = fields.course;
+        }
+      } else {
+        // Create new GPS update with SOG/COG
+        updates.push({
+          sensorType: 'gps',
+          instance,
+          data: {
+            name: 'GPS Receiver',
+            speedOverGround: fields.speed_knots,
+            courseOverGround: fields.course !== null && !isNaN(fields.course) ? fields.course : undefined,
+            timestamp: timestamp
+          }
+        });
+      }
     }
 
     if (updates.length === 0) {
@@ -608,7 +635,7 @@ export class NmeaSensorProcessor {
         timestamp: timestamp
       };
 
-      console.log(`🎯 VTG Processor: Setting overGround=${fields.speed_knots.toFixed(2)} knots (instance ${instance})`);
+      if (DEBUG_NMEA_PROCESSING) console.log(`🎯 VTG Processor: Setting overGround=${fields.speed_knots.toFixed(2)} knots (instance ${instance})`);
 
       return {
         success: true,
@@ -645,7 +672,7 @@ export class NmeaSensorProcessor {
         timestamp: timestamp
       };
 
-      console.log(`🎯 VHW Processor: Setting throughWater=${fields.speed_knots.toFixed(2)} knots (instance ${instance})`);
+      if (DEBUG_NMEA_PROCESSING) console.log(`🎯 VHW Processor: Setting throughWater=${fields.speed_knots.toFixed(2)} knots (instance ${instance})`);
 
       updates.push({
         sensorType: 'speed',
@@ -1266,165 +1293,86 @@ export class NmeaSensorProcessor {
     
     // Check if this is a battery measurement - FIXED: use continue instead of return to process all measurements
     if (identifier) {
-      // Battery voltage measurement (U=voltage, V=volts, BAT_X)
-      const batteryVoltageMatch = identifier.match(/^BAT_(\d+)$/);
-      if (batteryVoltageMatch && measurementType === 'U' && units === 'V') {
-        const instance = parseInt(batteryVoltageMatch[1], 10);
-        const voltage = parseFloat(measurementValue);
+      // Battery measurements - support both individual and compound XDR formats
+      // Pattern: BAT_XX for base measurements, BAT_XX_SUFFIX for specific attributes
+      const batteryMatch = identifier.match(/^BAT_(\d+)(?:_(NOM|CAP|CHEM|TMP|SOC))?$/);
+      if (batteryMatch) {
+        const instance = parseInt(batteryMatch[1], 10);
+        const suffix = batteryMatch[2]; // undefined for BAT_XX, or NOM/CAP/CHEM/TMP/SOC
         
-        if (!isNaN(voltage) && !isNaN(instance)) {
+        if (!isNaN(instance)) {
           const batteryData: Partial<BatterySensorData> = {
             name: `Battery ${instance + 1}`,
-            voltage: voltage,
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery Voltage: Instance ${instance} = ${voltage}V`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
-        }
-      }
-      
-      // Battery current measurement (I=current, A=amperes, BAT_X)
-      const batteryCurrentMatch = identifier.match(/^BAT_(\d+)$/);
-      if (batteryCurrentMatch && measurementType === 'I' && units === 'A') {
-        const instance = parseInt(batteryCurrentMatch[1], 10);
-        const current = parseFloat(measurementValue);
-        
-        if (!isNaN(current) && !isNaN(instance)) {
-          const batteryData: Partial<BatterySensorData> = {
-            current: current,
-            timestamp: timestamp
-          };
-          
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery Current: Instance ${instance} = ${current}A`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
-        }
-      }
-      
-      // Battery temperature measurement (C=temperature, C=celsius, BAT_X_TMP)
-      const batteryTempMatch = identifier.match(/^BAT_(\d+)_TMP$/);
-      if (batteryTempMatch && measurementType === 'C' && units === 'C') {
-        const instance = parseInt(batteryTempMatch[1], 10);
-        const temperature = parseFloat(measurementValue);
-        
-        if (!isNaN(temperature) && !isNaN(instance)) {
-          const batteryData: Partial<BatterySensorData> = {
-            temperature: temperature,
-            timestamp: timestamp
-          };
-          
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery Temperature: Instance ${instance} = ${temperature}°C`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
-        }
-      }
-      
-      // Battery State of Charge measurement (P=percentage, P=percent, BAT_X_SOC)
-      const batterySocMatch = identifier.match(/^BAT_(\d+)_SOC$/);
-      if (batterySocMatch && measurementType === 'P' && units === 'P') {
-        const instance = parseInt(batterySocMatch[1], 10);
-        const soc = parseFloat(measurementValue);
-        
-        if (!isNaN(soc) && !isNaN(instance)) {
-          const batteryData: Partial<BatterySensorData> = {
-            stateOfCharge: soc,
-            timestamp: timestamp
-          };
-          
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery SOC: Instance ${instance} = ${soc}%`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
-        }
-      }
-      
-      // Battery nominal voltage measurement (U=voltage, V=volts, BAT_X_NOM)
-      const batteryNomMatch = identifier.match(/^BAT_(\d+)_NOM$/);
-      if (batteryNomMatch && measurementType === 'U' && units === 'V') {
-        const instance = parseInt(batteryNomMatch[1], 10);
-        const nominalVoltage = parseFloat(measurementValue);
-        
-        if (!isNaN(nominalVoltage) && !isNaN(instance)) {
-          const batteryData: Partial<BatterySensorData> = {
-            nominalVoltage: nominalVoltage,
-            timestamp: timestamp
-          };
-          
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery Nominal: Instance ${instance} = ${nominalVoltage}V`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
-        }
-      }
-      
-      // Battery chemistry measurement (G=general string, no units, BAT_X_CHEM)
-      const batteryChemMatch = identifier.match(/^BAT_(\d+)_CHEM$/);
-      if (batteryChemMatch && measurementType === 'G') {
-        const instance = parseInt(batteryChemMatch[1], 10);
-        const chemistry = measurementValue;
-        
-        if (chemistry && !isNaN(instance)) {
-          const batteryData: Partial<BatterySensorData> = {
-            chemistry: chemistry,
-            timestamp: timestamp
-          };
-          
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery Chemistry: Instance ${instance} = ${chemistry}`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
-        }
-      }
-      
-      // Battery capacity measurement (V=volume/capacity, H=amp-hours, BAT_X_CAP)
-      const batteryCapMatch = identifier.match(/^BAT_(\d+)_CAP$/);
-      if (batteryCapMatch && measurementType === 'V' && units === 'H') {
-        const instance = parseInt(batteryCapMatch[1], 10);
-        const capacity = parseFloat(measurementValue);
-        
-        if (!isNaN(capacity) && !isNaN(instance)) {
-          const batteryData: Partial<BatterySensorData> = {
-            capacity: capacity,
-            timestamp: timestamp
-          };
-          
-          console.log(`[NmeaSensorProcessor] ✅ XDR Battery Capacity: Instance ${instance} = ${capacity}Ah`);
-          
-          updates.push({
-            sensorType: 'battery',
-            instance: instance,
-            data: batteryData
-          });
-          continue; // Process next measurement
+          // Handle different measurement types
+          if (measurementType === 'U' && units === 'V') {
+            // Voltage measurement
+            const voltage = parseFloat(measurementValue);
+            if (!isNaN(voltage)) {
+              if (suffix === 'NOM') {
+                // Nominal voltage (BAT_XX_NOM)
+                batteryData.nominalVoltage = voltage;
+                console.log(`[NmeaSensorProcessor] ✅ XDR Battery Nominal Voltage: Instance ${instance} = ${voltage}V`);
+              } else {
+                // Actual voltage (BAT_XX)
+                batteryData.voltage = voltage;
+                console.log(`[NmeaSensorProcessor] ✅ XDR Battery Voltage: Instance ${instance} = ${voltage}V`);
+              }
+              updates.push({ sensorType: 'battery', instance, data: batteryData });
+              continue;
+            }
+          } else if (measurementType === 'I' && units === 'A') {
+            // Current measurement (BAT_XX)
+            const current = parseFloat(measurementValue);
+            if (!isNaN(current)) {
+              batteryData.current = current;
+              console.log(`[NmeaSensorProcessor] ✅ XDR Battery Current: Instance ${instance} = ${current}A`);
+              updates.push({ sensorType: 'battery', instance, data: batteryData });
+              continue;
+            }
+          } else if (measurementType === 'C' && (units === 'C' || units === 'F')) {
+            // Temperature measurement (BAT_XX or BAT_XX_TMP)
+            let temperature = parseFloat(measurementValue);
+            if (!isNaN(temperature)) {
+              // Convert Fahrenheit to Celsius if needed
+              if (units === 'F') {
+                temperature = (temperature - 32) * (5 / 9);
+              }
+              batteryData.temperature = temperature;
+              console.log(`[NmeaSensorProcessor] ✅ XDR Battery Temperature: Instance ${instance} = ${temperature.toFixed(1)}°C`);
+              updates.push({ sensorType: 'battery', instance, data: batteryData });
+              continue;
+            }
+          } else if (measurementType === 'P' && (units === '%' || units === 'P')) {
+            // State of Charge measurement (BAT_XX or BAT_XX_SOC)
+            const soc = parseFloat(measurementValue);
+            if (!isNaN(soc)) {
+              batteryData.stateOfCharge = soc;
+              console.log(`[NmeaSensorProcessor] ✅ XDR Battery SOC: Instance ${instance} = ${soc}%`);
+              updates.push({ sensorType: 'battery', instance, data: batteryData });
+              continue;
+            }
+          } else if (measurementType === 'V' && units === 'H') {
+            // Capacity measurement (BAT_XX_CAP) - V=volume, H=amp-hours
+            const capacity = parseFloat(measurementValue);
+            if (!isNaN(capacity)) {
+              batteryData.capacity = capacity;
+              console.log(`[NmeaSensorProcessor] ✅ XDR Battery Capacity: Instance ${instance} = ${capacity}Ah`);
+              updates.push({ sensorType: 'battery', instance, data: batteryData });
+              continue;
+            }
+          } else if (measurementType === 'G' && (units === 'N' || !units)) {
+            // Chemistry measurement (BAT_XX_CHEM) - G=generic, N=text/name
+            const chemistry = measurementValue;
+            if (chemistry) {
+              batteryData.chemistry = chemistry;
+              console.log(`[NmeaSensorProcessor] ✅ XDR Battery Chemistry: Instance ${instance} = ${chemistry}`);
+              updates.push({ sensorType: 'battery', instance, data: batteryData });
+              continue;
+            }
+          }
         }
       }
     }

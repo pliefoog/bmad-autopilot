@@ -205,6 +205,8 @@ class UnifiedNMEABridge {
         return this.parseFileMode(args.slice(1));
       case '--scenario':
         return this.parseScenarioMode(args.slice(1));
+      case '--validate':
+        return this.parseValidateMode(args.slice(1));
       default:
         console.error(`❌ Unknown mode: ${mode}`);
         this.showHelp();
@@ -291,6 +293,30 @@ class UnifiedNMEABridge {
   }
 
   /**
+   * Parse validate mode arguments
+   */
+  parseValidateMode(args) {
+    if (args.length < 1) {
+      console.error('❌ Validate mode requires a scenario file path');
+      console.error('Usage: node nmea-bridge.js --validate <path-to-scenario.yml>');
+      process.exit(1);
+    }
+
+    const scenarioPath = args[0];
+    
+    // Check if file exists
+    if (!fs.existsSync(scenarioPath)) {
+      console.error(`❌ Scenario file not found: ${scenarioPath}`);
+      process.exit(1);
+    }
+
+    return {
+      mode: 'validate',
+      scenarioPath: path.resolve(scenarioPath)
+    };
+  }
+
+  /**
    * Parse common options across all modes
    */
   parseCommonOptions(args) {
@@ -362,11 +388,101 @@ class UnifiedNMEABridge {
   }
 
   /**
+   * Validate scenario file against JSON schema
+   */
+  async validateScenario(scenarioPath) {
+    const Ajv = require('ajv');
+    const yaml = require('js-yaml');
+    
+    try {
+      console.log(`\n📋 Validating scenario: ${path.basename(scenarioPath)}`);
+      console.log(`📂 Path: ${scenarioPath}\n`);
+      
+      // Load schema
+      const schemaPath = path.join(__dirname, '../../marine-assets/test-scenarios/scenario.schema.json');
+      if (!fs.existsSync(schemaPath)) {
+        console.error(`❌ Schema file not found: ${schemaPath}`);
+        process.exit(1);
+      }
+      
+      const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+      
+      // Load scenario YAML
+      const scenarioContent = fs.readFileSync(scenarioPath, 'utf8');
+      const scenario = yaml.load(scenarioContent);
+      
+      // Validate with Ajv
+      const ajv = new Ajv({ allErrors: true, verbose: true });
+      const validate = ajv.compile(schema);
+      const valid = validate(scenario);
+      
+      if (valid) {
+        console.log('✅ Scenario is VALID');
+        console.log(`\n📊 Summary:`);
+        console.log(`   • Name: ${scenario.name}`);
+        console.log(`   • Category: ${scenario.category}`);
+        console.log(`   • Duration: ${scenario.duration}s`);
+        console.log(`   • Version: ${scenario.version}`);
+        
+        if (scenario.bridge_mode) {
+          console.log(`   • Bridge Mode: ${scenario.bridge_mode}`);
+        }
+        
+        if (scenario.sensors) {
+          console.log(`   • Sensors: ${scenario.sensors.length}`);
+          const sensorTypes = {};
+          scenario.sensors.forEach(s => {
+            sensorTypes[s.type] = (sensorTypes[s.type] || 0) + 1;
+          });
+          Object.entries(sensorTypes).forEach(([type, count]) => {
+            console.log(`      - ${type}: ${count}`);
+          });
+        }
+        
+        if (scenario.data) {
+          console.log(`   • Uses legacy 'data' format (consider migrating to 'sensors')`);
+        }
+        
+        console.log('\n✅ Validation passed!\n');
+        process.exit(0);
+      } else {
+        console.error('❌ Scenario is INVALID\n');
+        console.error('Validation errors:\n');
+        
+        validate.errors.forEach((err, idx) => {
+          console.error(`${idx + 1}. ${err.instancePath || '/'}`);
+          console.error(`   ${err.message}`);
+          if (err.params) {
+            console.error(`   Params: ${JSON.stringify(err.params, null, 2)}`);
+          }
+          console.error('');
+        });
+        
+        process.exit(1);
+      }
+      
+    } catch (error) {
+      console.error('❌ Validation failed with error:\n');
+      console.error(error.message);
+      if (error.stack) {
+        console.error('\nStack trace:');
+        console.error(error.stack);
+      }
+      process.exit(1);
+    }
+  }
+
+  /**
    * Start the unified bridge
    */
   async start() {
     try {
       this.config = this.parseArguments();
+      
+      // Handle validate mode separately (doesn't need servers)
+      if (this.config.mode === 'validate') {
+        return await this.validateScenario(this.config.scenarioPath);
+      }
       
       console.log(`🚀 Starting NMEA Bridge in ${this.config.mode} mode...`);
       
@@ -473,6 +589,7 @@ MODES:
   --live <host> <port>           Connect to hardware NMEA WiFi bridge
   --file <path> [options]        Playback NMEA data from recorded file
   --scenario <name> [options]    Generate synthetic NMEA data
+  --validate <path>              Validate scenario YAML against JSON schema
 
 LIVE MODE OPTIONS:
   <host>                         NMEA WiFi bridge hostname or IP
@@ -487,6 +604,10 @@ SCENARIO MODE OPTIONS:
   <name>                         Scenario name (e.g., 'basic-navigation')
   --loop                         Loop scenario continuously  
   --speed <n>                    Simulation speed multiplier (default: 1.0)
+  --bridge-mode <mode>           Output mode: nmea0183|nmea2000|hybrid (default: nmea0183)
+
+VALIDATE MODE OPTIONS:
+  <path>                         Path to scenario YAML file to validate
 
 COMMON OPTIONS:
   --verbose, -v                  Enable verbose logging
@@ -496,7 +617,8 @@ COMMON OPTIONS:
 EXAMPLES:
   node nmea-bridge.js --live 192.168.1.10 10110
   node nmea-bridge.js --file recordings/sailing.nmea --rate 20 --loop
-  node nmea-bridge.js --scenario navigation/coastal-sailing --loop
+  node nmea-bridge.js --scenario navigation/coastal-sailing --loop --bridge-mode nmea2000
+  node nmea-bridge.js --validate marine-assets/test-scenarios/navigation/basic-navigation.yml
 
 PROTOCOL SERVERS:
   TCP: localhost:2000            Standard NMEA TCP connection

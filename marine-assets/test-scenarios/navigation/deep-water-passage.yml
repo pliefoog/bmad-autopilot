@@ -3,113 +3,238 @@ description: "Ocean conditions with consistent deep water (>305 meters)"
 duration: 900  # 15 minutes
 version: "1.0"
 category: "basic"
+bridge_mode: "nmea0183"  # Can be overridden with --bridge-mode flag
 
 # Vessel parameters (configurable)
 parameters:
   vessel:
-    length: ${VESSEL_LENGTH:12.2}  # meters
-    beam: ${VESSEL_BEAM:3.7}      # meters  
-    draft: ${VESSEL_DRAFT:1.8}     # meters
+    length: 12.2  # meters
+    beam: 3.7     # meters  
+    draft: 1.8    # meters
     type: "sailboat"
+    keel_offset: 1.8
+  sonar:
+    max_range: 100.0
+    transducer_offset: 0.0
+  gps:
+    quality: 1
+    satellites: 8
+    hdop: 1.0
+  compass:
+    magnetic_deviation: 0.0
+    magnetic_variation: -15.0
+  autopilot:
+    max_heading_rate: 10
+    cross_track_tolerance: 0.1
+    arrival_radius: 0.2
   conditions:
     ocean_depth_base: 609.6    # meters (deep ocean)
-    ocean_swell_period: 8     # seconds
-    trade_wind_direction: 60  # degrees (typical trade winds)
-    trade_wind_speed: 18      # knots
+    ocean_swell_period: 8      # seconds
+    trade_wind_direction: 60   # degrees
+    trade_wind_speed: 18       # knots
+    sea_state: 3               # Moderate seas (3-5 foot waves)
+    visibility: 10             # nautical miles
+    barometric_pressure: 1013.2  # mb
+    air_temperature: 78        # degrees F
+    water_temperature: 82      # degrees F
 
-# Deep ocean data patterns
-data:
-  depth:
-    type: "deep_ocean"
-    base_depth: 609.6      # Deep ocean baseline
-    variation: 61.0        # ±61 meters (seafloor topology)
-    swell_effect: 0.9      # ±0.9 meters from wave action
-    frequency: 0.02       # Very slow variation (deep ocean)
-    unit: "meters"
-    min: 305.0             # Always >305 meters as per AC1
-    max: 914.4
+# Sensor-based architecture (protocol-agnostic)
+sensors:
+  # Deep Ocean Depth Sensor
+  - type: depth_sensor
+    instance: 0
+    source_address: 3
+    manufacturer: "Airmar"
+    model: "DST800"
+    update_rate: 0.5  # Hz (every 2 seconds, less critical in deep water)
+    physical_properties:
+      unit: "meters"
+      precision: 0.1
+    data_generation:
+      depth:
+        type: "sine_wave"
+        base: 609.6            # Deep ocean baseline
+        amplitude: 61.0        # ±61 meters (seafloor topology)
+        period: 900            # 15-minute cycle
+        phase_shift: 0
+        min: 305.0             # Always >305 meters per AC1
+        max: 914.4
+        noise:
+          type: "sine_wave"    # Ocean swell effect
+          amplitude: 0.9       # ±0.9 meters from wave action
+          period: 8            # 8-second swell period
   
-  speed:
-    type: "ocean_passage"
-    base_speed: 7.2       # knots (steady passage speed)
-    ocean_current: 0.8    # knots current assistance
-    wave_effect: 0.3      # ±0.3 knots from wave action
-    unit: "knots"
-    variation: 0.2        # Very stable speed
-    min: 6.0
-    max: 8.5
-  
-  wind:
-    angle:
-      type: "trade_winds"
-      base: 60            # degrees (steady trade wind direction)
-      variation: 8        # ±8 degrees variation (very stable)
-      shift_period: 1800  # 30-minute gradual shifts
-    speed:
-      type: "steady_trade"
-      base: 18            # knots (consistent trade winds)
-      variation: 2        # ±2 knots (very stable)
-      gust_factor: 0.1    # Minimal gusting in open ocean
+  # Ocean Passage Speed Sensor (Speed Through Water)
+  - type: speed_sensor
+    instance: 0
+    source_address: 3
+    manufacturer: "Airmar"
+    model: "DST800"
+    update_rate: 1  # Hz (every 1 second)
+    physical_properties:
+      speed_type: "STW"
       unit: "knots"
-      min: 15
-      max: 22
+      precision: 0.1
+    data_generation:
+      speed:
+        type: "sine_wave"
+        base: 7.2              # Steady passage speed + current assistance (7.2 + 0.8)
+        amplitude: 0.3         # ±0.3 knots from wave action
+        period: 600            # 10-minute cycle
+        phase_shift: 0
+        min: 6.0
+        max: 8.5
+        noise:
+          type: "sine_wave"    # Wave effect on speed
+          amplitude: 0.2       # ±0.2 knots
+          period: 8            # 8-second wave period
   
-  gps:
-    type: "ocean_passage"
-    start_position:
-      latitude: 35.2000   # Mid-Atlantic passage
-      longitude: -65.0000
-    track_type: "great_circle"
-    target_position:
-      latitude: 35.4000   # 15-minute passage segment
-      longitude: -64.8000
-    speed_over_ground: "calculated"
-    course_over_ground: 45  # degrees (steady northeast course)
-
-# Ocean environment conditions
-conditions:
-  sea_state: 3          # Moderate seas (3-5 foot waves)
-  visibility: 10        # nautical miles (good visibility)
-  barometric_pressure: 1013.2  # mb (stable high pressure)
-  air_temperature: 78   # degrees F (tropical passage)
-  water_temperature: 82 # degrees F (warm ocean current)
-
-# NMEA sentence timing (ocean passage rates)
-timing:
-  depth: 0.5      # Hz (every 2 seconds) - less critical in deep water
-  speed: 1        # Hz (every 1 second) - passage monitoring
-  wind: 1         # Hz (every 1 second) - steady conditions
-  gps: 1          # Hz (every 1 second) - navigation critical
-  compass: 5      # Hz (every 0.2 seconds) - course monitoring
-  barometric: 0.033  # Every 30 seconds - weather monitoring
-
-# Mathematical functions for ocean patterns
-functions:
-  deep_ocean: |
-    // Deep ocean depth with minimal variation
-    const seafloorVariation = Math.sin((currentTime / 900) * 2 * Math.PI) * variation;
-    const swellEffect = Math.sin((currentTime / 8) * 2 * Math.PI) * swellEffect;
-    const totalDepth = baseDepth + seafloorVariation + swellEffect;
-    return Math.max(min, Math.min(max, totalDepth));
-    
-  ocean_passage: |
-    // Steady passage speed with minimal ocean effects
-    const currentEffect = oceanCurrent * Math.cos((currentTime / 1800) * 2 * Math.PI);
-    const waveEffect = Math.sin((currentTime / 8) * 2 * Math.PI) * waveEffect;
-    const speedWithEffects = baseSpeed + currentEffect + waveEffect;
-    return Math.max(min, Math.min(max, speedWithEffects));
-    
-  trade_winds: |
-    // Very stable trade wind direction
-    const gradualShift = Math.sin((currentTime / shiftPeriod) * 2 * Math.PI) * variation;
-    return (base + gradualShift + 360) % 360;
-    
-  steady_trade: |
-    // Consistent trade wind speed
-    const naturalVariation = Math.sin((currentTime / 600) * 2 * Math.PI) * variation;
-    const gustEffect = (Math.random() - 0.5) * 2 * gustFactor * base;
-    const windSpeed = base + naturalVariation + gustEffect;
-    return Math.max(min, Math.min(max, windSpeed));
+  # Trade Wind Sensor (Consistent)
+  - type: wind_sensor
+    instance: 0
+    source_address: 2
+    manufacturer: "Airmar"
+    model: "WS200WX"
+    update_rate: 1  # Hz
+    physical_properties:
+      mount_height: 15.0
+      reference: "apparent"
+      unit: "knots"
+      angle_unit: "degrees"
+      precision: 0.1
+    data_generation:
+      wind_speed:
+        type: "sine_wave"
+        base: 18               # Consistent trade winds
+        amplitude: 2           # ±2 knots (very stable)
+        period: 600            # 10-minute variation cycle
+        phase_shift: 0
+        min: 15
+        max: 22
+        noise:
+          type: "gaussian"     # Minimal gusting in open ocean
+          std_dev: 0.3         # Subtle random variation
+      wind_angle:
+        type: "sine_wave"
+        base: 60               # Steady trade wind direction
+        amplitude: 8           # ±8 degrees variation
+        period: 1800           # 30-minute gradual shifts
+        phase_shift: 0
+        min: 40
+        max: 80
+  
+  # GPS Sensor (Great Circle Navigation)
+  - type: gps_sensor
+    instance: 0
+    source_address: 1
+    manufacturer: "Garmin"
+    model: "GPS 19x"
+    update_rate: 1  # Hz (navigation critical)
+    physical_properties:
+      quality: 1
+      satellites: 8
+      hdop: 1.0
+      antenna_height: 3.0
+      dgps_enabled: false
+    data_generation:
+      position:
+        type: "great_circle"
+        start_position:
+          latitude: 35.2000    # Mid-Atlantic passage
+          longitude: -65.0000
+        end_position:
+          latitude: 35.4000    # 15-minute passage segment
+          longitude: -64.8000
+        duration: 900          # 15 minutes
+        course_over_ground: 45 # degrees (steady northeast course)
+        speed_over_ground: 7.2 # knots (calculated from distance/time)
+      heading:
+        type: "constant"
+        value: 45              # degrees (steady course)
+        variation: 2           # ±2 degrees from sea conditions
+  
+  # Compass/Heading Sensor (Steady Course)
+  - type: heading_sensor
+    instance: 0
+    source_address: 4
+    manufacturer: "Airmar"
+    model: "H2183"
+    update_rate: 5  # Hz (course monitoring)
+    physical_properties:
+      reference: "magnetic"
+      deviation: 0.0
+      variation: -15.0
+      precision: 0.5
+    data_generation:
+      heading:
+        type: "constant"
+        value: 45              # degrees magnetic (steady northeast)
+        variation: 2           # ±2 degrees from autopilot/sea conditions
+        noise:
+          type: "gaussian"
+          std_dev: 0.5         # Minimal compass noise
+  
+  # Water Temperature Sensor
+  - type: temperature_sensor
+    instance: 0
+    source_address: 3
+    manufacturer: "Airmar"
+    model: "DST800"
+    update_rate: 0.5  # Hz
+    physical_properties:
+      sensor_type: "water"
+      location: "sea_water_intake"
+      unit: "fahrenheit"
+      precision: 0.1
+    data_generation:
+      temperature:
+        type: "constant"
+        value: 82              # degrees F (warm ocean current)
+        variation: 1           # ±1 degree
+        noise:
+          type: "gaussian"
+          std_dev: 0.2
+  
+  # Barometric Pressure Sensor
+  - type: pressure_sensor
+    instance: 0
+    source_address: 5
+    manufacturer: "Airmar"
+    model: "WS200WX"
+    update_rate: 0.033  # Hz (every 30 seconds)
+    physical_properties:
+      sensor_type: "atmospheric"
+      unit: "mbar"
+      precision: 0.1
+    data_generation:
+      pressure:
+        type: "constant"
+        value: 1013.2          # mb (stable high pressure)
+        variation: 0.5         # ±0.5 mb
+        noise:
+          type: "gaussian"
+          std_dev: 0.1
+  
+  # Air Temperature Sensor
+  - type: temperature_sensor
+    instance: 1
+    source_address: 5
+    manufacturer: "Airmar"
+    model: "WS200WX"
+    update_rate: 0.033  # Hz
+    physical_properties:
+      sensor_type: "air"
+      location: "outside"
+      unit: "fahrenheit"
+      precision: 0.1
+    data_generation:
+      temperature:
+        type: "constant"
+        value: 78              # degrees F (tropical passage)
+        variation: 2           # ±2 degrees
+        noise:
+          type: "gaussian"
+          std_dev: 0.3
 
 # Use case documentation
 use_cases:
@@ -127,11 +252,11 @@ acceptance_criteria:
   - "AC1: Realistic timing between related instruments"
   - "AC1: Parameterizable vessel characteristics"
 
-# Ocean-specific NMEA sentences
-additional_sentences:
-  - "MWV"  # Wind speed and angle
-  - "GLL"  # Geographic position (lat/lon)
-  - "VTG"  # Track made good and ground speed
-  - "DBT"  # Depth below transducer
-  - "VHW"  # Water speed and heading
-  - "XDR"  # Transducer measurements (barometric pressure, temperature)
+# Ocean-specific features
+features:
+  - "Great circle navigation (35.2N/-65.0W → 35.4N/-64.8W)"
+  - "Consistent deep water (always >305m)"
+  - "Stable trade wind patterns (60° ±8°, 18±2 knots)"
+  - "Ocean swell effects on depth/speed"
+  - "Weather monitoring (barometric, temperature)"
+  - "Multi-protocol support (NMEA 0183/2000/Hybrid)"

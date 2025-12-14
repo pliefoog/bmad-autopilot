@@ -6,7 +6,23 @@
 
 import { Platform } from 'react-native';
 import { CriticalAlarmType, AlarmEscalationLevel, MarineAudioConfig } from './types';
-import { CriticalAlarmConfiguration } from './CriticalAlarmConfiguration';
+
+export interface SoundPatternMetadata {
+  value: string;
+  label: string;
+  description: string;
+  priority?: number;
+}
+
+// Available sound patterns with descriptions (ISO 9692 maritime standards)
+export const SOUND_PATTERNS: SoundPatternMetadata[] = [
+  { value: 'rapid_pulse', label: 'Rapid Pulse', description: 'Rapid pulsing (ISO Priority 1) - Immediate danger', priority: 1 },
+  { value: 'morse_u', label: 'Morse U', description: 'Morse "U" (·· —) (ISO Priority 2) - Navigation alert "You are in danger"', priority: 2 },
+  { value: 'warble', label: 'Warble', description: 'Warbling tone (ISO Priority 3) - Equipment warning', priority: 3 },
+  { value: 'triple_blast', label: 'Triple Blast', description: 'Triple blast (ISO Priority 4) - General alert', priority: 4 },
+  { value: 'intermittent', label: 'Intermittent', description: 'Intermittent tone (ISO Priority 5) - Information', priority: 5 },
+  { value: 'continuous_descending', label: 'Continuous Descending', description: 'Descending tone - Signal degradation' },
+];
 
 // Conditionally import expo-av only on mobile platforms
 let Audio: any = null;
@@ -31,7 +47,6 @@ export class MarineAudioAlertManager {
   private config: MarineAudioConfig;
   private capabilities: AudioSystemCapabilities;
   private activeSounds: Map<CriticalAlarmType, any> = new Map();
-  private volumeBeforeOverride: number = 0;
   private audioContext?: AudioContext; // For Web Audio API
   
   // Sound pattern generators
@@ -208,15 +223,8 @@ export class MarineAudioAlertManager {
       // Stop any existing sound for this alarm type
       await this.stopAlarmSound(alarmType);
       
-      // Override system volume if configured and supported
-      if (this.config.volumeOverride && this.capabilities.canOverrideSystemVolume) {
-        await this.overrideSystemVolume();
-      }
-      
-      // Get user-configured audio pattern from alarm configuration
-      const alarmConfig = CriticalAlarmConfiguration.getInstance();
-      const config = alarmConfig.getAlarmConfig(alarmType);
-      const configuredPattern = overridePattern || config?.audioPattern;
+      // Get user-configured audio pattern from sensor-instance alarm configuration
+      const configuredPattern = overridePattern;
       
       // Get sound configuration for this alarm type with user preference
       const soundConfig = this.getAlarmSoundConfig(alarmType, escalationLevel, configuredPattern);
@@ -288,11 +296,6 @@ export class MarineAudioAlertManager {
         this.activeSounds.delete(alarmType);
       }
       
-      // Restore system volume if it was overridden
-      if (this.config.volumeOverride && this.volumeBeforeOverride > 0) {
-        await this.restoreSystemVolume();
-      }
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Failed to stop alarm sound', error);
     }
@@ -328,12 +331,6 @@ export class MarineAudioAlertManager {
    */
   public setVolumeOverride(enabled: boolean): void {
     this.config.volumeOverride = enabled;
-    
-    if (!enabled && this.volumeBeforeOverride > 0) {
-      // Restore system volume if override is disabled
-      this.restoreSystemVolume();
-    }
-    
     console.log('MarineAudioAlertManager: Volume override', { enabled });
   }
   
@@ -393,11 +390,6 @@ export class MarineAudioAlertManager {
       );
       
       await Promise.all(stopPromises);
-      
-      // Restore system volume if it was overridden
-      if (this.config.volumeOverride && this.volumeBeforeOverride > 0) {
-        await this.restoreSystemVolume();
-      }
       
       console.log('MarineAudioAlertManager: All alarm sounds stopped');
       
@@ -572,69 +564,6 @@ export class MarineAudioAlertManager {
     return patternConfigs[pattern] || patternConfigs.rapid_pulse;
   }
   
-  /**
-   * Play generated alarm pattern using Web Audio API
-   */
-  private async playGeneratedAlarmPattern(
-    alarmType: CriticalAlarmType,
-    escalationLevel: AlarmEscalationLevel,
-    soundConfig: any
-  ): Promise<boolean> {
-    try {
-      if (!this.audioContext) {
-        if (typeof AudioContext !== 'undefined') {
-          this.audioContext = new AudioContext();
-        } else if (typeof (window as any).webkitAudioContext !== 'undefined') {
-          this.audioContext = new (window as any).webkitAudioContext();
-        } else {
-          console.warn('MarineAudioAlertManager: Web Audio API not supported');
-          return false;
-        }
-      }
-      
-      if (!this.audioContext) {
-        return false;
-      }
-      
-      // Resume audio context if suspended
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
-      }
-      
-      // Create audio nodes
-      const oscillator = this.audioContext.createOscillator();
-      const gainNode = this.audioContext.createGain();
-      
-      // Configure oscillator
-      oscillator.type = 'square'; // Square wave for penetrating marine alarm sound
-      oscillator.frequency.setValueAtTime(soundConfig.frequency, this.audioContext.currentTime);
-      
-      // Configure gain
-      gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-      
-      // Connect audio graph
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
-      
-      // Apply alarm-specific pattern
-      this.applyAlarmPattern(oscillator, gainNode, soundConfig);
-      
-      // Start audio
-      oscillator.start();
-      
-      // Store references for cleanup
-      this.oscillators.set(alarmType.toString(), oscillator);
-      this.gainNodes.set(alarmType.toString(), gainNode);
-      this.activeSounds.set(alarmType, { oscillator, gainNode, type: 'generated' });
-      
-      return true;
-      
-    } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to play generated pattern', error);
-      return false;
-    }
-  }
-
   private async playCustomSoundFile(
     alarmType: CriticalAlarmType,
     filename: string,
@@ -1254,42 +1183,6 @@ export class MarineAudioAlertManager {
         // Default to continuous tone
         gainNode.gain.setValueAtTime(volume, currentTime);
         break;
-    }
-  }
-  
-  private async overrideSystemVolume(): Promise<void> {
-    try {
-      // Store current volume before override
-      this.volumeBeforeOverride = 0.7; // Placeholder - would get actual system volume
-      
-      // Set maximum volume for marine alarm (platform-specific implementation)
-      if (Platform.OS === 'ios') {
-        // iOS: Use AVAudioSession to set volume
-        // await AudioSession.setVolume(1.0);
-      } else if (Platform.OS === 'android') {
-        // Android: Use AudioManager to set alarm stream volume
-        // await AudioManager.setStreamVolume('ALARM', audioManager.getStreamMaxVolume('ALARM'));
-      }
-      
-    } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to override system volume', error);
-    }
-  }
-  
-  private async restoreSystemVolume(): Promise<void> {
-    try {
-      if (this.volumeBeforeOverride > 0) {
-        // Restore previous volume level
-        if (Platform.OS === 'ios') {
-          // await AudioSession.setVolume(this.volumeBeforeOverride);
-        } else if (Platform.OS === 'android') {
-          // await AudioManager.restoreVolume();
-        }
-        
-        this.volumeBeforeOverride = 0;
-      }
-    } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to restore system volume', error);
     }
   }
   

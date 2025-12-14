@@ -4,7 +4,7 @@ import { TrendLine } from '../components/TrendLine';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useDepthAlarmThresholds } from '../hooks/useAlarmThresholds';
+// Note: Alarm thresholds now auto-subscribed in TrendLine component
 import { useDepthPresentation } from '../presentation/useDataPresentation';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -39,107 +39,93 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   
   // Widget state management per ui-architecture.md v2.3
   
-  // NEW: Get history and stats methods from store
-  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
+  // NEW: Get session stats method from store
   const getSessionStats = useNmeaStore((state) => state.getSessionStats);
   
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-  // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
-  // Subscribe to individual fields instead of entire depth objects
-  const dptDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.depth, (a, b) => a === b);
-  const dptReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.referencePoint, (a, b) => a === b);
-  const dptTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.timestamp);
-  
-  const dbtDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.depth, (a, b) => a === b);
-  const dbtReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.referencePoint, (a, b) => a === b);
-  const dbtTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[1]?.timestamp);
-  
-  const dbkDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.depth, (a, b) => a === b);
-  const dbkReferencePoint = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.referencePoint, (a, b) => a === b);
-  const dbkTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[2]?.timestamp);
+  // NMEA data selectors - Read from single sensor instance (based on talker ID)
+  // All three depth types (DPT, DBT, DBK) from same physical sensor are in separate fields
+  // Priority: DPT (depthBelowWaterline) > DBT (depthBelowTransducer) > DBK (depthBelowKeel)
+  const dptDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.depthBelowWaterline) as number | undefined;
+  const dbtDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.depthBelowTransducer) as number | undefined;
+  const dbkDepth = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.depthBelowKeel) as number | undefined;
+  const sensorTimestamp = useNmeaStore((state) => state.nmeaData.sensors.depth?.[0]?.timestamp);
   
   // Track currently locked depth source to prevent unnecessary switching (using ref to avoid re-renders)
   const lockedSourceRef = React.useRef<'DPT' | 'DBT' | 'DBK' | null>(null);
   
-  // Select depth source with sticky selection: once locked, only switch if current source becomes stale
+  // Select depth measurement type with sticky selection: once locked, only switch if current type unavailable
   const selectedDepthData = useMemo(() => {
-    const now = Date.now();
-    const STALE_THRESHOLD = 10000; // 10 seconds
-    
-    // Helper to check if a source is valid and fresh
-    const isSourceValid = (depth: number | undefined, timestamp: number | undefined): boolean => {
-      return depth !== undefined && 
-             timestamp !== undefined &&
-             (now - timestamp) < STALE_THRESHOLD;
+    // Helper to check if a depth value is valid
+    const isDepthValid = (depth: number | undefined): boolean => {
+      return depth !== undefined && !isNaN(depth);
     };
     
-    // If we have a locked source, check if it's still valid
-    if (lockedSourceRef.current) {
+    // Check if sensor data is fresh (10 second threshold for depth selection stability)
+    const isSensorFresh = sensorTimestamp !== undefined && (Date.now() - sensorTimestamp) < 10000;
+    
+    // If we have a locked source, check if it's still available and fresh
+    if (lockedSourceRef.current && isSensorFresh) {
       let currentDepth: number | undefined;
-      let currentReferencePoint: string | undefined;
-      let currentTimestamp: number | undefined;
+      let currentReferencePoint: 'waterline' | 'transducer' | 'keel';
       
       switch (lockedSourceRef.current) {
         case 'DPT':
           currentDepth = dptDepth;
-          currentReferencePoint = dptReferencePoint;
-          currentTimestamp = dptTimestamp;
+          currentReferencePoint = 'waterline';
           break;
         case 'DBT':
           currentDepth = dbtDepth;
-          currentReferencePoint = dbtReferencePoint;
-          currentTimestamp = dbtTimestamp;
+          currentReferencePoint = 'transducer';
           break;
         case 'DBK':
           currentDepth = dbkDepth;
-          currentReferencePoint = dbkReferencePoint;
-          currentTimestamp = dbkTimestamp;
+          currentReferencePoint = 'keel';
           break;
       }
       
-      // If current source is still valid, stick with it (STICKY SELECTION)
-      if (isSourceValid(currentDepth, currentTimestamp)) {
+      // If current measurement type is still available, stick with it (STICKY SELECTION)
+      if (isDepthValid(currentDepth)) {
         return {
           depth: currentDepth!,
           depthSource: lockedSourceRef.current,
           depthReferencePoint: currentReferencePoint,
-          depthTimestamp: currentTimestamp!
+          depthTimestamp: sensorTimestamp!
         };
       }
       
-      // Current source became stale, unlock and fall through to priority selection
+      // Current measurement type unavailable, unlock and fall through to priority selection
       lockedSourceRef.current = null;
     }
     
-    // No locked source or current source stale: use priority-based selection
-    // Priority: DPT > DBT > DBK
-    if (isSourceValid(dptDepth, dptTimestamp)) {
+    // No locked source or sensor stale: use priority-based selection
+    // Priority: DPT (waterline) > DBT (transducer) > DBK (keel)
+    if (isDepthValid(dptDepth) && isSensorFresh) {
       lockedSourceRef.current = 'DPT';
       return {
         depth: dptDepth!,
         depthSource: 'DPT' as const,
-        depthReferencePoint: dptReferencePoint,
-        depthTimestamp: dptTimestamp!
+        depthReferencePoint: 'waterline' as const,
+        depthTimestamp: sensorTimestamp!
       };
     }
     
-    if (isSourceValid(dbtDepth, dbtTimestamp)) {
+    if (isDepthValid(dbtDepth) && isSensorFresh) {
       lockedSourceRef.current = 'DBT';
       return {
         depth: dbtDepth!,
         depthSource: 'DBT' as const,
-        depthReferencePoint: dbtReferencePoint,
-        depthTimestamp: dbtTimestamp!
+        depthReferencePoint: 'transducer' as const,
+        depthTimestamp: sensorTimestamp!
       };
     }
     
-    if (isSourceValid(dbkDepth, dbkTimestamp)) {
+    if (isDepthValid(dbkDepth) && isSensorFresh) {
       lockedSourceRef.current = 'DBK';
       return {
         depth: dbkDepth!,
         depthSource: 'DBK' as const,
-        depthReferencePoint: dbkReferencePoint,
-        depthTimestamp: dbkTimestamp!
+        depthReferencePoint: 'keel' as const,
+        depthTimestamp: sensorTimestamp!
       };
     }
     
@@ -151,7 +137,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
       depthReferencePoint: undefined, 
       depthTimestamp: undefined 
     };
-  }, [dptDepth, dptReferencePoint, dptTimestamp, dbtDepth, dbtReferencePoint, dbtTimestamp, dbkDepth, dbkReferencePoint, dbkTimestamp]);
+  }, [dptDepth, dbtDepth, dbkDepth, sensorTimestamp]);
   
   // Remove the lockedSource useEffect entirely - ref handles it now
   
@@ -160,62 +146,14 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
   // Simple stale check without interval
   const isStale = !depthTimestamp || (Date.now() - depthTimestamp) > 5000;
   
-  // NEW: Get session stats efficiently from store
+  // Get session stats from store (instance 0 - all depth measurements merged here)
   const sessionStats = useMemo(() => {
-    // Priority: DPT (instance 0) > DBT (instance 1) > DBK (instance 2)
-    // Try to get stats from the primary source
-    let stats = getSessionStats('depth', 0);
-    
-    // Fallback to other sources if primary has no data
-    if (stats.count === 0) {
-      stats = getSessionStats('depth', 1);
-    }
-    if (stats.count === 0) {
-      stats = getSessionStats('depth', 2);
-    }
-    
+    const stats = getSessionStats('depth', 0);
     return stats;
-  }, [getSessionStats]);
+  }, [getSessionStats, depth, depthTimestamp]); // Re-calculate when depth changes
 
-  // Get alarm thresholds for depth from CriticalAlarmConfiguration
-  const alarmThresholds = useDepthAlarmThresholds();
-
-  // Wrapper component to receive injected props from UnifiedWidgetGrid
-  const TrendLineCell = useCallback(({ maxWidth: cellMaxWidth, cellHeight: cellHeightValue }: { maxWidth?: number; cellHeight?: number }) => {
-    // Get all data points in 5 minute window
-    const trendData = getSensorHistory('depth', 0, {
-      timeWindowMs: 5 * 60 * 1000
-    });
-    
-    // Convert alarm thresholds to display units for TrendLine
-    const convertedWarningThreshold = alarmThresholds.warning !== 9999 
-      ? depthPresentation.convert(alarmThresholds.warning) 
-      : undefined;
-    const convertedAlarmThreshold = alarmThresholds.min !== 9999 
-      ? depthPresentation.convert(alarmThresholds.min) 
-      : undefined;
-    
-    return (
-      <TrendLine 
-        data={trendData}
-        width={cellMaxWidth || 300}
-        height={cellHeightValue || 60}
-        usePrimaryLine={true}
-        showXAxis={true}
-        showYAxis={true}
-        xAxisPosition="top"
-        yAxisDirection="down"
-        timeWindowMinutes={5}
-        showTimeLabels={true}
-        showGrid={true}
-        strokeWidth={2}
-        forceZero={true}
-        warningThreshold={convertedWarningThreshold}
-        alarmThreshold={convertedAlarmThreshold}
-        thresholdType={alarmThresholds.thresholdType}
-      />
-    );
-  }, [getSensorHistory, alarmThresholds, depthPresentation]);
+  // Note: Alarm thresholds for TrendLine are now auto-subscribed within the component
+  // No need to fetch and convert them here
 
   const handleLongPressOnPin = useCallback(() => {
   }, [id]);
@@ -234,7 +172,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
       }
 
       if (!depthPresentation.isValid) {
-        // Fallback to meters if presentation system fails
+        // Fallback to meters with 1 decimal place (standard marine instrument precision)
         return { value: depthMeters.toFixed(1), unit: 'm' };
       }
 
@@ -334,8 +272,22 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
           }}
         />
         
-        {/* Row 2: Trend Line Graph */}
-        <TrendLineCell />
+        {/* Row 2: Trend Line Graph - Self-subscribing pattern with auto-subscribed thresholds */}
+        <TrendLine 
+          sensor="depth"
+          instance={0}
+          timeWindowMs={5 * 60 * 1000}
+          usePrimaryLine={true}
+          showXAxis={true}
+          showYAxis={true}
+          xAxisPosition="top"
+          yAxisDirection="down"
+          timeWindowMinutes={5}
+          showTimeLabels={true}
+          showGrid={true}
+          strokeWidth={2}
+          forceZero={true}
+        />
         
         {/* Separator rendered automatically after row 1 (index 1) = after the trend line */}
         

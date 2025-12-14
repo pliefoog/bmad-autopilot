@@ -473,17 +473,30 @@ export class TimeSeriesBuffer<T> {
       return; // Data not old enough yet
     }
     
-    // Move every Nth point to old storage
+    // Get all recent data and separate old from recent
     const recentArray = this.recentData.toArray();
-    for (let i = 0; i < recentArray.length; i += this.decimationFactor) {
-      const point = recentArray[i];
+    const oldPoints: Array<{ timestamp: number; value: T }> = [];
+    const stillRecentPoints: Array<{ timestamp: number; value: T }> = [];
+    
+    // Separate data into old (to decimate) and still recent (to keep)
+    for (const point of recentArray) {
       if (now - point.timestamp >= this.recentThresholdMs) {
-        this.oldData.push(point);
+        oldPoints.push(point);
+      } else {
+        stillRecentPoints.push(point);
       }
     }
     
-    // Remove old data from recent buffer
+    // Move every Nth old point to decimated storage
+    for (let i = 0; i < oldPoints.length; i += this.decimationFactor) {
+      this.oldData.push(oldPoints[i]);
+    }
+    
+    // Rebuild recent buffer with only still-recent data
     this.recentData.clear();
+    for (const point of stillRecentPoints) {
+      this.recentData.push(point);
+    }
   }
   
   /**

@@ -19,8 +19,8 @@ interface HeaderBarProps {
   onShowFactoryResetDialog?: () => void;
   onShowLayoutSettings?: () => void;
   onShowDisplayThemeSettings?: () => void;
-  onShowAlarmConfiguration?: () => void;
   onShowAlarmHistory?: () => void;
+  onShowAlarmConfiguration?: () => void;
   navigationSession?: {
     isRecording: boolean;
     startTime?: Date;
@@ -40,8 +40,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onShowFactoryResetDialog,
   onShowLayoutSettings,
   onShowDisplayThemeSettings,
-  onShowAlarmConfiguration,
   onShowAlarmHistory,
+  onShowAlarmConfiguration,
   navigationSession,
   onToggleNavigationSession,
   onShowAutopilotControl,
@@ -203,8 +203,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         onShowConnectionSettings={onShowConnectionSettings}
         onShowLayoutSettings={onShowLayoutSettings}
         onShowDisplayThemeSettings={onShowDisplayThemeSettings}
-        onShowAlarmConfiguration={onShowAlarmConfiguration}
         onShowAlarmHistory={onShowAlarmHistory}
+        onShowAlarmConfiguration={onShowAlarmConfiguration}
       />
     </>
   );

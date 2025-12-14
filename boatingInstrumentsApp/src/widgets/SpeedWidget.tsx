@@ -51,11 +51,15 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   
   // NEW: Get history and stats methods from store
   const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
+  const getSessionStats = useNmeaStore((state) => state.getSessionStats);
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-  const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround, (a, b) => a === b); // SOG
-  const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater, (a, b) => a === b); // STW
-  const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp); // No equality check - must update!
+  // ARCHITECTURAL FIX: STW from speed sensor (paddlewheel), SOG from GPS sensor (GPS-calculated)
+  // VHW sentence → speed sensor throughWater (STW - paddlewheel measurement)
+  // VTG/RMC sentence → GPS sensor speedOverGround (SOG - GPS calculation from position changes)
+  const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater, (a, b) => a === b);
+  const sog = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.speedOverGround, (a, b) => a === b);
+  const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp);
   
   // Debug: Log actual values from store
   useEffect(() => {
@@ -64,51 +68,23 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
     }
   }, [sog, stw]);
   
-  // NOTE: SOG history now auto-managed in sensor data - access via getSensorHistory when needed
-
-  // Local state for STW (Speed Through Water - secondary metric)
-  const [stwHistory, setStwHistory] = useState<{ value: number; timestamp: number }[]>([]);
-  
-  // Track STW history locally
-  useEffect(() => {
-    if (stw !== undefined && stw !== null) {
-      const now = Date.now();
-      const tenMinutesAgo = now - 10 * 60 * 1000;
-      
-      setStwHistory(prev => {
-        const lastEntry = prev[prev.length - 1];
-        if (lastEntry && Math.abs(lastEntry.value - stw) < 0.01 && (now - lastEntry.timestamp) < 1000) {
-          return prev;
-        }
-        
-        return [...prev, { value: stw, timestamp: now }]
-          .filter(entry => entry.timestamp > tenMinutesAgo)
-          .slice(-300);
-      });
-    }
-  }, [stw]);
-
-  // Calculate averages and maximums for secondary view
+  // Calculate averages and maximums for secondary view using store history
+  // Use getSessionStats which is optimized and updates correctly
   const calculations = useMemo(() => {
-    // Get SOG history from store
-    const sogHistoryData = getSensorHistory('speed', 0, {
-      timeWindowMs: 10 * 60 * 1000
-    });
+    const sogStats = getSessionStats('gps', 0); // GPS sensor tracks speedOverGround
+    const stwStats = getSessionStats('speed', 0); // Speed sensor tracks throughWater
     
-    const calculateStats = (data: { value: number; timestamp: number }[]) => {
-      if (data.length === 0) return { avg: null, max: null };
-      const values = data.map(d => d.value);
-      return {
-        avg: values.reduce((a, b) => a + b, 0) / values.length,
-        max: Math.max(...values)
-      };
-    };
-
     return {
-      sog: calculateStats(sogHistoryData),
-      stw: calculateStats(stwHistory)
+      sog: {
+        avg: sogStats.avg,
+        max: sogStats.max
+      },
+      stw: {
+        avg: stwStats.avg,
+        max: stwStats.max
+      }
     };
-  }, [getSensorHistory, stwHistory]);
+  }, [getSessionStats, sog, stw]); // Re-calculate when current values change
 
   // NEW: Speed conversion using semantic presentation system
   const getSpeedDisplay = useCallback((speedValue: number | null | undefined, label: string = 'Speed'): MetricDisplayData => {

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
+import { logger } from '../../utils/logger';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { MenuSection } from '../molecules/MenuSection';
 import { DevToolsSection } from '../molecules/DevToolsSection';
@@ -28,8 +29,8 @@ interface HamburgerMenuProps {
   onShowConnectionSettings?: () => void;
   onShowLayoutSettings?: () => void;
   onShowDisplayThemeSettings?: () => void;
-  onShowAlarmConfiguration?: () => void;
   onShowAlarmHistory?: () => void;
+  onShowAlarmConfiguration?: () => void;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -44,8 +45,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onShowConnectionSettings,
   onShowLayoutSettings,
   onShowDisplayThemeSettings,
-  onShowAlarmConfiguration,
   onShowAlarmHistory,
+  onShowAlarmConfiguration,
 }) => {
   const theme = useTheme();
   const menuWidth = Math.min(screenWidth * 0.8, MAX_MENU_WIDTH);
@@ -85,12 +86,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         requestAnimationFrame(() => onShowLayoutSettings?.());
       });
     },
-    openAlarmConfiguration: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowAlarmConfiguration?.());
-      });
-    },
     openAlarmHistory: () => {
       animateOut(() => {
         onClose();
@@ -112,6 +107,20 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
       animateOut(() => {
         onClose();
         setTimeout(() => setShowFeatureFlags(true), 0);
+      });
+    },
+    openAlarmConfiguration: () => {
+      logger.alarm('HamburgerMenu: openAlarmConfiguration called', { hasCallback: !!onShowAlarmConfiguration });
+      // Trigger close animation, then open alarm configuration
+      animateOut(() => {
+        logger.alarm('HamburgerMenu: Menu animation complete, closing menu');
+        onClose();
+        if (onShowAlarmConfiguration) {
+          logger.alarm('HamburgerMenu: Calling onShowAlarmConfiguration callback');
+          requestAnimationFrame(() => onShowAlarmConfiguration());
+        } else {
+          logger.alarm('HamburgerMenu: ERROR - No onShowAlarmConfiguration callback!');
+        }
       });
     },
   };

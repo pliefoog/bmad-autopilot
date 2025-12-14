@@ -24,6 +24,7 @@ import {
   Animated,
 } from 'react-native';
 import { useTheme } from '../../../store/themeStore';
+import { useSettingsStore } from '../../../store/settingsStore';
 import { settingsTokens, getPlatformTokens } from '../../../theme/settingsTokens';
 import { useHapticFeedback } from '../../../hooks';
 import { isTV } from '../../../utils/platformDetection';
@@ -65,7 +66,8 @@ const WebToggle: React.FC<{
   color: string;
   trackColor: string;
   testID: string;
-}> = ({ value, onValueChange, disabled, color, trackColor, testID }) => {
+  gloveMode: boolean;
+}> = ({ value, onValueChange, disabled, color, trackColor, testID, gloveMode }) => {
   const animatedValue = React.useRef(new Animated.Value(value ? 1 : 0)).current;
   const [isHovered, setIsHovered] = React.useState(false);
   
@@ -82,9 +84,15 @@ const WebToggle: React.FC<{
     outputRange: [trackColor, color],
   });
   
+  // Scale dimensions based on glove mode
+  const trackWidth = gloveMode ? 60 : 51;
+  const trackHeight = gloveMode ? 36 : 31;
+  const thumbSize = gloveMode ? 32 : 27;
+  const thumbTranslate = gloveMode ? 26 : 22;
+  
   const thumbTranslateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [2, 22], // Track width 44, thumb width 20
+    outputRange: [2, thumbTranslate],
   });
   
   const handlePress = () => {
@@ -106,7 +114,12 @@ const WebToggle: React.FC<{
     >
       <Animated.View
         style={[
-          webStyles.track,
+          {
+            width: trackWidth,
+            height: trackHeight,
+            borderRadius: trackHeight / 2,
+            justifyContent: 'center',
+          },
           {
             backgroundColor: trackBackgroundColor,
             opacity: disabled ? 0.5 : 1,
@@ -115,32 +128,18 @@ const WebToggle: React.FC<{
         ]}
       >
         <Animated.View
-          style={[
-            webStyles.thumb,
-            {
-              transform: [{ translateX: thumbTranslateX }],
-            },
-          ]}
+          style={{
+            width: thumbSize,
+            height: thumbSize,
+            borderRadius: thumbSize / 2,
+            backgroundColor: '#FFFFFF',
+            transform: [{ translateX: thumbTranslateX }],
+          }}
         />
       </Animated.View>
     </TouchableOpacity>
   );
 };
-
-const webStyles = StyleSheet.create({
-  track: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-  },
-  thumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-  },
-});
 
 /**
  * Platform-native toggle/switch component
@@ -163,6 +162,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   testID = 'platform-toggle',
 }) => {
   const theme = useTheme();
+  const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
   const platformTokens = getPlatformTokens();
   const tvMode = isTV();
   const styles = React.useMemo(
@@ -172,7 +172,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   const haptics = useHapticFeedback();
   
   const activeColor = color || theme.primary;
-  const trackColor = theme.appBackground;
+  const trackColor = theme.border;
   
   /**
    * Handle toggle change with haptic feedback
@@ -215,6 +215,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
         disabled={disabled}
         color={activeColor}
         trackColor={trackColor}
+        gloveMode={gloveMode}
         testID={`${testID}-switch`}
       />
     </View>
@@ -249,7 +250,7 @@ const createStyles = (
     flex: 1,
     fontSize: platformTokens.typography.body.fontSize,
     fontWeight: platformTokens.typography.body.fontWeight,
-    fontFamily: platformTokens.typography.fontFamily,
+    fontFamily: Platform.OS === 'web' ? 'sans-serif' : platformTokens.typography.fontFamily,
     color: theme.text,
     marginRight: settingsTokens.spacing.md,
   },

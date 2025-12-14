@@ -1,74 +1,103 @@
 name: "Basic Navigation Scenario"
-description: "Standard depth, speed, wind, GPS data (5-minute duration)"
+description: "Standard depth, speed, wind, GPS data using sensor-based architecture (5-minute duration)"
 duration: 300  # 5 minutes as per AC1
-version: "1.0"
+version: "2.0"
 category: "basic"
+bridge_mode: "nmea0183"  # Can be: nmea0183 | nmea2000 | hybrid
 
-# Data generation parameters
-data:
-  depth:
-    type: "sine_wave"
-    base: 4.6      # meters
-    amplitude: 1.5  # ±1.5 meters
-    frequency: 0.1 # Hz
-    unit: "meters"
-  
-  speed:
-    type: "gaussian"
-    mean: 6.0     # knots
-    std_dev: 0.5
-    min: 4.0
-    max: 8.0
-    unit: "knots"
-  
-  wind:
-    angle:
-      type: "random_walk"
-      start: 45    # degrees
-      step_size: 10
-      bounds: [0, 360]
-    speed:
-      type: "gaussian"
-      mean: 15     # knots
-      std_dev: 2
-      min: 5
-      max: 25
-      unit: "knots"
-  
+# Generator parameters (required by schema)
+parameters:
+  vessel:
+    keel_offset: 0.5
+  sonar:
+    max_range: 50.0
   gps:
-    type: "boat_movement"
-    start_position:
-      latitude: 41.4145
-      longitude: -81.8610
-    speed_range: [4, 8]  # knots
-    heading_variance: 5   # degrees
+    quality: 1
+    satellites: 8
+    hdop: 1.0
+    altitude: 0.0
+  compass:
+    magnetic_deviation: 0.0
+    magnetic_variation: -12.0
+  autopilot:
+    max_heading_rate: 10
+    cross_track_tolerance: 0.1
+    arrival_radius: 0.2
 
-# NMEA sentence definitions
-nmea_sentences:
-  - type: "DBT"    # Depth Below Transducer
-    frequency: 1   # Hz
-  - type: "VTG"    # Track Made Good and Ground Speed
-    frequency: 1
-  - type: "MWV"    # Wind Speed and Angle
-    frequency: 2
-  - type: "GGA"    # Global Positioning System Fix Data
-    frequency: 1
+# SENSOR-BASED DEFINITIONS (protocol-agnostic)
+sensors:
+  # Depth Sensor
+  - type: depth_sensor
+    instance: 0
+    name: "Depth Sounder"
+    update_rate: 1  # Hz
+    physical_properties:
+      transducer_depth: 0.5
+      keel_offset: 0.5
+      max_range: 50.0
+      mounting_location: "bow"
+    data_generation:
+      depth:
+        type: "sine_wave"
+        base: 4.6
+        amplitude: 1.5
+        period: 10  # 10-second cycle
+        min: 1.5
+        max: 10.0
 
-# Autopilot configuration
-autopilot:
-  enabled: false
-  initial_state:
-    mode: "STANDBY"
-    engaged: false
-    target_heading: 180
-    current_heading: 175
+  # Speed Sensor
+  - type: speed_sensor
+    instance: 0
+    name: "Speed Log"
+    update_rate: 1  # Hz
+    physical_properties:
+      speed_type: "STW"
+      unit: "knots"
+      precision: 0.1
+    data_generation:
+      speed:
+        type: "gaussian"
+        mean: 6.0
+        std_dev: 0.5
+        min: 4.0
+        max: 8.0
 
-# Phase progression (optional)
-phases:
-  - name: "startup"
-    duration: 60    # seconds
-    description: "Initial data stabilization"
-  
-  - name: "steady_cruise"
-    duration: 3540  # remaining time
-    description: "Steady cruising with normal variations"
+  # Wind Sensor
+  - type: wind_sensor
+    instance: 0
+    name: "Wind Instrument"
+    update_rate: 2  # Hz
+    physical_properties:
+      sensor_height: 10.0
+      mounting_location: "masthead"
+      reference_type: "apparent"
+    data_generation:
+      wind_speed:
+        type: "gaussian"
+        mean: 15
+        std_dev: 2
+        min: 5
+        max: 25
+      wind_angle:
+        type: "random_walk"
+        start: 45
+        step_size: 10
+        bounds: [0, 360]
+
+  # GPS Sensor
+  - type: gps_sensor
+    instance: 0
+    name: "GPS Antenna"
+    update_rate: 1  # Hz
+    physical_properties:
+      antenna_height: 2.5
+      horizontal_accuracy: 2.5
+      mounting_location: "stern"
+    data_generation:
+      position:
+        type: "boat_movement"
+        start_position:
+          latitude: 41.4145
+          longitude: -81.8610
+        speed_range: [4, 8]
+        heading_variance: 5

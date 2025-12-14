@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 const EventEmitter = require('events');
-const ScenarioSchemaValidator = require('../scenario-schema');
+const Ajv = require('ajv');
 const NMEA2000BinaryGenerator = require('../nmea2000-binary');
 
 /**
@@ -48,8 +48,8 @@ const SENSOR_TYPE_REGISTRY = {
     }
   },
   gps_sensor: {
-    nmea0183: ['GGA', 'GLL', 'RMC', 'GSA', 'GSV'],
-    nmea2000: [129025, 129026, 129029, 129539],
+    nmea0183: ['VTG', 'GGA', 'RMC', 'GLL', 'GSA', 'GSV'],  // VTG first = primary (provides SOG)
+    nmea2000: [129026, 129025, 129029, 129539],  // 129026 = COG & SOG (primary)
     physical_properties: {
       antenna_height: { unit: 'm', description: 'GPS antenna height above water' },
       horizontal_accuracy: { unit: 'm', description: 'Expected GPS accuracy', nmea0183_field: 'GGA.hdop', nmea2000_field: 'byte[14-15]' },
@@ -138,6 +138,14 @@ class ScenarioDataSource extends EventEmitter {
       phasesCompleted: 0,
       currentIteration: 1
     };
+    
+    // State for smooth heading transitions
+    this.currentSmoothedHeading = null;
+    this.lastHeadingUpdateTime = null;
+    
+    // State for cross-track error calculation
+    this.currentLegStartWaypoint = null;
+    this.currentLegEndWaypoint = null;
 
     // NMEA data generators for common scenarios
     this.dataGenerators = new Map();
@@ -181,12 +189,8 @@ class ScenarioDataSource extends EventEmitter {
         throw new Error(`Scenario not found: ${this.config.scenarioName}`);
       }
 
-      // Validate scenario schema
-      const validation = ScenarioSchemaValidator.validate(this.scenario);
-      if (!validation.valid) {
-        console.warn(`⚠️ Scenario validation warnings for ${this.config.scenarioName}:`);
-        validation.errors.forEach(error => console.warn(`   • ${error}`));
-      }
+      // Validate scenario schema using JSON Schema (Ajv)
+      this.validateScenarioSchema();
 
       this.emit('status', `Loaded scenario: ${this.scenario.name || this.config.scenarioName}`);
       this.emit('status', `Description: ${this.scenario.description || 'No description'}`);
@@ -196,6 +200,80 @@ class ScenarioDataSource extends EventEmitter {
       
     } catch (error) {
       throw new Error(`Failed to load scenario: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validate scenario against JSON Schema
+   */
+  validateScenarioSchema() {
+    try {
+      // Load JSON schema
+      const schemaPath = path.join(__dirname, '../../../../marine-assets/test-scenarios/scenario.schema.json');
+      
+      if (!fs.existsSync(schemaPath)) {
+        console.warn(`⚠️ Schema file not found: ${schemaPath}`);
+        console.warn('   Skipping schema validation');
+        return;
+      }
+      
+      const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+      
+      // Validate with Ajv
+      const ajv = new Ajv({ allErrors: true, verbose: true, strict: false });
+      const validate = ajv.compile(schema);
+      const valid = validate(this.scenario);
+      
+      if (!valid) {
+        console.warn(`\n⚠️ Scenario validation errors for: ${this.scenario.name || this.config.scenarioName}`);
+        console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        // Group errors by type
+        const criticalErrors = [];
+        const warnings = [];
+        
+        validate.errors.forEach(error => {
+          const path = error.instancePath || error.dataPath || 'root';
+          const message = error.message;
+          const fullMessage = `${path}: ${message}`;
+          
+          // Categorize errors
+          if (error.keyword === 'required' || error.keyword === 'type') {
+            criticalErrors.push(fullMessage);
+          } else {
+            warnings.push(fullMessage);
+          }
+        });
+        
+        // Display critical errors
+        if (criticalErrors.length > 0) {
+          console.error('\n❌ Critical Errors (may cause runtime issues):');
+          criticalErrors.forEach(err => console.error(`   • ${err}`));
+        }
+        
+        // Display warnings
+        if (warnings.length > 0) {
+          console.warn('\n⚠️  Warnings (may indicate configuration issues):');
+          warnings.forEach(warn => console.warn(`   • ${warn}`));
+        }
+        
+        console.warn('\n💡 Run with --validate flag for detailed schema validation');
+        console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        
+        // Fail only on critical errors that would prevent execution
+        if (criticalErrors.some(err => err.includes('name') || err.includes('bridge_mode'))) {
+          throw new Error('Critical schema validation errors - cannot continue');
+        }
+      } else {
+        console.log(`✅ Scenario schema validation passed: ${this.scenario.name}`);
+      }
+      
+    } catch (error) {
+      if (error.message.includes('Critical schema validation')) {
+        throw error;
+      }
+      console.warn(`⚠️ Schema validation error: ${error.message}`);
+      console.warn('   Continuing with scenario execution...');
     }
   }
 
@@ -866,6 +944,11 @@ class ScenarioDataSource extends EventEmitter {
     console.log(`🎯 Initializing sensor generators in ${bridgeMode} mode`);
 
     sensors.forEach((sensor, index) => {
+      // Debug speed sensors specifically
+      if (sensor.type === 'speed_sensor') {
+        console.log(`🔍 Speed sensor found: instance=${sensor.instance}, speed_type=${sensor.physical_properties?.speed_type}, name="${sensor.name}"`);
+      }
+      
       const generatorName = `sensor_${sensor.type}_${sensor.instance || index}`;
       const updateRateHz = sensor.update_rate || 1;
       const intervalMs = Math.round(1000 / updateRateHz);
@@ -929,7 +1012,29 @@ class ScenarioDataSource extends EventEmitter {
     }
 
     // Use the first (primary) sentence type for this sensor
-    const primarySentence = sentenceTypes[0];
+    let primarySentence = sentenceTypes[0];
+    
+    // Special case: temperature sensors support both MTW and XDR
+    // MTW is only for seawater temperature, use XDR for all other locations
+    if (sensor.type === 'temperature_sensor' && sentenceTypes.includes('XDR')) {
+      const locationCode = sensor.physical_properties?.location || sensor.physical_properties?.sensor_type || '';
+      const isWaterTemp = locationCode.toUpperCase() === 'SEAW' || 
+                          locationCode === 'sea_water' || 
+                          locationCode === 'water' ||
+                          sensor.physical_properties?.sensor_type === 'water';
+      
+      // Use MTW only for water temperature, XDR for everything else
+      primarySentence = isWaterTemp && sentenceTypes.includes('MTW') ? 'MTW' : 'XDR';
+    }
+    
+    // Special case: speed sensors support both VHW and VTG
+    // VHW is for STW (Speed Through Water), VTG is for SOG (Speed Over Ground)
+    if (sensor.type === 'speed_sensor') {
+      const speedType = sensor.physical_properties?.speed_type || 'STW';
+      
+      // Use VTG for SOG, VHW for STW
+      primarySentence = speedType === 'SOG' && sentenceTypes.includes('VTG') ? 'VTG' : 'VHW';
+    }
     
     // Route to specific generator based on sensor type
     switch (sensor.type) {
@@ -943,7 +1048,8 @@ class ScenarioDataSource extends EventEmitter {
         return this.generateWindFromSensor(sensor, primarySentence);
       
       case 'gps_sensor':
-        return this.generateGPSFromSensor(sensor, primarySentence);
+        // Real GPS emits multiple sentences per cycle (RMC, GGA, VTG at minimum)
+        return this.generateGPSFromSensor(sensor, sentenceTypes);
       
       case 'heading_sensor':
         return this.generateHeadingFromSensor(sensor, primarySentence);
@@ -1536,9 +1642,18 @@ class ScenarioDataSource extends EventEmitter {
    * Generate RSA rudder sensor angle sentence from YAML configuration
    */
   generateYAMLRSASentence(sentenceDef) {
-    // Simple rudder angle for engine load correlation
-    // In real scenario, this would be dynamic based on maneuvers
-    const rudderAngle = 0; // Straight ahead for engine monitoring
+    // Get rudder angle from YAML data section
+    const rudderConfig = this.scenario?.data?.rudder?.angle;
+    if (!rudderConfig) {
+      console.warn('⚠️ RSA: No rudder.angle data configured in YAML');
+      return null;
+    }
+
+    const rudderAngle = this.getYAMLDataValue('rudder_angle', rudderConfig);
+    if (rudderAngle === null) {
+      return null;
+    }
+
     const sentence = `$IIRSA,${rudderAngle.toFixed(1)},A,,`;
     const checksum = this.calculateChecksum(sentence.substring(1));
     return `${sentence}*${checksum}`;
@@ -1569,6 +1684,14 @@ class ScenarioDataSource extends EventEmitter {
         case 'coastal_track':
         case 'boat_movement':
           // Position data - not a simple value
+          return null;
+        case 'gps_track':
+          // For speed data, calculate from waypoint distances; for heading, calculate bearing
+          if (dataKey === 'speed') {
+            return this.getSpeedFromTrack();
+          } else if (dataKey === 'heading') {
+            return this.getCurrentHeading();
+          }
           return null;
         case 'polar_sailing':
           return this.generatePolarSailing(dataConfig, currentTime);
@@ -1931,6 +2054,11 @@ class ScenarioDataSource extends EventEmitter {
       depth = this.getYAMLDataValue('depth', sensor.data_generation.depth);
     }
     
+    // Debug: Log depth value occasionally
+    if (Math.random() < 0.1) { // 10% sampling rate for logging
+      console.log(`📏 Depth (${sentenceType}): ${depth?.toFixed(2)}m`);
+    }
+    
     // Get physical properties
     const transducerDepth = sensor.physical_properties?.transducer_depth || 0;
     const keelOffset = sensor.physical_properties?.keel_offset || 0;
@@ -1953,17 +2081,44 @@ class ScenarioDataSource extends EventEmitter {
     
     // Get speed from sensor data_generation
     if (sensor.data_generation?.speed) {
-      speedKnots = this.getYAMLDataValue('speed', sensor.data_generation.speed);
+      const speedConfig = sensor.data_generation.speed;
+      
+      // Handle gps_track type - calculate from waypoints
+      if (speedConfig.type === 'gps_track' || speedConfig.source === 'gps_track') {
+        const calculatedSpeed = this.getSpeedFromTrack();
+        if (calculatedSpeed !== null) {
+          speedKnots = calculatedSpeed;
+        }
+      } else {
+        // Use standard data generation
+        const extractedSpeed = this.getYAMLDataValue('speed', speedConfig);
+        // Only use extracted speed if it's valid (not null)
+        if (extractedSpeed !== null && extractedSpeed !== undefined) {
+          speedKnots = extractedSpeed;
+        }
+      }
     }
     
     // Apply calibration factor
     const calibrationFactor = sensor.physical_properties?.calibration_factor || 1.0;
     speedKnots *= calibrationFactor;
     
-    // Generate VHW sentence (primary for water speed)
-    if (sentenceType === 'VTG') {
-      return this.generateVTGSentence(); // Use existing method
+    // Determine sentence type based on speed_type property
+    const speedType = sensor.physical_properties?.speed_type || 'STW';
+    const instance = sensor.instance || 0;
+    
+    // Use VTG for SOG (Speed Over Ground), VHW for STW (Speed Through Water)
+    if (speedType === 'SOG' || sentenceType === 'VTG') {
+      // Generate VTG sentence for SOG
+      const heading = this.getCurrentHeading();
+      const speedKmh = (speedKnots * 1.852).toFixed(1);
+      const sentence = `VTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+      const checksum = this.calculateChecksum(sentence);
+      console.log(`🚤 VTG (instance ${instance}): SOG=${speedKnots.toFixed(2)} knots, heading=${heading.toFixed(1)}°`);
+      return `$GP${sentence}*${checksum}`;
     } else {
+      // Generate VHW sentence for STW
+      console.log(`🚤 VHW (instance ${instance}): STW=${speedKnots.toFixed(2)} knots`);
       return this.generateVHW(speedKnots);
     }
   }
@@ -1983,32 +2138,89 @@ class ScenarioDataSource extends EventEmitter {
     return this.generateMWV(windAngle, windSpeed);
   }
   
-  generateGPSFromSensor(sensor, sentenceType) {
+  generateGPSFromSensor(sensor, sentenceTypes) {
     let latitude = 37.7749;
     let longitude = -122.4194;
     
     // Get position from sensor data_generation
-    if (sensor.data_generation?.latitude) {
+    if (sensor.data_generation?.position?.type === 'gps_track') {
+      // Use sensor-based waypoint navigation
+      const position = this.getCurrentPositionFromSensor(sensor);
+      if (position) {
+        latitude = position.lat;
+        longitude = position.lon;
+      }
+    } else if (sensor.data_generation?.latitude) {
       latitude = this.getYAMLDataValue('latitude', sensor.data_generation.latitude);
     }
-    if (sensor.data_generation?.longitude) {
+    if (sensor.data_generation?.longitude && sensor.data_generation?.position?.type !== 'gps_track') {
       longitude = this.getYAMLDataValue('longitude', sensor.data_generation.longitude);
     }
     
-    // Generate appropriate sentence type
-    if (sentenceType === 'GGA') {
-      return this.generateGGASentence(); // Use existing method that reads scenario data
-    } else {
-      return this.generateRMC(latitude, longitude);
+    // Get calculated values for all sentences
+    const heading = this.getCurrentHeading();
+    const speedKnots = this.getSpeedFromTrack(); // SOG from GPS track
+    
+    // Real GPS emits multiple sentences per cycle
+    // Typical consumer GPS: RMC, GGA, VTG (minimum realistic output)
+    const sentences = [];
+    
+    // 1. RMC - Recommended Minimum (most important - position, speed, course, date)
+    if (sentenceTypes.includes('RMC')) {
+      const rmc = this.generateRMC(latitude, longitude, speedKnots, heading);
+      if (rmc) sentences.push(rmc);
     }
+    
+    // 2. GGA - Position and fix quality
+    if (sentenceTypes.includes('GGA')) {
+      const gga = this.generateGGASentence(latitude, longitude, sensor);
+      if (gga) sentences.push(gga);
+    }
+    
+    // 3. VTG - Track and ground speed (provides SOG for speed widget)
+    if (sentenceTypes.includes('VTG') && speedKnots !== null) {
+      const speedKmh = (speedKnots * 1.852).toFixed(1);
+      const sentence = `VTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+      const checksum = this.calculateChecksum(sentence);
+      sentences.push(`$GPVTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
+    }
+    
+    // 4. GLL - Geographic Position (optional, some GPS units emit this)
+    if (sentenceTypes.includes('GLL')) {
+      const gll = this.generateGLL(latitude, longitude);
+      if (gll) sentences.push(gll);
+    }
+    
+    // Log once per cycle (not per sentence)
+    if (sentences.length > 0 && speedKnots !== null) {
+      console.log(`🛰️ GPS: ${sentences.length} sentences, SOG=${speedKnots.toFixed(2)} knots, heading=${heading.toFixed(1)}°`);
+    }
+    
+    // Return array of sentences or single sentence if only one
+    return sentences.length > 1 ? sentences : (sentences[0] || null);
   }
   
   generateHeadingFromSensor(sensor, sentenceType) {
-    let heading = 180.0;
+    let heading = null;
     
     // Get heading from sensor data_generation
     if (sensor.data_generation?.heading) {
-      heading = this.getYAMLDataValue('heading', sensor.data_generation.heading);
+      const extractedHeading = this.getYAMLDataValue('heading', sensor.data_generation.heading);
+      // For gps_track, getYAMLDataValue returns heading from getCurrentHeading()
+      if (extractedHeading !== null && extractedHeading !== undefined) {
+        heading = extractedHeading;
+      }
+    }
+    
+    // If no heading from data_generation, calculate from GPS waypoints
+    if (heading === null || heading === undefined) {
+      const calculatedHeading = this.getCurrentHeading();
+      if (calculatedHeading !== null && calculatedHeading !== undefined) {
+        heading = calculatedHeading;
+      } else {
+        // Final fallback if no heading available
+        heading = 0.0;
+      }
     }
     
     // Get deviation and variation from physical properties
@@ -2031,17 +2243,27 @@ class ScenarioDataSource extends EventEmitter {
     const calibrationOffset = sensor.physical_properties?.calibration_offset || 0;
     temperature += calibrationOffset;
     
-    // Get sensor location for XDR transducer name
-    const location = sensor.physical_properties?.sensor_location || 'sea_water';
+    // Get sensor location code for XDR transducer identifier
+    // Priority: location (NMEA mnemonic code) > sensor_type (descriptive)
+    const locationCode = sensor.physical_properties?.location || sensor.physical_properties?.sensor_type || 'TEMP';
     const instance = sensor.instance || 0;
     
-    if (sentenceType === 'MTW' && location === 'sea_water') {
+    // Check if this is water temperature for MTW sentence
+    // MTW (Mean Temperature of Water) is only for seawater temperature
+    const isWaterTemp = locationCode.toUpperCase() === 'SEAW' || 
+                        locationCode === 'sea_water' || 
+                        locationCode === 'water' ||
+                        sensor.physical_properties?.sensor_type === 'water';
+    
+    // Use MTW only for seawater temperature sensors, XDR for all others
+    if (sentenceType === 'MTW' && isWaterTemp) {
       // MTW is specifically for water temperature
       const checksum = this.calculateChecksum(`MTW,${temperature.toFixed(1)},C`);
       return `$IIMTW,${temperature.toFixed(1)},C*${checksum}`;
     } else {
-      // XDR format for other temperature sensors
-      const transducerName = `TEMP_${location.toUpperCase()}_${String(instance).padStart(2, '0')}`;
+      // XDR format for all temperature sensors (including seawater if not using MTW)
+      // Format: SEAW_00, AIRX_01, ENGR_02, TEMP_03
+      const transducerName = `${locationCode.toUpperCase()}_${String(instance).padStart(2, '0')}`;
       const sentence = `IIXDR,C,${temperature.toFixed(1)},C,${transducerName}`;
       const checksum = this.calculateChecksum(sentence);
       return `$${sentence}*${checksum}`;
@@ -2073,6 +2295,7 @@ class ScenarioDataSource extends EventEmitter {
   generateBatteryFromSensor(sensor, sentenceType) {
     let voltage = 12.6;
     let current = 5.0;
+    let temperature = 298.15; // Default 25°C in Kelvin
     
     // Get battery parameters from sensor data_generation
     if (sensor.data_generation?.voltage) {
@@ -2081,20 +2304,78 @@ class ScenarioDataSource extends EventEmitter {
     if (sensor.data_generation?.current) {
       current = this.getYAMLDataValue('current', sensor.data_generation.current);
     }
+    if (sensor.data_generation?.temperature) {
+      temperature = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
+    }
     
-    // Get battery instance
+    // Get battery properties
     const batteryInstance = sensor.physical_properties?.battery_instance || sensor.instance || 0;
     const batteryId = `BAT_${String(batteryInstance).padStart(2, '0')}`;
+    const nominalVoltage = sensor.physical_properties?.nominal_voltage || 12;
+    const capacity = sensor.physical_properties?.capacity || 100;
+    const chemistry = sensor.physical_properties?.chemistry || 'FLA'; // Default to Flooded Lead-Acid
     
-    // Generate XDR sentences for voltage and current
-    const messages = [];
-    const voltageSentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId}`;
-    messages.push(`$${voltageSentence}*${this.calculateChecksum(voltageSentence)}`);
+    // Calculate State of Charge (SOC) based on voltage (rough approximation for 12V lead-acid)
+    // 12.6V+ = 100%, 12.4V = 75%, 12.2V = 50%, 12.0V = 25%, 11.8V = 0%
+    let soc = 0;
+    if (nominalVoltage === 12) {
+      if (voltage >= 12.6) soc = 100;
+      else if (voltage >= 12.4) soc = 75 + ((voltage - 12.4) / 0.2) * 25;
+      else if (voltage >= 12.2) soc = 50 + ((voltage - 12.2) / 0.2) * 25;
+      else if (voltage >= 12.0) soc = 25 + ((voltage - 12.0) / 0.2) * 25;
+      else if (voltage >= 11.8) soc = ((voltage - 11.8) / 0.2) * 25;
+      else soc = 0;
+    } else {
+      // Simple linear approximation for other voltages
+      soc = Math.max(0, Math.min(100, ((voltage - (nominalVoltage * 0.9)) / (nominalVoltage * 0.2)) * 100));
+    }
     
-    const currentSentence = `IIXDR,I,${current.toFixed(2)},A,${batteryId}`;
-    messages.push(`$${currentSentence}*${this.calculateChecksum(currentSentence)}`);
+    // Temperature in Celsius
+    const tempCelsius = temperature - 273.15;
     
-    return messages;
+    // Check XDR format preference from sensor configuration (default to compound for backward compatibility)
+    const xdrFormat = sensor.physical_properties?.xdr_format || 'compound';
+    
+    if (xdrFormat === 'compound') {
+      // Generate single compound XDR sentence with all battery parameters
+      // Format: $IIXDR,U,voltage,V,BAT_X,I,current,A,BAT_X,C,temp,C,BAT_X,P,soc,%,BAT_X,U,nominal,V,BAT_X,V,capacity,H,BAT_X,G,chemistry,N,BAT_X*XX
+      const sentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId},I,${current.toFixed(2)},A,${batteryId},C,${tempCelsius.toFixed(1)},C,${batteryId},P,${soc.toFixed(1)},%,${batteryId},U,${nominalVoltage.toFixed(1)},V,${batteryId},V,${capacity.toFixed(0)},H,${batteryId},G,${chemistry},N,${batteryId}`;
+      return [`$${sentence}*${this.calculateChecksum(sentence)}`];
+    } else {
+      // Generate individual XDR sentences (one per parameter)
+      // All use the SAME base battery ID (BAT_X) so parser can merge them
+      const messages = [];
+      
+      // Voltage - use base battery ID
+      const voltageSentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId}`;
+      messages.push(`$${voltageSentence}*${this.calculateChecksum(voltageSentence)}`);
+      
+      // Current - use base battery ID
+      const currentSentence = `IIXDR,I,${current.toFixed(2)},A,${batteryId}`;
+      messages.push(`$${currentSentence}*${this.calculateChecksum(currentSentence)}`);
+      
+      // Temperature - use base battery ID (parser will recognize C type as temperature)
+      const tempSentence = `IIXDR,C,${tempCelsius.toFixed(1)},C,${batteryId}`;
+      messages.push(`$${tempSentence}*${this.calculateChecksum(tempSentence)}`);
+      
+      // State of Charge - use base battery ID (parser will recognize P type as percentage/SOC)
+      const socSentence = `IIXDR,P,${soc.toFixed(1)},%,${batteryId}`;
+      messages.push(`$${socSentence}*${this.calculateChecksum(socSentence)}`);
+      
+      // Nominal Voltage - use base battery ID with N suffix for disambiguation
+      const nomSentence = `IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
+      messages.push(`$${nomSentence}*${this.calculateChecksum(nomSentence)}`);
+      
+      // Capacity - use base battery ID with CAP suffix
+      const capSentence = `IIXDR,V,${capacity.toFixed(0)},H,${batteryId}_CAP`;
+      messages.push(`$${capSentence}*${this.calculateChecksum(capSentence)}`);
+      
+      // Chemistry - use base battery ID with CHEM suffix
+      const chemSentence = `IIXDR,G,${chemistry},N,${batteryId}_CHEM`;
+      messages.push(`$${chemSentence}*${this.calculateChecksum(chemSentence)}`);
+      
+      return messages;
+    }
   }
   
   generateTankFromSensor(sensor, sentenceType) {
@@ -2107,8 +2388,8 @@ class ScenarioDataSource extends EventEmitter {
     
     // Get tank properties
     const tankInstance = sensor.physical_properties?.tank_instance || sensor.instance || 0;
-    const fluidType = sensor.physical_properties?.fluid_type || 'fuel';
-    const capacity = sensor.physical_properties?.capacity || 200;
+    const fluidType = sensor.physical_properties?.tank_type || sensor.physical_properties?.fluid_type || 'fuel';
+    const capacity = sensor.physical_properties?.tank_capacity || sensor.physical_properties?.capacity || 200;
     
     // NMEA 0183 doesn't have standard tank sentences, use XDR
     const tankId = `TANK_${fluidType.toUpperCase()}_${String(tankInstance).padStart(2, '0')}`;
@@ -2139,9 +2420,9 @@ class ScenarioDataSource extends EventEmitter {
    * Generate NMEA sentences (legacy simple generators)
    */
   generateDBT(depth) {
-    const depthFeet = (depth * 3.28084).toFixed(2);
-    const depthMeters = depth.toFixed(2);
-    const depthFathoms = (depth * 0.546807).toFixed(2);
+    const depthFeet = (depth * 3.28084).toFixed(1);
+    const depthMeters = depth.toFixed(1);
+    const depthFathoms = (depth * 0.546807).toFixed(1);
     const checksum = this.calculateChecksum(`DBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F`);
     return `$GPDBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
   }
@@ -2161,7 +2442,7 @@ class ScenarioDataSource extends EventEmitter {
     return `$IIMWV,${angle.toFixed(0)},R,${speed.toFixed(1)},N,A*${checksum}`;
   }
 
-  generateRMC(lat, lon) {
+  generateRMC(lat, lon, speed = null, track = null) {
     const time = new Date();
     const timeStr = time.toISOString().substr(11, 8).replace(/:/g, '');
     const dateStr = time.toISOString().substr(8, 2) + time.toISOString().substr(5, 2) + time.toISOString().substr(2, 2);
@@ -2174,21 +2455,116 @@ class ScenarioDataSource extends EventEmitter {
     const lonMin = ((lonDeg % 1) * 60).toFixed(4);
     const lonDir = lon >= 0 ? 'E' : 'W';
     
-    const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},5.2,180.0,${dateStr},,`;
+    // Use provided speed/track, or fallback to defaults
+    const speedKnots = speed !== null ? speed.toFixed(1) : '0.0';
+    const trackDegrees = track !== null ? track.toFixed(1) : '0.0';
+    
+    const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${speedKnots},${trackDegrees},${dateStr},,`;
     const checksum = this.calculateChecksum(sentence);
     return `$GP${sentence}*${checksum}`;
   }
 
-  generateHDG(heading, deviation = 0, variation = 0) {
-    const devStr = deviation !== 0 ? `${Math.abs(deviation).toFixed(1)},${deviation >= 0 ? 'E' : 'W'}` : ',';
-    const varStr = variation !== 0 ? `${Math.abs(variation).toFixed(1)},${variation >= 0 ? 'E' : 'W'}` : ',';
+  generateGLL(lat, lon) {
+    const time = new Date();
+    const timeStr = time.toISOString().substr(11, 8).replace(/:/g, '');
+    
+    const latDeg = Math.abs(lat);
+    const latMin = ((latDeg % 1) * 60).toFixed(4);
+    const latDir = lat >= 0 ? 'N' : 'S';
+    
+    const lonDeg = Math.abs(lon);
+    const lonMin = ((lonDeg % 1) * 60).toFixed(4);
+    const lonDir = lon >= 0 ? 'E' : 'W';
+    
+    // GLL: Geographic Position - Latitude/Longitude
+    const sentence = `GLL,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${timeStr},A,A`;
+    const checksum = this.calculateChecksum(sentence);
+    return `$GP${sentence}*${checksum}`;
+  }
+
+  generateHDG(heading, deviation = null, variation = null) {
+    // Return null if heading is not available
+    if (heading === null || heading === undefined) {
+      return null;
+    }
+    
+    // REQUIRED: Magnetic deviation and variation must be defined in YAML parameters.compass section
+    const compassParams = this.scenario?.parameters?.compass;
+    const dev = deviation !== null ? deviation : (compassParams?.magnetic_deviation || 0);
+    const vari = variation !== null ? variation : (compassParams?.magnetic_variation || 0);
+    
+    const devStr = dev !== 0 ? `${Math.abs(dev).toFixed(1)},${dev >= 0 ? 'E' : 'W'}` : ',';
+    const varStr = vari !== 0 ? `${Math.abs(vari).toFixed(1)},${vari >= 0 ? 'E' : 'W'}` : ',';
     const checksum = this.calculateChecksum(`HDG,${heading.toFixed(1)},${devStr},${varStr}`);
     return `$IIHDG,${heading.toFixed(1)},${devStr},${varStr}*${checksum}`;
   }
 
   generateAPB() {
-    const checksum = this.calculateChecksum('APB,A,A,0.00,L,N,V,V,180.0,M,DEST,180.0,M,180.0,M');
-    return `$GPAPB,A,A,0.00,L,N,V,V,180.0,M,DEST,180.0,M,180.0,M*${checksum}`;
+    // Get GPS configuration with waypoints
+    const gpsConfig = this.scenario?.data?.gps;
+    if (!gpsConfig || !gpsConfig.waypoints || gpsConfig.waypoints.length < 2) {
+      console.warn('⚠️ APB: Requires GPS waypoints configuration');
+      return null;
+    }
+
+    // Get current position and find next waypoint
+    const currentPos = this.getCurrentPosition();
+    if (!currentPos) return null;
+
+    const elapsed = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
+    const duration = this.scenario.duration || 300;
+    const progress = (elapsed % duration) / duration;
+    const totalTime = gpsConfig.waypoints[gpsConfig.waypoints.length - 1].time;
+    const currentTime = progress * totalTime;
+
+    // Find next waypoint for bearing calculation
+    let nextWaypoint = null;
+    let waypointId = 'DEST';
+    for (let i = 0; i < gpsConfig.waypoints.length; i++) {
+      if (gpsConfig.waypoints[i].time > currentTime) {
+        nextWaypoint = gpsConfig.waypoints[i];
+        waypointId = `WP${String(i).padStart(2, '0')}`;
+        break;
+      }
+    }
+
+    if (!nextWaypoint) {
+      // Use last waypoint if we're past all of them
+      nextWaypoint = gpsConfig.waypoints[gpsConfig.waypoints.length - 1];
+      waypointId = `WP${String(gpsConfig.waypoints.length - 1).padStart(2, '0')}`;
+    }
+
+    // Calculate bearing to next waypoint (true bearing)
+    const dLon = (nextWaypoint.lon - currentPos.lon) * Math.PI / 180;
+    const lat1 = currentPos.lat * Math.PI / 180;
+    const lat2 = nextWaypoint.lat * Math.PI / 180;
+    const dLat = lat2 - lat1;
+    
+    let bearingToWaypoint = Math.atan2(
+      Math.sin(dLon) * Math.cos(lat2),
+      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+    ) * 180 / Math.PI;
+    
+    if (bearingToWaypoint < 0) bearingToWaypoint += 360;
+
+    // Calculate cross-track error using proper great circle distance
+    const xte = this.calculateCrossTrackError();
+    const crossTrackError = xte.distance;
+    const xteDirection = xte.direction;
+
+    // Current heading
+    const currentHeading = this.getCurrentHeading();
+
+    // Status flags
+    const status = 'A'; // A = valid, V = invalid
+    const lockStatus = 'A'; // A = locked, V = not locked
+    const arrivalStatus = 'N'; // A = arrival, N = not arrived
+    const waypointPassed = 'V'; // V = not passed
+
+    // Build APB sentence
+    const sentence = `APB,${status},${lockStatus},${crossTrackError.toFixed(2)},${xteDirection},${arrivalStatus},${waypointPassed},${waypointPassed},${bearingToWaypoint.toFixed(1)},M,${waypointId},${bearingToWaypoint.toFixed(1)},M,${currentHeading.toFixed(1)},M`;
+    const checksum = this.calculateChecksum(sentence);
+    return `$GP${sentence}*${checksum}`;
   }
 
   /**
@@ -2216,21 +2592,23 @@ class ScenarioDataSource extends EventEmitter {
    * Generate DPT sentence (Depth)
    */
   generateDPT(depth, transducerDepth = null) {
-    const offset = transducerDepth !== null ? transducerDepth : (this.scenario?.parameters?.vessel?.keel_offset || 0);
-    const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0;
-    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
-    return `$SDDPT,${depth.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
+    // REQUIRED: keel_offset and max_range must be defined in YAML parameters section
+    const offset = transducerDepth !== null ? transducerDepth : this.scenario.parameters.vessel.keel_offset;
+    const maxRange = this.scenario.parameters.sonar.max_range;
+    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
+    return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
   }
 
   /**
    * Generate DBK sentence (Depth Below Keel)
    */
   generateDBK(depth) {
-    const keelOffset = this.scenario?.parameters?.vessel?.keel_offset || 0;
+    // REQUIRED: keel_offset must be defined in YAML parameters.vessel section
+    const keelOffset = this.scenario.parameters.vessel.keel_offset;
     const depthBelowKeel = Math.max(0, depth - keelOffset);
-    const depthFeet = (depthBelowKeel * 3.28084).toFixed(2);
-    const depthMeters = depthBelowKeel.toFixed(2);
-    const depthFathoms = (depthBelowKeel * 0.546807).toFixed(2);
+    const depthFeet = (depthBelowKeel * 3.28084).toFixed(1);
+    const depthMeters = depthBelowKeel.toFixed(1);
+    const depthFathoms = (depthBelowKeel * 0.546807).toFixed(1);
     const checksum = this.calculateChecksum(`DBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F`);
     return `$SDDBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
   }
@@ -2249,42 +2627,81 @@ class ScenarioDataSource extends EventEmitter {
 
   /**
    * Generate VHW sentence (Water Speed and Heading)
+   * VHW reports Speed Through Water (STW) - speed relative to water mass
    */
   generateVHWSentence() {
-    const speedConfig = this.scenario?.data?.speed;
+    // Try speed_through_water first, fallback to generic speed
+    const stwConfig = this.scenario?.data?.speed_through_water || this.scenario?.data?.speed;
     
     // Debug: Always log to diagnose missing STW
-    console.log(`🌊 VHW called - speedConfig: ${!!speedConfig}`);
+    console.log(`🌊 VHW called - stwConfig: ${!!stwConfig}`);
     
-    if (!speedConfig) {
-      console.log(`⚠️ VHW: No speedConfig, returning empty`);
+    if (!stwConfig) {
+      console.log(`⚠️ VHW: No speed_through_water or speed config, returning empty`);
       return [];
     }
 
-    const speed = this.getYAMLDataValue('speed', speedConfig);
+    const speed = this.getYAMLDataValue('speed_through_water', stwConfig);
     
     // Always log the actual speed value
-    console.log(`🌊 VHW STW: ${speed.toFixed(2)} knots`);
+    console.log(`🌊 VHW STW (through water): ${speed.toFixed(2)} knots`);
     
     return [this.generateVHW(speed)];
   }
 
   /**
    * Generate VTG sentence (Track Made Good and Ground Speed)
+   * VTG reports Speed Over Ground (SOG) - speed relative to Earth/seabed
    */
   generateVTGSentence() {
-    const speedConfig = this.scenario?.data?.speed;
+    const sogConfig = this.scenario?.data?.speed_over_ground;
+    const stwConfig = this.scenario?.data?.speed_through_water;
+    const speedConfig = this.scenario?.data?.speed; // Fallback for backward compatibility
     const gpsConfig = this.scenario?.data?.gps;
     
     // Debug: Always log to see if this is being called
-    console.log(`🚤 VTG called - speedConfig: ${!!speedConfig}, gpsConfig: ${!!gpsConfig}`);
+    console.log(`🚤 VTG called - sogConfig: ${!!sogConfig}, stwConfig: ${!!stwConfig}, gpsConfig: ${!!gpsConfig}`);
     
-    if (!speedConfig) {
-      console.log(`⚠️ VTG: No speedConfig, returning empty`);
+    // Determine SOG source (priority order):
+    let speed = null;
+    
+    // 1. Explicit speed_over_ground configuration
+    if (sogConfig) {
+      if (sogConfig.type === 'gps_track' || sogConfig.source === 'gps_track') {
+        speed = this.getSpeedFromTrack();
+        console.log(`🚤 VTG: Using GPS track-calculated SOG: ${speed?.toFixed(2)} knots`);
+      } else if (sogConfig.type === 'stw_plus_current') {
+        // SOG = STW + current
+        const stw = stwConfig ? this.getYAMLDataValue('speed_through_water', stwConfig) : 0;
+        const current = sogConfig.current || 0;
+        speed = stw + current;
+        console.log(`🚤 VTG: SOG from STW + current: ${stw.toFixed(2)} + ${current.toFixed(2)} = ${speed.toFixed(2)} knots`);
+      } else {
+        // Use defined pattern
+        speed = this.getYAMLDataValue('speed_over_ground', sogConfig);
+        console.log(`🚤 VTG: Using defined SOG pattern: ${speed?.toFixed(2)} knots`);
+      }
+    }
+    // 2. GPS-level configuration
+    else if (gpsConfig?.speed_over_ground === 'calculated') {
+      speed = this.getSpeedFromTrack();
+      console.log(`🚤 VTG: Using calculated SOG from waypoints: ${speed?.toFixed(2)} knots`);
+    }
+    // 3. Fallback: use generic speed or STW (backward compatibility)
+    else if (speedConfig) {
+      if (speedConfig.type === 'gps_track' || speedConfig.source === 'gps_track') {
+        speed = this.getSpeedFromTrack();
+      } else {
+        speed = this.getYAMLDataValue('speed', speedConfig);
+      }
+      console.log(`🚤 VTG: Using fallback speed config: ${speed?.toFixed(2)} knots`);
+    }
+    
+    if (speed === null) {
+      console.log(`⚠️ VTG: No SOG data available`);
       return [];
     }
 
-    const speed = this.getYAMLDataValue('speed', speedConfig);
     const heading = gpsConfig ? this.getCurrentHeading() : 0;
     
     // Always log the actual speed value
@@ -2311,12 +2728,43 @@ class ScenarioDataSource extends EventEmitter {
   /**
    * Generate GGA sentence (GPS Fix Data)
    */
-  generateGGASentence() {
-    const gpsConfig = this.scenario?.data?.gps;
-    if (!gpsConfig) return [];
+  generateGGASentence(latitude = null, longitude = null, sensor = null) {
+    // Use provided lat/lon or fall back to position data
+    let position;
+    if (latitude !== null && longitude !== null) {
+      position = { lat: latitude, lon: longitude };
+    } else {
+      const gpsConfig = this.scenario?.data?.gps;
+      if (!gpsConfig) return [];
+      position = this.getCurrentPosition();
+      if (!position) return [];
+    }
 
-    const position = this.getCurrentPosition();
-    if (!position) return [];
+    // Get GPS quality parameters from sensor physical_properties or scenario parameters
+    let gpsParams;
+    if (sensor?.physical_properties) {
+      gpsParams = {
+        quality: sensor.physical_properties.quality || 1,
+        satellites: sensor.physical_properties.satellites || 8,
+        hdop: sensor.physical_properties.hdop || 1.0,
+        altitude: sensor.physical_properties.altitude || 0
+      };
+    } else if (this.scenario?.parameters?.gps) {
+      gpsParams = this.scenario.parameters.gps;
+    } else {
+      // Default values
+      gpsParams = {
+        quality: 1,
+        satellites: 8,
+        hdop: 1.0,
+        altitude: 0
+      };
+    }
+    
+    const quality = gpsParams.quality;
+    const satellites = gpsParams.satellites;
+    const hdop = (gpsParams.hdop || 1.0).toFixed(1);
+    const altitude = (gpsParams.altitude || 0).toFixed(1);
 
     const time = new Date();
     const timeStr = time.toISOString().substr(11, 8).replace(/:/g, '') + '.00';
@@ -2329,22 +2777,51 @@ class ScenarioDataSource extends EventEmitter {
     const lonMin = ((lonDeg % 1) * 60).toFixed(4);
     const lonDir = position.lon >= 0 ? 'E' : 'W';
     
-    const sentence = `GGA,${timeStr},${Math.floor(latDeg)}${latMin},${latDir},${String(Math.floor(lonDeg)).padStart(3, '0')}${lonMin},${lonDir},1,08,1.0,0.0,M,0.0,M,,`;
+    const sentence = `GGA,${timeStr},${Math.floor(latDeg)}${latMin},${latDir},${String(Math.floor(lonDeg)).padStart(3, '0')}${lonMin},${lonDir},${quality},${String(satellites).padStart(2, '0')},${hdop},${altitude},M,0.0,M,,`;
     const checksum = this.calculateChecksum(sentence);
     return [`$GP${sentence}*${checksum}`];
   }
 
   /**
    * Generate RMC sentence (Recommended Minimum)
+   * RMC reports Speed Over Ground (SOG) - GPS-derived speed
    */
   generateRMCSentence() {
     const gpsConfig = this.scenario?.data?.gps;
+    const sogConfig = this.scenario?.data?.speed_over_ground;
+    const stwConfig = this.scenario?.data?.speed_through_water;
+    const speedConfig = this.scenario?.data?.speed; // Fallback
     if (!gpsConfig) return [];
 
     const position = this.getCurrentPosition();
     if (!position) return [];
 
-    return [this.generateRMC(position.lat, position.lon)];
+    // Get SOG: same logic as VTG
+    let speed = null;
+    if (sogConfig) {
+      if (sogConfig.type === 'gps_track' || sogConfig.source === 'gps_track') {
+        speed = this.getSpeedFromTrack();
+      } else if (sogConfig.type === 'stw_plus_current') {
+        const stw = stwConfig ? this.getYAMLDataValue('speed_through_water', stwConfig) : 0;
+        const current = sogConfig.current || 0;
+        speed = stw + current;
+      } else {
+        speed = this.getYAMLDataValue('speed_over_ground', sogConfig);
+      }
+    } else if (gpsConfig?.speed_over_ground === 'calculated') {
+      speed = this.getSpeedFromTrack();
+    } else if (speedConfig) {
+      if (speedConfig.type === 'gps_track' || speedConfig.source === 'gps_track') {
+        speed = this.getSpeedFromTrack();
+      } else {
+        speed = this.getYAMLDataValue('speed', speedConfig);
+      }
+    }
+    
+    // Get track from GPS heading calculation
+    const track = this.getCurrentHeading();
+
+    return [this.generateRMC(position.lat, position.lon, speed, track)];
   }
 
   /**
@@ -2393,7 +2870,7 @@ class ScenarioDataSource extends EventEmitter {
 
     // If waypoints exist, interpolate position
     if (gpsConfig.waypoints && gpsConfig.waypoints.length > 0) {
-      const elapsed = (Date.now() - this.startTime) / 1000;
+      const elapsed = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
       const duration = this.scenario.duration || 300;
       const progress = (elapsed % duration) / duration;
       const totalTime = gpsConfig.waypoints[gpsConfig.waypoints.length - 1].time;
@@ -2422,36 +2899,343 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   /**
-   * Get current heading from GPS track
+   * Get current position from sensor-based GPS configuration
    */
-  getCurrentHeading() {
-    const gpsConfig = this.scenario?.data?.gps;
-    if (!gpsConfig || !gpsConfig.waypoints || gpsConfig.waypoints.length < 2) {
-      return 0;
+  getCurrentPositionFromSensor(sensor) {
+    const positionConfig = sensor.data_generation?.position;
+    if (!positionConfig) return null;
+
+    // Get waypoints from sensor definition
+    const waypoints = positionConfig.waypoints;
+    const startPos = positionConfig.start_position;
+    
+    if (!waypoints || waypoints.length === 0) {
+      return startPos ? { lat: startPos.latitude, lon: startPos.longitude } : null;
     }
 
-    const elapsed = (Date.now() - this.startTime) / 1000;
+    const elapsed = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
     const duration = this.scenario.duration || 300;
     const progress = (elapsed % duration) / duration;
-    const totalTime = gpsConfig.waypoints[gpsConfig.waypoints.length - 1].time;
+    const totalTime = waypoints[waypoints.length - 1].time;
     const currentTime = progress * totalTime;
 
-    // Find surrounding waypoints
-    for (let i = 0; i < gpsConfig.waypoints.length - 1; i++) {
-      const wp1 = gpsConfig.waypoints[i];
-      const wp2 = gpsConfig.waypoints[i + 1];
+    // Find surrounding waypoints and interpolate
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const wp1 = waypoints[i];
+      const wp2 = waypoints[i + 1];
       
       if (currentTime >= wp1.time && currentTime <= wp2.time) {
-        // Calculate heading between waypoints
-        const dLon = wp2.lon - wp1.lon;
-        const dLat = wp2.lat - wp1.lat;
-        let heading = Math.atan2(dLon, dLat) * 180 / Math.PI;
-        if (heading < 0) heading += 360;
-        return heading;
+        const segmentProgress = (currentTime - wp1.time) / (wp2.time - wp1.time);
+        return {
+          lat: wp1.latitude + (wp2.latitude - wp1.latitude) * segmentProgress,
+          lon: wp1.longitude + (wp2.longitude - wp1.longitude) * segmentProgress
+        };
       }
     }
 
-    return 0;
+    // Return last waypoint if past end
+    const lastWp = waypoints[waypoints.length - 1];
+    return { lat: lastWp.latitude, lon: lastWp.longitude };
+  }
+
+  /**
+   * Calculate speed over ground from GPS track (distance traveled / time)
+   * Returns speed in knots
+   */
+  getSpeedFromTrack() {
+    // First try to find GPS sensor with waypoints (sensor-based architecture)
+    const gpsSensor = this.scenario.sensors?.find(s => 
+      s.type === 'gps_sensor' && s.data_generation?.position?.waypoints
+    );
+    
+    let waypoints = null;
+    if (gpsSensor) {
+      waypoints = gpsSensor.data_generation.position.waypoints;
+    } else {
+      // Fall back to old data structure
+      const gpsConfig = this.scenario?.data?.gps;
+      if (gpsConfig && gpsConfig.waypoints) {
+        waypoints = gpsConfig.waypoints;
+      }
+    }
+    
+    if (!waypoints || waypoints.length < 2) {
+      return null;
+    }
+
+    const elapsed = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
+    const duration = this.scenario.duration || 300;
+    const progress = (elapsed % duration) / duration;
+    const totalTime = waypoints[waypoints.length - 1].time;
+    const currentTime = progress * totalTime;
+
+    // Find current waypoint segment
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const wp1 = waypoints[i];
+      const wp2 = waypoints[i + 1];
+      
+      if (currentTime >= wp1.time && currentTime <= wp2.time) {
+        // Support both lat/lon and latitude/longitude property names
+        const lat1Val = wp1.latitude !== undefined ? wp1.latitude : wp1.lat;
+        const lon1Val = wp1.longitude !== undefined ? wp1.longitude : wp1.lon;
+        const lat2Val = wp2.latitude !== undefined ? wp2.latitude : wp2.lat;
+        const lon2Val = wp2.longitude !== undefined ? wp2.longitude : wp2.lon;
+        
+        // Calculate distance between waypoints using Haversine formula
+        const R = 3440.065; // Earth radius in nautical miles
+        const lat1 = lat1Val * Math.PI / 180;
+        const lat2 = lat2Val * Math.PI / 180;
+        const dLat = (lat2Val - lat1Val) * Math.PI / 180;
+        const dLon = (lon2Val - lon1Val) * Math.PI / 180;
+        
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1) * Math.cos(lat2) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c; // nautical miles
+        
+        // Calculate time for this segment
+        const segmentTime = (wp2.time - wp1.time) / 3600; // hours
+        
+        // Speed = distance / time (knots)
+        let speed = distance / segmentTime;
+        
+        // Add realistic variation to make speed less constant (±5% random noise)
+        const variation = 0.05; // 5% variation
+        const randomFactor = 1 + (Math.random() * 2 - 1) * variation; // 0.95 to 1.05
+        speed *= randomFactor;
+        
+        return speed;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get current heading from GPS track with optional smoothing
+   * @param {boolean} smooth - Apply rate limiting for realistic heading changes
+   * @returns {number} Heading in degrees (0-360)
+   */
+  getCurrentHeading(smooth = true) {
+    // Try sensor-based GPS first
+    const gpsSensor = this.scenario?.sensors?.find(s => s.type === 'gps_sensor');
+    let waypoints = null;
+    
+    if (gpsSensor?.data_generation?.position?.waypoints) {
+      waypoints = gpsSensor.data_generation.position.waypoints;
+    } else {
+      // Fall back to old data structure
+      const gpsConfig = this.scenario?.data?.gps;
+      if (!gpsConfig || !gpsConfig.waypoints || gpsConfig.waypoints.length < 2) {
+        return 0;
+      }
+      waypoints = gpsConfig.waypoints;
+    }
+
+    if (!waypoints || waypoints.length < 2) {
+      return 0;
+    }
+
+    const elapsed = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
+    const duration = this.scenario.duration || 300;
+    const progress = (elapsed % duration) / duration;
+    const totalTime = waypoints[waypoints.length - 1].time;
+    const currentTime = progress * totalTime;
+
+    // Calculate target heading from waypoints using proper bearing formula
+    let targetHeading = 0;
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const wp1 = waypoints[i];
+      const wp2 = waypoints[i + 1];
+      
+      if (currentTime >= wp1.time && currentTime <= wp2.time) {
+        // Calculate great circle bearing between waypoints
+        // Support both lat/lon and latitude/longitude property names
+        const lat1Deg = wp1.latitude || wp1.lat;
+        const lat2Deg = wp2.latitude || wp2.lat;
+        const lon1Deg = wp1.longitude || wp1.lon;
+        const lon2Deg = wp2.longitude || wp2.lon;
+        
+        const lat1 = lat1Deg * Math.PI / 180;
+        const lat2 = lat2Deg * Math.PI / 180;
+        const dLon = (lon2Deg - lon1Deg) * Math.PI / 180;
+        
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) -
+                  Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        targetHeading = Math.atan2(y, x) * 180 / Math.PI;
+        if (targetHeading < 0) targetHeading += 360;
+        
+        // Store current leg for XTE calculation
+        if (this.currentLegStartWaypoint?.lat !== wp1.lat) {
+          this.currentLegStartWaypoint = wp1;
+          this.currentLegEndWaypoint = wp2;
+        }
+        
+        break;
+      }
+    }
+
+    // Apply smooth heading transitions if requested
+    if (!smooth) {
+      this.currentSmoothedHeading = targetHeading;
+      this.lastHeadingUpdateTime = Date.now();
+      return targetHeading;
+    }
+
+    // Initialize smoothed heading on first call
+    if (this.currentSmoothedHeading === null) {
+      this.currentSmoothedHeading = targetHeading;
+      this.lastHeadingUpdateTime = Date.now();
+      return targetHeading;
+    }
+
+    // Calculate time delta
+    const now = Date.now();
+    const dt = (now - this.lastHeadingUpdateTime) / 1000; // seconds
+    this.lastHeadingUpdateTime = now;
+
+    // Maximum heading rate: 10 degrees per second (realistic for autopilot/manual steering)
+    const maxHeadingRate = this.scenario?.parameters?.autopilot?.max_heading_rate || 10;
+    
+    // Calculate shortest angular difference (handle 0/360 wrap)
+    let headingDelta = targetHeading - this.currentSmoothedHeading;
+    if (headingDelta > 180) headingDelta -= 360;
+    if (headingDelta < -180) headingDelta += 360;
+    
+    // Limit rate of change
+    const maxDelta = maxHeadingRate * dt;
+    const limitedDelta = Math.max(-maxDelta, Math.min(maxDelta, headingDelta));
+    
+    // Update smoothed heading
+    this.currentSmoothedHeading += limitedDelta;
+    if (this.currentSmoothedHeading < 0) this.currentSmoothedHeading += 360;
+    if (this.currentSmoothedHeading >= 360) this.currentSmoothedHeading -= 360;
+
+    return this.currentSmoothedHeading;
+  }
+
+  /**
+   * Calculate cross-track error (XTE) from current position to planned route
+   * Returns object with {distance: nm, direction: 'L'|'R'}
+   */
+  calculateCrossTrackError() {
+    if (!this.currentLegStartWaypoint || !this.currentLegEndWaypoint) {
+      return {distance: 0.0, direction: 'L'};
+    }
+
+    const currentPos = this.getCurrentPosition();
+    if (!currentPos) {
+      return {distance: 0.0, direction: 'L'};
+    }
+
+    const wp1 = this.currentLegStartWaypoint;
+    const wp2 = this.currentLegEndWaypoint;
+    
+    // Convert to radians
+    const lat1 = wp1.lat * Math.PI / 180;
+    const lon1 = wp1.lon * Math.PI / 180;
+    const lat2 = wp2.lat * Math.PI / 180;
+    const lon2 = wp2.lon * Math.PI / 180;
+    const latC = currentPos.lat * Math.PI / 180;
+    const lonC = currentPos.lon * Math.PI / 180;
+    
+    // Calculate bearing from wp1 to wp2
+    const dLon12 = lon2 - lon1;
+    const y = Math.sin(dLon12) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+              Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon12);
+    const bearing12 = Math.atan2(y, x);
+    
+    // Calculate bearing from wp1 to current position
+    const dLon1C = lonC - lon1;
+    const y1C = Math.sin(dLon1C) * Math.cos(latC);
+    const x1C = Math.cos(lat1) * Math.sin(latC) -
+                Math.sin(lat1) * Math.cos(latC) * Math.cos(dLon1C);
+    const bearing1C = Math.atan2(y1C, x1C);
+    
+    // Calculate angular distance from wp1 to current position
+    const dLat = latC - lat1;
+    const dLon = lonC - lon1;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1) * Math.cos(latC) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const angDist1C = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    // Calculate cross-track distance (in radians)
+    const xteRad = Math.asin(Math.sin(angDist1C) * Math.sin(bearing1C - bearing12));
+    
+    // Convert to nautical miles
+    const R = 3440.065; // Earth radius in nautical miles
+    const xteNm = Math.abs(xteRad * R);
+    
+    // Determine direction (left or right of course)
+    // Positive XTE means right of course, negative means left
+    const direction = xteRad >= 0 ? 'R' : 'L';
+    
+    return {distance: xteNm, direction: direction};
+  }
+
+  /**
+   * Calculate cross-track error (XTE) from current position to planned route
+   * Returns object with {distance: nm, direction: 'L'|'R'}
+   */
+  calculateCrossTrackError() {
+    if (!this.currentLegStartWaypoint || !this.currentLegEndWaypoint) {
+      return {distance: 0.0, direction: 'L'};
+    }
+
+    const currentPos = this.getCurrentPosition();
+    if (!currentPos) {
+      return {distance: 0.0, direction: 'L'};
+    }
+
+    const wp1 = this.currentLegStartWaypoint;
+    const wp2 = this.currentLegEndWaypoint;
+    
+    // Convert to radians
+    const lat1 = wp1.lat * Math.PI / 180;
+    const lon1 = wp1.lon * Math.PI / 180;
+    const lat2 = wp2.lat * Math.PI / 180;
+    const lon2 = wp2.lon * Math.PI / 180;
+    const latC = currentPos.lat * Math.PI / 180;
+    const lonC = currentPos.lon * Math.PI / 180;
+    
+    // Calculate bearing from wp1 to wp2
+    const dLon12 = lon2 - lon1;
+    const y = Math.sin(dLon12) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) -
+              Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon12);
+    const bearing12 = Math.atan2(y, x);
+    
+    // Calculate bearing from wp1 to current position
+    const dLon1C = lonC - lon1;
+    const y1C = Math.sin(dLon1C) * Math.cos(latC);
+    const x1C = Math.cos(lat1) * Math.sin(latC) -
+                Math.sin(lat1) * Math.cos(latC) * Math.cos(dLon1C);
+    const bearing1C = Math.atan2(y1C, x1C);
+    
+    // Calculate angular distance from wp1 to current position
+    const dLat = latC - lat1;
+    const dLon = lonC - lon1;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1) * Math.cos(latC) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const angDist1C = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    // Calculate cross-track distance (in radians)
+    const xteRad = Math.asin(Math.sin(angDist1C) * Math.sin(bearing1C - bearing12));
+    
+    // Convert to nautical miles
+    const R = 3440.065; // Earth radius in nautical miles
+    const xteNm = Math.abs(xteRad * R);
+    
+    // Determine direction (left or right of course)
+    // Positive XTE means right of course, negative means left
+    const direction = xteRad >= 0 ? 'R' : 'L';
+    
+    return {distance: xteNm, direction: direction};
   }
 
   /**

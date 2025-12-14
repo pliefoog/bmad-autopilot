@@ -2,6 +2,10 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
+import { useNmeaStore } from '../store/nmeaStore';
+import { SensorType } from '../types/SensorData';
+import { useDataPresentation } from '../presentation/useDataPresentation';
+import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
 
 export interface DataPoint {
   value: number;
@@ -9,9 +13,16 @@ export interface DataPoint {
 }
 
 export interface TrendLineProps {
-  data: DataPoint[];
-  width: number; // Required: cell width from parent
-  height: number; // Required: cell height from parent
+  // Self-subscribe to sensor history (new pattern - required)
+  sensor: SensorType;
+  instance: number;
+  timeWindowMs: number;
+  
+  // Dimensions - accept both naming conventions
+  width?: number; // From direct usage
+  height?: number; // From direct usage
+  maxWidth?: number; // From UnifiedWidgetGrid injection
+  cellHeight?: number; // From UnifiedWidgetGrid injection
   
   // Axis configuration
   showXAxis?: boolean;
@@ -28,10 +39,9 @@ export interface TrendLineProps {
   maxValue?: number; // Force maximum value
   forceZero?: boolean; // Force axis to include zero (useful for depth charts)
   
-  // Threshold configuration
-  warningThreshold?: number; // Warning level threshold
-  alarmThreshold?: number; // Alarm/critical level threshold
-  thresholdType?: 'min' | 'max'; // Whether values above or below threshold trigger alarm
+  // Threshold configuration (DEPRECATED - thresholds now auto-subscribed from alarm config)
+  // NOTE: These props are ignored. Thresholds are now derived from CriticalAlarmConfiguration
+  // and automatically converted to display units using the presentation system.
   usePrimaryLine?: boolean; // Use primary trendline color (default) vs secondary
   
   // Styling
@@ -63,9 +73,13 @@ export interface TrendLineProps {
  * - Speed trends, wind trends, etc.
  */
 export const TrendLine: React.FC<TrendLineProps> = ({
-  data,
-  width,
-  height,
+  sensor,
+  instance,
+  timeWindowMs,
+  width: widthProp,
+  height: heightProp,
+  maxWidth,
+  cellHeight,
   showXAxis = false,
   showYAxis = false,
   xAxisPosition = 'bottom',
@@ -75,9 +89,6 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   minValue,
   maxValue,
   forceZero = false,
-  warningThreshold,
-  alarmThreshold,
-  thresholdType = 'min',
   usePrimaryLine = true,
   strokeWidth = 2,
   showGrid = false,
@@ -88,10 +99,61 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // Get theme colors directly from store
   const theme = useTheme();
   
+  // Get presentation system for this sensor (for unit conversion)
+  const presentation = useDataPresentation(sensor);
+  
+  // Subscribe to sensor-instance alarm thresholds
+  const alarmThresholds = useAlarmThresholds(sensor, instance);
+  
+  // Convert thresholds to display units if enabled
+  const convertedWarningThreshold = useMemo(() => {
+    if (!alarmThresholds.enabled || alarmThresholds.warning === undefined) {
+      return undefined;
+    }
+    return presentation.isValid ? presentation.convert(alarmThresholds.warning) : alarmThresholds.warning;
+  }, [alarmThresholds.enabled, alarmThresholds.warning, presentation]);
+  
+  const convertedAlarmThreshold = useMemo(() => {
+    if (!alarmThresholds.enabled) {
+      return undefined;
+    }
+    const criticalValue = alarmThresholds.thresholdType === 'min' ? alarmThresholds.min : alarmThresholds.max;
+    if (criticalValue === undefined) {
+      return undefined;
+    }
+    return presentation.isValid ? presentation.convert(criticalValue) : criticalValue;
+  }, [alarmThresholds.enabled, alarmThresholds.min, alarmThresholds.max, alarmThresholds.thresholdType, presentation]);
+  
+  const thresholdType = alarmThresholds.thresholdType;
+  
+  // Derive actual dimensions from either prop naming convention
+  const width = widthProp ?? maxWidth ?? 300;
+  const height = heightProp ?? cellHeight ?? 60;
+  
+  // Subscribe to sensor timestamp to trigger updates when new data arrives
+  const sensorTimestamp = useNmeaStore((state) => 
+    state.nmeaData.sensors[sensor]?.[instance]?.timestamp
+  );
+  
+  // Get stable reference to getSensorHistory (won't change between renders)
+  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
+  
+  // Fetch history when sensor updates (memoized to prevent infinite loops)
+  // Note: getSensorHistory is NOT in deps because it's a stable Zustand method
+  const trendData = useMemo(() => {
+    const data = getSensorHistory(sensor, instance, { timeWindowMs });
+    // Debug logging disabled - was causing console spam
+    // if (Math.random() < 0.05) {
+    //   console.log(`📊 TrendLine(${sensor}[${instance}]): ${data.length} points, timestamp=${sensorTimestamp}`);
+    // }
+    return data;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensor, instance, timeWindowMs, sensorTimestamp]);
+  
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;
   const warningColor = theme.trendline.thresholdWarning;
-  // Use correct threshold color based on type (max for overheat/overspeed, min for shallow water/low battery)
+  // Use correct threshold color based on alarm configuration (max for overheat/overspeed, min for shallow water/low battery)
   const alarmColor = thresholdType === 'max' ? theme.trendline.thresholdMax : theme.trendline.thresholdMin;
   const normalColor = trendlineColor;
   const axisColor = theme.trendline.axis;
@@ -119,7 +181,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   // Calculate data range and scaling
   const { dataMin, dataMax, range, pointsData, yLabels, thresholdPositions } = useMemo(() => {
-    if (data.length < 2) {
+    if (trendData.length < 2) {
       return { 
         dataMin: 0, 
         dataMax: 0, 
@@ -133,7 +195,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     // Filter data to only include points within the time window
     const now = Date.now();
     const timeWindowMs = timeWindowMinutes * 60 * 1000;
-    const filteredData = data.filter(point => point.timestamp > now - timeWindowMs);
+    const filteredData = trendData.filter(point => point.timestamp > now - timeWindowMs);
     
     if (filteredData.length < 2) {
       return { 
@@ -150,17 +212,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     let dataMin = minValue !== undefined ? minValue : Math.min(...values);
     let dataMax = maxValue !== undefined ? maxValue : Math.max(...values);
     
-    // Include thresholds in the data range so they're always visible and positioned correctly
-    if (warningThreshold !== undefined) {
-      dataMin = Math.min(dataMin, warningThreshold);
-      dataMax = Math.max(dataMax, warningThreshold);
-    }
-    if (alarmThreshold !== undefined) {
-      dataMin = Math.min(dataMin, alarmThreshold);
-      dataMax = Math.max(dataMax, alarmThreshold);
-    }
-    
-    // Force zero into the range if requested (AFTER including thresholds)
+    // Force zero into the range if requested (BEFORE calculating thresholds)
     if (forceZero) {
       if (dataMin > 0) dataMin = 0;
       if (dataMax < 0) dataMax = 0;
@@ -186,12 +238,12 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     };
 
     const thresholdPositions: { warning?: number; alarm?: number } = {};
-    // Thresholds are now always in range because we expanded dataMin/dataMax to include them
-    if (warningThreshold !== undefined) {
-      thresholdPositions.warning = calculateThresholdY(warningThreshold);
+    // Only show thresholds if they fall within the data range (auto-subscribed from alarm config)
+    if (convertedWarningThreshold !== undefined && convertedWarningThreshold >= dataMin && convertedWarningThreshold <= dataMax) {
+      thresholdPositions.warning = calculateThresholdY(convertedWarningThreshold);
     }
-    if (alarmThreshold !== undefined) {
-      thresholdPositions.alarm = calculateThresholdY(alarmThreshold);
+    if (convertedAlarmThreshold !== undefined && convertedAlarmThreshold >= dataMin && convertedAlarmThreshold <= dataMax) {
+      thresholdPositions.alarm = calculateThresholdY(convertedAlarmThreshold);
     }
 
     // Calculate points for the line with colors
@@ -234,11 +286,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       yLabels: yAxisDirection === 'down' ? yLabels : yLabels.reverse(),
       thresholdPositions
     };
-  }, [data, minValue, maxValue, forceZero, warningThreshold, alarmThreshold, chartWidth, chartHeight, AXIS_MARGIN, yAxisDirection, xAxisPosition, PADDING_TOP, trendlineColor, timeWindowMinutes]);
+  }, [trendData, minValue, maxValue, forceZero, convertedWarningThreshold, convertedAlarmThreshold, chartWidth, chartHeight, AXIS_MARGIN, yAxisDirection, xAxisPosition, PADDING_TOP, trendlineColor, timeWindowMinutes]);
 
   // Generate time labels for X-axis (0 and max time only)
   const timeLabels = useMemo(() => {
-    if (!showTimeLabels || data.length < 2) return [];
+    if (!showTimeLabels || trendData.length < 2) return [];
     
     const labels: { position: number; text: string }[] = [];
     
@@ -255,9 +307,9 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     });
     
     return labels;
-  }, [showTimeLabels, timeWindowMinutes, data.length, chartWidth, AXIS_MARGIN]);
+  }, [showTimeLabels, timeWindowMinutes, trendData.length, chartWidth, AXIS_MARGIN]);
 
-  if (data.length < 2) {
+  if (trendData.length < 2) {
     return (
       <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ color: theme.textSecondary, fontSize: 10 }}>No trend data</Text>
