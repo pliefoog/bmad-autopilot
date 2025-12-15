@@ -16,6 +16,7 @@ import {
   type LayoutConstraints,
   type PageLayout,
 } from '../../utils/layoutUtils';
+import { logger } from '../../utils/logger';
 
 // Import widget components
 import { DepthWidget } from '../../widgets/DepthWidget';
@@ -132,6 +133,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     // Use widget IDs from store array - ORDER MATTERS: array[0] = top-left, array[n] = bottom-right
     const widgetIds = widgets.map(w => w.id);
     const layouts = calculatePageLayouts(widgetIds, constraints);
+    logger.layout('Calculated pages:', { totalWidgets: widgetIds.length, totalPages: layouts.length, cols: responsiveGrid.layout.cols, rows: responsiveGrid.layout.rows });
     return { pageLayouts: layouts, totalPages: layouts.length };
   }, [
     widgets,
@@ -330,6 +332,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       </PanGestureHandler>
 
       {/* Pagination dots - AC 6: Page Indicator Dots */}
+      {logger.layout('Rendering pagination:', { currentPage, totalPages, navigateToPage: !!navigateToPage })}
       <PaginationDots
         currentPage={currentPage}
         totalPages={totalPages}
