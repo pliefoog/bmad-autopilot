@@ -143,11 +143,11 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
                   style={[
                     styles.timeoutOption,
                     selectedTimeout === option.value && styles.timeoutOptionActive,
-                    tvMode && focusedIndex === index && styles.timeoutOptionFocused,
+                    focusedIndex === index && styles.timeoutOptionFocused,
                   ]}
                   onPress={() => {
                     handleTimeoutChange(option.value);
-                    if (tvMode) setFocusedIndex(index);
+                    setFocusedIndex(index);
                   }}
                   activeOpacity={0.7}
                 >
