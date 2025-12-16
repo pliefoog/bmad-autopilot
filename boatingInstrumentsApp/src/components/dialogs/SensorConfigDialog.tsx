@@ -362,6 +362,16 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     validationSchema: sensorFormSchema,
   });
 
+  // Ensure selectedMetric defaults to first metric for multi-metric sensors
+  useEffect(() => {
+    if (requiresMetricSelection && alarmConfig?.metrics && (!formData.selectedMetric || formData.selectedMetric === '')) {
+      const firstMetric = alarmConfig.metrics[0]?.key;
+      if (firstMetric) {
+        updateField('selectedMetric', firstMetric);
+      }
+    }
+  }, [requiresMetricSelection, alarmConfig, formData.selectedMetric, updateField]);
+
   /**
    * Get metric-specific presentation for multi-metric sensors
    * 
