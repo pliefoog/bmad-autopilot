@@ -48,6 +48,7 @@ import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmU
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
 import { getSmartDefaults } from '../../registry/AlarmThresholdDefaults';
 import { SOUND_PATTERNS } from '../../services/alarms/MarineAudioAlertManager';
+import { SENSOR_CONFIG_REGISTRY, getSensorConfig } from '../../registry/SensorConfigRegistry';
 
 /**
  * Sensor Configuration Dialog Props
@@ -301,7 +302,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     []
   );
 
-  // Get current thresholds
+  // Get current thresholds from NMEA store (single source of truth at runtime)
   const currentThresholds = useMemo(() => {
     if (!selectedSensorType) return { enabled: false };
     return getSensorThresholds(selectedSensorType, selectedInstance) || { enabled: false };
@@ -338,36 +339,52 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     };
   }, [selectedSensorType, selectedInstance, currentThresholds, presentation, requiresMetricSelection, alarmConfig, rawSensorData]);
 
+  // Form state - simple useState, no auto-save
+  const [formData, setFormData] = useState<SensorFormData>(initialFormData);
+  
+  // Update single field
+  const updateField = useCallback(<K extends keyof SensorFormData>(
+    field: K,
+    value: SensorFormData[K]
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+  
+  // Update multiple fields at once
+  const updateFields = useCallback((updates: Partial<SensorFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  }, []);
+  
   /**
-   * Save handler - persists form data to stores
+   * Explicit save function - saves current FormData to stores
+   * Called only on explicit transitions: instance switch, sensor switch, dialog close
    * 
-   * Converts display units → SI units, updates sensor name/enabled/sound patterns,
-   * saves battery chemistry or engine type context, and writes to both NMEA store
-   * and sensor config store.
+   * Writes to NMEA store FIRST (immediate, widgets see changes)
+   * Then AsyncStorage in background (persistence for next launch)
    */
-  const handleSave = useCallback(async (data: SensorFormData) => {
+  const saveCurrentForm = useCallback(async () => {
     if (!selectedSensorType) return;
 
     const updates: Partial<SensorAlarmThresholds> = {
-      name: data.name?.trim() || undefined,
-      enabled: data.enabled,
+      name: formData.name?.trim() || undefined,
+      enabled: formData.enabled,
       direction: getAlarmDirection(selectedSensorType).direction,
-      criticalSoundPattern: data.criticalSoundPattern,
-      warningSoundPattern: data.warningSoundPattern,
+      criticalSoundPattern: formData.criticalSoundPattern,
+      warningSoundPattern: formData.warningSoundPattern,
     };
 
     // Add context
     if (selectedSensorType === 'battery' && !sensorProvidedChemistry) {
-      updates.context = { batteryChemistry: data.batteryChemistry as any };
+      updates.context = { batteryChemistry: formData.batteryChemistry as any };
     } else if (selectedSensorType === 'engine') {
-      updates.context = { engineType: data.engineType as any };
+      updates.context = { engineType: formData.engineType as any };
     }
 
     // Convert thresholds back to SI units
-    if (requiresMetricSelection && data.selectedMetric) {
+    if (requiresMetricSelection && formData.selectedMetric) {
       // Use shared helper to get metric-specific presentation
       const metricPres = getMetricPresentation(
-        data.selectedMetric,
+        formData.selectedMetric,
         alarmConfig,
         presentation,
         voltagePresentation,
@@ -379,63 +396,56 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       );
       
       updates.metrics = { ...currentThresholds.metrics };
-      updates.metrics[data.selectedMetric] = {
+      if (!updates.metrics) updates.metrics = {};
+      updates.metrics[formData.selectedMetric] = {
         enabled: true,
-        direction: getAlarmDirection(selectedSensorType, data.selectedMetric).direction,
-        critical: data.criticalValue !== undefined && metricPres.isValid ? metricPres.convertBack(data.criticalValue) : undefined,
-        warning: data.warningValue !== undefined && metricPres.isValid ? metricPres.convertBack(data.warningValue) : undefined,
-        criticalSoundPattern: data.criticalSoundPattern,
-        warningSoundPattern: data.warningSoundPattern,
+        direction: getAlarmDirection(selectedSensorType, formData.selectedMetric).direction,
+        critical: formData.criticalValue !== undefined && metricPres.isValid ? metricPres.convertBack(formData.criticalValue) : undefined,
+        warning: formData.warningValue !== undefined && metricPres.isValid ? metricPres.convertBack(formData.warningValue) : undefined,
+        criticalSoundPattern: formData.criticalSoundPattern,
+        warningSoundPattern: formData.warningSoundPattern,
       };
     } else {
-      if (data.criticalValue !== undefined && presentation.isValid) {
-        updates.critical = presentation.convertBack(data.criticalValue);
+      if (formData.criticalValue !== undefined && presentation.isValid) {
+        updates.critical = presentation.convertBack(formData.criticalValue);
       }
-      if (data.warningValue !== undefined && presentation.isValid) {
-        updates.warning = presentation.convertBack(data.warningValue);
+      if (formData.warningValue !== undefined && presentation.isValid) {
+        updates.warning = presentation.convertBack(formData.warningValue);
       }
     }
 
     // Save to stores with error handling
     try {
-      setConfig(selectedSensorType, selectedInstance, updates);
+      // 1. Write to NMEA store FIRST (immediate, widgets see changes)
       updateSensorThresholds(selectedSensorType, selectedInstance, updates);
+      
+      // 2. Write to AsyncStorage in background (persistence)
+      setConfig(selectedSensorType, selectedInstance, updates);
+      
+      console.log(`[SensorConfigDialog] Saved ${selectedSensorType}:${selectedInstance}`);
     } catch (error) {
       console.error('[SensorConfigDialog] Save failed:', error);
-      throw error; // Re-throw for useFormState error handling
-    }
-  }, [selectedSensorType, selectedInstance, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, sensorProvidedChemistry, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
-
-  // Get alarm direction for validation
-  const alarmDirection = useMemo(() => {
-    if (!selectedSensorType) return undefined;
-    const metric = requiresMetricSelection ? initialFormData.selectedMetric : undefined;
-    return getAlarmDirection(selectedSensorType, metric).direction;
-  }, [selectedSensorType, requiresMetricSelection, initialFormData.selectedMetric]);
-
-  // Form state management with direction-aware validation
-  const {
-    formData,
-    updateField,
-    updateFields,
-    saveNow,
-    isDirty,
-  } = useFormState<SensorFormData>(initialFormData, {
-    onSave: handleSave,
-    debounceMs: 300,
-    validationSchema: createSensorFormSchema(alarmDirection),
-    onValidationError: (errors) => {
-      console.warn('[SensorConfigDialog] Validation errors:', errors);
-    },
-    onSaveError: (error) => {
-      console.error('[SensorConfigDialog] Save error:', error);
       if (Platform.OS === 'web') {
         alert('Failed to save sensor configuration. Please try again.');
       } else {
         Alert.alert('Save Failed', 'Could not save sensor configuration. Please try again.');
       }
-    },
-  });
+    }
+  }, [selectedSensorType, selectedInstance, formData, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, sensorProvidedChemistry, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
+  
+  // Get alarm direction for validation
+  const alarmDirection = useMemo(() => {
+    if (!selectedSensorType) return undefined;
+    const metric = requiresMetricSelection ? formData.selectedMetric : undefined;
+    return getAlarmDirection(selectedSensorType, metric).direction;
+  }, [selectedSensorType, requiresMetricSelection, formData.selectedMetric]);
+
+  // Load instance data when sensor type or instance changes
+  useEffect(() => {
+    if (selectedSensorType && selectedInstance !== undefined) {
+      setFormData(initialFormData);
+    }
+  }, [selectedSensorType, selectedInstance, initialFormData]);
 
   // Ensure selectedMetric defaults to first metric for multi-metric sensors
   useEffect(() => {
@@ -447,14 +457,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     }
   }, [requiresMetricSelection, alarmConfig, formData.selectedMetric, updateField]);
 
-  // Track previous metric to detect changes
-  const prevMetricRef = React.useRef<string | undefined>(undefined);
-
-  // Handle metric switching - load thresholds for selected metric (only when metric actually changes)
+  // Handle metric switching - load thresholds for selected metric
   useEffect(() => {
-    // Only load when metric changes, not on every render
-    if (formData.selectedMetric !== prevMetricRef.current) {
-      prevMetricRef.current = formData.selectedMetric;
+    if (formData.selectedMetric) {
       
       if (requiresMetricSelection && formData.selectedMetric && currentThresholds.metrics) {
         const metricConfig = currentThresholds.metrics[formData.selectedMetric];
@@ -543,41 +548,33 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /**
    * Handle instance switch (e.g., Battery 1 → Battery 2)
-   * Saves current form before switching to avoid data loss.
+   * Saves current form, then switches instance (form auto-reloads via useEffect)
    */
-  const handleInstanceSwitch = useCallback((newInstance: number) => {
-    saveNow();
+  const handleInstanceSwitch = useCallback(async (newInstance: number) => {
+    await saveCurrentForm();
     setSelectedInstance(newInstance);
-  }, [saveNow]);
+  }, [saveCurrentForm]);
 
   /**
    * Handle sensor type switch (e.g., Battery → Engine)
-   * Saves current form, switches sensor type, and resets to first available instance.
+   * Saves current form, switches sensor type, resets to first instance
    */
-  const handleSensorTypeSwitch = useCallback((value: string) => {
+  const handleSensorTypeSwitch = useCallback(async (value: string) => {
     if (value && value !== '') {
-      saveNow();
+      await saveCurrentForm();
       setSelectedSensorType(value as SensorType);
       const newInstances = getSensorInstances(value as SensorType);
       setSelectedInstance(newInstances.length > 0 ? newInstances[0].instance : 0);
     }
-  }, [saveNow, getSensorInstances]);
+  }, [saveCurrentForm, getSensorInstances]);
 
   /**
-   * Handle metric change - save current metric's thresholds before switching
-   * Uses proper async/await to ensure save completes before loading new metric
+   * Handle metric change - NO SAVE, just switch metric
+   * useEffect will load thresholds for new metric from NMEA store
    */
-  const handleMetricChange = useCallback(async (newMetric: string) => {
-    if (requiresMetricSelection && formData.selectedMetric && formData.selectedMetric !== newMetric) {
-      // Save current metric before switching - await completion
-      await saveNow();
-      // Small delay to ensure save propagates to stores
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    
-    // Update to new metric (useEffect will load new metric's thresholds)
+  const handleMetricChange = useCallback((newMetric: string) => {
     updateField('selectedMetric', newMetric);
-  }, [requiresMetricSelection, formData.selectedMetric, saveNow, updateField]);
+  }, [updateField]);
 
   /**
    * Handle alarm enable/disable with safety confirmation
@@ -607,17 +604,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, [selectedSensorType, updateField]);
 
   /**
-   * Handle dialog close - ensure pending saves complete
+   * Handle dialog close - always save current form before closing
    */
   const handleClose = useCallback(async () => {
-    if (isDirty) {
-      // Flush any pending saves before closing
-      await saveNow();
-      // Small delay to ensure save completes
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+    await saveCurrentForm();
     onClose();
-  }, [isDirty, saveNow, onClose]);
+  }, [saveCurrentForm, onClose]);
 
   // Master reset to defaults (resets ALL sensor settings including name, alarms, context)
   const handleMasterReset = useCallback(() => {
@@ -727,6 +719,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.instance.toString()}
+          contentContainerStyle={{ paddingHorizontal: 12 }}
           renderItem={({ item: inst }) => {
             const isSelected = inst.instance === selectedInstance;
             const displayName = inst.name || inst.location || `Instance ${inst.instance}`;
@@ -739,6 +732,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
                 ]}
                 onPress={() => handleInstanceSwitch(inst.instance)}
+                activeOpacity={0.7}
               >
                 <Text style={[styles.tabText, { color: isSelected ? theme.textInverse : theme.text }]}>
                   {displayName}
@@ -770,7 +764,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <UniversalIcon name="alert-circle-outline" size={64} color={theme.textSecondary} />
               <Text style={[styles.emptyText, { color: theme.text }]}>No Sensors Detected</Text>
               <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                Alarm configuration will be available once NMEA sensor data is received
+                Sensor configuration will be available once NMEA sensor data is received
               </Text>
             </View>
           )}
@@ -779,22 +773,17 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           {availableSensorTypes.length > 0 && (
             <>
               {/* Sensor Type Picker */}
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Sensor Selection</Text>
-              <View style={styles.field}>
+                <View style={[styles.field, { marginTop: 20, marginBottom: 0, zIndex: 200, elevation: 200 }]}>
                 <PlatformPicker
-                  label="Sensor Type"
-                  value={selectedSensorType || ''}
+                  label=""
+                  value={selectedSensorType || availableSensorTypes[0] || ''}
                   onValueChange={(value) => handleSensorTypeSwitch(String(value))}
-                  items={[
-                    { label: 'Select a sensor...', value: '' },
-                    ...availableSensorTypes.map((type) => ({
-                      label: type.charAt(0).toUpperCase() + type.slice(1),
-                      value: type,
-                    })),
-                  ]}
-                  placeholder="Select a sensor..."
+                  items={availableSensorTypes.map((type) => ({
+                  label: type.charAt(0).toUpperCase() + type.slice(1),
+                  value: type,
+                  }))}
                 />
-              </View>
+                </View>
 
               {/* Instance tabs */}
               {renderInstanceTabs()}
@@ -802,20 +791,17 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               {/* Configuration form */}
               {selectedSensorType && instances.length > 0 && (
                 <>
-                  {/* Basic Information */}
-                  <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Basic Information</Text>
-                  
-                  <View style={styles.field}>
+                    <View style={[styles.field, { marginTop: 16 }]}>
                     <Text style={[styles.label, { color: theme.text }]}>Name</Text>
                     <TextInput
                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                       value={formData.name}
                       onChangeText={(text: string) => updateField('name', text)}
-                      onBlur={saveNow}
                       placeholder="e.g., House Battery"
                       placeholderTextColor={theme.textSecondary}
+                      key={`${selectedSensorType}-${selectedInstance}`}
                     />
-                  </View>
+                    </View>
 
                   {/* Battery Chemistry */}
                   {selectedSensorType === 'battery' && (
@@ -869,16 +855,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   {/* Alarm Configuration */}
                   {supportsAlarms && (
                     <>
-                      {/* Alarm Header with Toggle */}
-                      <View style={[styles.alarmHeader, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                        <View style={styles.alarmHeaderLeft}>
-                          <Text style={[styles.alarmHeaderTitle, { color: theme.text }]}>Alarms</Text>
-                          {formData.enabled && (
-                            <Text style={[styles.alarmHeaderHint, { color: theme.textSecondary }]}>
-                              {getAlarmTriggerHint(selectedSensorType)}
-                            </Text>
-                          )}
-                        </View>
+                      {/* Alarms Toggle - Inline */}
+                      <View style={[styles.field, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                        <Text style={[styles.label, { color: theme.text, marginBottom: 0 }]}>Alarms</Text>
                         <PlatformToggle
                           value={formData.enabled}
                           onValueChange={handleEnabledChange}
@@ -888,13 +867,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                       {/* Alarm Configuration (shown when enabled) */}
                       {formData.enabled && (
-                        <View style={[styles.alarmContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                        <View style={[styles.alarmRowsContainer, { backgroundColor: `${theme.surface}88`, borderColor: theme.border }]}>
                           {/* Metric Selection (multi-metric sensors only) */}
                           {requiresMetricSelection && alarmConfig?.metrics && (
-                            <View style={[styles.field, styles.metricPickerField, { marginBottom: 20 }]}>
-                              <Text style={[styles.label, { color: theme.text }]}>Metric to Monitor</Text>
+                            <View style={[styles.field, styles.metricPickerField, { marginBottom: 12 }]}>
+                              <Text style={[styles.label, { color: theme.text }]}>Metric</Text>
                               <PlatformPicker
-                                label="Metric"
                                 value={formData.selectedMetric || ''}
                                 onValueChange={(value) => handleMetricChange(String(value))}
                                 items={alarmConfig.metrics.map((m) => ({
@@ -906,15 +884,16 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           )}
 
                           {/* Alarm Rows - Critical and Warning */}
-                          {/* Critical Row */}
-                          <View style={[styles.alarmRow, { borderColor: theme.border }]}>
-                            <View style={styles.alarmRowHeader}>
-                              <Text style={[styles.alarmRowTitle, { color: theme.error }]}>
-                                Critical: {((metricPresentation as any).formatSpec?.decimals !== undefined
-                                  ? (formData.criticalValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
-                                  : (formData.criticalValue || 0).toFixed(1))}{unitSymbol}
-                              </Text>
-                            </View>
+                          <View>
+                            {/* Critical Row */}
+                            <View style={[styles.alarmRow, { borderColor: theme.border }]}>
+                              <View style={styles.alarmRowHeader}>
+                                <Text style={[styles.alarmRowTitle, { color: theme.error }]}>
+                                  Critical: {((metricPresentation as any).formatSpec?.decimals !== undefined
+                                    ? (formData.criticalValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
+                                    : (formData.criticalValue || 0).toFixed(1))}{unitSymbol}
+                                </Text>
+                              </View>
                             {isNarrow ? (
                               // Mobile: Stacked layout
                               <View style={styles.alarmRowMobile}>
@@ -922,44 +901,48 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   <Slider
                                     style={{ width: '100%', height: 40 }}
                                     value={formData.criticalValue || 0}
-                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
-                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    minimumValue={
+                                      alarmDirection === 'below' 
+                                        ? (formData.warningValue || 0)
+                                        : ((metricPresentation as any).formatSpec?.rangeSpec?.min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0)
+                                    }
+                                    maximumValue={
+                                      alarmDirection === 'above'
+                                        ? ((metricPresentation as any).formatSpec?.rangeSpec?.max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100)
+                                        : (formData.warningValue || 100)
+                                    }
                                     step={0.1}
                                     onValueChange={(value) => updateField('criticalValue', value)}
-                                    onSlidingComplete={saveNow}
                                     minimumTrackTintColor={theme.error}
                                     maximumTrackTintColor={theme.border}
                                     thumbTintColor={theme.error}
                                     testID="critical-threshold"
                                   />
                                 </View>
-                                <View style={styles.alarmRowMobileSound}>
-                                  <Text style={[styles.alarmSoundLabel, { color: theme.textSecondary }]}>Sound</Text>
-                                  <View style={styles.alarmRowMobileSoundControls}>
-                                    <View style={{ flex: 1 }}>
-                                      <PlatformPicker
-                                        label=""
-                                        value={formData.criticalSoundPattern || 'none'}
-                                        onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                                        items={soundPatternItems}
-                                      />
-                                    </View>
-                                    <TouchableOpacity
-                                      style={[
-                                        styles.alarmRowTestButton,
-                                        { backgroundColor: theme.primary, borderColor: theme.border },
-                                        formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
-                                      ]}
-                                      onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
-                                      disabled={formData.criticalSoundPattern === 'none'}
-                                    >
-                                      <UniversalIcon 
-                                        name="volume-high-outline" 
-                                        size={20} 
-                                        color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : theme.background} 
-                                      />
-                                    </TouchableOpacity>
+                                <View style={styles.alarmRowMobileSoundControls}>
+                                  <View style={{ flex: 1 }}>
+                                    <PlatformPicker
+                                      label=""
+                                      value={formData.criticalSoundPattern || 'none'}
+                                      onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
+                                      items={soundPatternItems}
+                                    />
                                   </View>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.alarmRowTestButton,
+                                      { backgroundColor: theme.error, borderColor: theme.error },
+                                      formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
+                                    ]}
+                                    onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
+                                    disabled={formData.criticalSoundPattern === 'none'}
+                                  >
+                                    <UniversalIcon 
+                                      name="volume-high-outline" 
+                                      size={20} 
+                                      color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
+                                    />
+                                  </TouchableOpacity>
                                 </View>
                               </View>
                             ) : (
@@ -969,11 +952,18 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   <Slider
                                     style={{ width: '100%', height: 40 }}
                                     value={formData.criticalValue || 0}
-                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
-                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    minimumValue={
+                                      alarmDirection === 'below' 
+                                        ? (formData.warningValue || 0)
+                                        : ((metricPresentation as any).formatSpec?.rangeSpec?.min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0)
+                                    }
+                                    maximumValue={
+                                      alarmDirection === 'above'
+                                        ? ((metricPresentation as any).formatSpec?.rangeSpec?.max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100)
+                                        : (formData.warningValue || 100)
+                                    }
                                     step={0.1}
                                     onValueChange={(value) => updateField('criticalValue', value)}
-                                    onSlidingComplete={saveNow}
                                     minimumTrackTintColor={theme.error}
                                     maximumTrackTintColor={theme.border}
                                     thumbTintColor={theme.error}
@@ -991,7 +981,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                 <TouchableOpacity
                                   style={[
                                     styles.alarmRowTestButton,
-                                    { backgroundColor: theme.primary, borderColor: theme.border },
+                                    { backgroundColor: theme.error, borderColor: theme.error },
                                     formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
                                   ]}
                                   onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
@@ -1007,15 +997,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                             )}
                           </View>
 
-                          {/* Warning Row - Always shown */}
-                          <View style={[styles.alarmRow, { borderColor: theme.border, marginBottom: 0 }]}>
-                            <View style={styles.alarmRowHeader}>
-                              <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>
-                                Warning: {((metricPresentation as any).formatSpec?.decimals !== undefined
-                                  ? (formData.warningValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
-                                  : (formData.warningValue || 0).toFixed(1))}{unitSymbol}
-                              </Text>
-                            </View>
+                            {/* Warning Row - Always shown */}
+                            <View style={[styles.alarmRow, { borderColor: theme.border, marginBottom: 0, borderBottomWidth: 0 }]}>
+                              <View style={styles.alarmRowHeader}>
+                                <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>
+                                  Warning: {((metricPresentation as any).formatSpec?.decimals !== undefined
+                                    ? (formData.warningValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
+                                    : (formData.warningValue || 0).toFixed(1))}{unitSymbol}
+                                </Text>
+                              </View>
                             {isNarrow ? (
                               // Mobile: Stacked layout
                               <View style={styles.alarmRowMobile}>
@@ -1023,44 +1013,48 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   <Slider
                                     style={{ width: '100%', height: 40 }}
                                     value={formData.warningValue || 0}
-                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
-                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    minimumValue={
+                                      alarmDirection === 'above'
+                                        ? ((metricPresentation as any).formatSpec?.rangeSpec?.min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0)
+                                        : (formData.criticalValue || 0)
+                                    }
+                                    maximumValue={
+                                      alarmDirection === 'below'
+                                        ? ((metricPresentation as any).formatSpec?.rangeSpec?.max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100)
+                                        : (formData.criticalValue || 100)
+                                    }
                                     step={0.1}
                                     onValueChange={(value) => updateField('warningValue', value)}
-                                    onSlidingComplete={saveNow}
                                     minimumTrackTintColor={theme.warning}
                                     maximumTrackTintColor={theme.border}
                                     thumbTintColor={theme.warning}
                                     testID="warning-threshold"
                                   />
                                 </View>
-                                <View style={styles.alarmRowMobileSound}>
-                                  <Text style={[styles.alarmSoundLabel, { color: theme.textSecondary }]}>Sound</Text>
-                                  <View style={styles.alarmRowMobileSoundControls}>
-                                    <View style={{ flex: 1 }}>
-                                      <PlatformPicker
-                                        label=""
-                                        value={formData.warningSoundPattern || 'none'}
-                                        onValueChange={(value) => updateField('warningSoundPattern', String(value))}
-                                        items={soundPatternItems}
-                                      />
-                                    </View>
-                                    <TouchableOpacity
-                                      style={[
-                                        styles.alarmRowTestButton,
-                                        { backgroundColor: theme.primary, borderColor: theme.border },
-                                        formData.warningSoundPattern === 'none' && { opacity: 0.3 }
-                                      ]}
-                                      onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
-                                      disabled={formData.warningSoundPattern === 'none'}
-                                    >
-                                      <UniversalIcon 
-                                        name="volume-high-outline" 
-                                        size={20} 
-                                        color={formData.warningSoundPattern === 'none' ? theme.textSecondary : theme.background} 
-                                      />
-                                    </TouchableOpacity>
+                                <View style={styles.alarmRowMobileSoundControls}>
+                                  <View style={{ flex: 1 }}>
+                                    <PlatformPicker
+                                      label=""
+                                      value={formData.warningSoundPattern || 'none'}
+                                      onValueChange={(value) => updateField('warningSoundPattern', String(value))}
+                                      items={soundPatternItems}
+                                    />
                                   </View>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.alarmRowTestButton,
+                                      { backgroundColor: theme.warning, borderColor: theme.warning },
+                                      formData.warningSoundPattern === 'none' && { opacity: 0.3 }
+                                    ]}
+                                    onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
+                                    disabled={formData.warningSoundPattern === 'none'}
+                                  >
+                                    <UniversalIcon 
+                                      name="volume-high-outline" 
+                                      size={20} 
+                                      color={formData.warningSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
+                                    />
+                                  </TouchableOpacity>
                                 </View>
                               </View>
                             ) : (
@@ -1070,11 +1064,18 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   <Slider
                                     style={{ width: '100%', height: 40 }}
                                     value={formData.warningValue || 0}
-                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
-                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    minimumValue={
+                                      alarmDirection === 'above'
+                                        ? ((metricPresentation as any).formatSpec?.rangeSpec?.min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0)
+                                        : (formData.criticalValue || 0)
+                                    }
+                                    maximumValue={
+                                      alarmDirection === 'below'
+                                        ? ((metricPresentation as any).formatSpec?.rangeSpec?.max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100)
+                                        : (formData.criticalValue || 100)
+                                    }
                                     step={0.1}
                                     onValueChange={(value) => updateField('warningValue', value)}
-                                    onSlidingComplete={saveNow}
                                     minimumTrackTintColor={theme.warning}
                                     maximumTrackTintColor={theme.border}
                                     thumbTintColor={theme.warning}
@@ -1092,7 +1093,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                 <TouchableOpacity
                                   style={[
                                     styles.alarmRowTestButton,
-                                    { backgroundColor: theme.primary, borderColor: theme.border },
+                                    { backgroundColor: theme.warning, borderColor: theme.warning },
                                     formData.warningSoundPattern === 'none' && { opacity: 0.3 }
                                   ]}
                                   onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
@@ -1101,27 +1102,26 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   <UniversalIcon 
                                     name="volume-high-outline" 
                                     size={20} 
-                                    color={formData.warningSoundPattern === 'none' ? theme.textSecondary : theme.background} 
+                                    color={formData.warningSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
                                   />
                                 </TouchableOpacity>
                               </View>
                             )}
+                            </View>
                           </View>
                         </View>
                       )}
                     </>
                   )}
 
-                  {/* Master Reset Button */}
+                  {/* Master Reset Button - Global */}
                   {selectedSensorType && (
                     <TouchableOpacity
-                      style={[styles.masterResetButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                      style={styles.resetButtonLink}
                       onPress={handleMasterReset}
                     >
-                      <UniversalIcon name="refresh-outline" size={22} color={theme.error} />
-                      <Text style={[styles.masterResetButtonText, { color: theme.error }]}>
-                        Reset All Settings to Defaults
-                      </Text>
+                      <UniversalIcon name="refresh-outline" size={14} color={theme.textSecondary} />
+                      <Text style={[styles.resetButtonLinkText, { color: theme.textSecondary }]}>Reset to Defaults</Text>
                     </TouchableOpacity>
                   )}
                 </>
@@ -1154,8 +1154,9 @@ const createStyles = (theme: ThemeColors) =>
     },
     tabContainer: {
       borderBottomWidth: StyleSheet.hairlineWidth,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      paddingVertical: 8,
+      paddingHorizontal: 0,
+      marginTop: 20,
     },
     tab: {
       paddingHorizontal: 16,
@@ -1177,7 +1178,7 @@ const createStyles = (theme: ThemeColors) =>
       marginBottom: 12,
     },
     field: {
-      marginBottom: 16,
+      marginBottom: 12,
     },
     metricPickerField: {
       zIndex: 100,
@@ -1187,20 +1188,19 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: 16,
+      padding: 12,
       borderRadius: 8,
       borderWidth: 1,
-      marginTop: 20,
-      marginBottom: 2,
+      marginTop: 16,
+      marginBottom: 0,
     },
     alarmHeaderLeft: {
       flex: 1,
     },
     alarmHeaderTitle: {
-      fontSize: 17,
+      fontSize: 16,
       fontWeight: '600',
       fontFamily: 'sans-serif',
-      marginBottom: 4,
     },
     alarmHeaderHint: {
       fontSize: 13,
@@ -1208,21 +1208,27 @@ const createStyles = (theme: ThemeColors) =>
       lineHeight: 18,
     },
     alarmContent: {
-      padding: 16,
+      padding: 12,
       borderRadius: 8,
       borderWidth: 1,
-      marginBottom: 16,
+      marginBottom: 12,
+    },
+    alarmRowsContainer: {
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginTop: 12,
     },
     alarmRow: {
-      marginBottom: 16,
-      paddingBottom: 16,
+      marginBottom: 12,
+      paddingBottom: 12,
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
     alarmRowHeader: {
-      marginBottom: 12,
+      marginBottom: 8,
     },
     alarmRowTitle: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '600',
       fontFamily: 'sans-serif',
     },
@@ -1230,7 +1236,7 @@ const createStyles = (theme: ThemeColors) =>
     alarmRowControls: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
     },
     alarmRowSlider: {
       flex: 1,
@@ -1239,8 +1245,8 @@ const createStyles = (theme: ThemeColors) =>
       width: 140,
     },
     alarmRowTestButton: {
-      width: 44,
-      height: 44,
+      width: 40,
+      height: 40,
       borderRadius: 8,
       borderWidth: 1,
       alignItems: 'center',
@@ -1248,33 +1254,24 @@ const createStyles = (theme: ThemeColors) =>
     },
     // Mobile stacked layout
     alarmRowMobile: {
-      gap: 16,
+      gap: 10,
     },
     alarmRowMobileThreshold: {
       width: '100%',
     },
-    alarmRowMobileSound: {
-      gap: 8,
-    },
-    alarmSoundLabel: {
-      fontSize: 13,
-      fontWeight: '500',
-      fontFamily: 'sans-serif',
-      marginBottom: 4,
-    },
     alarmRowMobileSoundControls: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
     },
     label: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '600',
       fontFamily: 'sans-serif',
-      marginBottom: 8,
+      marginBottom: 6,
     },
     input: {
-      height: 44,
+      height: 40,
       borderWidth: 1,
       borderRadius: 8,
       paddingHorizontal: 12,
@@ -1287,10 +1284,10 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: 'sans-serif',
     },
     infoBox: {
-      padding: 16,
+      padding: 12,
       borderRadius: 8,
       borderWidth: 1,
-      marginBottom: 16,
+      marginBottom: 12,
     },
     infoText: {
       fontSize: 14,
@@ -1298,19 +1295,18 @@ const createStyles = (theme: ThemeColors) =>
       textAlign: 'center',
       lineHeight: 20,
     },
-    masterResetButton: {
+    resetButtonLink: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 14,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginTop: 24,
-      gap: 8,
+      marginTop: 20,
+      gap: 6,
+      alignSelf: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
     },
-    masterResetButtonText: {
-      fontSize: 15,
-      fontWeight: '600',
+    resetButtonLinkText: {
+      fontSize: 14,
       fontFamily: 'sans-serif',
     },
   });

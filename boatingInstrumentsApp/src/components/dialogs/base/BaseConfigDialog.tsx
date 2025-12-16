@@ -191,6 +191,8 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
-      paddingBottom: 32,
+      paddingHorizontal: 20,
+      paddingTop: 0,
+      paddingBottom: 20,
     },
   });
