@@ -725,7 +725,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                         <View style={[styles.alarmContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
                           {/* Metric Selection (multi-metric sensors only) */}
                           {requiresMetricSelection && alarmConfig?.metrics && (
-                            <View style={[styles.field, { marginBottom: 20 }]}>
+                            <View style={[styles.field, styles.metricPickerField, { marginBottom: 20 }]}>
                               <Text style={[styles.label, { color: theme.text }]}>Metric to Monitor</Text>
                               <PlatformPicker
                                 label="Metric"
@@ -913,6 +913,10 @@ const createStyles = (theme: ThemeColors) =>
     },
     field: {
       marginBottom: 16,
+    },
+    metricPickerField: {
+      zIndex: 100,
+      elevation: 100, // Android
     },
     alarmHeader: {
       flexDirection: 'row',
