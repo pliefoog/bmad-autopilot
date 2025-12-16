@@ -93,87 +93,26 @@ export interface SensorConfigDialogProps {
   sensorType?: SensorType;
 }
 
-// Sensor alarm capability classification
-type SensorAlarmType = 'multi-metric' | 'single-metric' | 'no-alarms';
-
-/**
- * Sensor Alarm Configuration Map
- * 
- * Defines alarm capabilities for each sensor type:
- * - **multi-metric**: Sensors with multiple alarm points (e.g., battery: voltage, current, SOC, temp)
- * - **single-metric**: Sensors with one alarm point (e.g., depth, wind, speed)
- * - **no-alarms**: Sensors without alarm support (e.g., compass, autopilot)
- * 
- * For multi-metric sensors, each metric includes:
- * - key: Internal identifier (camelCase)
- * - label: User-facing display name
- * - unit: SI unit for the metric
- * - category: DataCategory for presentation system (determines formatting/conversion)
- * 
- * **Usage Notes:**
- * - Metrics array defines the order of display in the dialog
- * - Each metric can have independent warning/critical thresholds
- * - Alarm direction (above/below) determined by sensorAlarmUtils
- */
-const SENSOR_ALARM_CONFIG: Record<SensorType, {
-  type: SensorAlarmType;
-  metrics?: Array<{ key: string; label: string; unit: string; category?: DataCategory }>;
-}> = {
-  battery: {
-    type: 'multi-metric',
-    metrics: [
-      { key: 'voltage', label: 'Voltage', unit: 'V', category: 'voltage' },
-      { key: 'soc', label: 'State of Charge', unit: '%' },
-      { key: 'temperature', label: 'Temperature', unit: '°C', category: 'temperature' },
-      { key: 'current', label: 'Current', unit: 'A', category: 'current' },
-    ],
-  },
-  engine: {
-    type: 'multi-metric',
-    metrics: [
-      { key: 'coolantTemp', label: 'Coolant Temperature', unit: '°C', category: 'temperature' },
-      { key: 'oilPressure', label: 'Oil Pressure', unit: 'Pa', category: 'pressure' },
-      { key: 'rpm', label: 'RPM', unit: 'RPM', category: 'rpm' },
-    ],
-  },
-  gps: {
-    type: 'multi-metric',
-    metrics: [
-      { key: 'speedOverGround', label: 'Speed Over Ground (SOG)', unit: 'kts', category: 'speed' },
-    ],
-  },
-  depth: { type: 'single-metric' },
-  tank: { type: 'single-metric' },
-  wind: { type: 'single-metric' },
-  speed: { type: 'single-metric' },
-  temperature: { type: 'single-metric' },
-  compass: { type: 'no-alarms' },
-  autopilot: { type: 'no-alarms' },
-  navigation: { type: 'no-alarms' },
-};
-
-// Map sensor types to presentation categories
-const sensorToCategory: Record<SensorType, DataCategory | null> = {
-  depth: 'depth',
-  speed: 'speed',
-  wind: 'wind',
-  temperature: 'temperature',
-  engine: 'temperature',
-  battery: 'voltage',
-  tank: null,
-  gps: 'coordinates',
-  compass: 'angle',
-  autopilot: null,
-  navigation: null,
-};
+// Hardcoded sensor configuration removed - now using SensorConfigRegistry as single source of truth
 
 /**
  * Get metric-specific presentation for unit conversion
- * Eliminates code duplication across save/load logic
+ * Uses registry to find metric category, then maps to appropriate presentation hook
+ * 
+ * @param sensorType - Sensor type to get metrics for
+ * @param metricKey - Specific metric identifier (e.g., 'voltage', 'temperature')
+ * @param presentation - Default presentation (used for single-metric sensors)
+ * @param voltagePresentation - Pre-called voltage presentation hook
+ * @param temperaturePresentation - Pre-called temperature presentation hook
+ * @param currentPresentation - Pre-called current presentation hook
+ * @param pressurePresentation - Pre-called pressure presentation hook
+ * @param rpmPresentation - Pre-called RPM presentation hook
+ * @param speedPresentation - Pre-called speed presentation hook
+ * @returns Appropriate presentation hook for the metric
  */
 function getMetricPresentation(
+  sensorType: SensorType | null,
   metricKey: string | undefined,
-  alarmConfig: typeof SENSOR_ALARM_CONFIG[SensorType] | null,
   presentation: any,
   voltagePresentation: any,
   temperaturePresentation: any,
@@ -182,9 +121,10 @@ function getMetricPresentation(
   rpmPresentation: any,
   speedPresentation: any
 ): any {
-  if (!metricKey || !alarmConfig?.metrics) return presentation;
+  if (!sensorType || !metricKey) return presentation;
   
-  const metricInfo = alarmConfig.metrics.find(m => m.key === metricKey);
+  const sensorConfig = getSensorConfig(sensorType);
+  const metricInfo = sensorConfig.alarmMetrics?.find(m => m.key === metricKey);
   if (!metricInfo?.category) return presentation;
   
   const categoryMap: Partial<Record<DataCategory, any>> = {
@@ -281,8 +221,27 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     }
   }, [instances, selectedInstance]);
 
-  // Get presentation for selected sensor
-  const category = selectedSensorType ? sensorToCategory[selectedSensorType] : null;
+  // Get presentation for selected sensor - derive category from registry
+  const category = useMemo(() => {
+    if (!selectedSensorType) return null;
+    const sensorConfig = getSensorConfig(selectedSensorType);
+    
+    // Multi-metric: use first metric's category
+    if (sensorConfig.alarmMetrics && sensorConfig.alarmMetrics.length > 0) {
+      return sensorConfig.alarmMetrics[0].category || null;
+    }
+    
+    // Single-metric: infer category from sensor type
+    const categoryMap: Partial<Record<SensorType, DataCategory>> = {
+      depth: 'depth',
+      speed: 'speed',
+      wind: 'wind',
+      temperature: 'temperature',
+    };
+    
+    return categoryMap[selectedSensorType] || null;
+  }, [selectedSensorType]);
+  
   const rawPresentation = useDataPresentation(category || 'depth');
   
   // Pre-call all possible metric presentation hooks (React hooks must be called unconditionally)
@@ -304,10 +263,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     [category, rawPresentation]
   );
 
-  // Get alarm configuration
-  const alarmConfig = selectedSensorType ? SENSOR_ALARM_CONFIG[selectedSensorType] : null;
-  const requiresMetricSelection = alarmConfig?.type === 'multi-metric';
-  const supportsAlarms = alarmConfig?.type !== 'no-alarms';
+  // Get alarm configuration from registry
+  const sensorConfig = selectedSensorType ? getSensorConfig(selectedSensorType) : null;
+  const requiresMetricSelection = sensorConfig?.alarmSupport === 'multi-metric';
+  const supportsAlarms = sensorConfig?.alarmSupport !== 'none';
   
   // Memoize sound pattern picker items (include "None" option)
   const soundPatternItems = useMemo(
@@ -343,7 +302,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       enabled: currentThresholds.enabled || false,
       batteryChemistry: (currentThresholds.context?.batteryChemistry as any) || 'lead-acid',
       engineType: (currentThresholds.context?.engineType as any) || 'diesel',
-      selectedMetric: requiresMetricSelection && alarmConfig?.metrics?.[0]?.key || '',
+      selectedMetric: requiresMetricSelection && sensorConfig?.alarmMetrics?.[0]?.key || '',
       criticalValue: currentThresholds.critical !== undefined && presentation.isValid
         ? presentation.convert(currentThresholds.critical)
         : undefined,
@@ -353,7 +312,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       criticalSoundPattern: currentThresholds.criticalSoundPattern || 'rapid_pulse',
       warningSoundPattern: currentThresholds.warningSoundPattern || 'warble',
     };
-  }, [selectedSensorType, selectedInstance, currentThresholds, presentation, requiresMetricSelection, alarmConfig, rawSensorData]);
+  }, [selectedSensorType, selectedInstance, currentThresholds, presentation, requiresMetricSelection, sensorConfig, rawSensorData]);
 
   // Form state - simple useState, no auto-save
   const [formData, setFormData] = useState<SensorFormData>(initialFormData);
@@ -436,8 +395,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     if (requiresMetricSelection && formData.selectedMetric) {
       // Use shared helper to get metric-specific presentation
       const metricPres = getMetricPresentation(
+        selectedSensorType,
         formData.selectedMetric,
-        alarmConfig,
         presentation,
         voltagePresentation,
         temperaturePresentation,
@@ -483,7 +442,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         Alert.alert('Save Failed', 'Could not save sensor configuration. Please try again.');
       }
     }
-  }, [selectedSensorType, selectedInstance, formData, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
+  }, [selectedSensorType, selectedInstance, formData, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
   
   // Get alarm direction for validation
   const alarmDirection = useMemo(() => {
@@ -501,13 +460,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   // Ensure selectedMetric defaults to first metric for multi-metric sensors
   useEffect(() => {
-    if (requiresMetricSelection && alarmConfig?.metrics && (!formData.selectedMetric || formData.selectedMetric === '')) {
-      const firstMetric = alarmConfig.metrics[0]?.key;
+    if (requiresMetricSelection && sensorConfig?.alarmMetrics && (!formData.selectedMetric || formData.selectedMetric === '')) {
+      const firstMetric = sensorConfig.alarmMetrics[0]?.key;
       if (firstMetric) {
         updateField('selectedMetric', firstMetric);
       }
     }
-  }, [requiresMetricSelection, alarmConfig, formData.selectedMetric, updateField]);
+  }, [requiresMetricSelection, sensorConfig, formData.selectedMetric, updateField]);
 
   // Handle metric switching - load thresholds for selected metric
   useEffect(() => {
@@ -518,8 +477,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         
         // Get metric-specific presentation using shared helper
         const metricPres = getMetricPresentation(
+          selectedSensorType,
           formData.selectedMetric,
-          alarmConfig,
           presentation,
           voltagePresentation,
           temperaturePresentation,
@@ -562,7 +521,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         }
       }
     }
-  }, [formData.selectedMetric, requiresMetricSelection, currentThresholds.metrics, alarmConfig, selectedSensorType, currentThresholds.context, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation, updateFields]);
+  }, [formData.selectedMetric, requiresMetricSelection, currentThresholds.metrics, selectedSensorType, currentThresholds.context, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation, updateFields]);
 
   /**
    * Get metric-specific presentation for multi-metric sensors
@@ -573,14 +532,14 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
    * **Why this approach:**
    * - Cannot call useDataPresentation() conditionally (violates React Rules of Hooks)
    * - Pre-call all needed presentations at top level, then select in this memo
-   * - Category map only includes categories actually used by SENSOR_ALARM_CONFIG
+   * - Category map only includes categories actually used by multi-metric sensors
    */
   const metricPresentation = useMemo(() => {
-    if (!requiresMetricSelection || !formData.selectedMetric || !alarmConfig?.metrics) {
+    if (!requiresMetricSelection || !formData.selectedMetric || !sensorConfig?.alarmMetrics) {
       return presentation;
     }
     
-    const metricInfo = alarmConfig.metrics.find(m => m.key === formData.selectedMetric);
+    const metricInfo = sensorConfig.alarmMetrics.find(m => m.key === formData.selectedMetric);
     if (metricInfo?.category) {
       // Map category to pre-called presentation hook (avoids conditional hook calls)
       // Only map categories actually used by multi-metric sensors
@@ -596,7 +555,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     }
     
     return presentation;
-  }, [requiresMetricSelection, formData.selectedMetric, alarmConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
+  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
 
   /**
    * Handle instance switch (e.g., Battery 1 → Battery 2)
@@ -750,29 +709,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   // Close handler (already defined earlier with async save completion)
 
-  // Get display unit and label
+  // Get display unit and label from registry
   const { unitSymbol, metricLabel } = useMemo(() => {
-    if (requiresMetricSelection && formData.selectedMetric && alarmConfig?.metrics) {
-      const metricInfo = alarmConfig.metrics.find(m => m.key === formData.selectedMetric);
+    if (requiresMetricSelection && formData.selectedMetric && sensorConfig?.alarmMetrics) {
+      const metricInfo = sensorConfig.alarmMetrics.find(m => m.key === formData.selectedMetric);
       return {
         unitSymbol: metricInfo?.unit || '',
         metricLabel: metricInfo?.label || '',
       };
     }
 
-    const labels: Record<string, string> = {
-      depth: 'Depth',
-      tank: 'Tank Level',
-      wind: 'Wind Speed',
-      speed: 'Speed',
-      temperature: 'Temperature',
-    };
-
+    // Single-metric sensors: use registry displayName
     return {
       unitSymbol: presentation.isValid ? presentation.presentation?.symbol || '' : '',
-      metricLabel: selectedSensorType ? labels[selectedSensorType] || selectedSensorType : '',
+      metricLabel: selectedSensorType ? sensorConfig?.displayName || selectedSensorType : '',
     };
-  }, [requiresMetricSelection, formData.selectedMetric, alarmConfig, selectedSensorType, presentation]);
+  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, selectedSensorType, presentation]);
 
   /**
    * Render sensor-specific configuration fields dynamically from registry
@@ -1031,13 +983,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       {formData.enabled && (
                         <View style={[styles.alarmRowsContainer, { backgroundColor: `${theme.surface}88`, borderColor: theme.border }]}>
                           {/* Metric Selection (multi-metric sensors only) */}
-                          {requiresMetricSelection && alarmConfig?.metrics && (
+                          {requiresMetricSelection && sensorConfig?.alarmMetrics && (
                             <View style={[styles.field, styles.metricPickerField, { marginBottom: 12 }]}>
                               <Text style={[styles.label, { color: theme.text }]}>Metric</Text>
                               <PlatformPicker
                                 value={formData.selectedMetric || ''}
                                 onValueChange={(value) => handleMetricChange(String(value))}
-                                items={alarmConfig.metrics.map((m) => ({
+                                items={sensorConfig.alarmMetrics.map((m) => ({
                                   label: `${m.label} (${m.unit})`,
                                   value: m.key,
                                 }))}
