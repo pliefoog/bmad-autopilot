@@ -1,5 +1,5 @@
 /**
- * Sensor Configuration Dialog - Per-Instance Configuration (Refactored)
+ * Sensor Configuration Dialog - Per-Instance Configuration (Registry-Driven)
  *
  * Features:
  * - Sensor naming and context configuration
@@ -8,14 +8,17 @@
  * - Location-aware threshold defaults
  * - SI unit storage with presentation system conversion
  * - Real-time configuration updates to NMEA store
- * - Unified form state management with useFormState
+ * - Registry-driven dynamic form rendering
  * - Reusable ThresholdEditor components
- * - Collapsible FormSection ONLY for conditional alarm configuration sections
+ * - Explicit save timing (transitions only, no auto-save)
  * 
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
  * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
- * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
+ * - SensorConfigRegistry: Single source of truth for all sensor-specific requirements
+ * - NMEA Store: Runtime source of truth (widgets read from here)
+ * - AsyncStorage: Background persistence only
+ * - FormData: In-memory editing state with explicit saves on transitions
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -43,7 +46,6 @@ import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { ThresholdEditor } from './inputs/ThresholdEditor';
-import { useFormState } from '../../hooks/useFormState';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
 import { getSmartDefaults } from '../../registry/AlarmThresholdDefaults';
@@ -373,10 +375,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       warningSoundPattern: formData.warningSoundPattern,
     };
 
-    // Add context
-    if (selectedSensorType === 'battery' && !sensorProvidedChemistry) {
+    // Add context from form fields
+    if (selectedSensorType === 'battery' && formData.batteryChemistry) {
       updates.context = { batteryChemistry: formData.batteryChemistry as any };
-    } else if (selectedSensorType === 'engine') {
+    } else if (selectedSensorType === 'engine' && formData.engineType) {
       updates.context = { engineType: formData.engineType as any };
     }
 
@@ -431,7 +433,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         Alert.alert('Save Failed', 'Could not save sensor configuration. Please try again.');
       }
     }
-  }, [selectedSensorType, selectedInstance, formData, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, sensorProvidedChemistry, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
+  }, [selectedSensorType, selectedInstance, formData, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
   
   // Get alarm direction for validation
   const alarmDirection = useMemo(() => {
@@ -624,7 +626,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       // Build context from current FormData
       const context: any = {};
       if (selectedSensorType === 'battery') {
-        context.batteryChemistry = sensorProvidedChemistry || formData.batteryChemistry || 'lead-acid';
+        context.batteryChemistry = formData.batteryChemistry || 'lead-acid';
       } else if (selectedSensorType === 'engine') {
         context.engineType = formData.engineType || 'diesel';
       }
@@ -687,7 +689,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         ]
       );
     }
-  }, [selectedSensorType, selectedInstance, formData, sensorProvidedChemistry, presentation, metricPresentation, updateFields]);
+  }, [selectedSensorType, selectedInstance, formData, presentation, metricPresentation, updateFields]);
 
   // Test alarm sound
   const handleTestSound = useCallback((soundPattern: string) => {
