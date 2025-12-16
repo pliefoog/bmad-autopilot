@@ -212,33 +212,35 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Battery Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'House Bank, Starter Battery, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this battery (e.g., House Bank, Starter)',
       },
       {
         key: 'batteryChemistry',
         label: 'Battery Chemistry',
         type: 'picker',
-        section: 'context',
-        readOnly: true, // Check hardware first (BMS provides this)
+        iostate: 'readOnlyIfValue',
         hardwareField: 'chemistry',
         options: [
-          { label: 'Lead Acid', value: 'lead-acid' },
+          { label: 'Lead Acid', value: 'lead-acid', default: true },
           { label: 'AGM', value: 'agm' },
           { label: 'Gel', value: 'gel' },
           { label: 'LiFePO4', value: 'lifepo4' },
         ],
-        defaultValue: 'lead-acid',
+        helpText: 'Battery chemistry type. Hardware may provide this value.',
       },
       {
         key: 'capacity',
         label: 'Capacity',
-        type: 'number',
-        section: 'context',
-        placeholder: 'Amp-hours (Ah)',
-        defaultValue: 200,
-        min: 10,
-        max: 2000,
+        type: 'slider',
+        iostate: 'readOnlyIfValue',
+        hardwareField: 'capacity',
+        default: 140,
+        min: 40,
+        max: 5000,
+        step: 10,
+        helpText: 'Battery capacity in amp-hours. Hardware may provide this value.',
       },
     ],
     
@@ -270,8 +272,186 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     ],
     
-    getDefaults: (context) => {
-      return getSmartDefaults('battery', { batteryChemistry: context?.batteryChemistry || 'lead-acid' });
+    defaults: {
+      contextKey: 'batteryChemistry',
+      contexts: {
+        'lead-acid': {
+          metrics: {
+            voltage: {
+              critical: 11.8,
+              warning: 12.0,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 0.2,
+              warningHysteresis: 0.2,
+            },
+            soc: {
+              critical: 20,
+              warning: 30,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 5,
+              warningHysteresis: 5,
+            },
+            temperature: {
+              critical: 50,
+              warning: 45,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 2,
+              warningHysteresis: 2,
+            },
+            current: {
+              critical: 200,
+              warning: 150,
+              direction: 'above' as const,
+              enabled: false,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 10,
+              warningHysteresis: 10,
+            },
+          },
+        },
+        'agm': {
+          metrics: {
+            voltage: {
+              critical: 12.0,
+              warning: 12.2,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 0.2,
+              warningHysteresis: 0.2,
+            },
+            soc: {
+              critical: 20,
+              warning: 30,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 5,
+              warningHysteresis: 5,
+            },
+            temperature: {
+              critical: 50,
+              warning: 45,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 2,
+              warningHysteresis: 2,
+            },
+            current: {
+              critical: 250,
+              warning: 200,
+              direction: 'above' as const,
+              enabled: false,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 10,
+              warningHysteresis: 10,
+            },
+          },
+        },
+        'gel': {
+          metrics: {
+            voltage: {
+              critical: 11.9,
+              warning: 12.1,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 0.2,
+              warningHysteresis: 0.2,
+            },
+            soc: {
+              critical: 20,
+              warning: 30,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 5,
+              warningHysteresis: 5,
+            },
+            temperature: {
+              critical: 45,
+              warning: 40,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 2,
+              warningHysteresis: 2,
+            },
+            current: {
+              critical: 180,
+              warning: 140,
+              direction: 'above' as const,
+              enabled: false,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 10,
+              warningHysteresis: 10,
+            },
+          },
+        },
+        'lifepo4': {
+          metrics: {
+            voltage: {
+              critical: 12.8,
+              warning: 13.0,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 0.2,
+              warningHysteresis: 0.2,
+            },
+            soc: {
+              critical: 10,
+              warning: 20,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 5,
+              warningHysteresis: 5,
+            },
+            temperature: {
+              critical: 55,
+              warning: 50,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 2,
+              warningHysteresis: 2,
+            },
+            current: {
+              critical: 300,
+              warning: 250,
+              direction: 'above' as const,
+              enabled: false,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 10,
+              warningHysteresis: 10,
+            },
+          },
+        },
+      },
     },
   },
   
@@ -285,15 +465,27 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Depth Sounder Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Bow Sounder, Stern Transducer, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this depth sounder (e.g., Bow Sounder)',
       },
     ],
     
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'below',
     
-    getDefaults: () => getSmartDefaults('depth'),
+    defaults: {
+      threshold: {
+        critical: 2.0,
+        warning: 2.5,
+        direction: 'below' as const,
+        enabled: true,
+        criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+        warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+        criticalHysteresis: 0.3,
+        warningHysteresis: 0.3,
+      },
+    },
   },
   
   engine: {
@@ -306,30 +498,31 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Engine Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Port Engine, Main Engine, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this engine (e.g., Port Engine, Main)',
       },
       {
         key: 'engineType',
         label: 'Engine Type',
         type: 'picker',
-        section: 'context',
+        iostate: 'readWrite',
         options: [
-          { label: 'Diesel', value: 'diesel' },
+          { label: 'Diesel', value: 'diesel', default: true },
           { label: 'Gasoline', value: 'gasoline' },
           { label: 'Outboard', value: 'outboard' },
         ],
-        defaultValue: 'diesel',
+        helpText: 'Type of engine installation',
       },
       {
         key: 'maxRpm',
         label: 'Maximum RPM',
         type: 'number',
-        section: 'context',
-        placeholder: 'Engine redline RPM',
-        defaultValue: 3000,
+        iostate: 'readWrite',
+        default: 3000,
         min: 1000,
         max: 8000,
+        helpText: 'Maximum rated RPM for this engine',
       },
     ],
     
@@ -355,8 +548,112 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     ],
     
-    getDefaults: (context) => {
-      return getSmartDefaults('engine', { engineType: context?.engineType || 'diesel' });
+    defaults: {
+      contextKey: 'engineType',
+      contexts: {
+        'diesel': {
+          metrics: {
+            rpm: {
+              critical: 2800,
+              warning: 2600,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 50,
+              warningHysteresis: 50,
+            },
+            temperature: {
+              critical: 105,
+              warning: 95,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 3,
+              warningHysteresis: 3,
+            },
+            oilPressure: {
+              critical: 15,
+              warning: 20,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 3,
+              warningHysteresis: 3,
+            },
+          },
+        },
+        'gasoline': {
+          metrics: {
+            rpm: {
+              critical: 3600,
+              warning: 3400,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 100,
+              warningHysteresis: 100,
+            },
+            temperature: {
+              critical: 110,
+              warning: 100,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 3,
+              warningHysteresis: 3,
+            },
+            oilPressure: {
+              critical: 10,
+              warning: 15,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 2,
+              warningHysteresis: 2,
+            },
+          },
+        },
+        'outboard': {
+          metrics: {
+            rpm: {
+              critical: 5800,
+              warning: 5500,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 100,
+              warningHysteresis: 100,
+            },
+            temperature: {
+              critical: 85,
+              warning: 75,
+              direction: 'above' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 3,
+              warningHysteresis: 3,
+            },
+            oilPressure: {
+              critical: 8,
+              warning: 12,
+              direction: 'below' as const,
+              enabled: true,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalHysteresis: 2,
+              warningHysteresis: 2,
+            },
+          },
+        },
+      },
     },
   },
   
@@ -370,15 +667,27 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Wind Sensor Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Masthead Wind, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this wind sensor (e.g., Masthead Wind)',
       },
     ],
     
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'above',
     
-    getDefaults: () => getSmartDefaults('wind'),
+    defaults: {
+      threshold: {
+        critical: 40,
+        warning: 30,
+        direction: 'above' as const,
+        enabled: false,
+        criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+        warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+        criticalHysteresis: 3,
+        warningHysteresis: 3,
+      },
+    },
   },
   
   speed: {
@@ -391,15 +700,27 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Speed Log Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Paddlewheel, Ultrasonic, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this speed sensor (e.g., Paddle Wheel)',
       },
     ],
     
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'above',
     
-    getDefaults: () => getSmartDefaults('speed'),
+    defaults: {
+      threshold: {
+        critical: 8,
+        warning: 7,
+        direction: 'above' as const,
+        enabled: false,
+        criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+        warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+        criticalHysteresis: 0.5,
+        warningHysteresis: 0.5,
+      },
+    },
   },
   
   temperature: {
@@ -412,33 +733,106 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Sensor Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Cabin Temp, Water Temp, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this temperature sensor (e.g., Engine Room)',
       },
       {
         key: 'location',
         label: 'Location',
         type: 'picker',
-        section: 'context',
+        iostate: 'readWrite',
         options: [
-          { label: 'Engine Room', value: 'engineRoom' },
+          { label: 'Engine Room', value: 'engineRoom', default: true },
           { label: 'Cabin/Saloon', value: 'cabin' },
           { label: 'Refrigerator', value: 'fridge' },
           { label: 'Freezer', value: 'freezer' },
           { label: 'Outside Air', value: 'outside' },
           { label: 'Sea Water', value: 'seaWater' },
         ],
-        defaultValue: 'cabin',
+        helpText: 'Physical location of temperature sensor',
       },
     ],
     
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'above',
     
-    getDefaults: (context) => {
-      // Location-aware temperature thresholds
-      // Engine room: higher limits (105°C), Freezer: below zero (-18°C), etc.
-      return getSmartDefaults('temperature', { temperatureLocation: context?.location || 'cabin' });
+    defaults: {
+      contextKey: 'location',
+      contexts: {
+        'engineRoom': {
+          threshold: {
+            critical: 105,
+            warning: 85,
+            direction: 'above' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            criticalHysteresis: 5,
+            warningHysteresis: 5,
+          },
+        },
+        'cabin': {
+          threshold: {
+            critical: 40,
+            warning: 35,
+            direction: 'above' as const,
+            enabled: false,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 2,
+            warningHysteresis: 2,
+          },
+        },
+        'fridge': {
+          threshold: {
+            critical: 10,
+            warning: 8,
+            direction: 'above' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 1,
+            warningHysteresis: 1,
+          },
+        },
+        'freezer': {
+          threshold: {
+            critical: -10,
+            warning: -15,
+            direction: 'above' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 2,
+            warningHysteresis: 2,
+          },
+        },
+        'outside': {
+          threshold: {
+            critical: 45,
+            warning: 40,
+            direction: 'above' as const,
+            enabled: false,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.info,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.none,
+            criticalHysteresis: 3,
+            warningHysteresis: 3,
+          },
+        },
+        'seaWater': {
+          threshold: {
+            critical: 35,
+            warning: 30,
+            direction: 'above' as const,
+            enabled: false,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.info,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.none,
+            criticalHysteresis: 2,
+            warningHysteresis: 2,
+          },
+        },
+      },
     },
   },
   
@@ -452,8 +846,9 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Compass Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Fluxgate Compass, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this compass (e.g., Fluxgate Compass)',
       },
     ],
     
@@ -470,8 +865,9 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'GPS Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Chart Plotter, Handheld, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this GPS (e.g., Chart Plotter)',
       },
     ],
     
@@ -488,8 +884,9 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Autopilot Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Raymarine, Garmin, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this autopilot (e.g., Raymarine)',
       },
     ],
     
@@ -506,8 +903,9 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'System Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Navigation System',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this navigation system',
       },
     ],
     
@@ -524,42 +922,117 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'name',
         label: 'Tank Name',
         type: 'text',
-        section: 'basic',
-        placeholder: 'Fuel Port, Fresh Water, etc.',
+        iostate: 'readWrite',
+        default: '',
+        helpText: 'Descriptive name for this tank (e.g., Port Fuel, Main Water)',
       },
       {
         key: 'tankType',
         label: 'Tank Type',
         type: 'picker',
-        section: 'context',
+        iostate: 'readWrite',
         options: [
-          { label: 'Fuel', value: 'fuel' },
+          { label: 'Fuel', value: 'fuel', default: true },
           { label: 'Fresh Water', value: 'freshWater' },
           { label: 'Gray Water', value: 'grayWater' },
           { label: 'Black Water', value: 'blackWater' },
           { label: 'Live Well', value: 'liveWell' },
           { label: 'Oil', value: 'oil' },
         ],
-        defaultValue: 'fuel',
+        helpText: 'Type of fluid stored in this tank',
       },
       {
         key: 'capacity',
         label: 'Capacity',
-        type: 'number',
-        section: 'context',
-        placeholder: 'Liters',
-        defaultValue: 200,
+        type: 'slider',
+        iostate: 'readWrite',
+        default: 200,
         min: 10,
         max: 5000,
+        step: 10,
+        helpText: 'Total capacity of tank in liters',
       },
     ],
     
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'below',
     
-    getDefaults: (context) => {
-      // Tank type affects alarm thresholds (fuel vs water vs black water)
-      return getSmartDefaults('tank', { tankType: context?.tankType || 'fuel' });
+    defaults: {
+      contextKey: 'tankType',
+      contexts: {
+        'fuel': {
+          threshold: {
+            critical: 15,
+            warning: 25,
+            direction: 'below' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            criticalHysteresis: 5,
+            warningHysteresis: 5,
+          },
+        },
+        'freshWater': {
+          threshold: {
+            critical: 10,
+            warning: 20,
+            direction: 'below' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 5,
+            warningHysteresis: 5,
+          },
+        },
+        'grayWater': {
+          threshold: {
+            critical: 90,
+            warning: 85,
+            direction: 'above' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 5,
+            warningHysteresis: 5,
+          },
+        },
+        'blackWater': {
+          threshold: {
+            critical: 95,
+            warning: 90,
+            direction: 'above' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            criticalHysteresis: 3,
+            warningHysteresis: 3,
+          },
+        },
+        'liveWell': {
+          threshold: {
+            critical: 10,
+            warning: 15,
+            direction: 'below' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 5,
+            warningHysteresis: 5,
+          },
+        },
+        'oil': {
+          threshold: {
+            critical: 20,
+            warning: 30,
+            direction: 'below' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            criticalHysteresis: 5,
+            warningHysteresis: 5,
+          },
+        },
+      },
     },
   },
 };
@@ -630,331 +1103,66 @@ export function getSensorAlarmMetrics(sensorType: SensorType): SensorAlarmMetric
 
 /**
  * ============================================================================
- * CONTEXT-AWARE DEFAULT THRESHOLDS
+ * CONTEXT-AWARE DEFAULT THRESHOLDS (PURE DATA LOOKUP)
  * ============================================================================
  * 
- * Provides smart defaults for alarm thresholds based on sensor context:
- * - Battery: Chemistry-based voltage thresholds (lead-acid, AGM, LiFePO4)
- * - Engine: Type-based RPM limits and oil pressure (diesel, gasoline, outboard)
- * - Temperature: Location-based ranges (freezer, fridge, engine, cabin)
- * - Tank: Type-based critical levels (fuel, water, black water)
+ * All alarm defaults are now stored as declarative data in the registry above.
+ * This helper function performs simple property lookups based on sensor context.
  * 
- * All values are in SI units. Presentation system handles conversion to user units.
+ * No procedural code, no switch statements - just pure data retrieval.
  */
 
 /**
  * Get context-aware default alarm thresholds for a sensor
  * 
+ * **Usage:**
+ * ```typescript
+ * // For context-aware sensors (battery, engine, temperature, tank)
+ * const batteryDefaults = getAlarmDefaults('battery', { batteryChemistry: 'lifepo4' });
+ * const engineDefaults = getAlarmDefaults('engine', { engineType: 'diesel' });
+ * const tempDefaults = getAlarmDefaults('temperature', { location: 'engineRoom' });
+ * const tankDefaults = getAlarmDefaults('tank', { tankType: 'fuel' });
+ * 
+ * // For simple sensors (depth, wind, speed)
+ * const depthDefaults = getAlarmDefaults('depth');
+ * ```
+ * 
  * @param sensorType - Type of sensor
- * @param context - Context parameters (chemistry, type, location, etc.)
- * @returns Complete alarm threshold configuration ready for NMEA store
+ * @param context - Context values (chemistry, type, location, etc.) - matches field option values exactly
+ * @returns Complete alarm threshold configuration, or undefined for no-alarm sensors
+ */
+export function getAlarmDefaults(
+  sensorType: SensorType,
+  context?: Record<string, any>
+): any | undefined {
+  const config = SENSOR_CONFIG_REGISTRY[sensorType];
+  if (!config.defaults) return undefined;
+  
+  // Simple sensors - direct threshold lookup
+  if ('threshold' in config.defaults) {
+    return config.defaults.threshold;
+  }
+  
+  // Context-aware sensors - lookup by context key value
+  if (config.defaults.contexts && config.defaults.contextKey) {
+    const contextValue = context?.[config.defaults.contextKey];
+    if (!contextValue) {
+      // No context provided - return first available context as default
+      const firstContext = Object.keys(config.defaults.contexts)[0];
+      return config.defaults.contexts[firstContext];
+    }
+    return config.defaults.contexts[contextValue];
+  }
+  
+  return undefined;
+}
+
+/**
+ * @deprecated Use getAlarmDefaults() instead. This function is maintained for backward compatibility only.
  */
 export function getSmartDefaults(
   sensorType: SensorType,
-  context?: {
-    batteryChemistry?: 'lead-acid' | 'agm' | 'gel' | 'lifepo4';
-    engineType?: 'diesel' | 'gasoline' | 'outboard';
-    tankType?: string;
-    temperatureLocation?: string;
-  }
-): SensorAlarmThresholds | undefined {
-  
-  // ========== BATTERY: Multi-metric, chemistry-aware ==========
-  if (sensorType === 'battery') {
-    const chemistry = context?.batteryChemistry || 'lead-acid';
-    
-    const metrics: any = {};
-    
-    // Voltage thresholds by chemistry
-    switch (chemistry) {
-      case 'lifepo4':
-        metrics.voltage = {
-          critical: 12.8,  // ~10% SOC
-          warning: 13.0,   // ~20% SOC
-          direction: 'below' as const,
-          enabled: true,
-          criticalSoundPattern: 'rapid_pulse',
-          warningSoundPattern: 'warble',
-          criticalHysteresis: 0.2,
-          warningHysteresis: 0.2,
-        };
-        break;
-      case 'agm':
-      case 'gel':
-        metrics.voltage = {
-          critical: 12.0,  // ~20% SOC
-          warning: 12.2,   // ~40% SOC
-          direction: 'below' as const,
-          enabled: true,
-          criticalSoundPattern: 'rapid_pulse',
-          warningSoundPattern: 'warble',
-          criticalHysteresis: 0.2,
-          warningHysteresis: 0.2,
-        };
-        break;
-      case 'lead-acid':
-      default:
-        metrics.voltage = {
-          critical: 11.8,  // ~20% SOC
-          warning: 12.0,   // ~40% SOC
-          direction: 'below' as const,
-          enabled: true,
-          criticalSoundPattern: 'rapid_pulse',
-          warningSoundPattern: 'warble',
-          criticalHysteresis: 0.2,
-          warningHysteresis: 0.2,
-        };
-    }
-    
-    // State of charge (universal)
-    metrics.soc = {
-      critical: 20,  // 20%
-      warning: 40,   // 40%
-      direction: 'below' as const,
-      enabled: true,
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 5,
-      warningHysteresis: 5,
-    };
-    
-    // Temperature (chemistry-dependent limits)
-    const maxTemp = chemistry === 'lifepo4' ? 50 : (chemistry === 'agm' || chemistry === 'gel' ? 45 : 40);
-    metrics.temperature = {
-      critical: maxTemp,
-      warning: maxTemp - 5,
-      direction: 'above' as const,
-      enabled: false,  // Enable when sensor provides it
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 2,
-      warningHysteresis: 2,
-    };
-    
-    // Current draw
-    metrics.current = {
-      critical: 200,  // 200A
-      warning: 150,   // 150A
-      direction: 'above' as const,
-      enabled: false,  // Enable when sensor provides it
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 10,
-      warningHysteresis: 10,
-    };
-    
-    return {
-      enabled: true,
-      context: { batteryChemistry: chemistry },
-      metrics,
-    };
-  }
-  
-  // ========== ENGINE: Multi-metric, type-aware ==========
-  if (sensorType === 'engine') {
-    const engineType = context?.engineType || 'diesel';
-    
-    const metrics: any = {};
-    
-    // RPM limits by engine type
-    switch (engineType) {
-      case 'outboard':
-        metrics.rpm = {
-          critical: 5800,
-          warning: 5500,
-          direction: 'above' as const,
-          enabled: true,
-          criticalSoundPattern: 'rapid_pulse',
-          warningSoundPattern: 'warble',
-          criticalHysteresis: 150,
-          warningHysteresis: 150,
-        };
-        break;
-      case 'gasoline':
-        metrics.rpm = {
-          critical: 3600,
-          warning: 3300,
-          direction: 'above' as const,
-          enabled: true,
-          criticalSoundPattern: 'rapid_pulse',
-          warningSoundPattern: 'warble',
-          criticalHysteresis: 100,
-          warningHysteresis: 100,
-        };
-        break;
-      case 'diesel':
-      default:
-        metrics.rpm = {
-          critical: 2800,
-          warning: 2500,
-          direction: 'above' as const,
-          enabled: true,
-          criticalSoundPattern: 'rapid_pulse',
-          warningSoundPattern: 'warble',
-          criticalHysteresis: 100,
-          warningHysteresis: 100,
-        };
-    }
-    
-    // Coolant temperature (universal)
-    metrics.temperature = {
-      critical: 95,  // 95°C
-      warning: 85,   // 85°C
-      direction: 'above' as const,
-      enabled: true,
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 3,
-      warningHysteresis: 3,
-    };
-    
-    // Oil pressure (in Pascals - 138kPa = 20 PSI)
-    metrics.oilPressure = {
-      critical: 138000,   // 20 PSI minimum
-      warning: 207000,    // 30 PSI warning
-      direction: 'below' as const,
-      enabled: true,
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 34500,  // ~5 PSI
-      warningHysteresis: 34500,
-    };
-    
-    return {
-      enabled: true,
-      context: { engineType },
-      metrics,
-    };
-  }
-  
-  // ========== TEMPERATURE: Single-metric, location-aware ==========
-  if (sensorType === 'temperature') {
-    const location = context?.temperatureLocation || 'cabin';
-    
-    let critical: number, warning: number;
-    
-    switch (location) {
-      case 'engineRoom':
-        critical = 105;  // Engine room overheat
-        warning = 85;
-        break;
-      case 'freezer':
-        critical = -10;  // Freezer rising temp
-        warning = -15;
-        break;
-      case 'fridge':
-        critical = 10;   // Food safety
-        warning = 8;
-        break;
-      case 'outside':
-        critical = 45;   // Extreme heat
-        warning = 40;
-        break;
-      case 'seaWater':
-        critical = 35;   // Cooling system issue
-        warning = 30;
-        break;
-      case 'cabin':
-      default:
-        critical = 40;   // Comfort/safety
-        warning = 35;
-    }
-    
-    return {
-      critical,
-      warning,
-      direction: 'above' as const,
-      enabled: location === 'engineRoom' || location === 'freezer' || location === 'fridge',
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 2,
-      warningHysteresis: 2,
-    };
-  }
-  
-  // ========== TANK: Single-metric, type-aware ==========
-  if (sensorType === 'tank') {
-    const tankType = context?.tankType || 'fuel';
-    
-    let critical: number, warning: number, direction: 'above' | 'below';
-    
-    switch (tankType) {
-      case 'blackWater':
-        critical = 95;   // Needs pump-out
-        warning = 90;
-        direction = 'above';
-        break;
-      case 'grayWater':
-        critical = 90;   // High warning
-        warning = 85;
-        direction = 'above';
-        break;
-      case 'freshWater':
-        critical = 10;   // Low water
-        warning = 20;
-        direction = 'below';
-        break;
-      case 'fuel':
-      default:
-        critical = 15;   // Reserve fuel
-        warning = 25;
-        direction = 'below';
-    }
-    
-    return {
-      critical,
-      warning,
-      direction,
-      enabled: true,
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 5,
-      warningHysteresis: 5,
-    };
-  }
-  
-  // ========== DEPTH: Single-metric, universal ==========
-  if (sensorType === 'depth') {
-    return {
-      critical: 2.0,   // 2 meters
-      warning: 2.5,    // 2.5 meters
-      direction: 'below' as const,
-      enabled: true,
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 0.3,
-      warningHysteresis: 0.2,
-    };
-  }
-  
-  // ========== WIND: Single-metric, universal ==========
-  if (sensorType === 'wind') {
-    return {
-      critical: 30,    // 30 m/s (~58 knots) storm
-      warning: 25,     // 25 m/s (~48 knots) gale
-      direction: 'above' as const,
-      enabled: false,  // User preference
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 2,
-      warningHysteresis: 2,
-    };
-  }
-  
-  // ========== SPEED: Single-metric, universal ==========
-  if (sensorType === 'speed') {
-    return {
-      critical: 6,     // 6 m/s (~12 knots)
-      warning: 5,      // 5 m/s (~10 knots)
-      direction: 'above' as const,
-      enabled: false,  // User preference
-      criticalSoundPattern: 'rapid_pulse',
-      warningSoundPattern: 'warble',
-      criticalHysteresis: 0.5,
-      warningHysteresis: 0.5,
-    };
-  }
-  
-  // Sensors with no alarm support
-  return undefined;
+  context?: Record<string, any>
+): any | undefined {
+  return getAlarmDefaults(sensorType, context);
 }
