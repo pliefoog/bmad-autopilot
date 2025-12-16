@@ -31,6 +31,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { z } from 'zod';
+import Slider from '@react-native-community/slider';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
@@ -750,23 +751,27 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           {/* Critical Row */}
                           <View style={[styles.alarmRow, { borderColor: theme.border }]}>
                             <View style={styles.alarmRowHeader}>
-                              <Text style={[styles.alarmRowTitle, { color: theme.error }]}>Critical</Text>
+                              <Text style={[styles.alarmRowTitle, { color: theme.error }]}>
+                                Critical: {((metricPresentation as any).formatSpec?.decimals !== undefined
+                                  ? (formData.criticalValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
+                                  : (formData.criticalValue || 0).toFixed(1))}{unitSymbol}
+                              </Text>
                             </View>
                             {isNarrow ? (
                               // Mobile: Stacked layout
                               <View style={styles.alarmRowMobile}>
                                 <View style={styles.alarmRowMobileThreshold}>
-                                  <ThresholdEditor
-                                    label=""
+                                  <Slider
+                                    style={{ width: '100%', height: 40 }}
                                     value={formData.criticalValue || 0}
-                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                                    otherThreshold={formData.warningValue}
-                                    unitSymbol={unitSymbol}
-                                    onChange={(value) => updateField('criticalValue', value)}
-                                    onBlur={saveNow}
+                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
+                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    step={0.1}
+                                    onValueChange={(value) => updateField('criticalValue', value)}
+                                    onSlidingComplete={saveNow}
+                                    minimumTrackTintColor={theme.error}
+                                    maximumTrackTintColor={theme.border}
+                                    thumbTintColor={theme.error}
                                     testID="critical-threshold"
                                   />
                                 </View>
@@ -803,17 +808,17 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               // Tablet/Desktop: Horizontal layout
                               <View style={styles.alarmRowControls}>
                                 <View style={styles.alarmRowSlider}>
-                                  <ThresholdEditor
-                                    label=""
+                                  <Slider
+                                    style={{ width: '100%', height: 40 }}
                                     value={formData.criticalValue || 0}
-                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                                    otherThreshold={formData.warningValue}
-                                    unitSymbol={unitSymbol}
-                                    onChange={(value) => updateField('criticalValue', value)}
-                                    onBlur={saveNow}
+                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
+                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    step={0.1}
+                                    onValueChange={(value) => updateField('criticalValue', value)}
+                                    onSlidingComplete={saveNow}
+                                    minimumTrackTintColor={theme.error}
+                                    maximumTrackTintColor={theme.border}
+                                    thumbTintColor={theme.error}
                                     testID="critical-threshold"
                                   />
                                 </View>
@@ -847,23 +852,27 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           {/* Warning Row - Always shown */}
                           <View style={[styles.alarmRow, { borderColor: theme.border, marginBottom: 0 }]}>
                             <View style={styles.alarmRowHeader}>
-                              <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>Warning</Text>
+                              <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>
+                                Warning: {((metricPresentation as any).formatSpec?.decimals !== undefined
+                                  ? (formData.warningValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
+                                  : (formData.warningValue || 0).toFixed(1))}{unitSymbol}
+                              </Text>
                             </View>
                             {isNarrow ? (
                               // Mobile: Stacked layout
                               <View style={styles.alarmRowMobile}>
                                 <View style={styles.alarmRowMobileThreshold}>
-                                  <ThresholdEditor
-                                    label=""
+                                  <Slider
+                                    style={{ width: '100%', height: 40 }}
                                     value={formData.warningValue || 0}
-                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                                    otherThreshold={formData.criticalValue}
-                                    unitSymbol={unitSymbol}
-                                    onChange={(value) => updateField('warningValue', value)}
-                                    onBlur={saveNow}
+                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
+                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    step={0.1}
+                                    onValueChange={(value) => updateField('warningValue', value)}
+                                    onSlidingComplete={saveNow}
+                                    minimumTrackTintColor={theme.warning}
+                                    maximumTrackTintColor={theme.border}
+                                    thumbTintColor={theme.warning}
                                     testID="warning-threshold"
                                   />
                                 </View>
@@ -900,17 +909,17 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               // Tablet/Desktop: Horizontal layout
                               <View style={styles.alarmRowControls}>
                                 <View style={styles.alarmRowSlider}>
-                                  <ThresholdEditor
-                                    label=""
+                                  <Slider
+                                    style={{ width: '100%', height: 40 }}
                                     value={formData.warningValue || 0}
-                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                                    otherThreshold={formData.criticalValue}
-                                    unitSymbol={unitSymbol}
-                                    onChange={(value) => updateField('warningValue', value)}
-                                    onBlur={saveNow}
+                                    minimumValue={(metricPresentation as any).formatSpec?.testCases.min || 0}
+                                    maximumValue={(metricPresentation as any).formatSpec?.testCases.max || 100}
+                                    step={0.1}
+                                    onValueChange={(value) => updateField('warningValue', value)}
+                                    onSlidingComplete={saveNow}
+                                    minimumTrackTintColor={theme.warning}
+                                    maximumTrackTintColor={theme.border}
+                                    thumbTintColor={theme.warning}
                                     testID="warning-threshold"
                                   />
                                 </View>
