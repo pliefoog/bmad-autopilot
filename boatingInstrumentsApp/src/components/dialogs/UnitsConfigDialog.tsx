@@ -29,8 +29,6 @@ import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../p
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
-import { getPlatformTokens } from '../../theme/settingsTokens';
-import { isTV } from '../../utils/platformDetection';
 
 /**
  * Units Configuration Dialog Props
@@ -236,12 +234,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
-  const platformTokens = getPlatformTokens();
-  const tvMode = isTV();
-  const styles = useMemo(
-    () => createStyles(theme, platformTokens, tvMode),
-    [theme, platformTokens, tvMode]
-  );
+  const styles = useMemo(() => createStyles(theme), [theme]);
   
   const presentationStore = usePresentationStore();
   const { setPresentationForCategory, selectedPresentations } = presentationStore;
@@ -512,11 +505,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
 // === STYLES ===
 
-const createStyles = (
-  theme: ThemeColors,
-  platformTokens: ReturnType<typeof getPlatformTokens>,
-  tvMode: boolean
-) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -525,8 +514,8 @@ const createStyles = (
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: platformTokens.spacing.row,
-      paddingVertical: tvMode ? 20 : 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
       borderBottomWidth: 1,
     },
     closeButton: {
@@ -535,80 +524,80 @@ const createStyles = (
       alignItems: 'center',
     },
     headerTitle: {
-      fontSize: platformTokens.typography.title.fontSize,
+      fontSize: 20,
       fontWeight: '600',
-      fontFamily: platformTokens.typography.fontFamily,
+      fontFamily: 'sans-serif',
     },
     scrollContainer: {
       flex: 1,
     },
     scrollContent: {
-      paddingBottom: platformTokens.spacing.section,
+      paddingBottom: 32,
     },
     hint: {
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: platformTokens.spacing.row,
+      fontSize: 13,
+      fontFamily: 'sans-serif',
+      marginBottom: 12,
       fontStyle: 'italic',
     },
     presetRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: platformTokens.spacing.row,
-      marginTop: platformTokens.spacing.row,
+      gap: 12,
+      marginTop: 12,
     },
     presetChip: {
-      paddingHorizontal: tvMode ? 24 : 16,
-      paddingVertical: tvMode ? 16 : 10,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: 20,
       borderWidth: 2,
     },
     presetText: {
-      fontSize: platformTokens.typography.label.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 14,
+      fontFamily: 'sans-serif',
     },
     previewBox: {
-      marginTop: platformTokens.spacing.row,
-      padding: platformTokens.spacing.row,
+      marginTop: 12,
+      padding: 12,
       borderRadius: 8,
       borderWidth: 1,
     },
     previewLabel: {
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 13,
+      fontFamily: 'sans-serif',
       marginBottom: 4,
       fontWeight: '600',
     },
     previewRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: platformTokens.spacing.row,
+      gap: 12,
     },
     previewText: {
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 13,
+      fontFamily: 'sans-serif',
     },
     unitsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: platformTokens.spacing.row,
+      gap: 12,
     },
     unitButton: {
-      paddingHorizontal: tvMode ? 18 : 12,
-      paddingVertical: tvMode ? 12 : 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderRadius: 6,
       borderWidth: 1,
-      minWidth: tvMode ? 80 : 60,
+      minWidth: 60,
       alignItems: 'center',
     },
     unitText: {
-      fontSize: platformTokens.typography.body.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 14,
+      fontFamily: 'sans-serif',
     },
     disabledHint: {
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
-      marginTop: platformTokens.spacing.row,
+      fontSize: 13,
+      fontFamily: 'sans-serif',
+      marginTop: 12,
       fontStyle: 'italic',
     },
   });
