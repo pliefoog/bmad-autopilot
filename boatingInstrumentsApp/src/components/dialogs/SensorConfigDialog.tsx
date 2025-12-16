@@ -41,7 +41,6 @@ import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { ThresholdEditor } from './inputs/ThresholdEditor';
-import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
@@ -254,9 +253,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const requiresMetricSelection = alarmConfig?.type === 'multi-metric';
   const supportsAlarms = alarmConfig?.type !== 'no-alarms';
   
-  // Memoize sound pattern picker items (avoid re-mapping on every render)
+  // Memoize sound pattern picker items (include "None" option)
   const soundPatternItems = useMemo(
-    () => SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value })),
+    () => [
+      { label: 'None', value: 'none' },
+      ...SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value }))
+    ],
     []
   );
 
@@ -443,45 +445,76 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     }
   }, [selectedSensorType, updateField]);
 
-  // Initialize defaults
-  const handleInitializeDefaults = useCallback(() => {
+  // Master reset to defaults (resets ALL sensor settings including name, alarms, context)
+  const handleMasterReset = useCallback(() => {
     if (!selectedSensorType) return;
 
-    const context: any = {};
-    if (selectedSensorType === 'battery') {
-      context.batteryChemistry = sensorProvidedChemistry || formData.batteryChemistry;
-    } else if (selectedSensorType === 'engine') {
-      context.engineType = formData.engineType;
-    }
+    const confirmReset = Platform.OS === 'web' 
+      ? confirm(`Reset ALL settings for this sensor to defaults (including name, alarms, and configuration)?`)
+      : false;
 
-    const instance = instances.find(i => i.instance === selectedInstance);
-    const defaults = getSmartDefaults(selectedSensorType, context, instance?.location);
+    const performReset = () => {
+      const context: any = {};
+      if (selectedSensorType === 'battery') {
+        context.batteryChemistry = sensorProvidedChemistry || 'lead-acid';
+      } else if (selectedSensorType === 'engine') {
+        context.engineType = 'diesel';
+      }
 
-    if (!defaults) return;
+      const instance = instances.find(i => i.instance === selectedInstance);
+      const defaults = getSmartDefaults(selectedSensorType, context, instance?.location);
 
-    updateSensorThresholds(selectedSensorType, selectedInstance, {
-      ...defaults,
-      lastModified: Date.now(),
-    });
+      if (defaults) {
+        // Reset alarms
+        updateSensorThresholds(selectedSensorType, selectedInstance, {
+          ...defaults,
+          lastModified: Date.now(),
+        });
 
-    if (Object.keys(context).length > 0) {
-      setConfig(selectedSensorType, selectedInstance, { context });
-    }
+        // Reset context
+        if (Object.keys(context).length > 0) {
+          setConfig(selectedSensorType, selectedInstance, { context });
+        }
 
-    // Reload form with defaults
-    const newFormData: Partial<SensorFormData> = {
-      criticalValue: defaults.critical !== undefined && presentation.isValid
-        ? presentation.convert(defaults.critical)
-        : undefined,
-      warningValue: defaults.warning !== undefined && presentation.isValid
-        ? presentation.convert(defaults.warning)
-        : undefined,
-      criticalSoundPattern: defaults.criticalSoundPattern || 'rapid_pulse',
-      warningSoundPattern: defaults.warningSoundPattern || 'warble',
+        // Reset form including name
+        const newFormData: Partial<SensorFormData> = {
+          name: '', // Reset name
+          batteryChemistry: context.batteryChemistry || formData.batteryChemistry,
+          engineType: context.engineType || formData.engineType,
+          criticalValue: defaults.critical !== undefined && presentation.isValid
+            ? presentation.convert(defaults.critical)
+            : undefined,
+          warningValue: defaults.warning !== undefined && presentation.isValid
+            ? presentation.convert(defaults.warning)
+            : undefined,
+          criticalSoundPattern: defaults.criticalSoundPattern || 'rapid_pulse',
+          warningSoundPattern: defaults.warningSoundPattern || 'warble',
+        };
+
+        updateFields(newFormData);
+      }
     };
 
-    updateFields(newFormData);
+    if (Platform.OS === 'web') {
+      if (confirmReset) performReset();
+    } else {
+      Alert.alert(
+        'Reset to Defaults?',
+        `Reset ALL settings for this sensor to defaults (including name, alarms, and configuration)?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Reset', style: 'destructive', onPress: performReset },
+        ]
+      );
+    }
   }, [selectedSensorType, selectedInstance, instances, formData, sensorProvidedChemistry, presentation, updateSensorThresholds, setConfig, updateFields]);
+
+  // Test alarm sound
+  const handleTestSound = useCallback((soundPattern: string) => {
+    if (soundPattern === 'none') return;
+    // TODO: Integrate with MarineAudioAlertManager to play sound
+    console.log(`Testing sound: ${soundPattern}`);
+  }, []);
 
   // Close handler
   const handleClose = useCallback(() => {
@@ -659,27 +692,31 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                   {/* Alarm Configuration */}
                   {supportsAlarms && (
-                    <FormSection
-                      sectionId="alarm-config"
-                      dialogId="sensor-config"
-                      title="Alarm Configuration"
-                      subtitle={formData.enabled ? getAlarmTriggerHint(selectedSensorType) : undefined}
-                      defaultCollapsed={false}
-                    >
-                      {/* Enable/Disable Toggle */}
-                      <PlatformToggle
-                        value={formData.enabled}
-                        onValueChange={handleEnabledChange}
-                        label="Enable Alarms"
-                      />
+                    <>
+                      {/* Alarm Header with Toggle */}
+                      <View style={[styles.alarmHeader, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                        <View style={styles.alarmHeaderLeft}>
+                          <Text style={[styles.alarmHeaderTitle, { color: theme.text }]}>Alarms</Text>
+                          {formData.enabled && (
+                            <Text style={[styles.alarmHeaderHint, { color: theme.textSecondary }]}>
+                              {getAlarmTriggerHint(selectedSensorType)}
+                            </Text>
+                          )}
+                        </View>
+                        <PlatformToggle
+                          value={formData.enabled}
+                          onValueChange={handleEnabledChange}
+                          label=""
+                        />
+                      </View>
 
-                      {/* All alarm configuration controls (shown when enabled) */}
+                      {/* Alarm Configuration (shown when enabled) */}
                       {formData.enabled && (
-                        <>
-                          {/* Metric Selection */}
+                        <View style={[styles.alarmContent, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                          {/* Metric Selection (multi-metric sensors only) */}
                           {requiresMetricSelection && alarmConfig?.metrics && (
-                            <View style={[styles.field, { marginTop: 20 }]}>
-                              <Text style={[styles.label, { color: theme.text }]}>Alarm Metric</Text>
+                            <View style={[styles.field, { marginBottom: 20 }]}>
+                              <Text style={[styles.label, { color: theme.text }]}>Metric to Monitor</Text>
                               <PlatformPicker
                                 label="Metric"
                                 value={formData.selectedMetric || ''}
@@ -692,81 +729,125 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                             </View>
                           )}
 
-                          {/* Threshold Configuration */}
-                          <View style={[styles.subsectionHeader, { marginTop: 24 }]}>
-                            <Text style={[styles.subsectionTitle, { color: theme.text }]}>
-                              Thresholds - {metricLabel}
-                            </Text>
+                          {/* Critical Row */}
+                          <View style={[styles.alarmRow, { borderColor: theme.border }]}>
+                            <View style={styles.alarmRowLabel}>
+                              <Text style={[styles.alarmRowTitle, { color: theme.error }]}>Critical</Text>
+                              <Text style={[styles.alarmRowUnit, { color: theme.textSecondary }]}>{unitSymbol}</Text>
+                            </View>
+                            <View style={styles.alarmRowControls}>
+                              {/* Threshold Slider */}
+                              <View style={styles.alarmRowSlider}>
+                                <ThresholdEditor
+                                  label=""
+                                  value={formData.criticalValue || 0}
+                                  direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                                  formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                                  minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                                  maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                                  otherThreshold={formData.warningValue}
+                                  unitSymbol={unitSymbol}
+                                  onChange={(value) => updateField('criticalValue', value)}
+                                  onBlur={saveNow}
+                                  testID="critical-threshold"
+                                />
+                              </View>
+                              {/* Sound Picker */}
+                              <View style={styles.alarmRowSound}>
+                                <PlatformPicker
+                                  label=""
+                                  value={formData.criticalSoundPattern || 'none'}
+                                  onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
+                                  items={soundPatternItems}
+                                />
+                              </View>
+                              {/* Test Button */}
+                              <TouchableOpacity
+                                style={[
+                                  styles.alarmRowTestButton,
+                                  { backgroundColor: theme.primary, borderColor: theme.border },
+                                  formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
+                                ]}
+                                onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
+                                disabled={formData.criticalSoundPattern === 'none'}
+                              >
+                                <UniversalIcon 
+                                  name="volume-high-outline" 
+                                  size={20} 
+                                  color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : theme.background} 
+                                />
+                              </TouchableOpacity>
+                            </View>
                           </View>
 
-                          {/* Critical Threshold */}
-                          <ThresholdEditor
-                            label={`Critical ${metricLabel}`}
-                            value={formData.criticalValue || 0}
-                            direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                            formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                            minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                            maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                            otherThreshold={formData.warningValue}
-                            unitSymbol={unitSymbol}
-                            onChange={(value) => updateField('criticalValue', value)}
-                            onBlur={saveNow}
-                            testID="critical-threshold"
-                          />
-
-                          {/* Warning Threshold */}
-                          <ThresholdEditor
-                            label={`Warning ${metricLabel}`}
-                            value={formData.warningValue || 0}
-                            direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                            formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                            minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                            maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                            otherThreshold={formData.criticalValue}
-                            unitSymbol={unitSymbol}
-                            onChange={(value) => updateField('warningValue', value)}
-                            onBlur={saveNow}
-                            testID="warning-threshold"
-                          />
-
-                          {/* Sound Configuration */}
-                          <View style={[styles.subsectionHeader, { marginTop: 24 }]}>
-                            <Text style={[styles.subsectionTitle, { color: theme.text }]}>
-                              Alarm Sounds
-                            </Text>
-                          </View>
-
-                          <View style={styles.field}>
-                            <Text style={[styles.label, { color: theme.text }]}>Critical Alarm Sound</Text>
-                            <PlatformPicker
-                              value={formData.criticalSoundPattern}
-                              onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                              items={soundPatternItems}
-                            />
-                          </View>
-
-                          <View style={styles.field}>
-                            <Text style={[styles.label, { color: theme.text }]}>Warning Alarm Sound</Text>
-                            <PlatformPicker
-                              value={formData.warningSoundPattern}
-                              onValueChange={(value) => updateField('warningSoundPattern', String(value))}
-                              items={soundPatternItems}
-                            />
-                          </View>
-
-                          {/* Reset Defaults Button */}
-                          <TouchableOpacity
-                            style={[styles.defaultsButton, { backgroundColor: theme.primary, marginTop: 20 }]}
-                            onPress={handleInitializeDefaults}
-                          >
-                            <UniversalIcon name="refresh-outline" size={22} color={theme.background} />
-                            <Text style={[styles.defaultsButtonText, { color: theme.background }]}>
-                              Reset to Smart Defaults
-                            </Text>
-                          </TouchableOpacity>
-                        </>
+                          {/* Warning Row (only if warning value exists) */}
+                          {formData.warningValue !== undefined && formData.warningValue !== null && (
+                            <View style={[styles.alarmRow, { borderColor: theme.border }]}>
+                              <View style={styles.alarmRowLabel}>
+                                <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>Warning</Text>
+                                <Text style={[styles.alarmRowUnit, { color: theme.textSecondary }]}>{unitSymbol}</Text>
+                              </View>
+                              <View style={styles.alarmRowControls}>
+                                {/* Threshold Slider */}
+                                <View style={styles.alarmRowSlider}>
+                                  <ThresholdEditor
+                                    label=""
+                                    value={formData.warningValue || 0}
+                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                                    otherThreshold={formData.criticalValue}
+                                    unitSymbol={unitSymbol}
+                                    onChange={(value) => updateField('warningValue', value)}
+                                    onBlur={saveNow}
+                                    testID="warning-threshold"
+                                  />
+                                </View>
+                                {/* Sound Picker */}
+                                <View style={styles.alarmRowSound}>
+                                  <PlatformPicker
+                                    label=""
+                                    value={formData.warningSoundPattern || 'none'}
+                                    onValueChange={(value) => updateField('warningSoundPattern', String(value))}
+                                    items={soundPatternItems}
+                                  />
+                                </View>
+                                {/* Test Button */}
+                                <TouchableOpacity
+                                  style={[
+                                    styles.alarmRowTestButton,
+                                    { backgroundColor: theme.primary, borderColor: theme.border },
+                                    formData.warningSoundPattern === 'none' && { opacity: 0.3 }
+                                  ]}
+                                  onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
+                                  disabled={formData.warningSoundPattern === 'none'}
+                                >
+                                  <UniversalIcon 
+                                    name="volume-high-outline" 
+                                    size={20} 
+                                    color={formData.warningSoundPattern === 'none' ? theme.textSecondary : theme.background} 
+                                  />
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          )}
+                        </View>
                       )}
-                    </FormSection>
+                    </>
+                  )}
+
+                  {/* Master Reset Button */}
+                  {selectedSensorType && (
+                    <TouchableOpacity
+                      style={[styles.masterResetButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                      onPress={handleMasterReset}
+                    >
+                      <UniversalIcon name="refresh-outline" size={22} color={theme.error} />
+                      <Text style={[styles.masterResetButtonText, { color: theme.error }]}>
+                        Reset All Settings to Defaults
+                      </Text>
+                    </TouchableOpacity>
                   )}
                 </>
               )}
@@ -820,16 +901,77 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: 'sans-serif',
       marginBottom: 12,
     },
-    subsectionHeader: {
-      marginBottom: 12,
+    field: {
+      marginBottom: 16,
     },
-    subsectionTitle: {
-      fontSize: 15,
+    alarmHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginTop: 20,
+      marginBottom: 2,
+    },
+    alarmHeaderLeft: {
+      flex: 1,
+    },
+    alarmHeaderTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      marginBottom: 4,
+    },
+    alarmHeaderHint: {
+      fontSize: 13,
+      fontFamily: 'sans-serif',
+      lineHeight: 18,
+    },
+    alarmContent: {
+      padding: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginBottom: 16,
+    },
+    alarmRow: {
+      marginBottom: 20,
+      paddingBottom: 20,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    alarmRowLabel: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      marginBottom: 12,
+      gap: 8,
+    },
+    alarmRowTitle: {
+      fontSize: 16,
       fontWeight: '600',
       fontFamily: 'sans-serif',
     },
-    field: {
-      marginBottom: 16,
+    alarmRowUnit: {
+      fontSize: 13,
+      fontFamily: 'sans-serif',
+    },
+    alarmRowControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    alarmRowSlider: {
+      flex: 1,
+    },
+    alarmRowSound: {
+      width: 140,
+    },
+    alarmRowTestButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 8,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     label: {
       fontSize: 14,
@@ -862,17 +1004,18 @@ const createStyles = (theme: ThemeColors) =>
       textAlign: 'center',
       lineHeight: 20,
     },
-    defaultsButton: {
+    masterResetButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       padding: 14,
-      borderRadius: 10,
-      marginVertical: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginTop: 24,
       gap: 8,
     },
-    defaultsButtonText: {
-      fontSize: 16,
+    masterResetButtonText: {
+      fontSize: 15,
       fontWeight: '600',
       fontFamily: 'sans-serif',
     },
