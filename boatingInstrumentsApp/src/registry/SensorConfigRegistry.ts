@@ -42,8 +42,8 @@ export interface SensorFieldConfig {
 export interface SensorAlarmMetricConfig {
   key: string;                    // Metric identifier (e.g., 'voltage')
   label: string;                  // Display name
-  category: DataCategory;         // For presentation system
-  unit: string;                   // SI unit
+  category?: DataCategory;        // For presentation system (optional for raw values like percentages)
+  unit: string;                   // SI unit or display unit
   direction: 'above' | 'below';   // Alarm direction
 }
 
@@ -141,8 +141,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'soc',
         label: 'State of Charge',
-        category: 'percentage',
-        unit: '%',
+        unit: '%',  // Raw percentage 0-100, no presentation conversion needed
         direction: 'below',
       },
     ],
@@ -329,55 +328,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     getDefaults: () => getSmartDefaults('temperature'),
   },
   
-  pressure: {
-    sensorType: 'pressure',
-    displayName: 'Pressure Sensor',
-    description: 'Atmospheric or system pressure',
-    
-    fields: [
-      {
-        key: 'name',
-        label: 'Sensor Name',
-        type: 'text',
-        section: 'basic',
-        placeholder: 'e.g., Barometer, Oil Pressure',
-      },
-    ],
-    
-    alarmSupport: 'single-metric',
-    defaultAlarmDirection: 'below',
-    
-    getDefaults: () => getSmartDefaults('pressure'),
-  },
-  
-  humidity: {
-    sensorType: 'humidity',
-    displayName: 'Humidity Sensor',
-    description: 'Relative humidity monitoring',
-    
-    fields: [
-      {
-        key: 'name',
-        label: 'Sensor Name',
-        type: 'text',
-        section: 'basic',
-        placeholder: 'e.g., Cabin Humidity, Bilge Humidity',
-      },
-      {
-        key: 'location',
-        label: 'Location',
-        type: 'text',
-        section: 'basic',
-        placeholder: 'e.g., Saloon, Engine Room',
-      },
-    ],
-    
-    alarmSupport: 'single-metric',
-    defaultAlarmDirection: 'above',
-    
-    getDefaults: () => getSmartDefaults('humidity'),
-  },
-  
   compass: {
     sensorType: 'compass',
     displayName: 'Compass',
@@ -421,24 +371,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     alarmSupport: 'none',
   },
   
-  rudder: {
-    sensorType: 'rudder',
-    displayName: 'Rudder Sensor',
-    description: 'Rudder angle indicator',
-    
-    fields: [
-      {
-        key: 'name',
-        label: 'Sensor Name',
-        type: 'text',
-        section: 'basic',
-        placeholder: 'e.g., Rudder Position Sensor',
-      },
-    ],
-    
-    alarmSupport: 'none',
-  },
-  
   autopilot: {
     sensorType: 'autopilot',
     displayName: 'Autopilot',
@@ -451,6 +383,24 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         type: 'text',
         section: 'basic',
         placeholder: 'e.g., Raymarine Evolution',
+      },
+    ],
+    
+    alarmSupport: 'none',
+  },
+  
+  navigation: {
+    sensorType: 'navigation',
+    displayName: 'Navigation',
+    description: 'Navigation and routing data',
+    
+    fields: [
+      {
+        key: 'name',
+        label: 'System Name',
+        type: 'text',
+        section: 'basic',
+        placeholder: 'e.g., Chart Plotter Navigation',
       },
     ],
     
