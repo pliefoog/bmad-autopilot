@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-12T17:00:55.489Z",
+  "timestamp": "2025-12-16T23:08:45.395Z",
   "thresholds": {
     "maxRenderTimeMs": 16,
     "maxMemoryIncreaseMb": 50,
@@ -8,100 +8,156 @@
   },
   "metrics": [
     {
-      "renderTime": 11952.856750000035,
-      "memoryUsage": -4.292701721191406,
-      "dataLatency": 28.477954341939327,
-      "throughput": 535.7465501720872,
-      "testName": "React Native App Compatibility Tests Protocol Server Compatibility should maintain TCP server on port 2000 for React Native app connection",
-      "timestamp": 1765558703573
+      "renderTime": 0.9568330000001879,
+      "memoryUsage": -8.688224792480469,
+      "dataLatency": 25.979438748892893,
+      "throughput": 459.5212808955974,
+      "testName": "Hardware Field Loading Pattern Battery sensor should define hardwareField for chemistry",
+      "timestamp": 1765926525347
     },
     {
-      "renderTime": 11757.652750000008,
-      "memoryUsage": -3.11322021484375,
-      "dataLatency": 54.63440902312598,
-      "throughput": 525.5796290874158,
-      "testName": "React Native App Compatibility Tests Protocol Server Compatibility should maintain UDP server on port 2000 for React Native app broadcasts",
-      "timestamp": 1765558716419
+      "renderTime": 0.27712500000052387,
+      "memoryUsage": -3.1285324096679688,
+      "dataLatency": 33.356178642561616,
+      "throughput": 517.6976070041849,
+      "testName": "Hardware Field Loading Pattern Battery sensor should define hardwareField for capacity",
+      "timestamp": 1765926525357
     },
     {
-      "renderTime": 13140.25583400001,
-      "memoryUsage": -2.9594879150390625,
-      "dataLatency": 39.279787198319724,
-      "throughput": 600.7569053534818,
-      "testName": "React Native App Compatibility Tests Protocol Server Compatibility should maintain WebSocket server on port 8080 for React Native web app",
-      "timestamp": 1765558729762
+      "renderTime": 0.2986670000009326,
+      "memoryUsage": -2.9197540283203125,
+      "dataLatency": 74.80999537305647,
+      "throughput": 461.41335137450915,
+      "testName": "Hardware Field Loading Pattern Battery sensor should simulate hardware value loading",
+      "timestamp": 1765926525358
     },
     {
-      "renderTime": 11399.197999999975,
-      "memoryUsage": -2.43048095703125,
-      "dataLatency": 73.25407562121617,
-      "throughput": 494.9887289092245,
-      "testName": "React Native App Compatibility Tests NMEA Data Format Compatibility should provide NMEA data in expected format for GPS widgets",
-      "timestamp": 1765558741405
+      "renderTime": 0.3403330000001006,
+      "memoryUsage": -10.585037231445312,
+      "dataLatency": 35.12699460304951,
+      "throughput": 488.83233191109025,
+      "testName": "Hardware Field Loading Pattern Battery sensor should fall back to default when hardware value not available",
+      "timestamp": 1765926525364
     },
     {
-      "renderTime": 14858.155792000005,
-      "memoryUsage": -2.1542282104492188,
-      "dataLatency": 69.4142948367414,
-      "throughput": 517.1597852392922,
-      "testName": "React Native App Compatibility Tests NMEA Data Format Compatibility should provide wind data in expected format for wind widgets",
-      "timestamp": 1765558758208
+      "renderTime": 0.5192920000008598,
+      "memoryUsage": -5.317420959472656,
+      "dataLatency": 43.321271977332316,
+      "throughput": 527.353502761114,
+      "testName": "Hardware Field Loading Pattern Engine sensor should have readWrite fields (no hardwareField)",
+      "timestamp": 1765926525369
     },
     {
-      "renderTime": 12668.627791000006,
-      "memoryUsage": -2.0709075927734375,
-      "dataLatency": 70.78221656772095,
-      "throughput": 622.0498416253869,
-      "testName": "React Native App Compatibility Tests NMEA Data Format Compatibility should provide depth data in expected format for depth widgets",
-      "timestamp": 1765558772794
+      "renderTime": 0.3208329999997659,
+      "memoryUsage": -4.777046203613281,
+      "dataLatency": 39.26492016220891,
+      "throughput": 605.2384597012835,
+      "testName": "Hardware Field Loading Pattern Tank sensor should have slider field with readWrite iostate",
+      "timestamp": 1765926525370
     },
     {
-      "renderTime": 13495.090958000044,
-      "memoryUsage": -1.0315017700195312,
-      "dataLatency": 70.54381890791704,
-      "throughput": 642.8479615417164,
-      "testName": "React Native App Compatibility Tests Multi-Protocol Concurrent Connection Compatibility should handle React Native app connecting via multiple protocols simultaneously",
-      "timestamp": 1765558787061
+      "renderTime": 0.10145799999918381,
+      "memoryUsage": -4.641029357910156,
+      "dataLatency": 64.74834839458848,
+      "throughput": 566.6765116558804,
+      "testName": "Field Dependency Validation shouldShowField should show field without dependencies",
+      "timestamp": 1765926525370
     },
     {
-      "renderTime": 11893.263375000039,
-      "memoryUsage": -1.1619338989257812,
-      "dataLatency": 74.98657629123011,
-      "throughput": 517.7132218706167,
-      "testName": "React Native App Compatibility Tests Scenario Data Compatibility should provide scenario data compatible with React Native app widgets",
-      "timestamp": 1765558799851
+      "renderTime": 0.14379200000075798,
+      "memoryUsage": -4.516326904296875,
+      "dataLatency": 50.51414883889268,
+      "throughput": 550.0543258999393,
+      "testName": "Field Dependency Validation shouldShowField should show field when dependency is satisfied",
+      "timestamp": 1765926525371
     },
     {
-      "renderTime": 11841.75679200003,
-      "memoryUsage": -3.2711029052734375,
-      "dataLatency": 38.306581540679495,
-      "throughput": 518.9021656975948,
-      "testName": "React Native App Compatibility Tests Scenario Data Compatibility should handle engine monitoring scenario for React Native engine widgets",
-      "timestamp": 1765558812206
+      "renderTime": 0.30708299999969313,
+      "memoryUsage": -4.2259521484375,
+      "dataLatency": 42.33719321092598,
+      "throughput": 456.41817607777034,
+      "testName": "Field Dependency Validation shouldShowField should hide field when dependency not satisfied",
+      "timestamp": 1765926525371
     },
     {
-      "renderTime": 11549.807665999979,
-      "memoryUsage": -2.8041229248046875,
-      "dataLatency": 31.04469782865966,
-      "throughput": 466.4218503770987,
-      "testName": "React Native App Compatibility Tests Performance and Responsiveness Compatibility should maintain acceptable data rates for React Native app real-time display",
-      "timestamp": 1765558823901
+      "renderTime": 0.26066700000046694,
+      "memoryUsage": -11.245323181152344,
+      "dataLatency": 26.410432713934195,
+      "throughput": 533.5255002508578,
+      "testName": "Field Dependency Validation validateFieldDependencies should return no errors for sensors without dependencies",
+      "timestamp": 1765926525379
     },
     {
-      "renderTime": 14331.932499999995,
-      "memoryUsage": -2.1928863525390625,
-      "dataLatency": 72.51799089692335,
-      "throughput": 649.9851012328555,
-      "testName": "React Native App Compatibility Tests Performance and Responsiveness Compatibility should handle React Native app connection/disconnection gracefully",
-      "timestamp": 1765558843732
+      "renderTime": 0.12899999999899592,
+      "memoryUsage": -11.032676696777344,
+      "dataLatency": 25.884493657795904,
+      "throughput": 489.98983774839866,
+      "testName": "Default Values battery should have default values",
+      "timestamp": 1765926525379
+    },
+    {
+      "renderTime": 0.2585829999989073,
+      "memoryUsage": -5.880218505859375,
+      "dataLatency": 73.67434982724254,
+      "throughput": 524.9835575082736,
+      "testName": "Default Values picker fields should have default option flag",
+      "timestamp": 1765926525383
+    },
+    {
+      "renderTime": 0.1200410000001284,
+      "memoryUsage": -5.676109313964844,
+      "dataLatency": 35.933463996594206,
+      "throughput": 579.3508482695679,
+      "testName": "Default Values tank should have default capacity",
+      "timestamp": 1765926525383
+    },
+    {
+      "renderTime": 0.04554199999984121,
+      "memoryUsage": -5.627143859863281,
+      "dataLatency": 36.50387321950191,
+      "throughput": 453.43653215738624,
+      "testName": "iostate Behavior readOnly fields cannot be edited",
+      "timestamp": 1765926525383
+    },
+    {
+      "renderTime": 0.290791999999783,
+      "memoryUsage": -0.5569610595703125,
+      "dataLatency": 34.14400853957211,
+      "throughput": 594.9212211915286,
+      "testName": "iostate Behavior readWrite fields are always editable",
+      "timestamp": 1765926525388
+    },
+    {
+      "renderTime": 0.19420800000079907,
+      "memoryUsage": -0.35372161865234375,
+      "dataLatency": 53.01637707444754,
+      "throughput": 576.9527573551658,
+      "testName": "iostate Behavior readOnlyIfValue fields conditional on hardware",
+      "timestamp": 1765926525388
+    },
+    {
+      "renderTime": 0.3377909999999247,
+      "memoryUsage": 0.4144287109375,
+      "dataLatency": 66.21230836168347,
+      "throughput": 587.4113528628668,
+      "testName": "helpText Property all fields should have helpText",
+      "timestamp": 1765926525389
+    },
+    {
+      "renderTime": 0.19958299999962037,
+      "memoryUsage": 0.6244125366210938,
+      "dataLatency": 72.9081245525908,
+      "throughput": 467.003019100027,
+      "testName": "helpText Property helpText should be descriptive",
+      "timestamp": 1765926525389
     }
   ],
   "summary": {
-    "totalTests": 11,
-    "averageRenderTime": 12626.236200727284,
-    "averageMemoryUsage": -2.498415860262784,
-    "averageDataLatency": 56.658400277679384,
-    "averageThroughput": 553.8319764642519,
-    "thresholdViolations": 11
+    "totalTests": 18,
+    "averageRenderTime": 0.28342350000002625,
+    "averageMemoryUsage": -4.896257612440321,
+    "averageDataLatency": 46.34144010527065,
+    "averageThroughput": 524.487787429191,
+    "thresholdViolations": 7
   }
 }
