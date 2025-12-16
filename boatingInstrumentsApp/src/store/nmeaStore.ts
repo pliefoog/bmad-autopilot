@@ -22,7 +22,7 @@ import type {
   AutopilotSensorData,
   NavigationSensorData,
 } from '../types/SensorData';
-import { getDefaultThresholds, getSmartDefaults } from '../registry/AlarmThresholdDefaults';
+import { getSmartDefaults } from '../registry/SensorConfigRegistry';
 import { logger } from '../utils/logger';
 
 // MEMORY LEAK FIX: Throttle alarm evaluation (expensive operation)

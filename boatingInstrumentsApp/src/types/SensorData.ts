@@ -21,7 +21,7 @@ import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
  * Context-aware configuration for sensors
  */
 export interface SensorContext {
-  batteryChemistry?: 'lead-acid' | 'agm' | 'lifepo4'; // Battery chemistry type
+  batteryChemistry?: 'lead-acid' | 'agm' | 'gel' | 'lifepo4'; // Battery chemistry type
   engineType?: 'diesel' | 'gasoline' | 'outboard'; // Engine type
   tankType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater'; // Tank type
   temperatureLocation?: 'engine' | 'cabin' | 'water' | 'refrigerator'; // Temperature sensor location

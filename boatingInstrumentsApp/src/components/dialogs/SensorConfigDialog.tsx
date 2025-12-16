@@ -48,9 +48,8 @@ import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { ThresholdEditor } from './inputs/ThresholdEditor';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
-import { getSmartDefaults } from '../../registry/AlarmThresholdDefaults';
 import { SOUND_PATTERNS } from '../../services/alarms/MarineAudioAlertManager';
-import { SENSOR_CONFIG_REGISTRY, getSensorConfig } from '../../registry/SensorConfigRegistry';
+import { SENSOR_CONFIG_REGISTRY, getSensorConfig, getSmartDefaults } from '../../registry/SensorConfigRegistry';
 
 /**
  * Sensor Configuration Dialog Props
@@ -213,6 +212,21 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       lastUpdate: data.timestamp,
     })) as SensorInstance[];
   }, [selectedSensorType, getSensorInstances]);
+
+  // Initialize selected sensor type when dialog opens (if not provided by prop)
+  useEffect(() => {
+    if (visible && !initialSensorType && !selectedSensorType && availableSensorTypes.length > 0) {
+      // Auto-select first available sensor when dialog opens without a specific sensor
+      setSelectedSensorType(availableSensorTypes[0]);
+    }
+  }, [visible, initialSensorType, selectedSensorType, availableSensorTypes]);
+
+  // Reset to initialSensorType when dialog visibility changes (handles re-opening)
+  useEffect(() => {
+    if (visible && initialSensorType && initialSensorType !== selectedSensorType) {
+      setSelectedSensorType(initialSensorType);
+    }
+  }, [visible, initialSensorType]);
 
   // Update selected instance when instances change
   useEffect(() => {
@@ -709,12 +723,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   // Close handler (already defined earlier with async save completion)
 
-  // Get display unit and label from registry
+  // Get display unit and label from registry (using presentation system for units)
   const { unitSymbol, metricLabel } = useMemo(() => {
     if (requiresMetricSelection && formData.selectedMetric && sensorConfig?.alarmMetrics) {
       const metricInfo = sensorConfig.alarmMetrics.find(m => m.key === formData.selectedMetric);
+      // Get unit from presentation system via category (SI values stored, presentation converts)
+      const metricCategory = metricInfo?.category;
+      let symbol = '';
+      if (metricCategory === 'voltage') symbol = voltagePresentation.presentation?.symbol || 'V';
+      else if (metricCategory === 'current') symbol = currentPresentation.presentation?.symbol || 'A';
+      else if (metricCategory === 'temperature') symbol = temperaturePresentation.presentation?.symbol || '°C';
+      else if (metricCategory === 'pressure') symbol = pressurePresentation.presentation?.symbol || 'kPa';
+      else if (metricCategory === 'rpm') symbol = rpmPresentation.presentation?.symbol || 'RPM';
+      else if (metricInfo?.key === 'soc') symbol = '%';  // SOC has no category (raw %)
+      
       return {
-        unitSymbol: metricInfo?.unit || '',
+        unitSymbol: symbol,
         metricLabel: metricInfo?.label || '',
       };
     }
@@ -724,7 +748,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       unitSymbol: presentation.isValid ? presentation.presentation?.symbol || '' : '',
       metricLabel: selectedSensorType ? sensorConfig?.displayName || selectedSensorType : '',
     };
-  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, selectedSensorType, presentation]);
+  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, selectedSensorType, presentation, 
+      voltagePresentation, currentPresentation, temperaturePresentation, pressurePresentation, rpmPresentation]);
 
   /**
    * Render sensor-specific configuration fields dynamically from registry
@@ -823,12 +848,24 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         case 'number':
           return (
             <View key={field.key} style={styles.field}>
-              <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+              <Text style={[styles.label, { color: theme.text }]}>
+                {field.label}
+                {field.min !== undefined && field.max !== undefined && 
+                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                    {` (${field.min}-${field.max})`}
+                  </Text>
+                }
+              </Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 value={String(formData[field.key as keyof SensorFormData] || '')}
                 onChangeText={(text) => {
-                  const num = parseFloat(text);
+                  let num = parseFloat(text);
+                  // Validate against min/max if defined
+                  if (!isNaN(num)) {
+                    if (field.min !== undefined && num < field.min) num = field.min;
+                    if (field.max !== undefined && num > field.max) num = field.max;
+                  }
                   updateField(field.key as any, isNaN(num) ? undefined : num);
                 }}
                 placeholder={field.placeholder}
@@ -989,10 +1026,21 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               <PlatformPicker
                                 value={formData.selectedMetric || ''}
                                 onValueChange={(value) => handleMetricChange(String(value))}
-                                items={sensorConfig.alarmMetrics.map((m) => ({
-                                  label: `${m.label} (${m.unit})`,
-                                  value: m.key,
-                                }))}
+                                items={sensorConfig.alarmMetrics.map((m) => {
+                                  // Get unit from presentation system via category
+                                  let unit = '';
+                                  if (m.category === 'voltage') unit = voltagePresentation.presentation?.symbol || 'V';
+                                  else if (m.category === 'current') unit = currentPresentation.presentation?.symbol || 'A';
+                                  else if (m.category === 'temperature') unit = temperaturePresentation.presentation?.symbol || '°C';
+                                  else if (m.category === 'pressure') unit = pressurePresentation.presentation?.symbol || 'kPa';
+                                  else if (m.category === 'rpm') unit = rpmPresentation.presentation?.symbol || 'RPM';
+                                  else if (m.key === 'soc') unit = '%';
+                                  
+                                  return {
+                                    label: `${m.label}${unit ? ` (${unit})` : ''}`,
+                                    value: m.key,
+                                  };
+                                })}
                               />
                             </View>
                           )}
