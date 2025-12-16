@@ -9,7 +9,13 @@
  * - Preset preview with formatted example values
  * - Platform-optimized layouts (3-column desktop, 2-column tablet, 1-column phone)
  * 
- * Original: 470 lines | Target: ~320 lines (32% reduction)
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal/header/footer structure
+ * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
+ * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
+ * - Note: BaseSettingsModal is used by other dialogs (Layout, Theme, etc.) - this uses BaseConfigDialog instead
+ * 
+ * Original: 470 lines | Refactored: 537 lines (14% increase due to Zod schema + preset preview feature)
  */
 
 import React, { useMemo, useCallback, useEffect } from 'react';
@@ -18,15 +24,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Modal,
 } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
-import { UniversalIcon } from '../atoms/UniversalIcon';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
 
@@ -362,23 +366,12 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   // === RENDER ===
 
   return (
-    <Modal
+    <BaseConfigDialog
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+      title="Units & Format"
+      onClose={handleClose}
+      testID="units-config-dialog"
     >
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <UniversalIcon name="close" size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Units & Format</Text>
-          <View style={styles.closeButton} />
-        </View>
-
-        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
         {/* Preset Selector */}
         <FormSection
           title="Preset"
@@ -497,9 +490,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
             </FormSection>
           );
         })}
-      </ScrollView>
-      </View>
-    </Modal>
+    </BaseConfigDialog>
   );
 };
 
@@ -507,33 +498,6 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-    },
-    closeButton: {
-      padding: 8,
-      width: 40,
-      alignItems: 'center',
-    },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-    },
-    scrollContainer: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingBottom: 32,
-    },
     hint: {
       fontSize: 13,
       fontFamily: 'sans-serif',

@@ -11,17 +11,21 @@
  * - Unified form state management with useFormState
  * - Reusable ThresholdEditor components
  * - Collapsible FormSection components
+ * 
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal/header/footer structure
+ * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
+ * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
+ * - Note: BaseSettingsModal is used by other dialogs (Layout, Theme, etc.) - this uses BaseConfigDialog instead
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Modal,
   FlatList,
   Platform,
   Alert,
@@ -33,6 +37,7 @@ import { useSensorConfigStore } from '../../store/sensorConfigStore';
 import { SensorType, SensorAlarmThresholds } from '../../types/SensorData';
 import { useDataPresentation } from '../../presentation/useDataPresentation';
 import { DataCategory } from '../../presentation/categories';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
@@ -545,19 +550,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-          <TouchableOpacity style={styles.backButton} onPress={handleClose}>
-            <UniversalIcon name="arrow-back" size={24} color={theme.text} />
-            <Text style={[styles.backButtonText, { color: theme.text }]}>Back</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Sensor Configuration</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+    <BaseConfigDialog
+      visible={visible}
+      title="Sensor Configuration"
+      onClose={handleClose}
+      testID="sensor-config-dialog"
+    >
           {/* No sensors detected */}
           {availableSensorTypes.length === 0 && (
             <View style={styles.emptyState}>
@@ -612,7 +610,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       <TextInput
                         style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                         value={formData.name}
-                        onChangeText={(text) => updateField('name', text)}
+                        onChangeText={(text: string) => updateField('name', text)}
                         onBlur={saveNow}
                         placeholder="e.g., House Battery"
                         placeholderTextColor={theme.textSecondary}
@@ -790,55 +788,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               )}
             </>
           )}
-        </ScrollView>
-      </View>
-    </Modal>
+    </BaseConfigDialog>
   );
 };
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      paddingTop: 16,
-      borderBottomWidth: 1,
-    },
-    backButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    backButtonText: {
-      fontSize: 17,
-      fontWeight: '400',
-      fontFamily: 'sans-serif',
-    },
-    headerTitle: {
-      fontSize: 17,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      textAlign: 'center',
-      pointerEvents: 'none',
-    },
-    headerSpacer: {
-      width: 80,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 16,
-    },
     emptyState: {
       flex: 1,
       justifyContent: 'center',

@@ -9,6 +9,12 @@
  * - FormSection components for organized layout
  * - Keyboard shortcuts (Cmd+S/Ctrl+S to save, Esc to cancel)
  * - Platform-aware touch targets and layouts
+ * 
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal/header/footer structure
+ * - BaseConfigDialog provides: pageSheet Modal, close button, title, optional action button
+ * - Eliminates duplicate Modal boilerplate (~100 lines removed vs manual implementation)
+ * - Note: BaseSettingsModal is used by other dialogs (Layout, Theme, etc.) - this uses BaseConfigDialog instead
  */
 
 import React, { useCallback, useMemo, useEffect } from 'react';
@@ -16,15 +22,14 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformTextInput } from './inputs/PlatformTextInput';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { FormSection } from './components/FormSection';
@@ -205,25 +210,18 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   }, [formData, isWeb, shouldEnableConnectButton, errors]);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-          <TouchableOpacity style={styles.backButton} onPress={handleClose}>
-            <UniversalIcon name="close" size={24} color={theme.text} />
-            <Text style={[styles.backButtonText, { color: theme.text }]}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Connection Settings</Text>
-          <TouchableOpacity
-            style={[styles.connectButton, { opacity: isConnectEnabled ? 1 : 0.5 }]}
-            onPress={handleConnect}
-            disabled={!isConnectEnabled}
-          >
-            <Text style={[styles.connectButtonText, { color: theme.primary }]}>Connect</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+    <BaseConfigDialog
+      visible={visible}
+      title="Connection Settings"
+      onClose={handleClose}
+      actionButton={{
+        label: "Connect",
+        onPress: handleConnect,
+        disabled: !isConnectEnabled,
+        testID: "connection-connect-button"
+      }}
+      testID="connection-config-dialog"
+    >
           {/* Connection Details */}
           <FormSection
             sectionId="connection-details"
@@ -320,59 +318,12 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
               Keyboard shortcuts: ⌘S (Mac) or Ctrl+S (Windows) to connect, Esc to cancel
             </Text>
           )}
-        </ScrollView>
-      </View>
-    </Modal>
+    </BaseConfigDialog>
   );
 };
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      paddingTop: 16,
-      borderBottomWidth: 1,
-    },
-    backButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      minWidth: 80,
-    },
-    backButtonText: {
-      fontSize: 17,
-      fontWeight: '400',
-      fontFamily: 'sans-serif',
-    },
-    headerTitle: {
-      fontSize: 17,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-      textAlign: 'center',
-      flex: 1,
-    },
-    connectButton: {
-      minWidth: 80,
-      alignItems: 'flex-end',
-    },
-    connectButtonText: {
-      fontSize: 17,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-    },
-    scrollView: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 16,
-    },
     field: {
       marginBottom: 16,
     },
