@@ -209,6 +209,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const alarmConfig = selectedSensorType ? SENSOR_ALARM_CONFIG[selectedSensorType] : null;
   const requiresMetricSelection = alarmConfig?.type === 'multi-metric';
   const supportsAlarms = alarmConfig?.type !== 'no-alarms';
+  
+  // Memoize sound pattern picker items (avoid re-mapping on every render)
+  const soundPatternItems = useMemo(
+    () => SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value })),
+    []
+  );
 
   // Get current thresholds
   const currentThresholds = useMemo(() => {
@@ -313,25 +319,14 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     const metricInfo = alarmConfig.metrics.find(m => m.key === formData.selectedMetric);
     if (metricInfo?.category) {
       // Map category to pre-called presentation hook (avoids conditional hook calls)
-      const categoryPresentationMap: Record<DataCategory, any> = {
+      // Only map categories actually used by multi-metric sensors
+      const categoryPresentationMap: Partial<Record<DataCategory, any>> = {
         voltage: voltagePresentation,
         temperature: temperaturePresentation,
         current: currentPresentation,
         pressure: pressurePresentation,
         rpm: rpmPresentation,
         speed: speedPresentation,
-        // Fallback to presentation for unmapped categories
-        depth: presentation,
-        wind: presentation,
-        angle: presentation,
-        coordinates: presentation,
-        volume: presentation,
-        time: presentation,
-        distance: presentation,
-        capacity: presentation,
-        flowRate: presentation,
-        frequency: presentation,
-        power: presentation,
       };
       return categoryPresentationMap[metricInfo.category] || presentation;
     }
@@ -698,7 +693,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               <PlatformPicker
                                 value={formData.criticalSoundPattern}
                                 onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                                items={SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value }))}
+                                items={soundPatternItems}
                               />
                             </View>
 
@@ -707,7 +702,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               <PlatformPicker
                                 value={formData.warningSoundPattern}
                                 onValueChange={(value) => updateField('warningSoundPattern', String(value))}
-                                items={SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value }))}
+                                items={soundPatternItems}
                               />
                             </View>
                           </FormSection>

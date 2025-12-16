@@ -138,12 +138,15 @@ export const ThresholdEditor: React.FC<ThresholdEditorProps> = React.memo(({
    * Trigger shake animation on validation failure
    */
   const triggerShakeAnimation = useCallback(() => {
+    const SHAKE_OFFSET = 10; // pixels
+    const SHAKE_DURATION = 50; // ms per shake
+    
     shakeAnim.setValue(0);
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: SHAKE_OFFSET, duration: SHAKE_DURATION, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -SHAKE_OFFSET, duration: SHAKE_DURATION, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: SHAKE_OFFSET, duration: SHAKE_DURATION, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: SHAKE_DURATION, useNativeDriver: true }),
     ]).start();
   }, [shakeAnim]);
   
@@ -177,33 +180,38 @@ export const ThresholdEditor: React.FC<ThresholdEditorProps> = React.memo(({
    * Start long-press (begin acceleration after initial delay)
    */
   const startLongPress = useCallback((incrementFn: () => void) => {
+    // Long-press timing constants
+    const LONG_PRESS_DELAY = 500; // ms before acceleration starts
+    const REPEAT_INTERVAL = 100; // ms between increments
+    const ACCELERATION_THRESHOLDS = [
+      { count: 40, multiplier: 10 },
+      { count: 30, multiplier: 8 },
+      { count: 20, multiplier: 4 },
+      { count: 10, multiplier: 2 },
+    ];
+    
     setPressCount(0);
     setPressMultiplier(1);
     
     // Initial press
     incrementFn();
     
-    // Start acceleration after 500ms
+    // Start acceleration after delay
     longPressTimerRef.current = setTimeout(() => {
       let count = 0;
       longPressIntervalRef.current = setInterval(() => {
         count++;
         
         // Accelerate based on count
-        if (count > 40) {
-          setPressMultiplier(10); // 10x after 40 taps
-        } else if (count > 30) {
-          setPressMultiplier(8); // 8x after 30 taps
-        } else if (count > 20) {
-          setPressMultiplier(4); // 4x after 20 taps
-        } else if (count > 10) {
-          setPressMultiplier(2); // 2x after 10 taps
+        const threshold = ACCELERATION_THRESHOLDS.find(t => count > t.count);
+        if (threshold) {
+          setPressMultiplier(threshold.multiplier);
         }
         
         setPressCount(count);
         incrementFn();
-      }, 100); // 100ms interval
-    }, 500);
+      }, REPEAT_INTERVAL);
+    }, LONG_PRESS_DELAY);
   }, []);
   
   /**
