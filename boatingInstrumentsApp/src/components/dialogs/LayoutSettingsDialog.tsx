@@ -188,7 +188,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
           testID="done-button"
         />
       </View>
-    </BaseSettingsModal>
+    </BaseConfigDialog>
   );
 };
 

@@ -13,7 +13,6 @@
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
  * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
  * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
- * - Note: BaseSettingsModal is used by other dialogs (Layout, Theme, etc.) - this uses BaseConfigDialog instead
  * 
  * Original: 470 lines | Refactored: 537 lines (14% increase due to Zod schema + preset preview feature)
  */

@@ -14,7 +14,6 @@
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
  * - BaseConfigDialog provides: pageSheet Modal, close button, title, optional action button
  * - Eliminates duplicate Modal boilerplate (~100 lines removed vs manual implementation)
- * - Note: BaseSettingsModal is used by other dialogs (Layout, Theme, etc.) - this uses BaseConfigDialog instead
  */
 
 import React, { useCallback, useMemo, useEffect } from 'react';

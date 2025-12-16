@@ -12,11 +12,10 @@
  * This component was created to eliminate ~260 lines of duplicate Modal/header/footer
  * code across ConnectionConfigDialog, UnitsConfigDialog, and SensorConfigDialog.
  * 
- * **vs BaseSettingsModal:**
- * - BaseSettingsModal: More complex, platform-adaptive (TV, iPad, etc.), used by LayoutSettingsDialog, 
- *   DisplayThemeDialog, FactoryResetDialog, AlarmHistoryDialog
- * - BaseConfigDialog: Simpler, focused on configuration dialogs with optional action buttons,
- *   used by ConnectionConfigDialog, UnitsConfigDialog, SensorConfigDialog
+ * **Component Purpose:**
+ * Provides consistent Modal structure for all configuration dialogs across the app.
+ * All 7 dialogs now use this component: ConnectionConfigDialog, UnitsConfigDialog, SensorConfigDialog,
+ * LayoutSettingsDialog, FactoryResetDialog, DisplayThemeDialog, AlarmHistoryDialog
  * 
  * **Usage:**
  * ```tsx
