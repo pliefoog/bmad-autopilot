@@ -28,6 +28,7 @@ import {
   FlatList,
   Platform,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -591,6 +592,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     );
   };
 
+  // Get responsive layout breakpoints
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 600; // Mobile
+  const isTablet = width >= 600 && width < 1024; // Tablet
+  const isWide = width >= 1024; // Desktop/Web
+
   return (
     <BaseConfigDialog
       visible={visible}
@@ -739,66 +746,159 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                             </View>
                           )}
 
+                          {/* Alarm Rows - Critical and Warning */}
                           {/* Critical Row */}
                           <View style={[styles.alarmRow, { borderColor: theme.border }]}>
-                            <View style={styles.alarmRowLabel}>
+                            <View style={styles.alarmRowHeader}>
                               <Text style={[styles.alarmRowTitle, { color: theme.error }]}>Critical</Text>
-                              <Text style={[styles.alarmRowUnit, { color: theme.textSecondary }]}>{unitSymbol}</Text>
                             </View>
-                            <View style={styles.alarmRowControls}>
-                              {/* Threshold Slider */}
-                              <View style={styles.alarmRowSlider}>
-                                <ThresholdEditor
-                                  label=""
-                                  value={formData.criticalValue || 0}
-                                  direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                                  formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                                  minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                                  maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                                  otherThreshold={formData.warningValue}
-                                  unitSymbol={unitSymbol}
-                                  onChange={(value) => updateField('criticalValue', value)}
-                                  onBlur={saveNow}
-                                  testID="critical-threshold"
-                                />
+                            {isNarrow ? (
+                              // Mobile: Stacked layout
+                              <View style={styles.alarmRowMobile}>
+                                <View style={styles.alarmRowMobileThreshold}>
+                                  <ThresholdEditor
+                                    label=""
+                                    value={formData.criticalValue || 0}
+                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                                    otherThreshold={formData.warningValue}
+                                    unitSymbol={unitSymbol}
+                                    onChange={(value) => updateField('criticalValue', value)}
+                                    onBlur={saveNow}
+                                    testID="critical-threshold"
+                                  />
+                                </View>
+                                <View style={styles.alarmRowMobileSound}>
+                                  <Text style={[styles.alarmSoundLabel, { color: theme.textSecondary }]}>Sound</Text>
+                                  <View style={styles.alarmRowMobileSoundControls}>
+                                    <View style={{ flex: 1 }}>
+                                      <PlatformPicker
+                                        label=""
+                                        value={formData.criticalSoundPattern || 'none'}
+                                        onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
+                                        items={soundPatternItems}
+                                      />
+                                    </View>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.alarmRowTestButton,
+                                        { backgroundColor: theme.primary, borderColor: theme.border },
+                                        formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
+                                      ]}
+                                      onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
+                                      disabled={formData.criticalSoundPattern === 'none'}
+                                    >
+                                      <UniversalIcon 
+                                        name="volume-high-outline" 
+                                        size={20} 
+                                        color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : theme.background} 
+                                      />
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
                               </View>
-                              {/* Sound Picker */}
-                              <View style={styles.alarmRowSound}>
-                                <PlatformPicker
-                                  label=""
-                                  value={formData.criticalSoundPattern || 'none'}
-                                  onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                                  items={soundPatternItems}
-                                />
+                            ) : (
+                              // Tablet/Desktop: Horizontal layout
+                              <View style={styles.alarmRowControls}>
+                                <View style={styles.alarmRowSlider}>
+                                  <ThresholdEditor
+                                    label=""
+                                    value={formData.criticalValue || 0}
+                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                                    otherThreshold={formData.warningValue}
+                                    unitSymbol={unitSymbol}
+                                    onChange={(value) => updateField('criticalValue', value)}
+                                    onBlur={saveNow}
+                                    testID="critical-threshold"
+                                  />
+                                </View>
+                                <View style={[styles.alarmRowSound, isWide && { width: 180 }]}>
+                                  <PlatformPicker
+                                    label=""
+                                    value={formData.criticalSoundPattern || 'none'}
+                                    onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
+                                    items={soundPatternItems}
+                                  />
+                                </View>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.alarmRowTestButton,
+                                    { backgroundColor: theme.primary, borderColor: theme.border },
+                                    formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
+                                  ]}
+                                  onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
+                                  disabled={formData.criticalSoundPattern === 'none'}
+                                >
+                                  <UniversalIcon 
+                                    name="volume-high-outline" 
+                                    size={20} 
+                                    color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : theme.background} 
+                                  />
+                                </TouchableOpacity>
                               </View>
-                              {/* Test Button */}
-                              <TouchableOpacity
-                                style={[
-                                  styles.alarmRowTestButton,
-                                  { backgroundColor: theme.primary, borderColor: theme.border },
-                                  formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
-                                ]}
-                                onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
-                                disabled={formData.criticalSoundPattern === 'none'}
-                              >
-                                <UniversalIcon 
-                                  name="volume-high-outline" 
-                                  size={20} 
-                                  color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : theme.background} 
-                                />
-                              </TouchableOpacity>
-                            </View>
+                            )}
                           </View>
 
-                          {/* Warning Row (only if warning value exists) */}
-                          {formData.warningValue !== undefined && formData.warningValue !== null && (
-                            <View style={[styles.alarmRow, { borderColor: theme.border }]}>
-                              <View style={styles.alarmRowLabel}>
-                                <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>Warning</Text>
-                                <Text style={[styles.alarmRowUnit, { color: theme.textSecondary }]}>{unitSymbol}</Text>
+                          {/* Warning Row - Always shown */}
+                          <View style={[styles.alarmRow, { borderColor: theme.border, marginBottom: 0 }]}>
+                            <View style={styles.alarmRowHeader}>
+                              <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>Warning</Text>
+                            </View>
+                            {isNarrow ? (
+                              // Mobile: Stacked layout
+                              <View style={styles.alarmRowMobile}>
+                                <View style={styles.alarmRowMobileThreshold}>
+                                  <ThresholdEditor
+                                    label=""
+                                    value={formData.warningValue || 0}
+                                    direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                                    formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                                    minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                                    maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                                    otherThreshold={formData.criticalValue}
+                                    unitSymbol={unitSymbol}
+                                    onChange={(value) => updateField('warningValue', value)}
+                                    onBlur={saveNow}
+                                    testID="warning-threshold"
+                                  />
+                                </View>
+                                <View style={styles.alarmRowMobileSound}>
+                                  <Text style={[styles.alarmSoundLabel, { color: theme.textSecondary }]}>Sound</Text>
+                                  <View style={styles.alarmRowMobileSoundControls}>
+                                    <View style={{ flex: 1 }}>
+                                      <PlatformPicker
+                                        label=""
+                                        value={formData.warningSoundPattern || 'none'}
+                                        onValueChange={(value) => updateField('warningSoundPattern', String(value))}
+                                        items={soundPatternItems}
+                                      />
+                                    </View>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.alarmRowTestButton,
+                                        { backgroundColor: theme.primary, borderColor: theme.border },
+                                        formData.warningSoundPattern === 'none' && { opacity: 0.3 }
+                                      ]}
+                                      onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
+                                      disabled={formData.warningSoundPattern === 'none'}
+                                    >
+                                      <UniversalIcon 
+                                        name="volume-high-outline" 
+                                        size={20} 
+                                        color={formData.warningSoundPattern === 'none' ? theme.textSecondary : theme.background} 
+                                      />
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
                               </View>
+                            ) : (
+                              // Tablet/Desktop: Horizontal layout
                               <View style={styles.alarmRowControls}>
-                                {/* Threshold Slider */}
                                 <View style={styles.alarmRowSlider}>
                                   <ThresholdEditor
                                     label=""
@@ -814,8 +914,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                     testID="warning-threshold"
                                   />
                                 </View>
-                                {/* Sound Picker */}
-                                <View style={styles.alarmRowSound}>
+                                <View style={[styles.alarmRowSound, isWide && { width: 180 }]}>
                                   <PlatformPicker
                                     label=""
                                     value={formData.warningSoundPattern || 'none'}
@@ -823,7 +922,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                     items={soundPatternItems}
                                   />
                                 </View>
-                                {/* Test Button */}
                                 <TouchableOpacity
                                   style={[
                                     styles.alarmRowTestButton,
@@ -840,8 +938,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   />
                                 </TouchableOpacity>
                               </View>
-                            </View>
-                          )}
+                            )}
+                          </View>
                         </View>
                       )}
                     </>
@@ -949,25 +1047,19 @@ const createStyles = (theme: ThemeColors) =>
       marginBottom: 16,
     },
     alarmRow: {
-      marginBottom: 20,
-      paddingBottom: 20,
+      marginBottom: 16,
+      paddingBottom: 16,
       borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    alarmRowLabel: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
+    alarmRowHeader: {
       marginBottom: 12,
-      gap: 8,
     },
     alarmRowTitle: {
       fontSize: 16,
       fontWeight: '600',
       fontFamily: 'sans-serif',
     },
-    alarmRowUnit: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
-    },
+    // Desktop/Tablet horizontal layout
     alarmRowControls: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -986,6 +1078,27 @@ const createStyles = (theme: ThemeColors) =>
       borderWidth: 1,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    // Mobile stacked layout
+    alarmRowMobile: {
+      gap: 16,
+    },
+    alarmRowMobileThreshold: {
+      width: '100%',
+    },
+    alarmRowMobileSound: {
+      gap: 8,
+    },
+    alarmSoundLabel: {
+      fontSize: 13,
+      fontWeight: '500',
+      fontFamily: 'sans-serif',
+      marginBottom: 4,
+    },
+    alarmRowMobileSoundControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
     },
     label: {
       fontSize: 14,
