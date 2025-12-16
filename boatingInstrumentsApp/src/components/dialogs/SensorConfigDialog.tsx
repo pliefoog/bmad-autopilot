@@ -659,30 +659,27 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                   {/* Alarm Configuration */}
                   {supportsAlarms && (
-                    <>
-                      <FormSection
-                        sectionId="alarm-enable"
-                        dialogId="sensor-config"
-                        title="Alarm Configuration"
-                        defaultCollapsed={false}
-                      >
-                        <PlatformToggle
-                          value={formData.enabled}
-                          onValueChange={handleEnabledChange}
-                          label="Enable Alarms"
-                        />
-                      </FormSection>
+                    <FormSection
+                      sectionId="alarm-config"
+                      dialogId="sensor-config"
+                      title="Alarm Configuration"
+                      subtitle={formData.enabled ? getAlarmTriggerHint(selectedSensorType) : undefined}
+                      defaultCollapsed={false}
+                    >
+                      {/* Enable/Disable Toggle */}
+                      <PlatformToggle
+                        value={formData.enabled}
+                        onValueChange={handleEnabledChange}
+                        label="Enable Alarms"
+                      />
 
+                      {/* All alarm configuration controls (shown when enabled) */}
                       {formData.enabled && (
                         <>
                           {/* Metric Selection */}
                           {requiresMetricSelection && alarmConfig?.metrics && (
-                            <FormSection
-                              sectionId="metric-selection"
-                              dialogId="sensor-config"
-                              title="Alarm Metric"
-                              defaultCollapsed={false}
-                            >
+                            <View style={[styles.field, { marginTop: 20 }]}>
+                              <Text style={[styles.label, { color: theme.text }]}>Alarm Metric</Text>
                               <PlatformPicker
                                 label="Metric"
                                 value={formData.selectedMetric || ''}
@@ -692,77 +689,74 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                   value: m.key,
                                 }))}
                               />
-                            </FormSection>
+                            </View>
                           )}
 
                           {/* Threshold Configuration */}
-                          <FormSection
-                            sectionId="thresholds"
-                            dialogId="sensor-config"
-                            title={`Threshold Configuration - ${metricLabel}`}
-                            subtitle={getAlarmTriggerHint(selectedSensorType)}
-                            defaultCollapsed={false}
-                          >
-                            {/* Critical Threshold */}
-                            <ThresholdEditor
-                              label={`Critical ${metricLabel}`}
-                              value={formData.criticalValue || 0}
-                              direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                              formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                              minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                              maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                              otherThreshold={formData.warningValue}
-                              unitSymbol={unitSymbol}
-                              onChange={(value) => updateField('criticalValue', value)}
-                              onBlur={saveNow}
-                              testID="critical-threshold"
-                            />
+                          <View style={[styles.subsectionHeader, { marginTop: 24 }]}>
+                            <Text style={[styles.subsectionTitle, { color: theme.text }]}>
+                              Thresholds - {metricLabel}
+                            </Text>
+                          </View>
 
-                            {/* Warning Threshold */}
-                            <ThresholdEditor
-                              label={`Warning ${metricLabel}`}
-                              value={formData.warningValue || 0}
-                              direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
-                              formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                              minValue={(metricPresentation as any).formatSpec?.testCases.min}
-                              maxValue={(metricPresentation as any).formatSpec?.testCases.max}
-                              otherThreshold={formData.criticalValue}
-                              unitSymbol={unitSymbol}
-                              onChange={(value) => updateField('warningValue', value)}
-                              onBlur={saveNow}
-                              testID="warning-threshold"
-                            />
-                          </FormSection>
+                          {/* Critical Threshold */}
+                          <ThresholdEditor
+                            label={`Critical ${metricLabel}`}
+                            value={formData.criticalValue || 0}
+                            direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                            formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                            minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                            maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                            otherThreshold={formData.warningValue}
+                            unitSymbol={unitSymbol}
+                            onChange={(value) => updateField('criticalValue', value)}
+                            onBlur={saveNow}
+                            testID="critical-threshold"
+                          />
+
+                          {/* Warning Threshold */}
+                          <ThresholdEditor
+                            label={`Warning ${metricLabel}`}
+                            value={formData.warningValue || 0}
+                            direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                            formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                            minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                            maxValue={(metricPresentation as any).formatSpec?.testCases.max}
+                            otherThreshold={formData.criticalValue}
+                            unitSymbol={unitSymbol}
+                            onChange={(value) => updateField('warningValue', value)}
+                            onBlur={saveNow}
+                            testID="warning-threshold"
+                          />
 
                           {/* Sound Configuration */}
-                          <FormSection
-                            sectionId="sound-config"
-                            dialogId="sensor-config"
-                            title="Alarm Sounds"
-                            defaultCollapsed={true}
-                          >
-                            <View style={styles.field}>
-                              <Text style={[styles.label, { color: theme.text }]}>Critical Alarm Sound</Text>
-                              <PlatformPicker
-                                value={formData.criticalSoundPattern}
-                                onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                                items={soundPatternItems}
-                              />
-                            </View>
+                          <View style={[styles.subsectionHeader, { marginTop: 24 }]}>
+                            <Text style={[styles.subsectionTitle, { color: theme.text }]}>
+                              Alarm Sounds
+                            </Text>
+                          </View>
 
-                            <View style={styles.field}>
-                              <Text style={[styles.label, { color: theme.text }]}>Warning Alarm Sound</Text>
-                              <PlatformPicker
-                                value={formData.warningSoundPattern}
-                                onValueChange={(value) => updateField('warningSoundPattern', String(value))}
-                                items={soundPatternItems}
-                              />
-                            </View>
-                          </FormSection>
+                          <View style={styles.field}>
+                            <Text style={[styles.label, { color: theme.text }]}>Critical Alarm Sound</Text>
+                            <PlatformPicker
+                              value={formData.criticalSoundPattern}
+                              onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
+                              items={soundPatternItems}
+                            />
+                          </View>
+
+                          <View style={styles.field}>
+                            <Text style={[styles.label, { color: theme.text }]}>Warning Alarm Sound</Text>
+                            <PlatformPicker
+                              value={formData.warningSoundPattern}
+                              onValueChange={(value) => updateField('warningSoundPattern', String(value))}
+                              items={soundPatternItems}
+                            />
+                          </View>
 
                           {/* Reset Defaults Button */}
                           <TouchableOpacity
-                            style={[styles.defaultsButton, { backgroundColor: theme.primary }]}
+                            style={[styles.defaultsButton, { backgroundColor: theme.primary, marginTop: 20 }]}
                             onPress={handleInitializeDefaults}
                           >
                             <UniversalIcon name="refresh-outline" size={22} color={theme.background} />
@@ -772,7 +766,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           </TouchableOpacity>
                         </>
                       )}
-                    </>
+                    </FormSection>
                   )}
                 </>
               )}
@@ -825,6 +819,14 @@ const createStyles = (theme: ThemeColors) =>
       fontWeight: '600',
       fontFamily: 'sans-serif',
       marginBottom: 12,
+    },
+    subsectionHeader: {
+      marginBottom: 12,
+    },
+    subsectionTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
     },
     field: {
       marginBottom: 16,
