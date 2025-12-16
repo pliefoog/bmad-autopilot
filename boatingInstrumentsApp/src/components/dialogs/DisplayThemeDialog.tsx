@@ -6,13 +6,17 @@
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
  * - Coming soon placeholder for theme selection
  * - Future: Theme widget functionality + accessibility settings
+ * 
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal structure
+ * - No action button (informational dialog only)
  */
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
-import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 import { isTV } from '../../utils/platformDetection';
@@ -35,11 +39,10 @@ export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({
   );
 
   return (
-    <BaseSettingsModal
+    <BaseConfigDialog
       visible={visible}
       title="Display & Theme"
       onClose={onClose}
-      showFooter={false}
       testID="display-theme-dialog"
     >
       <PlatformSettingsSection title="Coming Soon">
@@ -65,7 +68,7 @@ export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({
           </Text>
         </View>
       </PlatformSettingsSection>
-    </BaseSettingsModal>
+    </BaseConfigDialog>
   );
 };
 

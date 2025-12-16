@@ -6,6 +6,10 @@
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
  * - Historical alarm event display (coming soon)
  * - Clear history functionality
+ * 
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal structure
+ * - Action button for destructive Clear History operation
  */
 
 import React from 'react';
@@ -13,9 +17,8 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useAlarmStore } from '../../store/alarmStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
-import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
-import { PlatformButton } from './inputs/PlatformButton';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 import { isTV } from '../../utils/platformDetection';
 
@@ -61,11 +64,16 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
   };
 
   return (
-    <BaseSettingsModal
+    <BaseConfigDialog
       visible={visible}
       title="Alarm History"
       onClose={onClose}
-      showFooter={false}
+      actionButton={{
+        label: "Clear History",
+        onPress: handleClearHistory,
+        disabled: false,
+        testID: "clear-history-button"
+      }}
       testID="alarm-history-dialog"
     >
       <PlatformSettingsSection title="Recent Alarms">
@@ -87,19 +95,7 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
           </Text>
         </View>
       </PlatformSettingsSection>
-
-      <PlatformSettingsSection title="Actions">
-        <View style={styles.clearButtonContainer}>
-          <PlatformButton
-            variant="danger"
-            onPress={handleClearHistory}
-            title="Clear Alarm History"
-            icon="trash-outline"
-            testID="clear-history-button"
-          />
-        </View>
-      </PlatformSettingsSection>
-    </BaseSettingsModal>
+    </BaseConfigDialog>
   );
 };
 
@@ -130,8 +126,5 @@ const createStyles = (
       fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
       lineHeight: platformTokens.typography.body.lineHeight * 1.5,
-    },
-    clearButtonContainer: {
-      marginTop: platformTokens.spacing.row,
     },
   });

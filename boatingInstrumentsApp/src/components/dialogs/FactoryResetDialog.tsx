@@ -6,6 +6,11 @@
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
  * - Destructive action confirmation
  * - Clear warning message with bullet points
+ * 
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal structure
+ * - Action button for destructive Factory Reset operation
+ * - Confirms via platform-native Alert on mobile platforms
  */
 
 import React, { useMemo } from 'react';
@@ -17,9 +22,8 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
-import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
-import { PlatformButton } from './inputs/PlatformButton';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 import { isTV } from '../../utils/platformDetection';
@@ -77,13 +81,18 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
     await onConfirm();
   };
 
-  // Use platform-native modal
+  // Use BaseConfigDialog with destructive action button
   return (
-    <BaseSettingsModal
+    <BaseConfigDialog
       visible={visible}
       title="Factory Reset"
       onClose={onCancel}
-      showFooter={false}
+      actionButton={{
+        label: "Factory Reset",
+        onPress: handleConfirm,
+        disabled: false,
+        testID: "factory-reset-confirm-button"
+      }}
       testID="factory-reset-dialog"
     >
       {/* Warning Section */}
@@ -149,29 +158,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
         </View>
       </PlatformSettingsSection>
 
-      {/* Action Buttons */}
-      <View style={styles.actionContainer}>
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonWrapper}>
-            <PlatformButton
-              variant="secondary"
-              onPress={onCancel}
-              title="Cancel"
-              testID="factory-reset-cancel-button"
-            />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <PlatformButton
-              variant="danger"
-              onPress={handleConfirm}
-              title="Factory Reset"
-              icon="warning-outline"
-              testID="factory-reset-confirm-button"
-            />
-          </View>
-        </View>
-      </View>
-    </BaseSettingsModal>
+    </BaseConfigDialog>
   );
 };
 
@@ -231,15 +218,5 @@ const createStyles = (
       fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
       lineHeight: platformTokens.typography.body.lineHeight * 1.5,
-    },
-    actionContainer: {
-      marginTop: platformTokens.spacing.row,
-    },
-    buttonRow: {
-      flexDirection: 'row',
-      gap: platformTokens.spacing.row,
-    },
-    buttonWrapper: {
-      flex: 1,
     },
   });

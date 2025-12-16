@@ -9,6 +9,10 @@
  * - TV remote navigation support
  * - Viewing-distance-optimized typography
  * - Glove-friendly touch targets
+ * 
+ * **Architecture:**
+ * - Uses BaseConfigDialog for consistent Modal structure
+ * - No action button (contains embedded PlatformButton controls)
  */
 
 import React from 'react';
@@ -16,7 +20,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
-import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { 
   PlatformSettingsSection, 
   PlatformSettingsRow 
@@ -87,11 +91,10 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
   });
 
   return (
-    <BaseSettingsModal
+    <BaseConfigDialog
       visible={visible}
       title="Layout Settings"
       onClose={onClose}
-      showFooter={false}
       testID="layout-settings-dialog"
     >
       {/* Layout Mode Section */}
