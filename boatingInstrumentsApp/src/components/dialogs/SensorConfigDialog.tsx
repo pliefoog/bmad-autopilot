@@ -328,12 +328,28 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
     // Convert thresholds back to SI units
     if (requiresMetricSelection && data.selectedMetric) {
+      // Get metric-specific presentation for proper unit conversion
+      const metricInfo = alarmConfig?.metrics?.find(m => m.key === data.selectedMetric);
+      let metricPres = presentation;
+      
+      if (metricInfo?.category) {
+        const categoryMap: Partial<Record<DataCategory, any>> = {
+          voltage: voltagePresentation,
+          temperature: temperaturePresentation,
+          current: currentPresentation,
+          pressure: pressurePresentation,
+          rpm: rpmPresentation,
+          speed: speedPresentation,
+        };
+        metricPres = categoryMap[metricInfo.category] || presentation;
+      }
+      
       updates.metrics = { ...currentThresholds.metrics };
       updates.metrics[data.selectedMetric] = {
         enabled: true,
         direction: getAlarmDirection(selectedSensorType, data.selectedMetric).direction,
-        critical: data.criticalValue !== undefined ? presentation.convertBack(data.criticalValue) : undefined,
-        warning: data.warningValue !== undefined ? presentation.convertBack(data.warningValue) : undefined,
+        critical: data.criticalValue !== undefined && metricPres.isValid ? metricPres.convertBack(data.criticalValue) : undefined,
+        warning: data.warningValue !== undefined && metricPres.isValid ? metricPres.convertBack(data.warningValue) : undefined,
         criticalSoundPattern: data.criticalSoundPattern,
         warningSoundPattern: data.warningSoundPattern,
       };
@@ -349,7 +365,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     // Save to stores
     setConfig(selectedSensorType, selectedInstance, updates);
     updateSensorThresholds(selectedSensorType, selectedInstance, updates);
-  }, [selectedSensorType, selectedInstance, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, sensorProvidedChemistry]);
+  }, [selectedSensorType, selectedInstance, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, sensorProvidedChemistry, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
 
   // Form state management
   const {
