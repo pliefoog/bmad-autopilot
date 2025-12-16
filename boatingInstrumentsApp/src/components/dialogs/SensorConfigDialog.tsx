@@ -374,69 +374,77 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     }
   }, [requiresMetricSelection, alarmConfig, formData.selectedMetric, updateField]);
 
-  // Handle metric switching - load thresholds for selected metric
+  // Track previous metric to detect changes
+  const prevMetricRef = React.useRef<string | undefined>(undefined);
+
+  // Handle metric switching - load thresholds for selected metric (only when metric actually changes)
   useEffect(() => {
-    if (requiresMetricSelection && formData.selectedMetric && currentThresholds.metrics) {
-      const metricConfig = currentThresholds.metrics[formData.selectedMetric];
-      if (metricConfig) {
-        // Load stored thresholds for this metric
-        const metricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
-        let metricPres = presentation;
-        
-        // Get the correct presentation for this metric's category
-        if (metricInfo?.category) {
-          const categoryMap: Partial<Record<DataCategory, any>> = {
-            voltage: voltagePresentation,
-            temperature: temperaturePresentation,
-            current: currentPresentation,
-            pressure: pressurePresentation,
-            rpm: rpmPresentation,
-            speed: speedPresentation,
-          };
-          metricPres = categoryMap[metricInfo.category] || presentation;
-        }
+    // Only load when metric changes, not on every render
+    if (formData.selectedMetric !== prevMetricRef.current) {
+      prevMetricRef.current = formData.selectedMetric;
+      
+      if (requiresMetricSelection && formData.selectedMetric && currentThresholds.metrics) {
+        const metricConfig = currentThresholds.metrics[formData.selectedMetric];
+        if (metricConfig) {
+          // Load stored thresholds for this metric
+          const metricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
+          let metricPres = presentation;
+          
+          // Get the correct presentation for this metric's category
+          if (metricInfo?.category) {
+            const categoryMap: Partial<Record<DataCategory, any>> = {
+              voltage: voltagePresentation,
+              temperature: temperaturePresentation,
+              current: currentPresentation,
+              pressure: pressurePresentation,
+              rpm: rpmPresentation,
+              speed: speedPresentation,
+            };
+            metricPres = categoryMap[metricInfo.category] || presentation;
+          }
 
-        updateFields({
-          criticalValue: metricConfig.critical !== undefined && metricPres.isValid
-            ? metricPres.convert(metricConfig.critical)
-            : undefined,
-          warningValue: metricConfig.warning !== undefined && metricPres.isValid
-            ? metricPres.convert(metricConfig.warning)
-            : undefined,
-          criticalSoundPattern: metricConfig.criticalSoundPattern || 'rapid_pulse',
-          warningSoundPattern: metricConfig.warningSoundPattern || 'warble',
-        });
-      } else if (selectedSensorType && formData.selectedMetric) {
-        // No saved config for this metric - use smart defaults
-        const defaults = getSmartDefaults(selectedSensorType, currentThresholds.context);
-        const metricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
-        let metricPres = presentation;
-        
-        if (metricInfo?.category) {
-          const categoryMap: Partial<Record<DataCategory, any>> = {
-            voltage: voltagePresentation,
-            temperature: temperaturePresentation,
-            current: currentPresentation,
-            pressure: pressurePresentation,
-            rpm: rpmPresentation,
-            speed: speedPresentation,
-          };
-          metricPres = categoryMap[metricInfo.category] || presentation;
-        }
-
-        // Extract metric-specific defaults from multi-metric structure
-        if (defaults?.metrics?.[formData.selectedMetric]) {
-          const metricDefaults = defaults.metrics[formData.selectedMetric];
           updateFields({
-            criticalValue: metricDefaults.critical !== undefined && metricPres.isValid
-              ? metricPres.convert(metricDefaults.critical)
+            criticalValue: metricConfig.critical !== undefined && metricPres.isValid
+              ? metricPres.convert(metricConfig.critical)
               : undefined,
-            warningValue: metricDefaults.warning !== undefined && metricPres.isValid
-              ? metricPres.convert(metricDefaults.warning)
+            warningValue: metricConfig.warning !== undefined && metricPres.isValid
+              ? metricPres.convert(metricConfig.warning)
               : undefined,
-            criticalSoundPattern: 'rapid_pulse',
-            warningSoundPattern: 'warble',
+            criticalSoundPattern: metricConfig.criticalSoundPattern || 'rapid_pulse',
+            warningSoundPattern: metricConfig.warningSoundPattern || 'warble',
           });
+        } else if (selectedSensorType && formData.selectedMetric) {
+          // No saved config for this metric - use smart defaults
+          const defaults = getSmartDefaults(selectedSensorType, currentThresholds.context);
+          const metricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
+          let metricPres = presentation;
+          
+          if (metricInfo?.category) {
+            const categoryMap: Partial<Record<DataCategory, any>> = {
+              voltage: voltagePresentation,
+              temperature: temperaturePresentation,
+              current: currentPresentation,
+              pressure: pressurePresentation,
+              rpm: rpmPresentation,
+              speed: speedPresentation,
+            };
+            metricPres = categoryMap[metricInfo.category] || presentation;
+          }
+
+          // Extract metric-specific defaults from multi-metric structure
+          if (defaults?.metrics?.[formData.selectedMetric]) {
+            const metricDefaults = defaults.metrics[formData.selectedMetric];
+            updateFields({
+              criticalValue: metricDefaults.critical !== undefined && metricPres.isValid
+                ? metricPres.convert(metricDefaults.critical)
+                : undefined,
+              warningValue: metricDefaults.warning !== undefined && metricPres.isValid
+                ? metricPres.convert(metricDefaults.warning)
+                : undefined,
+              criticalSoundPattern: 'rapid_pulse',
+              warningSoundPattern: 'warble',
+            });
+          }
         }
       }
     }
