@@ -69,27 +69,54 @@ import { DataCategory } from '../presentation/categories';
 
 export type FieldType = 'text' | 'picker' | 'toggle' | 'slider' | 'number';
 export type AlarmSupport = 'multi-metric' | 'single-metric' | 'none';
+export type IOState = 'readOnly' | 'readWrite' | 'readOnlyIfValue';
+
+/**
+ * Standard sound patterns for alarms
+ */
+export const ALARM_SOUND_PATTERNS = {
+  critical: 'rapid_pulse',
+  warning: 'warble',
+  info: 'single_beep',
+  none: 'none',
+} as const;
+
+export type AlarmSoundPattern = typeof ALARM_SOUND_PATTERNS[keyof typeof ALARM_SOUND_PATTERNS];
 
 /**
  * Field configuration for sensor-specific inputs
+ * 
+ * **IOState Behavior:**
+ * - `readOnly`: Always load from sensor[instance][hardwareField], disable editing
+ * - `readWrite`: Load from sensor[instance][hardwareField], allow editing  
+ * - `readOnlyIfValue`: If sensor has value → read-only, if no value → editable with defaults
  */
 export interface SensorFieldConfig {
   key: string;                    // FormData key
   label: string;                  // Display label
   type: FieldType;                // Input type
-  required?: boolean;             // Validation
-  readOnly?: boolean;             // Check hardware first (e.g., chemistry from BMS)
+  iostate: IOState;               // Read/write behavior
+  hardwareField?: string;         // Sensor data field name to read from sensor[instance][field]
+  
+  // Type-specific configurations
+  default?: any;                  // Default value for text/number when no sensor value
   options?: Array<{               // For picker type
     label: string;
     value: string;
+    default?: boolean;            // Mark default option
   }>;
-  defaultValue?: any;             // Default when creating new (MUST be real value, not placeholder)
-  placeholder?: string;           // For text inputs only - NOT for setting defaults
-  section?: 'basic' | 'context' | 'alarms';  // UI grouping
-  hardwareField?: string;         // Sensor data field name if read-only from hardware
-  min?: number;                   // For number/slider types - minimum value (in SI units)
-  max?: number;                   // For number/slider types - maximum value (in SI units)
-  step?: number;                  // For slider types - step increment
+  
+  // Number/Slider constraints
+  min?: number;                   // Minimum value (SI units)
+  max?: number;                   // Maximum value (SI units)
+  step?: number;                  // Step increment for slider
+  
+  // Validation rules
+  required?: boolean;             // Field must have value
+  dependsOn?: string;             // Only valid if another field is set
+  
+  // UI metadata
+  helpText?: string;              // User guidance tooltip
 }
 
 /**
@@ -126,6 +153,32 @@ export interface SensorAlarmMetricConfig {
 }
 
 /**
+ * Threshold configuration for a single alarm level
+ */
+export interface ThresholdConfig {
+  critical: number;
+  warning: number;
+  direction: 'above' | 'below';
+  enabled: boolean;
+  criticalSoundPattern: AlarmSoundPattern;
+  warningSoundPattern: AlarmSoundPattern;
+  criticalHysteresis: number;
+  warningHysteresis: number;
+}
+
+/**
+ * Default alarm configuration structure
+ */
+export interface AlarmDefaults {
+  // For context-aware sensors (battery, engine, temperature, tank)
+  contextKey?: string;           // Which field determines context ('batteryChemistry', 'engineType', etc.)
+  contexts?: Record<string, any>; // Context-specific threshold configurations
+  
+  // For simple sensors (depth, wind, speed) - direct threshold config
+  threshold?: ThresholdConfig;
+}
+
+/**
  * Complete sensor configuration definition
  */
 export interface SensorConfigDefinition {
@@ -141,8 +194,8 @@ export interface SensorConfigDefinition {
   alarmMetrics?: SensorAlarmMetricConfig[];  // For multi-metric sensors
   defaultAlarmDirection?: 'above' | 'below'; // For single-metric
   
-  // Smart defaults function (can use context like chemistry, location)
-  getDefaults?: (context?: any) => any;
+  // Default values (PURE DATA - no functions)
+  defaults?: AlarmDefaults;
 }
 
 /**
