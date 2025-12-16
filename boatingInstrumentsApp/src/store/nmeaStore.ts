@@ -22,7 +22,7 @@ import type {
   AutopilotSensorData,
   NavigationSensorData,
 } from '../types/SensorData';
-import { getSmartDefaults } from '../registry/SensorConfigRegistry';
+import { getAlarmDefaults } from '../registry/SensorConfigRegistry';
 import { logger } from '../utils/logger';
 
 // MEMORY LEAK FIX: Throttle alarm evaluation (expensive operation)
@@ -417,8 +417,8 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
           engineType: (sensor as any)?.type,
         };
         
-        logger.sensor(`📋 Getting smart defaults for ${sensorType}[${instance}]:`, { context, location });
-        const defaults = getSmartDefaults(sensorType, context, location);
+        logger.sensor(`📋 Getting alarm defaults for ${sensorType}[${instance}]:`, { context, location });
+        const defaults = getAlarmDefaults(sensorType, context);
         
         if (defaults) {
           // Critical sensors should be auto-enabled, others keep their default enabled state
@@ -640,8 +640,8 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     // Get context from existing thresholds if available
     const context = sensor?.alarmThresholds?.context;
 
-    // Get smart context-aware defaults
-    const defaults = getSmartDefaults(sensorType, context, sensorLocation);
+    // Get context-aware defaults from registry
+    const defaults = getAlarmDefaults(sensorType, context);
 
     if (!defaults) {
       console.log(

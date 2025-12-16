@@ -49,7 +49,7 @@ import { ThresholdEditor } from './inputs/ThresholdEditor';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
 import { SOUND_PATTERNS } from '../../services/alarms/MarineAudioAlertManager';
-import { SENSOR_CONFIG_REGISTRY, getSensorConfig, getSmartDefaults } from '../../registry/SensorConfigRegistry';
+import { SENSOR_CONFIG_REGISTRY, getSensorConfig, getAlarmDefaults, shouldShowField } from '../../registry/SensorConfigRegistry';
 
 /**
  * Sensor Configuration Dialog Props
@@ -516,7 +516,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           });
         } else if (selectedSensorType && formData.selectedMetric) {
           // No saved config for this metric - use smart defaults
-          const defaults = getSmartDefaults(selectedSensorType, currentThresholds.context);
+          const defaults = getAlarmDefaults(selectedSensorType, currentThresholds.context);
 
           // Extract metric-specific defaults from multi-metric structure
           if (defaults?.metrics?.[formData.selectedMetric]) {
@@ -655,7 +655,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       }
 
       // Get defaults from registry
-      const defaults = sensorConfig.getDefaults?.(context) || getSmartDefaults(selectedSensorType, context);
+      const defaults = getAlarmDefaults(selectedSensorType, context);
 
       if (defaults) {
         // Build reset FormData
@@ -819,10 +819,23 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     const sensorConfig = getSensorConfig(selectedSensorType);
     
     return sensorConfig.fields.map((field) => {
-      // Check if field is read-only from hardware
+      // Check field dependencies - hide field if dependency not satisfied
+      if (!shouldShowField(field, formData)) {
+        return null;
+      }
+      
+      // Check iostate and hardware value
       const sensorData = rawSensorData[selectedSensorType]?.[selectedInstance] as any;
-      const hardwareValue = field.hardwareField && sensorData?.[field.hardwareField];
-      const isReadOnly = field.readOnly && hardwareValue;
+      const hardwareValue = field.hardwareField ? sensorData?.[field.hardwareField] : undefined;
+      
+      // Determine if field is read-only based on iostate
+      const isReadOnly = 
+        field.iostate === 'readOnly' || 
+        (field.iostate === 'readOnlyIfValue' && hardwareValue !== undefined);
+      
+      // Use hardware value if available, otherwise use form data or default
+      const currentValue = hardwareValue !== undefined ? hardwareValue : 
+        (formData[field.key as keyof SensorFormData] ?? field.default);
       
       switch (field.type) {
         case 'text':
@@ -831,15 +844,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                value={String(formData[field.key as keyof SensorFormData] || '')}
+                value={String(currentValue || '')}
                 onChangeText={(text) => updateField(field.key as any, text)}
-                placeholder={field.placeholder}
+                placeholder={field.helpText}
                 placeholderTextColor={theme.textSecondary}
                 editable={!isReadOnly}
               />
-              {isReadOnly && (
-                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
-                  (Provided by sensor hardware)
+              {field.helpText && (
+                <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
+                  {field.helpText}
+                </Text>
+              )}
+              {isReadOnly && hardwareValue !== undefined && (
+                <Text style={{ color: theme.primary, fontSize: 11, marginTop: 2, fontWeight: '500' }}>
+                  ✓ Value from sensor hardware
                 </Text>
               )}
             </View>
@@ -858,7 +876,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               </Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                value={String(formData[field.key as keyof SensorFormData] || '')}
+                value={String(currentValue ?? '')}
                 onChangeText={(text) => {
                   let num = parseFloat(text);
                   // Validate against min/max if defined
@@ -868,23 +886,46 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   }
                   updateField(field.key as any, isNaN(num) ? undefined : num);
                 }}
-                placeholder={field.placeholder}
+                placeholder={field.helpText}
                 placeholderTextColor={theme.textSecondary}
                 keyboardType="numeric"
+                editable={!isReadOnly}
               />
+              {field.helpText && (
+                <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
+                  {field.helpText}
+                </Text>
+              )}
+              {isReadOnly && hardwareValue !== undefined && (
+                <Text style={{ color: theme.primary, fontSize: 11, marginTop: 2, fontWeight: '500' }}>
+                  ✓ Value from sensor hardware
+                </Text>
+              )}
             </View>
           );
           
         case 'picker':
-          if (isReadOnly && hardwareValue) {
+          // Find default option if no value is set
+          const defaultOption = field.options?.find(opt => opt.default)?.value;
+          const pickerValue = String(currentValue ?? defaultOption ?? '');
+          
+          if (isReadOnly && hardwareValue !== undefined) {
             return (
               <View key={field.key} style={styles.field}>
                 <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
-                <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.6 }]}>
-                  <Text style={[styles.readonlyText, { color: theme.textSecondary }]}>
-                    {field.options?.find(opt => opt.value === hardwareValue)?.label || hardwareValue} (sensor provided)
+                <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.7 }]}>
+                  <Text style={[styles.readonlyText, { color: theme.text }]}>
+                    {field.options?.find(opt => opt.value === hardwareValue)?.label || hardwareValue}
                   </Text>
                 </View>
+                <Text style={{ color: theme.primary, fontSize: 11, marginTop: 2, fontWeight: '500' }}>
+                  ✓ Value from sensor hardware
+                </Text>
+                {field.helpText && (
+                  <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
+                    {field.helpText}
+                  </Text>
+                )}
               </View>
             );
           }
@@ -893,10 +934,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             <View key={field.key} style={styles.field}>
               <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
               <PlatformPicker
-                value={String(formData[field.key as keyof SensorFormData] || field.defaultValue || '')}
+                value={pickerValue}
                 onValueChange={(value) => updateField(field.key as any, value)}
                 items={field.options || []}
               />
+              {field.helpText && (
+                <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
+                  {field.helpText}
+                </Text>
+              )}
             </View>
           );
           

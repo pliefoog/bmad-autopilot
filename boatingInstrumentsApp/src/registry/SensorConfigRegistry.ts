@@ -1056,6 +1056,62 @@ export function getSensorConfig(sensorType: SensorType): SensorConfigDefinition 
 }
 
 /**
+ * Validate field dependencies for a sensor configuration
+ * 
+ * Checks if all field dependencies are satisfied based on current form values.
+ * Used to determine if dependent fields should be shown/enabled.
+ * 
+ * **Usage:**
+ * ```typescript
+ * const errors = validateFieldDependencies('battery', formData);
+ * if (errors.length > 0) {
+ *   console.log('Validation errors:', errors);
+ * }
+ * ```
+ * 
+ * @param sensorType - Type of sensor
+ * @param formData - Current form values
+ * @returns Array of validation error messages (empty if all valid)
+ */
+export function validateFieldDependencies(
+  sensorType: SensorType,
+  formData: Record<string, any>
+): string[] {
+  const config = SENSOR_CONFIG_REGISTRY[sensorType];
+  const errors: string[] = [];
+  
+  for (const field of config.fields) {
+    if (field.dependsOn) {
+      const dependentValue = formData[field.dependsOn];
+      
+      // Check if dependent field has a value
+      if (dependentValue === undefined || dependentValue === null || dependentValue === '') {
+        errors.push(`${field.label} requires ${field.dependsOn} to be set first`);
+      }
+    }
+  }
+  
+  return errors;
+}
+
+/**
+ * Check if a specific field should be shown based on dependencies
+ * 
+ * @param field - Field configuration
+ * @param formData - Current form values
+ * @returns true if field should be shown, false if dependencies not satisfied
+ */
+export function shouldShowField(
+  field: SensorFieldConfig,
+  formData: Record<string, any>
+): boolean {
+  if (!field.dependsOn) return true;
+  
+  const dependentValue = formData[field.dependsOn];
+  return dependentValue !== undefined && dependentValue !== null && dependentValue !== '';
+}
+
+/**
  * Check if sensor supports alarm configuration
  * 
  * **Usage:**
