@@ -25,8 +25,6 @@ import { useTheme, ThemeColors } from '../../store/themeStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
 import { UniversalIcon } from '../atoms/UniversalIcon';
-import { getPlatformTokens } from '../../theme/settingsTokens';
-import { isTV } from '../../utils/platformDetection';
 
 interface FactoryResetDialogProps {
   visible: boolean;
@@ -40,11 +38,9 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   onCancel,
 }) => {
   const theme = useTheme();
-  const platformTokens = getPlatformTokens();
-  const tvMode = isTV();
   const styles = useMemo(
-    () => createStyles(theme, platformTokens, tvMode),
-    [theme, platformTokens, tvMode]
+    () => createStyles(theme),
+    [theme]
   );
 
   const handleConfirm = async () => {
@@ -100,7 +96,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
         <View style={styles.warningBox}>
           <UniversalIcon 
             name="warning-outline" 
-            size={platformTokens.typography.body.fontSize * 2} 
+            size={32} 
             color={theme.error} 
             style={styles.warningIcon}
           />
@@ -163,60 +159,56 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
 };
 
 /**
- * Create platform-aware styles
+ * Create styles with theme integration
  */
-const createStyles = (
-  theme: ThemeColors,
-  platformTokens: ReturnType<typeof getPlatformTokens>,
-  tvMode: boolean
-) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     warningBox: {
       flexDirection: 'row',
       backgroundColor: theme.background,
       borderRadius: 8,
-      padding: platformTokens.spacing.inset,
+      padding: 16,
       borderWidth: 2,
       borderColor: theme.error,
     },
     warningIcon: {
-      marginRight: platformTokens.spacing.row,
+      marginRight: 12,
       marginTop: 2,
     },
     warningTextContainer: {
       flex: 1,
     },
     warningTitle: {
-      fontSize: platformTokens.typography.body.fontSize * 1.1,
+      fontSize: 18,
       fontWeight: '700',
       color: theme.error,
-      marginBottom: platformTokens.spacing.row * 0.5,
+      marginBottom: 8,
     },
     warningDescription: {
-      fontSize: platformTokens.typography.body.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
       color: theme.text,
-      lineHeight: platformTokens.typography.body.lineHeight * 1.5,
+      lineHeight: 24,
     },
     bulletList: {
-      gap: platformTokens.spacing.row * 0.75,
+      gap: 12,
     },
     bulletItem: {
       flexDirection: 'row',
       alignItems: 'flex-start',
     },
     bullet: {
-      fontSize: platformTokens.typography.body.fontSize,
+      fontSize: 16,
       fontWeight: '700',
       color: theme.text,
-      marginRight: platformTokens.spacing.row * 0.75,
+      marginRight: 12,
       minWidth: 16,
     },
     bulletText: {
       flex: 1,
-      fontSize: platformTokens.typography.body.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
       color: theme.text,
-      lineHeight: platformTokens.typography.body.lineHeight * 1.5,
+      lineHeight: 24,
     },
   });

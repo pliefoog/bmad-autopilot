@@ -19,8 +19,6 @@ import { useAlarmStore } from '../../store/alarmStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
-import { getPlatformTokens } from '../../theme/settingsTokens';
-import { isTV } from '../../utils/platformDetection';
 
 interface AlarmHistoryDialogProps {
   visible: boolean;
@@ -36,11 +34,9 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
-  const platformTokens = getPlatformTokens();
-  const tvMode = isTV();
   const styles = React.useMemo(
-    () => createStyles(theme, platformTokens, tvMode),
-    [theme, platformTokens, tvMode]
+    () => createStyles(theme),
+    [theme]
   );
   const alarmStore = useAlarmStore();
 
@@ -80,7 +76,7 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
         <View style={styles.infoBox}>
           <UniversalIcon 
             name="information-circle-outline" 
-            size={platformTokens.typography.body.fontSize * 1.5} 
+            size={24} 
             color={theme.primary} 
             style={styles.infoIcon}
           />
@@ -100,31 +96,27 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
 };
 
 /**
- * Create platform-aware styles
+ * Create styles with theme integration
  */
-const createStyles = (
-  theme: ThemeColors,
-  platformTokens: ReturnType<typeof getPlatformTokens>,
-  tvMode: boolean
-) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     infoBox: {
       flexDirection: 'row',
       backgroundColor: theme.background,
       borderRadius: 8,
-      padding: platformTokens.spacing.inset,
+      padding: 16,
       borderWidth: 1,
       borderColor: theme.primary,
     },
     infoIcon: {
-      marginRight: platformTokens.spacing.row,
+      marginRight: 12,
       marginTop: 2,
     },
     infoText: {
       flex: 1,
-      fontSize: platformTokens.typography.body.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
       color: theme.text,
-      lineHeight: platformTokens.typography.body.lineHeight * 1.5,
+      lineHeight: 24,
     },
   });

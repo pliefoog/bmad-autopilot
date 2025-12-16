@@ -26,9 +26,6 @@ import {
   PlatformSettingsRow 
 } from '../settings';
 import { PlatformButton } from './inputs/PlatformButton';
-import { getPlatformTokens } from '../../theme/settingsTokens';
-import { isTV } from '../../utils/platformDetection';
-import { useTVFocusManager } from '../../hooks/useTVFocusManager';
 
 interface LayoutSettingsDialogProps {
   visible: boolean;
@@ -40,11 +37,9 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
-  const platformTokens = getPlatformTokens();
-  const tvMode = isTV();
   const styles = React.useMemo(
-    () => createStyles(theme, platformTokens, tvMode),
-    [theme, platformTokens, tvMode]
+    () => createStyles(theme),
+    [theme]
   );
   
   const {
@@ -79,16 +74,9 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
     { label: '1 hour', value: 60 },
   ];
 
-  // TV focus management for timeout options
-  const {
-    focusedIndex,
-    setFocusedIndex,
-  } = useTVFocusManager({
-    itemCount: timeoutOptions.length,
-    initialIndex: timeoutOptions.findIndex(opt => opt.value === selectedTimeout),
-    onSelect: (index) => handleTimeoutChange(timeoutOptions[index].value),
-    enabled: tvMode && enableWidgetAutoRemoval,
-  });
+  const [focusedIndex, setFocusedIndex] = React.useState(
+    timeoutOptions.findIndex(opt => opt.value === selectedTimeout)
+  );
 
   return (
     <BaseConfigDialog
@@ -102,7 +90,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
         <View style={styles.infoBox}>
           <UniversalIcon 
             name="information-circle-outline" 
-            size={platformTokens.typography.body.fontSize * 1.5} 
+            size={24} 
             color={theme.primary} 
             style={styles.infoIcon}
           />
@@ -193,58 +181,54 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
 };
 
 /**
- * Create platform-aware styles
+ * Create styles with theme integration
  */
-const createStyles = (
-  theme: ThemeColors,
-  platformTokens: ReturnType<typeof getPlatformTokens>,
-  tvMode: boolean
-) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     infoBox: {
       flexDirection: 'row',
       backgroundColor: theme.background,
       borderRadius: 8,
-      padding: platformTokens.spacing.row,
-      marginBottom: platformTokens.spacing.row,
+      padding: 16,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: theme.primary,
     },
     infoIcon: {
-      marginRight: platformTokens.spacing.row,
+      marginRight: 12,
       marginTop: 2,
     },
     infoText: {
       flex: 1,
-      fontSize: platformTokens.typography.body.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
       color: theme.text,
-      lineHeight: platformTokens.typography.body.lineHeight,
+      lineHeight: 24,
     },
     resetButtonContainer: {
-      marginTop: platformTokens.spacing.row,
+      marginTop: 16,
     },
     timeoutContainer: {
-      marginTop: platformTokens.spacing.row,
-      paddingTop: platformTokens.spacing.row,
-      paddingHorizontal: platformTokens.spacing.inset,
+      marginTop: 16,
+      paddingTop: 16,
+      paddingHorizontal: 16,
       borderTopWidth: 1,
       borderTopColor: theme.border,
     },
     timeoutLabel: {
-      fontSize: platformTokens.typography.body.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 16,
+      fontFamily: 'sans-serif',
       color: theme.textSecondary,
-      marginBottom: platformTokens.spacing.row,
+      marginBottom: 12,
     },
     timeoutOptions: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: platformTokens.spacing.row,
+      gap: 12,
     },
     timeoutOption: {
-      paddingHorizontal: tvMode ? 24 : 16,
-      paddingVertical: tvMode ? 16 : 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
       borderRadius: 20,
       backgroundColor: theme.background,
       borderWidth: 1,
@@ -259,8 +243,8 @@ const createStyles = (
       borderColor: theme.interactive,
     },
     timeoutOptionText: {
-      fontSize: platformTokens.typography.label.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
+      fontSize: 14,
+      fontFamily: 'sans-serif',
       color: theme.text,
       fontWeight: '500',
     },
@@ -268,6 +252,6 @@ const createStyles = (
       color: '#FFFFFF',
     },
     closeButtonContainer: {
-      marginTop: platformTokens.spacing.section,
+      marginTop: 24,
     },
   });
