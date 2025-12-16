@@ -611,69 +611,83 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     onClose();
   }, [saveCurrentForm, onClose]);
 
-  // Master reset to defaults (resets ALL sensor settings including name, alarms, context)
+  /**
+   * Reset to defaults - loads app defaults into FormData (NOT saved yet)
+   * User can review defaults and edit before saving by switching instance/sensor/closing
+   */
   const handleMasterReset = useCallback(() => {
     if (!selectedSensorType) return;
 
-    const confirmReset = Platform.OS === 'web' 
-      ? confirm(`Reset ALL settings for this sensor to defaults (including name, alarms, and configuration)?`)
-      : false;
-
+    const sensorConfig = getSensorConfig(selectedSensorType);
+    
     const performReset = () => {
+      // Build context from current FormData
       const context: any = {};
       if (selectedSensorType === 'battery') {
-        context.batteryChemistry = sensorProvidedChemistry || 'lead-acid';
+        context.batteryChemistry = sensorProvidedChemistry || formData.batteryChemistry || 'lead-acid';
       } else if (selectedSensorType === 'engine') {
-        context.engineType = 'diesel';
+        context.engineType = formData.engineType || 'diesel';
       }
 
-      const instance = instances.find(i => i.instance === selectedInstance);
-      const defaults = getSmartDefaults(selectedSensorType, context, instance?.location);
+      // Get defaults from registry
+      const defaults = sensorConfig.getDefaults?.(context) || getSmartDefaults(selectedSensorType, context);
 
       if (defaults) {
-        // Reset alarms
-        updateSensorThresholds(selectedSensorType, selectedInstance, {
-          ...defaults,
-          lastModified: Date.now(),
-        });
-
-        // Reset context
-        if (Object.keys(context).length > 0) {
-          setConfig(selectedSensorType, selectedInstance, { context });
-        }
-
-        // Reset form including name
-        const newFormData: Partial<SensorFormData> = {
-          name: '', // Reset name
-          batteryChemistry: context.batteryChemistry || formData.batteryChemistry,
-          engineType: context.engineType || formData.engineType,
-          criticalValue: defaults.critical !== undefined && presentation.isValid
-            ? presentation.convert(defaults.critical)
-            : undefined,
-          warningValue: defaults.warning !== undefined && presentation.isValid
-            ? presentation.convert(defaults.warning)
-            : undefined,
-          criticalSoundPattern: defaults.criticalSoundPattern || 'rapid_pulse',
-          warningSoundPattern: defaults.warningSoundPattern || 'warble',
+        // Build reset FormData
+        const resetData: Partial<SensorFormData> = {
+          name: getSensorDisplayName(selectedSensorType, selectedInstance),
+          enabled: defaults.enabled || false,
         };
 
-        updateFields(newFormData);
+        // Handle single-metric vs multi-metric
+        if (sensorConfig.alarmSupport === 'single-metric') {
+          resetData.criticalValue = defaults.critical !== undefined && presentation.isValid
+            ? presentation.convert(defaults.critical)
+            : undefined;
+          resetData.warningValue = defaults.warning !== undefined && presentation.isValid
+            ? presentation.convert(defaults.warning)
+            : undefined;
+        } else if (sensorConfig.alarmSupport === 'multi-metric' && formData.selectedMetric) {
+          // Reset current metric's thresholds
+          const metricDefaults = defaults.metrics?.[formData.selectedMetric];
+          if (metricDefaults) {
+            resetData.criticalValue = metricDefaults.critical !== undefined && metricPresentation.isValid
+              ? metricPresentation.convert(metricDefaults.critical)
+              : undefined;
+            resetData.warningValue = metricDefaults.warning !== undefined && metricPresentation.isValid
+              ? metricPresentation.convert(metricDefaults.warning)
+              : undefined;
+          }
+        }
+
+        // Reset sound patterns
+        resetData.criticalSoundPattern = defaults.criticalSoundPattern || 'rapid_pulse';
+        resetData.warningSoundPattern = defaults.warningSoundPattern || 'warble';
+
+        // Reset context fields
+        resetData.batteryChemistry = context.batteryChemistry || formData.batteryChemistry;
+        resetData.engineType = context.engineType || formData.engineType;
+
+        // Update FormData with defaults (NOT saved yet - user can edit)
+        updateFields(resetData);
       }
     };
 
     if (Platform.OS === 'web') {
-      if (confirmReset) performReset();
+      if (confirm(`Reset ${sensorConfig.displayName} to application defaults?`)) {
+        performReset();
+      }
     } else {
       Alert.alert(
         'Reset to Defaults?',
-        `Reset ALL settings for this sensor to defaults (including name, alarms, and configuration)?`,
+        `Reset ${sensorConfig.displayName} to application defaults? You can edit before saving.`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Reset', style: 'destructive', onPress: performReset },
         ]
       );
     }
-  }, [selectedSensorType, selectedInstance, instances, formData, sensorProvidedChemistry, presentation, updateSensorThresholds, setConfig, updateFields]);
+  }, [selectedSensorType, selectedInstance, formData, sensorProvidedChemistry, presentation, metricPresentation, updateFields]);
 
   // Test alarm sound
   const handleTestSound = useCallback((soundPattern: string) => {
