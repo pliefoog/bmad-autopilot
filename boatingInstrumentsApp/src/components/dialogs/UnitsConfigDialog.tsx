@@ -5,9 +5,9 @@
  * Refactoring improvements:
  * - Zod schema for preset + 17 category validation
  * - useFormState with debouncing (300ms auto-save)
- * - Collapsible FormSection per category (17 sections)
+ * - Compact mobile-optimized layout (no collapsible sections)
  * - Preset preview with formatted example values
- * - Platform-optimized layouts (3-column desktop, 2-column tablet, 1-column phone)
+ * - Grid layout for unit selection (responsive wrapping)
  * 
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
@@ -30,7 +30,6 @@ import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
-import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
 
 /**
@@ -41,7 +40,7 @@ import { useFormState } from '../../hooks/useFormState';
  * 
  * **Component Behavior:**
  * - 4 presets: Nautical (EU/UK/US) + Custom
- * - 17 unit categories with collapsible sections
+ * - 17 unit categories displayed compactly in scrollable list
  * - Auto-saves unit selection with 300ms debounce
  * - Shows preset preview with example formatted values
  * - Custom mode enables individual unit selection
@@ -372,65 +371,71 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
       testID="units-config-dialog"
     >
         {/* Preset Selector */}
-        <FormSection
-          title="Preset"
-          sectionId="preset"
-          dialogId="units"
-          defaultCollapsed={false}
-        >
-          <Text style={[styles.hint, { color: theme.textSecondary }]}>
-            Choose a standard preset or customize individual units
-          </Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Preset</Text>
+        <Text style={[styles.hint, { color: theme.textSecondary }]}>
+          Choose a standard preset or customize individual units
+        </Text>
 
-          <View style={styles.presetRow}>
-            {PRESETS.map(preset => (
-              <TouchableOpacity
-                key={preset.id}
+        <View style={styles.presetRow}>
+          {PRESETS.map(preset => (
+            <TouchableOpacity
+              key={preset.id}
+              style={[
+                styles.presetChip,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+                formData.preset === preset.id && {
+                  borderColor: theme.interactive,
+                  backgroundColor: `${theme.interactive}15`,
+                },
+              ]}
+              onPress={() => handlePresetSelect(preset.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: formData.preset === preset.id }}
+              accessibilityLabel={`${preset.name}: ${preset.description}`}
+            >
+              <Text
                 style={[
-                  styles.presetChip,
-                  { backgroundColor: theme.surface, borderColor: theme.border },
+                  styles.presetText,
+                  { color: theme.textSecondary },
                   formData.preset === preset.id && {
-                    borderColor: theme.interactive,
-                    backgroundColor: `${theme.interactive}15`,
+                    color: theme.text,
+                    fontWeight: '600',
                   },
                 ]}
-                onPress={() => handlePresetSelect(preset.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: formData.preset === preset.id }}
-                accessibilityLabel={`${preset.name}: ${preset.description}`}
               >
-                <Text
-                  style={[
-                    styles.presetText,
-                    { color: theme.textSecondary },
-                    formData.preset === preset.id && {
-                      color: theme.text,
-                      fontWeight: '600',
-                    },
-                  ]}
-                >
-                  {preset.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Preset Preview */}
-          {currentPreset && currentPreset.examples.length > 0 && (
-            <View style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>
-                Preview:
+                {preset.name}
               </Text>
-              <View style={styles.previewRow}>
-                {currentPreset.examples.map((ex, idx) => (
-                  <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
-                    {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
-                  </Text>
-                ))}
-              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Preset Preview */}
+        {currentPreset && currentPreset.examples.length > 0 && (
+          <View style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>
+              Preview:
+            </Text>
+            <View style={styles.previewRow}>
+              {currentPreset.examples.map((ex, idx) => (
+                <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
+                  {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
+                </Text>
+              ))}
             </View>
-          )}
-        </FormSection>
+          </View>
+        )}
+
+        {/* Section divider */}
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+        {/* Locked mode hint */}
+        {formData.preset !== 'custom' && (
+          <View style={[styles.lockHintBox, { backgroundColor: `${theme.textSecondary}08` }]}>
+            <Text style={[styles.lockHintText, { color: theme.textSecondary }]}>
+              💡 Switch to Custom preset to modify individual units
+            </Text>
+          </View>
+        )}
 
         {/* Individual Category Sections */}
         {CATEGORIES.map(category => {
@@ -439,13 +444,9 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
           const isCustomMode = formData.preset === 'custom';
 
           return (
-            <FormSection
-              key={category.key}
-              title={category.name}
-              sectionId={category.key}
-              dialogId="units"
-              defaultCollapsed={category.defaultCollapsed}
-            >
+            <View key={category.key} style={styles.categorySection}>
+              <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+              
               <View style={styles.unitsGrid}>
                 {presentations.map(pres => (
                   <TouchableOpacity
@@ -480,13 +481,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
                   </TouchableOpacity>
                 ))}
               </View>
-
-              {!isCustomMode && (
-                <Text style={[styles.disabledHint, { color: theme.textSecondary }]}>
-                  Switch to Custom preset to modify
-                </Text>
-              )}
-            </FormSection>
+            </View>
           );
         })}
     </BaseConfigDialog>
@@ -497,11 +492,18 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      marginBottom: 8,
+      marginTop: 4,
+    },
     hint: {
       fontSize: 13,
       fontFamily: 'sans-serif',
       marginBottom: 12,
-      fontStyle: 'italic',
+      lineHeight: 18,
     },
     presetRow: {
       flexDirection: 'row',
@@ -540,6 +542,30 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 13,
       fontFamily: 'sans-serif',
     },
+    divider: {
+      height: 1,
+      marginVertical: 20,
+    },
+    lockHintBox: {
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    lockHintText: {
+      fontSize: 13,
+      fontFamily: 'sans-serif',
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    categorySection: {
+      marginBottom: 20,
+    },
+    categoryTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      marginBottom: 12,
+    },
     unitsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -556,11 +582,5 @@ const createStyles = (theme: ThemeColors) =>
     unitText: {
       fontSize: 14,
       fontFamily: 'sans-serif',
-    },
-    disabledHint: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
-      marginTop: 12,
-      fontStyle: 'italic',
     },
   });

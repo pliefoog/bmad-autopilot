@@ -6,7 +6,7 @@
  * - Protocol toggle (TCP/UDP) - hidden on Web (websocket only)
  * - Unified form state management with useFormState
  * - Zod validation schema with IP regex and port range validation
- * - FormSection components for organized layout
+ * - Compact mobile-optimized layout (no collapsible sections)
  * - Keyboard shortcuts (Cmd+S/Ctrl+S to save, Esc to cancel)
  * - Platform-aware touch targets and layouts
  * 
@@ -31,7 +31,6 @@ import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformTextInput } from './inputs/PlatformTextInput';
 import { PlatformToggle } from './inputs/PlatformToggle';
-import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
 import { getConnectionDefaults } from '../../services/connectionDefaults';
 
@@ -221,67 +220,65 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
       }}
       testID="connection-config-dialog"
     >
-          {/* Connection Details */}
-          <FormSection
-            sectionId="connection-details"
-            dialogId="connection-config"
-            title="NMEA Bridge Details"
-            subtitle="Configure your NMEA data source"
-            defaultCollapsed={false}
-          >
-            {/* IP Address */}
-            <View style={styles.field}>
-              <Text style={[styles.label, { color: theme.text }]}>Host (IP or DNS name)</Text>
-              <PlatformTextInput
-                value={formData.ip}
-                onChangeText={(text) => updateField('ip', text)}
-                placeholder="e.g. 192.168.1.100 or bridge.local"
-                keyboardType="default"
-                error={errors?.ip}
-                testID="connection-ip-input"
-              />
-            </View>
+          {/* Section Header */}
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>NMEA Bridge Details</Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+            Configure your NMEA data source
+          </Text>
 
-            {/* Port */}
-            <View style={styles.field}>
-              <Text style={[styles.label, { color: theme.text }]}>Port</Text>
-              <PlatformTextInput
-                value={formData.port.toString()}
-                onChangeText={(text) => {
-                  const num = parseInt(text, 10);
-                  if (!isNaN(num)) {
-                    updateField('port', num);
-                  }
-                }}
-                placeholder="8080"
-                keyboardType="numeric"
-                error={errors?.port}
-                testID="connection-port-input"
-              />
-            </View>
-          </FormSection>
+          {/* IP Address */}
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: theme.text }]}>Host (IP or DNS name)</Text>
+            <PlatformTextInput
+              value={formData.ip}
+              onChangeText={(text) => updateField('ip', text)}
+              placeholder="e.g. 192.168.1.100 or bridge.local"
+              keyboardType="default"
+              error={errors?.ip}
+              testID="connection-ip-input"
+            />
+          </View>
+
+          {/* Port */}
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: theme.text }]}>Port</Text>
+            <PlatformTextInput
+              value={formData.port.toString()}
+              onChangeText={(text) => {
+                const num = parseInt(text, 10);
+                if (!isNaN(num)) {
+                  updateField('port', num);
+                }
+              }}
+              placeholder="8080"
+              keyboardType="numeric"
+              error={errors?.port}
+              testID="connection-port-input"
+            />
+          </View>
 
           {/* Protocol Selection (hidden on web) */}
           {!isWeb && (
-            <FormSection
-              sectionId="protocol"
-              dialogId="connection-config"
-              title="Protocol"
-              subtitle="Select TCP or UDP"
-              defaultCollapsed={false}
-            >
-              <PlatformToggle
-                label={formData.useTcp ? "TCP" : "UDP"}
-                value={formData.useTcp}
-                onValueChange={(value) => updateField('useTcp', value)}
-                testID="connection-protocol-toggle"
-              />
-              <Text style={[styles.hint, { color: theme.textSecondary }]}>
-                {formData.useTcp
-                  ? 'TCP provides reliable, ordered delivery of data'
-                  : 'UDP provides faster, connectionless delivery'}
+            <>
+              <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 24 }]}>Protocol</Text>
+              <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+                Select TCP or UDP
               </Text>
-            </FormSection>
+              
+              <View style={styles.field}>
+                <PlatformToggle
+                  label={formData.useTcp ? "TCP" : "UDP"}
+                  value={formData.useTcp}
+                  onValueChange={(value) => updateField('useTcp', value)}
+                  testID="connection-protocol-toggle"
+                />
+                <Text style={[styles.hint, { color: theme.textSecondary }]}>
+                  {formData.useTcp
+                    ? 'TCP provides reliable, ordered delivery of data'
+                    : 'UDP provides faster, connectionless delivery'}
+                </Text>
+              </View>
+            </>
           )}
 
           {/* Web Protocol Notice */}
@@ -323,6 +320,19 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      marginBottom: 6,
+      marginTop: 8,
+    },
+    sectionSubtitle: {
+      fontSize: 14,
+      fontFamily: 'sans-serif',
+      marginBottom: 16,
+      lineHeight: 20,
+    },
     field: {
       marginBottom: 16,
     },

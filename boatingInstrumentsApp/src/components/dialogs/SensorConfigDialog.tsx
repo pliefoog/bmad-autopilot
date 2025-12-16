@@ -10,7 +10,7 @@
  * - Real-time configuration updates to NMEA store
  * - Unified form state management with useFormState
  * - Reusable ThresholdEditor components
- * - Collapsible FormSection components
+ * - Collapsible FormSection ONLY for conditional alarm configuration sections
  * 
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
@@ -570,12 +570,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           {availableSensorTypes.length > 0 && (
             <>
               {/* Sensor Type Picker */}
-              <FormSection
-                sectionId="sensor-selection"
-                dialogId="sensor-config"
-                title="Sensor Selection"
-                defaultCollapsed={false}
-              >
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Sensor Selection</Text>
+              <View style={styles.field}>
                 <PlatformPicker
                   label="Sensor Type"
                   value={selectedSensorType || ''}
@@ -589,7 +585,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   ]}
                   placeholder="Select a sensor..."
                 />
-              </FormSection>
+              </View>
 
               {/* Instance tabs */}
               {renderInstanceTabs()}
@@ -598,64 +594,59 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               {selectedSensorType && instances.length > 0 && (
                 <>
                   {/* Basic Information */}
-                  <FormSection
-                    sectionId="basic-info"
-                    dialogId="sensor-config"
-                    title="Basic Information"
-                    defaultCollapsed={false}
-                  >
+                  <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Basic Information</Text>
+                  
+                  <View style={styles.field}>
+                    <Text style={[styles.label, { color: theme.text }]}>Name</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      value={formData.name}
+                      onChangeText={(text: string) => updateField('name', text)}
+                      onBlur={saveNow}
+                      placeholder="e.g., House Battery"
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                  </View>
+
+                  {/* Battery Chemistry */}
+                  {selectedSensorType === 'battery' && (
                     <View style={styles.field}>
-                      <Text style={[styles.label, { color: theme.text }]}>Name</Text>
-                      <TextInput
-                        style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                        value={formData.name}
-                        onChangeText={(text: string) => updateField('name', text)}
-                        onBlur={saveNow}
-                        placeholder="e.g., House Battery"
-                        placeholderTextColor={theme.textSecondary}
-                      />
-                    </View>
-
-                    {/* Battery Chemistry */}
-                    {selectedSensorType === 'battery' && (
-                      <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.text }]}>Chemistry</Text>
-                        {sensorProvidedChemistry ? (
-                          <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.6 }]}>
-                            <Text style={[styles.readonlyText, { color: theme.textSecondary }]}>
-                              {sensorProvidedChemistry} (sensor provided)
-                            </Text>
-                          </View>
-                        ) : (
-                          <PlatformPicker
-                            value={formData.batteryChemistry || 'lead-acid'}
-                            onValueChange={(value) => updateField('batteryChemistry', value as any)}
-                            items={[
-                              { label: 'Lead Acid', value: 'lead-acid' },
-                              { label: 'AGM', value: 'agm' },
-                              { label: 'LiFePO4', value: 'lifepo4' },
-                            ]}
-                          />
-                        )}
-                      </View>
-                    )}
-
-                    {/* Engine Type */}
-                    {selectedSensorType === 'engine' && (
-                      <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.text }]}>Engine Type</Text>
+                      <Text style={[styles.label, { color: theme.text }]}>Chemistry</Text>
+                      {sensorProvidedChemistry ? (
+                        <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.6 }]}>
+                          <Text style={[styles.readonlyText, { color: theme.textSecondary }]}>
+                            {sensorProvidedChemistry} (sensor provided)
+                          </Text>
+                        </View>
+                      ) : (
                         <PlatformPicker
-                          value={formData.engineType || 'diesel'}
-                          onValueChange={(value) => updateField('engineType', value as any)}
+                          value={formData.batteryChemistry || 'lead-acid'}
+                          onValueChange={(value) => updateField('batteryChemistry', value as any)}
                           items={[
-                            { label: 'Diesel', value: 'diesel' },
-                            { label: 'Gasoline', value: 'gasoline' },
-                            { label: 'Outboard', value: 'outboard' },
+                            { label: 'Lead Acid', value: 'lead-acid' },
+                            { label: 'AGM', value: 'agm' },
+                            { label: 'LiFePO4', value: 'lifepo4' },
                           ]}
                         />
-                      </View>
-                    )}
-                  </FormSection>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Engine Type */}
+                  {selectedSensorType === 'engine' && (
+                    <View style={styles.field}>
+                      <Text style={[styles.label, { color: theme.text }]}>Engine Type</Text>
+                      <PlatformPicker
+                        value={formData.engineType || 'diesel'}
+                        onValueChange={(value) => updateField('engineType', value as any)}
+                        items={[
+                          { label: 'Diesel', value: 'diesel' },
+                          { label: 'Gasoline', value: 'gasoline' },
+                          { label: 'Outboard', value: 'outboard' },
+                        ]}
+                      />
+                    </View>
+                  )}
 
                   {/* No alarms message */}
                   {!supportsAlarms && (
@@ -828,6 +819,12 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 15,
       fontWeight: '500',
       fontFamily: 'sans-serif',
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      marginBottom: 12,
     },
     field: {
       marginBottom: 16,
