@@ -25,7 +25,6 @@ import { useTheme, ThemeColors } from '../../store/themeStore';
 import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
-import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseSettingsModal } from './base/BaseSettingsModal';
 import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';

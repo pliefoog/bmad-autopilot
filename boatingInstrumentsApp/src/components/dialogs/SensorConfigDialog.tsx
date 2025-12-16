@@ -185,6 +185,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   // Get presentation for selected sensor
   const category = selectedSensorType ? sensorToCategory[selectedSensorType] : null;
   const rawPresentation = useDataPresentation(category || 'depth');
+  
+  // Pre-call all possible metric presentation hooks (React hooks must be called unconditionally)
+  const voltagePresentation = useDataPresentation('voltage');
+  const temperaturePresentation = useDataPresentation('temperature');
+  const currentPresentation = useDataPresentation('current');
+  const pressurePresentation = useDataPresentation('pressure');
+  const rpmPresentation = useDataPresentation('rpm');
+  const speedPresentation = useDataPresentation('speed');
+  
   const presentation = useMemo(
     () => category ? rawPresentation : {
       isValid: false,
@@ -295,7 +304,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     validationSchema: sensorFormSchema,
   });
 
-  // Get metric-specific presentation
+  // Get metric-specific presentation (use pre-called hooks to avoid conditional hook calls)
   const metricPresentation = useMemo(() => {
     if (!requiresMetricSelection || !formData.selectedMetric || !alarmConfig?.metrics) {
       return presentation;
@@ -303,12 +312,32 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     
     const metricInfo = alarmConfig.metrics.find(m => m.key === formData.selectedMetric);
     if (metricInfo?.category) {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      return useDataPresentation(metricInfo.category);
+      // Map category to pre-called presentation hook (avoids conditional hook calls)
+      const categoryPresentationMap: Record<DataCategory, any> = {
+        voltage: voltagePresentation,
+        temperature: temperaturePresentation,
+        current: currentPresentation,
+        pressure: pressurePresentation,
+        rpm: rpmPresentation,
+        speed: speedPresentation,
+        // Fallback to presentation for unmapped categories
+        depth: presentation,
+        wind: presentation,
+        angle: presentation,
+        coordinates: presentation,
+        volume: presentation,
+        time: presentation,
+        distance: presentation,
+        capacity: presentation,
+        flowRate: presentation,
+        frequency: presentation,
+        power: presentation,
+      };
+      return categoryPresentationMap[metricInfo.category] || presentation;
     }
     
     return presentation;
-  }, [requiresMetricSelection, formData.selectedMetric, alarmConfig, presentation]);
+  }, [requiresMetricSelection, formData.selectedMetric, alarmConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
 
   // Handle instance switch
   const handleInstanceSwitch = useCallback((newInstance: number) => {

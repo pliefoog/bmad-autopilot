@@ -11,7 +11,7 @@
  * - Platform-aware touch targets and layouts
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
