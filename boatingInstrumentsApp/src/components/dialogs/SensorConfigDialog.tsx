@@ -44,9 +44,55 @@ import { getSensorDisplayName } from '../../utils/sensorDisplayName';
 import { getSmartDefaults } from '../../registry/AlarmThresholdDefaults';
 import { SOUND_PATTERNS } from '../../services/alarms/MarineAudioAlertManager';
 
+/**
+ * Sensor Configuration Dialog Props
+ * 
+ * @property visible - Controls modal visibility
+ * @property onClose - Callback when dialog closes (via X button or backdrop)
+ * @property sensorType - Optional sensor type filter (shows only that sensor)
+ * 
+ * **Component Behavior:**
+ * - Opens modal with platform-specific presentation (pageSheet on iOS)
+ * - Shows tabs for multi-instance sensors (e.g., multiple batteries)
+ * - Supports multi-metric alarms (battery: voltage/SOC/temp/current)
+ * - Auto-saves on field change with 300ms debounce
+ * - Converts display units ↔ SI units using presentation system
+ * - Persists to both NMEA store and sensor config store
+ * 
+ * **Limitations:**
+ * - Requires at least one sensor instance to be available
+ * - Chemistry/engine type dropdowns show only if not provided by hardware
+ * - Threshold validation enforces warning < critical (or vice versa based on direction)
+ * - Cannot configure sensors with 'no-alarms' type
+ */
+export interface SensorConfigDialogProps {
+  visible: boolean;
+  onClose: () => void;
+  sensorType?: SensorType;
+}
+
 // Sensor alarm capability classification
 type SensorAlarmType = 'multi-metric' | 'single-metric' | 'no-alarms';
 
+/**
+ * Sensor Alarm Configuration Map
+ * 
+ * Defines alarm capabilities for each sensor type:
+ * - **multi-metric**: Sensors with multiple alarm points (e.g., battery: voltage, current, SOC, temp)
+ * - **single-metric**: Sensors with one alarm point (e.g., depth, wind, speed)
+ * - **no-alarms**: Sensors without alarm support (e.g., compass, autopilot)
+ * 
+ * For multi-metric sensors, each metric includes:
+ * - key: Internal identifier (camelCase)
+ * - label: User-facing display name
+ * - unit: SI unit for the metric
+ * - category: DataCategory for presentation system (determines formatting/conversion)
+ * 
+ * **Usage Notes:**
+ * - Metrics array defines the order of display in the dialog
+ * - Each metric can have independent warning/critical thresholds
+ * - Alarm direction (above/below) determined by sensorAlarmUtils
+ */
 const SENSOR_ALARM_CONFIG: Record<SensorType, {
   type: SensorAlarmType;
   metrics?: Array<{ key: string; label: string; unit: string; category?: DataCategory }>;
@@ -98,12 +144,6 @@ const sensorToCategory: Record<SensorType, DataCategory | null> = {
   autopilot: null,
   navigation: null,
 };
-
-interface SensorConfigDialogProps {
-  visible: boolean;
-  onClose: () => void;
-  sensorType?: SensorType;
-}
 
 interface SensorInstance {
   instance: number;
@@ -253,7 +293,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     };
   }, [selectedSensorType, selectedInstance, currentThresholds, presentation, requiresMetricSelection, alarmConfig, rawSensorData]);
 
-  // Save handler
+  /**
+   * Save handler - persists form data to stores
+   * 
+   * Converts display units → SI units, updates sensor name/enabled/sound patterns,
+   * saves battery chemistry or engine type context, and writes to both NMEA store
+   * and sensor config store.
+   */
   const handleSave = useCallback(async (data: SensorFormData) => {
     if (!selectedSensorType) return;
 
@@ -310,7 +356,17 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     validationSchema: sensorFormSchema,
   });
 
-  // Get metric-specific presentation (use pre-called hooks to avoid conditional hook calls)
+  /**
+   * Get metric-specific presentation for multi-metric sensors
+   * 
+   * Maps the currently selected metric's category to the appropriate pre-called presentation hook.
+   * Returns default presentation for single-metric sensors or when no metric is selected.
+   * 
+   * **Why this approach:**
+   * - Cannot call useDataPresentation() conditionally (violates React Rules of Hooks)
+   * - Pre-call all needed presentations at top level, then select in this memo
+   * - Category map only includes categories actually used by SENSOR_ALARM_CONFIG
+   */
   const metricPresentation = useMemo(() => {
     if (!requiresMetricSelection || !formData.selectedMetric || !alarmConfig?.metrics) {
       return presentation;
@@ -334,13 +390,19 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     return presentation;
   }, [requiresMetricSelection, formData.selectedMetric, alarmConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
 
-  // Handle instance switch
+  /**
+   * Handle instance switch (e.g., Battery 1 → Battery 2)
+   * Saves current form before switching to avoid data loss.
+   */
   const handleInstanceSwitch = useCallback((newInstance: number) => {
     saveNow();
     setSelectedInstance(newInstance);
   }, [saveNow]);
 
-  // Handle sensor type switch
+  /**
+   * Handle sensor type switch (e.g., Battery → Engine)
+   * Saves current form, switches sensor type, and resets to first available instance.
+   */
   const handleSensorTypeSwitch = useCallback((value: string) => {
     if (value && value !== '') {
       saveNow();
@@ -350,7 +412,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     }
   }, [saveNow, getSensorInstances]);
 
-  // Handle enable with confirmation for critical sensors
+  /**
+   * Handle alarm enable/disable with safety confirmation
+   * Shows confirmation dialog for critical sensors (depth, battery, engine).
+   */
   const handleEnabledChange = useCallback((value: boolean) => {
     const isCritical = selectedSensorType && ['depth', 'battery', 'engine'].includes(selectedSensorType);
     

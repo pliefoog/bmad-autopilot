@@ -89,6 +89,23 @@ export interface UseFormStateReturn<T> {
  * useFormState Hook
  * 
  * Manages form state with debounced auto-save, validation, and dirty tracking.
+ * 
+ * @template T - Form data type (must be a plain object with serializable values)
+ * @param initialData - Initial form values (becomes baseline for dirty tracking)
+ * @param options - Configuration options for save, validation, and callbacks
+ * @returns Form state manager with update functions and validation
+ * 
+ * **Limitations:**
+ * - Only works with plain objects (no circular references, functions, or complex classes)
+ * - Debouncing uses setTimeout - rapid saves may be batched
+ * - isDirty uses JSON.stringify for comparison (objects must be serializable)
+ * - Validation runs synchronously - async validation not supported
+ * 
+ * **Usage Notes:**
+ * - updateField() triggers debounced save (default 300ms)
+ * - saveNow() bypasses debounce for immediate persistence (use on blur/close)
+ * - Validation errors are cleared automatically when user edits field
+ * - All save operations await onSave completion before updating isSaving
  */
 export function useFormState<T extends Record<string, any>>(
   initialData: T,

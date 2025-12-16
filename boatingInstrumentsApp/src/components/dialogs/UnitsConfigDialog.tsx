@@ -31,11 +31,35 @@ import { useFormState } from '../../hooks/useFormState';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 import { isTV } from '../../utils/platformDetection';
 
+/**
+ * Units Configuration Dialog Props
+ * 
+ * @property visible - Controls modal visibility
+ * @property onClose - Callback when dialog closes (auto-saves before closing)
+ * 
+ * **Component Behavior:**
+ * - 4 presets: Nautical (EU/UK/US) + Custom
+ * - 17 unit categories with collapsible sections
+ * - Auto-saves unit selection with 300ms debounce
+ * - Shows preset preview with example formatted values
+ * - Custom mode enables individual unit selection
+ * - Preset mode locks unit selection (switch to Custom to modify)
+ * 
+ * **Limitations:**
+ * - Presets are static (not user-definable)
+ * - Example values in preview are hardcoded samples
+ * - No search/filter for unit categories
+ * - Category order is fixed (not customizable)
+ */
 interface UnitsConfigDialogProps {
   visible: boolean;
   onClose: () => void;
 }
 
+/**
+ * Category Configuration
+ * Defines display properties for each unit category
+ */
 interface CategoryConfig {
   key: DataCategory;
   name: string;
@@ -45,6 +69,12 @@ interface CategoryConfig {
 
 // === PRESET DEFINITIONS ===
 
+/**
+ * Presentation Preset Structure
+ * 
+ * Defines a complete set of unit preferences for a region/standard.
+ * Examples array provides sample formatted values for preview display.
+ */
 interface PresentationPreset {
   id: string;
   name: string;
@@ -284,6 +314,10 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
   // === PRESET HANDLING ===
 
+  /**
+   * Handle preset selection
+   * Applies preset unit configuration to all 17 categories, or switches to Custom mode.
+   */
   const handlePresetSelect = useCallback((presetId: string) => {
     if (presetId === 'custom') {
       updateField('preset', presetId);
@@ -303,6 +337,10 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
   // === UNIT SELECTION ===
 
+  /**
+   * Handle individual unit selection
+   * Automatically switches to Custom preset when user modifies any category.
+   */
   const handleUnitSelect = useCallback((category: DataCategory, presentationId: string) => {
     updateFields({
       preset: 'custom',
@@ -312,6 +350,10 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
   // === CLOSE HANDLER ===
 
+  /**
+   * Handle dialog close
+   * Saves immediately if form is dirty (bypasses debounce).
+   */
   const handleClose = useCallback(() => {
     if (isDirty) {
       saveNow(); // Immediate save on close

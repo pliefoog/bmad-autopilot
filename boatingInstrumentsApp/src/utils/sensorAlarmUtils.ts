@@ -19,10 +19,23 @@ export interface AlarmDirectionResult {
  * Get alarm direction for a sensor type and optional metric
  * 
  * Determines whether the sensor alarms when values go ABOVE or BELOW thresholds.
+ * Based on marine safety conventions (e.g., depth alarms when too shallow, RPM when too high).
  * 
  * @param sensorType - Type of sensor (battery, depth, engine, etc.)
  * @param metric - Optional metric name for multi-metric sensors (e.g., 'voltage', 'rpm')
- * @returns Alarm direction and explanation
+ * @returns Alarm direction and human-readable explanation
+ * 
+ * **Limitations:**
+ * - Returns sensible defaults for unknown sensor types
+ * - Metric names are case-sensitive (use camelCase)
+ * - Does not validate if sensor type supports the specified metric
+ * - Reason string is English-only (not i18n)
+ * 
+ * **Usage Notes:**
+ * - Multi-metric sensors (battery, engine, gps) require metric parameter
+ * - Single-metric sensors (depth, wind, speed) ignore metric parameter
+ * - Use returned 'direction' for ThresholdEditor component
+ * - Use returned 'reason' for UI hints/tooltips
  * 
  * @example
  * ```typescript

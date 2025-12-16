@@ -31,6 +31,30 @@ import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
 import { getConnectionDefaults } from '../../services/connectionDefaults';
 
+/**
+ * Connection Configuration Dialog Props
+ * 
+ * @property visible - Controls modal visibility
+ * @property onClose - Callback when dialog closes
+ * @property onConnect - Called when user clicks Connect with validated config
+ * @property onDisconnect - Optional callback for Disconnect button
+ * @property currentConfig - Current connection settings (pre-fills form)
+ * @property shouldEnableConnectButton - Optional validation override for Connect button
+ * 
+ * **Component Behavior:**
+ * - IP validation: IPv4 format (192.168.1.100) or DNS names (bridge.local)
+ * - Port validation: 1-65535 range, integer only
+ * - Protocol toggle hidden on Web platform (WebSocket only)
+ * - Auto-saves form changes with 300ms debounce
+ * - Shows connection status indicator when connected
+ * - Keyboard shortcuts: Cmd/Ctrl+S to save, Esc to close
+ * 
+ * **Limitations:**
+ * - IPv6 addresses not supported
+ * - No DNS resolution validation (accepts any hostname format)
+ * - Protocol switch only visible on native platforms
+ * - No ping/connectivity test before connect
+ */
 interface ConnectionConfigDialogProps {
   visible: boolean;
   onClose: () => void;
