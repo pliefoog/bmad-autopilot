@@ -722,6 +722,90 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     };
   }, [requiresMetricSelection, formData.selectedMetric, alarmConfig, selectedSensorType, presentation]);
 
+  /**
+   * Render sensor-specific configuration fields dynamically from registry
+   */
+  const renderConfigFields = useCallback(() => {
+    if (!selectedSensorType) return null;
+    
+    const sensorConfig = getSensorConfig(selectedSensorType);
+    
+    return sensorConfig.fields.map((field) => {
+      // Check if field is read-only from hardware
+      const sensorData = rawSensorData[selectedSensorType]?.[selectedInstance] as any;
+      const hardwareValue = field.hardwareField && sensorData?.[field.hardwareField];
+      const isReadOnly = field.readOnly && hardwareValue;
+      
+      switch (field.type) {
+        case 'text':
+          return (
+            <View key={field.key} style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                value={String(formData[field.key as keyof SensorFormData] || '')}
+                onChangeText={(text) => updateField(field.key as any, text)}
+                placeholder={field.placeholder}
+                placeholderTextColor={theme.textSecondary}
+                editable={!isReadOnly}
+              />
+              {isReadOnly && (
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
+                  (Provided by sensor hardware)
+                </Text>
+              )}
+            </View>
+          );
+          
+        case 'number':
+          return (
+            <View key={field.key} style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                value={String(formData[field.key as keyof SensorFormData] || '')}
+                onChangeText={(text) => {
+                  const num = parseFloat(text);
+                  updateField(field.key as any, isNaN(num) ? undefined : num);
+                }}
+                placeholder={field.placeholder}
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="numeric"
+              />
+            </View>
+          );
+          
+        case 'picker':
+          if (isReadOnly && hardwareValue) {
+            return (
+              <View key={field.key} style={styles.field}>
+                <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+                <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.6 }]}>
+                  <Text style={[styles.readonlyText, { color: theme.textSecondary }]}>
+                    {field.options?.find(opt => opt.value === hardwareValue)?.label || hardwareValue} (sensor provided)
+                  </Text>
+                </View>
+              </View>
+            );
+          }
+          
+          return (
+            <View key={field.key} style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+              <PlatformPicker
+                value={String(formData[field.key as keyof SensorFormData] || field.defaultValue || '')}
+                onValueChange={(value) => updateField(field.key as any, value)}
+                items={field.options || []}
+              />
+            </View>
+          );
+          
+        default:
+          return null;
+      }
+    });
+  }, [selectedSensorType, selectedInstance, formData, rawSensorData, theme, updateField]);
+
   // Render instance tabs
   const renderInstanceTabs = () => {
     if (instances.length <= 1) return null;
@@ -805,57 +889,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               {/* Configuration form */}
               {selectedSensorType && instances.length > 0 && (
                 <>
-                    <View style={[styles.field, { marginTop: 16 }]}>
-                    <Text style={[styles.label, { color: theme.text }]}>Name</Text>
-                    <TextInput
-                      style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                      value={formData.name}
-                      onChangeText={(text: string) => updateField('name', text)}
-                      placeholder="e.g., House Battery"
-                      placeholderTextColor={theme.textSecondary}
-                      key={`${selectedSensorType}-${selectedInstance}`}
-                    />
-                    </View>
-
-                  {/* Battery Chemistry */}
-                  {selectedSensorType === 'battery' && (
-                    <View style={styles.field}>
-                      <Text style={[styles.label, { color: theme.text }]}>Chemistry</Text>
-                      {sensorProvidedChemistry ? (
-                        <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.6 }]}>
-                          <Text style={[styles.readonlyText, { color: theme.textSecondary }]}>
-                            {sensorProvidedChemistry} (sensor provided)
-                          </Text>
-                        </View>
-                      ) : (
-                        <PlatformPicker
-                          value={formData.batteryChemistry || 'lead-acid'}
-                          onValueChange={(value) => updateField('batteryChemistry', value as any)}
-                          items={[
-                            { label: 'Lead Acid', value: 'lead-acid' },
-                            { label: 'AGM', value: 'agm' },
-                            { label: 'LiFePO4', value: 'lifepo4' },
-                          ]}
-                        />
-                      )}
-                    </View>
-                  )}
-
-                  {/* Engine Type */}
-                  {selectedSensorType === 'engine' && (
-                    <View style={styles.field}>
-                      <Text style={[styles.label, { color: theme.text }]}>Engine Type</Text>
-                      <PlatformPicker
-                        value={formData.engineType || 'diesel'}
-                        onValueChange={(value) => updateField('engineType', value as any)}
-                        items={[
-                          { label: 'Diesel', value: 'diesel' },
-                          { label: 'Gasoline', value: 'gasoline' },
-                          { label: 'Outboard', value: 'outboard' },
-                        ]}
-                      />
-                    </View>
-                  )}
+                  {/* Dynamic fields from registry */}
+                  <View style={{ marginTop: 16 }}>
+                    {renderConfigFields()}
+                  </View>
 
                   {/* No alarms message */}
                   {!supportsAlarms && (
