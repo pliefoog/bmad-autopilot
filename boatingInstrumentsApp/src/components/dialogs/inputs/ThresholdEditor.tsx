@@ -105,8 +105,8 @@ export const ThresholdEditor: React.FC<ThresholdEditorProps> = React.memo(({
   // Long-press state
   const [pressMultiplier, setPressMultiplier] = useState(1);
   const [pressCount, setPressCount] = useState(0);
-  const longPressTimerRef = useRef<NodeJS.Timeout>();
-  const longPressIntervalRef = useRef<NodeJS.Timeout>();
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Validation animation
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -212,11 +212,11 @@ export const ThresholdEditor: React.FC<ThresholdEditorProps> = React.memo(({
   const endLongPress = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = undefined;
+      longPressTimerRef.current = null;
     }
     if (longPressIntervalRef.current) {
       clearInterval(longPressIntervalRef.current);
-      longPressIntervalRef.current = undefined;
+      longPressIntervalRef.current = null;
     }
     setPressMultiplier(1);
     setPressCount(0);

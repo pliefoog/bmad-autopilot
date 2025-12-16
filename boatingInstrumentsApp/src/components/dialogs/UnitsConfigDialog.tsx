@@ -297,7 +297,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
     // Apply preset to form (triggers debounced save)
     const updates: Partial<UnitsFormData> = { preset: presetId as any };
     Object.entries(preset.presentations).forEach(([cat, presId]) => {
-      updates[cat as keyof UnitsFormData] = presId;
+      updates[cat as keyof UnitsFormData] = presId as any;
     });
     updateFields(updates);
   }, [updateField, updateFields]);
@@ -338,7 +338,6 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
         {/* Preset Selector */}
         <FormSection
           title="Preset"
-          iconName="globe-outline"
           sectionId="preset"
           dialogId="units"
           defaultCollapsed={false}
@@ -407,7 +406,6 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
             <FormSection
               key={category.key}
               title={category.name}
-              iconName={category.iconName}
               sectionId={category.key}
               dialogId="units"
               defaultCollapsed={category.defaultCollapsed}

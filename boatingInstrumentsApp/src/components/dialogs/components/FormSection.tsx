@@ -18,6 +18,7 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
@@ -140,7 +141,7 @@ export const FormSection: React.FC<FormSectionProps> = React.memo(({
     if (errors.length === 0) return null;
     
     return (
-      <View style={[styles.errorSummary, { backgroundColor: theme.errorBackground, borderColor: theme.error }]}>
+      <View style={[styles.errorSummary, { backgroundColor: `${theme.error}15`, borderColor: theme.error }]}>
         <UniversalIcon name="alert-circle" size={16} color={theme.error} />
         <View style={styles.errorTextContainer}>
           {errors.map((error, index) => (
@@ -232,7 +233,8 @@ const getColumnCount = (columns: number): number => {
     return columns;
   } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
     // Mobile: Always 1 column on phones, requested columns on tablets
-    const isTablet = Platform.isPad || Platform.isTV;
+    const { width } = Dimensions.get('window');
+    const isTablet = width >= 768 || Platform.isTV;
     return isTablet ? Math.min(columns, 2) : 1;
   } else {
     // TV: 2 columns max

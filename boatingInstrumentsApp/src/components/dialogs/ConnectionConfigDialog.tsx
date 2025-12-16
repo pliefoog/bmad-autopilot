@@ -214,7 +214,6 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
               <PlatformTextInput
                 value={formData.ip}
                 onChangeText={(text) => updateField('ip', text)}
-                onBlur={saveNow}
                 placeholder="e.g. 192.168.1.100 or bridge.local"
                 keyboardType="default"
                 error={errors?.ip}
@@ -233,7 +232,6 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
                     updateField('port', num);
                   }
                 }}
-                onBlur={saveNow}
                 placeholder="8080"
                 keyboardType="numeric"
                 error={errors?.port}
@@ -276,7 +274,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
 
           {/* Connection Status */}
           {isConnected && (
-            <View style={[styles.statusBox, { backgroundColor: theme.successBackground, borderColor: theme.success }]}>
+            <View style={[styles.statusBox, { backgroundColor: `${theme.success}15`, borderColor: theme.success }]}>
               <UniversalIcon name="checkmark-circle" size={20} color={theme.success} />
               <Text style={[styles.statusText, { color: theme.success }]}>Connected</Text>
             </View>

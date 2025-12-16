@@ -116,7 +116,7 @@ export function useFormState<T extends Record<string, any>>(
   const initialDataRef = useRef<T>(initialData);
   
   // Debounce timer ref
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Check if form is dirty (has unsaved changes)
   const isDirty = JSON.stringify(formData) !== JSON.stringify(initialDataRef.current);
@@ -134,7 +134,7 @@ export function useFormState<T extends Record<string, any>>(
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Partial<Record<keyof T, string>> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           const field = err.path[0] as keyof T;
           if (field) {
             fieldErrors[field] = err.message;
@@ -161,7 +161,7 @@ export function useFormState<T extends Record<string, any>>(
     // Clear any pending debounced save
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = undefined;
+      debounceTimerRef.current = null;
     }
 
     // Validate before saving
@@ -247,7 +247,7 @@ export function useFormState<T extends Record<string, any>>(
     setErrors({});
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = undefined;
+      debounceTimerRef.current = null;
     }
   }, []);
 

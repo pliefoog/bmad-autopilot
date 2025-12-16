@@ -55,7 +55,7 @@ const SENSOR_ALARM_CONFIG: Record<SensorType, {
     type: 'multi-metric',
     metrics: [
       { key: 'voltage', label: 'Voltage', unit: 'V', category: 'voltage' },
-      { key: 'soc', label: 'State of Charge', unit: '%', category: 'percentage' },
+      { key: 'soc', label: 'State of Charge', unit: '%' },
       { key: 'temperature', label: 'Temperature', unit: '°C', category: 'temperature' },
       { key: 'current', label: 'Current', unit: 'A', category: 'current' },
     ],
@@ -245,7 +245,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     const updates: Partial<SensorAlarmThresholds> = {
       name: data.name?.trim() || undefined,
       enabled: data.enabled,
-      direction: getAlarmDirection(selectedSensorType),
+      direction: getAlarmDirection(selectedSensorType).direction,
       criticalSoundPattern: data.criticalSoundPattern,
       warningSoundPattern: data.warningSoundPattern,
     };
@@ -262,7 +262,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       updates.metrics = { ...currentThresholds.metrics };
       updates.metrics[data.selectedMetric] = {
         enabled: true,
-        direction: getAlarmDirection(selectedSensorType, data.selectedMetric),
+        direction: getAlarmDirection(selectedSensorType, data.selectedMetric).direction,
         critical: data.criticalValue !== undefined ? presentation.convertBack(data.criticalValue) : undefined,
         warning: data.warningValue !== undefined ? presentation.convertBack(data.warningValue) : undefined,
         criticalSoundPattern: data.criticalSoundPattern,
@@ -493,7 +493,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 <PlatformPicker
                   label="Sensor Type"
                   value={selectedSensorType || ''}
-                  onValueChange={handleSensorTypeSwitch}
+                  onValueChange={(value) => handleSensorTypeSwitch(String(value))}
                   items={[
                     { label: 'Select a sensor...', value: '' },
                     ...availableSensorTypes.map((type) => ({
@@ -609,7 +609,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               <PlatformPicker
                                 label="Metric"
                                 value={formData.selectedMetric || ''}
-                                onValueChange={(value) => updateField('selectedMetric', value)}
+                                onValueChange={(value) => updateField('selectedMetric', String(value))}
                                 items={alarmConfig.metrics.map((m) => ({
                                   label: `${m.label} (${m.unit})`,
                                   value: m.key,
@@ -630,10 +630,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                             <ThresholdEditor
                               label={`Critical ${metricLabel}`}
                               value={formData.criticalValue || 0}
-                              direction={getAlarmDirection(selectedSensorType, formData.selectedMetric)}
-                              formatSpec={metricPresentation.formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                              minValue={metricPresentation.formatSpec?.testCases.min}
-                              maxValue={metricPresentation.formatSpec?.testCases.max}
+                              direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                              formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                              minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                              maxValue={(metricPresentation as any).formatSpec?.testCases.max}
                               otherThreshold={formData.warningValue}
                               unitSymbol={unitSymbol}
                               onChange={(value) => updateField('criticalValue', value)}
@@ -645,10 +645,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                             <ThresholdEditor
                               label={`Warning ${metricLabel}`}
                               value={formData.warningValue || 0}
-                              direction={getAlarmDirection(selectedSensorType, formData.selectedMetric)}
-                              formatSpec={metricPresentation.formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
-                              minValue={metricPresentation.formatSpec?.testCases.min}
-                              maxValue={metricPresentation.formatSpec?.testCases.max}
+                              direction={getAlarmDirection(selectedSensorType, formData.selectedMetric).direction}
+                              formatSpec={(metricPresentation as any).formatSpec || { decimals: 1, testCases: { min: 0, max: 100 } }}
+                              minValue={(metricPresentation as any).formatSpec?.testCases.min}
+                              maxValue={(metricPresentation as any).formatSpec?.testCases.max}
                               otherThreshold={formData.criticalValue}
                               unitSymbol={unitSymbol}
                               onChange={(value) => updateField('warningValue', value)}
@@ -668,7 +668,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               <Text style={[styles.label, { color: theme.text }]}>Critical Alarm Sound</Text>
                               <PlatformPicker
                                 value={formData.criticalSoundPattern}
-                                onValueChange={(value) => updateField('criticalSoundPattern', value)}
+                                onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
                                 items={SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value }))}
                               />
                             </View>
@@ -677,7 +677,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                               <Text style={[styles.label, { color: theme.text }]}>Warning Alarm Sound</Text>
                               <PlatformPicker
                                 value={formData.warningSoundPattern}
-                                onValueChange={(value) => updateField('warningSoundPattern', value)}
+                                onValueChange={(value) => updateField('warningSoundPattern', String(value))}
                                 items={SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value }))}
                               />
                             </View>
