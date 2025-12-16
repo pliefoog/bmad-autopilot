@@ -1,13 +1,67 @@
 /**
  * Central Sensor Configuration Registry
  * 
+ * **Purpose:**
  * Single source of truth for all sensor-specific configuration requirements.
- * Drives SensorConfigDialog rendering without conditional sensor logic in the component.
+ * Eliminates conditional sensor logic throughout the codebase by centralizing
+ * configuration in a declarative registry pattern.
  * 
  * **Design Principle**: Configuration over Code
- * - Add new sensor = add registry entry
- * - No conditional logic scattered in dialog component
- * - Type-safe sensor configuration
+ * - ✅ Add new sensor = add registry entry only (no component changes)
+ * - ✅ No hardcoded sensor-specific conditionals in UI components
+ * - ✅ Type-safe sensor configuration via TypeScript
+ * - ✅ Extensible without modifying existing code
+ * 
+ * **Architecture Benefits:**
+ * 1. **Maintainability**: All sensor config in one file, easy to audit/update
+ * 2. **Extensibility**: New sensors work automatically in SensorConfigDialog
+ * 3. **Consistency**: Same rendering logic for all sensors
+ * 4. **Testability**: Registry can be unit tested independently
+ * 
+ * **Usage Example:**
+ * ```typescript
+ * // Get sensor configuration
+ * const sensorConfig = getSensorConfig('battery');
+ * 
+ * // Render fields dynamically
+ * sensorConfig.fields.map(field => renderField(field));
+ * 
+ * // Get default thresholds
+ * const defaults = sensorConfig.getDefaults?.({ batteryChemistry: 'lithium' });
+ * ```
+ * 
+ * **Adding New Sensor:**
+ * ```typescript
+ * newSensor: {
+ *   sensorType: 'newSensor',
+ *   displayName: 'New Sensor',
+ *   fields: [
+ *     { key: 'name', label: 'Name', type: 'text' },
+ *     // ... custom fields
+ *   ],
+ *   alarmSupport: 'single-metric', // or 'multi-metric' or 'none'
+ *   getDefaults: (context) => getSmartDefaults('newSensor', context),
+ * }
+ * ```
+ * 
+ * **Field Types:**
+ * - `text`: String input (name, location)
+ * - `number`: Numeric input (capacity, maxRpm)
+ * - `picker`: Dropdown selection (chemistry, engineType)
+ * - `toggle`: Boolean switch (not yet implemented)
+ * - `slider`: Range selector (not yet implemented)
+ * 
+ * **Hardware Integration:**
+ * Fields can be marked read-only if provided by sensor hardware:
+ * ```typescript
+ * {
+ *   key: 'batteryChemistry',
+ *   readOnly: true,              // Check hardware first
+ *   hardwareField: 'chemistry',   // Sensor data property name
+ *   // If hardware provides value, field shows read-only
+ *   // Otherwise falls back to user input
+ * }
+ * ```
  */
 
 import { SensorType } from '../types/SensorData';
@@ -38,6 +92,27 @@ export interface SensorFieldConfig {
 
 /**
  * Alarm metric configuration for multi-metric sensors
+ * 
+ * Multi-metric sensors (like battery, engine) have multiple alarm points.
+ * Each metric defines how that specific alarm behaves and presents data.
+ * 
+ * **Example - Battery with 4 metrics:**
+ * ```typescript
+ * alarmMetrics: [
+ *   { key: 'voltage', label: 'Voltage', category: 'voltage', unit: 'V', direction: 'below' },
+ *   { key: 'current', label: 'Current', category: 'current', unit: 'A', direction: 'above' },
+ *   { key: 'soc', label: 'State of Charge', unit: '%', direction: 'below' },  // No category = raw value
+ *   { key: 'temperature', label: 'Temperature', category: 'temperature', unit: '°C', direction: 'above' },
+ * ]
+ * ```
+ * 
+ * **Field Documentation:**
+ * - `key`: Metric identifier used in FormData and threshold storage (camelCase)
+ * - `label`: Human-readable name shown in UI
+ * - `category`: DataCategory for presentation system (voltage, temperature, current, etc.)
+ *              Optional - omit for raw values that don't need unit conversion (like percentages)
+ * - `unit`: SI unit for storage (V, A, °C, kPa, etc.) or display unit for raw values (%)
+ * - `direction`: Alarm triggers 'above' threshold (overtemp) or 'below' threshold (low voltage)
  */
 export interface SensorAlarmMetricConfig {
   key: string;                    // Metric identifier (e.g., 'voltage')
@@ -452,21 +527,64 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
 };
 
 /**
- * Helper to get sensor configuration by type
+ * Get sensor configuration by type
+ * 
+ * **Usage:**
+ * ```typescript
+ * const config = getSensorConfig('battery');
+ * console.log(config.displayName);        // "Battery"
+ * console.log(config.alarmSupport);       // "multi-metric"
+ * console.log(config.fields.length);      // 4 (name, location, chemistry, capacity)
+ * ```
+ * 
+ * @param sensorType - One of the valid SensorType values
+ * @returns Complete sensor configuration definition
  */
 export function getSensorConfig(sensorType: SensorType): SensorConfigDefinition {
   return SENSOR_CONFIG_REGISTRY[sensorType];
 }
 
 /**
- * Helper to check if sensor supports alarms
+ * Check if sensor supports alarm configuration
+ * 
+ * **Usage:**
+ * ```typescript
+ * if (sensorSupportsAlarms('battery')) {
+ *   // Show alarm configuration UI
+ * }
+ * 
+ * sensorSupportsAlarms('battery')   // true  (multi-metric)
+ * sensorSupportsAlarms('depth')     // true  (single-metric)
+ * sensorSupportsAlarms('compass')   // false (no alarms)
+ * ```
+ * 
+ * @param sensorType - Sensor type to check
+ * @returns true if sensor supports alarms (single or multi-metric)
  */
 export function sensorSupportsAlarms(sensorType: SensorType): boolean {
   return SENSOR_CONFIG_REGISTRY[sensorType].alarmSupport !== 'none';
 }
 
 /**
- * Helper to get alarm metrics for a sensor
+ * Get alarm metrics for multi-metric sensors
+ * 
+ * **Usage:**
+ * ```typescript
+ * const metrics = getSensorAlarmMetrics('battery');
+ * // Returns: [{ key: 'voltage', ... }, { key: 'current', ... }, ...]
+ * 
+ * metrics?.forEach(metric => {
+ *   console.log(`${metric.label}: ${metric.unit}`);
+ * });
+ * // Output:
+ * // "Voltage: V"
+ * // "Current: A"
+ * // "State of Charge: %"
+ * // "Temperature: °C"
+ * ```
+ * 
+ * @param sensorType - Sensor type to get metrics for
+ * @returns Array of alarm metric configurations, or undefined for single-metric/no-alarm sensors
  */
 export function getSensorAlarmMetrics(sensorType: SensorType): SensorAlarmMetricConfig[] | undefined {
   return SENSOR_CONFIG_REGISTRY[sensorType].alarmMetrics;

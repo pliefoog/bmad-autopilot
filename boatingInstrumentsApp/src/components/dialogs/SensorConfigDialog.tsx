@@ -63,15 +63,29 @@ import { SENSOR_CONFIG_REGISTRY, getSensorConfig } from '../../registry/SensorCo
  * - Opens modal with platform-specific presentation (pageSheet on iOS)
  * - Shows tabs for multi-instance sensors (e.g., multiple batteries)
  * - Supports multi-metric alarms (battery: voltage/SOC/temp/current)
- * - Auto-saves on field change with 300ms debounce
+ * - Explicit saves only on transitions (instance/sensor/close), NOT on field edits
  * - Converts display units ↔ SI units using presentation system
- * - Persists to both NMEA store and sensor config store
+ * - Persists to NMEA store (immediate) then AsyncStorage (background)
+ * 
+ * **Save Timing (Explicit):**
+ * ✅ Saves when: Switching instance, switching sensor type, closing dialog
+ * ❌ Does NOT save: Field edits, metric selection changes, slider dragging
+ * 
+ * **Store Architecture:**
+ * 1. **NMEA Store**: Runtime source of truth (widgets read from here)
+ * 2. **AsyncStorage**: Background persistence (loaded on app startup)
+ * 3. **FormData**: In-memory editing buffer (explicit saves on transitions)
+ * 
+ * **Registry-Driven Rendering:**
+ * - All sensor-specific fields defined in SensorConfigRegistry
+ * - Dynamic form rendering via renderConfigFields()
+ * - Hardware-provided fields automatically show read-only
+ * - New sensors work without component changes
  * 
  * **Limitations:**
  * - Requires at least one sensor instance to be available
- * - Chemistry/engine type dropdowns show only if not provided by hardware
  * - Threshold validation enforces warning < critical (or vice versa based on direction)
- * - Cannot configure sensors with 'no-alarms' type
+ * - Toggle/slider field types defined in registry but not yet implemented
  */
 export interface SensorConfigDialogProps {
   visible: boolean;
@@ -358,11 +372,47 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, []);
   
   /**
-   * Explicit save function - saves current FormData to stores
-   * Called only on explicit transitions: instance switch, sensor switch, dialog close
+   * Save current FormData to stores
    * 
-   * Writes to NMEA store FIRST (immediate, widgets see changes)
-   * Then AsyncStorage in background (persistence for next launch)
+   * **Architecture:**
+   * This function implements the explicit save pattern - changes are NOT auto-saved
+   * on every field edit. Instead, saves occur only on explicit user transitions.
+   * 
+   * **When Called:**
+   * 1. User switches to different sensor instance → handleInstanceSwitch()
+   * 2. User switches to different sensor type → handleSensorTypeSwitch()
+   * 3. User closes dialog → handleClose()
+   * 
+   * **NOT Called When:**
+   * - User edits a field (just updates FormData state)
+   * - User switches between alarm metrics (voltage → current)
+   * - User drags a slider (updates FormData, no save)
+   * 
+   * **Save Flow:**
+   * ```
+   * FormData (in-memory)
+   *     ↓
+   * Convert display units → SI units (presentation.convertBack)
+   *     ↓
+   * Build SensorAlarmThresholds object
+   *     ↓
+   * 1. updateSensorThresholds(NMEA store)    ← Widgets see immediately
+   *     ↓
+   * 2. setConfig(AsyncStorage)                ← Background persistence
+   * ```
+   * 
+   * **Error Handling:**
+   * - Try/catch wraps entire save operation
+   * - User gets alert on failure (platform-specific)
+   * - Console error logged for debugging
+   * - Partial saves are possible (NMEA succeeds, AsyncStorage fails)
+   * 
+   * **Unit Conversion:**
+   * - Multi-metric sensors: Uses metric-specific presentation (voltagePresentation, etc.)
+   * - Single-metric sensors: Uses main presentation hook
+   * - Raw values (SOC %): No conversion, stored as-is
+   * 
+   * @async Waits for save completion before resolving
    */
   const saveCurrentForm = useCallback(async () => {
     if (!selectedSensorType) return;
@@ -726,6 +776,65 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /**
    * Render sensor-specific configuration fields dynamically from registry
+   * 
+   * **Architecture:**
+   * This function eliminates hardcoded sensor-specific UI logic by reading
+   * field definitions from SensorConfigRegistry and rendering them generically.
+   * 
+   * **Before Refactoring (Hardcoded):**
+   * ```tsx
+   * {selectedSensorType === 'battery' && (
+   *   <View>
+   *     <Text>Battery Chemistry</Text>
+   *     <Picker ... />
+   *   </View>
+   * )}
+   * {selectedSensorType === 'engine' && (
+   *   <View>
+   *     <Text>Engine Type</Text>
+   *     <Picker ... />
+   *   </View>
+   * )}
+   * ```
+   * 
+   * **After Refactoring (Registry-Driven):**
+   * ```tsx
+   * {renderConfigFields()}
+   * ```
+   * 
+   * **Supported Field Types:**
+   * - `text`: String input (TextInput)
+   * - `number`: Numeric input (TextInput with numeric keyboard)
+   * - `picker`: Dropdown selection (PlatformPicker)
+   * - `toggle`: Boolean switch (TODO: not yet implemented)
+   * - `slider`: Range selector (TODO: not yet implemented)
+   * 
+   * **Hardware Integration:**
+   * Fields with `readOnly: true` and `hardwareField` check sensor data first:
+   * - If hardware provides value → Show read-only with "(Provided by sensor hardware)"
+   * - If no hardware value → Show editable input
+   * 
+   * **Example - Battery Chemistry:**
+   * ```typescript
+   * // Registry definition:
+   * {
+   *   key: 'batteryChemistry',
+   *   type: 'picker',
+   *   readOnly: true,
+   *   hardwareField: 'chemistry'
+   * }
+   * 
+   * // If BMS provides chemistry → Read-only: "LiFePO4 (sensor provided)"
+   * // If no BMS → Editable picker: [Lead Acid, AGM, Gel, LiFePO4, ...]
+   * ```
+   * 
+   * **Extensibility:**
+   * New sensors automatically render their fields without code changes:
+   * 1. Add sensor to registry with fields array
+   * 2. Fields render automatically in dialog
+   * 3. No conditional logic needed in component
+   * 
+   * @returns React elements for all configured fields, or null if no sensor selected
    */
   const renderConfigFields = useCallback(() => {
     if (!selectedSensorType) return null;
