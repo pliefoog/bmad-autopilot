@@ -1,324 +1,421 @@
 /**
- * Connection Config Dialog
- * Story 13.2.3 - Migrate Connection Settings to Unified Pattern
- * 
- * Refactored to use:
- * - BaseSettingsModal (Story 13.2.1) for consistent modal foundation
- * - Platform Input Components (Story 13.2.2) for cross-platform inputs
- * - Unified keyboard shortcuts and validation
- * 
- * iOS-Native Features (HIG Compliance):
- * - formSheet presentation on iPad (centered, appropriate width)
- * - pageSheet presentation on iPhone (bottom sheet, swipe dismissible)
- * - SF Pro typography with proper weights and sizes
- * - Uppercase section headers with letter spacing
- * - Grouped list style with 10pt corner radius
- * - Native UISwitch component for protocol toggle
- * - Proper safe area insets and spacing (16-20pt)
- * - Keyboard avoidance with behavior="padding"
- * - Light shadow instead of borders for inputs
- * - Theme-aware colors (adapts to dark mode)
+ * Connection Config Dialog (Refactored)
  * 
  * Features:
- * - IP address validation with real-time error display
- * - Port number validation (1-65535)
+ * - IP address and port configuration with validation
  * - Protocol toggle (TCP/UDP) - hidden on Web (websocket only)
- * - Keyboard shortcuts: Cmd+S/Ctrl+S to save, Enter to submit, Esc to cancel
- * - Platform-aware touch targets (44pt phone, 56pt tablet, 64pt glove mode)
- * - Zero breaking changes to public API
+ * - Unified form state management with useFormState
+ * - Zod validation schema with IP regex and port range validation
+ * - FormSection components for organized layout
+ * - Keyboard shortcuts (Cmd+S/Ctrl+S to save, Esc to cancel)
+ * - Platform-aware touch targets and layouts
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Platform,
-  Alert,
+  Modal,
   TouchableOpacity,
+  ScrollView,
+  Platform,
 } from 'react-native';
-import { BaseSettingsModal } from './base/BaseSettingsModal';
-import { 
-  PlatformTextInput, 
-  PlatformToggle,
-} from './inputs';
-import { validators } from '../../utils/inputValidation';
-import { getConnectionDefaults } from '../../services/connectionDefaults';
+import { z } from 'zod';
+import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
-import { useTheme } from '../../store/themeStore';
-import { hasKeyboard, isTablet } from '../../utils/platformDetection';
-import { getPlatformTokens } from '../../theme/settingsTokens';
+import { UniversalIcon } from '../atoms/UniversalIcon';
+import { PlatformTextInput } from './inputs/PlatformTextInput';
+import { PlatformToggle } from './inputs/PlatformToggle';
+import { FormSection } from './components/FormSection';
+import { useFormState } from '../../hooks/useFormState';
+import { getConnectionDefaults } from '../../services/connectionDefaults';
 
-/**
- * Connection Config Dialog Props
- * (unchanged for backward compatibility)
- */
 interface ConnectionConfigDialogProps {
   visible: boolean;
   onClose: () => void;
   onConnect: (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => void;
-  onDisconnect: () => void; // Deprecated but kept for compatibility
+  onDisconnect?: () => void;
   currentConfig?: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' };
   shouldEnableConnectButton?: (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => boolean;
 }
+
+// IP address validation regex (IPv4)
+const ipv4Regex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
+
+// Zod schema for connection form
+const connectionFormSchema = z.object({
+  ip: z.string()
+    .min(1, 'IP address is required')
+    .regex(ipv4Regex, 'Invalid IP address format')
+    .or(z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-_.]+[a-zA-Z0-9]$/, 'Invalid DNS name')),
+  port: z.number()
+    .int('Port must be an integer')
+    .min(1, 'Port must be at least 1')
+    .max(65535, 'Port must be at most 65535'),
+  useTcp: z.boolean(),
+});
+
+type ConnectionFormData = z.infer<typeof connectionFormSchema>;
 
 export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   visible,
   onClose,
   onConnect,
-  onDisconnect, // Keep for compatibility
   currentConfig,
   shouldEnableConnectButton,
 }) => {
-  const defaults = getConnectionDefaults();
   const theme = useTheme();
-  const platformTokens = getPlatformTokens();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const defaults = getConnectionDefaults();
   const connectionStatus = useNmeaStore(state => state.connectionStatus);
   const isConnected = connectionStatus === 'connected';
   const isWeb = Platform.OS === 'web';
-  const keyboardEnabled = hasKeyboard();
-  const tablet = isTablet();
-  
-  // Create styles with theme and platform tokens
-  const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
-  
-  // Form state
-  const [ip, setIp] = useState(currentConfig?.ip || defaults.ip);
-  const [port, setPort] = useState(currentConfig?.port.toString() || defaults.port.toString());
-  const [useTcp, setUseTcp] = useState(true); // true = TCP, false = UDP
-  const [hasUserInput, setHasUserInput] = useState(false);
-  
-  // Validation errors (managed by PlatformTextInput internally)
-  const [ipError, setIpError] = useState<string | undefined>();
-  const [portError, setPortError] = useState<string | undefined>();
 
-  // Initialize form when dialog opens
-  useEffect(() => {
-    if (visible && currentConfig && !hasUserInput) {
-      setIp(currentConfig.ip);
-      setPort(currentConfig.port.toString());
-      setUseTcp(currentConfig.protocol === 'tcp');
-    }
-  }, [visible, currentConfig, hasUserInput]);
+  // Initialize form data
+  const initialFormData: ConnectionFormData = useMemo(() => ({
+    ip: currentConfig?.ip || defaults.ip,
+    port: currentConfig?.port || defaults.port,
+    useTcp: currentConfig?.protocol === 'tcp' || defaults.protocol === 'tcp',
+  }), [currentConfig, defaults]);
 
-  // Reset user input tracking when dialog closes
-  useEffect(() => {
-    if (!visible) {
-      setHasUserInput(false);
-      setIpError(undefined);
-      setPortError(undefined);
-    }
-  }, [visible]);
-
-  // Keyboard shortcuts: Cmd+S / Ctrl+S to save
-  useEffect(() => {
-    if (!visible || !keyboardEnabled || Platform.OS !== 'web') return;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        if (isConnectButtonEnabled()) {
-          handleConnect();
-        }
-      }
+  // Save handler
+  const handleSave = useCallback(async (data: ConnectionFormData) => {
+    const config = {
+      ip: data.ip.trim(),
+      port: data.port,
+      protocol: isWeb ? 'websocket' : (data.useTcp ? 'tcp' : 'udp') as 'tcp' | 'udp' | 'websocket',
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [visible, ip, port, useTcp, keyboardEnabled]);
-
-  // Handle IP changes
-  const handleIpChange = (value: string) => {
-    setIp(value);
-    setHasUserInput(true);
-    
-    // Validate and set error
-    const error = validators.ipAddress(value.trim());
-    setIpError(error);
-  };
-
-  // Handle port changes
-  const handlePortChange = (value: string) => {
-    setPort(value);
-    setHasUserInput(true);
-    
-    // Validate and set error
-    const error = validators.portNumber(value);
-    setPortError(error);
-  };
-
-  // Get current configuration
-  const getCurrentConfig = () => ({
-    ip: ip.trim(),
-    port: parseInt(port, 10),
-    protocol: isWeb ? 'websocket' : (useTcp ? 'tcp' : 'udp') as 'tcp' | 'udp' | 'websocket',
-  });
-
-  // Check if Connect button should be enabled
-  const isConnectButtonEnabled = () => {
-    const portNumber = parseInt(port, 10);
-    
-    // Basic validation
-    if (!ip.trim() || isNaN(portNumber) || portNumber < 1 || portNumber > 65535) {
-      return false;
-    }
-    
-    // Check for validation errors
-    if (ipError || portError) {
-      return false;
-    }
-    
-    // Check if configuration has changed using the callback
-    if (shouldEnableConnectButton) {
-      return shouldEnableConnectButton(getCurrentConfig());
-    }
-    
-    // Fallback - always enabled if no callback provided
-    return true;
-  };
-
-  // Handle connect button press
-  const handleConnect = () => {
-    const config = getCurrentConfig();
-    
-    // Final validation before connecting
-    if (!ip.trim()) {
-      Alert.alert('Error', 'IP address is required');
-      return;
-    }
-    
-    if (isNaN(config.port) || config.port < 1 || config.port > 65535) {
-      Alert.alert('Error', 'Port must be a number between 1 and 65535');
-      return;
-    }
 
     onConnect(config);
-    onClose();
-  };
+  }, [onConnect, isWeb]);
 
-  // Reset to default values
-  const handleReset = () => {
-    setIp(defaults.ip);
-    setPort(defaults.port.toString());
-    setUseTcp(defaults.protocol === 'tcp');
-    setHasUserInput(true); // Mark as user action to prevent override
-    setIpError(undefined);
-    setPortError(undefined);
-  };
+  // Form state management
+  const {
+    formData,
+    updateField,
+    saveNow,
+    isDirty,
+    errors,
+    validate,
+  } = useFormState<ConnectionFormData>(initialFormData, {
+    onSave: handleSave,
+    debounceMs: 300,
+    validationSchema: connectionFormSchema,
+  });
+
+  // Handle connect button
+  const handleConnect = useCallback(() => {
+    const isValid = validate();
+    if (isValid) {
+      const config = {
+        ip: formData.ip.trim(),
+        port: formData.port,
+        protocol: isWeb ? 'websocket' : (formData.useTcp ? 'tcp' : 'udp') as 'tcp' | 'udp' | 'websocket',
+      };
+
+      // Check custom validation if provided
+      if (shouldEnableConnectButton && !shouldEnableConnectButton(config)) {
+        return;
+      }
+
+      onConnect(config);
+      onClose();
+    }
+  }, [formData, isWeb, onConnect, onClose, shouldEnableConnectButton, validate]);
+
+  // Handle close
+  const handleClose = useCallback(() => {
+    saveNow();
+    onClose();
+  }, [saveNow, onClose]);
+
+  // Reset to defaults
+  const handleReset = useCallback(() => {
+    updateField('ip', defaults.ip);
+    updateField('port', defaults.port);
+    updateField('useTcp', defaults.protocol === 'tcp');
+  }, [updateField, defaults]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'web') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+S / Ctrl+S to save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleConnect();
+      }
+      // Esc to cancel
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleClose();
+      }
+      // Enter to submit (if no validation errors)
+      if (e.key === 'Enter' && !errors) {
+        e.preventDefault();
+        handleConnect();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, handleConnect, handleClose, errors]);
+
+  // Check if connect button is enabled
+  const isConnectEnabled = useMemo(() => {
+    if (errors && Object.keys(errors).length > 0) return false;
+    
+    const config = {
+      ip: formData.ip.trim(),
+      port: formData.port,
+      protocol: isWeb ? 'websocket' : (formData.useTcp ? 'tcp' : 'udp') as 'tcp' | 'udp' | 'websocket',
+    };
+
+    if (shouldEnableConnectButton) {
+      return shouldEnableConnectButton(config);
+    }
+
+    return true;
+  }, [formData, isWeb, shouldEnableConnectButton, errors]);
 
   return (
-    <BaseSettingsModal
-      visible={visible}
-      title="Connection Settings"
-      onClose={onClose}
-      onSave={handleConnect}
-      saveButtonText="Connect"
-      cancelButtonText="Cancel"
-      testID="connection-config-dialog"
-    >
-      <View style={styles.content}>
-        {/* Description */}
-        <Text style={[styles.description, { color: theme.textSecondary }]}>
-          NMEA Bridge Details
-        </Text>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+          <TouchableOpacity style={styles.backButton} onPress={handleClose}>
+            <UniversalIcon name="close" size={24} color={theme.text} />
+            <Text style={[styles.backButtonText, { color: theme.text }]}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Connection Settings</Text>
+          <TouchableOpacity
+            style={[styles.connectButton, { opacity: isConnectEnabled ? 1 : 0.5 }]}
+            onPress={handleConnect}
+            disabled={!isConnectEnabled}
+          >
+            <Text style={[styles.connectButtonText, { color: theme.primary }]}>Connect</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* IP Address Input */}
-        <PlatformTextInput
-          label="Host (IP or DNS name)"
-          value={ip}
-          onChangeText={handleIpChange}
-          placeholder="e.g. 192.168.1.100 or bridge.local"
-          keyboardType="default"
-          validator={validators.ipAddress}
-          error={ipError}
-          onSubmit={handleConnect}
-          testID="connection-ip-input"
-        />
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* Connection Details */}
+          <FormSection
+            sectionId="connection-details"
+            dialogId="connection-config"
+            title="NMEA Bridge Details"
+            subtitle="Configure your NMEA data source"
+            defaultCollapsed={false}
+          >
+            {/* IP Address */}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>Host (IP or DNS name)</Text>
+              <PlatformTextInput
+                value={formData.ip}
+                onChangeText={(text) => updateField('ip', text)}
+                onBlur={saveNow}
+                placeholder="e.g. 192.168.1.100 or bridge.local"
+                keyboardType="default"
+                error={errors?.ip}
+                testID="connection-ip-input"
+              />
+            </View>
 
-        {/* Port Input */}
-        <PlatformTextInput
-          label="Port"
-          value={port}
-          onChangeText={handlePortChange}
-          placeholder="Enter port number"
-          keyboardType="numeric"
-          validator={validators.portNumber}
-          error={portError}
-          onSubmit={handleConnect}
-          testID="connection-port-input"
-        />
+            {/* Port */}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>Port</Text>
+              <PlatformTextInput
+                value={formData.port.toString()}
+                onChangeText={(text) => {
+                  const num = parseInt(text, 10);
+                  if (!isNaN(num)) {
+                    updateField('port', num);
+                  }
+                }}
+                onBlur={saveNow}
+                placeholder="8080"
+                keyboardType="numeric"
+                error={errors?.port}
+                testID="connection-port-input"
+              />
+            </View>
+          </FormSection>
 
-        {/* Protocol Toggle (hidden on Web - websocket only) */}
-        {!isWeb && (
-          <View style={styles.protocolSection}>
-            <PlatformToggle
-              label={useTcp ? "Protocol: TCP" : "Protocol: UDP"}
-              value={useTcp}
-              onValueChange={setUseTcp}
-              testID="connection-protocol-toggle"
-            />
-          </View>
-        )}
+          {/* Protocol Selection (hidden on web) */}
+          {!isWeb && (
+            <FormSection
+              sectionId="protocol"
+              dialogId="connection-config"
+              title="Protocol"
+              subtitle="Select TCP or UDP"
+              defaultCollapsed={false}
+            >
+              <PlatformToggle
+                label={formData.useTcp ? "TCP" : "UDP"}
+                value={formData.useTcp}
+                onValueChange={(value) => updateField('useTcp', value)}
+                testID="connection-protocol-toggle"
+              />
+              <Text style={[styles.hint, { color: theme.textSecondary }]}>
+                {formData.useTcp
+                  ? 'TCP provides reliable, ordered delivery of data'
+                  : 'UDP provides faster, connectionless delivery'}
+              </Text>
+            </FormSection>
+          )}
 
-        {/* Reset to Defaults Link */}
-        <TouchableOpacity
-          onPress={handleReset}
-          style={styles.resetLink}
-          testID="connection-reset-button"
-        >
-          <Text style={[styles.resetLinkText, { color: theme.interactive }]}>
-            Reset to Defaults
-          </Text>
-        </TouchableOpacity>
+          {/* Web Protocol Notice */}
+          {isWeb && (
+            <View style={[styles.infoBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+                ℹ️ Web version uses WebSocket protocol automatically
+              </Text>
+            </View>
+          )}
 
-        {/* Keyboard Shortcuts Hint (desktop only) */}
-        {keyboardEnabled && Platform.OS === 'web' && (
-          <Text style={[styles.keyboardHint, { color: theme.textSecondary }]}>
-            Keyboard shortcuts: ⌘S (Mac) or Ctrl+S (Windows) to save, Esc to cancel, Enter to submit
-          </Text>
-        )}
+          {/* Connection Status */}
+          {isConnected && (
+            <View style={[styles.statusBox, { backgroundColor: theme.successBackground, borderColor: theme.success }]}>
+              <UniversalIcon name="checkmark-circle" size={20} color={theme.success} />
+              <Text style={[styles.statusText, { color: theme.success }]}>Connected</Text>
+            </View>
+          )}
+
+          {/* Reset to Defaults */}
+          <TouchableOpacity
+            style={[styles.resetButton, { borderColor: theme.border }]}
+            onPress={handleReset}
+            testID="connection-reset-button"
+          >
+            <UniversalIcon name="refresh-outline" size={20} color={theme.text} />
+            <Text style={[styles.resetButtonText, { color: theme.text }]}>Reset to Defaults</Text>
+          </TouchableOpacity>
+
+          {/* Keyboard Hints */}
+          {Platform.OS === 'web' && (
+            <Text style={[styles.keyboardHint, { color: theme.textSecondary }]}>
+              Keyboard shortcuts: ⌘S (Mac) or Ctrl+S (Windows) to connect, Esc to cancel
+            </Text>
+          )}
+        </ScrollView>
       </View>
-    </BaseSettingsModal>
+    </Modal>
   );
 };
 
-const createStyles = (theme: any, platformTokens: ReturnType<typeof getPlatformTokens>) => StyleSheet.create({
-  content: {
-    // iOS uses native modal padding, others need explicit padding
-    ...(Platform.OS !== 'ios' && {
-      paddingHorizontal: platformTokens.spacing.inset,
-    }),
-  },
-  description: {
-    fontSize: platformTokens.typography.caption.fontSize,
-    fontWeight: platformTokens.typography.caption.fontWeight,
-    lineHeight: platformTokens.typography.caption.lineHeight,
-    marginBottom: platformTokens.spacing.section,
-    textTransform: Platform.OS === 'ios' ? 'uppercase' : 'none',
-    letterSpacing: Platform.OS === 'ios' ? 0.5 : 0,
-  },
-  protocolSection: {
-    marginTop: platformTokens.spacing.row,
-    marginBottom: platformTokens.spacing.section,
-  },
-  resetLink: {
-    marginTop: platformTokens.spacing.section,
-    marginBottom: platformTokens.spacing.row,
-    alignSelf: 'center',
-    paddingVertical: platformTokens.spacing.row,
-    paddingHorizontal: platformTokens.spacing.section,
-  },
-  resetLinkText: {
-    fontSize: platformTokens.typography.body.fontSize,
-    fontWeight: '500' as const,
-    fontFamily: platformTokens.typography.fontFamily,
-    textAlign: 'center' as const,
-  },
-  keyboardHint: {
-    fontSize: platformTokens.typography.caption.fontSize,
-    textAlign: 'center' as const,
-    marginTop: platformTokens.spacing.section,
-    fontStyle: 'italic' as const,
-    opacity: 0.7,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingTop: 16,
+      borderBottomWidth: 1,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      minWidth: 80,
+    },
+    backButtonText: {
+      fontSize: 17,
+      fontWeight: '400',
+      fontFamily: 'sans-serif',
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      textAlign: 'center',
+      flex: 1,
+    },
+    connectButton: {
+      minWidth: 80,
+      alignItems: 'flex-end',
+    },
+    connectButtonText: {
+      fontSize: 17,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 16,
+    },
+    field: {
+      marginBottom: 16,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+      marginBottom: 8,
+    },
+    hint: {
+      fontSize: 13,
+      fontFamily: 'sans-serif',
+      marginTop: 8,
+      lineHeight: 18,
+    },
+    infoBox: {
+      padding: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginBottom: 16,
+    },
+    infoText: {
+      fontSize: 14,
+      fontFamily: 'sans-serif',
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    statusBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginBottom: 16,
+      gap: 8,
+    },
+    statusText: {
+      fontSize: 15,
+      fontWeight: '600',
+      fontFamily: 'sans-serif',
+    },
+    resetButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 14,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginVertical: 16,
+      gap: 8,
+    },
+    resetButtonText: {
+      fontSize: 15,
+      fontWeight: '500',
+      fontFamily: 'sans-serif',
+    },
+    keyboardHint: {
+      fontSize: 12,
+      fontFamily: 'sans-serif',
+      textAlign: 'center',
+      marginTop: 8,
+      fontStyle: 'italic',
+      opacity: 0.7,
+    },
+  });
+
+export default ConnectionConfigDialog;
