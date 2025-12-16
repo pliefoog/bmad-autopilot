@@ -20,6 +20,7 @@ const LOG_CATEGORIES = {
   NETWORK: false,       // NMEA connections, data
   PERFORMANCE: false,   // Performance metrics
   ALARM: false,         // Alarm configuration, triggers, audio
+  SENSOR: false,        // Sensor detection, initialization, thresholds
   REACT_ERRORS: true,   // React error boundaries
 };
 
@@ -57,6 +58,7 @@ export const logger = {
   network: (...args: any[]) => LOG_CATEGORIES.NETWORK && originalConsole.log('[Network]', ...args),
   performance: (...args: any[]) => LOG_CATEGORIES.PERFORMANCE && originalConsole.log('[Performance]', ...args),
   alarm: (...args: any[]) => LOG_CATEGORIES.ALARM && originalConsole.log('[Alarm]', ...args),
+  sensor: (...args: any[]) => LOG_CATEGORIES.SENSOR && originalConsole.log('[Sensor]', ...args),
 };
 
 // Runtime control functions (available in dev console)

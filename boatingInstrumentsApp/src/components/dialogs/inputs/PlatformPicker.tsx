@@ -156,7 +156,6 @@ const WebDropdown: React.FC<{
                 }}
                 style={[
                   webDropdownStyles.dropdownItem,
-                  { height: touchTargetSize },
                   index === selectedIndex && { backgroundColor: theme.appBackground },
                   item.value === value && { backgroundColor: theme.primary + '20' },
                 ]}
@@ -216,6 +215,8 @@ const webDropdownStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: settingsTokens.spacing.md,
+    paddingVertical: settingsTokens.spacing.xs,
+    minHeight: 36,
   },
   dropdownItemText: {
     fontSize: settingsTokens.typography.body.fontSize,

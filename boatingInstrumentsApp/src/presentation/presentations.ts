@@ -148,9 +148,9 @@ const SPEED_PRESENTATIONS: Presentation[] = [
     name: 'Knots (1 decimal)',
     symbol: 'kts',
     description: 'Nautical speed in knots with 1 decimal place',
-    convert: (knots) => knots, // knots to knots (identity)
+    convert: (ms) => ms * 1.94384, // m/s to knots
     format: (value) => value.toFixed(1),
-    convertBack: (display) => display,
+    convertBack: (display) => display / 1.94384,
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
@@ -166,9 +166,9 @@ const SPEED_PRESENTATIONS: Presentation[] = [
     name: 'Knots (integer)',
     symbol: 'kts', 
     description: 'Nautical speed in knots, whole numbers',
-    convert: (knots) => knots, // knots to knots (identity)
+    convert: (ms) => ms * 1.94384, // m/s to knots
     format: (value) => Math.round(value).toString(),
-    convertBack: (display) => display,
+    convertBack: (display) => display / 1.94384,
     formatSpec: {
       pattern: 'xx',
       decimals: 0,
@@ -182,9 +182,9 @@ const SPEED_PRESENTATIONS: Presentation[] = [
     name: 'km/h (1 decimal)',
     symbol: 'km/h',
     description: 'Metric speed in kilometers per hour',
-    convert: (knots) => knots * 1.852, // knots to km/h
+    convert: (ms) => ms * 3.6, // m/s to km/h
     format: (value) => value.toFixed(1),
-    convertBack: (display) => display / 1.852,
+    convertBack: (display) => display / 3.6,
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
@@ -198,9 +198,9 @@ const SPEED_PRESENTATIONS: Presentation[] = [
     name: 'mph (1 decimal)',
     symbol: 'mph',
     description: 'Imperial speed in miles per hour',
-    convert: (knots) => knots * 1.15078, // knots to mph
+    convert: (ms) => ms * 2.23694, // m/s to mph
     format: (value) => value.toFixed(1),
-    convertBack: (display) => display / 1.15078,
+    convertBack: (display) => display / 2.23694,
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,

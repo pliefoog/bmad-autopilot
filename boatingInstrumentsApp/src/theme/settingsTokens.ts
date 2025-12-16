@@ -141,6 +141,13 @@ export const settingsTokens = {
     opacity: 0.6,      // 60% opacity for backdrop
     color: '#000000',  // Black backdrop
   },
+
+  /**
+   * Opacity values for various states
+   */
+  opacity: {
+    disabled: 0.5,     // 50% opacity for disabled elements
+  },
 } as const;
 
 /**

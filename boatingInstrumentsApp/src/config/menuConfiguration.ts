@@ -91,7 +91,7 @@ export const menuConfiguration: MenuConfiguration = {
       items: [
         {
           id: 'alarm-configuration',
-          label: 'Alarm Configuration',
+          label: 'Sensor Configuration',
           icon: '⚙️',
           action: 'openAlarmConfiguration',
           testId: 'menu-alarms',

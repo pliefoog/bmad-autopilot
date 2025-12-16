@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Platform, TouchableOpacity, Text, LayoutChangeEvent } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Platform,
+  TouchableOpacity,
+  Text,
+  LayoutChangeEvent,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../utils/logger'; // Import first to suppress all logging
 import { logger } from '../utils/logger'; // Import logger for selective category logging
@@ -30,16 +37,16 @@ import { LayoutSettingsDialog } from '../components/dialogs/LayoutSettingsDialog
 import { DisplayThemeDialog } from '../components/dialogs/DisplayThemeDialog';
 import { initializeWidgetSystem } from '../services/initializeWidgetSystem';
 import { AlarmHistoryDialog } from '../components/dialogs/AlarmHistoryDialog';
-import { AlarmConfigDialog } from '../components/dialogs/AlarmConfigDialog';
+import { SensorConfigDialog } from '../components/dialogs/SensorConfigDialog';
 import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
 import { MemoryMonitor } from '../components/MemoryMonitor';
-import { 
-  getConnectionDefaults, 
-  connectNmea, 
-  disconnectNmea, 
-  shouldEnableConnectButton, 
-  getCurrentConnectionConfig, 
-  initializeConnection
+import {
+  getConnectionDefaults,
+  connectNmea,
+  disconnectNmea,
+  shouldEnableConnectButton,
+  getCurrentConnectionConfig,
+  initializeConnection,
 } from '../services/connectionDefaults';
 
 const STORAGE_KEY = 'nmea-connection-config';
@@ -53,33 +60,35 @@ const STORAGE_KEY = 'nmea-connection-config';
 const DashboardContent: React.FC = () => {
   const { updateLayout } = useDashboardLayout();
   const insets = useSafeAreaInsets();
-  
-  const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    // The measured height is AFTER SafeAreaView has already applied top padding
-    // We only need to subtract the bottom inset for the home indicator area
-    const adjustedHeight = height - insets.bottom;
-    
-    updateLayout({ 
-      nativeEvent: { 
-        layout: { width, height: adjustedHeight } 
-      } 
-    } as LayoutChangeEvent);
-  }, [insets.bottom, updateLayout]);
-  
+
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const { width, height } = event.nativeEvent.layout;
+      // The measured height is AFTER SafeAreaView has already applied top padding
+      // We only need to subtract the bottom inset for the home indicator area
+      const adjustedHeight = height - insets.bottom;
+
+      updateLayout({
+        nativeEvent: {
+          layout: { width, height: adjustedHeight },
+        },
+      } as LayoutChangeEvent);
+    },
+    [insets.bottom, updateLayout],
+  );
+
   return (
-    <View 
-      style={styles.contentArea} 
-      onLayout={handleLayout}
-    >
+    <View style={styles.contentArea} onLayout={handleLayout}>
       {/* Absolutely positioned container keeps dashboard above safe area */}
-      <View style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: insets.bottom 
-      }}>
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: insets.bottom,
+        }}
+      >
         <ResponsiveDashboard />
       </View>
     </View>
@@ -88,9 +97,9 @@ const DashboardContent: React.FC = () => {
 
 const App = () => {
   // Selective subscriptions to prevent re-renders on unrelated state changes
-  const connectionStatus = useNmeaStore(state => state.connectionStatus);
-  const lastError = useNmeaStore(state => state.lastError);
-  const activeAlarms = useAlarmStore(state => state.activeAlarms);
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
+  const lastError = useNmeaStore((state) => state.lastError);
+  const activeAlarms = useAlarmStore((state) => state.activeAlarms);
   const theme = useTheme();
   const toast = useToast();
   const insets = useSafeAreaInsets(); // For bottom spacer only
@@ -106,21 +115,23 @@ const App = () => {
   const [showDisplayThemeDialog, setShowDisplayThemeDialog] = useState(false);
   const [showAlarmHistoryDialog, setShowAlarmHistoryDialog] = useState(false);
   const [showAlarmConfigDialog, setShowAlarmConfigDialog] = useState(false);
-  const [alarmConfigSensor, setAlarmConfigSensor] = useState<'depth' | 'temperature' | 'engine' | 'battery' | undefined>(undefined);
+  const [alarmConfigSensor, setAlarmConfigSensor] = useState<
+    'depth' | 'temperature' | 'engine' | 'battery' | undefined
+  >(undefined);
   const [showTestSwitchDialog, setShowTestSwitchDialog] = useState(false);
-  
+
   // Navigation session state
   const [navigationSession, setNavigationSession] = useState<{
     isRecording: boolean;
     startTime?: Date;
   }>({ isRecording: false });
-  
+
   // Onboarding system integration
-  const { 
-    isOnboardingVisible, 
-    isLoading: onboardingLoading, 
-    completeOnboarding, 
-    skipOnboarding 
+  const {
+    isOnboardingVisible,
+    isLoading: onboardingLoading,
+    completeOnboarding,
+    skipOnboarding,
   } = useOnboarding();
 
   // NOTE: History pruning removed - now handled automatically by TimeSeriesBuffer
@@ -129,10 +140,10 @@ const App = () => {
   useEffect(() => {
     // Access via window to ensure they're registered
     const profiler = (window as any).memoryProfiler || (window as any).__memoryProfiler;
-    
+
     if (profiler && profiler.isAvailable && profiler.isAvailable()) {
       profiler.start(1000); // Take snapshot every second
-      
+
       // Use logger.always to bypass suppression for this message
       const showMessage = () => {
         const msg = [
@@ -152,18 +163,18 @@ const App = () => {
           '',
           '═══════════════════════════════════════════════════',
         ].join('\n');
-        
+
         // Use original console before suppression
         const _console = (window as any).__originalConsole || console;
         if (_console && _console.log) {
           _console.log(msg);
         }
       };
-      
+
       // Delay to ensure logger has initialized
       setTimeout(showMessage, 100);
     }
-    
+
     return () => {
       if (profiler && profiler.stop) {
         const stats = profiler.stop();
@@ -181,16 +192,16 @@ const App = () => {
   const handleFactoryResetConfirm = async () => {
     setShowFactoryResetDialog(false);
     log('[App] User confirmed factory reset');
-    
+
     try {
       // Import the widget store and perform complete factory reset
       const { useWidgetStore } = await import('../store/widgetStore');
       const { resetAppToDefaults } = useWidgetStore.getState();
-      
+
       await resetAppToDefaults();
-      
+
       log('[App] Factory reset complete - forcing complete app restart');
-      
+
       // For web: Force a complete page reload to restart the app
       if (Platform.OS === 'web') {
         // Clear any remaining web storage before reload
@@ -200,7 +211,7 @@ const App = () => {
         } catch (e) {
           console.warn('Could not clear web storage:', e);
         }
-        
+
         // Force immediate reload from server, not cache
         setTimeout(() => {
           if (typeof window !== 'undefined' && window.location) {
@@ -211,7 +222,6 @@ const App = () => {
         // For mobile: The app should restart automatically when AsyncStorage is cleared
         log('[App] Factory reset complete - app should restart automatically');
       }
-      
     } catch (error) {
       console.error('[App] Error during factory reset:', error);
       // Even if there's an error, try to restart the app
@@ -222,18 +232,20 @@ const App = () => {
   };
 
   const handleToggleNavigationSession = () => {
-    setNavigationSession(prev => {
+    setNavigationSession((prev) => {
       if (prev.isRecording) {
         // Stop recording session
-        const duration = prev.startTime ? Math.round((Date.now() - prev.startTime.getTime()) / 1000 / 60) : 0;
+        const duration = prev.startTime
+          ? Math.round((Date.now() - prev.startTime.getTime()) / 1000 / 60)
+          : 0;
         toast.showNavigationUpdate(`Navigation session ended (duration: ${duration} minutes)`);
         return { isRecording: false };
       } else {
         // Start recording session
         toast.showNavigationUpdate('Navigation session started');
-        return { 
+        return {
           isRecording: true,
-          startTime: new Date()
+          startTime: new Date(),
         };
       }
     });
@@ -242,14 +254,14 @@ const App = () => {
   // Show toast for errors (with duplicate prevention and debouncing)
   const lastShownError = useRef<string | undefined>(undefined);
   const errorToastTimeout = useRef<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     // Clear any pending error toast
     if (errorToastTimeout.current) {
       clearTimeout(errorToastTimeout.current);
       errorToastTimeout.current = null;
     }
-    
+
     if (lastError && lastError !== lastShownError.current) {
       // Debounce error toasts to prevent rapid firing
       errorToastTimeout.current = setTimeout(() => {
@@ -261,7 +273,7 @@ const App = () => {
       // Clear the reference when error is cleared
       lastShownError.current = undefined;
     }
-    
+
     // Cleanup timeout on unmount
     return () => {
       if (errorToastTimeout.current) {
@@ -272,23 +284,23 @@ const App = () => {
 
   // Dynamic widget lifecycle management - ONLY create widgets when NMEA data is present
   // Selective subscription: only re-render when sensors actually change
-  const nmeaSensors = useNmeaStore(state => state.nmeaData?.sensors);
-  const nmeaTimestamp = useNmeaStore(state => state.nmeaData?.timestamp);
-  const nmeaMessageCount = useNmeaStore(state => state.nmeaData?.messageCount);
-  
+  const nmeaSensors = useNmeaStore((state) => state.nmeaData?.sensors);
+  const nmeaTimestamp = useNmeaStore((state) => state.nmeaData?.timestamp);
+  const nmeaMessageCount = useNmeaStore((state) => state.nmeaData?.messageCount);
+
   // Use getState() for stable function references (don't cause re-renders)
   // Only subscribe to data that actually needs to trigger re-renders
-  const dashboard = useWidgetStore(state => state.dashboard);
-  const enableWidgetAutoRemoval = useWidgetStore(state => state.enableWidgetAutoRemoval);
-  const widgetExpirationTimeout = useWidgetStore(state => state.widgetExpirationTimeout);
-  
+  const dashboard = useWidgetStore((state) => state.dashboard);
+  const enableWidgetAutoRemoval = useWidgetStore((state) => state.enableWidgetAutoRemoval);
+  const widgetExpirationTimeout = useWidgetStore((state) => state.widgetExpirationTimeout);
+
   // Initialize widget system ONCE on app mount (before connection)
   useEffect(() => {
     console.log('[App] 🚀 Initializing widget registration system...');
     initializeWidgetSystem();
     console.log('[App] ✅ Widget registration system initialized');
   }, []); // Empty deps = run once on mount
-  
+
   // Instance monitoring is now fully event-driven via WidgetRegistrationService
   // No manual start/stop needed - initialized once on mount in initializeWidgetSystem()
 
@@ -296,23 +308,27 @@ const App = () => {
   useEffect(() => {
     log('[App] 🧹 Setting up dynamic widget lifecycle management');
     console.log(`[App] Widget auto-removal: ${enableWidgetAutoRemoval ? 'ENABLED' : 'DISABLED'}`);
-    console.log(`[App] Widget expiration timeout: ${widgetExpirationTimeout}ms (${widgetExpirationTimeout / 1000}s)`);
-    
+    console.log(
+      `[App] Widget expiration timeout: ${widgetExpirationTimeout}ms (${
+        widgetExpirationTimeout / 1000
+      }s)`,
+    );
+
     // Don't start cleanup if auto-removal is disabled
     if (!enableWidgetAutoRemoval) {
       log('[App] Widget auto-removal disabled - skipping cleanup timer');
       return;
     }
-    
+
     // Run initial cleanup using getState() for stable reference
     useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
-    
+
     // Set up periodic cleanup - more frequent for responsive widget removal
     const cleanupInterval = setInterval(() => {
       log('[App] 🧹 Running periodic widget expiration cleanup');
       useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
     }, 15000); // Check every 15 seconds for more responsive widget removal
-    
+
     return () => clearInterval(cleanupInterval);
   }, [enableWidgetAutoRemoval, widgetExpirationTimeout]); // Only data dependencies, functions via getState()
 
@@ -327,7 +343,7 @@ const App = () => {
       timestamp: nmeaTimestamp,
       messageCount: nmeaMessageCount,
       availableSensors: Object.keys(nmeaSensors),
-      connectionStatus
+      connectionStatus,
     });
 
     if (!dashboard) {
@@ -337,7 +353,7 @@ const App = () => {
 
     // **1. SINGLE-INSTANCE SENSORS** (depth, gps, speed, wind, compass)
     const singleInstanceSensors = ['depth', 'gps', 'speed', 'wind', 'compass'];
-    singleInstanceSensors.forEach(sensorType => {
+    singleInstanceSensors.forEach((sensorType) => {
       const sensorData = nmeaSensors[sensorType];
       if (sensorData && Object.keys(sensorData).length > 0) {
         // Check if we have valid data for this sensor type
@@ -349,10 +365,13 @@ const App = () => {
             hasValidData = firstInstance?.depth !== undefined;
             break;
           case 'gps':
-            hasValidData = firstInstance?.position?.latitude !== undefined && firstInstance?.position?.longitude !== undefined;
+            hasValidData =
+              firstInstance?.position?.latitude !== undefined &&
+              firstInstance?.position?.longitude !== undefined;
             break;
           case 'speed':
-            hasValidData = firstInstance?.throughWater !== undefined || firstInstance?.overGround !== undefined;
+            hasValidData =
+              firstInstance?.throughWater !== undefined || firstInstance?.overGround !== undefined;
             break;
           case 'wind':
             hasValidData = firstInstance?.speed !== undefined && firstInstance?.angle !== undefined;
@@ -397,10 +416,10 @@ const App = () => {
           setPort(currentConfig.port.toString());
           setProtocol(currentConfig.protocol);
         }
-        
+
         // Note: Widget lifecycle management is now fully event-driven via WidgetRegistrationService
         // No explicit initialization needed - widgets update via onWidgetDetected/onWidgetUpdated events
-        
+
         toast.showConnectionSuccess('Auto-connecting to NMEA Bridge...');
       } catch (error) {
         console.error('[App] Failed to initialize services:', error);
@@ -415,21 +434,47 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Sync sensor configurations from persistent storage to volatile cache on app startup
+  useEffect(() => {
+    const syncPersistentConfigs = async () => {
+      try {
+        // Dynamic import to avoid circular dependencies
+        const { syncConfigsToNmeaStore } = await import('../store/sensorConfigStore');
+        
+        // Sync all stored configurations to nmeaStore cache
+        const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
+        syncConfigsToNmeaStore(updateSensorThresholds);
+        
+        console.log('[App] ✅ Synced sensor configurations from persistent storage');
+      } catch (error) {
+        console.error('[App] Failed to sync sensor configurations:', error);
+      }
+    };
+
+    syncPersistentConfigs();
+  }, []);
+
   // Connection handlers
-  const handleConnectionConnect = async (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
+  const handleConnectionConnect = async (config: {
+    ip: string;
+    port: number;
+    protocol: 'tcp' | 'udp' | 'websocket';
+  }) => {
     setIp(config.ip);
     setPort(config.port.toString());
     setProtocol(config.protocol as 'tcp' | 'udp');
-    
+
     try {
       const success = await connectNmea({
         ip: config.ip,
         port: config.port,
-        protocol: config.protocol as 'tcp' | 'udp' | 'websocket'
+        protocol: config.protocol as 'tcp' | 'udp' | 'websocket',
       });
-      
+
       if (success) {
-        toast.showConnectionSuccess(`Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`);
+        toast.showConnectionSuccess(
+          `Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`,
+        );
       }
     } catch (error) {
       console.error('Failed to connect:', error);
@@ -437,7 +482,11 @@ const App = () => {
     }
   };
 
-  const isConnectButtonEnabled = (config: { ip: string; port: number; protocol: 'tcp' | 'udp' | 'websocket' }) => {
+  const isConnectButtonEnabled = (config: {
+    ip: string;
+    port: number;
+    protocol: 'tcp' | 'udp' | 'websocket';
+  }) => {
     return shouldEnableConnectButton(config);
   };
 
@@ -454,11 +503,7 @@ const App = () => {
   // Show onboarding if it's the first run
   if (isOnboardingVisible && !onboardingLoading) {
     return (
-      <OnboardingScreen
-        visible={true}
-        onComplete={completeOnboarding}
-        onSkip={skipOnboarding}
-      />
+      <OnboardingScreen visible={true} onComplete={completeOnboarding} onSkip={skipOnboarding} />
     );
   }
 
@@ -488,95 +533,86 @@ const App = () => {
           <AlarmBanner alarms={activeAlarms} />
 
           {/* Global Toast Container */}
-          <ToastContainer 
-            position="top"
-            maxToasts={3}
-            stackDirection="vertical"
-          />
+          <ToastContainer position="top" maxToasts={3} stackDirection="vertical" />
 
           {/* Main Dashboard - Dynamic Widget Loading */}
           <DashboardContent />
-      
-      {/* Modals */}
-      <AutopilotControlScreen
-        visible={showAutopilotControl}
-        onClose={() => setShowAutopilotControl(false)}
-      />
 
-      <ConnectionConfigDialog
-        visible={showConnectionDialog}
-        onClose={() => setShowConnectionDialog(false)}
-        onConnect={handleConnectionConnect}
-        onDisconnect={handleConnectionDisconnect}
-        currentConfig={{ 
-          ip, 
-          port: parseInt(port, 10), 
-          protocol: protocol as 'tcp' | 'udp' | 'websocket'
-        }}
-        shouldEnableConnectButton={isConnectButtonEnabled}
-      />
+          {/* Modals */}
+          <AutopilotControlScreen
+            visible={showAutopilotControl}
+            onClose={() => setShowAutopilotControl(false)}
+          />
 
-      <UnitsConfigDialog
-        visible={showUnitsDialog}
-        onClose={() => setShowUnitsDialog(false)}
-      />
+          <ConnectionConfigDialog
+            visible={showConnectionDialog}
+            onClose={() => setShowConnectionDialog(false)}
+            onConnect={handleConnectionConnect}
+            onDisconnect={handleConnectionDisconnect}
+            currentConfig={{
+              ip,
+              port: parseInt(port, 10),
+              protocol: protocol as 'tcp' | 'udp' | 'websocket',
+            }}
+            shouldEnableConnectButton={isConnectButtonEnabled}
+          />
 
-      <FactoryResetDialog
-        visible={showFactoryResetDialog}
-        onConfirm={handleFactoryResetConfirm}
-        onCancel={() => setShowFactoryResetDialog(false)}
-      />
+          <UnitsConfigDialog visible={showUnitsDialog} onClose={() => setShowUnitsDialog(false)} />
 
-      <LayoutSettingsDialog
-        visible={showLayoutSettingsDialog}
-        onClose={() => setShowLayoutSettingsDialog(false)}
-      />
+          <FactoryResetDialog
+            visible={showFactoryResetDialog}
+            onConfirm={handleFactoryResetConfirm}
+            onCancel={() => setShowFactoryResetDialog(false)}
+          />
 
-      <DisplayThemeDialog
-        visible={showDisplayThemeDialog}
-        onClose={() => setShowDisplayThemeDialog(false)}
-      />
+          <LayoutSettingsDialog
+            visible={showLayoutSettingsDialog}
+            onClose={() => setShowLayoutSettingsDialog(false)}
+          />
 
-      <AlarmHistoryDialog
-        visible={showAlarmHistoryDialog}
-        onClose={() => setShowAlarmHistoryDialog(false)}
-      />
+          <DisplayThemeDialog
+            visible={showDisplayThemeDialog}
+            onClose={() => setShowDisplayThemeDialog(false)}
+          />
 
-      <AlarmConfigDialog
-        visible={showAlarmConfigDialog}
-        onClose={() => {
-          logger.alarm('App: Closing AlarmConfigDialog');
-          setShowAlarmConfigDialog(false);
-        }}
-        sensorType={alarmConfigSensor}
-      />
+          <AlarmHistoryDialog
+            visible={showAlarmHistoryDialog}
+            onClose={() => setShowAlarmHistoryDialog(false)}
+          />
 
-      <TestSwitchDialog
-        visible={showTestSwitchDialog}
-        onClose={() => setShowTestSwitchDialog(false)}
-      />
+          <SensorConfigDialog
+            visible={showAlarmConfigDialog}
+            onClose={() => {
+              logger.alarm('App: Closing SensorConfigDialog');
+              setShowAlarmConfigDialog(false);
+            }}
+            sensorType={alarmConfigSensor}
+          />
 
-      {/* Memory Monitor - Real-time memory usage display */}
-      <MemoryMonitor position="bottom-right" updateInterval={1000} />
+          <TestSwitchDialog
+            visible={showTestSwitchDialog}
+            onClose={() => setShowTestSwitchDialog(false)}
+          />
 
-      {/* Temporary Test Button - Floating */}
-      <TouchableOpacity
-        onPress={() => setShowTestSwitchDialog(true)}
-        style={{
-          position: 'absolute',
-          bottom: 120,
-          right: 20,
-          backgroundColor: theme.interactive,
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderRadius: 8,
-          zIndex: 9999,
-        }}
-      >
-        <Text style={{ color: theme.onColor, fontWeight: '600' }}>
-          TEST SWITCH
-        </Text>
-      </TouchableOpacity>
+          {/* Memory Monitor - Real-time memory usage display */}
+          <MemoryMonitor position="bottom-right" updateInterval={1000} />
+
+          {/* Temporary Test Button - Floating */}
+          <TouchableOpacity
+            onPress={() => setShowTestSwitchDialog(true)}
+            style={{
+              position: 'absolute',
+              bottom: 120,
+              right: 20,
+              backgroundColor: theme.interactive,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              zIndex: 9999,
+            }}
+          >
+            <Text style={{ color: theme.onColor, fontWeight: '600' }}>TEST SWITCH</Text>
+          </TouchableOpacity>
         </View>
       </DashboardLayoutProvider>
     </SafeAreaView>

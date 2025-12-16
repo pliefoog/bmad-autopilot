@@ -13,189 +13,361 @@ export const ALARM_THRESHOLD_DEFAULTS = {
   // Depth sensor defaults (meters)
   depth: {
     default: {
-      min: 2.0,           // Critical minimum depth
-      warning: 2.5,       // Warning depth
-      max: undefined,     // No maximum depth alarm by default
+      critical: 2.0, // Critical minimum depth (SI units: meters)
+      warning: 2.5, // Warning depth (SI units: meters)
+      direction: 'below' as const,
       enabled: true,
-      thresholdType: 'min' as const,
-    }
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 0.3, // 30cm hysteresis
+      warningHysteresis: 0.2, // 20cm hysteresis
+    },
   },
 
   // Temperature sensor defaults by location (celsius)
   temperature: {
+    default: {
+      critical: 50, // Generic temperature alarm (SI units: celsius)
+      warning: 40, // Generic high temperature (SI units: celsius)
+      direction: 'above' as const,
+      enabled: false, // Disabled by default - user should configure for specific use case
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 3, // 3°C hysteresis
+      warningHysteresis: 2, // 2°C hysteresis
+    },
     engine: {
-      min: 40,            // Engine too cold
-      warning: 85,        // High temperature warning
-      max: 95,            // Critical overheat
+      critical: 95, // Critical overheat (SI units: celsius)
+      warning: 85, // High temperature warning (SI units: celsius)
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 3, // 3°C hysteresis
+      warningHysteresis: 2, // 2°C hysteresis
     },
     exhaust: {
-      min: 30,
+      critical: 65, // Exhaust overheat
       warning: 55,
-      max: 65,            // Exhaust overheat
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 3,
+      warningHysteresis: 2,
     },
     engineRoom: {
-      min: 20,
+      critical: 50,
       warning: 40,
-      max: 50,
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 3,
+      warningHysteresis: 2,
     },
     seawater: {
-      min: 0,
-      warning: 25,
-      max: 30,
-      enabled: false,     // Usually informational only
-      thresholdType: 'max' as const,
+      critical: 35, // Very warm water affecting engine cooling efficiency
+      warning: 32, // Warm water - monitor engine temps
+      direction: 'above' as const,
+      enabled: false, // Usually informational only - enable if monitoring cooling water
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 2,
+      warningHysteresis: 1,
     },
     cabin: {
-      min: -10,
+      critical: 40,
       warning: 35,
-      max: 40,
-      enabled: false,     // Comfort only, not safety-critical
-      thresholdType: 'max' as const,
+      direction: 'above' as const,
+      enabled: false, // Comfort only, not safety-critical
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 3,
+      warningHysteresis: 2,
     },
     outside: {
-      min: -10,
+      critical: 40,
       warning: 35,
-      max: 40,
+      direction: 'above' as const,
       enabled: false,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 3,
+      warningHysteresis: 2,
     },
     refrigeration: {
-      min: -20,
+      critical: 10,
       warning: -10,
-      max: 10,
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 2,
+      warningHysteresis: 1,
     },
     freezer: {
-      min: -30,
+      critical: -10,
       warning: -15,
-      max: -10,
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 2,
+      warningHysteresis: 1,
     },
     liveWell: {
-      min: 10,
+      critical: 30,
       warning: 25,
-      max: 30,
+      direction: 'above' as const,
       enabled: false,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 2,
+      warningHysteresis: 1,
     },
     baitWell: {
-      min: 10,
+      critical: 30,
       warning: 25,
-      max: 30,
+      direction: 'above' as const,
       enabled: false,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 2,
+      warningHysteresis: 1,
     },
   },
 
-  // Engine sensor defaults
+  // Engine sensor defaults - context-aware by engine type
   engine: {
     rpm: {
-      min: undefined,     // No minimum RPM alarm
-      warning: 3300,      // High RPM warning
-      max: 3600,          // Red line
-      enabled: true,
-      thresholdType: 'max' as const,
+      // Diesel engine defaults (lower RPM range)
+      diesel: {
+        critical: 2800, // Diesel red line typically lower
+        warning: 2500,
+        direction: 'above' as const,
+        criticalHysteresis: 100, // 100 RPM recovery band
+        warningHysteresis: 100,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
+      // Gasoline engine defaults (higher RPM range)
+      gasoline: {
+        critical: 3600, // Gas engine red line
+        warning: 3300,
+        direction: 'above' as const,
+        criticalHysteresis: 100, // 100 RPM recovery band
+        warningHysteresis: 100,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
+      // Outboard defaults (similar to gasoline)
+      outboard: {
+        critical: 5800, // Outboards can rev higher
+        warning: 5500,
+        direction: 'above' as const,
+        criticalHysteresis: 150, // 150 RPM recovery band for higher revving
+        warningHysteresis: 150,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
     },
     coolantTemp: {
-      min: 40,
+      // Universal for all engine types (celsius)
+      critical: 95,
       warning: 85,
-      max: 95,
+      direction: 'above' as const,
+      criticalHysteresis: 3, // 3°C recovery band
+      warningHysteresis: 3,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
       enabled: true,
-      thresholdType: 'max' as const,
     },
-    oilPressure: {      // Pascals (kPa * 1000)
-      min: 138000,       // 20 PSI = 138 kPa
-      warning: 207000,   // 30 PSI
-      max: undefined,
-      enabled: true,
-      thresholdType: 'min' as const,
+    oilPressure: {
+      // Pascals (kPa * 1000)
+      // Diesel typically requires higher oil pressure
+      diesel: {
+        critical: 138000, // 20 PSI minimum
+        warning: 207000, // 30 PSI warning
+        direction: 'below' as const,
+        criticalHysteresis: 34500, // ~5 PSI recovery band
+        warningHysteresis: 34500,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
+      // Gasoline can operate at lower pressure
+      gasoline: {
+        critical: 103000, // 15 PSI minimum
+        warning: 172000, // 25 PSI warning
+        direction: 'below' as const,
+        criticalHysteresis: 34500, // ~5 PSI recovery band
+        warningHysteresis: 34500,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
+      // Outboard defaults
+      outboard: {
+        critical: 103000, // 15 PSI minimum
+        warning: 172000, // 25 PSI warning
+        direction: 'below' as const,
+        criticalHysteresis: 34500, // ~5 PSI recovery band
+        warningHysteresis: 34500,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
     },
     alternatorVoltage: {
-      min: 13.0,         // Not charging
-      warning: 13.5,
-      max: 15.0,         // Overcharging
+      // Universal charging system thresholds
+      critical: 13.0, // Not charging (below)
+      warning: 13.5, // Low charging
+      direction: 'below' as const,
+      criticalHysteresis: 0.3, // 0.3V recovery band
+      warningHysteresis: 0.3,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
       enabled: true,
-      thresholdType: 'min' as const,
     },
   },
 
-  // Battery sensor defaults (volts)
+  // Battery sensor defaults (volts) - context-aware by chemistry
   battery: {
     voltage: {
-      min: 11.0,         // Critical low voltage
-      warning: 12.0,     // Low battery warning
-      max: 15.0,         // Overcharge protection
-      enabled: true,
-      thresholdType: 'min' as const,
+      // Lead-acid (flooded) defaults
+      'lead-acid': {
+        critical: 11.8, // 50% DOD for lead-acid
+        warning: 12.2, // 70% SOC
+        direction: 'below' as const,
+        criticalHysteresis: 0.2, // 0.2V recovery band
+        warningHysteresis: 0.2,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
+      // AGM (Absorbed Glass Mat) defaults
+      agm: {
+        critical: 12.0, // Better voltage stability than flooded
+        warning: 12.4, // 80% SOC
+        direction: 'below' as const,
+        criticalHysteresis: 0.2, // 0.2V recovery band
+        warningHysteresis: 0.2,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
+      // LiFePO4 (Lithium Iron Phosphate) defaults
+      lifepo4: {
+        critical: 12.8, // ~20% SOC for LiFePO4
+        warning: 13.0, // ~50% SOC
+        direction: 'below' as const,
+        criticalHysteresis: 0.15, // Smaller hysteresis for stable LiFePO4
+        warningHysteresis: 0.15,
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+        enabled: true,
+      },
     },
-    stateOfCharge: {   // Percentage 0-100
-      min: 20,           // Critical SOC
-      warning: 50,       // Low SOC warning
-      max: undefined,
+    stateOfCharge: {
+      // Percentage 0-100 (chemistry-agnostic)
+      critical: 20,
+      warning: 50,
+      direction: 'below' as const,
+      criticalHysteresis: 5, // 5% recovery band
+      warningHysteresis: 5,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
       enabled: true,
-      thresholdType: 'min' as const,
     },
   },
 
   // Wind sensor defaults (m/s)
   wind: {
     speed: {
-      min: undefined,
-      warning: 12.5,     // ~25 knots
-      max: 17.5,         // ~35 knots - gale force
+      critical: 17.5, // ~35 knots - gale force (SI units: m/s)
+      warning: 12.5, // ~25 knots (SI units: m/s)
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 1.0, // 1 m/s hysteresis
+      warningHysteresis: 0.5, // 0.5 m/s hysteresis
     },
   },
 
-  // Speed sensor defaults (m/s)
+  // Speed sensor defaults (m/s) - Speed Through Water (STW) from paddlewheel
   speed: {
-    overGround: {
-      min: undefined,
-      warning: 12.5,     // ~25 knots
-      max: 15.0,         // ~30 knots
-      enabled: false,    // Usually not safety-critical
-      thresholdType: 'max' as const,
+    default: {
+      critical: 25.7, // ~50 knots (SI units: m/s)
+      warning: 20.6, // ~40 knots (SI units: m/s)
+      direction: 'above' as const,
+      enabled: false, // Usually not safety-critical
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 1.0,
+      warningHysteresis: 0.5,
+    },
+  },
+
+  // GPS sensor defaults - Speed Over Ground (SOG) from GPS calculation
+  gps: {
+    speedOverGround: {
+      critical: 25.7, // ~50 knots (SI units: m/s)
+      warning: 20.6, // ~40 knots (SI units: m/s)
+      direction: 'above' as const,
+      enabled: false, // Usually not safety-critical
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 1.0,
+      warningHysteresis: 0.5,
     },
   },
 
   // Tank level defaults (ratio 0.0-1.0)
   tank: {
     fuel: {
-      min: 0.10,         // 10% remaining
-      warning: 0.25,     // 25% remaining
-      max: undefined,
+      critical: 0.1, // 10% remaining (SI units: ratio)
+      warning: 0.25, // 25% remaining (SI units: ratio)
+      direction: 'below' as const,
       enabled: true,
-      thresholdType: 'min' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 0.05, // 5% hysteresis
+      warningHysteresis: 0.03, // 3% hysteresis
     },
     water: {
-      min: 0.10,
+      critical: 0.1,
       warning: 0.25,
-      max: undefined,
+      direction: 'below' as const,
       enabled: true,
-      thresholdType: 'min' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 0.05,
+      warningHysteresis: 0.03,
     },
     waste: {
-      min: undefined,
-      warning: 0.75,     // 75% full warning
-      max: 0.90,         // 90% full alarm
+      critical: 0.9, // 90% full alarm
+      warning: 0.75, // 75% full warning
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 0.05,
+      warningHysteresis: 0.03,
     },
     blackwater: {
-      min: undefined,
+      critical: 0.9,
       warning: 0.75,
-      max: 0.90,
+      direction: 'above' as const,
       enabled: true,
-      thresholdType: 'max' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 0.05,
+      warningHysteresis: 0.03,
     },
   },
 } as const;
@@ -205,10 +377,10 @@ export const ALARM_THRESHOLD_DEFAULTS = {
  */
 export function getDefaultThresholds(
   sensorType: string,
-  location?: string
+  location?: string,
 ): SensorAlarmThresholds | undefined {
   const defaults = (ALARM_THRESHOLD_DEFAULTS as any)[sensorType];
-  
+
   if (!defaults) {
     return undefined;
   }
@@ -228,8 +400,8 @@ export function getDefaultThresholds(
     engine: 'coolantTemp',
     battery: 'voltage',
     wind: 'speed',
-    speed: 'overGround',
     tank: 'fuel',
+    gps: 'speedOverGround',
   };
 
   const primaryField = primaryFields[sensorType];
@@ -245,13 +417,157 @@ export function getDefaultThresholds(
  */
 export function getFieldThresholds(
   sensorType: string,
-  fieldName: string
+  fieldName: string,
 ): SensorAlarmThresholds | undefined {
   const defaults = (ALARM_THRESHOLD_DEFAULTS as any)[sensorType];
-  
+
   if (!defaults || !defaults[fieldName]) {
     return undefined;
   }
 
   return { ...defaults[fieldName] };
+}
+
+/**
+ * Get smart context-aware thresholds based on sensor type and context
+ * Takes battery chemistry, engine type, etc. into account
+ * Returns multi-metric structure for battery and engine sensors
+ */
+export function getSmartDefaults(
+  sensorType: string,
+  context?: {
+    batteryChemistry?: 'lead-acid' | 'agm' | 'lifepo4';
+    engineType?: 'diesel' | 'gasoline' | 'outboard';
+    tankType?: string;
+    temperatureLocation?: string;
+  },
+  location?: string,
+): SensorAlarmThresholds | undefined {
+  const defaults = (ALARM_THRESHOLD_DEFAULTS as any)[sensorType];
+
+  if (!defaults) {
+    return undefined;
+  }
+
+  // Battery: return multi-metric structure with all metrics
+  if (sensorType === 'battery') {
+    const chemistry = context?.batteryChemistry || 'lead-acid';
+    const voltageDefaults = defaults.voltage?.[chemistry] || defaults.voltage?.['lead-acid'];
+    const socDefaults = defaults.stateOfCharge;
+    
+    // Create multi-metric structure
+    const metrics: any = {};
+    
+    if (voltageDefaults) {
+      metrics.voltage = {
+        ...voltageDefaults,
+        enabled: true,
+      };
+    }
+    
+    if (socDefaults) {
+      metrics.soc = {
+        ...socDefaults,
+        enabled: true,
+      };
+    }
+    
+    // Temperature and current can be added when available
+    // For now, we'll add placeholders that can be configured
+    metrics.temperature = {
+      critical: 45, // 45°C critical
+      warning: 40, // 40°C warning
+      direction: 'above' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 2,
+      warningHysteresis: 2,
+      enabled: false, // Disabled by default, enable if sensor provides it
+    };
+    
+    metrics.current = {
+      critical: 200, // 200A draw
+      warning: 150, // 150A draw
+      direction: 'above' as const,
+      criticalSoundPattern: 'rapid_pulse',
+      warningSoundPattern: 'warble',
+      criticalHysteresis: 10,
+      warningHysteresis: 10,
+      enabled: false, // Disabled by default
+    };
+    
+    return {
+      enabled: true,
+      context: { batteryChemistry: chemistry },
+      metrics,
+    };
+  }
+
+  // Engine: return multi-metric structure with all metrics
+  if (sensorType === 'engine') {
+    const engineType = context?.engineType || 'diesel';
+    const rpmDefaults = defaults.rpm?.[engineType] || defaults.rpm?.['diesel'];
+    const coolantDefaults = defaults.coolantTemp?.[engineType] || defaults.coolantTemp?.['diesel'];
+    const oilPressureDefaults = defaults.oilPressure?.[engineType] || defaults.oilPressure?.['diesel'];
+    
+    // Create multi-metric structure
+    const metrics: any = {};
+    
+    if (rpmDefaults) {
+      metrics.rpm = {
+        ...rpmDefaults,
+        enabled: true,
+      };
+    }
+    
+    if (coolantDefaults) {
+      metrics.coolantTemp = {
+        ...coolantDefaults,
+        enabled: true,
+      };
+    }
+    
+    if (oilPressureDefaults) {
+      metrics.oilPressure = {
+        ...oilPressureDefaults,
+        enabled: true,
+      };
+    }
+    
+    return {
+      enabled: true,
+      context: { engineType },
+      metrics,
+    };
+  }
+
+  // GPS: return multi-metric structure with SOG metric
+  if (sensorType === 'gps') {
+    const sogDefaults = defaults.speedOverGround;
+    
+    // Create multi-metric structure
+    const metrics: any = {};
+    
+    if (sogDefaults) {
+      metrics.speedOverGround = {
+        ...sogDefaults,
+      };
+    }
+    
+    return {
+      enabled: false, // GPS alarms not safety-critical by default
+      metrics,
+    };
+  }
+
+  // Temperature: use location-specific defaults
+  if (sensorType === 'temperature' && location) {
+    const tempDefaults = defaults[location];
+    if (tempDefaults) {
+      return { ...tempDefaults };
+    }
+  }
+
+  // Fall back to standard getDefaultThresholds logic for single-metric sensors
+  return getDefaultThresholds(sensorType, location);
 }

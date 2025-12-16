@@ -45,9 +45,6 @@ export interface PlatformToggleProps {
   /** Disabled state */
   disabled?: boolean;
   
-  /** Custom active color (defaults to theme.primary) */
-  color?: string;
-  
   /** TV focus state (for TV navigation) */
   focused?: boolean;
   
@@ -65,9 +62,10 @@ const WebToggle: React.FC<{
   disabled: boolean;
   color: string;
   trackColor: string;
+  thumbColor: string;
   testID: string;
   gloveMode: boolean;
-}> = ({ value, onValueChange, disabled, color, trackColor, testID, gloveMode }) => {
+}> = ({ value, onValueChange, disabled, color, trackColor, thumbColor, testID, gloveMode }) => {
   const animatedValue = React.useRef(new Animated.Value(value ? 1 : 0)).current;
   const [isHovered, setIsHovered] = React.useState(false);
   
@@ -115,25 +113,24 @@ const WebToggle: React.FC<{
       <Animated.View
         style={[
           {
-            width: trackWidth,
-            height: trackHeight,
-            borderRadius: trackHeight / 2,
-            justifyContent: 'center',
+        width: trackWidth,
+        height: trackHeight,
+        borderRadius: trackHeight / 2,
+        justifyContent: 'center',
           },
           {
-            backgroundColor: trackBackgroundColor,
-            opacity: disabled ? 0.5 : 1,
-            transform: isHovered && !disabled ? [{ scale: 1.05 }] : [{ scale: 1 }],
+        backgroundColor: trackBackgroundColor,
+        transform: isHovered && !disabled ? [{ scale: 1.05 }] : [{ scale: 1 }],
           },
         ]}
       >
         <Animated.View
           style={{
-            width: thumbSize,
-            height: thumbSize,
-            borderRadius: thumbSize / 2,
-            backgroundColor: '#FFFFFF',
-            transform: [{ translateX: thumbTranslateX }],
+        width: thumbSize,
+        height: thumbSize,
+        borderRadius: thumbSize / 2,
+        backgroundColor: thumbColor,
+        transform: [{ translateX: thumbTranslateX }],
           }}
         />
       </Animated.View>
@@ -149,7 +146,6 @@ const WebToggle: React.FC<{
  *   value={enabled}
  *   onValueChange={setEnabled}
  *   label="Enable Autopilot"
- *   color={theme.primary}
  * />
  */
 export const PlatformToggle: React.FC<PlatformToggleProps> = ({
@@ -157,7 +153,6 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   onValueChange,
   label,
   disabled = false,
-  color,
   focused = false,
   testID = 'platform-toggle',
 }) => {
@@ -171,8 +166,11 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   );
   const haptics = useHapticFeedback();
   
-  const activeColor = color || theme.primary;
-  const trackColor = theme.border;
+  // Use dedicated toggle theme colors for full control
+  const labelColor = disabled ? theme.textSecondary : theme.text;
+  const thumbColor = disabled ? theme.toggle.thumbDisabled : theme.toggle.thumb;
+  const trackColorOff = disabled ? theme.toggle.trackOffDisabled : theme.toggle.trackOff;
+  const trackColorOn = disabled ? theme.toggle.trackOnDisabled : theme.toggle.trackOn;
   
   /**
    * Handle toggle change with haptic feedback
@@ -185,20 +183,18 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   // Use native Switch for iOS and Android
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return (
-      <View style={[styles.container, disabled && styles.disabled]} testID={testID}>
-        <Text style={styles.label}>{label}</Text>
+      <View style={styles.container} testID={testID}>
+        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
         <Switch
           value={value}
           onValueChange={handleValueChange}
           disabled={disabled}
           trackColor={{
-            false: trackColor,
-            true: activeColor,
+            false: trackColorOff,
+            true: trackColorOn,
           }}
-          // iOS-specific: thumb color
-          thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
-          // Android-specific: thumb tint
-          ios_backgroundColor={trackColor}
+          thumbColor={thumbColor}
+          ios_backgroundColor={trackColorOff}
           testID={`${testID}-switch`}
         />
       </View>
@@ -207,14 +203,15 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   
   // Use custom toggle for web
   return (
-    <View style={[styles.container, disabled && styles.disabled]} testID={testID}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={styles.container} testID={testID}>
+      <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
       <WebToggle
         value={value}
         onValueChange={handleValueChange}
         disabled={disabled}
-        color={activeColor}
-        trackColor={trackColor}
+        color={trackColorOn}
+        trackColor={trackColorOff}
+        thumbColor={thumbColor}
         gloveMode={gloveMode}
         testID={`${testID}-switch`}
       />
@@ -250,12 +247,7 @@ const createStyles = (
     flex: 1,
     fontSize: platformTokens.typography.body.fontSize,
     fontWeight: platformTokens.typography.body.fontWeight,
-    fontFamily: Platform.OS === 'web' ? 'sans-serif' : platformTokens.typography.fontFamily,
-    color: theme.text,
+    fontFamily: platformTokens.typography.fontFamily,
     marginRight: settingsTokens.spacing.md,
-  },
-  
-  disabled: {
-    opacity: 0.5,
   },
 });

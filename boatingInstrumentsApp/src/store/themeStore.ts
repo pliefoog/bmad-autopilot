@@ -29,10 +29,14 @@ export interface ThemeColors {
   text: string;
   textSecondary: string;
   textTertiary: string;    // Muted/disabled text
+  textInverse: string;     // Text on colored backgrounds (e.g., selected tabs)
   accent: string;
   warning: string;
+  warningLight: string;    // Light warning background (15% opacity)
   error: string;
+  errorLight: string;      // Light error background (15% opacity)
   success: string;
+  successLight: string;    // Light success background (15% opacity)
   border: string;
   borderLight: string;     // Lighter border variant
   borderDark: string;      // Darker border variant
@@ -41,6 +45,8 @@ export interface ThemeColors {
   // Background variants
   surfaceHighlight: string; // Highlighted surface (hover/selected)
   surfaceDim: string;      // Dimmed surface (inactive)
+  surfaceElevated: string; // Elevated surface (modals, dropdowns, cards)
+  inputBackground: string; // Input field backgrounds
   overlay: string;         // Modal/dialog overlay
   overlayDark: string;     // Darker overlay variant
   // Icon-specific colors for theme compliance
@@ -64,6 +70,15 @@ export interface ThemeColors {
   interactiveHover: string; // Hover state
   interactiveActive: string; // Active/pressed state
   interactiveDisabled: string; // Disabled state
+  // Toggle/Switch specific colors
+  toggle: {
+    trackOn: string;         // Track color when toggle is ON (enabled)
+    trackOff: string;        // Track color when toggle is OFF (enabled)
+    trackOnDisabled: string; // Track color when toggle is ON (disabled)
+    trackOffDisabled: string; // Track color when toggle is OFF (disabled)
+    thumb: string;           // Thumb color (enabled)
+    thumbDisabled: string;   // Thumb color (disabled)
+  };
 }
 
 // Day theme - bright, high contrast for daylight use
@@ -76,10 +91,14 @@ const dayTheme: ThemeColors = {
   text: '#0F172A',         // Dark slate
   textSecondary: '#475569', // Medium slate
   textTertiary: '#94A3B8', // Muted gray
+  textInverse: '#FFFFFF',  // White text for colored backgrounds
   accent: '#059669',       // Emerald
   warning: '#D97706',      // Amber
+  warningLight: 'rgba(217, 119, 6, 0.15)', // Light amber background
   error: '#DC2626',        // Red
+  errorLight: 'rgba(220, 38, 38, 0.15)', // Light red background
   success: '#059669',      // Green
+  successLight: 'rgba(5, 150, 105, 0.15)', // Light green background
   border: '#CBD5E1',       // Light slate
   borderLight: '#E2E8F0',  // Very light border
   borderDark: '#94A3B8',   // Darker border
@@ -87,6 +106,8 @@ const dayTheme: ThemeColors = {
   shadowDark: '#00000040', // Darker shadow
   surfaceHighlight: '#F1F5F9', // Highlighted surface
   surfaceDim: '#F8FAFC',   // Dimmed surface
+  surfaceElevated: '#FFFFFF', // Elevated surface (same as surface for day)
+  inputBackground: '#FFFFFF', // White input backgrounds
   overlay: 'rgba(0, 0, 0, 0.3)', // Modal overlay
   overlayDark: 'rgba(0, 0, 0, 0.6)', // Darker overlay
   // Icon colors for day theme
@@ -109,23 +130,37 @@ const dayTheme: ThemeColors = {
   interactive: '#0284C7',  // Primary blue
   interactiveHover: '#0369A1', // Darker blue
   interactiveActive: '#075985', // Even darker blue
-  interactiveDisabled: '#E2E8F0' // Light gray
+  interactiveDisabled: '#E2E8F0', // Light gray
+  // Toggle/Switch colors for day theme
+  toggle: {
+    trackOn: '#0284C7',      // Sky blue when ON
+    trackOff: '#CBD5E1',     // Light slate when OFF
+    trackOnDisabled: '#E2E8F0',  // Very light gray when ON+disabled
+    trackOffDisabled: '#F1F5F9', // Almost white when OFF+disabled
+    thumb: '#FFFFFF',        // White thumb
+    thumbDisabled: '#94A3B8', // Medium gray thumb when disabled
+  },
 };
 
 // Night theme - dark background, reduced brightness for night use
+// Marine-compliant: Uses neutral grays to avoid night vision disruption
 const nightTheme: ThemeColors = {
-  primary: '#F1F5F9',      // Light color
-  secondary: '#22D3EE',    // Cyan
+  primary: '#CBD5E1',      // Light neutral gray (primary elements)
+  secondary: '#94A3B8',    // Medium gray (secondary elements)
   background: '#0F172A',   // Dark slate
   surface: '#1E293B',      // Darker slate
   appBackground: '#000000', // Pure black for dashboard background
   text: '#F1F5F9',         // Light text
   textSecondary: '#94A3B8', // Medium gray
   textTertiary: '#64748B', // Muted gray
-  accent: '#38BDF8',       // Light blue (no green for marine compatibility)
-  warning: '#FBBF24',      // Light amber
-  error: '#F87171',        // Light red
-  success: '#22D3EE',      // Cyan (no green for marine compatibility)
+  textInverse: '#0F172A',  // Dark text for light backgrounds
+  accent: '#94A3B8',       // Medium gray accent (neutral, no color disruption)
+  warning: '#FBBF24',      // Light amber (semantic color kept)
+  warningLight: 'rgba(251, 191, 36, 0.15)', // Light amber background
+  error: '#F87171',        // Light red (semantic color kept)
+  errorLight: 'rgba(248, 113, 113, 0.15)', // Light red background
+  success: '#94A3B8',      // Medium gray (neutral instead of cyan)
+  successLight: 'rgba(148, 163, 184, 0.15)', // Light gray background
   border: '#334155',       // Dark border
   borderLight: '#475569',  // Lighter border
   borderDark: '#1E293B',   // Darker border
@@ -133,29 +168,40 @@ const nightTheme: ThemeColors = {
   shadowDark: '#00000060', // Even darker shadow
   surfaceHighlight: '#334155', // Highlighted surface
   surfaceDim: '#0F172A',   // Dimmed surface
+  surfaceElevated: '#334155', // Elevated surface (lighter than base surface)
+  inputBackground: '#1E293B', // Same as surface for consistency
   overlay: 'rgba(0, 0, 0, 0.5)', // Modal overlay
   overlayDark: 'rgba(0, 0, 0, 0.8)', // Darker overlay
   // Icon colors for night theme
   iconPrimary: '#F1F5F9',  // Light text for visibility on dark background
   iconSecondary: '#94A3B8', // Medium gray for secondary icons
-  iconAccent: '#38BDF8',   // Light blue for accent icons
+  iconAccent: '#CBD5E1',   // Light gray for accent icons (neutral)
   iconDisabled: '#64748B', // Dark gray for disabled state
   // Trendline colors for night theme
   trendline: {
-    primary: '#F1F5F9',      // Light blue for primary trendlines
+    primary: '#CBD5E1',      // Light neutral gray for primary trendlines
     secondary: '#94A3B8',    // Medium gray for secondary trendlines
-    thresholdMin: '#F87171',     // Light red for minimum thresholds
-    thresholdWarning: '#FBBF24', // Light amber for warning thresholds
-    thresholdMax: '#22D3EE',     // Cyan for maximum thresholds
+    thresholdMin: '#F87171',     // Light red for minimum thresholds (semantic)
+    thresholdWarning: '#FBBF24', // Light amber for warning thresholds (semantic)
+    thresholdMax: '#94A3B8',     // Medium gray for maximum thresholds (neutral)
     axis: '#475569',         // Lighter border for axis lines
     grid: '#334155',         // Dark border for grid lines
     label: '#94A3B8',        // Medium gray for labels
   },
   // Interactive states
-  interactive: '#38BDF8',  // Light blue
-  interactiveHover: '#22D3EE', // Cyan
-  interactiveActive: '#0891B2', // Darker cyan
-  interactiveDisabled: '#334155' // Dark gray
+  interactive: '#94A3B8',  // Medium gray (neutral)
+  interactiveHover: '#CBD5E1', // Light gray on hover
+  interactiveActive: '#64748B', // Darker gray when active
+  interactiveDisabled: '#334155', // Dark gray for disabled
+  // Toggle/Switch colors for night theme (marine-compliant neutral grays)
+  toggle: {
+    trackOn: '#64748B',      // Medium gray when ON (neutral, visible)
+    trackOff: '#334155',     // Dark gray when OFF
+    trackOnDisabled: '#475569',  // Lighter gray when ON+disabled (visible but muted)
+    trackOffDisabled: '#475569', // Same gray when OFF+disabled (visible but muted)
+    thumb: '#CBD5E1',        // Light neutral gray thumb (high contrast)
+    thumbDisabled: '#94A3B8', // Medium gray thumb when disabled (visible)
+  },
 };
 
 // Red-night theme - red/black only for night vision preservation
@@ -168,10 +214,14 @@ const redNightTheme: ThemeColors = {
   text: '#FCA5A5',         // Light red (test expected)
   textSecondary: '#DC2626', // Dark red for secondary text
   textTertiary: '#991B1B', // Very dark red
+  textInverse: '#000000',  // Black text for red backgrounds (better contrast)
   accent: '#EF4444',       // Red accent
   warning: '#DC2626',      // Red warning (red spectrum for night vision, same as error)
+  warningLight: 'rgba(220, 38, 38, 0.15)', // Light red background
   error: '#DC2626',        // Dark red error
+  errorLight: 'rgba(220, 38, 38, 0.15)', // Light red background
   success: '#DC2626',      // Red success (no green for night vision)
+  successLight: 'rgba(220, 38, 38, 0.15)', // Light red background
   border: '#7F1D1D',       // Dark red border
   borderLight: '#991B1B',  // Lighter red border
   borderDark: '#450A0A',   // Darker red border
@@ -179,6 +229,8 @@ const redNightTheme: ThemeColors = {
   shadowDark: '#00000080', // Darker black shadow
   surfaceHighlight: '#450A0A', // Highlighted surface
   surfaceDim: '#000000',   // Dimmed surface (pure black)
+  surfaceElevated: '#450A0A', // Elevated surface (same as highlight)
+  inputBackground: '#1F1917', // Same as surface for consistency
   overlay: 'rgba(0, 0, 0, 0.7)', // Modal overlay
   overlayDark: 'rgba(0, 0, 0, 0.9)', // Darker overlay
   // Icon colors for red-night theme (marine night vision compliance)
@@ -201,7 +253,16 @@ const redNightTheme: ThemeColors = {
   interactive: '#EF4444',  // Red accent
   interactiveHover: '#DC2626', // Dark red
   interactiveActive: '#991B1B', // Darker red
-  interactiveDisabled: '#450A0A' // Very dark red
+  interactiveDisabled: '#450A0A', // Very dark red
+  // Toggle/Switch colors for red-night theme
+  toggle: {
+    trackOn: '#DC2626',      // Dark red when ON
+    trackOff: '#7F1D1D',     // Very dark red when OFF
+    trackOnDisabled: '#991B1B',  // Medium red when ON+disabled
+    trackOffDisabled: '#450A0A', // Almost black when OFF+disabled
+    thumb: '#000000',        // Black thumb (best contrast)
+    thumbDisabled: '#7F1D1D', // Dark red thumb when disabled
+  },
 };
 
 const themes = {
@@ -391,10 +452,14 @@ export const useTheme = () => {
     text: adjustBrightness(colors.text, brightness),
     textSecondary: adjustBrightness(colors.textSecondary, brightness),
     textTertiary: adjustBrightness(colors.textTertiary, brightness),
+    textInverse: adjustBrightness(colors.textInverse, brightness),
     accent: adjustBrightness(colors.accent, brightness),
     warning: adjustBrightness(colors.warning, brightness),
+    warningLight: adjustBrightness(colors.warningLight, brightness),
     error: adjustBrightness(colors.error, brightness),
+    errorLight: adjustBrightness(colors.errorLight, brightness),
     success: adjustBrightness(colors.success, brightness),
+    successLight: adjustBrightness(colors.successLight, brightness),
     border: adjustBrightness(colors.border, brightness),
     borderLight: adjustBrightness(colors.borderLight, brightness),
     borderDark: adjustBrightness(colors.borderDark, brightness),
@@ -402,6 +467,8 @@ export const useTheme = () => {
     shadowDark: adjustBrightness(colors.shadowDark, brightness),
     surfaceHighlight: adjustBrightness(colors.surfaceHighlight, brightness),
     surfaceDim: adjustBrightness(colors.surfaceDim, brightness),
+    surfaceElevated: adjustBrightness(colors.surfaceElevated, brightness),
+    inputBackground: adjustBrightness(colors.inputBackground, brightness),
     overlay: adjustBrightness(colors.overlay, brightness),
     overlayDark: adjustBrightness(colors.overlayDark, brightness),
     iconPrimary: adjustBrightness(colors.iconPrimary, brightness),
@@ -422,6 +489,14 @@ export const useTheme = () => {
     interactiveHover: adjustBrightness(colors.interactiveHover, brightness),
     interactiveActive: adjustBrightness(colors.interactiveActive, brightness),
     interactiveDisabled: adjustBrightness(colors.interactiveDisabled, brightness),
+    toggle: {
+      trackOn: adjustBrightness(colors.toggle.trackOn, brightness),
+      trackOff: adjustBrightness(colors.toggle.trackOff, brightness),
+      trackOnDisabled: adjustBrightness(colors.toggle.trackOnDisabled, brightness),
+      trackOffDisabled: adjustBrightness(colors.toggle.trackOffDisabled, brightness),
+      thumb: adjustBrightness(colors.toggle.thumb, brightness),
+      thumbDisabled: adjustBrightness(colors.toggle.thumbDisabled, brightness),
+    },
   };
   
   return adjustedColors;
