@@ -524,15 +524,69 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /**
    * Handle metric change - save current metric's thresholds before switching
+   * Must save synchronously with current metric key before updating selectedMetric
    */
   const handleMetricChange = useCallback((newMetric: string) => {
-    if (requiresMetricSelection && formData.selectedMetric) {
-      // Save current metric's thresholds before switching
-      saveNow();
+    if (requiresMetricSelection && selectedSensorType && formData.selectedMetric && formData.selectedMetric !== newMetric) {
+      // Save current metric's thresholds SYNCHRONOUSLY before switching
+      // Cannot use saveNow() because it's debounced - by the time it executes,
+      // selectedMetric will already be the new value
+      
+      // Get metric-specific presentation for current metric
+      const currentMetricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
+      let currentMetricPres = presentation;
+      
+      if (currentMetricInfo?.category) {
+        const categoryMap: Partial<Record<DataCategory, any>> = {
+          voltage: voltagePresentation,
+          temperature: temperaturePresentation,
+          current: currentPresentation,
+          pressure: pressurePresentation,
+          rpm: rpmPresentation,
+          speed: speedPresentation,
+        };
+        currentMetricPres = categoryMap[currentMetricInfo.category] || presentation;
+      }
+      
+      // Build updates with current metric's values
+      const updates: Partial<SensorAlarmThresholds> = {
+        name: formData.name?.trim() || undefined,
+        enabled: formData.enabled,
+        direction: getAlarmDirection(selectedSensorType).direction,
+        criticalSoundPattern: formData.criticalSoundPattern,
+        warningSoundPattern: formData.warningSoundPattern,
+      };
+      
+      // Add context
+      if (selectedSensorType === 'battery' && !sensorProvidedChemistry) {
+        updates.context = { batteryChemistry: formData.batteryChemistry as any };
+      } else if (selectedSensorType === 'engine') {
+        updates.context = { engineType: formData.engineType as any };
+      }
+      
+      // Save current metric's thresholds with correct key
+      updates.metrics = { ...currentThresholds.metrics };
+      updates.metrics[formData.selectedMetric] = {
+        enabled: true,
+        direction: getAlarmDirection(selectedSensorType, formData.selectedMetric).direction,
+        critical: formData.criticalValue !== undefined && currentMetricPres.isValid 
+          ? currentMetricPres.convertBack(formData.criticalValue) 
+          : undefined,
+        warning: formData.warningValue !== undefined && currentMetricPres.isValid 
+          ? currentMetricPres.convertBack(formData.warningValue) 
+          : undefined,
+        criticalSoundPattern: formData.criticalSoundPattern,
+        warningSoundPattern: formData.warningSoundPattern,
+      };
+      
+      // Save immediately to both stores
+      setConfig(selectedSensorType, selectedInstance, updates);
+      updateSensorThresholds(selectedSensorType, selectedInstance, updates);
     }
+    
     // Update to new metric (useEffect will load new metric's thresholds)
     updateField('selectedMetric', newMetric);
-  }, [requiresMetricSelection, formData.selectedMetric, saveNow, updateField]);
+  }, [requiresMetricSelection, formData, alarmConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation, selectedSensorType, sensorProvidedChemistry, currentThresholds, setConfig, selectedInstance, updateSensorThresholds, updateField]);
 
   /**
    * Handle alarm enable/disable with safety confirmation
