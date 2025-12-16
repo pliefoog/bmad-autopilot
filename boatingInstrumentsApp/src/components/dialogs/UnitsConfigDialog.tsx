@@ -19,13 +19,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
-import { BaseSettingsModal } from './base/BaseSettingsModal';
+import { UniversalIcon } from '../atoms/UniversalIcon';
 import { FormSection } from './components/FormSection';
 import { useFormState } from '../../hooks/useFormState';
 import { getPlatformTokens } from '../../theme/settingsTokens';
@@ -368,14 +369,23 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
   // === RENDER ===
 
   return (
-    <BaseSettingsModal
+    <Modal
       visible={visible}
-      title="Units & Format"
-      onClose={handleClose}
-      showFooter={false}
-      testID="units-config-dialog"
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
     >
-      <ScrollView style={styles.scrollContainer}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <UniversalIcon name="close" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Units & Format</Text>
+          <View style={styles.closeButton} />
+        </View>
+
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
         {/* Preset Selector */}
         <FormSection
           title="Preset"
@@ -495,7 +505,8 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
           );
         })}
       </ScrollView>
-    </BaseSettingsModal>
+      </View>
+    </Modal>
   );
 };
 
@@ -507,8 +518,32 @@ const createStyles = (
   tvMode: boolean
 ) =>
   StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: platformTokens.spacing.row,
+      paddingVertical: tvMode ? 20 : 12,
+      borderBottomWidth: 1,
+    },
+    closeButton: {
+      padding: 8,
+      width: 40,
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: platformTokens.typography.title.fontSize,
+      fontWeight: '600',
+      fontFamily: platformTokens.typography.fontFamily,
+    },
     scrollContainer: {
       flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: platformTokens.spacing.section,
     },
     hint: {
       fontSize: platformTokens.typography.caption.fontSize,
