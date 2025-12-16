@@ -150,6 +150,38 @@ const sensorToCategory: Record<SensorType, DataCategory | null> = {
   navigation: null,
 };
 
+/**
+ * Get metric-specific presentation for unit conversion
+ * Eliminates code duplication across save/load logic
+ */
+function getMetricPresentation(
+  metricKey: string | undefined,
+  alarmConfig: typeof SENSOR_ALARM_CONFIG[SensorType] | null,
+  presentation: any,
+  voltagePresentation: any,
+  temperaturePresentation: any,
+  currentPresentation: any,
+  pressurePresentation: any,
+  rpmPresentation: any,
+  speedPresentation: any
+): any {
+  if (!metricKey || !alarmConfig?.metrics) return presentation;
+  
+  const metricInfo = alarmConfig.metrics.find(m => m.key === metricKey);
+  if (!metricInfo?.category) return presentation;
+  
+  const categoryMap: Partial<Record<DataCategory, any>> = {
+    voltage: voltagePresentation,
+    temperature: temperaturePresentation,
+    current: currentPresentation,
+    pressure: pressurePresentation,
+    rpm: rpmPresentation,
+    speed: speedPresentation,
+  };
+  
+  return categoryMap[metricInfo.category] || presentation;
+}
+
 interface SensorInstance {
   instance: number;
   name?: string;
@@ -157,8 +189,8 @@ interface SensorInstance {
   lastUpdate?: number;
 }
 
-// Zod schema for form validation
-const sensorFormSchema = z.object({
+// Zod schema for form validation with direction-aware threshold validation
+const createSensorFormSchema = (direction?: 'above' | 'below') => z.object({
   name: z.string().optional(),
   enabled: z.boolean(),
   batteryChemistry: z.enum(['lead-acid', 'agm', 'lifepo4']).optional(),
@@ -169,17 +201,22 @@ const sensorFormSchema = z.object({
   criticalSoundPattern: z.string(),
   warningSoundPattern: z.string(),
 }).refine((data) => {
-  // Validate warning < critical for 'above' direction
-  if (data.warningValue !== undefined && data.criticalValue !== undefined) {
-    // Direction-aware validation will be handled by ThresholdEditor
-    return true;
+  // Validate threshold relationship based on alarm direction
+  if (data.warningValue !== undefined && data.criticalValue !== undefined && direction) {
+    if (direction === 'above') {
+      // For 'above' alarms: warning must be less than critical
+      return data.warningValue < data.criticalValue;
+    } else {
+      // For 'below' alarms: warning must be greater than critical
+      return data.warningValue > data.criticalValue;
+    }
   }
   return true;
 }, {
-  message: 'Invalid threshold configuration',
+  message: 'Warning threshold must be less severe than critical threshold',
 });
 
-type SensorFormData = z.infer<typeof sensorFormSchema>;
+type SensorFormData = z.infer<ReturnType<typeof createSensorFormSchema>>;
 
 export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   visible,
@@ -328,21 +365,18 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
     // Convert thresholds back to SI units
     if (requiresMetricSelection && data.selectedMetric) {
-      // Get metric-specific presentation for proper unit conversion
-      const metricInfo = alarmConfig?.metrics?.find(m => m.key === data.selectedMetric);
-      let metricPres = presentation;
-      
-      if (metricInfo?.category) {
-        const categoryMap: Partial<Record<DataCategory, any>> = {
-          voltage: voltagePresentation,
-          temperature: temperaturePresentation,
-          current: currentPresentation,
-          pressure: pressurePresentation,
-          rpm: rpmPresentation,
-          speed: speedPresentation,
-        };
-        metricPres = categoryMap[metricInfo.category] || presentation;
-      }
+      // Use shared helper to get metric-specific presentation
+      const metricPres = getMetricPresentation(
+        data.selectedMetric,
+        alarmConfig,
+        presentation,
+        voltagePresentation,
+        temperaturePresentation,
+        currentPresentation,
+        pressurePresentation,
+        rpmPresentation,
+        speedPresentation
+      );
       
       updates.metrics = { ...currentThresholds.metrics };
       updates.metrics[data.selectedMetric] = {
@@ -362,12 +396,24 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       }
     }
 
-    // Save to stores
-    setConfig(selectedSensorType, selectedInstance, updates);
-    updateSensorThresholds(selectedSensorType, selectedInstance, updates);
+    // Save to stores with error handling
+    try {
+      setConfig(selectedSensorType, selectedInstance, updates);
+      updateSensorThresholds(selectedSensorType, selectedInstance, updates);
+    } catch (error) {
+      console.error('[SensorConfigDialog] Save failed:', error);
+      throw error; // Re-throw for useFormState error handling
+    }
   }, [selectedSensorType, selectedInstance, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, sensorProvidedChemistry, alarmConfig, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
 
-  // Form state management
+  // Get alarm direction for validation
+  const alarmDirection = useMemo(() => {
+    if (!selectedSensorType) return undefined;
+    const metric = requiresMetricSelection ? initialFormData.selectedMetric : undefined;
+    return getAlarmDirection(selectedSensorType, metric).direction;
+  }, [selectedSensorType, requiresMetricSelection, initialFormData.selectedMetric]);
+
+  // Form state management with direction-aware validation
   const {
     formData,
     updateField,
@@ -377,7 +423,18 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   } = useFormState<SensorFormData>(initialFormData, {
     onSave: handleSave,
     debounceMs: 300,
-    validationSchema: sensorFormSchema,
+    validationSchema: createSensorFormSchema(alarmDirection),
+    onValidationError: (errors) => {
+      console.warn('[SensorConfigDialog] Validation errors:', errors);
+    },
+    onSaveError: (error) => {
+      console.error('[SensorConfigDialog] Save error:', error);
+      if (Platform.OS === 'web') {
+        alert('Failed to save sensor configuration. Please try again.');
+      } else {
+        Alert.alert('Save Failed', 'Could not save sensor configuration. Please try again.');
+      }
+    },
   });
 
   // Ensure selectedMetric defaults to first metric for multi-metric sensors
@@ -401,24 +458,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       
       if (requiresMetricSelection && formData.selectedMetric && currentThresholds.metrics) {
         const metricConfig = currentThresholds.metrics[formData.selectedMetric];
+        
+        // Get metric-specific presentation using shared helper
+        const metricPres = getMetricPresentation(
+          formData.selectedMetric,
+          alarmConfig,
+          presentation,
+          voltagePresentation,
+          temperaturePresentation,
+          currentPresentation,
+          pressurePresentation,
+          rpmPresentation,
+          speedPresentation
+        );
+        
         if (metricConfig) {
           // Load stored thresholds for this metric
-          const metricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
-          let metricPres = presentation;
-          
-          // Get the correct presentation for this metric's category
-          if (metricInfo?.category) {
-            const categoryMap: Partial<Record<DataCategory, any>> = {
-              voltage: voltagePresentation,
-              temperature: temperaturePresentation,
-              current: currentPresentation,
-              pressure: pressurePresentation,
-              rpm: rpmPresentation,
-              speed: speedPresentation,
-            };
-            metricPres = categoryMap[metricInfo.category] || presentation;
-          }
-
           updateFields({
             criticalValue: metricConfig.critical !== undefined && metricPres.isValid
               ? metricPres.convert(metricConfig.critical)
@@ -432,20 +487,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         } else if (selectedSensorType && formData.selectedMetric) {
           // No saved config for this metric - use smart defaults
           const defaults = getSmartDefaults(selectedSensorType, currentThresholds.context);
-          const metricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
-          let metricPres = presentation;
-          
-          if (metricInfo?.category) {
-            const categoryMap: Partial<Record<DataCategory, any>> = {
-              voltage: voltagePresentation,
-              temperature: temperaturePresentation,
-              current: currentPresentation,
-              pressure: pressurePresentation,
-              rpm: rpmPresentation,
-              speed: speedPresentation,
-            };
-            metricPres = categoryMap[metricInfo.category] || presentation;
-          }
 
           // Extract metric-specific defaults from multi-metric structure
           if (defaults?.metrics?.[formData.selectedMetric]) {
@@ -524,69 +565,19 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /**
    * Handle metric change - save current metric's thresholds before switching
-   * Must save synchronously with current metric key before updating selectedMetric
+   * Uses proper async/await to ensure save completes before loading new metric
    */
-  const handleMetricChange = useCallback((newMetric: string) => {
-    if (requiresMetricSelection && selectedSensorType && formData.selectedMetric && formData.selectedMetric !== newMetric) {
-      // Save current metric's thresholds SYNCHRONOUSLY before switching
-      // Cannot use saveNow() because it's debounced - by the time it executes,
-      // selectedMetric will already be the new value
-      
-      // Get metric-specific presentation for current metric
-      const currentMetricInfo = alarmConfig?.metrics?.find(m => m.key === formData.selectedMetric);
-      let currentMetricPres = presentation;
-      
-      if (currentMetricInfo?.category) {
-        const categoryMap: Partial<Record<DataCategory, any>> = {
-          voltage: voltagePresentation,
-          temperature: temperaturePresentation,
-          current: currentPresentation,
-          pressure: pressurePresentation,
-          rpm: rpmPresentation,
-          speed: speedPresentation,
-        };
-        currentMetricPres = categoryMap[currentMetricInfo.category] || presentation;
-      }
-      
-      // Build updates with current metric's values
-      const updates: Partial<SensorAlarmThresholds> = {
-        name: formData.name?.trim() || undefined,
-        enabled: formData.enabled,
-        direction: getAlarmDirection(selectedSensorType).direction,
-        criticalSoundPattern: formData.criticalSoundPattern,
-        warningSoundPattern: formData.warningSoundPattern,
-      };
-      
-      // Add context
-      if (selectedSensorType === 'battery' && !sensorProvidedChemistry) {
-        updates.context = { batteryChemistry: formData.batteryChemistry as any };
-      } else if (selectedSensorType === 'engine') {
-        updates.context = { engineType: formData.engineType as any };
-      }
-      
-      // Save current metric's thresholds with correct key
-      updates.metrics = { ...currentThresholds.metrics };
-      updates.metrics[formData.selectedMetric] = {
-        enabled: true,
-        direction: getAlarmDirection(selectedSensorType, formData.selectedMetric).direction,
-        critical: formData.criticalValue !== undefined && currentMetricPres.isValid 
-          ? currentMetricPres.convertBack(formData.criticalValue) 
-          : undefined,
-        warning: formData.warningValue !== undefined && currentMetricPres.isValid 
-          ? currentMetricPres.convertBack(formData.warningValue) 
-          : undefined,
-        criticalSoundPattern: formData.criticalSoundPattern,
-        warningSoundPattern: formData.warningSoundPattern,
-      };
-      
-      // Save immediately to both stores
-      setConfig(selectedSensorType, selectedInstance, updates);
-      updateSensorThresholds(selectedSensorType, selectedInstance, updates);
+  const handleMetricChange = useCallback(async (newMetric: string) => {
+    if (requiresMetricSelection && formData.selectedMetric && formData.selectedMetric !== newMetric) {
+      // Save current metric before switching - await completion
+      await saveNow();
+      // Small delay to ensure save propagates to stores
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     // Update to new metric (useEffect will load new metric's thresholds)
     updateField('selectedMetric', newMetric);
-  }, [requiresMetricSelection, formData, alarmConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation, selectedSensorType, sensorProvidedChemistry, currentThresholds, setConfig, selectedInstance, updateSensorThresholds, updateField]);
+  }, [requiresMetricSelection, formData.selectedMetric, saveNow, updateField]);
 
   /**
    * Handle alarm enable/disable with safety confirmation
@@ -614,6 +605,19 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       updateField('enabled', value);
     }
   }, [selectedSensorType, updateField]);
+
+  /**
+   * Handle dialog close - ensure pending saves complete
+   */
+  const handleClose = useCallback(async () => {
+    if (isDirty) {
+      // Flush any pending saves before closing
+      await saveNow();
+      // Small delay to ensure save completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    onClose();
+  }, [isDirty, saveNow, onClose]);
 
   // Master reset to defaults (resets ALL sensor settings including name, alarms, context)
   const handleMasterReset = useCallback(() => {
@@ -686,11 +690,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     console.log(`Testing sound: ${soundPattern}`);
   }, []);
 
-  // Close handler
-  const handleClose = useCallback(() => {
-    saveNow();
-    onClose();
-  }, [saveNow, onClose]);
+  // Close handler (already defined earlier with async save completion)
 
   // Get display unit and label
   const { unitSymbol, metricLabel } = useMemo(() => {
