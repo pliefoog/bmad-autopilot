@@ -164,6 +164,8 @@ export interface ThresholdConfig {
   warningSoundPattern: AlarmSoundPattern;
   criticalHysteresis: number;
   warningHysteresis: number;
+  min?: number;                   // Slider minimum value (SI units)
+  max?: number;                   // Slider maximum value (SI units)
 }
 
 /**
@@ -286,6 +288,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
+              min: 10.5,
+              max: 16.0,
             },
             soc: {
               critical: 20,
@@ -296,6 +300,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
+              min: 0,
+              max: 100,
             },
             temperature: {
               critical: 50,
@@ -316,6 +322,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
+              min: 0,
+              max: 500,
             },
           },
         },
@@ -330,6 +338,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
+              min: 10.5,
+              max: 16.0,
             },
             soc: {
               critical: 20,
@@ -340,6 +350,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
+              min: 0,
+              max: 100,
             },
             temperature: {
               critical: 50,
@@ -350,6 +362,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              min: -20,
+              max: 80,
             },
             current: {
               critical: 250,
@@ -360,6 +374,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
+              min: 0,
+              max: 500,
             },
           },
         },
@@ -374,6 +390,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
+              min: 10.5,
+              max: 16.0,
             },
             soc: {
               critical: 20,
@@ -384,6 +402,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
+              min: 0,
+              max: 100,
             },
             temperature: {
               critical: 45,
@@ -394,6 +414,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              min: -20,
+              max: 70,
             },
             current: {
               critical: 180,
@@ -404,6 +426,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
+              min: 0,
+              max: 400,
             },
           },
         },
@@ -418,6 +442,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
+              min: 12.0,
+              max: 15.0,
             },
             soc: {
               critical: 10,
@@ -438,6 +464,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              min: -20,
+              max: 60,
             },
             current: {
               critical: 300,
@@ -448,6 +476,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
+              min: 0,
+              max: 600,
             },
           },
         },
@@ -484,6 +514,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
         criticalHysteresis: 0.3,
         warningHysteresis: 0.3,
+        min: 0,
+        max: 100,
       },
     },
   },
@@ -562,6 +594,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 50,
               warningHysteresis: 50,
+              min: 0,
+              max: 3500,
             },
             temperature: {
               critical: 105,
@@ -572,6 +606,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              min: 0,
+              max: 120,
             },
             oilPressure: {
               critical: 15,
@@ -582,6 +618,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              min: 0,
+              max: 600,
             },
           },
         },
@@ -596,6 +634,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 100,
               warningHysteresis: 100,
+              min: 0,
+              max: 4500,
             },
             temperature: {
               critical: 110,
@@ -606,6 +646,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              min: 0,
+              max: 130,
             },
             oilPressure: {
               critical: 10,
@@ -616,6 +658,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              min: 0,
+              max: 500,
             },
           },
         },
@@ -630,6 +674,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 100,
               warningHysteresis: 100,
+              min: 0,
+              max: 6500,
             },
             temperature: {
               critical: 85,
@@ -640,6 +686,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              min: 0,
+              max: 100,
             },
             oilPressure: {
               critical: 8,
@@ -650,6 +698,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              min: 0,
+              max: 400,
             },
           },
         },
@@ -686,6 +736,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
         criticalHysteresis: 3,
         warningHysteresis: 3,
+        min: 0,
+        max: 60,
       },
     },
   },
@@ -719,6 +771,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.info,
         criticalHysteresis: 0.5,
         warningHysteresis: 0.5,
+        min: 0,
+        max: 15,
       },
     },
   },
@@ -770,6 +824,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
+            min: 0,
+            max: 150,
           },
         },
         'cabin': {
@@ -782,6 +838,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
+            min: -10,
+            max: 50,
           },
         },
         'fridge': {
@@ -794,6 +852,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 1,
             warningHysteresis: 1,
+            min: -10,
+            max: 20,
           },
         },
         'freezer': {
@@ -806,6 +866,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
+            min: -30,
+            max: 0,
           },
         },
         'outside': {
@@ -818,6 +880,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.none,
             criticalHysteresis: 3,
             warningHysteresis: 3,
+            min: -20,
+            max: 60,
           },
         },
         'seaWater': {
@@ -830,6 +894,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.none,
             criticalHysteresis: 2,
             warningHysteresis: 2,
+            min: -5,
+            max: 40,
           },
         },
       },
@@ -970,6 +1036,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
+            min: 0,
+            max: 100,
           },
         },
         'freshWater': {
@@ -982,6 +1050,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
+            min: 0,
+            max: 100,
           },
         },
         'grayWater': {
@@ -994,6 +1064,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
+            min: 0,
+            max: 100,
           },
         },
         'blackWater': {
@@ -1006,6 +1078,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 3,
             warningHysteresis: 3,
+            min: 0,
+            max: 100,
           },
         },
         'liveWell': {
@@ -1018,6 +1092,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
+            min: 0,
+            max: 100,
           },
         },
         'oil': {
@@ -1030,6 +1106,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
+            min: 0,
+            max: 100,
           },
         },
       },
@@ -1169,6 +1247,48 @@ export function getSensorAlarmMetrics(sensorType: SensorType): SensorAlarmMetric
  */
 
 /**
+ * Context value aliases - maps common abbreviations/variations to registry keys
+ */
+const CONTEXT_ALIASES: Record<string, Record<string, string>> = {
+  batteryChemistry: {
+    'fla': 'lead-acid',     // Flooded Lead Acid
+    'flooded': 'lead-acid',
+    'wet': 'lead-acid',
+    'gel': 'gel',
+    'lfp': 'lifepo4',       // Lithium Iron Phosphate
+    'lithium': 'lifepo4',
+  },
+  engineType: {
+    'gas': 'gasoline',
+    'petrol': 'gasoline',
+  },
+  tankType: {
+    'water': 'freshWater',         // Generic water → fresh water
+    'fresh': 'freshWater',
+    'freshwater': 'freshWater',
+    'waste': 'grayWater',          // Generic waste → gray water
+    'gray': 'grayWater',
+    'grey': 'grayWater',
+    'graywater': 'grayWater',
+    'greywater': 'grayWater',
+    'black': 'blackWater',
+    'blackwater': 'blackWater',
+    'sewage': 'blackWater',
+    'ballast': 'fuel',             // No specific ballast config, use fuel as generic
+    'livewell': 'liveWell',
+    'live well': 'liveWell',
+  },
+  location: {
+    'engine': 'engineRoom',        // Engine temp → engine room
+    'seawater': 'outside',         // Seawater temp → outside (ambient)
+    'exhaust': 'engineRoom',       // Exhaust temp → engine room category
+    'refrigeration': 'fridge',     // Full name → short form
+    'baitwell': 'liveWell',        // Bait well → live well (similar use case)
+    'bait well': 'liveWell',
+  },
+};
+
+/**
  * Get context-aware default alarm thresholds for a sensor
  * 
  * **Usage:**
@@ -1207,7 +1327,16 @@ export function getAlarmDefaults(
       const firstContext = Object.keys(config.defaults.contexts)[0];
       return config.defaults.contexts[firstContext];
     }
-    return config.defaults.contexts[contextValue];
+    // Normalize to lowercase to match registry keys (AGM -> agm, LiFePO4 -> lifepo4)
+    let normalizedValue = String(contextValue).toLowerCase();
+    
+    // Apply alias mapping if available (FLA -> lead-acid, LFP -> lifepo4, etc.)
+    const aliases = CONTEXT_ALIASES[config.defaults.contextKey];
+    if (aliases && aliases[normalizedValue]) {
+      normalizedValue = aliases[normalizedValue];
+    }
+    
+    return config.defaults.contexts[normalizedValue];
   }
   
   return undefined;
@@ -1219,6 +1348,6 @@ export function getAlarmDefaults(
 export function getSmartDefaults(
   sensorType: SensorType,
   context?: Record<string, any>
-): any | undefined {
+): SensorAlarmThresholds | ThresholdConfig | undefined {
   return getAlarmDefaults(sensorType, context);
 }

@@ -619,7 +619,16 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     instance: number,
   ): SensorAlarmThresholds | undefined => {
     const sensor = get().nmeaData.sensors[sensorType][instance];
-    return sensor?.alarmThresholds;
+    const thresholds = sensor?.alarmThresholds;
+    console.log(`[nmeaStore] getSensorThresholds(${sensorType}, ${instance}):`, thresholds);
+    if (thresholds?.metrics) {
+      console.log(`[nmeaStore] metrics:`, thresholds.metrics);
+      Object.keys(thresholds.metrics).forEach(key => {
+        const metric = thresholds.metrics![key];
+        console.log(`[nmeaStore]   ${key}:`, { min: metric.min, max: metric.max, critical: metric.critical, warning: metric.warning });
+      });
+    }
+    return thresholds;
   },
 
   initializeDefaultThresholds: <T extends SensorType>(

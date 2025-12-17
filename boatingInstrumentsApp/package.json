@@ -17,7 +17,7 @@
     "dev:mock": "node ./node_modules/.bin/jest --runInBand --testTimeout=20000 __tests__/integration/mockServerValidation.test.ts",
     "dev:playback": "node -e \"require('./scripts/bench/playback-bench.js')\"",
     "dev:bench": "node scripts/bench/playback-bench.js",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test:ci-fast": "jest __tests__/services/stopPlayback.test.ts __tests__/services/playbackParity.test.ts __tests__/integration/playbackUi.test.tsx __tests__/integration/modeToggleWidgets.test.tsx __tests__/services/playbackService.test.ts --runInBand --testTimeout=20000",
     "test:integration": "jest __tests__/integration --runInBand --testTimeout=20000",
     "test:integration:connection": "jest __tests__/integration/connectionResilience.test.ts --runInBand --testTimeout=20000",
@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@canboat/canboatjs": "^3.11.0",
+    "@ptomasroos/react-native-multi-slider": "^2.2.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-picker/picker": "^2.11.1",
     "@react-native/new-app-screen": "0.82.0",
