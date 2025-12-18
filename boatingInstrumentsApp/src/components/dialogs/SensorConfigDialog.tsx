@@ -35,7 +35,7 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import Slider from '@react-native-community/slider';
-import MultiSlider from '@ptomasroos/react-native-multi-slider';
+import RangeSlider from 'rn-range-slider';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
@@ -1259,73 +1259,146 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                 </View>
                               </View>
 
-                              {/* Multi-Slider */}
-                              <View style={{ alignItems: 'center', paddingHorizontal: 8 }}>
-                                <MultiSlider
-                                  values={alarmDirection === 'above' 
-                                    ? [formData.warningValue || 0, formData.criticalValue || 0]
-                                    : [formData.criticalValue || 0, formData.warningValue || 0]
-                                  }
+                              {/* Range Slider */}
+                              <View style={{ alignItems: 'center', paddingHorizontal: 8, width: isNarrow ? 280 : 400 }}>
+                                <RangeSlider
+                                  style={{ width: '100%', height: 40 }}
                                   min={(currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0}
                                   max={(currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100}
                                   step={Math.pow(10, -((metricPresentation as any).formatSpec?.decimals ?? 1))}
-                                  sliderLength={isNarrow ? 280 : 400}
-                                  onValuesChange={(values) => {
+                                  low={alarmDirection === 'above' ? (formData.warningValue || 0) : (formData.criticalValue || 0)}
+                                  high={alarmDirection === 'above' ? (formData.criticalValue || 0) : (formData.warningValue || 0)}
+                                  onValueChanged={(low, high) => {
                                     if (alarmDirection === 'above') {
                                       // For 'above': warning < critical
-                                      updateField('warningValue', values[0]);
-                                      updateField('criticalValue', values[1]);
+                                      updateField('warningValue', low);
+                                      updateField('criticalValue', high);
                                     } else {
                                       // For 'below': critical < warning
-                                      updateField('criticalValue', values[0]);
-                                      updateField('warningValue', values[1]);
+                                      updateField('criticalValue', low);
+                                      updateField('warningValue', high);
                                     }
                                   }}
-                                  selectedStyle={{ backgroundColor: theme.warning }}
-                                  unselectedStyle={{ backgroundColor: theme.border }}
-                                  markerStyle={{
-                                    height: 28,
-                                    width: 28,
-                                    borderRadius: 14,
-                                    backgroundColor: '#FFFFFF',
-                                    borderWidth: 3,
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: 0.25,
-                                    shadowRadius: 3.84,
-                                    elevation: 5,
+                                  renderThumb={(name) => (
+                                    <View style={{
+                                      height: 18,
+                                      width: 18,
+                                      borderRadius: 14,
+                                      backgroundColor: (() => {
+                                        // Left thumb (low value)
+                                        if (name === 'low') {
+                                          return alarmDirection === 'above' ? theme.warning : theme.error;
+                                        }
+                                        // Right thumb (high value)
+                                        return alarmDirection === 'above' ? theme.error : theme.warning;
+                                      })(),
+                                      borderWidth: 3,
+                                      borderColor: (() => {
+                                        // Left thumb (low value)
+                                        if (name === 'low') {
+                                          return alarmDirection === 'above' ? theme.warning : theme.error;
+                                        }
+                                        // Right thumb (high value)
+                                        return alarmDirection === 'above' ? theme.error : theme.warning;
+                                      })(),
+                                      shadowColor: '#000',
+                                      shadowOffset: { width: 0, height: 2 },
+                                      shadowOpacity: 0.25,
+                                      shadowRadius: 3.84,
+                                      elevation: 5,
+                                    }} />
+                                  )}
+                                  renderRail={() => {
+                                    const min = (currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0;
+                                    const max = (currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100;
+                                    const range = max - min;
+                                    
+                                    // Get threshold values
+                                    const warning = formData.warningValue ?? 0;
+                                    const critical = formData.criticalValue ?? 0;
+                                    
+                                    // Calculate percentages for each zone
+                                    // For 'above' direction: safe < warning < critical
+                                    // For 'below' direction: critical < warning < safe
+                                    let safePercent, warningPercent, criticalPercent;
+                                    
+                                    if (alarmDirection === 'above') {
+                                      // Values increase left to right: [0%...warning...critical...100%]
+                                      warningPercent = Math.max(0, Math.min(100, ((warning - min) / range) * 100));
+                                      criticalPercent = Math.max(0, Math.min(100, ((critical - min) / range) * 100));
+                                      safePercent = warningPercent;
+                                      
+                                      return (
+                                        <View style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                                          {/* Safe zone (left - green) */}
+                                          <View style={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            width: `${safePercent}%`,
+                                            height: 6,
+                                            backgroundColor: theme.success || '#22C55E',
+                                          }} />
+                                          
+                                          {/* Warning zone (middle - yellow/orange) */}
+                                          <View style={{
+                                            position: 'absolute',
+                                            left: `${warningPercent}%`,
+                                            width: `${Math.max(0, criticalPercent - warningPercent)}%`,
+                                            height: 6,
+                                            backgroundColor: theme.warning || '#F59E0B',
+                                          }} />
+                                          
+                                          {/* Critical zone (right - red) */}
+                                          <View style={{
+                                            position: 'absolute',
+                                            left: `${criticalPercent}%`,
+                                            width: `${Math.max(0, 100 - criticalPercent)}%`,
+                                            height: 6,
+                                            backgroundColor: theme.error || '#EF4444',
+                                          }} />
+                                        </View>
+                                      );
+                                    } else {
+                                      // 'below' direction: Values decrease left to right: [critical...warning...safe]
+                                      criticalPercent = Math.max(0, Math.min(100, ((critical - min) / range) * 100));
+                                      warningPercent = Math.max(0, Math.min(100, ((warning - min) / range) * 100));
+                                      
+                                      return (
+                                        <View style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                                          {/* Critical zone (left - red) */}
+                                          <View style={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            width: `${criticalPercent}%`,
+                                            height: 6,
+                                            backgroundColor: theme.error || '#EF4444',
+                                          }} />
+                                          
+                                          {/* Warning zone (middle - yellow/orange) */}
+                                          <View style={{
+                                            position: 'absolute',
+                                            left: `${criticalPercent}%`,
+                                            width: `${Math.max(0, warningPercent - criticalPercent)}%`,
+                                            height: 6,
+                                            backgroundColor: theme.warning || '#F59E0B',
+                                          }} />
+                                          
+                                          {/* Safe zone (right - green) */}
+                                          <View style={{
+                                            position: 'absolute',
+                                            left: `${warningPercent}%`,
+                                            width: `${Math.max(0, 100 - warningPercent)}%`,
+                                            height: 6,
+                                            backgroundColor: theme.success || '#22C55E',
+                                          }} />
+                                        </View>
+                                      );
+                                    }
                                   }}
-                                  customMarkerLeft={(e) => (
-                                    <View style={{
-                                      height: 28,
-                                      width: 28,
-                                      borderRadius: 14,
-                                      backgroundColor: '#FFFFFF',
-                                      borderWidth: 3,
-                                      borderColor: alarmDirection === 'above' ? theme.warning : theme.error,
-                                      shadowColor: '#000',
-                                      shadowOffset: { width: 0, height: 2 },
-                                      shadowOpacity: 0.25,
-                                      shadowRadius: 3.84,
-                                      elevation: 5,
-                                    }} />
+                                  renderRailSelected={() => (
+                                    // Make the selected rail transparent since we're showing zones in the base rail
+                                    <View style={{ flex: 1, height: 6, backgroundColor: 'transparent' }} />
                                   )}
-                                  customMarkerRight={(e) => (
-                                    <View style={{
-                                      height: 28,
-                                      width: 28,
-                                      borderRadius: 14,
-                                      backgroundColor: '#FFFFFF',
-                                      borderWidth: 3,
-                                      borderColor: alarmDirection === 'above' ? theme.error : theme.warning,
-                                      shadowColor: '#000',
-                                      shadowOffset: { width: 0, height: 2 },
-                                      shadowOpacity: 0.25,
-                                      shadowRadius: 3.84,
-                                      elevation: 5,
-                                    }} />
-                                  )}
-                                  trackStyle={{ height: 6, borderRadius: 3 }}
                                 />
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: isNarrow ? 280 : 400, marginTop: 8 }}>
                                   <Text style={{ fontSize: 10, color: theme.textSecondary }}>
