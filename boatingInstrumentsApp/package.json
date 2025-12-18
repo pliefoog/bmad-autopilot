@@ -47,7 +47,6 @@
   },
   "dependencies": {
     "@canboat/canboatjs": "^3.11.0",
-    "@ptomasroos/react-native-multi-slider": "^2.2.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-picker/picker": "^2.11.1",
     "@react-native/new-app-screen": "0.82.0",
@@ -82,6 +81,7 @@
     "react-native-tcp-socket": "^6.3.0",
     "react-native-udp": "^4.1.7",
     "react-native-vector-icons": "^10.3.0",
+    "rn-range-slider": "^2.2.2",
     "suncalc": "^1.9.0",
     "yaml": "^2.8.1",
     "zod": "^4.2.1",

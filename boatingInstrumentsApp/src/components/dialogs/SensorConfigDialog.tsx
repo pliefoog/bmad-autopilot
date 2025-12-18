@@ -273,7 +273,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       convert: (v: number) => v,
       convertBack: (v: number) => v,
       presentation: null,
-      formatSpec: { decimals: 1, testCases: { min: 0, max: 100 } },
+      formatSpec: { decimals: 1 },
     },
     [category, rawPresentation]
   );
@@ -665,8 +665,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   // Compute constrained slider ranges based on alarm direction and other slider's value
   const criticalSliderRange = useMemo(() => {
-    const baseMin = (currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0;
-    const baseMax = (currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100;
+    const baseMin = (currentMetricThresholds as any).min ?? 0;
+    const baseMax = (currentMetricThresholds as any).max ?? 100;
     
     return {
       min: alarmDirection === 'above' ? (formData.warningValue ?? baseMin) : baseMin,
@@ -675,8 +675,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, [currentMetricThresholds, metricPresentation, alarmDirection, formData.warningValue]);
   
   const warningSliderRange = useMemo(() => {
-    const baseMin = (currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0;
-    const baseMax = (currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100;
+    const baseMin = (currentMetricThresholds as any).min ?? 0;
+    const baseMax = (currentMetricThresholds as any).max ?? 100;
     
     return {
       min: alarmDirection === 'below' ? (formData.criticalValue ?? baseMin) : baseMin,
@@ -1239,32 +1239,21 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           {/* Alarm Thresholds - Combined Multi-Slider */}
                           <View>
                             <View style={[styles.alarmRow, { borderColor: theme.border, paddingBottom: 16 }]}>
-                              {/* Threshold Labels */}
-                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: theme.error }} />
-                                  <Text style={[styles.alarmRowTitle, { color: theme.error }]}>
-                                    Critical: {((metricPresentation as any).formatSpec?.decimals !== undefined
-                                      ? (formData.criticalValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
-                                      : (formData.criticalValue || 0).toFixed(1))}{unitSymbol}
-                                  </Text>
+                              {/* Range Slider with min/max on sides */}
+                              <View style={{ flexDirection: 'row', gap: 8, paddingTop: 20 }}>
+                                {/* Min value - left side, aligned with track */}
+                                <View style={{ height: 60, paddingTop: 5 }}>
+                                    <Text style={{ fontSize: 10, color: theme.textSecondary, minWidth: 40, textAlign: 'right', fontWeight: 'bold' }}>
+                                    {((currentMetricThresholds as any).min ?? 0).toFixed((metricPresentation as any).formatSpec?.decimals ?? 1)}{unitSymbol}
+                                    </Text>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                  <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: theme.warning }} />
-                                  <Text style={[styles.alarmRowTitle, { color: theme.warning }]}>
-                                    Warning: {((metricPresentation as any).formatSpec?.decimals !== undefined
-                                      ? (formData.warningValue || 0).toFixed((metricPresentation as any).formatSpec.decimals)
-                                      : (formData.warningValue || 0).toFixed(1))}{unitSymbol}
-                                  </Text>
-                                </View>
-                              </View>
-
-                              {/* Range Slider */}
-                              <View style={{ alignItems: 'center', paddingHorizontal: 8, width: isNarrow ? 280 : 400 }}>
-                                <RangeSlider
-                                  style={{ width: '100%', height: 40 }}
-                                  min={(currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0}
-                                  max={(currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100}
+                                
+                                {/* Slider container */}
+                                <View style={{ flex: 1, position: 'relative' }}>
+                                  <RangeSlider
+                                    style={{ width: '100%', height: 60 }}
+                                  min={(currentMetricThresholds as any).min ?? 0}
+                                  max={(currentMetricThresholds as any).max ?? 100}
                                   step={Math.pow(10, -((metricPresentation as any).formatSpec?.decimals ?? 1))}
                                   low={alarmDirection === 'above' ? (formData.warningValue || 0) : (formData.criticalValue || 0)}
                                   high={alarmDirection === 'above' ? (formData.criticalValue || 0) : (formData.warningValue || 0)}
@@ -1279,38 +1268,62 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                       updateField('warningValue', high);
                                     }
                                   }}
-                                  renderThumb={(name) => (
-                                    <View style={{
-                                      height: 18,
-                                      width: 18,
-                                      borderRadius: 14,
-                                      backgroundColor: (() => {
-                                        // Left thumb (low value)
-                                        if (name === 'low') {
-                                          return alarmDirection === 'above' ? theme.warning : theme.error;
-                                        }
-                                        // Right thumb (high value)
-                                        return alarmDirection === 'above' ? theme.error : theme.warning;
-                                      })(),
-                                      borderWidth: 3,
-                                      borderColor: (() => {
-                                        // Left thumb (low value)
-                                        if (name === 'low') {
-                                          return alarmDirection === 'above' ? theme.warning : theme.error;
-                                        }
-                                        // Right thumb (high value)
-                                        return alarmDirection === 'above' ? theme.error : theme.warning;
-                                      })(),
-                                      shadowColor: '#000',
-                                      shadowOffset: { width: 0, height: 2 },
-                                      shadowOpacity: 0.25,
-                                      shadowRadius: 3.84,
-                                      elevation: 5,
-                                    }} />
-                                  )}
+                                  renderThumb={(name) => {
+                                    // Determine colors, labels, and values based on threshold type
+                                    const isWarning = (name === 'low' && alarmDirection === 'above') || (name === 'high' && alarmDirection === 'below');
+                                    const thumbColor = isWarning ? (theme.warning || '#F59E0B') : (theme.error || '#EF4444');
+                                    const thresholdLabel = isWarning ? 'Warning' : 'Critical';
+                                    const thresholdValue = isWarning ? formData.warningValue : formData.criticalValue;
+                                    const decimals = (metricPresentation as any).formatSpec?.decimals ?? 1;
+                                    
+                                    return (
+                                      <View>
+                                        {/* Label above thumb */}
+                                        <Text style={{
+                                          position: 'absolute',
+                                          bottom: 26,
+                                          left: -20,
+                                          right: -20,
+                                          textAlign: 'center',
+                                          fontSize: 11,
+                                          fontWeight: '600',
+                                          color: thumbColor,
+                                        }}>
+                                          {thresholdLabel}
+                                        </Text>
+                                        {/* Thumb circle at rail level */}
+                                        <View style={{
+                                          height: 18,
+                                          width: 18,
+                                          borderRadius: 14,
+                                          backgroundColor: thumbColor,
+                                          borderWidth: 3,
+                                          borderColor: thumbColor,
+                                          shadowColor: '#000',
+                                          shadowOffset: { width: 0, height: 2 },
+                                          shadowOpacity: 0.25,
+                                          shadowRadius: 3.84,
+                                          elevation: 5,
+                                        }} />
+                                        {/* Threshold value below thumb */}
+                                        <Text style={{
+                                          position: 'absolute',
+                                          top: 24,
+                                          left: -20,
+                                          right: -20,
+                                          textAlign: 'center',
+                                          fontSize: 11,
+                                          fontWeight: '600',
+                                          color: thumbColor,
+                                        }}>
+                                          {thresholdValue?.toFixed(decimals)}{unitSymbol}
+                                        </Text>
+                                      </View>
+                                    );
+                                  }}
                                   renderRail={() => {
-                                    const min = (currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0;
-                                    const max = (currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100;
+                                    const min = (currentMetricThresholds as any).min ?? 0;
+                                    const max = (currentMetricThresholds as any).max ?? 100;
                                     const range = max - min;
                                     
                                     // Get threshold values
@@ -1400,13 +1413,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                     <View style={{ flex: 1, height: 6, backgroundColor: 'transparent' }} />
                                   )}
                                 />
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: isNarrow ? 280 : 400, marginTop: 8 }}>
-                                  <Text style={{ fontSize: 10, color: theme.textSecondary }}>
-                                    {((currentMetricThresholds as any).min ?? (metricPresentation as any).formatSpec?.testCases?.min ?? 0).toFixed((metricPresentation as any).formatSpec?.decimals ?? 1)}{unitSymbol}
-                                  </Text>
-                                  <Text style={{ fontSize: 10, color: theme.textSecondary }}>
-                                    {((currentMetricThresholds as any).max ?? (metricPresentation as any).formatSpec?.testCases?.max ?? 100).toFixed((metricPresentation as any).formatSpec?.decimals ?? 1)}{unitSymbol}
-                                  </Text>
+                                </View>
+                                
+                                {/* Max value - right side, aligned with track */}
+                                <View style={{ height: 60, paddingTop: 5 }}>
+                                    <Text style={{ fontSize: 10, color: theme.textSecondary, minWidth: 40, textAlign: 'left', fontWeight: 'bold' }}>
+                                    {((currentMetricThresholds as any).max ?? 100).toFixed((metricPresentation as any).formatSpec?.decimals ?? 1)}{unitSymbol}
+                                    </Text>
                                 </View>
                               </View>
 
