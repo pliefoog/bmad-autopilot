@@ -90,6 +90,10 @@ export type AlarmSoundPattern = typeof ALARM_SOUND_PATTERNS[keyof typeof ALARM_S
  * - `readOnly`: Always load from sensor[instance][hardwareField], disable editing
  * - `readWrite`: Load from sensor[instance][hardwareField], allow editing  
  * - `readOnlyIfValue`: If sensor has value → read-only, if no value → editable with defaults
+ * 
+ * **Field Roles:**
+ * - UI/Configuration fields: batteryChemistry, engineType, capacity - no category
+ * - Data fields: voltage, temperature, rpm - have category for presentation
  */
 export interface SensorFieldConfig {
   key: string;                    // FormData key
@@ -117,6 +121,10 @@ export interface SensorFieldConfig {
   
   // UI metadata
   helpText?: string;              // User guidance tooltip
+  
+  // Presentation (for data fields only - UI fields don't have category)
+  category?: DataCategory;        // For presentation cache (voltage, temperature, etc.)
+  direction?: 'above' | 'below';  // Default alarm direction for this field
 }
 
 /**
@@ -210,6 +218,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'DC power system monitoring',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Battery Name',
@@ -234,15 +243,52 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
       {
         key: 'capacity',
-        label: 'Capacity',
-        type: 'slider',
+        label: 'Capacity (Ah)',
+        type: 'number',
         iostate: 'readOnlyIfValue',
         hardwareField: 'capacity',
         default: 140,
         min: 40,
         max: 5000,
-        step: 10,
+        category: 'capacity',
         helpText: 'Battery capacity in amp-hours. Hardware may provide this value.',
+      },
+      // Data fields (with categories for presentation)
+      {
+        key: 'voltage',
+        label: 'Voltage',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'voltage',
+        category: 'voltage',
+        direction: 'below',
+      },
+      {
+        key: 'current',
+        label: 'Current',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'current',
+        category: 'current',
+        direction: 'above',
+      },
+      {
+        key: 'temperature',
+        label: 'Temperature',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'temperature',
+        category: 'temperature',
+        direction: 'above',
+      },
+      {
+        key: 'soc',
+        label: 'State of Charge',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'stateOfCharge',
+        direction: 'below',
+        // Raw percentage 0-100, no category = no unit conversion
       },
     ],
     
@@ -491,6 +537,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Water depth measurement',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Depth Sounder Name',
@@ -498,6 +545,16 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this depth sounder (e.g., Bow Sounder)',
+      },
+      // Data fields
+      {
+        key: 'depth',
+        label: 'Depth',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'depth',
+        category: 'depth',
+        direction: 'below',
       },
     ],
     
@@ -526,6 +583,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Engine monitoring and diagnostics',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Engine Name',
@@ -555,6 +613,58 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         min: 1000,
         max: 8000,
         helpText: 'Maximum rated RPM for this engine',
+      },
+      // Data fields (with categories for presentation)
+      {
+        key: 'rpm',
+        label: 'Engine RPM',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'rpm',
+        category: 'rpm',
+        direction: 'above',
+      },
+      {
+        key: 'temperature',
+        label: 'Coolant Temperature',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'coolantTemp',
+        category: 'temperature',
+        direction: 'above',
+      },
+      {
+        key: 'oilPressure',
+        label: 'Oil Pressure',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'oilPressure',
+        category: 'pressure',
+        direction: 'below',
+      },
+      {
+        key: 'alternatorVoltage',
+        label: 'Alternator Voltage',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'alternatorVoltage',
+        category: 'voltage',
+      },
+      {
+        key: 'fuelRate',
+        label: 'Fuel Rate',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'fuelRate',
+        category: 'flowRate',
+      },
+      {
+        key: 'hours',
+        label: 'Engine Hours',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'hours',
+        category: 'time',
       },
     ],
     
@@ -713,6 +823,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Wind speed and direction',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Wind Sensor Name',
@@ -720,6 +831,40 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this wind sensor (e.g., Masthead Wind)',
+      },
+      // Data fields
+      {
+        key: 'speed',
+        label: 'Wind Speed',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'speed',
+        category: 'wind',
+        direction: 'above',
+      },
+      {
+        key: 'direction',
+        label: 'Wind Direction',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'direction',
+        category: 'angle',
+      },
+      {
+        key: 'trueSpeed',
+        label: 'True Wind Speed',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'trueSpeed',
+        category: 'wind',
+      },
+      {
+        key: 'trueDirection',
+        label: 'True Wind Direction',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'trueDirection',
+        category: 'angle',
       },
     ],
     
@@ -748,6 +893,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Boat speed measurement',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Speed Log Name',
@@ -755,6 +901,24 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this speed sensor (e.g., Paddle Wheel)',
+      },
+      // Data fields
+      {
+        key: 'throughWater',
+        label: 'Speed Through Water',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'throughWater',
+        category: 'speed',
+        direction: 'above',
+      },
+      {
+        key: 'overGround',
+        label: 'Speed Over Ground',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'overGround',
+        category: 'speed',
       },
     ],
     
@@ -783,6 +947,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Environmental temperature monitoring',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Sensor Name',
@@ -805,6 +970,16 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
           { label: 'Sea Water', value: 'seaWater' },
         ],
         helpText: 'Physical location of temperature sensor',
+      },
+      // Data fields
+      {
+        key: 'value',
+        label: 'Temperature',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'value',
+        category: 'temperature',
+        direction: 'above',
       },
     ],
     
@@ -908,6 +1083,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Magnetic heading',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Compass Name',
@@ -915,6 +1091,15 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this compass (e.g., Fluxgate Compass)',
+      },
+      // Data fields
+      {
+        key: 'heading',
+        label: 'Heading',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'heading',
+        category: 'angle',
       },
     ],
     
@@ -927,6 +1112,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Position and navigation',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'GPS Name',
@@ -934,6 +1120,23 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this GPS (e.g., Chart Plotter)',
+      },
+      // Data fields
+      {
+        key: 'speedOverGround',
+        label: 'Speed Over Ground',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'speedOverGround',
+        category: 'speed',
+      },
+      {
+        key: 'courseOverGround',
+        label: 'Course Over Ground',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'courseOverGround',
+        category: 'angle',
       },
     ],
     
@@ -946,6 +1149,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Automatic steering control',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Autopilot Name',
@@ -965,6 +1169,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Navigation and routing data',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'System Name',
@@ -972,6 +1177,31 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this navigation system',
+      },
+      // Data fields
+      {
+        key: 'bearingToWaypoint',
+        label: 'Bearing to Waypoint',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'bearingToWaypoint',
+        category: 'angle',
+      },
+      {
+        key: 'distanceToWaypoint',
+        label: 'Distance to Waypoint',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'distanceToWaypoint',
+        category: 'distance',
+      },
+      {
+        key: 'crossTrackError',
+        label: 'Cross Track Error',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'crossTrackError',
+        category: 'distance',
       },
     ],
     
@@ -984,6 +1214,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     description: 'Fluid tank monitoring',
     
     fields: [
+      // UI/Configuration fields
       {
         key: 'name',
         label: 'Tank Name',
@@ -1009,14 +1240,24 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
       {
         key: 'capacity',
-        label: 'Capacity',
-        type: 'slider',
+        label: 'Capacity (L)',
+        type: 'number',
         iostate: 'readWrite',
         default: 200,
         min: 10,
         max: 5000,
-        step: 10,
+        category: 'volume',
         helpText: 'Total capacity of tank in liters',
+      },
+      // Data fields
+      {
+        key: 'level',
+        label: 'Tank Level',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'level',
+        direction: 'below',
+        helpText: 'Current tank level (0.0-1.0 ratio)',
       },
     ],
     
@@ -1287,6 +1528,73 @@ const CONTEXT_ALIASES: Record<string, Record<string, string>> = {
     'bait well': 'liveWell',
   },
 };
+
+/**
+ * Get a specific field configuration from a sensor
+ * 
+ * @param sensorType - Type of sensor
+ * @param fieldKey - Field key to look up
+ * @returns Field configuration or undefined if not found
+ */
+export function getSensorField(
+  sensorType: SensorType,
+  fieldKey: string
+): SensorFieldConfig | undefined {
+  const config = SENSOR_CONFIG_REGISTRY[sensorType];
+  return config?.fields?.find(f => f.key === fieldKey);
+}
+
+/**
+ * Get all data fields (fields with category) from a sensor
+ * These are fields that represent sensor measurements with units
+ * 
+ * @param sensorType - Type of sensor
+ * @returns Array of data field configurations
+ */
+export function getDataFields(sensorType: SensorType): SensorFieldConfig[] {
+  const config = SENSOR_CONFIG_REGISTRY[sensorType];
+  return config?.fields?.filter(f => f.category !== undefined) ?? [];
+}
+
+/**
+ * Get all UI/configuration fields (fields without category) from a sensor
+ * These are fields used for sensor configuration like type, capacity, etc.
+ * 
+ * @param sensorType - Type of sensor
+ * @returns Array of UI field configurations
+ */
+export function getConfigFields(sensorType: SensorType): SensorFieldConfig[] {
+  const config = SENSOR_CONFIG_REGISTRY[sensorType];
+  return config?.fields?.filter(f => f.category === undefined) ?? [];
+}
+
+/**
+ * Get all alarm-capable fields from a sensor
+ * For multi-metric sensors: returns fields with category
+ * For single-metric sensors: returns the primary data field
+ * 
+ * @param sensorType - Type of sensor
+ * @returns Array of alarm field configurations
+ */
+export function getAlarmFields(sensorType: SensorType): SensorFieldConfig[] {
+  const config = SENSOR_CONFIG_REGISTRY[sensorType];
+  if (!config) return [];
+  
+  // Multi-metric sensors: all data fields can have alarms
+  if (config.alarmSupport === 'multi-metric') {
+    return getDataFields(sensorType);
+  }
+  
+  // Single-metric sensors: find the primary alarm field
+  // This is typically the first data field with a category
+  if (config.alarmSupport === 'single-metric') {
+    const dataFields = getDataFields(sensorType);
+    return dataFields.slice(0, 1); // Return first data field
+  }
+  
+  // No alarm support
+  return [];
+}
 
 /**
  * Get context-aware default alarm thresholds for a sensor

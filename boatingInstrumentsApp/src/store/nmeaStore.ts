@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { EventEmitter } from 'events';
 import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
+import { SensorPresentationCache } from '../services/SensorPresentationCache';
 
 // Debug logging toggle - set to true to enable verbose store update logs
 const DEBUG_STORE_UPDATES = false;
@@ -341,12 +342,15 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         }
       }
 
-      const updatedSensorData = {
+      // Enrich sensor data with display information before storing
+      const enrichedData = SensorPresentationCache.enrichSensorData(sensorType, {
         ...currentSensorData,
         ...finalData,
         history, // Explicitly preserve history reference
         timestamp: updateNow,
-      };
+      });
+
+      const updatedSensorData = enrichedData;
 
       // AUTO-ADD to history (based on sensor type)
       const trackableValue = extractTrackableValue(sensorType, updatedSensorData);

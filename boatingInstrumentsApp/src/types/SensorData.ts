@@ -18,6 +18,16 @@ import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 // - PGN 65288: Autopilot status (via PCDIN/binary)
 
 /**
+ * Display information cached for a sensor field
+ * Generated once at sensor detection/update and cached for efficient access
+ */
+export interface DisplayInfo {
+  value: number; // The raw numeric value in SI units
+  unit: string; // Unit symbol (e.g., "V", "°C", "m", "kn")
+  formatted: string; // Fully formatted string (e.g., "12.6 V", "15.3°C")
+}
+
+/**
  * Context-aware configuration for sensors
  */
 export interface SensorContext {
@@ -74,6 +84,7 @@ export interface BaseSensorData {
   history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
   historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
   alarmThresholds?: SensorAlarmThresholds; // Per-instance alarm configuration
+  display?: Record<string, DisplayInfo>; // Cached presentation data for all fields (e.g., { voltage: { value: 12.6, unit: "V", formatted: "12.6 V" } })
 }
 
 export interface TankSensorData extends BaseSensorData {
