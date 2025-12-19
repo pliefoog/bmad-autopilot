@@ -95,49 +95,8 @@ export interface SensorConfigDialogProps {
 
 // Hardcoded sensor configuration removed - now using SensorConfigRegistry as single source of truth
 
-/**
- * Get metric-specific presentation for unit conversion
- * Uses registry to find metric category, then maps to appropriate presentation hook
- * 
- * @param sensorType - Sensor type to get metrics for
- * @param metricKey - Specific metric identifier (e.g., 'voltage', 'temperature')
- * @param presentation - Default presentation (used for single-metric sensors)
- * @param voltagePresentation - Pre-called voltage presentation hook
- * @param temperaturePresentation - Pre-called temperature presentation hook
- * @param currentPresentation - Pre-called current presentation hook
- * @param pressurePresentation - Pre-called pressure presentation hook
- * @param rpmPresentation - Pre-called RPM presentation hook
- * @param speedPresentation - Pre-called speed presentation hook
- * @returns Appropriate presentation hook for the metric
- */
-function getMetricPresentation(
-  sensorType: SensorType | null,
-  metricKey: string | undefined,
-  presentation: any,
-  voltagePresentation: any,
-  temperaturePresentation: any,
-  currentPresentation: any,
-  pressurePresentation: any,
-  rpmPresentation: any,
-  speedPresentation: any
-): any {
-  if (!sensorType || !metricKey) return presentation;
-  
-  const sensorConfig = getSensorConfig(sensorType);
-  const metricInfo = sensorConfig.alarmMetrics?.find(m => m.key === metricKey);
-  if (!metricInfo?.category) return presentation;
-  
-  const categoryMap: Partial<Record<DataCategory, any>> = {
-    voltage: voltagePresentation,
-    temperature: temperaturePresentation,
-    current: currentPresentation,
-    pressure: pressurePresentation,
-    rpm: rpmPresentation,
-    speed: speedPresentation,
-  };
-  
-  return categoryMap[metricInfo.category] || presentation;
-}
+// getMetricPresentation removed - Phase 4: Use sensor.display for reading values
+// Presentation hooks still used for convertBack() during saves
 
 interface SensorInstance {
   instance: number;
@@ -314,70 +273,35 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       ? getSensorDisplayName(selectedSensorType, selectedInstance, currentThresholds, currentSensorData?.name)
       : '';
 
-    // For multi-metric sensors, get the first metric key and load its thresholds
+    // Phase 4: Simplified threshold initialization
+    // For threshold values, we still convert from SI units stored in config
     const firstMetric = requiresMetricSelection && sensorConfig?.alarmMetrics?.[0]?.key;
     let criticalValue: number | undefined;
     let warningValue: number | undefined;
     let criticalSoundPattern = 'rapid_pulse';
     let warningSoundPattern = 'warble';
 
-    if (requiresMetricSelection && firstMetric && currentThresholds.metrics?.[firstMetric]) {
-      // Load stored thresholds for first metric
-      const metricConfig = currentThresholds.metrics[firstMetric];
-      
-      // Get metric-specific presentation
-      const metricPres = getMetricPresentation(
-        selectedSensorType,
-        firstMetric,
-        presentation,
-        voltagePresentation,
-        temperaturePresentation,
-        currentPresentation,
-        pressurePresentation,
-        rpmPresentation,
-        speedPresentation
-      );
-      
-      criticalValue = metricConfig.critical !== undefined && metricPres.isValid
-        ? metricPres.convert(metricConfig.critical)
-        : undefined;
-      warningValue = metricConfig.warning !== undefined && metricPres.isValid
-        ? metricPres.convert(metricConfig.warning)
-        : undefined;
-      criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
-      warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
-    } else if (requiresMetricSelection && firstMetric && !currentThresholds.metrics?.[firstMetric]) {
-      // No saved config - use defaults for first metric
-      const defaults = getAlarmDefaults(selectedSensorType!, currentThresholds.context);
-      if (defaults?.metrics?.[firstMetric]) {
-        const metricDefaults = defaults.metrics[firstMetric];
-        const metricPres = getMetricPresentation(
-          selectedSensorType,
-          firstMetric,
-          presentation,
-          voltagePresentation,
-          temperaturePresentation,
-          currentPresentation,
-          pressurePresentation,
-          rpmPresentation,
-          speedPresentation
-        );
-        
-        criticalValue = metricDefaults.critical !== undefined && metricPres.isValid
-          ? metricPres.convert(metricDefaults.critical)
-          : undefined;
-        warningValue = metricDefaults.warning !== undefined && metricPres.isValid
-          ? metricPres.convert(metricDefaults.warning)
-          : undefined;
+    if (requiresMetricSelection && firstMetric) {
+      const metricConfig = currentThresholds.metrics?.[firstMetric];
+      if (metricConfig) {
+        // Use metricPresentation (computed below) for conversion
+        criticalValue = metricConfig.critical;
+        warningValue = metricConfig.warning;
+        criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
+        warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
+      } else {
+        // No saved config - use defaults
+        const defaults = getAlarmDefaults(selectedSensorType!, currentThresholds.context);
+        const metricDefaults = defaults?.metrics?.[firstMetric];
+        if (metricDefaults) {
+          criticalValue = metricDefaults.critical;
+          warningValue = metricDefaults.warning;
+        }
       }
     } else {
-      // Single-metric sensor - use simple thresholds
-      criticalValue = currentThresholds.critical !== undefined && presentation.isValid
-        ? presentation.convert(currentThresholds.critical)
-        : undefined;
-      warningValue = currentThresholds.warning !== undefined && presentation.isValid
-        ? presentation.convert(currentThresholds.warning)
-        : undefined;
+      // Single-metric sensor
+      criticalValue = currentThresholds.critical;
+      warningValue = currentThresholds.warning;
       criticalSoundPattern = currentThresholds.criticalSoundPattern || 'rapid_pulse';
       warningSoundPattern = currentThresholds.warningSoundPattern || 'warble';
     }
@@ -393,7 +317,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       criticalSoundPattern,
       warningSoundPattern,
     };
-  }, [selectedSensorType, selectedInstance, currentThresholds, presentation, requiresMetricSelection, sensorConfig, rawSensorData, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
+  }, [selectedSensorType, selectedInstance, currentThresholds, requiresMetricSelection, sensorConfig, rawSensorData]);
 
   // Form state - simple useState, no auto-save
   const [formData, setFormData] = useState<SensorFormData>(initialFormData);
@@ -494,28 +418,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       updates.context = { engineType: formData.engineType };
     }
 
-    // Convert thresholds back to SI units
+    // Convert thresholds back to SI units using metricPresentation (computed below)
     if (requiresMetricSelection && formData.selectedMetric) {
-      // Use shared helper to get metric-specific presentation
-      const metricPres = getMetricPresentation(
-        selectedSensorType,
-        formData.selectedMetric,
-        presentation,
-        voltagePresentation,
-        temperaturePresentation,
-        currentPresentation,
-        pressurePresentation,
-        rpmPresentation,
-        speedPresentation
-      );
-      
       updates.metrics = { ...currentThresholds.metrics };
       if (!updates.metrics) updates.metrics = {};
       updates.metrics[formData.selectedMetric] = {
         enabled: true,
         direction: getAlarmDirection(selectedSensorType, formData.selectedMetric).direction,
-        critical: formData.criticalValue !== undefined && metricPres.isValid ? metricPres.convertBack(formData.criticalValue) : undefined,
-        warning: formData.warningValue !== undefined && metricPres.isValid ? metricPres.convertBack(formData.warningValue) : undefined,
+        critical: formData.criticalValue !== undefined && metricPresentation.isValid ? metricPresentation.convertBack(formData.criticalValue) : undefined,
+        warning: formData.warningValue !== undefined && metricPresentation.isValid ? metricPresentation.convertBack(formData.warningValue) : undefined,
         criticalSoundPattern: formData.criticalSoundPattern,
         warningSoundPattern: formData.warningSoundPattern,
       };
@@ -581,27 +492,14 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       if (requiresMetricSelection && formData.selectedMetric && currentThresholds.metrics) {
         const metricConfig = currentThresholds.metrics[formData.selectedMetric];
         
-        // Get metric-specific presentation using shared helper
-        const metricPres = getMetricPresentation(
-          selectedSensorType,
-          formData.selectedMetric,
-          presentation,
-          voltagePresentation,
-          temperaturePresentation,
-          currentPresentation,
-          pressurePresentation,
-          rpmPresentation,
-          speedPresentation
-        );
-        
         if (metricConfig) {
-          // Load stored thresholds for this metric
+          // Load stored thresholds for this metric (use metricPresentation for conversion)
           updateFields({
-            criticalValue: metricConfig.critical !== undefined && metricPres.isValid
-              ? metricPres.convert(metricConfig.critical)
+            criticalValue: metricConfig.critical !== undefined && metricPresentation.isValid
+              ? metricPresentation.convert(metricConfig.critical)
               : undefined,
-            warningValue: metricConfig.warning !== undefined && metricPres.isValid
-              ? metricPres.convert(metricConfig.warning)
+            warningValue: metricConfig.warning !== undefined && metricPresentation.isValid
+              ? metricPresentation.convert(metricConfig.warning)
               : undefined,
             criticalSoundPattern: metricConfig.criticalSoundPattern || 'rapid_pulse',
             warningSoundPattern: metricConfig.warningSoundPattern || 'warble',
@@ -614,11 +512,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           if (defaults?.metrics?.[formData.selectedMetric]) {
             const metricDefaults = defaults.metrics[formData.selectedMetric];
             updateFields({
-              criticalValue: metricDefaults.critical !== undefined && metricPres.isValid
-                ? metricPres.convert(metricDefaults.critical)
+              criticalValue: metricDefaults.critical !== undefined && metricPresentation.isValid
+                ? metricPresentation.convert(metricDefaults.critical)
                 : undefined,
-              warningValue: metricDefaults.warning !== undefined && metricPres.isValid
-                ? metricPres.convert(metricDefaults.warning)
+              warningValue: metricDefaults.warning !== undefined && metricPresentation.isValid
+                ? metricPresentation.convert(metricDefaults.warning)
                 : undefined,
               criticalSoundPattern: 'rapid_pulse',
               warningSoundPattern: 'warble',
@@ -627,7 +525,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         }
       }
     }
-  }, [formData.selectedMetric, requiresMetricSelection, currentThresholds.metrics, selectedSensorType, currentThresholds.context, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation, updateFields]);
+  }, [formData.selectedMetric, requiresMetricSelection, currentThresholds.metrics, selectedSensorType, currentThresholds.context, updateFields]);
 
   /**
    * Get metric-specific presentation for multi-metric sensors
