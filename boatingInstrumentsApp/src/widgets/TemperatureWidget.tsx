@@ -5,8 +5,6 @@ import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 // Note: Alarm thresholds now auto-subscribed in TrendLine component
-import { useTemperaturePresentation } from '../presentation/useDataPresentation';
-import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemperatureSensorData } from '../types/SensorData';
@@ -96,16 +94,10 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
       return () => clearInterval(interval);
     }, [temperatureTimestamp]); // CRITICAL: Only timestamp, not full object!
 
-    // Presentation hooks for temperature conversion
-    const tempPresentation = useTemperaturePresentation();
-
-    // Convert temperature using presentation system
-    const displayTemperature = useMemo(() => {
-      if (temperature === null) return null;
-      return tempPresentation.convert(temperature);
-    }, [temperature, tempPresentation]);
-
-    const displayUnit = tempPresentation.presentation?.symbol || '°C';
+    // NEW: Use cached display info from sensor.display (Phase 3 migration)
+    // No more presentation hooks needed - data is pre-formatted in store
+    const displayTemperature = temperatureSensorData?.display?.value?.value ?? null;
+    const displayUnit = temperatureSensorData?.display?.value?.unit || '°C';
 
     // Marine safety thresholds for temperature monitoring
     const getTemperatureState = useCallback((temp: number | null, location: string) => {

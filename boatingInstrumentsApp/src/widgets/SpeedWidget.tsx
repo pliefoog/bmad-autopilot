@@ -3,10 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useSpeedPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
-import { usePresentationStore } from '../presentation/presentationStore';
-import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
@@ -35,16 +32,6 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
   
-  // NEW: Clean semantic data presentation system for speed
-  const speedPresentation = useSpeedPresentation();
-  const presentationStore = usePresentationStore();
-  
-  // Get the full presentation object with formatSpec
-  const fullPresentation = useMemo(() => {
-    const presentationId = presentationStore.selectedPresentations.speed;
-    return presentationId ? findPresentation('speed', presentationId) : null;
-  }, [presentationStore.selectedPresentations.speed]);
-  
   // Widget state management per ui-architecture.md v2.3
   
   // NOTE: History now tracked automatically in sensor data - no subscription needed
@@ -57,9 +44,11 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   // ARCHITECTURAL FIX: STW from speed sensor (paddlewheel), SOG from GPS sensor (GPS-calculated)
   // VHW sentence → speed sensor throughWater (STW - paddlewheel measurement)
   // VTG/RMC sentence → GPS sensor speedOverGround (SOG - GPS calculation from position changes)
-  const stw = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.throughWater, (a, b) => a === b);
-  const sog = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.speedOverGround, (a, b) => a === b);
-  const speedTimestamp = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.timestamp);
+  const speedSensorData = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0], (a, b) => a === b);
+  const gpsSensorData = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0], (a, b) => a === b);
+  const stw = speedSensorData?.throughWater;
+  const sog = gpsSensorData?.speedOverGround;
+  const speedTimestamp = speedSensorData?.timestamp;
   
   // Debug: Log actual values from store
   useEffect(() => {
@@ -86,88 +75,28 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
     };
   }, [getSessionStats, sog, stw]); // Re-calculate when current values change
 
-  // NEW: Speed conversion using semantic presentation system
-  const getSpeedDisplay = useCallback((speedValue: number | null | undefined, label: string = 'Speed'): MetricDisplayData => {
-    const presentation = speedPresentation.presentation;
-    
-    if (speedValue === undefined || speedValue === null) {
-      return {
-        mnemonic: label, // NMEA source abbreviation like "SOG", "STW"
-        value: '---',
-        unit: presentation?.symbol || 'kts', // Presentation symbol
-        rawValue: 0,
-        layout: {
-          minWidth: 60,
-          alignment: 'right'
-        },
-        presentation: {
-          id: presentation?.id || 'kts_1',
-          name: presentation?.name || 'Knots (1 decimal)',
-          pattern: fullPresentation?.formatSpec.pattern || 'xxx.x'
-        },
-        status: {
-          isValid: false,
-          error: 'No data',
-          isFallback: true
-        }
-      };
-    }
-    
-    if (!speedPresentation.isValid || !presentation || !fullPresentation) {
-      // Fallback to knots if presentation system fails
-      return {
-        mnemonic: label, // NMEA source abbreviation like "SOG", "STW"  
-        value: speedValue.toFixed(1),
-        unit: 'kts', // Fallback presentation symbol
-        rawValue: speedValue,
-        layout: {
-          minWidth: 60,
-          alignment: 'right'
-        },
-        presentation: {
-          id: 'kts_1',
-          name: 'Knots (1 decimal)',
-          pattern: 'xxx.x'
-        },
-        status: {
-          isValid: true,
-          isFallback: true
-        }
-      };
-    }
-    
-    return {
-      mnemonic: label, // NMEA source abbreviation like "SOG", "STW"
-      value: speedPresentation.convertAndFormat(speedValue),
-      unit: presentation.symbol, // Presentation symbol like "kts", "mph"
-      rawValue: speedValue,
-      layout: {
-        minWidth: fullPresentation.formatSpec.minWidth * 8, // Approximate character width
-        alignment: 'right'
-      },
-      presentation: {
-        id: presentation.id,
-        name: presentation.name,
-        pattern: fullPresentation.formatSpec.pattern
-      },
-      status: {
-        isValid: true,
-        isFallback: false
-      }
-    };
-  }, [speedPresentation, fullPresentation]);
-
-  // Speed display data for component compatibility using presentation system
+  // NEW: Use cached display info from sensor.display (Phase 3 migration)
+  // No more presentation hooks needed - data is pre-formatted in store
   const speedDisplayData = useMemo(() => {
+    const createDisplay = (value: number | null | undefined, displayInfo: any, mnemonic: string): MetricDisplayData => ({
+      mnemonic,
+      value: displayInfo?.value ?? '---',
+      unit: displayInfo?.unit ?? 'kts',
+      rawValue: value ?? 0,
+      layout: { minWidth: 60, alignment: 'right' },
+      presentation: { id: 'speed', name: 'Speed', pattern: 'xxx.x' },
+      status: { isValid: value !== undefined && value !== null, isFallback: false }
+    });
+
     return {
-      sog: getSpeedDisplay(sog, 'SOG'),
-      stw: getSpeedDisplay(stw, 'STW'),
-      sogAvg: getSpeedDisplay(calculations.sog.avg, 'AVG'),
-      stwAvg: getSpeedDisplay(calculations.stw.avg, 'AVG'),
-      sogMax: getSpeedDisplay(calculations.sog.max, 'MAX'),
-      stwMax: getSpeedDisplay(calculations.stw.max, 'MAX')
+      sog: createDisplay(sog, gpsSensorData?.display?.speedOverGround, 'SOG'),
+      stw: createDisplay(stw, speedSensorData?.display?.throughWater, 'STW'),
+      sogAvg: createDisplay(calculations.sog.avg, null, 'AVG'),
+      stwAvg: createDisplay(calculations.stw.avg, null, 'AVG'),
+      sogMax: createDisplay(calculations.sog.max, null, 'MAX'),
+      stwMax: createDisplay(calculations.stw.max, null, 'MAX')
     };
-  }, [getSpeedDisplay, sog, stw, calculations]);
+  }, [sog, stw, calculations, gpsSensorData, speedSensorData]);
 
   const handleLongPressOnPin = useCallback(() => {
   }, [id]);

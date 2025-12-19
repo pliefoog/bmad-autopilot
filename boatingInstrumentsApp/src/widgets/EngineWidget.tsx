@@ -3,13 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import {
-  useDataPresentation,
-  useTemperaturePresentation,
-} from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
-import { usePresentationStore } from '../presentation/presentationStore';
-import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
@@ -79,39 +73,29 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       (a, b) => a === b,
     );
 
-    // Epic 9 Enhanced Presentation System for engine values
-    const frequencyPresentation = useDataPresentation('frequency');
-    const temperaturePresentation = useTemperaturePresentation();
-    const pressurePresentation = useDataPresentation('pressure');
-    const voltagePresentation = useDataPresentation('voltage');
-    const volumePresentation = useDataPresentation('volume');
-    const timePresentation = useDataPresentation('time');
-
-    // Engine display data using Epic 9 presentation system
+    // NEW: Use cached display info from sensor.display (Phase 3 migration)
+    // Helper function to create MetricDisplayData from sensor display
     const getEngineDisplay = useCallback(
       (
-        presentation: any,
+        displayInfo: any,
         value: number | null,
         engineMnemonic: string,
         fallbackSymbol: string = '',
-        fallbackName: string = '',
       ): MetricDisplayData => {
-        const presDetails = presentation.presentation;
-
         // Check for both null and undefined to prevent toFixed() errors
         if (value === null || value === undefined) {
           return {
-            mnemonic: engineMnemonic, // NMEA source abbreviation
+            mnemonic: engineMnemonic,
             value: '---',
-            unit: fallbackSymbol, // Fallback presentation symbol
+            unit: fallbackSymbol,
             rawValue: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
             },
             presentation: {
-              id: presDetails?.id || 'default',
-              name: fallbackName,
+              id: 'default',
+              name: engineMnemonic,
               pattern: 'xxx',
             },
             status: {
@@ -122,41 +106,19 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           };
         }
 
-        if (!presentation.isValid || !presDetails) {
-          return {
-            mnemonic: engineMnemonic, // NMEA source abbreviation
-            value: value.toFixed(1),
-            unit: fallbackSymbol, // Fallback presentation symbol
-            rawValue: value,
-            layout: {
-              minWidth: 60,
-              alignment: 'right',
-            },
-            presentation: {
-              id: 'fallback',
-              name: fallbackName,
-              pattern: 'xxx.x',
-            },
-            status: {
-              isValid: true,
-              isFallback: true,
-            },
-          };
-        }
-
         return {
-          mnemonic: engineMnemonic, // NMEA source abbreviation like "TEMP", "OIL", "VOLT"
-          value: presentation.convertAndFormat(value),
-          unit: presDetails.symbol, // Presentation symbol like "°C", "bar", "V"
+          mnemonic: engineMnemonic,
+          value: displayInfo?.value ?? (value !== null ? value.toFixed(1) : '---'),
+          unit: displayInfo?.unit ?? fallbackSymbol,
           rawValue: value,
           layout: {
             minWidth: 60,
             alignment: 'right',
           },
           presentation: {
-            id: presDetails.id,
-            name: presDetails.name,
-            pattern: 'xxx.x', // Default pattern
+            id: 'engine',
+            name: engineMnemonic,
+            pattern: 'xxx.x',
           },
           status: {
             isValid: true,
@@ -167,34 +129,35 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       [],
     );
 
+    // Engine display values using sensor.display cache
     const rpmDisplay = useMemo(
-      () => getEngineDisplay(frequencyPresentation, rpm, 'RPM', 'rpm', 'RPM'), // Engine Revolution Per Minute
-      [frequencyPresentation, rpm, getEngineDisplay],
+      () => getEngineDisplay(engineSensorData?.display?.rpm, rpm, 'RPM', 'rpm'),
+      [rpm, getEngineDisplay, engineSensorData],
     );
 
     const coolantTempDisplay = useMemo(
-      () => getEngineDisplay(temperaturePresentation, coolantTemp, 'ECT', '°C', 'Celsius'), // Engine Coolant Temperature
-      [temperaturePresentation, coolantTemp, getEngineDisplay],
+      () => getEngineDisplay(engineSensorData?.display?.temperature, coolantTemp, 'ECT', '°C'),
+      [coolantTemp, getEngineDisplay, engineSensorData],
     );
 
     const oilPressureDisplay = useMemo(
-      () => getEngineDisplay(pressurePresentation, oilPressure, 'EOP', 'bar', 'Bar'), // Engine Oil Pressure
-      [pressurePresentation, oilPressure, getEngineDisplay],
+      () => getEngineDisplay(engineSensorData?.display?.oilPressure, oilPressure, 'EOP', 'bar'),
+      [oilPressure, getEngineDisplay, engineSensorData],
     );
 
     const alternatorVoltageDisplay = useMemo(
-      () => getEngineDisplay(voltagePresentation, alternatorVoltage, 'ALT', 'V', 'Volts'), // Alternator Voltage
-      [voltagePresentation, alternatorVoltage, getEngineDisplay],
+      () => getEngineDisplay(engineSensorData?.display?.alternatorVoltage, alternatorVoltage, 'ALT', 'V'),
+      [alternatorVoltage, getEngineDisplay, engineSensorData],
     );
 
     const fuelFlowDisplay = useMemo(
-      () => getEngineDisplay(volumePresentation, fuelFlow, 'EFF', 'L/h', 'Liters per Hour'), // Engine Fuel Flow
-      [volumePresentation, fuelFlow, getEngineDisplay],
+      () => getEngineDisplay(engineSensorData?.display?.fuelRate, fuelFlow, 'EFF', 'L/h'),
+      [fuelFlow, getEngineDisplay, engineSensorData],
     );
 
     const engineHoursDisplay = useMemo(
-      () => getEngineDisplay(timePresentation, engineHours, 'EHR', 'h', 'Hours'), // Engine Hours
-      [timePresentation, engineHours, getEngineDisplay],
+      () => getEngineDisplay(engineSensorData?.display?.hours, engineHours, 'EHR', 'h'),
+      [engineHours, getEngineDisplay, engineSensorData],
     );
 
     // Marine safety thresholds for engine monitoring

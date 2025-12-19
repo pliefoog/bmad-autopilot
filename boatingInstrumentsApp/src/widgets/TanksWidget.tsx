@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useDataPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';

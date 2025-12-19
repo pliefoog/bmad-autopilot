@@ -3,10 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useWindPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
-import { usePresentationStore } from '../presentation/presentationStore';
-import { findPresentation } from '../presentation/presentations';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
@@ -31,25 +28,15 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
   
-  // NEW: Clean semantic data presentation system for wind
-  const windPresentation = useWindPresentation();
-  const presentationStore = usePresentationStore();
-  
-  // Get the full presentation object with formatSpec
-  const fullWindPresentation = useMemo(() => {
-    const presentationId = presentationStore.selectedPresentations.wind;
-    return presentationId ? findPresentation('wind', presentationId) : null;
-  }, [presentationStore.selectedPresentations.wind]);
-  
   // Widget state management per ui-architecture.md v2.3
   
   // NOTE: History now tracked automatically in sensor data - no subscription needed
   
-  // NMEA data selectors - NMEA Store v2.0 sensor-based interface
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-  const windAngle = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.angle, (a, b) => a === b); // AWA
-  const windSpeed = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.speed, (a, b) => a === b); // AWS
-  const windTimestamp = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]?.timestamp);
+  const windSensorData = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0], (a, b) => a === b);
+  const windAngle = windSensorData?.angle; // AWA
+  const windSpeed = windSensorData?.speed; // AWS
+  const windTimestamp = windSensorData?.timestamp;
   const heading = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.heading, (a, b) => a === b); // For true wind
   const sog = useNmeaStore((state) => state.nmeaData.sensors.speed?.[0]?.overGround, (a, b) => a === b); // For true wind
   
@@ -151,84 +138,25 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     };
   }, [windHistory]);
 
-  // NEW: Wind conversion using semantic presentation system
-  const getWindDisplay = useCallback((windValue: number | null | undefined, label: string = 'Wind'): MetricDisplayData => {
-    const presentation = windPresentation.presentation;
-    
-    if (windValue === undefined || windValue === null) {
-      return {
-        mnemonic: label, // NMEA source abbreviation like "AWA", "AWS", "TWA", "TWS"
-        value: '---',
-        unit: presentation?.symbol || 'kt', // Presentation symbol
-        rawValue: 0,
-        layout: {
-          minWidth: 60,
-          alignment: 'right'
-        },
-        presentation: {
-          id: presentation?.id || 'wind_kts_1',
-          name: presentation?.name || 'Knots (1 decimal)',
-          pattern: fullWindPresentation?.formatSpec.pattern || 'xxx.x'
-        },
-        status: {
-          isValid: false,
-          error: 'No data',
-          isFallback: true
-        }
-      };
-    }
-    
-    if (!windPresentation.isValid || !presentation || !fullWindPresentation) {
-      // Fallback to knots if presentation system fails
-      return {
-        mnemonic: label, // NMEA source abbreviation like "AWA", "AWS", "TWA", "TWS"
-        value: windValue.toFixed(1),
-        unit: 'kt', // Fallback presentation symbol
-        rawValue: windValue,
-        layout: {
-          minWidth: 60,
-          alignment: 'right'
-        },
-        presentation: {
-          id: 'wind_kts_1',
-          name: 'Knots (1 decimal)',
-          pattern: 'xxx.x'
-        },
-        status: {
-          isValid: true,
-          isFallback: true
-        }
-      };
-    }
-    
-    return {
-      mnemonic: label, // NMEA source abbreviation like "AWA", "AWS", "TWA", "TWS"
-      value: windPresentation.convertAndFormat(windValue),
-      unit: presentation.symbol, // Presentation symbol like "kt", "Bf"
-      rawValue: windValue,
-      layout: {
-        minWidth: fullWindPresentation.formatSpec.minWidth * 8,
-        alignment: 'right'
-      },
-      presentation: {
-        id: presentation.id,
-        name: presentation.name,
-        pattern: fullWindPresentation.formatSpec.pattern
-      },
-      status: {
-        isValid: true,
-        isFallback: false
-      }
-    };
-  }, [windPresentation, fullWindPresentation]);
+  // NEW: Use cached display info from sensor.display (Phase 3 migration)
+  // Helper function to create MetricDisplayData from sensor display or manual value
+  const getWindDisplay = useCallback((windValue: number | null | undefined, displayInfo: any, label: string = 'Wind'): MetricDisplayData => ({
+    mnemonic: label,
+    value: displayInfo?.value ?? (windValue !== null && windValue !== undefined ? windValue.toFixed(1) : '---'),
+    unit: displayInfo?.unit ?? 'kt',
+    rawValue: windValue ?? 0,
+    layout: { minWidth: 60, alignment: 'right' },
+    presentation: { id: 'wind', name: 'Wind', pattern: 'xxx.x' },
+    status: { isValid: windValue !== null && windValue !== undefined, isFallback: false }
+  }), []);
   
   // Enhanced angle display function with AWA port/starboard indication
   const getAngleDisplay = useCallback((angleValue: number | null | undefined, label: string = 'Angle'): MetricDisplayData => {
     if (angleValue === undefined || angleValue === null) {
       return {
-        mnemonic: label, // NMEA source abbreviation like "AWA", "TWA"
+        mnemonic: label,
         value: '---',
-        unit: '°', // Presentation symbol for degrees
+        unit: '°',
         rawValue: 0,
         layout: { minWidth: 70, alignment: 'right' },
         presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
@@ -266,19 +194,19 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     };
   }, []);
 
-  // Wind display data using presentation system
+  // Wind display data using sensor.display cache
   const windDisplayData = useMemo(() => {
     return {
-      windSpeed: getWindDisplay(windSpeed, 'AWS'),
-      trueWindSpeed: getWindDisplay(trueWind.speed, 'TWS'),
+      windSpeed: getWindDisplay(windSpeed, windSensorData?.display?.speed, 'AWS'),
+      trueWindSpeed: getWindDisplay(trueWind.speed, windSensorData?.display?.trueSpeed, 'TWS'),
       windAngle: getAngleDisplay(windAngle, 'AWA'),
       trueWindAngle: getAngleDisplay(trueWind.angle, 'TWA'),
-      apparentGust: getWindDisplay(gustCalculations.apparentGust, 'MAX'),
-      trueGust: getWindDisplay(gustCalculations.trueGust, 'MAX'),
+      apparentGust: getWindDisplay(gustCalculations.apparentGust, null, 'MAX'),
+      trueGust: getWindDisplay(gustCalculations.trueGust, null, 'MAX'),
       apparentVariation: getAngleDisplay(gustCalculations.apparentVariation, 'VAR'),
       trueVariation: getAngleDisplay(gustCalculations.trueVariation, 'VAR')
     };
-  }, [getWindDisplay, getAngleDisplay, windSpeed, windAngle, trueWind, gustCalculations]);
+  }, [getWindDisplay, getAngleDisplay, windSpeed, windAngle, trueWind, gustCalculations, windSensorData]);
 
   // Update true wind history
   useEffect(() => {

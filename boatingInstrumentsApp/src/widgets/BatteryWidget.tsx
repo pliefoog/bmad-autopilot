@@ -3,10 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import {
-  useDataPresentation,
-  useTemperaturePresentation,
-} from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -82,23 +78,15 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
       (a, b) => a === b,
     );
 
-    // Epic 9 Enhanced Presentation System for battery values
-    const voltagePresentation = useDataPresentation('voltage');
-    const currentPresentation = useDataPresentation('current');
-    const temperaturePresentation = useTemperaturePresentation();
-    const capacityPresentation = useDataPresentation('capacity');
-
-    // Battery display functions using Epic 9 system
+    // NEW: Use cached display info from sensor.display (Phase 3 migration)
+    // Helper function to create MetricDisplayData from sensor display
     const getBatteryDisplay = useCallback(
       (
-        presentation: any,
+        displayInfo: any,
         value: number | null,
         batteryMnemonic: string,
         fallbackSymbol: string = '',
-        fallbackName: string = '',
       ): MetricDisplayData => {
-        const presDetails = presentation.presentation;
-
         if (value === null) {
           return {
             mnemonic: batteryMnemonic,
@@ -110,8 +98,8 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
               alignment: 'right',
             },
             presentation: {
-              id: presDetails?.id || 'default',
-              name: fallbackName,
+              id: 'default',
+              name: batteryMnemonic,
               pattern: 'xxx',
             },
             status: {
@@ -122,76 +110,53 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           };
         }
 
-        if (!presentation.isValid || !presDetails) {
-          return {
-            mnemonic: batteryMnemonic,
-            value: value.toFixed(1),
-            unit: fallbackSymbol,
-            rawValue: value,
-            layout: {
-              minWidth: 60,
-              alignment: 'right',
-            },
-            presentation: {
-              id: 'fallback',
-              name: fallbackName,
-              pattern: 'xxx.x',
-            },
-            status: {
-              isValid: false,
-              isFallback: true,
-            },
-          };
-        }
-
         return {
           mnemonic: batteryMnemonic,
-          value: presentation.format(presentation.convert(value)),
-          unit: presDetails.symbol,
+          value: displayInfo?.value ?? (value !== null ? value.toFixed(1) : '---'),
+          unit: displayInfo?.unit ?? fallbackSymbol,
           rawValue: value,
           layout: {
             minWidth: 60,
             alignment: 'right',
           },
           presentation: {
-            id: presDetails.id,
-            name: presDetails.name,
+            id: 'battery',
+            name: batteryMnemonic,
             pattern: 'xxx.x',
           },
           status: {
             isValid: true,
+            isFallback: false,
           },
         };
       },
       [],
     );
 
-    // Battery display values with proper NMEA mnemonics
+    // Battery display values with proper NMEA mnemonics using sensor.display cache
     const voltageDisplay = useMemo(
-      () => getBatteryDisplay(voltagePresentation, voltage, 'VLT', 'V', 'Volts'),
-      [voltagePresentation, voltage, getBatteryDisplay],
+      () => getBatteryDisplay(batterySensorData?.display?.voltage, voltage, 'VLT', 'V'),
+      [voltage, getBatteryDisplay, batterySensorData],
     );
 
     const currentDisplay = useMemo(
-      () =>
-        getBatteryDisplay(
-          currentPresentation,
-          current !== null ? Math.abs(current) : null,
-          'AMP',
-          'A',
-          'Amperes',
-        ),
-      [currentPresentation, current, getBatteryDisplay],
+      () => getBatteryDisplay(
+        batterySensorData?.display?.current,
+        current !== null ? Math.abs(current) : null,
+        'AMP',
+        'A',
+      ),
+      [current, getBatteryDisplay, batterySensorData],
     );
 
     const temperatureDisplay = useMemo(
-      () => getBatteryDisplay(temperaturePresentation, temperature, 'TMP', '°C', 'Celsius'),
-      [temperaturePresentation, temperature, getBatteryDisplay],
+      () => getBatteryDisplay(batterySensorData?.display?.temperature, temperature, 'TMP', '°C'),
+      [temperature, getBatteryDisplay, batterySensorData],
     );
 
     const nominalVoltageDisplay = useMemo(
-      () => getBatteryDisplay(voltagePresentation, nominalVoltage, 'NOM', 'V', 'Nominal Volts'),
-      [voltagePresentation, nominalVoltage, getBatteryDisplay],
+      () => getBatteryDisplay(batterySensorData?.display?.voltage, nominalVoltage, 'NOM', 'V'),
+      [nominalVoltage, getBatteryDisplay, batterySensorData],
     );
 
     const isStale = !batteryTimestamp || voltage === null;
