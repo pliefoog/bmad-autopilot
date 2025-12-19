@@ -127,10 +127,13 @@ class SensorPresentationCacheService {
       // Get presentation for this category
       if (!field.category) {
         // No category = raw value (like percentages)
+        const identity = (x: number) => x;
         display[field.key] = {
           value,
           unit: '', // No unit symbol for raw values
           formatted: `${value}`,
+          convert: identity,
+          convertBack: identity,
         };
         continue;
       }
@@ -139,10 +142,13 @@ class SensorPresentationCacheService {
       const presentation = store.getPresentationForCategory(field.category);
       if (!presentation) {
         // No presentation found, use raw value
+        const identity = (x: number) => x;
         display[field.key] = {
           value,
           unit: '',
           formatted: `${value}`,
+          convert: identity,
+          convertBack: identity,
         };
         continue;
       }
@@ -157,6 +163,8 @@ class SensorPresentationCacheService {
         value: convertedValue,
         unit: presentation.symbol,
         formatted: `${formatted} ${presentation.symbol}`,
+        convert: presentation.convert,
+        convertBack: presentation.convertBack,
       };
     }
 

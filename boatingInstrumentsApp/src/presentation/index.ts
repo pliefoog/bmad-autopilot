@@ -34,7 +34,11 @@ export {
   usePresentationReset
 } from './presentationStore';
 
-// Main presentation hook
+// Main presentation hooks
+export { useCategoryPresentation } from './useCategoryPresentation';
+export type { CategoryPresentationResult } from './useCategoryPresentation';
+
+// Legacy presentation hooks (deprecated - use useCategoryPresentation instead)
 export { useDataPresentation } from './useDataPresentation';
 export type { DataPresentationResult } from './useDataPresentation';
 export {

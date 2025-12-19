@@ -40,7 +40,7 @@ import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
 import { SensorType, SensorAlarmThresholds } from '../../types/SensorData';
-import { useDataPresentation } from '../../presentation/useDataPresentation';
+import { useCategoryPresentation } from '../../presentation/useCategoryPresentation';
 import { DataCategory } from '../../presentation/categories';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
@@ -217,23 +217,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     return categoryMap[selectedSensorType] || null;
   }, [selectedSensorType]);
   
-  const rawPresentation = useDataPresentation(category || 'depth');
+  const rawPresentation = useCategoryPresentation(category || 'depth');
   
   // Pre-call all possible metric presentation hooks (React hooks must be called unconditionally)
-  const voltagePresentation = useDataPresentation('voltage');
-  const temperaturePresentation = useDataPresentation('temperature');
-  const currentPresentation = useDataPresentation('current');
-  const pressurePresentation = useDataPresentation('pressure');
-  const rpmPresentation = useDataPresentation('rpm');
-  const speedPresentation = useDataPresentation('speed');
+  const voltagePresentation = useCategoryPresentation('voltage');
+  const temperaturePresentation = useCategoryPresentation('temperature');
+  const currentPresentation = useCategoryPresentation('current');
+  const pressurePresentation = useCategoryPresentation('pressure');
+  const rpmPresentation = useCategoryPresentation('rpm');
+  const speedPresentation = useCategoryPresentation('speed');
   
   const presentation = useMemo(
     () => category ? rawPresentation : {
       isValid: false,
       convert: (v: number) => v,
       convertBack: (v: number) => v,
-      presentation: null,
-      formatSpec: { decimals: 1 },
+      symbol: '',
     },
     [category, rawPresentation]
   );
@@ -826,11 +825,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       // Get unit from presentation system via category (SI values stored, presentation converts)
       const metricCategory = metricInfo?.category;
       let symbol = '';
-      if (metricCategory === 'voltage') symbol = voltagePresentation.presentation?.symbol || 'V';
-      else if (metricCategory === 'current') symbol = currentPresentation.presentation?.symbol || 'A';
-      else if (metricCategory === 'temperature') symbol = temperaturePresentation.presentation?.symbol || '°C';
-      else if (metricCategory === 'pressure') symbol = pressurePresentation.presentation?.symbol || 'kPa';
-      else if (metricCategory === 'rpm') symbol = rpmPresentation.presentation?.symbol || 'RPM';
+      if (metricCategory === 'voltage') symbol = voltagePresentation.symbol || 'V';
+      else if (metricCategory === 'current') symbol = currentPresentation.symbol || 'A';
+      else if (metricCategory === 'temperature') symbol = temperaturePresentation.symbol || '°C';
+      else if (metricCategory === 'pressure') symbol = pressurePresentation.symbol || 'kPa';
+      else if (metricCategory === 'rpm') symbol = rpmPresentation.symbol || 'RPM';
       else if (metricInfo?.key === 'soc') symbol = '%';  // SOC has no category (raw %)
       
       return {
@@ -841,7 +840,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
     // Single-metric sensors: use registry displayName
     return {
-      unitSymbol: presentation.isValid ? presentation.presentation?.symbol || '' : '',
+      unitSymbol: presentation.isValid ? presentation.symbol || '' : '',
       metricLabel: selectedSensorType ? sensorConfig?.displayName || selectedSensorType : '',
     };
   }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, selectedSensorType, presentation, 
@@ -1175,11 +1174,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                                 items={sensorConfig.alarmMetrics.map((m) => {
                                   // Get unit from presentation system via category
                                   let unit = '';
-                                  if (m.category === 'voltage') unit = voltagePresentation.presentation?.symbol || 'V';
-                                  else if (m.category === 'current') unit = currentPresentation.presentation?.symbol || 'A';
-                                  else if (m.category === 'temperature') unit = temperaturePresentation.presentation?.symbol || '°C';
-                                  else if (m.category === 'pressure') unit = pressurePresentation.presentation?.symbol || 'kPa';
-                                  else if (m.category === 'rpm') unit = rpmPresentation.presentation?.symbol || 'RPM';
+                                  if (m.category === 'voltage') unit = voltagePresentation.symbol || 'V';
+                                  else if (m.category === 'current') unit = currentPresentation.symbol || 'A';
+                                  else if (m.category === 'temperature') unit = temperaturePresentation.symbol || '°C';
+                                  else if (m.category === 'pressure') unit = pressurePresentation.symbol || 'kPa';
+                                  else if (m.category === 'rpm') unit = rpmPresentation.symbol || 'RPM';
                                   else if (m.key === 'soc') unit = '%';
                                   
                                   return {

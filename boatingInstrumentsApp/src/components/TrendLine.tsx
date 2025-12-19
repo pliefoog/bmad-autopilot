@@ -4,7 +4,7 @@ import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
 import { SensorType } from '../types/SensorData';
-import { useDataPresentation } from '../presentation/useDataPresentation';
+import { useCategoryPresentation } from '../presentation/useCategoryPresentation';
 import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
 
 export interface DataPoint {
@@ -100,7 +100,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const theme = useTheme();
   
   // Get presentation system for this sensor (for unit conversion)
-  const presentation = useDataPresentation(sensor);
+  const presentation = useCategoryPresentation(sensor);
   
   // Subscribe to sensor-instance alarm thresholds
   const alarmThresholds = useAlarmThresholds(sensor, instance);

@@ -22,9 +22,11 @@ import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
  * Generated once at sensor detection/update and cached for efficient access
  */
 export interface DisplayInfo {
-  value: number; // The raw numeric value in SI units
+  value: number; // The converted display value (not SI)
   unit: string; // Unit symbol (e.g., "V", "°C", "m", "kn")
   formatted: string; // Fully formatted string (e.g., "12.6 V", "15.3°C")
+  convert: (siValue: number) => number; // Convert SI to display units
+  convertBack: (displayValue: number) => number; // Convert display to SI units
 }
 
 /**
