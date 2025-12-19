@@ -37,13 +37,39 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
   const isStale = !rudderTimestamp;
   
   // Phase 5: Use cached display info from sensor.display
-  // Rudder angle display data - rudder position is just an angle, doesn't need unit conversion
+  // Access rudderAngle display info (angles don't typically convert, but use cache for consistency)
   const rudderAngleDisplay = useMemo((): MetricDisplayData => {
+    const displayInfo = autopilotSensorData?.display?.rudderAngle;
+    
+    if (!displayInfo) {
+      // Fallback if display info not available
+      return {
+        mnemonic: 'RUD',
+        value: Math.abs(rudderAngle).toFixed(1),
+        unit: '°',
+        rawValue: Math.abs(rudderAngle),
+        layout: {
+          minWidth: 60,
+          alignment: 'right'
+        },
+        presentation: {
+          id: 'angle',
+          name: 'Angle',
+          pattern: 'xxx.x'
+        },
+        status: {
+          isValid: false,
+          isFallback: true
+        }
+      };
+    }
+    
+    // Use cached display info from presentation cache
     return {
       mnemonic: 'RUD',
-      value: Math.abs(rudderAngle).toFixed(1),
-      unit: '°',
-      rawValue: Math.abs(rudderAngle),
+      value: Math.abs(displayInfo.value).toFixed(1),  // Abs value for display
+      unit: displayInfo.unit,
+      rawValue: Math.abs(displayInfo.value),
       layout: {
         minWidth: 60,
         alignment: 'right'
@@ -58,7 +84,7 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
         isFallback: false
       }
     };
-  }, [rudderAngle]);
+  }, [autopilotSensorData, rudderAngle]);
   
   // Marine safety evaluation for rudder position
   const getRudderState = useCallback((angle: number) => {
