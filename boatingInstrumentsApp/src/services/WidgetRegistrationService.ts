@@ -24,7 +24,7 @@ const _console = typeof window !== 'undefined' && (window as any)._console
   : console;
 
 // Debug logging toggle - set to true to enable verbose widget registration logs
-const DEBUG_WIDGET_REGISTRATION = false;
+const DEBUG_WIDGET_REGISTRATION = true;
 
 /**
  * Sensor dependency declaration
