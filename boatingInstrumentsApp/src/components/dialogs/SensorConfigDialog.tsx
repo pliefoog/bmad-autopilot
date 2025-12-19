@@ -274,7 +274,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       : '';
 
     // Phase 4: Simplified threshold initialization
-    // For threshold values, we still convert from SI units stored in config
+    // For threshold values, we convert from SI units to display units using presentation
     const firstMetric = requiresMetricSelection && sensorConfig?.alarmMetrics?.[0]?.key;
     let criticalValue: number | undefined;
     let warningValue: number | undefined;
@@ -284,24 +284,36 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     if (requiresMetricSelection && firstMetric) {
       const metricConfig = currentThresholds.metrics?.[firstMetric];
       if (metricConfig) {
-        // Use metricPresentation (computed below) for conversion
-        criticalValue = metricConfig.critical;
-        warningValue = metricConfig.warning;
+        // Convert from SI units to display units using metricPresentation
+        criticalValue = metricConfig.critical !== undefined && metricPresentation.isValid
+          ? metricPresentation.convert(metricConfig.critical)
+          : metricConfig.critical;
+        warningValue = metricConfig.warning !== undefined && metricPresentation.isValid
+          ? metricPresentation.convert(metricConfig.warning)
+          : metricConfig.warning;
         criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
         warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
       } else {
-        // No saved config - use defaults
+        // No saved config - use defaults and convert
         const defaults = getAlarmDefaults(selectedSensorType!, currentThresholds.context);
         const metricDefaults = defaults?.metrics?.[firstMetric];
         if (metricDefaults) {
-          criticalValue = metricDefaults.critical;
-          warningValue = metricDefaults.warning;
+          criticalValue = metricDefaults.critical !== undefined && metricPresentation.isValid
+            ? metricPresentation.convert(metricDefaults.critical)
+            : metricDefaults.critical;
+          warningValue = metricDefaults.warning !== undefined && metricPresentation.isValid
+            ? metricPresentation.convert(metricDefaults.warning)
+            : metricDefaults.warning;
         }
       }
     } else {
-      // Single-metric sensor
-      criticalValue = currentThresholds.critical;
-      warningValue = currentThresholds.warning;
+      // Single-metric sensor - convert from SI units to display units
+      criticalValue = currentThresholds.critical !== undefined && presentation.isValid
+        ? presentation.convert(currentThresholds.critical)
+        : currentThresholds.critical;
+      warningValue = currentThresholds.warning !== undefined && presentation.isValid
+        ? presentation.convert(currentThresholds.warning)
+        : currentThresholds.warning;
       criticalSoundPattern = currentThresholds.criticalSoundPattern || 'rapid_pulse';
       warningSoundPattern = currentThresholds.warningSoundPattern || 'warble';
     }
