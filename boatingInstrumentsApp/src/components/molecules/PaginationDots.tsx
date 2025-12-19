@@ -58,16 +58,7 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
     return (
       <TouchableOpacity
         key={index}
-        style={[
-          styles.dot,
-          {
-            width: dotSize,
-            height: dotSize,
-            backgroundColor: isActive ? theme.primary : theme.textSecondary,
-            marginHorizontal: dotSpacing / 2,
-            opacity: isActive ? 1 : 0.4,
-          },
-        ]}
+        style={styles.dotTouchArea}
         onPress={() => onPagePress?.(index)}
         activeOpacity={0.7}
         testID={`${testID}-dot-${index}`}
@@ -77,11 +68,13 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
       >
         <Animated.View
           style={[
+            styles.dotCircle,
             {
-              width: '100%',
-              height: '100%',
+              width: dotSize,
+              height: dotSize,
               borderRadius: dotSize / 2,
               backgroundColor: isActive ? theme.primary : theme.textSecondary,
+              opacity: isActive ? 1 : 0.4,
             },
             animatedStyle,
           ]}
@@ -179,13 +172,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dot: {
-    borderRadius: 50, // Will be overridden by dynamic size
-    // Minimum touch target of 44pt per accessibility guidelines (AC 20)
-    minWidth: 44,
-    minHeight: 44,
+  dotTouchArea: {
+    // Minimum 44pt touch target per accessibility guidelines (AC 20)
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  dotCircle: {
+    // Actual visual dot - small and circular
+    // Size controlled dynamically via props (default 8pt)
   },
 });
 
