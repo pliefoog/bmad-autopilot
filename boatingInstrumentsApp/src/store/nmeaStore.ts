@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { EventEmitter } from 'events';
 import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 import { SensorPresentationCache } from '../services/SensorPresentationCache';
+import { usePresentationStore } from '../presentation/presentationStore';
 
 // Debug logging toggle - set to true to enable verbose store update logs
 const DEBUG_STORE_UPDATES = false;
@@ -725,3 +726,43 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     return state.nmeaData.sensors.temperature[instance] as TemperatureSensorData | undefined;
   },
 }));
+
+/**
+ * Re-enrich all sensor data when presentation preferences change
+ * 
+ * When the user changes unit preferences (e.g., metric to imperial),
+ * all cached display info needs to be regenerated with new units.
+ * This subscription triggers re-enrichment of all existing sensor data.
+ */
+usePresentationStore.subscribe(() => {
+  const state = useNmeaStore.getState();
+  const { sensors } = state.nmeaData;
+  
+  // Re-enrich all sensors
+  const sensorTypes = Object.keys(sensors) as SensorType[];
+  
+  sensorTypes.forEach((sensorType) => {
+    const sensorMap = sensors[sensorType];
+    const instances = Object.keys(sensorMap).map(Number);
+    
+    instances.forEach((instance) => {
+      const sensorData = sensorMap[instance];
+      if (sensorData) {
+        // Re-enrich with current data and presentation preferences
+        const enrichedData = SensorPresentationCache.enrichSensorData(sensorType, sensorData);
+        
+        // Update the sensor data in place (mutate for performance)
+        sensorMap[instance] = enrichedData as any;
+      }
+    });
+  });
+  
+  // Trigger Zustand update to notify subscribers
+  useNmeaStore.setState({
+    nmeaData: {
+      ...state.nmeaData,
+      sensors: { ...sensors }, // Shallow clone to trigger update
+      timestamp: Date.now(),
+    },
+  });
+});
