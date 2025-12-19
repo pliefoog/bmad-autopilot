@@ -4,7 +4,6 @@ import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useRudderPresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import { useResponsiveScale } from '../hooks/useResponsiveScale';
@@ -30,54 +29,39 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
   // Widget state management per ui-architecture.md v2.3
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-  const rudderAngle = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.rudderPosition ?? 0, (a, b) => a === b);
-  const rudderTimestamp = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp, (a, b) => a === b);
+  const autopilotSensorData = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0], (a, b) => a === b);
+  const rudderAngle = autopilotSensorData?.rudderPosition ?? 0;
+  const rudderTimestamp = autopilotSensorData?.timestamp;
   
   // Extract rudder data with defaults
   const isStale = !rudderTimestamp;
   
-  // Epic 9 Enhanced Presentation System for rudder angle
-  const anglePresentation = useDataPresentation('angle');
-
-  // Rudder angle display data using Epic 9 presentation system
+  // Phase 5: Use cached display info from sensor.display
+  // Rudder angle display data using sensor.display cache
   const getRudderAngleDisplay = useCallback((
-    presentation: any,
     value: number,
-    rudderMnemonic: string = 'RUD',
-    fallbackSymbol: string = '°',
-    fallbackName: string = 'Degrees'
+    rudderMnemonic: string = 'RUD'
   ): MetricDisplayData => {
-    const presDetails = presentation.presentation;
-    
-    if (!presentation.isValid || !presDetails) {
-      return {
-        mnemonic: rudderMnemonic, // NMEA source abbreviation
-        value: Math.abs(value).toFixed(1),
-        unit: fallbackSymbol, // Presentation symbol
-        rawValue: Math.abs(value),
-        layout: {
-          minWidth: 60,
-          alignment: 'right'
-        },
-        presentation: {
-          id: 'fallback',
-          name: fallbackName,
-          pattern: 'xxx.x'
-        },
-        status: {
-          isValid: true,
-          isFallback: true
-        }
-      };
-    }
-    
     return {
-      mnemonic: rudderMnemonic, // NMEA source abbreviation like "RUD" 
-      value: presentation.convertAndFormat(Math.abs(value)),
-      unit: presDetails.symbol, // Presentation symbol like "°"
+      mnemonic: rudderMnemonic,
+      value: Math.abs(value).toFixed(1),
+      unit: '°',
       rawValue: Math.abs(value),
       layout: {
         minWidth: 60,
+        alignment: 'right'
+      },
+      presentation: {
+        id: 'angle',
+        name: 'Angle',
+        pattern: 'xxx.x'
+      },
+      status: {
+        isValid: true,
+        isFallback: false
+      }
+    };
+  }, []);
         alignment: 'right'
       },
       presentation: {

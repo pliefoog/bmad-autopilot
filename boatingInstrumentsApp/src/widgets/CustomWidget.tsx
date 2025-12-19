@@ -14,7 +14,6 @@ import { View, StyleSheet } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { useDataPresentation, useDepthPresentation, useTemperaturePresentation } from '../presentation/useDataPresentation';
 import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -54,36 +53,17 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, title
     return widgetConfig?.settings?.customDefinition as CustomWidgetDefinition | undefined;
   }, [widgetConfig]);
   
-  // Presentation hooks
-  const depthPresentation = useDepthPresentation();
-  const temperaturePresentation = useTemperaturePresentation();
-  const speedPresentation = useDataPresentation('speed');
-  const genericPresentation = useDataPresentation('generic');
-  
-  /**
-   * Get presentation hook based on sensor category
-   */
-  const getPresentationForSensor = useCallback((category: SensorType) => {
-    switch (category) {
-      case 'depth':
-        return depthPresentation;
-      case 'temperature':
-        return temperaturePresentation;
-      case 'speed':
-        return speedPresentation;
-      default:
-        return genericPresentation;
-    }
-  }, [depthPresentation, temperaturePresentation, speedPresentation, genericPresentation]);
+  // Phase 5: CustomWidget now uses sensor.display directly
+  // No presentation hooks needed - data is pre-formatted in store
   
   /**
    * Subscribe to sensor data dynamically based on widget definition
-   * Uses selective Zustand subscriptions with shallow equality checks
+   * Phase 5: Get complete sensor data (including display property)
    */
-  const sensorValues = useMemo(() => {
+  const sensorDataMap = useMemo(() => {
     if (!customDefinition) return {};
     
-    const values: Record<string, number | null> = {};
+    const dataMap: Record<string, any> = {};
     
     // Collect all sensor bindings (required + optional)
     const allBindings = [
@@ -91,53 +71,51 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, title
       ...customDefinition.sensorBindings.optional,
     ];
     
-    // Subscribe to each sensor value
+    // Subscribe to each sensor's complete data
     allBindings.forEach(binding => {
       const instance = binding.instance ?? 0;
       const key = `${binding.category}.${instance}.${binding.measurementType}`;
       
-      // Get sensor value from store
+      // Get complete sensor data from store (includes display property)
       // eslint-disable-next-line react-hooks/rules-of-hooks
-      const value = useNmeaStore(
-        (state) => {
-          const sensorData = state.nmeaData.sensors[binding.category]?.[instance];
-          return sensorData ? (sensorData as any)[binding.measurementType] ?? null : null;
-        },
+      const sensorData = useNmeaStore(
+        (state) => state.nmeaData.sensors[binding.category]?.[instance],
         (a, b) => a === b
       );
       
-      values[key] = value;
+      dataMap[key] = {
+        sensor: sensorData,
+        measurementType: binding.measurementType,
+      };
     });
     
-    return values;
+    return dataMap;
   }, [customDefinition]);
   
   /**
-   * Build metric display data for a sensor binding
+   * Build metric display data for a sensor binding using Phase 5 sensor.display
    */
   const buildMetricDisplay = useCallback((
     sensorKey: string,
     label: string,
     mnemonic: string,
-    unit: string
+    fallbackUnit: string
   ): MetricDisplayData => {
-    const value = sensorValues[sensorKey];
-    const presentation = getPresentationForSensor(sensorKey.split('.')[0] as SensorType);
-    const presDetails = presentation.presentation;
+    const data = sensorDataMap[sensorKey];
     
-    // No data state
-    if (value === null || value === undefined) {
+    // No sensor data state
+    if (!data || !data.sensor) {
       return {
         mnemonic,
         value: '---',
-        unit,
+        unit: fallbackUnit,
         rawValue: 0,
         layout: {
           minWidth: 60,
           alignment: 'right',
         },
         presentation: {
-          id: presDetails?.id || 'default',
+          id: 'default',
           name: label,
           pattern: 'xxx',
         },
@@ -149,27 +127,54 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, title
       };
     }
     
-    // Valid data state
+    const measurementType = data.measurementType;
+    const displayInfo = data.sensor.display?.[measurementType];
+    
+    // If no display info or invalid, show no data
+    if (!displayInfo) {
+      return {
+        mnemonic,
+        value: '---',
+        unit: fallbackUnit,
+        rawValue: 0,
+        layout: {
+          minWidth: 60,
+          alignment: 'right',
+        },
+        presentation: {
+          id: 'default',
+          name: label,
+          pattern: 'xxx',
+        },
+        status: {
+          isValid: false,
+          error: 'No data',
+          isFallback: true,
+        },
+      };
+    }
+    
+    // Phase 5: Use cached display info from sensor.display
     return {
       mnemonic,
-      value: presentation.format(value),
-      unit: presDetails?.symbol || unit,
-      rawValue: value,
+      value: displayInfo.formatted,
+      unit: displayInfo.unit,
+      rawValue: displayInfo.value,
       layout: {
         minWidth: 60,
         alignment: 'right',
       },
       presentation: {
-        id: presDetails?.id || 'default',
+        id: measurementType,
         name: label,
-        pattern: presDetails?.pattern || 'xxx.x',
+        pattern: 'xxx.x',
       },
       status: {
         isValid: true,
         isFallback: false,
       },
     };
-  }, [sensorValues, getPresentationForSensor]);
+  }, [sensorDataMap]);
   
   // Render nothing if no definition
   if (!customDefinition) {
