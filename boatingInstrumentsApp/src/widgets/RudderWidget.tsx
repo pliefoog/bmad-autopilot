@@ -30,23 +30,20 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
   
   // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
   const autopilotSensorData = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0], (a, b) => a === b);
-  const rudderAngle = autopilotSensorData?.rudderPosition ?? 0;
+  const rudderAngle = autopilotSensorData?.rudderAngle ?? 0;  // Note: field is rudderAngle in AutopilotSensorData
   const rudderTimestamp = autopilotSensorData?.timestamp;
   
   // Extract rudder data with defaults
   const isStale = !rudderTimestamp;
   
   // Phase 5: Use cached display info from sensor.display
-  // Rudder angle display data using sensor.display cache
-  const getRudderAngleDisplay = useCallback((
-    value: number,
-    rudderMnemonic: string = 'RUD'
-  ): MetricDisplayData => {
+  // Rudder angle display data - rudder position is just an angle, doesn't need unit conversion
+  const rudderAngleDisplay = useMemo((): MetricDisplayData => {
     return {
-      mnemonic: rudderMnemonic,
-      value: Math.abs(value).toFixed(1),
+      mnemonic: 'RUD',
+      value: Math.abs(rudderAngle).toFixed(1),
       unit: '°',
-      rawValue: Math.abs(value),
+      rawValue: Math.abs(rudderAngle),
       layout: {
         minWidth: 60,
         alignment: 'right'
@@ -61,25 +58,7 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
         isFallback: false
       }
     };
-  }, []);
-        alignment: 'right'
-      },
-      presentation: {
-        id: presDetails.id,
-        name: presDetails.name,
-        pattern: 'xxx.x'
-      },
-      status: {
-        isValid: true,
-        isFallback: false
-      }
-    };
-  }, []);
-
-  const rudderAngleDisplay = useMemo(() =>
-    getRudderAngleDisplay(anglePresentation, rudderAngle, 'RUD'),
-    [anglePresentation, rudderAngle, getRudderAngleDisplay]
-  );
+  }, [rudderAngle]);
   
   // Marine safety evaluation for rudder position
   const getRudderState = useCallback((angle: number) => {
@@ -91,17 +70,18 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title
 
   const rudderState = getRudderState(rudderAngle);
 
-  // Format rudder display with direction and proper unit conversion
+  // Format rudder display with direction (PORT/STBD)
   const formatRudderDisplay = useCallback((angle: number) => {
-    if (angle === 0) return { value: '0', unit: rudderAngleDisplay.unit };
+    if (angle === 0) return { value: '0', unit: '°' };
     
     const side = angle >= 0 ? 'STBD' : 'PORT';
+    const absValue = Math.abs(angle).toFixed(1);
     
     return {
-      value: `${rudderAngleDisplay.value} ${side}`,
-      unit: rudderAngleDisplay.unit
+      value: `${absValue} ${side}`,
+      unit: '°'
     };
-  }, [rudderAngleDisplay]);
+  }, []);
 
   const handleLongPressOnPin = useCallback(() => {
   }, [id]);

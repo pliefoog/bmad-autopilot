@@ -65,27 +65,27 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, title
     
     const dataMap: Record<string, any> = {};
     
-    // Collect all sensor bindings (required + optional)
-    const allBindings = [
-      ...customDefinition.sensorBindings.required,
-      ...customDefinition.sensorBindings.optional,
+    // Collect all unique sensor keys from layout metrics
+    const allMetrics = [
+      ...customDefinition.layout.primaryMetrics,
+      ...(customDefinition.layout.secondaryMetrics || []),
     ];
     
-    // Subscribe to each sensor's complete data
-    allBindings.forEach(binding => {
-      const instance = binding.instance ?? 0;
-      const key = `${binding.category}.${instance}.${binding.measurementType}`;
+    // Parse sensor keys and subscribe to each sensor's complete data
+    allMetrics.forEach(metric => {
+      const [category, instanceStr, measurementType] = metric.sensorKey.split('.');
+      const instance = parseInt(instanceStr, 10);
       
       // Get complete sensor data from store (includes display property)
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const sensorData = useNmeaStore(
-        (state) => state.nmeaData.sensors[binding.category]?.[instance],
+        (state) => state.nmeaData.sensors[category as any]?.[instance],
         (a, b) => a === b
       );
       
-      dataMap[key] = {
+      dataMap[metric.sensorKey] = {
         sensor: sensorData,
-        measurementType: binding.measurementType,
+        measurementType: measurementType,
       };
     });
     
