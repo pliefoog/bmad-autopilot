@@ -86,9 +86,25 @@ const WebDropdown: React.FC<{
 }> = ({ value, items, onValueChange, theme, touchTargetSize, testID }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [buttonLayout, setButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const buttonRef = useRef<View>(null);
   const keyboardEnabled = hasKeyboard();
   
   const selectedItem = items.find(item => item.value === value);
+  
+  /**
+   * Handle dropdown toggle with button position measurement
+   */
+  const handleToggle = useCallback(() => {
+    if (!isOpen && buttonRef.current) {
+      buttonRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setButtonLayout({ x: pageX, y: pageY, width, height });
+        setIsOpen(true);
+      });
+    } else {
+      setIsOpen(false);
+    }
+  }, [isOpen]);
   
   /**
    * Handle keyboard navigation (↑↓ arrow keys)
@@ -125,9 +141,10 @@ const WebDropdown: React.FC<{
   }, [isOpen, handleKeyDown, keyboardEnabled]);
   
   return (
-    <View style={webDropdownStyles.container}>
-      <TouchableOpacity
-        onPress={() => setIsOpen(!isOpen)}
+    <>
+      <View ref={buttonRef} style={webDropdownStyles.container}>
+        <TouchableOpacity
+          onPress={handleToggle}
         style={[
           webDropdownStyles.button,
           { height: touchTargetSize, borderColor: theme.border, backgroundColor: theme.surface },
@@ -143,36 +160,64 @@ const WebDropdown: React.FC<{
           color={theme.text}
         />
       </TouchableOpacity>
+      </View>
       
-      {isOpen && (
-        <View style={[webDropdownStyles.dropdown, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <ScrollView style={webDropdownStyles.dropdownScroll}>
-            {items.map((item, index) => (
-              <TouchableOpacity
-                key={item.value}
-                onPress={() => {
-                  onValueChange(item.value);
-                  setIsOpen(false);
-                }}
-                style={[
-                  webDropdownStyles.dropdownItem,
-                  index === selectedIndex && { backgroundColor: theme.appBackground },
-                  item.value === value && { backgroundColor: theme.primary + '20' },
-                ]}
-                testID={`${testID}-item-${item.value}`}
-              >
-                {item.icon && (
-                  <UniversalIcon name={item.icon} size={20} color={theme.text} style={webDropdownStyles.itemIcon} />
-                )}
-                <Text style={[webDropdownStyles.dropdownItemText, { color: theme.text }]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-    </View>
+      {/* Dropdown in Modal - breaks out of ScrollView clipping */}
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="none"
+        onRequestClose={() => setIsOpen(false)}
+      >
+        {/* Backdrop - close on click outside */}
+        <TouchableOpacity
+          style={webDropdownStyles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setIsOpen(false)}
+        >
+          {/* Dropdown positioned below button */}
+          <View
+            style={[
+              webDropdownStyles.dropdownModal,
+              {
+                top: buttonLayout.y + buttonLayout.height + 4,
+                left: buttonLayout.x,
+                width: buttonLayout.width,
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+            ]}
+            onStartShouldSetResponder={() => true}
+          >
+            <ScrollView style={webDropdownStyles.dropdownScroll}>
+              {items.map((item, index) => (
+                <TouchableOpacity
+                  key={item.value}
+                  onPress={() => {
+                    onValueChange(item.value);
+                    setIsOpen(false);
+                  }}
+                  style={[
+                    webDropdownStyles.dropdownItem,
+                    { backgroundColor: theme.surface },
+                    index === selectedIndex && { backgroundColor: theme.appBackground },
+                    item.value === value && { backgroundColor: theme.primary + '20' },
+                  ]}
+                  testID={`${testID}-item-${item.value}`}
+                >
+                  {item.icon && (
+                    <UniversalIcon name={item.icon} size={20} color={theme.text} style={webDropdownStyles.itemIcon} />
+                  )}
+                  <Text style={[webDropdownStyles.dropdownItemText, { color: theme.text }]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 };
 
@@ -193,13 +238,13 @@ const webDropdownStyles = StyleSheet.create({
     flex: 1,
     fontSize: settingsTokens.typography.body.fontSize,
   },
-  dropdown: {
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  dropdownModal: {
     position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    maxHeight: 300,
-    marginTop: 4,
+    maxHeight: 200,
     borderWidth: 1,
     borderRadius: settingsTokens.borderRadius.input,
     shadowColor: '#000',
@@ -209,7 +254,7 @@ const webDropdownStyles = StyleSheet.create({
     elevation: 8,
   },
   dropdownScroll: {
-    maxHeight: 300,
+    maxHeight: 200,
   },
   dropdownItem: {
     flexDirection: 'row',

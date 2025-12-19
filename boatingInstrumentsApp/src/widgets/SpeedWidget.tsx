@@ -78,15 +78,35 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, title, 
   // NEW: Use cached display info from sensor.display (Phase 3 migration)
   // No more presentation hooks needed - data is pre-formatted in store
   const speedDisplayData = useMemo(() => {
-    const createDisplay = (value: number | null | undefined, displayInfo: any, mnemonic: string): MetricDisplayData => ({
-      mnemonic,
-      value: displayInfo?.value ?? '---',
-      unit: displayInfo?.unit ?? 'kts',
-      rawValue: value ?? 0,
-      layout: { minWidth: 60, alignment: 'right' },
-      presentation: { id: 'speed', name: 'Speed', pattern: 'xxx.x' },
-      status: { isValid: value !== undefined && value !== null, isFallback: false }
-    });
+    const createDisplay = (value: number | null | undefined, displayInfo: any, mnemonic: string): MetricDisplayData => {
+      // For direct sensor values, use display info if available
+      if (displayInfo) {
+        const formattedValue = typeof displayInfo.value === 'number' 
+          ? displayInfo.value.toFixed(1) 
+          : (displayInfo.value ?? '---');
+        
+        return {
+          mnemonic,
+          value: formattedValue,
+          unit: displayInfo.unit ?? 'kts',
+          rawValue: value ?? 0,
+          layout: { minWidth: 60, alignment: 'right' },
+          presentation: { id: 'speed', name: 'Speed', pattern: 'xxx.x' },
+          status: { isValid: value !== undefined && value !== null, isFallback: false }
+        };
+      }
+      
+      // For calculated values (avg, max), format manually
+      return {
+        mnemonic,
+        value: value !== null && value !== undefined ? value.toFixed(1) : '---',
+        unit: gpsSensorData?.display?.speedOverGround?.unit ?? speedSensorData?.display?.throughWater?.unit ?? 'kts',
+        rawValue: value ?? 0,
+        layout: { minWidth: 60, alignment: 'right' },
+        presentation: { id: 'speed', name: 'Speed', pattern: 'xxx.x' },
+        status: { isValid: value !== undefined && value !== null, isFallback: false }
+      };
+    };
 
     return {
       sog: createDisplay(sog, gpsSensorData?.display?.speedOverGround, 'SOG'),

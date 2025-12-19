@@ -142,7 +142,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
     const currentDisplay = useMemo(
       () => getBatteryDisplay(
         batterySensorData?.display?.current,
-        current !== null ? Math.abs(current) : null,
+        current,
         'AMP',
         'A',
       ),

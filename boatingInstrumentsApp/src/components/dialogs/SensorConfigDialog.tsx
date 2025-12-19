@@ -49,7 +49,8 @@ import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { ThresholdEditor } from './inputs/ThresholdEditor';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
-import { SOUND_PATTERNS } from '../../services/alarms/MarineAudioAlertManager';
+import { SOUND_PATTERNS, MarineAudioAlertManager } from '../../services/alarms/MarineAudioAlertManager';
+import { CriticalAlarmType, AlarmEscalationLevel } from '../../services/alarms/types';
 import { SENSOR_CONFIG_REGISTRY, getSensorConfig, getAlarmDefaults, shouldShowField } from '../../registry/SensorConfigRegistry';
 
 /**
@@ -283,13 +284,28 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
     if (requiresMetricSelection && firstMetric) {
       const metricConfig = currentThresholds.metrics?.[firstMetric];
+      
+      // Get presentation for the first metric's category
+      const metricInfo = sensorConfig?.alarmMetrics?.find(m => m.key === firstMetric);
+      const categoryPresentationMap: Partial<Record<DataCategory, any>> = {
+        voltage: voltagePresentation,
+        temperature: temperaturePresentation,
+        current: currentPresentation,
+        pressure: pressurePresentation,
+        rpm: rpmPresentation,
+        speed: speedPresentation,
+      };
+      const initialMetricPresentation = metricInfo?.category 
+        ? (categoryPresentationMap[metricInfo.category] || presentation)
+        : presentation;
+      
       if (metricConfig) {
-        // Convert from SI units to display units using metricPresentation
-        criticalValue = metricConfig.critical !== undefined && metricPresentation.isValid
-          ? metricPresentation.convert(metricConfig.critical)
+        // Convert from SI units to display units using initialMetricPresentation
+        criticalValue = metricConfig.critical !== undefined && initialMetricPresentation.isValid
+          ? initialMetricPresentation.convert(metricConfig.critical)
           : metricConfig.critical;
-        warningValue = metricConfig.warning !== undefined && metricPresentation.isValid
-          ? metricPresentation.convert(metricConfig.warning)
+        warningValue = metricConfig.warning !== undefined && initialMetricPresentation.isValid
+          ? initialMetricPresentation.convert(metricConfig.warning)
           : metricConfig.warning;
         criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
         warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
@@ -298,11 +314,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         const defaults = getAlarmDefaults(selectedSensorType!, currentThresholds.context);
         const metricDefaults = defaults?.metrics?.[firstMetric];
         if (metricDefaults) {
-          criticalValue = metricDefaults.critical !== undefined && metricPresentation.isValid
-            ? metricPresentation.convert(metricDefaults.critical)
+          criticalValue = metricDefaults.critical !== undefined && initialMetricPresentation.isValid
+            ? initialMetricPresentation.convert(metricDefaults.critical)
             : metricDefaults.critical;
-          warningValue = metricDefaults.warning !== undefined && metricPresentation.isValid
-            ? metricPresentation.convert(metricDefaults.warning)
+          warningValue = metricDefaults.warning !== undefined && initialMetricPresentation.isValid
+            ? initialMetricPresentation.convert(metricDefaults.warning)
             : metricDefaults.warning;
         }
       }
@@ -329,7 +345,21 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       criticalSoundPattern,
       warningSoundPattern,
     };
-  }, [selectedSensorType, selectedInstance, currentThresholds, requiresMetricSelection, sensorConfig, rawSensorData]);
+  }, [
+    selectedSensorType, 
+    selectedInstance, 
+    currentThresholds, 
+    requiresMetricSelection, 
+    sensorConfig, 
+    rawSensorData,
+    presentation,
+    voltagePresentation,
+    temperaturePresentation,
+    currentPresentation,
+    pressurePresentation,
+    rpmPresentation,
+    speedPresentation,
+  ]);
 
   // Form state - simple useState, no auto-save
   const [formData, setFormData] = useState<SensorFormData>(initialFormData);
@@ -731,9 +761,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         resetData.criticalSoundPattern = defaults.criticalSoundPattern || 'rapid_pulse';
         resetData.warningSoundPattern = defaults.warningSoundPattern || 'warble';
 
-        // Reset context fields
-        resetData.batteryChemistry = context.batteryChemistry || formData.batteryChemistry;
-        resetData.engineType = context.engineType || formData.engineType;
+        // Reset context fields (preserve from formData, not from context which is just for defaults lookup)
+        if (selectedSensorType === 'battery') {
+          resetData.batteryChemistry = formData.batteryChemistry;
+        }
+        if (selectedSensorType === 'engine') {
+          resetData.engineType = formData.engineType;
+        }
 
         // Update FormData with defaults (NOT saved yet - user can edit)
         updateFields(resetData);
@@ -757,10 +791,30 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, [selectedSensorType, selectedInstance, formData, presentation, metricPresentation, updateFields]);
 
   // Test alarm sound
-  const handleTestSound = useCallback((soundPattern: string) => {
+  const handleTestSound = useCallback(async (soundPattern: string) => {
     if (soundPattern === 'none') return;
-    // TODO: Integrate with MarineAudioAlertManager to play sound
-    console.log(`Testing sound: ${soundPattern}`);
+    
+    try {
+      const audioManager = MarineAudioAlertManager.getInstance();
+      
+      // Use appropriate alarm type for testing
+      const testAlarmType = CriticalAlarmType.ENGINE_OVERHEAT; // Generic test alarm
+      const escalationLevel = AlarmEscalationLevel.WARNING;
+      
+      console.log(`Testing sound: ${soundPattern}`);
+      const success = await audioManager.testAlarmSound(
+        testAlarmType,
+        escalationLevel,
+        3000, // 3 second duration
+        soundPattern
+      );
+      
+      if (!success) {
+        console.warn('Failed to play test sound');
+      }
+    } catch (error) {
+      console.error('Error playing test sound:', error);
+    }
   }, []);
 
   // Close handler (already defined earlier with async save completion)
@@ -860,7 +914,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     
     const sensorConfig = getSensorConfig(selectedSensorType);
     
-    return sensorConfig.fields.map((field) => {
+    return sensorConfig.fields
+      // Filter out pure read-only sensor data fields (voltage, current, rpm, etc.)
+      // Only show configurable fields: readWrite or readOnlyIfValue
+      .filter(field => field.iostate !== 'readOnly')
+      .map((field) => {
       // Check field dependencies - hide field if dependency not satisfied
       if (!shouldShowField(field, formData)) {
         return null;
@@ -899,11 +957,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               {field.helpText && (
                 <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
                   {field.helpText}
-                </Text>
-              )}
-              {isReadOnly && hardwareValue !== undefined && (
-                <Text style={{ color: theme.primary, fontSize: 11, marginTop: 2, fontWeight: '500' }}>
-                  ✓ Value from sensor hardware
                 </Text>
               )}
             </View>
@@ -946,11 +999,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   {field.helpText}
                 </Text>
               )}
-              {isReadOnly && hardwareValue !== undefined && (
-                <Text style={{ color: theme.primary, fontSize: 11, marginTop: 2, fontWeight: '500' }}>
-                  ✓ Value from sensor hardware
-                </Text>
-              )}
             </View>
           );
           
@@ -968,9 +1016,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                     {field.options?.find(opt => opt.value === hardwareValue)?.label || hardwareValue}
                   </Text>
                 </View>
-                <Text style={{ color: theme.primary, fontSize: 11, marginTop: 2, fontWeight: '500' }}>
-                  ✓ Value from sensor hardware
-                </Text>
                 {field.helpText && (
                   <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
                     {field.helpText}
@@ -1072,7 +1117,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           {availableSensorTypes.length > 0 && (
             <>
               {/* Sensor Type Picker */}
-                <View style={[styles.field, { marginTop: 20, marginBottom: 0, zIndex: 200, elevation: 200 }]}>
+                <View style={[styles.field, { marginTop: 20, marginBottom: 0 }]}>
                 <PlatformPicker
                   label=""
                   value={selectedSensorType || availableSensorTypes[0] || ''}
@@ -1335,7 +1380,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                               {/* Sound Controls */}
                               {isNarrow ? (
-                                // Mobile: Stacked sound controls
+                                // Mobile: Stacked sound controls with proper z-index
                                 <View style={{ marginTop: 16, gap: 12 }}>
                                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <Text style={{ flex: 0, minWidth: 80, color: theme.error, fontWeight: '600' }}>Critical:</Text>
