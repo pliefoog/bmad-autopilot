@@ -311,12 +311,22 @@ export class NmeaSensorProcessor {
     const depthRounded = Math.round(depthMeters * 10) / 10;
 
     // DBT measures depth below transducer (MEDIUM PRIORITY)
+    // Get existing depth sensor to check if higher priority (DPT) already set the depth
+    const existingSensor = this.nmeaStore.getSensorData('depth', instance) as DepthSensorData | undefined;
+    const shouldUpdatePrimaryDepth = !existingSensor?.depthSource || existingSensor.depthSource === 'DBK';
+    
     const depthData: Partial<DepthSensorData> = {
       name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
-      depth: depthRounded, // PRIMARY metric: use if DPT not available
-      depthBelowTransducer: depthRounded, // DBT-specific measurement
+      depthBelowTransducer: depthRounded, // DBT-specific measurement (for debugging)
       timestamp: timestamp
     };
+    
+    // Only update primary depth field if no higher priority source (DPT) has set it
+    if (shouldUpdatePrimaryDepth) {
+      depthData.depth = depthRounded; // PRIMARY metric: use if DPT not available
+      depthData.depthSource = 'DBT'; // Metadata: which NMEA sentence provided this depth
+      depthData.depthReferencePoint = 'transducer'; // DBT reference point
+    }
 
     return {
       success: true,
@@ -352,10 +362,13 @@ export class NmeaSensorProcessor {
     const depthRounded = Math.round(fields.depth_meters * 10) / 10;
     
     // DPT measures depth from waterline (HIGHEST PRIORITY)
+    // Always use DPT for primary depth field - it has highest priority
     const depthData: Partial<DepthSensorData> = {
       name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
-      depth: depthRounded, // PRIMARY metric: prefer DPT (from waterline)
-      depthBelowWaterline: depthRounded, // DPT-specific measurement
+      depth: depthRounded, // PRIMARY metric: DPT has highest priority (from waterline)
+      depthSource: 'DPT', // Metadata: which NMEA sentence provided this depth
+      depthReferencePoint: 'waterline', // DPT reference point
+      depthBelowWaterline: depthRounded, // DPT-specific measurement (for debugging)
       timestamp: timestamp
     };
 
@@ -401,12 +414,22 @@ export class NmeaSensorProcessor {
     const depthRounded = Math.round(depthMeters * 10) / 10;
 
     // DBK measures depth below keel (LOWEST PRIORITY)
+    // Get existing depth sensor to check if higher priority (DPT/DBT) already set the depth
+    const existingSensor = this.nmeaStore.getSensorData('depth', instance) as DepthSensorData | undefined;
+    const shouldUpdatePrimaryDepth = !existingSensor?.depthSource; // Only set if nothing has set it yet
+    
     const depthData: Partial<DepthSensorData> = {
       name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
-      depth: depthRounded, // PRIMARY metric: use if DPT/DBT not available
-      depthBelowKeel: depthRounded, // DBK-specific measurement
+      depthBelowKeel: depthRounded, // DBK-specific measurement (for debugging)
       timestamp: timestamp
     };
+    
+    // Only update primary depth field if no higher priority source (DPT/DBT) has set it
+    if (shouldUpdatePrimaryDepth) {
+      depthData.depth = depthRounded; // PRIMARY metric: use if DPT/DBT not available
+      depthData.depthSource = 'DBK'; // Metadata: which NMEA sentence provided this depth
+      depthData.depthReferencePoint = 'keel'; // DBK reference point
+    }
 
     return {
       success: true,

@@ -556,6 +556,22 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         category: 'depth',
         direction: 'below',
       },
+      {
+        key: 'depthSource',
+        label: 'Depth Source',
+        type: 'text',
+        iostate: 'readOnly',
+        hardwareField: 'depthSource',
+        helpText: 'NMEA sentence type providing depth (DPT/DBT/DBK)',
+      },
+      {
+        key: 'depthReferencePoint',
+        label: 'Reference Point',
+        type: 'text',
+        iostate: 'readOnly',
+        hardwareField: 'depthReferencePoint',
+        helpText: 'Measurement reference (waterline/transducer/keel)',
+      },
     ],
     
     alarmSupport: 'single-metric',

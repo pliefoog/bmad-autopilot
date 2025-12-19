@@ -161,11 +161,18 @@ export interface TemperatureSensorData extends BaseSensorData {
 }
 
 export interface DepthSensorData extends BaseSensorData {
-  // PRIMARY metric - Widget selects based on priority: DPT > DBT > DBK
-  depth?: number; // Consolidated depth value in meters
+  // PRIMARY metric - Single depth value selected by NMEA parser with priority: DPT > DBT > DBK
+  depth?: number; // Depth in meters (selected by priority logic in data layer)
 
-  // All depth measurements from the same physical sensor
-  // Different NMEA sentence types update different fields, all merged into same instance
+  // Metadata: Which NMEA sentence provided the depth value
+  // Used for display mnemonic in MetricCell (DBT, DPT, or DBK)
+  depthSource?: 'DBT' | 'DPT' | 'DBK';
+  
+  // Reference point for the depth measurement (for user understanding)
+  depthReferencePoint?: 'waterline' | 'transducer' | 'keel';
+
+  // Raw depth measurements from different NMEA sentences (for debugging/logging)
+  // NMEA parser applies priority logic and writes to 'depth' field
   depthBelowWaterline?: number; // DPT - Depth from waterline (HIGHEST PRIORITY)
   depthBelowTransducer?: number; // DBT - Depth below transducer (MEDIUM PRIORITY)
   depthBelowKeel?: number; // DBK - Depth below keel (LOWEST PRIORITY)
@@ -173,7 +180,7 @@ export interface DepthSensorData extends BaseSensorData {
   // Instance mapping: Based on talker ID (physical sensor)
   // - Multiple physical sensors distinguished by talker ID (SD, II, etc.)
   // - Each sensor can send DPT, DBT, DBK - all update same instance
-  // - Widget uses priority logic to select which measurement to display
+  // - NMEA parser selects best available measurement and updates 'depth' + 'depthSource'
 }
 
 export interface CompassSensorData extends BaseSensorData {
