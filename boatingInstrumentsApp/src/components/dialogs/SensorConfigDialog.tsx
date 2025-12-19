@@ -376,8 +376,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         metricThresholds,
         hasMin: 'min' in metricThresholds,
         hasMax: 'max' in metricThresholds,
-        min: metricThresholds.min,
-        max: metricThresholds.max
+        min: 'min' in metricThresholds ? metricThresholds.min : undefined,
+        max: 'max' in metricThresholds ? metricThresholds.max : undefined
       });
       return metricThresholds;
     }
@@ -925,7 +925,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       
       // Check iostate and hardware value
       const sensorData = rawSensorData[selectedSensorType]?.[selectedInstance];
-      const hardwareValue = field.hardwareField ? sensorData?.[field.hardwareField] : undefined;
+      const hardwareValue = field.hardwareField ? (sensorData as any)?.[field.hardwareField] : undefined;
       
       // Determine if field is read-only based on iostate
       const isReadOnly = 
@@ -944,7 +944,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <TextInput
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 value={String(currentValue || '')}
-                onChangeText={(text) => updateField(field.key, text)}
+                onChangeText={(text) => updateField(field.key as keyof SensorFormData, text)}
                 placeholder={field.helpText}
                 placeholderTextColor={theme.textSecondary}
                 editable={!isReadOnly}
@@ -982,7 +982,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                     if (field.min !== undefined && num < field.min) num = field.min;
                     if (field.max !== undefined && num > field.max) num = field.max;
                   }
-                  updateField(field.key, isNaN(num) ? undefined : num);
+                  updateField(field.key as keyof SensorFormData, isNaN(num) ? undefined : num);
                 }}
                 placeholder={field.helpText}
                 placeholderTextColor={theme.textSecondary}
@@ -1029,10 +1029,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
               <PlatformPicker
                 value={pickerValue}
-                onValueChange={(value) => updateField(field.key, value)}
+                onValueChange={(value) => updateField(field.key as keyof SensorFormData, value)}
                 items={field.options || []}
-                accessibilityLabel={field.label}
-                accessibilityHint={field.helpText}
               />
               {field.helpText && (
                 <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
