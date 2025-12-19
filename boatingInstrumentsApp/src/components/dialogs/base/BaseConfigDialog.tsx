@@ -108,7 +108,7 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
             testID={`${testID}-close-button`}
           >
             <UniversalIcon name="close" size={24} color={theme.text} />
-            <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
+            <Text style={[styles.headerButtonText, { color: theme.text }]}>Done</Text>
           </TouchableOpacity>
 
           {/* Title (Center) */}
