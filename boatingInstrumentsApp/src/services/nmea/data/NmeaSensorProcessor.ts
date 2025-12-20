@@ -124,6 +124,11 @@ export class NmeaSensorProcessor {
       const timestamp = Date.now();
       log('[NmeaSensorProcessor] Processing message:', parsedMessage.messageType);
       
+      // Log RPM messages specifically
+      if (parsedMessage.messageType === 'RPM') {
+        console.log('🚨 [NmeaSensorProcessor] RPM message received:', parsedMessage);
+      }
+      
       let result: ProcessingResult;
       
       switch (parsedMessage.messageType) {
