@@ -1484,15 +1484,15 @@ export class NmeaSensorProcessor {
       const engineFuelMatch = identifier.match(/^ENGINE#(\d+)_FUEL$/);
       if (engineFuelMatch && measurementType === 'V' && units === 'L') {
         const instance = parseInt(engineFuelMatch[1], 10) - 1;
-        const fuelFlow = parseFloat(measurementValue); // L/h from NMEA
+        const fuelRate = parseFloat(measurementValue); // L/h from NMEA
         
-        if (!isNaN(fuelFlow) && !isNaN(instance)) {
+        if (!isNaN(fuelRate) && !isNaN(instance)) {
           const engineData: Partial<EngineSensorData> = {
-            fuelFlow: fuelFlow, // Stored in L/h (base unit)
+            fuelRate: fuelRate, // Stored in L/h (base unit)
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Fuel Flow: Instance ${instance} = ${fuelFlow.toFixed(1)} L/h`);
+          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Fuel Rate: Instance ${instance} = ${fuelRate.toFixed(1)} L/h`);
           
           updates.push({
             sensorType: 'engine',
@@ -1507,15 +1507,15 @@ export class NmeaSensorProcessor {
       const engineHoursMatch = identifier.match(/^ENGINE#(\d+)_HOURS$/);
       if (engineHoursMatch && measurementType === 'G' && units === 'H') {
         const instance = parseInt(engineHoursMatch[1], 10) - 1;
-        const engineHours = parseFloat(measurementValue);
+        const hours = parseFloat(measurementValue);
         
-        if (!isNaN(engineHours) && !isNaN(instance)) {
+        if (!isNaN(hours) && !isNaN(instance)) {
           const engineData: Partial<EngineSensorData> = {
-            engineHours: engineHours, // Stored in hours
+            hours: hours, // Stored in hours
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Hours: Instance ${instance} = ${engineHours.toFixed(1)}h`);
+          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Hours: Instance ${instance} = ${hours.toFixed(1)}h`);
           
           updates.push({
             sensorType: 'engine',

@@ -56,12 +56,12 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.alternatorVoltage ?? null,
       (a, b) => a === b,
     );
-    const fuelFlow = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.fuelFlow ?? null,
+    const fuelRate = useNmeaStore(
+      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.fuelRate ?? null,
       (a, b) => a === b,
     );
-    const engineHours = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.engineHours ?? null,
+    const hours = useNmeaStore(
+      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.hours ?? null,
       (a, b) => a === b,
     );
     const engineTimestamp = useNmeaStore(
@@ -151,13 +151,13 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
     );
 
     const fuelFlowDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.fuelRate, fuelFlow, 'EFF', 'L/h'),
-      [fuelFlow, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(engineSensorData?.display?.fuelRate, fuelRate, 'EFF', 'L/h'),
+      [fuelRate, getEngineDisplay, engineSensorData],
     );
 
     const engineHoursDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.hours, engineHours, 'EHR', 'h'),
-      [engineHours, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(engineSensorData?.display?.hours, hours, 'EHR', 'h'),
+      [hours, getEngineDisplay, engineSensorData],
     );
 
     // Marine safety thresholds for engine monitoring
