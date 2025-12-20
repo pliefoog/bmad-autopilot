@@ -241,6 +241,14 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     instance: number,
     data: Partial<SensorData>,
   ) => {
+    // DEBUG: Log engine sensor updates
+    if (sensorType === 'engine') {
+      console.log(`🚨 [nmeaStore] updateSensorData called for engine-${instance}`, {
+        dataKeys: Object.keys(data),
+        data: data
+      });
+    }
+    
     // 🛡️ PREVENT INFINITE LOOPS: Throttle duplicate updates
     // If the same sensor data comes in within 100ms, skip it entirely
     const updateKey = `${sensorType}-${instance}`;
