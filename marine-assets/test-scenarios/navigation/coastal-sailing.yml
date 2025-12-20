@@ -249,7 +249,8 @@ sensors:
     physical_properties:
       engine_instance: 0            # 0=port/single, 1=starboard (maps to RPM.source or PGN 127488 byte[0])
       rpm_calibration: 1.02         # RPM multiplier
-      sensor_types: ["rpm", "coolant_temp", "oil_pressure", "alternator_voltage", "fuel_rate"]
+      reduction_ratio: 2.5          # Engine:Shaft reduction gear ratio (2.5:1)
+      sensor_types: ["rpm", "shaft_rpm", "coolant_temp", "oil_pressure", "alternator_voltage", "fuel_rate", "engine_hours"]
     data_generation:
       rpm:
         type: "sine_wave"
@@ -258,6 +259,44 @@ sensors:
         period: 120                 # 2-minute cycle
         min: 500
         max: 3200
+      shaft_rpm:
+        type: "calculated"          # Calculated from engine RPM / reduction_ratio
+        source: "rpm"               # Takes value from rpm field
+        divisor: 2.5                # Divide by reduction ratio
+      coolant_temp:
+        type: "sine_wave"
+        base: 180.0                 # °F (82°C typical diesel operating temp)
+        amplitude: 5.0              # ±5°F variation
+        period: 180                 # 3-minute cycle
+        min: 170.0
+        max: 195.0
+      oil_pressure:
+        type: "sine_wave"
+        base: 45.0                  # PSI (3.1 bar)
+        amplitude: 2.0              # ±2 PSI variation
+        period: 150                 # 2.5-minute cycle
+        min: 35.0
+        max: 55.0
+      alternator_voltage:
+        type: "sine_wave"
+        base: 13.8                  # V (charging voltage)
+        amplitude: 0.2              # ±0.2V variation
+        period: 90                  # 1.5-minute cycle
+        min: 13.4
+        max: 14.2
+      fuel_rate:
+        type: "sine_wave"
+        base: 3.5                   # L/h (gallons/hour converted)
+        amplitude: 1.0              # ±1 L/h variation
+        period: 120                 # 2-minute cycle
+        min: 1.5
+        max: 6.0
+      engine_hours:
+        type: "linear"
+        start: 1247.5                # Starting hours
+        rate: 0.0167                 # Hours per second (1 hour per 60 seconds at 1Hz = 1hr/min realtime)
+        min: 0
+        max: 9999.9
 
   # ========== BATTERY SENSORS (2x) ==========
   - type: battery_sensor

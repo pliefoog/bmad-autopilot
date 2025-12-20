@@ -682,6 +682,15 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         hardwareField: 'hours',
         category: 'time',
       },
+      {
+        key: 'shaftRpm',
+        label: 'Shaft RPM',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'shaftRpm',
+        category: 'rpm',
+        helpText: 'Propeller shaft revolutions per minute',
+      },
     ],
     
     alarmSupport: 'multi-metric',

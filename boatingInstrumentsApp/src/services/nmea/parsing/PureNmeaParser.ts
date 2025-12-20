@@ -755,20 +755,22 @@ export class PureNmeaParser {
 
   /**
    * Parse RPM (Engine RPM and Pitch) fields
-   * Format: $xxRPM,<source>,<instance>,<rpm>,<status>*hh
-   * Fields: 1=Source (E=Engine, P=Propeller), 2=Instance, 3=RPM Value, 4=Status (A=Active, V=Void)
+   * Format: $xxRPM,<source>,<instance>,<rpm>,<pitch>,<status>*hh
+   * Fields: 1=Source (E=Engine, P=Propeller), 2=Instance, 3=RPM Value, 4=Pitch (%), 5=Status (A=Active, V=Void)
    */
   private parseRPMFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1],  // Source
       field_2: parts[2],  // Instance
       field_3: parts[3],  // RPM Value
-      field_4: parts[4],  // Status
+      field_4: parts[4],  // Pitch %
+      field_5: parts[5],  // Status
       // Parsed values - these are the field names our NmeaSensorProcessor expects
       source: parts[1] || '',
       instance: parts[2] || '',
       rpm: parts[3] || '',
-      status: parts[4] || ''
+      pitch: parts[4] || '',
+      status: parts[5] || ''
     };
   }
 

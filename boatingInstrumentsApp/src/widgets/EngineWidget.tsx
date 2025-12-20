@@ -64,6 +64,10 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.hours ?? null,
       (a, b) => a === b,
     );
+    const shaftRpm = useNmeaStore(
+      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.shaftRpm ?? null,
+      (a, b) => a === b,
+    );
     const engineTimestamp = useNmeaStore(
       (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.timestamp,
       (a, b) => a === b,
@@ -106,10 +110,34 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           };
         }
 
+        // If display info available, use pre-formatted string (not the numeric value!)
+        if (displayInfo?.formatted) {
+          return {
+            mnemonic: engineMnemonic,
+            value: displayInfo.formatted.replace(` ${displayInfo.unit}`, ''), // Remove unit from formatted string
+            unit: displayInfo.unit,
+            rawValue: value,
+            layout: {
+              minWidth: 60,
+              alignment: 'right',
+            },
+            presentation: {
+              id: 'engine',
+              name: engineMnemonic,
+              pattern: 'xxx.x',
+            },
+            status: {
+              isValid: true,
+              isFallback: false,
+            },
+          };
+        }
+
+        // Fallback to raw value formatting
         return {
           mnemonic: engineMnemonic,
-          value: displayInfo?.value ?? (value !== null ? value.toFixed(1) : '---'),
-          unit: displayInfo?.unit ?? fallbackSymbol,
+          value: value.toFixed(1),
+          unit: fallbackSymbol,
           rawValue: value,
           layout: {
             minWidth: 60,
@@ -158,6 +186,11 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
     const engineHoursDisplay = useMemo(
       () => getEngineDisplay(engineSensorData?.display?.hours, hours, 'EHR', 'h'),
       [hours, getEngineDisplay, engineSensorData],
+    );
+
+    const shaftRpmDisplay = useMemo(
+      () => getEngineDisplay(engineSensorData?.display?.shaftRpm, shaftRpm, 'SRPM', 'rpm'),
+      [shaftRpm, getEngineDisplay, engineSensorData],
     );
 
     // Marine safety thresholds for engine monitoring
@@ -326,8 +359,17 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           }}
         />
 
-        {/* Row 4: Empty space for consistent 4-row layout */}
-        <View />
+        {/* Row 4: Shaft RPM (spans 2 columns) */}
+        <SecondaryMetricCell
+          data={shaftRpmDisplay}
+          state="normal"
+          compact={true}
+          fontSize={{
+            mnemonic: fontSize.label,
+            value: fontSize.value,
+            unit: fontSize.unit,
+          }}
+        />
         <View />
       </UnifiedWidgetGrid>
     );

@@ -2271,25 +2271,86 @@ class ScenarioDataSource extends EventEmitter {
   }
   
   generateEngineFromSensor(sensor, sentenceType) {
-    let rpm = 1800.0;
-    
-    // Get RPM from sensor data_generation
-    if (sensor.data_generation?.rpm) {
-      rpm = this.getYAMLDataValue('rpm', sensor.data_generation.rpm);
-    }
-    
-    // Apply calibration
-    const rpmCalibration = sensor.physical_properties?.rpm_calibration || 1.0;
-    rpm *= rpmCalibration;
-    
-    // Get engine instance
+    const messages = [];
     const engineInstance = sensor.physical_properties?.engine_instance || sensor.instance || 0;
+    const engineId = `ENGINE#${engineInstance}`;
     const source = engineInstance === 0 ? 'E' : 'E1';
     
-    // Generate RPM sentence
-    const sentence = `IIRPM,${source},0,${rpm.toFixed(0)},100,A`;
-    const checksum = this.calculateChecksum(sentence);
-    return `$${sentence}*${checksum}`;
+    // Check which sensor types are configured
+    const sensorTypes = sensor.physical_properties?.sensor_types || ['rpm'];
+    
+    // Generate Engine RPM sentence if configured (source='E')
+    if (sensorTypes.includes('rpm') && sensor.data_generation?.rpm) {
+      let rpm = this.getYAMLDataValue('rpm', sensor.data_generation.rpm);
+      const rpmCalibration = sensor.physical_properties?.rpm_calibration || 1.0;
+      rpm *= rpmCalibration;
+      
+      const rpmSentence = `IIRPM,E,${engineInstance},${rpm.toFixed(0)},100,A`;
+      messages.push(`$${rpmSentence}*${this.calculateChecksum(rpmSentence)}`);
+    }
+    
+    // Generate Shaft RPM sentence if configured (source='S')
+    if (sensorTypes.includes('shaft_rpm') && sensor.data_generation?.shaft_rpm) {
+      let shaftRpm;
+      const shaftConfig = sensor.data_generation.shaft_rpm;
+      
+      // Check if shaft RPM is calculated from engine RPM
+      if (shaftConfig.type === 'calculated' && shaftConfig.source === 'rpm') {
+        const engineRpm = this.getYAMLDataValue('rpm', sensor.data_generation.rpm);
+        const divisor = shaftConfig.divisor || sensor.physical_properties?.reduction_ratio || 1.0;
+        shaftRpm = engineRpm / divisor;
+      } else {
+        // Otherwise use direct value generation
+        shaftRpm = this.getYAMLDataValue('shaft_rpm', shaftConfig);
+      }
+      
+      const shaftSentence = `IIRPM,S,${engineInstance},${shaftRpm.toFixed(0)},100,A`;
+      messages.push(`$${shaftSentence}*${this.calculateChecksum(shaftSentence)}`);
+    }
+    
+    // Build XDR sentence components for other engine parameters
+    const xdrComponents = [];
+    
+    // Coolant Temperature (Celsius converted from data_generation which is in Fahrenheit)
+    if (sensorTypes.includes('coolant_temp') && sensor.data_generation?.coolant_temp) {
+      const tempF = this.getYAMLDataValue('coolant_temp', sensor.data_generation.coolant_temp);
+      const tempC = (tempF - 32) * 5 / 9; // Convert F to C
+      xdrComponents.push(`C,${tempC.toFixed(1)},C,${engineId}`);
+    }
+    
+    // Oil Pressure (PSI)
+    if (sensorTypes.includes('oil_pressure') && sensor.data_generation?.oil_pressure) {
+      const pressure = this.getYAMLDataValue('oil_pressure', sensor.data_generation.oil_pressure);
+      xdrComponents.push(`P,${pressure.toFixed(1)},P,${engineId}`);
+    }
+    
+    // Alternator Voltage
+    if (sensorTypes.includes('alternator_voltage') && sensor.data_generation?.alternator_voltage) {
+      const voltage = this.getYAMLDataValue('alternator_voltage', sensor.data_generation.alternator_voltage);
+      xdrComponents.push(`U,${voltage.toFixed(2)},V,ALTERNATOR#${engineInstance}`);
+    }
+    
+    // Generate compound XDR sentence if we have any components
+    if (xdrComponents.length > 0) {
+      const xdrSentence = `IIXDR,${xdrComponents.join(',')}`;
+      messages.push(`$${xdrSentence}*${this.calculateChecksum(xdrSentence)}`);
+    }
+    
+    // Fuel Rate (separate XDR sentence)
+    if (sensorTypes.includes('fuel_rate') && sensor.data_generation?.fuel_rate) {
+      const fuelRate = this.getYAMLDataValue('fuel_rate', sensor.data_generation.fuel_rate);
+      const fuelSentence = `IIXDR,V,${fuelRate.toFixed(1)},L,${engineId}_FUEL`;
+      messages.push(`$${fuelSentence}*${this.calculateChecksum(fuelSentence)}`);
+    }
+    
+    // Engine Hours (separate XDR sentence)
+    if (sensorTypes.includes('engine_hours') && sensor.data_generation?.engine_hours) {
+      const hours = this.getYAMLDataValue('engine_hours', sensor.data_generation.engine_hours);
+      const hoursSentence = `IIXDR,G,${hours.toFixed(1)},H,${engineId}_HOURS`;
+      messages.push(`$${hoursSentence}*${this.calculateChecksum(hoursSentence)}`);
+    }
+    
+    return messages;
   }
   
   generateBatteryFromSensor(sensor, sentenceType) {
@@ -2391,8 +2452,23 @@ class ScenarioDataSource extends EventEmitter {
     const fluidType = sensor.physical_properties?.tank_type || sensor.physical_properties?.fluid_type || 'fuel';
     const capacity = sensor.physical_properties?.tank_capacity || sensor.physical_properties?.capacity || 200;
     
+    // Map common tank type names to XDR standard mnemonics
+    const tankTypeMap = {
+      'fuel': 'FUEL',
+      'water': 'WATR',
+      'fresh_water': 'WATR',
+      'waste': 'WAST',
+      'gray_water': 'WAST',
+      'ballast': 'BALL',
+      'blackwater': 'BWAT',
+      'black_water': 'BWAT'
+    };
+    
+    const tankMnemonic = tankTypeMap[fluidType.toLowerCase()] || 'FUEL';
+    
     // NMEA 0183 doesn't have standard tank sentences, use XDR
-    const tankId = `TANK_${fluidType.toUpperCase()}_${String(tankInstance).padStart(2, '0')}`;
+    // Format: FUEL_0, WATR_1, WAST_0 (no TANK_ prefix - matches parser expectations)
+    const tankId = `${tankMnemonic}_${tankInstance}`;
     const sentence = `IIXDR,V,${level.toFixed(1)},%,${tankId}`;
     const checksum = this.calculateChecksum(sentence);
     return `$${sentence}*${checksum}`;

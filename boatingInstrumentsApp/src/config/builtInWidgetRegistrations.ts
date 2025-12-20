@@ -310,6 +310,12 @@ export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
       required: false,
       label: 'Engine Hours',
     },
+    {
+      category: 'engine',
+      measurementType: 'shaftRpm',
+      required: false,
+      label: 'Shaft RPM',
+    },
   ],
   createWidget: (instance, sensorData) => {
     return createWidgetConfig('engine', instance, `Engine ${instance}`, 'cog-outline');

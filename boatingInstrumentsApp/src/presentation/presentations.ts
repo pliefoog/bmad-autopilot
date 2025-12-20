@@ -400,10 +400,28 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
 // ===== PRESSURE PRESENTATIONS =====
 const PRESSURE_PRESENTATIONS: Presentation[] = [
   {
+    id: 'bar_1',
+    name: 'Bar (1 decimal)',
+    symbol: 'bar',
+    description: 'Metric pressure in bar, 1 decimal place - ideal for engine oil pressure',
+    convert: (pascals: number) => pascals / 100000,
+    format: (bar: number) => bar.toFixed(1),
+    convertBack: (bar: number) => bar * 100000,
+    formatSpec: {
+      pattern: 'x.x',
+      decimals: 1,
+      minWidth: 3,
+      testCases: { min: 2.0, max: 5.5, typical: 3.4 }
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international']
+  },
+  {
     id: 'bar_3',
     name: 'Bar (3 decimals)',
     symbol: 'bar',
-    description: 'Metric pressure in bar, 3 decimal places',
+    description: 'Metric pressure in bar, 3 decimal places - for atmospheric pressure',
     convert: (pascals: number) => pascals / 100000,
     format: (bar: number) => bar.toFixed(3),
     convertBack: (bar: number) => bar * 100000,
@@ -413,7 +431,6 @@ const PRESSURE_PRESENTATIONS: Presentation[] = [
       minWidth: 5,
       testCases: { min: 0.950, max: 1.050, typical: 1.013 }
     },
-    isDefault: true,
     isMetric: true,
     preferredInRegion: ['eu', 'international']
   },

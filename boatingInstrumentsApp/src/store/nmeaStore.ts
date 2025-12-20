@@ -241,21 +241,15 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
     instance: number,
     data: Partial<SensorData>,
   ) => {
-    // DEBUG: Log engine sensor updates
-    if (sensorType === 'engine') {
-      console.log(`🚨 [nmeaStore] updateSensorData called for engine-${instance}`, {
-        dataKeys: Object.keys(data),
-        data: data
-      });
-    }
-    
     // 🛡️ PREVENT INFINITE LOOPS: Throttle duplicate updates
     // If the same sensor data comes in within 100ms, skip it entirely
+    // EXCEPTION: Engine sensors have 0ms throttle to allow XDR multi-field updates
     const updateKey = `${sensorType}-${instance}`;
     const now = Date.now();
     const lastUpdate = lastUpdateTimes.get(updateKey);
+    const throttleMs = sensorType === 'engine' ? 0 : 100;
 
-    if (lastUpdate && now - lastUpdate < 100) {
+    if (lastUpdate && now - lastUpdate < throttleMs) {
       // Debug: Log throttled updates for speed sensor
       if (sensorType === 'speed') {
         console.log(

@@ -236,23 +236,24 @@ export class NmeaSensorProcessor {
   }
 
   /**
-   * Process RPM (Engine RPM and Pitch) message
+   * Process RPM (Engine/Shaft RPM and Pitch) message
    * Format: $--RPM,S,n,x.x,A*hh
-   * Where: S = Source (E=Engine), n = Instance, x.x = RPM value, A = Valid
+   * Where: S = Source (E=Engine, S=Shaft), n = Instance, x.x = RPM value, A = Valid
    */
   private processRPM(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
     const fields = message.fields;
+    const source = fields.source; // 'E' = Engine, 'S' = Shaft
     
-    // Check if this is engine RPM (source = 'E')
-    if (fields.source !== 'E') {
+    // Only process engine and shaft RPM
+    if (source !== 'E' && source !== 'S') {
       return {
         success: false,
-        errors: ['RPM message is not for engine (source not E)'],
+        errors: [`RPM message source '${source}' not supported (only E=Engine, S=Shaft)`],
         messageType: 'RPM'
       };
     }
 
-    // Extract and validate engine instance and RPM value
+    // Extract and validate instance and RPM value
     const engineInstance = parseInt(fields.instance) || 0;
     const rpmValue = parseFloat(fields.rpm);
     const status = fields.status;
@@ -266,14 +267,19 @@ export class NmeaSensorProcessor {
       };
     }
 
-    // Create engine sensor update
+    // Create engine sensor update - different field based on source
     const engineData: Partial<EngineSensorData> = {
       name: `Engine ${engineInstance + 1}`,
-      rpm: rpmValue, // Raw RPM value (no unit conversion needed)
       timestamp: timestamp
     };
 
-    console.log(`🚨 [NmeaSensorProcessor] Processed RPM - Instance: ${engineInstance}, RPM: ${rpmValue}, engineData:`, engineData);
+    if (source === 'E') {
+      engineData.rpm = rpmValue; // Engine RPM
+      console.log(`🚨 [NmeaSensorProcessor] Processed Engine RPM - Instance: ${engineInstance}, RPM: ${rpmValue}`);
+    } else if (source === 'S') {
+      engineData.shaftRpm = rpmValue; // Shaft RPM
+      console.log(`🚨 [NmeaSensorProcessor] Processed Shaft RPM - Instance: ${engineInstance}, Shaft RPM: ${rpmValue}`);
+    }
 
     return {
       success: true,
@@ -1409,24 +1415,27 @@ export class NmeaSensorProcessor {
     
     // Check if this is engine measurement (ENGINE#X identifiers)
     if (identifier) {
-      // Engine coolant temperature (C=temperature, F=fahrenheit, ENGINE#X)
+      // Engine coolant temperature (C=temperature, C/F=celsius/fahrenheit, ENGINE#X)
       const engineTempMatch = identifier.match(/^ENGINE#(\d+)$/);
       console.log(`[NmeaSensorProcessor] XDR Engine check: identifier="${identifier}", tempMatch=${!!engineTempMatch}, type="${measurementType}", units="${units}"`);
       
-      if (engineTempMatch && measurementType === 'C' && units === 'F') {
-        const instance = parseInt(engineTempMatch[1], 10) - 1; // ENGINE#1 -> instance 0
+      if (engineTempMatch && measurementType === 'C' && (units === 'F' || units === 'C')) {
+        const instance = parseInt(engineTempMatch[1], 10); // ENGINE#0 -> instance 0
         let temperature = parseFloat(measurementValue);
         
         if (!isNaN(temperature) && !isNaN(instance)) {
-          // Convert Fahrenheit to Celsius
-          temperature = (temperature - 32) * (5 / 9);
+          // Convert to Celsius if needed
+          if (units === 'F') {
+            temperature = (temperature - 32) * (5 / 9);
+          }
+          // If units === 'C', already in Celsius
           
           const engineData: Partial<EngineSensorData> = {
             coolantTemp: temperature,
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Coolant Temp: Instance ${instance} = ${temperature.toFixed(1)}°C (from ${measurementValue}°F)`);
+          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Coolant Temp: Instance ${instance} = ${temperature.toFixed(1)}°C (from ${measurementValue}${units})`);
           
           updates.push({
             sensorType: 'engine',
@@ -1440,7 +1449,7 @@ export class NmeaSensorProcessor {
       // Engine oil pressure (P=pressure, P=PSI per NMEA XDR standard, ENGINE#X)
       const enginePressureMatch = identifier.match(/^ENGINE#(\d+)$/);
       if (enginePressureMatch && measurementType === 'P' && units === 'P') {
-        const instance = parseInt(enginePressureMatch[1], 10) - 1;
+        const instance = parseInt(enginePressureMatch[1], 10); // ENGINE#0 -> instance 0
         let pressure = parseFloat(measurementValue); // PSI from NMEA
         
         if (!isNaN(pressure) && !isNaN(instance)) {
@@ -1468,7 +1477,7 @@ export class NmeaSensorProcessor {
       const alternatorMatch = identifier?.match(/^ALTERNATOR(?:#(\d+))?$/);
       if (alternatorMatch && measurementType === 'U' && units === 'V') {
         const voltage = parseFloat(measurementValue);
-        const instance = alternatorMatch[1] ? parseInt(alternatorMatch[1], 10) - 1 : 0; // ALTERNATOR#1 -> instance 0
+        const instance = alternatorMatch[1] ? parseInt(alternatorMatch[1], 10) : 0; // ALTERNATOR#0 -> instance 0, ALTERNATOR -> instance 0
         
         if (!isNaN(voltage) && !isNaN(instance)) {
           const engineData: Partial<EngineSensorData> = {
@@ -1490,7 +1499,7 @@ export class NmeaSensorProcessor {
       // Engine fuel flow (V=volume, L=liters per hour, ENGINE#X_FUEL)
       const engineFuelMatch = identifier.match(/^ENGINE#(\d+)_FUEL$/);
       if (engineFuelMatch && measurementType === 'V' && units === 'L') {
-        const instance = parseInt(engineFuelMatch[1], 10) - 1;
+        const instance = parseInt(engineFuelMatch[1], 10); // ENGINE#0_FUEL -> instance 0
         const fuelRate = parseFloat(measurementValue); // L/h from NMEA
         
         if (!isNaN(fuelRate) && !isNaN(instance)) {
@@ -1513,7 +1522,7 @@ export class NmeaSensorProcessor {
       // Engine hours (G=generic, H=hours, ENGINE#X_HOURS)
       const engineHoursMatch = identifier.match(/^ENGINE#(\d+)_HOURS$/);
       if (engineHoursMatch && measurementType === 'G' && units === 'H') {
-        const instance = parseInt(engineHoursMatch[1], 10) - 1;
+        const instance = parseInt(engineHoursMatch[1], 10); // ENGINE#0_HOURS -> instance 0
         const hours = parseFloat(measurementValue);
         
         if (!isNaN(hours) && !isNaN(instance)) {

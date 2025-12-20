@@ -97,12 +97,13 @@ export interface TankSensorData extends BaseSensorData {
 }
 
 export interface EngineSensorData extends BaseSensorData {
-  rpm?: number; // PRIMARY metric
+  rpm?: number; // PRIMARY metric - Engine RPM (source='E')
   coolantTemp?: number; // PRIMARY metric
   oilPressure?: number; // PRIMARY metric
   alternatorVoltage?: number; // Secondary metric (also called 'voltage' in some contexts)
   fuelRate?: number; // Secondary metric
   hours?: number; // Secondary metric
+  shaftRpm?: number; // Secondary metric - Propeller shaft RPM (source='S')
 }
 
 export interface BatterySensorData extends BaseSensorData {
