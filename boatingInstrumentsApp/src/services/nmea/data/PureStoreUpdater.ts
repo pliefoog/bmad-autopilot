@@ -450,7 +450,7 @@ export class PureStoreUpdater {
       case 'compass':
         return 1000; // Navigation data every second
       case 'depth':
-        return 1500; // Depth updates every 1.5 seconds
+        return 500; // Depth updates every 500ms (2Hz) for smooth trendline visualization
       case 'tank':
         return 2000; // Tank levels every 2 seconds
       case 'battery':
