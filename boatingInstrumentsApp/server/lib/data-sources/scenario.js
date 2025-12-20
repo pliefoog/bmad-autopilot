@@ -2399,8 +2399,8 @@ class ScenarioDataSource extends EventEmitter {
     
     if (xdrFormat === 'compound') {
       // Generate single compound XDR sentence with all battery parameters
-      // Format: $IIXDR,U,voltage,V,BAT_X,I,current,A,BAT_X,C,temp,C,BAT_X,P,soc,%,BAT_X,U,nominal,V,BAT_X,V,capacity,H,BAT_X,G,chemistry,N,BAT_X*XX
-      const sentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId},I,${current.toFixed(2)},A,${batteryId},C,${tempCelsius.toFixed(1)},C,${batteryId},P,${soc.toFixed(1)},%,${batteryId},U,${nominalVoltage.toFixed(1)},V,${batteryId},V,${capacity.toFixed(0)},H,${batteryId},G,${chemistry},N,${batteryId}`;
+      // Format: $IIXDR,U,voltage,V,BAT_X,I,current,A,BAT_X,C,temp,C,BAT_X,P,soc,%,BAT_X,U,nominal,V,BAT_X_NOM,V,capacity,H,BAT_X,G,chemistry,N,BAT_X*XX
+      const sentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId},I,${current.toFixed(2)},A,${batteryId},C,${tempCelsius.toFixed(1)},C,${batteryId},P,${soc.toFixed(1)},%,${batteryId},U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM,V,${capacity.toFixed(0)},H,${batteryId},G,${chemistry},N,${batteryId}`;
       return [`$${sentence}*${this.calculateChecksum(sentence)}`];
     } else {
       // Generate individual XDR sentences (one per parameter)

@@ -61,6 +61,20 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.battery?.[instanceNumber]?.nominalVoltage ?? null,
       (a, b) => a === b,
     );
+    
+    // DEBUG: Log battery sensor data to verify nominalVoltage is present
+    React.useEffect(() => {
+      const batterySensor = useNmeaStore.getState().nmeaData.sensors.battery?.[instanceNumber];
+      if (batterySensor) {
+        console.log(`[BatteryWidget] Battery ${instanceNumber} sensor data:`, {
+          voltage: batterySensor.voltage,
+          nominalVoltage: batterySensor.nominalVoltage,
+          current: batterySensor.current,
+          temperature: batterySensor.temperature,
+          stateOfCharge: batterySensor.stateOfCharge,
+        });
+      }
+    }, [instanceNumber, voltage, nominalVoltage]);
     const capacity = useNmeaStore(
       (state) => state.nmeaData.sensors.battery?.[instanceNumber]?.capacity ?? null,
       (a, b) => a === b,
@@ -155,8 +169,53 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
     );
 
     const nominalVoltageDisplay = useMemo(
-      () => getBatteryDisplay(batterySensorData?.display?.voltage, nominalVoltage, 'NOM', 'V'),
-      [nominalVoltage, getBatteryDisplay, batterySensorData],
+      () => {
+        // Nominal voltage doesn't have a display cache entry (not in registry as data field)
+        // Just format the raw value directly - it's always in volts
+        if (nominalVoltage === null || nominalVoltage === undefined) {
+          return {
+            mnemonic: 'NOM',
+            value: '---',
+            unit: 'V',
+            rawValue: 0,
+            layout: {
+              minWidth: 60,
+              alignment: 'right',
+            },
+            presentation: {
+              id: 'battery',
+              name: 'NOM',
+              pattern: 'xxx',
+            },
+            status: {
+              isValid: false,
+              error: 'No data',
+              isFallback: true,
+            },
+          };
+        }
+
+        return {
+          mnemonic: 'NOM',
+          value: nominalVoltage.toFixed(0),
+          unit: 'V',
+          rawValue: nominalVoltage,
+          layout: {
+            minWidth: 60,
+            alignment: 'right',
+          },
+          presentation: {
+            id: 'battery',
+            name: 'NOM',
+            pattern: 'xx',
+          },
+          status: {
+            isValid: true,
+            isFallback: false,
+          },
+        };
+      },
+      [nominalVoltage],
     );
 
     const isStale = !batteryTimestamp || voltage === null;
