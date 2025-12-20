@@ -21,6 +21,9 @@ const warn = (...args: any[]) => ENABLE_NMEA_PROCESSOR_LOGGING && console.warn(.
 // Debug toggle for verbose VTG/VHW processor logs
 const DEBUG_NMEA_PROCESSING = false;
 
+// Debug toggle for engine/RPM processing
+const DEBUG_ENGINE_PROCESSING = false;
+
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import { normalizeApparentWindAngle, normalizeTrueWindAngle } from '../../../utils/marineAngles';
 import { pgnParser } from '../pgnParser';
@@ -125,8 +128,8 @@ export class NmeaSensorProcessor {
       const timestamp = Date.now();
       log('[NmeaSensorProcessor] Processing message:', parsedMessage.messageType);
       
-      // Log RPM messages specifically
-      if (parsedMessage.messageType === 'RPM') {
+      // Log RPM messages specifically (for debugging engine detection)
+      if (parsedMessage.messageType === 'RPM' && DEBUG_ENGINE_PROCESSING) {
         console.log('🚨 [NmeaSensorProcessor] RPM message received:', parsedMessage);
       }
       
@@ -276,10 +279,14 @@ export class NmeaSensorProcessor {
 
     if (source === 'E') {
       engineData.rpm = rpmValue; // Engine RPM
-      console.log(`🚨 [NmeaSensorProcessor] Processed Engine RPM - Instance: ${engineInstance}, RPM: ${rpmValue}`);
+      if (DEBUG_ENGINE_PROCESSING) {
+        console.log(`🚨 [NmeaSensorProcessor] Processed Engine RPM - Instance: ${engineInstance}, RPM: ${rpmValue}`);
+      }
     } else if (source === 'S') {
       engineData.shaftRpm = rpmValue; // Shaft RPM
-      console.log(`🚨 [NmeaSensorProcessor] Processed Shaft RPM - Instance: ${engineInstance}, Shaft RPM: ${rpmValue}`);
+      if (DEBUG_ENGINE_PROCESSING) {
+        console.log(`🚨 [NmeaSensorProcessor] Processed Shaft RPM - Instance: ${engineInstance}, Shaft RPM: ${rpmValue}`);
+      }
     }
 
     return {
@@ -1425,7 +1432,9 @@ export class NmeaSensorProcessor {
     if (identifier) {
       // Engine coolant temperature (C=temperature, C/F=celsius/fahrenheit, ENGINE#X)
       const engineTempMatch = identifier.match(/^ENGINE#(\d+)$/);
-      console.log(`[NmeaSensorProcessor] XDR Engine check: identifier="${identifier}", tempMatch=${!!engineTempMatch}, type="${measurementType}", units="${units}"`);
+      if (DEBUG_ENGINE_PROCESSING) {
+        console.log(`[NmeaSensorProcessor] XDR Engine check: identifier="${identifier}", tempMatch=${!!engineTempMatch}, type="${measurementType}", units="${units}"`);
+      }
       
       if (engineTempMatch && measurementType === 'C' && (units === 'F' || units === 'C')) {
         const instance = parseInt(engineTempMatch[1], 10); // ENGINE#0 -> instance 0
@@ -1443,7 +1452,9 @@ export class NmeaSensorProcessor {
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Coolant Temp: Instance ${instance} = ${temperature.toFixed(1)}°C (from ${measurementValue}${units})`);
+          if (DEBUG_ENGINE_PROCESSING) {
+            console.log(`[NmeaSensorProcessor] ✅ XDR Engine Coolant Temp: Instance ${instance} = ${temperature.toFixed(1)}°C (from ${measurementValue}${units})`);
+          }
           
           updates.push({
             sensorType: 'engine',
@@ -1470,7 +1481,9 @@ export class NmeaSensorProcessor {
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Oil Pressure: Instance ${instance} = ${pressure.toFixed(0)} Pa (from ${measurementValue} PSI)`);
+          if (DEBUG_ENGINE_PROCESSING) {
+            console.log(`[NmeaSensorProcessor] ✅ XDR Engine Oil Pressure: Instance ${instance} = ${pressure.toFixed(0)} Pa (from ${measurementValue} PSI)`);
+          }
           
           updates.push({
             sensorType: 'engine',
@@ -1493,7 +1506,9 @@ export class NmeaSensorProcessor {
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Alternator Voltage: Instance ${instance} = ${voltage}V`);
+          if (DEBUG_ENGINE_PROCESSING) {
+            console.log(`[NmeaSensorProcessor] ✅ XDR Alternator Voltage: Instance ${instance} = ${voltage}V`);
+          }
           
           updates.push({
             sensorType: 'engine',
@@ -1516,7 +1531,9 @@ export class NmeaSensorProcessor {
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Fuel Rate: Instance ${instance} = ${fuelRate.toFixed(1)} L/h`);
+          if (DEBUG_ENGINE_PROCESSING) {
+            console.log(`[NmeaSensorProcessor] ✅ XDR Engine Fuel Rate: Instance ${instance} = ${fuelRate.toFixed(1)} L/h`);
+          }
           
           updates.push({
             sensorType: 'engine',
@@ -1539,7 +1556,9 @@ export class NmeaSensorProcessor {
             timestamp: timestamp
           };
           
-          console.log(`[NmeaSensorProcessor] ✅ XDR Engine Hours: Instance ${instance} = ${hours.toFixed(1)}h`);
+          if (DEBUG_ENGINE_PROCESSING) {
+            console.log(`[NmeaSensorProcessor] ✅ XDR Engine Hours: Instance ${instance} = ${hours.toFixed(1)}h`);
+          }
           
           updates.push({
             sensorType: 'engine',

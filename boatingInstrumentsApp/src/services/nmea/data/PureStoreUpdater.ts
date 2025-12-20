@@ -376,12 +376,6 @@ export class PureStoreUpdater {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
-    // DEBUG: Log engine updates
-    const engineUpdates = updates.filter(u => u.sensorType === 'engine');
-    if (engineUpdates.length > 0) {
-      console.log('🚨 [PureStoreUpdater] Engine updates received:', engineUpdates);
-    }
-
     const {
       throttleMs = this.DEFAULT_THROTTLE_MS,
       skipThrottling = false
