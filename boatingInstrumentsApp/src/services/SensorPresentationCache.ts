@@ -112,7 +112,9 @@ class SensorPresentationCacheService {
     const store = usePresentationStore.getState();
 
     for (const field of dataFields) {
-      const value = (data as any)[field.key];
+      // Use hardwareField if available, otherwise fall back to key
+      const fieldName = field.hardwareField || field.key;
+      const value = (data as any)[fieldName];
       
       // Skip undefined/null values
       if (value === undefined || value === null) {
