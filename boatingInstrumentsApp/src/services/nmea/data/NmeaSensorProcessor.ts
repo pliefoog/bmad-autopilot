@@ -39,6 +39,7 @@ import type {
   NavigationSensorData
 } from '../../../types/SensorData';
 import { useWidgetStore } from '../../../store/widgetStore';
+import { useNmeaStore } from '../../../store/nmeaStore';
 
 export interface SensorUpdate<T = any> {
   sensorType: SensorType;
@@ -325,7 +326,7 @@ export class NmeaSensorProcessor {
 
     // DBT measures depth below transducer (MEDIUM PRIORITY)
     // Get existing depth sensor to check if higher priority (DPT) already set the depth
-    const existingSensor = this.nmeaStore.getSensorData('depth', instance) as DepthSensorData | undefined;
+    const existingSensor = useNmeaStore.getState().nmeaData.sensors.depth?.[instance] as DepthSensorData | undefined;
     const shouldUpdatePrimaryDepth = !existingSensor?.depthSource || existingSensor.depthSource === 'DBK';
     
     const depthData: Partial<DepthSensorData> = {
@@ -428,7 +429,7 @@ export class NmeaSensorProcessor {
 
     // DBK measures depth below keel (LOWEST PRIORITY)
     // Get existing depth sensor to check if higher priority (DPT/DBT) already set the depth
-    const existingSensor = this.nmeaStore.getSensorData('depth', instance) as DepthSensorData | undefined;
+    const existingSensor = useNmeaStore.getState().nmeaData.sensors.depth?.[instance] as DepthSensorData | undefined;
     const shouldUpdatePrimaryDepth = !existingSensor?.depthSource; // Only set if nothing has set it yet
     
     const depthData: Partial<DepthSensorData> = {
