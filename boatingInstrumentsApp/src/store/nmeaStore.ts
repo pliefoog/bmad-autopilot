@@ -353,6 +353,16 @@ export const useNmeaStore = create<NmeaStore>((set, get) => ({
         timestamp: updateNow,
       });
 
+      // Debug: Log depth enrichment
+      if (sensorType === 'depth') {
+        console.log(`🌊 [DEPTH DEBUG] Store enrichment for depth-${instance}:`, {
+          rawDepth: (finalData as any).depth,
+          enrichedHasDisplay: !!enrichedData.display,
+          displayDepth: enrichedData.display?.depth,
+          displayKeys: enrichedData.display ? Object.keys(enrichedData.display) : []
+        });
+      }
+
       const updatedSensorData = enrichedData;
 
       // AUTO-ADD to history (based on sensor type)

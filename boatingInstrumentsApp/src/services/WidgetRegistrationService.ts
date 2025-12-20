@@ -25,7 +25,8 @@ const _console = typeof window !== 'undefined' && (window as any)._console
 
 // Debug logging toggles - set to true to enable verbose logs
 const DEBUG_WIDGET_REGISTRATION = false; // General widget detection
-const DEBUG_ENGINE_DETECTION = true;     // Engine-specific detection only
+const DEBUG_ENGINE_DETECTION = false;    // Engine-specific detection only
+const DEBUG_DEPTH_DETECTION = true;      // Depth-specific detection and display cache
 
 /**
  * Sensor dependency declaration
@@ -230,6 +231,9 @@ export class WidgetRegistrationService {
     // 2. If the key exists in sensorData, it means sensor data was received
     if (widgetType === 'engine' && DEBUG_ENGINE_DETECTION) {
       console.log(`🚨 [canCreateWidget] Checking engine widget creation with sensorData:`, sensorData);
+    }
+    if (widgetType === 'depth' && DEBUG_DEPTH_DETECTION) {
+      console.log(`🌊 [DEPTH DEBUG] canCreateWidget check for depth widget with sensorData:`, sensorData);
       console.log(`🚨 [canCreateWidget] Required sensors:`, registration.requiredSensors);
     }
     const hasRequiredSensors = registration.requiredSensors.every(dep => {
@@ -375,6 +379,18 @@ export class WidgetRegistrationService {
       console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
       console.log(`🔧 [WidgetRegistrationService] sensorData keys:`, Object.keys(sensorData));
       console.log(`🔧 [WidgetRegistrationService] Engine sensor data:`, sensorData);
+    }
+    
+    // Depth-specific logging
+    if (DEBUG_DEPTH_DETECTION && sensorType === 'depth') {
+      console.log(`🌊 [DEPTH DEBUG] handleSensorUpdate called: depth-${instance}`);
+      console.log(`🌊 [DEPTH DEBUG] Sensor data:`, {
+        depth: sensorData?.depth,
+        hasDisplay: !!sensorData?.display,
+        displayDepth: sensorData?.display?.depth,
+        depthSource: sensorData?.depthSource,
+        timestamp: sensorData?.timestamp
+      });
     }
     
     // Find all widget types that depend on this sensor

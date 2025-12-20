@@ -340,6 +340,13 @@ export class NmeaSensorProcessor {
       depthData.depth = depthRounded; // PRIMARY metric: use if DPT not available
       depthData.depthSource = 'DBT'; // Metadata: which NMEA sentence provided this depth
       depthData.depthReferencePoint = 'transducer'; // DBT reference point
+      
+      console.log(`🌊 [DEPTH DEBUG] DBT processed - Instance ${instance}:`, {
+        depth: depthRounded,
+        depthSource: 'DBT',
+        shouldUpdatePrimary: shouldUpdatePrimaryDepth,
+        existingSource: existingSensor?.depthSource
+      });
     }
 
     return {
