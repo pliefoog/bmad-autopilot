@@ -374,6 +374,16 @@ export class WidgetRegistrationService {
     sensorData: Partial<SensorData>,
     allSensors: any // Full sensor state from nmeaStore
   ): void {
+    // Log ALL sensor updates when depth debugging is enabled
+    if (DEBUG_DEPTH_DETECTION) {
+      console.log(`🎯 [WIDGET REGISTRATION] Sensor update: ${sensorType}-${instance}`, {
+        sensorType,
+        instance,
+        hasData: !!sensorData,
+        dataKeys: sensorData ? Object.keys(sensorData) : []
+      });
+    }
+    
     // Only log for engine sensors
     if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
       console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
