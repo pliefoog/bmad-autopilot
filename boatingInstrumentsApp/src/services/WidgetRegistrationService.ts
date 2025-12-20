@@ -23,8 +23,9 @@ const _console = typeof window !== 'undefined' && (window as any)._console
   ? (window as any)._console 
   : console;
 
-// Debug logging toggle - set to true to enable verbose widget registration logs
-const DEBUG_WIDGET_REGISTRATION = true;
+// Debug logging toggles - set to true to enable verbose logs
+const DEBUG_WIDGET_REGISTRATION = false; // General widget detection
+const DEBUG_ENGINE_DETECTION = true;     // Engine-specific detection only
 
 /**
  * Sensor dependency declaration
@@ -227,7 +228,7 @@ export class WidgetRegistrationService {
     // Note: We check for key existence, not value !== null, because:
     // 1. Speed can legitimately be 0 (boat stopped)
     // 2. If the key exists in sensorData, it means sensor data was received
-    if (widgetType === 'engine' && DEBUG_WIDGET_REGISTRATION) {
+    if (widgetType === 'engine' && DEBUG_ENGINE_DETECTION) {
       console.log(`🚨 [canCreateWidget] Checking engine widget creation with sensorData:`, sensorData);
       console.log(`🚨 [canCreateWidget] Required sensors:`, registration.requiredSensors);
     }
@@ -238,7 +239,7 @@ export class WidgetRegistrationService {
         // Look for any key matching the pattern: category.*.measurementType
         const pattern = new RegExp(`^${dep.category}\\.\\d+\\.${dep.measurementType}$`);
         const matchingKey = Object.keys(sensorData).find(key => pattern.test(key));
-        if (widgetType === 'engine' && DEBUG_WIDGET_REGISTRATION) {
+        if (widgetType === 'engine' && DEBUG_ENGINE_DETECTION) {
           console.log(`🚨 [canCreateWidget] Looking for pattern: ${pattern}, found: ${matchingKey}`);
         }
         if (matchingKey) {
@@ -369,17 +370,18 @@ export class WidgetRegistrationService {
     sensorData: Partial<SensorData>,
     allSensors: any // Full sensor state from nmeaStore
   ): void {
-    if (DEBUG_WIDGET_REGISTRATION) {
+    // Only log for engine sensors
+    if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
       console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
       console.log(`🔧 [WidgetRegistrationService] sensorData keys:`, Object.keys(sensorData));
-      if (sensorType === 'engine') {
-        console.log(`🔧 [WidgetRegistrationService] Engine sensor data:`, sensorData);
-      }
+      console.log(`🔧 [WidgetRegistrationService] Engine sensor data:`, sensorData);
     }
     
     // Find all widget types that depend on this sensor
     const affectedWidgets = this.findAffectedWidgets(sensorType, instance);
-    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] Found ${affectedWidgets.length} affected widgets`);
+    if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
+      console.log(`🔧 [WidgetRegistrationService] Found ${affectedWidgets.length} affected widgets`);
+    }
 
     affectedWidgets.forEach(registration => {
       const instanceKey = `${registration.widgetType}-${instance}`;
@@ -401,17 +403,18 @@ export class WidgetRegistrationService {
         allSensors
       );
       
-      // Debug logging for custom widgets
-      if (registration.widgetType === 'customT1') {
-        console.log(`🔍 [CUSTOM WIDGET DEBUG] customT1 sensor map:`, sensorValueMap);
-        console.log(`🔍 [CUSTOM WIDGET DEBUG] Required sensors:`, registration.requiredSensors);
+      // Debug logging for engine widgets only
+      if (DEBUG_ENGINE_DETECTION && registration.widgetType === 'engine') {
+        console.log(`🚨 [ENGINE DEBUG] Building sensorValueMap for engine-${instance}`);
+        console.log(`🚨 [ENGINE DEBUG] sensorValueMap:`, sensorValueMap);
+        console.log(`🚨 [ENGINE DEBUG] Required sensors:`, registration.requiredSensors);
       }
       
       // Check if widget can be created
       const canCreate = this.canCreateWidget(registration.widgetType, sensorValueMap);
       
-      if (registration.widgetType === 'customT1') {
-        console.log(`🔍 [CUSTOM WIDGET DEBUG] Can create customT1? ${canCreate}`);
+      if (DEBUG_ENGINE_DETECTION && registration.widgetType === 'engine') {
+        console.log(`🚨 [ENGINE DEBUG] Can create engine widget? ${canCreate}`);
       }
       
       if (canCreate) {
@@ -441,7 +444,9 @@ export class WidgetRegistrationService {
     });
 
     // Directly update widgetStore with all detected instances
-    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate complete, calling updateWidgetStore()`);
+    if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
+      console.log(`🔧 [WidgetRegistrationService] Engine handleSensorUpdate complete, calling updateWidgetStore()`);
+    }
     this.updateWidgetStore();
   }
 
