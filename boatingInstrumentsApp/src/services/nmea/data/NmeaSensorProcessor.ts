@@ -268,6 +268,8 @@ export class NmeaSensorProcessor {
       timestamp: timestamp
     };
 
+    console.log(`🚨 [NmeaSensorProcessor] Processed RPM - Instance: ${engineInstance}, RPM: ${rpmValue}, engineData:`, engineData);
+
     return {
       success: true,
       updates: [{

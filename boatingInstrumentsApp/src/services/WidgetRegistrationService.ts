@@ -227,6 +227,10 @@ export class WidgetRegistrationService {
     // Note: We check for key existence, not value !== null, because:
     // 1. Speed can legitimately be 0 (boat stopped)
     // 2. If the key exists in sensorData, it means sensor data was received
+    if (widgetType === 'engine' && DEBUG_WIDGET_REGISTRATION) {
+      console.log(`🚨 [canCreateWidget] Checking engine widget creation with sensorData:`, sensorData);
+      console.log(`🚨 [canCreateWidget] Required sensors:`, registration.requiredSensors);
+    }
     const hasRequiredSensors = registration.requiredSensors.every(dep => {
       // For multi-instance widgets with no specific instance requirement,
       // check if ANY instance of this sensor type/measurement exists in the map
@@ -234,6 +238,9 @@ export class WidgetRegistrationService {
         // Look for any key matching the pattern: category.*.measurementType
         const pattern = new RegExp(`^${dep.category}\\.\\d+\\.${dep.measurementType}$`);
         const matchingKey = Object.keys(sensorData).find(key => pattern.test(key));
+        if (widgetType === 'engine' && DEBUG_WIDGET_REGISTRATION) {
+          console.log(`🚨 [canCreateWidget] Looking for pattern: ${pattern}, found: ${matchingKey}`);
+        }
         if (matchingKey) {
           // Key exists = sensor data available (value can be 0, null is OK if sensor exists)
           return matchingKey in sensorData;
