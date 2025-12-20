@@ -362,7 +362,13 @@ export class WidgetRegistrationService {
     sensorData: Partial<SensorData>,
     allSensors: any // Full sensor state from nmeaStore
   ): void {
-    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
+    if (DEBUG_WIDGET_REGISTRATION) {
+      console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
+      console.log(`🔧 [WidgetRegistrationService] sensorData keys:`, Object.keys(sensorData));
+      if (sensorType === 'engine') {
+        console.log(`🔧 [WidgetRegistrationService] Engine sensor data:`, sensorData);
+      }
+    }
     
     // Find all widget types that depend on this sensor
     const affectedWidgets = this.findAffectedWidgets(sensorType, instance);
