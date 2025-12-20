@@ -173,7 +173,9 @@ export class WidgetRegistrationService {
    * Register a widget type with its sensor dependencies
    */
   public registerWidget(registration: WidgetRegistration): void {
-    console.log(`📋 Registering widget: ${registration.widgetType}`);
+    if (DEBUG_WIDGET_REGISTRATION) {
+      console.log(`📋 Registering widget: ${registration.widgetType}`);
+    }
     this.registrations.set(registration.widgetType, registration);
     
     // Initialize calculated field cache
@@ -464,7 +466,9 @@ export class WidgetRegistrationService {
         this.detectedInstances.set(instanceKey, detectedInstance);
 
         if (isNewInstance) {
-          console.log(`✅ Detected new widget instance: ${instanceKey}`);
+          if (DEBUG_WIDGET_REGISTRATION || (DEBUG_DEPTH_DETECTION && sensorType === 'depth')) {
+            console.log(`✅ Detected new widget instance: ${instanceKey}`);
+          }
         }
       }
     });

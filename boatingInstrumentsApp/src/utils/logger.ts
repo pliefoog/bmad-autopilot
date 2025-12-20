@@ -20,7 +20,7 @@ const LOG_CATEGORIES = {
   NETWORK: false,       // NMEA connections, data
   PERFORMANCE: false,   // Performance metrics
   ALARM: false,         // Alarm configuration, triggers, audio
-  SENSOR: true,         // Sensor detection, initialization, thresholds
+  SENSOR: false,        // Sensor detection, initialization, thresholds - DISABLED (use DEBUG_DEPTH_DETECTION instead)
   REACT_ERRORS: true,   // React error boundaries
 };
 
