@@ -72,10 +72,32 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, title, 
 
   // NEW: Use cached display info from sensor.display (Phase 3 migration)
   // No more presentation hooks needed - data is pre-formatted in store
+  // 🛡️ ARCHITECTURAL VALIDATION: Display cache MUST exist - no fallbacks allowed
   const convertDepth = useMemo(() => {
+    // CRITICAL: If depth exists but display cache is missing, this is a BUG
+    if (depth !== null && depth !== undefined && !depthSensorData?.display?.depth) {
+      console.error(
+        '🚨 PRESENTATION CACHE BUG: Depth sensor has raw data but missing display cache!',
+        {
+          depth,
+          depthSensorData,
+          hasDisplay: !!depthSensorData?.display,
+          displayDepth: depthSensorData?.display?.depth,
+        }
+      );
+      // Throw exception in development to force structural fix
+      if (__DEV__) {
+        throw new Error(
+          `[DepthWidget] Display cache missing for depth=${depth}. ` +
+          `This indicates SensorPresentationCache.enrichSensorData() failed. ` +
+          `Check SensorConfigRegistry has 'depth' field with category='depth'.`
+        );
+      }
+    }
+
     return {
       current: {
-        value: depthSensorData?.display?.depth?.value ?? '---',
+        value: depthSensorData?.display?.depth?.formatted?.replace(` ${depthSensorData?.display?.depth?.unit}`, '') ?? '---',
         unit: depthSensorData?.display?.depth?.unit ?? 'm'
       },
       sessionMin: {
