@@ -33,11 +33,11 @@ const DEBUG_DEPTH_DETECTION = true;      // Depth-specific detection and display
  * Describes which sensor data a widget requires or optionally uses
  */
 export interface SensorDependency {
-  /** Sensor category (e.g., 'depth', 'speed', 'engine') */
-  category: SensorType;
+  /** Sensor type (e.g., 'depth', 'speed', 'engine') */
+  sensorType: SensorType;
   
-  /** Specific measurement field (e.g., 'dbt', 'sog', 'rpm') */
-  measurementType: string;
+  /** Specific metric name (e.g., 'dbt', 'sog', 'rpm') */
+  metricName: string;
   
   /** Specific instance number, or undefined for any instance */
   instance?: number;
@@ -64,7 +64,7 @@ export interface CalculatedField {
   calculate: (sensors: SensorValueMap) => number | null;
   
   /** List of sensor dependencies that trigger recalculation */
-  dependencies: Array<{ category: SensorType; measurementType: string }>;
+  dependencies: Array<{ sensorType: SensorType; metricName: string }>;
   
   /** Cached value */
   cachedValue?: number | null;
@@ -77,7 +77,7 @@ export interface CalculatedField {
  * Map of sensor values for calculation and binding
  */
 export interface SensorValueMap {
-  [key: string]: number | null; // key format: "category.instance.measurementType"
+  [key: string]: number | null; // key format: "sensorType.instance.metricName"
 }
 
 /**
@@ -242,8 +242,8 @@ export class WidgetRegistrationService {
       // For multi-instance widgets with no specific instance requirement,
       // check if ANY instance of this sensor type/measurement exists in the map
       if (dep.instance === undefined) {
-        // Look for any key matching the pattern: category.*.measurementType
-        const pattern = new RegExp(`^${dep.category}\\.\\d+\\.${dep.measurementType}$`);
+        // Look for any key matching the pattern: sensorType.*.metricName
+        const pattern = new RegExp(`^${dep.sensorType}\\.\\d+\\.${dep.metricName}$`);
         const matchingKey = Object.keys(sensorData).find(key => pattern.test(key));
         if (widgetType === 'engine' && DEBUG_ENGINE_DETECTION) {
           console.log(`🚨 [canCreateWidget] Looking for pattern: ${pattern}, found: ${matchingKey}`);
@@ -255,7 +255,7 @@ export class WidgetRegistrationService {
         return false;
       } else {
         // Specific instance required
-        const key = this.buildSensorKey(dep.category, dep.instance, dep.measurementType);
+        const key = this.buildSensorKey(dep.sensorType, dep.instance, dep.metricName);
         // Check if key exists in map (sensor data available)
         return key in sensorData;
       }
@@ -493,7 +493,7 @@ export class WidgetRegistrationService {
       // Check if any required or optional sensors match this update
       const isAffected = [...registration.requiredSensors, ...registration.optionalSensors]
         .some(dep => {
-          if (dep.category !== sensorType) return false;
+          if (dep.sensorType !== sensorType) return false;
           if (dep.instance !== undefined && dep.instance !== instance) return false;
           return true;
         });
@@ -522,11 +522,21 @@ export class WidgetRegistrationService {
 
     allDependencies.forEach(dep => {
       const targetInstance = dep.instance ?? instance;
-      const sensorData = allSensors[dep.category]?.[targetInstance];
+      const sensorData = allSensors[dep.sensorType]?.[targetInstance];
       
       if (sensorData) {
-        const value = (sensorData as any)[dep.measurementType];
-        const key = this.buildSensorKey(dep.category, targetInstance, dep.measurementType);
+        // Access metric via getMetric() (unified MetricValue access)
+        let value: any = null;
+        if (sensorData.getMetric) {
+          // SensorInstance - use getMetric()
+          const metric = sensorData.getMetric(dep.metricName);
+          value = metric?.si_value ?? null;
+        } else {
+          // Legacy direct access (fallback)
+          value = (sensorData as any)[dep.metricName];
+        }
+        
+        const key = this.buildSensorKey(dep.sensorType, targetInstance, dep.metricName);
         valueMap[key] = value ?? null;
       }
     });
@@ -538,11 +548,11 @@ export class WidgetRegistrationService {
    * Build standardized sensor key for value map
    */
   private buildSensorKey(
-    category: SensorType,
+    sensorType: SensorType,
     instance: number,
-    measurementType: string
+    metricName: string
   ): string {
-    return `${category}.${instance}.${measurementType}`;
+    return `${sensorType}.${instance}.${metricName}`;
   }
 
   /**
@@ -568,7 +578,7 @@ export class WidgetRegistrationService {
       if (previousValues && field.cachedValue !== undefined) {
         // Check if any dependency values changed
         const dependenciesChanged = field.dependencies.some(dep => {
-          const key = this.buildSensorKey(dep.category, 0, dep.measurementType);
+          const key = this.buildSensorKey(dep.sensorType, 0, dep.metricName);
           return sensorValueMap[key] !== previousValues[key];
         });
         
