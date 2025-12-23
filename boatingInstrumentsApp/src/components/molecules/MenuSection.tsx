@@ -11,10 +11,10 @@ interface MenuSectionProps {
   actionHandlers?: Record<string, () => void>; // Optional custom handlers
 }
 
-export const MenuSection: React.FC<MenuSectionProps> = ({ 
-  section, 
+export const MenuSection: React.FC<MenuSectionProps> = ({
+  section,
   onItemPress,
-  actionHandlers = {}
+  actionHandlers = {},
 }) => {
   const theme = useTheme();
   const { executeAction } = useMenuActions();
@@ -37,19 +37,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
       {/* Section Header */}
       <View style={[styles.header, { backgroundColor: theme.background }]}>
         <Text style={styles.headerIcon}>{section.icon}</Text>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          {section.title}
-        </Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>{section.title}</Text>
       </View>
 
       {/* Section Items */}
       <View style={[styles.itemsContainer, { backgroundColor: theme.surface }]}>
         {section.items.map((item) => (
-          <MenuItem
-            key={item.id}
-            item={item}
-            onPress={() => handleItemPress(item.action)}
-          />
+          <MenuItem key={item.id} item={item} onPress={() => handleItemPress(item.action)} />
         ))}
       </View>
     </View>

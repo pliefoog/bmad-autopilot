@@ -1,6 +1,6 @@
 /**
  * Default Help Content - Initial help content for offline use
- * 
+ *
  * Provides comprehensive help content including:
  * - User manual sections
  * - FAQ

@@ -60,15 +60,13 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
       // Generate NMEA sentence for heading command
       const nmeaSentence = this.generateHeadingNMEA(heading);
-      
+
       // Emit command event
       this.emit('command', { command, nmea: nmeaSentence });
 
       // Update state
       this.currentState.targetHeading = heading;
       this.currentState.lastUpdate = Date.now();
-
-      console.log(`Autopilot heading command sent: ${heading}°`);
     } catch (error) {
       console.error('Failed to send heading command:', error);
       throw new Error(`Heading command failed: ${error}`);
@@ -99,15 +97,13 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
       // Generate NMEA sentence for speed command
       const nmeaSentence = this.generateSpeedNMEA(speed);
-      
+
       // Emit command event
       this.emit('command', { command, nmea: nmeaSentence });
 
       // Update state
       this.currentState.targetSpeed = speed;
       this.currentState.lastUpdate = Date.now();
-
-      console.log(`Autopilot speed command sent: ${speed} knots`);
     } catch (error) {
       console.error('Failed to send speed command:', error);
       throw new Error(`Speed command failed: ${error}`);
@@ -138,15 +134,13 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
       // Generate NMEA sentence for mode command
       const nmeaSentence = this.generateModeNMEA(mode);
-      
+
       // Emit command event
       this.emit('command', { command, nmea: nmeaSentence });
 
       // Update state
       this.currentState.mode = mode as any;
       this.currentState.lastUpdate = Date.now();
-
-      console.log(`Autopilot mode set to: ${mode}`);
     } catch (error) {
       console.error('Failed to set mode:', error);
       throw new Error(`Mode set failed: ${error}`);
@@ -173,7 +167,7 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
       // Generate engagement NMEA sentence
       const nmeaSentence = this.generateEngagementNMEA(true);
-      
+
       // Emit command event
       this.emit('command', { command, nmea: nmeaSentence });
 
@@ -181,8 +175,6 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.engaged = true;
       this.currentState.mode = 'auto';
       this.currentState.lastUpdate = Date.now();
-
-      console.log('Autopilot engaged');
     } catch (error) {
       console.error('Failed to engage autopilot:', error);
       throw new Error(`Autopilot engagement failed: ${error}`);
@@ -209,7 +201,7 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
       // Generate disengagement NMEA sentence
       const nmeaSentence = this.generateEngagementNMEA(false);
-      
+
       // Emit command event
       this.emit('command', { command, nmea: nmeaSentence });
 
@@ -219,8 +211,6 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.targetHeading = undefined;
       this.currentState.targetSpeed = undefined;
       this.currentState.lastUpdate = Date.now();
-
-      console.log('Autopilot disengaged');
     } catch (error) {
       console.error('Failed to disengage autopilot:', error);
       throw new Error(`Autopilot disengagement failed: ${error}`);
@@ -241,19 +231,13 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       // Type-specific validation
       switch (command.type) {
         case 'heading':
-          return typeof command.value === 'number' && 
-                 command.value >= 0 && 
-                 command.value <= 360;
+          return typeof command.value === 'number' && command.value >= 0 && command.value <= 360;
         case 'speed':
-          return typeof command.value === 'number' && 
-                 command.value >= 0 && 
-                 command.value <= 50;
+          return typeof command.value === 'number' && command.value >= 0 && command.value <= 50;
         case 'mode':
           return ['standby', 'auto', 'wind', 'nav', 'track'].includes(command.value as string);
         case 'wind':
-          return typeof command.value === 'number' && 
-                 command.value >= 0 && 
-                 command.value <= 360;
+          return typeof command.value === 'number' && command.value >= 0 && command.value <= 360;
         default:
           return false;
       }
@@ -265,14 +249,22 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
   // NMEA sentence generation helpers
   private generateHeadingNMEA(heading: number): string {
-    // APB - Autopilot Sentence "B" 
-    const checksum = this.calculateChecksum(`APAPB,A,A,0.00,R,N,V,V,${heading.toFixed(1)},M,DEST,${heading.toFixed(1)},M,${heading.toFixed(1)},M`);
-    return `$APAPB,A,A,0.00,R,N,V,V,${heading.toFixed(1)},M,DEST,${heading.toFixed(1)},M,${heading.toFixed(1)},M*${checksum}`;
+    // APB - Autopilot Sentence "B"
+    const checksum = this.calculateChecksum(
+      `APAPB,A,A,0.00,R,N,V,V,${heading.toFixed(1)},M,DEST,${heading.toFixed(
+        1,
+      )},M,${heading.toFixed(1)},M`,
+    );
+    return `$APAPB,A,A,0.00,R,N,V,V,${heading.toFixed(1)},M,DEST,${heading.toFixed(
+      1,
+    )},M,${heading.toFixed(1)},M*${checksum}`;
   }
 
   private generateSpeedNMEA(speed: number): string {
     // VTG - Track made good and Ground speed
-    const checksum = this.calculateChecksum(`APVTG,0.0,T,0.0,M,${speed.toFixed(1)},N,${(speed * 1.852).toFixed(1)},K,A`);
+    const checksum = this.calculateChecksum(
+      `APVTG,0.0,T,0.0,M,${speed.toFixed(1)},N,${(speed * 1.852).toFixed(1)},K,A`,
+    );
     return `$APVTG,0.0,T,0.0,M,${speed.toFixed(1)},N,${(speed * 1.852).toFixed(1)},K,A*${checksum}`;
   }
 
@@ -300,7 +292,7 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
   // Event handling
   private emit(event: string, data: any): void {
     const listeners = this.eventListeners.get(event) || [];
-    listeners.forEach(listener => {
+    listeners.forEach((listener) => {
       try {
         listener(data);
       } catch (error) {

@@ -1,5 +1,5 @@
 name: "Comprehensive Coastal Sailing Scenario"
-description: "Complete coastal cruiser simulation with all marine systems using sensor-based definitions. Works with both NMEA 0183 and NMEA 2000 protocols. Includes depth, speed (STW/SOG), wind, GPS, compass, engine, batteries (2x), tanks (4x), temperatures, and rudder position."
+description: "Complete coastal cruiser simulation with realistic Tri-Data/multisensor output matching NMEA 2000→0183 bridge behavior (DPT depth with offset, VHW speed, MTW water temp) plus full marine systems. Works with both NMEA 0183 and NMEA 2000 protocols. Includes depth, speed (STW/SOG), wind, GPS, compass, engine, batteries (2x), tanks (4x), temperatures, and rudder position. Mimics Raymarine/B&G/Airmar transducer bridged to NMEA 0183."
 duration: 600  # 10 minutes
 version: "2.0"
 category: "navigation"

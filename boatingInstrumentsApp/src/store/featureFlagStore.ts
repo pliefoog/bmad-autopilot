@@ -1,12 +1,12 @@
 /**
  * Feature Flag Store
- * 
+ *
  * Zustand store with AsyncStorage persistence for VIP Platform feature flags.
  * Provides reactive state management and developer menu integration.
  */
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, devtools } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FeatureFlags, DEFAULT_FEATURE_FLAGS } from '../config/featureFlags';
 
@@ -59,78 +59,76 @@ const PHASE_FLAGS: Record<number, (keyof FeatureFlags)[]> = {
  * Feature Flag Store with AsyncStorage persistence
  */
 export const useFeatureFlagStore = create<FeatureFlagStore>()(
-  persist(
-    (set, get) => ({
-      // Initialize with default flags
-      ...DEFAULT_FEATURE_FLAGS,
+  devtools(
+    persist(
+      (set, get) => ({
+        // Initialize with default flags
+        ...DEFAULT_FEATURE_FLAGS,
 
-      // Set individual feature flag
-      setFeatureFlag: (flag: keyof FeatureFlags, enabled: boolean) => {
-        console.log(`[FeatureFlags] ${flag} = ${enabled}`);
-        set({ [flag]: enabled });
-      },
+        // Set individual feature flag
+        setFeatureFlag: (flag: keyof FeatureFlags, enabled: boolean) => {
+          set({ [flag]: enabled });
+        },
 
-      // Toggle individual feature flag
-      toggleFeatureFlag: (flag: keyof FeatureFlags) => {
-        const currentValue = get()[flag];
-        const newValue = !currentValue;
-        console.log(`[FeatureFlags] ${flag}: ${currentValue} → ${newValue}`);
-        set({ [flag]: newValue });
-      },
+        // Toggle individual feature flag
+        toggleFeatureFlag: (flag: keyof FeatureFlags) => {
+          const currentValue = get()[flag];
+          const newValue = !currentValue;
+          set({ [flag]: newValue });
+        },
 
-      // Reset all flags to defaults
-      resetToDefaults: () => {
-        console.log('[FeatureFlags] Resetting to defaults');
-        set(DEFAULT_FEATURE_FLAGS);
-      },
+        // Reset all flags to defaults
+        resetToDefaults: () => {
+          set(DEFAULT_FEATURE_FLAGS);
+        },
 
-      // Enable all flags for a specific phase
-      enablePhase: (phase: number) => {
-        const flags = PHASE_FLAGS[phase];
-        if (!flags) {
-          console.warn(`[FeatureFlags] Invalid phase: ${phase}`);
-          return;
-        }
-        console.log(`[FeatureFlags] Enabling Phase ${phase}`);
-        const updates = flags.reduce((acc, flag) => {
-          acc[flag] = true;
-          return acc;
-        }, {} as Partial<FeatureFlags>);
-        set(updates);
-      },
+        // Enable all flags for a specific phase
+        enablePhase: (phase: number) => {
+          const flags = PHASE_FLAGS[phase];
+          if (!flags) {
+            console.warn(`[FeatureFlags] Invalid phase: ${phase}`);
+            return;
+          }
+          const updates = flags.reduce((acc, flag) => {
+            acc[flag] = true;
+            return acc;
+          }, {} as Partial<FeatureFlags>);
+          set(updates);
+        },
 
-      // Disable all flags for a specific phase
-      disablePhase: (phase: number) => {
-        const flags = PHASE_FLAGS[phase];
-        if (!flags) {
-          console.warn(`[FeatureFlags] Invalid phase: ${phase}`);
-          return;
-        }
-        console.log(`[FeatureFlags] Disabling Phase ${phase}`);
-        const updates = flags.reduce((acc, flag) => {
-          acc[flag] = false;
-          return acc;
-        }, {} as Partial<FeatureFlags>);
-        set(updates);
+        // Disable all flags for a specific phase
+        disablePhase: (phase: number) => {
+          const flags = PHASE_FLAGS[phase];
+          if (!flags) {
+            console.warn(`[FeatureFlags] Invalid phase: ${phase}`);
+            return;
+          }
+          const updates = flags.reduce((acc, flag) => {
+            acc[flag] = false;
+            return acc;
+          }, {} as Partial<FeatureFlags>);
+          set(updates);
+        },
+      }),
+      {
+        name: 'bmad-feature-flags', // AsyncStorage key
+        storage: createJSONStorage(() => AsyncStorage),
+        // Only persist the flag values, not the action functions
+        partialize: (state) => {
+          const {
+            setFeatureFlag,
+            toggleFeatureFlag,
+            resetToDefaults,
+            enablePhase,
+            disablePhase,
+            ...flags
+          } = state;
+          return flags;
+        },
       },
-    }),
-    {
-      name: 'bmad-feature-flags', // AsyncStorage key
-      storage: createJSONStorage(() => AsyncStorage),
-      // Only persist the flag values, not the action functions
-      partialize: (state) => {
-        const { 
-          setFeatureFlag, 
-          toggleFeatureFlag, 
-          resetToDefaults, 
-          enablePhase, 
-          disablePhase,
-          ...flags 
-        } = state;
-        return flags;
-      },
-    }
-  )
+    ),
+    { name: 'Feature Flag Store', enabled: __DEV__ },
+  ),
 );
 
 /**

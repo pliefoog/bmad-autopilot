@@ -40,11 +40,11 @@ export class SimulatorTestClient {
   private currentPort: number = 0;
   private websocket: WebSocket | null = null;
   private wsPort: number = 8080;
-  private messageBuffer: Array<{type: string, data: string, timestamp: number}> = [];
+  private messageBuffer: Array<{ type: string; data: string; timestamp: number }> = [];
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private isMockMode: boolean = false;
-  
+
   // AC2 Requirement: Auto-discovery on ports [9090, 8080] with 5-second timeout
   private static readonly DEFAULT_PORTS = [9090, 8080];
   private static readonly DEFAULT_TIMEOUT = 5000;
@@ -64,64 +64,60 @@ export class SimulatorTestClient {
       ports: options.ports || [9090, 8080],
       timeout: options.timeout || 5000,
       retries: options.retries || 3,
-      ...options
+      ...options,
     };
 
-    console.log(`🔍 Discovering simulator on ports ${config.ports.join(', ')}...`);
-    
     // AC1.2: Exponential backoff delays: 100ms, 200ms, 400ms
     const backoffDelays = [100, 200, 400];
-    
+
     for (let attempt = 0; attempt < config.retries; attempt++) {
       for (const port of config.ports) {
         try {
           instance.profiler.start();
-          
+
           const response = await fetch(`http://localhost:${port}/api/status`, {
             method: 'GET',
-            signal: AbortSignal.timeout(config.timeout)
+            signal: AbortSignal.timeout(config.timeout),
           });
-          
+
           if (response.ok) {
             const status = await response.json();
             if (status.running || status.status === 'active') {
               instance.isConnected = true;
               instance.baseUrl = `http://localhost:${port}`;
               instance.currentPort = port;
-              
+
               instance.profiler.mark('connection-established');
-              console.log(`✅ Connected to simulator on port ${port}`);
-              
+
               // AC1.1: Connection validation
               await instance.validateConnection();
-              
+
               // AC1.5: Establish WebSocket connection for real-time data streams
               try {
                 await instance.connectWebSocket();
-                console.log(`✅ WebSocket connected on port ${instance.wsPort}`);
               } catch (wsError) {
-                console.warn(`⚠️ WebSocket connection failed, continuing with HTTP-only mode: ${wsError}`);
+                console.warn(
+                  `⚠️ WebSocket connection failed, continuing with HTTP-only mode: ${wsError}`,
+                );
               }
-              
+
               return instance;
             }
           }
-          
-        } catch (error) {
-          console.log(`⚠️ Port ${port} not available (attempt ${attempt + 1}/${config.retries})`);
-        }
+        } catch (error) {}
       }
-      
+
       // AC1.2: Exponential backoff with Story 11.3 specified delays
       if (attempt < config.retries - 1) {
         const delay = backoffDelays[attempt] || 400; // fallback to 400ms
-        console.log(`⏰ Waiting ${delay}ms before retry ${attempt + 2}/${config.retries}...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
     // AC1.3: Graceful fallback to mock mode if simulator unavailable
-    console.warn(`⚠️ Simulator not available after ${config.retries} attempts, falling back to mock mode`);
+    console.warn(
+      `⚠️ Simulator not available after ${config.retries} attempts, falling back to mock mode`,
+    );
     return instance.createMockInstance();
   }
 
@@ -134,8 +130,7 @@ export class SimulatorTestClient {
     mockInstance.baseUrl = 'mock://localhost:9090';
     mockInstance.currentPort = 9090;
     mockInstance.isMockMode = true;
-    
-    console.log('🎭 Mock mode activated - simulator unavailable');
+
     return mockInstance;
   }
 
@@ -143,31 +138,29 @@ export class SimulatorTestClient {
    * AC2.3: Targeted NMEA sentence injection capabilities
    * AC1.4: HTTP API communication for NMEA injection
    */
-  async injectNmeaMessage(sentence: string, options: Partial<NmeaInjectionOptions> = {}): Promise<void> {
+  async injectNmeaMessage(
+    sentence: string,
+    options: Partial<NmeaInjectionOptions> = {},
+  ): Promise<void> {
     if (!this.isConnected) {
       throw new Error('SimulatorTestClient not connected. Call autoConnect() first.');
     }
 
-    const {
-      repeat = 1,
-      interval = 1000,
-      validate = true
-    } = options;
+    const { repeat = 1, interval = 1000, validate = true } = options;
 
     this.profiler.start();
 
     // AC1.3: Mock mode handling
     if (this.isMockMode) {
-      console.log(`🎭 Mock mode: Injecting NMEA sentence: ${sentence.substring(0, 20)}...`);
-      await new Promise(resolve => setTimeout(resolve, 50)); // Simulate network delay
-      
+      await new Promise((resolve) => setTimeout(resolve, 50)); // Simulate network delay
+
       // Generate mock response message
       this.messageBuffer.push({
         type: 'nmea',
         data: sentence,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       this.profiler.mark('sentence-injection');
       return;
     }
@@ -180,8 +173,8 @@ export class SimulatorTestClient {
           sentence,
           repeat,
           interval,
-          validate
-        })
+          validate,
+        }),
       });
 
       if (!response.ok) {
@@ -190,13 +183,18 @@ export class SimulatorTestClient {
 
       this.profiler.mark('sentence-injection');
       const perf = this.profiler.validateIntegrationTestPerformance('sentence-injection');
-      
-      if (!perf.passed) {
-        console.warn(`NMEA sentence injection time ${perf.time}ms exceeds AC2 threshold ${perf.threshold}ms`);
-      }
 
+      if (!perf.passed) {
+        console.warn(
+          `NMEA sentence injection time ${perf.time}ms exceeds AC2 threshold ${perf.threshold}ms`,
+        );
+      }
     } catch (error) {
-      throw new Error(`NMEA sentence injection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `NMEA sentence injection failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
   }
 
@@ -215,11 +213,9 @@ export class SimulatorTestClient {
 
     // AC1.3: Mock mode handling for offline development
     if (this.isMockMode) {
-      console.log(`🎭 Mock mode: Simulating scenario '${options.scenarioName}' load`);
-      await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
-      
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate network delay
+
       this.profiler.mark('scenario-load');
-      console.log(`✅ Mock scenario '${options.scenarioName}' started successfully`);
       return;
     }
 
@@ -230,12 +226,14 @@ export class SimulatorTestClient {
         body: JSON.stringify({
           name: options.scenarioName,
           parameters: options.parameters || {},
-          duration: options.duration
-        })
+          duration: options.duration,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to load scenario '${options.scenarioName}': ${response.statusText}`);
+        throw new Error(
+          `Failed to load scenario '${options.scenarioName}': ${response.statusText}`,
+        );
       }
 
       const result = await response.json();
@@ -245,22 +243,24 @@ export class SimulatorTestClient {
 
       this.profiler.mark('scenario-load');
       const perf = this.profiler.validateIntegrationTestPerformance('scenario-load');
-      
+
       if (!perf.passed) {
         console.warn(`Scenario load time ${perf.time}ms exceeds AC2 threshold ${perf.threshold}ms`);
       }
-
-      console.log(`✅ Scenario '${options.scenarioName}' started successfully`);
-
     } catch (error) {
-      throw new Error(`Scenario loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Scenario loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
   /**
    * AC2.4: Pipeline validation and state synchronization testing
    */
-  async validatePipelineState(expectedState: Record<string, any>, timeoutMs: number = 5000): Promise<boolean> {
+  async validatePipelineState(
+    expectedState: Record<string, any>,
+    timeoutMs: number = 5000,
+  ): Promise<boolean> {
     if (!this.isConnected) {
       throw new Error('SimulatorTestClient not connected. Call autoConnect() first.');
     }
@@ -281,17 +281,18 @@ export class SimulatorTestClient {
         if (stateMatches) {
           this.profiler.mark('pipeline-validation');
           const perf = this.profiler.validateIntegrationTestPerformance('pipeline-validation');
-          
+
           if (!perf.passed) {
-            console.warn(`Pipeline validation time ${perf.time}ms exceeds AC2 threshold ${perf.threshold}ms`);
+            console.warn(
+              `Pipeline validation time ${perf.time}ms exceeds AC2 threshold ${perf.threshold}ms`,
+            );
           }
 
           return true;
         }
 
         // Wait before next check
-        await new Promise(resolve => setTimeout(resolve, 100));
-
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } catch (error) {
         console.warn('Pipeline state validation error:', error);
       }
@@ -311,7 +312,7 @@ export class SimulatorTestClient {
     try {
       const response = await fetch(`${this.baseUrl}/api/health`, {
         method: 'GET',
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(2000),
       });
 
       if (!response.ok) {
@@ -322,10 +323,10 @@ export class SimulatorTestClient {
       if (health.status !== 'healthy') {
         throw new Error(`Simulator unhealthy: ${health.status}`);
       }
-
-      console.log(`✅ Connection validated - simulator healthy`);
     } catch (error) {
-      throw new Error(`Connection validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Connection validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -340,7 +341,6 @@ export class SimulatorTestClient {
         this.websocket = new WebSocket(wsUrl);
 
         this.websocket.onopen = () => {
-          console.log(`📡 WebSocket connected to ${wsUrl}`);
           this.reconnectAttempts = 0;
           resolve();
         };
@@ -349,7 +349,7 @@ export class SimulatorTestClient {
           try {
             const message = JSON.parse(event.data) as NmeaWebSocketMessage;
             this.messageBuffer.push(message);
-            
+
             // Limit buffer size for memory management
             if (this.messageBuffer.length > 1000) {
               this.messageBuffer = this.messageBuffer.slice(-500);
@@ -360,16 +360,14 @@ export class SimulatorTestClient {
         };
 
         this.websocket.onclose = (event) => {
-          console.log(`🔌 WebSocket connection closed (code: ${event.code})`);
           this.websocket = null;
-          
+
           // AC4.2: Automatic reconnection with exponential backoff
           if (this.isConnected && this.reconnectAttempts < this.maxReconnectAttempts) {
             const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
             this.reconnectAttempts++;
-            
+
             setTimeout(() => {
-              console.log(`🔄 Reconnecting WebSocket (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
               this.connectWebSocket().catch(console.warn);
             }, delay);
           }
@@ -387,9 +385,12 @@ export class SimulatorTestClient {
             reject(new Error('WebSocket connection timeout'));
           }
         }, 5000);
-
       } catch (error) {
-        reject(new Error(`WebSocket setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        reject(
+          new Error(
+            `WebSocket setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          ),
+        );
       }
     });
   }
@@ -397,7 +398,9 @@ export class SimulatorTestClient {
   /**
    * AC4.1: Connection pooling for test environment isolation
    */
-  getRealtimeMessages(maxMessages: number = 10): Array<{type: string, data: string, timestamp: number}> {
+  getRealtimeMessages(
+    maxMessages: number = 10,
+  ): Array<{ type: string; data: string; timestamp: number }> {
     return this.messageBuffer.slice(-maxMessages);
   }
 
@@ -409,26 +412,30 @@ export class SimulatorTestClient {
       this.websocket.close();
       this.websocket = null;
     }
-    
+
     this.messageBuffer = [];
     this.reconnectAttempts = 0;
     this.isConnected = false;
     this.baseUrl = '';
     this.currentPort = 0;
-    
-    console.log('🧹 SimulatorTestClient disconnected and cleaned up');
   }
 
   /**
    * Get connection info with mock mode status
    */
-  getConnectionInfo(): { connected: boolean; port: number; baseUrl: string; mockMode: boolean; websocketConnected: boolean } {
+  getConnectionInfo(): {
+    connected: boolean;
+    port: number;
+    baseUrl: string;
+    mockMode: boolean;
+    websocketConnected: boolean;
+  } {
     return {
       connected: this.isConnected,
       port: this.currentPort,
       baseUrl: this.baseUrl,
       mockMode: this.isMockMode,
-      websocketConnected: this.websocket?.readyState === WebSocket.OPEN
+      websocketConnected: this.websocket?.readyState === WebSocket.OPEN,
     };
   }
 
@@ -447,7 +454,7 @@ export class SimulatorTestClient {
       connection: this.profiler.validateIntegrationTestPerformance('connection-established'),
       injection: this.profiler.validateIntegrationTestPerformance('sentence-injection'),
       scenarioLoad: this.profiler.validateIntegrationTestPerformance('scenario-load'),
-      validation: this.profiler.validateIntegrationTestPerformance('pipeline-validation')
+      validation: this.profiler.validateIntegrationTestPerformance('pipeline-validation'),
     };
   }
 }
@@ -455,21 +462,26 @@ export class SimulatorTestClient {
 /**
  * Convenience function for quick setup in tests
  */
-export async function createSimulatorTestClient(options?: SimulatorConnectionOptions): Promise<SimulatorTestClient> {
+export async function createSimulatorTestClient(
+  options?: SimulatorConnectionOptions,
+): Promise<SimulatorTestClient> {
   return await SimulatorTestClient.autoConnect(options);
 }
 
 /**
  * AC4: Fallback detection - Check if simulator is available for testing
  */
-export async function isSimulatorAvailable(ports: number[] = [9090, 8080], timeout: number = 2000): Promise<boolean> {
+export async function isSimulatorAvailable(
+  ports: number[] = [9090, 8080],
+  timeout: number = 2000,
+): Promise<boolean> {
   for (const port of ports) {
     try {
       const response = await fetch(`http://localhost:${port}/api/status`, {
         method: 'GET',
-        signal: AbortSignal.timeout(timeout)
+        signal: AbortSignal.timeout(timeout),
       });
-      
+
       if (response.ok) {
         const status = await response.json();
         if (status.running) return true;
@@ -478,6 +490,6 @@ export async function isSimulatorAvailable(ports: number[] = [9090, 8080], timeo
       // Continue to next port
     }
   }
-  
+
   return false;
 }

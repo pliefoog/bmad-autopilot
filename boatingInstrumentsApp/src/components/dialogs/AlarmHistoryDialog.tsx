@@ -1,12 +1,12 @@
 /**
  * Alarm History Dialog
  * Epic 8 - Phase 2: Platform-Native Dialog Migration
- * 
+ *
  * Features:
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
  * - Historical alarm event display (coming soon)
  * - Clear history functionality
- * 
+ *
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal structure
  * - Action button for destructive Clear History operation
@@ -29,34 +29,23 @@ interface AlarmHistoryDialogProps {
  * Alarm History Dialog
  * Shows historical alarms and provides option to clear history
  */
-export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
-  visible,
-  onClose,
-}) => {
+export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = React.useMemo(
-    () => createStyles(theme),
-    [theme]
-  );
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const alarmStore = useAlarmStore();
 
   const handleClearHistory = () => {
-    Alert.alert(
-      'Clear Alarm History',
-      'This will remove all alarm history records. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Implement actual history clearing in alarmStore
-            console.log('Clearing alarm history');
-            Alert.alert('Success', 'Alarm history cleared');
-          },
+    Alert.alert('Clear Alarm History', 'This will remove all alarm history records. Continue?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: () => {
+          // TODO: Implement actual history clearing in alarmStore
+          Alert.alert('Success', 'Alarm history cleared');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -65,29 +54,25 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({
       title="Alarm History"
       onClose={onClose}
       actionButton={{
-        label: "Clear History",
+        label: 'Clear History',
         onPress: handleClearHistory,
         disabled: false,
-        testID: "clear-history-button"
+        testID: 'clear-history-button',
       }}
       testID="alarm-history-dialog"
     >
       <PlatformSettingsSection title="Recent Alarms">
         <View style={styles.infoBox}>
-          <UniversalIcon 
-            name="information-circle-outline" 
-            size={24} 
-            color={theme.primary} 
+          <UniversalIcon
+            name="information-circle-outline"
+            size={24}
+            color={theme.primary}
             style={styles.infoIcon}
           />
           <Text style={styles.infoText}>
             Alarm history tracking coming soon.{'\n\n'}
-            This will show:{'\n'}
-            • Historical alarm events{'\n'}
-            • Alarm timestamps{'\n'}
-            • Alarm severity levels{'\n'}
-            • Acknowledgment status{'\n'}
-            • Option to export history
+            This will show:{'\n'}• Historical alarm events{'\n'}• Alarm timestamps{'\n'}• Alarm
+            severity levels{'\n'}• Acknowledgment status{'\n'}• Option to export history
           </Text>
         </View>
       </PlatformSettingsSection>

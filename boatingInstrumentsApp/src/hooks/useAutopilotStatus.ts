@@ -20,7 +20,7 @@ export const useAutopilotStatus = (): AutopilotState => {
   return useMemo(() => {
     const autopilot = nmeaData?.autopilot;
     const isConnected = connectionStatus === 'connected';
-    
+
     // Determine autopilot status based on data availability and connection
     let status: AutopilotStatus = 'off';
     if (!isConnected) {

@@ -1,6 +1,6 @@
 /**
  * ContextualHelp - Tooltip and help bubble system for contextual assistance
- * 
+ *
  * Features:
  * - Position-aware tooltips (top, bottom, left, right, center)
  * - Auto-positioning to stay within screen bounds
@@ -123,16 +123,11 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
     target,
     maxWidth,
     TOOLTIP_MARGIN,
-    ARROW_SIZE
+    ARROW_SIZE,
   );
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={handleDismiss}
-    >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleDismiss}>
       <TouchableWithoutFeedback onPress={handleDismiss}>
         <View style={styles.container}>
           <TouchableWithoutFeedback>
@@ -159,27 +154,30 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
                     tooltipPos.arrowPosition === 'left' && styles.arrowLeft,
                     tooltipPos.arrowPosition === 'right' && styles.arrowRight,
                     {
-                      borderTopColor: tooltipPos.arrowPosition === 'bottom' ? theme.surface : 'transparent',
-                      borderBottomColor: tooltipPos.arrowPosition === 'top' ? theme.surface : 'transparent',
-                      borderLeftColor: tooltipPos.arrowPosition === 'right' ? theme.surface : 'transparent',
-                      borderRightColor: tooltipPos.arrowPosition === 'left' ? theme.surface : 'transparent',
+                      borderTopColor:
+                        tooltipPos.arrowPosition === 'bottom' ? theme.surface : 'transparent',
+                      borderBottomColor:
+                        tooltipPos.arrowPosition === 'top' ? theme.surface : 'transparent',
+                      borderLeftColor:
+                        tooltipPos.arrowPosition === 'right' ? theme.surface : 'transparent',
+                      borderRightColor:
+                        tooltipPos.arrowPosition === 'left' ? theme.surface : 'transparent',
                     },
                   ]}
                 />
               )}
-
-              {/* Content */}
               <View style={styles.content}>
                 {titleText && (
-                  <Text
-                    style={[styles.title, { color: theme.text }]}
-                    accessibilityRole="header"
-                  >
+                  <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">
                     {titleText}
                   </Text>
                 )}
                 <Text
-                  style={[styles.text, { color: theme.textSecondary }, titleText && styles.textWithTitle]}
+                  style={[
+                    styles.text,
+                    { color: theme.textSecondary },
+                    titleText && styles.textWithTitle,
+                  ]}
                 >
                   {contentText}
                 </Text>
@@ -200,7 +198,7 @@ function calculateTooltipPosition(
   target?: { x: number; y: number; width: number; height: number },
   maxWidth: number = 300,
   margin: number = 8,
-  arrowSize: number = 8
+  arrowSize: number = 8,
 ): {
   style: { top?: number; bottom?: number; left?: number; right?: number };
   arrowPosition: 'top' | 'bottom' | 'left' | 'right';
@@ -278,85 +276,86 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.overlay,
-  },
-  tooltip: {
-    position: 'absolute',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.shadowDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-      web: {
-        boxShadow: `0 2px 4px ${theme.shadow}`,
-      },
-    }),
-  },
-  arrow: {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderWidth: ARROW_SIZE,
-  },
-  arrowTop: {
-    top: -ARROW_SIZE * 2,
-    left: '50%',
-    marginLeft: -ARROW_SIZE,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: 'transparent',
-  },
-  arrowBottom: {
-    bottom: -ARROW_SIZE * 2,
-    left: '50%',
-    marginLeft: -ARROW_SIZE,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: 'transparent',
-  },
-  arrowLeft: {
-    left: -ARROW_SIZE * 2,
-    top: '50%',
-    marginTop: -ARROW_SIZE,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: 'transparent',
-  },
-  arrowRight: {
-    right: -ARROW_SIZE * 2,
-    top: '50%',
-    marginTop: -ARROW_SIZE,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: 'transparent',
-  },
-  content: {
-    // Content container
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  text: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  textWithTitle: {
-    marginTop: 4,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.overlay,
+    },
+    tooltip: {
+      position: 'absolute',
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      ...Platform.select({
+        ios: {
+          shadowColor: theme.shadowDark,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 4,
+        },
+        web: {
+          boxShadow: `0 2px 4px ${theme.shadow}`,
+        },
+      }),
+    },
+    arrow: {
+      position: 'absolute',
+      width: 0,
+      height: 0,
+      borderStyle: 'solid',
+      borderWidth: ARROW_SIZE,
+    },
+    arrowTop: {
+      top: -ARROW_SIZE * 2,
+      left: '50%',
+      marginLeft: -ARROW_SIZE,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderBottomColor: 'transparent',
+    },
+    arrowBottom: {
+      bottom: -ARROW_SIZE * 2,
+      left: '50%',
+      marginLeft: -ARROW_SIZE,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderTopColor: 'transparent',
+    },
+    arrowLeft: {
+      left: -ARROW_SIZE * 2,
+      top: '50%',
+      marginTop: -ARROW_SIZE,
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+      borderRightColor: 'transparent',
+    },
+    arrowRight: {
+      right: -ARROW_SIZE * 2,
+      top: '50%',
+      marginTop: -ARROW_SIZE,
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+      borderLeftColor: 'transparent',
+    },
+    content: {
+      // Content container
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 6,
+    },
+    text: {
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    textWithTitle: {
+      marginTop: 4,
+    },
+  });
 
 export default ContextualHelp;

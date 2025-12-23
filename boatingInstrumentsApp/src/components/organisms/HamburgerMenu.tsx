@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
-import { logger } from '../../utils/logger';
+import { log as logger } from '../../utils/logging/logger';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { MenuSection } from '../molecules/MenuSection';
 import { DevToolsSection } from '../molecules/DevToolsSection';
@@ -54,12 +54,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const { resetAppToDefaults } = useWidgetStore();
   const nmeaStore = useNmeaStore();
   const [showFeatureFlags, setShowFeatureFlags] = useState(false);
-  
+
   // Log menu state for debugging
   React.useEffect(() => {
     console.log('[HamburgerMenu] Visibility changed:', visible);
   }, [visible]);
-  
+
   // Custom action handlers
   const actionHandlers = {
     openConnectionSettings: () => {
@@ -110,7 +110,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
       });
     },
     openAlarmConfiguration: () => {
-      logger.alarm('HamburgerMenu: openAlarmConfiguration called', { hasCallback: !!onShowAlarmConfiguration });
+      logger.alarm('HamburgerMenu: openAlarmConfiguration called', {
+        hasCallback: !!onShowAlarmConfiguration,
+      });
       // Trigger close animation, then open alarm configuration
       animateOut(() => {
         logger.alarm('HamburgerMenu: Menu animation complete, closing menu');
@@ -154,91 +156,84 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
   return (
     <>
-    {/* Hamburger Menu Modal */}
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={handleClose}
-    >
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={handleOverlayPress}
+      {/* Hamburger Menu Modal */}
+      <Modal
+        transparent
+        visible={visible}
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={handleClose}
       >
-        <Animated.View
-          style={[
-            styles.overlayBackground,
-            {
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              opacity: fadeAnimation,
-            },
-          ]}
-        />
-        
-        <Animated.View
-          style={[
-            styles.menuContainer,
-            {
-              backgroundColor: theme.surface,
-              width: menuWidth,
-              transform: [{ translateX: slideAnimation }],
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.menuContent}
-            activeOpacity={1}
-            onPress={handleMenuPress}
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={handleOverlayPress}>
+          <Animated.View
+            style={[
+              styles.overlayBackground,
+              {
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                opacity: fadeAnimation,
+              },
+            ]}
+          />
+
+          <Animated.View
+            style={[
+              styles.menuContainer,
+              {
+                backgroundColor: theme.surface,
+                width: menuWidth,
+                transform: [{ translateX: slideAnimation }],
+              },
+            ]}
           >
-            <SafeAreaView style={styles.safeArea}>
-              <ScrollView 
-                style={styles.scrollContainer}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {/* Header */}
-                <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={handleClose}
-                    testID="hamburger-menu-close"
-                  >
-                    <View style={[styles.closeIcon, { backgroundColor: theme.textSecondary }]} />
-                  </TouchableOpacity>
-                </View>
+            <TouchableOpacity
+              style={styles.menuContent}
+              activeOpacity={1}
+              onPress={handleMenuPress}
+            >
+              <SafeAreaView style={styles.safeArea}>
+                <ScrollView
+                  style={styles.scrollContainer}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* Header */}
+                  <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={handleClose}
+                      testID="hamburger-menu-close"
+                    >
+                      <View style={[styles.closeIcon, { backgroundColor: theme.textSecondary }]} />
+                    </TouchableOpacity>
+                  </View>
 
-                {/* Primary Navigation Sections */}
-                {sections.map((section) => (
-                  <MenuSection
-                    key={section.id}
-                    section={section}
-                    onItemPress={handleClose}
-                    actionHandlers={actionHandlers}
-                  />
-                ))}
+                  {/* Primary Navigation Sections */}
+                  {sections.map((section) => (
+                    <MenuSection
+                      key={section.id}
+                      section={section}
+                      onItemPress={handleClose}
+                      actionHandlers={actionHandlers}
+                    />
+                  ))}
 
-                {/* Development Tools Section */}
-                {showDevTools && devSections && (
-                  <DevToolsSection
-                    sections={devSections}
-                    onItemPress={handleClose}
-                    actionHandlers={actionHandlers}
-                  />
-                )}
-              </ScrollView>
-            </SafeAreaView>
-          </TouchableOpacity>
-        </Animated.View>
-      </TouchableOpacity>
-    </Modal>
-    
-    {/* Feature Flags Developer Menu - Always rendered so state persists */}
-    <FeatureFlagsMenu
-      visible={showFeatureFlags}
-      onClose={() => setShowFeatureFlags(false)}
-    />
+                  {/* Development Tools Section */}
+                  {showDevTools && devSections && (
+                    <DevToolsSection
+                      sections={devSections}
+                      onItemPress={handleClose}
+                      actionHandlers={actionHandlers}
+                    />
+                  )}
+                </ScrollView>
+              </SafeAreaView>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Feature Flags Developer Menu - Always rendered so state persists */}
+      <FeatureFlagsMenu visible={showFeatureFlags} onClose={() => setShowFeatureFlags(false)} />
     </>
   );
 };

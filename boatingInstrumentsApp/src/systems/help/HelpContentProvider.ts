@@ -1,6 +1,6 @@
 /**
  * HelpContentProvider - Manages help content delivery, search, and caching
- * 
+ *
  * Features:
  * - Remote content updates without app updates
  * - Offline-first with local caching
@@ -54,7 +54,10 @@ export class HelpContentProvider {
   /**
    * Initialize with default content and load cache
    */
-  public async initialize(defaultContent: HelpContent[], language: string = DEFAULT_LANGUAGE): Promise<void> {
+  public async initialize(
+    defaultContent: HelpContent[],
+    language: string = DEFAULT_LANGUAGE,
+  ): Promise<void> {
     this.currentLanguage = language;
 
     // Load cached content first
@@ -62,19 +65,18 @@ export class HelpContentProvider {
 
     // Add default content if cache is empty
     if (this.content.size === 0) {
-      defaultContent.forEach(content => {
+      defaultContent.forEach((content) => {
         this.content.set(content.id, content);
       });
       await this.cacheHelpContent(defaultContent);
     }
 
     // Try to update from remote in background
-    this.updateHelpContent().catch(err => {
+    this.updateHelpContent().catch((err) => {
       console.warn('[HelpContentProvider] Background update failed:', err);
     });
 
     this.isInitialized = true;
-    console.log(`[HelpContentProvider] Initialized with ${this.content.size} items`);
   }
 
   /**
@@ -82,7 +84,7 @@ export class HelpContentProvider {
    */
   public async getHelpContent(contentId: string, language?: string): Promise<HelpContent | null> {
     const lang = language || this.currentLanguage;
-    
+
     // Try exact match first
     let content = this.content.get(contentId);
 
@@ -108,14 +110,14 @@ export class HelpContentProvider {
    * Get content by type
    */
   public getContentByType(type: HelpContentType): HelpContent[] {
-    return Array.from(this.content.values()).filter(c => c.type === type);
+    return Array.from(this.content.values()).filter((c) => c.type === type);
   }
 
   /**
    * Get content by category
    */
   public getContentByCategory(category: string): HelpContent[] {
-    return Array.from(this.content.values()).filter(c => c.category === category);
+    return Array.from(this.content.values()).filter((c) => c.category === category);
   }
 
   /**
@@ -129,12 +131,12 @@ export class HelpContentProvider {
     const searchTerms = query.toLowerCase().trim().split(/\s+/);
     const results: Array<HelpSearchResult & { score: number }> = [];
 
-    this.content.forEach(content => {
+    this.content.forEach((content) => {
       let score = 0;
 
       // Search in title (highest weight)
       const titleLower = content.title.toLowerCase();
-      searchTerms.forEach(term => {
+      searchTerms.forEach((term) => {
         if (titleLower.includes(term)) {
           score += 10;
         }
@@ -142,16 +144,16 @@ export class HelpContentProvider {
 
       // Search in description
       const descLower = content.description.toLowerCase();
-      searchTerms.forEach(term => {
+      searchTerms.forEach((term) => {
         if (descLower.includes(term)) {
           score += 5;
         }
       });
 
       // Search in tags
-      content.tags.forEach(tag => {
+      content.tags.forEach((tag) => {
         const tagLower = tag.toLowerCase();
-        searchTerms.forEach(term => {
+        searchTerms.forEach((term) => {
           if (tagLower.includes(term)) {
             score += 3;
           }
@@ -160,7 +162,7 @@ export class HelpContentProvider {
 
       // Search in content (lowest weight)
       const contentLower = content.content.toLowerCase();
-      searchTerms.forEach(term => {
+      searchTerms.forEach((term) => {
         if (contentLower.includes(term)) {
           score += 1;
         }
@@ -172,7 +174,8 @@ export class HelpContentProvider {
         const contentIndex = contentLower.indexOf(firstTerm);
         const snippetStart = Math.max(0, contentIndex - 50);
         const snippetEnd = Math.min(content.content.length, contentIndex + 150);
-        const snippet = (snippetStart > 0 ? '...' : '') +
+        const snippet =
+          (snippetStart > 0 ? '...' : '') +
           content.content.substring(snippetStart, snippetEnd) +
           (snippetEnd < content.content.length ? '...' : '');
 
@@ -201,15 +204,12 @@ export class HelpContentProvider {
       // Check network connectivity
       const isConnected = await checkNetworkConnectivity();
       if (!isConnected) {
-        console.log('[HelpContentProvider] No network connection, using cached content');
         return false;
       }
 
-      console.log('[HelpContentProvider] Fetching remote content...');
-
       const response = await fetch(REMOTE_CONTENT_URL, {
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Accept-Language': this.currentLanguage,
         },
         cache: 'no-cache',
@@ -225,13 +225,12 @@ export class HelpContentProvider {
 
       // Check if update is needed
       if (version === this.contentVersion) {
-        console.log('[HelpContentProvider] Content is up to date');
         return false;
       }
 
       // Update content
       const newContent = content as HelpContent[];
-      newContent.forEach(item => {
+      newContent.forEach((item) => {
         // Convert date strings to Date objects
         item.lastUpdated = new Date(item.lastUpdated);
         this.content.set(item.id, item);
@@ -243,7 +242,6 @@ export class HelpContentProvider {
       await this.cacheHelpContent(newContent);
       await AsyncStorage.setItem(CONTENT_VERSION_KEY, version);
 
-      console.log(`[HelpContentProvider] Updated to version ${version} with ${newContent.length} items`);
       return true;
     } catch (error) {
       console.error('[HelpContentProvider] Update failed:', error);
@@ -256,13 +254,12 @@ export class HelpContentProvider {
    */
   public async cacheHelpContent(content: HelpContent[]): Promise<void> {
     try {
-      const cacheData = content.map(item => ({
+      const cacheData = content.map((item) => ({
         ...item,
         lastUpdated: item.lastUpdated.toISOString(),
       }));
 
       await AsyncStorage.setItem(CONTENT_CACHE_KEY, JSON.stringify(cacheData));
-      console.log(`[HelpContentProvider] Cached ${content.length} items`);
     } catch (error) {
       console.error('[HelpContentProvider] Cache save failed:', error);
     }
@@ -276,7 +273,7 @@ export class HelpContentProvider {
       const cached = await AsyncStorage.getItem(CONTENT_CACHE_KEY);
       if (cached) {
         const data = JSON.parse(cached) as HelpContent[];
-        data.forEach(item => {
+        data.forEach((item) => {
           // Convert date strings back to Date objects
           item.lastUpdated = new Date(item.lastUpdated);
           this.content.set(item.id, item);
@@ -286,8 +283,6 @@ export class HelpContentProvider {
         if (version) {
           this.contentVersion = version;
         }
-
-        console.log(`[HelpContentProvider] Loaded ${data.length} cached items`);
       }
     } catch (error) {
       console.error('[HelpContentProvider] Cache load failed:', error);
@@ -299,7 +294,6 @@ export class HelpContentProvider {
    */
   public setLanguage(language: string): void {
     this.currentLanguage = language;
-    console.log(`[HelpContentProvider] Language set to: ${language}`);
   }
 
   /**
@@ -344,7 +338,6 @@ export class HelpContentProvider {
     this.content.clear();
     this.contentVersion = '1.0.0';
     await AsyncStorage.multiRemove([CONTENT_CACHE_KEY, CONTENT_VERSION_KEY]);
-    console.log('[HelpContentProvider] Cleared all cached content');
   }
 
   /**

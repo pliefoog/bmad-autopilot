@@ -4,7 +4,12 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CriticalAlarmEvent, AlarmHistoryEntry, AlarmEscalationLevel, AlarmPerformanceMetrics } from './types';
+import {
+  CriticalAlarmEvent,
+  AlarmHistoryEntry,
+  AlarmEscalationLevel,
+  AlarmPerformanceMetrics,
+} from './types';
 
 export interface AlarmHistoryConfig {
   maxHistoryEntries: number;
@@ -19,7 +24,7 @@ export class AlarmHistoryLogger {
   private config: AlarmHistoryConfig;
   private historyCache: AlarmHistoryEntry[] = [];
   private performanceMetrics: AlarmPerformanceMetrics;
-  
+
   constructor(config?: Partial<AlarmHistoryConfig>) {
     this.config = {
       maxHistoryEntries: 10000,
@@ -29,11 +34,11 @@ export class AlarmHistoryLogger {
       exportFormat: 'json',
       ...config,
     };
-    
+
     this.performanceMetrics = this.initializePerformanceMetrics();
     this.loadHistoryFromStorage();
   }
-  
+
   /**
    * Log critical alarm event with marine safety context
    */
@@ -54,108 +59,87 @@ export class AlarmHistoryLogger {
         relatedAlarms: this.findRelatedAlarms(alarmEvent),
         cascadeEffects: [],
       };
-      
+
       // Add to cache and persistent storage
       this.historyCache.push(historyEntry);
       await this.saveHistoryToStorage();
-      
+
       // Update performance metrics
       this.updatePerformanceMetrics(historyEntry);
-      
-      console.log('AlarmHistoryLogger: Critical alarm logged', {
-        alarmId: alarmEvent.id,
-        type: alarmEvent.type,
-        escalationLevel: alarmEvent.escalationLevel,
-      });
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to log critical alarm', error);
     }
   }
-  
+
   /**
    * Log alarm acknowledgment with response time and method
    */
   public async logAlarmAcknowledgment(
     alarmEvent: CriticalAlarmEvent,
     acknowledgedBy: string,
-    method: string = 'manual'
+    method: string = 'manual',
   ): Promise<void> {
     try {
-      const historyEntry = this.historyCache.find(entry => entry.alarmEvent.id === alarmEvent.id);
+      const historyEntry = this.historyCache.find((entry) => entry.alarmEvent.id === alarmEvent.id);
       if (!historyEntry) {
-        console.warn('AlarmHistoryLogger: No history entry found for alarm acknowledgment', alarmEvent.id);
+        console.warn(
+          'AlarmHistoryLogger: No history entry found for alarm acknowledgment',
+          alarmEvent.id,
+        );
         return;
       }
-      
+
       // Update acknowledgment information
       historyEntry.endTime = Date.now();
       historyEntry.duration = historyEntry.endTime - historyEntry.startTime;
       historyEntry.responseTime = (alarmEvent.acknowledgedAt || Date.now()) - alarmEvent.detectedAt;
       historyEntry.acknowledgedBy = acknowledgedBy;
       historyEntry.acknowledgmentMethod = method;
-      
+
       // Check marine safety compliance
       historyEntry.complianceIssues = this.checkComplianceIssues(historyEntry);
-      
+
       await this.saveHistoryToStorage();
-      
+
       // Update performance metrics
       this.updateResponseTimeMetrics(historyEntry.responseTime);
-      
-      console.log('AlarmHistoryLogger: Alarm acknowledgment logged', {
-        alarmId: alarmEvent.id,
-        responseTime: historyEntry.responseTime,
-        acknowledgedBy,
-        method,
-        complianceIssues: historyEntry.complianceIssues,
-      });
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to log alarm acknowledgment', error);
     }
   }
-  
+
   /**
    * Log alarm escalation event
    */
   public async logAlarmEscalation(
     alarmEvent: CriticalAlarmEvent,
     previousLevel: AlarmEscalationLevel,
-    newLevel: AlarmEscalationLevel
+    newLevel: AlarmEscalationLevel,
   ): Promise<void> {
     try {
-      const historyEntry = this.historyCache.find(entry => entry.alarmEvent.id === alarmEvent.id);
+      const historyEntry = this.historyCache.find((entry) => entry.alarmEvent.id === alarmEvent.id);
       if (historyEntry) {
         historyEntry.escalationCount++;
-        
+
         // Log escalation details in metadata
         if (!historyEntry.alarmEvent.metadata.escalations) {
           historyEntry.alarmEvent.metadata.escalations = [];
         }
-        
+
         historyEntry.alarmEvent.metadata.escalations.push({
           timestamp: Date.now(),
           from: previousLevel,
           to: newLevel,
           escalationCount: historyEntry.escalationCount,
         });
-        
+
         await this.saveHistoryToStorage();
       }
-      
-      console.log('AlarmHistoryLogger: Alarm escalation logged', {
-        alarmId: alarmEvent.id,
-        from: previousLevel,
-        to: newLevel,
-        totalEscalations: historyEntry?.escalationCount || 0,
-      });
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to log alarm escalation', error);
     }
   }
-  
+
   /**
    * Log system test results
    */
@@ -191,61 +175,56 @@ export class AlarmHistoryLogger {
         relatedAlarms: [],
         cascadeEffects: [],
       };
-      
+
       this.historyCache.push(testEntry);
       await this.saveHistoryToStorage();
-      
-      console.log('AlarmHistoryLogger: System test logged', { testResults });
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to log system test', error);
     }
   }
-  
+
   /**
    * Mark alarm as false positive for performance tracking
    */
   public async markFalsePositive(alarmId: string, reason: string): Promise<void> {
     try {
-      const historyEntry = this.historyCache.find(entry => entry.alarmEvent.id === alarmId);
+      const historyEntry = this.historyCache.find((entry) => entry.alarmEvent.id === alarmId);
       if (historyEntry) {
         historyEntry.falsePositive = true;
         historyEntry.alarmEvent.metadata.falsePositiveReason = reason;
-        
+
         await this.saveHistoryToStorage();
-        
+
         // Update performance metrics
         this.performanceMetrics.falsePositiveCount++;
         this.updateFalsePositiveRate();
       }
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to mark false positive', error);
     }
   }
-  
+
   /**
    * Mark alarm as false negative for performance tracking
    */
   public async markFalseNegative(alarmId: string, reason: string): Promise<void> {
     try {
-      const historyEntry = this.historyCache.find(entry => entry.alarmEvent.id === alarmId);
+      const historyEntry = this.historyCache.find((entry) => entry.alarmEvent.id === alarmId);
       if (historyEntry) {
         historyEntry.falseNegative = true;
         historyEntry.alarmEvent.metadata.falseNegativeReason = reason;
-        
+
         await this.saveHistoryToStorage();
-        
+
         // Update performance metrics
         this.performanceMetrics.falseNegativeCount++;
         this.updateFalseNegativeRate();
       }
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to mark false negative', error);
     }
   }
-  
+
   /**
    * Get alarm history for analysis and reporting
    */
@@ -258,103 +237,106 @@ export class AlarmHistoryLogger {
     includeTests?: boolean;
   }): AlarmHistoryEntry[] {
     let filteredHistory = [...this.historyCache];
-    
+
     if (filters) {
       if (filters.startDate) {
-        filteredHistory = filteredHistory.filter(entry => entry.startTime >= filters.startDate!);
+        filteredHistory = filteredHistory.filter((entry) => entry.startTime >= filters.startDate!);
       }
-      
+
       if (filters.endDate) {
-        filteredHistory = filteredHistory.filter(entry => entry.startTime <= filters.endDate!);
+        filteredHistory = filteredHistory.filter((entry) => entry.startTime <= filters.endDate!);
       }
-      
+
       if (filters.alarmTypes) {
-        filteredHistory = filteredHistory.filter(entry => 
-          filters.alarmTypes!.includes(entry.alarmEvent.type)
+        filteredHistory = filteredHistory.filter((entry) =>
+          filters.alarmTypes!.includes(entry.alarmEvent.type),
         );
       }
-      
+
       if (filters.escalationLevels) {
-        filteredHistory = filteredHistory.filter(entry => 
-          filters.escalationLevels!.includes(entry.alarmEvent.escalationLevel)
+        filteredHistory = filteredHistory.filter((entry) =>
+          filters.escalationLevels!.includes(entry.alarmEvent.escalationLevel),
         );
       }
-      
+
       if (filters.acknowledgedBy) {
-        filteredHistory = filteredHistory.filter(entry => 
-          entry.acknowledgedBy === filters.acknowledgedBy
+        filteredHistory = filteredHistory.filter(
+          (entry) => entry.acknowledgedBy === filters.acknowledgedBy,
         );
       }
-      
+
       if (!filters.includeTests) {
-        filteredHistory = filteredHistory.filter(entry => 
-          entry.alarmEvent.source !== 'AlarmHistoryLogger' || 
-          !entry.alarmEvent.message.includes('System test')
+        filteredHistory = filteredHistory.filter(
+          (entry) =>
+            entry.alarmEvent.source !== 'AlarmHistoryLogger' ||
+            !entry.alarmEvent.message.includes('System test'),
         );
       }
     }
-    
+
     return filteredHistory.sort((a, b) => b.startTime - a.startTime); // Most recent first
   }
-  
+
   /**
    * Get performance metrics for marine safety compliance
    */
   public getPerformanceMetrics(): AlarmPerformanceMetrics {
     return { ...this.performanceMetrics };
   }
-  
+
   /**
    * Export alarm history in specified format for marine incident reporting
    */
   public async exportAlarmHistory(
     format: 'json' | 'csv' | 'maritime-xml' = 'json',
-    filters?: any
+    filters?: any,
   ): Promise<string> {
     const history = this.getAlarmHistory(filters);
-    
+
     switch (format) {
       case 'json':
-        return JSON.stringify({
-          exportDate: new Date().toISOString(),
-          totalEntries: history.length,
-          performanceMetrics: this.performanceMetrics,
-          alarmHistory: history,
-        }, null, 2);
-        
+        return JSON.stringify(
+          {
+            exportDate: new Date().toISOString(),
+            totalEntries: history.length,
+            performanceMetrics: this.performanceMetrics,
+            alarmHistory: history,
+          },
+          null,
+          2,
+        );
+
       case 'csv':
         return this.exportToCsv(history);
-        
+
       case 'maritime-xml':
         return this.exportToMaritimeXml(history);
-        
+
       default:
         throw new Error(`Unsupported export format: ${format}`);
     }
   }
-  
+
   /**
    * Clear old history entries to maintain storage limits
    */
   public async clearOldHistory(olderThanDays: number = 90): Promise<void> {
     try {
-      const cutoffTime = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
       const initialCount = this.historyCache.length;
-      
-      this.historyCache = this.historyCache.filter(entry => entry.startTime >= cutoffTime);
-      
+
+      this.historyCache = this.historyCache.filter((entry) => entry.startTime >= cutoffTime);
+
       await this.saveHistoryToStorage();
-      
+
       const removedCount = initialCount - this.historyCache.length;
-      console.log(`AlarmHistoryLogger: Cleared ${removedCount} old history entries`);
-      
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to clear old history', error);
     }
   }
-  
+
   // Private helper methods
-  
+
   private initializePerformanceMetrics(): AlarmPerformanceMetrics {
     return {
       averageResponseTimeMs: 0,
@@ -379,7 +361,7 @@ export class AlarmHistoryLogger {
       lastComplianceCheck: Date.now(),
     };
   }
-  
+
   private async loadHistoryFromStorage(): Promise<void> {
     try {
       const storedHistory = await AsyncStorage.getItem(this.config.storageKey);
@@ -390,20 +372,20 @@ export class AlarmHistoryLogger {
       console.error('AlarmHistoryLogger: Failed to load history from storage', error);
     }
   }
-  
+
   private async saveHistoryToStorage(): Promise<void> {
     try {
       // Maintain storage limits
       if (this.historyCache.length > this.config.maxHistoryEntries) {
         this.historyCache = this.historyCache.slice(-this.config.maxHistoryEntries);
       }
-      
+
       await AsyncStorage.setItem(this.config.storageKey, JSON.stringify(this.historyCache));
     } catch (error) {
       console.error('AlarmHistoryLogger: Failed to save history to storage', error);
     }
   }
-  
+
   private async getCurrentVesselState(): Promise<AlarmHistoryEntry['vesselState']> {
     // This would integrate with NMEA store to get current vessel state
     return {
@@ -413,86 +395,107 @@ export class AlarmHistoryLogger {
       conditions: 'Unknown', // Would get from weather data or manual input
     };
   }
-  
+
   private findRelatedAlarms(alarmEvent: CriticalAlarmEvent): string[] {
     // Find alarms that occurred within a short time window (cascade detection)
     const timeWindow = 30000; // 30 seconds
     const startTime = alarmEvent.detectedAt - timeWindow;
     const endTime = alarmEvent.detectedAt + timeWindow;
-    
+
     return this.historyCache
-      .filter(entry => 
-        entry.alarmEvent.id !== alarmEvent.id &&
-        entry.startTime >= startTime &&
-        entry.startTime <= endTime
+      .filter(
+        (entry) =>
+          entry.alarmEvent.id !== alarmEvent.id &&
+          entry.startTime >= startTime &&
+          entry.startTime <= endTime,
       )
-      .map(entry => entry.alarmEvent.id);
+      .map((entry) => entry.alarmEvent.id);
   }
-  
+
   private checkComplianceIssues(historyEntry: AlarmHistoryEntry): string[] {
     const issues: string[] = [];
-    
+
     // Check response time compliance (<500ms)
     if (historyEntry.responseTime > 500) {
-      issues.push(`Response time ${historyEntry.responseTime}ms exceeds marine safety requirement of 500ms`);
+      issues.push(
+        `Response time ${historyEntry.responseTime}ms exceeds marine safety requirement of 500ms`,
+      );
     }
-    
+
     // Check escalation compliance
     if (historyEntry.escalationCount > 5) {
-      issues.push(`Excessive escalation count: ${historyEntry.escalationCount} escalations before acknowledgment`);
+      issues.push(
+        `Excessive escalation count: ${historyEntry.escalationCount} escalations before acknowledgment`,
+      );
     }
-    
+
     // Check acknowledgment compliance
     if (historyEntry.acknowledgmentMethod === 'timeout') {
       issues.push('Alarm was not manually acknowledged - timed out automatically');
     }
-    
+
     return issues;
   }
-  
+
   private updatePerformanceMetrics(historyEntry: AlarmHistoryEntry): void {
     this.performanceMetrics.totalAlarmsTriggered++;
     // Other metrics would be updated based on the history entry
   }
-  
+
   private updateResponseTimeMetrics(responseTime: number): void {
     // Update response time statistics
     const current = this.performanceMetrics.averageResponseTimeMs;
     const count = this.performanceMetrics.totalAlarmsTriggered;
-    
-    this.performanceMetrics.averageResponseTimeMs = 
-      ((current * (count - 1)) + responseTime) / count;
-    
+
+    this.performanceMetrics.averageResponseTimeMs = (current * (count - 1) + responseTime) / count;
+
     if (responseTime > this.performanceMetrics.maxResponseTimeMs) {
       this.performanceMetrics.maxResponseTimeMs = responseTime;
     }
-    
+
     // Update percentiles (simplified calculation)
     // In production, would use proper percentile calculation algorithm
   }
-  
+
   private updateFalsePositiveRate(): void {
     if (this.performanceMetrics.totalAlarmsTriggered > 0) {
-      this.performanceMetrics.falsePositiveRate = 
-        (this.performanceMetrics.falsePositiveCount / this.performanceMetrics.totalAlarmsTriggered) * 100;
+      this.performanceMetrics.falsePositiveRate =
+        (this.performanceMetrics.falsePositiveCount /
+          this.performanceMetrics.totalAlarmsTriggered) *
+        100;
     }
   }
-  
+
   private updateFalseNegativeRate(): void {
     if (this.performanceMetrics.totalAlarmsTriggered > 0) {
-      this.performanceMetrics.falseNegativeRate = 
-        (this.performanceMetrics.falseNegativeCount / this.performanceMetrics.totalAlarmsTriggered) * 100;
+      this.performanceMetrics.falseNegativeRate =
+        (this.performanceMetrics.falseNegativeCount /
+          this.performanceMetrics.totalAlarmsTriggered) *
+        100;
     }
   }
-  
+
   private exportToCsv(history: AlarmHistoryEntry[]): string {
     const headers = [
-      'ID', 'Type', 'Escalation Level', 'Start Time', 'End Time', 'Duration (ms)',
-      'Response Time (ms)', 'Escalation Count', 'Acknowledged By', 'Acknowledgment Method',
-      'False Positive', 'False Negative', 'Compliance Issues', 'Position', 'Course', 'Speed'
+      'ID',
+      'Type',
+      'Escalation Level',
+      'Start Time',
+      'End Time',
+      'Duration (ms)',
+      'Response Time (ms)',
+      'Escalation Count',
+      'Acknowledged By',
+      'Acknowledgment Method',
+      'False Positive',
+      'False Negative',
+      'Compliance Issues',
+      'Position',
+      'Course',
+      'Speed',
     ];
-    
-    const rows = history.map(entry => [
+
+    const rows = history.map((entry) => [
       entry.id,
       entry.alarmEvent.type,
       entry.alarmEvent.escalationLevel,
@@ -506,20 +509,24 @@ export class AlarmHistoryLogger {
       entry.falsePositive,
       entry.falseNegative,
       entry.complianceIssues.join('; '),
-      entry.vesselState.position ? `${entry.vesselState.position.lat},${entry.vesselState.position.lon}` : '',
+      entry.vesselState.position
+        ? `${entry.vesselState.position.lat},${entry.vesselState.position.lon}`
+        : '',
       entry.vesselState.course || '',
       entry.vesselState.speed || '',
     ]);
-    
-    return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    return [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
   }
-  
+
   private exportToMaritimeXml(history: AlarmHistoryEntry[]): string {
     // Maritime XML format for official incident reporting
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n<MarineAlarmReport>\n';
     const xmlFooter = '</MarineAlarmReport>';
-    
-    const xmlBody = history.map(entry => `
+
+    const xmlBody = history
+      .map(
+        (entry) => `
   <AlarmEvent>
     <ID>${entry.id}</ID>
     <Type>${entry.alarmEvent.type}</Type>
@@ -527,14 +534,18 @@ export class AlarmHistoryLogger {
     <StartTime>${new Date(entry.startTime).toISOString()}</StartTime>
     <EndTime>${entry.endTime ? new Date(entry.endTime).toISOString() : ''}</EndTime>
     <ResponseTimeMs>${entry.responseTime}</ResponseTimeMs>
-    <VesselPosition lat="${entry.vesselState.position?.lat || 0}" lon="${entry.vesselState.position?.lon || 0}" />
+    <VesselPosition lat="${entry.vesselState.position?.lat || 0}" lon="${
+          entry.vesselState.position?.lon || 0
+        }" />
     <Compliance>
       <Issues>${entry.complianceIssues.join(', ')}</Issues>
       <FalsePositive>${entry.falsePositive}</FalsePositive>
       <FalseNegative>${entry.falseNegative}</FalseNegative>
     </Compliance>
-  </AlarmEvent>`).join('\n');
-    
+  </AlarmEvent>`,
+      )
+      .join('\n');
+
     return xmlHeader + xmlBody + '\n' + xmlFooter;
   }
 }

@@ -1,7 +1,7 @@
 /**
  * Visual Polish Utilities
  * Story 4.4 AC1-5: Smooth transitions, loading states, animations
- * 
+ *
  * Provides:
  * - Animated component wrappers
  * - Loading state components
@@ -31,17 +31,15 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
 }) => {
   const theme = useTheme();
 
-  const containerStyle = fullScreen
-    ? styles.loadingContainerFullScreen
-    : styles.loadingContainer;
+  const containerStyle = fullScreen ? styles.loadingContainerFullScreen : styles.loadingContainer;
 
   return (
-    <View style={[containerStyle, { backgroundColor: fullScreen ? theme.background : 'transparent' }]}>
+    <View
+      style={[containerStyle, { backgroundColor: fullScreen ? theme.background : 'transparent' }]}
+    >
       <ActivityIndicator size={size} color={theme.primary} />
       {message && (
-        <Text style={[styles.loadingMessage, { color: theme.textSecondary }]}>
-          {message}
-        </Text>
+        <Text style={[styles.loadingMessage, { color: theme.textSecondary }]}>{message}</Text>
       )}
     </View>
   );
@@ -61,12 +59,7 @@ export interface EmptyStateProps {
   };
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = '📭',
-  title,
-  message,
-  action,
-}) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({ icon = '📭', title, message, action }) => {
   const theme = useTheme();
 
   return (
@@ -74,20 +67,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <Text style={styles.emptyIcon}>{icon}</Text>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>{title}</Text>
       {message && (
-        <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>
-          {message}
-        </Text>
+        <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>{message}</Text>
       )}
       {action && (
-        <View
-          style={[
-            styles.emptyAction,
-            { backgroundColor: theme.primary },
-          ]}
-        >
-          <Text style={[styles.emptyActionText, { color: theme.surface }]}>
-            {action.label}
-          </Text>
+        <View style={[styles.emptyAction, { backgroundColor: theme.primary }]}>
+          <Text style={[styles.emptyActionText, { color: theme.surface }]}>{action.label}</Text>
         </View>
       )}
     </View>
@@ -120,11 +104,7 @@ export const FadeInView: React.FC<FadeInViewProps> = ({
     }).start();
   }, [fadeAnim, duration, delay]);
 
-  return (
-    <Animated.View style={{ opacity: fadeAnim }}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={{ opacity: fadeAnim }}>{children}</Animated.View>;
 };
 
 // ============================================================================
@@ -172,11 +152,7 @@ export const SlideInView: React.FC<SlideInViewProps> = ({
     }
   };
 
-  return (
-    <Animated.View style={{ transform: getTransform() }}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={{ transform: getTransform() }}>{children}</Animated.View>;
 };
 
 // ============================================================================
@@ -208,11 +184,7 @@ export const ScaleInView: React.FC<ScaleInViewProps> = ({
     }).start();
   }, [scaleAnim, delay]);
 
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>{children}</Animated.View>;
 };
 
 // ============================================================================
@@ -248,7 +220,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           duration: 800,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, [pulseAnim]);
 
@@ -278,11 +250,7 @@ export interface DividerProps {
   thickness?: number;
 }
 
-export const Divider: React.FC<DividerProps> = ({
-  spacing = 4,
-  color,
-  thickness = 1,
-}) => {
+export const Divider: React.FC<DividerProps> = ({ spacing = 4, color, thickness = 1 }) => {
   const theme = useTheme();
 
   return (
@@ -306,11 +274,7 @@ export interface BadgeProps {
   size?: 'sm' | 'md';
 }
 
-export const Badge: React.FC<BadgeProps> = ({
-  label,
-  variant = 'primary',
-  size = 'md',
-}) => {
+export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', size = 'md' }) => {
   const theme = useTheme();
 
   const getBackgroundColor = () => {
@@ -328,7 +292,8 @@ export const Badge: React.FC<BadgeProps> = ({
     }
   };
 
-  const fontSize = size === 'sm' ? designTokens.typography.fontSize.xs : designTokens.typography.fontSize.sm;
+  const fontSize =
+    size === 'sm' ? designTokens.typography.fontSize.xs : designTokens.typography.fontSize.sm;
   const padding = size === 'sm' ? 4 : 6;
 
   return (
@@ -342,9 +307,7 @@ export const Badge: React.FC<BadgeProps> = ({
         },
       ]}
     >
-      <Text style={[styles.badgeText, { fontSize, color: theme.surface }]}>
-        {label}
-      </Text>
+      <Text style={[styles.badgeText, { fontSize, color: theme.surface }]}>{label}</Text>
     </View>
   );
 };

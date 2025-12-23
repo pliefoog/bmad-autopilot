@@ -1,11 +1,11 @@
 /**
  * Layout Constants - Centralized Magic Numbers
- * 
+ *
  * All hardcoded layout values extracted into named constants for:
  * - Maintainability
  * - Consistency
  * - Easy updates across codebase
- * 
+ *
  * Nautical Context Optimizations:
  * - Viewing distance: 2-3 feet typical (helm station)
  * - Environment: Bright sunlight, motion/vibration, wet hands possible
@@ -118,21 +118,21 @@ export const Z_INDEX = {
  */
 export function getColumnsForWidth(screenWidth: number): number {
   let columns = 1;
-  
+
   if (screenWidth >= BREAKPOINTS.LARGE_DESKTOP) {
-    columns = GRID_COLUMNS.LARGE_DESKTOP;  // 6 cols (reduced from 8 for readability)
+    columns = GRID_COLUMNS.LARGE_DESKTOP; // 6 cols (reduced from 8 for readability)
   } else if (screenWidth >= BREAKPOINTS.DESKTOP) {
-    columns = GRID_COLUMNS.DESKTOP;  // 5 cols (reduced from 6)
+    columns = GRID_COLUMNS.DESKTOP; // 5 cols (reduced from 6)
   } else if (screenWidth >= BREAKPOINTS.TABLET_LANDSCAPE) {
-    columns = GRID_COLUMNS.TABLET_LANDSCAPE;  // 4 cols (reduced from 5)
+    columns = GRID_COLUMNS.TABLET_LANDSCAPE; // 4 cols (reduced from 5)
   } else if (screenWidth >= BREAKPOINTS.TABLET_PORTRAIT) {
-    columns = GRID_COLUMNS.TABLET_PORTRAIT;  // 3 cols
+    columns = GRID_COLUMNS.TABLET_PORTRAIT; // 3 cols
   } else if (screenWidth >= BREAKPOINTS.MOBILE_LANDSCAPE) {
-    columns = GRID_COLUMNS.MOBILE_LANDSCAPE;  // 2 cols
+    columns = GRID_COLUMNS.MOBILE_LANDSCAPE; // 2 cols
   } else {
-    columns = GRID_COLUMNS.MOBILE_PORTRAIT;  // 1 col
+    columns = GRID_COLUMNS.MOBILE_PORTRAIT; // 1 col
   }
-  
+
   return columns;
 }
 
@@ -147,8 +147,5 @@ export function shouldUsePagination(screenWidth: number): boolean {
  * Validate widget expiration timeout
  */
 export function validateExpirationTimeout(timeoutMs: number): number {
-  return Math.max(
-    LIFECYCLE.MIN_EXPIRATION_MS,
-    Math.min(timeoutMs, LIFECYCLE.MAX_EXPIRATION_MS)
-  );
+  return Math.max(LIFECYCLE.MIN_EXPIRATION_MS, Math.min(timeoutMs, LIFECYCLE.MAX_EXPIRATION_MS));
 }

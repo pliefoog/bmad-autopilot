@@ -1,7 +1,7 @@
 /**
  * Glove Mode Settings Component
  * Story 4.4 AC15: Toggle glove mode for marine environments
- * 
+ *
  * Provides a settings toggle for glove mode which:
  * - Increases touch targets by 12px
  * - Extends gesture timeouts and tolerances
@@ -35,14 +35,16 @@ export const GloveModeSettings: React.FC = () => {
             Enhanced touch targets and gesture tolerances for wearing gloves at sea
           </Text>
         </View>
-        <ThemedSwitch
-          value={gloveMode}
-          onValueChange={handleToggle}
-        />
+        <ThemedSwitch value={gloveMode} onValueChange={handleToggle} />
       </View>
-      
+
       {gloveMode && (
-        <View style={[styles.activeIndicator, { backgroundColor: theme.success + '20', borderColor: theme.success }]}>
+        <View
+          style={[
+            styles.activeIndicator,
+            { backgroundColor: theme.success + '20', borderColor: theme.success },
+          ]}
+        >
           <Text style={[styles.activeText, { color: theme.success }]}>
             ✓ Glove mode active • Touch targets increased • Gesture timeouts extended
           </Text>

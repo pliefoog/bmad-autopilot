@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeColors } from '../../theme';
 
@@ -42,45 +36,46 @@ export default function AlarmConfigDialog({ visible, onClose }: AlarmConfigDialo
   );
 }
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    backgroundColor: theme.overlay,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  headerButtonText: {
-    fontSize: 17,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  message: {
-    fontSize: 16,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    dragHandle: {
+      width: 36,
+      height: 5,
+      backgroundColor: theme.overlay,
+      borderRadius: 3,
+      alignSelf: 'center',
+      marginTop: 5,
+      marginBottom: 5,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+    },
+    headerButton: {
+      padding: 8,
+      minWidth: 60,
+    },
+    headerButtonText: {
+      fontSize: 17,
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    message: {
+      fontSize: 16,
+    },
+  });

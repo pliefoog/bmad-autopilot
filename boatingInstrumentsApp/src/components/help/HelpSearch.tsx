@@ -1,6 +1,6 @@
 /**
  * HelpSearch - Searchable help content interface
- * 
+ *
  * Features:
  * - Real-time search with debouncing
  * - Search result highlighting
@@ -91,7 +91,7 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({
         )}
       </TouchableOpacity>
     ),
-    [colors, onResultSelect]
+    [colors, onResultSelect],
   );
 
   const renderEmpty = useCallback(() => {
@@ -114,9 +114,7 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({
 
     return (
       <View style={styles.emptyState}>
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>
-          No Results Found
-        </Text>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>No Results Found</Text>
         <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
           Try different keywords or browse by category
         </Text>
@@ -127,7 +125,9 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({
   return (
     <View style={styles.container}>
       {/* Search input */}
-      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View
+        style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      >
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
@@ -157,13 +157,9 @@ export const HelpSearch: React.FC<HelpSearchProps> = ({
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Searching...
-          </Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Searching...</Text>
         </View>
       )}
-
-      {/* Results */}
       {!loading && (
         <FlatList
           data={results}

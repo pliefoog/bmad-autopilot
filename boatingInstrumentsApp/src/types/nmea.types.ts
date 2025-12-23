@@ -10,25 +10,25 @@ export interface NmeaData {
   longitude?: number;
   altitude?: number;
   heading?: number;
-  speed?: number;  // Speed over ground in knots
+  speed?: number; // Speed over ground in knots
   course?: number; // Course over ground in degrees
 
   // GPS Quality and Status
   satellites?: number;
-  hdop?: number;    // Horizontal dilution of precision
+  hdop?: number; // Horizontal dilution of precision
   fixType?: number; // 0=no fix, 1=GPS, 2=DGPS, 3=PPS
   timestamp?: number;
 
   // Wind Data
-  windSpeed?: number;     // True wind speed in knots
+  windSpeed?: number; // True wind speed in knots
   windDirection?: number; // True wind direction in degrees
-  apparentWindSpeed?: number;     // Apparent wind speed in knots
+  apparentWindSpeed?: number; // Apparent wind speed in knots
   apparentWindDirection?: number; // Apparent wind direction in degrees
 
   // Water and Navigation
-  depth?: number;        // Depth in meters
+  depth?: number; // Depth in meters
   waterTemperature?: number; // Water temperature in Celsius
-  waterSpeed?: number;   // Speed through water in knots
+  waterSpeed?: number; // Speed through water in knots
 
   // Engine Data
   engineRpm?: number;
@@ -93,7 +93,7 @@ export interface RMCData {
   status: 'A' | 'V'; // A=Active, V=Void
   latitude: number | null;
   longitude: number | null;
-  speed: number;  // Speed over ground in knots
+  speed: number; // Speed over ground in knots
   course: number; // Course over ground in degrees
   date: string;
   magneticVariation?: number;
@@ -157,22 +157,49 @@ export interface NmeaDataQuality {
 /**
  * NMEA message types and talker IDs
  */
-export type NmeaMessageType = 
-  | 'GGA' | 'GSA' | 'GSV' | 'RMC' | 'VTG' | 'GLL'  // GPS
-  | 'VWR' | 'VWT' | 'MWV' | 'MWD'                   // Wind
-  | 'DPT' | 'DBT' | 'MTW'                           // Depth/Water
-  | 'HDG' | 'HDT' | 'HDM'                           // Heading
-  | 'RPM' | 'RSA'                                   // Engine/Rudder
-  | 'MDA' | 'MMB'                                   // Meteorological
-  | 'APB' | 'BWC' | 'BWR' | 'WPL'                   // Autopilot/Waypoint
-  | 'VDR' | 'VLW' | 'VPW';                          // Miscellaneous
+export type NmeaMessageType =
+  | 'GGA'
+  | 'GSA'
+  | 'GSV'
+  | 'RMC'
+  | 'VTG'
+  | 'GLL' // GPS
+  | 'VWR'
+  | 'VWT'
+  | 'MWV'
+  | 'MWD' // Wind
+  | 'DPT'
+  | 'DBT'
+  | 'MTW' // Depth/Water
+  | 'HDG'
+  | 'HDT'
+  | 'HDM' // Heading
+  | 'RPM'
+  | 'RSA' // Engine/Rudder
+  | 'MDA'
+  | 'MMB' // Meteorological
+  | 'APB'
+  | 'BWC'
+  | 'BWR'
+  | 'WPL' // Autopilot/Waypoint
+  | 'VDR'
+  | 'VLW'
+  | 'VPW'; // Miscellaneous
 
-export type NmeaTalkerId = 
-  | 'GP' | 'GL' | 'GA' | 'GB' | 'GN'  // GNSS
-  | 'II' | 'IN'                       // Integrated Instrumentation
-  | 'WI'                              // Weather Instruments
-  | 'YX' | 'ST' | 'TR'               // Transducers
-  | 'AP' | 'AG';                      // Autopilot
+export type NmeaTalkerId =
+  | 'GP'
+  | 'GL'
+  | 'GA'
+  | 'GB'
+  | 'GN' // GNSS
+  | 'II'
+  | 'IN' // Integrated Instrumentation
+  | 'WI' // Weather Instruments
+  | 'YX'
+  | 'ST'
+  | 'TR' // Transducers
+  | 'AP'
+  | 'AG'; // Autopilot
 
 /**
  * NMEA validation and error types
@@ -244,26 +271,26 @@ export interface NMEADataState {
   longitude?: number;
   cog?: number; // Course over ground
 
-  // Environmental data  
+  // Environmental data
   apparentWindAngle?: number;
   apparentWindSpeed?: number;
   trueWindAngle?: number;
   trueWindSpeed?: number;
   waterTemperature?: number;
-  
+
   // Electrical systems
   batteryVoltage?: number;
-  
+
   // Engine data (multi-engine support)
   engines: {
     [id: string]: EngineData;
   };
-  
+
   // Autopilot data
   autopilotMode?: AutopilotMode;
   targetHeading?: number;
   rudderPosition?: number;
-  
+
   // Timestamps for staleness detection
   timestamps: {
     [key: string]: number;

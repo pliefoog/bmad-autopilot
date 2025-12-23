@@ -1,6 +1,6 @@
 /**
  * useHelpSystem - React Hook for help system integration
- * 
+ *
  * Provides easy access to tutorials, help content, and contextual help
  * throughout the application.
  */
@@ -8,12 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import TutorialManager from '../systems/help/TutorialManager';
 import HelpContentProvider from '../systems/help/HelpContentProvider';
-import {
-  Tutorial,
-  TutorialProgress,
-  HelpContent,
-  HelpSearchResult,
-} from '../systems/help/types';
+import { Tutorial, TutorialProgress, HelpContent, HelpSearchResult } from '../systems/help/types';
 
 export interface UseHelpSystemReturn {
   // Tutorial functions
@@ -24,12 +19,12 @@ export interface UseHelpSystemReturn {
   getTutorialProgress: (tutorialId: string) => TutorialProgress | undefined;
   isTutorialCompleted: (tutorialId: string) => boolean;
   getRecommendedTutorial: () => Tutorial | null;
-  
+
   // Help content functions
   getHelpContent: (contentId: string, language?: string) => Promise<HelpContent | null>;
   searchHelpContent: (query: string, limit?: number) => Promise<HelpSearchResult[]>;
   updateHelpContent: () => Promise<boolean>;
-  
+
   // State
   isInitialized: boolean;
   currentTutorial: string | null;
@@ -123,14 +118,14 @@ export function useHelpSystem(): UseHelpSystemReturn {
     async (contentId: string, language?: string): Promise<HelpContent | null> => {
       return await HelpContentProvider.getHelpContent(contentId, language);
     },
-    []
+    [],
   );
 
   const searchHelpContent = useCallback(
     async (query: string, limit?: number): Promise<HelpSearchResult[]> => {
       return await HelpContentProvider.searchHelpContent(query, limit);
     },
-    []
+    [],
   );
 
   const updateHelpContent = useCallback(async (): Promise<boolean> => {
@@ -146,12 +141,12 @@ export function useHelpSystem(): UseHelpSystemReturn {
     getTutorialProgress,
     isTutorialCompleted,
     getRecommendedTutorial,
-    
+
     // Help content functions
     getHelpContent,
     searchHelpContent,
     updateHelpContent,
-    
+
     // State
     isInitialized,
     currentTutorial,

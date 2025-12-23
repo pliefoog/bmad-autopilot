@@ -1,11 +1,11 @@
 /**
  * Real-Time Marine Coverage Reporter for VS Code Test Explorer Integration
- * 
+ *
  * PURPOSE: Provide real-time coverage visualization with marine safety focus areas
  * REQUIREMENT: AC-11.7.2 - Real-Time Coverage Visualization with marine safety thresholds
  * METHOD: Custom Jest coverage reporter with <100ms latency and marine domain highlighting
  * EXPECTED: Real-time coverage updates in VS Code with 85% widgets, 80% services, 90% integration thresholds
- * 
+ *
  * Integration with Epic 11 Professional-Grade Testing Architecture:
  * - Story 11.6: Coverage and Performance Thresholds
  * - Story 11.7: VS Code Test Explorer Integration
@@ -22,41 +22,41 @@ class RealTimeMarineCoverageReporter {
     this.startTime = performance.now();
     this.updateInterval = options.updateInterval || 50; // <100ms requirement with buffer
     this.lastUpdate = 0;
-    
+
     // AC2.1: Marine safety focus areas with specific thresholds
     this.marineThresholds = {
       widgets: {
         pattern: './src/widgets/**/*.{js,jsx,ts,tsx}',
         threshold: 85,
-        domain: 'Marine UI Components'
+        domain: 'Marine UI Components',
       },
       services: {
         pattern: './src/services/**/*.{js,jsx,ts,tsx}',
         threshold: 80,
-        domain: 'NMEA Services & State Management'
+        domain: 'NMEA Services & State Management',
       },
       integration: {
         pattern: './server/lib/**/*.js',
         threshold: 90,
-        domain: 'End-to-End Marine Workflows'
+        domain: 'End-to-End Marine Workflows',
       },
       safetyCritical: {
         navigation: {
           pattern: './src/widgets/navigation/**/*.{js,jsx,ts,tsx}',
           threshold: 95,
-          domain: 'Navigation Safety'
+          domain: 'Navigation Safety',
         },
         autopilot: {
           pattern: './src/widgets/autopilot/**/*.{js,jsx,ts,tsx}',
           threshold: 95,
-          domain: 'Autopilot Safety'
+          domain: 'Autopilot Safety',
         },
         nmea: {
           pattern: './src/services/nmea/**/*.{js,jsx,ts,tsx}',
           threshold: 95,
-          domain: 'NMEA Safety Critical'
-        }
-      }
+          domain: 'NMEA Safety Critical',
+        },
+      },
     };
 
     this.coverageGaps = new Map();
@@ -64,7 +64,7 @@ class RealTimeMarineCoverageReporter {
       lastUpdate: null,
       updateLatency: [],
       coverageByDomain: {},
-      thresholdViolations: []
+      thresholdViolations: [],
     };
   }
 
@@ -73,7 +73,7 @@ class RealTimeMarineCoverageReporter {
    */
   async updateRealTimeCoverage(coverageMap) {
     const updateStart = performance.now();
-    
+
     try {
       // Check if enough time has passed for update (throttling for performance)
       const now = performance.now();
@@ -83,21 +83,21 @@ class RealTimeMarineCoverageReporter {
 
       const coverageData = await this.processCoverageMap(coverageMap);
       const gapAnalysis = await this.identifyCoverageGaps(coverageData);
-      
+
       // AC2.3: Generate VS Code compatible coverage overlay data
       const vscodeOverlay = {
         metadata: {
           timestamp: new Date().toISOString(),
           updateLatency: performance.now() - updateStart,
-          marineThresholds: this.marineThresholds
+          marineThresholds: this.marineThresholds,
         },
         coverage: coverageData,
         gaps: gapAnalysis,
-        thresholdStatus: this.evaluateThresholds(coverageData)
+        thresholdStatus: this.evaluateThresholds(coverageData),
       };
 
       await this.saveRealTimeData(vscodeOverlay);
-      
+
       // Track update latency for AC2.4 validation
       const latency = performance.now() - updateStart;
       if (!this.realTimeData.updateLatency) {
@@ -110,7 +110,6 @@ class RealTimeMarineCoverageReporter {
       if (latency > 100) {
         console.warn(`⚠️ Coverage update latency exceeded 100ms: ${latency.toFixed(2)}ms`);
       }
-
     } catch (error) {
       console.error('Real-time coverage update failed:', error);
     }
@@ -126,7 +125,7 @@ class RealTimeMarineCoverageReporter {
       integration: { files: [], coverage: { lines: 0, branches: 0, functions: 0, statements: 0 } },
       navigation: { files: [], coverage: { lines: 0, branches: 0, functions: 0, statements: 0 } },
       autopilot: { files: [], coverage: { lines: 0, branches: 0, functions: 0, statements: 0 } },
-      nmea: { files: [], coverage: { lines: 0, branches: 0, functions: 0, statements: 0 } }
+      nmea: { files: [], coverage: { lines: 0, branches: 0, functions: 0, statements: 0 } },
     };
 
     for (const [filePath, fileCoverage] of coverageMap.files) {
@@ -138,10 +137,10 @@ class RealTimeMarineCoverageReporter {
     }
 
     // Calculate percentages for each domain
-    Object.keys(domainCoverage).forEach(domain => {
+    Object.keys(domainCoverage).forEach((domain) => {
       const coverage = domainCoverage[domain].coverage;
       const fileCount = domainCoverage[domain].files.length;
-      
+
       if (fileCount > 0) {
         coverage.linesPercent = this.calculatePercentage(coverage.lines);
         coverage.branchesPercent = this.calculatePercentage(coverage.branches);
@@ -175,7 +174,7 @@ class RealTimeMarineCoverageReporter {
     // Aggregate line coverage
     if (fileCoverage.getLineCoverage) {
       const lineCoverage = fileCoverage.getLineCoverage();
-      Object.values(lineCoverage).forEach(linesCovered => {
+      Object.values(lineCoverage).forEach((linesCovered) => {
         domainCoverage.lines += linesCovered > 0 ? 1 : 0;
       });
     }
@@ -183,7 +182,7 @@ class RealTimeMarineCoverageReporter {
     // Aggregate branch coverage
     if (fileCoverage.getBranchCoverage) {
       const branchCoverage = fileCoverage.getBranchCoverage();
-      Object.values(branchCoverage).forEach(branchesCovered => {
+      Object.values(branchCoverage).forEach((branchesCovered) => {
         domainCoverage.branches += branchesCovered > 0 ? 1 : 0;
       });
     }
@@ -191,7 +190,7 @@ class RealTimeMarineCoverageReporter {
     // Aggregate function coverage
     if (fileCoverage.getFunctionCoverage) {
       const functionCoverage = fileCoverage.getFunctionCoverage();
-      Object.values(functionCoverage).forEach(functionsCovered => {
+      Object.values(functionCoverage).forEach((functionsCovered) => {
         domainCoverage.functions += functionsCovered > 0 ? 1 : 0;
       });
     }
@@ -199,7 +198,7 @@ class RealTimeMarineCoverageReporter {
     // Aggregate statement coverage
     if (fileCoverage.getStatementCoverage) {
       const statementCoverage = fileCoverage.getStatementCoverage();
-      Object.values(statementCoverage).forEach(statementsCovered => {
+      Object.values(statementCoverage).forEach((statementsCovered) => {
         domainCoverage.statements += statementsCovered > 0 ? 1 : 0;
       });
     }
@@ -214,37 +213,47 @@ class RealTimeMarineCoverageReporter {
       engine: [],
       environment: [],
       autopilot: [],
-      criticalGaps: []
+      criticalGaps: [],
     };
 
     // Check navigation domain gaps
-    if (coverageData.navigation.coverage.linesPercent < this.marineThresholds.safetyCritical.navigation.threshold) {
+    if (
+      coverageData.navigation.coverage.linesPercent <
+      this.marineThresholds.safetyCritical.navigation.threshold
+    ) {
       gaps.navigation.push({
         domain: 'Navigation',
         currentCoverage: coverageData.navigation.coverage.linesPercent,
         threshold: this.marineThresholds.safetyCritical.navigation.threshold,
-        gap: this.marineThresholds.safetyCritical.navigation.threshold - coverageData.navigation.coverage.linesPercent,
+        gap:
+          this.marineThresholds.safetyCritical.navigation.threshold -
+          coverageData.navigation.coverage.linesPercent,
         files: coverageData.navigation.files,
-        severity: 'high' // Navigation is safety-critical
+        severity: 'high', // Navigation is safety-critical
       });
     }
 
     // Check autopilot domain gaps
-    if (coverageData.autopilot.coverage.linesPercent < this.marineThresholds.safetyCritical.autopilot.threshold) {
+    if (
+      coverageData.autopilot.coverage.linesPercent <
+      this.marineThresholds.safetyCritical.autopilot.threshold
+    ) {
       gaps.autopilot.push({
         domain: 'Autopilot',
         currentCoverage: coverageData.autopilot.coverage.linesPercent,
         threshold: this.marineThresholds.safetyCritical.autopilot.threshold,
-        gap: this.marineThresholds.safetyCritical.autopilot.threshold - coverageData.autopilot.coverage.linesPercent,
+        gap:
+          this.marineThresholds.safetyCritical.autopilot.threshold -
+          coverageData.autopilot.coverage.linesPercent,
         files: coverageData.autopilot.files,
-        severity: 'critical' // Autopilot is safety-critical
+        severity: 'critical', // Autopilot is safety-critical
       });
     }
 
     // Identify critical gaps (safety-critical domains below 90%)
-    Object.keys(gaps).forEach(domain => {
+    Object.keys(gaps).forEach((domain) => {
       if (gaps[domain].length > 0) {
-        gaps[domain].forEach(gap => {
+        gaps[domain].forEach((gap) => {
           if (gap.severity === 'critical' || gap.currentCoverage < 90) {
             gaps.criticalGaps.push(gap);
           }
@@ -264,12 +273,18 @@ class RealTimeMarineCoverageReporter {
       services: this.checkThreshold(coverageData.services, this.marineThresholds.services),
       integration: this.checkThreshold(coverageData.integration, this.marineThresholds.integration),
       safetyCritical: {
-        navigation: this.checkThreshold(coverageData.navigation, this.marineThresholds.safetyCritical.navigation),
-        autopilot: this.checkThreshold(coverageData.autopilot, this.marineThresholds.safetyCritical.autopilot),
-        nmea: this.checkThreshold(coverageData.nmea, this.marineThresholds.safetyCritical.nmea)
+        navigation: this.checkThreshold(
+          coverageData.navigation,
+          this.marineThresholds.safetyCritical.navigation,
+        ),
+        autopilot: this.checkThreshold(
+          coverageData.autopilot,
+          this.marineThresholds.safetyCritical.autopilot,
+        ),
+        nmea: this.checkThreshold(coverageData.nmea, this.marineThresholds.safetyCritical.nmea),
       },
       overallStatus: 'pass',
-      violations: []
+      violations: [],
     };
 
     // Collect all violations
@@ -279,10 +294,10 @@ class RealTimeMarineCoverageReporter {
       thresholdStatus.integration,
       thresholdStatus.safetyCritical.navigation,
       thresholdStatus.safetyCritical.autopilot,
-      thresholdStatus.safetyCritical.nmea
+      thresholdStatus.safetyCritical.nmea,
     ];
 
-    allChecks.forEach(check => {
+    allChecks.forEach((check) => {
       if (check.status === 'fail') {
         thresholdStatus.violations.push(check);
         thresholdStatus.overallStatus = 'fail';
@@ -302,7 +317,7 @@ class RealTimeMarineCoverageReporter {
       return {
         domain: threshold.domain,
         status: 'unknown',
-        message: 'No coverage data available'
+        message: 'No coverage data available',
       };
     }
 
@@ -315,7 +330,7 @@ class RealTimeMarineCoverageReporter {
         status: 'pass',
         coverage,
         required,
-        message: `✅ Coverage meets threshold (${coverage.toFixed(1)}% >= ${required}%)`
+        message: `✅ Coverage meets threshold (${coverage.toFixed(1)}% >= ${required}%)`,
       };
     } else if (coverage >= required - 5) {
       return {
@@ -324,7 +339,7 @@ class RealTimeMarineCoverageReporter {
         coverage,
         required,
         gap: required - coverage,
-        message: `⚠️ Coverage below threshold (${coverage.toFixed(1)}% < ${required}%)`
+        message: `⚠️ Coverage below threshold (${coverage.toFixed(1)}% < ${required}%)`,
       };
     } else {
       return {
@@ -333,7 +348,9 @@ class RealTimeMarineCoverageReporter {
         coverage,
         required,
         gap: required - coverage,
-        message: `❌ Coverage significantly below threshold (${coverage.toFixed(1)}% < ${required}%)`
+        message: `❌ Coverage significantly below threshold (${coverage.toFixed(
+          1,
+        )}% < ${required}%)`,
       };
     }
   }
@@ -343,11 +360,11 @@ class RealTimeMarineCoverageReporter {
    */
   calculatePercentage(coverage) {
     if (!coverage || typeof coverage !== 'object') return 0;
-    
+
     const total = Object.keys(coverage).length;
     if (total === 0) return 0;
-    
-    const covered = Object.values(coverage).filter(v => v > 0).length;
+
+    const covered = Object.values(coverage).filter((v) => v > 0).length;
     return (covered / total) * 100;
   }
 
@@ -355,16 +372,19 @@ class RealTimeMarineCoverageReporter {
    * AC2.12: Save real-time data for VS Code Test Explorer consumption
    */
   async saveRealTimeData(vscodeOverlay) {
-    const outputPath = path.join(this.globalConfig.rootDir, 'coverage', 'vscode-coverage-overlay.json');
-    
+    const outputPath = path.join(
+      this.globalConfig.rootDir,
+      'coverage',
+      'vscode-coverage-overlay.json',
+    );
+
     try {
       await this.ensureDirectoryExists(path.dirname(outputPath));
       fs.writeFileSync(outputPath, JSON.stringify(vscodeOverlay, null, 2));
-      
+
       // Also create a timestamp file for VS Code to detect updates
       const timestampPath = path.join(this.globalConfig.rootDir, 'coverage', '.coverage-timestamp');
       fs.writeFileSync(timestampPath, Date.now().toString());
-      
     } catch (error) {
       console.error('Failed to save real-time coverage data:', error);
     }
@@ -384,21 +404,22 @@ class RealTimeMarineCoverageReporter {
     try {
       console.log('📊 Real-Time Marine Coverage Report Summary:');
       console.log(`   Update Count: ${this.realTimeData.updateLatency.length}`);
-      
+
       if (this.realTimeData.updateLatency.length > 0) {
-        const avgLatency = this.realTimeData.updateLatency.reduce((a, b) => a + b) / this.realTimeData.updateLatency.length;
+        const avgLatency =
+          this.realTimeData.updateLatency.reduce((a, b) => a + b) /
+          this.realTimeData.updateLatency.length;
         const maxLatency = Math.max(...this.realTimeData.updateLatency);
-        
+
         console.log(`   Average Update Latency: ${avgLatency.toFixed(2)}ms`);
         console.log(`   Maximum Update Latency: ${maxLatency.toFixed(2)}ms`);
-        
+
         if (maxLatency > 100) {
           console.warn(`   ⚠️ Maximum latency exceeded 100ms requirement`);
         } else {
           console.log(`   ✅ All updates met <100ms latency requirement`);
         }
       }
-      
     } catch (error) {
       console.error('Real-Time Marine Coverage Reporter error:', error);
     }

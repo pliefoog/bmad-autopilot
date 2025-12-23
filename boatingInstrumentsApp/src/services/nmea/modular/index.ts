@@ -1,6 +1,6 @@
 /**
  * Modular NMEA Processing Architecture
- * 
+ *
  * Clean, maintainable NMEA processing with separated concerns:
  * - Connection management (protocol-agnostic)
  * - NMEA parsing (pure functions)
@@ -15,7 +15,11 @@ export type { NmeaServiceConfig, NmeaServiceStatus, ProcessingMetrics } from '..
 
 // Core components (for advanced usage)
 export { PureConnectionManager } from '../connection/PureConnectionManager';
-export type { ConnectionConfig, ConnectionStatus, ConnectionEvents } from '../connection/PureConnectionManager';
+export type {
+  ConnectionConfig,
+  ConnectionStatus,
+  ConnectionEvents,
+} from '../connection/PureConnectionManager';
 
 export { PureNmeaParser, pureNmeaParser } from '../parsing/PureNmeaParser';
 export type { ParsedNmeaMessage, ParsingResult } from '../parsing/PureNmeaParser';
@@ -32,7 +36,7 @@ export const createNmeaService = (config: import('../NmeaService').NmeaServiceCo
     start: () => service.start(config),
     stop: () => service.stop(),
     getStatus: () => service.getStatus(),
-    isRunning: () => service.isServiceRunning()
+    isRunning: () => service.isServiceRunning(),
   };
 };
 

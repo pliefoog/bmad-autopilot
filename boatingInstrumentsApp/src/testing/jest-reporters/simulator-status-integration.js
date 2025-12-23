@@ -1,11 +1,11 @@
 /**
  * Simulator Status Integration for VS Code Test Explorer
- * 
+ *
  * PURPOSE: Integrate NMEA Bridge Simulator connection status with VS Code Test Explorer UI
  * REQUIREMENT: AC-11.7.3 - Simulator Connection Status display with auto-discovery and fallback modes
  * METHOD: SimulatorTestClient integration with VS Code Test Explorer status reporting
  * EXPECTED: Real-time simulator status in VS Code Test Explorer with connection health monitoring
- * 
+ *
  * Integration with Epic 11 Professional-Grade Testing Architecture:
  * - Story 11.3: Automatic Simulator Discovery
  * - Story 11.7: VS Code Test Explorer Integration
@@ -36,15 +36,15 @@ class SimulatorStatusIntegration {
       lastCheck: null,
       retryAttempts: 0,
       fallbackMode: false,
-      connectionHistory: []
+      connectionHistory: [],
     };
-    
+
     // AC3.1: Auto-discovery configuration for ports [9090, 8080]
     this.discoveryPorts = options.discoveryPorts || [9090, 8080];
     this.discoveryTimeout = options.discoveryTimeout || 5000;
     this.healthCheckInterval = options.healthCheckInterval || 10000; // 10 seconds
     this.maxRetryAttempts = options.maxRetryAttempts || 5;
-    
+
     this.statusMonitor = null;
   }
 
@@ -54,16 +54,15 @@ class SimulatorStatusIntegration {
   async initializeSimulatorMonitoring() {
     try {
       console.log('🔍 Initializing NMEA Bridge Simulator monitoring for VS Code Test Explorer...');
-      
+
       // AC3.3: Attempt auto-discovery on configured ports
       await this.performAutoDiscovery();
-      
+
       // AC3.4: Start continuous health monitoring
       this.startHealthMonitoring();
-      
+
       // AC3.5: Generate initial VS Code Test Explorer status
       await this.updateVSCodeTestExplorerStatus();
-      
     } catch (error) {
       console.error('Simulator monitoring initialization failed:', error);
       await this.activateFallbackMode('Initialization failed');
@@ -77,43 +76,45 @@ class SimulatorStatusIntegration {
     const discoveryStart = performance.now();
     let discoverySuccess = false;
 
-    console.log(`🔄 Auto-discovering NMEA Bridge Simulator on ports: ${this.discoveryPorts.join(', ')}`);
+    console.log(
+      `🔄 Auto-discovering NMEA Bridge Simulator on ports: ${this.discoveryPorts.join(', ')}`,
+    );
 
     for (const port of this.discoveryPorts) {
       const attemptStart = performance.now();
-      
+
       try {
         console.log(`   Checking port ${port}...`);
-        
+
         const connectionAttempt = {
           port,
           timestamp: new Date().toISOString(),
           duration: null,
           success: false,
-          error: null
+          error: null,
         };
-        
+
         // AC3.7: Use existing SimulatorTestClient for connection
         if (SimulatorTestClient) {
           this.simulatorClient = await SimulatorTestClient.autoConnect({
             ports: [port],
             timeout: this.discoveryTimeout,
-            retries: 1
+            retries: 1,
           });
-          
-          if (this.simulatorClient && await this.simulatorClient.isConnected()) {
+
+          if (this.simulatorClient && (await this.simulatorClient.isConnected())) {
             connectionAttempt.success = true;
             connectionAttempt.duration = performance.now() - attemptStart;
-            
+
             this.connectionStatus = {
               isConnected: true,
               port,
               lastCheck: new Date().toISOString(),
               retryAttempts: 0,
               fallbackMode: false,
-              connectionHistory: [...this.connectionStatus.connectionHistory, connectionAttempt]
+              connectionHistory: [...this.connectionStatus.connectionHistory, connectionAttempt],
             };
-            
+
             discoverySuccess = true;
             console.log(`   ✅ Connected to NMEA Bridge Simulator on port ${port}`);
             break;
@@ -124,7 +125,6 @@ class SimulatorStatusIntegration {
           discoverySuccess = true;
           break;
         }
-        
       } catch (error) {
         console.log(`   ❌ Port ${port} unavailable: ${error.message}`);
         this.connectionStatus.connectionHistory.push({
@@ -132,7 +132,7 @@ class SimulatorStatusIntegration {
           timestamp: new Date().toISOString(),
           duration: performance.now() - attemptStart,
           success: false,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -152,7 +152,7 @@ class SimulatorStatusIntegration {
    */
   async simulateMockConnection(port) {
     console.log(`   🎭 Using mock simulator connection on port ${port}`);
-    
+
     this.connectionStatus = {
       isConnected: true,
       port,
@@ -160,13 +160,16 @@ class SimulatorStatusIntegration {
       retryAttempts: 0,
       fallbackMode: true,
       mockMode: true,
-      connectionHistory: [...this.connectionStatus.connectionHistory, {
-        port,
-        timestamp: new Date().toISOString(),
-        duration: 50, // Simulated fast connection
-        success: true,
-        mockMode: true
-      }]
+      connectionHistory: [
+        ...this.connectionStatus.connectionHistory,
+        {
+          port,
+          timestamp: new Date().toISOString(),
+          duration: 50, // Simulated fast connection
+          success: true,
+          mockMode: true,
+        },
+      ],
     };
   }
 
@@ -183,7 +186,9 @@ class SimulatorStatusIntegration {
       await this.updateVSCodeTestExplorerStatus();
     }, this.healthCheckInterval);
 
-    console.log(`❤️ Simulator health monitoring started (${this.healthCheckInterval / 1000}s interval)`);
+    console.log(
+      `❤️ Simulator health monitoring started (${this.healthCheckInterval / 1000}s interval)`,
+    );
   }
 
   /**
@@ -191,11 +196,11 @@ class SimulatorStatusIntegration {
    */
   async performHealthCheck() {
     const checkStart = performance.now();
-    
+
     try {
       if (this.simulatorClient && !this.connectionStatus.fallbackMode) {
         const isHealthy = await this.simulatorClient.healthCheck();
-        
+
         if (isHealthy) {
           this.connectionStatus.lastCheck = new Date().toISOString();
           this.connectionStatus.retryAttempts = 0;
@@ -206,11 +211,10 @@ class SimulatorStatusIntegration {
         // Mock health check always passes
         this.connectionStatus.lastCheck = new Date().toISOString();
       }
-      
     } catch (error) {
       await this.handleConnectionFailure(error.message);
     }
-    
+
     const checkDuration = performance.now() - checkStart;
     console.log(`🔍 Health check completed in ${checkDuration.toFixed(2)}ms`);
   }
@@ -220,9 +224,11 @@ class SimulatorStatusIntegration {
    */
   async handleConnectionFailure(reason) {
     this.connectionStatus.retryAttempts++;
-    
-    console.log(`⚠️ Simulator connection issue (attempt ${this.connectionStatus.retryAttempts}/${this.maxRetryAttempts}): ${reason}`);
-    
+
+    console.log(
+      `⚠️ Simulator connection issue (attempt ${this.connectionStatus.retryAttempts}/${this.maxRetryAttempts}): ${reason}`,
+    );
+
     if (this.connectionStatus.retryAttempts >= this.maxRetryAttempts) {
       await this.activateFallbackMode(`Max retry attempts reached: ${reason}`);
     } else {
@@ -238,13 +244,13 @@ class SimulatorStatusIntegration {
    */
   async activateFallbackMode(reason) {
     console.log(`🔄 Activating fallback mode: ${reason}`);
-    
+
     this.connectionStatus = {
       ...this.connectionStatus,
       isConnected: false,
       fallbackMode: true,
       fallbackReason: reason,
-      fallbackActivatedAt: new Date().toISOString()
+      fallbackActivatedAt: new Date().toISOString(),
     };
 
     await this.updateVSCodeTestExplorerStatus();
@@ -257,19 +263,19 @@ class SimulatorStatusIntegration {
     const statusData = {
       metadata: {
         timestamp: new Date().toISOString(),
-        source: 'SimulatorStatusIntegration'
+        source: 'SimulatorStatusIntegration',
       },
       simulator: {
         status: this.getSimulatorStatus(),
         connection: this.connectionStatus,
         capabilities: await this.getSimulatorCapabilities(),
-        recommendations: this.generateRecommendations()
+        recommendations: this.generateRecommendations(),
       },
       testEnvironment: {
         mode: this.connectionStatus.fallbackMode ? 'mock' : 'live',
         readiness: this.assessTestReadiness(),
-        warnings: this.generateWarnings()
-      }
+        warnings: this.generateWarnings(),
+      },
     };
 
     // AC3.14: Save status for VS Code Test Explorer consumption
@@ -280,12 +286,19 @@ class SimulatorStatusIntegration {
     // AC3.15: Create status indicator file for VS Code extensions
     const indicatorPath = path.join(this.globalConfig.rootDir, '.vscode', 'simulator-status.json');
     await this.ensureDirectoryExists(path.dirname(indicatorPath));
-    fs.writeFileSync(indicatorPath, JSON.stringify({
-      connected: this.connectionStatus.isConnected,
-      port: this.connectionStatus.port,
-      mode: this.connectionStatus.fallbackMode ? 'mock' : 'live',
-      lastUpdate: new Date().toISOString()
-    }, null, 2));
+    fs.writeFileSync(
+      indicatorPath,
+      JSON.stringify(
+        {
+          connected: this.connectionStatus.isConnected,
+          port: this.connectionStatus.port,
+          mode: this.connectionStatus.fallbackMode ? 'mock' : 'live',
+          lastUpdate: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
+    );
 
     console.log(`📊 Simulator status updated for VS Code Test Explorer`);
   }
@@ -297,7 +310,7 @@ class SimulatorStatusIntegration {
     if (this.connectionStatus.fallbackMode) {
       return this.connectionStatus.mockMode ? 'mock' : 'fallback';
     }
-    
+
     return this.connectionStatus.isConnected ? 'connected' : 'disconnected';
   }
 
@@ -310,7 +323,7 @@ class SimulatorStatusIntegration {
         scenarios: ['mock-basic-navigation'],
         protocols: ['NMEA0183-mock'],
         features: ['mock-data-injection'],
-        mode: 'mock'
+        mode: 'mock',
       };
     }
 
@@ -322,7 +335,7 @@ class SimulatorStatusIntegration {
         scenarios: ['unknown'],
         protocols: ['unknown'],
         features: ['unknown'],
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -336,8 +349,9 @@ class SimulatorStatusIntegration {
     if (this.connectionStatus.fallbackMode) {
       recommendations.push({
         type: 'warning',
-        message: 'Running in fallback mode. Start NMEA Bridge Simulator for full testing capabilities.',
-        action: 'Run VS Code task: "Start NMEA Bridge: Scenario - Basic Navigation"'
+        message:
+          'Running in fallback mode. Start NMEA Bridge Simulator for full testing capabilities.',
+        action: 'Run VS Code task: "Start NMEA Bridge: Scenario - Basic Navigation"',
       });
     }
 
@@ -345,7 +359,7 @@ class SimulatorStatusIntegration {
       recommendations.push({
         type: 'info',
         message: `Connection instability detected (${this.connectionStatus.retryAttempts} retry attempts).`,
-        action: 'Check simulator logs and network connectivity'
+        action: 'Check simulator logs and network connectivity',
       });
     }
 
@@ -353,7 +367,7 @@ class SimulatorStatusIntegration {
       recommendations.push({
         type: 'error',
         message: 'No simulator connection available.',
-        action: 'Start NMEA Bridge Simulator or check port availability'
+        action: 'Start NMEA Bridge Simulator or check port availability',
       });
     }
 
@@ -367,7 +381,7 @@ class SimulatorStatusIntegration {
     const readiness = {
       level: 'unknown',
       score: 0,
-      factors: []
+      factors: [],
     };
 
     // Connection factor
@@ -376,23 +390,23 @@ class SimulatorStatusIntegration {
       readiness.factors.push({
         factor: 'connection',
         status: this.connectionStatus.fallbackMode ? 'mock' : 'live',
-        score: this.connectionStatus.fallbackMode ? 60 : 90
+        score: this.connectionStatus.fallbackMode ? 60 : 90,
       });
     } else {
       readiness.factors.push({
         factor: 'connection',
         status: 'disconnected',
-        score: 0
+        score: 0,
       });
     }
 
     // Stability factor
-    const stabilityScore = Math.max(0, 100 - (this.connectionStatus.retryAttempts * 20));
+    const stabilityScore = Math.max(0, 100 - this.connectionStatus.retryAttempts * 20);
     readiness.score = (readiness.score + stabilityScore) / 2;
     readiness.factors.push({
       factor: 'stability',
       status: this.connectionStatus.retryAttempts === 0 ? 'stable' : 'unstable',
-      score: stabilityScore
+      score: stabilityScore,
     });
 
     // Determine readiness level
@@ -414,7 +428,7 @@ class SimulatorStatusIntegration {
       warnings.push({
         type: 'connection',
         severity: 'high',
-        message: `Multiple connection failures (${this.connectionStatus.retryAttempts} attempts)`
+        message: `Multiple connection failures (${this.connectionStatus.retryAttempts} attempts)`,
       });
     }
 
@@ -422,18 +436,19 @@ class SimulatorStatusIntegration {
       warnings.push({
         type: 'capability',
         severity: 'medium',
-        message: 'Limited testing capabilities in fallback mode'
+        message: 'Limited testing capabilities in fallback mode',
       });
     }
 
     const lastCheck = this.connectionStatus.lastCheck;
     if (lastCheck) {
       const timeSinceCheck = Date.now() - new Date(lastCheck).getTime();
-      if (timeSinceCheck > 30000) { // 30 seconds
+      if (timeSinceCheck > 30000) {
+        // 30 seconds
         warnings.push({
           type: 'staleness',
           severity: 'medium',
-          message: `Status data is stale (${Math.round(timeSinceCheck / 1000)}s old)`
+          message: `Status data is stale (${Math.round(timeSinceCheck / 1000)}s old)`,
         });
       }
     }
@@ -456,8 +471,10 @@ class SimulatorStatusIntegration {
     console.log(`   Status: ${this.getSimulatorStatus()}`);
     console.log(`   Port: ${this.connectionStatus.port || 'N/A'}`);
     console.log(`   Retry Attempts: ${this.connectionStatus.retryAttempts}`);
-    console.log(`   Mode: ${this.connectionStatus.fallbackMode ? 'Fallback/Mock' : 'Live Simulator'}`);
-    
+    console.log(
+      `   Mode: ${this.connectionStatus.fallbackMode ? 'Fallback/Mock' : 'Live Simulator'}`,
+    );
+
     // Stop health monitoring
     if (this.statusMonitor) {
       clearInterval(this.statusMonitor);
@@ -485,7 +502,7 @@ class SimulatorStatusIntegration {
     if (this.statusMonitor) {
       clearInterval(this.statusMonitor);
     }
-    
+
     if (this.simulatorClient && typeof this.simulatorClient.disconnect === 'function') {
       this.simulatorClient.disconnect();
     }

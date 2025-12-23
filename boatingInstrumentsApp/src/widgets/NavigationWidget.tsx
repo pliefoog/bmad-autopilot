@@ -24,112 +24,126 @@ interface NavigationWidgetProps {
  * Primary Grid (2×2): Bearing, Distance, XTE, VMG
  * Secondary Grid (2×1): Waypoint info and ETA
  */
-export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ id, title, width, height }) => {
-  const theme = useTheme();
-  const fontSize = useResponsiveFontSize(width || 0, height || 0);
-  
-  const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
-  
-  // Widget state management
-  
-  // NMEA data selectors - navigation sensor
-  const waypointId = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.waypointId);
-  const waypointName = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.waypointName);
-  const bearingToWaypoint = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.bearingToWaypoint);
-  const distanceToWaypoint = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.distanceToWaypoint);
-  const crossTrackError = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.crossTrackError);
-  const velocityMadeGood = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.velocityMadeGood);
-  const steerDirection = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.steerDirection);
-  const timeToWaypoint = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.timeToWaypoint);
-  const navTimestamp = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]?.timestamp);
-  
-  // Use metric display system for navigation metrics
-  const bearingMetric = useMetricDisplay('angle', bearingToWaypoint ?? undefined, 'BRG');
-  const distanceMetric = useMetricDisplay('distance', distanceToWaypoint ?? undefined, 'DIST');
-  const xteMetric = useMetricDisplay('distance', typeof crossTrackError === 'number' ? Math.abs(crossTrackError) : undefined, 'XTE');
-  const vmgMetric = useMetricDisplay('speed', velocityMadeGood ?? undefined, 'VMG');
-  
-  // Format displays for PrimaryMetricCell
-  const bearingDisplay = {
-    mnemonic: bearingMetric.mnemonic || 'BRG',
-    value: bearingMetric.value || '---',
-    unit: bearingMetric.unit || '°'
-  };
-  
-  const distanceDisplay = {
-    mnemonic: distanceMetric.mnemonic || 'DIST',
-    value: distanceMetric.value || '---',
-    unit: distanceMetric.unit || 'nm'
-  };
-  
-  const xteDisplay = {
-    mnemonic: xteMetric.mnemonic || 'XTE',
-    value: xteMetric.value || '---',
-    unit: xteMetric.unit || 'nm'
-  };
-  
-  const vmgDisplay = {
-    mnemonic: vmgMetric.mnemonic || 'VMG',
-    value: vmgMetric.value || '---',
-    unit: vmgMetric.unit || 'kts'
-  };
-  
-  // Format waypoint display
-  const waypointDisplay = useMemo(() => {
-    if (!waypointId) return 'No Waypoint';
-    return waypointName || waypointId;
-  }, [waypointId, waypointName]);
-  
-  // Format ETA
-  const etaDisplay = useMemo(() => {
-    if (typeof timeToWaypoint !== 'number') return '---';
-    const hours = Math.floor(timeToWaypoint / 3600);
-    const minutes = Math.floor((timeToWaypoint % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  }, [timeToWaypoint]);
-  
-  // Data staleness detection
-  const isStale = navTimestamp ? (Date.now() - navTimestamp) > 10000 : true;
-  
-  // Widget header component
-  const headerComponent = (
-    <View style={{
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%',
-      paddingHorizontal: 16,
-    }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <UniversalIcon 
-          name={WidgetMetadataRegistry.getMetadata('navigation')?.icon || 'navigate-outline'} 
-          size={headerIconSize} 
-          color={theme.iconPrimary}
-        />
-        <Text style={{
-          fontSize: headerFontSize,
-          fontWeight: 'bold',
-          letterSpacing: 0.5,
-          color: theme.textSecondary,
-          textTransform: 'uppercase',
-        }}>{title}</Text>
+export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
+  ({ id, title, width, height }) => {
+    const theme = useTheme();
+    const fontSize = useResponsiveFontSize(width || 0, height || 0);
+
+    const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
+
+    // Widget state management
+
+    // NMEA data - Read SensorInstance once, extract metrics
+    const navigationInstance = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]);
+
+    const waypointId = navigationInstance?.getMetric('waypointId')?.si_value;
+    const waypointName = navigationInstance?.getMetric('waypointName')?.si_value;
+    const bearingToWaypointMetric = navigationInstance?.getMetric('bearingToWaypoint');
+    const bearingToWaypoint = bearingToWaypointMetric?.si_value;
+    const distanceToWaypointMetric = navigationInstance?.getMetric('distanceToWaypoint');
+    const distanceToWaypoint = distanceToWaypointMetric?.si_value;
+    const crossTrackErrorMetric = navigationInstance?.getMetric('crossTrackError');
+    const crossTrackError = crossTrackErrorMetric?.si_value;
+    const velocityMadeGood = navigationInstance?.getMetric('velocityMadeGood')?.si_value;
+    const steerDirection = navigationInstance?.getMetric('steerDirection')?.si_value;
+    const timeToWaypoint = navigationInstance?.getMetric('timeToWaypoint')?.si_value;
+    const navTimestamp = navigationInstance?.timestamp;
+
+    // Use metric display system for navigation metrics
+    const bearingMetric = useMetricDisplay('angle', bearingToWaypoint ?? undefined, 'BRG');
+    const distanceMetric = useMetricDisplay('distance', distanceToWaypoint ?? undefined, 'DIST');
+    const xteMetric = useMetricDisplay(
+      'distance',
+      typeof crossTrackError === 'number' ? Math.abs(crossTrackError) : undefined,
+      'XTE',
+    );
+    const vmgMetric = useMetricDisplay('speed', velocityMadeGood ?? undefined, 'VMG');
+
+    // Format displays for PrimaryMetricCell
+    const bearingDisplay = {
+      mnemonic: bearingMetric.mnemonic || 'BRG',
+      value: bearingMetric.value || '---',
+      unit: bearingMetric.unit || '°',
+    };
+
+    const distanceDisplay = {
+      mnemonic: distanceMetric.mnemonic || 'DIST',
+      value: distanceMetric.value || '---',
+      unit: distanceMetric.unit || 'nm',
+    };
+
+    const xteDisplay = {
+      mnemonic: xteMetric.mnemonic || 'XTE',
+      value: xteMetric.value || '---',
+      unit: xteMetric.unit || 'nm',
+    };
+
+    const vmgDisplay = {
+      mnemonic: vmgMetric.mnemonic || 'VMG',
+      value: vmgMetric.value || '---',
+      unit: vmgMetric.unit || 'kts',
+    };
+
+    // Format waypoint display
+    const waypointDisplay = useMemo(() => {
+      if (!waypointId) return 'No Waypoint';
+      return waypointName || waypointId;
+    }, [waypointId, waypointName]);
+
+    // Format ETA
+    const etaDisplay = useMemo(() => {
+      if (typeof timeToWaypoint !== 'number') return '---';
+      const hours = Math.floor(timeToWaypoint / 3600);
+      const minutes = Math.floor((timeToWaypoint % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    }, [timeToWaypoint]);
+
+    // Data staleness detection
+    const isStale = navTimestamp ? Date.now() - navTimestamp > 10000 : true;
+
+    // Widget header component
+    const headerComponent = (
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+          paddingHorizontal: 16,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <UniversalIcon
+            name={WidgetMetadataRegistry.getMetadata('navigation')?.icon || 'navigate-outline'}
+            size={headerIconSize}
+            color={theme.iconPrimary}
+          />
+          <Text
+            style={{
+              fontSize: headerFontSize,
+              fontWeight: 'bold',
+              letterSpacing: 0.5,
+              color: theme.textSecondary,
+              textTransform: 'uppercase',
+            }}
+          >
+            {title}
+          </Text>
+        </View>
       </View>
-      
+    );
 
-    </View>
-  );
-
-  return (
-    <UnifiedWidgetGrid
-      theme={theme}
-      header={headerComponent}
-      widgetWidth={width || 200}
-      widgetHeight={height || 200}
-      primaryRows={2}
-      secondaryRows={2}
-      columns={2}
-      testID={`navigation-widget-${id}`}
-    >
+    return (
+      <UnifiedWidgetGrid
+        theme={theme}
+        header={headerComponent}
+        widgetWidth={width || 200}
+        widgetHeight={height || 200}
+        primaryRows={2}
+        secondaryRows={2}
+        columns={2}
+        testID={`navigation-widget-${id}`}
+      >
         {/* Primary Grid Row 1: Bearing and Distance */}
         <PrimaryMetricCell
           mnemonic={bearingDisplay.mnemonic}
@@ -200,9 +214,10 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
             unit: fontSize.unit,
           }}
         />
-    </UnifiedWidgetGrid>
-  );
-});
+      </UnifiedWidgetGrid>
+    );
+  },
+);
 
 NavigationWidget.displayName = 'NavigationWidget';
 

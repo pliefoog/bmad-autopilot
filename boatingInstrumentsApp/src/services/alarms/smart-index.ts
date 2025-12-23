@@ -5,48 +5,36 @@
 
 // Main orchestrator
 export { SmartAlarmManager } from './SmartAlarmManager';
-export type { 
-  SmartAlarmConfiguration, 
-  ProcessedAlarm, 
-  SmartAlarmStats 
-} from './SmartAlarmManager';
+export type { SmartAlarmConfiguration, ProcessedAlarm, SmartAlarmStats } from './SmartAlarmManager';
 
 // Core components
 export { AlarmGroupingEngine } from './AlarmGroupingEngine';
-export type { 
-  AlarmGroup, 
-  MarineSystemCategory, 
-  GroupingRule 
-} from './AlarmGroupingEngine';
+export type { AlarmGroup, MarineSystemCategory, GroupingRule } from './AlarmGroupingEngine';
 
 export { PriorityQueueManager } from './PriorityQueueManager';
-export type { 
-  PriorityQueueEntry, 
-  VesselContext, 
-  QueueConfiguration 
-} from './PriorityQueueManager';
+export type { PriorityQueueEntry, VesselContext, QueueConfiguration } from './PriorityQueueManager';
 
 export { VesselContextDetector } from './VesselContextDetector';
-export type { 
-  NmeaDataSnapshot, 
-  MovementPattern, 
-  ContextDetectionConfig 
+export type {
+  NmeaDataSnapshot,
+  MovementPattern,
+  ContextDetectionConfig,
 } from './VesselContextDetector';
 
 export { AdaptiveLearningEngine } from './AdaptiveLearningEngine';
-export type { 
-  AlarmInteraction, 
-  LearnedPattern, 
-  ThresholdAdjustment, 
-  LearningConfig 
+export type {
+  AlarmInteraction,
+  LearnedPattern,
+  ThresholdAdjustment,
+  LearningConfig,
 } from './AdaptiveLearningEngine';
 
 export { MaintenanceScheduler } from './MaintenanceScheduler';
-export type { 
-  MaintenanceItem, 
-  MaintenanceAlarm, 
-  EngineUsage, 
-  PredictiveConfig 
+export type {
+  MaintenanceItem,
+  MaintenanceAlarm,
+  EngineUsage,
+  PredictiveConfig,
 } from './MaintenanceScheduler';
 
 // Existing alarm types (re-export for convenience)

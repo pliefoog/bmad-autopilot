@@ -16,12 +16,41 @@ export interface SoundPatternMetadata {
 
 // Available sound patterns with descriptions (ISO 9692 maritime standards)
 export const SOUND_PATTERNS: SoundPatternMetadata[] = [
-  { value: 'rapid_pulse', label: 'Rapid Pulse', description: 'Rapid pulsing (ISO Priority 1) - Immediate danger', priority: 1 },
-  { value: 'morse_u', label: 'Morse U', description: 'Morse "U" (·· —) (ISO Priority 2) - Navigation alert "You are in danger"', priority: 2 },
-  { value: 'warble', label: 'Warble', description: 'Warbling tone (ISO Priority 3) - Equipment warning', priority: 3 },
-  { value: 'triple_blast', label: 'Triple Blast', description: 'Triple blast (ISO Priority 4) - General alert', priority: 4 },
-  { value: 'intermittent', label: 'Intermittent', description: 'Intermittent tone (ISO Priority 5) - Information', priority: 5 },
-  { value: 'continuous_descending', label: 'Continuous Descending', description: 'Descending tone - Signal degradation' },
+  {
+    value: 'rapid_pulse',
+    label: 'Rapid Pulse',
+    description: 'Rapid pulsing (ISO Priority 1) - Immediate danger',
+    priority: 1,
+  },
+  {
+    value: 'morse_u',
+    label: 'Morse U',
+    description: 'Morse "U" (·· —) (ISO Priority 2) - Navigation alert "You are in danger"',
+    priority: 2,
+  },
+  {
+    value: 'warble',
+    label: 'Warble',
+    description: 'Warbling tone (ISO Priority 3) - Equipment warning',
+    priority: 3,
+  },
+  {
+    value: 'triple_blast',
+    label: 'Triple Blast',
+    description: 'Triple blast (ISO Priority 4) - General alert',
+    priority: 4,
+  },
+  {
+    value: 'intermittent',
+    label: 'Intermittent',
+    description: 'Intermittent tone (ISO Priority 5) - Information',
+    priority: 5,
+  },
+  {
+    value: 'continuous_descending',
+    label: 'Continuous Descending',
+    description: 'Descending tone - Signal degradation',
+  },
 ];
 
 // Conditionally import expo-av only on mobile platforms
@@ -43,22 +72,22 @@ interface AudioSystemCapabilities {
 
 export class MarineAudioAlertManager {
   private static instance: MarineAudioAlertManager | null = null;
-  
+
   private config: MarineAudioConfig;
   private capabilities: AudioSystemCapabilities;
   private activeSounds: Map<CriticalAlarmType, any> = new Map();
   private audioContext?: AudioContext; // For Web Audio API
-  
+
   // Sound pattern generators
   private oscillators: Map<string, OscillatorNode> = new Map();
   private gainNodes: Map<string, GainNode> = new Map();
-  
+
   constructor(config?: MarineAudioConfig) {
     this.config = config || this.getDefaultConfig();
     this.capabilities = this.detectAudioCapabilities();
     this.initializePlatformAudio();
   }
-  
+
   /**
    * Get singleton instance
    */
@@ -68,7 +97,7 @@ export class MarineAudioAlertManager {
     }
     return MarineAudioAlertManager.instance;
   }
-  
+
   /**
    * Get default marine audio configuration
    */
@@ -92,7 +121,7 @@ export class MarineAudioAlertManager {
       engineNoiseCompensation: false,
     };
   }
-  
+
   /**
    * Detect platform-specific audio capabilities
    */
@@ -103,7 +132,7 @@ export class MarineAudioAlertManager {
       backgroundAudioSupported: false,
       nativeAudioSupported: false,
     };
-    
+
     if (Platform.OS === 'ios') {
       capabilities.canOverrideSystemVolume = true;
       capabilities.backgroundAudioSupported = true;
@@ -120,10 +149,10 @@ export class MarineAudioAlertManager {
       capabilities.nativeAudioSupported = false;
       capabilities.maxVolume = 1.0;
     }
-    
+
     return capabilities;
   }
-  
+
   /**
    * Initialize platform-specific audio system
    */
@@ -140,7 +169,7 @@ export class MarineAudioAlertManager {
       console.error('MarineAudioAlertManager: Failed to initialize platform audio', error);
     }
   }
-  
+
   /**
    * Initialize iOS AVAudioSession for marine alarms
    */
@@ -150,7 +179,7 @@ export class MarineAudioAlertManager {
         console.warn('MarineAudioAlertManager: expo-av Audio not available');
         return;
       }
-      
+
       // Configure expo-av audio mode for iOS alarms
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -159,13 +188,11 @@ export class MarineAudioAlertManager {
         shouldDuckAndroid: false,
         playThroughEarpieceAndroid: false,
       });
-      
-      console.log('MarineAudioAlertManager: iOS AVAudioSession initialized with expo-av');
     } catch (error) {
       console.error('MarineAudioAlertManager: iOS audio initialization failed', error);
     }
   }
-  
+
   /**
    * Initialize Android AudioManager for marine alarms
    */
@@ -175,7 +202,7 @@ export class MarineAudioAlertManager {
         console.warn('MarineAudioAlertManager: expo-av Audio not available');
         return;
       }
-      
+
       // Configure expo-av audio mode for Android alarms
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -184,13 +211,11 @@ export class MarineAudioAlertManager {
         shouldDuckAndroid: false, // Don't lower alarm volume for other audio
         playThroughEarpieceAndroid: false, // Use speaker for alarms
       });
-      
-      console.log('MarineAudioAlertManager: Android AudioManager initialized with expo-av');
     } catch (error) {
       console.error('MarineAudioAlertManager: Android audio initialization failed', error);
     }
   }
-  
+
   /**
    * Initialize Web Audio API for marine alarms
    */
@@ -199,36 +224,35 @@ export class MarineAudioAlertManager {
       // Initialize Web Audio API for web platform
       if (typeof window !== 'undefined' && window.AudioContext) {
         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        
+
         // Request audio context activation (required for user interaction)
         if (this.audioContext.state === 'suspended') {
           // Will be activated on first user interaction
-          console.log('MarineAudioAlertManager: Web Audio Context created (suspended until user interaction)');
         }
       }
     } catch (error) {
       console.error('MarineAudioAlertManager: Web Audio initialization failed', error);
     }
   }
-  
+
   /**
    * Play alarm sound for specific critical alarm type with marine audio requirements
    */
   public async playAlarmSound(
     alarmType: CriticalAlarmType,
     escalationLevel: AlarmEscalationLevel,
-    overridePattern?: string
+    overridePattern?: string,
   ): Promise<boolean> {
     try {
       // Stop any existing sound for this alarm type
       await this.stopAlarmSound(alarmType);
-      
+
       // Get user-configured audio pattern from sensor-instance alarm configuration
       const configuredPattern = overridePattern;
-      
+
       // Get sound configuration for this alarm type with user preference
       const soundConfig = this.getAlarmSoundConfig(alarmType, escalationLevel, configuredPattern);
-      
+
       if (soundConfig.useCustomFile && soundConfig.filename) {
         // Play custom sound file
         return await this.playCustomSoundFile(alarmType, soundConfig.filename, escalationLevel);
@@ -236,7 +260,6 @@ export class MarineAudioAlertManager {
         // Generate sound pattern algorithmically
         return await this.generateAlarmSound(alarmType, soundConfig, escalationLevel);
       }
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Failed to play alarm sound', {
         alarmType,
@@ -246,7 +269,7 @@ export class MarineAudioAlertManager {
       return false;
     }
   }
-  
+
   /**
    * Stop alarm sound for specific alarm type
    */
@@ -262,7 +285,7 @@ export class MarineAudioAlertManager {
             oscillator.disconnect();
             this.oscillators.delete(alarmType.toString());
           }
-          
+
           const gainNode = this.gainNodes.get(alarmType.toString());
           if (gainNode) {
             gainNode.disconnect();
@@ -292,21 +315,20 @@ export class MarineAudioAlertManager {
             activeSound.release();
           }
         }
-        
+
         this.activeSounds.delete(alarmType);
       }
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Failed to stop alarm sound', error);
     }
   }
-  
+
   /**
    * Set master volume for all alarm sounds
    */
   public setMasterVolume(volume: number): void {
     this.config.masterVolume = Math.max(0, Math.min(1, volume));
-    
+
     // Update all active sounds
     this.gainNodes.forEach((gainNode, alarmType) => {
       if (gainNode && gainNode.gain) {
@@ -315,40 +337,36 @@ export class MarineAudioAlertManager {
         gainNode.gain.setValueAtTime(newVolume, this.audioContext?.currentTime || 0);
       }
     });
-    
-    console.log('MarineAudioAlertManager: Master volume updated', { volume: this.config.masterVolume });
   }
-  
+
   /**
    * Get current master volume
    */
   public getMasterVolume(): number {
     return this.config.masterVolume;
   }
-  
+
   /**
    * Enable or disable audio override of system volume
    */
   public setVolumeOverride(enabled: boolean): void {
     this.config.volumeOverride = enabled;
-    console.log('MarineAudioAlertManager: Volume override', { enabled });
   }
-  
+
   /**
    * Get current volume override setting
    */
   public getVolumeOverride(): boolean {
     return this.config.volumeOverride;
   }
-  
+
   /**
    * Enable or disable synthetic sound generation
    */
   public setSyntheticSoundsEnabled(enabled: boolean): void {
     this.config.allowSyntheticSounds = enabled;
-    console.log('MarineAudioAlertManager: Synthetic sounds', { enabled });
   }
-  
+
   /**
    * Test specific alarm sound
    */
@@ -356,48 +374,41 @@ export class MarineAudioAlertManager {
     alarmType: CriticalAlarmType,
     escalationLevel: AlarmEscalationLevel = AlarmEscalationLevel.WARNING,
     duration: number = 3000,
-    audioPattern?: string
+    audioPattern?: string,
   ): Promise<boolean> {
     try {
-      console.log('MarineAudioAlertManager: Testing alarm sound', { alarmType, escalationLevel, duration, audioPattern });
-      
       // Play the test sound with optional pattern override
       const result = await this.playAlarmSound(alarmType, escalationLevel, audioPattern);
-      
+
       if (result) {
         // Stop the test sound after specified duration
         setTimeout(async () => {
           await this.stopAlarmSound(alarmType);
-          console.log('MarineAudioAlertManager: Test alarm sound stopped');
         }, duration);
       }
-      
+
       return result;
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Failed to test alarm sound', error);
       return false;
     }
   }
-  
+
   /**
    * Stop all active alarm sounds
    */
   public async stopAllAlarmSounds(): Promise<void> {
     try {
-      const stopPromises = Array.from(this.activeSounds.keys()).map(alarmType => 
-        this.stopAlarmSound(alarmType)
+      const stopPromises = Array.from(this.activeSounds.keys()).map((alarmType) =>
+        this.stopAlarmSound(alarmType),
       );
-      
+
       await Promise.all(stopPromises);
-      
-      console.log('MarineAudioAlertManager: All alarm sounds stopped');
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Failed to stop all alarm sounds', error);
     }
   }
-  
+
   /**
    * Get list of currently playing alarms
    */
@@ -416,35 +427,28 @@ export class MarineAudioAlertManager {
         soundGeneration: false,
         backgroundCapability: false,
       };
-      
+
       // Test volume level capability (>85dB requirement)
       testResults.volumeLevel = await this.testAudioLevel();
-      
+
       // Test platform-specific support
       testResults.platformSupport = this.capabilities.nativeAudioSupported;
-      
+
       // Test sound generation
       testResults.soundGeneration = await this.testSoundGeneration();
-      
+
       // Test background audio capability
       testResults.backgroundCapability = this.capabilities.backgroundAudioSupported;
-      
-      const allTestsPassed = Object.values(testResults).every(result => result);
-      
-      console.log('MarineAudioAlertManager: Audio system test results', {
-        results: testResults,
-        overall: allTestsPassed,
-        targetAudioLevel: `${this.config.targetAudioLevelDb}dB`,
-      });
-      
+
+      const allTestsPassed = Object.values(testResults).every((result) => result);
+
       return allTestsPassed;
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Audio system test failed', error);
       return false;
     }
   }
-  
+
   /**
    * Get current audio system status and marine compliance
    */
@@ -465,9 +469,9 @@ export class MarineAudioAlertManager {
       activeSounds: Array.from(this.activeSounds.keys()),
     };
   }
-  
+
   // Private helper methods
-  
+
   /**
    * Get alarm-specific sound configuration with distinct patterns for each type
    * Now supports user-configured patterns from CriticalAlarmConfiguration
@@ -475,11 +479,16 @@ export class MarineAudioAlertManager {
   private getAlarmSoundConfig(
     alarmType: CriticalAlarmType,
     escalationLevel: AlarmEscalationLevel,
-    configuredPattern?: 'rapid_pulse' | 'warble' | 'intermittent' | 'triple_blast' | 'continuous_descending'
+    configuredPattern?:
+      | 'rapid_pulse'
+      | 'warble'
+      | 'intermittent'
+      | 'triple_blast'
+      | 'continuous_descending',
   ): any {
     const baseVolume = this.calculateVolumeForEscalation(escalationLevel);
     const baseFrequency = this.getMarineAlarmFrequency(alarmType);
-    
+
     // Pattern configurations with all parameters
     // Following ISO 9692 and IEC 60092-504 maritime alarm standards
     const patternConfigs = {
@@ -519,8 +528,8 @@ export class MarineAudioAlertManager {
         frequency: baseFrequency,
         volume: baseVolume,
         shortDuration: 0.2, // 200ms for short beeps (dit)
-        longDuration: 0.6,  // 600ms for long beep (dah)
-        gapDuration: 0.2,   // 200ms between beeps
+        longDuration: 0.6, // 600ms for long beep (dah)
+        gapDuration: 0.2, // 200ms between beeps
         groupInterval: 1.5, // 1.5s between groups
         useCustomFile: false,
         filename: null,
@@ -547,27 +556,27 @@ export class MarineAudioAlertManager {
         description: 'Descending tone - Signal degradation',
       },
     };
-    
+
     // Default patterns for each alarm type following maritime standards
     // ISO 9692: Priority 1 (immediate), 2 (navigation), 3 (equipment), 4 (general), 5 (info)
     const defaultPatterns: Record<CriticalAlarmType, keyof typeof patternConfigs> = {
-      [CriticalAlarmType.SHALLOW_WATER]: 'rapid_pulse',        // Priority 1 - Immediate grounding danger
-      [CriticalAlarmType.AUTOPILOT_FAILURE]: 'morse_u',        // Priority 2 - Navigation "You are in danger"
-      [CriticalAlarmType.ENGINE_OVERHEAT]: 'warble',           // Priority 3 - Equipment warning
-      [CriticalAlarmType.LOW_BATTERY]: 'triple_blast',         // Priority 4 - General alert
-      [CriticalAlarmType.GPS_LOSS]: 'intermittent',            // Priority 5 - Information (before critical)
+      [CriticalAlarmType.SHALLOW_WATER]: 'rapid_pulse', // Priority 1 - Immediate grounding danger
+      [CriticalAlarmType.AUTOPILOT_FAILURE]: 'morse_u', // Priority 2 - Navigation "You are in danger"
+      [CriticalAlarmType.ENGINE_OVERHEAT]: 'warble', // Priority 3 - Equipment warning
+      [CriticalAlarmType.LOW_BATTERY]: 'triple_blast', // Priority 4 - General alert
+      [CriticalAlarmType.GPS_LOSS]: 'intermittent', // Priority 5 - Information (before critical)
     };
-    
+
     // Use configured pattern, fall back to default for alarm type
     const pattern = configuredPattern || defaultPatterns[alarmType] || 'rapid_pulse';
-    
+
     return patternConfigs[pattern] || patternConfigs.rapid_pulse;
   }
-  
+
   private async playCustomSoundFile(
     alarmType: CriticalAlarmType,
     filename: string,
-    escalationLevel: AlarmEscalationLevel
+    escalationLevel: AlarmEscalationLevel,
   ): Promise<boolean> {
     try {
       if (Platform.OS === 'web') {
@@ -575,15 +584,14 @@ export class MarineAudioAlertManager {
         const audio = new Audio(filename);
         audio.loop = true;
         audio.volume = this.calculateVolumeForEscalation(escalationLevel);
-        
+
         await audio.play();
         this.activeSounds.set(alarmType, audio);
         return true;
-        
       } else {
         // Use React Native Sound or Expo AV for mobile platforms
         // This requires additional setup with sound libraries
-        
+
         // Example with expo-av:
         // const { sound } = await Audio.Sound.createAsync(
         //   { uri: filename },
@@ -594,8 +602,7 @@ export class MarineAudioAlertManager {
         //   }
         // );
         // this.activeSounds.set(alarmType, sound);
-        
-        console.log('MarineAudioAlertManager: Custom sound file playback not yet implemented for mobile');
+
         return false;
       }
     } catch (error) {
@@ -603,11 +610,11 @@ export class MarineAudioAlertManager {
       return false;
     }
   }
-  
+
   private async generateAlarmSound(
     alarmType: CriticalAlarmType,
     soundConfig: any,
-    escalationLevel: AlarmEscalationLevel
+    escalationLevel: AlarmEscalationLevel,
   ): Promise<boolean> {
     // Prefer web audio if context is available (handles web and fallback cases)
     if (this.audioContext) {
@@ -615,58 +622,56 @@ export class MarineAudioAlertManager {
     } else if ((Platform.OS === 'ios' || Platform.OS === 'android') && Audio) {
       return await this.generateMobileAudioAlarm(alarmType, soundConfig, escalationLevel);
     } else {
-      console.log('MarineAudioAlertManager: Algorithmic sound generation not supported for platform');
       return false;
     }
   }
-  
+
   private async generateWebAudioAlarm(
     alarmType: CriticalAlarmType,
     soundConfig: any,
-    escalationLevel: AlarmEscalationLevel
+    escalationLevel: AlarmEscalationLevel,
   ): Promise<boolean> {
     if (!this.audioContext) {
       return false;
     }
-    
+
     try {
       // Activate audio context if suspended
       if (this.audioContext.state === 'suspended') {
         await this.audioContext.resume();
       }
-      
+
       // Create oscillator for alarm tone
       const oscillator = this.audioContext.createOscillator();
       const gainNode = this.audioContext.createGain();
-      
+
       // Set frequency based on alarm type and marine standards
       const frequency = soundConfig.frequency || this.getMarineAlarmFrequency(alarmType);
       oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-      
+
       // Set waveform for better penetration through marine noise
       oscillator.type = 'square'; // Square wave penetrates better than sine
-      
+
       // Configure volume for marine environment (>85dB requirement)
       const volume = this.calculateVolumeForEscalation(escalationLevel);
       gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
-      
+
       // Connect audio nodes
       oscillator.connect(gainNode);
       gainNode.connect(this.audioContext.destination);
-      
+
       // Apply pattern (continuous, intermittent, pulsing, warble)
       this.applyAlarmPattern(oscillator, gainNode, soundConfig);
-      
+
       // Start the alarm
       oscillator.start();
-      
+
       // Store references for cleanup
       this.oscillators.set(alarmType.toString(), oscillator);
       this.gainNodes.set(alarmType.toString(), gainNode);
       this.activeSounds.set(alarmType, { oscillator, gainNode });
-      
+
       return true;
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Web Audio alarm generation failed', error);
       return false;
@@ -679,41 +684,43 @@ export class MarineAudioAlertManager {
   private async generateMobileAudioAlarm(
     alarmType: CriticalAlarmType,
     soundConfig: any,
-    escalationLevel: AlarmEscalationLevel
+    escalationLevel: AlarmEscalationLevel,
   ): Promise<boolean> {
     try {
       if (!Audio) {
-        console.error('MarineAudioAlertManager: expo-av Audio not available for mobile alarm generation');
+        console.error(
+          'MarineAudioAlertManager: expo-av Audio not available for mobile alarm generation',
+        );
         return false;
       }
-      
+
       // Get frequency based on alarm type and marine standards
       const frequency = soundConfig.frequency || this.getMarineAlarmFrequency(alarmType);
-      
+
       // Calculate volume for marine environment (>85dB requirement)
       const volume = this.calculateVolumeForEscalation(escalationLevel);
-      
-      console.log(`MarineAudioAlertManager: Generating mobile alarm - Type: ${alarmType}, Freq: ${frequency}Hz, Vol: ${volume.toFixed(2)}, Pattern: ${soundConfig.pattern || 'continuous'}`);
-      
+
       // Generate tone using data URI with WAV audio
-      const audioUri = this.generateToneDataUri(frequency, volume, soundConfig.pattern || 'continuous');
-      
+      const audioUri = this.generateToneDataUri(
+        frequency,
+        volume,
+        soundConfig.pattern || 'continuous',
+      );
+
       // Create and configure sound object
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUri },
-        { 
+        {
           shouldPlay: true,
           volume: volume,
           isLooping: true, // Always loop - will be stopped by timeout or manual stop
-        }
+        },
       );
-      
+
       // Store sound reference for cleanup
       this.activeSounds.set(alarmType, sound);
-      
-      console.log(`MarineAudioAlertManager: Mobile alarm generated for ${alarmType} at ${frequency}Hz`);
+
       return true;
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Mobile audio alarm generation failed', error);
       return false;
@@ -726,88 +733,98 @@ export class MarineAudioAlertManager {
    */
   private generateToneDataUri(frequency: number, volume: number, pattern: string): string {
     const sampleRate = 44100;
-    
+
     // Pattern-specific durations and configurations
     let duration: number;
     let samples: Int16Array;
-    
+
     switch (pattern) {
       case 'continuous':
         duration = 2; // 2 second continuous tone
         samples = this.generateContinuousTone(frequency, volume, duration, sampleRate);
         break;
-        
+
       case 'intermittent':
         duration = 2; // 2 seconds: 0.5s on, 0.5s off, 0.5s on, 0.5s off
         samples = this.generateIntermittentTone(frequency, volume, duration, sampleRate);
         break;
-        
+
       case 'pulsing':
       case 'rapid_pulse':
         duration = 2; // 2 seconds of rapid pulses
         samples = this.generatePulsingTone(frequency, volume, duration, sampleRate);
         break;
-        
+
       case 'warble':
         duration = 2; // 2 seconds of warble
         samples = this.generateWarbleTone(frequency, volume, duration, sampleRate);
         break;
-        
+
       case 'morse_u':
         duration = 1.5; // One Morse "U" group: ·· — (short short long)
         samples = this.generateMorseUTone(frequency, volume, sampleRate);
         break;
-        
+
       case 'triple_blast':
         duration = 2; // Three short blasts with gaps
         samples = this.generateTripleBlastTone(frequency, volume, sampleRate);
         break;
-        
+
       case 'continuous_descending':
         duration = 2; // 2 second descending tone
         samples = this.generateDescendingTone(frequency, volume, duration, sampleRate);
         break;
-        
+
       default:
         duration = 2;
         samples = this.generateContinuousTone(frequency, volume, duration, sampleRate);
     }
-    
+
     // Create WAV file
     const wavHeader = this.createWavHeader(samples.length, sampleRate);
     const wavData = new Uint8Array(wavHeader.length + samples.length * 2);
     wavData.set(wavHeader, 0);
     wavData.set(new Uint8Array(samples.buffer), wavHeader.length);
-    
+
     // Convert to base64 data URI
     const base64 = this.arrayBufferToBase64(wavData.buffer);
     return `data:audio/wav;base64,${base64}`;
   }
-  
-  private generateContinuousTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+
+  private generateContinuousTone(
+    frequency: number,
+    volume: number,
+    duration: number,
+    sampleRate: number,
+  ): Int16Array {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
       const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
       samples[i] = Math.floor(value * volume * 32767);
     }
-    
+
     return samples;
   }
-  
-  private generateIntermittentTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+
+  private generateIntermittentTone(
+    frequency: number,
+    volume: number,
+    duration: number,
+    sampleRate: number,
+  ): Int16Array {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
     const onTime = 0.5; // 500ms on
     const offTime = 0.5; // 500ms off
     const cycleTime = onTime + offTime;
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
       const cyclePosition = t % cycleTime;
-      
+
       if (cyclePosition < onTime) {
         const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
         samples[i] = Math.floor(value * volume * 32767);
@@ -815,21 +832,26 @@ export class MarineAudioAlertManager {
         samples[i] = 0; // Silence during off period
       }
     }
-    
+
     return samples;
   }
-  
-  private generatePulsingTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+
+  private generatePulsingTone(
+    frequency: number,
+    volume: number,
+    duration: number,
+    sampleRate: number,
+  ): Int16Array {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
     const pulseRate = 2; // 2 Hz (2 pulses per second) - matches web
     const dutyCycle = 0.5; // 50% on, 50% off - matches web
     const pulsePeriod = 1 / pulseRate;
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
       const pulsePosition = (t % pulsePeriod) / pulsePeriod;
-      
+
       if (pulsePosition < dutyCycle) {
         const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
         samples[i] = Math.floor(value * volume * 32767);
@@ -837,16 +859,21 @@ export class MarineAudioAlertManager {
         samples[i] = 0;
       }
     }
-    
+
     return samples;
   }
-  
-  private generateWarbleTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+
+  private generateWarbleTone(
+    frequency: number,
+    volume: number,
+    duration: number,
+    sampleRate: number,
+  ): Int16Array {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
     const warbleRate = 4; // 4 Hz warble
     const warbleDepth = 100; // ±100 Hz modulation - matches web
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
       const modulation = Math.sin(2 * Math.PI * warbleRate * t) * warbleDepth;
@@ -854,32 +881,32 @@ export class MarineAudioAlertManager {
       const value = Math.sin(2 * Math.PI * modulatedFreq * t) > 0 ? 1 : -1;
       samples[i] = Math.floor(value * volume * 32767);
     }
-    
+
     return samples;
   }
-  
+
   private generateMorseUTone(frequency: number, volume: number, sampleRate: number): Int16Array {
     // Morse "U": ·· — (dit dit dah) - ISO maritime "You are in danger"
-    const dit = 0.2;  // Short beep - matches web
-    const dah = 0.6;  // Long beep - matches web
-    const gap = 0.2;  // Gap between elements - matches web
+    const dit = 0.2; // Short beep - matches web
+    const dah = 0.6; // Long beep - matches web
+    const gap = 0.2; // Gap between elements - matches web
     const duration = dit + gap + dit + gap + dah;
-    
+
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
-    
+
     const timeline = [
-      { start: 0, end: dit, on: true },          // First dit
-      { start: dit, end: dit + gap, on: false },  // Gap
-      { start: dit + gap, end: dit + gap + dit, on: true },  // Second dit
+      { start: 0, end: dit, on: true }, // First dit
+      { start: dit, end: dit + gap, on: false }, // Gap
+      { start: dit + gap, end: dit + gap + dit, on: true }, // Second dit
       { start: dit + gap + dit, end: dit + gap + dit + gap, on: false }, // Gap
-      { start: dit + gap + dit + gap, end: duration, on: true }  // Dah
+      { start: dit + gap + dit + gap, end: duration, on: true }, // Dah
     ];
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
-      const segment = timeline.find(s => t >= s.start && t < s.end);
-      
+      const segment = timeline.find((s) => t >= s.start && t < s.end);
+
       if (segment && segment.on) {
         const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
         samples[i] = Math.floor(value * volume * 32767);
@@ -887,31 +914,39 @@ export class MarineAudioAlertManager {
         samples[i] = 0;
       }
     }
-    
+
     return samples;
   }
-  
-  private generateTripleBlastTone(frequency: number, volume: number, sampleRate: number): Int16Array {
+
+  private generateTripleBlastTone(
+    frequency: number,
+    volume: number,
+    sampleRate: number,
+  ): Int16Array {
     // Three short blasts: blast-gap-blast-gap-blast
-    const blastDuration = 0.2;  // 200ms blast - matches web
-    const gapDuration = 0.1;    // 100ms gap - matches web
-    const duration = (blastDuration * 3) + (gapDuration * 2);
-    
+    const blastDuration = 0.2; // 200ms blast - matches web
+    const gapDuration = 0.1; // 100ms gap - matches web
+    const duration = blastDuration * 3 + gapDuration * 2;
+
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
-    
+
     const timeline = [
       { start: 0, end: blastDuration, on: true },
       { start: blastDuration, end: blastDuration + gapDuration, on: false },
-      { start: blastDuration + gapDuration, end: (blastDuration * 2) + gapDuration, on: true },
-      { start: (blastDuration * 2) + gapDuration, end: (blastDuration * 2) + (gapDuration * 2), on: false },
-      { start: (blastDuration * 2) + (gapDuration * 2), end: duration, on: true }
+      { start: blastDuration + gapDuration, end: blastDuration * 2 + gapDuration, on: true },
+      {
+        start: blastDuration * 2 + gapDuration,
+        end: blastDuration * 2 + gapDuration * 2,
+        on: false,
+      },
+      { start: blastDuration * 2 + gapDuration * 2, end: duration, on: true },
     ];
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
-      const segment = timeline.find(s => t >= s.start && t < s.end);
-      
+      const segment = timeline.find((s) => t >= s.start && t < s.end);
+
       if (segment && segment.on) {
         const value = Math.sin(2 * Math.PI * frequency * t) > 0 ? 1 : -1;
         samples[i] = Math.floor(value * volume * 32767);
@@ -919,17 +954,22 @@ export class MarineAudioAlertManager {
         samples[i] = 0;
       }
     }
-    
+
     return samples;
   }
-  
-  private generateDescendingTone(frequency: number, volume: number, duration: number, sampleRate: number): Int16Array {
+
+  private generateDescendingTone(
+    frequency: number,
+    volume: number,
+    duration: number,
+    sampleRate: number,
+  ): Int16Array {
     const numSamples = Math.floor(sampleRate * duration);
     const samples = new Int16Array(numSamples);
     const startFreq = frequency;
     const frequencyRange = 300; // Descend by 300Hz - matches web
     const endFreq = startFreq - frequencyRange;
-    
+
     for (let i = 0; i < numSamples; i++) {
       const t = i / sampleRate;
       const progress = t / duration;
@@ -937,7 +977,7 @@ export class MarineAudioAlertManager {
       const value = Math.sin(2 * Math.PI * currentFreq * t) > 0 ? 1 : -1;
       samples[i] = Math.floor(value * volume * 32767);
     }
-    
+
     return samples;
   }
 
@@ -947,12 +987,12 @@ export class MarineAudioAlertManager {
   private createWavHeader(numSamples: number, sampleRate: number): Uint8Array {
     const header = new ArrayBuffer(44);
     const view = new DataView(header);
-    
+
     // RIFF chunk descriptor
     this.writeString(view, 0, 'RIFF');
     view.setUint32(4, 36 + numSamples * 2, true);
     this.writeString(view, 8, 'WAVE');
-    
+
     // fmt sub-chunk
     this.writeString(view, 12, 'fmt ');
     view.setUint32(16, 16, true); // subchunk1 size
@@ -962,11 +1002,11 @@ export class MarineAudioAlertManager {
     view.setUint32(28, sampleRate * 2, true); // byte rate
     view.setUint16(32, 2, true); // block align
     view.setUint16(34, 16, true); // bits per sample
-    
+
     // data sub-chunk
     this.writeString(view, 36, 'data');
     view.setUint32(40, numSamples * 2, true);
-    
+
     return new Uint8Array(header);
   }
 
@@ -984,7 +1024,7 @@ export class MarineAudioAlertManager {
     }
     return btoa(binary);
   }
-  
+
   private getMarineAlarmFrequency(alarmType: CriticalAlarmType): number {
     // Frequencies chosen for maximum penetration through marine noise
     // Different frequency ranges help distinguish alarm types audibly
@@ -993,36 +1033,36 @@ export class MarineAudioAlertManager {
       [CriticalAlarmType.SHALLOW_WATER]: 800,
       [CriticalAlarmType.DEEP_WATER]: 750,
       [CriticalAlarmType.HIGH_SPEED]: 850,
-      
+
       // Engine alarms (1000-1200 Hz range - higher for urgency)
       [CriticalAlarmType.ENGINE_OVERHEAT]: 1200,
       [CriticalAlarmType.ENGINE_LOW_TEMP]: 1050,
       [CriticalAlarmType.ENGINE_HIGH_RPM]: 1150,
       [CriticalAlarmType.ENGINE_LOW_OIL_PRESSURE]: 1100,
-      
+
       // Electrical alarms (600-700 Hz range - lower for power issues)
       [CriticalAlarmType.LOW_BATTERY]: 600,
       [CriticalAlarmType.HIGH_BATTERY]: 650,
       [CriticalAlarmType.LOW_ALTERNATOR]: 620,
       [CriticalAlarmType.HIGH_CURRENT]: 680,
-      
+
       // Wind alarms (900-950 Hz range)
       [CriticalAlarmType.HIGH_WIND]: 920,
       [CriticalAlarmType.WIND_GUST]: 950,
-      
+
       // System alarms (950-1050 Hz range)
       [CriticalAlarmType.AUTOPILOT_FAILURE]: 1000,
       [CriticalAlarmType.GPS_LOSS]: 980,
-      
+
       // Tank alarms (700-750 Hz range)
       [CriticalAlarmType.LOW_FUEL]: 720,
       [CriticalAlarmType.LOW_WATER]: 740,
       [CriticalAlarmType.HIGH_WASTE_WATER]: 760,
     };
-    
+
     return frequencyMap[alarmType] || 1000;
   }
-  
+
   private calculateVolumeForEscalation(escalationLevel: AlarmEscalationLevel): number {
     // Volume levels to meet marine >85dB requirement
     const baseVolumeMap = {
@@ -1032,102 +1072,106 @@ export class MarineAudioAlertManager {
       [AlarmEscalationLevel.CRITICAL]: 0.9,
       [AlarmEscalationLevel.EMERGENCY]: 1.0,
     };
-    
+
     const baseVolume = baseVolumeMap[escalationLevel] || 0.7;
-    
+
     // Apply master volume multiplier
     return baseVolume * this.config.masterVolume;
   }
-  
+
   private applyAlarmPattern(
     oscillator: OscillatorNode,
     gainNode: GainNode,
-    soundConfig: any
+    soundConfig: any,
   ): void {
     if (!this.audioContext) return;
-    
+
     const currentTime = this.audioContext.currentTime;
     const volume = soundConfig.volume;
-    
+
     switch (soundConfig.pattern) {
       case 'continuous':
         // Continuous tone - steady volume
         gainNode.gain.setValueAtTime(volume, currentTime);
         break;
-        
+
       case 'intermittent':
         // On/off pattern for intermittent alarms
         const onTime = soundConfig.onTime || 0.5;
         const offTime = soundConfig.offTime || 0.5;
-        
+
         // Create repeating on/off pattern
-        for (let i = 0; i < 60; i++) { // 60 seconds of pattern
-          const startTime = currentTime + (i * (onTime + offTime));
+        for (let i = 0; i < 60; i++) {
+          // 60 seconds of pattern
+          const startTime = currentTime + i * (onTime + offTime);
           gainNode.gain.setValueAtTime(0, startTime);
           gainNode.gain.setValueAtTime(volume, startTime + 0.01);
           gainNode.gain.setValueAtTime(volume, startTime + onTime);
           gainNode.gain.setValueAtTime(0, startTime + onTime + 0.01);
         }
         break;
-        
+
       case 'pulsing':
       case 'rapid_pulse':
         // Pulsing pattern with configurable rate
         const pulseRate = soundConfig.pulseRate || 2; // Hz
         const dutyCycle = soundConfig.dutyCycle || 0.5;
         const pulsePeriod = 1 / pulseRate;
-        
+
         // Create pulsing envelope
-        for (let i = 0; i < (60 * pulseRate); i++) { // 60 seconds of pulses
-          const pulseStart = currentTime + (i * pulsePeriod);
+        for (let i = 0; i < 60 * pulseRate; i++) {
+          // 60 seconds of pulses
+          const pulseStart = currentTime + i * pulsePeriod;
           const pulseOnTime = pulsePeriod * dutyCycle;
-          
+
           gainNode.gain.setValueAtTime(0, pulseStart);
           gainNode.gain.linearRampToValueAtTime(volume, pulseStart + 0.02);
           gainNode.gain.setValueAtTime(volume, pulseStart + pulseOnTime);
           gainNode.gain.linearRampToValueAtTime(0, pulseStart + pulsePeriod);
         }
         break;
-        
+
       case 'warble':
         // Warbling frequency for distinctive alarm sound
         const warbleRate = soundConfig.warbleRate || 4; // Hz
         const warbleDepth = soundConfig.warbleDepth || 100; // Hz
         const baseFrequency = soundConfig.frequency;
-        
+
         gainNode.gain.setValueAtTime(volume, currentTime);
-        
-        for (let i = 0; i < 6000; i++) { // 60 seconds at 100ms resolution
-          const time = currentTime + (i * 0.01);
+
+        for (let i = 0; i < 6000; i++) {
+          // 60 seconds at 100ms resolution
+          const time = currentTime + i * 0.01;
           const modulation = Math.sin(2 * Math.PI * warbleRate * i * 0.01) * warbleDepth;
           oscillator.frequency.setValueAtTime(baseFrequency + modulation, time);
         }
         break;
-        
+
       case 'morse_u':
         // Morse code "U" pattern (·· —) - ISO maritime standard for "You are in danger"
-        const shortDur = soundConfig.shortDuration || 0.2;  // Dit
-        const longDur = soundConfig.longDuration || 0.6;    // Dah
-        const gapDur = soundConfig.gapDuration || 0.2;      // Gap between dits/dahs
+        const shortDur = soundConfig.shortDuration || 0.2; // Dit
+        const longDur = soundConfig.longDuration || 0.6; // Dah
+        const gapDur = soundConfig.gapDuration || 0.2; // Gap between dits/dahs
         const morseGroupInterval = soundConfig.groupInterval || 1.5;
-        
+
         // Create Morse "U" groups: short short long (·· —)
-        for (let group = 0; group < 40; group++) { // 40 groups over 60 seconds
-          const groupStart = currentTime + (group * morseGroupInterval);
-          
+        for (let group = 0; group < 40; group++) {
+          // 40 groups over 60 seconds
+          const groupStart = currentTime + group * morseGroupInterval;
+
           // First short beep (dit)
           gainNode.gain.setValueAtTime(0, groupStart);
           gainNode.gain.setValueAtTime(volume, groupStart + 0.01);
           gainNode.gain.setValueAtTime(volume, groupStart + shortDur);
           gainNode.gain.setValueAtTime(0, groupStart + shortDur + 0.01);
-          
+
           // Second short beep (dit)
           const secondBeep = groupStart + shortDur + gapDur;
           gainNode.gain.setValueAtTime(0, secondBeep);
           gainNode.gain.setValueAtTime(volume, secondBeep + 0.01);
           gainNode.gain.setValueAtTime(volume, secondBeep + shortDur);
           gainNode.gain.setValueAtTime(0, secondBeep + shortDur + 0.01);
-          
+
           // Long beep (dah)
           const longBeep = secondBeep + shortDur + gapDur;
           gainNode.gain.setValueAtTime(0, longBeep);
@@ -1136,20 +1180,21 @@ export class MarineAudioAlertManager {
           gainNode.gain.setValueAtTime(0, longBeep + longDur + 0.01);
         }
         break;
-        
+
       case 'triple_blast':
         // Triple blast pattern for general alerts
         const blastDuration = soundConfig.blastDuration || 0.2;
         const blastInterval = soundConfig.blastInterval || 0.1;
         const groupInterval = soundConfig.groupInterval || 1.5;
-        
+
         // Create triple blast groups
-        for (let group = 0; group < 40; group++) { // 40 groups over 60 seconds
-          const groupStart = currentTime + (group * groupInterval);
-          
+        for (let group = 0; group < 40; group++) {
+          // 40 groups over 60 seconds
+          const groupStart = currentTime + group * groupInterval;
+
           for (let blast = 0; blast < 3; blast++) {
-            const blastStart = groupStart + (blast * (blastDuration + blastInterval));
-            
+            const blastStart = groupStart + blast * (blastDuration + blastInterval);
+
             gainNode.gain.setValueAtTime(0, blastStart);
             gainNode.gain.setValueAtTime(volume, blastStart + 0.01);
             gainNode.gain.setValueAtTime(volume, blastStart + blastDuration);
@@ -1157,76 +1202,77 @@ export class MarineAudioAlertManager {
           }
         }
         break;
-        
+
       case 'continuous_descending':
         // Continuous descending tone for GPS loss
         const sweepDuration = soundConfig.sweepDuration || 2.0;
         const frequencyRange = soundConfig.frequencyRange || 300;
         const baseFreq = soundConfig.frequency;
-        
+
         gainNode.gain.setValueAtTime(volume, currentTime);
-        
+
         // Create continuous descending sweeps
-        for (let sweep = 0; sweep < 30; sweep++) { // 30 sweeps over 60 seconds
-          const sweepStart = currentTime + (sweep * sweepDuration);
-          
-          for (let i = 0; i < 200; i++) { // 200 steps per sweep
-            const time = sweepStart + (i * sweepDuration / 200);
+        for (let sweep = 0; sweep < 30; sweep++) {
+          // 30 sweeps over 60 seconds
+          const sweepStart = currentTime + sweep * sweepDuration;
+
+          for (let i = 0; i < 200; i++) {
+            // 200 steps per sweep
+            const time = sweepStart + (i * sweepDuration) / 200;
             const progress = i / 200; // 0 to 1
-            const frequency = baseFreq - (progress * frequencyRange);
+            const frequency = baseFreq - progress * frequencyRange;
             oscillator.frequency.setValueAtTime(frequency, time);
           }
         }
         break;
-        
+
       default:
         // Default to continuous tone
         gainNode.gain.setValueAtTime(volume, currentTime);
         break;
     }
   }
-  
+
   private async testAudioLevel(): Promise<boolean> {
     // Test if audio system can achieve >85dB output
     // This would require actual hardware testing or platform-specific volume measurement
     // For now, return true if volume override is available
     return this.capabilities.canOverrideSystemVolume;
   }
-  
+
   private async testSoundGeneration(): Promise<boolean> {
     try {
       // Test basic sound generation capability
       if (Platform.OS === 'web' && this.audioContext) {
         const testOscillator = this.audioContext.createOscillator();
         const testGain = this.audioContext.createGain();
-        
+
         testOscillator.connect(testGain);
         testGain.connect(this.audioContext.destination);
-        
+
         testGain.gain.setValueAtTime(0.1, this.audioContext.currentTime); // Low volume for test
         testOscillator.frequency.setValueAtTime(1000, this.audioContext.currentTime);
-        
+
         testOscillator.start();
         testOscillator.stop(this.audioContext.currentTime + 0.1); // 100ms test tone
-        
+
         return true;
       }
-      
+
       return this.capabilities.nativeAudioSupported;
-      
     } catch (error) {
       console.error('MarineAudioAlertManager: Sound generation test failed', error);
       return false;
     }
   }
-  
+
   private estimateAudioLevel(): number {
     // Estimate audio output level based on system capabilities and master volume
     // This would ideally measure actual dB output, but requires hardware integration
-    
+
     const baseTargetLevel = this.config.targetAudioLevelDb;
     const volumeMultiplier = this.config.masterVolume;
-    
+
     if (this.capabilities.canOverrideSystemVolume) {
       // With volume override, we can achieve full target level
       return Math.max(baseTargetLevel * volumeMultiplier, 85); // Ensure minimum 85dB for marine safety
@@ -1236,12 +1282,12 @@ export class MarineAudioAlertManager {
       return Math.max(estimatedCapability, 85); // Marine safety requirement
     }
   }
-  
+
   private checkMarineComplianceStatus(): boolean {
     const estimatedLevel = this.estimateAudioLevel();
     const hasVolumeOverride = this.capabilities.canOverrideSystemVolume;
     const hasBackgroundAudio = this.capabilities.backgroundAudioSupported;
-    
+
     // Marine compliance requires >85dB, volume override, and background capability
     return estimatedLevel >= 85 && hasVolumeOverride && hasBackgroundAudio;
   }
@@ -1251,16 +1297,16 @@ export class MarineAudioAlertManager {
 export const DEFAULT_MARINE_AUDIO_CONFIG: MarineAudioConfig = {
   targetAudioLevelDb: 85, // Marine safety requirement
   platformSpecific: true,
-  
+
   // Volume control
   masterVolume: 0.8, // 80% default volume
   volumeOverride: true, // Override system volume for marine safety
   respectSystemVolume: false, // Override for marine safety
   backgroundAudioCapable: true,
-  
+
   // Sound generation options
   allowSyntheticSounds: true, // Allow generated alarm patterns
-  
+
   soundPatterns: {
     [CriticalAlarmType.SHALLOW_WATER]: {
       pattern: 'intermittent',
@@ -1289,7 +1335,7 @@ export const DEFAULT_MARINE_AUDIO_CONFIG: MarineAudioConfig = {
       repetitions: 5,
     },
   },
-  
+
   weatherCompensation: true,
   engineNoiseCompensation: true,
 };

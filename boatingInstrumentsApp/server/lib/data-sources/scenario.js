@@ -20,7 +20,7 @@ const NMEA2000BinaryGenerator = require('../nmea2000-binary');
  */
 const SENSOR_TYPE_REGISTRY = {
   depth_sensor: {
-    nmea0183: ['DBT', 'DPT', 'DBK'],
+    nmea0183: ['DPT', 'DBT', 'DBK'],  // DPT first - matches real NMEA 2000→0183 bridges (CANboat)
     nmea2000: [128267],
     physical_properties: {
       transducer_depth: { unit: 'm', description: 'Depth of transducer below waterline', nmea0183_field: 'DPT.offset', nmea2000_field: 'byte[8]' },
@@ -2062,10 +2062,11 @@ class ScenarioDataSource extends EventEmitter {
     // Get physical properties
     const transducerDepth = sensor.physical_properties?.transducer_depth || 0;
     const keelOffset = sensor.physical_properties?.keel_offset || 0;
+    const maxRange = sensor.physical_properties?.max_range || null;
     
     // Generate appropriate sentence type
     if (sentenceType === 'DPT') {
-      return this.generateDPT(depth, transducerDepth);
+      return this.generateDPT(depth, transducerDepth, maxRange);
     } else if (sentenceType === 'DBK') {
       // DBK = depth below keel = measured depth - transducer depth - keel offset
       const depthBelowKeel = Math.max(0, depth - transducerDepth - keelOffset);
@@ -2468,8 +2469,9 @@ class ScenarioDataSource extends EventEmitter {
     
     // NMEA 0183 doesn't have standard tank sentences, use XDR
     // Format: FUEL_0, WATR_1, WAST_0 (no TANK_ prefix - matches parser expectations)
+    // Use 'P' for percentage per NMEA 0183 spec (not '%' symbol)
     const tankId = `${tankMnemonic}_${tankInstance}`;
-    const sentence = `IIXDR,V,${level.toFixed(1)},%,${tankId}`;
+    const sentence = `IIXDR,V,${level.toFixed(1)},P,${tankId}`;
     const checksum = this.calculateChecksum(sentence);
     return `$${sentence}*${checksum}`;
   }
@@ -2665,14 +2667,17 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   /**
-   * Generate DPT sentence (Depth)
+   * Generate DPT sentence (Depth with offset and max range)
+   * Matches NMEA 2000→0183 bridge behavior: PGN 128267 → DPT
+   * Format: $--DPT,depth_meters,offset_meters,max_range_meters*checksum
    */
-  generateDPT(depth, transducerDepth = null) {
-    // REQUIRED: keel_offset and max_range must be defined in YAML parameters section
-    const offset = transducerDepth !== null ? transducerDepth : this.scenario.parameters.vessel.keel_offset;
-    const maxRange = this.scenario.parameters.sonar.max_range;
-    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}`);
-    return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${maxRange.toFixed(1)}*${checksum}`;
+  generateDPT(depth, transducerDepth = null, maxRange = null) {
+    // Offset: transducer depth below waterline (positive) or keel depth (negative)
+    const offset = transducerDepth !== null ? transducerDepth : this.scenario.parameters?.vessel?.keel_offset || 0;
+    // Max range: from parameters or default to 100m
+    const range = maxRange !== null ? maxRange : (this.scenario.parameters?.sonar?.max_range || 100.0);
+    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}`);
+    return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}*${checksum}`;
   }
 
   /**

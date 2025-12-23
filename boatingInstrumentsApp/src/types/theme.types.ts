@@ -56,7 +56,7 @@ export interface ThemeColors {
   depth: string;
   wind: string;
   navigation: string;
-  
+
   // Night vision preservation
   redNight: string;
   redNightDim: string;
@@ -165,7 +165,7 @@ export interface ThemeBorderRadius {
   lg: number;
   xl: number;
   full: number;
-  
+
   // Component-specific
   button: number;
   card: number;
@@ -183,7 +183,7 @@ export interface ThemeShadows {
   md: string;
   lg: string;
   xl: string;
-  
+
   // Specific elevations
   card: string;
   modal: string;
@@ -247,7 +247,7 @@ export interface Theme {
   shadows: ThemeShadows;
   animations: ThemeAnimations;
   breakpoints: ThemeBreakpoints;
-  
+
   // Theme metadata
   name: string;
   version: string;
@@ -334,11 +334,11 @@ export interface MarineThemeExtensions {
   // Night vision preservation
   redNightCompatible: boolean;
   minimumContrast: number;
-  
+
   // Environmental considerations
   sunlightReadability: boolean;
   waterResistantColors: boolean;
-  
+
   // Safety requirements
   emergencyColors: {
     alarm: string;
@@ -346,7 +346,7 @@ export interface MarineThemeExtensions {
     critical: string;
     safe: string;
   };
-  
+
   // Navigation colors
   navigationColors: {
     port: string;
@@ -368,7 +368,7 @@ export interface AccessibilityTheme {
     large: number;
     decorative: number;
   };
-  
+
   // Focus indicators
   focusIndicator: {
     width: number;
@@ -376,11 +376,11 @@ export interface AccessibilityTheme {
     color: string;
     offset: number;
   };
-  
+
   // Motion preferences
   respectReducedMotion: boolean;
   alternativeAnimations: boolean;
-  
+
   // Text scaling
   supportTextScaling: boolean;
   maxTextScale: number;

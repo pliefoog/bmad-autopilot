@@ -33,7 +33,7 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* iOS Drag Handle */}
         <View style={styles.dragHandle} />
-        
+
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <TouchableOpacity
@@ -53,150 +53,143 @@ const TestSwitchDialog: React.FC<TestSwitchDialogProps> = ({ visible, onClose })
         {/* Content */}
         {viewMode === 'list' ? (
           <>
-        {/* Content - WITHOUT ScrollView */}
-        <View style={styles.content}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            WITHOUT ScrollView (baseline):
-          </Text>
-          
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Switch 1 (ON)
-            </Text>
-            <ThemedSwitch
-              value={testSwitch1}
-              onValueChange={setTestSwitch1}
-              testID="test-switch-1"
-            />
-          </View>
+            {/* Content - WITHOUT ScrollView */}
+            <View style={styles.content}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                WITHOUT ScrollView (baseline):
+              </Text>
 
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Switch 2 (OFF)
-            </Text>
-            <ThemedSwitch
-              value={testSwitch2}
-              onValueChange={setTestSwitch2}
-              testID="test-switch-2"
-            />
-          </View>
-        </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.text }]}>Switch 1 (ON)</Text>
+                <ThemedSwitch
+                  value={testSwitch1}
+                  onValueChange={setTestSwitch1}
+                  testID="test-switch-1"
+                />
+              </View>
 
-        {/* Content - WITH SCROLLVIEW */}
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            WITH ScrollView (test):
-          </Text>
-          
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Switch 3 (ON) - ScrollView
-            </Text>
-            <ThemedSwitch
-              value={testSwitch3}
-              onValueChange={setTestSwitch3}
-              testID="test-switch-3"
-            />
-          </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.text }]}>Switch 2 (OFF)</Text>
+                <ThemedSwitch
+                  value={testSwitch2}
+                  onValueChange={setTestSwitch2}
+                  testID="test-switch-2"
+                />
+              </View>
+            </View>
 
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Switch 4 (OFF) - ScrollView
-            </Text>
-            <ThemedSwitch
-              value={testSwitch4}
-              onValueChange={setTestSwitch4}
-              testID="test-switch-4"
-            />
-          </View>
+            {/* Content - WITH SCROLLVIEW */}
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                WITH ScrollView (test):
+              </Text>
 
-          <Text style={[styles.info, { color: theme.tertiary }]}>
-            Compare colors between switches above and below.
-          </Text>
-        </ScrollView>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.text }]}>
+                  Switch 3 (ON) - ScrollView
+                </Text>
+                <ThemedSwitch
+                  value={testSwitch3}
+                  onValueChange={setTestSwitch3}
+                  testID="test-switch-3"
+                />
+              </View>
 
-        {/* New section - PageSheet test */}
-        <View style={styles.content}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            WITH TouchableOpacity WRAPPER:
-          </Text>
-          
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Switch 5 (ON) - Wrapped
-            </Text>
-            <TouchableOpacity
-              onPress={() => setTestSwitch5(!testSwitch5)}
-              activeOpacity={1}
-            >
-              <ThemedSwitch
-                value={testSwitch5}
-                onValueChange={setTestSwitch5}
-                testID="test-switch-5"
-              />
-            </TouchableOpacity>
-          </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.text }]}>
+                  Switch 4 (OFF) - ScrollView
+                </Text>
+                <ThemedSwitch
+                  value={testSwitch4}
+                  onValueChange={setTestSwitch4}
+                  testID="test-switch-4"
+                />
+              </View>
 
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Switch 6 (OFF) - Wrapped
-            </Text>
-            <TouchableOpacity
-              onPress={() => setTestSwitch6(!testSwitch6)}
-              activeOpacity={1}
-            >
-              <ThemedSwitch
-                value={testSwitch6}
-                onValueChange={setTestSwitch6}
-                testID="test-switch-6"
-              />
-            </TouchableOpacity>
-          </View>
+              <Text style={[styles.info, { color: theme.tertiary }]}>
+                Compare colors between switches above and below.
+              </Text>
+            </ScrollView>
 
-          <Text style={[styles.info, { color: theme.tertiary }]}>
-            If these show green/yellow, TouchableOpacity wrapper is the culprit!
-          </Text>
-          
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: theme.interactive }]}
-            onPress={() => setViewMode('detail')}
-          >
-            <Text style={[styles.buttonText, { color: theme.onColor }]}>
-              Go to Detail View →
-            </Text>
-          </TouchableOpacity>
-        </View>
-        </>
-        ) : (
-          // Detail View - mimics AlarmConfigDialog detail view
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              DETAIL VIEW (like AlarmConfigDialog):
-            </Text>
-            
-            <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <View style={styles.sectionRow}>
-                <Text style={[styles.label, { color: theme.text }]}>Enable Alarm</Text>
-                <TouchableOpacity
-                  onPress={() => setDetailSwitch(!detailSwitch)}
-                  activeOpacity={1}
-                >
+            {/* New section - PageSheet test */}
+            <View style={styles.content}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                WITH TouchableOpacity WRAPPER:
+              </Text>
+
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.text }]}>Switch 5 (ON) - Wrapped</Text>
+                <TouchableOpacity onPress={() => setTestSwitch5(!testSwitch5)} activeOpacity={1}>
                   <ThemedSwitch
-                    value={detailSwitch}
-                    onValueChange={setDetailSwitch}
-                    trackColor={{ false: theme.border, true: theme.interactive }}
-                    testID="detail-switch"
+                    value={testSwitch5}
+                    onValueChange={setTestSwitch5}
+                    testID="test-switch-5"
                   />
                 </TouchableOpacity>
               </View>
+
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.text }]}>Switch 6 (OFF) - Wrapped</Text>
+                <TouchableOpacity onPress={() => setTestSwitch6(!testSwitch6)} activeOpacity={1}>
+                  <ThemedSwitch
+                    value={testSwitch6}
+                    onValueChange={setTestSwitch6}
+                    testID="test-switch-6"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.info, { color: theme.tertiary }]}>
+                If these show green/yellow, TouchableOpacity wrapper is the culprit!
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: theme.interactive }]}
+                onPress={() => setViewMode('detail')}
+              >
+                <Text style={[styles.buttonText, { color: theme.onColor }]}>
+                  Go to Detail View →
+                </Text>
+              </TouchableOpacity>
             </View>
-            
-            <Text style={[styles.info, { color: theme.tertiary }]}>
-              This mimics the AlarmConfigDialog detail view structure.
-              {'\n'}
-              Does this switch show green?
-            </Text>
-          </ScrollView>
+          </>
+        ) : (
+          <>
+            {/* Detail View - mimics AlarmConfigDialog detail view */}
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                DETAIL VIEW (like AlarmConfigDialog):
+              </Text>
+
+              <View
+                style={[
+                  styles.section,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                ]}
+              >
+                <View style={styles.sectionRow}>
+                  <Text style={[styles.label, { color: theme.text }]}>Enable Alarm</Text>
+                  <TouchableOpacity
+                    onPress={() => setDetailSwitch(!detailSwitch)}
+                    activeOpacity={1}
+                  >
+                    <ThemedSwitch
+                      value={detailSwitch}
+                      onValueChange={setDetailSwitch}
+                      trackColor={{ false: theme.border, true: theme.interactive }}
+                      testID="detail-switch"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Text style={[styles.info, { color: theme.tertiary }]}>
+                This mimics the AlarmConfigDialog detail view structure.
+                {'\n'}
+                Does this switch show green?
+              </Text>
+            </ScrollView>
+          </>
         )}
       </View>
     </Modal>

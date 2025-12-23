@@ -1,7 +1,7 @@
 /**
  * HelpButton Component
  * Story 4.4 AC12: Contextual help button with tooltip overlay
- * 
+ *
  * Provides inline help throughout the app with accessibility support
  * and marine-appropriate styling for challenging viewing conditions.
  */
@@ -16,38 +16,38 @@ export interface HelpButtonProps {
    * Unique identifier for the help button (for analytics/tracking)
    */
   helpId: string;
-  
+
   /**
    * Callback when help is triggered
    * Parent component should handle tooltip display
    */
   onPress: () => void;
-  
+
   /**
    * Optional custom size (default: 24)
    */
   size?: number;
-  
+
   /**
    * Optional custom color (defaults to theme.textSecondary)
    */
   color?: string;
-  
+
   /**
    * Optional style override for positioning
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for automated testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label (default: "Help")
    */
   accessibilityLabel?: string;
-  
+
   /**
    * Accessibility hint describing what help content will show
    */
@@ -56,7 +56,7 @@ export interface HelpButtonProps {
 
 /**
  * HelpButton - Icon button that triggers contextual help display
- * 
+ *
  * Usage:
  * ```tsx
  * <HelpButton
@@ -78,9 +78,9 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
 }) => {
   const theme = useTheme();
   const [pressed, setPressed] = useState(false);
-  
+
   const iconColor = color || theme.textSecondary;
-  
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -100,11 +100,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
       accessibilityHint={accessibilityHint}
       testID={`${testID}-${helpId}`}
     >
-      <Ionicons 
-        name="help-circle-outline" 
-        size={size} 
-        color={iconColor}
-      />
+      <Ionicons name="help-circle-outline" size={size} color={iconColor} />
     </TouchableOpacity>
   );
 };

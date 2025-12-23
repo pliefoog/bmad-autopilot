@@ -21,17 +21,10 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   testID,
 }) => {
   return (
-    <Card
-      variant="elevated"
-      padding="small"
-      rounded="none"
-      testID={testID}
-    >
+    <Card variant="elevated" padding="small" rounded="none" testID={testID}>
       <View style={styles.container}>
-        <View style={styles.leftSection}>
-          {leftActions}
-        </View>
-        
+        <View style={styles.leftSection}>{leftActions}</View>
+
         <View style={styles.centerSection}>
           <ConnectionStatus
             status={connectionStatus}
@@ -39,7 +32,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
             testID={testID ? `${testID}-connection` : undefined}
           />
         </View>
-        
+
         <View style={styles.rightSection}>
           <ThemeToggle
             isDarkMode={isDarkMode}

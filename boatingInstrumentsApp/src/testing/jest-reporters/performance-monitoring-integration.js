@@ -1,11 +1,11 @@
 /**
  * Performance Monitoring Integration for VS Code Test Explorer
- * 
+ *
  * PURPOSE: Integrate performance threshold monitoring with VS Code Test Explorer warnings
  * REQUIREMENT: AC-11.7.4 - Performance threshold violations with render, memory, and data latency monitoring
  * METHOD: PerformanceProfiler integration with real-time threshold validation and VS Code warnings
  * EXPECTED: Performance alerts in VS Code Test Explorer for >16ms renders, >50MB memory, >100ms latency
- * 
+ *
  * Integration with Epic 11 Professional-Grade Testing Architecture:
  * - Story 11.1: Triple Testing Strategy Implementation (PerformanceProfiler)
  * - Story 11.7: VS Code Test Explorer Integration
@@ -29,32 +29,32 @@ class PerformanceMonitoringIntegration {
     this.globalConfig = globalConfig;
     this.options = options;
     this.profiler = PerformanceProfiler ? new PerformanceProfiler() : null;
-    
+
     // AC4.1: Performance threshold definitions for marine applications
     this.thresholds = {
       render: {
         max: 16, // <16ms for 60fps requirement
         unit: 'ms',
         category: 'UI Responsiveness',
-        severity: 'critical'
+        severity: 'critical',
       },
       memory: {
         max: 50, // <50MB increase per test operation
         unit: 'MB',
-        category: 'Memory Management', 
-        severity: 'high'
+        category: 'Memory Management',
+        severity: 'high',
       },
       dataLatency: {
         max: 100, // <100ms NMEA sentence → widget update
         unit: 'ms',
         category: 'Data Processing',
-        severity: 'critical'
+        severity: 'critical',
       },
       testExecution: {
         unit: 50, // <50ms per unit test
         integration: 2000, // <2000ms per integration test
-        e2e: 30000 // <30s per E2E test
-      }
+        e2e: 30000, // <30s per E2E test
+      },
     };
 
     this.performanceViolations = [];
@@ -62,7 +62,7 @@ class PerformanceMonitoringIntegration {
       renderTimes: [],
       memoryUsage: [],
       dataLatency: [],
-      testExecutionTimes: new Map()
+      testExecutionTimes: new Map(),
     };
 
     this.isMonitoring = false;
@@ -75,14 +75,14 @@ class PerformanceMonitoringIntegration {
    */
   initializePerformanceMonitoring() {
     console.log('⚡ Initializing performance monitoring for VS Code Test Explorer...');
-    
+
     this.isMonitoring = true;
     this.memoryBaseline = this.getCurrentMemoryUsage();
-    
+
     // Start monitoring intervals
     this.startRenderPerformanceMonitoring();
     this.startMemoryMonitoring();
-    
+
     console.log('⚡ Performance monitoring active with marine application thresholds');
   }
 
@@ -93,17 +93,17 @@ class PerformanceMonitoringIntegration {
     // Hook into React Native's render cycle if available
     if (typeof global !== 'undefined' && global.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
       const originalOnCommitFiberRoot = global.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberRoot;
-      
+
       global.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberRoot = (...args) => {
         const renderStart = performance.now();
-        
+
         if (originalOnCommitFiberRoot) {
           originalOnCommitFiberRoot.apply(this, args);
         }
-        
+
         const renderTime = performance.now() - renderStart;
         this.recordRenderPerformance(renderTime);
-        
+
         return args;
       };
     }
@@ -122,12 +122,12 @@ class PerformanceMonitoringIntegration {
         const TestingLibrary = require('@testing-library/react-native');
         if (TestingLibrary.render) {
           const originalRender = TestingLibrary.render;
-          
+
           TestingLibrary.render = (...args) => {
             const renderStart = performance.now();
             const result = originalRender.apply(this, args);
             const renderTime = performance.now() - renderStart;
-            
+
             this.recordRenderPerformance(renderTime, 'test-render');
             return result;
           };
@@ -145,7 +145,7 @@ class PerformanceMonitoringIntegration {
     this.performanceMetrics.renderTimes.push({
       time: renderTime,
       timestamp: Date.now(),
-      context
+      context,
     });
 
     // AC4.6: Check render performance threshold (>16ms violation)
@@ -159,7 +159,9 @@ class PerformanceMonitoringIntegration {
         unit: this.thresholds.render.unit,
         timestamp: new Date().toISOString(),
         context,
-        message: `Render time ${renderTime.toFixed(2)}ms exceeds 60fps threshold (${this.thresholds.render.max}ms)`
+        message: `Render time ${renderTime.toFixed(2)}ms exceeds 60fps threshold (${
+          this.thresholds.render.max
+        }ms)`,
       };
 
       this.performanceViolations.push(violation);
@@ -184,14 +186,14 @@ class PerformanceMonitoringIntegration {
    */
   checkMemoryUsage() {
     const currentMemory = this.getCurrentMemoryUsage();
-    
+
     if (this.testStartMemory) {
       const memoryIncrease = currentMemory.heapUsed - this.testStartMemory.heapUsed;
-      
+
       this.performanceMetrics.memoryUsage.push({
         current: currentMemory,
         increase: memoryIncrease,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // AC4.9: Check memory threshold violation (>50MB increase)
@@ -207,9 +209,11 @@ class PerformanceMonitoringIntegration {
           details: {
             baseline: this.testStartMemory.heapUsed,
             current: currentMemory.heapUsed,
-            total: currentMemory.heapTotal
+            total: currentMemory.heapTotal,
           },
-          message: `Memory increase ${memoryIncrease.toFixed(2)}MB exceeds threshold (${this.thresholds.memory.max}MB)`
+          message: `Memory increase ${memoryIncrease.toFixed(2)}MB exceeds threshold (${
+            this.thresholds.memory.max
+          }MB)`,
         };
 
         this.performanceViolations.push(violation);
@@ -223,13 +227,13 @@ class PerformanceMonitoringIntegration {
    */
   recordDataLatency(nmeaSentenceTime, widgetUpdateTime, context = 'nmea-widget-update') {
     const latency = widgetUpdateTime - nmeaSentenceTime;
-    
+
     this.performanceMetrics.dataLatency.push({
       latency,
       nmeaSentenceTime,
       widgetUpdateTime,
       timestamp: Date.now(),
-      context
+      context,
     });
 
     // AC4.11: Check data latency threshold violation (>100ms)
@@ -245,9 +249,11 @@ class PerformanceMonitoringIntegration {
         context,
         details: {
           nmeaSentenceTime,
-          widgetUpdateTime
+          widgetUpdateTime,
         },
-        message: `Data latency ${latency.toFixed(2)}ms exceeds marine safety threshold (${this.thresholds.dataLatency.max}ms)`
+        message: `Data latency ${latency.toFixed(2)}ms exceeds marine safety threshold (${
+          this.thresholds.dataLatency.max
+        }ms)`,
       };
 
       this.performanceViolations.push(violation);
@@ -260,15 +266,15 @@ class PerformanceMonitoringIntegration {
    */
   recordTestExecutionTime(testPath, testName, executionTime, tier = 'unit') {
     const testKey = `${testPath}:${testName}`;
-    
+
     if (!this.performanceMetrics.testExecutionTimes.has(testKey)) {
       this.performanceMetrics.testExecutionTimes.set(testKey, []);
     }
-    
+
     this.performanceMetrics.testExecutionTimes.get(testKey).push({
       executionTime,
       tier,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // AC4.13: Check test execution threshold based on tier
@@ -299,7 +305,9 @@ class PerformanceMonitoringIntegration {
         testPath,
         testName,
         tier,
-        message: `${tier} test execution ${executionTime.toFixed(2)}ms exceeds threshold (${threshold}ms)`
+        message: `${tier} test execution ${executionTime.toFixed(
+          2,
+        )}ms exceeds threshold (${threshold}ms)`,
       };
 
       this.performanceViolations.push(violation);
@@ -320,16 +328,15 @@ class PerformanceMonitoringIntegration {
         message: violation.message,
         details: violation,
         timestamp: violation.timestamp,
-        recommendations: this.generatePerformanceRecommendations(violation)
+        recommendations: this.generatePerformanceRecommendations(violation),
       };
 
       // Save to VS Code-accessible location
       await this.savePerformanceWarning(warning);
-      
+
       // Log to console for immediate visibility
       const severityIcon = this.getSeverityIcon(violation.severity);
       console.warn(`${severityIcon} Performance Alert: ${violation.message}`);
-      
     } catch (error) {
       console.error('Failed to report performance violation to VS Code:', error);
     }
@@ -347,34 +354,34 @@ class PerformanceMonitoringIntegration {
           'Consider using React.memo() for component optimization',
           'Check for unnecessary re-renders with React DevTools',
           'Implement virtualization for large lists',
-          'Optimize marine widget rendering with useMemo/useCallback'
+          'Optimize marine widget rendering with useMemo/useCallback',
         );
         break;
-        
+
       case 'memory':
         recommendations.push(
           'Check for memory leaks in NMEA data subscriptions',
           'Implement proper cleanup in useEffect hooks',
           'Consider object pooling for frequent allocations',
-          'Monitor WebSocket connection cleanup'
+          'Monitor WebSocket connection cleanup',
         );
         break;
-        
+
       case 'dataLatency':
         recommendations.push(
           'Optimize NMEA sentence parsing performance',
           'Check WebSocket message batching configuration',
           'Implement data throttling for high-frequency updates',
-          'Review widget update debouncing strategy'
+          'Review widget update debouncing strategy',
         );
         break;
-        
+
       case 'testExecution':
         recommendations.push(
           'Check for synchronous operations in tests',
           'Optimize test setup and teardown procedures',
           'Consider test parallelization',
-          'Review mock implementation performance'
+          'Review mock implementation performance',
         );
         break;
     }
@@ -386,8 +393,12 @@ class PerformanceMonitoringIntegration {
    * AC4.16: Save performance warning for VS Code Test Explorer
    */
   async savePerformanceWarning(warning) {
-    const warningsFile = path.join(this.globalConfig.rootDir, 'coverage', 'performance-warnings.json');
-    
+    const warningsFile = path.join(
+      this.globalConfig.rootDir,
+      'coverage',
+      'performance-warnings.json',
+    );
+
     let existingWarnings = [];
     try {
       const content = fs.readFileSync(warningsFile, 'utf8');
@@ -397,7 +408,7 @@ class PerformanceMonitoringIntegration {
     }
 
     existingWarnings.push(warning);
-    
+
     // Keep only recent warnings (last 100)
     if (existingWarnings.length > 100) {
       existingWarnings = existingWarnings.slice(-100);
@@ -417,7 +428,7 @@ class PerformanceMonitoringIntegration {
         heapUsed: usage.heapUsed / 1024 / 1024, // Convert to MB
         heapTotal: usage.heapTotal / 1024 / 1024,
         external: usage.external / 1024 / 1024,
-        rss: usage.rss / 1024 / 1024
+        rss: usage.rss / 1024 / 1024,
       };
     }
 
@@ -426,7 +437,7 @@ class PerformanceMonitoringIntegration {
       heapUsed: 0,
       heapTotal: 0,
       external: 0,
-      rss: 0
+      rss: 0,
     };
   }
 
@@ -438,7 +449,7 @@ class PerformanceMonitoringIntegration {
       critical: '🚨',
       high: '⚠️',
       medium: '⚡',
-      low: '💡'
+      low: '💡',
     };
     return icons[severity] || '📊';
   }
@@ -450,24 +461,28 @@ class PerformanceMonitoringIntegration {
     const summary = {
       metadata: {
         timestamp: new Date().toISOString(),
-        monitoringDuration: this.isMonitoring ? Date.now() - this.monitoringStartTime : 0
+        monitoringDuration: this.isMonitoring ? Date.now() - this.monitoringStartTime : 0,
       },
       violations: {
         total: this.performanceViolations.length,
         byType: this.groupViolationsByType(),
-        bySeverity: this.groupViolationsBySeverity()
+        bySeverity: this.groupViolationsBySeverity(),
       },
       metrics: {
         render: this.summarizeRenderMetrics(),
         memory: this.summarizeMemoryMetrics(),
         dataLatency: this.summarizeDataLatencyMetrics(),
-        testExecution: this.summarizeTestExecutionMetrics()
+        testExecution: this.summarizeTestExecutionMetrics(),
       },
       thresholds: this.thresholds,
-      recommendations: this.generateOverallRecommendations()
+      recommendations: this.generateOverallRecommendations(),
     };
 
-    const summaryPath = path.join(this.globalConfig.rootDir, 'coverage', 'performance-summary.json');
+    const summaryPath = path.join(
+      this.globalConfig.rootDir,
+      'coverage',
+      'performance-summary.json',
+    );
     await this.ensureDirectoryExists(path.dirname(summaryPath));
     fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 
@@ -480,7 +495,7 @@ class PerformanceMonitoringIntegration {
   onTestStart(test) {
     this.testStartMemory = this.getCurrentMemoryUsage();
     this.monitoringStartTime = Date.now();
-    
+
     if (this.profiler) {
       this.profiler.start();
     }
@@ -490,15 +505,17 @@ class PerformanceMonitoringIntegration {
    * Jest Reporter Interface: Called when test completes
    */
   onTestResult(test, testResult, aggregatedResult) {
-    const testDuration = testResult.perfStats ? testResult.perfStats.end - testResult.perfStats.start : 0;
-    
+    const testDuration = testResult.perfStats
+      ? testResult.perfStats.end - testResult.perfStats.start
+      : 0;
+
     // Determine test tier from file path
     let tier = 'unit';
     if (test.path.includes('/tier2-integration/')) tier = 'integration';
     else if (test.path.includes('/tier3-e2e/')) tier = 'e2e';
-    
+
     // Record test execution times
-    testResult.assertionResults.forEach(assertion => {
+    testResult.assertionResults.forEach((assertion) => {
       if (assertion.duration) {
         this.recordTestExecutionTime(test.path, assertion.title, assertion.duration, tier);
       }
@@ -510,7 +527,7 @@ class PerformanceMonitoringIntegration {
    */
   async onRunComplete(contexts, results) {
     this.isMonitoring = false;
-    
+
     // Clear monitoring intervals
     if (this.memoryMonitoringInterval) {
       clearInterval(this.memoryMonitoringInterval);
@@ -518,13 +535,13 @@ class PerformanceMonitoringIntegration {
 
     // Generate final performance summary
     const summary = await this.generatePerformanceSummary();
-    
+
     console.log('⚡ Performance Monitoring Summary:');
     console.log(`   Total Violations: ${summary.violations.total}`);
     console.log(`   Render Violations: ${summary.violations.byType.render || 0}`);
     console.log(`   Memory Violations: ${summary.violations.byType.memory || 0}`);
     console.log(`   Data Latency Violations: ${summary.violations.byType.dataLatency || 0}`);
-    
+
     if (summary.violations.total > 0) {
       console.log('⚠️ Performance thresholds exceeded - check coverage/performance-warnings.json');
     } else {
@@ -551,80 +568,80 @@ class PerformanceMonitoringIntegration {
 
   summarizeRenderMetrics() {
     if (this.performanceMetrics.renderTimes.length === 0) return null;
-    
-    const times = this.performanceMetrics.renderTimes.map(r => r.time);
+
+    const times = this.performanceMetrics.renderTimes.map((r) => r.time);
     return {
       count: times.length,
       avg: times.reduce((a, b) => a + b) / times.length,
       max: Math.max(...times),
       min: Math.min(...times),
-      violations: times.filter(t => t > this.thresholds.render.max).length
+      violations: times.filter((t) => t > this.thresholds.render.max).length,
     };
   }
 
   summarizeMemoryMetrics() {
     if (this.performanceMetrics.memoryUsage.length === 0) return null;
-    
-    const increases = this.performanceMetrics.memoryUsage.map(m => m.increase);
+
+    const increases = this.performanceMetrics.memoryUsage.map((m) => m.increase);
     return {
       count: increases.length,
       avgIncrease: increases.reduce((a, b) => a + b) / increases.length,
       maxIncrease: Math.max(...increases),
-      violations: increases.filter(i => i > this.thresholds.memory.max).length
+      violations: increases.filter((i) => i > this.thresholds.memory.max).length,
     };
   }
 
   summarizeDataLatencyMetrics() {
     if (this.performanceMetrics.dataLatency.length === 0) return null;
-    
-    const latencies = this.performanceMetrics.dataLatency.map(d => d.latency);
+
+    const latencies = this.performanceMetrics.dataLatency.map((d) => d.latency);
     return {
       count: latencies.length,
       avg: latencies.reduce((a, b) => a + b) / latencies.length,
       max: Math.max(...latencies),
       min: Math.min(...latencies),
-      violations: latencies.filter(l => l > this.thresholds.dataLatency.max).length
+      violations: latencies.filter((l) => l > this.thresholds.dataLatency.max).length,
     };
   }
 
   summarizeTestExecutionMetrics() {
     const allExecutions = [];
-    this.performanceMetrics.testExecutionTimes.forEach(executions => {
+    this.performanceMetrics.testExecutionTimes.forEach((executions) => {
       allExecutions.push(...executions);
     });
-    
+
     if (allExecutions.length === 0) return null;
-    
-    const times = allExecutions.map(e => e.executionTime);
+
+    const times = allExecutions.map((e) => e.executionTime);
     return {
       count: times.length,
       avg: times.reduce((a, b) => a + b) / times.length,
       max: Math.max(...times),
       byTier: {
-        unit: allExecutions.filter(e => e.tier === 'unit').length,
-        integration: allExecutions.filter(e => e.tier === 'integration').length,
-        e2e: allExecutions.filter(e => e.tier === 'e2e').length
-      }
+        unit: allExecutions.filter((e) => e.tier === 'unit').length,
+        integration: allExecutions.filter((e) => e.tier === 'integration').length,
+        e2e: allExecutions.filter((e) => e.tier === 'e2e').length,
+      },
     };
   }
 
   generateOverallRecommendations() {
     const recommendations = [];
-    
+
     if (this.performanceViolations.length > 0) {
       recommendations.push('Review performance violations in coverage/performance-warnings.json');
     }
-    
-    const renderViolations = this.performanceViolations.filter(v => v.type === 'render').length;
+
+    const renderViolations = this.performanceViolations.filter((v) => v.type === 'render').length;
     if (renderViolations > 0) {
       recommendations.push('Focus on marine widget rendering optimization for 60fps target');
     }
-    
-    const memoryViolations = this.performanceViolations.filter(v => v.type === 'memory').length;
+
+    const memoryViolations = this.performanceViolations.filter((v) => v.type === 'memory').length;
     if (memoryViolations > 0) {
       recommendations.push('Investigate NMEA data processing memory usage');
     }
-    
+
     return recommendations;
   }
 

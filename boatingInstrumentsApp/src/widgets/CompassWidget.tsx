@@ -16,7 +16,7 @@ import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 interface CompassWidgetProps {
   id: string;
   title: string;
-  width?: number;  // Widget width for responsive scaling
+  width?: number; // Widget width for responsive scaling
   height?: number; // Widget height for responsive scaling
 }
 
@@ -27,132 +27,179 @@ type CompassMode = 'TRUE' | 'MAGNETIC';
  * Primary Grid (2×1): True Heading + Magnetic Heading
  * Secondary Grid (2×1): Variation and Deviation (if available)
  */
-export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, title, width, height }) => {
-  const theme = useTheme();
-  const fontSize = useResponsiveFontSize(width || 0, height || 0);
-  
-  // Widget state management per ui-architecture.md v2.3
-  
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-  const compassSensorData = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0], (a, b) => a === b);
-  const heading = compassSensorData?.heading;
-  const magneticHeading = compassSensorData?.magneticHeading;
-  const variation = compassSensorData?.magneticVariation;
-  const deviation = compassSensorData?.magneticDeviation;
-  const compassTimestamp = compassSensorData?.timestamp;
-  const headingTimestamp = compassTimestamp; // Use sensor timestamp
-  
-  // NEW: Use cached display info from sensor.display (Phase 3 migration)
-  // No more presentation hooks needed - data is pre-formatted in store
-  const variationDisplay: MetricDisplayData = {
-    mnemonic: 'VAR',
-    value: compassSensorData?.display?.magneticVariation?.value ?? '---',
-    unit: compassSensorData?.display?.magneticVariation?.unit ?? '°',
-    rawValue: variation ?? 0,
-    layout: { minWidth: 60, alignment: 'right' },
-    presentation: { id: 'angle', name: 'Angle', pattern: 'xxx.x' },
-    status: { isValid: variation !== undefined && variation !== null, isFallback: false }
-  };
+export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
+  ({ id, title, width, height }) => {
+    const theme = useTheme();
+    const fontSize = useResponsiveFontSize(width || 0, height || 0);
 
-  const deviationDisplay: MetricDisplayData = {
-    mnemonic: 'DEV',
-    value: compassSensorData?.display?.magneticDeviation?.value ?? '---',
-    unit: compassSensorData?.display?.magneticDeviation?.unit ?? '°',
-    rawValue: deviation ?? 0,
-    layout: { minWidth: 60, alignment: 'right' },
-    presentation: { id: 'angle', name: 'Angle', pattern: 'xxx.x' },
-    status: { isValid: deviation !== undefined && deviation !== null, isFallback: false }
-  };
-  
-  // Compass mode state with toggle capability
-  const [compassMode, setCompassMode] = useState<CompassMode>('TRUE'); // Default to TRUE per marine standards
+    // Widget state management per ui-architecture.md v2.3
 
-  const handleLongPressOnPin = useCallback(() => {
-  }, [id]);
+    // NMEA data selectors - Using SensorInstance pattern with getMetric()
+    const compassSensorData = useNmeaStore(
+      (state) => state.nmeaData.sensors.compass?.[0],
+      (a, b) => a === b,
+    );
 
-  // Responsive header sizing using proper base-size scaling
-  const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
+    // Extract MetricValues for all compass data
+    const magneticHeadingMetric = compassSensorData?.getMetric('magneticHeading');
+    const magneticHeading = magneticHeadingMetric?.si_value;
 
-  // Mode toggle handler (tap compass to switch TRUE ↔ MAGNETIC)
-  const handleModeToggle = useCallback(() => {
-    setCompassMode(prev => prev === 'TRUE' ? 'MAGNETIC' : 'TRUE');
-  }, []);
+    const trueHeadingMetric = compassSensorData?.getMetric('trueHeading');
+    const trueHeading = trueHeadingMetric?.si_value;
 
-  // Current heading based on selected mode
-  const currentHeading = useMemo(() => {
-    switch (compassMode) {
-      case 'TRUE':
-        return heading;
-      case 'MAGNETIC':
-        return magneticHeading || (heading && variation ? heading - variation : null);
-      default:
-        return heading;
-    }
-  }, [heading, magneticHeading, variation, compassMode]);
+    // Legacy heading field (for backward compatibility)
+    const headingMetric = compassSensorData?.getMetric('heading');
+    const heading = headingMetric?.si_value;
 
-  // Data staleness detection (>5s = stale)
-  const isStale = headingTimestamp ? (Date.now() - headingTimestamp) > 5000 : true;
+    const variationMetric = compassSensorData?.getMetric('variation');
+    const variation = variationMetric?.si_value;
 
-  // Heading display formatting
-  const headingDisplay = useMemo(() => {
-    if (currentHeading === undefined || currentHeading === null) {
-      return '---°';
-    }
-    return `${Math.round(currentHeading).toString().padStart(3, '0')}°`;
-  }, [currentHeading]);
+    const deviationMetric = compassSensorData?.getMetric('deviation');
+    const deviation = deviationMetric?.si_value;
 
-  // Cardinal direction
-  const cardinalDirection = useMemo(() => {
-    if (currentHeading === undefined || currentHeading === null) return '';
-    
-    const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-    const index = Math.round(currentHeading / 22.5) % 16;
-    return directions[index];
-  }, [currentHeading]);
+    const compassTimestamp = compassSensorData?.timestamp;
+    const headingTimestamp = compassTimestamp; // Use sensor timestamp
 
-  // Header component for UnifiedWidgetGrid v2
-  const headerComponent = (
-    <View style={{
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%',
-      paddingHorizontal: 16,
-    }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <UniversalIcon 
-          name={WidgetMetadataRegistry.getMetadata('compass')?.icon || 'compass-outline'} 
-          size={headerIconSize} 
-          color={theme.iconPrimary}
-        />
-        <Text style={{
-          fontSize: headerFontSize,
-          fontWeight: 'bold',
-          letterSpacing: 0.5,
-          color: theme.textSecondary,
-          textTransform: 'uppercase',
-        }}>{title}</Text>
+    // Create display data from MetricValues (pre-enriched with user formatting)
+    const variationMetricDisplay = compassSensorData?.getMetric('variation');
+    const variationDisplay: MetricDisplayData = {
+      mnemonic: 'VAR',
+      value: variationMetricDisplay?.formattedValue ?? '---',
+      unit: variationMetricDisplay?.unit ?? '°',
+      rawValue: variation ?? 0,
+      layout: { minWidth: 60, alignment: 'right' },
+      presentation: { id: 'angle', name: 'Angle', pattern: 'xxx.x' },
+      status: { isValid: variation !== undefined && variation !== null, isFallback: false },
+    };
+
+    const deviationMetricDisplay = compassSensorData?.getMetric('deviation');
+    const deviationDisplay: MetricDisplayData = {
+      mnemonic: 'DEV',
+      value: deviationMetricDisplay?.formattedValue ?? '---',
+      unit: deviationMetricDisplay?.unit ?? '°',
+      rawValue: deviation ?? 0,
+      layout: { minWidth: 60, alignment: 'right' },
+      presentation: { id: 'angle', name: 'Angle', pattern: 'xxx.x' },
+      status: { isValid: deviation !== undefined && deviation !== null, isFallback: false },
+    };
+
+    // Compass mode state with toggle capability
+    const [compassMode, setCompassMode] = useState<CompassMode>('TRUE'); // Default to TRUE per marine standards
+
+    const handleLongPressOnPin = useCallback(() => {}, [id]);
+
+    // Responsive header sizing using proper base-size scaling
+    const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
+
+    // Mode toggle handler (tap compass to switch TRUE ↔ MAGNETIC)
+    const handleModeToggle = useCallback(() => {
+      setCompassMode((prev) => (prev === 'TRUE' ? 'MAGNETIC' : 'TRUE'));
+    }, []);
+
+    // Current heading based on selected mode
+    const currentHeading = useMemo(() => {
+      switch (compassMode) {
+        case 'TRUE':
+          // Prefer trueHeading if available, otherwise calculate from magnetic + variation
+          return (
+            trueHeading ?? (magneticHeading && variation ? magneticHeading + variation : heading)
+          );
+        case 'MAGNETIC':
+          // Prefer magneticHeading if available, otherwise calculate from true - variation
+          return magneticHeading ?? (trueHeading && variation ? trueHeading - variation : heading);
+        default:
+          return trueHeading ?? magneticHeading ?? heading;
+      }
+    }, [trueHeading, magneticHeading, heading, variation, compassMode]);
+
+    // Data staleness detection (>5s = stale)
+    const isStale = headingTimestamp ? Date.now() - headingTimestamp > 5000 : true;
+
+    // Heading display formatting
+    const headingDisplay = useMemo(() => {
+      if (currentHeading === undefined || currentHeading === null) {
+        return '---°';
+      }
+      return `${Math.round(currentHeading).toString().padStart(3, '0')}°`;
+    }, [currentHeading]);
+
+    // Cardinal direction
+    const cardinalDirection = useMemo(() => {
+      if (currentHeading === undefined || currentHeading === null) return '';
+
+      const directions = [
+        'N',
+        'NNE',
+        'NE',
+        'ENE',
+        'E',
+        'ESE',
+        'SE',
+        'SSE',
+        'S',
+        'SSW',
+        'SW',
+        'WSW',
+        'W',
+        'WNW',
+        'NW',
+        'NNW',
+      ];
+      const index = Math.round(currentHeading / 22.5) % 16;
+      return directions[index];
+    }, [currentHeading]);
+
+    // Header component for UnifiedWidgetGrid v2
+    const headerComponent = (
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+          paddingHorizontal: 16,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <UniversalIcon
+            name={WidgetMetadataRegistry.getMetadata('compass')?.icon || 'compass-outline'}
+            size={headerIconSize}
+            color={theme.iconPrimary}
+          />
+          <Text
+            style={{
+              fontSize: headerFontSize,
+              fontWeight: 'bold',
+              letterSpacing: 0.5,
+              color: theme.textSecondary,
+              textTransform: 'uppercase',
+            }}
+          >
+            {title}
+          </Text>
+        </View>
       </View>
-      
+    );
 
-    </View>
-  );
-
-  return (
-    <UnifiedWidgetGrid 
-      theme={theme}
-      header={headerComponent}
-      widgetWidth={width || 400}
-      widgetHeight={height || 300}
-      columns={1}
-      primaryRows={2}
-      secondaryRows={2}
-      testID={`compass-widget-${id}`}
-    >
+    return (
+      <UnifiedWidgetGrid
+        theme={theme}
+        header={headerComponent}
+        widgetWidth={width || 400}
+        widgetHeight={height || 300}
+        columns={1}
+        primaryRows={2}
+        secondaryRows={2}
+        testID={`compass-widget-${id}`}
+      >
         {/* Row 1: True Heading */}
         <PrimaryMetricCell
           mnemonic="TRUE"
-          value={heading !== null && heading !== undefined ? Math.round(heading).toString().padStart(3, '0') : '---'}
+          value={
+            heading !== null && heading !== undefined
+              ? Math.round(heading).toString().padStart(3, '0')
+              : '---'
+          }
           unit="°"
           state={isStale ? 'warning' : 'normal'}
           fontSize={{
@@ -164,7 +211,15 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
         {/* Row 2: Magnetic Heading */}
         <PrimaryMetricCell
           mnemonic="MAG"
-          value={magneticHeading !== null && magneticHeading !== undefined ? Math.round(magneticHeading).toString().padStart(3, '0') : (heading && variation ? Math.round(heading - variation).toString().padStart(3, '0') : '---')}
+          value={
+            magneticHeading !== null && magneticHeading !== undefined
+              ? Math.round(magneticHeading).toString().padStart(3, '0')
+              : heading && variation
+              ? Math.round(heading - variation)
+                  .toString()
+                  .padStart(3, '0')
+              : '---'
+          }
           unit="°"
           state={isStale ? 'warning' : 'normal'}
           fontSize={{
@@ -197,8 +252,9 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, tit
           }}
         />
       </UnifiedWidgetGrid>
-  );
-});
+    );
+  },
+);
 
 // SVG Compass Rose Component
 interface CompassRoseProps {
@@ -211,14 +267,14 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
   const size = 120;
   const center = size / 2;
   const radius = 45;
-  
+
   // Compass rose color based on state
   const strokeColor = isStale ? theme.textSecondary : theme.iconPrimary;
   const fillColor = isStale ? theme.textSecondary : theme.text;
-  
+
   // Calculate rotation (north up, heading rotates clockwise)
   const rotation = -heading; // Negative because we want the rose to rotate opposite to heading
-  
+
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <G transform={`rotate(${rotation}, ${center}, ${center})`}>
@@ -231,7 +287,7 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
           stroke={strokeColor}
           strokeWidth="2"
         />
-        
+
         {/* Cardinal direction markers */}
         {[0, 90, 180, 270].map((angle, index) => {
           const radian = (angle * Math.PI) / 180;
@@ -239,7 +295,7 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
           const y1 = center - (radius - 10) * Math.cos(radian);
           const x2 = center + radius * Math.sin(radian);
           const y2 = center - radius * Math.cos(radian);
-          
+
           return (
             <Line
               key={angle}
@@ -253,15 +309,13 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
             />
           );
         })}
-        
-        {/* Intercardinal direction markers */}
         {[45, 135, 225, 315].map((angle) => {
           const radian = (angle * Math.PI) / 180;
           const x1 = center + (radius - 5) * Math.sin(radian);
           const y1 = center - (radius - 5) * Math.cos(radian);
           const x2 = center + radius * Math.sin(radian);
           const y2 = center - radius * Math.cos(radian);
-          
+
           return (
             <Line
               key={angle}
@@ -275,8 +329,6 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
             />
           );
         })}
-        
-        {/* North pointer (triangle) */}
         <G>
           <Line
             x1={center}
@@ -307,14 +359,9 @@ const CompassRose: React.FC<CompassRoseProps> = React.memo(({ heading, theme, is
             strokeLinecap="round"
           />
         </G>
-        
+
         {/* Center dot */}
-        <Circle
-          cx={center}
-          cy={center}
-          r="3"
-          fill={fillColor}
-        />
+        <Circle cx={center} cy={center} r="3" fill={fillColor} />
       </G>
     </Svg>
   );

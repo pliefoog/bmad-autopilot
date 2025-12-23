@@ -237,6 +237,7 @@ export const MaritimeSettingsConfiguration: React.FC = () => {
           • <Text style={styles.bold}>Major Cities:</Text> Reference points for timezone identification
         </Text>
       </View>
+    </ScrollView>
   );
 };
 

@@ -10,7 +10,7 @@ export default function RootLayout() {
   // Initialize accessibility service on app mount
   useEffect(() => {
     AccessibilityService.initialize();
-    
+
     return () => {
       AccessibilityService.cleanup();
     };
@@ -20,35 +20,37 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <LoadingProvider>
-          <Stack screenOptions={{ 
-            headerShown: true, // Enable native iOS headers for HIG compliance
-            animation: 'slide_from_right',
-            gestureEnabled: true, // Enable iOS swipe-back gesture
-            gestureDirection: 'horizontal',
-            headerBackTitle: Platform.OS === 'web' ? 'Back' : '', // Show "Back" text on web, chevron on iOS
-            headerBackTitleVisible: Platform.OS === 'web', // Always show back button on web
-            presentation: 'card', // Standard push navigation
-          }}>
-            <Stack.Screen 
-              name="index" 
+          <Stack
+            screenOptions={{
+              headerShown: true, // Enable native iOS headers for HIG compliance
+              animation: 'slide_from_right',
+              gestureEnabled: true, // Enable iOS swipe-back gesture
+              gestureDirection: 'horizontal',
+              headerBackTitle: Platform.OS === 'web' ? 'Back' : '', // Show "Back" text on web, chevron on iOS
+              headerBackTitleVisible: Platform.OS === 'web', // Always show back button on web
+              presentation: 'card', // Standard push navigation
+            }}
+          >
+            <Stack.Screen
+              name="index"
               options={{
                 headerShown: false, // Dashboard uses custom header
               }}
             />
-            <Stack.Screen 
-              name="settings" 
-              options={{ 
+            <Stack.Screen
+              name="settings"
+              options={{
                 presentation: 'card', // Settings is part of navigation hierarchy (not modal)
                 animation: 'slide_from_right',
                 headerShown: true,
                 title: 'Settings',
                 headerBackTitle: 'Dashboard',
                 gestureEnabled: true,
-              }} 
+              }}
             />
             <Stack.Screen
               name="widget-selector"
-              options={{ 
+              options={{
                 presentation: 'modal', // Widget selector IS a modal (temporary task)
                 animation: 'slide_from_bottom',
                 headerShown: true,

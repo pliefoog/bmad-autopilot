@@ -18,14 +18,9 @@ export interface ErrorBoundaryConfig {
 // Helper function to create error boundary with default config
 export const createErrorBoundary = <T extends React.ComponentType<any>>(
   WrappedComponent: T,
-  config: ErrorBoundaryConfig = {}
+  config: ErrorBoundaryConfig = {},
 ): React.ComponentType<React.ComponentProps<T>> => {
-  const {
-    enableRetry = true,
-    retryAttempts = 3,
-    retryDelay = 1000,
-    isolateError = true,
-  } = config;
+  const { enableRetry = true, retryAttempts = 3, retryDelay = 1000, isolateError = true } = config;
 
   return (props: React.ComponentProps<T>) => (
     <BaseErrorBoundary
@@ -43,7 +38,7 @@ export const createErrorBoundary = <T extends React.ComponentType<any>>(
 export const withWidgetErrorBoundary = <T extends React.ComponentType<any>>(
   WrappedComponent: T,
   widgetType?: string,
-  widgetId?: string
+  widgetId?: string,
 ): React.ComponentType<React.ComponentProps<T>> => {
   return (props: React.ComponentProps<T>) => (
     <WidgetErrorBoundary
@@ -63,7 +58,7 @@ export const withConnectionErrorBoundary = <T extends React.ComponentType<any>>(
   WrappedComponent: T,
   connectionType?: 'wifi' | 'bluetooth' | 'usb' | 'serial',
   hostAddress?: string,
-  port?: number
+  port?: number,
 ): React.ComponentType<React.ComponentProps<T>> => {
   return (props: React.ComponentProps<T>) => (
     <ConnectionErrorBoundary
@@ -83,7 +78,7 @@ export const withConnectionErrorBoundary = <T extends React.ComponentType<any>>(
 export const withDataErrorBoundary = <T extends React.ComponentType<any>>(
   WrappedComponent: T,
   dataType?: 'nmea0183' | 'nmea2000' | 'json' | 'binary',
-  sourceId?: string
+  sourceId?: string,
 ): React.ComponentType<React.ComponentProps<T>> => {
   return (props: React.ComponentProps<T>) => (
     <DataErrorBoundary

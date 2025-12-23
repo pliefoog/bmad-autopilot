@@ -1,16 +1,16 @@
 /**
  * Accessibility Service
- * 
+ *
  * Integrates with React Native's AccessibilityInfo API to detect and respond to
  * system accessibility settings (VoiceOver, TalkBack, font scaling, etc.)
- * 
+ *
  * Features:
  * - Screen reader detection (VoiceOver on iOS, TalkBack on Android)
  * - System font scale detection
  * - Reduced motion preference detection
  * - Accessibility announcement utilities
  * - High contrast mode detection (where available)
- * 
+ *
  * @see Story 4.4: Accessibility Implementation (AC6, AC7, AC8)
  * @see docs/stories/story-context-4.4.xml - React Native AccessibilityInfo API integration
  */
@@ -53,50 +53,49 @@ class AccessibilityServiceClass {
 
       // Detect reduced motion preference
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        const reduceMotionEnabled = await AccessibilityInfo.isReduceMotionEnabled?.() ?? false;
+        const reduceMotionEnabled = (await AccessibilityInfo.isReduceMotionEnabled?.()) ?? false;
         this.state.reduceMotionEnabled = reduceMotionEnabled;
-        
+
         // Update settings store
         useSettingsStore.getState().updateThemeSettings({
-          reducedMotion: reduceMotionEnabled
+          reducedMotion: reduceMotionEnabled,
         });
       }
 
       // Detect reduced transparency (iOS only)
       if (Platform.OS === 'ios') {
-        const reduceTransparencyEnabled = await AccessibilityInfo.isReduceTransparencyEnabled?.() ?? false;
+        const reduceTransparencyEnabled =
+          (await AccessibilityInfo.isReduceTransparencyEnabled?.()) ?? false;
         this.state.reduceTransparencyEnabled = reduceTransparencyEnabled;
       }
 
       // Detect bold text (iOS only)
       if (Platform.OS === 'ios') {
-        const boldTextEnabled = await AccessibilityInfo.isBoldTextEnabled?.() ?? false;
+        const boldTextEnabled = (await AccessibilityInfo.isBoldTextEnabled?.()) ?? false;
         this.state.boldTextEnabled = boldTextEnabled;
       }
 
       // Detect grayscale (iOS only)
       if (Platform.OS === 'ios') {
-        const grayscaleEnabled = await AccessibilityInfo.isGrayscaleEnabled?.() ?? false;
+        const grayscaleEnabled = (await AccessibilityInfo.isGrayscaleEnabled?.()) ?? false;
         this.state.grayscaleEnabled = grayscaleEnabled;
       }
 
       // Detect invert colors (iOS only)
       if (Platform.OS === 'ios') {
-        const invertColorsEnabled = await AccessibilityInfo.isInvertColorsEnabled?.() ?? false;
+        const invertColorsEnabled = (await AccessibilityInfo.isInvertColorsEnabled?.()) ?? false;
         this.state.invertColorsEnabled = invertColorsEnabled;
-        
+
         // High contrast mode approximation
         if (invertColorsEnabled || this.state.grayscaleEnabled) {
           useSettingsStore.getState().updateThemeSettings({
-            highContrast: true
+            highContrast: true,
           });
         }
       }
 
       // Setup change listeners
       this.setupListeners();
-
-      console.log('[AccessibilityService] Initialized with state:', this.state);
     } catch (error) {
       console.error('[AccessibilityService] Initialization error:', error);
     }
@@ -111,8 +110,7 @@ class AccessibilityServiceClass {
       'screenReaderChanged',
       (enabled: boolean) => {
         this.state.screenReaderEnabled = enabled;
-        console.log('[AccessibilityService] Screen reader changed:', enabled);
-      }
+      },
     );
     this.listeners.push(() => screenReaderListener.remove());
 
@@ -123,10 +121,9 @@ class AccessibilityServiceClass {
         (enabled: boolean) => {
           this.state.reduceMotionEnabled = enabled;
           useSettingsStore.getState().updateThemeSettings({
-            reducedMotion: enabled
+            reducedMotion: enabled,
           });
-          console.log('[AccessibilityService] Reduced motion changed:', enabled);
-        }
+        },
       );
       this.listeners.push(() => reduceMotionListener.remove());
     }
@@ -138,8 +135,7 @@ class AccessibilityServiceClass {
           'boldTextChanged',
           (enabled: boolean) => {
             this.state.boldTextEnabled = enabled;
-            console.log('[AccessibilityService] Bold text changed:', enabled);
-          }
+          },
         );
         this.listeners.push(() => boldTextListener.remove());
 
@@ -150,11 +146,10 @@ class AccessibilityServiceClass {
             // Update high contrast if needed
             if (enabled) {
               useSettingsStore.getState().updateThemeSettings({
-                highContrast: true
+                highContrast: true,
               });
             }
-            console.log('[AccessibilityService] Grayscale changed:', enabled);
-          }
+          },
         );
         this.listeners.push(() => grayscaleListener.remove());
 
@@ -165,11 +160,10 @@ class AccessibilityServiceClass {
             // Update high contrast if needed
             if (enabled) {
               useSettingsStore.getState().updateThemeSettings({
-                highContrast: true
+                highContrast: true,
               });
             }
-            console.log('[AccessibilityService] Invert colors changed:', enabled);
-          }
+          },
         );
         this.listeners.push(() => invertColorsListener.remove());
       }
@@ -180,7 +174,7 @@ class AccessibilityServiceClass {
    * Cleanup listeners
    */
   cleanup(): void {
-    this.listeners.forEach(remove => remove());
+    this.listeners.forEach((remove) => remove());
     this.listeners = [];
   }
 
@@ -207,7 +201,7 @@ class AccessibilityServiceClass {
 
   /**
    * Announce message to screen reader
-   * 
+   *
    * @param message - Message to announce
    * @param priority - 'polite' (default) or 'assertive' for interrupting announcements
    */
@@ -229,7 +223,7 @@ class AccessibilityServiceClass {
 
   /**
    * Announce alarm to screen reader with marine-specific context
-   * 
+   *
    * @param alarmType - Type of alarm (e.g., 'depth', 'anchor')
    * @param severity - 'warning' or 'critical'
    * @param message - Alarm message
@@ -237,14 +231,14 @@ class AccessibilityServiceClass {
   announceAlarm(alarmType: string, severity: 'warning' | 'critical', message: string): void {
     const prefix = severity === 'critical' ? 'CRITICAL ALARM' : 'WARNING';
     const fullMessage = `${prefix}: ${alarmType}. ${message}`;
-    
+
     // Use assertive for critical alarms to interrupt current announcements
     this.announce(fullMessage, severity === 'critical' ? 'assertive' : 'polite');
   }
 
   /**
    * Set accessibility focus to a specific component
-   * 
+   *
    * @param reactTag - React tag from findNodeHandle
    */
   setAccessibilityFocus(reactTag: number | null): void {
@@ -267,7 +261,7 @@ class AccessibilityServiceClass {
   getFontScaleMultiplier(): number {
     const userLargeText = useSettingsStore.getState().themeSettings.largeText;
     const systemScale = this.state.fontScale;
-    
+
     // User preference adds +20% to system scale
     return userLargeText ? systemScale * 1.2 : systemScale;
   }
@@ -275,7 +269,10 @@ class AccessibilityServiceClass {
   /**
    * Announce connection status change to screen reader
    */
-  announceConnectionStatus(status: 'connected' | 'connecting' | 'disconnected', bridge?: string): void {
+  announceConnectionStatus(
+    status: 'connected' | 'connecting' | 'disconnected',
+    bridge?: string,
+  ): void {
     let message = '';
     switch (status) {
       case 'connected':
@@ -288,7 +285,7 @@ class AccessibilityServiceClass {
         message = 'NMEA bridge disconnected';
         break;
     }
-    
+
     this.announce(message, 'polite');
   }
 
@@ -316,7 +313,7 @@ export function useAccessibility(): AccessibilityState & {
   getFontScaleMultiplier: () => number;
 } {
   const state = AccessibilityService.getState();
-  
+
   return {
     ...state,
     announce: AccessibilityService.announce.bind(AccessibilityService),

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 // Theme compliance validation moved to development-only environment
 
 export type ThemeMode = 'day' | 'night' | 'red-night' | 'auto';
@@ -26,10 +26,10 @@ export interface ThemeColors {
   statusError: string;
   statusWarning: string;
   // Icon-specific colors for theme compliance
-  iconPrimary: string;     // Primary icon color (theme-aware)
-  iconSecondary: string;   // Secondary icon color (muted)
-  iconAccent: string;      // Accent icon color for important elements
-  iconDisabled: string;    // Disabled/inactive icon color
+  iconPrimary: string; // Primary icon color (theme-aware)
+  iconSecondary: string; // Secondary icon color (muted)
+  iconAccent: string; // Accent icon color for important elements
+  iconDisabled: string; // Disabled/inactive icon color
   // iOS semantic colors (HIG compliance)
   iosSystemBlue: string;
   iosSystemGreen: string;
@@ -47,21 +47,21 @@ export interface ThemeColors {
   iosSystemGray5: string;
   iosSystemGray6: string;
   // iOS label colors (adapt to theme)
-  iosLabel: string;                    // Primary text
-  iosSecondaryLabel: string;           // Secondary text (60% opacity)
-  iosTertiaryLabel: string;            // Tertiary text (30% opacity)
-  iosQuaternaryLabel: string;          // Quaternary text (18% opacity)
+  iosLabel: string; // Primary text
+  iosSecondaryLabel: string; // Secondary text (60% opacity)
+  iosTertiaryLabel: string; // Tertiary text (30% opacity)
+  iosQuaternaryLabel: string; // Quaternary text (18% opacity)
   // iOS fill colors
-  iosSystemBackground: string;         // Primary background
-  iosSecondarySystemBackground: string;// Secondary background
+  iosSystemBackground: string; // Primary background
+  iosSecondarySystemBackground: string; // Secondary background
   iosTertiarySystemBackground: string; // Tertiary background
-  iosSystemFill: string;               // Fill color
-  iosSecondarySystemFill: string;      // Secondary fill
-  iosTertiarySystemFill: string;       // Tertiary fill
-  iosQuaternarySystemFill: string;     // Quaternary fill
+  iosSystemFill: string; // Fill color
+  iosSecondarySystemFill: string; // Secondary fill
+  iosTertiarySystemFill: string; // Tertiary fill
+  iosQuaternarySystemFill: string; // Quaternary fill
   // iOS separator
-  iosSeparator: string;                // Hairline separator
-  iosOpaqueSeparator: string;          // Opaque separator
+  iosSeparator: string; // Hairline separator
+  iosOpaqueSeparator: string; // Opaque separator
 }
 
 export interface ThemeSettings {
@@ -232,18 +232,18 @@ const defaultSettings: SettingsState = {
 // Theme color definitions - Marine compliant colors with iOS semantic colors
 const dayTheme: ThemeColors = {
   // Marine-specific colors (preserved for navigation safety)
-  primary: '#CC3300',      // Dark red instead of blue
-  secondary: '#666666',    // Neutral gray
+  primary: '#CC3300', // Dark red instead of blue
+  secondary: '#666666', // Neutral gray
   background: '#FFFFFF',
-  surface: '#F8F8F8',      // Light gray without blue tint
-  text: '#1E1E1E',         // Dark gray
+  surface: '#F8F8F8', // Light gray without blue tint
+  text: '#1E1E1E', // Dark gray
   textSecondary: '#666666', // Medium gray
-  accent: '#CC3300',       // Red accent instead of cyan
-  warning: '#CC6600',      // Orange-red warning
-  error: '#CC0000',        // Pure red error
-  success: '#CC3300',      // Red instead of green for consistency
-  border: '#E0E0E0',       // Light gray border
-  shadow: '#00000020',     // Valid shadow format
+  accent: '#CC3300', // Red accent instead of cyan
+  warning: '#CC6600', // Orange-red warning
+  error: '#CC0000', // Pure red error
+  success: '#CC3300', // Red instead of green for consistency
+  border: '#E0E0E0', // Light gray border
+  shadow: '#00000020', // Valid shadow format
   headerBackground: '#F0F0F0',
   cardBackground: '#FFFFFF',
   buttonPrimary: '#CC3300',
@@ -292,18 +292,18 @@ const dayTheme: ThemeColors = {
 
 const nightTheme: ThemeColors = {
   // Marine-specific colors (preserved for navigation safety)
-  primary: '#CC3300',      // Dark red instead of blue
-  secondary: '#666666',    // Neutral gray
-  background: '#1A1A1A',   // Dark gray background
-  surface: '#2A2A2A',      // Slightly lighter dark gray
-  text: '#F0F0F0',         // Light gray text
+  primary: '#CC3300', // Dark red instead of blue
+  secondary: '#666666', // Neutral gray
+  background: '#1A1A1A', // Dark gray background
+  surface: '#2A2A2A', // Slightly lighter dark gray
+  text: '#F0F0F0', // Light gray text
   textSecondary: '#AAAAAA', // Medium gray text
-  accent: '#CC3300',       // Red accent
-  warning: '#CC6600',      // Orange-red warning
-  error: '#CC0000',        // Red error
-  success: '#CC3300',      // Red instead of green
-  border: '#444444',       // Dark gray border
-  shadow: '#00000040',     // Valid shadow format
+  accent: '#CC3300', // Red accent
+  warning: '#CC6600', // Orange-red warning
+  error: '#CC0000', // Red error
+  success: '#CC3300', // Red instead of green
+  border: '#444444', // Dark gray border
+  shadow: '#00000040', // Valid shadow format
   headerBackground: '#444444',
   cardBackground: '#2A2A2A',
   buttonPrimary: '#CC3300',
@@ -352,18 +352,18 @@ const nightTheme: ThemeColors = {
 
 const redNightTheme: ThemeColors = {
   // Marine red night vision mode (CRITICAL for navigation safety)
-  primary: '#FF0000',      // Pure red - marine compliant
-  secondary: '#CC0000',    // Dark red
-  background: '#000000',   // Pure black
-  surface: '#330000',      // Very dark red
-  text: '#FF0000',         // Pure red text
+  primary: '#FF0000', // Pure red - marine compliant
+  secondary: '#CC0000', // Dark red
+  background: '#000000', // Pure black
+  surface: '#330000', // Very dark red
+  text: '#FF0000', // Pure red text
   textSecondary: '#CC0000', // Dark red text
-  accent: '#FF0000',       // Pure red accent
-  warning: '#FF0000',      // Red warning (no orange/yellow)
-  error: '#CC0000',        // Dark red error
-  success: '#FF0000',      // Red success (no green)
-  border: '#660000',       // Dark red border
-  shadow: '#00000060',     // Black shadow
+  accent: '#FF0000', // Pure red accent
+  warning: '#FF0000', // Red warning (no orange/yellow)
+  error: '#CC0000', // Dark red error
+  success: '#FF0000', // Red success (no green)
+  border: '#660000', // Dark red border
+  shadow: '#00000060', // Black shadow
   headerBackground: '#660000',
   cardBackground: '#330000',
   buttonPrimary: '#FF0000',
@@ -372,21 +372,21 @@ const redNightTheme: ThemeColors = {
   statusDisconnected: '#990000',
   statusError: '#CC0000',
   statusWarning: '#FF0000',
-  iconPrimary: '#FF0000',  // Pure red icons
+  iconPrimary: '#FF0000', // Pure red icons
   iconSecondary: '#CC0000',
   iconAccent: '#FF0000',
   iconDisabled: '#330000',
   // iOS semantic colors (red night vision - all red spectrum)
-  iosSystemBlue: '#FF0000',      // No blue in red night mode
-  iosSystemGreen: '#FF0000',     // No green in red night mode
-  iosSystemIndigo: '#CC0000',    // Dark red substitute
-  iosSystemOrange: '#FF0000',    // Pure red
-  iosSystemPink: '#FF0000',      // Pure red
-  iosSystemPurple: '#CC0000',    // Dark red substitute
-  iosSystemRed: '#FF0000',       // Pure red
-  iosSystemTeal: '#FF0000',      // Pure red
-  iosSystemYellow: '#FF0000',    // Pure red (no yellow)
-  iosSystemGray: '#660000',      // Dark red gray
+  iosSystemBlue: '#FF0000', // No blue in red night mode
+  iosSystemGreen: '#FF0000', // No green in red night mode
+  iosSystemIndigo: '#CC0000', // Dark red substitute
+  iosSystemOrange: '#FF0000', // Pure red
+  iosSystemPink: '#FF0000', // Pure red
+  iosSystemPurple: '#CC0000', // Dark red substitute
+  iosSystemRed: '#FF0000', // Pure red
+  iosSystemTeal: '#FF0000', // Pure red
+  iosSystemYellow: '#FF0000', // Pure red (no yellow)
+  iosSystemGray: '#660000', // Dark red gray
   iosSystemGray2: '#550000',
   iosSystemGray3: '#440000',
   iosSystemGray4: '#330000',
@@ -414,129 +414,129 @@ const redNightTheme: ThemeColors = {
 // Validation should only be done during theme development with VALIDATE_THEMES=true
 
 export const useSettingsStore = create<SettingsStore>()(
-  persist(
-    (set, get) => ({
-      ...defaultSettings,
+  devtools(
+    persist(
+      (set, get) => ({
+        ...defaultSettings,
 
-      // Actions
-      setThemeMode: (mode) =>
-        set({ themeMode: mode }),
+        // Actions
+        setThemeMode: (mode) => set({ themeMode: mode }),
 
-      updateThemeSettings: (settings) =>
-        set((state) => ({
-          themeSettings: { ...state.themeSettings, ...settings },
-        })),
+        updateThemeSettings: (settings) =>
+          set((state) => ({
+            themeSettings: { ...state.themeSettings, ...settings },
+          })),
 
-      setUnit: (category, unit) =>
-        set((state) => ({
-          units: { ...state.units, [category]: unit },
-        })),
+        setUnit: (category, unit) =>
+          set((state) => ({
+            units: { ...state.units, [category]: unit },
+          })),
 
-      setGpsSetting: (setting, value) =>
-        set((state) => ({
-          gps: { ...state.gps, [setting]: value },
-        })),
+        setGpsSetting: (setting, value) =>
+          set((state) => ({
+            gps: { ...state.gps, [setting]: value },
+          })),
 
-      setShipTimeSetting: (setting, value) =>
-        set((state) => ({
-          shipTime: { ...state.shipTime, [setting]: value },
-        })),
+        setShipTimeSetting: (setting, value) =>
+          set((state) => ({
+            shipTime: { ...state.shipTime, [setting]: value },
+          })),
 
-      updateDisplaySettings: (settings) =>
-        set((state) => ({
-          display: { ...state.display, ...settings },
-        })),
+        updateDisplaySettings: (settings) =>
+          set((state) => ({
+            display: { ...state.display, ...settings },
+          })),
 
-      updateNavigationSettings: (settings) =>
-        set((state) => ({
-          navigation: { ...state.navigation, ...settings },
-        })),
+        updateNavigationSettings: (settings) =>
+          set((state) => ({
+            navigation: { ...state.navigation, ...settings },
+          })),
 
-      updateDataLoggingSettings: (settings) =>
-        set((state) => ({
-          dataLogging: { ...state.dataLogging, ...settings },
-        })),
+        updateDataLoggingSettings: (settings) =>
+          set((state) => ({
+            dataLogging: { ...state.dataLogging, ...settings },
+          })),
 
-      updateDeveloperSettings: (settings) =>
-        set((state) => ({
-          developer: { ...state.developer, ...settings },
-        })),
+        updateDeveloperSettings: (settings) =>
+          set((state) => ({
+            developer: { ...state.developer, ...settings },
+          })),
 
-      resetToDefaults: () =>
-        set(defaultSettings),
+        resetToDefaults: () => set(defaultSettings),
 
-      exportSettings: () => get(),
+        exportSettings: () => get(),
 
-      importSettings: (settings) =>
-        set((state) => ({ ...state, ...settings })),
+        importSettings: (settings) => set((state) => ({ ...state, ...settings })),
 
-      getCurrentThemeColors: () => {
-        const state = get();
-        let baseTheme: ThemeColors;
+        getCurrentThemeColors: () => {
+          const state = get();
+          let baseTheme: ThemeColors;
 
-        if (state.themeMode === 'auto') {
-          // Simple auto theme based on time (6 AM - 6 PM = day)
-          const hour = new Date().getHours();
-          const isDayTime = hour >= 6 && hour < 18;
-          baseTheme = isDayTime ? dayTheme : nightTheme;
-        } else {
-          switch (state.themeMode) {
-            case 'day':
-              baseTheme = dayTheme;
-              break;
-            case 'night':
-              baseTheme = nightTheme;
-              break;
-            case 'red-night':
-              baseTheme = redNightTheme;
-              break;
-            default:
-              baseTheme = dayTheme;
+          if (state.themeMode === 'auto') {
+            // Simple auto theme based on time (6 AM - 6 PM = day)
+            const hour = new Date().getHours();
+            const isDayTime = hour >= 6 && hour < 18;
+            baseTheme = isDayTime ? dayTheme : nightTheme;
+          } else {
+            switch (state.themeMode) {
+              case 'day':
+                baseTheme = dayTheme;
+                break;
+              case 'night':
+                baseTheme = nightTheme;
+                break;
+              case 'red-night':
+                baseTheme = redNightTheme;
+                break;
+              default:
+                baseTheme = dayTheme;
+            }
           }
-        }
 
-        // Apply modifications based on theme settings
-        if (state.themeSettings.highContrast) {
-          baseTheme = {
-            ...baseTheme,
-            text: state.themeMode === 'day' ? '#000000' : '#FFFFFF',
-            background: state.themeMode === 'day' ? '#FFFFFF' : '#000000',
-          };
-        }
+          // Apply modifications based on theme settings
+          if (state.themeSettings.highContrast) {
+            baseTheme = {
+              ...baseTheme,
+              text: state.themeMode === 'day' ? '#000000' : '#FFFFFF',
+              background: state.themeMode === 'day' ? '#FFFFFF' : '#000000',
+            };
+          }
 
-        // Color-blind friendly adjustments (opt-in)
-        if (state.themeSettings.colorBlindFriendly) {
-          baseTheme = {
-            ...baseTheme,
-            // Use high-contrast, color-blind friendly variants for critical markers
-            warning: '#FFD166', // warm yellow for warnings
-            error: '#D00000', // strong red for errors
-            success: '#007A33', // green for success where applicable
-            accent: '#FFD166',
-          };
-        }
+          // Color-blind friendly adjustments (opt-in)
+          if (state.themeSettings.colorBlindFriendly) {
+            baseTheme = {
+              ...baseTheme,
+              // Use high-contrast, color-blind friendly variants for critical markers
+              warning: '#FFD166', // warm yellow for warnings
+              error: '#D00000', // strong red for errors
+              success: '#007A33', // green for success where applicable
+              accent: '#FFD166',
+            };
+          }
 
-        // Marine mode: optimize contrast and critical UI colors for marine environments
-        if (state.themeSettings.marineMode) {
-          baseTheme = {
-            ...baseTheme,
-            // Slightly amplify primary/button colors for better visibility in sun/glare
-            buttonPrimary: '#FF2D2D',
-            // Ensure text/backdrop maintain contrast
-            text: state.themeMode === 'day' ? '#000000' : '#FFFFFF',
-          };
-        }
+          // Marine mode: optimize contrast and critical UI colors for marine environments
+          if (state.themeSettings.marineMode) {
+            baseTheme = {
+              ...baseTheme,
+              // Slightly amplify primary/button colors for better visibility in sun/glare
+              buttonPrimary: '#FF2D2D',
+              // Ensure text/backdrop maintain contrast
+              text: state.themeMode === 'day' ? '#000000' : '#FFFFFF',
+            };
+          }
 
-        return baseTheme;
+          return baseTheme;
+        },
+      }),
+      {
+        name: 'settings-store',
+        // Persist everything except developer settings which should reset
+        partialize: (state) => {
+          const { developer, ...persistedState } = state;
+          return persistedState;
+        },
       },
-    }),
-    {
-      name: 'settings-store',
-      // Persist everything except developer settings which should reset
-      partialize: (state) => {
-        const { developer, ...persistedState } = state;
-        return persistedState;
-      },
-    }
-  )
+    ),
+    { name: 'Settings Store', enabled: __DEV__ },
+  ),
 );

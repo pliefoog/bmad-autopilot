@@ -21,24 +21,24 @@ const getSuggestedNetworkHost = (): string => {
   // For web, try to detect current host or provide WiFi bridge suggestion
   if (typeof window !== 'undefined' && Platform.OS === 'web') {
     const hostname = window.location.hostname;
-    
+
     // If we're accessing via network IP, suggest the simulator running on same host
     if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
       // For development, suggest the same host where the simulator is likely running
       return hostname;
     }
-    
+
     // For localhost access, suggest localhost simulator
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return '127.0.0.1';
     }
-    
+
     // For hostname access, suggest the local host
     return hostname;
   }
-  
+
   // For mobile, suggest localhost (most common during development)
-  return '192.168.1.52'; // Use the current network IP that's actually running services
+  return '127.0.0.1'; // Use localhost for simulator during development
 };
 
 export const getConnectionDefaults = (): ConnectionConfig => {
@@ -47,15 +47,15 @@ export const getConnectionDefaults = (): ConnectionConfig => {
     return {
       ip: getSuggestedNetworkHost(), // Smart suggestion based on current access
       port: 8080, // WebSocket for web
-      protocol: 'websocket'
+      protocol: 'websocket',
     };
   }
-  
+
   // Mobile platforms (iOS/Android)
   return {
     ip: getSuggestedNetworkHost(), // Smart suggestion for mobile
     port: 2000, // TCP for mobile
-    protocol: 'tcp'
+    protocol: 'tcp',
   };
 };
 
@@ -66,7 +66,7 @@ export const getConnectionDescription = (): string => {
   if (typeof window !== 'undefined' && Platform.OS === 'web') {
     return 'WebSocket connection to NMEA Bridge Simulator (accessible from network)';
   }
-  
+
   return 'TCP connection to WiFi NMEA Bridge (accessible from network)';
 };
 
@@ -82,13 +82,13 @@ export const loadConnectionSettings = async (): Promise<ConnectionConfig> => {
       return {
         ip: parsed.ip || defaults.ip,
         port: parseInt(parsed.port) || defaults.port,
-        protocol: parsed.protocol || defaults.protocol
+        protocol: parsed.protocol || defaults.protocol,
       };
     }
   } catch (error) {
     console.warn('[Connection] Failed to load saved settings:', error);
   }
-  
+
   return getConnectionDefaults();
 };
 
@@ -99,12 +99,11 @@ export const saveConnectionSettings = async (config: ConnectionConfig): Promise<
   const settingsData = {
     ip: config.ip,
     port: config.port.toString(),
-    protocol: config.protocol
+    protocol: config.protocol,
   };
 
   try {
     await AsyncStorage.setItem('nmea-connection-config', JSON.stringify(settingsData));
-    console.log('[Connection] Settings saved');
   } catch (error) {
     console.error('[Connection] Failed to save settings:', error);
   }
@@ -113,23 +112,24 @@ export const saveConnectionSettings = async (config: ConnectionConfig): Promise<
 /**
  * Connect to NMEA source with configuration
  */
-export const connectNmea = async (config: ConnectionConfig, saveSettings: boolean = true): Promise<boolean> => {
-  console.log(`[Connection] Connect request: ${config.protocol}://${config.ip}:${config.port}`);
-  
+export const connectNmea = async (
+  config: ConnectionConfig,
+  saveSettings: boolean = true,
+): Promise<boolean> => {
   // Save settings if requested
   if (saveSettings) {
     await saveConnectionSettings(config);
   }
-  
+
   // Convert to NmeaServiceConfig
   const serviceConfig: NmeaServiceConfig = {
     connection: {
       ip: config.ip,
       port: config.port,
-      protocol: config.protocol
-    }
+      protocol: config.protocol,
+    },
   };
-  
+
   // Connect using NmeaService
   return await NmeaService.getInstance().start(serviceConfig);
 };
@@ -138,7 +138,6 @@ export const connectNmea = async (config: ConnectionConfig, saveSettings: boolea
  * Disconnect from NMEA source
  */
 export const disconnectNmea = (): void => {
-  console.log('[Connection] Disconnect requested');
   NmeaService.getInstance().stop();
 };
 
@@ -148,7 +147,7 @@ export const disconnectNmea = (): void => {
 export const shouldEnableConnectButton = (config: ConnectionConfig): boolean => {
   const currentConfig = NmeaService.getInstance().getCurrentConfig();
   if (!currentConfig) return true;
-  
+
   return !(
     currentConfig.connection.ip === config.ip &&
     currentConfig.connection.port === config.port &&
@@ -162,13 +161,13 @@ export const shouldEnableConnectButton = (config: ConnectionConfig): boolean => 
 export const getCurrentConnectionConfig = (): ConnectionConfig | null => {
   const serviceStatus = NmeaService.getInstance().getStatus();
   const connectionStatus = serviceStatus.connection;
-  
+
   if (!connectionStatus.config) return null;
-  
+
   return {
     ip: connectionStatus.config.ip,
     port: connectionStatus.config.port,
-    protocol: connectionStatus.config.protocol
+    protocol: connectionStatus.config.protocol,
   };
 };
 
@@ -176,10 +175,8 @@ export const getCurrentConnectionConfig = (): ConnectionConfig | null => {
  * Initialize connection with saved/default settings
  */
 export const initializeConnection = async (): Promise<void> => {
-  console.log('[Connection] Initializing...');
-  
   const config = await loadConnectionSettings();
-  
+
   // Attempt to connect in background (don't save during initialization)
   connectNmea(config, false);
 };

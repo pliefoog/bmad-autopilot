@@ -1,16 +1,16 @@
 /**
  * Memory & Storage Management Optimization
- * 
+ *
  * Efficient memory patterns and storage management for extended marine operation.
  * Prevents memory leaks, manages log files, and monitors storage usage.
- * 
+ *
  * Key Principles:
  * - Memory leak prevention (cleanup subscriptions, timers, listeners)
  * - Log rotation (automatic cleanup of old logs)
  * - Data structure optimization (minimize allocations, reuse objects)
  * - Storage monitoring (track usage, alert when low)
  * - Efficient serialization (minimize storage footprint)
- * 
+ *
  * Marine-Specific Optimizations:
  * - Long-term data retention (voyage logs, recordings)
  * - Efficient historical data storage
@@ -30,13 +30,13 @@ import { useEffect, useRef, useCallback } from 'react';
 export const MEMORY_THRESHOLDS = {
   /** Warning threshold (MB) */
   WARNING: 150,
-  
+
   /** Critical threshold (MB) */
   CRITICAL: 180,
-  
+
   /** Maximum threshold (MB) */
   MAX: 200,
-  
+
   /** Baseline target (MB) */
   BASELINE: 100,
 } as const;
@@ -47,13 +47,13 @@ export const MEMORY_THRESHOLDS = {
 export const LOG_CONFIG = {
   /** Maximum log file size (MB) */
   MAX_FILE_SIZE: 10,
-  
+
   /** Maximum number of log files to keep */
   MAX_FILES: 5,
-  
+
   /** Log retention period (days) */
   RETENTION_DAYS: 7,
-  
+
   /** Auto-cleanup interval (hours) */
   CLEANUP_INTERVAL: 24,
 } as const;
@@ -63,14 +63,14 @@ export const LOG_CONFIG = {
  */
 export const STORAGE_CONFIG = {
   /** Warning threshold (% of total) */
-  WARNING_PERCENT: 0.80, // 80%
-  
+  WARNING_PERCENT: 0.8, // 80%
+
   /** Critical threshold (% of total) */
-  CRITICAL_PERCENT: 0.90, // 90%
-  
+  CRITICAL_PERCENT: 0.9, // 90%
+
   /** Minimum free space (MB) */
   MIN_FREE_SPACE: 100,
-  
+
   /** Check interval (minutes) */
   CHECK_INTERVAL: 30,
 } as const;
@@ -81,53 +81,49 @@ export const STORAGE_CONFIG = {
 
 /**
  * Cleanup tracker to prevent memory leaks
- * 
+ *
  * Tracks subscriptions, timers, and listeners for automatic cleanup
  * Use in components that create long-lived subscriptions
  */
 export class CleanupTracker {
   private cleanupFunctions: Array<() => void> = [];
-  
+
   /**
    * Register cleanup function
    */
   add(cleanup: () => void): void {
     this.cleanupFunctions.push(cleanup);
   }
-  
+
   /**
    * Register timer for cleanup
    */
   addTimer(timerId: NodeJS.Timeout): void {
     this.add(() => clearTimeout(timerId));
   }
-  
+
   /**
    * Register interval for cleanup
    */
   addInterval(intervalId: NodeJS.Timeout): void {
     this.add(() => clearInterval(intervalId));
   }
-  
+
   /**
    * Register animation frame for cleanup
    */
   addAnimationFrame(frameId: number): void {
     this.add(() => cancelAnimationFrame(frameId));
   }
-  
+
   /**
    * Register event listener for cleanup
    */
-  addEventListener(
-    target: EventTarget,
-    event: string,
-    handler: EventListener
-  ): void {
+  addEventListener(target: EventTarget, event: string, handler: EventListener): void {
     target.addEventListener(event, handler);
     this.add(() => target.removeEventListener(event, handler));
   }
-  
+
   /**
    * Execute all cleanup functions
    */
@@ -141,7 +137,7 @@ export class CleanupTracker {
     }
     this.cleanupFunctions = [];
   }
-  
+
   /**
    * Get number of tracked items
    */
@@ -152,20 +148,20 @@ export class CleanupTracker {
 
 /**
  * Hook for automatic cleanup tracking
- * 
+ *
  * Returns tracker that automatically cleans up on unmount
- * 
+ *
  * @returns Cleanup tracker instance
- * 
+ *
  * @example
  * ```tsx
  * function Component() {
  *   const cleanup = useCleanupTracker();
- *   
+ *
  *   useEffect(() => {
  *     const timer = setInterval(() => {}, 1000);
  *     cleanup.addInterval(timer);
- *     
+ *
  *     const subscription = store.subscribe(() => {});
  *     cleanup.add(subscription);
  *   }, []);
@@ -174,11 +170,11 @@ export class CleanupTracker {
  */
 export function useCleanupTracker(): CleanupTracker {
   const tracker = useRef(new CleanupTracker());
-  
+
   useEffect(() => {
     return () => tracker.current.cleanup();
   }, []);
-  
+
   return tracker.current;
 }
 
@@ -199,7 +195,7 @@ export interface LogEntry {
 
 /**
  * Log file manager with automatic rotation
- * 
+ *
  * Manages log files with size limits and automatic cleanup
  * Rotates logs when size exceeds threshold
  * Deletes old logs beyond retention period
@@ -208,75 +204,72 @@ export class LogFileManager {
   private currentLogSize: number = 0;
   private logBuffer: LogEntry[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
-  
+
   /**
    * Add log entry
    */
   log(entry: LogEntry): void {
     this.logBuffer.push(entry);
-    
+
     // Estimate size (rough approximation)
     this.currentLogSize += JSON.stringify(entry).length;
-    
+
     // Schedule flush if not already scheduled
     if (!this.flushTimer) {
       this.flushTimer = setTimeout(() => this.flush(), 5000);
     }
-    
+
     // Check if rotation needed
     if (this.currentLogSize > LOG_CONFIG.MAX_FILE_SIZE * 1024 * 1024) {
       this.rotate();
     }
   }
-  
+
   /**
    * Flush log buffer to storage
    */
   private async flush(): Promise<void> {
     if (this.logBuffer.length === 0) return;
-    
+
     const entries = [...this.logBuffer];
     this.logBuffer = [];
-    
+
     // TODO: Write to AsyncStorage or File System
     // Platform-specific implementation needed
-    
+
     if (__DEV__) {
-      console.log(`[LogManager] Flushed ${entries.length} log entries`);
     }
-    
+
     this.flushTimer = null;
   }
-  
+
   /**
    * Rotate log file (create new, archive old)
    */
   private async rotate(): Promise<void> {
     await this.flush();
-    
+
     // TODO: Rename current log file with timestamp
     // TODO: Check number of log files and delete oldest if > MAX_FILES
-    
+
     this.currentLogSize = 0;
-    
+
     if (__DEV__) {
-      console.log('[LogManager] Log file rotated');
     }
   }
-  
+
   /**
    * Clean up old log files beyond retention period
    */
   async cleanup(): Promise<void> {
-    const cutoffTime = Date.now() - (LOG_CONFIG.RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    
+    const cutoffTime = Date.now() - LOG_CONFIG.RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
     // TODO: List log files and delete those older than cutoff
-    
+
     if (__DEV__) {
-      console.log('[LogManager] Cleaned up old log files');
     }
   }
-  
+
   /**
    * Force immediate flush
    */
@@ -287,7 +280,7 @@ export class LogFileManager {
     }
     await this.flush();
   }
-  
+
   /**
    * Get log statistics
    */
@@ -311,13 +304,13 @@ export function scheduleLogCleanup(): NodeJS.Timeout {
   const cleanup = async () => {
     await logManager.cleanup();
   };
-  
+
   // Run cleanup every 24 hours
   const interval = setInterval(cleanup, LOG_CONFIG.CLEANUP_INTERVAL * 60 * 60 * 1000);
-  
+
   // Run initial cleanup
   cleanup();
-  
+
   return interval;
 }
 
@@ -327,10 +320,10 @@ export function scheduleLogCleanup(): NodeJS.Timeout {
 
 /**
  * Ring buffer for efficient FIFO storage
- * 
+ *
  * Fixed-size circular buffer that overwrites old data
  * More memory-efficient than array push/shift
- * 
+ *
  * @example
  * ```ts
  * const buffer = new RingBuffer<number>(100);
@@ -346,19 +339,19 @@ export class RingBuffer<T> {
   private readIndex: number = 0;
   private size: number = 0;
   private readonly capacity: number;
-  
+
   constructor(capacity: number) {
     this.capacity = capacity;
     this.buffer = new Array(capacity);
   }
-  
+
   /**
    * Add item to buffer (overwrites oldest if full)
    */
   push(item: T): void {
     this.buffer[this.writeIndex] = item;
     this.writeIndex = (this.writeIndex + 1) % this.capacity;
-    
+
     if (this.size < this.capacity) {
       this.size++;
     } else {
@@ -366,7 +359,7 @@ export class RingBuffer<T> {
       this.readIndex = (this.readIndex + 1) % this.capacity;
     }
   }
-  
+
   /**
    * Get most recent item
    */
@@ -375,7 +368,7 @@ export class RingBuffer<T> {
     const lastIndex = (this.writeIndex - 1 + this.capacity) % this.capacity;
     return this.buffer[lastIndex];
   }
-  
+
   /**
    * Get oldest item
    */
@@ -383,7 +376,7 @@ export class RingBuffer<T> {
     if (this.size === 0) return undefined;
     return this.buffer[this.readIndex];
   }
-  
+
   /**
    * Get item at index (0 = oldest)
    */
@@ -392,7 +385,7 @@ export class RingBuffer<T> {
     const actualIndex = (this.readIndex + index) % this.capacity;
     return this.buffer[actualIndex];
   }
-  
+
   /**
    * Convert to array (oldest to newest)
    */
@@ -403,7 +396,7 @@ export class RingBuffer<T> {
     }
     return result;
   }
-  
+
   /**
    * Clear buffer
    */
@@ -412,14 +405,14 @@ export class RingBuffer<T> {
     this.readIndex = 0;
     this.writeIndex = 0;
   }
-  
+
   /**
    * Get current size
    */
   getSize(): number {
     return this.size;
   }
-  
+
   /**
    * Check if buffer is full
    */
@@ -430,7 +423,7 @@ export class RingBuffer<T> {
 
 /**
  * Efficient time-series data storage with automatic decimation
- * 
+ *
  * Stores high-resolution recent data, automatically reduces resolution for older data
  * Useful for storing sensor data (NMEA history) without unbounded growth
  */
@@ -439,45 +432,45 @@ export class TimeSeriesBuffer<T> {
   private oldData: RingBuffer<{ timestamp: number; value: T }>;
   private decimationFactor: number;
   private recentThresholdMs: number;
-  
+
   constructor(
     recentCapacity: number,
     oldCapacity: number,
     recentThresholdMs: number = 60000, // 1 minute
-    decimationFactor: number = 10
+    decimationFactor: number = 10,
   ) {
     this.recentData = new RingBuffer(recentCapacity);
     this.oldData = new RingBuffer(oldCapacity);
     this.recentThresholdMs = recentThresholdMs;
     this.decimationFactor = decimationFactor;
   }
-  
+
   /**
    * Add data point
    */
   add(value: T, timestamp: number = Date.now()): void {
     this.recentData.push({ timestamp, value });
-    
+
     // Check if we need to move old data
     this.decimateOldData();
   }
-  
+
   /**
    * Move old data to decimated storage
    */
   private decimateOldData(): void {
     const now = Date.now();
     const first = this.recentData.getFirst();
-    
+
     if (!first || now - first.timestamp < this.recentThresholdMs) {
       return; // Data not old enough yet
     }
-    
+
     // Get all recent data and separate old from recent
     const recentArray = this.recentData.toArray();
     const oldPoints: Array<{ timestamp: number; value: T }> = [];
     const stillRecentPoints: Array<{ timestamp: number; value: T }> = [];
-    
+
     // Separate data into old (to decimate) and still recent (to keep)
     for (const point of recentArray) {
       if (now - point.timestamp >= this.recentThresholdMs) {
@@ -486,42 +479,42 @@ export class TimeSeriesBuffer<T> {
         stillRecentPoints.push(point);
       }
     }
-    
+
     // Move every Nth old point to decimated storage
     for (let i = 0; i < oldPoints.length; i += this.decimationFactor) {
       this.oldData.push(oldPoints[i]);
     }
-    
+
     // Rebuild recent buffer with only still-recent data
     this.recentData.clear();
     for (const point of stillRecentPoints) {
       this.recentData.push(point);
     }
   }
-  
+
   /**
    * Get all data points (recent + old)
    */
   getAll(): Array<{ timestamp: number; value: T }> {
     return [...this.oldData.toArray(), ...this.recentData.toArray()];
   }
-  
+
   /**
    * Get data in time range
    */
   getRange(startTime: number, endTime: number): Array<{ timestamp: number; value: T }> {
     return this.getAll().filter(
-      point => point.timestamp >= startTime && point.timestamp <= endTime
+      (point) => point.timestamp >= startTime && point.timestamp <= endTime,
     );
   }
-  
+
   /**
    * Get most recent value
    */
   getLatest(): T | undefined {
     return this.recentData.getLast()?.value;
   }
-  
+
   /**
    * Get storage statistics
    */
@@ -532,21 +525,16 @@ export class TimeSeriesBuffer<T> {
       totalCount: this.recentData.getSize() + this.oldData.getSize(),
     };
   }
-  
+
   /**
    * Get data for chart rendering
    * Returns all data points in the time window (no downsampling)
    */
-  getForChart(
-    pixelWidth: number, 
-    timeWindowMs?: number
-  ): Array<{ timestamp: number; value: T }> {
+  getForChart(pixelWidth: number, timeWindowMs?: number): Array<{ timestamp: number; value: T }> {
     // Return all raw data points - no sampling/decimation
-    return timeWindowMs 
-      ? this.getRange(Date.now() - timeWindowMs, Date.now())
-      : this.getAll();
+    return timeWindowMs ? this.getRange(Date.now() - timeWindowMs, Date.now()) : this.getAll();
   }
-  
+
   /**
    * Get data statistics without full array copy
    * Efficiently calculates min/max/avg from ring buffers
@@ -554,11 +542,11 @@ export class TimeSeriesBuffer<T> {
   getDataStats(): { min: T; max: T; avg: T; count: number } | null {
     const allData = this.getAll();
     if (allData.length === 0) return null;
-    
+
     let min = allData[0].value;
     let max = allData[0].value;
     let sum = 0;
-    
+
     for (const point of allData) {
       const val = point.value as any;
       if (typeof val === 'number') {
@@ -567,15 +555,15 @@ export class TimeSeriesBuffer<T> {
         sum += val;
       }
     }
-    
+
     return {
       min,
       max,
       avg: (sum / allData.length) as T,
-      count: allData.length
+      count: allData.length,
     };
   }
-  
+
   /**
    * Clear all data
    */
@@ -595,33 +583,33 @@ export class TimeSeriesBuffer<T> {
 export interface StorageInfo {
   /** Total storage capacity (bytes) */
   total: number;
-  
+
   /** Used storage (bytes) */
   used: number;
-  
+
   /** Free storage (bytes) */
   free: number;
-  
+
   /** Usage percentage (0.0 - 1.0) */
   usagePercent: number;
-  
+
   /** Is storage usage critical */
   isCritical: boolean;
-  
+
   /** Is storage usage at warning level */
   isWarning: boolean;
 }
 
 /**
  * Storage monitoring service
- * 
+ *
  * Tracks storage usage and alerts when low
  * Provides cleanup recommendations
  */
 export class StorageMonitor {
   private storageInfo: StorageInfo | null = null;
   private listeners: Array<(info: StorageInfo) => void> = [];
-  
+
   /**
    * Check storage usage
    */
@@ -630,32 +618,32 @@ export class StorageMonitor {
     // iOS: Use react-native-fs to get document directory size
     // Android: StatFs for storage information
     // Web: navigator.storage.estimate()
-    
+
     // Mock implementation
     const mockInfo: StorageInfo = {
       total: 1000 * 1024 * 1024, // 1GB
-      used: 500 * 1024 * 1024,   // 500MB
-      free: 500 * 1024 * 1024,   // 500MB
+      used: 500 * 1024 * 1024, // 500MB
+      free: 500 * 1024 * 1024, // 500MB
       usagePercent: 0.5,
       isCritical: false,
       isWarning: false,
     };
-    
+
     mockInfo.isCritical = mockInfo.usagePercent >= STORAGE_CONFIG.CRITICAL_PERCENT;
     mockInfo.isWarning = mockInfo.usagePercent >= STORAGE_CONFIG.WARNING_PERCENT;
-    
+
     this.storageInfo = mockInfo;
     this.notifyListeners(mockInfo);
-    
+
     return mockInfo;
   }
-  
+
   /**
    * Subscribe to storage updates
    */
   subscribe(listener: (info: StorageInfo) => void): () => void {
     this.listeners.push(listener);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.listeners.indexOf(listener);
@@ -664,7 +652,7 @@ export class StorageMonitor {
       }
     };
   }
-  
+
   /**
    * Notify all listeners of storage update
    */
@@ -677,22 +665,22 @@ export class StorageMonitor {
       }
     }
   }
-  
+
   /**
    * Get current storage info (cached)
    */
   getStorageInfo(): StorageInfo | null {
     return this.storageInfo;
   }
-  
+
   /**
    * Get cleanup recommendations
    */
   getCleanupRecommendations(): string[] {
     if (!this.storageInfo) return [];
-    
+
     const recommendations: string[] = [];
-    
+
     if (this.storageInfo.isCritical) {
       recommendations.push('Delete old log files');
       recommendations.push('Remove old voyage recordings');
@@ -701,7 +689,7 @@ export class StorageMonitor {
       recommendations.push('Consider removing old logs');
       recommendations.push('Archive completed voyages to external storage');
     }
-    
+
     return recommendations;
   }
 }
@@ -717,39 +705,35 @@ export const storageMonitor = new StorageMonitor();
 export function scheduleStorageMonitoring(): NodeJS.Timeout {
   const check = async () => {
     const info = await storageMonitor.checkStorage();
-    
+
     if (info.isCritical) {
-      console.error(
-        `[Storage] Critical storage usage: ${(info.usagePercent * 100).toFixed(1)}%`
-      );
+      console.error(`[Storage] Critical storage usage: ${(info.usagePercent * 100).toFixed(1)}%`);
     } else if (info.isWarning) {
-      console.warn(
-        `[Storage] High storage usage: ${(info.usagePercent * 100).toFixed(1)}%`
-      );
+      console.warn(`[Storage] High storage usage: ${(info.usagePercent * 100).toFixed(1)}%`);
     }
   };
-  
+
   // Check every 30 minutes
   const interval = setInterval(check, STORAGE_CONFIG.CHECK_INTERVAL * 60 * 1000);
-  
+
   // Run initial check
   check();
-  
+
   return interval;
 }
 
 /**
  * Hook for storage monitoring
- * 
+ *
  * @returns Current storage information
- * 
+ *
  * @example
  * ```tsx
  * function StorageIndicator() {
  *   const storage = useStorageMonitor();
- *   
+ *
  *   if (!storage) return null;
- *   
+ *
  *   return (
  *     <View>
  *       <Text>Storage: {(storage.usagePercent * 100).toFixed(0)}%</Text>
@@ -761,17 +745,17 @@ export function scheduleStorageMonitoring(): NodeJS.Timeout {
  */
 export function useStorageMonitor(): StorageInfo | null {
   const [storageInfo, setStorageInfo] = React.useState<StorageInfo | null>(null);
-  
+
   useEffect(() => {
     // Initial check
     storageMonitor.checkStorage().then(setStorageInfo);
-    
+
     // Subscribe to updates
     const unsubscribe = storageMonitor.subscribe(setStorageInfo);
-    
+
     return unsubscribe;
   }, []);
-  
+
   return storageInfo;
 }
 

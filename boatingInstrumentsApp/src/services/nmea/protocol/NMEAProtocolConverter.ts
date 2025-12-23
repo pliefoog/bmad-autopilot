@@ -2,14 +2,14 @@ import { DepthConverter } from './converters/DepthConverter';
 
 /**
  * NMEA Protocol Conversion Engine
- * 
+ *
  * Provides bidirectional conversion between NMEA 2000 PGNs and NMEA 0183 sentences,
  * matching the behavior of physical WiFi bridge devices like Actisense NGW-1,
  * Yacht Devices YBWN-02, and QK-A032.
- * 
+ *
  * Features:
  * - Native sentence conversion for direct PGN mappings
- * - $PCDIN encapsulation for unmapped PGNs  
+ * - $PCDIN encapsulation for unmapped PGNs
  * - Device-specific bridge profile support
  * - Configurable conversion rules per device
  * - Bidirectional conversion framework
@@ -86,11 +86,11 @@ export class NMEAProtocolConverter {
    */
   public convertPGNToSentences(pgnData: PGNData): ConversionResult {
     const rule = this.conversionRules.rules.get(pgnData.pgn);
-    
+
     if (rule?.nativeConversion) {
       return this.performNativeConversion(pgnData, rule);
     }
-    
+
     if (rule?.pcdinFallback || this.profile.pcdinUsage !== 'minimal') {
       return this.performPCDINConversion(pgnData);
     }
@@ -99,7 +99,7 @@ export class NMEAProtocolConverter {
       sentences: [],
       successful: false,
       method: 'failed',
-      errors: [`No conversion rule found for PGN ${pgnData.pgn}`]
+      errors: [`No conversion rule found for PGN ${pgnData.pgn}`],
     };
   }
 
@@ -148,14 +148,14 @@ export class NMEAProtocolConverter {
 
     // Add basic conversion rules (will be expanded in subsequent tasks)
     const basicRules: Array<{ pgn: number; sentence: string; pcdin: boolean }> = [
-      { pgn: 128267, sentence: 'DBT', pcdin: false },  // Depth
-      { pgn: 128259, sentence: 'VHW', pcdin: false },  // Speed
-      { pgn: 130306, sentence: 'MWV', pcdin: false },  // Wind
-      { pgn: 129029, sentence: 'GGA', pcdin: false },  // GPS
-      { pgn: 127250, sentence: 'HDG', pcdin: false },  // Heading
-      { pgn: 127488, sentence: 'RPM', pcdin: false },  // Engine RPM
-      { pgn: 127505, sentence: '', pcdin: true },      // Tanks (PCDIN only)
-      { pgn: 127508, sentence: 'XDR', pcdin: true },   // Battery
+      { pgn: 128267, sentence: 'DBT', pcdin: false }, // Depth
+      { pgn: 128259, sentence: 'VHW', pcdin: false }, // Speed
+      { pgn: 130306, sentence: 'MWV', pcdin: false }, // Wind
+      { pgn: 129029, sentence: 'GGA', pcdin: false }, // GPS
+      { pgn: 127250, sentence: 'HDG', pcdin: false }, // Heading
+      { pgn: 127488, sentence: 'RPM', pcdin: false }, // Engine RPM
+      { pgn: 127505, sentence: '', pcdin: true }, // Tanks (PCDIN only)
+      { pgn: 127508, sentence: 'XDR', pcdin: true }, // Battery
     ];
 
     for (const rule of basicRules) {
@@ -167,15 +167,15 @@ export class NMEAProtocolConverter {
       if (rule.sentence) {
         conversionRule.nativeConversion = {
           sentenceType: rule.sentence,
-          converter: this.createConverterFunction(rule.pgn, rule.sentence)
+          converter: this.createConverterFunction(rule.pgn, rule.sentence),
         };
-        
+
         // Add bidirectional conversion for supported combinations
         conversionRule.bidirectional = {
           sentenceType: rule.sentence,
-          converter: this.createBidirectionalConverter(rule.pgn, rule.sentence)
+          converter: this.createBidirectionalConverter(rule.pgn, rule.sentence),
         };
-        
+
         sentenceRules.set(rule.sentence, conversionRule);
       }
 
@@ -184,26 +184,29 @@ export class NMEAProtocolConverter {
 
     return {
       name: profileName,
-      manufacturer: profileName.includes('actisense') ? 'Actisense' : 
-                   profileName.includes('yacht') ? 'Yacht Devices' : 'Generic',
+      manufacturer: profileName.includes('actisense')
+        ? 'Actisense'
+        : profileName.includes('yacht')
+        ? 'Yacht Devices'
+        : 'Generic',
       model: 'Development Profile',
       description: 'Default development profile with basic conversion rules',
       defaultProfile: profileName === 'actisense-ngw1',
       conversionRules: {
         rules,
-        sentenceRules
+        sentenceRules,
       },
       pcdinUsage: 'moderate',
       transmissionPeriods: {
-        128267: 1000,  // Depth - 1Hz
-        128259: 1000,  // Speed - 1Hz
-        130306: 1000,  // Wind - 1Hz
-        129029: 1000,  // GPS - 1Hz
-        127250: 1000,  // Heading - 1Hz
-        127488: 500,   // Engine - 2Hz
-        127505: 2000,  // Tanks - 0.5Hz
-        127508: 1000,  // Battery - 1Hz
-      }
+        128267: 1000, // Depth - 1Hz
+        128259: 1000, // Speed - 1Hz
+        130306: 1000, // Wind - 1Hz
+        129029: 1000, // GPS - 1Hz
+        127250: 1000, // Heading - 1Hz
+        127488: 500, // Engine - 2Hz
+        127505: 2000, // Tanks - 0.5Hz
+        127508: 1000, // Battery - 1Hz
+      },
     };
   }
 
@@ -216,14 +219,16 @@ export class NMEAProtocolConverter {
       return {
         sentences,
         successful: true,
-        method: 'native'
+        method: 'native',
       };
     } catch (error) {
       return {
         sentences: [],
         successful: false,
         method: 'failed',
-        errors: [`Native conversion failed: ${error instanceof Error ? error.message : String(error)}`]
+        errors: [
+          `Native conversion failed: ${error instanceof Error ? error.message : String(error)}`,
+        ],
       };
     }
   }
@@ -237,20 +242,22 @@ export class NMEAProtocolConverter {
         pgn: pgnData.pgn,
         source: pgnData.source,
         destination: pgnData.destination,
-        data: pgnData.data
+        data: pgnData.data,
       });
 
       return {
         sentences: [pcdinSentence],
         successful: true,
-        method: 'pcdin'
+        method: 'pcdin',
       };
     } catch (error) {
       return {
         sentences: [],
         successful: false,
         method: 'failed',
-        errors: [`PCDIN conversion failed: ${error instanceof Error ? error.message : String(error)}`]
+        errors: [
+          `PCDIN conversion failed: ${error instanceof Error ? error.message : String(error)}`,
+        ],
       };
     }
   }
@@ -264,12 +271,12 @@ export class NMEAProtocolConverter {
     const srcHex = pcdinData.source.toString(16).toUpperCase().padStart(2, '0');
     const dstHex = pcdinData.destination.toString(16).toUpperCase().padStart(2, '0');
     const dataHex = Array.from(pcdinData.data)
-      .map(byte => byte.toString(16).toUpperCase().padStart(2, '0'))
+      .map((byte) => byte.toString(16).toUpperCase().padStart(2, '0'))
       .join('');
 
     const sentence = `$PCDIN,${pgnHex},${srcHex},${dstHex},${dataHex}`;
     const checksum = this.calculateNMEAChecksum(sentence.substring(1)); // Skip leading $
-    
+
     return `${sentence}*${checksum}`;
   }
 
@@ -277,16 +284,20 @@ export class NMEAProtocolConverter {
    * Parse $PCDIN sentence back to PGN data
    */
   private parsePCDINSentence(sentence: string): PGNData | null {
-    const match = sentence.match(/^\$PCDIN,([0-9A-F]{6}),([0-9A-F]{2}),([0-9A-F]{2}),([0-9A-F]*)\*([0-9A-F]{2})$/);
-    
+    const match = sentence.match(
+      /^\$PCDIN,([0-9A-F]{6}),([0-9A-F]{2}),([0-9A-F]{2}),([0-9A-F]*)\*([0-9A-F]{2})$/,
+    );
+
     if (!match) {
       return null;
     }
 
     const [, pgnHex, srcHex, dstHex, dataHex, checksumHex] = match;
-    
+
     // Verify checksum
-    const expectedChecksum = this.calculateNMEAChecksum(`PCDIN,${pgnHex},${srcHex},${dstHex},${dataHex || ''}`);
+    const expectedChecksum = this.calculateNMEAChecksum(
+      `PCDIN,${pgnHex},${srcHex},${dstHex},${dataHex || ''}`,
+    );
     if (checksumHex !== expectedChecksum) {
       return null;
     }
@@ -294,8 +305,10 @@ export class NMEAProtocolConverter {
     const pgn = parseInt(pgnHex, 16);
     const source = parseInt(srcHex, 16);
     const destination = parseInt(dstHex, 16);
-    
-    const data = new Uint8Array(dataHex ? dataHex.match(/.{2}/g)?.map(hex => parseInt(hex, 16)) || [] : []);
+
+    const data = new Uint8Array(
+      dataHex ? dataHex.match(/.{2}/g)?.map((hex) => parseInt(hex, 16)) || [] : [],
+    );
 
     return {
       pgn,
@@ -303,7 +316,7 @@ export class NMEAProtocolConverter {
       destination,
       priority: 6, // Default priority for PCDIN
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -320,7 +333,7 @@ export class NMEAProtocolConverter {
     if (match) {
       return match[2]; // Return sentence type (e.g., GGA, RMC, DBT)
     }
-    
+
     return '';
   }
 
@@ -369,23 +382,23 @@ export class NMEAProtocolConverter {
     if (pgn === 128259 && sentenceType === 'VHW') {
       return this.createSpeedConverter();
     }
-    
+
     if (pgn === 130306 && sentenceType === 'MWV') {
       return this.createWindConverter();
     }
-    
+
     if (pgn === 129029 && sentenceType === 'GGA') {
       return this.createGPSConverter();
     }
-    
+
     if (pgn === 127250 && sentenceType === 'HDG') {
       return this.createHeadingConverter();
     }
-    
+
     if (pgn === 127488 && sentenceType === 'RPM') {
       return this.createEngineConverter();
     }
-    
+
     // Fallback for unsupported combinations
     return (data: PGNData) => [];
   }
@@ -393,12 +406,15 @@ export class NMEAProtocolConverter {
   /**
    * Create bidirectional converter function (sentence → PGN)
    */
-  private createBidirectionalConverter(pgn: number, sentenceType: string): (sentence: string) => PGNData | null {
+  private createBidirectionalConverter(
+    pgn: number,
+    sentenceType: string,
+  ): (sentence: string) => PGNData | null {
     // Map sentence/PGN combinations to actual converter functions
     if (pgn === 128267 && sentenceType === 'DBT') {
       return DepthConverter.DBTToPGN128267;
     }
-    
+
     // Placeholder for other bidirectional converters
     return (sentence: string) => null;
   }
@@ -412,8 +428,10 @@ export class NMEAProtocolConverter {
       // Format: $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh
       const speed_knots = 5.2; // Placeholder data from PGN
       const heading = 45.0; // Placeholder data from PGN
-      
-      const sentence = `$IIVHW,${heading.toFixed(1)},T,,M,${speed_knots.toFixed(1)},N,${(speed_knots * 1.852).toFixed(1)},K`;
+
+      const sentence = `$IIVHW,${heading.toFixed(1)},T,,M,${speed_knots.toFixed(1)},N,${(
+        speed_knots * 1.852
+      ).toFixed(1)},K`;
       const checksum = this.calculateNMEAChecksum(sentence.substring(1));
       return [`${sentence}*${checksum}`];
     };
@@ -428,7 +446,7 @@ export class NMEAProtocolConverter {
       // Format: $--MWV,x.x,a,x.x,a*hh (angle, reference, speed, unit)
       const wind_angle = 120.0; // Placeholder data
       const wind_speed = 8.5; // Placeholder data
-      
+
       const sentence = `$IIMWV,${wind_angle.toFixed(1)},R,${wind_speed.toFixed(1)},N,A`;
       const checksum = this.calculateNMEAChecksum(sentence.substring(1));
       return [`${sentence}*${checksum}`];
@@ -445,7 +463,7 @@ export class NMEAProtocolConverter {
       const time = '120000.00'; // Placeholder
       const lat = '5230.5000,N'; // Placeholder
       const lon = '00131.2000,E'; // Placeholder
-      
+
       const sentence = `$IIGGA,${time},${lat},${lon},1,08,1.0,50.0,M,45.0,M,,`;
       const checksum = this.calculateNMEAChecksum(sentence.substring(1));
       return [`${sentence}*${checksum}`];
@@ -462,8 +480,10 @@ export class NMEAProtocolConverter {
       const heading = 90.5; // Placeholder data
       const deviation = 2.1; // Placeholder
       const variation = 5.2; // Placeholder
-      
-      const sentence = `$IIHDG,${heading.toFixed(1)},${deviation.toFixed(1)},E,${variation.toFixed(1)},W`;
+
+      const sentence = `$IIHDG,${heading.toFixed(1)},${deviation.toFixed(1)},E,${variation.toFixed(
+        1,
+      )},W`;
       const checksum = this.calculateNMEAChecksum(sentence.substring(1));
       return [`${sentence}*${checksum}`];
     };
@@ -478,7 +498,7 @@ export class NMEAProtocolConverter {
       // Format: $--RPM,a,x,x.x,x.x,A*hh
       const rpm = 2850; // Placeholder data
       const pitch = 45.0; // Placeholder
-      
+
       const sentence = `$IIRPM,E,1,${rpm.toFixed(1)},${pitch.toFixed(1)},A`;
       const checksum = this.calculateNMEAChecksum(sentence.substring(1));
       return [`${sentence}*${checksum}`];

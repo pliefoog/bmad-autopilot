@@ -42,7 +42,6 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
     try {
       const layoutData = JSON.stringify(widgets);
       await AsyncStorage.setItem(this.LAYOUT_KEY, layoutData);
-      console.log(`Saved layout with ${widgets.length} widgets`);
     } catch (error) {
       console.error('Failed to save widget layout:', error);
       throw new Error(`Widget layout save failed: ${error}`);
@@ -53,12 +52,10 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
     try {
       const layoutData = await AsyncStorage.getItem(this.LAYOUT_KEY);
       if (!layoutData) {
-        console.log('No saved layout found, returning empty array');
         return [];
       }
-      
+
       const widgets = JSON.parse(layoutData) as WidgetConfig[];
-      console.log(`Loaded layout with ${widgets.length} widgets`);
       return widgets;
     } catch (error) {
       console.error('Failed to load widget layout:', error);
@@ -69,7 +66,6 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
   async clearLayout(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.LAYOUT_KEY);
-      console.log('Widget layout cleared');
     } catch (error) {
       console.error('Failed to clear widget layout:', error);
       throw new Error(`Widget layout clear failed: ${error}`);
@@ -80,7 +76,6 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
     try {
       const key = this.WIDGET_SETTINGS_PREFIX + widgetId;
       await AsyncStorage.setItem(key, JSON.stringify(settings));
-      console.log(`Saved settings for widget: ${widgetId}`);
     } catch (error) {
       console.error(`Failed to save settings for widget ${widgetId}:`, error);
       throw new Error(`Widget settings save failed: ${error}`);
@@ -91,13 +86,12 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
     try {
       const key = this.WIDGET_SETTINGS_PREFIX + widgetId;
       const settingsData = await AsyncStorage.getItem(key);
-      
+
       if (!settingsData) {
         return null;
       }
-      
+
       const settings = JSON.parse(settingsData);
-      console.log(`Loaded settings for widget: ${widgetId}`);
       return settings;
     } catch (error) {
       console.error(`Failed to load settings for widget ${widgetId}:`, error);

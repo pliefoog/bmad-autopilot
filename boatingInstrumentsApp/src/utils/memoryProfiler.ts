@@ -1,6 +1,6 @@
 /**
  * Memory Profiling Utility
- * 
+ *
  * Tracks memory usage over time and detects leaks in the browser environment.
  * Uses performance.memory API (Chrome/Edge only) and manual heap snapshots.
  */
@@ -39,9 +39,11 @@ class MemoryProfiler {
    * Check if memory profiling is available
    */
   isAvailable(): boolean {
-    return typeof window !== 'undefined' && 
-           'performance' in window && 
-           'memory' in (window.performance as any);
+    return (
+      typeof window !== 'undefined' &&
+      'performance' in window &&
+      'memory' in (window.performance as any)
+    );
   }
 
   /**
@@ -58,7 +60,6 @@ class MemoryProfiler {
       return false;
     }
 
-    console.log(`[MemoryProfiler] Starting memory profiling (interval: ${intervalMs}ms)`);
     this.snapshots = [];
     this.startTime = Date.now();
     this.isRunning = true;
@@ -94,7 +95,6 @@ class MemoryProfiler {
     this.takeSnapshot();
 
     const stats = this.calculateStats();
-    console.log('[MemoryProfiler] Stopped. Stats:', stats);
 
     return stats;
   }
@@ -125,14 +125,18 @@ class MemoryProfiler {
       usedMB: memory.usedJSHeapSize / (1024 * 1024),
       totalMB: memory.totalJSHeapSize / (1024 * 1024),
       limitMB: memory.jsHeapSizeLimit / (1024 * 1024),
-      percentUsed: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100
+      percentUsed: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100,
     };
 
     this.snapshots.push(snapshot);
 
     // Log if memory usage is high
     if (snapshot.percentUsed > 80) {
-      console.warn(`[MemoryProfiler] High memory usage: ${snapshot.usedMB.toFixed(2)}MB (${snapshot.percentUsed.toFixed(1)}%)`);
+      console.warn(
+        `[MemoryProfiler] High memory usage: ${snapshot.usedMB.toFixed(
+          2,
+        )}MB (${snapshot.percentUsed.toFixed(1)}%)`,
+      );
     }
   }
 
@@ -151,11 +155,11 @@ class MemoryProfiler {
         growthRate: 0,
         totalGrowth: 0,
         leakDetected: false,
-        leakSeverity: 'none'
+        leakSeverity: 'none',
       };
     }
 
-    const usedMBValues = this.snapshots.map(s => s.usedMB);
+    const usedMBValues = this.snapshots.map((s) => s.usedMB);
     const averageUsedMB = usedMBValues.reduce((a, b) => a + b, 0) / usedMBValues.length;
     const peakUsedMB = Math.max(...usedMBValues);
     const minUsedMB = Math.min(...usedMBValues);
@@ -181,7 +185,7 @@ class MemoryProfiler {
       growthRate,
       totalGrowth,
       leakDetected,
-      leakSeverity
+      leakSeverity,
     };
   }
 
@@ -193,7 +197,7 @@ class MemoryProfiler {
     // 1. Growing more than 2MB/min sustained
     // 2. Total growth > 50MB over 10+ minutes
     // 3. Growth rate > 5MB/min (severe)
-    
+
     if (durationMinutes < 2) {
       return false; // Too early to tell
     }
@@ -216,7 +220,10 @@ class MemoryProfiler {
   /**
    * Assess severity of memory leak
    */
-  private assessLeakSeverity(growthRate: number, totalGrowth: number): 'none' | 'low' | 'medium' | 'high' | 'critical' {
+  private assessLeakSeverity(
+    growthRate: number,
+    totalGrowth: number,
+  ): 'none' | 'low' | 'medium' | 'high' | 'critical' {
     if (growthRate > 10 || totalGrowth > 200) {
       return 'critical'; // > 10MB/min or > 200MB total
     }
@@ -280,10 +287,14 @@ class MemoryProfiler {
    */
   exportCSV(stats: MemoryStats): string {
     const header = 'Timestamp,Elapsed(s),UsedMB,TotalMB,PercentUsed\n';
-    const rows = stats.snapshots.map(s => {
-      const elapsed = (s.timestamp - stats.startTime) / 1000;
-      return `${s.timestamp},${elapsed.toFixed(1)},${s.usedMB.toFixed(2)},${s.totalMB.toFixed(2)},${s.percentUsed.toFixed(2)}`;
-    }).join('\n');
+    const rows = stats.snapshots
+      .map((s) => {
+        const elapsed = (s.timestamp - stats.startTime) / 1000;
+        return `${s.timestamp},${elapsed.toFixed(1)},${s.usedMB.toFixed(2)},${s.totalMB.toFixed(
+          2,
+        )},${s.percentUsed.toFixed(2)}`;
+      })
+      .join('\n');
 
     return header + rows;
   }
@@ -301,13 +312,11 @@ if (typeof window !== 'undefined') {
 if (typeof window !== 'undefined') {
   (window as any).startMemoryProfile = () => {
     memoryProfiler.start(1000);
-    console.log('✅ Memory profiling started. Run stopMemoryProfile() to see results.');
   };
 
   (window as any).stopMemoryProfile = () => {
     const stats = memoryProfiler.stop();
     if (stats) {
-      console.log(memoryProfiler.formatStats(stats));
       return stats;
     }
   };
@@ -315,10 +324,8 @@ if (typeof window !== 'undefined') {
   (window as any).getMemoryStats = () => {
     const stats = memoryProfiler.getCurrentStats();
     if (stats) {
-      console.log(memoryProfiler.formatStats(stats));
       return stats;
     } else {
-      console.log('Memory profiling not running. Run startMemoryProfile() first.');
     }
   };
 
@@ -326,7 +333,6 @@ if (typeof window !== 'undefined') {
     const stats = memoryProfiler.getCurrentStats() || memoryProfiler.stop();
     if (stats) {
       const csv = memoryProfiler.exportCSV(stats);
-      console.log('Copy this CSV data:\n' + csv);
       return csv;
     }
   };
@@ -338,31 +344,29 @@ if (typeof window !== 'undefined') {
     const originalWarn = console.warn;
     const originalInfo = console.info;
     const originalDebug = console.debug;
-    
+
     // Suppress all logging temporarily
     console.log = () => {};
     console.warn = () => {};
     console.info = () => {};
     console.debug = () => {};
-    
+
     try {
       const stats = memoryProfiler.getCurrentStats();
-      
+
       // Restore console
       console.log = originalLog;
       console.warn = originalWarn;
       console.info = originalInfo;
       console.debug = originalDebug;
-      
+
       // Clear console
       console.clear();
-      
+
       if (stats) {
-        console.log(memoryProfiler.formatStats(stats));
       } else {
-        console.log('Memory profiling not running. Run startMemoryProfile() first.');
       }
-      
+
       return stats;
     } catch (error) {
       // Restore console on error
@@ -370,7 +374,7 @@ if (typeof window !== 'undefined') {
       console.warn = originalWarn;
       console.info = originalInfo;
       console.debug = originalDebug;
-      
+
       console.error('Error getting memory stats:', error);
     }
   };

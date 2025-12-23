@@ -1,10 +1,10 @@
 /**
  * Widget Registration Service
- * 
+ *
  * Event-driven widget registration system that replaces polling-based detection.
  * Widgets declare their sensor dependencies (required vs optional), and the service
  * automatically creates widget instances when sensor data becomes available.
- * 
+ *
  * Architecture:
  * - Widgets register with required/optional sensor dependencies
  * - Service subscribes directly to nmeaStore sensor update events
@@ -19,14 +19,14 @@ import type { SensorType, SensorData } from '../types/SensorData';
 import type { WidgetConfig } from '../types/widget.types';
 
 // Direct console reference to bypass logger filtering for critical debug
-const _console = typeof window !== 'undefined' && (window as any)._console 
-  ? (window as any)._console 
-  : console;
+const _console =
+  typeof window !== 'undefined' && (window as any)._console ? (window as any)._console : console;
 
 // Debug logging toggles - set to true to enable verbose logs
 const DEBUG_WIDGET_REGISTRATION = false; // General widget detection
-const DEBUG_ENGINE_DETECTION = false;    // Engine-specific detection only
-const DEBUG_DEPTH_DETECTION = true;      // Depth-specific detection and display cache
+const DEBUG_ENGINE_DETECTION = false; // Engine-specific detection only
+const DEBUG_DEPTH_DETECTION = false; // Depth-specific detection and display cache
+const DEBUG_CUSTOM_WIDGETS = true; // Custom widget detection (customT1, etc.)
 
 /**
  * Sensor dependency declaration
@@ -35,16 +35,16 @@ const DEBUG_DEPTH_DETECTION = true;      // Depth-specific detection and display
 export interface SensorDependency {
   /** Sensor type (e.g., 'depth', 'speed', 'engine') */
   sensorType: SensorType;
-  
+
   /** Specific metric name (e.g., 'dbt', 'sog', 'rpm') */
   metricName: string;
-  
+
   /** Specific instance number, or undefined for any instance */
   instance?: number;
-  
+
   /** Is this sensor required for widget creation? */
   required: boolean;
-  
+
   /** Human-readable label for this sensor binding */
   label?: string;
 }
@@ -56,19 +56,19 @@ export interface SensorDependency {
 export interface CalculatedField {
   /** Unique field identifier */
   id: string;
-  
+
   /** Display label */
   label: string;
-  
+
   /** Calculation function - receives sensor values, returns calculated value */
   calculate: (sensors: SensorValueMap) => number | null;
-  
+
   /** List of sensor dependencies that trigger recalculation */
   dependencies: Array<{ sensorType: SensorType; metricName: string }>;
-  
+
   /** Cached value */
   cachedValue?: number | null;
-  
+
   /** Timestamp of last calculation */
   lastCalculated?: number;
 }
@@ -86,40 +86,40 @@ export interface SensorValueMap {
 export interface WidgetRegistration {
   /** Unique widget type identifier */
   widgetType: string;
-  
+
   /** Human-readable name */
   displayName: string;
-  
+
   /** Widget category for organization */
   category: 'navigation' | 'engine' | 'environment' | 'autopilot' | 'utility' | 'custom';
-  
+
   /** Icon name (Ionicons) */
   icon: string;
-  
+
   /** Sensors that MUST be present for widget to be created */
   requiredSensors: SensorDependency[];
-  
+
   /** Sensors that are nice to have but not mandatory */
   optionalSensors: SensorDependency[];
-  
+
   /** Calculated fields (derived metrics) */
   calculatedFields?: CalculatedField[];
-  
+
   /** Function to create widget configuration when sensors available */
   createWidget: (instance: number, sensorData: SensorValueMap) => WidgetConfig;
-  
+
   /** Optional validation function for additional checks */
   validateData?: (sensorData: SensorValueMap) => boolean;
-  
+
   /** Priority for widget ordering (higher = shown first) */
   priority?: number;
-  
+
   /** Is this a multi-instance widget type? */
   multiInstance: boolean;
-  
+
   /** Maximum number of instances (-1 = unlimited) */
   maxInstances?: number;
-  
+
   /** How long without data before widget expires (ms). If not specified, uses global default (5 minutes) */
   expirationTimeout?: number;
 }
@@ -136,11 +136,12 @@ export interface DetectedWidgetInstance {
   priority: number;
   sensorData: SensorValueMap;
   calculatedFields?: Record<string, number | null>;
+  widgetConfig?: any; // Full widget config from registration.createWidget() - preserves custom settings
 }
 
 /**
  * Widget Registration Service
- * 
+ *
  * Central registry for widget types and event-driven widget detection/creation
  */
 export class WidgetRegistrationService {
@@ -149,10 +150,10 @@ export class WidgetRegistrationService {
   private eventEmitter: EventEmitter = new EventEmitter();
   private detectedInstances: Map<string, DetectedWidgetInstance> = new Map();
   private calculatedFieldCache: Map<string, CalculatedField> = new Map();
-  
+
   // Memoization for calculated fields
   private lastSensorValues: Map<string, SensorValueMap> = new Map();
-  
+
   // Initialization state
   private isInitialized = false;
   private sensorUpdateHandler: ((event: any) => void) | null = null;
@@ -177,10 +178,10 @@ export class WidgetRegistrationService {
       console.log(`📋 Registering widget: ${registration.widgetType}`);
     }
     this.registrations.set(registration.widgetType, registration);
-    
+
     // Initialize calculated field cache
     if (registration.calculatedFields) {
-      registration.calculatedFields.forEach(field => {
+      registration.calculatedFields.forEach((field) => {
         const cacheKey = `${registration.widgetType}.${field.id}`;
         this.calculatedFieldCache.set(cacheKey, field);
       });
@@ -192,7 +193,7 @@ export class WidgetRegistrationService {
    */
   public unregisterWidget(widgetType: string): void {
     this.registrations.delete(widgetType);
-    
+
     // Clean up detected instances
     const instancesToRemove: string[] = [];
     this.detectedInstances.forEach((instance, key) => {
@@ -200,7 +201,7 @@ export class WidgetRegistrationService {
         instancesToRemove.push(key);
       }
     });
-    instancesToRemove.forEach(key => this.detectedInstances.delete(key));
+    instancesToRemove.forEach((key) => this.detectedInstances.delete(key));
   }
 
   /**
@@ -220,10 +221,7 @@ export class WidgetRegistrationService {
   /**
    * Check if a widget type can be created with available sensor data
    */
-  public canCreateWidget(
-    widgetType: string,
-    sensorData: SensorValueMap
-  ): boolean {
+  public canCreateWidget(widgetType: string, sensorData: SensorValueMap): boolean {
     const registration = this.registrations.get(widgetType);
     if (!registration) return false;
 
@@ -231,23 +229,13 @@ export class WidgetRegistrationService {
     // Note: We check for key existence, not value !== null, because:
     // 1. Speed can legitimately be 0 (boat stopped)
     // 2. If the key exists in sensorData, it means sensor data was received
-    if (widgetType === 'engine' && DEBUG_ENGINE_DETECTION) {
-      console.log(`🚨 [canCreateWidget] Checking engine widget creation with sensorData:`, sensorData);
-    }
-    if (widgetType === 'depth' && DEBUG_DEPTH_DETECTION) {
-      console.log(`🌊 [DEPTH DEBUG] canCreateWidget check for depth widget with sensorData:`, sensorData);
-      console.log(`🚨 [canCreateWidget] Required sensors:`, registration.requiredSensors);
-    }
-    const hasRequiredSensors = registration.requiredSensors.every(dep => {
+    const hasRequiredSensors = registration.requiredSensors.every((dep) => {
       // For multi-instance widgets with no specific instance requirement,
       // check if ANY instance of this sensor type/measurement exists in the map
       if (dep.instance === undefined) {
         // Look for any key matching the pattern: sensorType.*.metricName
         const pattern = new RegExp(`^${dep.sensorType}\\.\\d+\\.${dep.metricName}$`);
-        const matchingKey = Object.keys(sensorData).find(key => pattern.test(key));
-        if (widgetType === 'engine' && DEBUG_ENGINE_DETECTION) {
-          console.log(`🚨 [canCreateWidget] Looking for pattern: ${pattern}, found: ${matchingKey}`);
-        }
+        const matchingKey = Object.keys(sensorData).find((key) => pattern.test(key));
         if (matchingKey) {
           // Key exists = sensor data available (value can be 0, null is OK if sensor exists)
           return matchingKey in sensorData;
@@ -280,86 +268,76 @@ export class WidgetRegistrationService {
       console.log('[WidgetRegistrationService] ⚠️ Already initialized');
       return;
     }
-    
+
     // Reset cleanup flag at the START of initialization
     this.isCleaningUp = false;
-    
+
     console.log('[WidgetRegistrationService] 🚀 Initializing...');
-    
+
     // Import dynamically to avoid circular dependency
     import('../store/nmeaStore').then(({ useNmeaStore }) => {
       const store = useNmeaStore.getState();
-      
+
       // Subscribe to real-time sensor updates
-      this.sensorUpdateHandler = (event: { 
-        sensorType: string; 
-        instance: number; 
+      this.sensorUpdateHandler = (event: {
+        sensorType: string;
+        instance: number;
         timestamp: number;
       }) => {
         const currentState = useNmeaStore.getState();
         const allSensors = currentState.nmeaData.sensors;
         const sensorData = (allSensors as any)[event.sensorType]?.[event.instance];
-        
+
         if (!sensorData) return;
-        
-        this.handleSensorUpdate(
-          event.sensorType as any,
-          event.instance,
-          sensorData,
-          allSensors
-        );
+
+        this.handleSensorUpdate(event.sensorType as any, event.instance, sensorData, allSensors);
       };
-      
+
       store.sensorEventEmitter.on('sensorUpdate', this.sensorUpdateHandler);
-      
+
       // Perform initial scan of existing sensor data
       this.performInitialScan(useNmeaStore.getState().nmeaData.sensors);
-      
+
       this.isInitialized = true;
       console.log('[WidgetRegistrationService] ✅ Initialized successfully');
     });
   }
-  
+
   /**
    * Perform initial scan of existing sensor data
    */
   private performInitialScan(allSensors: any): void {
     const sensorCategories = Object.keys(allSensors);
-    
-    sensorCategories.forEach(category => {
+
+    sensorCategories.forEach((category) => {
       const categoryData = allSensors[category];
       if (!categoryData) return;
-      
-      Object.keys(categoryData).forEach(instanceKey => {
+
+      Object.keys(categoryData).forEach((instanceKey) => {
         const instance = parseInt(instanceKey, 10);
         const sensorData = categoryData[instance];
-        
+
         if (sensorData && sensorData.timestamp) {
-          this.handleSensorUpdate(
-            category as any,
-            instance,
-            sensorData,
-            allSensors
-          );
+          this.handleSensorUpdate(category as any, instance, sensorData, allSensors);
         }
       });
     });
   }
-  
+
   /**
    * Cleanup subscription (for factory reset)
    */
   public cleanup(): void {
     if (!this.isInitialized || !this.sensorUpdateHandler) return;
-    
+
     // Set flag to prevent store updates during cleanup
     this.isCleaningUp = true;
-    
+
     import('../store/nmeaStore').then(({ useNmeaStore }) => {
       const store = useNmeaStore.getState();
       store.sensorEventEmitter.removeListener('sensorUpdate', this.sensorUpdateHandler);
     });
-    
+
     this.sensorUpdateHandler = null;
     this.isInitialized = false;
     this.clearDetectedInstances();
@@ -374,7 +352,7 @@ export class WidgetRegistrationService {
     sensorType: SensorType,
     instance: number,
     sensorData: Partial<SensorData>,
-    allSensors: any // Full sensor state from nmeaStore
+    allSensors: any, // Full sensor state from nmeaStore
   ): void {
     // Log ALL sensor updates when depth debugging is enabled
     if (DEBUG_DEPTH_DETECTION) {
@@ -382,17 +360,19 @@ export class WidgetRegistrationService {
         sensorType,
         instance,
         hasData: !!sensorData,
-        dataKeys: sensorData ? Object.keys(sensorData) : []
+        dataKeys: sensorData ? Object.keys(sensorData) : [],
       });
     }
-    
+
     // Only log for engine sensors
     if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
-      console.log(`🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`);
+      console.log(
+        `🔧 [WidgetRegistrationService] handleSensorUpdate called: ${sensorType}-${instance}`,
+      );
       console.log(`🔧 [WidgetRegistrationService] sensorData keys:`, Object.keys(sensorData));
       console.log(`🔧 [WidgetRegistrationService] Engine sensor data:`, sensorData);
     }
-    
+
     // Depth-specific logging
     if (DEBUG_DEPTH_DETECTION && sensorType === 'depth') {
       console.log(`🌊 [DEPTH DEBUG] handleSensorUpdate called: depth-${instance}`);
@@ -401,19 +381,21 @@ export class WidgetRegistrationService {
         hasDisplay: !!sensorData?.display,
         displayDepth: sensorData?.display?.depth,
         depthSource: sensorData?.depthSource,
-        timestamp: sensorData?.timestamp
+        timestamp: sensorData?.timestamp,
       });
     }
-    
+
     // Find all widget types that depend on this sensor
     const affectedWidgets = this.findAffectedWidgets(sensorType, instance);
     if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
-      console.log(`🔧 [WidgetRegistrationService] Found ${affectedWidgets.length} affected widgets`);
+      console.log(
+        `🔧 [WidgetRegistrationService] Found ${affectedWidgets.length} affected widgets`,
+      );
     }
 
-    affectedWidgets.forEach(registration => {
+    affectedWidgets.forEach((registration) => {
       const instanceKey = `${registration.widgetType}-${instance}`;
-      
+
       // Early exit: If widget already detected, just update sensor data
       if (this.detectedInstances.has(instanceKey)) {
         const existingInstance = this.detectedInstances.get(instanceKey)!;
@@ -425,29 +407,17 @@ export class WidgetRegistrationService {
         return; // Skip validation for already-detected widgets
       }
       // Build sensor value map for this widget type
-      const sensorValueMap = this.buildSensorValueMap(
-        registration,
-        instance,
-        allSensors
-      );
-      
-      // Debug logging for engine widgets only
-      if (DEBUG_ENGINE_DETECTION && registration.widgetType === 'engine') {
-        console.log(`🚨 [ENGINE DEBUG] Building sensorValueMap for engine-${instance}`);
-        console.log(`🚨 [ENGINE DEBUG] sensorValueMap:`, sensorValueMap);
-        console.log(`🚨 [ENGINE DEBUG] Required sensors:`, registration.requiredSensors);
-      }
-      
+      const sensorValueMap = this.buildSensorValueMap(registration, instance, allSensors);
+
       // Check if widget can be created
       const canCreate = this.canCreateWidget(registration.widgetType, sensorValueMap);
-      
-      if (DEBUG_ENGINE_DETECTION && registration.widgetType === 'engine') {
-        console.log(`🚨 [ENGINE DEBUG] Can create engine widget? ${canCreate}`);
-      }
-      
+
       if (canCreate) {
         // Calculate any derived fields
         const calculatedFields = this.calculateFields(registration, sensorValueMap);
+
+        // Create full widget config by calling registration.createWidget()
+        const widgetConfig = registration.createWidget(instance, sensorValueMap);
 
         // Create or update detected instance
         const instanceKey = `${registration.widgetType}-${instance}`;
@@ -460,6 +430,7 @@ export class WidgetRegistrationService {
           priority: registration.priority ?? 100,
           sensorData: sensorValueMap,
           calculatedFields,
+          widgetConfig, // ⭐ Include full config - preserves customDefinition for CustomWidget
         };
 
         const isNewInstance = !this.detectedInstances.has(instanceKey);
@@ -474,29 +445,24 @@ export class WidgetRegistrationService {
     });
 
     // Directly update widgetStore with all detected instances
-    if (DEBUG_ENGINE_DETECTION && sensorType === 'engine') {
-      console.log(`🔧 [WidgetRegistrationService] Engine handleSensorUpdate complete, calling updateWidgetStore()`);
-    }
     this.updateWidgetStore();
   }
 
   /**
    * Find widget types affected by a sensor update
    */
-  private findAffectedWidgets(
-    sensorType: SensorType,
-    instance: number
-  ): WidgetRegistration[] {
+  private findAffectedWidgets(sensorType: SensorType, instance: number): WidgetRegistration[] {
     const affected: WidgetRegistration[] = [];
 
-    this.registrations.forEach(registration => {
+    this.registrations.forEach((registration) => {
       // Check if any required or optional sensors match this update
-      const isAffected = [...registration.requiredSensors, ...registration.optionalSensors]
-        .some(dep => {
+      const isAffected = [...registration.requiredSensors, ...registration.optionalSensors].some(
+        (dep) => {
           if (dep.sensorType !== sensorType) return false;
           if (dep.instance !== undefined && dep.instance !== instance) return false;
           return true;
-        });
+        },
+      );
 
       if (isAffected) {
         affected.push(registration);
@@ -512,18 +478,15 @@ export class WidgetRegistrationService {
   private buildSensorValueMap(
     registration: WidgetRegistration,
     instance: number,
-    allSensors: any
+    allSensors: any,
   ): SensorValueMap {
     const valueMap: SensorValueMap = {};
-    const allDependencies = [
-      ...registration.requiredSensors,
-      ...registration.optionalSensors,
-    ];
+    const allDependencies = [...registration.requiredSensors, ...registration.optionalSensors];
 
-    allDependencies.forEach(dep => {
+    allDependencies.forEach((dep) => {
       const targetInstance = dep.instance ?? instance;
       const sensorData = allSensors[dep.sensorType]?.[targetInstance];
-      
+
       if (sensorData) {
         // Access metric via getMetric() (unified MetricValue access)
         let value: any = null;
@@ -535,7 +498,7 @@ export class WidgetRegistrationService {
           // Legacy direct access (fallback)
           value = (sensorData as any)[dep.metricName];
         }
-        
+
         const key = this.buildSensorKey(dep.sensorType, targetInstance, dep.metricName);
         valueMap[key] = value ?? null;
       }
@@ -547,11 +510,7 @@ export class WidgetRegistrationService {
   /**
    * Build standardized sensor key for value map
    */
-  private buildSensorKey(
-    sensorType: SensorType,
-    instance: number,
-    metricName: string
-  ): string {
+  private buildSensorKey(sensorType: SensorType, instance: number, metricName: string): string {
     return `${sensorType}.${instance}.${metricName}`;
   }
 
@@ -561,7 +520,7 @@ export class WidgetRegistrationService {
    */
   private calculateFields(
     registration: WidgetRegistration,
-    sensorValueMap: SensorValueMap
+    sensorValueMap: SensorValueMap,
   ): Record<string, number | null> | undefined {
     if (!registration.calculatedFields || registration.calculatedFields.length === 0) {
       return undefined;
@@ -571,17 +530,17 @@ export class WidgetRegistrationService {
     const cacheKey = registration.widgetType;
     const previousValues = this.lastSensorValues.get(cacheKey);
 
-    registration.calculatedFields.forEach(field => {
+    registration.calculatedFields.forEach((field) => {
       // Check if dependencies have changed (simple memoization)
       let needsRecalculation = true;
-      
+
       if (previousValues && field.cachedValue !== undefined) {
         // Check if any dependency values changed
-        const dependenciesChanged = field.dependencies.some(dep => {
+        const dependenciesChanged = field.dependencies.some((dep) => {
           const key = this.buildSensorKey(dep.sensorType, 0, dep.metricName);
           return sensorValueMap[key] !== previousValues[key];
         });
-        
+
         if (!dependenciesChanged) {
           // Use cached value
           results[field.id] = field.cachedValue ?? null;
@@ -593,7 +552,7 @@ export class WidgetRegistrationService {
         // Calculate new value
         const calculatedValue = field.calculate(sensorValueMap);
         results[field.id] = calculatedValue;
-        
+
         // Update cache
         field.cachedValue = calculatedValue;
         field.lastCalculated = Date.now();
@@ -619,7 +578,7 @@ export class WidgetRegistrationService {
   public getDetectedInstancesByType(): Record<string, DetectedWidgetInstance[]> {
     const grouped: Record<string, DetectedWidgetInstance[]> = {};
 
-    this.detectedInstances.forEach(instance => {
+    this.detectedInstances.forEach((instance) => {
       if (!grouped[instance.widgetType]) {
         grouped[instance.widgetType] = [];
       }
@@ -646,9 +605,7 @@ export class WidgetRegistrationService {
   /**
    * Subscribe to aggregate detected instances updates
    */
-  public onDetectedInstancesChanged(
-    callback: (instances: DetectedWidgetInstance[]) => void
-  ): void {
+  public onDetectedInstancesChanged(callback: (instances: DetectedWidgetInstance[]) => void): void {
     this.eventEmitter.on('detectedInstancesChanged', callback);
   }
 
@@ -668,22 +625,30 @@ export class WidgetRegistrationService {
       console.log('⚠️ [WidgetRegistrationService] Skipping store update - cleaning up');
       return;
     }
-    
+
     const instances = this.getDetectedInstances();
-    if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] Updating store with ${instances.length} instances`);
-    
+    if (DEBUG_WIDGET_REGISTRATION)
+      console.log(
+        `🔧 [WidgetRegistrationService] Updating store with ${instances.length} instances`,
+      );
+
     // Import dynamically to avoid circular dependency
-    import('../store/widgetStore').then(({ useWidgetStore }) => {
-      const store = useWidgetStore.getState();
-      if (store.updateInstanceWidgets) {
-        if (DEBUG_WIDGET_REGISTRATION) console.log(`🔧 [WidgetRegistrationService] Calling store.updateInstanceWidgets with ${instances.length} instances`);
-        store.updateInstanceWidgets(instances as any);
-      } else {
-        console.log('⚠️ [WidgetRegistrationService] store.updateInstanceWidgets not available');
-      }
-    }).catch(error => {
-      console.log('❌ [WidgetRegistrationService] Error importing widgetStore:', error);
-    });
+    import('../store/widgetStore')
+      .then(({ useWidgetStore }) => {
+        const store = useWidgetStore.getState();
+        if (store.updateInstanceWidgets) {
+          if (DEBUG_WIDGET_REGISTRATION)
+            console.log(
+              `🔧 [WidgetRegistrationService] Calling store.updateInstanceWidgets with ${instances.length} instances`,
+            );
+          store.updateInstanceWidgets(instances as any);
+        } else {
+          console.log('⚠️ [WidgetRegistrationService] store.updateInstanceWidgets not available');
+        }
+      })
+      .catch((error) => {
+        console.log('❌ [WidgetRegistrationService] Error importing widgetStore:', error);
+      });
   }
 
   /**

@@ -2,13 +2,13 @@
  * Platform Detection Utilities
  * Story 13.2.1 - Phase 2: Platform Detection Utilities
  * Enhanced for TV platforms (tvOS, Android TV) and viewing distance scaling
- * 
+ *
  * Provides platform detection and capability checking for adaptive UI
  */
 
 import { Platform, Dimensions } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
-import { logger } from './logger';
+import { log as logger } from './logging/logger';
 
 /**
  * Platform type enumeration
@@ -18,13 +18,13 @@ export type PlatformType = 'ios' | 'android' | 'web' | 'desktop';
 /**
  * Platform variant enumeration (more granular)
  */
-export type PlatformVariant = 
-  | 'ios-phone' 
-  | 'ios-tablet' 
-  | 'tvos' 
-  | 'android-phone' 
-  | 'android-tablet' 
-  | 'androidtv' 
+export type PlatformVariant =
+  | 'ios-phone'
+  | 'ios-tablet'
+  | 'tvos'
+  | 'android-phone'
+  | 'android-tablet'
+  | 'androidtv'
   | 'web'
   | 'unknown';
 
@@ -71,7 +71,7 @@ export function hasKeyboard(): boolean {
   // 2. Large screen with mouse
   const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   const screenWidth = window.screen.width;
-  
+
   // Desktop heuristic: screen > 1024px OR no touch support
   return screenWidth > 1024 || !hasTouch;
 }
@@ -90,13 +90,17 @@ export function hasTouchscreen(): boolean {
     // Check for touch support
     if ('ontouchstart' in window) return true;
     if (navigator.maxTouchPoints > 0) return true;
-    
+
     // Legacy IE support
     // @ts-ignore
-    if (typeof window.DocumentTouch !== 'undefined' && typeof document !== 'undefined' && document instanceof window.DocumentTouch) {
+    if (
+      typeof window.DocumentTouch !== 'undefined' &&
+      typeof document !== 'undefined' &&
+      document instanceof window.DocumentTouch
+    ) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -134,20 +138,24 @@ export function getIPadMultitaskingMode(): {
 
   const { width, height } = Dimensions.get('window');
   const screen = Dimensions.get('screen');
-  
+
   const widthPercentage = (width / screen.width) * 100;
-  
+
   // Slide Over: ~320-375pt width (narrow overlay)
   const isSlideOver = width < 400;
-  
+
   // Split View: 1/3, 1/2, or 2/3 of screen
   const isSplitView = !isSlideOver && widthPercentage < 95;
-  
+
   // Full screen: > 95% of screen width
   const isFullScreen = widthPercentage >= 95;
-  
-  logger.platform(`iPad Multitasking: ${width}pt (${widthPercentage.toFixed(1)}%), SlideOver: ${isSlideOver}, SplitView: ${isSplitView}, FullScreen: ${isFullScreen}`);
-  
+
+  logger.platform(
+    `iPad Multitasking: ${width}pt (${widthPercentage.toFixed(
+      1,
+    )}%), SlideOver: ${isSlideOver}, SplitView: ${isSplitView}, FullScreen: ${isFullScreen}`,
+  );
+
   return { isSplitView, isSlideOver, isFullScreen, widthPercentage };
 }
 
@@ -166,12 +174,12 @@ export function hasHardwareKeyboard(): boolean {
       return width >= 834;
     }
   }
-  
+
   // Web and desktop always have keyboard
   if (Platform.OS === 'web') {
     return true;
   }
-  
+
   return false;
 }
 
@@ -187,7 +195,7 @@ export function isTablet(): boolean {
     logger.platform(`iOS native detection - isPad: ${nativeIsPad}`);
     return nativeIsPad;
   }
-  
+
   if (Platform.OS === 'web') {
     if (typeof window === 'undefined') return false;
     const width = window.screen.width;
@@ -201,14 +209,18 @@ export function isTablet(): boolean {
   const { width, height } = Dimensions.get('window');
   const aspectRatio = Math.max(width, height) / Math.min(width, height);
   const minDimension = Math.min(width, height);
-  
+
   // Tablets typically have:
   // 1. Larger than 600pt in smallest dimension
   // 2. Aspect ratio closer to 4:3 than 16:9
   const isTabletSize = minDimension >= 600 && aspectRatio < 1.6;
-  
-  logger.platform(`Android - ${width}×${height}, MinDim: ${minDimension}, Aspect: ${aspectRatio.toFixed(2)}, IsTablet: ${isTabletSize}`);
-  
+
+  logger.platform(
+    `Android - ${width}×${height}, MinDim: ${minDimension}, Aspect: ${aspectRatio.toFixed(
+      2,
+    )}, IsTablet: ${isTabletSize}`,
+  );
+
   return isTabletSize;
 }
 
@@ -240,7 +252,7 @@ export function getTVPlatform(): 'tvos' | 'androidtv' | null {
 export function getPlatformVariant(): PlatformVariant {
   const { width, height } = Dimensions.get('window');
   const isLargeScreen = Math.min(width, height) >= 600;
-  
+
   // @ts-ignore - Platform.isTVOS may not be in types
   if (Platform.isTVOS === true) return 'tvos';
   // @ts-ignore - Platform.isTV may not be in types
@@ -248,7 +260,7 @@ export function getPlatformVariant(): PlatformVariant {
   if (Platform.OS === 'web') return 'web';
   if (Platform.OS === 'ios') return isLargeScreen ? 'ios-tablet' : 'ios-phone';
   if (Platform.OS === 'android') return isLargeScreen ? 'android-tablet' : 'android-phone';
-  
+
   return 'unknown';
 }
 
@@ -257,12 +269,12 @@ export function getPlatformVariant(): PlatformVariant {
  * Phone: 1.0x (12-18 inches)
  * Tablet: 1.2x (18-24 inches)
  * TV: 2.0x (10+ feet)
- * 
+ *
  * Used for scaling typography and UI elements based on typical viewing distance
  */
 export function getViewingDistanceScale(): number {
   const variant = getPlatformVariant();
-  
+
   if (variant === 'tvos' || variant === 'androidtv') return 2.0;
   if (variant === 'ios-tablet' || variant === 'android-tablet') return 1.2;
   return 1.0;

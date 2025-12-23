@@ -41,31 +41,28 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   return (
     <View style={[styles.container, style]} testID={testID}>
       {showLabel && (
-        <Label
-          size={size}
-          testID={testID ? `${testID}-label` : undefined}
-        >
-          Dark Mode
+        <Label size={size} testID={testID ? `${testID}-label` : undefined}>
+          <Text>Dark Mode</Text>
         </Label>
       )}
-      <TouchableOpacity 
-        onPress={() => onToggle(!isDarkMode)} 
+      <TouchableOpacity
+        onPress={() => onToggle(!isDarkMode)}
         style={[
           styles.toggle,
           {
             backgroundColor: isDarkMode ? theme.text : theme.border,
-          }
+          },
         ]}
         testID={testID ? `${testID}-switch` : undefined}
       >
-        <View 
+        <View
           style={[
             styles.toggleThumb,
             {
               backgroundColor: theme.surface,
               transform: [{ translateX: isDarkMode ? 14 : 0 }],
-            }
-          ]} 
+            },
+          ]}
         />
       </TouchableOpacity>
     </View>

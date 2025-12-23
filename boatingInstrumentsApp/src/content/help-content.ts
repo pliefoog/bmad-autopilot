@@ -1,7 +1,7 @@
 /**
  * Help Content
  * Story 4.4 AC12: Centralized contextual help content
- * 
+ *
  * Marine-specific help content for all app features with accurate
  * terminology and accessibility-friendly descriptions.
  */
@@ -22,19 +22,19 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
   'connection-setup': {
     title: 'WiFi Bridge Connection',
     content: [
-      'Connect to your boat\'s WiFi bridge to receive real-time NMEA 0183 and NMEA 2000 data.',
+      "Connect to your boat's WiFi bridge to receive real-time NMEA 0183 and NMEA 2000 data.",
       'Most marine WiFi bridges create their own wireless network. Connect your device to this network, then configure the bridge IP address and port.',
       'Common bridge IP addresses: 192.168.1.1, 192.168.4.1, or 10.0.0.1. Default port is typically 10110 for TCP or 10110 for UDP.',
     ],
     tips: [
       'Ensure WiFi is enabled on your device',
       'Check that the bridge has power',
-      'Verify your boat\'s instruments are transmitting NMEA data',
+      "Verify your boat's instruments are transmitting NMEA data",
       'Some bridges require authentication - check manufacturer documentation',
     ],
     relatedTopics: ['nmea-data', 'connection-troubleshooting'],
   },
-  
+
   'nmea-data': {
     title: 'NMEA Data Types',
     content: [
@@ -49,12 +49,12 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['connection-setup', 'widget-data'],
   },
-  
+
   'connection-troubleshooting': {
     title: 'Connection Troubleshooting',
     content: [
-      'If you\'re having trouble connecting, try these common solutions:',
-      '1. Verify your device is connected to the bridge\'s WiFi network (not cellular or another WiFi)',
+      "If you're having trouble connecting, try these common solutions:",
+      "1. Verify your device is connected to the bridge's WiFi network (not cellular or another WiFi)",
       '2. Check the bridge IP address and port number are correct',
       '3. Ensure the bridge has power and is functioning (look for status LEDs)',
       '4. Try rebooting the WiFi bridge',
@@ -67,7 +67,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['connection-setup', 'nmea-data'],
   },
-  
+
   // Widgets & Display
   'widget-customization': {
     title: 'Widget Customization',
@@ -83,7 +83,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['widget-data', 'alarm-configuration'],
   },
-  
+
   'widget-data': {
     title: 'Understanding Widget Data',
     content: [
@@ -101,7 +101,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['widget-customization', 'alarm-configuration'],
   },
-  
+
   // Alarms & Safety
   'alarm-configuration': {
     title: 'Alarm Configuration',
@@ -111,14 +111,14 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
       'Critical alarms (shallow water, autopilot failure, GPS loss) cannot be disabled for safety.',
     ],
     tips: [
-      'Set shallow water alarm 2-3 meters above your vessel\'s draft',
-      'Configure high wind alarm based on your vessel\'s capabilities',
+      "Set shallow water alarm 2-3 meters above your vessel's draft",
+      "Configure high wind alarm based on your vessel's capabilities",
       'Test alarms before relying on them at sea',
       'Keep alarm sound enabled even with haptic feedback',
     ],
     relatedTopics: ['alarm-types', 'alarm-acknowledgment'],
   },
-  
+
   'alarm-types': {
     title: 'Alarm Types',
     content: [
@@ -136,23 +136,23 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['alarm-configuration', 'alarm-acknowledgment'],
   },
-  
+
   'alarm-acknowledgment': {
     title: 'Acknowledging Alarms',
     content: [
       'When an alarm triggers, you must acknowledge it to silence the audio alert.',
       'Tap the alarm banner or use the acknowledge button. Critical alarms may require confirmation.',
-      'Acknowledging an alarm doesn\'t clear the underlying condition - fix the problem!',
+      "Acknowledging an alarm doesn't clear the underlying condition - fix the problem!",
     ],
     tips: [
-      'Don\'t ignore alarms - they indicate real safety issues',
+      "Don't ignore alarms - they indicate real safety issues",
       'After acknowledging, check the source of the alarm immediately',
       'Some critical alarms escalate if not addressed',
       'Screen reader users receive confirmation when alarms are acknowledged',
     ],
     relatedTopics: ['alarm-types', 'alarm-configuration'],
   },
-  
+
   // Autopilot (if applicable)
   'autopilot-modes': {
     title: 'Autopilot Modes',
@@ -171,7 +171,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['autopilot-control', 'alarm-types'],
   },
-  
+
   'autopilot-control': {
     title: 'Autopilot Control',
     content: [
@@ -187,7 +187,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['autopilot-modes', 'alarm-types'],
   },
-  
+
   // Accessibility
   'accessibility-features': {
     title: 'Accessibility Features',
@@ -207,7 +207,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['alarm-types', 'widget-data'],
   },
-  
+
   // Settings & Preferences
   'theme-settings': {
     title: 'Theme & Display',
@@ -225,7 +225,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
     ],
     relatedTopics: ['accessibility-features', 'marine-optimization'],
   },
-  
+
   'marine-optimization': {
     title: 'Marine Environment Use',
     content: [
@@ -233,7 +233,7 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
       'Touch targets are enlarged for use with wet hands or gloves',
       'High contrast ratios ensure visibility in direct sunlight',
       'Critical information uses redundant indicators (color + icon + text)',
-      'Haptic feedback confirms actions even when screen isn\'t visible',
+      "Haptic feedback confirms actions even when screen isn't visible",
     ],
     tips: [
       'Keep screen brightness at maximum in sunlight',
@@ -260,9 +260,9 @@ export function getRelatedTopics(helpId: string): Array<{ id: string; title: str
   if (!content || !content.relatedTopics) {
     return [];
   }
-  
+
   return content.relatedTopics
-    .map(id => {
+    .map((id) => {
       const related = HELP_CONTENT[id];
       return related ? { id, title: related.title } : null;
     })

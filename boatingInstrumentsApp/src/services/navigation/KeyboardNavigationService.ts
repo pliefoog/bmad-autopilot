@@ -1,7 +1,7 @@
 /**
  * Keyboard Navigation Service
  * Story 4.4 AC14: Desktop keyboard navigation and shortcuts
- * 
+ *
  * Provides:
  * - Focus management for widgets and UI elements
  * - Tab order and arrow key navigation
@@ -33,22 +33,22 @@ export type GlobalShortcut = {
 
 class KeyboardNavigationService {
   private static instance: KeyboardNavigationService;
-  
+
   // Registered navigable elements
   private elements: Map<string, NavigableElement> = new Map();
-  
+
   // Current focus state
   private currentFocusId: string | null = null;
-  
+
   // Global shortcuts
   private shortcuts: Map<string, GlobalShortcut> = new Map();
-  
+
   // Keyboard listener
   private keyboardListener: ((event: KeyboardEvent) => void) | null = null;
-  
+
   // Enable/disable state
   private enabled: boolean = false;
-  
+
   // Focus lock (for modals)
   private focusLock: string[] = [];
 
@@ -75,21 +75,18 @@ class KeyboardNavigationService {
    */
   public initialize(): void {
     if (!this.isSupported()) {
-      console.log('[KeyboardNav] Not supported on platform:', Platform.OS);
       return;
     }
 
     if (this.enabled) {
-      console.log('[KeyboardNav] Already initialized');
       return;
     }
 
     this.keyboardListener = this.handleKeyPress.bind(this);
-    
+
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', this.keyboardListener);
       this.enabled = true;
-      console.log('[KeyboardNav] Initialized successfully');
     }
   }
 
@@ -101,7 +98,6 @@ class KeyboardNavigationService {
       window.removeEventListener('keydown', this.keyboardListener);
       this.enabled = false;
       this.keyboardListener = null;
-      console.log('[KeyboardNav] Cleaned up');
     }
   }
 
@@ -110,7 +106,6 @@ class KeyboardNavigationService {
    */
   public registerElement(element: NavigableElement): void {
     this.elements.set(element.id, element);
-    console.log(`[KeyboardNav] Registered element: ${element.id} (type: ${element.type})`);
   }
 
   /**
@@ -121,7 +116,6 @@ class KeyboardNavigationService {
     if (this.currentFocusId === elementId) {
       this.currentFocusId = null;
     }
-    console.log(`[KeyboardNav] Unregistered element: ${elementId}`);
   }
 
   /**
@@ -130,7 +124,6 @@ class KeyboardNavigationService {
   public registerShortcut(shortcut: GlobalShortcut): void {
     const key = this.getShortcutKey(shortcut);
     this.shortcuts.set(key, shortcut);
-    console.log(`[KeyboardNav] Registered shortcut: ${key} - ${shortcut.description}`);
   }
 
   /**
@@ -138,7 +131,6 @@ class KeyboardNavigationService {
    */
   public unregisterShortcut(key: string): void {
     this.shortcuts.delete(key);
-    console.log(`[KeyboardNav] Unregistered shortcut: ${key}`);
   }
 
   /**
@@ -153,21 +145,19 @@ class KeyboardNavigationService {
 
     // Check focus lock
     if (this.focusLock.length > 0 && !this.focusLock.includes(elementId)) {
-      console.log(`[KeyboardNav] Focus locked, cannot focus: ${elementId}`);
       return false;
     }
 
     this.currentFocusId = elementId;
-    
+
     if (element.focusRef?.current) {
       element.focusRef.current.focus();
     }
-    
+
     if (element.onFocus) {
       element.onFocus();
     }
 
-    console.log(`[KeyboardNav] Focused element: ${elementId}`);
     return true;
   }
 
@@ -193,7 +183,7 @@ class KeyboardNavigationService {
     }
 
     // Get navigable elements in focus lock (if any) or all elements
-    const availableElements = Array.from(this.elements.values()).filter(el => {
+    const availableElements = Array.from(this.elements.values()).filter((el) => {
       if (this.focusLock.length > 0) {
         return this.focusLock.includes(el.id);
       }
@@ -214,7 +204,7 @@ class KeyboardNavigationService {
    */
   public focusNext(): boolean {
     const sortedElements = this.getSortedElements();
-    
+
     if (sortedElements.length === 0) {
       return false;
     }
@@ -223,9 +213,9 @@ class KeyboardNavigationService {
       return this.focusElement(sortedElements[0].id);
     }
 
-    const currentIndex = sortedElements.findIndex(el => el.id === this.currentFocusId);
+    const currentIndex = sortedElements.findIndex((el) => el.id === this.currentFocusId);
     const nextIndex = (currentIndex + 1) % sortedElements.length;
-    
+
     return this.focusElement(sortedElements[nextIndex].id);
   }
 
@@ -234,7 +224,7 @@ class KeyboardNavigationService {
    */
   public focusPrevious(): boolean {
     const sortedElements = this.getSortedElements();
-    
+
     if (sortedElements.length === 0) {
       return false;
     }
@@ -243,9 +233,9 @@ class KeyboardNavigationService {
       return this.focusElement(sortedElements[sortedElements.length - 1].id);
     }
 
-    const currentIndex = sortedElements.findIndex(el => el.id === this.currentFocusId);
+    const currentIndex = sortedElements.findIndex((el) => el.id === this.currentFocusId);
     const prevIndex = currentIndex === 0 ? sortedElements.length - 1 : currentIndex - 1;
-    
+
     return this.focusElement(sortedElements[prevIndex].id);
   }
 
@@ -271,7 +261,6 @@ class KeyboardNavigationService {
     const element = this.elements.get(this.currentFocusId);
     if (element?.onActivate) {
       element.onActivate();
-      console.log(`[KeyboardNav] Activated element: ${this.currentFocusId}`);
       return true;
     }
 
@@ -283,7 +272,6 @@ class KeyboardNavigationService {
    */
   public lockFocus(elementIds: string[]): void {
     this.focusLock = elementIds;
-    console.log(`[KeyboardNav] Focus locked to: ${elementIds.join(', ')}`);
   }
 
   /**
@@ -291,7 +279,6 @@ class KeyboardNavigationService {
    */
   public unlockFocus(): void {
     this.focusLock = [];
-    console.log('[KeyboardNav] Focus unlocked');
   }
 
   /**
@@ -312,11 +299,10 @@ class KeyboardNavigationService {
     // Check for global shortcuts first
     const shortcutKey = this.getShortcutKeyFromEvent(event);
     const shortcut = this.shortcuts.get(shortcutKey);
-    
+
     if (shortcut) {
       event.preventDefault();
       shortcut.action();
-      console.log(`[KeyboardNav] Executed shortcut: ${shortcutKey}`);
       return;
     }
 
@@ -385,11 +371,12 @@ class KeyboardNavigationService {
 
   private getSortedElements(): NavigableElement[] {
     const elements = Array.from(this.elements.values());
-    
+
     // Filter by focus lock if active
-    const filteredElements = this.focusLock.length > 0
-      ? elements.filter(el => this.focusLock.includes(el.id))
-      : elements;
+    const filteredElements =
+      this.focusLock.length > 0
+        ? elements.filter((el) => this.focusLock.includes(el.id))
+        : elements;
 
     // Sort by priority (lower = higher priority)
     return filteredElements.sort((a, b) => {
@@ -399,11 +386,14 @@ class KeyboardNavigationService {
     });
   }
 
-  private moveWidgetFocus(direction: NavigationDirection, availableElements: NavigableElement[]): boolean {
+  private moveWidgetFocus(
+    direction: NavigationDirection,
+    availableElements: NavigableElement[],
+  ): boolean {
     // Simple grid navigation - can be enhanced with actual widget positions
-    const widgets = availableElements.filter(el => el.type === 'widget');
-    const currentIndex = widgets.findIndex(el => el.id === this.currentFocusId);
-    
+    const widgets = availableElements.filter((el) => el.type === 'widget');
+    const currentIndex = widgets.findIndex((el) => el.id === this.currentFocusId);
+
     if (currentIndex === -1) {
       return false;
     }
@@ -433,7 +423,10 @@ class KeyboardNavigationService {
     return false;
   }
 
-  private moveLinearFocus(direction: NavigationDirection, availableElements: NavigableElement[]): boolean {
+  private moveLinearFocus(
+    direction: NavigationDirection,
+    availableElements: NavigableElement[],
+  ): boolean {
     // For non-widget elements, treat up/left as previous, down/right as next
     if (direction === 'up' || direction === 'left') {
       return this.focusPrevious();

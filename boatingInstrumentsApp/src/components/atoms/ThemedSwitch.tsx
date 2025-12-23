@@ -14,14 +14,33 @@ interface ThemedSwitchProps {
   disabled?: boolean;
 }
 
-export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({ value, onValueChange, disabled = false }) => {
+export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
+  value,
+  onValueChange,
+  disabled = false,
+}) => {
   const theme = useTheme();
 
   // For web, use custom switch implementation to ensure proper theming
   if (Platform.OS === 'web') {
     return (
-      <Pressable onPress={() => !disabled && onValueChange(!value)} disabled={disabled} style={[styles.webSwitchContainer, { backgroundColor: value ? theme.primary : theme.border, opacity: disabled ? 0.5 : 1 }]}>
-        <View style={[styles.webSwitchThumb, { backgroundColor: value ? theme.text : theme.textSecondary, transform: [{ translateX: value ? 20 : 0 }] }]} />
+      <Pressable
+        onPress={() => !disabled && onValueChange(!value)}
+        disabled={disabled}
+        style={[
+          styles.webSwitchContainer,
+          { backgroundColor: value ? theme.primary : theme.border, opacity: disabled ? 0.5 : 1 },
+        ]}
+      >
+        <View
+          style={[
+            styles.webSwitchThumb,
+            {
+              backgroundColor: value ? theme.text : theme.textSecondary,
+              transform: [{ translateX: value ? 20 : 0 }],
+            },
+          ]}
+        />
       </Pressable>
     );
   }

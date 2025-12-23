@@ -1,35 +1,35 @@
 /**
  * Central Sensor Configuration Registry
- * 
+ *
  * **Purpose:**
  * Single source of truth for all sensor-specific configuration requirements.
  * Eliminates conditional sensor logic throughout the codebase by centralizing
  * configuration in a declarative registry pattern.
- * 
+ *
  * **Design Principle**: Configuration over Code
  * - ✅ Add new sensor = add registry entry only (no component changes)
  * - ✅ No hardcoded sensor-specific conditionals in UI components
  * - ✅ Type-safe sensor configuration via TypeScript
  * - ✅ Extensible without modifying existing code
- * 
+ *
  * **Architecture Benefits:**
  * 1. **Maintainability**: All sensor config in one file, easy to audit/update
  * 2. **Extensibility**: New sensors work automatically in SensorConfigDialog
  * 3. **Consistency**: Same rendering logic for all sensors
  * 4. **Testability**: Registry can be unit tested independently
- * 
+ *
  * **Usage Example:**
  * ```typescript
  * // Get sensor configuration
  * const sensorConfig = getSensorConfig('battery');
- * 
+ *
  * // Render fields dynamically
  * sensorConfig.fields.map(field => renderField(field));
- * 
+ *
  * // Get default thresholds
  * const defaults = sensorConfig.getDefaults?.({ batteryChemistry: 'lithium' });
  * ```
- * 
+ *
  * **Adding New Sensor:**
  * ```typescript
  * newSensor: {
@@ -43,14 +43,14 @@
  *   getDefaults: (context) => getSmartDefaults('newSensor', context),
  * }
  * ```
- * 
+ *
  * **Field Types:**
  * - `text`: String input (name, location)
  * - `number`: Numeric input (capacity, maxRpm)
  * - `picker`: Dropdown selection (chemistry, engineType)
  * - `toggle`: Boolean switch (not yet implemented)
  * - `slider`: Range selector (not yet implemented)
- * 
+ *
  * **Hardware Integration:**
  * Fields can be marked read-only if provided by sensor hardware:
  * ```typescript
@@ -81,58 +81,59 @@ export const ALARM_SOUND_PATTERNS = {
   none: 'none',
 } as const;
 
-export type AlarmSoundPattern = typeof ALARM_SOUND_PATTERNS[keyof typeof ALARM_SOUND_PATTERNS];
+export type AlarmSoundPattern = (typeof ALARM_SOUND_PATTERNS)[keyof typeof ALARM_SOUND_PATTERNS];
 
 /**
  * Field configuration for sensor-specific inputs
- * 
+ *
  * **IOState Behavior:**
  * - `readOnly`: Always load from sensor[instance][hardwareField], disable editing
- * - `readWrite`: Load from sensor[instance][hardwareField], allow editing  
+ * - `readWrite`: Load from sensor[instance][hardwareField], allow editing
  * - `readOnlyIfValue`: If sensor has value → read-only, if no value → editable with defaults
- * 
+ *
  * **Field Roles:**
  * - UI/Configuration fields: batteryChemistry, engineType, capacity - no category
  * - Data fields: voltage, temperature, rpm - have category for presentation
  */
 export interface SensorFieldConfig {
-  key: string;                    // FormData key
-  label: string;                  // Display label
-  type: FieldType;                // Input type
-  iostate: IOState;               // Read/write behavior
-  hardwareField?: string;         // Sensor data field name to read from sensor[instance][field]
-  
+  key: string; // FormData key
+  label: string; // Display label
+  type: FieldType; // Input type
+  iostate: IOState; // Read/write behavior
+  hardwareField?: string; // Sensor data field name to read from sensor[instance][field]
+
   // Type-specific configurations
-  default?: any;                  // Default value for text/number when no sensor value
-  options?: Array<{               // For picker type
+  default?: any; // Default value for text/number when no sensor value
+  options?: Array<{
+    // For picker type
     label: string;
     value: string;
-    default?: boolean;            // Mark default option
+    default?: boolean; // Mark default option
   }>;
-  
+
   // Number/Slider constraints
-  min?: number;                   // Minimum value (SI units)
-  max?: number;                   // Maximum value (SI units)
-  step?: number;                  // Step increment for slider
-  
+  min?: number; // Minimum value (SI units)
+  max?: number; // Maximum value (SI units)
+  step?: number; // Step increment for slider
+
   // Validation rules
-  required?: boolean;             // Field must have value
-  dependsOn?: string;             // Only valid if another field is set
-  
+  required?: boolean; // Field must have value
+  dependsOn?: string; // Only valid if another field is set
+
   // UI metadata
-  helpText?: string;              // User guidance tooltip
-  
+  helpText?: string; // User guidance tooltip
+
   // Presentation (for data fields only - UI fields don't have category)
-  category?: DataCategory;        // For presentation cache (voltage, temperature, etc.)
-  direction?: 'above' | 'below';  // Default alarm direction for this field
+  category?: DataCategory; // For presentation cache (voltage, temperature, etc.)
+  direction?: 'above' | 'below'; // Default alarm direction for this field
 }
 
 /**
  * Alarm metric configuration for multi-metric sensors
- * 
+ *
  * Multi-metric sensors (like battery, engine) have multiple alarm points.
  * Each metric defines how that specific alarm behaves and presents data.
- * 
+ *
  * **Example - Battery with 4 metrics:**
  * ```typescript
  * alarmMetrics: [
@@ -142,7 +143,7 @@ export interface SensorFieldConfig {
  *   { key: 'temperature', label: 'Temperature', category: 'temperature', unit: '°C', direction: 'above' },
  * ]
  * ```
- * 
+ *
  * **Field Documentation:**
  * - `key`: Metric identifier used in FormData and threshold storage (camelCase)
  * - `label`: Human-readable name shown in UI
@@ -152,10 +153,10 @@ export interface SensorFieldConfig {
  * - `direction`: Alarm triggers 'above' threshold (overtemp) or 'below' threshold (low voltage)
  */
 export interface SensorAlarmMetricConfig {
-  key: string;                    // Metric identifier (e.g., 'voltage')
-  label: string;                  // Display name
-  category?: DataCategory;        // For presentation system (optional for raw values like percentages)
-  direction: 'above' | 'below';   // Alarm direction
+  key: string; // Metric identifier (e.g., 'voltage')
+  label: string; // Display name
+  category?: DataCategory; // For presentation system (optional for raw values like percentages)
+  direction: 'above' | 'below'; // Alarm direction
   // NOTE: No 'unit' field - values are ALWAYS stored in SI units
   // Presentation system handles conversion to user-selected units
 }
@@ -172,8 +173,8 @@ export interface ThresholdConfig {
   warningSoundPattern: AlarmSoundPattern;
   criticalHysteresis: number;
   warningHysteresis: number;
-  min?: number;                   // Slider minimum value (SI units)
-  max?: number;                   // Slider maximum value (SI units)
+  min?: number; // Slider minimum value (SI units)
+  max?: number; // Slider maximum value (SI units)
 }
 
 /**
@@ -181,9 +182,9 @@ export interface ThresholdConfig {
  */
 export interface AlarmDefaults {
   // For context-aware sensors (battery, engine, temperature, tank)
-  contextKey?: string;           // Which field determines context ('batteryChemistry', 'engineType', etc.)
+  contextKey?: string; // Which field determines context ('batteryChemistry', 'engineType', etc.)
   contexts?: Record<string, any>; // Context-specific threshold configurations
-  
+
   // For simple sensors (depth, wind, speed) - direct threshold config
   threshold?: ThresholdConfig;
 }
@@ -195,15 +196,15 @@ export interface SensorConfigDefinition {
   sensorType: SensorType;
   displayName: string;
   description?: string;
-  
+
   // What fields are configurable for this sensor
   fields: SensorFieldConfig[];
-  
+
   // Alarm configuration
   alarmSupport: AlarmSupport;
-  alarmMetrics?: SensorAlarmMetricConfig[];  // For multi-metric sensors
+  alarmMetrics?: SensorAlarmMetricConfig[]; // For multi-metric sensors
   defaultAlarmDirection?: 'above' | 'below'; // For single-metric
-  
+
   // Default values (PURE DATA - no functions)
   defaults?: AlarmDefaults;
 }
@@ -216,7 +217,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     sensorType: 'battery',
     displayName: 'Battery',
     description: 'DC power system monitoring',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -264,6 +265,15 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         direction: 'below',
       },
       {
+        key: 'nominalVoltage',
+        label: 'Nominal Voltage',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'nominalVoltage',
+        category: 'voltage',
+        helpText: 'Rated/nominal voltage (e.g., 12V, 24V, 48V)',
+      },
+      {
         key: 'current',
         label: 'Current',
         type: 'number',
@@ -291,7 +301,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         // Raw percentage 0-100, no category = no unit conversion
       },
     ],
-    
+
     alarmSupport: 'multi-metric',
     alarmMetrics: [
       {
@@ -319,7 +329,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         // Raw percentage 0-100, no category = no unit conversion
       },
     ],
-    
+
     defaults: {
       contextKey: 'batteryChemistry',
       contexts: {
@@ -373,7 +383,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             },
           },
         },
-        'agm': {
+        agm: {
           metrics: {
             voltage: {
               critical: 12.0,
@@ -425,7 +435,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             },
           },
         },
-        'gel': {
+        gel: {
           metrics: {
             voltage: {
               critical: 11.9,
@@ -477,7 +487,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             },
           },
         },
-        'lifepo4': {
+        lifepo4: {
           metrics: {
             voltage: {
               critical: 12.8,
@@ -530,12 +540,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     },
   },
-  
+
   depth: {
     sensorType: 'depth',
     displayName: 'Depth Sounder',
     description: 'Water depth measurement',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -573,10 +583,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         helpText: 'Measurement reference (waterline/transducer/keel)',
       },
     ],
-    
+
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'below',
-    
+
     defaults: {
       threshold: {
         critical: 2.0,
@@ -592,12 +602,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     },
   },
-  
+
   engine: {
     sensorType: 'engine',
     displayName: 'Engine',
     description: 'Engine monitoring and diagnostics',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -692,7 +702,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         helpText: 'Propeller shaft revolutions per minute',
       },
     ],
-    
+
     alarmSupport: 'multi-metric',
     alarmMetrics: [
       {
@@ -714,11 +724,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         direction: 'above',
       },
     ],
-    
+
     defaults: {
       contextKey: 'engineType',
       contexts: {
-        'diesel': {
+        diesel: {
           metrics: {
             rpm: {
               critical: 2800,
@@ -758,7 +768,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             },
           },
         },
-        'gasoline': {
+        gasoline: {
           metrics: {
             rpm: {
               critical: 3600,
@@ -798,7 +808,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             },
           },
         },
-        'outboard': {
+        outboard: {
           metrics: {
             rpm: {
               critical: 5800,
@@ -841,12 +851,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     },
   },
-  
+
   wind: {
     sensorType: 'wind',
     displayName: 'Wind Sensor',
     description: 'Wind speed and direction',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -892,10 +902,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         category: 'angle',
       },
     ],
-    
+
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'above',
-    
+
     defaults: {
       threshold: {
         critical: 40,
@@ -911,12 +921,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     },
   },
-  
+
   speed: {
     sensorType: 'speed',
     displayName: 'Speed Log',
     description: 'Boat speed measurement',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -946,10 +956,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         category: 'speed',
       },
     ],
-    
+
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'above',
-    
+
     defaults: {
       threshold: {
         critical: 8,
@@ -965,38 +975,42 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     },
   },
-  
+
   temperature: {
     sensorType: 'temperature',
     displayName: 'Temperature Sensor',
     description: 'Environmental temperature monitoring',
-    
+
     fields: [
-      // UI/Configuration fields
+      // String metadata fields (stored as MetricValues without category)
       {
         key: 'name',
         label: 'Sensor Name',
         type: 'text',
         iostate: 'readWrite',
+        hardwareField: 'name',
         default: '',
         helpText: 'Descriptive name for this temperature sensor (e.g., Engine Room)',
       },
       {
         key: 'location',
         label: 'Location',
-        type: 'picker',
+        type: 'text',
         iostate: 'readWrite',
-        options: [
-          { label: 'Engine Room', value: 'engineRoom', default: true },
-          { label: 'Cabin/Saloon', value: 'cabin' },
-          { label: 'Refrigerator', value: 'fridge' },
-          { label: 'Freezer', value: 'freezer' },
-          { label: 'Outside Air', value: 'outside' },
-          { label: 'Sea Water', value: 'seaWater' },
-        ],
-        helpText: 'Physical location of temperature sensor',
+        hardwareField: 'location',
+        default: 'unknown',
+        helpText: 'Physical location - string MetricValue without formatting/conversion',
       },
-      // Data fields
+      {
+        key: 'units',
+        label: 'Temperature Units',
+        type: 'text',
+        iostate: 'readOnly',
+        hardwareField: 'units',
+        default: 'C',
+        helpText: 'Temperature units (C or F) - string MetricValue',
+      },
+      // Numeric data field (stored as MetricValue with category)
       {
         key: 'value',
         label: 'Temperature',
@@ -1007,14 +1021,14 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         direction: 'above',
       },
     ],
-    
+
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'above',
-    
+
     defaults: {
       contextKey: 'location',
       contexts: {
-        'engineRoom': {
+        engineRoom: {
           threshold: {
             critical: 105,
             warning: 85,
@@ -1028,7 +1042,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 150,
           },
         },
-        'cabin': {
+        cabin: {
           threshold: {
             critical: 40,
             warning: 35,
@@ -1042,7 +1056,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 50,
           },
         },
-        'fridge': {
+        fridge: {
           threshold: {
             critical: 10,
             warning: 8,
@@ -1056,7 +1070,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 20,
           },
         },
-        'freezer': {
+        freezer: {
           threshold: {
             critical: -10,
             warning: -15,
@@ -1070,7 +1084,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 0,
           },
         },
-        'outside': {
+        outside: {
           threshold: {
             critical: 45,
             warning: 40,
@@ -1084,7 +1098,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 60,
           },
         },
-        'seaWater': {
+        seaWater: {
           threshold: {
             critical: 35,
             warning: 30,
@@ -1101,12 +1115,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       },
     },
   },
-  
+
   compass: {
     sensorType: 'compass',
     displayName: 'Compass',
     description: 'Magnetic heading',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -1117,25 +1131,71 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         default: '',
         helpText: 'Descriptive name for this compass (e.g., Fluxgate Compass)',
       },
-      // Data fields
+      // Data fields - Heading (both magnetic and true)
+      {
+        key: 'magneticHeading',
+        label: 'Magnetic Heading',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'magneticHeading',
+        category: 'angle',
+        helpText: 'Magnetic heading (0-360°) - not corrected for variation',
+      },
+      {
+        key: 'trueHeading',
+        label: 'True Heading',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'trueHeading',
+        category: 'angle',
+        helpText: 'True heading (0-360°) - corrected for magnetic variation',
+      },
       {
         key: 'heading',
-        label: 'Heading',
+        label: 'Heading (Legacy)',
         type: 'number',
         iostate: 'readOnly',
         hardwareField: 'heading',
         category: 'angle',
+        helpText: 'DEPRECATED: Use magneticHeading or trueHeading instead',
+      },
+      {
+        key: 'variation',
+        label: 'Magnetic Variation',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'variation',
+        category: 'angle',
+        helpText: 'Magnetic variation (difference between true and magnetic north)',
+      },
+      {
+        key: 'deviation',
+        label: 'Compass Deviation',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'deviation',
+        category: 'angle',
+        helpText: 'Compass deviation (local magnetic disturbance)',
+      },
+      {
+        key: 'rateOfTurn',
+        label: 'Rate of Turn',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'rateOfTurn',
+        category: 'angle',
+        helpText: 'Rate of turn in degrees per minute',
       },
     ],
-    
+
     alarmSupport: 'none',
   },
-  
+
   gps: {
     sensorType: 'gps',
     displayName: 'GPS',
     description: 'Position and navigation',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -1146,7 +1206,39 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         default: '',
         helpText: 'Descriptive name for this GPS (e.g., Chart Plotter)',
       },
-      // Data fields
+      // Position fields - proper MetricValues with coordinate formatting
+      {
+        key: 'latitude',
+        label: 'Latitude',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'latitude',
+        category: 'coordinates',
+        helpText:
+          "GPS latitude in decimal degrees (formatted per user preference: DD.ddddd° or DD° MM.mmm' N/S)",
+      },
+      {
+        key: 'longitude',
+        label: 'Longitude',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'longitude',
+        category: 'coordinates',
+        helpText:
+          "GPS longitude in decimal degrees (formatted per user preference: DDD.ddddd° or DDD° MM.mmm' E/W)",
+      },
+      // Time field - proper MetricValue with time formatting
+      {
+        key: 'utcTime',
+        label: 'UTC Time',
+        type: 'number',
+        iostate: 'readOnly',
+        hardwareField: 'utcTime',
+        category: 'time',
+        helpText:
+          'UTC timestamp from GPS in milliseconds (formatted per user date/time preferences)',
+      },
+      // Navigation fields - proper MetricValues
       {
         key: 'speedOverGround',
         label: 'Speed Over Ground',
@@ -1163,16 +1255,34 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         hardwareField: 'courseOverGround',
         category: 'angle',
       },
+      // Special complex object field (architectural exception)
+      {
+        key: 'quality',
+        label: 'GPS Quality',
+        type: 'text', // Actually object {fixType, satellites, hdop} - special case
+        iostate: 'readOnly',
+        hardwareField: 'quality',
+        helpText:
+          'GPS fix quality object {fixType, satellites, hdop} - accessed directly, not via getMetric()',
+      },
+      {
+        key: 'timeSource',
+        label: 'Time Source',
+        type: 'text',
+        iostate: 'readOnly',
+        hardwareField: 'timeSource',
+        helpText: 'Source sentence for time priority: RMC (1) > ZDA (2) > GGA (3)',
+      },
     ],
-    
+
     alarmSupport: 'none',
   },
-  
+
   autopilot: {
     sensorType: 'autopilot',
     displayName: 'Autopilot',
     description: 'Automatic steering control',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -1228,15 +1338,15 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         helpText: 'Current rudder position (-35 to +35 degrees, positive = starboard)',
       },
     ],
-    
+
     alarmSupport: 'none',
   },
-  
+
   navigation: {
     sensorType: 'navigation',
     displayName: 'Navigation',
     description: 'Navigation and routing data',
-    
+
     fields: [
       // UI/Configuration fields
       {
@@ -1273,52 +1383,36 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         category: 'distance',
       },
     ],
-    
+
     alarmSupport: 'none',
   },
-  
+
   tank: {
     sensorType: 'tank',
     displayName: 'Tank Level',
     description: 'Fluid tank monitoring',
-    
+
     fields: [
-      // UI/Configuration fields
+      // String metadata fields (stored as MetricValues without category)
       {
         key: 'name',
         label: 'Tank Name',
         type: 'text',
         iostate: 'readWrite',
+        hardwareField: 'name',
         default: '',
         helpText: 'Descriptive name for this tank (e.g., Port Fuel, Main Water)',
       },
       {
-        key: 'tankType',
+        key: 'type',
         label: 'Tank Type',
-        type: 'picker',
+        type: 'text',
         iostate: 'readWrite',
-        options: [
-          { label: 'Fuel', value: 'fuel', default: true },
-          { label: 'Fresh Water', value: 'freshWater' },
-          { label: 'Gray Water', value: 'grayWater' },
-          { label: 'Black Water', value: 'blackWater' },
-          { label: 'Live Well', value: 'liveWell' },
-          { label: 'Oil', value: 'oil' },
-        ],
-        helpText: 'Type of fluid stored in this tank',
+        hardwareField: 'type',
+        default: 'fuel',
+        helpText: 'Type of fluid stored - string MetricValue without formatting/conversion',
       },
-      {
-        key: 'capacity',
-        label: 'Capacity (L)',
-        type: 'number',
-        iostate: 'readWrite',
-        default: 200,
-        min: 10,
-        max: 5000,
-        category: 'volume',
-        helpText: 'Total capacity of tank in liters',
-      },
-      // Data fields
+      // Numeric data fields (stored as MetricValues with category)
       {
         key: 'level',
         label: 'Tank Level',
@@ -1326,17 +1420,29 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         iostate: 'readOnly',
         hardwareField: 'level',
         direction: 'below',
-        helpText: 'Current tank level (0.0-1.0 ratio)',
+        helpText: 'Current tank level (0.0-1.0 ratio) - no category, widget converts to %',
+      },
+      {
+        key: 'capacity',
+        label: 'Capacity',
+        type: 'number',
+        iostate: 'readWrite',
+        hardwareField: 'capacity',
+        category: 'volume',
+        default: 200,
+        min: 10,
+        max: 5000,
+        helpText: 'Total capacity of tank in liters',
       },
     ],
-    
+
     alarmSupport: 'single-metric',
     defaultAlarmDirection: 'below',
-    
+
     defaults: {
       contextKey: 'tankType',
       contexts: {
-        'fuel': {
+        fuel: {
           threshold: {
             critical: 15,
             warning: 25,
@@ -1350,7 +1456,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 100,
           },
         },
-        'freshWater': {
+        freshWater: {
           threshold: {
             critical: 10,
             warning: 20,
@@ -1364,7 +1470,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 100,
           },
         },
-        'grayWater': {
+        grayWater: {
           threshold: {
             critical: 90,
             warning: 85,
@@ -1378,7 +1484,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 100,
           },
         },
-        'blackWater': {
+        blackWater: {
           threshold: {
             critical: 95,
             warning: 90,
@@ -1392,7 +1498,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 100,
           },
         },
-        'liveWell': {
+        liveWell: {
           threshold: {
             critical: 10,
             warning: 15,
@@ -1406,7 +1512,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             max: 100,
           },
         },
-        'oil': {
+        oil: {
           threshold: {
             critical: 20,
             warning: 30,
@@ -1427,15 +1533,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
 
 /**
  * Get sensor configuration by type
- * 
+ *
  * **Usage:**
  * ```typescript
  * const config = getSensorConfig('battery');
- * console.log(config.displayName);        // "Battery"
- * console.log(config.alarmSupport);       // "multi-metric"
- * console.log(config.fields.length);      // 4 (name, location, chemistry, capacity)
  * ```
- * 
+ *
  * @param sensorType - One of the valid SensorType values
  * @returns Complete sensor configuration definition
  */
@@ -1445,74 +1548,70 @@ export function getSensorConfig(sensorType: SensorType): SensorConfigDefinition 
 
 /**
  * Validate field dependencies for a sensor configuration
- * 
+ *
  * Checks if all field dependencies are satisfied based on current form values.
  * Used to determine if dependent fields should be shown/enabled.
- * 
+ *
  * **Usage:**
  * ```typescript
  * const errors = validateFieldDependencies('battery', formData);
  * if (errors.length > 0) {
- *   console.log('Validation errors:', errors);
  * }
  * ```
- * 
+ *
  * @param sensorType - Type of sensor
  * @param formData - Current form values
  * @returns Array of validation error messages (empty if all valid)
  */
 export function validateFieldDependencies(
   sensorType: SensorType,
-  formData: Record<string, any>
+  formData: Record<string, any>,
 ): string[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
   const errors: string[] = [];
-  
+
   for (const field of config.fields) {
     if (field.dependsOn) {
       const dependentValue = formData[field.dependsOn];
-      
+
       // Check if dependent field has a value
       if (dependentValue === undefined || dependentValue === null || dependentValue === '') {
         errors.push(`${field.label} requires ${field.dependsOn} to be set first`);
       }
     }
   }
-  
+
   return errors;
 }
 
 /**
  * Check if a specific field should be shown based on dependencies
- * 
+ *
  * @param field - Field configuration
  * @param formData - Current form values
  * @returns true if field should be shown, false if dependencies not satisfied
  */
-export function shouldShowField(
-  field: SensorFieldConfig,
-  formData: Record<string, any>
-): boolean {
+export function shouldShowField(field: SensorFieldConfig, formData: Record<string, any>): boolean {
   if (!field.dependsOn) return true;
-  
+
   const dependentValue = formData[field.dependsOn];
   return dependentValue !== undefined && dependentValue !== null && dependentValue !== '';
 }
 
 /**
  * Check if sensor supports alarm configuration
- * 
+ *
  * **Usage:**
  * ```typescript
  * if (sensorSupportsAlarms('battery')) {
  *   // Show alarm configuration UI
  * }
- * 
+ *
  * sensorSupportsAlarms('battery')   // true  (multi-metric)
  * sensorSupportsAlarms('depth')     // true  (single-metric)
  * sensorSupportsAlarms('compass')   // false (no alarms)
  * ```
- * 
+ *
  * @param sensorType - Sensor type to check
  * @returns true if sensor supports alarms (single or multi-metric)
  */
@@ -1522,14 +1621,13 @@ export function sensorSupportsAlarms(sensorType: SensorType): boolean {
 
 /**
  * Get alarm metrics for multi-metric sensors
- * 
+ *
  * **Usage:**
  * ```typescript
  * const metrics = getSensorAlarmMetrics('battery');
  * // Returns: [{ key: 'voltage', ... }, { key: 'current', ... }, ...]
- * 
+ *
  * metrics?.forEach(metric => {
- *   console.log(`${metric.label}: ${metric.unit}`);
  * });
  * // Output:
  * // "Voltage: V"
@@ -1537,11 +1635,13 @@ export function sensorSupportsAlarms(sensorType: SensorType): boolean {
  * // "State of Charge: %"
  * // "Temperature: °C"
  * ```
- * 
+ *
  * @param sensorType - Sensor type to get metrics for
  * @returns Array of alarm metric configurations, or undefined for single-metric/no-alarm sensors
  */
-export function getSensorAlarmMetrics(sensorType: SensorType): SensorAlarmMetricConfig[] | undefined {
+export function getSensorAlarmMetrics(
+  sensorType: SensorType,
+): SensorAlarmMetricConfig[] | undefined {
   return SENSOR_CONFIG_REGISTRY[sensorType].alarmMetrics;
 }
 
@@ -1549,10 +1649,10 @@ export function getSensorAlarmMetrics(sensorType: SensorType): SensorAlarmMetric
  * ============================================================================
  * CONTEXT-AWARE DEFAULT THRESHOLDS (PURE DATA LOOKUP)
  * ============================================================================
- * 
+ *
  * All alarm defaults are now stored as declarative data in the registry above.
  * This helper function performs simple property lookups based on sensor context.
- * 
+ *
  * No procedural code, no switch statements - just pure data retrieval.
  */
 
@@ -1561,113 +1661,113 @@ export function getSensorAlarmMetrics(sensorType: SensorType): SensorAlarmMetric
  */
 const CONTEXT_ALIASES: Record<string, Record<string, string>> = {
   batteryChemistry: {
-    'fla': 'lead-acid',     // Flooded Lead Acid
-    'flooded': 'lead-acid',
-    'wet': 'lead-acid',
-    'gel': 'gel',
-    'lfp': 'lifepo4',       // Lithium Iron Phosphate
-    'lithium': 'lifepo4',
+    fla: 'lead-acid', // Flooded Lead Acid
+    flooded: 'lead-acid',
+    wet: 'lead-acid',
+    gel: 'gel',
+    lfp: 'lifepo4', // Lithium Iron Phosphate
+    lithium: 'lifepo4',
   },
   engineType: {
-    'gas': 'gasoline',
-    'petrol': 'gasoline',
+    gas: 'gasoline',
+    petrol: 'gasoline',
   },
   tankType: {
-    'water': 'freshWater',         // Generic water → fresh water
-    'fresh': 'freshWater',
-    'freshwater': 'freshWater',
-    'waste': 'grayWater',          // Generic waste → gray water
-    'gray': 'grayWater',
-    'grey': 'grayWater',
-    'graywater': 'grayWater',
-    'greywater': 'grayWater',
-    'black': 'blackWater',
-    'blackwater': 'blackWater',
-    'sewage': 'blackWater',
-    'ballast': 'fuel',             // No specific ballast config, use fuel as generic
-    'livewell': 'liveWell',
+    water: 'freshWater', // Generic water → fresh water
+    fresh: 'freshWater',
+    freshwater: 'freshWater',
+    waste: 'grayWater', // Generic waste → gray water
+    gray: 'grayWater',
+    grey: 'grayWater',
+    graywater: 'grayWater',
+    greywater: 'grayWater',
+    black: 'blackWater',
+    blackwater: 'blackWater',
+    sewage: 'blackWater',
+    ballast: 'fuel', // No specific ballast config, use fuel as generic
+    livewell: 'liveWell',
     'live well': 'liveWell',
   },
   location: {
-    'engine': 'engineRoom',        // Engine temp → engine room
-    'seawater': 'outside',         // Seawater temp → outside (ambient)
-    'exhaust': 'engineRoom',       // Exhaust temp → engine room category
-    'refrigeration': 'fridge',     // Full name → short form
-    'baitwell': 'liveWell',        // Bait well → live well (similar use case)
+    engine: 'engineRoom', // Engine temp → engine room
+    seawater: 'outside', // Seawater temp → outside (ambient)
+    exhaust: 'engineRoom', // Exhaust temp → engine room category
+    refrigeration: 'fridge', // Full name → short form
+    baitwell: 'liveWell', // Bait well → live well (similar use case)
     'bait well': 'liveWell',
   },
 };
 
 /**
  * Get a specific field configuration from a sensor
- * 
+ *
  * @param sensorType - Type of sensor
  * @param fieldKey - Field key to look up
  * @returns Field configuration or undefined if not found
  */
 export function getSensorField(
   sensorType: SensorType,
-  fieldKey: string
+  fieldKey: string,
 ): SensorFieldConfig | undefined {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  return config?.fields?.find(f => f.key === fieldKey);
+  return config?.fields?.find((f) => f.key === fieldKey);
 }
 
 /**
  * Get all data fields (fields with category) from a sensor
  * These are fields that represent sensor measurements with units
- * 
+ *
  * @param sensorType - Type of sensor
  * @returns Array of data field configurations
  */
 export function getDataFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  return config?.fields?.filter(f => f.category !== undefined) ?? [];
+  return config?.fields?.filter((f) => f.category !== undefined) ?? [];
 }
 
 /**
  * Get all UI/configuration fields (fields without category) from a sensor
  * These are fields used for sensor configuration like type, capacity, etc.
- * 
+ *
  * @param sensorType - Type of sensor
  * @returns Array of UI field configurations
  */
 export function getConfigFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  return config?.fields?.filter(f => f.category === undefined) ?? [];
+  return config?.fields?.filter((f) => f.category === undefined) ?? [];
 }
 
 /**
  * Get all alarm-capable fields from a sensor
  * For multi-metric sensors: returns fields with category
  * For single-metric sensors: returns the primary data field
- * 
+ *
  * @param sensorType - Type of sensor
  * @returns Array of alarm field configurations
  */
 export function getAlarmFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
   if (!config) return [];
-  
+
   // Multi-metric sensors: all data fields can have alarms
   if (config.alarmSupport === 'multi-metric') {
     return getDataFields(sensorType);
   }
-  
+
   // Single-metric sensors: find the primary alarm field
   // This is typically the first data field with a category
   if (config.alarmSupport === 'single-metric') {
     const dataFields = getDataFields(sensorType);
     return dataFields.slice(0, 1); // Return first data field
   }
-  
+
   // No alarm support
   return [];
 }
 
 /**
  * Get context-aware default alarm thresholds for a sensor
- * 
+ *
  * **Usage:**
  * ```typescript
  * // For context-aware sensors (battery, engine, temperature, tank)
@@ -1675,27 +1775,27 @@ export function getAlarmFields(sensorType: SensorType): SensorFieldConfig[] {
  * const engineDefaults = getAlarmDefaults('engine', { engineType: 'diesel' });
  * const tempDefaults = getAlarmDefaults('temperature', { location: 'engineRoom' });
  * const tankDefaults = getAlarmDefaults('tank', { tankType: 'fuel' });
- * 
+ *
  * // For simple sensors (depth, wind, speed)
  * const depthDefaults = getAlarmDefaults('depth');
  * ```
- * 
+ *
  * @param sensorType - Type of sensor
  * @param context - Context values (chemistry, type, location, etc.) - matches field option values exactly
  * @returns Complete alarm threshold configuration, or undefined for no-alarm sensors
  */
 export function getAlarmDefaults(
   sensorType: SensorType,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ): any | undefined {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
   if (!config.defaults) return undefined;
-  
+
   // Simple sensors - direct threshold lookup
   if ('threshold' in config.defaults) {
     return config.defaults.threshold;
   }
-  
+
   // Context-aware sensors - lookup by context key value
   if (config.defaults.contexts && config.defaults.contextKey) {
     const contextValue = context?.[config.defaults.contextKey];
@@ -1706,16 +1806,16 @@ export function getAlarmDefaults(
     }
     // Normalize to lowercase to match registry keys (AGM -> agm, LiFePO4 -> lifepo4)
     let normalizedValue = String(contextValue).toLowerCase();
-    
+
     // Apply alias mapping if available (FLA -> lead-acid, LFP -> lifepo4, etc.)
     const aliases = CONTEXT_ALIASES[config.defaults.contextKey];
     if (aliases && aliases[normalizedValue]) {
       normalizedValue = aliases[normalizedValue];
     }
-    
+
     return config.defaults.contexts[normalizedValue];
   }
-  
+
   return undefined;
 }
 
@@ -1724,7 +1824,7 @@ export function getAlarmDefaults(
  */
 export function getSmartDefaults(
   sensorType: SensorType,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ): SensorAlarmThresholds | ThresholdConfig | undefined {
   return getAlarmDefaults(sensorType, context);
 }

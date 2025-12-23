@@ -26,15 +26,15 @@ export interface AlarmThresholdValues {
  */
 export function useAlarmThresholds(
   sensorType: SensorType,
-  instance: number = 0
+  instance: number = 0,
 ): AlarmThresholdValues {
   // Get threshold retrieval method from store
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
   const sensorEventEmitter = useNmeaStore((state) => state.sensorEventEmitter);
-  
+
   // Local state to trigger re-renders on threshold updates
   const [updateTrigger, setUpdateTrigger] = useState(0);
-  
+
   // Subscribe to threshold updates for this sensor instance
   useEffect(() => {
     const handleThresholdUpdate = (event: { sensorType: string; instance: number }) => {
@@ -42,17 +42,17 @@ export function useAlarmThresholds(
         setUpdateTrigger((prev) => prev + 1);
       }
     };
-    
+
     sensorEventEmitter.on('threshold-update', handleThresholdUpdate);
-    
+
     return () => {
       sensorEventEmitter.off('threshold-update', handleThresholdUpdate);
     };
   }, [sensorType, instance, sensorEventEmitter]);
-  
+
   // Get current thresholds from store (updateTrigger ensures re-fetch)
   const thresholds = getSensorThresholds(sensorType, instance);
-  
+
   // Return disabled state if no thresholds configured
   if (!thresholds) {
     return {
@@ -62,7 +62,7 @@ export function useAlarmThresholds(
       message: `No alarm thresholds configured for ${sensorType}[${instance}]`,
     };
   }
-  
+
   // Return loaded thresholds
   return {
     warning: thresholds.warning,
@@ -79,20 +79,26 @@ export function useAlarmThresholds(
  * Usage: const thresholds = useDepthAlarmThresholds(0); // instance 0
  */
 // Navigation
-export const useDepthAlarmThresholds = (instance: number = 0) => useAlarmThresholds('depth', instance);
-export const useSpeedAlarmThresholds = (instance: number = 0) => useAlarmThresholds('speed', instance);
+export const useDepthAlarmThresholds = (instance: number = 0) =>
+  useAlarmThresholds('depth', instance);
+export const useSpeedAlarmThresholds = (instance: number = 0) =>
+  useAlarmThresholds('speed', instance);
 
 // Engine
-export const useEngineAlarmThresholds = (instance: number = 0) => useAlarmThresholds('engine', instance);
+export const useEngineAlarmThresholds = (instance: number = 0) =>
+  useAlarmThresholds('engine', instance);
 
 // Temperature
-export const useTemperatureAlarmThresholds = (instance: number = 0) => useAlarmThresholds('temperature', instance);
+export const useTemperatureAlarmThresholds = (instance: number = 0) =>
+  useAlarmThresholds('temperature', instance);
 
 // Battery
-export const useBatteryAlarmThresholds = (instance: number = 0) => useAlarmThresholds('battery', instance);
+export const useBatteryAlarmThresholds = (instance: number = 0) =>
+  useAlarmThresholds('battery', instance);
 
 // Wind
-export const useWindAlarmThresholds = (instance: number = 0) => useAlarmThresholds('wind', instance);
+export const useWindAlarmThresholds = (instance: number = 0) =>
+  useAlarmThresholds('wind', instance);
 
 // Tanks
 export const useFuelLevelAlarmThresholds = () => useAlarmThresholds('tanks.fuel.level');

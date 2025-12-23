@@ -1,6 +1,6 @@
 /**
  * Bridge Profile Loader
- * 
+ *
  * Loads device-specific bridge profiles from YAML configuration files.
  * Handles validation, caching, and error recovery for bridge profiles.
  */
@@ -56,8 +56,8 @@ export class BridgeProfileLoader {
     try {
       const files = fs.readdirSync(this.configDir);
       return files
-        .filter(file => file.endsWith('.yaml') || file.endsWith('.yml'))
-        .map(file => path.basename(file, path.extname(file)));
+        .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml'))
+        .map((file) => path.basename(file, path.extname(file)));
     } catch (error) {
       console.warn('Could not read bridge profiles directory:', error);
       return ['actisense-ngw1']; // Default fallback
@@ -69,16 +69,16 @@ export class BridgeProfileLoader {
    */
   private static async loadProfileFromFile(profileName: string): Promise<BridgeProfile> {
     const filePath = path.join(this.configDir, `${profileName}.yaml`);
-    
+
     if (!fs.existsSync(filePath)) {
       throw new Error(`Profile file not found: ${filePath}`);
     }
 
     const content = fs.readFileSync(filePath, 'utf-8');
-    
+
     // For now, create a mock parser until yaml dependency is available
     const profileData = this.parseProfileYAML(content, profileName);
-    
+
     return this.convertYAMLToProfile(profileData);
   }
 
@@ -88,17 +88,20 @@ export class BridgeProfileLoader {
   private static parseProfileYAML(content: string, profileName: string): BridgeProfileYAML {
     // This is a simplified parser for development
     // In production, this would use a proper YAML parser
-    
+
     return {
       name: profileName,
-      manufacturer: profileName.includes('actisense') ? 'Actisense' : 
-                   profileName.includes('yacht') ? 'Yacht Devices' : 'Unknown',
+      manufacturer: profileName.includes('actisense')
+        ? 'Actisense'
+        : profileName.includes('yacht')
+        ? 'Yacht Devices'
+        : 'Unknown',
       model: 'Parsed from YAML',
       description: 'Profile loaded from configuration file',
       defaultProfile: profileName === 'actisense-ngw1',
       pcdinUsage: 'moderate',
       transmissionPeriods: {
-        128267: 1000,  // Default transmission periods
+        128267: 1000, // Default transmission periods
         128259: 1000,
         130306: 1000,
         129029: 1000,
@@ -118,14 +121,14 @@ export class BridgeProfileLoader {
         127508: { sentenceType: 'XDR', pcdinFallback: true },
       },
       sentenceRules: {
-        'DBT': 128267,
-        'VHW': 128259,
-        'MWV': 130306,
-        'GGA': 129029,
-        'HDG': 127250,
-        'RPM': 127488,
-        'XDR': 127508,
-      }
+        DBT: 128267,
+        VHW: 128259,
+        MWV: 130306,
+        GGA: 129029,
+        HDG: 127250,
+        RPM: 127488,
+        XDR: 127508,
+      },
     };
   }
 
@@ -139,7 +142,7 @@ export class BridgeProfileLoader {
     // Process conversion rules
     for (const [pgnStr, ruleData] of Object.entries(yamlData.conversionRules)) {
       const pgn = parseInt(pgnStr);
-      
+
       const rule: ConversionRule = {
         pgn,
         pcdinFallback: ruleData.pcdinFallback || false,
@@ -149,13 +152,13 @@ export class BridgeProfileLoader {
       if (ruleData.sentenceType) {
         rule.nativeConversion = {
           sentenceType: ruleData.sentenceType,
-          converter: this.createConverterFunction(pgn, ruleData.sentenceType)
+          converter: this.createConverterFunction(pgn, ruleData.sentenceType),
         };
-        
+
         // Add bidirectional conversion for supported combinations
         rule.bidirectional = {
           sentenceType: ruleData.sentenceType,
-          converter: this.createBidirectionalConverter(pgn, ruleData.sentenceType)
+          converter: this.createBidirectionalConverter(pgn, ruleData.sentenceType),
         };
       }
 
@@ -178,22 +181,25 @@ export class BridgeProfileLoader {
       defaultProfile: yamlData.defaultProfile,
       conversionRules: {
         rules,
-        sentenceRules
+        sentenceRules,
       },
       pcdinUsage: yamlData.pcdinUsage,
-      transmissionPeriods: yamlData.transmissionPeriods
+      transmissionPeriods: yamlData.transmissionPeriods,
     };
   }
 
   /**
    * Create converter function for specific PGN/sentence combination
    */
-  private static createConverterFunction(pgn: number, sentenceType: string): (data: PGNData) => string[] {
+  private static createConverterFunction(
+    pgn: number,
+    sentenceType: string,
+  ): (data: PGNData) => string[] {
     // Map PGN/sentence combinations to actual converter functions
     if (pgn === 128267 && sentenceType === 'DBT') {
       return DepthConverter.PGN128267ToDBT;
     }
-    
+
     // Placeholder for other converters
     return (data: PGNData) => {
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
@@ -204,12 +210,15 @@ export class BridgeProfileLoader {
   /**
    * Create bidirectional converter function (sentence → PGN)
    */
-  private static createBidirectionalConverter(pgn: number, sentenceType: string): (sentence: string) => PGNData | null {
+  private static createBidirectionalConverter(
+    pgn: number,
+    sentenceType: string,
+  ): (sentence: string) => PGNData | null {
     // Map sentence/PGN combinations to actual converter functions
     if (pgn === 128267 && sentenceType === 'DBT') {
       return DepthConverter.DBTToPGN128267;
     }
-    
+
     // Placeholder for other bidirectional converters
     return (sentence: string) => null;
   }

@@ -1,12 +1,12 @@
 /**
  * Factory Reset Dialog
  * Epic 8 - Phase 2: Platform-Native Dialog Migration
- * 
+ *
  * Features:
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
  * - Destructive action confirmation
  * - Clear warning message with bullet points
- * 
+ *
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal structure
  * - Action button for destructive Factory Reset operation
@@ -14,13 +14,7 @@
  */
 
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
@@ -38,10 +32,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   onCancel,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(
-    () => createStyles(theme),
-    [theme]
-  );
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const handleConfirm = async () => {
     // For mobile platforms, use React Native Alert instead of the modal
@@ -49,13 +40,13 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
       Alert.alert(
         'Factory Reset Confirmation',
         'This will completely restore the app to its initial state:\n\n' +
-        '• All widgets will be removed\n' +
-        '• Dashboard layouts will be reset\n' +
-        '• All settings will be cleared\n' +
-        '• Connection settings will be reset\n' +
-        '• App will return to first-launch state\n' +
-        '• Setup wizard will appear again\n\n' +
-        'This action cannot be undone!',
+          '• All widgets will be removed\n' +
+          '• Dashboard layouts will be reset\n' +
+          '• All settings will be cleared\n' +
+          '• Connection settings will be reset\n' +
+          '• App will return to first-launch state\n' +
+          '• Setup wizard will appear again\n\n' +
+          'This action cannot be undone!',
         [
           {
             text: 'Cancel',
@@ -68,11 +59,11 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
             onPress: onConfirm,
           },
         ],
-        { cancelable: true, onDismiss: onCancel }
+        { cancelable: true, onDismiss: onCancel },
       );
       return;
     }
-    
+
     // For web and modal display, proceed with the action
     await onConfirm();
   };
@@ -84,27 +75,27 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
       title="Factory Reset"
       onClose={onCancel}
       actionButton={{
-        label: "Factory Reset",
+        label: 'Factory Reset',
         onPress: handleConfirm,
         disabled: false,
-        testID: "factory-reset-confirm-button"
+        testID: 'factory-reset-confirm-button',
       }}
       testID="factory-reset-dialog"
     >
       {/* Warning Section */}
       <PlatformSettingsSection title="Warning">
         <View style={styles.warningBox}>
-          <UniversalIcon 
-            name="warning-outline" 
-            size={32} 
-            color={theme.error} 
+          <UniversalIcon
+            name="warning-outline"
+            size={32}
+            color={theme.error}
             style={styles.warningIcon}
           />
           <View style={styles.warningTextContainer}>
             <Text style={styles.warningTitle}>⚠️ Complete Factory Reset</Text>
             <Text style={styles.warningDescription}>
-              This action will permanently delete all your custom settings and configurations.
-              This cannot be undone!
+              This action will permanently delete all your custom settings and configurations. This
+              cannot be undone!
             </Text>
           </View>
         </View>
@@ -153,7 +144,6 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
           </View>
         </View>
       </PlatformSettingsSection>
-
     </BaseConfigDialog>
   );
 };

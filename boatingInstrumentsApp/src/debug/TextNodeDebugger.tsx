@@ -13,29 +13,27 @@ export const TextNodeDebugger: React.FC = () => {
   return (
     <View>
       <Text>Debug: Text Node Issues</Text>
-      
+
       {/* Safe patterns */}
       <Text>Period: {period}</Text>
       <Text>Number: {numericValue}</Text>
-      <Text>String: {"safe string"}</Text>
-      
+      <Text>String: {'safe string'}</Text>
+
       {/* These might be problematic */}
       <Text>Empty: "{emptyString}"</Text>
       <Text>Undefined: {undefinedValue ? 'defined' : 'undefined'}</Text>
       <Text>Null: {nullValue ? 'not null' : 'null'}</Text>
       <Text>Boolean: {booleanValue ? 'true' : 'false'}</Text>
-      
+
       {/* Test spaces and dots */}
-      <Text>Space Test: {numericValue} {period}</Text>
-      
+      <Text>
+        Space Test: {numericValue} {period}
+      </Text>
+
       {/* Potentially unsafe patterns */}
-      <View>
-        Safe in View: {numericValue}
-      </View>
-      
-      <View>
-        Unsafe period: {period}
-      </View>
+      <View><Text>Safe in View: {numericValue}</Text></View>
+
+      <View><Text>Unsafe period: {period}</Text></View>
     </View>
   );
 };

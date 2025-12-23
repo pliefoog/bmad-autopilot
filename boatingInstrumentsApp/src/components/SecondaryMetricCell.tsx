@@ -49,9 +49,12 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   const value = data?.value ?? legacyValue ?? '';
   const unit = data?.unit ?? legacyUnit ?? '';
 
-  const displayValue = value !== null && value !== undefined && value !== '' 
-    ? (typeof value === 'number' ? value.toFixed(precision) : String(value))
-    : '---';
+  const displayValue =
+    value !== null && value !== undefined && value !== ''
+      ? typeof value === 'number'
+        ? value.toFixed(precision)
+        : String(value)
+      : '---';
 
   // Calculate dynamic font sizes
   const dynamicSizes = useMemo(() => {
@@ -60,12 +63,12 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     const BASE_UNIT_SIZE = customFontSize?.unit ?? 12;
     const BASE_SPACE_SIZE = 4;
     const BASE_TOTAL_HEIGHT = BASE_MNEMONIC_SIZE + BASE_SPACE_SIZE + BASE_VALUE_SIZE;
-    
+
     let mnemonicFontSize = BASE_MNEMONIC_SIZE;
     let valueFontSize = BASE_VALUE_SIZE;
     let unitFontSize = BASE_UNIT_SIZE;
     let spaceSize = BASE_SPACE_SIZE;
-    
+
     if (cellHeight && cellHeight > 0) {
       const heightScaleFactor = cellHeight / BASE_TOTAL_HEIGHT;
       mnemonicFontSize = BASE_MNEMONIC_SIZE * heightScaleFactor;
@@ -73,19 +76,19 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       unitFontSize = BASE_UNIT_SIZE * heightScaleFactor;
       spaceSize = BASE_SPACE_SIZE * heightScaleFactor;
     }
-    
+
     if (maxWidth && maxWidth > 0) {
       const actualAvailableWidth = maxWidth;
       const CHAR_WIDTH_RATIO = 0.6;
       const PADDING_RESERVE = 0.95;
       const scaledValueWidth = displayValue.length * (valueFontSize * CHAR_WIDTH_RATIO);
       const targetWidth = actualAvailableWidth * PADDING_RESERVE;
-      
+
       if (scaledValueWidth > targetWidth) {
         valueFontSize = valueFontSize * (targetWidth / scaledValueWidth);
       }
     }
-    
+
     return {
       value: Math.max(1, valueFontSize),
       mnemonic: Math.max(1, mnemonicFontSize),
@@ -99,14 +102,18 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.mnemonic}>
-        {mnemonic.toUpperCase()}{unit && unit.trim() !== '' ? ` (${unit})` : ''}
+        {mnemonic.toUpperCase()}
+        {unit && unit.trim() !== '' ? ` (${unit})` : ''}
       </Text>
       <Text style={styles.value}>{displayValue}</Text>
     </View>
   );
 };
 
-const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit: number; space: number }) =>
+const createStyles = (
+  theme: any,
+  sizes: { value: number; mnemonic: number; unit: number; space: number },
+) =>
   StyleSheet.create({
     container: {
       flex: 1,

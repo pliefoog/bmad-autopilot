@@ -1,6 +1,6 @@
 /**
  * Font Measurement Service
- * 
+ *
  * Platform-specific text measurement with aggressive caching for layout stability.
  * Provides pixel-accurate measurements for marine instrument displays.
  */
@@ -119,17 +119,17 @@ export class FontMeasurementService {
    */
   private static measureTextWeb(key: MeasurementKey): FontMetrics {
     const ctx = this.initializeCanvas();
-    
+
     // Set font properties
     ctx.font = `${key.fontWeight} ${key.fontSize}px ${key.fontFamily}`;
-    
+
     // Measure text
     const metrics = ctx.measureText(key.text);
-    
+
     return {
       width: metrics.width,
       height: key.fontSize * 1.2, // Approximate line height
-      baseline: key.fontSize * 0.8 // Approximate baseline
+      baseline: key.fontSize * 0.8, // Approximate baseline
     };
   }
 
@@ -139,14 +139,14 @@ export class FontMeasurementService {
   private static measureTextNative(key: MeasurementKey): FontMetrics {
     // For React Native, we'll use estimated measurements based on font metrics
     // In a real implementation, you'd use platform-specific measurement APIs
-    
+
     const charWidth = key.fontSize * 0.6; // Approximate character width
     const estimatedWidth = key.text.length * charWidth;
-    
+
     return {
       width: estimatedWidth,
       height: key.fontSize * 1.2,
-      baseline: key.fontSize * 0.8
+      baseline: key.fontSize * 0.8,
     };
   }
 
@@ -157,7 +157,7 @@ export class FontMeasurementService {
     text: string,
     fontSize: number,
     fontFamily: string = 'system',
-    fontWeight: string = 'normal'
+    fontWeight: string = 'normal',
   ): FontMetrics {
     const key: MeasurementKey = { text, fontSize, fontFamily, fontWeight };
     const cacheKey = this.getCacheKey(key);
@@ -190,37 +190,33 @@ export class FontMeasurementService {
     format: PresentationFormat,
     fontSize: number,
     fontFamily: string = 'system',
-    fontWeight: string = 'normal'
+    fontWeight: string = 'normal',
   ): number {
     const { testCases } = format;
-    
+
     // Generate test strings from test cases
     const testStrings: string[] = [];
-    
+
     // Format test values according to the presentation format
     if (format.pattern.includes('.')) {
       // Decimal format
       testStrings.push(
         testCases.min.toFixed(format.decimals),
         testCases.max.toFixed(format.decimals),
-        testCases.typical.toFixed(format.decimals)
+        testCases.typical.toFixed(format.decimals),
       );
     } else if (format.pattern.includes('Bf (Description)')) {
       // Beaufort format - use longest description
-      testStrings.push(
-        '0 Bf (Calm)',
-        '12 Bf (Hurricane)',
-        '6 Bf (Strong Breeze)'
-      );
+      testStrings.push('0 Bf (Calm)', '12 Bf (Hurricane)', '6 Bf (Strong Breeze)');
     } else {
       // Integer format
       testStrings.push(
         Math.round(testCases.min).toString(),
         Math.round(testCases.max).toString(),
-        Math.round(testCases.typical).toString()
+        Math.round(testCases.typical).toString(),
       );
     }
-    
+
     // Add pattern-based test strings for worst-case scenarios
     if (format.pattern === 'xxx.x') {
       testStrings.push('999.9', '000.0', '123.4', '-99.9');
@@ -230,24 +226,20 @@ export class FontMeasurementService {
       testStrings.push('999', '000', '123', '-99');
     } else if (format.pattern.includes('°') && format.pattern.includes('′')) {
       // Coordinate patterns (DDM, DMS)
-      testStrings.push(
-        "179° 59.999′ W",
-        "89° 59.999′ S",
-        "0° 0.000′ N"
-      );
+      testStrings.push('179° 59.999′ W', '89° 59.999′ S', '0° 0.000′ N');
     } else if (format.pattern.includes('°')) {
       // Angle patterns (degrees only)
       testStrings.push('359°', '0°', '180°');
     }
-    
+
     // Measure all test strings and find maximum width
     let maxWidth = 0;
-    
-    testStrings.forEach(text => {
+
+    testStrings.forEach((text) => {
       const metrics = this.measureText(text, fontSize, fontFamily, fontWeight);
       maxWidth = Math.max(maxWidth, metrics.width);
     });
-    
+
     // Add padding for layout stability (10% margin)
     return Math.ceil(maxWidth * 1.1);
   }
@@ -272,21 +264,32 @@ export class FontMeasurementService {
   static preloadMarineMeasurements(
     fontSize: number,
     fontFamily: string = 'system',
-    fontWeight: string = 'normal'
+    fontWeight: string = 'normal',
   ): void {
     // Common marine values to preload
     const commonValues = [
       // Speed values
-      '0.0', '5.2', '12.5', '25.8', '99.9',
-      // Depth values  
-      '1.2', '15.5', '999.9', '50.0',
+      '0.0',
+      '5.2',
+      '12.5',
+      '25.8',
+      '99.9',
+      // Depth values
+      '1.2',
+      '15.5',
+      '999.9',
+      '50.0',
       // Wind values
-      '0 Bf (Calm)', '4 Bf (Moderate Breeze)', '8 Bf (Gale)',
+      '0 Bf (Calm)',
+      '4 Bf (Moderate Breeze)',
+      '8 Bf (Gale)',
       // Temperature values
-      '22.5', '-5.0', '35.2'
+      '22.5',
+      '-5.0',
+      '35.2',
     ];
-    
-    commonValues.forEach(value => {
+
+    commonValues.forEach((value) => {
       this.measureText(value, fontSize, fontFamily, fontWeight);
     });
   }

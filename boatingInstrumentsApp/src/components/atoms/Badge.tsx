@@ -22,33 +22,36 @@ const Badge: React.FC<BadgeProps> = ({
   testID,
 }) => {
   const theme = useTheme();
-  
+
   // Create dynamic styles based on current theme
-  const dynamicStyles = useMemo(() => ({
-    badge_default: {
-      backgroundColor: theme.surface,
-      borderWidth: 1,
-      borderColor: theme.border,
-    },
-    badge_primary: {
-      backgroundColor: theme.primary,
-    },
-    badge_secondary: {
-      backgroundColor: theme.secondary,
-    },
-    badge_success: {
-      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
-    },
-    badge_warning: {
-      backgroundColor: theme.warning,
-    },
-    badge_danger: {
-      backgroundColor: theme.error,
-    },
-    text_default: {
-      color: theme.text,
-    },
-  }), [theme]);
+  const dynamicStyles = useMemo(
+    () => ({
+      badge_default: {
+        backgroundColor: theme.surface,
+        borderWidth: 1,
+        borderColor: theme.border,
+      },
+      badge_primary: {
+        backgroundColor: theme.primary,
+      },
+      badge_secondary: {
+        backgroundColor: theme.secondary,
+      },
+      badge_success: {
+        backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+      },
+      badge_warning: {
+        backgroundColor: theme.warning,
+      },
+      badge_danger: {
+        backgroundColor: theme.error,
+      },
+      text_default: {
+        color: theme.text,
+      },
+    }),
+    [theme],
+  );
 
   const badgeStyle = [
     styles.badge,

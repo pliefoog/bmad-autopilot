@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
-import { logger } from '../../utils/logger';
+import { log as logger } from '../../utils/logging/logger';
 
 interface PaginationDotsProps {
   currentPage: number;
@@ -31,7 +31,7 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
   const theme = useTheme();
 
   // Debug logging
-  logger.layout('PaginationDots rendering:', { currentPage, totalPages, hasIcons: true });
+  logger.layout('PaginationDots rendering:', () => ({ currentPage, totalPages, hasIcons: true }));
 
   // Don't render if there's only one page or no pages
   if (totalPages <= 1) {
@@ -41,19 +41,21 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
 
   const renderDot = (index: number) => {
     const isActive = index === currentPage;
-    
+
     // Animated dot scale if animation value provided
-    const animatedStyle = animatedValue ? {
-      transform: [
-        {
-          scale: animatedValue.interpolate({
-            inputRange: [index - 1, index, index + 1],
-            outputRange: [0.8, 1.2, 0.8],
-            extrapolate: 'clamp',
-          }),
-        },
-      ],
-    } : {};
+    const animatedStyle = animatedValue
+      ? {
+          transform: [
+            {
+              scale: animatedValue.interpolate({
+                inputRange: [index - 1, index, index + 1],
+                outputRange: [0.8, 1.2, 0.8],
+                extrapolate: 'clamp',
+              }),
+            },
+          ],
+        }
+      : {};
 
     return (
       <TouchableOpacity
@@ -85,10 +87,7 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        { paddingVertical: dotSpacing / 2 }
-      ]}
+      style={[styles.container, { paddingVertical: dotSpacing / 2 }]}
       testID={testID}
       accessibilityRole="tablist"
       accessibilityLabel={`Page ${currentPage + 1} of ${totalPages}`}
@@ -96,10 +95,7 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
       <View style={styles.navigationContainer}>
         {/* Previous button */}
         <TouchableOpacity
-          style={[
-            styles.arrowButton,
-            currentPage === 0 && styles.arrowButtonDisabled
-          ]}
+          style={[styles.arrowButton, currentPage === 0 && styles.arrowButtonDisabled]}
           onPress={() => currentPage > 0 && onPagePress?.(currentPage - 1)}
           disabled={currentPage === 0}
           testID={`${testID}-prev`}
@@ -121,10 +117,7 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
 
         {/* Next button */}
         <TouchableOpacity
-          style={[
-            styles.arrowButton,
-            currentPage === totalPages - 1 && styles.arrowButtonDisabled
-          ]}
+          style={[styles.arrowButton, currentPage === totalPages - 1 && styles.arrowButtonDisabled]}
           onPress={() => currentPage < totalPages - 1 && onPagePress?.(currentPage + 1)}
           disabled={currentPage === totalPages - 1}
           testID={`${testID}-next`}
@@ -135,7 +128,9 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
           <UniversalIcon
             name="chevron-forward-outline"
             size={24}
-            color={currentPage === totalPages - 1 ? theme.textSecondary + '40' : theme.textSecondary}
+            color={
+              currentPage === totalPages - 1 ? theme.textSecondary + '40' : theme.textSecondary
+            }
           />
         </TouchableOpacity>
       </View>

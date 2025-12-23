@@ -28,20 +28,20 @@ export interface BackgroundProcessingState {
  */
 export class BackgroundProcessingManager {
   private static instance: BackgroundProcessingManager;
-  
+
   private config: BackgroundServiceConfig;
   private state: BackgroundProcessingState;
   private nmeaService: NmeaService | null = null;
   private notificationManager: NotificationManager;
-  
+
   // Timers for background operations
   private processingTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
-  
+
   // App state listener
   private appStateSubscription: any = null;
-  
+
   private constructor(config: Partial<BackgroundServiceConfig> = {}) {
     this.config = {
       enabled: true,
@@ -49,50 +49,50 @@ export class BackgroundProcessingManager {
       processingSamplingRate: 2000, // 2 seconds when backgrounded (vs 1s foreground)
       heartbeatInterval: 30000, // 30 seconds
       maxBackgroundDuration: 180000, // 3 minutes (iOS constraint)
-      ...config
+      ...config,
     };
-    
+
     this.state = {
       isBackgrounded: false,
       serviceActive: false,
       lastProcessingTime: Date.now(),
       connectionMaintained: false,
-      processingRate: 1000 // Start with foreground rate
+      processingRate: 1000, // Start with foreground rate
     };
-    
+
     this.notificationManager = NotificationManager.getInstance();
-    
+
     this.setupAppStateListener();
   }
-  
-  public static getInstance(config?: Partial<BackgroundServiceConfig>): BackgroundProcessingManager {
+
+  public static getInstance(
+    config?: Partial<BackgroundServiceConfig>,
+  ): BackgroundProcessingManager {
     if (!BackgroundProcessingManager.instance) {
       BackgroundProcessingManager.instance = new BackgroundProcessingManager(config);
     }
     return BackgroundProcessingManager.instance;
   }
-  
+
   /**
    * Initialize background processing system
    */
   public async initialize(nmeaService: NmeaService): Promise<void> {
     if (!this.config.enabled) {
-      console.log('[Background] Background processing disabled by config');
       return;
     }
-    
+
     this.nmeaService = nmeaService;
-    
+
     // Initialize notification system for background alerts
     await this.notificationManager.initialize();
-    
+
     // Request background permissions if needed
     await this.requestBackgroundPermissions();
-    
+
     this.state.serviceActive = true;
-    console.log('[Background] Background processing manager initialized');
   }
-  
+
   /**
    * Request platform-specific background permissions
    */
@@ -101,51 +101,46 @@ export class BackgroundProcessingManager {
       if (Platform.OS === 'ios') {
         // iOS: Request background app refresh and critical alert permissions
         // This would typically be done through native modules
-        console.log('[Background] iOS: Requesting background app refresh permission');
         // TODO: Implement native iOS background permission request
-        
       } else if (Platform.OS === 'android') {
         // Android: Request battery optimization exemption and notification permissions
-        console.log('[Background] Android: Requesting battery optimization exemption');
         // TODO: Implement native Android battery optimization request
       }
     } catch (error) {
       console.error('[Background] Failed to request background permissions:', error);
     }
   }
-  
+
   /**
    * Setup AppState listener to handle foreground/background transitions
    */
   private setupAppStateListener(): void {
     this.appStateSubscription = AppState.addEventListener(
       'change',
-      this.handleAppStateChange.bind(this)
+      this.handleAppStateChange.bind(this),
     );
   }
-  
+
   /**
    * Handle app state changes (foreground/background/inactive)
    */
   private handleAppStateChange(nextAppState: AppStateStatus): void {
     const previousState = this.state.isBackgrounded;
-    
+
     if (nextAppState === 'background') {
       this.state.isBackgrounded = true;
       if (!previousState) {
-        console.log('[Background] App backgrounded - starting background processing');
         this.startBackgroundProcessing();
       }
     } else if (nextAppState === 'active') {
       this.state.isBackgrounded = false;
       if (previousState) {
-        console.log('[Background] App foregrounded - resuming normal processing');
         this.stopBackgroundProcessing();
       }
     }
     // 'inactive' state (iOS transition state) - no action needed
   }
-  
+
   /**
    * Start background processing when app is backgrounded
    */
@@ -153,28 +148,26 @@ export class BackgroundProcessingManager {
     if (!this.config.enabled || !this.nmeaService) {
       return;
     }
-    
+
     // Switch to reduced processing rate for battery conservation
     this.state.processingRate = this.config.processingSamplingRate;
-    
+
     // Start background NMEA monitoring with reduced frequency
     this.processingTimer = setInterval(() => {
       this.processBackgroundData();
     }, this.state.processingRate);
-    
+
     // Start heartbeat for connection health monitoring
     this.heartbeatTimer = setInterval(() => {
       this.performHeartbeat();
     }, this.config.heartbeatInterval);
-    
+
     // Set maximum background duration timer (iOS constraint)
     this.reconnectTimer = setTimeout(() => {
       this.handleMaxBackgroundDuration();
     }, this.config.maxBackgroundDuration);
-    
-    console.log(`[Background] Background processing started (rate: ${this.state.processingRate}ms)`);
   }
-  
+
   /**
    * Stop background processing when app returns to foreground
    */
@@ -184,23 +177,21 @@ export class BackgroundProcessingManager {
       clearInterval(this.processingTimer);
       this.processingTimer = null;
     }
-    
+
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
-    
+
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-    
+
     // Return to normal processing rate
     this.state.processingRate = 1000; // Normal foreground rate
-    
-    console.log('[Background] Background processing stopped - resumed foreground mode');
   }
-  
+
   /**
    * Process NMEA data in background mode with reduced frequency
    */
@@ -208,34 +199,32 @@ export class BackgroundProcessingManager {
     if (!this.nmeaService || !this.state.isBackgrounded) {
       return;
     }
-    
+
     try {
       // Get current NMEA data from store
       const nmeaData = useNmeaStore.getState().nmeaData;
       const { evaluateThresholds, getUnacknowledgedAlarms } = useAlarmStore.getState();
-      
+
       // Evaluate alarm thresholds with current data
       evaluateThresholds(nmeaData);
-      
+
       // Check for new critical alarms
       const unacknowledgedAlarms = getUnacknowledgedAlarms();
-      const criticalAlarms = unacknowledgedAlarms.filter(alarm => 
-        alarm.level === 'critical' && 
-        (Date.now() - alarm.timestamp) < 5000 // New alarms within last 5 seconds
+      const criticalAlarms = unacknowledgedAlarms.filter(
+        (alarm) => alarm.level === 'critical' && Date.now() - alarm.timestamp < 5000, // New alarms within last 5 seconds
       );
-      
+
       // Send background notifications for critical alarms
       if (criticalAlarms.length > 0) {
         this.handleBackgroundAlarms(criticalAlarms);
       }
-      
+
       this.state.lastProcessingTime = Date.now();
-      
     } catch (error) {
       console.error('[Background] Error processing background data:', error);
     }
   }
-  
+
   /**
    * Handle critical alarms detected in background
    */
@@ -243,13 +232,12 @@ export class BackgroundProcessingManager {
     for (const alarm of alarms) {
       try {
         await this.notificationManager.sendCriticalAlarmNotification(alarm);
-        console.log(`[Background] Sent notification for critical alarm: ${alarm.message}`);
       } catch (error) {
         console.error(`[Background] Failed to send notification for alarm ${alarm.id}:`, error);
       }
     }
   }
-  
+
   /**
    * Perform periodic health checks in background
    */
@@ -257,28 +245,26 @@ export class BackgroundProcessingManager {
     if (!this.state.isBackgrounded) {
       return;
     }
-    
+
     const now = Date.now();
     const connectionStatus = useNmeaStore.getState().connectionStatus;
-    
+
     // Check connection health
     this.state.connectionMaintained = connectionStatus === 'connected';
-    
+
     // Monitor processing delay
     const processingDelay = now - this.state.lastProcessingTime;
     if (processingDelay > this.config.processingSamplingRate * 2) {
       console.warn(`[Background] Processing delay detected: ${processingDelay}ms`);
     }
-    
+
     // Battery level monitoring (if available)
     this.updateBatteryStatus();
-    
+
     // Adjust processing rate based on battery level
     this.optimizeForBattery();
-    
-    console.log(`[Background] Heartbeat - Connection: ${connectionStatus}, Processing delay: ${processingDelay}ms`);
   }
-  
+
   /**
    * Update battery status for optimization decisions
    */
@@ -290,7 +276,7 @@ export class BackgroundProcessingManager {
       // this.state.batteryLevel = await getBatteryLevel();
     }
   }
-  
+
   /**
    * Optimize processing based on battery level
    */
@@ -298,7 +284,7 @@ export class BackgroundProcessingManager {
     if (!this.config.batteryOptimization || !this.state.batteryLevel) {
       return;
     }
-    
+
     // Increase processing interval if battery is low
     if (this.state.batteryLevel < 20) {
       this.state.processingRate = Math.min(this.config.processingSamplingRate * 2, 5000);
@@ -308,80 +294,77 @@ export class BackgroundProcessingManager {
       this.state.processingRate = this.config.processingSamplingRate;
     }
   }
-  
+
   /**
    * Handle maximum background duration reached (iOS constraint)
    */
   private handleMaxBackgroundDuration(): void {
-    console.log('[Background] Maximum background duration reached - initiating graceful degradation');
-    
     // For iOS, we need to prepare for system suspension
     // Save critical state and prepare for reconnection when app becomes active
-    
+
     if (Platform.OS === 'ios') {
       // iOS: Prepare for app suspension
       this.prepareForSuspension();
     } else {
       // Android: Continue with foreground service (if properly configured)
-      console.log('[Background] Android: Continuing with foreground service');
     }
   }
-  
+
   /**
    * Prepare for app suspension on iOS
    */
   private prepareForSuspension(): void {
     // Save critical alarm state
     const alarmState = useAlarmStore.getState();
-    const criticalAlarms = alarmState.getUnacknowledgedAlarms()
-      .filter(alarm => alarm.level === 'critical');
-    
+    const criticalAlarms = alarmState
+      .getUnacknowledgedAlarms()
+      .filter((alarm) => alarm.level === 'critical');
+
     if (criticalAlarms.length > 0) {
       // Schedule local notifications for critical alarms
-      criticalAlarms.forEach(alarm => {
+      criticalAlarms.forEach((alarm) => {
         this.notificationManager.scheduleLocalAlarmNotification(alarm);
       });
     }
-    
+
     // Reduce processing to minimum
     this.state.processingRate = 10000; // 10 seconds
   }
-  
+
   /**
    * Get current background processing status
    */
   public getStatus(): BackgroundProcessingState & { config: BackgroundServiceConfig } {
     return {
       ...this.state,
-      config: this.config
+      config: this.config,
     };
   }
-  
+
   /**
    * Update background processing configuration
    */
   public updateConfig(newConfig: Partial<BackgroundServiceConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     // Apply new configuration if currently running
     if (this.state.isBackgrounded && this.state.serviceActive) {
       this.stopBackgroundProcessing();
       this.startBackgroundProcessing();
     }
   }
-  
+
   /**
    * Cleanup resources
    */
   public destroy(): void {
     this.stopBackgroundProcessing();
-    
+
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
       this.appStateSubscription = null;
     }
-    
+
     this.state.serviceActive = false;
-    console.log('[Background] Background processing manager destroyed');
   }
 }

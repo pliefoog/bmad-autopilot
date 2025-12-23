@@ -4,15 +4,15 @@ import { useTheme } from '../../store/themeStore';
 
 /**
  * DigitalDisplay - LED-style numeric display component for marine instruments
- * 
+ *
  * Acceptance Criteria Satisfied:
  * - AC 1: Digital Display Component with LED-style numeric display and segmented appearance
  * - AC 6: Segmented Numeric Display with 7-segment LED-style appearance for depth, speed, RPM readings
  * - AC 7: Monospace Font Integration with seamless integration to existing typography system
- * - AC 8: Size Variants supporting large (primary) and small (secondary) display sizes  
+ * - AC 8: Size Variants supporting large (primary) and small (secondary) display sizes
  * - AC 9: Alert State Styling with red glow effect for critical values, amber for warnings
  * - AC 10: High Contrast Mode with enhanced visibility for bright sunlight conditions
- * 
+ *
  * Features:
  * - 7-segment LED-style appearance with authentic marine instrument aesthetic
  * - Multiple size variants (large/small) for different widget contexts
@@ -55,22 +55,25 @@ export const DigitalDisplay: React.FC<DigitalDisplayProps> = ({
   testID,
 }) => {
   const theme = useTheme();
-  
+
   // Format value for display with precision handling
   const displayValue = useMemo(() => {
     if (value === undefined || value === null || value === '') {
       return '---';
     }
-    
+
     if (typeof value === 'number') {
       return value.toFixed(precision);
     }
-    
+
     return value.toString();
   }, [value, precision]);
 
   // Calculate dynamic styling based on props
-  const styles = useMemo(() => createStyles(theme, size, state, segments, highContrast), [theme, size, state, segments, highContrast]);
+  const styles = useMemo(
+    () => createStyles(theme, size, state, segments, highContrast),
+    [theme, size, state, segments, highContrast],
+  );
 
   // Get appropriate colors for current state
   const getStateColor = () => {
@@ -87,10 +90,10 @@ export const DigitalDisplay: React.FC<DigitalDisplayProps> = ({
 
   const getGlowStyle = (): ViewStyle => {
     if (state === 'normal') return {};
-    
+
     const glowColor = state === 'alarm' ? theme.error : theme.warning;
     const intensity = highContrast ? 8 : 4;
-    
+
     return {
       shadowColor: glowColor,
       shadowOffset: { width: 0, height: 0 },
@@ -104,24 +107,19 @@ export const DigitalDisplay: React.FC<DigitalDisplayProps> = ({
     <View style={[styles.container, getGlowStyle(), style]} testID={testID}>
       {/* LED-style background panel */}
       <View style={styles.displayPanel}>
-        
         {/* Main value display */}
-        <Text 
-          style={[
-            styles.valueText, 
-            { color: getStateColor() },
-            segments && styles.segmentedText
-          ]}
+        <Text
+          style={[styles.valueText, { color: getStateColor() }, segments && styles.segmentedText]}
           numberOfLines={1}
           adjustsFontSizeToFit
           testID={testID ? `${testID}-value` : 'digital-display-value'}
         >
           {displayValue}
         </Text>
-        
+
         {/* Unit label */}
         {unit && (
-          <Text 
+          <Text
             style={[styles.unitText, highContrast && styles.highContrastUnit]}
             testID={testID ? `${testID}-unit` : 'digital-display-unit'}
           >
@@ -129,19 +127,25 @@ export const DigitalDisplay: React.FC<DigitalDisplayProps> = ({
           </Text>
         )}
       </View>
-      
+
       {/* LED-style bezel effect */}
       <View style={styles.bezel} />
     </View>
   );
 };
 
-const createStyles = (theme: any, size: 'large' | 'small', state: 'normal' | 'warning' | 'alarm', segments: boolean, highContrast: boolean) => {
+const createStyles = (
+  theme: any,
+  size: 'large' | 'small',
+  state: 'normal' | 'warning' | 'alarm',
+  segments: boolean,
+  highContrast: boolean,
+) => {
   const isLarge = size === 'large';
   const baseFontSize = isLarge ? 36 : 24;
   const unitFontSize = isLarge ? 14 : 10;
   const containerHeight = isLarge ? 80 : 60;
-  
+
   return StyleSheet.create({
     container: {
       position: 'relative',
@@ -155,7 +159,7 @@ const createStyles = (theme: any, size: 'large' | 'small', state: 'normal' | 'wa
       borderWidth: 1,
       borderColor: '#2A2A2A', // Subtle bezel
     },
-    
+
     displayPanel: {
       flexDirection: 'row',
       alignItems: 'baseline',
@@ -163,7 +167,7 @@ const createStyles = (theme: any, size: 'large' | 'small', state: 'normal' | 'wa
       backgroundColor: 'transparent',
       minWidth: isLarge ? 120 : 80,
     },
-    
+
     valueText: {
       fontSize: baseFontSize,
       fontFamily: 'monospace', // AC 7: Monospace integration
@@ -178,7 +182,7 @@ const createStyles = (theme: any, size: 'large' | 'small', state: 'normal' | 'wa
         textShadowRadius: 2,
       }),
     },
-    
+
     segmentedText: {
       // 7-segment LED styling (AC 6)
       letterSpacing: segments ? 2 : 0,
@@ -188,7 +192,7 @@ const createStyles = (theme: any, size: 'large' | 'small', state: 'normal' | 'wa
       textShadowOffset: { width: 0, height: 0 },
       textShadowRadius: 1,
     },
-    
+
     unitText: {
       fontSize: unitFontSize,
       fontFamily: 'monospace',
@@ -198,12 +202,12 @@ const createStyles = (theme: any, size: 'large' | 'small', state: 'normal' | 'wa
       includeFontPadding: false,
       textAlignVertical: 'bottom',
     },
-    
+
     highContrastUnit: {
       color: theme.text,
       fontWeight: '600',
     },
-    
+
     bezel: {
       position: 'absolute',
       top: 0,

@@ -16,15 +16,15 @@ export interface MaintenanceItem {
   name: string;
   description: string;
   category: 'engine' | 'electrical' | 'navigation' | 'safety' | 'hull' | 'systems';
-  
+
   // Schedule configuration
   scheduleType: 'hours' | 'calendar' | 'cycles' | 'conditions';
-  
+
   // Schedule parameters
   intervalHours?: number; // Engine/operating hours
   intervalDays?: number; // Calendar days
   intervalCycles?: number; // Usage cycles (start/stop, anchor/sail, etc.)
-  
+
   // Condition-based maintenance
   conditionTriggers?: {
     temperatureExceeded?: number; // Count of overheating events
@@ -33,35 +33,35 @@ export interface MaintenanceItem {
     roughWeatherOperations?: number; // Hours in rough weather
     depthAlarms?: number; // Count of shallow water events
   };
-  
+
   // Current status
   lastPerformed?: number; // Timestamp
   currentHours: number; // Hours accumulated since last maintenance
   currentDays: number; // Days since last maintenance
   currentCycles: number; // Cycles since last maintenance
   currentConditions: MaintenanceItem['conditionTriggers']; // Current condition counts
-  
+
   // Thresholds and warnings
   warningThreshold: number; // % of interval to show warning (0.8 = 80%)
   criticalThreshold: number; // % of interval to show critical (0.95 = 95%)
   overdueThreshold: number; // % over interval to show overdue (1.1 = 110%)
-  
+
   // Priority and impact
   priority: 'low' | 'medium' | 'high' | 'critical';
   safetyImpact: boolean; // If true, affects vessel safety
-  
+
   // Metadata
   estimatedTime: number; // Minutes to complete
   cost?: number; // Estimated cost
   parts?: string[]; // Required parts
   tools?: string[]; // Required tools
   expertise?: 'basic' | 'intermediate' | 'professional'; // Required expertise
-  
+
   // Learning and optimization
   actualCompletionTimes: number[]; // Historical completion times
   lastAlarmGenerated?: number; // When we last generated an alarm
   userPostponements: number; // How many times user postponed
-  
+
   // Integration
   linkedAlarms?: string[]; // Alarm types that relate to this maintenance
   createdAt: number;
@@ -74,19 +74,19 @@ export interface MaintenanceItem {
 export interface MaintenanceAlarm extends Omit<Alarm, 'id' | 'timestamp'> {
   maintenanceId: string;
   maintenanceType: 'preventive' | 'predictive' | 'overdue' | 'condition_based';
-  
+
   // Progress information
   completion: number; // 0-1 representing how close to due
   timeRemaining?: string; // Human readable time remaining
-  
+
   // Actions available
   availableActions: ('postpone' | 'mark_complete' | 'schedule' | 'ignore')[];
   postponeOptions?: { hours: number; reason: string }[]; // Available postpone options
-  
+
   // Cost and impact
   estimatedCost?: number;
   safetyRisk: 'none' | 'low' | 'medium' | 'high';
-  
+
   // Context
   recommendedConditions?: VesselContext['state'][]; // Best conditions to perform maintenance
 }
@@ -98,17 +98,17 @@ export interface EngineUsage {
   totalHours: number;
   hoursThisMonth: number;
   hoursThisYear: number;
-  
+
   // Usage patterns
   averageRpm: number;
   maxRpm: number;
   thermalCycles: number; // Heat up/cool down cycles
-  
+
   // Conditions
   roughWeatherHours: number;
   highLoadHours: number; // Hours at high RPM
   idleHours: number;
-  
+
   // Tracking
   lastUpdated: number;
   sessionStartTime?: number;
@@ -120,29 +120,37 @@ export interface EngineUsage {
  */
 export interface PredictiveConfig {
   enabled: boolean;
-  
+
   // Learning parameters
   learningPeriodDays: number; // Days to collect baseline data
   predictionHorizonDays: number; // How far ahead to predict
   confidenceThreshold: number; // Minimum confidence for predictions
-  
+
   // Condition monitoring
   temperatureAnalysis: boolean;
   pressureAnalysis: boolean;
   vibrationAnalysis: boolean; // If vibration sensors available
   performanceAnalysis: boolean; // RPM, fuel consumption patterns
-  
+
   // Alarm integration
   suppressDuplicateAlarms: boolean; // Don't alarm if recent maintenance alarm exists
   contextAwareness: boolean; // Consider vessel context for maintenance timing
   weatherIntegration: boolean; // Delay maintenance suggestions in bad weather
-  
+
   // Notifications
   advanceNotificationDays: number; // Days ahead to start notifications
   escalationEnabled: boolean; // Escalate overdue maintenance
-  
+
   // User preferences
-  preferredMaintenanceDays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
+  preferredMaintenanceDays: (
+    | 'monday'
+    | 'tuesday'
+    | 'wednesday'
+    | 'thursday'
+    | 'friday'
+    | 'saturday'
+    | 'sunday'
+  )[];
   maintenanceWindowHours: { start: number; end: number }; // Preferred hours (0-23)
 }
 
@@ -154,42 +162,42 @@ export class MaintenanceScheduler {
   private maintenanceItems: MaintenanceItem[] = [];
   private engineUsage: EngineUsage;
   private activeAlarms: MaintenanceAlarm[] = [];
-  
+
   private readonly storageKey = 'maintenance-scheduler';
   private saveScheduled = false;
-  
+
   // Usage tracking
   private usageTimer?: NodeJS.Timeout;
   private lastNmeaUpdate: number = 0;
-  
+
   // Maintenance checking
   private maintenanceCheckTimer?: NodeJS.Timeout;
-  
+
   constructor(config?: Partial<PredictiveConfig>) {
     this.config = {
       enabled: true,
       learningPeriodDays: 30,
       predictionHorizonDays: 14,
       confidenceThreshold: 0.7,
-      
+
       temperatureAnalysis: true,
       pressureAnalysis: true,
       vibrationAnalysis: false,
       performanceAnalysis: true,
-      
+
       suppressDuplicateAlarms: true,
       contextAwareness: true,
       weatherIntegration: true,
-      
+
       advanceNotificationDays: 7,
       escalationEnabled: true,
-      
+
       preferredMaintenanceDays: ['saturday', 'sunday'],
       maintenanceWindowHours: { start: 9, end: 17 }, // 9 AM to 5 PM
-      
+
       ...config,
     };
-    
+
     this.engineUsage = {
       totalHours: 0,
       hoursThisMonth: 0,
@@ -203,59 +211,57 @@ export class MaintenanceScheduler {
       lastUpdated: Date.now(),
       sessionHours: 0,
     };
-    
+
     this.loadFromStorage();
     this.startUsageTracking();
     this.startMaintenanceChecking();
   }
-  
+
   /**
    * Update engine usage with NMEA data
    */
-  public updateEngineUsage(
-    nmeaData: Partial<NmeaDataSnapshot>,
-    context: VesselContext
-  ): void {
+  public updateEngineUsage(nmeaData: Partial<NmeaDataSnapshot>, context: VesselContext): void {
     if (!this.config.enabled) return;
-    
+
     const now = Date.now();
     const timeDelta = (now - this.lastNmeaUpdate) / (1000 * 60 * 60); // Hours
-    
+
     if (timeDelta < 0.01) return; // Minimum 36 second intervals
-    
+
     this.lastNmeaUpdate = now;
-    
+
     // Check if engine is running (based on RPM or speed)
     const engineRunning = this.isEngineRunning(nmeaData, context);
-    
+
     if (engineRunning) {
       // Update basic usage
       this.engineUsage.totalHours += timeDelta;
       this.engineUsage.hoursThisMonth += timeDelta;
       this.engineUsage.hoursThisYear += timeDelta;
       this.engineUsage.sessionHours += timeDelta;
-      
+
       // Update RPM statistics
       if (nmeaData.engineRpm && nmeaData.engineRpm > 0) {
         this.engineUsage.averageRpm = (this.engineUsage.averageRpm + nmeaData.engineRpm) / 2;
         this.engineUsage.maxRpm = Math.max(this.engineUsage.maxRpm, nmeaData.engineRpm);
-        
+
         // Track high load hours
-        if (nmeaData.engineRpm > 3000) { // Configurable threshold
+        if (nmeaData.engineRpm > 3000) {
+          // Configurable threshold
           this.engineUsage.highLoadHours += timeDelta;
         }
-        
+
         // Track idle hours
         if (nmeaData.engineRpm < 1000) {
           this.engineUsage.idleHours += timeDelta;
         }
       }
-      
+
       // Track rough weather operations
       if (context.weather === 'rough' || context.weather === 'severe') {
         this.engineUsage.roughWeatherHours += timeDelta;
       }
-      
+
       // Update maintenance item hours
       for (const item of this.maintenanceItems) {
         if (item.scheduleType === 'hours') {
@@ -263,11 +269,11 @@ export class MaintenanceScheduler {
         }
       }
     }
-    
+
     // Track thermal cycles (engine start/stop)
     if (this.detectThermalCycle(nmeaData)) {
       this.engineUsage.thermalCycles++;
-      
+
       // Update cycle-based maintenance
       for (const item of this.maintenanceItems) {
         if (item.scheduleType === 'cycles') {
@@ -275,38 +281,38 @@ export class MaintenanceScheduler {
         }
       }
     }
-    
+
     this.engineUsage.lastUpdated = now;
     this.scheduleSave();
   }
-  
+
   /**
    * Update condition-based maintenance counters
    */
   public updateMaintenanceConditions(alarm: Alarm): void {
     if (!this.config.enabled) return;
-    
+
     const conditionType = this.classifyAlarmCondition(alarm);
-    
+
     if (!conditionType) return;
-    
+
     // Update condition counts for relevant maintenance items
     for (const item of this.maintenanceItems) {
       if (item.scheduleType === 'conditions' && item.conditionTriggers) {
         if (!item.currentConditions) {
           item.currentConditions = {};
         }
-        
+
         const currentCount = item.currentConditions[conditionType] || 0;
         (item.currentConditions as any)[conditionType] = currentCount + 1;
-        
+
         item.updatedAt = Date.now();
       }
     }
-    
+
     this.scheduleSave();
   }
-  
+
   /**
    * Check for due maintenance and generate alarms
    */
@@ -314,56 +320,59 @@ export class MaintenanceScheduler {
     if (!this.config.enabled) {
       return [];
     }
-    
+
     const now = Date.now();
     const newAlarms: MaintenanceAlarm[] = [];
-    
+
     for (const item of this.maintenanceItems) {
       const status = this.calculateMaintenanceStatus(item, now);
-      
+
       if (status.isDue || status.isOverdue || status.isWarning) {
         // Check if we should suppress duplicate alarms
         if (this.shouldSuppressAlarm(item, now)) {
           continue;
         }
-        
+
         // Check context awareness
         if (this.config.contextAwareness && !this.isSuitableMaintenanceContext(item, context)) {
           continue;
         }
-        
+
         const alarm = this.createMaintenanceAlarm(item, status, context);
         newAlarms.push(alarm);
-        
+
         // Update last alarm time
         item.lastAlarmGenerated = now;
       }
     }
-    
+
     // Update active alarms
-    this.activeAlarms = [...this.activeAlarms.filter(alarm => 
-      !newAlarms.some(newAlarm => newAlarm.maintenanceId === alarm.maintenanceId)
-    ), ...newAlarms];
-    
+    this.activeAlarms = [
+      ...this.activeAlarms.filter(
+        (alarm) => !newAlarms.some((newAlarm) => newAlarm.maintenanceId === alarm.maintenanceId),
+      ),
+      ...newAlarms,
+    ];
+
     return newAlarms;
   }
-  
+
   /**
    * Mark maintenance as completed
    */
   public completeMaintenance(
     maintenanceId: string,
     actualTime?: number,
-    notes?: string
+    notes?: string,
   ): { success: boolean; message: string } {
-    const item = this.maintenanceItems.find(m => m.id === maintenanceId);
-    
+    const item = this.maintenanceItems.find((m) => m.id === maintenanceId);
+
     if (!item) {
       return { success: false, message: 'Maintenance item not found' };
     }
-    
+
     const now = Date.now();
-    
+
     // Reset counters
     item.lastPerformed = now;
     item.currentHours = 0;
@@ -371,85 +380,70 @@ export class MaintenanceScheduler {
     item.currentCycles = 0;
     item.currentConditions = {};
     item.updatedAt = now;
-    
+
     // Track actual completion time
     if (actualTime) {
       item.actualCompletionTimes.push(actualTime);
-      
+
       // Keep only last 10 completion times
       if (item.actualCompletionTimes.length > 10) {
         item.actualCompletionTimes = item.actualCompletionTimes.slice(-10);
       }
     }
-    
+
     // Remove active alarms for this maintenance
-    this.activeAlarms = this.activeAlarms.filter(alarm => 
-      alarm.maintenanceId !== maintenanceId
-    );
-    
+    this.activeAlarms = this.activeAlarms.filter((alarm) => alarm.maintenanceId !== maintenanceId);
+
     this.scheduleSave();
-    
-    console.log(`MaintenanceScheduler: Completed maintenance ${item.name}`, {
-      maintenanceId,
-      actualTime,
-      notes,
-    });
-    
-    return { 
-      success: true, 
-      message: `${item.name} marked as completed` 
+
+    return {
+      success: true,
+      message: `${item.name} marked as completed`,
     };
   }
-  
+
   /**
    * Postpone maintenance
    */
   public postponeMaintenance(
     maintenanceId: string,
     postponeHours: number,
-    reason: string
+    reason: string,
   ): { success: boolean; message: string } {
-    const item = this.maintenanceItems.find(m => m.id === maintenanceId);
-    
+    const item = this.maintenanceItems.find((m) => m.id === maintenanceId);
+
     if (!item) {
       return { success: false, message: 'Maintenance item not found' };
     }
-    
+
     // Track postponement
     item.userPostponements++;
-    
+
     // Adjust thresholds to delay alarm
     const postponeRatio = postponeHours / (item.intervalHours || 1);
     item.warningThreshold += postponeRatio;
     item.criticalThreshold += postponeRatio;
-    
+
     // Remove current alarm
-    this.activeAlarms = this.activeAlarms.filter(alarm => 
-      alarm.maintenanceId !== maintenanceId
-    );
-    
+    this.activeAlarms = this.activeAlarms.filter((alarm) => alarm.maintenanceId !== maintenanceId);
+
     item.updatedAt = Date.now();
     this.scheduleSave();
-    
-    console.log(`MaintenanceScheduler: Postponed maintenance ${item.name}`, {
-      maintenanceId,
-      postponeHours,
-      reason,
-      postponements: item.userPostponements,
-    });
-    
-    return { 
-      success: true, 
-      message: `${item.name} postponed for ${postponeHours} hours` 
+
+    return {
+      success: true,
+      message: `${item.name} postponed for ${postponeHours} hours`,
     };
   }
-  
+
   /**
    * Add custom maintenance item
    */
-  public addMaintenanceItem(item: Omit<MaintenanceItem, 'id' | 'createdAt' | 'updatedAt'>): MaintenanceItem {
+  public addMaintenanceItem(
+    item: Omit<MaintenanceItem, 'id' | 'createdAt' | 'updatedAt'>,
+  ): MaintenanceItem {
     const now = Date.now();
-    
+
     const newItem: MaintenanceItem = {
       ...item,
       id: `maintenance-${now}-${Math.random().toString(36).substr(2, 9)}`,
@@ -459,13 +453,13 @@ export class MaintenanceScheduler {
       createdAt: now,
       updatedAt: now,
     };
-    
+
     this.maintenanceItems.push(newItem);
     this.scheduleSave();
-    
+
     return newItem;
   }
-  
+
   /**
    * Get maintenance statistics
    */
@@ -479,36 +473,36 @@ export class MaintenanceScheduler {
     postponementRate: number;
   } {
     const now = Date.now();
-    const monthAgo = now - (30 * 24 * 60 * 60 * 1000);
-    
+    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
+
     let overdueCount = 0;
     let warningCount = 0;
     let completedThisMonth = 0;
     let totalCompletionTimes: number[] = [];
     let totalPostponements = 0;
-    
+
     for (const item of this.maintenanceItems) {
       const status = this.calculateMaintenanceStatus(item, now);
-      
+
       if (status.isOverdue) overdueCount++;
       else if (status.isWarning) warningCount++;
-      
+
       if (item.lastPerformed && item.lastPerformed >= monthAgo) {
         completedThisMonth++;
       }
-      
+
       totalCompletionTimes = [...totalCompletionTimes, ...item.actualCompletionTimes];
       totalPostponements += item.userPostponements;
     }
-    
-    const averageCompletionTime = totalCompletionTimes.length > 0
-      ? totalCompletionTimes.reduce((sum, time) => sum + time, 0) / totalCompletionTimes.length
-      : 0;
-    
-    const postponementRate = this.maintenanceItems.length > 0
-      ? totalPostponements / this.maintenanceItems.length
-      : 0;
-    
+
+    const averageCompletionTime =
+      totalCompletionTimes.length > 0
+        ? totalCompletionTimes.reduce((sum, time) => sum + time, 0) / totalCompletionTimes.length
+        : 0;
+
+    const postponementRate =
+      this.maintenanceItems.length > 0 ? totalPostponements / this.maintenanceItems.length : 0;
+
     return {
       totalItems: this.maintenanceItems.length,
       overdueItems: overdueCount,
@@ -519,7 +513,7 @@ export class MaintenanceScheduler {
       postponementRate,
     };
   }
-  
+
   /**
    * Get predictive maintenance recommendations
    */
@@ -529,28 +523,32 @@ export class MaintenanceScheduler {
     reasoning: string;
   }[] {
     if (!this.config.enabled) return [];
-    
-    const recommendations: { recommendations: MaintenanceItem[]; confidence: number; reasoning: string; }[] = [];
-    
+
+    const recommendations: {
+      recommendations: MaintenanceItem[];
+      confidence: number;
+      reasoning: string;
+    }[] = [];
+
     // Analyze usage patterns
     const usageAnalysis = this.analyzeUsagePatterns();
-    
+
     // Temperature-based predictions
     if (this.config.temperatureAnalysis) {
       const tempRecommendations = this.analyzeTempuraturePatterns(usageAnalysis);
       recommendations.push(...tempRecommendations);
     }
-    
+
     // Performance-based predictions
     if (this.config.performanceAnalysis) {
       const perfRecommendations = this.analyzePerformancePatterns(usageAnalysis);
       recommendations.push(...perfRecommendations);
     }
-    
+
     // Filter by confidence threshold
-    return recommendations.filter(rec => rec.confidence >= this.config.confidenceThreshold);
+    return recommendations.filter((rec) => rec.confidence >= this.config.confidenceThreshold);
   }
-  
+
   /**
    * Export maintenance data
    */
@@ -567,74 +565,87 @@ export class MaintenanceScheduler {
       exportDate: new Date().toISOString(),
     };
   }
-  
+
   // Private implementation methods
-  
+
   private isEngineRunning(nmeaData: Partial<NmeaDataSnapshot>, context: VesselContext): boolean {
     // Engine running indicators
     if (nmeaData.engineRpm && nmeaData.engineRpm > 500) {
       return true;
     }
-    
+
     // Speed-based detection (if no RPM data)
     if (nmeaData.speed && nmeaData.speed > 2 && context.state === 'motoring') {
       return true;
     }
-    
+
     // Temperature-based detection (engine warm)
     if (nmeaData.engineTemp && nmeaData.engineTemp > 60) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   private detectThermalCycle(nmeaData: Partial<NmeaDataSnapshot>): boolean {
     // Simple thermal cycle detection - engine temperature crossing thresholds
     // This would be enhanced with better state tracking in a real implementation
-    
+
     if (!nmeaData.engineTemp) return false;
-    
+
     const temp = nmeaData.engineTemp;
-    
+
     // Detect significant temperature changes (simplified)
     const coolThreshold = 40; // Below this is "cold"
     const warmThreshold = 70; // Above this is "warm"
-    
+
     // This would need proper state tracking to detect transitions
     // For now, just detect when engine reaches operating temperature
     return temp >= warmThreshold;
   }
-  
-  private classifyAlarmCondition(alarm: Alarm): keyof NonNullable<MaintenanceItem['conditionTriggers']> | null {
+
+  private classifyAlarmCondition(
+    alarm: Alarm,
+  ): keyof NonNullable<MaintenanceItem['conditionTriggers']> | null {
     const message = alarm.message.toLowerCase();
     const source = (alarm.source || '').toLowerCase();
-    
-    if (message.includes('temperature') || message.includes('overheat') || source.includes('temp')) {
+
+    if (
+      message.includes('temperature') ||
+      message.includes('overheat') ||
+      source.includes('temp')
+    ) {
       return 'temperatureExceeded';
     }
-    
-    if (message.includes('oil pressure') || message.includes('pressure') || source.includes('oil')) {
+
+    if (
+      message.includes('oil pressure') ||
+      message.includes('pressure') ||
+      source.includes('oil')
+    ) {
       return 'lowOilPressure';
     }
-    
+
     if (message.includes('rpm') || message.includes('engine speed') || source.includes('rpm')) {
       return 'highRpm';
     }
-    
+
     if (message.includes('depth') || message.includes('shallow') || source.includes('depth')) {
       return 'depthAlarms';
     }
-    
+
     // Weather-related could indicate rough conditions
     if (message.includes('wind') || message.includes('wave') || source.includes('weather')) {
       return 'roughWeatherOperations';
     }
-    
+
     return null;
   }
-  
-  private calculateMaintenanceStatus(item: MaintenanceItem, now: number): {
+
+  private calculateMaintenanceStatus(
+    item: MaintenanceItem,
+    now: number,
+  ): {
     isDue: boolean;
     isOverdue: boolean;
     isWarning: boolean;
@@ -643,7 +654,7 @@ export class MaintenanceScheduler {
   } {
     let completion = 0;
     let timeRemaining: string | undefined;
-    
+
     // Calculate completion based on schedule type
     switch (item.scheduleType) {
       case 'hours':
@@ -653,7 +664,7 @@ export class MaintenanceScheduler {
           timeRemaining = hoursLeft > 0 ? `${Math.ceil(hoursLeft)} hours` : 'Overdue';
         }
         break;
-        
+
       case 'calendar':
         if (item.intervalDays && item.lastPerformed) {
           const daysSinceLastPerformed = (now - item.lastPerformed) / (24 * 60 * 60 * 1000);
@@ -662,7 +673,7 @@ export class MaintenanceScheduler {
           timeRemaining = daysLeft > 0 ? `${Math.ceil(daysLeft)} days` : 'Overdue';
         }
         break;
-        
+
       case 'cycles':
         if (item.intervalCycles) {
           completion = item.currentCycles / item.intervalCycles;
@@ -670,27 +681,28 @@ export class MaintenanceScheduler {
           timeRemaining = cyclesLeft > 0 ? `${cyclesLeft} cycles` : 'Overdue';
         }
         break;
-        
+
       case 'conditions':
         if (item.conditionTriggers && item.currentConditions) {
           let maxConditionCompletion = 0;
-          
+
           for (const [condition, threshold] of Object.entries(item.conditionTriggers)) {
-            const currentCount = item.currentConditions[condition as keyof typeof item.conditionTriggers] || 0;
+            const currentCount =
+              item.currentConditions[condition as keyof typeof item.conditionTriggers] || 0;
             const conditionCompletion = currentCount / (threshold || 1);
             maxConditionCompletion = Math.max(maxConditionCompletion, conditionCompletion);
           }
-          
+
           completion = maxConditionCompletion;
           timeRemaining = completion >= 1 ? 'Conditions met' : 'Monitor conditions';
         }
         break;
     }
-    
+
     const isWarning = completion >= item.warningThreshold && completion < item.criticalThreshold;
     const isDue = completion >= item.criticalThreshold && completion < item.overdueThreshold;
     const isOverdue = completion >= item.overdueThreshold;
-    
+
     return {
       isDue,
       isOverdue,
@@ -699,45 +711,48 @@ export class MaintenanceScheduler {
       timeRemaining,
     };
   }
-  
+
   private shouldSuppressAlarm(item: MaintenanceItem, now: number): boolean {
     if (!this.config.suppressDuplicateAlarms) return false;
-    
+
     // Suppress if alarm was generated recently (within last hour)
-    if (item.lastAlarmGenerated && (now - item.lastAlarmGenerated) < 60 * 60 * 1000) {
+    if (item.lastAlarmGenerated && now - item.lastAlarmGenerated < 60 * 60 * 1000) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   private isSuitableMaintenanceContext(item: MaintenanceItem, context: VesselContext): boolean {
     // Don't suggest maintenance in bad weather
-    if (this.config.weatherIntegration && (context.weather === 'severe' || context.weather === 'rough')) {
+    if (
+      this.config.weatherIntegration &&
+      (context.weather === 'severe' || context.weather === 'rough')
+    ) {
       return false;
     }
-    
+
     // Don't suggest maintenance while actively navigating
     if (context.state === 'sailing' || context.state === 'motoring') {
       return false;
     }
-    
+
     // Prefer maintenance when anchored
     if (context.state === 'anchored') {
       return true;
     }
-    
+
     return true;
   }
-  
+
   private createMaintenanceAlarm(
     item: MaintenanceItem,
     status: ReturnType<MaintenanceScheduler['calculateMaintenanceStatus']>,
-    context: VesselContext
+    context: VesselContext,
   ): MaintenanceAlarm {
     let level: AlarmLevel = 'info';
     let maintenanceType: MaintenanceAlarm['maintenanceType'] = 'preventive';
-    
+
     if (status.isOverdue) {
       level = item.safetyImpact ? 'critical' : 'warning';
       maintenanceType = 'overdue';
@@ -748,21 +763,21 @@ export class MaintenanceScheduler {
       level = 'info';
       maintenanceType = 'preventive';
     }
-    
+
     // Determine available actions
     const availableActions: MaintenanceAlarm['availableActions'] = ['mark_complete', 'postpone'];
-    
+
     if (!status.isOverdue) {
       availableActions.push('ignore');
     }
-    
+
     // Postpone options
     const postponeOptions = [
       { hours: 24, reason: 'Weather conditions' },
       { hours: 72, reason: 'Parts on order' },
       { hours: 168, reason: 'Schedule conflict' },
     ];
-    
+
     return {
       maintenanceId: item.id,
       maintenanceType,
@@ -771,26 +786,26 @@ export class MaintenanceScheduler {
       source: 'maintenance_scheduler',
       value: status.completion,
       threshold: 1.0,
-      
+
       completion: status.completion,
       timeRemaining: status.timeRemaining,
-      
+
       availableActions,
       postponeOptions,
-      
+
       estimatedCost: item.cost,
       safetyRisk: item.safetyImpact ? (status.isOverdue ? 'high' : 'medium') : 'low',
-      
+
       recommendedConditions: ['anchored'],
     };
   }
-  
+
   private createMaintenanceMessage(
     item: MaintenanceItem,
-    status: ReturnType<MaintenanceScheduler['calculateMaintenanceStatus']>
+    status: ReturnType<MaintenanceScheduler['calculateMaintenanceStatus']>,
   ): string {
     const completionPercent = Math.round(status.completion * 100);
-    
+
     if (status.isOverdue) {
       return `OVERDUE: ${item.name} (${completionPercent}% of interval)`;
     } else if (status.isDue) {
@@ -798,114 +813,138 @@ export class MaintenanceScheduler {
     } else if (status.isWarning) {
       return `APPROACHING: ${item.name} (${completionPercent}% of interval)`;
     }
-    
+
     return `${item.name} maintenance required`;
   }
-  
+
   private analyzeUsagePatterns(): {
     averageHoursPerDay: number;
     peakUsageHours: number[];
     roughWeatherRatio: number;
     highLoadRatio: number;
   } {
-    const daysOfData = Math.max(1, (Date.now() - (this.engineUsage.lastUpdated - 30 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000));
-    
+    const daysOfData = Math.max(
+      1,
+      (Date.now() - (this.engineUsage.lastUpdated - 30 * 24 * 60 * 60 * 1000)) /
+        (24 * 60 * 60 * 1000),
+    );
+
     return {
       averageHoursPerDay: this.engineUsage.totalHours / daysOfData,
       peakUsageHours: [8, 9, 10, 16, 17, 18], // Typical peak usage hours
-      roughWeatherRatio: this.engineUsage.roughWeatherHours / Math.max(1, this.engineUsage.totalHours),
+      roughWeatherRatio:
+        this.engineUsage.roughWeatherHours / Math.max(1, this.engineUsage.totalHours),
       highLoadRatio: this.engineUsage.highLoadHours / Math.max(1, this.engineUsage.totalHours),
     };
   }
-  
-  private analyzeTempuraturePatterns(usageAnalysis: ReturnType<MaintenanceScheduler['analyzeUsagePatterns']>): {
+
+  private analyzeTempuraturePatterns(
+    usageAnalysis: ReturnType<MaintenanceScheduler['analyzeUsagePatterns']>,
+  ): {
     recommendations: MaintenanceItem[];
     confidence: number;
     reasoning: string;
   }[] {
-    const recommendations: { recommendations: MaintenanceItem[]; confidence: number; reasoning: string; }[] = [];
-    
+    const recommendations: {
+      recommendations: MaintenanceItem[];
+      confidence: number;
+      reasoning: string;
+    }[] = [];
+
     // Find temperature-related maintenance items
-    const tempItems = this.maintenanceItems.filter(item =>
-      item.category === 'engine' &&
-      (item.name.toLowerCase().includes('coolant') ||
-       item.name.toLowerCase().includes('thermostat') ||
-       item.name.toLowerCase().includes('temperature'))
+    const tempItems = this.maintenanceItems.filter(
+      (item) =>
+        item.category === 'engine' &&
+        (item.name.toLowerCase().includes('coolant') ||
+          item.name.toLowerCase().includes('thermostat') ||
+          item.name.toLowerCase().includes('temperature')),
     );
-    
+
     // If high thermal cycles or rough weather usage, recommend cooling system maintenance
     if (usageAnalysis.roughWeatherRatio > 0.3 || this.engineUsage.thermalCycles > 100) {
       recommendations.push({
         recommendations: tempItems,
         confidence: 0.8,
-        reasoning: `High thermal stress detected (${Math.round(usageAnalysis.roughWeatherRatio * 100)}% rough weather usage, ${this.engineUsage.thermalCycles} thermal cycles)`,
+        reasoning: `High thermal stress detected (${Math.round(
+          usageAnalysis.roughWeatherRatio * 100,
+        )}% rough weather usage, ${this.engineUsage.thermalCycles} thermal cycles)`,
       });
     }
-    
+
     return recommendations;
   }
-  
-  private analyzePerformancePatterns(usageAnalysis: ReturnType<MaintenanceScheduler['analyzeUsagePatterns']>): {
+
+  private analyzePerformancePatterns(
+    usageAnalysis: ReturnType<MaintenanceScheduler['analyzeUsagePatterns']>,
+  ): {
     recommendations: MaintenanceItem[];
     confidence: number;
     reasoning: string;
   }[] {
-    const recommendations: { recommendations: MaintenanceItem[]; confidence: number; reasoning: string; }[] = [];
-    
+    const recommendations: {
+      recommendations: MaintenanceItem[];
+      confidence: number;
+      reasoning: string;
+    }[] = [];
+
     // Find performance-related maintenance items
-    const perfItems = this.maintenanceItems.filter(item =>
-      item.category === 'engine' &&
-      (item.name.toLowerCase().includes('filter') ||
-       item.name.toLowerCase().includes('oil') ||
-       item.name.toLowerCase().includes('fuel'))
+    const perfItems = this.maintenanceItems.filter(
+      (item) =>
+        item.category === 'engine' &&
+        (item.name.toLowerCase().includes('filter') ||
+          item.name.toLowerCase().includes('oil') ||
+          item.name.toLowerCase().includes('fuel')),
     );
-    
+
     // If high load usage, recommend more frequent oil/filter changes
     if (usageAnalysis.highLoadRatio > 0.4) {
       recommendations.push({
         recommendations: perfItems,
         confidence: 0.75,
-        reasoning: `High load operation detected (${Math.round(usageAnalysis.highLoadRatio * 100)}% of running time above 3000 RPM)`,
+        reasoning: `High load operation detected (${Math.round(
+          usageAnalysis.highLoadRatio * 100,
+        )}% of running time above 3000 RPM)`,
       });
     }
-    
+
     return recommendations;
   }
-  
+
   private startUsageTracking(): void {
     // Update usage tracking every minute
     this.usageTimer = setInterval(() => {
       // Update calendar-based maintenance
       const now = Date.now();
-      
+
       for (const item of this.maintenanceItems) {
         if (item.scheduleType === 'calendar' && item.lastPerformed) {
           item.currentDays = (now - item.lastPerformed) / (24 * 60 * 60 * 1000);
         }
       }
-      
+
       // Update monthly/yearly rollover
       this.updateUsageRollover(now);
-      
     }, 60 * 1000);
   }
-  
+
   private updateUsageRollover(now: number): void {
     const currentDate = new Date(now);
     const lastUpdateDate = new Date(this.engineUsage.lastUpdated);
-    
+
     // Reset monthly hours if month changed
-    if (currentDate.getMonth() !== lastUpdateDate.getMonth() ||
-        currentDate.getFullYear() !== lastUpdateDate.getFullYear()) {
+    if (
+      currentDate.getMonth() !== lastUpdateDate.getMonth() ||
+      currentDate.getFullYear() !== lastUpdateDate.getFullYear()
+    ) {
       this.engineUsage.hoursThisMonth = 0;
     }
-    
+
     // Reset yearly hours if year changed
     if (currentDate.getFullYear() !== lastUpdateDate.getFullYear()) {
       this.engineUsage.hoursThisYear = 0;
     }
   }
-  
+
   private startMaintenanceChecking(): void {
     // Check for maintenance alarms every 10 minutes
     this.maintenanceCheckTimer = setInterval(() => {
@@ -914,39 +953,33 @@ export class MaintenanceScheduler {
       this.scheduleSave();
     }, 10 * 60 * 1000);
   }
-  
+
   private scheduleSave(): void {
     if (!this.saveScheduled) {
       this.saveScheduled = true;
-      
+
       setTimeout(() => {
         this.saveToStorage();
         this.saveScheduled = false;
       }, 5000);
     }
   }
-  
+
   private async loadFromStorage(): Promise<void> {
     try {
       const stored = await AsyncStorage.getItem(this.storageKey);
-      
+
       if (stored) {
         const data = JSON.parse(stored);
-        
+
         this.maintenanceItems = data.maintenanceItems || [];
         this.engineUsage = { ...this.engineUsage, ...(data.engineUsage || {}) };
         this.activeAlarms = data.activeAlarms || [];
-        
+
         // Load default maintenance items if none exist
         if (this.maintenanceItems.length === 0) {
           this.loadDefaultMaintenanceItems();
         }
-        
-        console.log('MaintenanceScheduler: Loaded from storage', {
-          items: this.maintenanceItems.length,
-          totalHours: this.engineUsage.totalHours,
-          activeAlarms: this.activeAlarms.length,
-        });
       } else {
         this.loadDefaultMaintenanceItems();
       }
@@ -955,7 +988,7 @@ export class MaintenanceScheduler {
       this.loadDefaultMaintenanceItems();
     }
   }
-  
+
   private async saveToStorage(): Promise<void> {
     try {
       const data = {
@@ -964,14 +997,13 @@ export class MaintenanceScheduler {
         activeAlarms: this.activeAlarms,
         lastSaved: Date.now(),
       };
-      
+
       await AsyncStorage.setItem(this.storageKey, JSON.stringify(data));
-      
     } catch (error) {
       console.error('MaintenanceScheduler: Failed to save to storage', error);
     }
   }
-  
+
   private loadDefaultMaintenanceItems(): void {
     const defaultItems: Omit<MaintenanceItem, 'id' | 'createdAt' | 'updatedAt'>[] = [
       // Engine maintenance
@@ -999,7 +1031,7 @@ export class MaintenanceScheduler {
         userPostponements: 0,
         linkedAlarms: ['oil_pressure_low', 'engine_temperature_high'],
       },
-      
+
       {
         name: 'Fuel Filter Replacement',
         description: 'Replace primary and secondary fuel filters',
@@ -1024,7 +1056,7 @@ export class MaintenanceScheduler {
         userPostponements: 0,
         linkedAlarms: ['fuel_pressure_low', 'engine_roughness'],
       },
-      
+
       {
         name: 'Cooling System Inspection',
         description: 'Check coolant level, hoses, and belts',
@@ -1049,7 +1081,7 @@ export class MaintenanceScheduler {
         userPostponements: 0,
         linkedAlarms: ['engine_temperature_high', 'coolant_level_low'],
       },
-      
+
       // Safety equipment
       {
         name: 'Safety Equipment Inspection',
@@ -1074,7 +1106,7 @@ export class MaintenanceScheduler {
         actualCompletionTimes: [],
         userPostponements: 0,
       },
-      
+
       // Navigation equipment
       {
         name: 'GPS System Backup',
@@ -1100,23 +1132,19 @@ export class MaintenanceScheduler {
         userPostponements: 0,
       },
     ];
-    
+
     // Add default items
     for (const item of defaultItems) {
       this.addMaintenanceItem(item);
     }
-    
-    console.log('MaintenanceScheduler: Loaded default maintenance items', {
-      count: defaultItems.length,
-    });
   }
-  
+
   public cleanup(): void {
     if (this.usageTimer) {
       clearInterval(this.usageTimer);
       this.usageTimer = undefined;
     }
-    
+
     if (this.maintenanceCheckTimer) {
       clearInterval(this.maintenanceCheckTimer);
       this.maintenanceCheckTimer = undefined;

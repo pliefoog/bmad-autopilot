@@ -8,20 +8,15 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import '../utils/logger'; // Import first to suppress all logging
-import { logger } from '../utils/logger'; // Import logger for selective category logging
+import { log } from '../utils/logging/logger';
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
 import { useTheme } from '../store/themeStore';
-import { useNmeaStore } from '../store/nmeaStore';
+import { useNmeaStore, initializeNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useAlarmStore } from '../store/alarmStore';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useToast } from '../hooks/useToast';
-
-// Master toggle for App.tsx logging
-const ENABLE_APP_LOGGING = false;
-const log = (...args: any[]) => ENABLE_APP_LOGGING && console.log(...args);
 import ResponsiveDashboard from '../components/organisms/ResponsiveDashboard';
 import { DashboardLayoutProvider, useDashboardLayout } from '../contexts/DashboardLayoutContext';
 import HeaderBar from '../components/HeaderBar';
@@ -136,6 +131,12 @@ const App = () => {
 
   // NOTE: History pruning removed - now handled automatically by TimeSeriesBuffer
 
+  // Initialize NMEA Store v3 with ReEnrichmentCoordinator
+  useEffect(() => {
+    initializeNmeaStore();
+    log.app('NMEA Store v3 initialized');
+  }, []);
+
   // Memory profiling: Start on mount (Chrome/Edge only)
   useEffect(() => {
     // Access via window to ensure they're registered
@@ -167,7 +168,6 @@ const App = () => {
         // Use original console before suppression
         const _console = (window as any).__originalConsole || console;
         if (_console && _console.log) {
-          _console.log(msg);
         }
       };
 
@@ -181,7 +181,6 @@ const App = () => {
         if (stats) {
           const _console = (window as any).__originalConsole || console;
           if (_console && _console.log) {
-            _console.log(profiler.formatStats(stats));
           }
         }
       }
@@ -191,7 +190,7 @@ const App = () => {
   // Factory reset handler
   const handleFactoryResetConfirm = async () => {
     setShowFactoryResetDialog(false);
-    log('[App] User confirmed factory reset');
+    log.app('[App] User confirmed factory reset');
 
     try {
       // Import the widget store and perform complete factory reset
@@ -200,7 +199,7 @@ const App = () => {
 
       await resetAppToDefaults();
 
-      log('[App] Factory reset complete - forcing complete app restart');
+      log.app('[App] Factory reset complete - forcing complete app restart');
 
       // For web: Force a complete page reload to restart the app
       if (Platform.OS === 'web') {
@@ -220,7 +219,7 @@ const App = () => {
         }, 100);
       } else {
         // For mobile: The app should restart automatically when AsyncStorage is cleared
-        log('[App] Factory reset complete - app should restart automatically');
+        log.app('[App] Factory reset complete - app should restart automatically');
       }
     } catch (error) {
       console.error('[App] Error during factory reset:', error);
@@ -296,9 +295,7 @@ const App = () => {
 
   // Initialize widget system ONCE on app mount (before connection)
   useEffect(() => {
-    console.log('[App] 🚀 Initializing widget registration system...');
     initializeWidgetSystem();
-    console.log('[App] ✅ Widget registration system initialized');
   }, []); // Empty deps = run once on mount
 
   // Instance monitoring is now fully event-driven via WidgetRegistrationService
@@ -306,17 +303,11 @@ const App = () => {
 
   // Dynamic widget lifecycle management - periodic cleanup of expired widgets
   useEffect(() => {
-    log('[App] 🧹 Setting up dynamic widget lifecycle management');
-    console.log(`[App] Widget auto-removal: ${enableWidgetAutoRemoval ? 'ENABLED' : 'DISABLED'}`);
-    console.log(
-      `[App] Widget expiration timeout: ${widgetExpirationTimeout}ms (${
-        widgetExpirationTimeout / 1000
-      }s)`,
-    );
+    log.app('[App] 🧹 Setting up dynamic widget lifecycle management');
 
     // Don't start cleanup if auto-removal is disabled
     if (!enableWidgetAutoRemoval) {
-      log('[App] Widget auto-removal disabled - skipping cleanup timer');
+      log.app('[App] Widget auto-removal disabled - skipping cleanup timer');
       return;
     }
 
@@ -325,75 +316,16 @@ const App = () => {
 
     // Set up periodic cleanup - more frequent for responsive widget removal
     const cleanupInterval = setInterval(() => {
-      log('[App] 🧹 Running periodic widget expiration cleanup');
+      log.app('[App] 🧹 Running periodic widget expiration cleanup');
       useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
     }, 15000); // Check every 15 seconds for more responsive widget removal
 
     return () => clearInterval(cleanupInterval);
   }, [enableWidgetAutoRemoval, widgetExpirationTimeout]); // Only data dependencies, functions via getState()
 
-  // FULLY DYNAMIC WIDGET SYSTEM - widgets created/removed based on live NMEA data only
-  useEffect(() => {
-    if (!nmeaSensors) {
-      log('[App] No NMEA data available - no widgets to create/update');
-      return;
-    }
-
-    log('[App] 🔄 DYNAMIC WIDGET LIFECYCLE - Processing NMEA sensors:', {
-      timestamp: nmeaTimestamp,
-      messageCount: nmeaMessageCount,
-      availableSensors: Object.keys(nmeaSensors),
-      connectionStatus,
-    });
-
-    if (!dashboard) {
-      console.warn('[App] No dashboard found');
-      return;
-    }
-
-    // **1. SINGLE-INSTANCE SENSORS** (depth, gps, speed, wind, compass)
-    const singleInstanceSensors = ['depth', 'gps', 'speed', 'wind', 'compass'];
-    singleInstanceSensors.forEach((sensorType) => {
-      const sensorData = nmeaSensors[sensorType];
-      if (sensorData && Object.keys(sensorData).length > 0) {
-        // Check if we have valid data for this sensor type
-        const firstInstance = Object.values(sensorData)[0] as any;
-        let hasValidData = false;
-
-        switch (sensorType) {
-          case 'depth':
-            hasValidData = firstInstance?.depth !== undefined;
-            break;
-          case 'gps':
-            hasValidData =
-              firstInstance?.position?.latitude !== undefined &&
-              firstInstance?.position?.longitude !== undefined;
-            break;
-          case 'speed':
-            hasValidData =
-              firstInstance?.throughWater !== undefined || firstInstance?.overGround !== undefined;
-            break;
-          case 'wind':
-            hasValidData = firstInstance?.speed !== undefined && firstInstance?.angle !== undefined;
-            break;
-          case 'compass':
-            hasValidData = firstInstance?.heading !== undefined;
-            break;
-        }
-
-        // Widget auto-discovery now handled by WidgetRegistrationService
-        // No manual widget creation needed - widgets appear automatically when NMEA data detected
-      }
-    });
-
-    // NOTE: Multi-instance widget auto-discovery is now handled by the event-driven
-    // WidgetRegistrationService via initializeWidgetSystem(). No manual widget creation needed.
-
-    // Multi-instance widget auto-discovery (engines, batteries, tanks, temperatures)
-    // now handled entirely by WidgetRegistrationService - no manual creation needed
-
-    log('[App] ✅ Dynamic widget processing complete');
-  }, [nmeaSensors, nmeaTimestamp, connectionStatus, dashboard]); // Functions via getState()
+  // Widget lifecycle is fully event-driven via WidgetRegistrationService
+  // No manual widget creation or validation needed - widgets appear/disappear automatically
+  // based on sensor data availability through the event-driven system
 
   // Helper functions now use global toast system
   const showSuccessToast = (message: string) => {
@@ -440,12 +372,10 @@ const App = () => {
       try {
         // Dynamic import to avoid circular dependencies
         const { syncConfigsToNmeaStore } = await import('../store/sensorConfigStore');
-        
+
         // Sync all stored configurations to nmeaStore cache
         const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
         syncConfigsToNmeaStore(updateSensorThresholds);
-        
-        console.log('[App] ✅ Synced sensor configurations from persistent storage');
       } catch (error) {
         console.error('[App] Failed to sync sensor configurations:', error);
       }
@@ -520,8 +450,8 @@ const App = () => {
             onShowDisplayThemeSettings={() => setShowDisplayThemeDialog(true)}
             onShowAlarmHistory={() => setShowAlarmHistoryDialog(true)}
             onShowAlarmConfiguration={() => {
-              logger.alarm('App: onShowAlarmConfiguration called from HamburgerMenu');
-              logger.alarm('App: Setting showAlarmConfigDialog to true');
+              log.alarm('App: onShowAlarmConfiguration called from HamburgerMenu');
+              log.alarm('App: Setting showAlarmConfigDialog to true');
               setShowAlarmConfigDialog(true);
             }}
             navigationSession={navigationSession}
@@ -583,7 +513,7 @@ const App = () => {
           <SensorConfigDialog
             visible={showAlarmConfigDialog}
             onClose={() => {
-              logger.alarm('App: Closing SensorConfigDialog');
+              log.alarm('App: Closing SensorConfigDialog');
               setShowAlarmConfigDialog(false);
             }}
             sensorType={alarmConfigSensor}
@@ -594,8 +524,8 @@ const App = () => {
             onClose={() => setShowTestSwitchDialog(false)}
           />
 
-          {/* Memory Monitor - Real-time memory usage display */}
-          <MemoryMonitor position="bottom-right" updateInterval={1000} />
+          {/* Memory Monitor - DISABLED: Causing infinite render loop */}
+          {/* <MemoryMonitor position="bottom-right" updateInterval={1000} /> */}
 
           {/* Temporary Test Button - Floating */}
           <TouchableOpacity

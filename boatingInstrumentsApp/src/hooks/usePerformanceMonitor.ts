@@ -34,7 +34,7 @@ export interface UsePerformanceMonitorReturn {
 }
 
 export function usePerformanceMonitor(
-  options: UsePerformanceMonitorOptions
+  options: UsePerformanceMonitorOptions,
 ): UsePerformanceMonitorReturn {
   const {
     componentName,
@@ -60,7 +60,7 @@ export function usePerformanceMonitor(
   // Memory tracking (if available)
   const getMemoryUsage = useCallback(() => {
     if (!enableMemoryTracking) return undefined;
-    
+
     // Use performance.memory if available (Chrome/Edge)
     if ('memory' in performance) {
       const memory = (performance as any).memory;
@@ -70,52 +70,52 @@ export function usePerformanceMonitor(
         limit: memory.jsHeapSizeLimit,
       };
     }
-    
+
     return undefined;
   }, [enableMemoryTracking]);
 
   // Manual render time tracking
-  const markRender = useCallback((renderTime: number) => {
-    const now = Date.now();
-    
-    // Sample rate check
-    if (Math.random() > sampleRate) return;
-    
-    // Throttle updates to avoid excessive re-renders
-    if (now - lastSampleTime.current < 100) return;
-    lastSampleTime.current = now;
+  const markRender = useCallback(
+    (renderTime: number) => {
+      const now = Date.now();
 
-    setMetrics(prev => {
-      const newRenderCount = prev.renderCount + 1;
-      const newTotalTime = prev.totalRenderTime + renderTime;
-      const newSlowRenders = renderTime > slowRenderThreshold 
-        ? prev.slowRenders + 1 
-        : prev.slowRenders;
+      // Sample rate check
+      if (Math.random() > sampleRate) return;
 
-      // Track render history for trend analysis
-      renderHistory.current.push(renderTime);
-      if (renderHistory.current.length > 100) {
-        renderHistory.current.shift();
-      }
+      // Throttle updates to avoid excessive re-renders
+      if (now - lastSampleTime.current < 100) return;
+      lastSampleTime.current = now;
 
-      if (enableLogging && renderTime > slowRenderThreshold) {
-        console.warn(
-          `🐌 Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`
-        );
-      }
+      setMetrics((prev) => {
+        const newRenderCount = prev.renderCount + 1;
+        const newTotalTime = prev.totalRenderTime + renderTime;
+        const newSlowRenders =
+          renderTime > slowRenderThreshold ? prev.slowRenders + 1 : prev.slowRenders;
 
-      return {
-        ...prev,
-        renderCount: newRenderCount,
-        totalRenderTime: newTotalTime,
-        averageRenderTime: newTotalTime / newRenderCount,
-        lastRenderTime: renderTime,
-        slowRenders: newSlowRenders,
-        memoryUsage: getMemoryUsage(),
-        timestamp: now,
-      };
-    });
-  }, [componentName, slowRenderThreshold, sampleRate, enableLogging, getMemoryUsage]);
+        // Track render history for trend analysis
+        renderHistory.current.push(renderTime);
+        if (renderHistory.current.length > 100) {
+          renderHistory.current.shift();
+        }
+
+        if (enableLogging && renderTime > slowRenderThreshold) {
+          console.warn(`🐌 Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`);
+        }
+
+        return {
+          ...prev,
+          renderCount: newRenderCount,
+          totalRenderTime: newTotalTime,
+          averageRenderTime: newTotalTime / newRenderCount,
+          lastRenderTime: renderTime,
+          slowRenders: newSlowRenders,
+          memoryUsage: getMemoryUsage(),
+          timestamp: now,
+        };
+      });
+    },
+    [componentName, slowRenderThreshold, sampleRate, enableLogging, getMemoryUsage],
+  );
 
   // Reset metrics
   const reset = useCallback(() => {
@@ -136,9 +136,10 @@ export function usePerformanceMonitor(
     const { renderCount, totalRenderTime, averageRenderTime, slowRenders, memoryUsage } = metrics;
     const slowRenderPercentage = renderCount > 0 ? (slowRenders / renderCount) * 100 : 0;
     const recentRenders = renderHistory.current.slice(-10);
-    const recentAverage = recentRenders.length > 0 
-      ? recentRenders.reduce((sum, time) => sum + time, 0) / recentRenders.length 
-      : 0;
+    const recentAverage =
+      recentRenders.length > 0
+        ? recentRenders.reduce((sum, time) => sum + time, 0) / recentRenders.length
+        : 0;
 
     const getPerformanceGrade = (avgTime: number, slowPercent: number): string => {
       if (avgTime < 5 && slowPercent < 5) return 'A+ (Excellent)';
@@ -156,7 +157,9 @@ export function usePerformanceMonitor(
       `📈 Recent Average: ${recentAverage.toFixed(2)}ms`,
       memoryUsage ? `💾 Memory: ${(memoryUsage.used / 1024 / 1024).toFixed(1)}MB` : '',
       `🎯 Performance Grade: ${getPerformanceGrade(averageRenderTime, slowRenderPercentage)}`,
-    ].filter(Boolean).join('\n');
+    ]
+      .filter(Boolean)
+      .join('\n');
   }, [metrics, componentName]);
 
   // Development logging
@@ -165,11 +168,6 @@ export function usePerformanceMonitor(
 
     const interval = setInterval(() => {
       if (metrics.renderCount > 0) {
-        console.log(`📊 ${componentName} Performance:`, {
-          renders: metrics.renderCount,
-          avgTime: `${metrics.averageRenderTime.toFixed(2)}ms`,
-          slowRenders: metrics.slowRenders,
-        });
       }
     }, 30000); // Log every 30 seconds
 
@@ -187,30 +185,23 @@ export function usePerformanceMonitor(
 // Performance utilities
 export const PerformanceUtils = {
   // Measure function execution time
-  measureExecution: <T extends (...args: any[]) => any>(
-    fn: T,
-    label?: string
-  ): T => {
+  measureExecution: <T extends (...args: any[]) => any>(fn: T, label?: string): T => {
     return ((...args: Parameters<T>) => {
       const start = performance.now();
       const result = fn(...args);
       const end = performance.now();
-      
+
       if (__DEV__ && label) {
-        console.log(`⏱️  ${label}: ${(end - start).toFixed(2)}ms`);
       }
-      
+
       return result;
     }) as T;
   },
 
   // Debounce for performance optimization
-  debounce: <T extends (...args: any[]) => any>(
-    fn: T,
-    delay: number
-  ): T => {
+  debounce: <T extends (...args: any[]) => any>(fn: T, delay: number): T => {
     let timeoutId: NodeJS.Timeout;
-    
+
     return ((...args: Parameters<T>) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => fn(...args), delay);
@@ -218,17 +209,14 @@ export const PerformanceUtils = {
   },
 
   // Throttle for performance optimization
-  throttle: <T extends (...args: any[]) => any>(
-    fn: T,
-    limit: number
-  ): T => {
+  throttle: <T extends (...args: any[]) => any>(fn: T, limit: number): T => {
     let inThrottle: boolean;
-    
+
     return ((...args: Parameters<T>) => {
       if (!inThrottle) {
         fn(...args);
         inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
+        setTimeout(() => (inThrottle = false), limit);
       }
     }) as T;
   },

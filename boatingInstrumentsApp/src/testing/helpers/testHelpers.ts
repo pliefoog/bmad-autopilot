@@ -16,9 +16,7 @@ export interface TestRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 
 // Create a test wrapper with providers
 export function createTestWrapper(options: TestRenderOptions = {}) {
-  const { 
-    nmeaData = sampleNmeaData,
-  } = options;
+  const { nmeaData = sampleNmeaData } = options;
 
   return function TestWrapper({ children }: { children: React.ReactNode }) {
     return React.createElement(React.Fragment, null, children);
@@ -26,14 +24,8 @@ export function createTestWrapper(options: TestRenderOptions = {}) {
 }
 
 // Enhanced render function with test utilities
-export function renderWithProviders(
-  ui: ReactElement,
-  options: TestRenderOptions = {}
-) {
-  const { 
-    nmeaData = sampleNmeaData,
-    ...renderOptions 
-  } = options;
+export function renderWithProviders(ui: ReactElement, options: TestRenderOptions = {}) {
+  const { nmeaData = sampleNmeaData, ...renderOptions } = options;
 
   const Wrapper = createTestWrapper({ nmeaData });
 
@@ -65,17 +57,17 @@ export function renderWithProviders(
 export const waitForCondition = async (
   condition: () => boolean | Promise<boolean>,
   timeout = 5000,
-  interval = 100
+  interval = 100,
 ): Promise<void> => {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     const result = await condition();
     if (result) return;
-    
-    await new Promise(resolve => setTimeout(resolve, interval));
+
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   throw new Error(`Condition not met within ${timeout}ms`);
 };
 
@@ -91,11 +83,11 @@ export class PerformanceProfiler {
 
   mark(label: string): void {
     const elapsed = performance.now() - this.startTime;
-    
+
     if (!this.measurements[label]) {
       this.measurements[label] = [];
     }
-    
+
     this.measurements[label].push(elapsed);
   }
 
@@ -103,24 +95,28 @@ export class PerformanceProfiler {
   validateUnitTestPerformance(label: string): { passed: boolean; time: number; threshold: number } {
     const measurements = this.measurements[label] || [];
     const latestTime = measurements[measurements.length - 1] || 0;
-    
+
     return {
       passed: latestTime < this.AC1_UNIT_TEST_THRESHOLD,
       time: latestTime,
-      threshold: this.AC1_UNIT_TEST_THRESHOLD
+      threshold: this.AC1_UNIT_TEST_THRESHOLD,
     };
   }
 
   // AC2 Performance Validation: Check if integration test meets <2000ms requirement
-  validateIntegrationTestPerformance(label: string): { passed: boolean; time: number; threshold: number } {
+  validateIntegrationTestPerformance(label: string): {
+    passed: boolean;
+    time: number;
+    threshold: number;
+  } {
     const measurements = this.measurements[label] || [];
     const latestTime = measurements[measurements.length - 1] || 0;
     const AC2_INTEGRATION_TEST_THRESHOLD = 2000;
-    
+
     return {
       passed: latestTime < AC2_INTEGRATION_TEST_THRESHOLD,
       time: latestTime,
-      threshold: AC2_INTEGRATION_TEST_THRESHOLD
+      threshold: AC2_INTEGRATION_TEST_THRESHOLD,
     };
   }
 
@@ -129,11 +125,11 @@ export class PerformanceProfiler {
     const measurements = this.measurements[label] || [];
     const latestTime = measurements[measurements.length - 1] || 0;
     const AC3_E2E_TEST_THRESHOLD = 30000; // 30 seconds
-    
+
     return {
       passed: latestTime < AC3_E2E_TEST_THRESHOLD,
       time: latestTime,
-      threshold: AC3_E2E_TEST_THRESHOLD
+      threshold: AC3_E2E_TEST_THRESHOLD,
     };
   }
 
@@ -155,8 +151,8 @@ export class PerformanceProfiler {
 
   getAllStats(): Record<string, ReturnType<PerformanceProfiler['getStats']>> {
     const stats: Record<string, ReturnType<PerformanceProfiler['getStats']>> = {};
-    
-    Object.keys(this.measurements).forEach(label => {
+
+    Object.keys(this.measurements).forEach((label) => {
       stats[label] = this.getStats(label);
     });
 
@@ -190,7 +186,7 @@ export function measureMemoryUsage(): {
 // Mock timers utilities
 export function mockTimers() {
   jest.useFakeTimers();
-  
+
   return {
     advance: (ms: number) => jest.advanceTimersByTime(ms),
     runAll: () => jest.runAllTimers(),
@@ -219,7 +215,7 @@ export class NetworkSimulator {
 
   async simulateRequest<T>(
     request: () => Promise<T>,
-    options: { timeout?: number } = {}
+    options: { timeout?: number } = {},
   ): Promise<T> {
     const { timeout = 5000 } = options;
 
@@ -235,14 +231,14 @@ export class NetworkSimulator {
 
     // Add latency
     if (this.latency > 0) {
-      await new Promise(resolve => setTimeout(resolve, this.latency));
+      await new Promise((resolve) => setTimeout(resolve, this.latency));
     }
 
     // Execute request with timeout
     return Promise.race([
       request(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), timeout)
+        setTimeout(() => reject(new Error('Request timeout')), timeout),
       ),
     ]);
   }
@@ -255,12 +251,15 @@ export class NetworkSimulator {
 }
 
 // Data generation utilities for stress testing
-export function generateBulkNmeaData(count: number, baseData: NmeaData = sampleNmeaData): NmeaData[] {
+export function generateBulkNmeaData(
+  count: number,
+  baseData: NmeaData = sampleNmeaData,
+): NmeaData[] {
   const data: NmeaData[] = [];
-  
+
   for (let i = 0; i < count; i++) {
     const variation = Math.sin(i * 0.1) * 0.1;
-    
+
     data.push({
       ...baseData,
       timestamp: Date.now() + i * 1000,
@@ -270,34 +269,34 @@ export function generateBulkNmeaData(count: number, baseData: NmeaData = sampleN
       longitude: (baseData.longitude || 0) + variation * 0.001,
     });
   }
-  
+
   return data;
 }
 
 // Error boundary testing utilities
 export function createTestErrorBoundary() {
   let lastError: Error | null = null;
-  
+
   function TestErrorBoundary({ children }: { children: React.ReactNode }) {
     const [hasError, setHasError] = React.useState(false);
-    
+
     React.useEffect(() => {
       const errorHandler = (error: ErrorEvent) => {
         lastError = error.error;
         setHasError(true);
       };
-      
+
       window.addEventListener('error', errorHandler);
       return () => window.removeEventListener('error', errorHandler);
     }, []);
-    
+
     if (hasError) {
       return React.createElement(Text, { testID: 'error-boundary' }, 'Error caught');
     }
-    
+
     return React.createElement(React.Fragment, null, children);
   }
-  
+
   return {
     ErrorBoundary: TestErrorBoundary,
     getLastError: () => lastError,
@@ -314,24 +313,22 @@ export function validateTestData(data: any, schema: Record<string, string>): boo
       console.warn(`Missing required field: ${key}`);
       return false;
     }
-    
+
     const actualType = typeof data[key];
     if (actualType !== expectedType) {
       console.warn(`Type mismatch for ${key}: expected ${expectedType}, got ${actualType}`);
       return false;
     }
   }
-  
+
   return true;
 }
 
 // Re-export commonly used testing utilities
-export { 
-  createMockNmeaService,
-} from '../mocks/mockNmeaService';
+export { createMockNmeaService } from '../mocks/mockNmeaService';
 
-export { 
+export {
   sampleNmeaData,
   createTestNmeaData,
-  generateTimeSeriesData 
+  generateTimeSeriesData,
 } from '../fixtures/nmeaFixtures';

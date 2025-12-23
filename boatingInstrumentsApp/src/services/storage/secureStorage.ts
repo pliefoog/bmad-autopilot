@@ -47,11 +47,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
 
       const credentialsData = JSON.stringify(credentials);
       await AsyncStorage.setItem(this.WIFI_CREDENTIALS_KEY, credentialsData);
-      
+
       // Also save to connection history
       await this.saveConnectionHistory(credentials.host, credentials.port);
-      
-      console.log(`WiFi credentials saved for ${credentials.host}:${credentials.port}`);
     } catch (error) {
       console.error('Failed to save WiFi credentials:', error);
       throw new Error(`WiFi credentials save failed: ${error}`);
@@ -61,14 +59,12 @@ class SecureStorageServiceImpl implements SecureStorageService {
   async loadWiFiCredentials(): Promise<WiFiCredentials | null> {
     try {
       const credentialsData = await AsyncStorage.getItem(this.WIFI_CREDENTIALS_KEY);
-      
+
       if (!credentialsData) {
-        console.log('No saved WiFi credentials found');
         return null;
       }
-      
+
       const credentials = JSON.parse(credentialsData) as WiFiCredentials;
-      console.log(`Loaded WiFi credentials for ${credentials.host}:${credentials.port}`);
       return credentials;
     } catch (error) {
       console.error('Failed to load WiFi credentials:', error);
@@ -79,7 +75,6 @@ class SecureStorageServiceImpl implements SecureStorageService {
   async clearCredentials(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.WIFI_CREDENTIALS_KEY);
-      console.log('WiFi credentials cleared');
     } catch (error) {
       console.error('Failed to clear WiFi credentials:', error);
       throw new Error(`WiFi credentials clear failed: ${error}`);
@@ -89,24 +84,23 @@ class SecureStorageServiceImpl implements SecureStorageService {
   async saveConnectionHistory(host: string, port: number): Promise<void> {
     try {
       const newConnection: WiFiCredentials = { host, port };
-      
+
       // Load existing history
       const historyData = await AsyncStorage.getItem(this.CONNECTION_HISTORY_KEY);
       let history: WiFiCredentials[] = historyData ? JSON.parse(historyData) : [];
-      
+
       // Remove duplicate if exists
-      history = history.filter(item => !(item.host === host && item.port === port));
-      
+      history = history.filter((item) => !(item.host === host && item.port === port));
+
       // Add new connection to beginning
       history.unshift(newConnection);
-      
+
       // Limit history size
       if (history.length > this.MAX_HISTORY_ITEMS) {
         history = history.slice(0, this.MAX_HISTORY_ITEMS);
       }
-      
+
       await AsyncStorage.setItem(this.CONNECTION_HISTORY_KEY, JSON.stringify(history));
-      console.log(`Connection history updated: ${host}:${port}`);
     } catch (error) {
       console.error('Failed to save connection history:', error);
       // Don't throw here as this is not critical functionality
@@ -116,13 +110,12 @@ class SecureStorageServiceImpl implements SecureStorageService {
   async getConnectionHistory(): Promise<WiFiCredentials[]> {
     try {
       const historyData = await AsyncStorage.getItem(this.CONNECTION_HISTORY_KEY);
-      
+
       if (!historyData) {
         return [];
       }
-      
+
       const history = JSON.parse(historyData) as WiFiCredentials[];
-      console.log(`Loaded ${history.length} connection history items`);
       return history;
     } catch (error) {
       console.error('Failed to load connection history:', error);
@@ -133,7 +126,6 @@ class SecureStorageServiceImpl implements SecureStorageService {
   async clearConnectionHistory(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.CONNECTION_HISTORY_KEY);
-      console.log('Connection history cleared');
     } catch (error) {
       console.error('Failed to clear connection history:', error);
       throw new Error(`Connection history clear failed: ${error}`);

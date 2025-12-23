@@ -26,25 +26,26 @@ const LoadingOverlay: React.FC<{ testID?: string }> = ({ testID }) => {
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  backdrop: {
-    backgroundColor: theme.overlayDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2000,
-    elevation: 2000,
-  },
-  container: {
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 120,
-  },
-  text: {
-    marginTop: 8,
-    fontSize: 14,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    backdrop: {
+      backgroundColor: theme.overlayDark,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2000,
+      elevation: 2000,
+    },
+    container: {
+      padding: 16,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 120,
+    },
+    text: {
+      marginTop: 8,
+      fontSize: 14,
+    },
+  });
 
 export default LoadingOverlay;

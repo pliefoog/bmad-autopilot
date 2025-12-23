@@ -1,8 +1,14 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, devtools } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'no-data' | 'error' | 'reconnecting';
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'no-data'
+  | 'error'
+  | 'reconnecting';
 
 export interface ConnectionConfig {
   ip: string;
@@ -66,97 +72,95 @@ const defaultMetrics: ConnectionMetrics = {
 };
 
 export const useConnectionStore = create<ConnectionStore>()(
-  persist(
-    (set, get) => ({
-      // State
-      status: 'disconnected',
-      config: defaultConfig,
-      metrics: defaultMetrics,
-      lastError: undefined,
-      isAutoConnecting: false,
-      debugMode: false,
+  devtools(
+    persist(
+      (set, get) => ({
+        // State
+        status: 'disconnected',
+        config: defaultConfig,
+        metrics: defaultMetrics,
+        lastError: undefined,
+        isAutoConnecting: false,
+        debugMode: false,
 
-      // Actions
-      setStatus: (status) => {
-        const now = Date.now();
-        set((state) => ({
-          status,
-          metrics: {
-            ...state.metrics,
-            ...(status === 'connected' && { connectedAt: now }),
-            ...(status === 'disconnected' && { disconnectedAt: now }),
-          },
-        }));
-      },
+        // Actions
+        setStatus: (status) => {
+          const now = Date.now();
+          set((state) => ({
+            status,
+            metrics: {
+              ...state.metrics,
+              ...(status === 'connected' && { connectedAt: now }),
+              ...(status === 'disconnected' && { disconnectedAt: now }),
+            },
+          }));
+        },
 
-      setConfig: (newConfig) =>
-        set((state) => ({
-          config: { ...state.config, ...newConfig },
-        })),
+        setConfig: (newConfig) =>
+          set((state) => ({
+            config: { ...state.config, ...newConfig },
+          })),
 
-      setLastError: (error) => {
-        const now = Date.now();
-        set((state) => ({
-          lastError: error,
-          metrics: error
-            ? { ...state.metrics, lastErrorTime: now }
-            : state.metrics,
-        }));
-      },
+        setLastError: (error) => {
+          const now = Date.now();
+          set((state) => ({
+            lastError: error,
+            metrics: error ? { ...state.metrics, lastErrorTime: now } : state.metrics,
+          }));
+        },
 
-      setAutoConnecting: (auto) =>
-        set({ isAutoConnecting: auto }),
+        setAutoConnecting: (auto) => set({ isAutoConnecting: auto }),
 
-      setDebugMode: (enabled) =>
-        set({ debugMode: enabled }),
+        setDebugMode: (enabled) => set({ debugMode: enabled }),
 
-      updateMetrics: (newMetrics) =>
-        set((state) => ({
-          metrics: { ...state.metrics, ...newMetrics },
-        })),
+        updateMetrics: (newMetrics) =>
+          set((state) => ({
+            metrics: { ...state.metrics, ...newMetrics },
+          })),
 
-      incrementPacketsReceived: () =>
-        set((state) => ({
-          metrics: {
-            ...state.metrics,
-            packetsReceived: state.metrics.packetsReceived + 1,
-          },
-        })),
+        incrementPacketsReceived: () =>
+          set((state) => ({
+            metrics: {
+              ...state.metrics,
+              packetsReceived: state.metrics.packetsReceived + 1,
+            },
+          })),
 
-      incrementPacketsDropped: () =>
-        set((state) => ({
-          metrics: {
-            ...state.metrics,
-            packetsDropped: state.metrics.packetsDropped + 1,
-          },
-        })),
+        incrementPacketsDropped: () =>
+          set((state) => ({
+            metrics: {
+              ...state.metrics,
+              packetsDropped: state.metrics.packetsDropped + 1,
+            },
+          })),
 
-      incrementReconnectAttempts: () =>
-        set((state) => ({
-          metrics: {
-            ...state.metrics,
-            reconnectAttempts: state.metrics.reconnectAttempts + 1,
-          },
-        })),
+        incrementReconnectAttempts: () =>
+          set((state) => ({
+            metrics: {
+              ...state.metrics,
+              reconnectAttempts: state.metrics.reconnectAttempts + 1,
+            },
+          })),
 
-      resetMetrics: () =>
-        set({ metrics: defaultMetrics }),
+        resetMetrics: () => set({ metrics: defaultMetrics }),
 
-      reset: () =>
-        set({
-          status: 'disconnected',
-          metrics: defaultMetrics,
-          lastError: undefined,
-          isAutoConnecting: false,
-        }),
-    }),
-    {
-      name: 'connection-store',
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        config: state.config,
-        debugMode: state.debugMode,
+        reset: () =>
+          set({
+            status: 'disconnected',
+            metrics: defaultMetrics,
+            lastError: undefined,
+            isAutoConnecting: false,
+          }),
       }),
-    }
-  )
+      {
+        name: 'connection-store',
+        storage: createJSONStorage(() => AsyncStorage),
+        partialize: (state) => ({
+          config: state.config,
+          debugMode: state.debugMode,
+        }),
+      },
+    ),
+    { name: 'Connection Store', enabled: __DEV__ },
+  ),
 );

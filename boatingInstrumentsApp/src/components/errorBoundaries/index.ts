@@ -49,4 +49,4 @@ export const MarineErrorTypes = {
   VALIDATION_FAILED: 'validation_failed',
 } as const;
 
-export type MarineErrorType = typeof MarineErrorTypes[keyof typeof MarineErrorTypes];
+export type MarineErrorType = (typeof MarineErrorTypes)[keyof typeof MarineErrorTypes];

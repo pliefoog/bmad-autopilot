@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-12-22T10:00:13.568Z",
+  "testType": "memory_pressure",
+  "metrics": {
+    "memoryUnderPressureMB": 93.61134618512934,
+    "recoveryTimeMs": 3693.346134001405,
+    "gcCycles": 17,
+    "performanceImpact": 0.1278658594402375
+  },
+  "environment": {
+    "nodeVersion": "v20.19.5",
+    "platform": "darwin",
+    "arch": "arm64"
+  }
+}

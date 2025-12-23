@@ -3,17 +3,20 @@ import { ThemeColors } from '../store/themeStore';
 import { PlatformStyles } from '../utils/animationUtils';
 
 // Base theme utilities for creating consistent styles
-export const createThemeStyles = (colors: ThemeColors, options?: {
-  fontSize?: number;
-  fontWeight?: string;
-  borderRadius?: number;
-  spacing?: { xs: number; sm: number; md: number; lg: number; xl: number };
-}) => {
+export const createThemeStyles = (
+  colors: ThemeColors,
+  options?: {
+    fontSize?: number;
+    fontWeight?: string;
+    borderRadius?: number;
+    spacing?: { xs: number; sm: number; md: number; lg: number; xl: number };
+  },
+) => {
   const {
     fontSize = 14,
     fontWeight = '400',
     borderRadius = 8,
-    spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }
+    spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
   } = options || {};
 
   return StyleSheet.create({
@@ -36,7 +39,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       ...PlatformStyles.boxShadow(colors.shadow, { x: 0, y: 2 }, 4, 0.1),
       elevation: 3,
     },
-    
+
     // Typography
     text: {
       color: colors.text,
@@ -58,7 +61,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       fontSize: fontSize * 1.125,
       fontWeight: '500',
     },
-    
+
     // Buttons
     button: {
       paddingVertical: spacing.sm,
@@ -85,7 +88,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       fontSize,
       fontWeight: '500',
     },
-    
+
     // Form elements
     input: {
       backgroundColor: colors.surface,
@@ -103,7 +106,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
     inputError: {
       borderColor: colors.error,
     },
-    
+
     // Status indicators
     statusConnected: {
       color: colors.statusConnected,
@@ -117,20 +120,20 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
     statusWarning: {
       color: colors.statusWarning,
     },
-    
+
     // Spacing utilities
     marginXS: { margin: spacing.xs },
     marginSM: { margin: spacing.sm },
     marginMD: { margin: spacing.md },
     marginLG: { margin: spacing.lg },
     marginXL: { margin: spacing.xl },
-    
+
     paddingXS: { padding: spacing.xs },
     paddingSM: { padding: spacing.sm },
     paddingMD: { padding: spacing.md },
     paddingLG: { padding: spacing.lg },
     paddingXL: { padding: spacing.xl },
-    
+
     // Borders
     border: {
       borderWidth: 1,
@@ -144,7 +147,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    
+
     // Flexbox utilities
     row: {
       flexDirection: 'row',
@@ -159,7 +162,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
     spaceBetween: {
       justifyContent: 'space-between',
     },
-    
+
     // Marine-specific styles
     widget: {
       backgroundColor: colors.cardBackground,
@@ -194,7 +197,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       color: colors.textSecondary,
       marginLeft: spacing.xs,
     },
-    
+
     // Navigation
     header: {
       backgroundColor: colors.headerBackground,
@@ -208,7 +211,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       fontWeight: '600',
       color: colors.text,
     },
-    
+
     // Overlays and modals
     overlay: {
       backgroundColor: colors.overlay,
@@ -225,7 +228,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
       margin: spacing.md,
       maxHeight: '80%',
     },
-    
+
     // Shadows (when enabled)
     shadow: {
       ...PlatformStyles.boxShadow(colors.shadow, { x: 0, y: 2 }, 4, 0.1),
@@ -241,7 +244,7 @@ export const createThemeStyles = (colors: ThemeColors, options?: {
 // Preset theme style combinations
 export const createMarineWidgetStyles = (colors: ThemeColors, options?: any) => {
   const base = createThemeStyles(colors, options);
-  
+
   return StyleSheet.create({
     ...base,
     // Marine-specific widget overrides

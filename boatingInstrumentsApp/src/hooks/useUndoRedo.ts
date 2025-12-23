@@ -40,7 +40,7 @@ export const useUndoRedo = () => {
   useEffect(() => {
     // Register callback for stack changes
     undoRedoManager.onStackChangeCallback(updateState);
-    
+
     // Initial state
     updateState();
   }, [updateState]);
@@ -88,7 +88,7 @@ export const useKeyboardShortcuts = (enabled: boolean = true) => {
 
       if (isMod && event.key === 'z') {
         event.preventDefault();
-        
+
         if (event.shiftKey) {
           // Cmd+Shift+Z or Ctrl+Shift+Z = Redo
           await redo();
@@ -97,7 +97,7 @@ export const useKeyboardShortcuts = (enabled: boolean = true) => {
           await undo();
         }
       }
-      
+
       // Alternative redo shortcut: Cmd+Y
       if (isMod && event.key === 'y') {
         event.preventDefault();

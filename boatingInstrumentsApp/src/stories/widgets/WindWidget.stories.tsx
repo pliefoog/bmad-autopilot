@@ -20,7 +20,6 @@ const MockStoreProvider: React.FC<{
   children: React.ReactNode;
   windData?: any;
 }> = ({ children, windData = mockWindData }) => {
-
   useEffect(() => {
     // Clear and reset NMEA store completely
     useNmeaStore.setState({
@@ -224,12 +223,8 @@ export const WindConditions: Story = {
           {/* Light winds */}
           <View style={{ flex: 1, backgroundColor: 'white', padding: 12, borderRadius: 8 }}>
             <WindWidget id="wind-light-demo" title="Light Winds" />
-            <Text style={{ fontSize: 12, color: '#4caf50', marginTop: 8 }}>
-              Light: 5-8 knots
-            </Text>
-            <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
-              See "LightWind" story
-            </Text>
+            <Text style={{ fontSize: 12, color: '#4caf50', marginTop: 8 }}>Light: 5-8 knots</Text>
+            <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>See "LightWind" story</Text>
           </View>
 
           {/* Moderate winds */}
@@ -238,17 +233,13 @@ export const WindConditions: Story = {
             <Text style={{ fontSize: 12, color: '#ff9800', marginTop: 8 }}>
               Moderate: 12-15 knots
             </Text>
-            <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
-              Current display
-            </Text>
+            <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>Current display</Text>
           </View>
 
           {/* Strong winds */}
           <View style={{ flex: 1, backgroundColor: 'white', padding: 12, borderRadius: 8 }}>
             <WindWidget id="wind-strong-demo" title="Strong Winds" />
-            <Text style={{ fontSize: 12, color: '#f44336', marginTop: 8 }}>
-              Strong: 20+ knots
-            </Text>
+            <Text style={{ fontSize: 12, color: '#f44336', marginTop: 8 }}>Strong: 20+ knots</Text>
             <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
               See "StrongWind" story
             </Text>
@@ -320,9 +311,7 @@ export const UnitVariations: Story = {
 
           <View style={{ flex: 1, backgroundColor: 'white', padding: 12, borderRadius: 8 }}>
             <WindWidget id="wind-beaufort" title="Wind (Beaufort)" />
-            <Text style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
-              Scale: 0-12 Beaufort
-            </Text>
+            <Text style={{ fontSize: 12, color: '#666', marginTop: 8 }}>Scale: 0-12 Beaufort</Text>
           </View>
         </View>
       </View>
@@ -345,16 +334,12 @@ export const DataStates: Story = {
       <View style={{ padding: 20, flexDirection: 'row', gap: 16 }}>
         <View style={{ flex: 1, backgroundColor: 'white', padding: 12, borderRadius: 8 }}>
           <WindWidget id="wind-normal" title="Wind (Normal)" />
-          <Text style={{ fontSize: 12, color: '#4caf50', marginTop: 8 }}>
-            ✓ Fresh wind data
-          </Text>
+          <Text style={{ fontSize: 12, color: '#4caf50', marginTop: 8 }}>✓ Fresh wind data</Text>
         </View>
 
         <View style={{ flex: 1, backgroundColor: 'white', padding: 12, borderRadius: 8 }}>
           <WindWidget id="wind-stale-demo" title="Wind (Stale)" />
-          <Text style={{ fontSize: 12, color: '#ff9800', marginTop: 8 }}>
-            See individual story
-          </Text>
+          <Text style={{ fontSize: 12, color: '#ff9800', marginTop: 8 }}>See individual story</Text>
         </View>
 
         <View style={{ flex: 1, backgroundColor: 'white', padding: 12, borderRadius: 8 }}>
@@ -392,9 +377,7 @@ export const MaritimeThemes: Story = {
         {/* Night Theme */}
         <View style={{ backgroundColor: '#1a1a1a', padding: 20 }}>
           <WindWidget id="wind-night" title="Wind (Night Theme)" />
-          <Text style={{ marginTop: 10, color: '#ccc' }}>
-            Night Theme - Reduced brightness
-          </Text>
+          <Text style={{ marginTop: 10, color: '#ccc' }}>Night Theme - Reduced brightness</Text>
         </View>
 
         {/* Red Night Theme */}

@@ -25,9 +25,9 @@ export interface CommandResult {
  * Circuit breaker states
  */
 export enum CircuitBreakerState {
-  CLOSED = 'closed',     // Normal operation
-  OPEN = 'open',         // Failing, blocking requests
-  HALF_OPEN = 'half_open' // Testing if service recovered
+  CLOSED = 'closed', // Normal operation
+  OPEN = 'open', // Failing, blocking requests
+  HALF_OPEN = 'half_open', // Testing if service recovered
 }
 
 /**
@@ -41,22 +41,22 @@ export class AutopilotRetryManager {
       baseDelayMs: 1000,
       maxDelayMs: 30000,
       backoffMultiplier: 2,
-      jitterFactor: 0.1
+      jitterFactor: 0.1,
     },
     command: {
       maxAttempts: 3,
       baseDelayMs: 500,
       maxDelayMs: 5000,
       backoffMultiplier: 1.5,
-      jitterFactor: 0.2
+      jitterFactor: 0.2,
     },
     critical: {
       maxAttempts: 2,
       baseDelayMs: 200,
       maxDelayMs: 1000,
       backoffMultiplier: 2,
-      jitterFactor: 0.1
-    }
+      jitterFactor: 0.1,
+    },
   };
 
   private circuitBreakerState = CircuitBreakerState.CLOSED;
@@ -71,9 +71,8 @@ export class AutopilotRetryManager {
   async executeWithRetry<T>(
     operation: () => Promise<T>,
     policyName: keyof typeof AutopilotRetryManager.DEFAULT_RETRY_POLICIES = 'command',
-    customPolicy?: Partial<RetryPolicy>
+    customPolicy?: Partial<RetryPolicy>,
   ): Promise<CommandResult & { result?: T }> {
-    
     // Check circuit breaker
     if (this.circuitBreakerState === CircuitBreakerState.OPEN) {
       if (Date.now() - this.lastFailureTime > this.circuitBreakerTimeout) {
@@ -83,69 +82,68 @@ export class AutopilotRetryManager {
           success: false,
           error: 'Circuit breaker open - service unavailable',
           responseTimeMs: 0,
-          attempt: 0
+          attempt: 0,
         };
       }
     }
 
-    const policy = { 
-      ...AutopilotRetryManager.DEFAULT_RETRY_POLICIES[policyName], 
-      ...customPolicy 
+    const policy = {
+      ...AutopilotRetryManager.DEFAULT_RETRY_POLICIES[policyName],
+      ...customPolicy,
     };
 
     let lastError: string | undefined;
-    
+
     for (let attempt = 1; attempt <= policy.maxAttempts; attempt++) {
       const startTime = Date.now();
-      
+
       try {
         const result = await operation();
         const responseTime = Date.now() - startTime;
-        
+
         // Success - reset circuit breaker
         this.onSuccess();
-        
+
         // Record metrics
         autopilotSafetyManager.recordCommandExecution(true, responseTime);
-        
+
         return {
           success: true,
           responseTimeMs: responseTime,
           attempt,
-          result
+          result,
         };
-        
       } catch (error) {
         const responseTime = Date.now() - startTime;
         lastError = error instanceof Error ? error.message : String(error);
-        
+
         // Record failure
         this.onFailure();
         autopilotSafetyManager.recordCommandExecution(false, responseTime);
-        
+
         // If this was the last attempt, don't wait
         if (attempt === policy.maxAttempts) {
           break;
         }
-        
+
         // Calculate delay with exponential backoff and jitter
         const delay = this.calculateDelay(attempt, policy);
-        
+
         console.warn(
-          `[RetryManager] Attempt ${attempt}/${policy.maxAttempts} failed: ${lastError}. Retrying in ${delay}ms`
+          `[RetryManager] Attempt ${attempt}/${policy.maxAttempts} failed: ${lastError}. Retrying in ${delay}ms`,
         );
-        
+
         // Wait before retry
         await this.sleep(delay);
       }
     }
-    
+
     // All attempts failed
     return {
       success: false,
       error: lastError || 'Unknown error',
       responseTimeMs: 0,
-      attempt: policy.maxAttempts
+      attempt: policy.maxAttempts,
     };
   }
 
@@ -155,13 +153,10 @@ export class AutopilotRetryManager {
   async executeWithTimeout<T>(
     operation: () => Promise<T>,
     timeoutMs: number,
-    policyName: keyof typeof AutopilotRetryManager.DEFAULT_RETRY_POLICIES = 'command'
+    policyName: keyof typeof AutopilotRetryManager.DEFAULT_RETRY_POLICIES = 'command',
   ): Promise<CommandResult & { result?: T }> {
-    
-    const timeoutOperation = () => Promise.race([
-      operation(),
-      this.createTimeoutPromise<T>(timeoutMs)
-    ]);
+    const timeoutOperation = () =>
+      Promise.race([operation(), this.createTimeoutPromise<T>(timeoutMs)]);
 
     return this.executeWithRetry(timeoutOperation, policyName);
   }
@@ -172,13 +167,13 @@ export class AutopilotRetryManager {
   private calculateDelay(attempt: number, policy: RetryPolicy): number {
     // Exponential backoff: baseDelay * (multiplier ^ (attempt - 1))
     const exponentialDelay = policy.baseDelayMs * Math.pow(policy.backoffMultiplier, attempt - 1);
-    
+
     // Cap at maximum delay
     const cappedDelay = Math.min(exponentialDelay, policy.maxDelayMs);
-    
+
     // Add random jitter to prevent thundering herd
     const jitter = cappedDelay * policy.jitterFactor * (Math.random() * 2 - 1);
-    
+
     return Math.max(0, cappedDelay + jitter);
   }
 
@@ -195,7 +190,7 @@ export class AutopilotRetryManager {
    * Sleep utility for delays
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -214,9 +209,11 @@ export class AutopilotRetryManager {
   private onFailure(): void {
     this.failureCount++;
     this.lastFailureTime = Date.now();
-    
-    if (this.failureCount >= this.failureThreshold && 
-        this.circuitBreakerState === CircuitBreakerState.CLOSED) {
+
+    if (
+      this.failureCount >= this.failureThreshold &&
+      this.circuitBreakerState === CircuitBreakerState.CLOSED
+    ) {
       this.circuitBreakerState = CircuitBreakerState.OPEN;
       console.error(`[RetryManager] Circuit breaker opened after ${this.failureCount} failures`);
     }

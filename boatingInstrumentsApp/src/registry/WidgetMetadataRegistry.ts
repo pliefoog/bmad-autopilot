@@ -1,13 +1,13 @@
 /**
  * Widget Metadata Registry - Single Source of Truth
- * 
+ *
  * Centralized registry for all widget metadata including:
  * - Icons (Ionicon names)
  * - Titles and instance titles
  * - Categories for organization
  * - Instance mapping for multi-instance widgets
  * - Type definitions for consistency
- * 
+ *
  * This replaces scattered icon/title definitions across the codebase.
  */
 
@@ -85,39 +85,39 @@ const TEMPERATURE_INSTANCE_MAP: Record<number, InstanceMapping> = NMEA_TEMPERATU
 // NMEA 0183 Location Mapping (for temperature-location based IDs)
 // Maps location strings to NMEA 2000 source equivalents for consistency
 const NMEA0183_LOCATION_MAP: Record<string, { source: number; instance?: number }> = {
-  'seawater': { source: 0 },
-  'sea': { source: 0 },
-  'water': { source: 0 },
-  'outside': { source: 1 },
-  'air': { source: 1 },
-  'ambient': { source: 1 },
-  'inside': { source: 2 },
-  'cabin': { source: 2 },
-  'engine': { source: 3 },
-  'engineroom': { source: 3 },
-  'engineRoom': { source: 3 },
-  'maincabin': { source: 4 },
-  'mainCabin': { source: 4 },
-  'livewell': { source: 5 },
-  'liveWell': { source: 5 },
-  'baitwell': { source: 6 },
-  'baitWell': { source: 6 },
-  'refrigeration': { source: 7 },
-  'fridge': { source: 7 },
-  'heating': { source: 8 },
-  'heater': { source: 8 },
-  'dewpoint': { source: 9 },
-  'dewPoint': { source: 9 },
-  'windchill': { source: 10 },
-  'windChill': { source: 10 },
-  'heatindex': { source: 11 },
-  'heatIndex': { source: 11 },
-  'freezer': { source: 12 },
-  'exhaust': { source: 13 },
-  'forwardcabin': { source: 14 },
-  'forwardCabin': { source: 14 },
-  'aftcabin': { source: 15 },
-  'aftCabin': { source: 15 },
+  seawater: { source: 0 },
+  sea: { source: 0 },
+  water: { source: 0 },
+  outside: { source: 1 },
+  air: { source: 1 },
+  ambient: { source: 1 },
+  inside: { source: 2 },
+  cabin: { source: 2 },
+  engine: { source: 3 },
+  engineroom: { source: 3 },
+  engineRoom: { source: 3 },
+  maincabin: { source: 4 },
+  mainCabin: { source: 4 },
+  livewell: { source: 5 },
+  liveWell: { source: 5 },
+  baitwell: { source: 6 },
+  baitWell: { source: 6 },
+  refrigeration: { source: 7 },
+  fridge: { source: 7 },
+  heating: { source: 8 },
+  heater: { source: 8 },
+  dewpoint: { source: 9 },
+  dewPoint: { source: 9 },
+  windchill: { source: 10 },
+  windChill: { source: 10 },
+  heatindex: { source: 11 },
+  heatIndex: { source: 11 },
+  freezer: { source: 12 },
+  exhaust: { source: 13 },
+  forwardcabin: { source: 14 },
+  forwardCabin: { source: 14 },
+  aftcabin: { source: 15 },
+  aftCabin: { source: 15 },
 };
 
 // Tank Position Mapping for different fluid types
@@ -142,16 +142,16 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     title: 'GPS',
     icon: 'navigate-outline',
     category: 'navigation',
-    description: 'Global Positioning System position and navigation data'
+    description: 'Global Positioning System position and navigation data',
   },
 
   compass: {
     id: 'compass',
-    type: 'single', 
+    type: 'single',
     title: 'Compass',
     icon: 'compass-outline',
     category: 'navigation',
-    description: 'Vessel heading and compass bearing'
+    description: 'Vessel heading and compass bearing',
   },
 
   speed: {
@@ -160,7 +160,7 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     title: 'Speed',
     icon: 'speedometer-outline',
     category: 'navigation',
-    description: 'Speed over ground and through water'
+    description: 'Speed over ground and through water',
   },
 
   wind: {
@@ -169,7 +169,7 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     title: 'Wind',
     icon: 'cloud-outline',
     category: 'environment',
-    description: 'Wind speed and direction data'
+    description: 'Wind speed and direction data',
   },
 
   depth: {
@@ -178,7 +178,7 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     title: 'Depth',
     icon: 'water-outline',
     category: 'navigation',
-    description: 'Water depth from sounder'
+    description: 'Water depth from sounder',
   },
 
   // Multi-Instance Devices
@@ -192,12 +192,14 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     maxInstances: 8,
     instanceMapping: (instance: number, data?: any) => {
       const mapping = ENGINE_INSTANCE_MAP[instance];
-      return mapping || { 
-        title: `ENGINE #${instance + 1}`, 
-        priority: instance + 10,
-        position: `engine${instance + 1}`
-      };
-    }
+      return (
+        mapping || {
+          title: `ENGINE #${instance + 1}`,
+          priority: instance + 10,
+          position: `engine${instance + 1}`,
+        }
+      );
+    },
   },
 
   battery: {
@@ -211,7 +213,7 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     instanceMapping: (instance: number) => {
       const mapping = BATTERY_INSTANCE_MAP[instance];
       return mapping || { title: `BATTERY #${instance + 1}`, priority: instance + 10 };
-    }
+    },
   },
 
   tanks: {
@@ -226,17 +228,20 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
       const fluidType = data?.fluidType || 'fuel';
       const positions = TANK_POSITIONS[fluidType] || ['TANK'];
       const position = positions[instance % positions.length] || `#${instance + 1}`;
-      
+
       return {
         title: `${fluidType.toUpperCase()} ${position}`,
         priority: instance + 1,
         position,
         // Use different icons based on fluid type
-        icon: fluidType === 'fuel' ? 'cube-outline' : 
-              fluidType === 'freshWater' ? 'water-outline' : 
-              'cube-outline'
+        icon:
+          fluidType === 'fuel'
+            ? 'cube-outline'
+            : fluidType === 'freshWater'
+            ? 'water-outline'
+            : 'cube-outline',
       };
-    }
+    },
   },
 
   // Tank Widget (singular) - for backward compatibility with createInstanceWidget
@@ -253,9 +258,9 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
         title: `Tank ${instance + 1}`,
         priority: instance + 1,
         position: `#${instance + 1}`,
-        icon: 'cube-outline'
+        icon: 'cube-outline',
       };
-    }
+    },
   },
 
   // Temperature Widgets (supporting both NMEA 2000 and NMEA 0183)
@@ -278,22 +283,24 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
             return {
               ...sourceMapping,
               // Preserve instance if provided, otherwise use source as default
-              priority: sourceMapping.priority + (instance || 0)
+              priority: sourceMapping.priority + (instance || 0),
             };
           }
         }
       }
-      
+
       // Direct NMEA 2000 source mapping
       const mapping = NMEA_TEMPERATURE_SOURCES[instance];
-      return mapping || { 
-        title: `TEMP SENSOR ${instance}`, 
-        priority: instance + 100,
-        location: `sensor${instance}`,
-        icon: 'thermometer-outline'
-      };
-    }
-  }
+      return (
+        mapping || {
+          title: `TEMP SENSOR ${instance}`,
+          priority: instance + 100,
+          location: `sensor${instance}`,
+          icon: 'thermometer-outline',
+        }
+      );
+    },
+  },
 };
 
 /**
@@ -307,9 +314,9 @@ export class WidgetMetadataRegistry {
   static getMetadata(widgetId: string): WidgetMetadata | undefined {
     // Handle legacy mappings
     if (widgetId === 'water-temperature') {
-      return WIDGET_METADATA_REGISTRY['temperature'];
+      return WIDGET_METADATA_REGISTRY.temperature;
     }
-    
+
     return WIDGET_METADATA_REGISTRY[widgetId];
   }
 
@@ -317,7 +324,9 @@ export class WidgetMetadataRegistry {
    * Map NMEA 0183 temperature location to NMEA 2000 source
    * This ensures consistency between NMEA 0183 and NMEA 2000 temperature handling
    */
-  static mapLocationToNmeaSource(location: string): { source: number; mapping: InstanceMapping } | undefined {
+  static mapLocationToNmeaSource(
+    location: string,
+  ): { source: number; mapping: InstanceMapping } | undefined {
     const normalized = location.toLowerCase();
     const sourceInfo = NMEA0183_LOCATION_MAP[normalized];
     if (sourceInfo) {
@@ -347,14 +356,14 @@ export class WidgetMetadataRegistry {
    * Get widgets by category
    */
   static getByCategory(category: WidgetCategory): WidgetMetadata[] {
-    return Object.values(WIDGET_METADATA_REGISTRY).filter(meta => meta.category === category);
+    return Object.values(WIDGET_METADATA_REGISTRY).filter((meta) => meta.category === category);
   }
 
   /**
    * Get multi-instance widgets only
    */
   static getMultiInstanceWidgets(): WidgetMetadata[] {
-    return Object.values(WIDGET_METADATA_REGISTRY).filter(meta => meta.type === 'multi-instance');
+    return Object.values(WIDGET_METADATA_REGISTRY).filter((meta) => meta.type === 'multi-instance');
   }
 
   /**

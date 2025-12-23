@@ -20,13 +20,7 @@ const StatusCard: React.FC<StatusCardProps> = ({
   testID,
 }) => {
   return (
-    <Card
-      variant={variant}
-      padding="medium"
-      rounded="medium"
-      style={style}
-      testID={testID}
-    >
+    <Card variant={variant} padding="medium" rounded="medium" style={style} testID={testID}>
       <View style={[styles.container, styles.header]}>
         <StatusIndicator
           status={status}

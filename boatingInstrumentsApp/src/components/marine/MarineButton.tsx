@@ -1,16 +1,24 @@
 import React, { useRef, useMemo } from 'react';
-import { Text, StyleSheet, Animated, ViewStyle, TextStyle, TouchableOpacity, GestureResponderEvent } from 'react-native';
+import {
+  Text,
+  StyleSheet,
+  Animated,
+  ViewStyle,
+  TextStyle,
+  TouchableOpacity,
+  GestureResponderEvent,
+} from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { ANIMATION_DURATIONS, ANIMATION_EASINGS } from '../../utils/animationOptimization';
 import { getUseNativeDriver } from '../../utils/animationUtils';
 
 /**
  * MarineButton - Professional tactile button component for marine interfaces
- * 
+ *
  * Acceptance Criteria Satisfied:
  * - AC 5: Marine Button Component with professional tactile buttons for marine control interfaces
  * - AC 24: Professional Marine Styling with pressed/unpressed states and tactile feedback
- * 
+ *
  * Features:
  * - Professional tactile buttons matching marine control interface standards
  * - Clear pressed/unpressed visual states with realistic depth effects
@@ -58,7 +66,7 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
   const theme = useTheme();
   const pressAnimation = useRef(new Animated.Value(0)).current;
   const scaleAnimation = useRef(new Animated.Value(1)).current;
-  
+
   // Get variant colors
   const getVariantColors = (buttonVariant: MarineButtonVariant) => {
     switch (buttonVariant) {
@@ -99,53 +107,56 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
         };
     }
   };
-  
+
   // Get size dimensions
   const getSizeDimensions = (buttonSize: MarineButtonSize) => {
     switch (buttonSize) {
       case 'small':
-        return { 
-          paddingHorizontal: 12, 
-          paddingVertical: 6, 
-          fontSize: 12, 
+        return {
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          fontSize: 12,
           minWidth: 60,
           borderRadius: 6,
         };
       case 'medium':
-        return { 
-          paddingHorizontal: 20, 
-          paddingVertical: 10, 
-          fontSize: 14, 
+        return {
+          paddingHorizontal: 20,
+          paddingVertical: 10,
+          fontSize: 14,
           minWidth: 80,
           borderRadius: 8,
         };
       case 'large':
-        return { 
-          paddingHorizontal: 28, 
-          paddingVertical: 14, 
-          fontSize: 16, 
+        return {
+          paddingHorizontal: 28,
+          paddingVertical: 14,
+          fontSize: 16,
           minWidth: 120,
           borderRadius: 10,
         };
       default:
-        return { 
-          paddingHorizontal: 20, 
-          paddingVertical: 10, 
-          fontSize: 14, 
+        return {
+          paddingHorizontal: 20,
+          paddingVertical: 10,
+          fontSize: 14,
           minWidth: 80,
           borderRadius: 8,
         };
     }
   };
-  
+
   const colors = getVariantColors(variant);
   const dimensions = getSizeDimensions(size);
-  const styles = useMemo(() => createStyles(theme, colors, dimensions, disabled), [theme, colors, dimensions, disabled]);
-  
+  const styles = useMemo(
+    () => createStyles(theme, colors, dimensions, disabled),
+    [theme, colors, dimensions, disabled],
+  );
+
   // Handle press in with animation (AC 24)
   const handlePressIn = () => {
     if (disabled) return;
-    
+
     Animated.parallel([
       Animated.timing(pressAnimation, {
         toValue: 1,
@@ -161,11 +172,11 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
       }),
     ]).start();
   };
-  
+
   // Handle press out with animation
   const handlePressOut = () => {
     if (disabled) return;
-    
+
     Animated.parallel([
       Animated.timing(pressAnimation, {
         toValue: 0,
@@ -181,23 +192,23 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
       }),
     ]).start();
   };
-  
+
   // Animated styles for pressed state
   const animatedBackgroundColor = pressAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [colors.background, colors.backgroundPressed],
   });
-  
+
   const animatedElevation = pressAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [4, 1],
   });
-  
+
   const animatedShadowOpacity = pressAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [0.3, 0.1],
   });
-  
+
   return (
     <TouchableOpacity
       activeOpacity={1}
@@ -220,7 +231,7 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
         ]}
       >
         {/* Top highlight for depth effect */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.topHighlight,
             {
@@ -229,19 +240,19 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
                 outputRange: [0.3, 0.1],
               }),
             },
-          ]} 
+          ]}
         />
-        
+
         {/* Button text */}
-        <Text 
+        <Text
           style={[styles.buttonText, textStyle]}
           testID={testID ? `${testID}-text` : 'marine-button-text'}
         >
           {title}
         </Text>
-        
+
         {/* Bottom shadow for depth effect */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.bottomShadow,
             {
@@ -250,19 +261,14 @@ export const MarineButton: React.FC<MarineButtonProps> = ({
                 outputRange: [0.4, 0.8],
               }),
             },
-          ]} 
+          ]}
         />
       </Animated.View>
     </TouchableOpacity>
   );
 };
 
-const createStyles = (
-  theme: ThemeColors, 
-  colors: any, 
-  dimensions: any,
-  disabled: boolean
-) => {
+const createStyles = (theme: ThemeColors, colors: any, dimensions: any, disabled: boolean) => {
   return StyleSheet.create({
     button: {
       paddingHorizontal: dimensions.paddingHorizontal,
@@ -285,7 +291,7 @@ const createStyles = (
       borderBottomColor: disabled ? theme.surface : theme.surfaceDim,
       borderRightColor: disabled ? theme.surface : theme.surfaceDim,
     },
-    
+
     buttonText: {
       fontSize: dimensions.fontSize,
       fontFamily: 'monospace',
@@ -296,7 +302,7 @@ const createStyles = (
       textTransform: 'uppercase',
       zIndex: 2,
     },
-    
+
     topHighlight: {
       position: 'absolute',
       top: 1,
@@ -308,7 +314,7 @@ const createStyles = (
       borderTopRightRadius: dimensions.borderRadius - 2,
       zIndex: 1,
     },
-    
+
     bottomShadow: {
       position: 'absolute',
       bottom: 1,

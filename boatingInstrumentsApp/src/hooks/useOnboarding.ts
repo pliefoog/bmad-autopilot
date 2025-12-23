@@ -1,7 +1,7 @@
 /**
  * Onboarding Hook
  * Story 4.4 AC11: First-run detection and onboarding state management
- * 
+ *
  * Manages onboarding flow state using AsyncStorage to detect first-run users.
  * Provides methods to trigger onboarding, mark complete, and replay from settings.
  */
@@ -37,7 +37,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const checkOnboardingStatus = async () => {
     try {
       const hasCompleted = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
-      
+
       if (hasCompleted !== 'true') {
         // First-run user - show onboarding
         setIsOnboardingVisible(true);
@@ -91,7 +91,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
 export const resetOnboardingStatus = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
-    console.log('Onboarding status reset - app will show onboarding on next launch');
   } catch (error) {
     console.error('Failed to reset onboarding status:', error);
     throw error;

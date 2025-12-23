@@ -1,6 +1,6 @@
 /**
  * useMetricDisplay Hook
- * 
+ *
  * Unified metric display hook replacing both legacy useUnitConversion and presentations.
  * Provides single source of truth: Settings → useMetricDisplay → Pre-formatted MetricDisplayData → Pure Components
  */
@@ -8,10 +8,7 @@
 import { useMemo } from 'react';
 import { useCurrentPresentation } from '../presentation/presentationStore';
 import { MetricDisplayData, MetricDisplayOptions } from '../types/MetricDisplayData';
-import { 
-  PRESENTATIONS,
-  getDefaultPresentation 
-} from '../presentation/presentations';
+import { PRESENTATIONS, getDefaultPresentation } from '../presentation/presentations';
 import { DataCategory } from '../presentation/categories';
 import { FontMeasurementService } from '../services/FontMeasurementService';
 
@@ -22,11 +19,11 @@ export function useMetricDisplay(
   category: DataCategory,
   rawValue: number | null | undefined,
   mnemonic?: string,
-  options?: MetricDisplayOptions
+  options?: MetricDisplayOptions,
 ): MetricDisplayData {
   // Story 9.6: Get presentation directly from presentation store (reactive)
   const presentation = useCurrentPresentation(category);
-  
+
   return useMemo(() => {
     // Handle invalid inputs
     if (rawValue === null || rawValue === undefined || isNaN(rawValue)) {
@@ -35,26 +32,30 @@ export function useMetricDisplay(
 
     // Use current presentation from store, fallback to default
     const activePresentation = presentation || getDefaultPresentation(category);
-    
+
     if (!activePresentation) {
-      return createInvalidMetricDisplay(category, mnemonic, `No presentation found for category: ${category}`);
+      return createInvalidMetricDisplay(
+        category,
+        mnemonic,
+        `No presentation found for category: ${category}`,
+      );
     }
 
     try {
       // Convert and format the value with optional metadata
       const convertedValue = activePresentation.convert(rawValue);
       const formattedValue = activePresentation.format(convertedValue, options?.metadata);
-      
+
       // Calculate optimal width for layout stability
       const fontSize = options?.fontSize || 16;
       const fontFamily = options?.fontFamily || 'system';
       const fontWeight = options?.fontWeight || 'normal';
-      
+
       const minWidth = FontMeasurementService.calculateOptimalWidth(
         activePresentation.formatSpec,
         fontSize,
         fontFamily,
-        fontWeight
+        fontWeight,
       );
 
       return {
@@ -65,24 +66,23 @@ export function useMetricDisplay(
         layout: {
           minWidth,
           alignment: getAlignmentForCategory(category),
-          fontSize
+          fontSize,
         },
         presentation: {
           id: activePresentation.id,
           name: activePresentation.name,
-          pattern: activePresentation.formatSpec.pattern
+          pattern: activePresentation.formatSpec.pattern,
         },
         status: {
           isValid: true,
-          isFallback: !presentation // Mark as fallback if using default
-        }
+          isFallback: !presentation, // Mark as fallback if using default
+        },
       };
-      
     } catch (error) {
       return createInvalidMetricDisplay(
-        category, 
-        mnemonic, 
-        `Conversion error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        category,
+        mnemonic,
+        `Conversion error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }, [category, rawValue, mnemonic, presentation, options]);
@@ -100,9 +100,9 @@ function getAlignmentForCategory(category: DataCategory): 'left' | 'center' | 'r
  * Create error/invalid metric display data
  */
 function createInvalidMetricDisplay(
-  category: DataCategory, 
-  mnemonic?: string, 
-  error?: string
+  category: DataCategory,
+  mnemonic?: string,
+  error?: string,
 ): MetricDisplayData {
   return {
     mnemonic: mnemonic || '?',
@@ -111,18 +111,18 @@ function createInvalidMetricDisplay(
     rawValue: 0,
     layout: {
       minWidth: 40,
-      alignment: 'center'
+      alignment: 'center',
     },
     presentation: {
       id: 'invalid',
       name: 'Invalid',
-      pattern: '---'
+      pattern: '---',
     },
     status: {
       isValid: false,
       error: error || 'Unknown error',
-      isFallback: true
-    }
+      isFallback: true,
+    },
   };
 }
 

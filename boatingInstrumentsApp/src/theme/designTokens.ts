@@ -1,7 +1,7 @@
 /**
  * Design Tokens System
  * Story 4.4 AC1-5: Comprehensive design system for consistency
- * 
+ *
  * Provides:
  * - Color tokens with semantic naming
  * - Spacing scale (4px base unit)
@@ -123,18 +123,18 @@ export const colors = {
 
 export const spacing = {
   0: 0,
-  1: 4,    // 0.25rem
-  2: 8,    // 0.5rem
-  3: 12,   // 0.75rem
-  4: 16,   // 1rem
-  5: 20,   // 1.25rem
-  6: 24,   // 1.5rem
-  8: 32,   // 2rem
-  10: 40,  // 2.5rem
-  12: 48,  // 3rem
-  16: 64,  // 4rem
-  20: 80,  // 5rem
-  24: 96,  // 6rem
+  1: 4, // 0.25rem
+  2: 8, // 0.5rem
+  3: 12, // 0.75rem
+  4: 16, // 1rem
+  5: 20, // 1.25rem
+  6: 24, // 1.5rem
+  8: 32, // 2rem
+  10: 40, // 2.5rem
+  12: 48, // 3rem
+  16: 64, // 4rem
+  20: 80, // 5rem
+  24: 96, // 6rem
 };
 
 // ============================================================================
@@ -191,7 +191,7 @@ export const typography = {
 /**
  * iOS standard text styles with proper line heights and letter spacing
  * Use with Dynamic Type hook for accessibility compliance
- * 
+ *
  * Marine optimization: Base sizes suitable for 2-3m viewing distance
  * when combined with dashboard scaling in useDynamicType hook
  */
@@ -307,7 +307,7 @@ export const shadows = {
   xl: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 8.0,
     elevation: 12,
   },
@@ -346,10 +346,10 @@ export const borderRadius = {
  */
 export const iosBorderRadius = {
   none: 0,
-  small: 8,      // List items, small buttons
-  medium: 10,    // Cards, medium buttons, text fields
-  large: 13,     // Large cards, modal sheets
-  xlarge: 20,    // Full-screen modals
+  small: 8, // List items, small buttons
+  medium: 10, // Cards, medium buttons, text fields
+  large: 13, // Large cards, modal sheets
+  xlarge: 20, // Full-screen modals
   continuous: 10, // iOS continuous corner (approximation)
   full: 9999,
 };
@@ -408,11 +408,11 @@ export const breakpoints = {
 // ============================================================================
 
 export const touchTargets = {
-  minimum: 44,     // iOS minimum
-  standard: 48,    // Material Design
-  marine: 56,      // Marine-optimized (AC15)
+  minimum: 44, // iOS minimum
+  standard: 48, // Material Design
+  marine: 56, // Marine-optimized (AC15)
   marineLarge: 64, // Large marine targets
-  glove: 68,       // Glove mode (AC15)
+  glove: 68, // Glove mode (AC15)
 };
 
 // ============================================================================

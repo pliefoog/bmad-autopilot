@@ -13,10 +13,10 @@ export interface ServiceRegistry {
   // Storage Services
   settingsStorage: typeof settingsStorageService;
   secureStorage: typeof secureStorageService;
-  
+
   // NMEA Services
   autopilotCommands: typeof autopilotCommandService;
-  
+
   // Playback Services
   nmeaPlayback: typeof nmeaPlaybackService;
   sampleData: typeof sampleDataService;
@@ -24,7 +24,7 @@ export interface ServiceRegistry {
 
 class ServiceRegistryImpl implements ServiceRegistry {
   private static instance: ServiceRegistryImpl;
-  
+
   static getInstance(): ServiceRegistryImpl {
     if (!ServiceRegistryImpl.instance) {
       ServiceRegistryImpl.instance = new ServiceRegistryImpl();
@@ -35,10 +35,10 @@ class ServiceRegistryImpl implements ServiceRegistry {
   // Storage Services
   public readonly settingsStorage = settingsStorageService;
   public readonly secureStorage = secureStorageService;
-  
+
   // NMEA Services
   public readonly autopilotCommands = autopilotCommandService;
-  
+
   // Playback Services
   public readonly nmeaPlayback = nmeaPlaybackService;
   public readonly sampleData = sampleDataService;
@@ -48,12 +48,8 @@ class ServiceRegistryImpl implements ServiceRegistry {
    */
   async initialize(): Promise<void> {
     try {
-      console.log('Initializing service registry...');
-      
       // Services are already initialized as singletons
       // Additional initialization logic can be added here
-      
-      console.log('Service registry initialized successfully');
     } catch (error) {
       console.error('Failed to initialize service registry:', error);
       throw new Error(`Service registry initialization failed: ${error}`);
@@ -79,9 +75,7 @@ class ServiceRegistryImpl implements ServiceRegistry {
    */
   async reset(): Promise<void> {
     try {
-      console.log('Resetting service registry...');
       // Individual services handle their own reset logic
-      console.log('Service registry reset completed');
     } catch (error) {
       console.error('Failed to reset service registry:', error);
       throw new Error(`Service registry reset failed: ${error}`);

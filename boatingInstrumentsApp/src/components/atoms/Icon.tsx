@@ -11,44 +11,38 @@ interface IconProps {
 
 // Simple icon component using Unicode symbols for web compatibility
 // This matches the pattern used in the existing Ionicons mock
-const Icon: React.FC<IconProps> = ({
-  name,
-  size = 16,
-  color = '#000',
-  style,
-  testID,
-}) => {
+const Icon: React.FC<IconProps> = ({ name, size = 16, color = '#000', style, testID }) => {
   // Icon mapping based on existing Ionicons mock
   const iconMap: { [key: string]: string } = {
     // Marine instrument icons
-    'water': '🌊',
+    water: '🌊',
     'water-outline': '🌊',
     'car-outline': '⚙️',
     'cube-outline': '⛽',
-    'thermometer': '🌡️',
+    thermometer: '🌡️',
     'thermometer-outline': '🌡️',
-    'speedometer': '💨',
+    speedometer: '💨',
     'speedometer-outline': '💨',
-    'location': '📍',
-    'navigate': '🧭',
+    location: '📍',
+    navigate: '🧭',
     'navigate-outline': '🧭',
-    'boat': '⛵',
+    boat: '⛵',
     'boat-outline': '⛵',
-    'leaf': '💨',
+    leaf: '💨',
     'battery-charging-outline': '🔋',
-    'compass': '🧭',
+    compass: '🧭',
     'compass-outline': '🧭',
     'swap-horizontal-outline': '🤖',
     'cloud-outline': '💨',
     'color-palette-outline': '🎨',
     // Tank-specific icons
     'fuel-pump': '⛽',
-    'droplet': '💧',
-    'toilet': '🚽',
+    droplet: '💧',
+    toilet: '🚽',
     // Generic metrics
     'bar-chart': '📊',
     'chart-bar': '📊',
-    'analytics': '📊',
+    analytics: '📊',
     // UI icons
     'settings-outline': '⚙',
     'grid-outline': '▦',
@@ -58,10 +52,10 @@ const Icon: React.FC<IconProps> = ({
     'notifications-outline': '○',
     'warning-outline': '⚠',
     // Common fallback
-    'default': '●',
+    default: '●',
   };
 
-  const iconSymbol = iconMap[name] || iconMap['default'];
+  const iconSymbol = iconMap[name] || iconMap.default;
 
   const iconStyle = [
     styles.icon,

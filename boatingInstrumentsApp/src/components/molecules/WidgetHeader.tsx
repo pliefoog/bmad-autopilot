@@ -29,7 +29,7 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
 }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  
+
   return (
     <View style={[styles.container, style]} testID={testID}>
       <View style={styles.leftSection}>
@@ -43,10 +43,7 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           />
         )}
         <View style={styles.titleContainer}>
-          <Text
-            style={[styles.title, titleStyle]}
-            testID={testID ? `${testID}-title` : undefined}
-          >
+          <Text style={[styles.title, titleStyle]} testID={testID ? `${testID}-title` : undefined}>
             {title}
           </Text>
           {subtitle && (
@@ -59,7 +56,6 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           )}
         </View>
       </View>
-      
       <View style={styles.rightSection}>
         {status && (
           <StatusIndicator
@@ -75,45 +71,46 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  icon: {
-    marginRight: 8,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.text,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: theme.textSecondary,
-    marginTop: 2,
-  },
-  statusIndicator: {
-    marginLeft: 8,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    leftSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    rightSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    icon: {
+      marginRight: 8,
+    },
+    titleContainer: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    subtitle: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
+    statusIndicator: {
+      marginLeft: 8,
+    },
+  });
 
 export default WidgetHeader;

@@ -11,7 +11,6 @@ export const useMenuState = (visible: boolean, menuWidth: number = 320) => {
   const fadeAnimation = useRef(new Animated.Value(0)).current;
 
   const animateIn = useCallback(() => {
-    console.log('[useMenuState] Animating in, menuWidth:', menuWidth);
     // Slide in from left and fade in overlay
     Animated.parallel([
       Animated.timing(slideAnimation, {
@@ -27,26 +26,28 @@ export const useMenuState = (visible: boolean, menuWidth: number = 320) => {
     ]).start();
   }, [slideAnimation, fadeAnimation, menuWidth]);
 
-  const animateOut = useCallback((callback?: () => void) => {
-    console.log('[useMenuState] Animating out, menuWidth:', menuWidth);
-    // Slide out to left and fade out overlay
-    Animated.parallel([
-      Animated.timing(slideAnimation, {
-        toValue: -menuWidth,
-        duration: 300,
-        useNativeDriver: getUseNativeDriver(),
-      }),
-      Animated.timing(fadeAnimation, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: getUseNativeDriver(),
-      }),
-    ]).start(() => {
-      if (callback) {
-        callback();
-      }
-    });
-  }, [slideAnimation, fadeAnimation, menuWidth]);
+  const animateOut = useCallback(
+    (callback?: () => void) => {
+      // Slide out to left and fade out overlay
+      Animated.parallel([
+        Animated.timing(slideAnimation, {
+          toValue: -menuWidth,
+          duration: 300,
+          useNativeDriver: getUseNativeDriver(),
+        }),
+        Animated.timing(fadeAnimation, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: getUseNativeDriver(),
+        }),
+      ]).start(() => {
+        if (callback) {
+          callback();
+        }
+      });
+    },
+    [slideAnimation, fadeAnimation, menuWidth],
+  );
 
   return {
     slideAnimation,

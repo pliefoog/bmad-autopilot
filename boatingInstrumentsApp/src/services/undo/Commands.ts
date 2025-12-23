@@ -1,4 +1,3 @@
-
 import { Command } from './UndoRedoManager';
 import { useThemeStore } from '../../store/themeStore';
 import { useSettingsStore, ThemeSettings } from '../../store/settingsStore';
@@ -12,7 +11,7 @@ export class ThemeChangeCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private previousMode: ThemeMode;
   private newMode: ThemeMode;
 
@@ -49,7 +48,7 @@ export class ThemeSettingsChangeCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private previousSettings: Partial<ThemeSettings>;
   private newSettings: Partial<ThemeSettings>;
 
@@ -58,7 +57,7 @@ export class ThemeSettingsChangeCommand implements Command {
     this.timestamp = Date.now();
     this.previousSettings = { ...useSettingsStore.getState().themeSettings };
     this.newSettings = newSettings;
-    
+
     // Generate description from changed settings
     if (description) {
       this.description = description;
@@ -93,7 +92,7 @@ export class WidgetAddCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private widgetId: string;
   private onAdd: (widgetId: string) => void;
   private onRemove: (widgetId: string) => void;
@@ -101,7 +100,7 @@ export class WidgetAddCommand implements Command {
   constructor(
     widgetId: string,
     onAdd: (widgetId: string) => void,
-    onRemove: (widgetId: string) => void
+    onRemove: (widgetId: string) => void,
   ) {
     this.id = `widget-add-${widgetId}-${Date.now()}`;
     this.timestamp = Date.now();
@@ -136,7 +135,7 @@ export class WidgetRemoveCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private widgetId: string;
   private onAdd: (widgetId: string) => void;
   private onRemove: (widgetId: string) => void;
@@ -144,7 +143,7 @@ export class WidgetRemoveCommand implements Command {
   constructor(
     widgetId: string,
     onAdd: (widgetId: string) => void,
-    onRemove: (widgetId: string) => void
+    onRemove: (widgetId: string) => void,
   ) {
     this.id = `widget-remove-${widgetId}-${Date.now()}`;
     this.timestamp = Date.now();
@@ -185,7 +184,7 @@ export class ConnectionSettingsCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private previousConfig: ConnectionConfig;
   private newConfig: ConnectionConfig;
   private onApply: (config: ConnectionConfig) => void;
@@ -193,7 +192,7 @@ export class ConnectionSettingsCommand implements Command {
   constructor(
     previousConfig: ConnectionConfig,
     newConfig: ConnectionConfig,
-    onApply: (config: ConnectionConfig) => void
+    onApply: (config: ConnectionConfig) => void,
   ) {
     this.id = `connection-settings-${Date.now()}`;
     this.timestamp = Date.now();
@@ -228,19 +227,19 @@ export class DisplaySettingsCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private previousSettings: Partial<ReturnType<typeof useSettingsStore.getState>['display']>;
   private newSettings: Partial<ReturnType<typeof useSettingsStore.getState>['display']>;
 
   constructor(
     newSettings: Partial<ReturnType<typeof useSettingsStore.getState>['display']>,
-    description?: string
+    description?: string,
   ) {
     this.id = `display-settings-${Date.now()}`;
     this.timestamp = Date.now();
     this.previousSettings = { ...useSettingsStore.getState().display };
     this.newSettings = newSettings;
-    
+
     if (description) {
       this.description = description;
     } else {
@@ -274,14 +273,14 @@ export class UnitChangeCommand implements Command {
   public readonly id: string;
   public readonly description: string;
   public readonly timestamp: number;
-  
+
   private category: keyof ReturnType<typeof useSettingsStore.getState>['units'];
   private previousUnit: string;
   private newUnit: string;
 
   constructor(
     category: keyof ReturnType<typeof useSettingsStore.getState>['units'],
-    newUnit: string
+    newUnit: string,
   ) {
     this.id = `unit-change-${category}-${Date.now()}`;
     this.timestamp = Date.now();

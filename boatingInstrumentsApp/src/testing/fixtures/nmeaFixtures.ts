@@ -11,32 +11,32 @@ export const sampleNmeaData: NmeaData = {
   speed: 8.5, // knots
   heading: 275.3,
   course: 273.1,
-  
+
   // Wind Data
   windDirection: 185.0,
   windSpeed: 12.3,
   apparentWindDirection: 25.7,
-  
+
   // Engine Data
   engineRpm: 2450,
   engineTemperature: 87.5,
   fuelLevel: 75.5,
-  
+
   // Environmental
   depth: 42.8,
   waterTemperature: 18.3,
   airTemperature: 22.1,
   barometricPressure: 1013.25,
   humidity: 68.5,
-  
+
   // Electrical
   batteryVoltage: 12.6,
-  
+
   // Autopilot
   autopilotStatus: 'standby',
   autopilotMode: 'compass',
   autopilotHeading: 275.0,
-  
+
   // System
   timestamp: Date.now(),
 };
@@ -149,22 +149,22 @@ export const navigationTestData = {
     ...sampleNmeaData,
     speed: 3.2,
     depth: 15.6,
-    latitude: 37.8080,
+    latitude: 37.808,
     longitude: -122.4177, // San Francisco Bay
   },
   coastal: {
     ...sampleNmeaData,
     speed: 12.8,
     depth: 85.3,
-    latitude: 37.7000,
-    longitude: -122.5000,
+    latitude: 37.7,
+    longitude: -122.5,
   },
   offshore: {
     ...sampleNmeaData,
     speed: 18.5,
     depth: 350.7,
-    latitude: 37.5000,
-    longitude: -123.0000,
+    latitude: 37.5,
+    longitude: -123.0,
   },
 };
 
@@ -218,15 +218,15 @@ export function createTestQualityMetrics(quality: DataQuality): DataQualityMetri
 export function generateTimeSeriesData(
   baseData: NmeaData = sampleNmeaData,
   count: number = 10,
-  intervalMs: number = 1000
+  intervalMs: number = 1000,
 ): NmeaData[] {
   const series: NmeaData[] = [];
-  const startTime = Date.now() - (count * intervalMs);
+  const startTime = Date.now() - count * intervalMs;
 
   for (let i = 0; i < count; i++) {
-    const timestamp = startTime + (i * intervalMs);
+    const timestamp = startTime + i * intervalMs;
     const variation = Math.sin(i * 0.5) * 0.1; // Small variation
-    
+
     series.push({
       ...baseData,
       timestamp,

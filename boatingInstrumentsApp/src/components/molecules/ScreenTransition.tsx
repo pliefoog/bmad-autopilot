@@ -10,17 +10,37 @@ interface ScreenTransitionProps {
   testID?: string;
 }
 
-const ScreenTransition: React.FC<ScreenTransitionProps> = ({ children, duration = 300, direction = 'up', style, testID }) => {
+const ScreenTransition: React.FC<ScreenTransitionProps> = ({
+  children,
+  duration = 300,
+  direction = 'up',
+  style,
+  testID,
+}) => {
   const theme = useTheme();
   const opacity = React.useRef(new Animated.Value(theme.reducedMotion ? 1 : 0)).current;
-  const translate = React.useRef(new Animated.Value(theme.reducedMotion ? 0 : (direction === 'up' || direction === 'down' ? 10 : 10))).current;
+  const translate = React.useRef(
+    new Animated.Value(
+      theme.reducedMotion ? 0 : direction === 'up' || direction === 'down' ? 10 : 10,
+    ),
+  ).current;
 
   React.useEffect(() => {
     if (theme.reducedMotion) return;
 
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(translate, { toValue: 0, duration, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translate, {
+        toValue: 0,
+        duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [opacity, translate, duration, theme.reducedMotion]);
 
@@ -31,10 +51,7 @@ const ScreenTransition: React.FC<ScreenTransitionProps> = ({ children, duration 
   else if (direction === 'right') transform.push({ translateX: Animated.multiply(translate, -1) });
 
   return (
-    <Animated.View
-      testID={testID}
-      style={[styles.container, style, { opacity, transform }]}
-    >
+    <Animated.View testID={testID} style={[styles.container, style, { opacity, transform }]}>
       {children}
     </Animated.View>
   );

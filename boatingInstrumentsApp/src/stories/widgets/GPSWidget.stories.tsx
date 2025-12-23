@@ -27,7 +27,6 @@ const MockStoreProvider: React.FC<{
   nmeaData?: any;
   coordinateFormat?: 'decimal_degrees' | 'degrees_minutes' | 'degrees_minutes_seconds' | 'utm';
 }> = ({ children, nmeaData = mockNmeaData, coordinateFormat }) => {
-
   useEffect(() => {
     // Clear and reset NMEA store completely
     useNmeaStore.setState({
@@ -139,7 +138,7 @@ export const SouthernHemisphere: Story = {
     <MockStoreProvider
       nmeaData={{
         gpsPosition: {
-          latitude: -33.8688,  // Sydney, Australia
+          latitude: -33.8688, // Sydney, Australia
           longitude: 151.2093,
         },
         gpsQuality: 'GPS',
@@ -182,7 +181,7 @@ export const MaritimeSettings: Story = {
       <MockStoreProvider
         nmeaData={{
           gpsPosition: {
-            latitude: 48.63665,   // Brittany, France
+            latitude: 48.63665, // Brittany, France
             longitude: -2.02335,
           },
           gpsQuality: 'DGPS',
@@ -193,28 +192,59 @@ export const MaritimeSettings: Story = {
         <ScrollView style={{ backgroundColor: '#f8fafc' }}>
           <View style={{ padding: 20, gap: 20 }}>
             {/* GPS Widget Preview - Updates when settings change */}
-            <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 }}>
+            <View
+              style={{
+                backgroundColor: 'white',
+                padding: 16,
+                borderRadius: 8,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
               <Text style={styles.previewTitle}>📍 Live GPS Widget Preview</Text>
               <Text style={styles.previewNote}>
                 Current Position: Brittany, France (48.63665°N, 2.02335°W)
               </Text>
               <Text style={styles.previewNote}>
-                Time: {currentTime.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
+                Time:{' '}
+                {currentTime.toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  timeZoneName: 'short',
+                })}
               </Text>
 
               <View style={{ marginTop: 12, marginBottom: 8 }}>
                 <GPSWidget id="gps-preview" title="GPS Position" />
               </View>
 
-              <View style={{ backgroundColor: '#eff6ff', padding: 12, borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#3b82f6' }}>
-                <Text style={{ fontSize: 13, color: '#1e40af', fontWeight: '600', marginBottom: 4 }}>
+              <View
+                style={{
+                  backgroundColor: '#eff6ff',
+                  padding: 12,
+                  borderRadius: 8,
+                  borderLeftWidth: 3,
+                  borderLeftColor: '#3b82f6',
+                }}
+              >
+                <Text
+                  style={{ fontSize: 13, color: '#1e40af', fontWeight: '600', marginBottom: 4 }}
+                >
                   💡 Interactive Demo
                 </Text>
                 <Text style={{ fontSize: 12, color: '#1e40af', lineHeight: 18 }}>
-                  • Change <Text style={styles.bold}>Coordinate Format</Text> below to see LAT/LON display update{'\n'}
-                  • Adjust <Text style={styles.bold}>Date/Time Format</Text> to see expanded view change{'\n'}
-                  • Select <Text style={styles.bold}>Timezone</Text> to see local time conversion{'\n'}
-                  • Click the ⌄ caret to expand/collapse the widget
+                  • Change <Text style={styles.bold}>Coordinate Format</Text> below to see LAT/LON
+                  display update{'\n'}• Adjust <Text style={styles.bold}>Date/Time Format</Text> to
+                  see expanded view change{'\n'}• Select <Text style={styles.bold}>Timezone</Text>{' '}
+                  to see local time conversion{'\n'}• Click the ⌄ caret to expand/collapse the
+                  widget
                 </Text>
               </View>
             </View>
@@ -226,14 +256,19 @@ export const MaritimeSettings: Story = {
             <View style={styles.implementationNotes}>
               <Text style={styles.notesTitle}>✅ Implementation Features</Text>
               <Text style={styles.notesText}>
-                ✓ <Text style={styles.bold}>GPS Section:</Text> Coordinate format (DD/DDM/DMS/UTM), Date, Time, Timezone{'\n'}
-                ✓ <Text style={styles.bold}>Ship Time Section:</Text> Date, Time, Timezone (without coordinate format){'\n'}
-                ✓ <Text style={styles.bold}>Timezone Dropdown:</Text> UTC±n format with major cities/countries{'\n'}
-                ✓ <Text style={styles.bold}>Proper Maritime Abbreviations:</Text> DD, DDM, DMS, UTM instead of symbols{'\n'}
-                ✓ <Text style={styles.bold}>Time Format Notation:</Text> HH:mm, hh:mm a, etc. instead of component letters{'\n'}
-                ✓ <Text style={styles.bold}>Separate Settings:</Text> GPS for navigation, Ship Time for ETAs/schedules{'\n'}
-                ✓ <Text style={styles.bold}>Comprehensive Timezones:</Text> 50+ zones with half-hour offsets included{'\n'}
-                ✓ <Text style={styles.bold}>Real-time Updates:</Text> Widget reflects settings changes immediately
+                ✓ <Text style={styles.bold}>GPS Section:</Text> Coordinate format (DD/DDM/DMS/UTM),
+                Date, Time, Timezone{'\n'}✓ <Text style={styles.bold}>Ship Time Section:</Text>{' '}
+                Date, Time, Timezone (without coordinate format){'\n'}✓{' '}
+                <Text style={styles.bold}>Timezone Dropdown:</Text> UTC±n format with major
+                cities/countries{'\n'}✓{' '}
+                <Text style={styles.bold}>Proper Maritime Abbreviations:</Text> DD, DDM, DMS, UTM
+                instead of symbols{'\n'}✓ <Text style={styles.bold}>Time Format Notation:</Text>{' '}
+                HH:mm, hh:mm a, etc. instead of component letters{'\n'}✓{' '}
+                <Text style={styles.bold}>Separate Settings:</Text> GPS for navigation, Ship Time
+                for ETAs/schedules{'\n'}✓ <Text style={styles.bold}>Comprehensive Timezones:</Text>{' '}
+                50+ zones with half-hour offsets included{'\n'}✓{' '}
+                <Text style={styles.bold}>Real-time Updates:</Text> Widget reflects settings changes
+                immediately
               </Text>
             </View>
           </View>
@@ -317,10 +352,30 @@ export const MaritimeThemes: Story = {
 
     // Theme options
     const themes: { mode: ThemeMode; label: string; description: string; bgColor: string }[] = [
-      { mode: 'day', label: '☀️ Day', description: 'High contrast for outdoor visibility', bgColor: '#ffffff' },
-      { mode: 'night', label: '🌙 Night', description: 'Reduced brightness for indoor use', bgColor: '#1a1a2e' },
-      { mode: 'red-night', label: '👁️ Red Night', description: 'Marine night vision preservation', bgColor: '#0f0000' },
-      { mode: 'auto', label: '🕐 Auto', description: 'Automatic theme based on time', bgColor: '#f0f0f0' },
+      {
+        mode: 'day',
+        label: '☀️ Day',
+        description: 'High contrast for outdoor visibility',
+        bgColor: '#ffffff',
+      },
+      {
+        mode: 'night',
+        label: '🌙 Night',
+        description: 'Reduced brightness for indoor use',
+        bgColor: '#1a1a2e',
+      },
+      {
+        mode: 'red-night',
+        label: '👁️ Red Night',
+        description: 'Marine night vision preservation',
+        bgColor: '#0f0000',
+      },
+      {
+        mode: 'auto',
+        label: '🕐 Auto',
+        description: 'Automatic theme based on time',
+        bgColor: '#f0f0f0',
+      },
     ];
 
     return (
@@ -373,19 +428,21 @@ export const MaritimeThemes: Story = {
             </View>
 
             {/* Current Theme Info */}
-            <View style={{ backgroundColor: '#eff6ff', padding: 12, borderRadius: 8, marginBottom: 20 }}>
+            <View
+              style={{ backgroundColor: '#eff6ff', padding: 12, borderRadius: 8, marginBottom: 20 }}
+            >
               <Text style={{ fontSize: 14, color: '#1e40af', fontWeight: '600' }}>
-                {themes.find(t => t.mode === selectedTheme)?.label || 'Day'}
+                {themes.find((t) => t.mode === selectedTheme)?.label || 'Day'}
               </Text>
               <Text style={{ fontSize: 12, color: '#1e40af', marginTop: 4 }}>
-                {themes.find(t => t.mode === selectedTheme)?.description}
+                {themes.find((t) => t.mode === selectedTheme)?.description}
               </Text>
             </View>
 
             {/* GPS Widget with Dynamic Background */}
             <View
               style={{
-                backgroundColor: themes.find(t => t.mode === selectedTheme)?.bgColor || '#ffffff',
+                backgroundColor: themes.find((t) => t.mode === selectedTheme)?.bgColor || '#ffffff',
                 padding: 20,
                 borderRadius: 12,
               }}
@@ -394,17 +451,25 @@ export const MaritimeThemes: Story = {
             </View>
 
             {/* Implementation Notes */}
-            <View style={{ backgroundColor: '#f0fdf4', padding: 16, borderRadius: 12, marginTop: 20, borderLeftWidth: 4, borderLeftColor: '#22c55e' }}>
+            <View
+              style={{
+                backgroundColor: '#f0fdf4',
+                padding: 16,
+                borderRadius: 12,
+                marginTop: 20,
+                borderLeftWidth: 4,
+                borderLeftColor: '#22c55e',
+              }}
+            >
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#15803d', marginBottom: 8 }}>
                 💡 Interactive Demo
               </Text>
               <Text style={{ fontSize: 14, color: '#15803d', lineHeight: 20 }}>
-                • Select different themes above to see the GPS widget adapt{'\n'}
-                • Click the ⌄ caret to expand and see Date/Time with theme styling{'\n'}
-                • Day theme: High contrast for outdoor sunlight visibility{'\n'}
-                • Night theme: Reduced brightness for cockpit use at night{'\n'}
-                • Red Night: Preserves night-adapted vision for navigation{'\n'}
-                • Auto: Switches automatically based on time of day
+                • Select different themes above to see the GPS widget adapt{'\n'}• Click the ⌄ caret
+                to expand and see Date/Time with theme styling{'\n'}• Day theme: High contrast for
+                outdoor sunlight visibility{'\n'}• Night theme: Reduced brightness for cockpit use
+                at night{'\n'}• Red Night: Preserves night-adapted vision for navigation{'\n'}•
+                Auto: Switches automatically based on time of day
               </Text>
             </View>
           </View>
@@ -436,7 +501,9 @@ export const WidgetStates: Story = {
 
         <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 8 }}>
           <GPSWidget id="gps-expanded" title="GPS (Expanded)" />
-          <Text style={{ marginTop: 8, color: '#666' }}>Expanded: Shows LAT/LON + UTC Date/Time</Text>
+          <Text style={{ marginTop: 8, color: '#666' }}>
+            Expanded: Shows LAT/LON + UTC Date/Time
+          </Text>
         </View>
       </View>
     </MockStoreProvider>

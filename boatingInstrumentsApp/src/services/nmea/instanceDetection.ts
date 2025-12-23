@@ -4,16 +4,16 @@ import { WidgetMetadataRegistry } from '../../registry/WidgetMetadataRegistry';
 
 /**
  * NMEA Instance Detection Service
- * 
+ *
  * Detects marine instruments and multi-instance devices from NMEA data.
  * Uses Widget Factory and Metadata Registry for consistent widget creation.
- * 
+ *
  * Responsibilities:
  * - NMEA data scanning and parsing
  * - Instance lifecycle management
  * - Device detection and monitoring
  * - Callback notifications for widget updates
- * 
+ *
  * Widget metadata (titles, icons, categories) handled by WidgetFactory.
  */
 
@@ -39,13 +39,22 @@ const NMEA_INSTRUMENT_DETECTION = {
   depth: {
     pgns: [128267], // Water Depth
     sentences: ['DPT', 'DBT'], // Depth sentences
-  }
+  },
 } as const;
 
 // Types for detected instances
 export interface DetectedInstance {
   id: string;
-  type: 'gps' | 'compass' | 'speed' | 'wind' | 'depth' | 'engine' | 'battery' | 'tank' | 'temperature';
+  type:
+    | 'gps'
+    | 'compass'
+    | 'speed'
+    | 'wind'
+    | 'depth'
+    | 'engine'
+    | 'battery'
+    | 'tank'
+    | 'temperature';
   instance?: number; // Optional for single instruments (GPS, compass, etc.)
   title: string;
   icon: string;
@@ -98,13 +107,21 @@ class InstanceDetectionService {
   private scanTimer: NodeJS.Timeout | null = null;
   private readonly MAX_INSTANCES_PER_TYPE = 16;
   private readonly INSTANCE_TIMEOUT = 30000; // 30 seconds
-  
+
   // Event-driven detection (Phase 1 optimization)
   private lastEventTime = new Map<string, number>();
   private readonly EVENT_THROTTLE_MS = 100; // Max 10 events/sec per sensor instance
 
   // Callback system for instance updates
-  private instanceCallbacks: Array<(instances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void> = [];
+  private instanceCallbacks: Array<
+    (instances: {
+      engines: DetectedInstance[];
+      batteries: DetectedInstance[];
+      tanks: DetectedInstance[];
+      temperatures: DetectedInstance[];
+      instruments: DetectedInstance[];
+    }) => void
+  > = [];
 
   // Runtime management tracking
   private runtimeMetrics: RuntimeMetrics = {
@@ -116,12 +133,12 @@ class InstanceDetectionService {
     orphanedInstances: 0,
     memoryUsageBytes: 0,
     lastCleanupTime: 0,
-    cleanupCount: 0
+    cleanupCount: 0,
   };
 
   /**
    * Start instance detection scanning with event-driven architecture (Phase 1 optimization)
-   * 
+   *
    * Changed from 10s polling to real-time event-driven detection:
    * - Subscribes to sensor update events from nmeaStore
    * - Instant widget creation (<100ms latency vs 0-10s)
@@ -134,48 +151,48 @@ class InstanceDetectionService {
     }
 
     this.state.isScanning = true;
-    console.log('[InstanceDetection] 🚀 Starting event-driven instance detection (Phase 1)...');
-    
+
     // Run initial full scan
     this.performScan();
-    
+
     // Subscribe to real-time sensor update events
     const store = useNmeaStore.getState();
     store.sensorEventEmitter.on('sensorUpdate', this.handleSensorUpdate);
-    console.log('[InstanceDetection] ✅ Subscribed to real-time sensor events');
-    
+
     // Background cleanup timer (reduced from 10s to 60s)
     // Only removes stale instances, no longer does full scans
     this.scanTimer = setInterval(() => {
       this.cleanupStaleInstances();
       this.updateRuntimeMetrics();
     }, 60000); // 60 seconds - cleanup only
-    
-    console.log('[InstanceDetection] ⏱️  Background cleanup scheduled (60s interval)');
   }
-  
+
   /**
    * Handle real-time sensor update events (Phase 1 optimization)
-   * 
+   *
    * Called immediately when sensor data arrives (vs polling every 10s).
    * Implements throttling to prevent event storms during rapid updates.
    */
-  private handleSensorUpdate = (event: { sensorType: string; instance: number; timestamp: number }): void => {
+  private handleSensorUpdate = (event: {
+    sensorType: string;
+    instance: number;
+    timestamp: number;
+  }): void => {
     // Event throttling: prevent storms during rapid updates
     const throttleKey = `${event.sensorType}-${event.instance}`;
     const now = Date.now();
     const lastTime = this.lastEventTime.get(throttleKey) || 0;
-    
+
     if (now - lastTime < this.EVENT_THROTTLE_MS) {
       return; // Throttled - skip this update
     }
-    
+
     this.lastEventTime.set(throttleKey, now);
-    
+
     // Get current NMEA data
     const nmeaData = useNmeaStore.getState().nmeaData;
     const currentTime = Date.now();
-    
+
     // Scan only the specific sensor type that changed (optimized)
     switch (event.sensorType) {
       case 'gps':
@@ -202,12 +219,12 @@ class InstanceDetectionService {
         console.warn(`[InstanceDetection] Unknown sensor type in event: ${event.sensorType}`);
         return;
     }
-    
+
     // Update metrics and notify callbacks immediately
     this.updateRuntimeMetrics();
     this.notifyInstanceCallbacks();
   };
-  
+
   /**
    * Check if sensor has actual measurement data (not just timestamp)
    * Prevents creating widgets for "empty" sensor entries
@@ -228,12 +245,12 @@ class InstanceDetectionService {
         return sensorData.mode != null || sensorData.targetHeading != null;
       default:
         // For unknown types, require any non-timestamp, non-history field
-        return Object.keys(sensorData).some(key => 
-          key !== 'timestamp' && key !== 'history' && sensorData[key] != null
+        return Object.keys(sensorData).some(
+          (key) => key !== 'timestamp' && key !== 'history' && sensorData[key] != null,
         );
     }
   }
-  
+
   /**
    * Helper to show expected fields for debugging
    */
@@ -255,7 +272,7 @@ class InstanceDetectionService {
         return ['any non-timestamp field'];
     }
   }
-  
+
   /**
    * Get total instance count for performance monitoring
    */
@@ -272,22 +289,19 @@ class InstanceDetectionService {
     }
 
     this.state.isScanning = false;
-    
+
     // Unsubscribe from sensor events
     const store = useNmeaStore.getState();
     store.sensorEventEmitter.off('sensorUpdate', this.handleSensorUpdate);
-    console.log('[InstanceDetection] 🔌 Unsubscribed from sensor events');
-    
+
     // Stop cleanup timer
     if (this.scanTimer) {
       clearInterval(this.scanTimer);
       this.scanTimer = null;
     }
-    
+
     // Clear throttle cache
     this.lastEventTime.clear();
-    
-    console.log('[InstanceDetection] ⏹️  Stopped event-driven instance detection.');
   }
 
   /**
@@ -296,35 +310,34 @@ class InstanceDetectionService {
   private performScan(): void {
     const startTime = performance.now();
     const currentTime = Date.now();
-    
+
     try {
       // Get current NMEA data from store (use the nested nmeaData object)
       const storeState = useNmeaStore.getState();
       const nmeaData = storeState.nmeaData;
-      
+
       // Scan for all NMEA instruments and instances
       this.scanForMarineInstruments(nmeaData, currentTime);
       this.scanForEngineInstances(nmeaData, currentTime);
       this.scanForBatteryInstances(nmeaData, currentTime);
       this.scanForTankInstances(nmeaData, currentTime);
       this.scanForTemperatureInstances(nmeaData, currentTime);
-      
+
       // Clean up expired instances
       this.cleanupStaleInstances();
-      
+
       // Update runtime metrics
       this.updateRuntimeMetrics();
-      
+
       // Notify callbacks of updated instances
       this.notifyInstanceCallbacks();
-      
+
       this.state.lastScanTime = currentTime;
-      
+
       const scanDuration = performance.now() - startTime;
       if (scanDuration > 100) {
         console.warn(`[InstanceDetection] Scan took ${scanDuration.toFixed(1)}ms (target: <100ms)`);
       }
-      
     } catch (error) {
       console.error('[InstanceDetection] Error during scan:', error);
     }
@@ -339,67 +352,67 @@ class InstanceDetectionService {
 
     // Check each sensor type for presence of data
     const sensorTypeMap: Record<string, string> = {
-      'gps': 'gps',
-      'compass': 'compass', 
-      'speed': 'speed',
-      'wind': 'wind',
-      'depth': 'depth',
-      'autopilot': 'autopilot'
+      gps: 'gps',
+      compass: 'compass',
+      speed: 'speed',
+      wind: 'wind',
+      depth: 'depth',
+      autopilot: 'autopilot',
     };
 
     try {
       Object.entries(sensorTypeMap).forEach(([instrumentType, sensorType]) => {
         const sensorInstances = sensors[sensorType] || {};
-      
-      // Check each instance of this sensor type
-      Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
-        
-        if (sensorData && sensorData.timestamp) {
-          // CRITICAL FIX: Verify actual measurement data exists (not just timestamp)
-          const hasMeasurementData = this.hasValidMeasurementData(instrumentType, sensorData);
-          
-          if (!hasMeasurementData) {
-            return; // Skip - sensor has timestamp but no actual readings yet
-          }
-          
-          // Check if data is recent (within last 30 seconds)
-          const dataAge = currentTime - sensorData.timestamp;
-          if (dataAge < 30000) {
-            // Create instance-specific ID using WidgetFactory format: "gps-0", "compass-0", "depth-0", etc.
-            const instance = parseInt(instanceNum, 10);
-            const instanceId = WidgetFactory.generateInstanceWidgetId(instrumentType, instance);
-            
-            try {
-              const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
-              
-              const detectedInstance: DetectedInstance = {
-                id: instanceId,
-                type: instrumentType as DetectedInstance['type'],
-                instance: instance,
-                title: widgetInstance.title,
-                icon: widgetInstance.icon,
-                priority: this.getInstrumentPriority(instrumentType),
-                lastSeen: currentTime,
-                category: widgetInstance.category as DetectedInstance['category'],
-              };
 
-              // Log first detection
-              const isFirstDetection = !this.state.instruments.has(instanceId);
-              
-              this.state.instruments.set(instanceId, detectedInstance);
-              
-              if (isFirstDetection) {
-                console.log(`🎉 [InstanceDetection] ✅ CREATED marine instrument: ${widgetInstance.title} (instance ${instance}) - ID: ${instanceId}`);
-              } else {
-                console.log(`♻️ [InstanceDetection] Updated marine instrument: ${widgetInstance.title} (instance ${instance})`);
+        // Check each instance of this sensor type
+        Object.entries(sensorInstances).forEach(([instanceNum, sensorData]: [string, any]) => {
+          if (sensorData && sensorData.timestamp) {
+            // CRITICAL FIX: Verify actual measurement data exists (not just timestamp)
+            const hasMeasurementData = this.hasValidMeasurementData(instrumentType, sensorData);
+
+            if (!hasMeasurementData) {
+              return; // Skip - sensor has timestamp but no actual readings yet
+            }
+
+            // Check if data is recent (within last 30 seconds)
+            const dataAge = currentTime - sensorData.timestamp;
+            if (dataAge < 30000) {
+              // Create instance-specific ID using WidgetFactory format: "gps-0", "compass-0", "depth-0", etc.
+              const instance = parseInt(instanceNum, 10);
+              const instanceId = WidgetFactory.generateInstanceWidgetId(instrumentType, instance);
+
+              try {
+                const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
+
+                const detectedInstance: DetectedInstance = {
+                  id: instanceId,
+                  type: instrumentType as DetectedInstance['type'],
+                  instance: instance,
+                  title: widgetInstance.title,
+                  icon: widgetInstance.icon,
+                  priority: this.getInstrumentPriority(instrumentType),
+                  lastSeen: currentTime,
+                  category: widgetInstance.category as DetectedInstance['category'],
+                };
+
+                // Log first detection
+                const isFirstDetection = !this.state.instruments.has(instanceId);
+
+                this.state.instruments.set(instanceId, detectedInstance);
+
+                if (isFirstDetection) {
+                } else {
+                }
+              } catch (error) {
+                console.warn(
+                  `[InstanceDetection] Failed to create widget instance for ${instanceId}:`,
+                  error,
+                );
               }
-            } catch (error) {
-              console.warn(`[InstanceDetection] Failed to create widget instance for ${instanceId}:`, error);
             }
           }
-        }
+        });
       });
-    });
     } catch (error) {
       console.error('❌ [scanForMarineInstruments] ERROR during forEach:', error);
     }
@@ -411,10 +424,10 @@ class InstanceDetectionService {
   private getInstrumentPriority(instrumentType: string): number {
     const priorities: Record<string, number> = {
       gps: 1,
-      compass: 2, 
+      compass: 2,
       speed: 3,
       wind: 4,
-      depth: 5
+      depth: 5,
     };
     return priorities[instrumentType] || 10;
   }
@@ -426,27 +439,30 @@ class InstanceDetectionService {
     // NMEA Store v2.0: Look for engine sensor data
     const sensors = nmeaData.sensors || {};
     const engineSensors = sensors.engine || {};
-    
+
     // Check each engine instance for recent data
     Object.entries(engineSensors).forEach(([instanceStr, engineData]: [string, any]) => {
       const instance = parseInt(instanceStr);
       if (engineData && engineData.timestamp) {
         // CRITICAL FIX: Verify actual measurement data exists
-        const hasEngineData = engineData.rpm != null || engineData.coolantTemperature != null || 
-                             engineData.oilPressure != null || engineData.alternatorVoltage != null ||
-                             engineData.engineHours != null;
+        const hasEngineData =
+          engineData.rpm != null ||
+          engineData.coolantTemperature != null ||
+          engineData.oilPressure != null ||
+          engineData.alternatorVoltage != null ||
+          engineData.engineHours != null;
         if (!hasEngineData) {
           return; // Skip - sensor has timestamp but no actual readings yet
         }
-        
+
         // Check if data is recent (within last 30 seconds)
         const dataAge = currentTime - engineData.timestamp;
         if (dataAge < 30000) {
           const instanceId = WidgetFactory.generateInstanceWidgetId('engine', instance);
-          
+
           // Use WidgetFactory for title and metadata
           const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
-          
+
           // Create or update engine instance
           const detectedInstance: DetectedInstance = {
             id: instanceId,
@@ -458,13 +474,12 @@ class InstanceDetectionService {
             lastSeen: currentTime,
             category: widgetInstance.category as DetectedInstance['category'],
           };
-          
+
           // Log first detection
           const isFirstDetection = !this.state.engines.has(instanceId);
           this.state.engines.set(instanceId, detectedInstance);
-          
+
           if (isFirstDetection) {
-            console.log(`[InstanceDetection] Detected engine instance: ${detectedInstance.title}`);
           }
         }
       }
@@ -477,18 +492,20 @@ class InstanceDetectionService {
   private scanForBatteryInstances(nmeaData: any, currentTime: number): void {
     const sensors = nmeaData.sensors || {};
     const batterySensors = sensors.battery || {};
-    
+
     // First, use sensor data (preferred in NMEA Store v2)
     Object.entries(batterySensors).forEach(([instanceStr, batteryData]: [string, any]) => {
       const instance = parseInt(instanceStr, 10);
       if (batteryData && batteryData.timestamp) {
         // CRITICAL FIX: Verify actual measurement data exists
-        const hasBatteryData = batteryData.voltage != null || batteryData.current != null || 
-                              batteryData.stateOfCharge != null;
+        const hasBatteryData =
+          batteryData.voltage != null ||
+          batteryData.current != null ||
+          batteryData.stateOfCharge != null;
         if (!hasBatteryData) {
           return; // Skip - sensor has timestamp but no actual readings yet
         }
-        
+
         const dataAge = currentTime - batteryData.timestamp;
         if (dataAge < 30000) {
           const instanceId = WidgetFactory.generateInstanceWidgetId('battery', instance);
@@ -506,7 +523,6 @@ class InstanceDetectionService {
           const isFirstDetection = !this.state.batteries.has(instanceId);
           this.state.batteries.set(instanceId, detectedInstance);
           if (isFirstDetection) {
-            console.log(`[InstanceDetection] Detected battery instance from sensor data: ${widgetInstance.title}`);
           }
         }
       }
@@ -514,13 +530,13 @@ class InstanceDetectionService {
   }
 
   /**
-  * Scan for tank instances from sensor data (NMEA Store v2.0)
+   * Scan for tank instances from sensor data (NMEA Store v2.0)
    */
   private scanForTankInstances(nmeaData: any, currentTime: number): void {
     // NMEA Store v2.0: Check sensor data first
     const sensors = nmeaData.sensors || {};
     const tankSensors = sensors.tank || {};
-    
+
     // Check each tank instance for recent data
     Object.entries(tankSensors).forEach(([instanceStr, tankData]: [string, any]) => {
       const instance = parseInt(instanceStr);
@@ -530,16 +546,16 @@ class InstanceDetectionService {
         if (!hasTankData) {
           return; // Skip - sensor has timestamp but no actual readings yet
         }
-        
+
         // Check if data is recent (within last 30 seconds)
         const dataAge = currentTime - tankData.timestamp;
         if (dataAge < 30000) {
           const fluidType = this.mapSensorTypeToFluidType(tankData.type) || 'unknown';
           const instanceId = WidgetFactory.generateInstanceWidgetId('tank', instance);
-          
+
           // Use WidgetFactory for title and metadata
           const widgetInstance = WidgetFactory.createWidgetInstance(instanceId);
-          
+
           const detectedInstance: DetectedInstance = {
             id: instanceId,
             type: 'tank',
@@ -552,13 +568,12 @@ class InstanceDetectionService {
             fluidType,
             position: this.determinePosition(instance, fluidType),
           };
-          
+
           // Log first detection
           const isFirstDetection = !this.state.tanks.has(instanceId);
           this.state.tanks.set(instanceId, detectedInstance);
-          
+
           if (isFirstDetection) {
-            console.log(`[InstanceDetection] Detected tank instance: ${detectedInstance.title}`);
           }
         }
       }
@@ -570,7 +585,7 @@ class InstanceDetectionService {
    */
   private determinePosition(instance: number, fluidType?: string): string | undefined {
     if (!fluidType) return undefined;
-    
+
     // Use WidgetFactory to get tank position information
     // For now, return a simple position designation
     const positions: Record<string, string[]> = {
@@ -581,7 +596,7 @@ class InstanceDetectionService {
       liveWell: ['LIVE', 'BAIT'],
       ballast: ['BALLAST'],
     };
-    
+
     const typePositions = positions[fluidType] || ['UNKNOWN'];
     return typePositions[instance % typePositions.length];
   }
@@ -598,7 +613,7 @@ class InstanceDetectionService {
       liveWell: 50,
       ballast: 60,
     };
-    
+
     const basePriority = basePriorities[fluidType] || 70;
     return basePriority + instance; // Add instance to maintain ordering within type
   }
@@ -606,7 +621,9 @@ class InstanceDetectionService {
   /**
    * Map TankSensorData.type values back to fluid type strings
    */
-  private mapSensorTypeToFluidType(sensorType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater'): string {
+  private mapSensorTypeToFluidType(
+    sensorType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater',
+  ): string {
     const reverseMap: Record<string, string> = {
       fuel: 'fuel',
       water: 'freshWater',
@@ -614,20 +631,20 @@ class InstanceDetectionService {
       ballast: 'ballast',
       blackwater: 'blackWater',
     };
-    
+
     return reverseMap[sensorType || 'fuel'] || 'fuel';
   }
 
   /**
    * Scan for temperature sensor instances from NMEA data
-   * Supports PGN 130311 (Environmental Parameters), PGN 130312 (Temperature), 
+   * Supports PGN 130311 (Environmental Parameters), PGN 130312 (Temperature),
    * NMEA 0183 MTW (Mean Temperature of Water), and XDR temperature sensors
    */
   private scanForTemperatureInstances(nmeaData: any, currentTime: number): void {
     // NMEA Store v2.0: Check sensor data first (preferred approach)
     const sensors = nmeaData.sensors || {};
     const temperatureSensors = sensors.temperature || {};
-    
+
     Object.entries(temperatureSensors).forEach(([instanceStr, tempData]: [string, any]) => {
       const instance = parseInt(instanceStr);
       if (tempData && tempData.timestamp) {
@@ -636,7 +653,7 @@ class InstanceDetectionService {
         if (!hasTemperatureData) {
           return; // Skip - sensor has timestamp but no actual readings yet
         }
-        
+
         // Check if data is recent (within last 30 seconds)
         const dataAge = currentTime - tempData.timestamp;
         if (dataAge < 30000) {
@@ -645,7 +662,7 @@ class InstanceDetectionService {
           const title = `TEMP SENSOR ${instance + 1}`;
           const icon = 'thermometer-outline';
           const location = tempData.location || `sensor${instance}`;
-          
+
           const detectedInstance: DetectedInstance = {
             id: instanceId,
             type: 'temperature',
@@ -660,27 +677,31 @@ class InstanceDetectionService {
 
           const isFirstDetection = !this.state.temperatures.has(instanceId);
           this.state.temperatures.set(instanceId, detectedInstance);
-          
+
           if (isFirstDetection) {
-            console.log(`[InstanceDetection] Temperature sensor ${instance} detected from sensor data: ${title} (${tempData.temperature}°C)`);
           }
         }
       }
     });
   }
 
-    /**
+  /**
    * Remove instances that haven't been seen recently
    */
   private cleanupStaleInstances(): void {
     const currentTime = Date.now();
     const staleThreshold = currentTime - this.INSTANCE_TIMEOUT;
-    
-    [this.state.engines, this.state.batteries, this.state.tanks, this.state.temperatures, this.state.instruments].forEach(instanceMap => {
+
+    [
+      this.state.engines,
+      this.state.batteries,
+      this.state.tanks,
+      this.state.temperatures,
+      this.state.instruments,
+    ].forEach((instanceMap) => {
       instanceMap.forEach((instance, id) => {
         if (instance.lastSeen < staleThreshold) {
           instanceMap.delete(id);
-          console.log(`[InstanceDetection] Removed stale ${instance.type} instance: ${id}`);
         }
       });
     });
@@ -693,14 +714,16 @@ class InstanceDetectionService {
     this.runtimeMetrics.activeEngines = this.state.engines.size;
     this.runtimeMetrics.activeBatteries = this.state.batteries.size;
     this.runtimeMetrics.activeTanks = this.state.tanks.size;
-    this.runtimeMetrics.totalInstances = this.runtimeMetrics.activeEngines + 
-                                         this.runtimeMetrics.activeBatteries + 
-                                         this.runtimeMetrics.activeTanks;
-    
+    this.runtimeMetrics.totalInstances =
+      this.runtimeMetrics.activeEngines +
+      this.runtimeMetrics.activeBatteries +
+      this.runtimeMetrics.activeTanks;
+
     // Estimate memory usage (rough calculation)
     const avgInstanceSize = 200; // Approximate bytes per DetectedInstance
     const callbacksSize = this.instanceCallbacks.length * 100; // Approximate callback overhead
-    this.runtimeMetrics.memoryUsageBytes = (this.runtimeMetrics.totalInstances * avgInstanceSize) + callbacksSize;
+    this.runtimeMetrics.memoryUsageBytes =
+      this.runtimeMetrics.totalInstances * avgInstanceSize + callbacksSize;
   }
 
   /**
@@ -717,8 +740,12 @@ class InstanceDetectionService {
       engines: Array.from(this.state.engines.values()).sort((a, b) => a.priority - b.priority),
       batteries: Array.from(this.state.batteries.values()).sort((a, b) => a.priority - b.priority),
       tanks: Array.from(this.state.tanks.values()).sort((a, b) => a.priority - b.priority),
-      temperatures: Array.from(this.state.temperatures.values()).sort((a, b) => a.priority - b.priority),
-      instruments: Array.from(this.state.instruments.values()).sort((a, b) => a.priority - b.priority),
+      temperatures: Array.from(this.state.temperatures.values()).sort(
+        (a, b) => a.priority - b.priority,
+      ),
+      instruments: Array.from(this.state.instruments.values()).sort(
+        (a, b) => a.priority - b.priority,
+      ),
     };
   }
 
@@ -752,14 +779,29 @@ class InstanceDetectionService {
   /**
    * Register a callback for instance detection updates
    */
-  public onInstancesDetected(callback: (instances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[]; instruments: DetectedInstance[] }) => void): void {
+  public onInstancesDetected(
+    callback: (instances: {
+      engines: DetectedInstance[];
+      batteries: DetectedInstance[];
+      tanks: DetectedInstance[];
+      temperatures: DetectedInstance[];
+      instruments: DetectedInstance[];
+    }) => void,
+  ): void {
     this.instanceCallbacks.push(callback);
   }
 
   /**
    * Remove a callback for instance detection updates
    */
-  public offInstancesDetected(callback: (instances: { engines: DetectedInstance[]; batteries: DetectedInstance[]; tanks: DetectedInstance[]; temperatures: DetectedInstance[] }) => void): void {
+  public offInstancesDetected(
+    callback: (instances: {
+      engines: DetectedInstance[];
+      batteries: DetectedInstance[];
+      tanks: DetectedInstance[];
+      temperatures: DetectedInstance[];
+    }) => void,
+  ): void {
     const index = this.instanceCallbacks.indexOf(callback);
     if (index > -1) {
       this.instanceCallbacks.splice(index, 1);
@@ -779,10 +821,9 @@ class InstanceDetectionService {
    * Force cleanup of expired instances (manual trigger)
    */
   public forceCleanup(): void {
-    console.log('[InstanceDetection] Manual cleanup triggered');
     this.cleanupStaleInstances();
     this.updateRuntimeMetrics();
-    
+
     // Notify callbacks if instances were removed
     this.notifyInstanceCallbacks();
   }
@@ -800,9 +841,8 @@ class InstanceDetectionService {
       orphanedInstances: 0,
       memoryUsageBytes: 0,
       lastCleanupTime: 0,
-      cleanupCount: 0
+      cleanupCount: 0,
     };
-    console.log('[InstanceDetection] Runtime metrics reset');
   }
 
   /**
@@ -810,7 +850,6 @@ class InstanceDetectionService {
    */
   private notifyInstanceCallbacks(): void {
     if (this.instanceCallbacks.length === 0) {
-      console.log('[InstanceDetection] ⚠️ No callbacks registered for instance updates');
       return;
     }
 
@@ -822,9 +861,12 @@ class InstanceDetectionService {
       instruments: Array.from(this.state.instruments.values()),
     };
 
-    const totalInstances = instances.engines.length + instances.batteries.length + 
-                          instances.tanks.length + instances.temperatures.length + 
-                          instances.instruments.length;
+    const totalInstances =
+      instances.engines.length +
+      instances.batteries.length +
+      instances.tanks.length +
+      instances.temperatures.length +
+      instances.instruments.length;
 
     for (const callback of this.instanceCallbacks) {
       try {

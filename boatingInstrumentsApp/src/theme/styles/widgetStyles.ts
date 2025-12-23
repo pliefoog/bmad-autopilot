@@ -210,7 +210,7 @@ export const createWidgetStyles = (theme: ThemeColors) =>
  */
 export const getStateColor = (
   state: 'normal' | 'alarm' | 'warning' | 'no-data' | 'highlighted',
-  theme: ThemeColors
+  theme: ThemeColors,
 ): string => {
   switch (state) {
     case 'alarm':
@@ -231,7 +231,7 @@ export const getStateColor = (
  */
 export const getStateBackgroundColor = (
   state: 'normal' | 'alarm' | 'warning' | 'no-data' | 'highlighted',
-  theme: ThemeColors
+  theme: ThemeColors,
 ): string => {
   switch (state) {
     case 'alarm':

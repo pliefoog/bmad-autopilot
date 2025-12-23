@@ -1,9 +1,9 @@
 /**
  * Pure Store Updater Component
- * 
+ *
  * Single point for updating NMEA store with intelligent throttling and batching.
  * Handles data freshness, update frequency control, and store synchronization.
- * 
+ *
  * Key Principles:
  * - Single responsibility - only store updates
  * - Intelligent throttling to prevent UI thrashing
@@ -11,12 +11,10 @@
  * - Data freshness validation
  */
 
-// Master toggle for PureStoreUpdater logging (produces hundreds of logs per minute)
-const ENABLE_STORE_UPDATER_LOGGING = false;
-const log = (...args: any[]) => ENABLE_STORE_UPDATER_LOGGING && console.log(...args);
-const warn = (...args: any[]) => ENABLE_STORE_UPDATER_LOGGING && console.warn(...args);
-// Errors ALWAYS show regardless of logging toggle
+import { log } from '../../../utils/logging/logger';
+// Errors and warnings ALWAYS show regardless of logging toggle
 const error = console.error.bind(console);
+const warn = console.warn.bind(console);
 
 import { useNmeaStore } from '../../../store/nmeaStore';
 import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
@@ -39,11 +37,11 @@ export interface UpdateOptions {
 
 export class PureStoreUpdater {
   private static instance: PureStoreUpdater;
-  
+
   // Throttling management
   private lastUpdateTimes: Map<string, number> = new Map();
   private readonly DEFAULT_THROTTLE_MS = 1000; // 1 second default throttling
-  
+
   // Update statistics
   private updateCount = 0;
   private throttledCount = 0;
@@ -58,7 +56,9 @@ export class PureStoreUpdater {
   /**
    * Update connection status in store
    */
-  updateConnectionStatus(status: { state: 'disconnected' | 'connecting' | 'connected' | 'error' }): void {
+  updateConnectionStatus(status: {
+    state: 'disconnected' | 'connecting' | 'connected' | 'error';
+  }): void {
     // Map connection manager states to store states
     const storeState = status.state === 'error' ? 'disconnected' : status.state;
     useNmeaStore.getState().setConnectionStatus(storeState);
@@ -90,7 +90,7 @@ export class PureStoreUpdater {
     try {
       // Process message using new NmeaSensorProcessor
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
-      
+
       if (!result.success) {
         // Log processing errors but don't treat as failures
         if (useNmeaStore.getState().debugMode) {
@@ -100,7 +100,7 @@ export class PureStoreUpdater {
           updated: false,
           throttled: false,
           batchedFields: [],
-          reason: `Processing failed: ${result.errors?.join(', ')}`
+          reason: `Processing failed: ${result.errors?.join(', ')}`,
         };
       }
 
@@ -112,16 +112,15 @@ export class PureStoreUpdater {
         updated: false,
         throttled: false,
         batchedFields: [],
-        reason: 'No sensor updates generated'
+        reason: 'No sensor updates generated',
       };
-    
     } catch (error) {
       error('[PureStoreUpdater] Error processing NMEA message:', error);
       return {
         updated: false,
         throttled: false,
         batchedFields: [],
-        reason: `Exception: ${error instanceof Error ? error.message : 'Unknown error'}`
+        reason: `Exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }
@@ -132,32 +131,31 @@ export class PureStoreUpdater {
   processBinaryPgnFrame(frame: BinaryPgnFrame, options: UpdateOptions = {}): UpdateResult {
     try {
       const hexData = Array.from(frame.data)
-        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+        .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
         .join('');
-      
-      console.log(`[PureStoreUpdater] Processing binary PGN ${frame.pgn} (0x${frame.pgn.toString(16).toUpperCase()}), data: ${hexData}`);
-      
+
       // Convert binary frame to sensor updates based on PGN
       const updates = this.parseBinaryPgnToUpdates(frame);
-      
+
       if (updates.length > 0) {
         return this.applySensorUpdates(updates, options);
       }
-      
+
       return {
         updated: false,
         throttled: false,
         batchedFields: [],
-        reason: 'No sensor updates generated from binary PGN'
+        reason: 'No sensor updates generated from binary PGN',
       };
-
     } catch (error) {
       error('[PureStoreUpdater] Error processing binary PGN frame:', error);
       return {
         updated: false,
         throttled: false,
         batchedFields: [],
-        reason: `Binary frame exception: ${error instanceof Error ? error.message : 'Unknown error'}`
+        reason: `Binary frame exception: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
       };
     }
   }
@@ -167,15 +165,16 @@ export class PureStoreUpdater {
    */
   private parseBinaryPgnToUpdates(frame: BinaryPgnFrame): SensorUpdate[] {
     const hexData = Array.from(frame.data)
-      .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+      .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
       .join('');
-    
+
     const timestamp = Date.now();
     const updates: SensorUpdate[] = [];
 
     try {
       switch (frame.pgn) {
-        case 128267: { // Water Depth
+        case 128267: {
+          // Water Depth
           const depthData = pgnParser.parseDepthPgn(hexData);
           if (depthData) {
             updates.push({
@@ -187,14 +186,15 @@ export class PureStoreUpdater {
               data: {
                 depth: depthData.depth,
                 referencePoint: 'transducer' as const,
-                sentenceType: 'DPT' as const
-              }
+                sentenceType: 'DPT' as const,
+              },
             });
           }
           break;
         }
 
-        case 128259: { // Speed
+        case 128259: {
+          // Speed
           const speedData = pgnParser.parseSpeedPgn(hexData);
           if (speedData) {
             updates.push({
@@ -204,14 +204,15 @@ export class PureStoreUpdater {
               unit: 'knots',
               timestamp,
               data: {
-                throughWater: speedData.speed
-              }
+                throughWater: speedData.speed,
+              },
             });
           }
           break;
         }
 
-        case 130306: { // Wind
+        case 130306: {
+          // Wind
           const windData = pgnParser.parseWindPgn(hexData);
           if (windData) {
             updates.push({
@@ -223,14 +224,15 @@ export class PureStoreUpdater {
               data: {
                 speed: windData.windSpeed,
                 direction: windData.windAngle,
-                angle: windData.windAngle // @deprecated - kept for backward compatibility
-              }
+                angle: windData.windAngle, // @deprecated - kept for backward compatibility
+              },
             });
           }
           break;
         }
 
-        case 129029: { // GPS
+        case 129029: {
+          // GPS
           const gpsData = pgnParser.parseGPSPgn(hexData);
           if (gpsData) {
             updates.push({
@@ -242,15 +244,16 @@ export class PureStoreUpdater {
               data: {
                 position: {
                   latitude: gpsData.latitude,
-                  longitude: gpsData.longitude
-                }
-              }
+                  longitude: gpsData.longitude,
+                },
+              },
             });
           }
           break;
         }
 
-        case 127250: { // Heading
+        case 127250: {
+          // Heading
           const headingData = pgnParser.parseHeadingPgn(hexData);
           if (headingData) {
             updates.push({
@@ -260,14 +263,15 @@ export class PureStoreUpdater {
               unit: 'degrees',
               timestamp,
               data: {
-                heading: headingData.heading
-              }
+                heading: headingData.heading,
+              },
             });
           }
           break;
         }
 
-        case 130310: { // Temperature
+        case 130310: {
+          // Temperature
           const tempData = pgnParser.parseTemperaturePgn(hexData);
           if (tempData) {
             updates.push({
@@ -279,14 +283,15 @@ export class PureStoreUpdater {
               data: {
                 value: tempData.temperature,
                 location: 'seawater' as const,
-                units: 'C' as const
-              }
+                units: 'C' as const,
+              },
             });
           }
           break;
         }
 
-        case 127245: { // Rudder
+        case 127245: {
+          // Rudder
           const rudderData = pgnParser.parseRudderPgn(hexData);
           if (rudderData) {
             updates.push({
@@ -296,15 +301,16 @@ export class PureStoreUpdater {
               unit: 'degrees',
               timestamp,
               data: {
-                rudderAngle: rudderData.rudderAngle
-              }
+                rudderAngle: rudderData.rudderAngle,
+              },
             });
           }
           break;
         }
 
         case 127488: // Engine Rapid
-        case 127489: { // Engine Dynamic
+        case 127489: {
+          // Engine Dynamic
           const engineData = pgnParser.parseEnginePgn(frame.pgn, hexData, frame.source);
           if (engineData && engineData.engineSpeed !== undefined) {
             updates.push({
@@ -314,14 +320,15 @@ export class PureStoreUpdater {
               unit: 'rpm',
               timestamp,
               data: {
-                rpm: engineData.engineSpeed
-              }
+                rpm: engineData.engineSpeed,
+              },
             });
           }
           break;
         }
 
-        case 127508: { // Battery
+        case 127508: {
+          // Battery
           const batteryData = pgnParser.parseBatteryPgn(frame.pgn, hexData, frame.source);
           if (batteryData) {
             updates.push({
@@ -334,14 +341,15 @@ export class PureStoreUpdater {
                 voltage: batteryData.batteryVoltage,
                 current: batteryData.batteryCurrent,
                 stateOfCharge: batteryData.stateOfCharge,
-                temperature: batteryData.temperature
-              }
+                temperature: batteryData.temperature,
+              },
             });
           }
           break;
         }
 
-        case 127505: { // Tank
+        case 127505: {
+          // Tank
           const tankData = pgnParser.parseTankPgn(frame.pgn, hexData, frame.source);
           if (tankData && tankData.level !== undefined) {
             updates.push({
@@ -350,11 +358,11 @@ export class PureStoreUpdater {
               value: tankData.level,
               unit: 'percent',
               timestamp,
-              data: { 
+              data: {
                 level: tankData.level,
                 type: tankData.fluidType,
-                capacity: tankData.capacity
-              }
+                capacity: tankData.capacity,
+              },
             });
           }
           break;
@@ -376,10 +384,7 @@ export class PureStoreUpdater {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
-    const {
-      throttleMs = this.DEFAULT_THROTTLE_MS,
-      skipThrottling = false
-    } = options;
+    const { throttleMs = this.DEFAULT_THROTTLE_MS, skipThrottling = false } = options;
 
     // CRITICAL: Merge updates for same sensor/instance to prevent data loss
     // XDR sentences often contain multiple measurements (coolantTemp, oilPressure, voltage)
@@ -388,7 +393,7 @@ export class PureStoreUpdater {
 
     for (const update of updates) {
       const fieldKey = `${update.sensorType}.${update.instance}`;
-      
+
       if (mergedUpdates.has(fieldKey)) {
         // Merge data fields from this update into existing update
         const existing = mergedUpdates.get(fieldKey)!;
@@ -404,27 +409,39 @@ export class PureStoreUpdater {
       // Use field-specific throttle settings (engine=0ms, wind/gps=500ms, depth=1500ms, etc.)
       const fieldThrottle = this.getFieldThrottleMs(update.sensorType);
       const effectiveThrottle = skipThrottling ? 0 : fieldThrottle;
-      
+
       if (effectiveThrottle > 0 && this.isThrottled(fieldKey, effectiveThrottle)) {
         continue;
       }
 
       // Update sensor data in store
       try {
+        // Debug: Log depth updates to trace data flow
+        if (update.sensorType === 'depth') {
+          log.depth('PureStoreUpdater calling updateSensorData', () => ({
+            sensorType: update.sensorType,
+            instance: update.instance,
+            data: update.data,
+            hasDepth: 'depth' in update.data,
+            depthValue: (update.data as any).depth,
+          }));
+        }
+
         useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data);
         updatedFields.push(fieldKey);
         anyUpdated = true;
-        
+
         // Update throttle timestamp
         this.lastUpdateTimes.set(fieldKey, Date.now());
       } catch (error) {
         console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
       }
-    }    return {
+    }
+    return {
       updated: anyUpdated,
       throttled: false,
       batchedFields: updatedFields,
-      reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'All updates throttled'
+      reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'All updates throttled',
     };
   }
 
@@ -437,7 +454,7 @@ export class PureStoreUpdater {
       case 'gps':
         return 500; // GPS updates every 500ms for smooth movement
       case 'wind':
-        return 500;  // Wind updates more frequently
+        return 500; // Wind updates more frequently
       case 'engine':
         return 0; // Engine data: NO THROTTLING - multi-measurement XDR requires immediate updates
       case 'speed':
@@ -462,7 +479,7 @@ export class PureStoreUpdater {
   private isThrottled(fieldKey: string, throttleMs: number): boolean {
     const lastUpdate = this.lastUpdateTimes.get(fieldKey);
     if (!lastUpdate) return false;
-    return (Date.now() - lastUpdate) < throttleMs;
+    return Date.now() - lastUpdate < throttleMs;
   }
 
   /**
@@ -474,11 +491,11 @@ export class PureStoreUpdater {
     throttleRate: number;
   } {
     const throttleRate = this.updateCount > 0 ? (this.throttledCount / this.updateCount) * 100 : 0;
-    
+
     return {
       updateCount: this.updateCount,
       throttledCount: this.throttledCount,
-      throttleRate: Math.round(throttleRate * 100) / 100
+      throttleRate: Math.round(throttleRate * 100) / 100,
     };
   }
 

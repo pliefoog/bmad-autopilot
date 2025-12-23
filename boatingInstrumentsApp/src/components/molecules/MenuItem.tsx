@@ -28,27 +28,18 @@ export const MenuItem: React.FC<MenuItemProps> = ({ item, onPress }) => {
       <View style={styles.content}>
         <View style={styles.leftSection}>
           <Text style={styles.icon}>{item.icon}</Text>
-          <Text
-            style={[
-              styles.label,
-              { color: item.disabled ? theme.textSecondary : theme.text },
-            ]}
-          >
+          <Text style={[styles.label, { color: item.disabled ? theme.textSecondary : theme.text }]}>
             {item.label}
           </Text>
         </View>
-        
+
         {item.badge && (
           <View style={[styles.badge, { backgroundColor: theme.primary }]}>
-            <Text style={[styles.badgeText, { color: theme.background }]}>
-              {item.badge}
-            </Text>
+            <Text style={[styles.badgeText, { color: theme.background }]}>{item.badge}</Text>
           </View>
         )}
 
-        <Text style={[styles.chevron, { color: theme.textSecondary }]}>
-          ›
-        </Text>
+        <Text style={[styles.chevron, { color: theme.textSecondary }]}>›</Text>
       </View>
     </TouchableOpacity>
   );

@@ -47,7 +47,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'auto',
   units: {
     speed: 'knots',
-    depth: 'feet', 
+    depth: 'feet',
     temperature: 'celsius',
     pressure: 'psi',
   },
@@ -87,7 +87,6 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
     try {
       const settingsData = JSON.stringify(settings);
       await AsyncStorage.setItem(this.SETTINGS_KEY, settingsData);
-      console.log('App settings saved successfully');
     } catch (error) {
       console.error('Failed to save app settings:', error);
       throw new Error(`Settings save failed: ${error}`);
@@ -97,22 +96,19 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
   async loadSettings(): Promise<AppSettings> {
     try {
       const settingsData = await AsyncStorage.getItem(this.SETTINGS_KEY);
-      
+
       if (!settingsData) {
-        console.log('No saved settings found, using defaults');
         await this.saveSettings(DEFAULT_SETTINGS);
         return DEFAULT_SETTINGS;
       }
-      
+
       const settings = JSON.parse(settingsData) as AppSettings;
-      
+
       // Merge with defaults to handle new settings added in updates
       const mergedSettings = this.mergeWithDefaults(settings);
-      console.log('App settings loaded successfully');
       return mergedSettings;
     } catch (error) {
       console.error('Failed to load app settings:', error);
-      console.log('Returning default settings due to error');
       return DEFAULT_SETTINGS;
     }
   }
@@ -120,7 +116,6 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
   async saveThemePreference(theme: DisplayMode): Promise<void> {
     try {
       await AsyncStorage.setItem(this.THEME_KEY, theme);
-      console.log(`Theme preference saved: ${theme}`);
     } catch (error) {
       console.error('Failed to save theme preference:', error);
       throw new Error(`Theme save failed: ${error}`);
@@ -142,7 +137,6 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
       await AsyncStorage.removeItem(this.SETTINGS_KEY);
       await AsyncStorage.removeItem(this.THEME_KEY);
       await this.saveSettings(DEFAULT_SETTINGS);
-      console.log('Settings reset to defaults');
     } catch (error) {
       console.error('Failed to reset settings:', error);
       throw new Error(`Settings reset failed: ${error}`);

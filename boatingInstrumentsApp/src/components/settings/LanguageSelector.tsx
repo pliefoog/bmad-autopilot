@@ -1,6 +1,6 @@
 /**
  * LanguageSelector - Language preference selection component
- * 
+ *
  * Allows users to change the app language from a list of supported languages
  */
 
@@ -51,7 +51,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       await changeLanguage(languageCode);
       setCurrentLanguage(languageCode);
       onLanguageChanged?.(languageCode);
-      
+
       // Small delay to show the change visually
       setTimeout(() => {
         setChanging(false);
@@ -150,26 +150,17 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   });
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>
-              {t('settings.language.select')}
-            </Text>
+            <Text style={styles.headerTitle}>{t('settings.language.select')}</Text>
           </View>
 
           {changing ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>
-                {t('common.loading')}
-              </Text>
+              <Text style={styles.loadingText}>{t('common.loading')}</Text>
             </View>
           ) : (
             <>
@@ -179,20 +170,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   return (
                     <TouchableOpacity
                       key={language.code}
-                      style={[
-                        styles.languageItem,
-                        isSelected && styles.languageItemSelected,
-                      ]}
+                      style={[styles.languageItem, isSelected && styles.languageItemSelected]}
                       onPress={() => handleLanguageSelect(language.code)}
                       activeOpacity={0.7}
                     >
                       <View style={styles.languageInfo}>
-                        <Text style={styles.languageName}>
-                          {language.nativeName}
-                        </Text>
-                        <Text style={styles.languageNativeName}>
-                          {language.name}
-                        </Text>
+                        <Text style={styles.languageName}>{language.nativeName}</Text>
+                        <Text style={styles.languageNativeName}>{language.name}</Text>
                       </View>
                       {isSelected && <Text style={styles.checkmark}>✓</Text>}
                     </TouchableOpacity>
@@ -200,14 +184,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 })}
               </ScrollView>
 
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.closeButtonText}>
-                  {t('common.close')}
-                </Text>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
+                <Text style={styles.closeButtonText}>{t('common.close')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -293,10 +271,7 @@ export const InlineLanguageSelector: React.FC<{
           return (
             <TouchableOpacity
               key={language.code}
-              style={[
-                styles.languageItem,
-                isSelected && styles.languageItemSelected,
-              ]}
+              style={[styles.languageItem, isSelected && styles.languageItemSelected]}
               onPress={() => handleLanguageSelect(language.code)}
               activeOpacity={0.7}
             >

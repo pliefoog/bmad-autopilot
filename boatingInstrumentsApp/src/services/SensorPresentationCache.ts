@@ -1,17 +1,17 @@
 /**
  * Sensor Presentation Cache Service
- * 
+ *
  * **Purpose:**
  * Generates and caches display information for sensor data fields at the moment
  * of sensor detection/update. This eliminates runtime presentation lookups and
  * provides instant access to formatted values with proper units.
- * 
+ *
  * **Architecture:**
  * - Lazy initialization: Cache initializes on first sensor update
  * - Store subscription: Reacts to unit preference changes
  * - Version tracking: Increments version on preference changes for React reactivity
  * - Registry-driven: Uses SensorConfigRegistry to find fields with categories
- * 
+ *
  * **Usage:**
  * ```typescript
  * // In nmeaStore updateSensorData:
@@ -32,12 +32,12 @@
  *     soc: { value: 85, unit: '%', formatted: '85%' }
  *   }
  * }
- * 
+ *
  * // In widgets:
  * const voltage = sensor.display?.voltage;
  * return <Text>{voltage?.formatted ?? 'N/A'}</Text>;
  * ```
- * 
+ *
  * **Benefits:**
  * - ✅ One-time lookup per sensor update (not per render)
  * - ✅ No hook calls needed in widgets
@@ -66,12 +66,10 @@ class SensorPresentationCacheService {
     if (this.initialized) return;
 
     // Subscribe to presentation store changes
-    this.unsubscribe = usePresentationStore.subscribe(
-      () => {
-        // Increment version when presentation preferences change
-        this.version++;
-      }
-    );
+    this.unsubscribe = usePresentationStore.subscribe(() => {
+      // Increment version when presentation preferences change
+      this.version++;
+    });
 
     this.initialized = true;
   }
@@ -86,14 +84,14 @@ class SensorPresentationCacheService {
 
   /**
    * Enrich sensor data with display information
-   * 
+   *
    * @param sensorType - Type of sensor (battery, engine, etc.)
    * @param data - Raw sensor data object
    * @returns Sensor data with display property populated
    */
   enrichSensorData<T extends Partial<BaseSensorData>>(
     sensorType: SensorType,
-    data: T
+    data: T,
   ): T & { display?: Record<string, DisplayInfo> } {
     // Lazy initialization
     if (!this.initialized) {
@@ -115,7 +113,7 @@ class SensorPresentationCacheService {
       // Use hardwareField if available, otherwise fall back to key
       const fieldName = field.hardwareField || field.key;
       const value = (data as any)[fieldName];
-      
+
       // Skip undefined/null values
       if (value === undefined || value === null) {
         continue;
@@ -133,6 +131,7 @@ class SensorPresentationCacheService {
         display[field.key] = {
           value,
           unit: '', // No unit symbol for raw values
+          formattedValue: `${value}`,
           formatted: `${value}`,
           convert: identity,
           convertBack: identity,
@@ -148,23 +147,42 @@ class SensorPresentationCacheService {
         display[field.key] = {
           value,
           unit: '',
+          formattedValue: `${value}`,
           formatted: `${value}`,
           convert: identity,
           convertBack: identity,
         };
         continue;
       }
-      
+
       // Convert value to user's preferred units
       const convertedValue = presentation.convert(value);
-      
+
+      // Safety check: If conversion returns undefined/null/NaN, fall back to raw value
+      if (convertedValue === undefined || convertedValue === null || isNaN(convertedValue)) {
+        console.warn(
+          `[SensorPresentationCache] Invalid converted value for ${sensorType}.${field.key}: ${convertedValue}`,
+        );
+        const identity = (x: number) => x;
+        display[field.key] = {
+          value,
+          unit: '',
+          formattedValue: `${value}`,
+          formatted: `${value}`,
+          convert: identity,
+          convertBack: identity,
+        };
+        continue;
+      }
+
       // Format the value using presentation's formatter
       const formatted = presentation.format(convertedValue);
 
       display[field.key] = {
         value: convertedValue,
         unit: presentation.symbol,
-        formatted: `${formatted} ${presentation.symbol}`,
+        formattedValue: formatted, // Formatted number WITHOUT unit (e.g., "17.7")
+        formatted: `${formatted} ${presentation.symbol}`, // Formatted WITH unit (e.g., "17.7 kts")
         convert: presentation.convert,
         convertBack: presentation.convertBack,
       };

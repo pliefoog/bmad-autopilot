@@ -174,7 +174,7 @@ export interface ParseOptions {
 }
 
 // Event Types
-export type NMEAEventType = 
+export type NMEAEventType =
   | 'data'
   | 'connected'
   | 'disconnected'
@@ -212,7 +212,7 @@ export interface ValidationResult {
 }
 
 // Common NMEA Message Types
-export type NMEAMessageType = 
+export type NMEAMessageType =
   | 'GGA' // GPS fix data
   | 'RMC' // Recommended minimum
   | 'VTG' // Track made good
@@ -228,9 +228,9 @@ export type NMEAMessageType =
   | 'XTE' // Cross-track error
   | 'APB' // Autopilot sentence B
   | 'BWC' // Bearing and distance to waypoint
-  | 'BWR' // Bearing and distance to waypoint rhumb line;
+  | 'BWR'; // Bearing and distance to waypoint rhumb line;
 
-export type PGNMessageType = 
+export type PGNMessageType =
   | 127245 // Rudder
   | 127250 // Vessel Heading
   | 127488 // Engine Parameters, Rapid Update

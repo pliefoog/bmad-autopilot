@@ -1,6 +1,6 @@
 /**
  * InteractiveTutorial - Overlay-based tutorial system with step highlighting
- * 
+ *
  * Features:
  * - Step-by-step guided tutorials with visual highlights
  * - Target element highlighting with spotlight effect
@@ -154,12 +154,7 @@ export const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
   const showSafetyWarning = tutorial.safetyWarning && tutorial.category === 'safety';
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={handleSkip}
-    >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleSkip}>
       <View style={styles.container}>
         {/* Dark overlay */}
         {overlay && (
@@ -176,8 +171,6 @@ export const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
             ]}
           />
         )}
-
-        {/* Tutorial content card */}
         <Animated.View
           style={[
             styles.contentCard,
@@ -192,18 +185,14 @@ export const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTop}>
-              <Text style={[styles.title, { color: colors.text }]}>
-                {tutorial.title}
-              </Text>
+              <Text style={[styles.title, { color: colors.text }]}>{tutorial.title}</Text>
               <TouchableOpacity
                 onPress={handleSkip}
                 style={styles.skipButton}
                 accessibilityLabel="Skip tutorial"
                 accessibilityRole="button"
               >
-                <Text style={[styles.skipText, { color: colors.textSecondary }]}>
-                  Skip
-                </Text>
+                <Text style={[styles.skipText, { color: colors.textSecondary }]}>Skip</Text>
               </TouchableOpacity>
             </View>
 
@@ -233,12 +222,8 @@ export const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
               </Text>
             </View>
           )}
-
-          {/* Step content */}
           <View style={styles.stepContent}>
-            <Text style={[styles.stepTitle, { color: colors.text }]}>
-              {currentStep.title}
-            </Text>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>{currentStep.title}</Text>
             <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
               {currentStep.description}
             </Text>
@@ -280,11 +265,7 @@ export const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
 
             <TouchableOpacity
               onPress={handleNext}
-              style={[
-                styles.navButton,
-                styles.nextButton,
-                { backgroundColor: colors.primary },
-              ]}
+              style={[styles.navButton, styles.nextButton, { backgroundColor: colors.primary }]}
               accessibilityLabel={isLastStep ? 'Complete tutorial' : 'Next step'}
               accessibilityRole="button"
             >

@@ -32,17 +32,9 @@ export * from './autopilot.types';
 export * from './service.types';
 
 // Story 6.6 specific exports
-export type { 
-  StoryConnectionState, 
-  StorageService, 
-  PlaybackService 
-} from './service.types';
+export type { StoryConnectionState, StorageService, PlaybackService } from './service.types';
 
-export type { 
-  StoryThemeColors, 
-  StoryThemeSpacing, 
-  StoryThemeTypography 
-} from './theme.types';
+export type { StoryThemeColors, StoryThemeSpacing, StoryThemeTypography } from './theme.types';
 
 /**
  * Store and state management types (with renamed exports to avoid conflicts)
@@ -54,21 +46,21 @@ export type {
   AlarmState as StoreAlarmState,
   WidgetState as StoreWidgetState,
   SettingsState as StoreSettingsState,
-  
+
   // Action interfaces
   ConnectionActions,
   NmeaActions,
   AlarmActions,
   WidgetActions,
   SettingsActions,
-  
+
   // Combined store types
   ConnectionStore,
   NmeaStore,
   AlarmStore,
   WidgetStore,
   SettingsStore,
-  
+
   // Alarm types (renamed to avoid conflicts)
   Alarm as StoreAlarm,
   AlarmLevel,
@@ -76,7 +68,7 @@ export type {
   AlarmThreshold,
   AlarmSettings,
   AlarmLevelSettings,
-  
+
   // Store configuration and utilities
   StoreConfig,
   StoreMigration,
@@ -88,7 +80,7 @@ export type {
   StorePersistence,
   StoreHydration,
   StoreListener,
-  StoreSubscription
+  StoreSubscription,
 } from './store.types';
 
 /**
@@ -410,4 +402,9 @@ export type { NmeaData as NMEAData } from './nmea.types';
 export type { ConnectionConfig as Connection } from './connection.types';
 export type { Theme } from './theme.types';
 export type { AutopilotCommand as APCommand } from './autopilot.types';
-export type { Alarm as AlarmData, GenericStoreState, NMEAStoreActions, WidgetStoreActions } from './store.types';
+export type {
+  Alarm as AlarmData,
+  GenericStoreState,
+  NMEAStoreActions,
+  WidgetStoreActions,
+} from './store.types';

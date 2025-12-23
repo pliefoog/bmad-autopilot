@@ -25,7 +25,10 @@ export class PlaybackService {
     const absolute = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
     const raw = readFileSync(absolute, { encoding: 'utf8' });
     // Split into lines and filter empty lines
-    this.sentences = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    this.sentences = raw
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     this.index = 0;
 
     // Start emitting sentences at nominal NMEA rate modified by speed
@@ -50,9 +53,7 @@ export class PlaybackService {
       const validation = parseAndValidate(sentence);
       if (!validation.ok) {
         // store invalid sentence marker for QA/inspection but continue
-        console.log(`[PlaybackService] Invalid sentence: ${sentence}`);
       } else {
-        console.log(`[PlaybackService] Processing: ${sentence}`);
       }
       // Parse sentence via canonical parser and update store similarly to live connection
       try {
@@ -61,28 +62,56 @@ export class PlaybackService {
           updateSensorData('depth', 0, { depth: Number((parsed as any).depthMeters) });
         } else if (parsed && parsed.sentenceId === 'VTG' && 'speedKnots' in parsed) {
           updateSensorData('speed', 0, { stw: Number((parsed as any).speedKnots) } as any);
-        } else if (parsed && parsed.sentenceId === 'MWV' && 'windSpeed' in parsed && 'windAngle' in parsed) {
-          setNmeaData({ windAngle: Number((parsed as any).windAngle), windSpeed: Number((parsed as any).windSpeed) });
-        } else if (parsed && parsed.sentenceId === 'GGA' && 'latitude' in parsed && 'longitude' in parsed) {
+        } else if (
+          parsed &&
+          parsed.sentenceId === 'MWV' &&
+          'windSpeed' in parsed &&
+          'windAngle' in parsed
+        ) {
+          setNmeaData({
+            windAngle: Number((parsed as any).windAngle),
+            windSpeed: Number((parsed as any).windSpeed),
+          });
+        } else if (
+          parsed &&
+          parsed.sentenceId === 'GGA' &&
+          'latitude' in parsed &&
+          'longitude' in parsed
+        ) {
           const fixType = 'fixType' in parsed ? (parsed as any).fixType : undefined;
           setNmeaData({
-            gpsPosition: { lat: Number((parsed as any).latitude), lon: Number((parsed as any).longitude) },
+            gpsPosition: {
+              lat: Number((parsed as any).latitude),
+              lon: Number((parsed as any).longitude),
+            },
             gpsQuality: {
               fixType: fixType === 'fix' ? 1 : fixType === 'dgps-fix' ? 2 : 0,
-              satellites: 'satellitesInView' in parsed ? Number((parsed as any).satellitesInView) : undefined,
-              hdop: 'horizontalDilution' in parsed ? Number((parsed as any).horizontalDilution) : undefined,
-            }
+              satellites:
+                'satellitesInView' in parsed ? Number((parsed as any).satellitesInView) : undefined,
+              hdop:
+                'horizontalDilution' in parsed
+                  ? Number((parsed as any).horizontalDilution)
+                  : undefined,
+            },
           });
-        } else if (parsed && parsed.sentenceId === 'GLL' && 'latitude' in parsed && 'longitude' in parsed) {
+        } else if (
+          parsed &&
+          parsed.sentenceId === 'GLL' &&
+          'latitude' in parsed &&
+          'longitude' in parsed
+        ) {
           // GPGLL provides position only, determine fix status from validity
           const isValid = 'status' in parsed && (parsed as any).status === 'valid';
           setNmeaData({
-            gpsPosition: { lat: Number((parsed as any).latitude), lon: Number((parsed as any).longitude) },
+            gpsPosition: {
+              lat: Number((parsed as any).latitude),
+              lon: Number((parsed as any).longitude),
+            },
             gpsQuality: {
               fixType: isValid ? 2 : 0, // 2 = 2D fix if valid, 0 = no fix if invalid
               satellites: undefined, // GLL doesn't provide satellite count
               hdop: undefined, // GLL doesn't provide HDOP
-            }
+            },
           });
         } else if (parsed && parsed.sentenceId === 'HDG' && 'heading' in parsed) {
           setNmeaData({ heading: Number((parsed as any).heading) });
@@ -90,7 +119,6 @@ export class PlaybackService {
       } catch (e) {
         // ignore parse errors in playback; store still has raw sentence for debugging
       }
-
     }, intervalMs);
     // Allow Node to exit if only this timer is left (helps Jest detect open handles)
     if (this.timer && typeof (this.timer as any).unref === 'function') {

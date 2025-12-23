@@ -45,24 +45,24 @@ export interface WidgetMeta {
 /**
  * Widget categories for organization
  */
-export type WidgetCategory = 
-  | 'navigation' 
-  | 'engine' 
-  | 'environment' 
-  | 'communication' 
-  | 'safety' 
-  | 'autopilot' 
+export type WidgetCategory =
+  | 'navigation'
+  | 'engine'
+  | 'environment'
+  | 'communication'
+  | 'safety'
+  | 'autopilot'
   | 'utility';
 
 /**
  * Widget states for visual feedback
  */
-export type WidgetState = 
-  | 'normal' 
-  | 'alarm' 
+export type WidgetState =
+  | 'normal'
+  | 'alarm'
   | 'warning'
-  | 'no-data' 
-  | 'highlighted' 
+  | 'no-data'
+  | 'highlighted'
   | 'error'
   | 'loading';
 
@@ -150,9 +150,19 @@ export interface WidgetEvent {
  * Specific widget types supported by the marine instrument system
  */
 export type WidgetType =
-  | 'depth' | 'speed' | 'wind' | 'compass' | 'autopilot'
-  | 'gps' | 'temperature' | 'voltage' | 'engine' | 'alarm'
-  | 'battery' | 'tanks' | 'rudder';
+  | 'depth'
+  | 'speed'
+  | 'wind'
+  | 'compass'
+  | 'autopilot'
+  | 'gps'
+  | 'temperature'
+  | 'voltage'
+  | 'engine'
+  | 'alarm'
+  | 'battery'
+  | 'tanks'
+  | 'rudder';
 
 /**
  * Base props for widget components as specified in Story 6.6

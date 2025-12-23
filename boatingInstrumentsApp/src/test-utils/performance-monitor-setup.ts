@@ -40,12 +40,12 @@ class PerformanceMonitor {
     try {
       const thresholdPath = path.join(__dirname, '../../performance/threshold-config.json');
       const thresholdConfig = JSON.parse(fs.readFileSync(thresholdPath, 'utf-8'));
-      
+
       this.thresholds = {
         maxRenderTimeMs: thresholdConfig.performance_gates.render_performance.warn_threshold_ms,
         maxMemoryIncreaseMb: thresholdConfig.performance_gates.memory_limits.warn_threshold_mb,
         maxDataLatencyMs: thresholdConfig.performance_gates.data_latency.warn_threshold_ms,
-        minThroughputMsgSec: thresholdConfig.performance_gates.throughput.warn_threshold_msgs_sec
+        minThroughputMsgSec: thresholdConfig.performance_gates.throughput.warn_threshold_msgs_sec,
       };
     } catch (error) {
       // Use default thresholds if config file not found
@@ -53,18 +53,19 @@ class PerformanceMonitor {
         maxRenderTimeMs: 16,
         maxMemoryIncreaseMb: 50,
         maxDataLatencyMs: 100,
-        minThroughputMsgSec: 500
+        minThroughputMsgSec: 500,
       };
     }
   }
 
   private initializeMonitoring() {
     this.baselineMemory = this.getMemoryUsage();
-    
+
     // Add performance observer for React Native if available
     if (typeof global !== 'undefined' && global.performance) {
       global.performance.mark = global.performance.mark || performance.mark.bind(performance);
-      global.performance.measure = global.performance.measure || performance.measure.bind(performance);
+      global.performance.measure =
+        global.performance.measure || performance.measure.bind(performance);
     }
   }
 
@@ -78,7 +79,7 @@ class PerformanceMonitor {
   endTest(testName: string): PerformanceMetrics {
     const endTime = performance.now();
     const renderTime = endTime - this.testStartTime;
-    
+
     if (global.performance?.mark && global.performance?.measure) {
       global.performance.mark(`${testName}-end`);
       global.performance.measure(`${testName}`, `${testName}-start`, `${testName}-end`);
@@ -93,12 +94,12 @@ class PerformanceMonitor {
       dataLatency: this.measureDataLatency(),
       throughput: this.calculateThroughput(),
       testName,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.metrics.push(metrics);
     this.validateThresholds(metrics);
-    
+
     return metrics;
   }
 
@@ -125,24 +126,40 @@ class PerformanceMonitor {
     const violations: string[] = [];
 
     if (metrics.renderTime > this.thresholds.maxRenderTimeMs) {
-      violations.push(`Render time ${metrics.renderTime.toFixed(2)}ms exceeds threshold ${this.thresholds.maxRenderTimeMs}ms`);
+      violations.push(
+        `Render time ${metrics.renderTime.toFixed(2)}ms exceeds threshold ${
+          this.thresholds.maxRenderTimeMs
+        }ms`,
+      );
     }
 
     if (metrics.memoryUsage > this.thresholds.maxMemoryIncreaseMb) {
-      violations.push(`Memory increase ${metrics.memoryUsage.toFixed(2)}MB exceeds threshold ${this.thresholds.maxMemoryIncreaseMb}MB`);
+      violations.push(
+        `Memory increase ${metrics.memoryUsage.toFixed(2)}MB exceeds threshold ${
+          this.thresholds.maxMemoryIncreaseMb
+        }MB`,
+      );
     }
 
     if (metrics.dataLatency > this.thresholds.maxDataLatencyMs) {
-      violations.push(`Data latency ${metrics.dataLatency.toFixed(2)}ms exceeds threshold ${this.thresholds.maxDataLatencyMs}ms`);
+      violations.push(
+        `Data latency ${metrics.dataLatency.toFixed(2)}ms exceeds threshold ${
+          this.thresholds.maxDataLatencyMs
+        }ms`,
+      );
     }
 
     if (metrics.throughput < this.thresholds.minThroughputMsgSec) {
-      violations.push(`Throughput ${metrics.throughput.toFixed(2)} msg/sec below threshold ${this.thresholds.minThroughputMsgSec} msg/sec`);
+      violations.push(
+        `Throughput ${metrics.throughput.toFixed(2)} msg/sec below threshold ${
+          this.thresholds.minThroughputMsgSec
+        } msg/sec`,
+      );
     }
 
     if (violations.length > 0) {
       console.warn(`⚠️ Performance threshold violations in ${metrics.testName}:`);
-      violations.forEach(violation => console.warn(`  - ${violation}`));
+      violations.forEach((violation) => console.warn(`  - ${violation}`));
     }
   }
 
@@ -152,11 +169,10 @@ class PerformanceMonitor {
       timestamp: new Date().toISOString(),
       thresholds: this.thresholds,
       metrics: this.metrics,
-      summary: this.generateSummary()
+      summary: this.generateSummary(),
     };
 
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-    console.log(`📊 Performance report generated: ${reportPath}`);
   }
 
   private generateSummary() {
@@ -164,16 +180,21 @@ class PerformanceMonitor {
 
     return {
       totalTests: this.metrics.length,
-      averageRenderTime: this.metrics.reduce((sum, m) => sum + m.renderTime, 0) / this.metrics.length,
-      averageMemoryUsage: this.metrics.reduce((sum, m) => sum + m.memoryUsage, 0) / this.metrics.length,
-      averageDataLatency: this.metrics.reduce((sum, m) => sum + m.dataLatency, 0) / this.metrics.length,
-      averageThroughput: this.metrics.reduce((sum, m) => sum + m.throughput, 0) / this.metrics.length,
-      thresholdViolations: this.metrics.filter(m => 
-        m.renderTime > this.thresholds.maxRenderTimeMs ||
-        m.memoryUsage > this.thresholds.maxMemoryIncreaseMb ||
-        m.dataLatency > this.thresholds.maxDataLatencyMs ||
-        m.throughput < this.thresholds.minThroughputMsgSec
-      ).length
+      averageRenderTime:
+        this.metrics.reduce((sum, m) => sum + m.renderTime, 0) / this.metrics.length,
+      averageMemoryUsage:
+        this.metrics.reduce((sum, m) => sum + m.memoryUsage, 0) / this.metrics.length,
+      averageDataLatency:
+        this.metrics.reduce((sum, m) => sum + m.dataLatency, 0) / this.metrics.length,
+      averageThroughput:
+        this.metrics.reduce((sum, m) => sum + m.throughput, 0) / this.metrics.length,
+      thresholdViolations: this.metrics.filter(
+        (m) =>
+          m.renderTime > this.thresholds.maxRenderTimeMs ||
+          m.memoryUsage > this.thresholds.maxMemoryIncreaseMb ||
+          m.dataLatency > this.thresholds.maxDataLatencyMs ||
+          m.throughput < this.thresholds.minThroughputMsgSec,
+      ).length,
     };
   }
 }

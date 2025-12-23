@@ -13,10 +13,13 @@ export class MockServer {
     if (filePath) {
       const absolute = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
       const raw = fs.readFileSync(absolute, { encoding: 'utf8' });
-      this.sentences = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      this.sentences = raw
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       // Pre-scan loaded sentences to record invalid ones for testing/inspection
       try {
-        this.invalidSentences = this.sentences.filter(s => !parseAndValidate(s).ok);
+        this.invalidSentences = this.sentences.filter((s) => !parseAndValidate(s).ok);
       } catch (e) {
         this.invalidSentences = [];
       }
@@ -43,7 +46,9 @@ export class MockServer {
 
       socket.on('error', () => {});
       socket.on('close', () => {
-        try { clearInterval(perSocketInterval); } catch (e) {}
+        try {
+          clearInterval(perSocketInterval);
+        } catch (e) {}
       });
     });
 
@@ -61,7 +66,9 @@ export class MockServer {
         this.server.getConnections((_, sockets) => {
           // no-op: getConnections requires callback but server.close will handle
         });
-        try { this.server.close(); } catch (e) {}
+        try {
+          this.server.close();
+        } catch (e) {}
         if (typeof (this.server as any).unref === 'function') {
           (this.server as any).unref();
         }

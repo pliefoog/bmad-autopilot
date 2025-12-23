@@ -4,12 +4,12 @@
 /**
  * Connection status and state types
  */
-export type ConnectionStatus = 
-  | 'disconnected' 
-  | 'connecting' 
-  | 'connected' 
-  | 'no-data' 
-  | 'error' 
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'no-data'
+  | 'error'
   | 'reconnecting'
   | 'timeout';
 
@@ -88,7 +88,7 @@ export interface ConnectionDiagnostics {
 /**
  * Connection events and callbacks
  */
-export type ConnectionEventType = 
+export type ConnectionEventType =
   | 'connecting'
   | 'connected'
   | 'disconnected'
@@ -170,11 +170,7 @@ export interface NetworkScanResult {
 /**
  * Reconnection strategies
  */
-export type ReconnectionStrategy = 
-  | 'immediate'
-  | 'linear'
-  | 'exponential'
-  | 'custom';
+export type ReconnectionStrategy = 'immediate' | 'linear' | 'exponential' | 'custom';
 
 export interface ReconnectionOptions {
   strategy: ReconnectionStrategy;
@@ -200,7 +196,7 @@ export interface ConnectionPool {
 /**
  * Error types and handling
  */
-export type ConnectionErrorType = 
+export type ConnectionErrorType =
   | 'network-error'
   | 'timeout'
   | 'authentication'

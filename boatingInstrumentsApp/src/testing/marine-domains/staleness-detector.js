@@ -1,6 +1,6 @@
 /**
  * Staleness Detection Utilities for Marine Safety
- * 
+ *
  * PURPOSE: Provide 5-second marine safety threshold staleness detection for critical marine instrumentation
  * REQUIREMENT: AC-11.5.5 - Staleness Detection and Marine Safety Thresholds
  * METHOD: Data age monitoring with 5-second marine safety threshold and timeout detection
@@ -10,21 +10,21 @@
 
 const MARINE_STALENESS_THRESHOLDS = {
   criticalSystems: {
-    stalenessThresholdMs: 5000,       // 5-second marine safety threshold
-    dataAgeWarningMs: 3000,           // 3-second warning threshold
-    maxDataGapMs: 10000,              // Maximum acceptable data gap
-    criticalSystemTimeoutMs: 2000     // Critical system timeout
+    stalenessThresholdMs: 5000, // 5-second marine safety threshold
+    dataAgeWarningMs: 3000, // 3-second warning threshold
+    maxDataGapMs: 10000, // Maximum acceptable data gap
+    criticalSystemTimeoutMs: 2000, // Critical system timeout
   },
   navigationSystems: {
-    gpsMaxAge: 1000,                  // GPS data maximum age (1 second)
-    compassMaxAge: 500,               // Compass data maximum age (500ms)
-    speedMaxAge: 1000,                // Speed data maximum age (1 second)
+    gpsMaxAge: 1000, // GPS data maximum age (1 second)
+    compassMaxAge: 500, // Compass data maximum age (500ms)
+    speedMaxAge: 1000, // Speed data maximum age (1 second)
   },
   autopilotSystems: {
-    commandResponseTimeout: 1000,     // 1-second autopilot response timeout
-    statusUpdateMaxAge: 500,          // Autopilot status update maximum age
-    emergencyStopTimeout: 500         // Emergency stop response timeout
-  }
+    commandResponseTimeout: 1000, // 1-second autopilot response timeout
+    statusUpdateMaxAge: 500, // Autopilot status update maximum age
+    emergencyStopTimeout: 500, // Emergency stop response timeout
+  },
 };
 
 /**
@@ -37,7 +37,10 @@ class StalenessDetector {
    * @param {number} thresholdMs - Staleness threshold in milliseconds (default: 5000ms)
    * @returns {boolean} True if data is fresh, false if stale
    */
-  checkDataFreshness(timestamp, thresholdMs = MARINE_STALENESS_THRESHOLDS.criticalSystems.stalenessThresholdMs) {
+  checkDataFreshness(
+    timestamp,
+    thresholdMs = MARINE_STALENESS_THRESHOLDS.criticalSystems.stalenessThresholdMs,
+  ) {
     const now = Date.now();
     const dataAge = now - timestamp;
     return dataAge <= thresholdMs;
@@ -83,12 +86,12 @@ class StalenessDetector {
         isStale,
         isWarning,
         marineCompliant: !isStale,
-        threshold: MARINE_STALENESS_THRESHOLDS.criticalSystems.stalenessThresholdMs
+        threshold: MARINE_STALENESS_THRESHOLDS.criticalSystems.stalenessThresholdMs,
       });
     });
 
-    const staleSystemCount = results.filter(r => r.isStale).length;
-    const warningSystemCount = results.filter(r => r.isWarning).length;
+    const staleSystemCount = results.filter((r) => r.isStale).length;
+    const warningSystemCount = results.filter((r) => r.isWarning).length;
 
     return {
       marineCompliant: staleSystemCount === 0,
@@ -96,7 +99,7 @@ class StalenessDetector {
       staleSystems: staleSystemCount,
       warningSystems: warningSystemCount,
       results,
-      crashFreeSupport: staleSystemCount === 0 // Supports 99.5% crash-free session rate
+      crashFreeSupport: staleSystemCount === 0, // Supports 99.5% crash-free session rate
     };
   }
 
@@ -112,5 +115,5 @@ class StalenessDetector {
 
 module.exports = {
   StalenessDetector,
-  MARINE_STALENESS_THRESHOLDS
+  MARINE_STALENESS_THRESHOLDS,
 };

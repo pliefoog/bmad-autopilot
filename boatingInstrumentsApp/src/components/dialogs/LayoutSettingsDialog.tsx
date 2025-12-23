@@ -1,7 +1,7 @@
 /**
  * Layout Settings Dialog
  * Epic 8 - Phase 2: Platform-Native Dialog Migration
- * 
+ *
  * Consolidated widget lifecycle and layout reset settings
  * Features:
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
@@ -9,7 +9,7 @@
  * - TV remote navigation support
  * - Viewing-distance-optimized typography
  * - Glove-friendly touch targets
- * 
+ *
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal structure
  * - No action button (contains embedded PlatformButton controls)
@@ -21,10 +21,7 @@ import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
-import { 
-  PlatformSettingsSection, 
-  PlatformSettingsRow 
-} from '../settings';
+import { PlatformSettingsSection, PlatformSettingsRow } from '../settings';
 import { PlatformButton } from './inputs/PlatformButton';
 
 interface LayoutSettingsDialogProps {
@@ -32,16 +29,10 @@ interface LayoutSettingsDialogProps {
   onClose: () => void;
 }
 
-export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
-  visible,
-  onClose,
-}) => {
+export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = React.useMemo(
-    () => createStyles(theme),
-    [theme]
-  );
-  
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+
   const {
     resetLayoutToAutoDiscovery,
     enableWidgetAutoRemoval,
@@ -50,7 +41,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
     setWidgetExpirationTimeout,
   } = useWidgetStore();
 
-  const dashboardConfig = useWidgetStore(state => state.dashboard);
+  const dashboardConfig = useWidgetStore((state) => state.dashboard);
 
   const timeoutMinutes = Math.round(widgetExpirationTimeout / 60000);
   const [selectedTimeout, setSelectedTimeout] = React.useState(timeoutMinutes);
@@ -75,7 +66,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
   ];
 
   const [focusedIndex, setFocusedIndex] = React.useState(
-    timeoutOptions.findIndex(opt => opt.value === selectedTimeout)
+    timeoutOptions.findIndex((opt) => opt.value === selectedTimeout),
   );
 
   return (
@@ -88,10 +79,10 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
       {/* Layout Mode Section */}
       <PlatformSettingsSection title="Layout Mode">
         <View style={styles.infoBox}>
-          <UniversalIcon 
-            name="information-circle-outline" 
-            size={24} 
-            color={theme.primary} 
+          <UniversalIcon
+            name="information-circle-outline"
+            size={24}
+            color={theme.primary}
             style={styles.infoIcon}
           />
           <Text style={styles.infoText}>
@@ -130,7 +121,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({
           isFirst
           isLast={!enableWidgetAutoRemoval}
         />
-        
+
         {enableWidgetAutoRemoval && (
           <View style={styles.timeoutContainer}>
             <Text style={styles.timeoutLabel}>

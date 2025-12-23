@@ -1,6 +1,6 @@
 /**
  * i18n Configuration
- * 
+ *
  * Internationalization setup for BMad Autopilot app
  * Supports multiple languages with fallback to English
  */
@@ -95,7 +95,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'it', name: 'Italian', nativeName: 'Italiano' },
 ] as const;
 
-export type LanguageCode = typeof SUPPORTED_LANGUAGES[number]['code'];
+export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]['code'];
 
 /**
  * Change language programmatically
@@ -104,7 +104,6 @@ export async function changeLanguage(languageCode: LanguageCode): Promise<void> 
   try {
     await i18n.changeLanguage(languageCode);
     await AsyncStorage.setItem(LANGUAGE_KEY, languageCode);
-    console.log(`[i18n] Language changed to: ${languageCode}`);
   } catch (error) {
     console.error('[i18n] Failed to change language:', error);
     throw error;
@@ -122,6 +121,6 @@ export function getCurrentLanguage(): string {
  * Get language display name
  */
 export function getLanguageDisplayName(code: string): string {
-  const language = SUPPORTED_LANGUAGES.find(lang => lang.code === code);
+  const language = SUPPORTED_LANGUAGES.find((lang) => lang.code === code);
   return language ? language.nativeName : code;
 }

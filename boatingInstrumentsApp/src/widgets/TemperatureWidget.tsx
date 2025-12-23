@@ -46,30 +46,27 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
     // NEW: Get session stats method from store
     const getSessionStats = useNmeaStore((state) => state.getSessionStats);
 
-    // NMEA data - Phase 1 Optimization: Selective field subscriptions with shallow equality
-    const temperature = useNmeaStore(
-      (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.value ?? null,
-      (a, b) => a === b,
-    );
-    const location = useNmeaStore(
-      (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.location ?? 'unknown',
-      (a, b) => a === b,
-    );
-    const units = useNmeaStore(
-      (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.units ?? 'C',
-      (a, b) => a === b,
-    );
-    const sensorName = useNmeaStore(
-      (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.name ?? title,
-      (a, b) => a === b,
-    );
-    const temperatureTimestamp = useNmeaStore(
-      (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp,
-    );
+    // NMEA data - Read SensorInstance once, extract all metrics via getMetric()
     const temperatureSensorData = useNmeaStore(
       (state) => state.nmeaData.sensors.temperature?.[instanceNumber],
       (a, b) => a === b,
     );
+
+    // Extract numeric MetricValue
+    const temperatureMetric = temperatureSensorData?.getMetric('value');
+    const temperature = (temperatureMetric?.si_value as number | null) ?? null;
+
+    // Extract string MetricValues (now properly stored in _metrics Map)
+    const locationMetric = temperatureSensorData?.getMetric('location');
+    const location = (locationMetric?.si_value as string) ?? 'unknown';
+
+    const unitsMetric = temperatureSensorData?.getMetric('units');
+    const units = (unitsMetric?.si_value as string) ?? 'C';
+
+    const nameMetric = temperatureSensorData?.getMetric('name');
+    const sensorName = (nameMetric?.si_value as string) ?? title;
+
+    const temperatureTimestamp = temperatureSensorData?.timestamp;
 
     // Check if data is stale (> 5 seconds old)
     // Use state + useEffect to detect staleness without causing re-renders on every cycle
@@ -94,10 +91,11 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
       return () => clearInterval(interval);
     }, [temperatureTimestamp]); // CRITICAL: Only timestamp, not full object!
 
-    // NEW: Use cached display info from sensor.display (Phase 3 migration)
-    // No more presentation hooks needed - data is pre-formatted in store
-    const displayTemperature = temperatureSensorData?.display?.value?.value ?? null;
-    const displayUnit = temperatureSensorData?.display?.value?.unit || '°C';
+    // NEW: Use MetricValue from SensorInstance (Phase 4 migration)
+    // MetricValue has pre-enriched display data
+    const valueMetric = temperatureSensorData?.getMetric('value');
+    const displayTemperature = valueMetric?.value ?? null;
+    const displayUnit = valueMetric?.unit || '°C';
 
     // Marine safety thresholds for temperature monitoring
     const getTemperatureState = useCallback((temp: number | null, location: string) => {
@@ -220,7 +218,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
         {/* Primary Row 1: Temperature */}
         <PrimaryMetricCell
           mnemonic="TEMP"
-          value={displayTemperature !== null ? displayTemperature.toFixed(1) : '---'}
+          value={displayTemperature !== null ? String(displayTemperature) : '---'}
           unit={displayUnit}
           state={isStale ? 'warning' : temperatureState}
           fontSize={{
@@ -233,6 +231,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
         <TrendLine
           sensor="temperature"
           instance={instanceNumber}
+          metric="value"
           timeWindowMs={5 * 60 * 1000}
           usePrimaryLine={temperatureState === 'normal'}
           showXAxis={true}

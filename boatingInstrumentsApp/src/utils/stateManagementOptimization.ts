@@ -1,16 +1,16 @@
 /**
  * State Management Optimization Utilities
- * 
+ *
  * Performance-optimized patterns for Zustand store subscriptions and selectors.
  * Reduces unnecessary re-renders through selective subscriptions and memoization.
- * 
+ *
  * Key Principles:
  * - Subscribe to minimum necessary state slice (not entire store)
  * - Use shallow equality comparison for object/array state
  * - Memoize derived state calculations
  * - Batch related state updates
  * - Avoid nested subscriptions (subscribe at top level)
- * 
+ *
  * Marine-Specific Optimizations:
  * - High-frequency NMEA data updates require selective subscriptions
  * - Widget components should only re-render when THEIR data changes
@@ -54,17 +54,17 @@ export interface SubscriptionOptions {
    * Custom equality function (default: shallow comparison)
    */
   equalityFn?: EqualityFn<any>;
-  
+
   /**
    * Debounce rapid updates (ms)
    */
   debounce?: number;
-  
+
   /**
    * Throttle high-frequency updates (ms)
    */
   throttle?: number;
-  
+
   /**
    * Fire effect on initial mount (default: false)
    */
@@ -79,7 +79,7 @@ export interface BatchUpdateConfig {
    * Maximum batch window in ms (default: 50ms)
    */
   maxWait?: number;
-  
+
   /**
    * Maximum batch size (default: 10 updates)
    */
@@ -92,15 +92,15 @@ export interface BatchUpdateConfig {
 
 /**
  * Hook for subscribing to specific state slice with custom equality
- * 
+ *
  * Prevents re-renders when unrelated store state changes
  * Uses shallow comparison by default (checks object properties)
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract state slice
  * @param equalityFn - Custom equality function (default: shallow)
  * @returns Selected state slice
- * 
+ *
  * @example
  * ```tsx
  * // Only re-render when speed or depth changes (not other NMEA data)
@@ -114,21 +114,21 @@ export interface BatchUpdateConfig {
 export function useSelectiveSubscription<TStore, TResult>(
   useStore: ZustandHook<TStore>,
   selector: Selector<TStore, TResult>,
-  equalityFn: EqualityFn<TResult> = shallow
+  equalityFn: EqualityFn<TResult> = shallow,
 ): TResult {
   return useStore(selector, equalityFn);
 }
 
 /**
  * Hook for subscribing to single primitive value
- * 
+ *
  * Optimized for subscribing to individual values (numbers, strings, booleans)
  * Uses Object.is equality (strict equality with NaN handling)
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract single value
  * @returns Selected value
- * 
+ *
  * @example
  * ```tsx
  * // Only re-render when heading changes (not other navigation data)
@@ -140,21 +140,21 @@ export function useSelectiveSubscription<TStore, TResult>(
  */
 export function useSingleValueSubscription<TStore, TResult>(
   useStore: ZustandHook<TStore>,
-  selector: Selector<TStore, TResult>
+  selector: Selector<TStore, TResult>,
 ): TResult {
   return useStore(selector, Object.is);
 }
 
 /**
  * Hook for subscribing to array state with shallow comparison
- * 
+ *
  * Prevents re-renders when array contents haven't changed
  * Compares array length and elements (one level deep)
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract array state
  * @returns Selected array
- * 
+ *
  * @example
  * ```tsx
  * // Only re-render when alarm array actually changes
@@ -166,7 +166,7 @@ export function useSingleValueSubscription<TStore, TResult>(
  */
 export function useArraySubscription<TStore, TItem>(
   useStore: ZustandHook<TStore>,
-  selector: Selector<TStore, TItem[]>
+  selector: Selector<TStore, TItem[]>,
 ): TItem[] {
   return useStore(selector, (a: TItem[], b: TItem[]) => {
     if (a.length !== b.length) return false;
@@ -176,15 +176,15 @@ export function useArraySubscription<TStore, TItem>(
 
 /**
  * Hook for throttled store subscription
- * 
+ *
  * Limits update frequency for high-frequency state changes
  * Useful for NMEA data that updates faster than display needs
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract state slice
  * @param throttleMs - Throttle interval in ms (default: 100ms)
  * @returns Throttled state value
- * 
+ *
  * @example
  * ```tsx
  * // Update heading display max every 100ms (even if NMEA updates faster)
@@ -198,7 +198,7 @@ export function useArraySubscription<TStore, TItem>(
 export function useThrottledSubscription<TStore, TResult>(
   useStore: ZustandHook<TStore>,
   selector: Selector<TStore, TResult>,
-  throttleMs: number = 100
+  throttleMs: number = 100,
 ): TResult {
   const latestValue = useStore(selector);
   const [throttledValue, setThrottledValue] = useState(latestValue);
@@ -218,7 +218,7 @@ export function useThrottledSubscription<TStore, TResult>(
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
+
       timeoutRef.current = setTimeout(() => {
         setThrottledValue(latestValue);
         lastUpdateTime.current = Date.now();
@@ -237,15 +237,15 @@ export function useThrottledSubscription<TStore, TResult>(
 
 /**
  * Hook for debounced store subscription
- * 
+ *
  * Waits for state changes to settle before updating
  * Useful for input-driven state (search, filters)
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract state slice
  * @param debounceMs - Debounce delay in ms (default: 300ms)
  * @returns Debounced state value
- * 
+ *
  * @example
  * ```tsx
  * // Only update search results after user stops typing for 300ms
@@ -259,7 +259,7 @@ export function useThrottledSubscription<TStore, TResult>(
 export function useDebouncedSubscription<TStore, TResult>(
   useStore: ZustandHook<TStore>,
   selector: Selector<TStore, TResult>,
-  debounceMs: number = 300
+  debounceMs: number = 300,
 ): TResult {
   const latestValue = useStore(selector);
   const [debouncedValue, setDebouncedValue] = useState(latestValue);
@@ -292,24 +292,24 @@ export function useDebouncedSubscription<TStore, TResult>(
 
 /**
  * Creates memoized selector for derived state
- * 
+ *
  * Caches expensive calculations until dependencies change
  * Prevents recalculating derived values on every render
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract base state
  * @param deriveFn - Function to compute derived value
  * @param equalityFn - Equality function for cache invalidation
  * @returns Memoized derived value
- * 
+ *
  * @example
  * ```tsx
  * // Calculate distance to waypoint only when position/waypoint changes
  * const distance = useMemoizedSelector(
  *   useNmeaStore,
- *   (state) => ({ 
+ *   (state) => ({
  *     position: state.navigation.position,
- *     waypoint: state.navigation.activeWaypoint 
+ *     waypoint: state.navigation.activeWaypoint
  *   }),
  *   ({ position, waypoint }) => calculateDistance(position, waypoint),
  *   shallow
@@ -320,7 +320,7 @@ export function useMemoizedSelector<TStore, TBase, TResult>(
   useStore: ZustandHook<TStore>,
   selector: Selector<TStore, TBase>,
   deriveFn: (base: TBase) => TResult,
-  equalityFn: EqualityFn<TBase> = shallow
+  equalityFn: EqualityFn<TBase> = shallow,
 ): TResult {
   const baseState = useStore(selector, equalityFn);
   return useMemo(() => deriveFn(baseState), [baseState, deriveFn]);
@@ -328,15 +328,15 @@ export function useMemoizedSelector<TStore, TBase, TResult>(
 
 /**
  * Creates cached selector that updates only when predicate returns true
- * 
+ *
  * Useful for filtering high-frequency updates by significance
  * Example: Only update speed display when change exceeds 0.1 knots
- * 
+ *
  * @param useStore - Zustand store hook
  * @param selector - Function to extract state value
  * @param shouldUpdate - Predicate to determine if update is significant
  * @returns Cached value that updates only when significant
- * 
+ *
  * @example
  * ```tsx
  * // Only update display when speed changes by more than 0.1 knots
@@ -350,7 +350,7 @@ export function useMemoizedSelector<TStore, TBase, TResult>(
 export function useConditionalCache<TStore, TResult>(
   useStore: ZustandHook<TStore>,
   selector: Selector<TStore, TResult>,
-  shouldUpdate: (prev: TResult, next: TResult) => boolean
+  shouldUpdate: (prev: TResult, next: TResult) => boolean,
 ): TResult {
   const latestValue = useStore(selector);
   const cachedValue = useRef<TResult>(latestValue);
@@ -368,32 +368,35 @@ export function useConditionalCache<TStore, TResult>(
 
 /**
  * Creates batch update function for store
- * 
+ *
  * Accumulates multiple state updates and applies them together
  * Reduces number of re-renders when multiple related changes occur
- * 
+ *
  * @param setState - Zustand setState function
  * @param config - Batch configuration options
  * @returns Batch update function
- * 
+ *
  * @example
  * ```tsx
  * const batchUpdate = createBatchUpdater(useNmeaStore.setState);
- * 
+ *
  * // Queue multiple updates
  * batchUpdate((state) => ({ ...state, speed: 5.2 }));
  * batchUpdate((state) => ({ ...state, depth: 12.5 }));
  * batchUpdate((state) => ({ ...state, heading: 180 }));
- * 
+ *
  * // All applied together in single re-render after 50ms or 10 updates
  * ```
  */
 export function createBatchUpdater<TStore>(
-  setState: (partial: TStore | Partial<TStore> | ((state: TStore) => TStore | Partial<TStore>), replace?: boolean) => void,
-  config: BatchUpdateConfig = {}
+  setState: (
+    partial: TStore | Partial<TStore> | ((state: TStore) => TStore | Partial<TStore>),
+    replace?: boolean,
+  ) => void,
+  config: BatchUpdateConfig = {},
 ): (updater: (state: TStore) => Partial<TStore>) => void {
   const { maxWait = 50, maxBatch = 10 } = config;
-  
+
   let pendingUpdates: Array<(state: TStore) => Partial<TStore>> = [];
   let timeoutId: NodeJS.Timeout | null = null;
 
@@ -402,12 +405,12 @@ export function createBatchUpdater<TStore>(
 
     setState((state: TStore) => {
       let newState = { ...state };
-      
+
       for (const updater of pendingUpdates) {
         const update = updater(newState);
         newState = { ...newState, ...update };
       }
-      
+
       return newState;
     });
 
@@ -434,29 +437,29 @@ export function createBatchUpdater<TStore>(
 
 /**
  * Hook for batched state updates within component
- * 
+ *
  * Batches multiple setState calls into single update
  * Useful for components that make rapid state changes
- * 
+ *
  * @param config - Batch configuration options
  * @returns Batch update controller with queue and flush methods
- * 
+ *
  * @example
  * ```tsx
  * const batch = useBatchedUpdates({ maxWait: 50, maxBatch: 10 });
- * 
+ *
  * // Queue updates
  * batch.queue(() => setSpeed(5.2));
  * batch.queue(() => setDepth(12.5));
  * batch.queue(() => setHeading(180));
- * 
+ *
  * // Force flush immediately (optional)
  * batch.flush();
  * ```
  */
 export function useBatchedUpdates(config: BatchUpdateConfig = {}) {
   const { maxWait = 50, maxBatch = 10 } = config;
-  
+
   const pendingUpdates = useRef<Array<() => void>>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -469,27 +472,30 @@ export function useBatchedUpdates(config: BatchUpdateConfig = {}) {
     }
 
     pendingUpdates.current = [];
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
   }, []);
 
-  const queue = useCallback((update: () => void) => {
-    pendingUpdates.current.push(update);
+  const queue = useCallback(
+    (update: () => void) => {
+      pendingUpdates.current.push(update);
 
-    // Flush if max batch size reached
-    if (pendingUpdates.current.length >= maxBatch) {
-      flush();
-      return;
-    }
+      // Flush if max batch size reached
+      if (pendingUpdates.current.length >= maxBatch) {
+        flush();
+        return;
+      }
 
-    // Schedule flush if not already scheduled
-    if (!timeoutRef.current) {
-      timeoutRef.current = setTimeout(flush, maxWait);
-    }
-  }, [flush, maxBatch, maxWait]);
+      // Schedule flush if not already scheduled
+      if (!timeoutRef.current) {
+        timeoutRef.current = setTimeout(flush, maxWait);
+      }
+    },
+    [flush, maxBatch, maxWait],
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -509,25 +515,25 @@ export function useBatchedUpdates(config: BatchUpdateConfig = {}) {
 
 /**
  * Hook for monitoring subscription performance
- * 
+ *
  * Tracks re-render frequency to identify performance issues
  * Only active in development mode
- * 
+ *
  * @param componentName - Component name for logging
  * @param selector - Selector function being monitored
  * @param warnThreshold - Re-renders per second threshold for warning (default: 10)
- * 
+ *
  * @example
  * ```tsx
  * function SpeedWidget() {
  *   const speed = useNmeaStore((state) => state.speed);
- *   
+ *
  *   useSubscriptionMonitor(
  *     'SpeedWidget',
  *     (state) => state.speed,
  *     10 // Warn if more than 10 re-renders per second
  *   );
- *   
+ *
  *   return <Text>{speed}</Text>;
  * }
  * ```
@@ -535,7 +541,7 @@ export function useBatchedUpdates(config: BatchUpdateConfig = {}) {
 export function useSubscriptionMonitor<TStore, TResult>(
   componentName: string,
   selector: Selector<TStore, TResult>,
-  warnThreshold: number = 10
+  warnThreshold: number = 10,
 ): void {
   if (__DEV__) {
     const renderCount = useRef(0);
@@ -543,16 +549,16 @@ export function useSubscriptionMonitor<TStore, TResult>(
 
     useEffect(() => {
       renderCount.current++;
-      
+
       const elapsed = Date.now() - startTime.current;
       const rendersPerSecond = (renderCount.current / elapsed) * 1000;
 
       if (rendersPerSecond > warnThreshold) {
         console.warn(
           `[State Performance] ${componentName} is re-rendering frequently: ` +
-          `${rendersPerSecond.toFixed(2)} renders/sec ` +
-          `(${renderCount.current} renders in ${elapsed}ms). ` +
-          `Consider optimizing selector or using throttled subscription.`
+            `${rendersPerSecond.toFixed(2)} renders/sec ` +
+            `(${renderCount.current} renders in ${elapsed}ms). ` +
+            `Consider optimizing selector or using throttled subscription.`,
         );
       }
     });
@@ -561,10 +567,10 @@ export function useSubscriptionMonitor<TStore, TResult>(
 
 /**
  * Logs selector equality checks for debugging
- * 
+ *
  * Helps identify why components are re-rendering
  * Only active in development mode with verbose logging enabled
- * 
+ *
  * @param componentName - Component name for logging
  * @param value - Current selector value
  * @param previousValue - Previous selector value
@@ -574,19 +580,10 @@ export function logEqualityCheck<T>(
   componentName: string,
   value: T,
   previousValue: T,
-  equalityFn: EqualityFn<T>
+  equalityFn: EqualityFn<T>,
 ): void {
   if (__DEV__ && process.env.VERBOSE_STATE_LOGGING === 'true') {
     const isEqual = equalityFn(value, previousValue);
-    
-    console.log(
-      `[Equality Check] ${componentName}:`,
-      {
-        equal: isEqual,
-        previous: previousValue,
-        current: value,
-      }
-    );
   }
 }
 
@@ -596,13 +593,13 @@ export function logEqualityCheck<T>(
 
 /**
  * Creates optimized selector for marine widget data
- * 
+ *
  * Pre-configured selector patterns for common marine data types
  * Includes appropriate equality checks and performance tuning
- * 
+ *
  * @param widgetType - Type of marine widget
  * @returns Optimized selector configuration
- * 
+ *
  * @example
  * ```tsx
  * const config = createMarineWidgetSelector('speed');
@@ -635,30 +632,30 @@ export function createMarineWidgetSelector(widgetType: string) {
       equalityFn: (a: number, b: number) => Math.abs(a - b) < 1, // 1 degree threshold
     },
     wind: {
-      selector: (state: any) => ({ 
-        speed: state.wind.speed, 
-        direction: state.wind.direction 
+      selector: (state: any) => ({
+        speed: state.wind.speed,
+        direction: state.wind.direction,
       }),
       equalityFn: shallow,
     },
     battery: {
       selector: (state: any) => state.battery,
-      equalityFn: (a: any, b: any) => 
-        Math.abs(a.voltage - b.voltage) < 0.1 && 
-        Math.abs(a.current - b.current) < 0.1,
+      equalityFn: (a: any, b: any) =>
+        Math.abs(a.voltage - b.voltage) < 0.1 && Math.abs(a.current - b.current) < 0.1,
     },
     alarms: {
       selector: (state: any) => state.alarms.activeAlarms,
-      equalityFn: (a: any[], b: any[]) => 
+      equalityFn: (a: any[], b: any[]) =>
         a.length === b.length && a.every((item, i) => item.id === b[i].id),
     },
   };
 
-  return configs[widgetType] || {
-    selector: (state: any) => state,
-    equalityFn: shallow,
-  };
+  return (
+    configs[widgetType] || {
+      selector: (state: any) => state,
+      equalityFn: shallow,
+    }
+  );
 }
 
 // Remove duplicate React import at bottom
-

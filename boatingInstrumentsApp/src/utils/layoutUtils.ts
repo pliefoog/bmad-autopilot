@@ -32,7 +32,7 @@ export interface LayoutConstraints {
  */
 export const calculateGridPositions = (
   widgetCount: number,
-  constraints: LayoutConstraints
+  constraints: LayoutConstraints,
 ): GridCell[] => {
   const { cols, gap, cellWidth, cellHeight } = constraints;
   const positions: GridCell[] = [];
@@ -61,7 +61,7 @@ export const calculateGridPositions = (
  */
 export const calculatePageLayouts = (
   widgetIds: string[],
-  constraints: LayoutConstraints
+  constraints: LayoutConstraints,
 ): PageLayout[] => {
   const { cols, rows } = constraints;
   const widgetsPerPage = cols * rows;
@@ -71,7 +71,7 @@ export const calculatePageLayouts = (
     const startIndex = pageIndex * widgetsPerPage;
     const endIndex = Math.min(startIndex + widgetsPerPage, widgetIds.length);
     const pageWidgets = widgetIds.slice(startIndex, endIndex);
-    
+
     const cells = calculateGridPositions(pageWidgets.length, constraints);
 
     pages.push({
@@ -91,7 +91,7 @@ export const calculatePageLayouts = (
 export const calculateOptimalPlacement = (
   widgetIds: string[],
   expandedWidgets: Set<string>,
-  constraints: LayoutConstraints
+  constraints: LayoutConstraints,
 ): PageLayout[] => {
   // For now, treat all widgets as equal size - future enhancement could handle expanded widgets
   // This is a placeholder for more complex layout algorithms
@@ -104,7 +104,7 @@ export const calculateOptimalPlacement = (
  */
 export const canFitOnCurrentPage = (
   currentPageWidgets: number,
-  maxWidgetsPerPage: number
+  maxWidgetsPerPage: number,
 ): boolean => {
   return currentPageWidgets < maxWidgetsPerPage;
 };
@@ -115,7 +115,7 @@ export const canFitOnCurrentPage = (
  */
 export const findOptimalPageForNewWidget = (
   pages: PageLayout[],
-  maxWidgetsPerPage: number
+  maxWidgetsPerPage: number,
 ): number => {
   // Find the first page that has space
   for (let i = 0; i < pages.length; i++) {
@@ -123,7 +123,7 @@ export const findOptimalPageForNewWidget = (
       return i;
     }
   }
-  
+
   // All pages are full, return next page index
   return pages.length;
 };
@@ -135,11 +135,11 @@ export const findOptimalPageForNewWidget = (
 export const calculateSafeAreaInsets = (
   screenWidth: number,
   screenHeight: number,
-  platform: string
+  platform: string,
 ): { top: number; bottom: number; left: number; right: number } => {
   // Basic safe area calculation - in production, use react-native-safe-area-context
   const isIPhoneX = platform === 'ios' && screenHeight >= 812;
-  
+
   return {
     top: isIPhoneX ? 44 : 0,
     bottom: isIPhoneX ? 34 : 0,
@@ -164,20 +164,20 @@ export const createPageTransitionConfig = () => ({
  */
 export const validateLayoutConstraints = (constraints: LayoutConstraints): boolean => {
   const { containerWidth, containerHeight, cols, rows, cellWidth, cellHeight } = constraints;
-  
+
   // Ensure minimum cell sizes
   if (cellWidth < 120 || cellHeight < 120) {
     return false;
   }
-  
+
   // Ensure grid fits in container
   const requiredWidth = cols * cellWidth + (cols - 1) * constraints.gap;
   const requiredHeight = rows * cellHeight + (rows - 1) * constraints.gap;
-  
+
   if (requiredWidth > containerWidth || requiredHeight > containerHeight) {
     return false;
   }
-  
+
   return true;
 };
 
@@ -193,20 +193,22 @@ export interface ViewportInfo {
 export const calculateOptimalViewport = (
   currentPage: number,
   totalPages: number,
-  preloadBuffer: number = 1
+  preloadBuffer: number = 1,
 ): ViewportInfo => {
   const visiblePageIndices = [currentPage];
   const preloadPageIndices = [];
-  
+
   // Add pages within preload buffer
-  for (let i = Math.max(0, currentPage - preloadBuffer); 
-       i <= Math.min(totalPages - 1, currentPage + preloadBuffer); 
-       i++) {
+  for (
+    let i = Math.max(0, currentPage - preloadBuffer);
+    i <= Math.min(totalPages - 1, currentPage + preloadBuffer);
+    i++
+  ) {
     if (i !== currentPage) {
       preloadPageIndices.push(i);
     }
   }
-  
+
   return {
     visiblePageIndices,
     preloadPageIndices,
@@ -229,11 +231,11 @@ export const calculateOptimalGridDensity = (
   availableHeight: number,
   minCellWidth: number = 140,
   minCellHeight: number = 140,
-  gap: number = 8
+  gap: number = 8,
 ): { cols: number; rows: number } => {
   const maxCols = Math.floor((availableWidth + gap) / (minCellWidth + gap));
   const maxRows = Math.floor((availableHeight + gap) / (minCellHeight + gap));
-  
+
   return {
     cols: Math.max(1, maxCols),
     rows: Math.max(1, maxRows),

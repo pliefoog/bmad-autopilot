@@ -6,7 +6,7 @@ import { getUseNativeDriver } from '../../utils/animationUtils';
 
 /**
  * LinearBar - Progress bar component for tank/battery indicators with marine styling
- * 
+ *
  * Acceptance Criteria Satisfied:
  * - AC 3: Linear Bar Component with horizontal and vertical progress bars for tank/battery indicators
  * - AC 16: Threshold Markers with configurable warning and critical level markers
@@ -14,7 +14,7 @@ import { getUseNativeDriver } from '../../utils/animationUtils';
  * - AC 18: Wave Motion with subtle animation effects for liquid representation
  * - AC 19: Marine Grade Styling with professional marine equipment appearance
  * - AC 20: Multi-directional Support with horizontal and vertical orientations
- * 
+ *
  * Features:
  * - Horizontal and vertical progress bars with professional marine styling
  * - Configurable threshold markers for warning and critical levels
@@ -74,11 +74,11 @@ export const LinearBar: React.FC<LinearBarProps> = ({
   const theme = useTheme();
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const waveAnimation = useRef(new Animated.Value(0)).current;
-  
+
   // Clamp value between 0 and 100
   const clampedValue = Math.max(0, Math.min(100, value));
   const normalizedValue = clampedValue / 100;
-  
+
   // Animate progress bar (AC 17)
   useEffect(() => {
     Animated.timing(progressAnimation, {
@@ -88,7 +88,7 @@ export const LinearBar: React.FC<LinearBarProps> = ({
       useNativeDriver: false, // Width/height animations require JS driver
     }).start();
   }, [normalizedValue, progressAnimation]);
-  
+
   // Wave motion animation for liquid representation (AC 18)
   useEffect(() => {
     if (animated && type === 'tank') {
@@ -106,14 +106,14 @@ export const LinearBar: React.FC<LinearBarProps> = ({
             easing: ANIMATION_EASINGS.EASE_IN_OUT,
             useNativeDriver: getUseNativeDriver(),
           }),
-        ])
+        ]),
       );
       waveAnimationLoop.start();
-      
+
       return () => waveAnimationLoop.stop();
     }
   }, [animated, type, waveAnimation]);
-  
+
   // Get bar color based on value and type (AC 19)
   const getBarColor = () => {
     // Check thresholds for warning/critical states
@@ -122,7 +122,7 @@ export const LinearBar: React.FC<LinearBarProps> = ({
         return threshold.color === 'red' ? theme.error : theme.warning;
       }
     }
-    
+
     // Normal colors based on type
     switch (type) {
       case 'tank':
@@ -135,21 +135,21 @@ export const LinearBar: React.FC<LinearBarProps> = ({
         return theme.primary;
     }
   };
-  
+
   // Calculate container dimensions (AC 20)
   const containerStyle: ViewStyle = {
     width: orientation === 'horizontal' ? size : thickness,
     height: orientation === 'vertical' ? size : thickness,
     flexDirection: orientation === 'horizontal' ? 'row' : 'column',
   };
-  
+
   // Calculate progress dimensions
   const progressStyle = useMemo(() => {
     const baseStyle = {
       backgroundColor: getBarColor(),
       borderRadius: thickness / 6,
     };
-    
+
     if (orientation === 'horizontal') {
       return {
         ...baseStyle,
@@ -173,72 +173,74 @@ export const LinearBar: React.FC<LinearBarProps> = ({
       };
     }
   }, [orientation, thickness, size, progressAnimation, getBarColor]);
-  
+
   // Wave effect transform for liquid animation (AC 18)
-  const waveTransform = animated && type === 'tank' ? {
-    transform: [
-      {
-        translateY: waveAnimation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -2],
-        }),
-      },
-      {
-        scaleY: waveAnimation.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [1, 1.02, 1],
-        }),
-      },
-    ],
-  } : {};
-  
+  const waveTransform =
+    animated && type === 'tank'
+      ? {
+          transform: [
+            {
+              translateY: waveAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -2],
+              }),
+            },
+            {
+              scaleY: waveAnimation.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [1, 1.02, 1],
+              }),
+            },
+          ],
+        }
+      : {};
+
   const styles = createStyles(theme, orientation, thickness);
-  
+
   return (
     <View style={[styles.container, style]} testID={testID}>
-      
       {/* Main bar container */}
       <View style={[styles.barContainer, containerStyle]}>
-        
         {/* Background track */}
         <View style={styles.track} />
-        
+
         {/* Progress fill */}
         <Animated.View
           style={[styles.progress, progressStyle, waveTransform]}
           testID={testID ? `${testID}-progress` : 'linear-bar-progress'}
         />
-        
+
         {/* Threshold markers (AC 16) */}
         {thresholds.map((threshold, index) => {
           const position = (threshold.value / 100) * size;
-          const markerStyle = orientation === 'horizontal'
-            ? { left: position, height: thickness + 4 }
-            : { bottom: position, width: thickness + 4 };
-          
+          const markerStyle =
+            orientation === 'horizontal'
+              ? { left: position, height: thickness + 4 }
+              : { bottom: position, width: thickness + 4 };
+
           return (
             <View
               key={index}
               style={[
                 styles.thresholdMarker,
                 markerStyle,
-                { borderColor: threshold.color === 'red' ? theme.error : theme.warning }
+                { borderColor: threshold.color === 'red' ? theme.error : theme.warning },
               ]}
               testID={testID ? `${testID}-threshold-${index}` : `threshold-${index}`}
             />
           );
         })}
       </View>
-      
+
       {/* Value display */}
       {showValue && (
         <View style={styles.valueContainer}>
           <Text style={styles.valueText} testID={testID ? `${testID}-value` : 'linear-bar-value'}>
-            {clampedValue.toFixed(0)}{unit}
+            {clampedValue.toFixed(0)}
+            {unit}
           </Text>
         </View>
       )}
-      
     </View>
   );
 };
@@ -249,7 +251,7 @@ const createStyles = (theme: ThemeColors, orientation: LinearBarOrientation, thi
       alignItems: 'center',
       justifyContent: 'center',
     },
-    
+
     barContainer: {
       position: 'relative',
       backgroundColor: theme.surface, // Marine equipment background
@@ -258,7 +260,7 @@ const createStyles = (theme: ThemeColors, orientation: LinearBarOrientation, thi
       borderColor: theme.borderDark,
       overflow: 'hidden',
     },
-    
+
     track: {
       position: 'absolute',
       top: 0,
@@ -268,7 +270,7 @@ const createStyles = (theme: ThemeColors, orientation: LinearBarOrientation, thi
       backgroundColor: theme.surfaceDim,
       borderRadius: thickness / 6,
     },
-    
+
     progress: {
       position: 'absolute',
       top: orientation === 'vertical' ? undefined : 0,
@@ -282,14 +284,14 @@ const createStyles = (theme: ThemeColors, orientation: LinearBarOrientation, thi
       shadowRadius: 2,
       elevation: 2,
     },
-    
+
     thresholdMarker: {
       position: 'absolute',
       borderWidth: 2,
       borderStyle: 'dashed',
       zIndex: 10,
     },
-    
+
     valueContainer: {
       marginTop: orientation === 'vertical' ? 8 : 4,
       marginLeft: orientation === 'horizontal' ? 8 : 0,
@@ -300,7 +302,7 @@ const createStyles = (theme: ThemeColors, orientation: LinearBarOrientation, thi
       borderWidth: 1,
       borderColor: theme.borderDark,
     },
-    
+
     valueText: {
       fontSize: 12,
       fontFamily: 'monospace',

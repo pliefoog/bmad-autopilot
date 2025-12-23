@@ -12,7 +12,7 @@ import SecondaryMetricCell from '../components/SecondaryMetricCell';
 interface RudderWidgetProps {
   id: string;
   title: string;
-  width?: number;  // Widget width for responsive scaling
+  width?: number; // Widget width for responsive scaling
   height?: number; // Widget height for responsive scaling
 }
 
@@ -21,216 +21,245 @@ interface RudderWidgetProps {
  * Primary Grid (2×1): Rudder angle with direction + Rate
  * Secondary: SVG rudder visualization with boat outline
  */
-export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, title, width, height }) => {
-  const theme = useTheme();
-  const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
+export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
+  ({ id, title, width, height }) => {
+    const theme = useTheme();
+    const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
-  
-  // Widget state management per ui-architecture.md v2.3
-  
-  // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-  const autopilotSensorData = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0], (a, b) => a === b);
-  const rudderAngle = autopilotSensorData?.rudderAngle ?? 0;  // Note: field is rudderAngle in AutopilotSensorData
-  const rudderTimestamp = autopilotSensorData?.timestamp;
-  
-  // Extract rudder data with defaults
-  const isStale = !rudderTimestamp;
-  
-  // Phase 5: Use cached display info from sensor.display
-  // Access rudderAngle display info (angles don't typically convert, but use cache for consistency)
-  const rudderAngleDisplay = useMemo((): MetricDisplayData => {
-    const displayInfo = autopilotSensorData?.display?.rudderAngle;
-    
-    if (!displayInfo) {
-      // Fallback if display info not available
+    // Widget state management per ui-architecture.md v2.3
+
+    // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
+    const autopilotSensorData = useNmeaStore(
+      (state) => state.nmeaData.sensors.autopilot?.[0],
+      (a, b) => a === b,
+    );
+    const rudderAngle = autopilotSensorData?.rudderAngle ?? 0; // Note: field is rudderAngle in AutopilotSensorData
+    const rudderTimestamp = autopilotSensorData?.timestamp;
+
+    // Extract rudder data with defaults
+    const isStale = !rudderTimestamp;
+
+    // Phase 4: Use MetricValue from SensorInstance
+    // Access rudderAngle MetricValue (angles don't typically convert, but use for consistency)
+    const rudderAngleDisplay = useMemo((): MetricDisplayData => {
+      const metricValue = autopilotSensorData?.getMetric('rudderAngle');
+
+      if (!metricValue) {
+        // Fallback if display info not available
+        return {
+          mnemonic: 'RUD',
+          value: '---',
+          unit: '°',
+          rawValue: Math.abs(rudderAngle),
+          layout: {
+            minWidth: 60,
+            alignment: 'right',
+          },
+          presentation: {
+            id: 'angle',
+            name: 'Angle',
+            pattern: 'xxx.x',
+          },
+          status: {
+            isValid: false,
+            isFallback: true,
+          },
+        };
+      }
+
+      // Use cached display info from presentation cache
       return {
         mnemonic: 'RUD',
-        value: Math.abs(rudderAngle).toFixed(1),
-        unit: '°',
-        rawValue: Math.abs(rudderAngle),
+        value: displayInfo.value,
+        unit: displayInfo.unit,
+        rawValue: Math.abs(displayInfo.value),
         layout: {
           minWidth: 60,
-          alignment: 'right'
+          alignment: 'right',
         },
         presentation: {
           id: 'angle',
           name: 'Angle',
-          pattern: 'xxx.x'
+          pattern: 'xxx.x',
         },
         status: {
-          isValid: false,
-          isFallback: true
-        }
+          isValid: true,
+          isFallback: false,
+        },
       };
-    }
-    
-    // Use cached display info from presentation cache
-    return {
-      mnemonic: 'RUD',
-      value: Math.abs(displayInfo.value).toFixed(1),  // Abs value for display
-      unit: displayInfo.unit,
-      rawValue: Math.abs(displayInfo.value),
-      layout: {
-        minWidth: 60,
-        alignment: 'right'
+    }, [autopilotSensorData, rudderAngle]);
+
+    // Marine safety evaluation for rudder position
+    const getRudderState = useCallback((angle: number) => {
+      const absAngle = Math.abs(angle);
+      if (absAngle > 30) return 'alarm'; // Extreme rudder angle warning
+      if (absAngle > 20) return 'warning'; // Caution zone
+      return 'normal';
+    }, []);
+
+    const rudderState = getRudderState(rudderAngle);
+
+    // Format rudder display with direction (PORT/STBD)
+    const formatRudderDisplay = useCallback((angle: number) => {
+      if (angle === 0) return { value: '0', unit: '°' };
+
+      const side = angle >= 0 ? 'STBD' : 'PORT';
+      const absValue = Math.abs(angle);
+
+      return {
+        value: `${absValue} ${side}`,
+        unit: '°',
+      };
+    }, []);
+
+    const handleLongPressOnPin = useCallback(() => {}, [id]);
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        backgroundColor: theme.surface,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor:
+          rudderState === 'alarm'
+            ? theme.error
+            : rudderState === 'warning'
+            ? theme.warning
+            : theme.border,
+        padding: 16,
       },
-      presentation: {
-        id: 'angle',
-        name: 'Angle',
-        pattern: 'xxx.x'
+      header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
       },
-      status: {
-        isValid: true,
-        isFallback: false
-      }
-    };
-  }, [autopilotSensorData, rudderAngle]);
-  
-  // Marine safety evaluation for rudder position
-  const getRudderState = useCallback((angle: number) => {
-    const absAngle = Math.abs(angle);
-    if (absAngle > 30) return 'alarm';    // Extreme rudder angle warning
-    if (absAngle > 20) return 'warning';  // Caution zone
-    return 'normal';
-  }, []);
+      title: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+        color: theme.textSecondary,
+        textTransform: 'uppercase',
+      },
+      controls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+      },
+      controlButton: {
+        padding: 4,
+        minWidth: 24,
+        alignItems: 'center',
+      },
+      caret: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: theme.textSecondary,
+      },
+      pinIcon: {
+        fontSize: 12,
+        color: theme.primary,
+      },
+      primaryGrid: {
+        alignItems: 'center',
+        height: '50%',
+        justifyContent: 'center',
+      },
+      // Horizontal separator between primary and secondary views
+      separator: {
+        height: 1,
+        marginVertical: 12,
+      },
+      rudderVisualization: {
+        alignItems: 'center',
+        marginTop: 12,
+      },
+      statusIndicator: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor:
+          rudderState === 'alarm'
+            ? theme.error
+            : rudderState === 'warning'
+            ? theme.warning
+            : theme.success,
+        opacity: isStale ? 0.3 : 1,
+      },
+      warningText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 8,
+        color:
+          rudderState === 'alarm'
+            ? theme.error
+            : rudderState === 'warning'
+            ? theme.warning
+            : theme.textSecondary,
+      },
+    });
 
-  const rudderState = getRudderState(rudderAngle);
-
-  // Format rudder display with direction (PORT/STBD)
-  const formatRudderDisplay = useCallback((angle: number) => {
-    if (angle === 0) return { value: '0', unit: '°' };
-    
-    const side = angle >= 0 ? 'STBD' : 'PORT';
-    const absValue = Math.abs(angle).toFixed(1);
-    
-    return {
-      value: `${absValue} ${side}`,
-      unit: '°'
-    };
-  }, []);
-
-  const handleLongPressOnPin = useCallback(() => {
-  }, [id]);
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      width: '100%',
-      height: '100%',
-      backgroundColor: theme.surface,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: rudderState === 'alarm' ? theme.error :
-                   rudderState === 'warning' ? theme.warning :
-                   theme.border,
-      padding: 16,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    title: {
-      fontSize: 11,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-      color: theme.textSecondary,
-      textTransform: 'uppercase',
-    },
-    controls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    controlButton: {
-      padding: 4,
-      minWidth: 24,
-      alignItems: 'center',
-    },
-    caret: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.textSecondary,
-    },
-    pinIcon: {
-      fontSize: 12,
-      color: theme.primary,
-    },
-    primaryGrid: {
-      alignItems: 'center',
-      height: '50%',
-      justifyContent: 'center',
-    },
-    // Horizontal separator between primary and secondary views
-    separator: {
-      height: 1,
-      marginVertical: 12,
-    },
-    rudderVisualization: {
-      alignItems: 'center',
-      marginTop: 12,
-    },
-    statusIndicator: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: rudderState === 'alarm' ? theme.error :
-                       rudderState === 'warning' ? theme.warning :
-                       theme.success,
-      opacity: isStale ? 0.3 : 1,
-    },
-    warningText: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      marginTop: 8,
-      color: rudderState === 'alarm' ? theme.error :
-             rudderState === 'warning' ? theme.warning :
-             theme.textSecondary,
-    },
-  });
-
-  return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={handlePress}
-      onLongPress={handleLongPress}
-      activeOpacity={0.8}
-    >
-      {/* Widget Header with Title */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase', color: theme.textSecondary }]}>{title}</Text>
-      </View>
-      
-      {/* Primary Grid (1×1): Rudder angle with direction */}
-      <View style={styles.primaryGrid}>
-        <PrimaryMetricCell
-          data={rudderAngleDisplay}
-          state={getRudderState(rudderAngle)}
-          fontSize={{
-            mnemonic: fontSize.primaryLabel,
-            value: fontSize.primaryValue,
-            unit: fontSize.primaryUnit,
-          }}
-        />
-      </View>
-
-      {/* Secondary: SVG rudder visualization */}
-      {/* Horizontal separator */}
-      <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-      {/* RUDDER VISUALIZATION */}
-      <View style={styles.rudderVisualization}>
-          <RudderIndicator angle={rudderAngle} theme={theme} />
-          <Text style={styles.warningText}>
-            {rudderState === 'alarm' ? 'EXTREME ANGLE!' : 
-             rudderState === 'warning' ? 'High Angle' : 
-             isStale ? 'No Data' : 'Normal Position'}
+    return (
+      <TouchableOpacity
+        style={styles.container}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        activeOpacity={0.8}
+      >
+        {/* Widget Header with Title */}
+        <View style={styles.header}>
+          <Text
+            style={[
+              styles.title,
+              {
+                fontSize: 11,
+                fontWeight: 'bold',
+                letterSpacing: 0.5,
+                textTransform: 'uppercase',
+                color: theme.textSecondary,
+              },
+            ]}
+          >
+            {title}
           </Text>
         </View>
-    </TouchableOpacity>
-  );
-});
+
+        {/* Primary Grid (1×1): Rudder angle with direction */}
+        <View style={styles.primaryGrid}>
+          <PrimaryMetricCell
+            data={rudderAngleDisplay}
+            state={getRudderState(rudderAngle)}
+            fontSize={{
+              mnemonic: fontSize.primaryLabel,
+              value: fontSize.primaryValue,
+              unit: fontSize.primaryUnit,
+            }}
+          />
+        </View>
+
+        {/* Secondary: SVG rudder visualization */}
+        {/* Horizontal separator */}
+        <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
+        {/* RUDDER VISUALIZATION */}
+        <View style={styles.rudderVisualization}>
+          <RudderIndicator angle={rudderAngle} theme={theme} />
+          <Text style={styles.warningText}>
+            {rudderState === 'alarm'
+              ? 'EXTREME ANGLE!'
+              : rudderState === 'warning'
+              ? 'High Angle'
+              : isStale
+              ? 'No Data'
+              : 'Normal Position'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  },
+);
 
 interface RudderIndicatorProps {
   angle: number;
@@ -240,63 +269,78 @@ interface RudderIndicatorProps {
 const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
   const size = 80;
   const center = size / 2;
-  
+
   // Clamp angle to ±45 degrees for visualization
   const clampedAngle = Math.max(-45, Math.min(45, angle));
-  
+
   // Convert angle to SVG rotation (negative for correct direction)
   const rotation = -clampedAngle;
-  
+
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {/* Boat hull outline */}
       <Polygon
-        points={`${center},5 ${center-15},${size-10} ${center+15},${size-10}`}
+        points={`${center},5 ${center - 15},${size - 10} ${center + 15},${size - 10}`}
         fill="none"
         stroke={theme.border}
         strokeWidth="2"
       />
-      
+
       {/* Center point */}
-      <Circle
-        cx={center}
-        cy={center + 10}
-        r="2"
-        fill={theme.text}
-      />
-      
+      <Circle cx={center} cy={center + 10} r="2" fill={theme.text} />
+
       {/* Rudder indicator */}
       <Line
         x1={center}
         y1={center + 10}
         x2={center}
         y2={center + 25}
-        stroke={angle === 0 ? theme.success : 
-               Math.abs(angle) > 30 ? theme.error :
-               Math.abs(angle) > 20 ? theme.warning : theme.primary}
+        stroke={
+          angle === 0
+            ? theme.success
+            : Math.abs(angle) > 30
+            ? theme.error
+            : Math.abs(angle) > 20
+            ? theme.warning
+            : theme.primary
+        }
         strokeWidth="4"
         strokeLinecap="round"
         transform={`rotate(${rotation} ${center} ${center + 10})`}
       />
-      
+
       {/* Angle reference marks */}
-      <Line x1={center-20} y1={center+10} x2={center-15} y2={center+10} stroke={theme.border} strokeWidth="1" />
-      <Line x1={center+15} y1={center+10} x2={center+20} y2={center+10} stroke={theme.border} strokeWidth="1" />
-      
+      <Line
+        x1={center - 20}
+        y1={center + 10}
+        x2={center - 15}
+        y2={center + 10}
+        stroke={theme.border}
+        strokeWidth="1"
+      />
+      <Line
+        x1={center + 15}
+        y1={center + 10}
+        x2={center + 20}
+        y2={center + 10}
+        stroke={theme.border}
+        strokeWidth="1"
+      />
+
       {/* Port/Starboard labels */}
-      <SvgText 
-        x={center-25} 
-        y={center+15} 
-        fontSize="8" 
+      <SvgText
+        x={center - 25}
+        y={center + 15}
+        fontSize="8"
         fill={theme.textSecondary}
         textAnchor="middle"
       >
         P
       </SvgText>
-      <SvgText 
-        x={center+25} 
-        y={center+15} 
-        fontSize="8" 
+      <SvgText
+        x={center + 25}
+        y={center + 15}
+        fontSize="8"
         fill={theme.textSecondary}
         textAnchor="middle"
       >

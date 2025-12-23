@@ -4,7 +4,11 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { keyboardNavigationService, NavigableElement, GlobalShortcut } from '../services/navigation/KeyboardNavigationService';
+import {
+  keyboardNavigationService,
+  NavigableElement,
+  GlobalShortcut,
+} from '../services/navigation/KeyboardNavigationService';
 
 /**
  * Hook to register an element for keyboard navigation
@@ -17,7 +21,7 @@ export function useNavigableElement(
     onActivate?: () => void;
     priority?: number;
     enabled?: boolean;
-  } = {}
+  } = {},
 ) {
   const focusRef = useRef<any>(null);
   const { onFocus, onActivate, priority, enabled = true } = options;
@@ -53,23 +57,20 @@ export function useNavigableElement(
 /**
  * Hook to register global keyboard shortcuts
  */
-export function useKeyboardShortcut(
-  shortcuts: GlobalShortcut[],
-  enabled: boolean = true
-) {
+export function useKeyboardShortcut(shortcuts: GlobalShortcut[], enabled: boolean = true) {
   useEffect(() => {
     if (!enabled || !keyboardNavigationService.isSupported()) {
       return;
     }
 
     // Register all shortcuts
-    shortcuts.forEach(shortcut => {
+    shortcuts.forEach((shortcut) => {
       keyboardNavigationService.registerShortcut(shortcut);
     });
 
     return () => {
       // Unregister all shortcuts
-      shortcuts.forEach(shortcut => {
+      shortcuts.forEach((shortcut) => {
         const key = [
           shortcut.ctrlKey && 'Ctrl',
           shortcut.shiftKey && 'Shift',

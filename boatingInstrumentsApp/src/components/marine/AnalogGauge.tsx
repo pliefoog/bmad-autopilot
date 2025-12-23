@@ -6,7 +6,7 @@ import { ANIMATION_DURATIONS, ANIMATION_EASINGS } from '../../utils/animationOpt
 
 /**
  * AnalogGauge - Circular gauge component with needle animation for marine instruments
- * 
+ *
  * Acceptance Criteria Satisfied:
  * - AC 2: Analog Gauge Component with circular gauge and marine-standard scales and needle indicators
  * - AC 11: Customizable Scale Ranges with configurable min/max values and automatic scale calculation
@@ -14,7 +14,7 @@ import { ANIMATION_DURATIONS, ANIMATION_EASINGS } from '../../utils/animationOpt
  * - AC 13: Needle Animation with smooth needle movement and realistic damping for natural motion
  * - AC 14: Tick Mark System with major and minor tick marks and appropriate value labels
  * - AC 15: Digital Readout Integration with digital value display within analog gauge center
- * 
+ *
  * Features:
  * - Circular gauge with customizable scale ranges and automatic calculation
  * - Marine color-coded ranges (green/amber/red) for safety standards
@@ -67,21 +67,21 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
 }) => {
   const theme = useTheme();
   const needleAnimation = useRef(new Animated.Value(0)).current;
-  
+
   // Calculate gauge geometry
   const radius = (size - 40) / 2;
   const center = size / 2;
   const needleLength = radius * 0.8;
-  
+
   // Normalize value to 0-1 range for angle calculation
   const normalizedValue = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  
+
   // Calculate needle angle (240° sweep from -120° to +120°)
   const startAngle = -120;
   const endAngle = 120;
   const sweepAngle = endAngle - startAngle;
-  const targetAngle = startAngle + (normalizedValue * sweepAngle);
-  
+  const targetAngle = startAngle + normalizedValue * sweepAngle;
+
   // Animate needle with realistic damping (AC 13)
   useEffect(() => {
     Animated.timing(needleAnimation, {
@@ -91,24 +91,24 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
       useNativeDriver: false, // SVG animations require JS driver
     }).start();
   }, [targetAngle, needleAnimation]);
-  
+
   // Generate tick marks and labels (AC 14)
   const tickMarks = useMemo(() => {
     const ticks = [];
     const majorTickCount = 11; // 0, 10, 20, ..., 100%
     const minorTicksPerMajor = 4;
-    
+
     for (let i = 0; i <= majorTickCount; i++) {
       const angle = startAngle + (i / majorTickCount) * sweepAngle;
       const tickValue = min + (i / majorTickCount) * (max - min);
       const isMajor = true;
-      
+
       ticks.push({
         angle,
         value: tickValue,
         isMajor,
       });
-      
+
       // Add minor ticks between major ticks
       if (i < majorTickCount) {
         for (let j = 1; j <= minorTicksPerMajor; j++) {
@@ -121,10 +121,10 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
         }
       }
     }
-    
+
     return ticks;
   }, [min, max, startAngle, sweepAngle]);
-  
+
   // Get marine color for ranges (AC 12)
   const getMarineColor = (colorName: 'green' | 'amber' | 'red') => {
     switch (colorName) {
@@ -136,7 +136,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
         return theme.error; // Marine danger range
     }
   };
-  
+
   // Convert angle to SVG coordinates
   const angleToPoint = (angle: number, radius: number) => {
     const radians = (angle * Math.PI) / 180;
@@ -145,23 +145,22 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
       y: center + radius * Math.sin(radians),
     };
   };
-  
+
   const styles = createStyles(theme, size);
-  
+
   return (
     <View style={[styles.container, style]} testID={testID}>
       {/* Gauge SVG */}
       <Svg width={size} height={size} style={styles.svg}>
-        
         {/* Colored range arcs (AC 12) */}
         {ranges.map((range, index) => {
           const rangeStartAngle = startAngle + ((range.min - min) / (max - min)) * sweepAngle;
           const rangeEndAngle = startAngle + ((range.max - min) / (max - min)) * sweepAngle;
           const arcRadius = radius * 0.9;
-          
+
           const startPoint = angleToPoint(rangeStartAngle, arcRadius);
           const endPoint = angleToPoint(rangeEndAngle, arcRadius);
-          
+
           return (
             <G key={index}>
               <Line
@@ -176,13 +175,11 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
             </G>
           );
         })}
-        
-        {/* Tick marks (AC 14) */}
         {tickMarks.map((tick, index) => {
           const outerPoint = angleToPoint(tick.angle, radius);
           const innerRadius = tick.isMajor ? radius * 0.85 : radius * 0.9;
           const innerPoint = angleToPoint(tick.angle, innerRadius);
-          
+
           return (
             <G key={index}>
               <Line
@@ -193,7 +190,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
                 stroke={theme.textSecondary}
                 strokeWidth={tick.isMajor ? 2 : 1}
               />
-              
+
               {/* Major tick labels */}
               {tick.isMajor && (
                 <SvgText
@@ -210,8 +207,6 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
             </G>
           );
         })}
-        
-        {/* Gauge needle (AC 13) */}
         <Animated.View
           style={[
             styles.needleContainer,
@@ -219,11 +214,11 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
               transform: [
                 { translateX: center },
                 { translateY: center },
-                { 
+                {
                   rotate: needleAnimation.interpolate({
                     inputRange: [-180, 180],
                     outputRange: ['-180deg', '180deg'],
-                  })
+                  }),
                 },
                 { translateX: -center },
                 { translateY: -center },
@@ -241,7 +236,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
               strokeWidth={3}
               strokeLinecap="round"
             />
-            
+
             {/* Needle center hub */}
             <Circle
               cx={center}
@@ -253,7 +248,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
             />
           </Svg>
         </Animated.View>
-        
+
         {/* Outer rim */}
         <Circle
           cx={center}
@@ -264,7 +259,7 @@ export const AnalogGauge: React.FC<AnalogGaugeProps> = ({
           strokeWidth={2}
         />
       </Svg>
-      
+
       {/* Digital readout in center (AC 15) */}
       {showDigital && (
         <View style={styles.digitalReadout}>
@@ -291,17 +286,17 @@ const createStyles = (theme: ThemeColors, size: number) => {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    
+
     svg: {
       position: 'absolute',
     },
-    
+
     needleContainer: {
       position: 'absolute',
       width: size,
       height: size,
     },
-    
+
     digitalReadout: {
       position: 'absolute',
       backgroundColor: theme.overlayDark,
@@ -313,7 +308,7 @@ const createStyles = (theme: ThemeColors, size: number) => {
       alignItems: 'center',
       minWidth: size * 0.3,
     },
-    
+
     digitalValue: {
       fontSize: size * 0.12,
       fontFamily: 'monospace',
@@ -321,7 +316,7 @@ const createStyles = (theme: ThemeColors, size: number) => {
       color: theme.text,
       textAlign: 'center',
     },
-    
+
     digitalUnit: {
       fontSize: size * 0.08,
       fontFamily: 'monospace',

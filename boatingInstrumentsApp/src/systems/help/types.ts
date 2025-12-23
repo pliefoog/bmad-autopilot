@@ -48,7 +48,7 @@ export interface Tutorial {
 /**
  * Help content types
  */
-export type HelpContentType = 
+export type HelpContentType =
   | 'tutorial'
   | 'guide'
   | 'faq'

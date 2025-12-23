@@ -17,18 +17,37 @@ interface AutopilotWidgetProps {
   showControls?: boolean;
 }
 
-export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, width, height, showControls = false }) => {
-  // Clean sensor data access - NMEA Store v2.0
-  const autopilot = useNmeaStore((state) => state.getSensorData('autopilot', 0));
-  const compass = useNmeaStore((state) => state.getSensorData('compass', 0));
+export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
+  id,
+  title,
+  width,
+  height,
+  showControls = false,
+}) => {
+  // Clean sensor data access - NMEA Store v2.0 with SensorInstance
+  const autopilotInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.autopilot?.[0],
+    (a, b) => a === b,
+  );
+  const compassInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.compass?.[0],
+    (a, b) => a === b,
+  );
   const theme = useTheme();
-  
-  // Extract heading data from compass or autopilot
-  const currentHeading = autopilot?.actualHeading ?? compass?.heading ?? 0;
-  // Metric display hooks for angles - using clean sensor data
-  const actualHeadingDisplay = useMetricDisplay('angle', currentHeading);
-  const targetHeadingDisplay = useMetricDisplay('angle', autopilot?.targetHeading ?? 0);
-  const rudderPositionDisplay = useMetricDisplay('angle', autopilot?.rudderPosition ?? 0);
+
+  // Extract metrics from SensorInstance
+  const actualHeading =
+    autopilotInstance?.getMetric('actualHeading')?.si_value ??
+    compassInstance?.getMetric('heading')?.si_value ??
+    0;
+  const targetHeading = autopilotInstance?.getMetric('targetHeading')?.si_value ?? 0;
+  const rudderPosition = autopilotInstance?.getMetric('rudderPosition')?.si_value ?? 0;
+
+  // Use pre-enriched display data from MetricValue
+  const actualHeadingDisplay =
+    autopilotInstance?.getMetric('actualHeading') ?? compassInstance?.getMetric('heading');
+  const targetHeadingDisplay = autopilotInstance?.getMetric('targetHeading');
+  const rudderPositionDisplay = autopilotInstance?.getMetric('rudderPosition');
   const [selectedView, setSelectedView] = useState<'overview' | 'details' | 'controls'>('overview');
   const [isCommandPending, setIsCommandPending] = useState(false);
   const commandManager = useRef<AutopilotCommandManager | null>(null);
@@ -39,7 +58,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
       commandManager.current = new AutopilotCommandManager();
       // TODO: Connect to NMEA connection when available
     }
-    
+
     return () => {
       if (commandManager.current) {
         commandManager.current.disconnect();
@@ -47,20 +66,15 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
     };
   }, []);
 
-  // Autopilot data with defaults
-  const {
-    mode = 'STANDBY',
-    engaged = false,
-    active = false,
-    targetHeading = undefined,
-    actualHeading = undefined,
-    rudderPosition = undefined,
-    windAngle = undefined,
-    crossTrackError = undefined,
-    turnRate = undefined,
-    headingSource = 'COMPASS',
-    alarms = []
-  } = autopilot || {};
+  // Autopilot data with defaults - extracted from SensorInstance
+  const mode = autopilotInstance?.getMetric('mode')?.si_value ?? 'STANDBY';
+  const engaged = autopilotInstance?.getMetric('engaged')?.si_value ?? false;
+  const active = autopilotInstance?.getMetric('active')?.si_value ?? false;
+  const windAngle = autopilotInstance?.getMetric('windAngle')?.si_value;
+  const crossTrackError = autopilotInstance?.getMetric('crossTrackError')?.si_value;
+  const turnRate = autopilotInstance?.getMetric('turnRate')?.si_value;
+  const headingSource = autopilotInstance?.getMetric('headingSource')?.si_value ?? 'COMPASS';
+  const alarms = autopilotInstance?.getMetric('alarms')?.si_value ?? [];
 
   // Status color determination
   const getStatusColor = () => {
@@ -71,9 +85,10 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   };
 
   const getWidgetState = () => {
-    if (autopilot === undefined) return 'no-data';
+    if (autopilotInstance === undefined) return 'no-data';
     if (alarms && alarms.length > 0) return 'alarm';
-    if ((active || engaged) && (mode === 'AUTO' || mode === 'WIND' || mode === 'TRACK')) return 'normal';
+    if ((active || engaged) && (mode === 'AUTO' || mode === 'WIND' || mode === 'TRACK'))
+      return 'normal';
     if (active || engaged) return 'alarm';
     return 'normal';
   };
@@ -85,18 +100,18 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
       message,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: onConfirm, style: 'destructive' }
+        { text: 'Confirm', onPress: onConfirm, style: 'destructive' },
       ],
-      { cancelable: true }
+      { cancelable: true },
     );
   };
 
   // AC1: Engage autopilot in compass mode
   const handleEngage = async (): Promise<void> => {
     if (!commandManager.current) return;
-    
-    const currentHeading = heading || autopilot?.targetHeading;
-    if (!currentHeading) {
+
+    const headingToUse = actualHeading || targetHeading;
+    if (!headingToUse) {
       Alert.alert('Error', 'No heading available for autopilot engagement');
       return;
     }
@@ -117,7 +132,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   // AC2: Disengage autopilot
   const handleDisengage = async (): Promise<void> => {
     if (!commandManager.current) return;
-    
+
     setIsCommandPending(true);
     try {
       const success = await commandManager.current.disengageAutopilot();
@@ -134,7 +149,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   // AC3: Adjust heading in 1° and 10° increments
   const handleHeadingAdjust = async (degrees: number): Promise<void> => {
     if (!commandManager.current) return;
-    
+
     setIsCommandPending(true);
     try {
       const success = await commandManager.current.adjustHeading(degrees);
@@ -151,7 +166,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   // AC5: Set standby mode
   const handleStandby = async (): Promise<void> => {
     if (!commandManager.current) return;
-    
+
     setIsCommandPending(true);
     try {
       const success = await commandManager.current.setStandby();
@@ -168,7 +183,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   // AC14: Emergency disengage
   const handleEmergencyDisengage = async (): Promise<void> => {
     if (!commandManager.current) return;
-    
+
     showConfirmationDialog(
       'EMERGENCY DISENGAGE - This will immediately stop autopilot control. Continue?',
       async () => {
@@ -176,21 +191,27 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
         try {
           const success = await commandManager.current?.emergencyDisengage();
           if (!success) {
-            Alert.alert('Emergency Failed', 'Emergency disengage failed - use manual controls immediately');
+            Alert.alert(
+              'Emergency Failed',
+              'Emergency disengage failed - use manual controls immediately',
+            );
           }
         } catch (error) {
-          Alert.alert('Emergency Failed', 'Emergency disengage failed - use manual controls immediately');
+          Alert.alert(
+            'Emergency Failed',
+            'Emergency disengage failed - use manual controls immediately',
+          );
         } finally {
           setIsCommandPending(false);
         }
-      }
+      },
     );
   };
 
-  const CompassRose: React.FC<{ actual?: number; target?: number; size: number }> = ({ 
-    actual, 
-    target, 
-    size = 80 
+  const CompassRose: React.FC<{ actual?: number; target?: number; size: number }> = ({
+    actual,
+    target,
+    size = 80,
   }) => {
     const center = size / 2;
     const radius = size * 0.4;
@@ -198,21 +219,53 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
     return (
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {/* Outer compass ring */}
-        <Circle 
-          cx={center} 
-          cy={center} 
-          r={radius} 
-          fill="none" 
-          stroke={theme.border} 
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={theme.border}
           strokeWidth={1}
         />
-        
+
         {/* Cardinal directions */}
-        <SvgText x={center} y={center - radius + 8} textAnchor="middle" fill={theme.text} fontSize={10}>N</SvgText>
-        <SvgText x={center + radius - 4} y={center + 3} textAnchor="middle" fill={theme.text} fontSize={10}>E</SvgText>
-        <SvgText x={center} y={center + radius - 2} textAnchor="middle" fill={theme.text} fontSize={10}>S</SvgText>
-        <SvgText x={center - radius + 4} y={center + 3} textAnchor="middle" fill={theme.text} fontSize={10}>W</SvgText>
-        
+        <SvgText
+          x={center}
+          y={center - radius + 8}
+          textAnchor="middle"
+          fill={theme.text}
+          fontSize={10}
+        >
+          N
+        </SvgText>
+        <SvgText
+          x={center + radius - 4}
+          y={center + 3}
+          textAnchor="middle"
+          fill={theme.text}
+          fontSize={10}
+        >
+          E
+        </SvgText>
+        <SvgText
+          x={center}
+          y={center + radius - 2}
+          textAnchor="middle"
+          fill={theme.text}
+          fontSize={10}
+        >
+          S
+        </SvgText>
+        <SvgText
+          x={center - radius + 4}
+          y={center + 3}
+          textAnchor="middle"
+          fill={theme.text}
+          fontSize={10}
+        >
+          W
+        </SvgText>
+
         {/* Target heading */}
         {target !== undefined && (
           <Line
@@ -225,8 +278,6 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
             strokeDasharray="3,2"
           />
         )}
-        
-        {/* Actual heading */}
         {actual !== undefined && (
           <Line
             x1={center}
@@ -237,8 +288,6 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
             strokeWidth={3}
           />
         )}
-        
-        {/* Center dot */}
         <Circle cx={center} cy={center} r={2} fill={theme.text} />
       </Svg>
     );
@@ -262,11 +311,14 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   const renderOverview = () => (
     <View style={styles.overview}>
       <View style={styles.statusRow}>
-        <Text style={[styles.modeText, { color: getStatusColor() }]}>
-          {mode}
-        </Text>
-        <Text style={[styles.engagedText, { color: (active || engaged) ? theme.success : theme.textSecondary }]}>
-          {(active || engaged) ? 'ACTIVE' : 'STANDBY'}
+        <Text style={[styles.modeText, { color: getStatusColor() }]}>{mode}</Text>
+        <Text
+          style={[
+            styles.engagedText,
+            { color: active || engaged ? theme.success : theme.textSecondary },
+          ]}
+        >
+          {active || engaged ? 'ACTIVE' : 'STANDBY'}
         </Text>
       </View>
 
@@ -299,10 +351,13 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
 
       {alarms && alarms.length > 0 && (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-          <UniversalIcon name="warning-outline" size={14} color={theme.error} style={{ marginRight: 4 }} />
-          <Text style={[styles.alarmText, { color: theme.error }]}>
-            {alarms[0]}
-          </Text>
+          <UniversalIcon
+            name="warning-outline"
+            size={14}
+            color={theme.error}
+            style={{ marginRight: 4 }}
+          />
+          <Text style={[styles.alarmText, { color: theme.error }]}>{alarms[0]}</Text>
         </View>
       )}
     </View>
@@ -312,31 +367,30 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
     <View style={styles.details}>
       <View style={styles.detailRow}>
         <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Heading Source:</Text>
-        <Text style={[styles.detailValue, { color: theme.text }]}>
-          {headingSource}
-        </Text>
+        <Text style={[styles.detailValue, { color: theme.text }]}>{headingSource}</Text>
       </View>
-      
+
       {windAngle !== undefined && (
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Wind Angle:</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {windAngle.toFixed(0)}°
-          </Text>
+          <Text style={[styles.detailValue, { color: theme.text }]}>{windAngle.toFixed(0)}°</Text>
         </View>
       )}
-      
       {crossTrackError !== undefined && (
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>XTE:</Text>
-          <Text style={[styles.detailValue, { 
-            color: Math.abs(crossTrackError) > 50 ? theme.warning : theme.text 
-          }]}>
+          <Text
+            style={[
+              styles.detailValue,
+              {
+                color: Math.abs(crossTrackError) > 50 ? theme.warning : theme.text,
+              },
+            ]}
+          >
             {`${crossTrackError > 0 ? 'STB' : 'PORT'} ${Math.abs(crossTrackError).toFixed(1)}m`}
           </Text>
         </View>
       )}
-      
       {turnRate !== undefined && (
         <View style={styles.detailRow}>
           <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Turn Rate:</Text>
@@ -352,31 +406,43 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
     <View style={styles.controls}>
       {/* AC13: Command status display */}
       {autopilot?.commandStatus && (
-        <View style={[styles.commandStatus, { 
-          backgroundColor: autopilot.commandStatus === 'success' ? theme.success + '20' : 
-                           autopilot.commandStatus === 'error' ? theme.error + '20' :
-                           theme.warning + '20'
-        }]}>
-          <Text style={[styles.commandStatusText, { 
-            color: autopilot.commandStatus === 'success' ? theme.success :
-                   autopilot.commandStatus === 'error' ? theme.error :
-                   theme.warning
-          }]}>
+        <View
+          style={[
+            styles.commandStatus,
+            {
+              backgroundColor:
+                autopilot.commandStatus === 'success'
+                  ? theme.success + '20'
+                  : autopilot.commandStatus === 'error'
+                  ? theme.error + '20'
+                  : theme.warning + '20',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.commandStatusText,
+              {
+                color:
+                  autopilot.commandStatus === 'success'
+                    ? theme.success
+                    : autopilot.commandStatus === 'error'
+                    ? theme.error
+                    : theme.warning,
+              },
+            ]}
+          >
             {autopilot.commandMessage || 'Command in progress...'}
           </Text>
         </View>
       )}
-
-      {/* Emergency Controls */}
       <View style={styles.emergencyRow}>
         <TouchableOpacity
           style={[styles.emergencyButton, { backgroundColor: theme.error }]}
           onPress={handleEmergencyDisengage}
           disabled={isCommandPending}
         >
-          <Text style={[styles.emergencyButtonText, { color: theme.surface }]}>
-            EMERGENCY STOP
-          </Text>
+          <Text style={[styles.emergencyButtonText, { color: theme.surface }]}>EMERGENCY STOP</Text>
         </TouchableOpacity>
       </View>
 
@@ -388,19 +454,19 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
             onPress={handleEngage}
             disabled={isCommandPending || !heading}
           >
-            <Text style={[styles.controlButtonText, { color: theme.surface }]}>
-              ENGAGE
-            </Text>
+            <Text style={[styles.controlButtonText, { color: theme.surface }]}>ENGAGE</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.controlButton, styles.disengageButton, { backgroundColor: theme.warning }]}
+            style={[
+              styles.controlButton,
+              styles.disengageButton,
+              { backgroundColor: theme.warning },
+            ]}
             onPress={handleDisengage}
             disabled={isCommandPending}
           >
-            <Text style={[styles.controlButtonText, { color: theme.surface }]}>
-              DISENGAGE
-            </Text>
+            <Text style={[styles.controlButtonText, { color: theme.surface }]}>DISENGAGE</Text>
           </TouchableOpacity>
         )}
 
@@ -409,9 +475,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
           onPress={handleStandby}
           disabled={isCommandPending}
         >
-          <Text style={[styles.controlButtonText, { color: theme.surface }]}>
-            STANDBY
-          </Text>
+          <Text style={[styles.controlButtonText, { color: theme.surface }]}>STANDBY</Text>
         </TouchableOpacity>
       </View>
 
@@ -421,7 +485,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
             HEADING ADJUSTMENT
           </Text>
-          
+
           <View style={styles.headingControls}>
             <View style={styles.headingRow}>
               <TouchableOpacity
@@ -429,9 +493,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
                 onPress={() => handleHeadingAdjust(-10)}
                 disabled={isCommandPending}
               >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>
-                  -10°
-                </Text>
+                <Text style={[styles.headingButtonText, { color: theme.accent }]}>-10°</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -439,9 +501,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
                 onPress={() => handleHeadingAdjust(-1)}
                 disabled={isCommandPending}
               >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>
-                  -1°
-                </Text>
+                <Text style={[styles.headingButtonText, { color: theme.accent }]}>-1°</Text>
               </TouchableOpacity>
 
               <View style={styles.currentHeading}>
@@ -455,9 +515,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
                 onPress={() => handleHeadingAdjust(1)}
                 disabled={isCommandPending}
               >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>
-                  +1°
-                </Text>
+                <Text style={[styles.headingButtonText, { color: theme.accent }]}>+1°</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -465,9 +523,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
                 onPress={() => handleHeadingAdjust(10)}
                 disabled={isCommandPending}
               >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>
-                  +10°
-                </Text>
+                <Text style={[styles.headingButtonText, { color: theme.accent }]}>+10°</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -487,15 +543,8 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({ id, title, wid
   };
 
   return (
-    <TouchableOpacity 
-      onPress={cycleView}
-      style={styles.container}
-    >
-      <WidgetCard 
-        title="Autopilot"
-        icon="swap-horizontal-outline"
-        state={getWidgetState()}
-      >
+    <TouchableOpacity onPress={cycleView} style={styles.container}>
+      <WidgetCard title="Autopilot" icon="swap-horizontal-outline" state={getWidgetState()}>
         {selectedView === 'overview' && renderOverview()}
         {selectedView === 'details' && renderDetails()}
         {selectedView === 'controls' && renderControls()}

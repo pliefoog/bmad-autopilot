@@ -7,10 +7,10 @@ import { useNmeaStore } from '../store/nmeaStore';
  * System degradation levels
  */
 export enum DegradationLevel {
-  NORMAL = 'normal',           // All systems operational
-  DEGRADED = 'degraded',       // Some systems affected but operational
-  CRITICAL = 'critical',       // Major systems failing, limited functionality
-  EMERGENCY = 'emergency'      // System failure, emergency procedures active
+  NORMAL = 'normal', // All systems operational
+  DEGRADED = 'degraded', // Some systems affected but operational
+  CRITICAL = 'critical', // Major systems failing, limited functionality
+  EMERGENCY = 'emergency', // System failure, emergency procedures active
 }
 
 /**
@@ -19,7 +19,7 @@ export enum DegradationLevel {
 export enum ServiceState {
   AVAILABLE = 'available',
   DEGRADED = 'degraded',
-  UNAVAILABLE = 'unavailable'
+  UNAVAILABLE = 'unavailable',
 }
 
 /**
@@ -55,38 +55,38 @@ export class AutopilotGracefulDegradationService {
     connection: ServiceState.AVAILABLE,
     gps: ServiceState.AVAILABLE,
     compass: ServiceState.AVAILABLE,
-    sensors: ServiceState.AVAILABLE
+    sensors: ServiceState.AVAILABLE,
   };
-  
+
   private degradationResponses: { [key in DegradationLevel]: DegradationResponse } = {
     [DegradationLevel.NORMAL]: {
       level: DegradationLevel.NORMAL,
       allowedOperations: ['all'],
       disabledFeatures: [],
       userMessage: 'All systems operational',
-      automaticActions: []
+      automaticActions: [],
     },
     [DegradationLevel.DEGRADED]: {
       level: DegradationLevel.DEGRADED,
       allowedOperations: ['engage', 'disengage', 'heading_small_adjustments'],
       disabledFeatures: ['auto_nav', 'wind_mode'],
       userMessage: 'Some systems degraded - Basic autopilot available',
-      automaticActions: ['disable_advanced_modes', 'increase_monitoring']
+      automaticActions: ['disable_advanced_modes', 'increase_monitoring'],
     },
     [DegradationLevel.CRITICAL]: {
       level: DegradationLevel.CRITICAL,
       allowedOperations: ['disengage', 'emergency_stop'],
       disabledFeatures: ['engage', 'heading_adjustments', 'mode_changes'],
       userMessage: 'Critical system issues - Limited to emergency operations',
-      automaticActions: ['auto_disengage', 'clear_command_queue', 'activate_alarms']
+      automaticActions: ['auto_disengage', 'clear_command_queue', 'activate_alarms'],
     },
     [DegradationLevel.EMERGENCY]: {
       level: DegradationLevel.EMERGENCY,
       allowedOperations: ['emergency_stop'],
       disabledFeatures: ['all_except_emergency'],
       userMessage: 'EMERGENCY: System failure - Manual steering only',
-      automaticActions: ['force_disengage', 'emergency_alerts', 'log_incident']
-    }
+      automaticActions: ['force_disengage', 'emergency_alerts', 'log_incident'],
+    },
   };
 
   private monitoringInterval?: ReturnType<typeof setInterval>;
@@ -110,17 +110,17 @@ export class AutopilotGracefulDegradationService {
    */
   private assessSystemHealth(): void {
     this.lastHealthCheck = Date.now();
-    
+
     // Get health metrics from safety manager
     const healthMetrics = autopilotSafetyManager.getHealthMetrics();
     const safetyEvents = autopilotSafetyManager.getSafetyEvents(false); // Unresolved events
-    
+
     // Update component health
     this.updateComponentHealth(healthMetrics);
-    
+
     // Calculate degradation level
     const newDegradationLevel = this.calculateDegradationLevel(healthMetrics, safetyEvents);
-    
+
     // Handle degradation level changes
     if (newDegradationLevel !== this.currentDegradationLevel) {
       this.handleDegradationChange(this.currentDegradationLevel, newDegradationLevel);
@@ -136,12 +136,14 @@ export class AutopilotGracefulDegradationService {
     this.componentHealth.autopilot = this.mapHealthToServiceState(healthMetrics.autopilotStatus);
     this.componentHealth.gps = this.mapHealthToServiceState(healthMetrics.gpsStatus);
     this.componentHealth.compass = this.mapHealthToServiceState(healthMetrics.compassStatus);
-    
+
     // Sensors health based on data freshness and accuracy
     const timeSinceData = Date.now() - healthMetrics.lastDataReceived;
-    if (timeSinceData > 10000) { // 10 seconds
+    if (timeSinceData > 10000) {
+      // 10 seconds
       this.componentHealth.sensors = ServiceState.UNAVAILABLE;
-    } else if (timeSinceData > 5000) { // 5 seconds
+    } else if (timeSinceData > 5000) {
+      // 5 seconds
       this.componentHealth.sensors = ServiceState.DEGRADED;
     } else {
       this.componentHealth.sensors = ServiceState.AVAILABLE;
@@ -152,48 +154,51 @@ export class AutopilotGracefulDegradationService {
    * Calculate appropriate degradation level based on system health
    */
   private calculateDegradationLevel(
-    healthMetrics: SystemHealthMetrics, 
-    safetyEvents: any[]
+    healthMetrics: SystemHealthMetrics,
+    safetyEvents: any[],
   ): DegradationLevel {
-    
     // Count critical failures
     let criticalFailures = 0;
     let majorFailures = 0;
-    
+
     // Connection failures are critical
     if (this.componentHealth.connection === ServiceState.UNAVAILABLE) {
       criticalFailures++;
     }
-    
+
     // Autopilot failures
     if (this.componentHealth.autopilot === ServiceState.UNAVAILABLE) {
       criticalFailures++;
     } else if (this.componentHealth.autopilot === ServiceState.DEGRADED) {
       majorFailures++;
     }
-    
+
     // Navigation system failures
-    if (this.componentHealth.gps === ServiceState.UNAVAILABLE && 
-        this.componentHealth.compass === ServiceState.UNAVAILABLE) {
+    if (
+      this.componentHealth.gps === ServiceState.UNAVAILABLE &&
+      this.componentHealth.compass === ServiceState.UNAVAILABLE
+    ) {
       criticalFailures++;
-    } else if (this.componentHealth.gps === ServiceState.UNAVAILABLE || 
-               this.componentHealth.compass === ServiceState.UNAVAILABLE) {
+    } else if (
+      this.componentHealth.gps === ServiceState.UNAVAILABLE ||
+      this.componentHealth.compass === ServiceState.UNAVAILABLE
+    ) {
       majorFailures++;
     }
-    
+
     // Command success rate degradation
     if (healthMetrics.commandSuccessRate < 50) {
       criticalFailures++;
     } else if (healthMetrics.commandSuccessRate < 80) {
       majorFailures++;
     }
-    
+
     // Critical safety events
-    const criticalEvents = safetyEvents.filter(event => event.level === 'critical');
+    const criticalEvents = safetyEvents.filter((event) => event.level === 'critical');
     if (criticalEvents.length > 0) {
       criticalFailures += criticalEvents.length;
     }
-    
+
     // Determine degradation level
     if (criticalFailures >= 2) {
       return DegradationLevel.EMERGENCY;
@@ -211,31 +216,27 @@ export class AutopilotGracefulDegradationService {
   /**
    * Handle degradation level changes
    */
-  private handleDegradationChange(
-    fromLevel: DegradationLevel, 
-    toLevel: DegradationLevel
-  ): void {
-    
+  private handleDegradationChange(fromLevel: DegradationLevel, toLevel: DegradationLevel): void {
     console.warn(`[GracefulDegradation] Level changed from ${fromLevel} to ${toLevel}`);
-    
+
     const response = this.degradationResponses[toLevel];
-    
+
     // Execute automatic actions
-    response.automaticActions.forEach(action => {
+    response.automaticActions.forEach((action) => {
       this.executeAutomaticAction(action);
     });
-    
+
     // Update user interface
     this.notifyUserOfDegradation(response);
-    
+
     // Log degradation event
     const errorMessage = AutopilotErrorManager.createError('SYS_002', {
       fromLevel,
       toLevel,
       response,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     AutopilotErrorManager.formatErrorForUser(errorMessage);
   }
 
@@ -247,35 +248,35 @@ export class AutopilotGracefulDegradationService {
       case 'disable_advanced_modes':
         this.disableAdvancedModes();
         break;
-        
+
       case 'auto_disengage':
         this.performAutoDisengage();
         break;
-        
+
       case 'force_disengage':
         this.performForceDisengage();
         break;
-        
+
       case 'clear_command_queue':
         autopilotCommandQueue.clearNonEmergencyCommands();
         break;
-        
+
       case 'increase_monitoring':
         this.increaseMonitoringFrequency();
         break;
-        
+
       case 'activate_alarms':
         this.activateEmergencyAlarms();
         break;
-        
+
       case 'emergency_alerts':
         this.sendEmergencyAlerts();
         break;
-        
+
       case 'log_incident':
         this.logIncident();
         break;
-        
+
       default:
         console.warn(`[GracefulDegradation] Unknown automatic action: ${action}`);
     }
@@ -287,15 +288,15 @@ export class AutopilotGracefulDegradationService {
   private disableAdvancedModes(): void {
     const store = useNmeaStore.getState();
     const autopilotData = store.nmeaData.autopilot;
-    
+
     if (autopilotData && autopilotData.mode && autopilotData.mode !== 'COMPASS') {
       // Switch to basic compass mode
       store.setNmeaData({
         autopilot: {
           ...autopilotData,
           mode: 'COMPASS',
-          commandMessage: 'Advanced modes disabled due to system degradation'
-        }
+          commandMessage: 'Advanced modes disabled due to system degradation',
+        },
       });
     }
   }
@@ -305,14 +306,14 @@ export class AutopilotGracefulDegradationService {
    */
   private performAutoDisengage(): void {
     const store = useNmeaStore.getState();
-    
+
     store.setNmeaData({
       autopilot: {
         ...store.nmeaData.autopilot,
         active: false,
         commandStatus: 'error',
-        commandMessage: 'Autopilot auto-disengaged due to system degradation'
-      }
+        commandMessage: 'Autopilot auto-disengaged due to system degradation',
+      },
     });
   }
 
@@ -321,14 +322,14 @@ export class AutopilotGracefulDegradationService {
    */
   private performForceDisengage(): void {
     const store = useNmeaStore.getState();
-    
+
     store.setNmeaData({
       autopilot: {
         active: false,
         mode: 'STANDBY',
         commandStatus: 'error',
-        commandMessage: 'EMERGENCY: Autopilot force-disengaged - Switch to manual steering'
-      }
+        commandMessage: 'EMERGENCY: Autopilot force-disengaged - Switch to manual steering',
+      },
     });
   }
 
@@ -339,7 +340,7 @@ export class AutopilotGracefulDegradationService {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
     }
-    
+
     // Check every second during degraded conditions
     this.monitoringInterval = setInterval(() => {
       this.assessSystemHealth();
@@ -351,13 +352,15 @@ export class AutopilotGracefulDegradationService {
    */
   private activateEmergencyAlarms(): void {
     const store = useNmeaStore.getState();
-    
-    store.updateAlarms([{
-      id: `emergency_degradation_${Date.now()}`,
-      message: 'CRITICAL SYSTEM DEGRADATION - Check systems immediately',
-      level: 'critical',
-      timestamp: Date.now()
-    }]);
+
+    store.updateAlarms([
+      {
+        id: `emergency_degradation_${Date.now()}`,
+        message: 'CRITICAL SYSTEM DEGRADATION - Check systems immediately',
+        level: 'critical',
+        timestamp: Date.now(),
+      },
+    ]);
   }
 
   /**
@@ -365,7 +368,9 @@ export class AutopilotGracefulDegradationService {
    */
   private sendEmergencyAlerts(): void {
     // This would integrate with notification systems
-    console.error('[EMERGENCY] Critical autopilot system failure - Switch to manual steering immediately');
+    console.error(
+      '[EMERGENCY] Critical autopilot system failure - Switch to manual steering immediately',
+    );
   }
 
   /**
@@ -374,14 +379,14 @@ export class AutopilotGracefulDegradationService {
   private logIncident(): void {
     const healthMetrics = autopilotSafetyManager.getHealthMetrics();
     const safetyEvents = autopilotSafetyManager.getSafetyEvents(false);
-    
+
     console.error('[INCIDENT LOG]', {
       timestamp: Date.now(),
       degradationLevel: this.currentDegradationLevel,
       componentHealth: this.componentHealth,
       healthMetrics,
       safetyEvents,
-      systemUptime: Date.now() - this.lastHealthCheck
+      systemUptime: Date.now() - this.lastHealthCheck,
     });
   }
 
@@ -390,13 +395,15 @@ export class AutopilotGracefulDegradationService {
    */
   private notifyUserOfDegradation(response: DegradationResponse): void {
     const store = useNmeaStore.getState();
-    
-    store.updateAlarms([{
-      id: `degradation_${Date.now()}`,
-      message: response.userMessage,
-      level: response.level === DegradationLevel.EMERGENCY ? 'critical' : 'warning',
-      timestamp: Date.now()
-    }]);
+
+    store.updateAlarms([
+      {
+        id: `degradation_${Date.now()}`,
+        message: response.userMessage,
+        level: response.level === DegradationLevel.EMERGENCY ? 'critical' : 'warning',
+        timestamp: Date.now(),
+      },
+    ]);
   }
 
   /**
@@ -422,20 +429,22 @@ export class AutopilotGracefulDegradationService {
    */
   isOperationAllowed(operation: string): boolean {
     const response = this.degradationResponses[this.currentDegradationLevel];
-    
+
     if (response.allowedOperations.includes('all')) {
       return true;
     }
-    
+
     if (response.allowedOperations.includes(operation)) {
       return true;
     }
-    
-    if (response.disabledFeatures.includes('all_except_emergency') && 
-        operation !== 'emergency_stop') {
+
+    if (
+      response.disabledFeatures.includes('all_except_emergency') &&
+      operation !== 'emergency_stop'
+    ) {
       return false;
     }
-    
+
     return !response.disabledFeatures.includes(operation);
   }
 
@@ -451,14 +460,14 @@ export class AutopilotGracefulDegradationService {
     lastHealthCheck: number;
   } {
     const response = this.degradationResponses[this.currentDegradationLevel];
-    
+
     return {
       degradationLevel: this.currentDegradationLevel,
       componentHealth: { ...this.componentHealth },
       allowedOperations: [...response.allowedOperations],
       disabledFeatures: [...response.disabledFeatures],
       userMessage: response.userMessage,
-      lastHealthCheck: this.lastHealthCheck
+      lastHealthCheck: this.lastHealthCheck,
     };
   }
 
@@ -481,15 +490,17 @@ export class AutopilotGracefulDegradationService {
       connection: ServiceState.AVAILABLE,
       gps: ServiceState.AVAILABLE,
       compass: ServiceState.AVAILABLE,
-      sensors: ServiceState.AVAILABLE
+      sensors: ServiceState.AVAILABLE,
     };
-    
+
     // Force health assessment
     this.assessSystemHealth();
-    
+
     // Return true if we've recovered to normal or degraded
-    return this.currentDegradationLevel === DegradationLevel.NORMAL || 
-           this.currentDegradationLevel === DegradationLevel.DEGRADED;
+    return (
+      this.currentDegradationLevel === DegradationLevel.NORMAL ||
+      this.currentDegradationLevel === DegradationLevel.DEGRADED
+    );
   }
 
   /**

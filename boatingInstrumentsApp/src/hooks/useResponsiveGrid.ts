@@ -5,9 +5,9 @@ import { Dimensions, Platform } from 'react-native';
  * Platform breakpoints based on UI Architecture v2.3 specification
  */
 const BREAKPOINTS = {
-  phone: 480,     // ≤480px width
-  tablet: 1024,   // 481px-1024px width  
-  desktop: 1025,  // >1024px width
+  phone: 480, // ≤480px width
+  tablet: 1024, // 481px-1024px width
+  desktop: 1025, // >1024px width
 } as const;
 
 /**
@@ -16,16 +16,16 @@ const BREAKPOINTS = {
  */
 const GRID_DENSITY = {
   phone: {
-    portrait: { cols: 1, rows: 1 },   // 1×1 grid
-    landscape: { cols: 2, rows: 1 },  // 2×1 grid
+    portrait: { cols: 1, rows: 1 }, // 1×1 grid
+    landscape: { cols: 2, rows: 1 }, // 2×1 grid
   },
   tablet: {
-    portrait: { cols: 2, rows: 2 },   // 2×2 grid  
-    landscape: { cols: 3, rows: 2 },  // 3×2 grid
+    portrait: { cols: 2, rows: 2 }, // 2×2 grid
+    landscape: { cols: 3, rows: 2 }, // 3×2 grid
   },
   desktop: {
-    portrait: { cols: 3, rows: 3 },   // 3×3 grid
-    landscape: { cols: 4, rows: 3 },  // 4×3 grid
+    portrait: { cols: 3, rows: 3 }, // 3×3 grid
+    landscape: { cols: 4, rows: 3 }, // 4×3 grid
   },
 } as const;
 
@@ -68,7 +68,7 @@ export interface ResponsiveGridState {
 export const useResponsiveGrid = (
   headerHeight: number = 60,
   footerHeight: number = 88,
-  pageIndicatorHeight: number = 30
+  pageIndicatorHeight: number = 30,
 ): ResponsiveGridState => {
   const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
   const [isLoading, setIsLoading] = useState(true);
@@ -100,8 +100,13 @@ export const useResponsiveGrid = (
   // Calculate available space for dashboard content
   const availableSpace = useMemo(() => {
     return {
-      width: dimensions.width - (WIDGET_CONSTRAINTS.padding * 2),
-      height: dimensions.height - headerHeight - footerHeight - pageIndicatorHeight - (WIDGET_CONSTRAINTS.padding * 2),
+      width: dimensions.width - WIDGET_CONSTRAINTS.padding * 2,
+      height:
+        dimensions.height -
+        headerHeight -
+        footerHeight -
+        pageIndicatorHeight -
+        WIDGET_CONSTRAINTS.padding * 2,
     };
   }, [dimensions, headerHeight, footerHeight, pageIndicatorHeight]);
 
@@ -109,27 +114,27 @@ export const useResponsiveGrid = (
   const layout: GridLayout = useMemo(() => {
     const density = GRID_DENSITY[platform][orientation];
     const { cols, rows } = density;
-    
+
     // Calculate cell dimensions considering gaps
     // AC 5: Equal cell sizing with 8pt gaps between cells
     const totalGapWidth = (cols - 1) * WIDGET_CONSTRAINTS.gap;
     const totalGapHeight = (rows - 1) * WIDGET_CONSTRAINTS.gap;
-    
+
     // Calculate cell size to fit available space exactly
     // Remove maxSize constraint to prevent overflow
     const cellWidth = Math.max(
       WIDGET_CONSTRAINTS.minSize.width,
-      (availableSpace.width - totalGapWidth) / cols
+      (availableSpace.width - totalGapWidth) / cols,
     );
-    
+
     const cellHeight = Math.max(
       WIDGET_CONSTRAINTS.minSize.height,
-      (availableSpace.height - totalGapHeight) / rows
+      (availableSpace.height - totalGapHeight) / rows,
     );
 
     // Calculate actual container dimensions needed
-    const containerWidth = (cellWidth * cols) + totalGapWidth;
-    const containerHeight = (cellHeight * rows) + totalGapHeight;
+    const containerWidth = cellWidth * cols + totalGapWidth;
+    const containerHeight = cellHeight * rows + totalGapHeight;
 
     // AC 12: Widget Per Page Limits enforcement
     const widgetsPerPage = cols * rows;
@@ -161,7 +166,7 @@ export const useResponsiveGrid = (
  */
 export const calculatePages = <T>(
   items: T[],
-  widgetsPerPage: number
+  widgetsPerPage: number,
 ): { pages: T[][]; totalPages: number } => {
   if (items.length === 0) {
     return { pages: [], totalPages: 0 };

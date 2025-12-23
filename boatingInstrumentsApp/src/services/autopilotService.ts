@@ -6,10 +6,10 @@ import { useNmeaStore } from '../store/nmeaStore';
  */
 export enum AutopilotMode {
   STANDBY = 'standby',
-  AUTO = 'auto',           // Compass mode
-  WIND = 'wind',           // Wind mode
-  NAV = 'nav',             // Navigation/route mode
-  TRACK = 'track'          // Track mode
+  AUTO = 'auto', // Compass mode
+  WIND = 'wind', // Wind mode
+  NAV = 'nav', // Navigation/route mode
+  TRACK = 'track', // Track mode
 }
 
 /**
@@ -23,7 +23,7 @@ export enum AutopilotCommand {
   CHANGE_MODE = 'change_mode',
   STANDBY = 'standby',
   TACK_PORT = 'tack_port',
-  TACK_STARBOARD = 'tack_starboard'
+  TACK_STARBOARD = 'tack_starboard',
 }
 
 /**
@@ -42,7 +42,7 @@ export interface CommandConfirmation {
  * Implements Story 3.1 requirements for Raymarine Evolution control
  */
 export class AutopilotCommandManager {
-  private static readonly RAYMARINE_MANUFACTURER_CODE = 0x01B3;
+  private static readonly RAYMARINE_MANUFACTURER_CODE = 0x01b3;
   private static readonly PGN_PROPRIETARY_HEADING = 126208;
   private static readonly PGN_AUTOPILOT_CONTROL = 127237; // Standard NMEA2000
   private static readonly COMMAND_TIMEOUT_MS = 5000;
@@ -65,8 +65,10 @@ export class AutopilotCommandManager {
       command: AutopilotCommand.ENGAGE,
       params: { mode: AutopilotMode.AUTO, heading: currentHeading },
       requiresConfirmation: true,
-      confirmationMessage: `Engage autopilot in compass mode${currentHeading ? ` at ${Math.round(currentHeading)}°` : ''}?`,
-      timeoutMs: 10000 // 10 seconds for engagement
+      confirmationMessage: `Engage autopilot in compass mode${
+        currentHeading ? ` at ${Math.round(currentHeading)}°` : ''
+      }?`,
+      timeoutMs: 10000, // 10 seconds for engagement
     };
 
     return this.executeCommandWithConfirmation(confirmation);
@@ -80,7 +82,7 @@ export class AutopilotCommandManager {
       command: AutopilotCommand.DISENGAGE,
       requiresConfirmation: true,
       confirmationMessage: 'Switch to manual steering?',
-      timeoutMs: 5000
+      timeoutMs: 5000,
     };
 
     return this.executeCommandWithConfirmation(confirmation);
@@ -108,8 +110,10 @@ export class AutopilotCommandManager {
       command: AutopilotCommand.ADJUST_HEADING,
       params: { adjustment: degrees, newHeading },
       requiresConfirmation,
-      confirmationMessage: `Adjust heading by ${degrees > 0 ? '+' : ''}${degrees}° to ${Math.round(newHeading)}°?`,
-      timeoutMs: this.COMMAND_TIMEOUT_MS
+      confirmationMessage: `Adjust heading by ${degrees > 0 ? '+' : ''}${degrees}° to ${Math.round(
+        newHeading,
+      )}°?`,
+      timeoutMs: this.COMMAND_TIMEOUT_MS,
     };
 
     return this.executeCommandWithConfirmation(confirmation);
@@ -124,7 +128,7 @@ export class AutopilotCommandManager {
       params: { mode },
       requiresConfirmation: true,
       confirmationMessage: `Switch autopilot to ${mode} mode?`,
-      timeoutMs: this.COMMAND_TIMEOUT_MS
+      timeoutMs: this.COMMAND_TIMEOUT_MS,
     };
 
     return this.executeCommandWithConfirmation(confirmation);
@@ -138,7 +142,7 @@ export class AutopilotCommandManager {
       command: AutopilotCommand.STANDBY,
       requiresConfirmation: false, // Standby should be immediate for safety
       confirmationMessage: 'Setting autopilot to standby...',
-      timeoutMs: this.COMMAND_TIMEOUT_MS
+      timeoutMs: this.COMMAND_TIMEOUT_MS,
     };
 
     return this.executeCommandWithConfirmation(confirmation);
@@ -152,17 +156,17 @@ export class AutopilotCommandManager {
     try {
       await this.sendStandbyCommand();
       await this.sendDisengageCommand();
-      
+
       // Clear all pending confirmations and timeouts
       this.clearAllPendingCommands();
-      
+
       // Update store immediately
       useNmeaStore.getState().setNmeaData({
-        autopilot: { 
+        autopilot: {
           ...useNmeaStore.getState().nmeaData.autopilot,
           active: false,
-          mode: AutopilotMode.STANDBY
-        }
+          mode: AutopilotMode.STANDBY,
+        },
       });
 
       return true;
@@ -175,7 +179,9 @@ export class AutopilotCommandManager {
   /**
    * Execute command with safety confirmation system
    */
-  private async executeCommandWithConfirmation(confirmation: CommandConfirmation): Promise<boolean> {
+  private async executeCommandWithConfirmation(
+    confirmation: CommandConfirmation,
+  ): Promise<boolean> {
     // AC12: Auto-timeout validation
     if (!this.canSendCommand()) {
       throw new Error('Command rate limited. Please wait before sending another command.');
@@ -198,27 +204,27 @@ export class AutopilotCommandManager {
    */
   private async executeCommand(command: AutopilotCommand, params?: any): Promise<boolean> {
     this.lastCommandTime = Date.now();
-    
+
     try {
       switch (command) {
         case AutopilotCommand.ENGAGE:
           return await this.sendEngageCommand(params?.mode, params?.heading);
-        
+
         case AutopilotCommand.DISENGAGE:
           return await this.sendDisengageCommand();
-        
+
         case AutopilotCommand.ADJUST_HEADING:
           return await this.sendHeadingCommand(params?.newHeading);
-        
+
         case AutopilotCommand.SET_HEADING:
           return await this.sendHeadingCommand(params?.heading);
-        
+
         case AutopilotCommand.CHANGE_MODE:
           return await this.sendModeChangeCommand(params?.mode);
-        
+
         case AutopilotCommand.STANDBY:
           return await this.sendStandbyCommand();
-        
+
         default:
           throw new Error(`Unsupported command: ${command}`);
       }
@@ -234,7 +240,7 @@ export class AutopilotCommandManager {
    */
   private async sendHeadingCommand(headingDegrees: number): Promise<boolean> {
     const normalizedHeading = this.normalizeHeading(headingDegrees);
-    
+
     // Convert degrees to thousands of radians for Raymarine protocol
     const headingRadians = (normalizedHeading * Math.PI) / 180;
     const headingThousands = Math.round(headingRadians * 1000);
@@ -242,20 +248,20 @@ export class AutopilotCommandManager {
     // Build proprietary PGN 126208 message for Raymarine
     const data = new Uint8Array(14);
     // Manufacturer code (little endian)
-    data[0] = AutopilotCommandManager.RAYMARINE_MANUFACTURER_CODE & 0xFF;
-    data[1] = (AutopilotCommandManager.RAYMARINE_MANUFACTURER_CODE >> 8) & 0xFF;
+    data[0] = AutopilotCommandManager.RAYMARINE_MANUFACTURER_CODE & 0xff;
+    data[1] = (AutopilotCommandManager.RAYMARINE_MANUFACTURER_CODE >> 8) & 0xff;
     data[2] = 0x00; // Reserved
-    data[3] = 0x00; // Reserved  
+    data[3] = 0x00; // Reserved
     data[4] = 0x03; // Command type (heading)
-    data[5] = 0xFF; // Reserved
-    data[6] = 0xFF; // Reserved
-    data[7] = 0xFF; // Reserved
-    data[8] = 0xFF; // Reserved
-    data[9] = 0xFF; // Reserved
-    data[10] = 0xFF; // Reserved
+    data[5] = 0xff; // Reserved
+    data[6] = 0xff; // Reserved
+    data[7] = 0xff; // Reserved
+    data[8] = 0xff; // Reserved
+    data[9] = 0xff; // Reserved
+    data[10] = 0xff; // Reserved
     // Target heading (little endian)
-    data[11] = headingThousands & 0xFF;
-    data[12] = (headingThousands >> 8) & 0xFF;
+    data[11] = headingThousands & 0xff;
+    data[12] = (headingThousands >> 8) & 0xff;
     data[13] = 0x00; // Reserved
 
     return this.transmitPGN(AutopilotCommandManager.PGN_PROPRIETARY_HEADING, data);
@@ -264,14 +270,17 @@ export class AutopilotCommandManager {
   /**
    * Send engage command (implementation varies by autopilot model)
    */
-  private async sendEngageCommand(mode: AutopilotMode = AutopilotMode.AUTO, heading?: number): Promise<boolean> {
+  private async sendEngageCommand(
+    mode: AutopilotMode = AutopilotMode.AUTO,
+    heading?: number,
+  ): Promise<boolean> {
     // For Raymarine, engagement may use standard PGN 127237 or proprietary commands
     // This is a simplified implementation - actual protocol may vary
     const currentHeading = heading || useNmeaStore.getState().nmeaData.heading || 0;
-    
+
     // First set the target heading, then engage
     await this.sendHeadingCommand(currentHeading);
-    
+
     // Send mode change to auto
     return this.sendModeChangeCommand(mode);
   }
@@ -291,7 +300,7 @@ export class AutopilotCommandManager {
     const data = new Uint8Array(21);
     // Set steering mode to standby (value 3)
     data[0] = 0x03; // Steering mode bits 0-2 set to standby
-    
+
     return this.transmitPGN(AutopilotCommandManager.PGN_AUTOPILOT_CONTROL, data);
   }
 
@@ -301,7 +310,7 @@ export class AutopilotCommandManager {
   private async sendModeChangeCommand(mode: AutopilotMode): Promise<boolean> {
     // Use standard NMEA2000 PGN for mode change
     const data = new Uint8Array(21);
-    
+
     // Set steering mode based on AutopilotMode
     switch (mode) {
       case AutopilotMode.AUTO:
@@ -317,8 +326,7 @@ export class AutopilotCommandManager {
         data[0] = 0x03; // Standby mode
         break;
     }
-    
-    console.log(`Mode change to ${mode} - using standard PGN ${AutopilotCommandManager.PGN_AUTOPILOT_CONTROL}`);
+
     return this.transmitPGN(AutopilotCommandManager.PGN_AUTOPILOT_CONTROL, data);
   }
 
@@ -328,11 +336,10 @@ export class AutopilotCommandManager {
   private async transmitPGN(pgn: number, data: Uint8Array): Promise<boolean> {
     // In test environment, simulate successful transmission
     if (typeof jest !== 'undefined' && !this.nmeaConnection) {
-      console.log(`Simulating PGN ${pgn} transmission in test environment`);
       this.updateCommandStatus('success', 'Command sent successfully');
       return true;
     }
-    
+
     if (!this.nmeaConnection) {
       console.error('No NMEA connection available for PGN transmission');
       return false;
@@ -343,23 +350,23 @@ export class AutopilotCommandManager {
       const pgnData = {
         pgn: pgn,
         src: 0x99, // Source address (arbitrary)
-        dst: 0xFF, // Destination (broadcast)
-        prio: 2,   // Priority (high for autopilot commands)
-        fields: data
+        dst: 0xff, // Destination (broadcast)
+        prio: 2, // Priority (high for autopilot commands)
+        fields: data,
       };
 
       // AC8: Implement proper message sequencing and timing
       const encodedMessage = ToPgn(pgnData);
-      
+
       // AC10: Provide command confirmation feedback
       this.updateCommandStatus('sending', `Sending command PGN ${pgn}...`);
-      
+
       // Transmit via NMEA connection
       await this.nmeaConnection.sendData(encodedMessage);
-      
+
       // AC9: Handle autopilot response acknowledgments
       this.setupCommandTimeout(pgn);
-      
+
       return true;
     } catch (error: any) {
       console.error('PGN transmission failed:', error);
@@ -373,7 +380,7 @@ export class AutopilotCommandManager {
    */
   private canSendCommand(): boolean {
     const now = Date.now();
-    return (now - this.lastCommandTime) >= AutopilotCommandManager.MAX_COMMAND_RATE_MS;
+    return now - this.lastCommandTime >= AutopilotCommandManager.MAX_COMMAND_RATE_MS;
   }
 
   /**
@@ -391,23 +398,21 @@ export class AutopilotCommandManager {
   private async requestUserConfirmation(confirmation: CommandConfirmation): Promise<boolean> {
     // In test environment, resolve immediately to prevent hanging with fake timers
     if (typeof jest !== 'undefined') {
-      console.log(`Confirmation required: ${confirmation.confirmationMessage}`);
       return Promise.resolve(true);
     }
 
     return new Promise((resolve) => {
       const confirmationId = Date.now().toString();
       this.pendingConfirmations.set(confirmationId, confirmation);
-      
+
       // This would trigger UI confirmation dialog
-      console.log(`Confirmation required: ${confirmation.confirmationMessage}`);
-      
+
       // Set timeout for confirmation
       const timeout = setTimeout(() => {
         this.pendingConfirmations.delete(confirmationId);
         resolve(false);
       }, confirmation.timeoutMs);
-      
+
       // In real implementation, this would be called by UI confirmation dialog
       // For now, simulate auto-confirmation after short delay
       setTimeout(() => {
@@ -433,7 +438,7 @@ export class AutopilotCommandManager {
       this.updateCommandStatus('timeout', 'Command timeout - no autopilot response');
       this.commandTimeouts.delete(commandIdStr);
     }, AutopilotCommandManager.COMMAND_TIMEOUT_MS);
-    
+
     this.commandTimeouts.set(commandIdStr, timeout);
   }
 
@@ -443,7 +448,7 @@ export class AutopilotCommandManager {
   public handleAutopilotResponse(pgn: number, data: any): void {
     const commandId = pgn.toString();
     const timeout = this.commandTimeouts.get(commandId);
-    
+
     if (timeout) {
       clearTimeout(timeout);
       this.commandTimeouts.delete(commandId);
@@ -454,7 +459,10 @@ export class AutopilotCommandManager {
   /**
    * AC13: Clear visual indication and update command status
    */
-  private updateCommandStatus(status: 'sending' | 'success' | 'error' | 'timeout', message: string): void {
+  private updateCommandStatus(
+    status: 'sending' | 'success' | 'error' | 'timeout',
+    message: string,
+  ): void {
     // Update autopilot store with command status
     const currentAutopilot = useNmeaStore.getState().nmeaData.autopilot || {};
     useNmeaStore.getState().setNmeaData({
@@ -462,8 +470,8 @@ export class AutopilotCommandManager {
         ...currentAutopilot,
         commandStatus: status,
         commandMessage: message,
-        lastCommandTime: Date.now()
-      }
+        lastCommandTime: Date.now(),
+      },
     });
   }
 
@@ -480,7 +488,7 @@ export class AutopilotCommandManager {
    */
   private clearAllPendingCommands(): void {
     this.pendingConfirmations.clear();
-    
+
     for (const timeout of this.commandTimeouts.values()) {
       clearTimeout(timeout);
     }

@@ -1,6 +1,6 @@
 /**
  * QuickStartGuide - First-run experience with guided workflows
- * 
+ *
  * Features:
  * - Step-by-step onboarding checklist
  * - Progress tracking
@@ -69,7 +69,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
         setProgress(savedProgress);
 
         // Update steps with completion status
-        const updatedSteps = providedSteps.map(step => ({
+        const updatedSteps = providedSteps.map((step) => ({
           ...step,
           completed: savedProgress.stepsCompleted.includes(step.id),
         }));
@@ -89,7 +89,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
   };
 
   const handleStepComplete = useCallback((stepId: string) => {
-    setProgress(prev => {
+    setProgress((prev) => {
       const newCompleted = [...prev.stepsCompleted, stepId];
       const allCompleted = newCompleted.length === prev.totalSteps;
 
@@ -100,36 +100,37 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
       };
     });
 
-    setSteps(prev =>
-      prev.map(step =>
-        step.id === stepId ? { ...step, completed: true } : step
-      )
+    setSteps((prev) =>
+      prev.map((step) => (step.id === stepId ? { ...step, completed: true } : step)),
     );
   }, []);
 
-  const handleStepPress = useCallback((step: QuickStartStep) => {
-    if (!step.completed) {
-      // Start progress if not started
-      if (!progress.started) {
-        setProgress(prev => ({
-          ...prev,
-          started: true,
-          currentStep: steps.findIndex(s => s.id === step.id),
-        }));
-      }
+  const handleStepPress = useCallback(
+    (step: QuickStartStep) => {
+      if (!step.completed) {
+        // Start progress if not started
+        if (!progress.started) {
+          setProgress((prev) => ({
+            ...prev,
+            started: true,
+            currentStep: steps.findIndex((s) => s.id === step.id),
+          }));
+        }
 
-      // Execute step action
-      if (step.action) {
-        step.action();
-      }
+        // Execute step action
+        if (step.action) {
+          step.action();
+        }
 
-      // Trigger parent callback
-      onStepAction(step);
-    }
-  }, [progress.started, steps, onStepAction]);
+        // Trigger parent callback
+        onStepAction(step);
+      }
+    },
+    [progress.started, steps, onStepAction],
+  );
 
   const handleDismiss = useCallback(() => {
-    setProgress(prev => ({
+    setProgress((prev) => ({
       ...prev,
       dismissed: true,
     }));
@@ -145,7 +146,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
       dismissed: false,
     };
     setProgress(resetProgress);
-    setSteps(providedSteps.map(s => ({ ...s, completed: false })));
+    setSteps(providedSteps.map((s) => ({ ...s, completed: false })));
     await AsyncStorage.removeItem(STORAGE_KEY);
   }, [providedSteps]);
 
@@ -189,9 +190,7 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
                 {completedCount} of {progress.totalSteps} completed
               </Text>
               {isComplete && (
-                <Text style={[styles.completeText, { color: theme.success }]}>
-                  ✓ All Done!
-                </Text>
+                <Text style={[styles.completeText, { color: theme.success }]}>✓ All Done!</Text>
               )}
             </View>
             <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
@@ -221,7 +220,9 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
               onPress={() => handleStepPress(step)}
               disabled={step.completed}
               accessibilityRole="button"
-              accessibilityLabel={`Step ${index + 1}: ${step.title}${step.completed ? ' - Completed' : ''}`}
+              accessibilityLabel={`Step ${index + 1}: ${step.title}${
+                step.completed ? ' - Completed' : ''
+              }`}
               accessibilityState={{ disabled: step.completed }}
             >
               {/* Step Number / Checkmark */}
@@ -284,12 +285,14 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
                 accessibilityLabel="Restart quick start guide"
                 accessibilityRole="button"
               >
-                <Text style={[styles.footerButtonText, { color: theme.text }]}>
-                  ↻ Restart
-                </Text>
+                <Text style={[styles.footerButtonText, { color: theme.text }]}>↻ Restart</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.footerButton, styles.primaryButton, { backgroundColor: theme.primary }]}
+                style={[
+                  styles.footerButton,
+                  styles.primaryButton,
+                  { backgroundColor: theme.primary },
+                ]}
                 onPress={handleDismiss}
                 accessibilityLabel="Finish and close"
                 accessibilityRole="button"
@@ -315,163 +318,164 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    backgroundColor: theme.overlay,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  header: {
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  headerButtonText: {
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  progressSection: {
-    // Progress container
-  },
-  progressInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  progressText: {
-    fontSize: 14,
-  },
-  completeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  progressBarContainer: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  stepItemCompleted: {
-    opacity: 0.6,
-  },
-  stepNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  stepNumberText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  checkmark: {
-    fontSize: 16,
-    color: theme.surface,
-  },
-  stepContent: {
-    flex: 1,
-  },
-  stepHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  stepIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  stepTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-  },
-  stepTitleCompleted: {
-    textDecorationLine: 'line-through',
-  },
-  stepDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  stepDescriptionCompleted: {
-    textDecorationLine: 'line-through',
-  },
-  arrow: {
-    fontSize: 20,
-    marginLeft: 8,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-    borderTopWidth: 1,
-  },
-  footerButton: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    minHeight: 48,
-  },
-  footerButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  primaryButton: {
-    borderWidth: 0,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.surface,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    dragHandle: {
+      width: 36,
+      height: 5,
+      backgroundColor: theme.overlay,
+      borderRadius: 3,
+      alignSelf: 'center',
+      marginTop: 5,
+      marginBottom: 5,
+    },
+    header: {
+      paddingTop: 12,
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    headerButton: {
+      padding: 8,
+      minWidth: 60,
+    },
+    headerButtonText: {
+      fontSize: 17,
+      fontWeight: '400',
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: '600',
+      flex: 1,
+      textAlign: 'center',
+    },
+    progressSection: {
+      // Progress container
+    },
+    progressInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    progressText: {
+      fontSize: 14,
+    },
+    completeText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    progressBarContainer: {
+      height: 6,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    progressBar: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    content: {
+      flex: 1,
+    },
+    contentContainer: {
+      padding: 20,
+    },
+    stepItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 12,
+    },
+    stepItemCompleted: {
+      opacity: 0.6,
+    },
+    stepNumber: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    stepNumberText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    checkmark: {
+      fontSize: 16,
+      color: theme.surface,
+    },
+    stepContent: {
+      flex: 1,
+    },
+    stepHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    stepIcon: {
+      fontSize: 20,
+      marginRight: 8,
+    },
+    stepTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      flex: 1,
+    },
+    stepTitleCompleted: {
+      textDecorationLine: 'line-through',
+    },
+    stepDescription: {
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    stepDescriptionCompleted: {
+      textDecorationLine: 'line-through',
+    },
+    arrow: {
+      fontSize: 20,
+      marginLeft: 8,
+    },
+    footer: {
+      flexDirection: 'row',
+      padding: 20,
+      gap: 12,
+      borderTopWidth: 1,
+    },
+    footerButton: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      minHeight: 48,
+    },
+    footerButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    primaryButton: {
+      borderWidth: 0,
+    },
+    primaryButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.surface,
+    },
+  });
 
 export default QuickStartGuide;

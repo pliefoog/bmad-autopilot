@@ -28,11 +28,8 @@ const IconButton: React.FC<IconButtonProps> = ({
 }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  
-  const buttonStyle = [
-    rounded && styles.rounded,
-    style,
-  ];
+
+  const buttonStyle = [rounded && styles.rounded, style];
 
   return (
     <Button
@@ -54,13 +51,14 @@ const IconButton: React.FC<IconButtonProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  rounded: {
-    borderRadius: 9999,
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    rounded: {
+      borderRadius: 9999,
+      aspectRatio: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });
 
 export default IconButton;

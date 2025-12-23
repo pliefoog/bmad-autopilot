@@ -20,15 +20,10 @@ export interface ToastItemProps {
   stackDirection: 'vertical' | 'horizontal';
 }
 
-export const ToastItem: React.FC<ToastItemProps> = ({
-  toast,
-  index,
-  position,
-  stackDirection,
-}) => {
+export const ToastItem: React.FC<ToastItemProps> = ({ toast, index, position, stackDirection }) => {
   const theme = useTheme();
   const { dismiss } = useToast();
-  
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const translateY = useRef(new Animated.Value(position === 'top' ? -50 : 50)).current;
@@ -97,9 +92,10 @@ export const ToastItem: React.FC<ToastItemProps> = ({
   const toastStyle = getToastBackgroundStyle(toast.type, toast.priority, theme);
   const textStyle = getToastTextStyle(toast.type, theme);
 
-  const marginStyle = stackDirection === 'vertical' 
-    ? { marginBottom: index < 2 ? 8 : 0 }
-    : { marginRight: index < 2 ? 8 : 0 };
+  const marginStyle =
+    stackDirection === 'vertical'
+      ? { marginBottom: index < 2 ? 8 : 0 }
+      : { marginRight: index < 2 ? 8 : 0 };
 
   return (
     <Animated.View
@@ -108,10 +104,7 @@ export const ToastItem: React.FC<ToastItemProps> = ({
         marginStyle,
         {
           opacity: fadeAnim,
-          transform: [
-            { scale: scaleAnim },
-            { translateY },
-          ],
+          transform: [{ scale: scaleAnim }, { translateY }],
         },
       ]}
     >
@@ -125,14 +118,11 @@ export const ToastItem: React.FC<ToastItemProps> = ({
           <Text style={[styles.toastText, textStyle]} numberOfLines={3}>
             {toast.message}
           </Text>
-          
+
           {toast.action && (
             <TouchableOpacity
               onPress={handleActionPress}
-              style={[
-                styles.actionButton,
-                getActionButtonStyle(toast.action.style, theme)
-              ]}
+              style={[styles.actionButton, getActionButtonStyle(toast.action.style, theme)]}
             >
               <Text style={[styles.actionText, getActionTextStyle(toast.action.style, theme)]}>
                 {toast.action.label}
@@ -151,13 +141,13 @@ export const ToastItem: React.FC<ToastItemProps> = ({
 };
 
 const getToastBackgroundStyle = (
-  type: ToastData['type'], 
-  priority: ToastData['priority'], 
-  theme: any
+  type: ToastData['type'],
+  priority: ToastData['priority'],
+  theme: any,
 ) => {
   // Critical alarms get special treatment
   if (priority === 'critical') {
-    return { 
+    return {
       backgroundColor: theme.error,
       borderColor: theme.error,
       borderWidth: 2,
@@ -174,7 +164,7 @@ const getToastBackgroundStyle = (
     case 'info':
       return { backgroundColor: theme.primary };
     case 'alarm':
-      return { 
+      return {
         backgroundColor: theme.error,
         borderColor: '#FF6B6B',
         borderWidth: 1,
@@ -215,66 +205,67 @@ const getActionTextStyle = (style: string = 'default', theme: any) => {
   return { color: theme.text, fontWeight: '600' as const };
 };
 
-const createStyles = (theme: any) => StyleSheet.create({
-  toastWrapper: {
-    // Wrapper for animation
-  },
-  
-  toastContainer: {
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 4,
-    minHeight: 56,
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: theme.shadow || '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    toastWrapper: {
+      // Wrapper for animation
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    // Platform-specific styles
-    ...(Platform.OS === 'web' && {
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    }),
-  },
-  
-  contentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  
-  toastText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  
-  actionButton: {
-    marginLeft: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  
-  actionText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  
-  priorityIndicator: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-});
+
+    toastContainer: {
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginHorizontal: 4,
+      minHeight: 56,
+      justifyContent: 'center',
+      elevation: 8,
+      shadowColor: theme.shadow || '#000000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      // Platform-specific styles
+      ...(Platform.OS === 'web' && {
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      }),
+    },
+
+    contentContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+
+    toastText: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '500',
+      lineHeight: 20,
+    },
+
+    actionButton: {
+      marginLeft: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+
+    actionText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+
+    priorityIndicator: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      borderTopLeftRadius: 12,
+      borderBottomLeftRadius: 12,
+    },
+  });

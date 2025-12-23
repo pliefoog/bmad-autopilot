@@ -1,6 +1,6 @@
 /**
  * Memory Leak Diagnostics
- * 
+ *
  * Tools to identify specific memory leak sources in the app.
  */
 
@@ -38,7 +38,7 @@ class MemoryDiagnostics {
    */
   generateReport(): DiagnosticReport {
     const state = useNmeaStore.getState();
-    
+
     // Count history entries from sensor.history TimeSeriesBuffers
     const historyArrays = {
       depth: this.countSensorHistory(state.nmeaData.sensors.depth),
@@ -49,7 +49,7 @@ class MemoryDiagnostics {
       temperature: this.countMultiInstanceHistory(state.nmeaData.sensors.temperature),
     };
 
-    const totalHistoryEntries = 
+    const totalHistoryEntries =
       historyArrays.depth +
       historyArrays.wind +
       historyArrays.speed +
@@ -58,9 +58,8 @@ class MemoryDiagnostics {
       Object.values(historyArrays.temperature).reduce((a, b) => a + b, 0);
 
     // DOM stats
-    const nodeCount = typeof document !== 'undefined' 
-      ? document.getElementsByTagName('*').length 
-      : 0;
+    const nodeCount =
+      typeof document !== 'undefined' ? document.getElementsByTagName('*').length : 0;
 
     const report: DiagnosticReport = {
       timestamp: Date.now(),
@@ -88,7 +87,7 @@ class MemoryDiagnostics {
    */
   private countSensorHistory(sensorGroup: Record<number, any>): number {
     if (!sensorGroup) return 0;
-    
+
     let total = 0;
     Object.values(sensorGroup).forEach((sensor: any) => {
       if (sensor?.history) {
@@ -96,7 +95,7 @@ class MemoryDiagnostics {
         total += stats?.totalCount || 0;
       }
     });
-    
+
     return total;
   }
 
@@ -105,16 +104,16 @@ class MemoryDiagnostics {
    */
   private countMultiInstanceHistory(sensorGroup: Record<number, any>): Record<string, number> {
     const counts: Record<string, number> = {};
-    
+
     if (!sensorGroup) return counts;
-    
+
     Object.entries(sensorGroup).forEach(([instance, sensor]: [string, any]) => {
       if (sensor?.history) {
         const stats = sensor.history.getStats();
         counts[instance] = stats?.totalCount || 0;
       }
     });
-    
+
     return counts;
   }
 
@@ -127,15 +126,17 @@ class MemoryDiagnostics {
     subscriptionGrowth: number;
   } | null {
     const current = this.generateReport();
-    
+
     if (!this.previousReport) {
       return null;
     }
 
     return {
-      historyGrowth: current.storeStats.totalHistoryEntries - this.previousReport.storeStats.totalHistoryEntries,
+      historyGrowth:
+        current.storeStats.totalHistoryEntries - this.previousReport.storeStats.totalHistoryEntries,
       domGrowth: current.domStats.nodeCount - this.previousReport.domStats.nodeCount,
-      subscriptionGrowth: current.storeStats.subscriptions - this.previousReport.storeStats.subscriptions,
+      subscriptionGrowth:
+        current.storeStats.subscriptions - this.previousReport.storeStats.subscriptions,
     };
   }
 
@@ -162,7 +163,7 @@ class MemoryDiagnostics {
     const engineKeys = Object.keys(report.storeStats.historyArrays.engine);
     if (engineKeys.length > 0) {
       lines.push('  Engines:');
-      engineKeys.forEach(key => {
+      engineKeys.forEach((key) => {
         lines.push(`    ${key}: ${report.storeStats.historyArrays.engine[key]}`);
       });
     }
@@ -171,7 +172,7 @@ class MemoryDiagnostics {
     const batteryKeys = Object.keys(report.storeStats.historyArrays.battery);
     if (batteryKeys.length > 0) {
       lines.push('  Batteries:');
-      batteryKeys.forEach(key => {
+      batteryKeys.forEach((key) => {
         lines.push(`    ${key}: ${report.storeStats.historyArrays.battery[key]}`);
       });
     }
@@ -180,7 +181,7 @@ class MemoryDiagnostics {
     const tempKeys = Object.keys(report.storeStats.historyArrays.temperature);
     if (tempKeys.length > 0) {
       lines.push('  Temperatures:');
-      tempKeys.forEach(key => {
+      tempKeys.forEach((key) => {
         lines.push(`    ${key}: ${report.storeStats.historyArrays.temperature[key]}`);
       });
     }
@@ -188,16 +189,22 @@ class MemoryDiagnostics {
     lines.push('');
     lines.push('🌐 DOM Statistics:');
     lines.push(`  Total DOM Nodes: ${report.domStats.nodeCount}`);
-    
+
     // Growth analysis
     if (this.previousReport) {
       const growth = this.detectGrowth();
       if (growth) {
         lines.push('');
         lines.push('📈 Growth Since Last Check:');
-        lines.push(`  History Entries: ${growth.historyGrowth > 0 ? '+' : ''}${growth.historyGrowth}`);
+        lines.push(
+          `  History Entries: ${growth.historyGrowth > 0 ? '+' : ''}${growth.historyGrowth}`,
+        );
         lines.push(`  DOM Nodes: ${growth.domGrowth > 0 ? '+' : ''}${growth.domGrowth}`);
-        lines.push(`  Subscriptions: ${growth.subscriptionGrowth > 0 ? '+' : ''}${growth.subscriptionGrowth}`);
+        lines.push(
+          `  Subscriptions: ${growth.subscriptionGrowth > 0 ? '+' : ''}${
+            growth.subscriptionGrowth
+          }`,
+        );
 
         if (growth.historyGrowth > 100) {
           lines.push('');
@@ -221,15 +228,11 @@ class MemoryDiagnostics {
    * Monitor for continuous leak detection
    */
   startMonitoring(intervalMs: number = 10000): NodeJS.Timeout {
-    console.log(`[Diagnostics] Starting monitoring (interval: ${intervalMs}ms)`);
-    
     // Initial report
     const initial = this.generateReport();
-    console.log(this.formatReport(initial));
 
     return setInterval(() => {
       const report = this.generateReport();
-      console.log(this.formatReport(report));
     }, intervalMs);
   }
 }
@@ -246,13 +249,11 @@ if (typeof window !== 'undefined') {
 if (typeof window !== 'undefined') {
   (window as any).diagnoseMemory = () => {
     const report = memoryDiagnostics.generateReport();
-    console.log(memoryDiagnostics.formatReport(report));
     return report;
   };
 
   (window as any).monitorMemory = (intervalSeconds: number = 10) => {
     const intervalId = memoryDiagnostics.startMonitoring(intervalSeconds * 1000);
-    console.log(`✅ Monitoring started. Run stopMonitoring() to stop.`);
     (window as any).__memoryMonitorInterval = intervalId;
     return intervalId;
   };
@@ -261,9 +262,7 @@ if (typeof window !== 'undefined') {
     if ((window as any).__memoryMonitorInterval) {
       clearInterval((window as any).__memoryMonitorInterval);
       (window as any).__memoryMonitorInterval = null;
-      console.log('✅ Monitoring stopped.');
     } else {
-      console.log('No monitoring active.');
     }
   };
 
@@ -274,28 +273,27 @@ if (typeof window !== 'undefined') {
     const originalWarn = console.warn;
     const originalInfo = console.info;
     const originalDebug = console.debug;
-    
+
     // Suppress all logging temporarily
     console.log = () => {};
     console.warn = () => {};
     console.info = () => {};
     console.debug = () => {};
-    
+
     try {
       const report = memoryDiagnostics.generateReport();
-      
+
       // Restore console
       console.log = originalLog;
       console.warn = originalWarn;
       console.info = originalInfo;
       console.debug = originalDebug;
-      
+
       // Clear console
       console.clear();
-      
+
       // Show ONLY the diagnostic report
-      console.log(memoryDiagnostics.formatReport(report));
-      
+
       return report;
     } catch (error) {
       // Restore console on error
@@ -303,7 +301,7 @@ if (typeof window !== 'undefined') {
       console.warn = originalWarn;
       console.info = originalInfo;
       console.debug = originalDebug;
-      
+
       console.error('Error running diagnostics:', error);
     }
   };

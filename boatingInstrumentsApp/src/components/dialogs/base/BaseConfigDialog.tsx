@@ -1,22 +1,22 @@
 /**
  * Base Config Dialog Component
- * 
+ *
  * Reusable foundation for configuration dialogs with consistent structure:
  * - Standard Modal wrapper with pageSheet presentation
  * - Header with close button and title
  * - Optional action button (Connect, Save, etc.)
  * - ScrollView content area
  * - Consistent styling across all config dialogs
- * 
+ *
  * **Architecture Decision:**
  * This component was created to eliminate ~260 lines of duplicate Modal/header/footer
  * code across ConnectionConfigDialog, UnitsConfigDialog, and SensorConfigDialog.
- * 
+ *
  * **Component Purpose:**
  * Provides consistent Modal structure for all configuration dialogs across the app.
  * All 7 dialogs now use this component: ConnectionConfigDialog, UnitsConfigDialog, SensorConfigDialog,
  * LayoutSettingsDialog, FactoryResetDialog, DisplayThemeDialog, AlarmHistoryDialog
- * 
+ *
  * **Usage:**
  * ```tsx
  * <BaseConfigDialog
@@ -35,27 +35,20 @@
  */
 
 import React, { useMemo } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
 
 export interface BaseConfigDialogProps {
   /** Controls modal visibility */
   visible: boolean;
-  
+
   /** Dialog title displayed in header */
   title: string;
-  
+
   /** Callback when dialog is closed (X button or backdrop) */
   onClose: () => void;
-  
+
   /** Optional action button configuration (Connect, Save, etc.) */
   actionButton?: {
     label: string;
@@ -63,17 +56,17 @@ export interface BaseConfigDialogProps {
     disabled?: boolean;
     testID?: string;
   };
-  
+
   /** Dialog content */
   children: React.ReactNode;
-  
+
   /** Test ID for testing */
   testID?: string;
 }
 
 /**
  * Base Config Dialog
- * 
+ *
  * Provides consistent Modal structure for all configuration dialogs.
  * Handles header, close button, optional action button, and scrollable content area.
  */
@@ -98,10 +91,15 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
     >
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.surface, borderBottomColor: theme.border },
+          ]}
+        >
           {/* Close Button (Left) */}
-          <TouchableOpacity 
-            style={styles.headerButton} 
+          <TouchableOpacity
+            style={styles.headerButton}
             onPress={onClose}
             accessibilityLabel="Close dialog"
             accessibilityRole="button"
@@ -136,8 +134,8 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
         </View>
 
         {/* Scrollable Content */}
-        <ScrollView 
-          style={styles.scrollView} 
+        <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >

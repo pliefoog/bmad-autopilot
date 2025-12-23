@@ -1,11 +1,11 @@
 /**
  * Platform-Specific Performance Benchmarks
- * 
+ *
  * Defines performance targets and benchmarks for different platforms:
  * - iOS: Native performance characteristics
  * - Android: Device variety considerations
  * - Web: Browser-specific optimizations
- * 
+ *
  * Story 4.5 AC1-5: Establish performance benchmarks for each platform
  */
 
@@ -236,7 +236,7 @@ export function detectDeviceClass(): 'low-end' | 'mid-range' | 'high-end' {
     // Web: Detect based on hardware concurrency and memory
     const cores = navigator.hardwareConcurrency || 4;
     const memory = (performance as any).memory?.jsHeapSizeLimit || 0;
-    
+
     if (cores >= 8 && memory > 4 * 1024 * 1024 * 1024) {
       return 'high-end';
     } else if (cores >= 4) {
@@ -244,7 +244,7 @@ export function detectDeviceClass(): 'low-end' | 'mid-range' | 'high-end' {
     }
     return 'low-end';
   }
-  
+
   // For React Native, we'll default to mid-range
   // In production, this would use native modules to detect device specs
   return 'mid-range';
@@ -254,12 +254,12 @@ export function detectDeviceClass(): 'low-end' | 'mid-range' | 'high-end' {
  * Get platform-specific benchmarks
  */
 export function getPlatformBenchmarks(
-  deviceClass?: 'low-end' | 'mid-range' | 'high-end'
+  deviceClass?: 'low-end' | 'mid-range' | 'high-end',
 ): PerformanceBenchmark[] {
   const detectedClass = deviceClass || detectDeviceClass();
-  
+
   let platformConfigs: PlatformBenchmarkConfig[] = [];
-  
+
   if (Platform.OS === 'ios') {
     platformConfigs = IOS_BENCHMARKS;
   } else if (Platform.OS === 'android') {
@@ -267,8 +267,8 @@ export function getPlatformBenchmarks(
   } else if (Platform.OS === 'web') {
     platformConfigs = WEB_BENCHMARKS;
   }
-  
-  const config = platformConfigs.find(c => c.deviceClass === detectedClass);
+
+  const config = platformConfigs.find((c) => c.deviceClass === detectedClass);
   return config?.benchmarks || [];
 }
 
@@ -283,7 +283,7 @@ export function getAllPlatformBenchmarks(): PlatformBenchmarkConfig[] {
   } else if (Platform.OS === 'web') {
     return WEB_BENCHMARKS;
   }
-  
+
   return [];
 }
 

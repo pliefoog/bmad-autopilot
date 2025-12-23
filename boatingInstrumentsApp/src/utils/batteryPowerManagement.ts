@@ -1,16 +1,16 @@
 /**
  * Battery & Power Management Optimization
- * 
+ *
  * Intelligent power consumption management for extended marine use.
  * Optimizes battery life for long passages without shore power.
- * 
+ *
  * Key Principles:
  * - Screen management: Intelligent dimming, brightness adaptation
  * - Background throttling: Reduce processing during low-power scenarios
  * - Feature toggles: Disable non-essential features to save power
  * - Battery monitoring: Track usage and predict remaining runtime
  * - Adaptive performance: Scale processing based on battery level
- * 
+ *
  * Marine-Specific Optimizations:
  * - Extended operation focus (24+ hour passages)
  * - Ambient light adaptation (bright sun to dark night)
@@ -31,13 +31,13 @@ import { Platform, AppState } from 'react-native';
 export enum PowerMode {
   /** Maximum performance - plugged in or high battery */
   PERFORMANCE = 'performance',
-  
+
   /** Balanced - normal operation */
   BALANCED = 'balanced',
-  
+
   /** Power saver - extend battery life */
   POWER_SAVER = 'power_saver',
-  
+
   /** Ultra saver - minimal features for emergency situations */
   ULTRA_SAVER = 'ultra_saver',
 }
@@ -47,14 +47,14 @@ export enum PowerMode {
  */
 export const BATTERY_THRESHOLDS = {
   /** Switch to power saver mode */
-  POWER_SAVER: 0.30, // 30%
-  
+  POWER_SAVER: 0.3, // 30%
+
   /** Switch to ultra saver mode */
   ULTRA_SAVER: 0.15, // 15%
-  
+
   /** Critical battery warning */
-  CRITICAL: 0.10, // 10%
-  
+  CRITICAL: 0.1, // 10%
+
   /** Emergency shutdown warning */
   EMERGENCY: 0.05, // 5%
 } as const;
@@ -65,16 +65,16 @@ export const BATTERY_THRESHOLDS = {
 export const SCREEN_CONFIG = {
   /** Minimum brightness level (0.0 - 1.0) */
   MIN_BRIGHTNESS: 0.1,
-  
+
   /** Maximum brightness level (0.0 - 1.0) */
   MAX_BRIGHTNESS: 1.0,
-  
+
   /** Auto-dim timeout in ms */
   AUTO_DIM_TIMEOUT: 30000, // 30 seconds
-  
+
   /** Dim brightness level (0.0 - 1.0) */
   DIM_BRIGHTNESS: 0.3,
-  
+
   /** Ambient light adaptation speed (0.0 - 1.0, higher = faster) */
   ADAPTATION_SPEED: 0.2,
 } as const;
@@ -84,9 +84,9 @@ export const SCREEN_CONFIG = {
  */
 export const PROCESSING_THROTTLES = {
   [PowerMode.PERFORMANCE]: {
-    nmeaUpdateInterval: 100,    // ms
-    widgetUpdateInterval: 100,  // ms
-    alarmCheckInterval: 500,    // ms
+    nmeaUpdateInterval: 100, // ms
+    widgetUpdateInterval: 100, // ms
+    alarmCheckInterval: 500, // ms
     backgroundUpdateInterval: 1000, // ms
   },
   [PowerMode.BALANCED]: {
@@ -128,15 +128,15 @@ export const FEATURE_AVAILABILITY = {
     autoRecording: true,
   },
   [PowerMode.POWER_SAVER]: {
-    animations: false,        // Disable animations
+    animations: false, // Disable animations
     liveWidgets: true,
     backgroundMonitoring: true,
-    historicalData: false,    // Disable historical queries
-    autoRecording: false,     // Disable auto recording
+    historicalData: false, // Disable historical queries
+    autoRecording: false, // Disable auto recording
   },
   [PowerMode.ULTRA_SAVER]: {
     animations: false,
-    liveWidgets: false,       // Show only essential alarms
+    liveWidgets: false, // Show only essential alarms
     backgroundMonitoring: true, // Keep critical monitoring
     historicalData: false,
     autoRecording: false,
@@ -153,22 +153,22 @@ export const FEATURE_AVAILABILITY = {
 export interface BatteryState {
   /** Current battery level (0.0 - 1.0) */
   level: number;
-  
+
   /** Is device charging */
   isCharging: boolean;
-  
+
   /** Estimated time remaining (minutes) */
   estimatedTimeRemaining?: number;
-  
+
   /** Current power mode */
   powerMode: PowerMode;
-  
+
   /** Battery drain rate (%/hour) */
   drainRate: number;
-  
+
   /** Battery health (0.0 - 1.0) */
   health?: number;
-  
+
   /** Temperature (Celsius) */
   temperature?: number;
 }
@@ -179,7 +179,7 @@ export interface BatteryState {
 export class BatteryUsageTracker {
   private samples: Array<{ level: number; timestamp: number }> = [];
   private maxSamples = 10;
-  
+
   /**
    * Add battery level sample
    */
@@ -188,13 +188,13 @@ export class BatteryUsageTracker {
       level,
       timestamp: Date.now(),
     });
-    
+
     // Keep only recent samples
     if (this.samples.length > this.maxSamples) {
       this.samples.shift();
     }
   }
-  
+
   /**
    * Calculate drain rate in %/hour
    */
@@ -202,36 +202,36 @@ export class BatteryUsageTracker {
     if (this.samples.length < 2) {
       return 0;
     }
-    
+
     const first = this.samples[0];
     const last = this.samples[this.samples.length - 1];
-    
+
     const levelDrop = first.level - last.level;
     const timeDiff = last.timestamp - first.timestamp;
     const hours = timeDiff / (1000 * 60 * 60);
-    
+
     if (hours <= 0) return 0;
-    
+
     return (levelDrop / hours) * 100; // Convert to percentage per hour
   }
-  
+
   /**
    * Estimate time remaining in minutes
    */
   estimateTimeRemaining(currentLevel: number): number | undefined {
     const drainRate = this.calculateDrainRate();
-    
+
     if (drainRate <= 0) {
       return undefined; // Can't estimate if not draining or charging
     }
-    
+
     // Calculate hours until 5% (emergency threshold)
     const usableLevel = currentLevel - BATTERY_THRESHOLDS.EMERGENCY;
     const hoursRemaining = usableLevel / (drainRate / 100);
-    
+
     return hoursRemaining * 60; // Convert to minutes
   }
-  
+
   /**
    * Check if drain rate is acceptable for marine use
    * Target: <5% per hour
@@ -244,17 +244,17 @@ export class BatteryUsageTracker {
 
 /**
  * Hook for monitoring battery state
- * 
+ *
  * Tracks battery level, charging state, and estimates runtime
  * Note: Requires react-native-device-info or similar package for full functionality
- * 
+ *
  * @returns Current battery state
- * 
+ *
  * @example
  * ```tsx
  * function BatteryIndicator() {
  *   const battery = useBatteryMonitor();
- *   
+ *
  *   return (
  *     <View>
  *       <Text>Battery: {(battery.level * 100).toFixed(0)}%</Text>
@@ -274,24 +274,24 @@ export function useBatteryMonitor(): BatteryState {
     powerMode: PowerMode.BALANCED,
     drainRate: 0,
   });
-  
+
   const tracker = useRef(new BatteryUsageTracker());
-  
+
   useEffect(() => {
     // TODO: Integrate with actual battery API
     // This is a placeholder implementation
     // In production, use react-native-device-info or Platform-specific APIs
-    
+
     const updateBattery = async () => {
       // Platform-specific battery APIs would go here
       // For now, using mock data
       const mockLevel = 0.75; // 75%
       const mockCharging = false;
-      
+
       tracker.current.addSample(mockLevel);
       const drainRate = tracker.current.calculateDrainRate();
       const estimatedTimeRemaining = tracker.current.estimateTimeRemaining(mockLevel);
-      
+
       // Determine power mode based on battery level
       let powerMode = PowerMode.BALANCED;
       if (mockCharging) {
@@ -301,7 +301,7 @@ export function useBatteryMonitor(): BatteryState {
       } else if (mockLevel <= BATTERY_THRESHOLDS.POWER_SAVER) {
         powerMode = PowerMode.POWER_SAVER;
       }
-      
+
       setBatteryState({
         level: mockLevel,
         isCharging: mockCharging,
@@ -310,14 +310,14 @@ export function useBatteryMonitor(): BatteryState {
         estimatedTimeRemaining,
       });
     };
-    
+
     // Update every 30 seconds
     const interval = setInterval(updateBattery, 30000);
     updateBattery(); // Initial update
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   return batteryState;
 }
 
@@ -327,7 +327,7 @@ export function useBatteryMonitor(): BatteryState {
 
 /**
  * Screen dimming controller
- * 
+ *
  * Manages screen brightness based on:
  * - User activity (auto-dim on inactivity)
  * - Ambient light (adapt to environment)
@@ -341,23 +341,23 @@ export class ScreenDimmingController {
   private lastActivityTime: number = Date.now();
   private autoDimTimer: NodeJS.Timeout | null = null;
   private animationFrame: number | null = null;
-  
+
   /**
    * Record user activity (touch, gesture, etc.)
    */
   recordActivity(): void {
     this.lastActivityTime = Date.now();
-    
+
     // Un-dim if currently dimmed
     if (this.isDimmed) {
       this.setTargetBrightness(SCREEN_CONFIG.MAX_BRIGHTNESS);
       this.isDimmed = false;
     }
-    
+
     // Restart auto-dim timer
     this.startAutoDimTimer();
   }
-  
+
   /**
    * Start auto-dim timer
    */
@@ -365,12 +365,12 @@ export class ScreenDimmingController {
     if (this.autoDimTimer) {
       clearTimeout(this.autoDimTimer);
     }
-    
+
     this.autoDimTimer = setTimeout(() => {
       this.dimScreen();
     }, SCREEN_CONFIG.AUTO_DIM_TIMEOUT);
   }
-  
+
   /**
    * Dim screen after inactivity
    */
@@ -378,20 +378,20 @@ export class ScreenDimmingController {
     this.isDimmed = true;
     this.setTargetBrightness(SCREEN_CONFIG.DIM_BRIGHTNESS);
   }
-  
+
   /**
    * Set target brightness with smooth transition
    */
   setTargetBrightness(brightness: number): void {
     this.targetBrightness = Math.max(
       SCREEN_CONFIG.MIN_BRIGHTNESS,
-      Math.min(SCREEN_CONFIG.MAX_BRIGHTNESS, brightness)
+      Math.min(SCREEN_CONFIG.MAX_BRIGHTNESS, brightness),
     );
-    
+
     // Start smooth transition animation
     this.animateBrightness();
   }
-  
+
   /**
    * Animate brightness change smoothly
    */
@@ -399,29 +399,29 @@ export class ScreenDimmingController {
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
-    
+
     const step = () => {
       const delta = this.targetBrightness - this.currentBrightness;
-      
+
       if (Math.abs(delta) < 0.01) {
         // Close enough, snap to target
         this.currentBrightness = this.targetBrightness;
         return;
       }
-      
+
       // Move towards target
       this.currentBrightness += delta * SCREEN_CONFIG.ADAPTATION_SPEED;
-      
+
       // Apply brightness change (would call platform-specific API here)
       this.applyBrightness(this.currentBrightness);
-      
+
       // Continue animation
       this.animationFrame = requestAnimationFrame(step);
     };
-    
+
     this.animationFrame = requestAnimationFrame(step);
   }
-  
+
   /**
    * Apply brightness to screen (platform-specific)
    */
@@ -430,12 +430,11 @@ export class ScreenDimmingController {
     // iOS: react-native-screen-brightness
     // Android: react-native-device-brightness
     // Web: Not applicable
-    
+
     if (__DEV__) {
-      console.log(`[Screen Brightness] ${(brightness * 100).toFixed(0)}%`);
     }
   }
-  
+
   /**
    * Adjust brightness for power mode
    */
@@ -455,14 +454,14 @@ export class ScreenDimmingController {
         break;
     }
   }
-  
+
   /**
    * Get current brightness level
    */
   getCurrentBrightness(): number {
     return this.currentBrightness;
   }
-  
+
   /**
    * Cleanup timers
    */
@@ -478,19 +477,19 @@ export class ScreenDimmingController {
 
 /**
  * Hook for screen dimming management
- * 
+ *
  * Automatically dims screen after inactivity
  * Integrates with power mode for battery savings
- * 
+ *
  * @param powerMode - Current power mode
  * @returns Controller instance and current brightness
- * 
+ *
  * @example
  * ```tsx
  * function App() {
  *   const { powerMode } = useBatteryMonitor();
  *   const { recordActivity, brightness } = useScreenDimming(powerMode);
- *   
+ *
  *   return (
  *     <View onTouchStart={recordActivity}>
  *       <Dashboard brightness={brightness} />
@@ -502,31 +501,31 @@ export class ScreenDimmingController {
 export function useScreenDimming(powerMode: PowerMode) {
   const controller = useRef(new ScreenDimmingController());
   const [brightness, setBrightness] = useState<number>(SCREEN_CONFIG.MAX_BRIGHTNESS);
-  
+
   // Apply power mode changes
   useEffect(() => {
     controller.current.applyPowerMode(powerMode);
   }, [powerMode]);
-  
+
   // Monitor brightness changes
   useEffect(() => {
     const interval = setInterval(() => {
       const currentBrightness = controller.current.getCurrentBrightness();
       setBrightness(currentBrightness);
     }, 100);
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => controller.current.dispose();
   }, []);
-  
+
   const recordActivity = useCallback(() => {
     controller.current.recordActivity();
   }, []);
-  
+
   return {
     recordActivity,
     brightness,
@@ -540,40 +539,40 @@ export function useScreenDimming(powerMode: PowerMode) {
 
 /**
  * Hook to check if feature is available in current power mode
- * 
+ *
  * @param feature - Feature name to check
  * @param powerMode - Current power mode
  * @returns true if feature is enabled
- * 
+ *
  * @example
  * ```tsx
  * function AnimatedWidget() {
  *   const { powerMode } = useBatteryMonitor();
  *   const animationsEnabled = usePowerAwareFeature('animations', powerMode);
- *   
+ *
  *   return animationsEnabled ? <AnimatedView /> : <StaticView />;
  * }
  * ```
  */
 export function usePowerAwareFeature(
-  feature: keyof typeof FEATURE_AVAILABILITY[PowerMode.PERFORMANCE],
-  powerMode: PowerMode
+  feature: keyof (typeof FEATURE_AVAILABILITY)[PowerMode.PERFORMANCE],
+  powerMode: PowerMode,
 ): boolean {
   return FEATURE_AVAILABILITY[powerMode][feature];
 }
 
 /**
  * Hook to get processing throttle for current power mode
- * 
+ *
  * @param powerMode - Current power mode
  * @returns Throttle configuration
- * 
+ *
  * @example
  * ```tsx
  * function NmeaProcessor() {
  *   const { powerMode } = useBatteryMonitor();
  *   const throttle = useProcessingThrottle(powerMode);
- *   
+ *
  *   useEffect(() => {
  *     const interval = setInterval(processNmea, throttle.nmeaUpdateInterval);
  *     return () => clearInterval(interval);
@@ -591,36 +590,35 @@ export function useProcessingThrottle(powerMode: PowerMode) {
 
 /**
  * Background task scheduler that respects power mode
- * 
+ *
  * Adjusts task frequency based on power mode and app state
  */
 export class PowerAwareBackgroundScheduler {
-  private tasks: Map<string, {
-    callback: () => void;
-    interval: number;
-    timer: NodeJS.Timeout | null;
-  }> = new Map();
-  
+  private tasks: Map<
+    string,
+    {
+      callback: () => void;
+      interval: number;
+      timer: NodeJS.Timeout | null;
+    }
+  > = new Map();
+
   private powerMode: PowerMode = PowerMode.BALANCED;
   private appState: string = 'active';
-  
+
   /**
    * Register background task
    */
-  registerTask(
-    taskId: string,
-    callback: () => void,
-    baseInterval: number
-  ): void {
+  registerTask(taskId: string, callback: () => void, baseInterval: number): void {
     this.tasks.set(taskId, {
       callback,
       interval: baseInterval,
       timer: null,
     });
-    
+
     this.scheduleTask(taskId);
   }
-  
+
   /**
    * Unregister background task
    */
@@ -631,7 +629,7 @@ export class PowerAwareBackgroundScheduler {
     }
     this.tasks.delete(taskId);
   }
-  
+
   /**
    * Update power mode and reschedule tasks
    */
@@ -639,7 +637,7 @@ export class PowerAwareBackgroundScheduler {
     this.powerMode = mode;
     this.rescheduleAllTasks();
   }
-  
+
   /**
    * Update app state and adjust scheduling
    */
@@ -647,32 +645,32 @@ export class PowerAwareBackgroundScheduler {
     this.appState = state;
     this.rescheduleAllTasks();
   }
-  
+
   /**
    * Schedule individual task with power-aware interval
    */
   private scheduleTask(taskId: string): void {
     const task = this.tasks.get(taskId);
     if (!task) return;
-    
+
     // Clear existing timer
     if (task.timer) {
       clearInterval(task.timer);
     }
-    
+
     // Calculate adjusted interval based on power mode and app state
     const adjustedInterval = this.calculateAdjustedInterval(task.interval);
-    
+
     // Schedule task
     task.timer = setInterval(task.callback, adjustedInterval);
   }
-  
+
   /**
    * Calculate adjusted interval based on power mode
    */
   private calculateAdjustedInterval(baseInterval: number): number {
     let multiplier = 1.0;
-    
+
     // Adjust for power mode
     switch (this.powerMode) {
       case PowerMode.PERFORMANCE:
@@ -688,15 +686,15 @@ export class PowerAwareBackgroundScheduler {
         multiplier = 6.0;
         break;
     }
-    
+
     // Further throttle if app is in background
     if (this.appState !== 'active') {
       multiplier *= 2.0;
     }
-    
+
     return baseInterval * multiplier;
   }
-  
+
   /**
    * Reschedule all tasks
    */
@@ -705,7 +703,7 @@ export class PowerAwareBackgroundScheduler {
       this.scheduleTask(taskId);
     }
   }
-  
+
   /**
    * Cleanup all tasks
    */
@@ -729,36 +727,36 @@ export class PowerAwareBackgroundScheduler {
 export interface BatteryUsageReport {
   /** Current battery level (0.0 - 1.0) */
   currentLevel: number;
-  
+
   /** Drain rate (%/hour) */
   drainRate: number;
-  
+
   /** Estimated time remaining (minutes) */
   estimatedTimeRemaining?: number;
-  
+
   /** Is within target drain rate (<5%/hour) */
   isWithinTarget: boolean;
-  
+
   /** Current power mode */
   powerMode: PowerMode;
-  
+
   /** Time in each power mode (minutes) */
   timeInModes: Record<PowerMode, number>;
-  
+
   /** Total monitoring duration (minutes) */
   totalDuration: number;
 }
 
 /**
  * Generate battery usage report for monitoring
- * 
+ *
  * @param batteryState - Current battery state
  * @param tracker - Battery usage tracker
  * @returns Usage report
  */
 export function generateBatteryReport(
   batteryState: BatteryState,
-  tracker: BatteryUsageTracker
+  tracker: BatteryUsageTracker,
 ): BatteryUsageReport {
   return {
     currentLevel: batteryState.level,
@@ -784,14 +782,12 @@ export function logBatteryWarnings(report: BatteryUsageReport): void {
     if (!report.isWithinTarget) {
       console.warn(
         `[Battery] High drain rate detected: ${report.drainRate.toFixed(2)}%/hour ` +
-        `(target: <5%/hour). Consider switching to power saver mode.`
+          `(target: <5%/hour). Consider switching to power saver mode.`,
       );
     }
-    
+
     if (report.currentLevel <= BATTERY_THRESHOLDS.CRITICAL) {
-      console.warn(
-        `[Battery] Critical battery level: ${(report.currentLevel * 100).toFixed(0)}%`
-      );
+      console.warn(`[Battery] Critical battery level: ${(report.currentLevel * 100).toFixed(0)}%`);
     }
   }
 }

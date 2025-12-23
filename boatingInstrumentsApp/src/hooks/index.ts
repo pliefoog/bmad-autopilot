@@ -8,19 +8,19 @@ export { useConnection } from './useConnection';
 export type { UseConnectionOptions, UseConnectionReturn } from './useConnection';
 
 export { useAlarmThreshold } from './useAlarmThreshold';
-export type { 
-  UseAlarmThresholdOptions, 
+export type {
+  UseAlarmThresholdOptions,
   UseAlarmThresholdReturn,
-  AlarmThreshold 
+  AlarmThreshold,
 } from './useAlarmThreshold';
 
 export { useUnitConversion } from './useUnitConversion';
-export type { 
-  UseUnitConversionOptions, 
+export type {
+  UseUnitConversionOptions,
   UseUnitConversionReturn,
   UnitSystem,
   UnitDefinition,
-  ConversionPreference 
+  ConversionPreference,
 } from './useUnitConversion';
 
 export { useResponsiveHeader } from './useResponsiveHeader';
@@ -32,10 +32,7 @@ export type { UseInputFocusReturn } from './useInputFocus';
 export { useTouchTargetSize } from './useTouchTargetSize';
 
 export { useInputValidation } from './useInputValidation';
-export type { 
-  ValidatorFunction,
-  UseInputValidationReturn 
-} from './useInputValidation';
+export type { ValidatorFunction, UseInputValidationReturn } from './useInputValidation';
 
 export { useHapticFeedback } from './useHapticFeedback';
 export type { UseHapticFeedbackReturn } from './useHapticFeedback';
@@ -51,7 +48,7 @@ export const useDataWithConnection = () => {
   const dataHook = useNMEAData({
     enableRealTimeUpdates: connectionHook.isConnected,
   });
-  
+
   return {
     ...connectionHook,
     ...dataHook,

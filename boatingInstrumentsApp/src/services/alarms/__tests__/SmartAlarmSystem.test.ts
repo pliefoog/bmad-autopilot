@@ -47,7 +47,7 @@ describe('Smart Alarm Management System', () => {
   let smartAlarmManager: SmartAlarmManager;
   let mockNmeaData: NmeaDataSnapshot;
   let mockVesselContext: VesselContext;
-  
+
   beforeEach(() => {
     // Initialize smart alarm manager with test configuration
     smartAlarmManager = new SmartAlarmManager({
@@ -61,11 +61,11 @@ describe('Smart Alarm Management System', () => {
       maxResponseTime: 500,
       debugLogging: false,
     });
-    
+
     // Mock NMEA data
     mockNmeaData = {
       timestamp: Date.now(),
-      position: { latitude: 40.7128, longitude: -74.0060 },
+      position: { latitude: 40.7128, longitude: -74.006 },
       speed: 6.5,
       courseOverGround: 45,
       heading: 43,
@@ -80,7 +80,7 @@ describe('Smart Alarm Management System', () => {
       gpsFixValid: true,
       satelliteCount: 8,
     };
-    
+
     // Mock vessel context
     mockVesselContext = {
       state: 'sailing',
@@ -90,15 +90,15 @@ describe('Smart Alarm Management System', () => {
       crewOnWatch: true,
       confidence: 0.9,
     };
-    
+
     // Update manager with initial data
     smartAlarmManager.updateNmeaData(mockNmeaData);
   });
-  
+
   afterEach(() => {
     smartAlarmManager.cleanup();
   });
-  
+
   describe('Marine Safety Compliance', () => {
     it('should process critical alarms within maximum response time', async () => {
       const criticalAlarm: Alarm = {
@@ -110,17 +110,17 @@ describe('Smart Alarm Management System', () => {
         value: 105,
         threshold: 100,
       };
-      
+
       const startTime = performance.now();
       const processed = await smartAlarmManager.processAlarm(criticalAlarm);
       const processingTime = performance.now() - startTime;
-      
+
       expect(processingTime).toBeLessThan(500); // 500ms max response time
       expect(processed.level).toBe('critical');
       expect(processed.smartFeaturesApplied).toContain('criticalBypass');
       expect(processed.smartSuppressed).toBe(false); // Never suppress critical alarms
     });
-    
+
     it('should never suppress critical safety alarms', async () => {
       const criticalSafetyAlarms: Alarm[] = [
         {
@@ -145,16 +145,16 @@ describe('Smart Alarm Management System', () => {
           source: 'bilge_alarm',
         },
       ];
-      
+
       for (const alarm of criticalSafetyAlarms) {
         const processed = await smartAlarmManager.processAlarm(alarm);
-        
+
         expect(processed.smartSuppressed).toBe(false);
         expect(processed.smartPriority).toBeGreaterThanOrEqual(1000);
         expect(processed.smartFeaturesApplied).toContain('criticalBypass');
       }
     });
-    
+
     it('should maintain marine safety classification accuracy', async () => {
       const testAlarms: Array<{ alarm: Alarm; expectedClassification: string }> = [
         {
@@ -188,24 +188,24 @@ describe('Smart Alarm Management System', () => {
           expectedClassification: 'electrical_safety',
         },
       ];
-      
+
       for (const testCase of testAlarms) {
         const processed = await smartAlarmManager.processAlarm(testCase.alarm);
-        
+
         // Verify safety classification (would check internal classification)
         expect(processed.smartPriority).toBeGreaterThan(0);
         expect(processed.processingTime).toBeLessThan(1000); // 1 second max for any alarm
       }
     });
   });
-  
+
   describe('Alarm Grouping Engine', () => {
     let groupingEngine: AlarmGroupingEngine;
-    
+
     beforeEach(() => {
       groupingEngine = new AlarmGroupingEngine();
     });
-    
+
     it('should group related engine alarms', () => {
       const engineAlarms: Alarm[] = [
         {
@@ -230,19 +230,19 @@ describe('Smart Alarm Management System', () => {
           source: 'engine_rpm',
         },
       ];
-      
+
       const groups = groupingEngine.processAlarms(engineAlarms);
-      
+
       expect(groups.length).toBeGreaterThan(0);
-      
-      const engineGroup = groups.find(g => g.category === MarineSystemCategory.ENGINE);
+
+      const engineGroup = groups.find((g) => g.category === MarineSystemCategory.ENGINE);
       expect(engineGroup).toBeDefined();
       expect(engineGroup!.alarms.length).toBe(3);
       if (engineGroup && engineGroup.primaryAlarm) {
         expect(engineGroup.primaryAlarm.level).toBe('warning'); // Highest severity becomes primary
       }
     });
-    
+
     it('should separate navigation alarms from engine alarms', () => {
       const mixedAlarms: Alarm[] = [
         {
@@ -267,18 +267,18 @@ describe('Smart Alarm Management System', () => {
           source: 'autopilot',
         },
       ];
-      
+
       const groups = groupingEngine.processAlarms(mixedAlarms);
-      
-      const navigationGroup = groups.find(g => g.category === MarineSystemCategory.NAVIGATION);
-      const engineGroup = groups.find(g => g.category === MarineSystemCategory.ENGINE);
-      
+
+      const navigationGroup = groups.find((g) => g.category === MarineSystemCategory.NAVIGATION);
+      const engineGroup = groups.find((g) => g.category === MarineSystemCategory.ENGINE);
+
       expect(navigationGroup).toBeDefined();
       expect(engineGroup).toBeDefined();
       expect(navigationGroup!.alarms.length).toBe(2); // GPS + Autopilot
       expect(engineGroup!.alarms.length).toBe(1); // Engine only
     });
-    
+
     it('should handle ungrouped alarms correctly', () => {
       const ungroupedAlarms: Alarm[] = [
         {
@@ -289,17 +289,17 @@ describe('Smart Alarm Management System', () => {
           source: 'custom_sensor',
         },
       ];
-      
+
       const groups = groupingEngine.processAlarms(ungroupedAlarms);
-      
+
       // Should still create appropriate categorization
       expect(groups.length).toBeGreaterThanOrEqual(1);
     });
   });
-  
+
   describe('Priority Queue Management', () => {
     let priorityQueue: PriorityQueueManager;
-    
+
     beforeEach(() => {
       priorityQueue = new PriorityQueueManager({
         maxSize: 10,
@@ -308,13 +308,13 @@ describe('Smart Alarm Management System', () => {
         marineSafetyBypass: true,
       });
     });
-    
+
     afterEach(() => {
       if (priorityQueue.cleanup) {
         priorityQueue.cleanup();
       }
     });
-    
+
     it('should prioritize critical alarms over lower levels', () => {
       const alarms: Alarm[] = [
         {
@@ -336,12 +336,12 @@ describe('Smart Alarm Management System', () => {
           timestamp: Date.now(),
         },
       ];
-      
+
       // Test would verify proper priority ordering
       // In a real implementation, we'd test the queue ordering
       expect(alarms[1].level).toBe('critical'); // Critical should be highest priority
     });
-    
+
     it('should apply context-aware filtering', () => {
       const engineAlarm: Alarm = {
         id: 'engine-context-1',
@@ -350,7 +350,7 @@ describe('Smart Alarm Management System', () => {
         timestamp: Date.now(),
         source: 'engine_temperature',
       };
-      
+
       // Test with different contexts
       const motoringContext: VesselContext = {
         state: 'motoring',
@@ -360,7 +360,7 @@ describe('Smart Alarm Management System', () => {
         crewOnWatch: true,
         confidence: 0.9,
       };
-      
+
       const anchoredContext: VesselContext = {
         state: 'anchored',
         weather: 'calm',
@@ -369,40 +369,40 @@ describe('Smart Alarm Management System', () => {
         crewOnWatch: true,
         confidence: 0.9,
       };
-      
+
       // Engine alarms should be more relevant when motoring
       expect(motoringContext.state).toBe('motoring');
       expect(anchoredContext.state).toBe('anchored');
     });
   });
-  
+
   describe('Vessel Context Detection', () => {
     let contextDetector: VesselContextDetector;
-    
+
     beforeEach(() => {
       contextDetector = new VesselContextDetector();
     });
-    
+
     afterEach(() => {
       if (contextDetector.cleanup) {
         contextDetector.cleanup();
       }
     });
-    
+
     it('should detect anchored state correctly', () => {
       const anchoredData: Partial<NmeaDataSnapshot> = {
         speed: 0.2, // Very low speed
-        position: { latitude: 40.7128, longitude: -74.0060 },
+        position: { latitude: 40.7128, longitude: -74.006 },
         engineRunning: false,
         windSpeed: 8,
       };
-      
+
       const context = contextDetector.updateWithNmeaData(anchoredData);
-      
+
       expect(context.state).toBe('anchored');
       expect(context.confidence).toBeGreaterThan(0.5);
     });
-    
+
     it('should detect sailing state correctly', () => {
       const sailingData: Partial<NmeaDataSnapshot> = {
         speed: 6.5,
@@ -411,13 +411,13 @@ describe('Smart Alarm Management System', () => {
         windSpeed: 15,
         windAngle: 120,
       };
-      
+
       const context = contextDetector.updateWithNmeaData(sailingData);
-      
+
       expect(context.state).toBe('sailing');
       expect(context.confidence).toBeGreaterThan(0.7);
     });
-    
+
     it('should detect motoring state correctly', () => {
       const motoringData: Partial<NmeaDataSnapshot> = {
         speed: 8.2,
@@ -425,39 +425,39 @@ describe('Smart Alarm Management System', () => {
         engineRpm: 2400,
         windSpeed: 5, // Low wind
       };
-      
+
       const context = contextDetector.updateWithNmeaData(motoringData);
-      
+
       expect(context.state).toBe('motoring');
       expect(context.confidence).toBeGreaterThan(0.8);
     });
-    
+
     it('should detect weather conditions accurately', () => {
       const roughWeatherData: Partial<NmeaDataSnapshot> = {
         windSpeed: 25, // 25 knots - rough conditions
         speed: 4.5,
       };
-      
+
       const context = contextDetector.updateWithNmeaData(roughWeatherData);
-      
+
       expect(context.weather).toBe('rough');
     });
-    
+
     it('should update confidence based on data quality', () => {
       const incompleteData: Partial<NmeaDataSnapshot> = {
         speed: 5.0,
         // Missing position, wind, engine data
       };
-      
+
       const context = contextDetector.updateWithNmeaData(incompleteData);
-      
+
       expect(context.confidence).toBeLessThan(0.8); // Lower confidence with incomplete data
     });
   });
-  
+
   describe('Adaptive Learning Engine', () => {
     let learningEngine: AdaptiveLearningEngine;
-    
+
     beforeEach(() => {
       learningEngine = new AdaptiveLearningEngine({
         enabled: true,
@@ -466,11 +466,11 @@ describe('Smart Alarm Management System', () => {
         confidenceThreshold: 0.7,
       });
     });
-    
+
     afterEach(() => {
       learningEngine.cleanup();
     });
-    
+
     it('should learn from false alarm patterns', () => {
       const falseAlarm: Alarm = {
         id: 'false-1',
@@ -481,7 +481,7 @@ describe('Smart Alarm Management System', () => {
         value: 1.8,
         threshold: 2.0,
       };
-      
+
       // Record multiple false positive interactions
       for (let i = 0; i < 3; i++) {
         learningEngine.recordInteraction(
@@ -490,32 +490,32 @@ describe('Smart Alarm Management System', () => {
           2000, // 2 seconds - quick dismissal
           mockVesselContext,
           mockNmeaData,
-          'False alarm - tide pool area'
+          'False alarm - tide pool area',
         );
       }
-      
+
       // Check if learning engine would suppress similar alarms
       const suppressionResult = learningEngine.shouldSuppressAlarm(
         falseAlarm,
         mockVesselContext,
-        mockNmeaData
+        mockNmeaData,
       );
-      
+
       // After multiple false positives, should consider suppression
       expect(suppressionResult.confidence).toBeGreaterThan(0);
     });
-    
+
     it('should adapt thresholds based on patterns', () => {
       const thresholdAdjustment = learningEngine.getThresholdAdjustment(
         'depth_alarm',
         mockVesselContext,
-        mockNmeaData
+        mockNmeaData,
       );
-      
+
       expect(thresholdAdjustment.adjustment).toBeGreaterThanOrEqual(0.5);
       expect(thresholdAdjustment.adjustment).toBeLessThanOrEqual(2.0);
     });
-    
+
     it('should respect safety constraints', () => {
       const criticalAlarm: Alarm = {
         id: 'critical-safety-1',
@@ -524,47 +524,47 @@ describe('Smart Alarm Management System', () => {
         timestamp: Date.now(),
         source: 'engine_oil_pressure',
       };
-      
+
       // Even if marked as false positive, critical alarms should not be suppressed
       learningEngine.recordInteraction(
         criticalAlarm,
         'dismissed',
         1000,
         mockVesselContext,
-        mockNmeaData
+        mockNmeaData,
       );
-      
+
       const suppressionResult = learningEngine.shouldSuppressAlarm(
         criticalAlarm,
         mockVesselContext,
-        mockNmeaData
+        mockNmeaData,
       );
-      
+
       // Critical alarms should not be suppressed even with learning
       expect(suppressionResult.suppress).toBe(false);
     });
   });
-  
+
   describe('Maintenance Integration', () => {
     let maintenanceScheduler: MaintenanceScheduler;
-    
+
     beforeEach(() => {
       maintenanceScheduler = new MaintenanceScheduler({
         enabled: true,
       });
     });
-    
+
     afterEach(() => {
       maintenanceScheduler.cleanup();
     });
-    
+
     it('should track engine hours accurately', () => {
       const engineRunningData: Partial<NmeaDataSnapshot> = {
         engineRunning: true,
         engineRpm: 2000,
         speed: 7.5,
       };
-      
+
       // Simulate engine running for updates
       for (let i = 0; i < 10; i++) {
         maintenanceScheduler.updateEngineUsage(engineRunningData, {
@@ -572,11 +572,11 @@ describe('Smart Alarm Management System', () => {
           state: 'motoring',
         });
       }
-      
+
       const stats = maintenanceScheduler.getMaintenanceStats();
       expect(stats.totalEngineHours).toBeGreaterThanOrEqual(0);
     });
-    
+
     it('should generate maintenance alarms when due', () => {
       // Add a test maintenance item with short interval
       const testMaintenanceItem = maintenanceScheduler.addMaintenanceItem({
@@ -598,12 +598,12 @@ describe('Smart Alarm Management System', () => {
         actualCompletionTimes: [],
         userPostponements: 0,
       });
-      
+
       const maintenanceAlarms = maintenanceScheduler.checkMaintenanceAlarms(mockVesselContext);
-      
+
       expect(maintenanceAlarms.length).toBeGreaterThanOrEqual(0);
     });
-    
+
     it('should complete maintenance tasks', () => {
       const testMaintenanceItem = maintenanceScheduler.addMaintenanceItem({
         name: 'Test Maintenance',
@@ -624,14 +624,18 @@ describe('Smart Alarm Management System', () => {
         actualCompletionTimes: [],
         userPostponements: 0,
       });
-      
-      const result = maintenanceScheduler.completeMaintenance(testMaintenanceItem.id, 45, 'Test completion');
-      
+
+      const result = maintenanceScheduler.completeMaintenance(
+        testMaintenanceItem.id,
+        45,
+        'Test completion',
+      );
+
       expect(result.success).toBe(true);
       expect(result.message).toContain('completed');
     });
   });
-  
+
   describe('End-to-End Integration', () => {
     it('should process complex alarm scenario correctly', async () => {
       // Simulate a complex marine scenario
@@ -662,7 +666,7 @@ describe('Smart Alarm Management System', () => {
           source: 'gps_navigation',
         },
       ];
-      
+
       // Update context to rough weather motoring
       smartAlarmManager.updateNmeaData({
         ...mockNmeaData,
@@ -671,38 +675,36 @@ describe('Smart Alarm Management System', () => {
         engineRpm: 2800, // High RPM
         engineTemp: 95, // High temperature
       });
-      
+
       // Process all alarms
       const processedAlarms = await Promise.all(
-        scenarioAlarms.map(alarm => smartAlarmManager.processAlarm(alarm))
+        scenarioAlarms.map((alarm) => smartAlarmManager.processAlarm(alarm)),
       );
-      
+
       // Verify processing results
-      processedAlarms.forEach(processed => {
+      processedAlarms.forEach((processed) => {
         expect(processed.processingTime).toBeLessThan(1000); // Performance check
         expect(processed.smartFeaturesApplied.length).toBeGreaterThan(0);
         expect(processed.contextRelevance).toBeGreaterThan(0);
       });
-      
+
       // Engine alarms should be highly relevant during motoring in rough weather
-      const engineAlarms = processedAlarms.filter(p => 
-        p.source?.includes('engine')
-      );
-      
-      engineAlarms.forEach(engineAlarm => {
+      const engineAlarms = processedAlarms.filter((p) => p.source?.includes('engine'));
+
+      engineAlarms.forEach((engineAlarm) => {
         expect(engineAlarm.contextRelevance).toBeGreaterThan(0.8);
       });
-      
+
       // Check grouped alarms
       const groups = smartAlarmManager.getGroupedAlarms();
       expect(groups.length).toBeGreaterThan(0);
-      
+
       // Verify statistics collection
       const stats = smartAlarmManager.getStatistics();
       expect(stats.totalAlarms).toBe(scenarioAlarms.length);
       expect(stats.processedAlarms).toBe(scenarioAlarms.length);
     });
-    
+
     it('should handle user interactions properly', async () => {
       const testAlarm: Alarm = {
         id: 'interaction-test-1',
@@ -711,24 +713,24 @@ describe('Smart Alarm Management System', () => {
         timestamp: Date.now(),
         source: 'test_sensor',
       };
-      
+
       const processed = await smartAlarmManager.processAlarm(testAlarm);
-      
+
       // Simulate user acknowledgment
       smartAlarmManager.recordUserInteraction(
         processed.id,
         'acknowledged',
         5000, // 5 seconds to acknowledge
-        'User acknowledged during test'
+        'User acknowledged during test',
       );
-      
+
       // Verify interaction was recorded (would check internal state)
       expect(processed.id).toBe(testAlarm.id);
     });
-    
+
     it('should export and validate system data', () => {
       const exportedData = smartAlarmManager.exportSmartData();
-      
+
       expect(exportedData.configuration).toBeDefined();
       expect(exportedData.statistics).toBeDefined();
       expect(exportedData.learningData).toBeDefined();
@@ -736,12 +738,12 @@ describe('Smart Alarm Management System', () => {
       expect(exportedData.exportTimestamp).toBeDefined();
     });
   });
-  
+
   describe('Performance and Reliability', () => {
     it('should handle high alarm volume without performance degradation', async () => {
       const startTime = performance.now();
       const testAlarms: Alarm[] = [];
-      
+
       // Generate 50 test alarms
       for (let i = 0; i < 50; i++) {
         testAlarms.push({
@@ -752,32 +754,32 @@ describe('Smart Alarm Management System', () => {
           source: `test_source_${i % 5}`,
         });
       }
-      
+
       // Process all alarms
       const processed = await Promise.all(
-        testAlarms.map(alarm => smartAlarmManager.processAlarm(alarm))
+        testAlarms.map((alarm) => smartAlarmManager.processAlarm(alarm)),
       );
-      
+
       const totalTime = performance.now() - startTime;
       const avgTime = totalTime / testAlarms.length;
-      
+
       expect(avgTime).toBeLessThan(100); // Less than 100ms per alarm on average
       expect(processed.length).toBe(testAlarms.length);
-      
+
       // Verify all critical alarms were processed quickly
-      const criticalAlarms = processed.filter(p => p.level === 'critical');
-      criticalAlarms.forEach(critical => {
+      const criticalAlarms = processed.filter((p) => p.level === 'critical');
+      criticalAlarms.forEach((critical) => {
         expect(critical.processingTime).toBeLessThan(500);
       });
     });
-    
+
     it('should recover gracefully from component failures', async () => {
       // Simulate component failure by updating configuration
       smartAlarmManager.updateConfiguration({
         contextDetectionEnabled: false,
         adaptiveLearningEnabled: false,
       });
-      
+
       const testAlarm: Alarm = {
         id: 'failure-recovery-1',
         message: 'Test alarm during component failure',
@@ -785,36 +787,36 @@ describe('Smart Alarm Management System', () => {
         timestamp: Date.now(),
         source: 'test_failure',
       };
-      
+
       const processed = await smartAlarmManager.processAlarm(testAlarm);
-      
+
       // Should still process alarm successfully
       expect(processed.id).toBe(testAlarm.id);
       expect(processed.smartFeaturesApplied).toContain('fallback');
     });
-    
+
     it('should maintain data consistency across restarts', () => {
       // Get initial stats
       const initialStats = smartAlarmManager.getStatistics();
-      
+
       // Simulate restart by cleaning up and recreating
       smartAlarmManager.cleanup();
-      
+
       const newManager = new SmartAlarmManager({
         groupingEnabled: true,
         contextDetectionEnabled: true,
         adaptiveLearningEnabled: true,
       });
-      
+
       // Should initialize properly
       const newStats = newManager.getStatistics();
       expect(newStats).toBeDefined();
       expect(newStats.componentStatus).toBeDefined();
-      
+
       newManager.cleanup();
     });
   });
-  
+
   describe('Marine Safety Standards Compliance', () => {
     it('should meet SOLAS alarm response requirements', async () => {
       const solasCriticalAlarms: Alarm[] = [
@@ -840,34 +842,34 @@ describe('Smart Alarm Management System', () => {
           source: 'navigation_system',
         },
       ];
-      
+
       for (const alarm of solasCriticalAlarms) {
         const processed = await smartAlarmManager.processAlarm(alarm);
-        
+
         // SOLAS requires immediate response to critical safety alarms
         expect(processed.processingTime).toBeLessThan(500);
         expect(processed.smartSuppressed).toBe(false);
         expect(processed.smartPriority).toBeGreaterThanOrEqual(1000);
       }
     });
-    
+
     it('should maintain audit trail for marine inspections', () => {
       const exportedData = smartAlarmManager.exportSmartData();
-      
+
       // Verify audit trail components
       expect(exportedData.statistics.lastUpdated).toBeDefined();
       expect(exportedData.statistics.totalAlarms).toBeGreaterThanOrEqual(0);
       expect(exportedData.configuration.marineSafetyCompliance).toBe(true);
       expect(exportedData.exportTimestamp).toBeDefined();
     });
-    
+
     it('should support regulatory compliance reporting', () => {
       const learningInsights = smartAlarmManager.getLearningInsights();
-      
+
       expect(learningInsights.stats).toBeDefined();
       expect(learningInsights.patterns).toBeDefined();
       expect(learningInsights.recommendations).toBeDefined();
-      
+
       // Verify false alarm reduction is tracked for compliance
       expect(typeof learningInsights.stats.falsePositiveReduction).toBe('number');
     });
@@ -882,11 +884,11 @@ describe('Smart Alarm Management System', () => {
 function createTestNmeaData(state: VesselContext['state']): NmeaDataSnapshot {
   const base: NmeaDataSnapshot = {
     timestamp: Date.now(),
-    position: { latitude: 40.7128, longitude: -74.0060 },
+    position: { latitude: 40.7128, longitude: -74.006 },
     gpsFixValid: true,
     satelliteCount: 8,
   };
-  
+
   switch (state) {
     case 'anchored':
       return {
@@ -895,7 +897,7 @@ function createTestNmeaData(state: VesselContext['state']): NmeaDataSnapshot {
         engineRunning: false,
         windSpeed: 8,
       };
-      
+
     case 'sailing':
       return {
         ...base,
@@ -905,7 +907,7 @@ function createTestNmeaData(state: VesselContext['state']): NmeaDataSnapshot {
         windSpeed: 15,
         windAngle: 120,
       };
-      
+
     case 'motoring':
       return {
         ...base,
@@ -914,7 +916,7 @@ function createTestNmeaData(state: VesselContext['state']): NmeaDataSnapshot {
         engineRpm: 2200,
         windSpeed: 5,
       };
-      
+
     default:
       return base;
   }
@@ -926,10 +928,10 @@ function createTestNmeaData(state: VesselContext['state']): NmeaDataSnapshot {
 function createMarineTestAlarm(
   category: 'engine' | 'navigation' | 'electrical' | 'safety',
   level: AlarmLevel,
-  isRecurrent = false
+  isRecurrent = false,
 ): Alarm {
   const baseId = isRecurrent ? 'recurrent' : 'single';
-  
+
   const alarmTemplates = {
     engine: {
       message: 'Engine temperature high',
@@ -952,9 +954,9 @@ function createMarineTestAlarm(
       source: 'safety_equipment',
     },
   };
-  
+
   const template = alarmTemplates[category];
-  
+
   return {
     id: `${baseId}-${category}-${Date.now()}`,
     message: template.message,

@@ -19,7 +19,8 @@ export class StressTestService {
     let count = 0;
 
     // Helper to create simple VTG and GGA sentences (checksum omitted for brevity)
-    const makeVTG = (speedKn: number) => `$GPVTG,,T,,M,${speedKn.toFixed(1)},N,${(speedKn*1.852).toFixed(1)},K`;
+    const makeVTG = (speedKn: number) =>
+      `$GPVTG,,T,,M,${speedKn.toFixed(1)},N,${(speedKn * 1.852).toFixed(1)},K`;
     const makeGGA = (lat: number, lon: number) => {
       // Convert decimal degrees to NMEA ddmm.mmmm format (simple)
       const toNmea = (d: number, isLat: boolean) => {
@@ -27,10 +28,10 @@ export class StressTestService {
         const degrees = Math.floor(abs);
         const minutes = (abs - degrees) * 60;
         if (isLat) {
-          const dd = String(degrees).padStart(2,'0');
+          const dd = String(degrees).padStart(2, '0');
           return `${dd}${minutes.toFixed(4)}`;
         }
-        const dd = String(degrees).padStart(3,'0');
+        const dd = String(degrees).padStart(3, '0');
         return `${dd}${minutes.toFixed(4)}`;
       };
       const latRaw = toNmea(lat, true);
@@ -47,13 +48,11 @@ export class StressTestService {
       const lat = 37 + Math.random() * 0.01;
       const lon = -122 + Math.random() * 0.01;
       // Alternate sentence types to exercise parser
-      const sentence = (count % 3 === 0) ? makeGGA(lat, lon) : makeVTG(speed);
+      const sentence = count % 3 === 0 ? makeGGA(lat, lon) : makeVTG(speed);
       addRawSentence(sentence);
       count++;
       if (count % 1000 === 0) {
         // Lightweight performance hook
-        // eslint-disable-next-line no-console
-        console.log(`[StressTest] Sent ${count} synthetic NMEA sentences`);
       }
     }, intervalMs);
     if (this.interval && typeof (this.interval as any).unref === 'function') {

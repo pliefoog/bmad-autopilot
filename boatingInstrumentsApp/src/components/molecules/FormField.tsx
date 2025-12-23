@@ -39,11 +39,7 @@ const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <View style={[styles.container, style]} testID={testID}>
-      <Label
-        variant={labelVariant}
-        size={size}
-        testID={testID ? `${testID}-label` : undefined}
-      >
+      <Label variant={labelVariant} size={size} testID={testID ? `${testID}-label` : undefined}>
         {label}
       </Label>
       <Input

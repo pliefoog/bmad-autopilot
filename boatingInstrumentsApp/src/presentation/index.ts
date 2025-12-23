@@ -1,8 +1,8 @@
 /**
  * Data Presentation System - Main Exports
- * 
+ *
  * Clean semantic alternative to complex unit conversion system.
- * 
+ *
  * Usage:
  * import { useDepthPresentation } from '../presentation';
  * const depth = useDepthPresentation();
@@ -15,11 +15,11 @@ export type { DataCategory } from './categories';
 
 export { PRESENTATIONS } from './presentations';
 export type { Presentation, CategoryPresentations } from './presentations';
-export { 
+export {
   getPresentationsForCategory,
-  getDefaultPresentation, 
+  getDefaultPresentation,
   findPresentation,
-  getPresentationsForRegion
+  getPresentationsForRegion,
 } from './presentations';
 
 // Settings store
@@ -31,7 +31,7 @@ export {
   useMarineRegion,
   useMarineRegionSetter,
   useAllPresentationSelections,
-  usePresentationReset
+  usePresentationReset,
 } from './presentationStore';
 
 // Main presentation hooks
@@ -48,5 +48,5 @@ export {
   useTemperaturePresentation,
   useMultiValuePresentation,
   useBatchPresentation,
-  hasPresentations
+  hasPresentations,
 } from './useDataPresentation';

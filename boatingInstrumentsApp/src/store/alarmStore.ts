@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 import { CriticalAlarmType } from '../services/alarms/types';
 
 export type AlarmLevel = 'info' | 'warning' | 'critical';
@@ -69,11 +69,23 @@ interface AlarmActions {
   reset: () => void;
   // Critical alarm system actions
   initializeCriticalAlarmSystem: () => Promise<void>;
-  triggerCriticalAlarm: (type: CriticalAlarmType, data: { value: number; threshold: number; message?: string }) => Promise<void>;
+  triggerCriticalAlarm: (
+    type: CriticalAlarmType,
+    data: { value: number; threshold: number; message?: string },
+  ) => Promise<void>;
   enableCriticalAlarms: (enabled: boolean) => void;
   // GPS and Autopilot monitoring actions
-  updateGPSStatus: (gpsData: { fixType?: number; satellites?: number; lastUpdate?: number }) => void;
-  updateAutopilotStatus: (autopilotData: { engaged?: boolean; status?: 'active' | 'standby' | 'failed' | 'disconnected'; lastHeartbeat?: number; mode?: string }) => void;
+  updateGPSStatus: (gpsData: {
+    fixType?: number;
+    satellites?: number;
+    lastUpdate?: number;
+  }) => void;
+  updateAutopilotStatus: (autopilotData: {
+    engaged?: boolean;
+    status?: 'active' | 'standby' | 'failed' | 'disconnected';
+    lastHeartbeat?: number;
+    mode?: string;
+  }) => void;
 }
 
 type AlarmStore = AlarmState & AlarmActions;
@@ -175,154 +187,165 @@ const mapThresholdToCriticalAlarmType = (thresholdId: string): CriticalAlarmType
 };
 
 export const useAlarmStore = create<AlarmStore>()(
-  persist(
-    (set, get) => ({
-      // State
-      activeAlarms: [],
-      alarmHistory: [],
-      thresholds: defaultThresholds,
-      settings: defaultSettings,
-      maxHistorySize: 1000,
-      // Critical alarm system state
-      criticalAlarmManager: undefined,
-      criticalAlarmMonitors: undefined,
-      criticalAlarmsEnabled: true,
+  devtools(
+    persist(
+      (set, get) => ({
+        // State
+        activeAlarms: [],
+        alarmHistory: [],
+        thresholds: defaultThresholds,
+        settings: defaultSettings,
+        maxHistorySize: 1000,
+        // Critical alarm system state
+        criticalAlarmManager: undefined,
+        criticalAlarmMonitors: undefined,
+        criticalAlarmsEnabled: true,
 
-      // Actions
-      addAlarm: (alarmData) => {
-        const alarm: Alarm = {
-          ...alarmData,
-          id: `alarm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          timestamp: Date.now(),
-        };
-
-        set((state) => {
-          const newHistory = [...state.alarmHistory, alarm];
-          if (newHistory.length > state.maxHistorySize) {
-            newHistory.splice(0, newHistory.length - state.maxHistorySize);
-          }
-
-          return {
-            activeAlarms: [...state.activeAlarms, alarm],
-            alarmHistory: newHistory,
+        // Actions
+        addAlarm: (alarmData) => {
+          const alarm: Alarm = {
+            ...alarmData,
+            id: `alarm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            timestamp: Date.now(),
           };
-        });
-      },
 
-      acknowledgeAlarm: (id, acknowledgedBy = 'user') => {
-        const now = Date.now();
-        set((state) => ({
-          activeAlarms: state.activeAlarms.map((alarm) =>
-            alarm.id === id
-              ? {
-                  ...alarm,
-                  acknowledged: true,
-                  acknowledgedAt: now,
-                  acknowledgedBy,
-                }
-              : alarm
-          ),
-        }));
-      },
+          set((state) => {
+            const newHistory = [...state.alarmHistory, alarm];
+            if (newHistory.length > state.maxHistorySize) {
+              newHistory.splice(0, newHistory.length - state.maxHistorySize);
+            }
 
-      clearAlarm: (id) =>
-        set((state) => ({
-          activeAlarms: state.activeAlarms.filter((alarm) => alarm.id !== id),
-        })),
+            return {
+              activeAlarms: [...state.activeAlarms, alarm],
+              alarmHistory: newHistory,
+            };
+          });
+        },
 
-      clearAllAlarms: () =>
-        set({ activeAlarms: [] }),
+        acknowledgeAlarm: (id, acknowledgedBy = 'user') => {
+          const now = Date.now();
+          set((state) => ({
+            activeAlarms: state.activeAlarms.map((alarm) =>
+              alarm.id === id
+                ? {
+                    ...alarm,
+                    acknowledged: true,
+                    acknowledgedAt: now,
+                    acknowledgedBy,
+                  }
+                : alarm,
+            ),
+          }));
+        },
 
-      addThreshold: (thresholdData) => {
-        const threshold: AlarmThreshold = {
-          ...thresholdData,
-          id: `threshold-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        };
+        clearAlarm: (id) =>
+          set((state) => ({
+            activeAlarms: state.activeAlarms.filter((alarm) => alarm.id !== id),
+          })),
 
-        set((state) => ({
-          thresholds: [...state.thresholds, threshold],
-        }));
-      },
+        clearAllAlarms: () => set({ activeAlarms: [] }),
 
-      updateThreshold: (id, updates) =>
-        set((state) => ({
-          thresholds: state.thresholds.map((threshold) =>
-            threshold.id === id ? { ...threshold, ...updates } : threshold
-          ),
-        })),
+        addThreshold: (thresholdData) => {
+          const threshold: AlarmThreshold = {
+            ...thresholdData,
+            id: `threshold-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          };
 
-      removeThreshold: (id) =>
-        set((state) => ({
-          thresholds: state.thresholds.filter((threshold) => threshold.id !== id),
-        })),
+          set((state) => ({
+            thresholds: [...state.thresholds, threshold],
+          }));
+        },
 
-      updateSettings: (newSettings) =>
-        set((state) => ({
-          settings: { ...state.settings, ...newSettings },
-        })),
+        updateThreshold: (id, updates) =>
+          set((state) => ({
+            thresholds: state.thresholds.map((threshold) =>
+              threshold.id === id ? { ...threshold, ...updates } : threshold,
+            ),
+          })),
 
-      muteAlarmsFor: (minutes) => {
-        const muteUntil = Date.now() + minutes * 60 * 1000;
-        set((state) => ({
-          settings: { ...state.settings, muteUntil },
-        }));
-      },
+        removeThreshold: (id) =>
+          set((state) => ({
+            thresholds: state.thresholds.filter((threshold) => threshold.id !== id),
+          })),
 
-      evaluateThresholds: (data) => {
-        const state = get();
-        const now = Date.now();
+        updateSettings: (newSettings) =>
+          set((state) => ({
+            settings: { ...state.settings, ...newSettings },
+          })),
 
-        // Skip if alarms are muted
-        if (state.settings.muteUntil && now < state.settings.muteUntil) {
-          return;
-        }
+        muteAlarmsFor: (minutes) => {
+          const muteUntil = Date.now() + minutes * 60 * 1000;
+          set((state) => ({
+            settings: { ...state.settings, muteUntil },
+          }));
+        },
 
-        state.thresholds.forEach(async (threshold) => {
-          if (!threshold.enabled) return;
+        evaluateThresholds: (data) => {
+          const state = get();
+          const now = Date.now();
 
-          const value = getNestedValue(data, threshold.dataPath);
-          if (value === undefined) return;
-
-          let shouldAlarm = false;
-          let message = '';
-
-          switch (threshold.type) {
-            case 'min':
-              shouldAlarm = value < threshold.value;
-              message = `${threshold.name}: ${value} below ${threshold.value}`;
-              break;
-            case 'max':
-              shouldAlarm = value > threshold.value;
-              message = `${threshold.name}: ${value} above ${threshold.value}`;
-              break;
-            case 'range':
-              shouldAlarm = threshold.maxValue
-                ? value < threshold.value || value > threshold.maxValue
-                : false;
-              message = `${threshold.name}: ${value} outside range ${threshold.value}-${threshold.maxValue}`;
-              break;
+          // Skip if alarms are muted
+          if (state.settings.muteUntil && now < state.settings.muteUntil) {
+            return;
           }
 
-          // Check if alarm already exists for this threshold
-          const existingAlarm = state.activeAlarms.find(
-            (alarm) => alarm.source === threshold.id
-          );
+          state.thresholds.forEach(async (threshold) => {
+            if (!threshold.enabled) return;
 
-          if (shouldAlarm && !existingAlarm) {
-            // Check if this is a critical alarm type and trigger through critical alarm system
-            const criticalAlarmType = mapThresholdToCriticalAlarmType(threshold.id);
-            
-            if (criticalAlarmType && state.criticalAlarmsEnabled) {
-              // Trigger critical alarm through marine safety system
-              try {
-                await get().triggerCriticalAlarm(criticalAlarmType, {
-                  value,
-                  threshold: threshold.value,
-                  message,
-                });
-              } catch (error) {
-                console.error('AlarmStore: Failed to trigger critical alarm, falling back to regular alarm', error);
-                // Fallback to regular alarm system
+            const value = getNestedValue(data, threshold.dataPath);
+            if (value === undefined) return;
+
+            let shouldAlarm = false;
+            let message = '';
+
+            switch (threshold.type) {
+              case 'min':
+                shouldAlarm = value < threshold.value;
+                message = `${threshold.name}: ${value} below ${threshold.value}`;
+                break;
+              case 'max':
+                shouldAlarm = value > threshold.value;
+                message = `${threshold.name}: ${value} above ${threshold.value}`;
+                break;
+              case 'range':
+                shouldAlarm = threshold.maxValue
+                  ? value < threshold.value || value > threshold.maxValue
+                  : false;
+                message = `${threshold.name}: ${value} outside range ${threshold.value}-${threshold.maxValue}`;
+                break;
+            }
+
+            // Check if alarm already exists for this threshold
+            const existingAlarm = state.activeAlarms.find((alarm) => alarm.source === threshold.id);
+
+            if (shouldAlarm && !existingAlarm) {
+              // Check if this is a critical alarm type and trigger through critical alarm system
+              const criticalAlarmType = mapThresholdToCriticalAlarmType(threshold.id);
+
+              if (criticalAlarmType && state.criticalAlarmsEnabled) {
+                // Trigger critical alarm through marine safety system
+                try {
+                  await get().triggerCriticalAlarm(criticalAlarmType, {
+                    value,
+                    threshold: threshold.value,
+                    message,
+                  });
+                } catch (error) {
+                  console.error(
+                    'AlarmStore: Failed to trigger critical alarm, falling back to regular alarm',
+                    error,
+                  );
+                  // Fallback to regular alarm system
+                  get().addAlarm({
+                    message,
+                    level: threshold.level,
+                    source: threshold.id,
+                    value,
+                    threshold: threshold.value,
+                  });
+                }
+              } else {
+                // Regular alarm
                 get().addAlarm({
                   message,
                   level: threshold.level,
@@ -331,116 +354,108 @@ export const useAlarmStore = create<AlarmStore>()(
                   threshold: threshold.value,
                 });
               }
-            } else {
-              // Regular alarm
-              get().addAlarm({
-                message,
-                level: threshold.level,
-                source: threshold.id,
-                value,
-                threshold: threshold.value,
-              });
+            } else if (!shouldAlarm && existingAlarm) {
+              // Clear alarm (value returned to normal)
+              get().clearAlarm(existingAlarm.id);
             }
-          } else if (!shouldAlarm && existingAlarm) {
-            // Clear alarm (value returned to normal)
-            get().clearAlarm(existingAlarm.id);
+          });
+        },
+
+        getUnacknowledgedAlarms: () => {
+          const state = get();
+          return state.activeAlarms.filter((alarm) => !alarm.acknowledged);
+        },
+
+        reset: () =>
+          set({
+            activeAlarms: [],
+            alarmHistory: [],
+          }),
+
+        // Critical alarm system actions
+        initializeCriticalAlarmSystem: async () => {
+          try {
+            const { AlarmManager, CriticalAlarmMonitors, DEFAULT_MARINE_ALARM_CONFIG } =
+              await import('../services/alarms');
+            const alarmManager = AlarmManager.getInstance(DEFAULT_MARINE_ALARM_CONFIG);
+
+            // Create monitors with callback to trigger critical alarms
+            const monitors = new CriticalAlarmMonitors(
+              {
+                gpsTimeoutMs: 60000, // 1 minute
+                autopilotHeartbeatTimeoutMs: 10000, // 10 seconds
+                monitoringIntervalMs: 5000, // 5 seconds
+              },
+              async (type, data) => {
+                // Callback to trigger critical alarms through AlarmManager
+                await get().triggerCriticalAlarm(type, data);
+              },
+            );
+
+            set((state) => ({
+              criticalAlarmManager: alarmManager,
+              criticalAlarmMonitors: monitors,
+            }));
+
+            // Start monitoring GPS and autopilot systems
+            monitors.startMonitoring();
+          } catch (error) {
+            console.error('AlarmStore: Failed to initialize critical alarm system', error);
           }
-        });
-      },
+        },
 
-      getUnacknowledgedAlarms: () => {
-        const state = get();
-        return state.activeAlarms.filter((alarm) => !alarm.acknowledged);
-      },
+        triggerCriticalAlarm: async (
+          type: CriticalAlarmType,
+          data: { value: number; threshold: number; message?: string },
+        ) => {
+          const state = get();
 
-      reset: () =>
-        set({
-          activeAlarms: [],
-          alarmHistory: [],
-        }),
+          if (!state.criticalAlarmsEnabled) {
+            console.warn('AlarmStore: Critical alarms are disabled');
+            return;
+          }
 
-      // Critical alarm system actions
-      initializeCriticalAlarmSystem: async () => {
-        try {
-          const { AlarmManager, CriticalAlarmMonitors, DEFAULT_MARINE_ALARM_CONFIG } = await import('../services/alarms');
-          const alarmManager = AlarmManager.getInstance(DEFAULT_MARINE_ALARM_CONFIG);
-          
-          // Create monitors with callback to trigger critical alarms
-          const monitors = new CriticalAlarmMonitors(
-            {
-              gpsTimeoutMs: 60000, // 1 minute
-              autopilotHeartbeatTimeoutMs: 10000, // 10 seconds
-              monitoringIntervalMs: 5000, // 5 seconds
-            },
-            async (type, data) => {
-              // Callback to trigger critical alarms through AlarmManager
-              await get().triggerCriticalAlarm(type, data);
-            }
-          );
-          
+          if (!state.criticalAlarmManager) {
+            console.warn('AlarmStore: Critical alarm system not initialized, initializing now...');
+            await get().initializeCriticalAlarmSystem();
+          }
+
+          const alarmManager = get().criticalAlarmManager;
+          if (alarmManager) {
+            await alarmManager.triggerCriticalAlarm(type, data);
+          }
+        },
+
+        enableCriticalAlarms: (enabled: boolean) => {
           set((state) => ({
-            criticalAlarmManager: alarmManager,
-            criticalAlarmMonitors: monitors,
+            criticalAlarmsEnabled: enabled,
           }));
-          
-          // Start monitoring GPS and autopilot systems
-          monitors.startMonitoring();
-          
-          console.log('AlarmStore: Critical alarm system and monitors initialized');
-        } catch (error) {
-          console.error('AlarmStore: Failed to initialize critical alarm system', error);
-        }
-      },
+        },
 
-      triggerCriticalAlarm: async (type: CriticalAlarmType, data: { value: number; threshold: number; message?: string }) => {
-        const state = get();
-        
-        if (!state.criticalAlarmsEnabled) {
-          console.warn('AlarmStore: Critical alarms are disabled');
-          return;
-        }
-        
-        if (!state.criticalAlarmManager) {
-          console.warn('AlarmStore: Critical alarm system not initialized, initializing now...');
-          await get().initializeCriticalAlarmSystem();
-        }
-        
-        const alarmManager = get().criticalAlarmManager;
-        if (alarmManager) {
-          await alarmManager.triggerCriticalAlarm(type, data);
-        }
-      },
+        // GPS and Autopilot monitoring actions
+        updateGPSStatus: (gpsData) => {
+          const state = get();
+          if (state.criticalAlarmMonitors) {
+            state.criticalAlarmMonitors.updateGPSStatus(gpsData);
+          }
+        },
 
-      enableCriticalAlarms: (enabled: boolean) => {
-        set((state) => ({
-          criticalAlarmsEnabled: enabled,
-        }));
-        
-        console.log(`AlarmStore: Critical alarms ${enabled ? 'enabled' : 'disabled'}`);
-      },
-
-      // GPS and Autopilot monitoring actions
-      updateGPSStatus: (gpsData) => {
-        const state = get();
-        if (state.criticalAlarmMonitors) {
-          state.criticalAlarmMonitors.updateGPSStatus(gpsData);
-        }
-      },
-
-      updateAutopilotStatus: (autopilotData) => {
-        const state = get();
-        if (state.criticalAlarmMonitors) {
-          state.criticalAlarmMonitors.updateAutopilotStatus(autopilotData);
-        }
-      },
-    }),
-    {
-      name: 'alarm-store',
-      partialize: (state) => ({
-        thresholds: state.thresholds,
-        settings: state.settings,
-        alarmHistory: state.alarmHistory.slice(-100), // Keep last 100 in storage
+        updateAutopilotStatus: (autopilotData) => {
+          const state = get();
+          if (state.criticalAlarmMonitors) {
+            state.criticalAlarmMonitors.updateAutopilotStatus(autopilotData);
+          }
+        },
       }),
-    }
-  )
+      {
+        name: 'alarm-store',
+        partialize: (state) => ({
+          thresholds: state.thresholds,
+          settings: state.settings,
+          alarmHistory: state.alarmHistory.slice(-100), // Keep last 100 in storage
+        }),
+      },
+    ),
+    { name: 'Alarm Store', enabled: __DEV__ },
+  ),
 );

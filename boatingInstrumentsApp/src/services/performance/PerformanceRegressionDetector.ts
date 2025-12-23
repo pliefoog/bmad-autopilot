@@ -1,12 +1,12 @@
 /**
  * Performance Regression Testing
- * 
+ *
  * Automated performance regression detection and reporting:
  * - Baseline performance capture
  * - Regression detection with configurable thresholds
  * - Historical performance tracking
  * - CI/CD integration support
- * 
+ *
  * Story 4.5 AC1-5: Create automated performance regression testing
  */
 
@@ -53,36 +53,36 @@ export class PerformanceRegressionDetector {
   private static readonly STORAGE_KEY = '@performance_baseline';
   private static readonly HISTORY_KEY = '@performance_history';
   private static readonly MAX_HISTORY_ENTRIES = 50;
-  
+
   // Regression thresholds (percentage degradation)
   private static readonly THRESHOLDS = {
     fps: {
-      minor: 5,      // 5% FPS drop
-      moderate: 10,  // 10% FPS drop
-      major: 20,     // 20% FPS drop
-      critical: 30,  // 30% FPS drop
+      minor: 5, // 5% FPS drop
+      moderate: 10, // 10% FPS drop
+      major: 20, // 20% FPS drop
+      critical: 30, // 30% FPS drop
     },
     memory: {
-      minor: 10,     // 10% memory increase
-      moderate: 20,  // 20% memory increase
-      major: 40,     // 40% memory increase
-      critical: 60,  // 60% memory increase
+      minor: 10, // 10% memory increase
+      moderate: 20, // 20% memory increase
+      major: 40, // 40% memory increase
+      critical: 60, // 60% memory increase
     },
     renderTime: {
-      minor: 15,     // 15% slower render
-      moderate: 30,  // 30% slower render
-      major: 50,     // 50% slower render
+      minor: 15, // 15% slower render
+      moderate: 30, // 30% slower render
+      major: 50, // 50% slower render
       critical: 100, // 100% slower render (2x)
     },
   };
-  
+
   /**
    * Capture current performance as baseline
    */
   public static async captureBaseline(version: string): Promise<PerformanceBaseline> {
     // Get current performance report
     const report = performanceMonitor.getReport();
-    
+
     const baseline: PerformanceBaseline = {
       timestamp: new Date(),
       version,
@@ -95,20 +95,16 @@ export class PerformanceRegressionDetector {
       },
       report,
     };
-    
+
     // Save baseline
-    await AsyncStorage.setItem(
-      this.STORAGE_KEY,
-      JSON.stringify(baseline)
-    );
-    
+    await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(baseline));
+
     // Add to history
     await this.addToHistory(baseline);
-    
-    console.log('[RegressionDetector] Baseline captured:', version);
+
     return baseline;
   }
-  
+
   /**
    * Get stored baseline
    */
@@ -116,26 +112,26 @@ export class PerformanceRegressionDetector {
     try {
       const stored = await AsyncStorage.getItem(this.STORAGE_KEY);
       if (!stored) return null;
-      
+
       const baseline = JSON.parse(stored);
       // Restore Date objects
       baseline.timestamp = new Date(baseline.timestamp);
       baseline.report.timestamp = new Date(baseline.report.timestamp);
-      
+
       return baseline;
     } catch (error) {
       console.error('[RegressionDetector] Failed to load baseline:', error);
       return null;
     }
   }
-  
+
   /**
    * Compare current performance against baseline
    */
   public static async detectRegression(): Promise<RegressionResult> {
     const baseline = await this.getBaseline();
     const current = performanceMonitor.getReport();
-    
+
     if (!baseline) {
       return {
         hasRegression: false,
@@ -146,16 +142,16 @@ export class PerformanceRegressionDetector {
         comparisonSummary: 'No baseline available for comparison',
       };
     }
-    
+
     const regressions: RegressionDetail[] = [];
     const improvements: RegressionDetail[] = [];
-    
+
     // Compare FPS
     const fpsChange = this.calculatePercentChange(
       baseline.metrics.averageFPS,
-      current.metrics.averageFPS
+      current.metrics.averageFPS,
     );
-    
+
     if (fpsChange < 0) {
       // FPS decreased (negative is bad)
       const detail: RegressionDetail = {
@@ -178,13 +174,13 @@ export class PerformanceRegressionDetector {
         threshold: 5,
       });
     }
-    
+
     // Compare Memory
     const memoryChange = this.calculatePercentChange(
       baseline.metrics.peakMemoryMB,
-      current.metrics.peakMemoryMB
+      current.metrics.peakMemoryMB,
     );
-    
+
     if (memoryChange > 0) {
       // Memory increased (positive is bad)
       const detail: RegressionDetail = {
@@ -207,13 +203,13 @@ export class PerformanceRegressionDetector {
         threshold: 10,
       });
     }
-    
+
     // Compare Render Time
     const renderChange = this.calculatePercentChange(
       baseline.metrics.averageRenderTimeMs,
-      current.metrics.renderTime
+      current.metrics.renderTime,
     );
-    
+
     if (renderChange > 0) {
       // Render time increased (positive is bad)
       const detail: RegressionDetail = {
@@ -236,10 +232,10 @@ export class PerformanceRegressionDetector {
         threshold: 15,
       });
     }
-    
+
     // Generate summary
     const summary = this.generateSummary(baseline, current, regressions, improvements);
-    
+
     return {
       hasRegression: regressions.length > 0,
       regressions,
@@ -249,7 +245,7 @@ export class PerformanceRegressionDetector {
       comparisonSummary: summary,
     };
   }
-  
+
   /**
    * Calculate percentage change
    */
@@ -257,20 +253,20 @@ export class PerformanceRegressionDetector {
     if (baseline === 0) return 0;
     return ((current - baseline) / baseline) * 100;
   }
-  
+
   /**
    * Calculate regression severity
    */
   private static calculateSeverity(
     percentChange: number,
-    thresholds: { minor: number; moderate: number; major: number; critical: number }
+    thresholds: { minor: number; moderate: number; major: number; critical: number },
   ): 'minor' | 'moderate' | 'major' | 'critical' {
     if (percentChange >= thresholds.critical) return 'critical';
     if (percentChange >= thresholds.major) return 'major';
     if (percentChange >= thresholds.moderate) return 'moderate';
     return 'minor';
   }
-  
+
   /**
    * Generate comparison summary
    */
@@ -278,42 +274,44 @@ export class PerformanceRegressionDetector {
     baseline: PerformanceBaseline,
     current: PerformanceReport,
     regressions: RegressionDetail[],
-    improvements: RegressionDetail[]
+    improvements: RegressionDetail[],
   ): string {
     const lines: string[] = [];
-    
+
     lines.push(`Performance Comparison vs Baseline (${baseline.version})`);
     lines.push('');
-    
+
     if (regressions.length > 0) {
       lines.push('⚠️ REGRESSIONS DETECTED:');
-      regressions.forEach(r => {
+      regressions.forEach((r) => {
         lines.push(
           `  ${r.metric}: ${r.baselineValue.toFixed(2)} → ${r.currentValue.toFixed(2)} ` +
-          `(${r.percentChange > 0 ? '+' : ''}${r.percentChange.toFixed(1)}%) [${r.severity.toUpperCase()}]`
+            `(${r.percentChange > 0 ? '+' : ''}${r.percentChange.toFixed(
+              1,
+            )}%) [${r.severity.toUpperCase()}]`,
         );
       });
       lines.push('');
     }
-    
+
     if (improvements.length > 0) {
       lines.push('✅ IMPROVEMENTS:');
-      improvements.forEach(i => {
+      improvements.forEach((i) => {
         lines.push(
           `  ${i.metric}: ${i.baselineValue.toFixed(2)} → ${i.currentValue.toFixed(2)} ` +
-          `(${i.percentChange > 0 ? '+' : ''}${i.percentChange.toFixed(1)}%)`
+            `(${i.percentChange > 0 ? '+' : ''}${i.percentChange.toFixed(1)}%)`,
         );
       });
       lines.push('');
     }
-    
+
     if (regressions.length === 0 && improvements.length === 0) {
       lines.push('✓ Performance stable (no significant changes)');
     }
-    
+
     return lines.join('\n');
   }
-  
+
   /**
    * Add baseline to history
    */
@@ -321,20 +319,20 @@ export class PerformanceRegressionDetector {
     try {
       const stored = await AsyncStorage.getItem(this.HISTORY_KEY);
       let history: PerformanceBaseline[] = stored ? JSON.parse(stored) : [];
-      
+
       history.push(baseline);
-      
+
       // Keep only last N entries
       if (history.length > this.MAX_HISTORY_ENTRIES) {
         history = history.slice(-this.MAX_HISTORY_ENTRIES);
       }
-      
+
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
       console.error('[RegressionDetector] Failed to save history:', error);
     }
   }
-  
+
   /**
    * Get performance history
    */
@@ -342,7 +340,7 @@ export class PerformanceRegressionDetector {
     try {
       const stored = await AsyncStorage.getItem(this.HISTORY_KEY);
       if (!stored) return [];
-      
+
       const history = JSON.parse(stored);
       // Restore Date objects
       return history.map((entry: any) => ({
@@ -358,16 +356,15 @@ export class PerformanceRegressionDetector {
       return [];
     }
   }
-  
+
   /**
    * Clear all performance data
    */
   public static async clearData(): Promise<void> {
     await AsyncStorage.removeItem(this.STORAGE_KEY);
     await AsyncStorage.removeItem(this.HISTORY_KEY);
-    console.log('[RegressionDetector] Performance data cleared');
   }
-  
+
   /**
    * Export performance data for CI/CD
    */
@@ -375,15 +372,17 @@ export class PerformanceRegressionDetector {
     const baseline = await this.getBaseline();
     const current = performanceMonitor.getReport();
     const regression = await this.detectRegression();
-    
+
     const ciReport = {
       timestamp: new Date().toISOString(),
-      baseline: baseline ? {
-        version: baseline.version,
-        fps: baseline.metrics.averageFPS,
-        memory: baseline.metrics.peakMemoryMB,
-        renderTime: baseline.metrics.averageRenderTimeMs,
-      } : null,
+      baseline: baseline
+        ? {
+            version: baseline.version,
+            fps: baseline.metrics.averageFPS,
+            memory: baseline.metrics.peakMemoryMB,
+            renderTime: baseline.metrics.averageRenderTimeMs,
+          }
+        : null,
       current: {
         fps: current.metrics.averageFPS,
         memory: current.metrics.peakMemoryMB,
@@ -394,7 +393,7 @@ export class PerformanceRegressionDetector {
       regressions: regression.regressions,
       benchmarks: getPlatformBenchmarks(),
     };
-    
+
     return JSON.stringify(ciReport, null, 2);
   }
 }

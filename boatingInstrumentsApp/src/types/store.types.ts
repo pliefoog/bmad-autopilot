@@ -31,7 +31,7 @@ export type StoreMiddleware = (config: any) => (set: any, get: any, api: any) =>
  */
 export type AlarmLevel = 'info' | 'warning' | 'critical' | 'emergency';
 
-export type AlarmCategory = 
+export type AlarmCategory =
   | 'navigation'
   | 'engine'
   | 'safety'
@@ -135,8 +135,6 @@ export interface AlarmState {
   silenced: boolean;
   silencedUntil?: number;
 }
-
-
 
 export interface SettingsState {
   theme: ThemeSettings;

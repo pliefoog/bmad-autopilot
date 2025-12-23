@@ -1,12 +1,12 @@
 /**
  * Display & Theme Settings Dialog
  * Epic 8 - Phase 2: Platform-Native Dialog Migration
- * 
+ *
  * Features:
  * - Platform-native presentation (iOS pageSheet, Android bottom sheet, TV centered)
  * - Coming soon placeholder for theme selection
  * - Future: Theme widget functionality + accessibility settings
- * 
+ *
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal structure
  * - No action button (informational dialog only)
@@ -24,15 +24,9 @@ interface DisplayThemeDialogProps {
   onClose: () => void;
 }
 
-export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({
-  visible,
-  onClose,
-}) => {
+export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = React.useMemo(
-    () => createStyles(theme),
-    [theme]
-  );
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   return (
     <BaseConfigDialog
@@ -43,18 +37,15 @@ export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({
     >
       <PlatformSettingsSection title="Coming Soon">
         <View style={styles.infoBox}>
-          <UniversalIcon 
-            name="information-circle-outline" 
-            size={24} 
-            color={theme.primary} 
+          <UniversalIcon
+            name="information-circle-outline"
+            size={24}
+            color={theme.primary}
             style={styles.infoIcon}
           />
           <Text style={styles.infoText}>
-            This dialog will include:{'\n\n'}
-            • Theme selection (Day/Night/Red-Night/Auto){'\n'}
-            • Brightness control{'\n'}
-            • Font size adjustment{'\n'}
-            • Accessibility settings{'\n'}
+            This dialog will include:{'\n\n'}• Theme selection (Day/Night/Red-Night/Auto){'\n'}•
+            Brightness control{'\n'}• Font size adjustment{'\n'}• Accessibility settings{'\n'}
             {'  '}- High contrast mode{'\n'}
             {'  '}- Reduce animations{'\n'}
             {'  '}- Large text{'\n'}

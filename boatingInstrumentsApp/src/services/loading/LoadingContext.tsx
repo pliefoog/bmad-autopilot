@@ -31,16 +31,22 @@ export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, []);
 
-  const isLoading = useCallback((key?: LoadingKey) => {
-    if (!key) {
-      return Object.keys(activeKeys).length > 0;
-    }
-    return !!activeKeys[key];
-  }, [activeKeys]);
+  const isLoading = useCallback(
+    (key?: LoadingKey) => {
+      if (!key) {
+        return Object.keys(activeKeys).length > 0;
+      }
+      return !!activeKeys[key];
+    },
+    [activeKeys],
+  );
 
   const anyLoading = useMemo(() => Object.keys(activeKeys).length > 0, [activeKeys]);
 
-  const value = useMemo(() => ({ startLoading, stopLoading, isLoading, anyLoading }), [startLoading, stopLoading, isLoading, anyLoading]);
+  const value = useMemo(
+    () => ({ startLoading, stopLoading, isLoading, anyLoading }),
+    [startLoading, stopLoading, isLoading, anyLoading],
+  );
 
   return <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>;
 };
@@ -56,7 +62,10 @@ export const useLoading = (): LoadingContextValue => {
 /**
  * Helper to wrap an async function and automatically start/stop loading for the given key
  */
-export const withLoading = async <T extends any>(fn: () => Promise<T>, helpers: { start: (k?: LoadingKey) => void; stop: (k?: LoadingKey) => void; key?: LoadingKey } ) : Promise<T> => {
+export const withLoading = async <T extends any>(
+  fn: () => Promise<T>,
+  helpers: { start: (k?: LoadingKey) => void; stop: (k?: LoadingKey) => void; key?: LoadingKey },
+): Promise<T> => {
   const k = helpers.key || 'global';
   helpers.start(k);
   try {

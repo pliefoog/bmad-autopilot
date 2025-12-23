@@ -1,7 +1,7 @@
 /**
  * Icon System
  * Story 4.4 AC1-5: Standardized icon usage with Ionicons
- * 
+ *
  * Provides:
  * - Consistent icon naming
  * - Semantic icon mappings
@@ -325,7 +325,7 @@ export const semanticIcons = {
   connected: icons.checkmarkCircle,
   connecting: icons.ellipsisHorizontalCircle,
   disconnected: icons.closeCircle,
-  
+
   // Marine
   depth: icons.waterOutline,
   speed: icons.speedometerOutline,
@@ -369,7 +369,7 @@ export interface StandardIconProps {
 export const getStandardIconProps = (
   iconName: string,
   size: keyof typeof iconSizes | number = 'base',
-  color?: string
+  color?: string,
 ): { name: string; size: number; color?: string } => {
   return {
     name: iconName,

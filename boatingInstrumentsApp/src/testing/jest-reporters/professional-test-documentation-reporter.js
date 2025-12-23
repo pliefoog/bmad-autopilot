@@ -1,11 +1,11 @@
 /**
  * Professional Test Documentation Reporter for VS Code Test Explorer Integration
- * 
+ *
  * PURPOSE: Parse and display professional test documentation headers in VS Code Test Explorer
  * REQUIREMENT: AC-11.7.1 - Professional Test Documentation Display in VS Code
  * METHOD: Jest custom reporter with PURPOSE/REQUIREMENT/METHOD header parsing and test categorization
  * EXPECTED: Enhanced test names in VS Code Test Explorer with professional documentation display
- * 
+ *
  * Integration with Epic 11 Professional-Grade Testing Architecture:
  * - Story 11.4: Professional Test Documentation Standards
  * - Story 11.7: VS Code Test Explorer Integration
@@ -25,7 +25,7 @@ class ProfessionalTestDocumentationReporter {
       environment: /wind|depth|water|weather/i,
       engine: /engine|rpm|fuel|oil/i,
       autopilot: /autopilot|steering|rudder|pilot/i,
-      safety: /alarm|alert|warning|safety|critical|emergency/i
+      safety: /alarm|alert|warning|safety|critical|emergency/i,
     };
   }
 
@@ -36,7 +36,7 @@ class ProfessionalTestDocumentationReporter {
     try {
       const content = fs.readFileSync(testPath, 'utf8');
       const documentation = this.extractDocumentationHeaders(content);
-      
+
       if (documentation) {
         this.testDocumentation.set(testPath, documentation);
         const category = this.categorizeByMarineDomain(documentation);
@@ -57,7 +57,7 @@ class ProfessionalTestDocumentationReporter {
       requirement: /\*\s*REQUIREMENT:\s*(.+?)(?:\n|\*\/)/gi,
       method: /\*\s*METHOD:\s*(.+?)(?:\n|\*\/)/gi,
       expected: /\*\s*EXPECTED:\s*(.+?)(?:\n|\*\/)/gi,
-      errorConditions: /\*\s*ERROR CONDITIONS:\s*(.+?)(?:\n|\*\/)/gi
+      errorConditions: /\*\s*ERROR CONDITIONS:\s*(.+?)(?:\n|\*\/)/gi,
     };
 
     const documentation = {};
@@ -66,7 +66,7 @@ class ProfessionalTestDocumentationReporter {
     for (const [key, pattern] of Object.entries(headerPatterns)) {
       const matches = [...content.matchAll(pattern)];
       if (matches.length > 0) {
-        documentation[key] = matches.map(match => match[1].trim()).join('; ');
+        documentation[key] = matches.map((match) => match[1].trim()).join('; ');
         hasDocumentation = true;
       }
     }
@@ -79,13 +79,13 @@ class ProfessionalTestDocumentationReporter {
    */
   categorizeByMarineDomain(documentation) {
     const allText = Object.values(documentation).join(' ').toLowerCase();
-    
+
     for (const [domain, pattern] of Object.entries(this.marineDomainsMap)) {
       if (pattern.test(allText)) {
         return domain;
       }
     }
-    
+
     return 'general';
   }
 
@@ -97,13 +97,13 @@ class ProfessionalTestDocumentationReporter {
 
     const domain = this.testCategories.get(testResult.testPath) || 'general';
     const domainIcon = this.getDomainIcon(domain);
-    
+
     let enhancedName = `${domainIcon} ${testResult.title}`;
-    
+
     if (documentation.requirement) {
       enhancedName += ` [${documentation.requirement}]`;
     }
-    
+
     return enhancedName;
   }
 
@@ -117,7 +117,7 @@ class ProfessionalTestDocumentationReporter {
       environment: '🌊',
       autopilot: '🎯',
       safety: '⚠️',
-      general: '📋'
+      general: '📋',
     };
     return icons[domain] || icons.general;
   }
@@ -134,10 +134,9 @@ class ProfessionalTestDocumentationReporter {
 
       // Generate VS Code Test Explorer compatible output
       await this.generateVSCodeTestOutput(results);
-      
+
       // Generate requirement traceability data
       await this.generateTraceabilityOutput(results);
-      
     } catch (error) {
       console.error('Professional Test Documentation Reporter error:', error);
     }
@@ -153,42 +152,48 @@ class ProfessionalTestDocumentationReporter {
         totalTests: results.numTotalTests,
         passedTests: results.numPassedTests,
         failedTests: results.numFailedTests,
-        testCategories: this.getTestCategorySummary()
+        testCategories: this.getTestCategorySummary(),
       },
-      testResults: []
+      testResults: [],
     };
 
-    for (const testResult of (results.testResults || [])) {
+    for (const testResult of results.testResults || []) {
       const documentation = this.testDocumentation.get(testResult.testFilePath);
       const category = this.testCategories.get(testResult.testFilePath) || 'general';
-      
+
       const enhancedResult = {
         testFilePath: testResult.testFilePath,
         category,
         documentation,
-        tests: (testResult.assertionResults || []).map(assertion => ({
+        tests: (testResult.assertionResults || []).map((assertion) => ({
           title: this.enhanceTestName(assertion, documentation),
           originalTitle: assertion.title,
           status: assertion.status,
           duration: assertion.duration,
           failureMessages: assertion.failureMessages,
           location: assertion.location,
-          documentation: documentation ? {
-            purpose: documentation.purpose,
-            requirement: documentation.requirement,
-            method: documentation.method
-          } : null
-        }))
+          documentation: documentation
+            ? {
+                purpose: documentation.purpose,
+                requirement: documentation.requirement,
+                method: documentation.method,
+              }
+            : null,
+        })),
       };
 
       output.testResults.push(enhancedResult);
     }
 
     // Save VS Code Test Explorer output
-    const outputPath = path.join(this.globalConfig.rootDir, 'coverage', 'vscode-test-explorer.json');
+    const outputPath = path.join(
+      this.globalConfig.rootDir,
+      'coverage',
+      'vscode-test-explorer.json',
+    );
     await this.ensureDirectoryExists(path.dirname(outputPath));
     fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
-    
+
     console.log(`📊 VS Code Test Explorer output generated: ${outputPath}`);
   }
 
@@ -204,19 +209,21 @@ class ProfessionalTestDocumentationReporter {
         environment: { tests: 0, passed: 0 },
         autopilot: { tests: 0, passed: 0 },
         safety: { tests: 0, passed: 0 },
-        general: { tests: 0, passed: 0 }
-      }
+        general: { tests: 0, passed: 0 },
+      },
     };
 
-    for (const testResult of (results.testResults || [])) {
+    for (const testResult of results.testResults || []) {
       const documentation = this.testDocumentation.get(testResult.testFilePath);
       const category = this.testCategories.get(testResult.testFilePath) || 'general';
-      
+
       // Count tests by category
       const assertionResults = testResult.assertionResults || [];
       traceability.coverage[category].tests += assertionResults.length;
-      traceability.coverage[category].passed += assertionResults.filter(a => a.status === 'passed').length;
-      
+      traceability.coverage[category].passed += assertionResults.filter(
+        (a) => a.status === 'passed',
+      ).length;
+
       // Map requirements to tests
       if (documentation && documentation.requirement) {
         if (!traceability.requirements.has(documentation.requirement)) {
@@ -226,7 +233,7 @@ class ProfessionalTestDocumentationReporter {
           testFile: testResult.testFilePath,
           category,
           testCount: assertionResults.length,
-          passed: assertionResults.filter(a => a.status === 'passed').length
+          passed: assertionResults.filter((a) => a.status === 'passed').length,
         });
       }
     }
@@ -234,15 +241,19 @@ class ProfessionalTestDocumentationReporter {
     const traceabilityOutput = {
       metadata: {
         generatedAt: new Date().toISOString(),
-        totalRequirements: traceability.requirements.size
+        totalRequirements: traceability.requirements.size,
       },
       requirements: Object.fromEntries(traceability.requirements),
-      domainCoverage: traceability.coverage
+      domainCoverage: traceability.coverage,
     };
 
-    const outputPath = path.join(this.globalConfig.rootDir, 'coverage', 'requirement-traceability.json');
+    const outputPath = path.join(
+      this.globalConfig.rootDir,
+      'coverage',
+      'requirement-traceability.json',
+    );
     fs.writeFileSync(outputPath, JSON.stringify(traceabilityOutput, null, 2));
-    
+
     console.log(`🔗 Requirement traceability output generated: ${outputPath}`);
   }
 

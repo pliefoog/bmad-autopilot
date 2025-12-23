@@ -37,7 +37,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
   const nativeBrightnessControl = useThemeStore((state) => state.nativeBrightnessControl);
   // Get unadjusted colors for brightness bar fill
   const unadjustedColors = useThemeStore((state) => state.colors);
-  
+
   const renderCount = React.useRef(0);
   renderCount.current++;
   log('ThemeWidget render #' + renderCount.current + ' - mode:', mode, 'brightness:', brightness);
@@ -93,7 +93,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
   const handleBrightnessBarPress = React.useCallback(() => {
     const now = Date.now();
     const DOUBLE_PRESS_DELAY = 300; // ms
-    
+
     if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
       // Double click detected
       setBrightnessToMax();
@@ -108,26 +108,32 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
 
   // Header component for UnifiedWidgetGrid
   const headerComponent = (
-    <View style={{
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%',
-      paddingHorizontal: 16,
-    }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 16,
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <UniversalIcon 
-          name="color-palette-outline" 
-          size={headerIconSize} 
+        <UniversalIcon
+          name="color-palette-outline"
+          size={headerIconSize}
           color={theme.iconPrimary}
         />
-        <Text style={{
-          fontSize: headerFontSize,
-          fontWeight: 'bold',
-          letterSpacing: 0.5,
-          color: theme.textSecondary,
-          textTransform: 'uppercase',
-        }}>{title}</Text>
+        <Text
+          style={{
+            fontSize: headerFontSize,
+            fontWeight: 'bold',
+            letterSpacing: 0.5,
+            color: theme.textSecondary,
+            textTransform: 'uppercase',
+          }}
+        >
+          {title}
+        </Text>
       </View>
     </View>
   );
@@ -212,7 +218,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
       columns={2}
       primaryRows={2}
       secondaryRows={2}
-      columnSpans={Platform.OS !== 'web' ? [1,1,1,1,2,2] : [1,1,1,1,2,1,1]}
+      columnSpans={Platform.OS !== 'web' ? [1, 1, 1, 1, 2, 2] : [1, 1, 1, 1, 2, 1, 1]}
     >
       {/* Row 0-1: Theme Buttons (2×2 primary grid) */}
       <TouchableOpacity
@@ -228,17 +234,13 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
             borderTopColor: mode === 'day' ? theme.text : theme.border,
             borderBottomColor: mode === 'day' ? theme.text : theme.border,
             borderRightColor: mode === 'day' ? theme.text : theme.border,
-          }
+          },
         ]}
         onPress={handleDayPress}
       >
-        <Ionicons 
-          name="sunny" 
-          size={32} 
-          color={mode === 'day' ? theme.surface : theme.text} 
-        />
+        <Ionicons name="sunny" size={32} color={mode === 'day' ? theme.surface : theme.text} />
       </TouchableOpacity>
-      
+
       <TouchableOpacity
         style={[
           styles.themeButton,
@@ -251,17 +253,12 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
             borderLeftColor: mode === 'night' ? theme.text : theme.border,
             borderTopColor: mode === 'night' ? theme.text : theme.border,
             borderBottomColor: mode === 'night' ? theme.text : theme.border,
-          }
+          },
         ]}
         onPress={handleNightPress}
       >
-        <Ionicons 
-          name="moon" 
-          size={32} 
-          color={mode === 'night' ? theme.surface : theme.text} 
-        />
+        <Ionicons name="moon" size={32} color={mode === 'night' ? theme.surface : theme.text} />
       </TouchableOpacity>
-      
       <TouchableOpacity
         style={[
           styles.themeButton,
@@ -275,17 +272,12 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
             borderTopColor: mode === 'red-night' ? theme.text : theme.border,
             borderBottomColor: mode === 'red-night' ? theme.text : theme.border,
             borderRightColor: mode === 'red-night' ? theme.text : theme.border,
-          }
+          },
         ]}
         onPress={handleRedPress}
       >
-        <Ionicons 
-          name="eye" 
-          size={32} 
-          color={mode === 'red-night' ? theme.surface : theme.text} 
-        />
+        <Ionicons name="eye" size={32} color={mode === 'red-night' ? theme.surface : theme.text} />
       </TouchableOpacity>
-      
       <TouchableOpacity
         style={[
           styles.themeButton,
@@ -298,53 +290,41 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
             borderLeftColor: mode === 'auto' ? theme.text : theme.border,
             borderTopColor: mode === 'auto' ? theme.text : theme.border,
             borderBottomColor: mode === 'auto' ? theme.text : theme.border,
-          }
+          },
         ]}
         onPress={handleAutoPress}
       >
-        <Ionicons 
-          name="time" 
-          size={32} 
-          color={mode === 'auto' ? theme.surface : theme.text} 
-        />
+        <Ionicons name="time" size={32} color={mode === 'auto' ? theme.surface : theme.text} />
       </TouchableOpacity>
 
       {/* Row 2: Brightness Controls (spans 2 columns in secondary) */}
-      <Pressable 
-        style={styles.brightnessSection}
-        onPress={handleBrightnessBarPress}
-      >
+      <Pressable style={styles.brightnessSection} onPress={handleBrightnessBarPress}>
         <View style={styles.brightnessControls}>
           <TouchableOpacity
             style={styles.brightnessButton}
             onPress={decreaseBrightness}
             disabled={brightness <= 0.1}
           >
-            <Ionicons 
-              name="remove" 
-              size={20} 
-              color={brightness <= 0.1 ? unadjustedColors.textSecondary : unadjustedColors.text} 
+            <Ionicons
+              name="remove"
+              size={20}
+              color={brightness <= 0.1 ? unadjustedColors.textSecondary : unadjustedColors.text}
             />
           </TouchableOpacity>
-          
+
           <View style={styles.brightnessBar}>
-            <View 
-              style={[
-                styles.brightnessFill, 
-                { width: `${brightness * 100}%` }
-              ]} 
-            />
+            <View style={[styles.brightnessFill, { width: `${brightness * 100}%` }]} />
           </View>
-          
+
           <TouchableOpacity
             style={styles.brightnessButton}
             onPress={increaseBrightness}
             disabled={brightness >= 1.0}
           >
-            <Ionicons 
-              name="add" 
-              size={20} 
-              color={brightness >= 1.0 ? unadjustedColors.textSecondary : unadjustedColors.text} 
+            <Ionicons
+              name="add"
+              size={20}
+              color={brightness >= 1.0 ? unadjustedColors.textSecondary : unadjustedColors.text}
             />
           </TouchableOpacity>
         </View>
@@ -352,28 +332,18 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, title, width, he
 
       {/* Row 3: Native Control Toggle (spans 2 columns, non-web only) */}
       {Platform.OS !== 'web' && (
-        <TouchableOpacity
-          style={styles.nativeToggle}
-          onPress={toggleNativeControl}
-        >
+        <TouchableOpacity style={styles.nativeToggle} onPress={toggleNativeControl}>
           <View style={styles.nativeToggleContent}>
-            <Ionicons 
-              name={nativeBrightnessControl ? "phone-portrait" : "phone-portrait-outline"} 
-              size={16} 
-              color={theme.text} 
+            <Ionicons
+              name={nativeBrightnessControl ? 'phone-portrait' : 'phone-portrait-outline'}
+              size={16}
+              color={theme.text}
             />
-            <Text style={styles.nativeToggleText}>
-              Native
-            </Text>
+            <Text style={styles.nativeToggleText}>Native</Text>
           </View>
-          <ThemedSwitch
-            value={nativeBrightnessControl}
-            onValueChange={toggleNativeControl}
-          />
+          <ThemedSwitch value={nativeBrightnessControl} onValueChange={toggleNativeControl} />
         </TouchableOpacity>
       )}
-      
-      {/* Row 4: Empty space on web for consistent 4-row layout */}
       {Platform.OS === 'web' && <View />}
       {Platform.OS === 'web' && <View />}
     </UnifiedWidgetGrid>

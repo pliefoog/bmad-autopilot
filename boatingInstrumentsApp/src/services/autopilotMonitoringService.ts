@@ -10,7 +10,7 @@ export enum LogLevel {
   INFO = 'info',
   WARN = 'warn',
   ERROR = 'error',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 /**
@@ -22,7 +22,7 @@ export enum EventType {
   CONNECTION = 'connection',
   SYSTEM = 'system',
   USER = 'user',
-  PERFORMANCE = 'performance'
+  PERFORMANCE = 'performance',
 }
 
 /**
@@ -97,7 +97,7 @@ export class AutopilotMonitoringService {
     metricsIntervalMs: 30000, // 30 seconds
     performanceWindowMs: 5 * 60 * 1000, // 5 minutes
     enableDebugLogs: false,
-    enablePerformanceMonitoring: true
+    enablePerformanceMonitoring: true,
   };
 
   private logEntries: LogEntry[] = [];
@@ -106,7 +106,7 @@ export class AutopilotMonitoringService {
   private sessionId: string;
   private startTime: number;
   private metricsInterval?: ReturnType<typeof setInterval>;
-  
+
   // Performance tracking
   private commandTimes: number[] = [];
   private errorCounts: { [key: string]: number } = {};
@@ -120,14 +120,14 @@ export class AutopilotMonitoringService {
     this.config = { ...AutopilotMonitoringService.DEFAULT_CONFIG, ...config };
     this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.startTime = Date.now();
-    
+
     if (this.config.enablePerformanceMonitoring) {
       this.startPerformanceMonitoring();
     }
 
     this.log(LogLevel.INFO, EventType.SYSTEM, 'Monitoring service started', {
       sessionId: this.sessionId,
-      config: this.config
+      config: this.config,
     });
   }
 
@@ -143,7 +143,12 @@ export class AutopilotMonitoringService {
     }
 
     if (healthMetrics.autopilotStatus === 'fault') {
-      this.log(LogLevel.CRITICAL, EventType.SAFETY, 'Autopilot system fault detected', healthMetrics);
+      this.log(
+        LogLevel.CRITICAL,
+        EventType.SAFETY,
+        'Autopilot system fault detected',
+        healthMetrics,
+      );
     }
 
     if (healthMetrics.gpsStatus === 'failed') {
@@ -165,7 +170,10 @@ export class AutopilotMonitoringService {
   /**
    * AC12: Command/response logging for troubleshooting
    */
-  logCommand(command: QueuedCommand, result?: { success: boolean; error?: string; responseTime: number }): void {
+  logCommand(
+    command: QueuedCommand,
+    result?: { success: boolean; error?: string; responseTime: number },
+  ): void {
     const logData = {
       commandId: command.id,
       command: command.command,
@@ -173,14 +181,16 @@ export class AutopilotMonitoringService {
       priority: command.priority,
       status: command.status,
       createdAt: command.createdAt,
-      retryCount: command.retryCount
+      retryCount: command.retryCount,
     };
 
     if (result) {
       const level = result.success ? LogLevel.INFO : LogLevel.ERROR;
-      this.log(level, EventType.COMMAND, 
+      this.log(
+        level,
+        EventType.COMMAND,
         `Command ${command.command} ${result.success ? 'completed' : 'failed'}`,
-        { ...logData, result }
+        { ...logData, result },
       );
 
       // Track command statistics
@@ -188,7 +198,7 @@ export class AutopilotMonitoringService {
       if (result.success) {
         this.successfulCommands++;
       }
-      
+
       this.recordCommandResponseTime(result.responseTime);
     } else {
       this.log(LogLevel.DEBUG, EventType.COMMAND, `Command ${command.command} queued`, logData);
@@ -208,28 +218,32 @@ export class AutopilotMonitoringService {
         category: error.category,
         cause: error.cause,
         solution: error.solution,
-        errorData: error.data
-      }
+        errorData: error.data,
+      },
     );
 
     // Track error statistics
     this.errorCounts[error.code] = (this.errorCounts[error.code] || 0) + 1;
-    this.errorCounts['total'] = (this.errorCounts['total'] || 0) + 1;
+    this.errorCounts.total = (this.errorCounts.total || 0) + 1;
   }
 
   /**
    * Log safety events
    */
   logSafetyEvent(event: SafetyEvent): void {
-    const level = event.level === 'critical' ? LogLevel.CRITICAL : 
-                  event.level === 'warning' ? LogLevel.WARN : LogLevel.INFO;
-    
+    const level =
+      event.level === 'critical'
+        ? LogLevel.CRITICAL
+        : event.level === 'warning'
+        ? LogLevel.WARN
+        : LogLevel.INFO;
+
     this.log(level, EventType.SAFETY, `Safety event: ${event.message}`, {
       eventId: event.id,
       eventType: event.type,
       eventData: event.data,
       resolved: event.resolved,
-      resolvedAt: event.resolvedAt
+      resolvedAt: event.resolvedAt,
     });
   }
 
@@ -243,10 +257,17 @@ export class AutopilotMonitoringService {
   /**
    * Log connection events
    */
-  logConnectionEvent(event: 'connected' | 'disconnected' | 'reconnecting' | 'data_gap', data?: any): void {
-    const level = event === 'disconnected' ? LogLevel.ERROR : 
-                  event === 'data_gap' ? LogLevel.WARN : LogLevel.INFO;
-    
+  logConnectionEvent(
+    event: 'connected' | 'disconnected' | 'reconnecting' | 'data_gap',
+    data?: any,
+  ): void {
+    const level =
+      event === 'disconnected'
+        ? LogLevel.ERROR
+        : event === 'data_gap'
+        ? LogLevel.WARN
+        : LogLevel.INFO;
+
     this.log(level, EventType.CONNECTION, `Connection event: ${event}`, data);
 
     if (event === 'reconnecting') {
@@ -263,7 +284,7 @@ export class AutopilotMonitoringService {
    */
   recordCommandResponseTime(responseTime: number): void {
     this.commandTimes.push(responseTime);
-    
+
     // Keep only recent command times (last 5 minutes)
     const cutoffTime = Date.now() - this.config.performanceWindowMs;
     this.commandTimes = this.commandTimes.slice(-1000); // Keep max 1000 entries
@@ -275,16 +296,16 @@ export class AutopilotMonitoringService {
   recordSystemMetrics(healthMetrics: SystemHealthMetrics): void {
     // This would typically integrate with system monitoring APIs
     // For now, we'll track what we have from the health metrics
-    
+
     const networkLatency = healthMetrics.commandResponseTime;
     const dataProcessingRate = this.calculateDataProcessingRate();
-    
+
     this.log(LogLevel.DEBUG, EventType.PERFORMANCE, 'System metrics recorded', {
       networkLatency,
       dataProcessingRate,
       commandSuccessRate: healthMetrics.commandSuccessRate,
       totalCommands: healthMetrics.totalCommands,
-      failedCommands: healthMetrics.failedCommands
+      failedCommands: healthMetrics.failedCommands,
     });
   }
 
@@ -293,36 +314,37 @@ export class AutopilotMonitoringService {
    */
   getPerformanceMetrics(): PerformanceMetrics {
     const now = Date.now();
-    const recentTimes = this.commandTimes.filter(time => time > 0);
-    
+    const recentTimes = this.commandTimes.filter((time) => time > 0);
+
     const commandResponseTimes = {
-      average: recentTimes.length > 0 ? recentTimes.reduce((a, b) => a + b, 0) / recentTimes.length : 0,
+      average:
+        recentTimes.length > 0 ? recentTimes.reduce((a, b) => a + b, 0) / recentTimes.length : 0,
       min: recentTimes.length > 0 ? Math.min(...recentTimes) : 0,
       max: recentTimes.length > 0 ? Math.max(...recentTimes) : 0,
       p95: this.calculatePercentile(recentTimes, 95),
-      p99: this.calculatePercentile(recentTimes, 99)
+      p99: this.calculatePercentile(recentTimes, 99),
     };
 
-    const successRate = this.totalCommands > 0 ? 
-      (this.successfulCommands / this.totalCommands) * 100 : 100;
+    const successRate =
+      this.totalCommands > 0 ? (this.successfulCommands / this.totalCommands) * 100 : 100;
 
     return {
       timestamp: now,
       commandResponseTimes,
       systemHealth: {
         networkLatency: commandResponseTimes.average,
-        dataProcessingRate: this.calculateDataProcessingRate()
+        dataProcessingRate: this.calculateDataProcessingRate(),
       },
       errorRates: {
-        total: this.errorCounts['total'] || 0,
+        total: this.errorCounts.total || 0,
         byCategory: { ...this.errorCounts },
-        successRate
+        successRate,
       },
       connectionStats: {
         uptime: now - this.startTime,
         reconnections: this.reconnectionCount,
-        dataGaps: this.dataGapCount
-      }
+        dataGaps: this.dataGapCount,
+      },
     };
   }
 
@@ -334,24 +356,24 @@ export class AutopilotMonitoringService {
     eventType?: EventType,
     startTime?: number,
     endTime?: number,
-    limit?: number
+    limit?: number,
   ): LogEntry[] {
     let filtered = this.logEntries;
 
     if (level) {
-      filtered = filtered.filter(entry => entry.level === level);
+      filtered = filtered.filter((entry) => entry.level === level);
     }
 
     if (eventType) {
-      filtered = filtered.filter(entry => entry.eventType === eventType);
+      filtered = filtered.filter((entry) => entry.eventType === eventType);
     }
 
     if (startTime) {
-      filtered = filtered.filter(entry => entry.timestamp >= startTime);
+      filtered = filtered.filter((entry) => entry.timestamp >= startTime);
     }
 
     if (endTime) {
-      filtered = filtered.filter(entry => entry.timestamp <= endTime);
+      filtered = filtered.filter((entry) => entry.timestamp <= endTime);
     }
 
     // Sort by timestamp (newest first)
@@ -369,8 +391,8 @@ export class AutopilotMonitoringService {
    */
   getPerformanceHistory(minutes?: number): PerformanceMetrics[] {
     if (minutes) {
-      const cutoff = Date.now() - (minutes * 60 * 1000);
-      return this.performanceHistory.filter(metric => metric.timestamp >= cutoff);
+      const cutoff = Date.now() - minutes * 60 * 1000;
+      return this.performanceHistory.filter((metric) => metric.timestamp >= cutoff);
     }
     return [...this.performanceHistory];
   }
@@ -382,14 +404,18 @@ export class AutopilotMonitoringService {
     if (format === 'csv') {
       return this.exportLogsAsCsv();
     }
-    
-    return JSON.stringify({
-      sessionId: this.sessionId,
-      exportedAt: Date.now(),
-      totalEntries: this.logEntries.length,
-      config: this.config,
-      logs: this.logEntries
-    }, null, 2);
+
+    return JSON.stringify(
+      {
+        sessionId: this.sessionId,
+        exportedAt: Date.now(),
+        totalEntries: this.logEntries.length,
+        config: this.config,
+        logs: this.logEntries,
+      },
+      null,
+      2,
+    );
   }
 
   /**
@@ -397,17 +423,19 @@ export class AutopilotMonitoringService {
    */
   cleanup(): void {
     const cutoff = Date.now() - this.config.logRetentionMs;
-    
+
     const originalCount = this.logEntries.length;
-    this.logEntries = this.logEntries.filter(entry => entry.timestamp >= cutoff);
-    
+    this.logEntries = this.logEntries.filter((entry) => entry.timestamp >= cutoff);
+
     const removedCount = originalCount - this.logEntries.length;
     if (removedCount > 0) {
       this.log(LogLevel.INFO, EventType.SYSTEM, `Cleaned up ${removedCount} old log entries`);
     }
 
     // Also cleanup performance history
-    this.performanceHistory = this.performanceHistory.filter(metric => metric.timestamp >= cutoff);
+    this.performanceHistory = this.performanceHistory.filter(
+      (metric) => metric.timestamp >= cutoff,
+    );
   }
 
   /**
@@ -428,8 +456,8 @@ export class AutopilotMonitoringService {
       context: {
         sessionId: this.sessionId,
         version: '1.0.0', // Would come from app config
-        platform: 'mobile' // Would be detected
-      }
+        platform: 'mobile', // Would be detected
+      },
     };
 
     this.logEntries.push(logEntry);
@@ -445,7 +473,7 @@ export class AutopilotMonitoringService {
       [LogLevel.INFO]: console.info,
       [LogLevel.WARN]: console.warn,
       [LogLevel.ERROR]: console.error,
-      [LogLevel.CRITICAL]: console.error
+      [LogLevel.CRITICAL]: console.error,
     };
 
     consoleMethods[level](`[${eventType}] ${message}`, data);
@@ -458,11 +486,10 @@ export class AutopilotMonitoringService {
     this.metricsInterval = setInterval(() => {
       const metrics = this.getPerformanceMetrics();
       this.performanceHistory.push(metrics);
-      
+
       // Keep only recent history
-      const cutoff = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
-      this.performanceHistory = this.performanceHistory.filter(m => m.timestamp >= cutoff);
-      
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours
+      this.performanceHistory = this.performanceHistory.filter((m) => m.timestamp >= cutoff);
     }, this.config.metricsIntervalMs);
   }
 
@@ -480,7 +507,7 @@ export class AutopilotMonitoringService {
    */
   private calculatePercentile(numbers: number[], percentile: number): number {
     if (numbers.length === 0) return 0;
-    
+
     const sorted = [...numbers].sort((a, b) => a - b);
     const index = Math.ceil((percentile / 100) * sorted.length) - 1;
     return sorted[Math.max(0, index)];
@@ -491,11 +518,16 @@ export class AutopilotMonitoringService {
    */
   private mapErrorSeverityToLogLevel(severity: string): LogLevel {
     switch (severity) {
-      case 'critical': return LogLevel.CRITICAL;
-      case 'error': return LogLevel.ERROR;
-      case 'warning': return LogLevel.WARN;
-      case 'info': return LogLevel.INFO;
-      default: return LogLevel.INFO;
+      case 'critical':
+        return LogLevel.CRITICAL;
+      case 'error':
+        return LogLevel.ERROR;
+      case 'warning':
+        return LogLevel.WARN;
+      case 'info':
+        return LogLevel.INFO;
+      default:
+        return LogLevel.INFO;
     }
   }
 
@@ -504,17 +536,15 @@ export class AutopilotMonitoringService {
    */
   private exportLogsAsCsv(): string {
     const headers = ['timestamp', 'level', 'eventType', 'message', 'data'];
-    const rows = this.logEntries.map(entry => [
+    const rows = this.logEntries.map((entry) => [
       new Date(entry.timestamp).toISOString(),
       entry.level,
       entry.eventType,
       entry.message.replace(/"/g, '""'), // Escape quotes
-      JSON.stringify(entry.data || {}).replace(/"/g, '""')
+      JSON.stringify(entry.data || {}).replace(/"/g, '""'),
     ]);
 
-    return [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
+    return [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
   }
 
   /**
@@ -525,7 +555,7 @@ export class AutopilotMonitoringService {
       clearInterval(this.metricsInterval);
       this.metricsInterval = undefined;
     }
-    
+
     this.log(LogLevel.INFO, EventType.SYSTEM, 'Monitoring service stopped');
   }
 }

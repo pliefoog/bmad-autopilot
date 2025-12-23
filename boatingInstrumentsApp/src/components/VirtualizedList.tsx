@@ -1,12 +1,12 @@
 /**
  * Virtualized List Component
- * 
+ *
  * Efficient list rendering for large datasets:
  * - Only renders visible items
  * - Smooth scrolling with windowing
  * - Optimized for marine data lists (alarms, logs, waypoints)
  * - Memory-efficient item recycling
- * 
+ *
  * Story 4.5 AC4: Implement efficient list virtualization for large datasets
  */
 
@@ -44,7 +44,7 @@ export interface VirtualizedListProps<T> {
 
 /**
  * Virtualized list component for efficient rendering of large datasets
- * 
+ *
  * @example
  * ```tsx
  * <VirtualizedList
@@ -70,59 +70,57 @@ export function VirtualizedList<T>({
   const scrollViewRef = useRef<ScrollView>(null);
   const [containerHeight, setContainerHeight] = useState(height || 0);
   const [scrollOffset, setScrollOffset] = useState(initialScrollIndex * itemHeight);
-  
+
   // Calculate visible range
   const visibleRange = useMemo(() => {
     const effectiveHeight = height || containerHeight;
     if (effectiveHeight === 0) {
       return { start: 0, end: 0 };
     }
-    
+
     const visibleStart = Math.floor(scrollOffset / itemHeight);
     const visibleEnd = Math.ceil((scrollOffset + effectiveHeight) / itemHeight);
-    
+
     // Add overscan
     const start = Math.max(0, visibleStart - overscan);
     const end = Math.min(data.length, visibleEnd + overscan);
-    
+
     return { start, end };
   }, [scrollOffset, itemHeight, height, containerHeight, data.length, overscan]);
-  
+
   // Calculate total content height
   const contentHeight = useMemo(() => {
     return data.length * itemHeight;
   }, [data.length, itemHeight]);
-  
+
   // Handle scroll events
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const newScrollOffset = event.nativeEvent.contentOffset.y;
-      setScrollOffset(newScrollOffset);
-    },
-    []
-  );
-  
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const newScrollOffset = event.nativeEvent.contentOffset.y;
+    setScrollOffset(newScrollOffset);
+  }, []);
+
   // Handle container layout
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) => {
       if (!height) {
-        setContainerHeight(event.nativeEvent.layout.height);
+        const newH = event.nativeEvent.layout.height;
+        setContainerHeight((prev) => (prev !== newH ? newH : prev));
       }
     },
-    [height]
+    [height],
   );
-  
+
   // Render visible items
   const visibleItems = useMemo(() => {
     const items: React.ReactNode[] = [];
-    
+
     for (let i = visibleRange.start; i < visibleRange.end; i++) {
       const item = data[i];
       if (!item) continue;
-      
+
       const key = keyExtractor(item, i);
       const top = i * itemHeight;
-      
+
       items.push(
         <View
           key={key}
@@ -138,18 +136,18 @@ export function VirtualizedList<T>({
           ]}
         >
           {renderItem(item, i)}
-        </View>
+        </View>,
       );
     }
-    
+
     return items;
   }, [data, visibleRange, itemHeight, keyExtractor, renderItem]);
-  
+
   // Show empty state
   if (data.length === 0 && emptyComponent) {
     return <View style={[styles.container, style]}>{emptyComponent}</View>;
   }
-  
+
   return (
     <View style={[styles.container, style]} onLayout={handleLayout}>
       <ScrollView
@@ -159,9 +157,7 @@ export function VirtualizedList<T>({
         onScroll={handleScroll}
         showsVerticalScrollIndicator={true}
       >
-        <View style={[styles.content, { height: contentHeight }]}>
-          {visibleItems}
-        </View>
+        <View style={[styles.content, { height: contentHeight }]}>{visibleItems}</View>
       </ScrollView>
     </View>
   );
@@ -202,7 +198,7 @@ export function VirtualizedSectionList<T>({
   const scrollViewRef = useRef<ScrollView>(null);
   const [containerHeight, setContainerHeight] = useState(height || 0);
   const [scrollOffset, setScrollOffset] = useState(0);
-  
+
   // Flatten sections into single array with metadata
   const flatData = useMemo(() => {
     const items: Array<{
@@ -214,9 +210,9 @@ export function VirtualizedSectionList<T>({
       offset: number;
       height: number;
     }> = [];
-    
+
     let currentOffset = 0;
-    
+
     sections.forEach((section, sectionIndex) => {
       // Add section header
       items.push({
@@ -227,7 +223,7 @@ export function VirtualizedSectionList<T>({
         height: sectionHeaderHeight,
       });
       currentOffset += sectionHeaderHeight;
-      
+
       // Add section items
       section.data.forEach((item, itemIndex) => {
         items.push({
@@ -241,48 +237,48 @@ export function VirtualizedSectionList<T>({
         currentOffset += itemHeight;
       });
     });
-    
+
     return { items, totalHeight: currentOffset };
   }, [sections, itemHeight, sectionHeaderHeight]);
-  
+
   // Calculate visible range
   const visibleItems = useMemo(() => {
     const effectiveHeight = height || containerHeight;
     if (effectiveHeight === 0) return [];
-    
+
     const visibleStart = scrollOffset;
     const visibleEnd = scrollOffset + effectiveHeight;
-    
+
     return flatData.items.filter((item) => {
       const itemEnd = item.offset + item.height;
-      return itemEnd >= visibleStart - overscan * itemHeight &&
-             item.offset <= visibleEnd + overscan * itemHeight;
+      return (
+        itemEnd >= visibleStart - overscan * itemHeight &&
+        item.offset <= visibleEnd + overscan * itemHeight
+      );
     });
   }, [flatData, scrollOffset, height, containerHeight, overscan, itemHeight]);
-  
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      setScrollOffset(event.nativeEvent.contentOffset.y);
-    },
-    []
-  );
-  
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setScrollOffset(event.nativeEvent.contentOffset.y);
+  }, []);
+
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) => {
       if (!height) {
-        setContainerHeight(event.nativeEvent.layout.height);
+        const newH = event.nativeEvent.layout.height;
+        setContainerHeight((prev) => (prev !== newH ? newH : prev));
       }
     },
-    [height]
+    [height],
   );
-  
+
   const renderedItems = useMemo(() => {
     return visibleItems.map((item) => {
       const key =
         item.type === 'header'
           ? `header-${item.sectionIndex}`
           : keyExtractor(item.data!, item.itemIndex!, item.sectionIndex);
-      
+
       return (
         <View
           key={key}
@@ -304,11 +300,11 @@ export function VirtualizedSectionList<T>({
       );
     });
   }, [visibleItems, keyExtractor, renderItem, renderSectionHeader]);
-  
+
   if (sections.length === 0 && emptyComponent) {
     return <View style={[styles.container, style]}>{emptyComponent}</View>;
   }
-  
+
   return (
     <View style={[styles.container, style]} onLayout={handleLayout}>
       <ScrollView
@@ -318,9 +314,7 @@ export function VirtualizedSectionList<T>({
         onScroll={handleScroll}
         showsVerticalScrollIndicator={true}
       >
-        <View style={[styles.content, { height: flatData.totalHeight }]}>
-          {renderedItems}
-        </View>
+        <View style={[styles.content, { height: flatData.totalHeight }]}>{renderedItems}</View>
       </ScrollView>
     </View>
   );

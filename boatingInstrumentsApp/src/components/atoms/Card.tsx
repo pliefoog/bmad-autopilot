@@ -26,7 +26,7 @@ const Card: React.FC<CardProps> = ({
 }) => {
   const theme = useTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
-  
+
   const cardStyle = [
     styles.card,
     styles[`card_${variant}`],
@@ -44,64 +44,65 @@ const Card: React.FC<CardProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  card: {
-    backgroundColor: theme.surfaceHighlight,
-  },
-  card_default: {
-    borderWidth: 1,
-    borderColor: theme.borderLight,
-  },
-  card_elevated: {
-    ...PlatformStyles.boxShadow(theme.shadow, { x: 0, y: 2 }, 3.84, 0.1),
-    elevation: 5,
-  },
-  card_outlined: {
-    borderWidth: 2,
-    borderColor: theme.border,
-  },
-  card_filled: {
-    backgroundColor: theme.surfaceHighlight,
-  },
-  padding_none: {
-    padding: 0,
-  },
-  padding_small: {
-    padding: 8,
-  },
-  padding_medium: {
-    padding: 16,
-  },
-  padding_large: {
-    padding: 24,
-  },
-  margin_none: {
-    margin: 0,
-  },
-  margin_small: {
-    margin: 8,
-  },
-  margin_medium: {
-    margin: 16,
-  },
-  margin_large: {
-    margin: 24,
-  },
-  rounded_none: {
-    borderRadius: 0,
-  },
-  rounded_small: {
-    borderRadius: 4,
-  },
-  rounded_medium: {
-    borderRadius: 8,
-  },
-  rounded_large: {
-    borderRadius: 16,
-  },
-  rounded_full: {
-    borderRadius: 9999,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: theme.surfaceHighlight,
+    },
+    card_default: {
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+    },
+    card_elevated: {
+      ...PlatformStyles.boxShadow(theme.shadow, { x: 0, y: 2 }, 3.84, 0.1),
+      elevation: 5,
+    },
+    card_outlined: {
+      borderWidth: 2,
+      borderColor: theme.border,
+    },
+    card_filled: {
+      backgroundColor: theme.surfaceHighlight,
+    },
+    padding_none: {
+      padding: 0,
+    },
+    padding_small: {
+      padding: 8,
+    },
+    padding_medium: {
+      padding: 16,
+    },
+    padding_large: {
+      padding: 24,
+    },
+    margin_none: {
+      margin: 0,
+    },
+    margin_small: {
+      margin: 8,
+    },
+    margin_medium: {
+      margin: 16,
+    },
+    margin_large: {
+      margin: 24,
+    },
+    rounded_none: {
+      borderRadius: 0,
+    },
+    rounded_small: {
+      borderRadius: 4,
+    },
+    rounded_medium: {
+      borderRadius: 8,
+    },
+    rounded_large: {
+      borderRadius: 16,
+    },
+    rounded_full: {
+      borderRadius: 9999,
+    },
+  });
 
 export default Card;

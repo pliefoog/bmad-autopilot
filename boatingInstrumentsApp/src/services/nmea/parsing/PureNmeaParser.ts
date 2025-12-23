@@ -1,9 +1,9 @@
 /**
  * Pure NMEA Parser Component
- * 
+ *
  * Dedicated NMEA sentence parsing with no side effects.
  * Supports NMEA 0183 and NMEA 2000 (via DIN wrapper) messages.
- * 
+ *
  * Key Principles:
  * - Pure functions - no side effects
  * - Single responsibility - only parsing
@@ -29,11 +29,11 @@ export interface ParsingResult {
 
 export class PureNmeaParser {
   private static instance: PureNmeaParser;
-  
+
   // Performance tracking
   private parseCount = 0;
   private errorCount = 0;
-  
+
   static getInstance(): PureNmeaParser {
     if (!PureNmeaParser.instance) {
       PureNmeaParser.instance = new PureNmeaParser();
@@ -49,7 +49,7 @@ export class PureNmeaParser {
   parseSentence(sentence: string): ParsingResult {
     this.parseCount++;
     const timestamp = Date.now();
-    
+
     try {
       // Basic validation
       const validationResult = this.validateSentence(sentence);
@@ -57,7 +57,7 @@ export class PureNmeaParser {
         this.errorCount++;
         return {
           success: false,
-          errors: validationResult.errors
+          errors: validationResult.errors,
         };
       }
 
@@ -67,32 +67,31 @@ export class PureNmeaParser {
         this.errorCount++;
         return {
           success: false,
-          errors: ['Invalid NMEA header format']
+          errors: ['Invalid NMEA header format'],
         };
       }
 
       // Parse fields based on message type
       const fields = this.parseMessageFields(headerInfo.messageType, sentence);
-      
+
       const parsedMessage: ParsedNmeaMessage = {
         messageType: headerInfo.messageType,
         talker: headerInfo.talker,
         fields,
         raw: sentence,
         timestamp,
-        valid: true
+        valid: true,
       };
 
       return {
         success: true,
-        data: parsedMessage
+        data: parsedMessage,
       };
-
     } catch (error) {
       this.errorCount++;
       return {
         success: false,
-        errors: [`Parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        errors: [`Parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`],
       };
     }
   }
@@ -125,7 +124,7 @@ export class PureNmeaParser {
 
     return {
       valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
     };
   }
 
@@ -138,14 +137,14 @@ export class PureNmeaParser {
       if (firstComma === -1) return null;
 
       const header = sentence.substring(1, firstComma); // Remove $ or !
-      
+
       if (header.length < 5) return null;
 
       // Handle BINARY format (NMEA 2000 binary PGN pseudo-sentence)
       if (header === 'BINARY') {
         return {
           talker: '',
-          messageType: 'BINARY'
+          messageType: 'BINARY',
         };
       }
 
@@ -153,14 +152,14 @@ export class PureNmeaParser {
       if (header.startsWith('PC')) {
         return {
           talker: header.substring(0, 2), // PC
-          messageType: header.substring(2)  // DIN
+          messageType: header.substring(2), // DIN
         };
       }
 
       // Standard format: 2-char talker + 3-char message type
       return {
         talker: header.substring(0, 2),
-        messageType: header.substring(2)
+        messageType: header.substring(2),
       };
     } catch (error) {
       return null;
@@ -172,7 +171,7 @@ export class PureNmeaParser {
    */
   private parseMessageFields(messageType: string, sentence: string): Record<string, any> {
     const parts = sentence.split(',');
-    
+
     // Remove checksum from last field if present
     if (parts.length > 0) {
       const lastField = parts[parts.length - 1];
@@ -253,15 +252,15 @@ export class PureNmeaParser {
    */
   private parseGGAFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Time
-      field_2: parts[2],  // Latitude
-      field_3: parts[3],  // Latitude direction
-      field_4: parts[4],  // Longitude  
-      field_5: parts[5],  // Longitude direction
-      field_6: parts[6],  // Fix quality
-      field_7: parts[7],  // Number of satellites
-      field_8: parts[8],  // HDOP
-      field_9: parts[9],  // Altitude
+      field_1: parts[1], // Time
+      field_2: parts[2], // Latitude
+      field_3: parts[3], // Latitude direction
+      field_4: parts[4], // Longitude
+      field_5: parts[5], // Longitude direction
+      field_6: parts[6], // Fix quality
+      field_7: parts[7], // Number of satellites
+      field_8: parts[8], // HDOP
+      field_9: parts[9], // Altitude
       field_10: parts[10], // Altitude unit
       field_11: parts[11], // Geoid height
       field_12: parts[12], // Geoid unit
@@ -276,7 +275,7 @@ export class PureNmeaParser {
       fix_quality: parts[6] ? parseInt(parts[6]) : null,
       satellites: parts[7] ? parseInt(parts[7]) : null,
       hdop: parts[8] ? parseFloat(parts[8]) : null,
-      altitude: parts[9] ? parseFloat(parts[9]) : null
+      altitude: parts[9] ? parseFloat(parts[9]) : null,
     };
   }
 
@@ -285,21 +284,21 @@ export class PureNmeaParser {
    */
   private parseVTGFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Track degrees true
-      field_2: parts[2],  // True indicator
-      field_3: parts[3],  // Track degrees magnetic
-      field_4: parts[4],  // Magnetic indicator
-      field_5: parts[5],  // Speed knots
-      field_6: parts[6],  // Knots indicator
-      field_7: parts[7],  // Speed km/h
-      field_8: parts[8],  // Km/h indicator
-      field_9: parts[9],  // Mode
+      field_1: parts[1], // Track degrees true
+      field_2: parts[2], // True indicator
+      field_3: parts[3], // Track degrees magnetic
+      field_4: parts[4], // Magnetic indicator
+      field_5: parts[5], // Speed knots
+      field_6: parts[6], // Knots indicator
+      field_7: parts[7], // Speed km/h
+      field_8: parts[8], // Km/h indicator
+      field_9: parts[9], // Mode
       // Parsed values
       track_true: parts[1] ? parseFloat(parts[1]) : null,
       track_magnetic: parts[3] ? parseFloat(parts[3]) : null,
       speed_knots: parts[5] ? parseFloat(parts[5]) : null,
       speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
-      mode: parts[9]
+      mode: parts[9],
     };
   }
 
@@ -308,16 +307,16 @@ export class PureNmeaParser {
    */
   private parseDBTFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Depth feet
-      field_2: parts[2],  // Feet unit
-      field_3: parts[3],  // Depth meters
-      field_4: parts[4],  // Meters unit
-      field_5: parts[5],  // Depth fathoms
-      field_6: parts[6],  // Fathoms unit
+      field_1: parts[1], // Depth feet
+      field_2: parts[2], // Feet unit
+      field_3: parts[3], // Depth meters
+      field_4: parts[4], // Meters unit
+      field_5: parts[5], // Depth fathoms
+      field_6: parts[6], // Fathoms unit
       // Parsed values
       depth_feet: parts[1] ? parseFloat(parts[1]) : null,
       depth_meters: parts[3] ? parseFloat(parts[3]) : null,
-      depth_fathoms: parts[5] ? parseFloat(parts[5]) : null
+      depth_fathoms: parts[5] ? parseFloat(parts[5]) : null,
     };
   }
 
@@ -326,17 +325,17 @@ export class PureNmeaParser {
    */
   private parseMWVFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Wind angle
-      field_2: parts[2],  // Reference (R=relative, T=true)
-      field_3: parts[3],  // Wind speed
-      field_4: parts[4],  // Speed unit
-      field_5: parts[5],  // Status
+      field_1: parts[1], // Wind angle
+      field_2: parts[2], // Reference (R=relative, T=true)
+      field_3: parts[3], // Wind speed
+      field_4: parts[4], // Speed unit
+      field_5: parts[5], // Status
       // Parsed values
       wind_angle: parts[1] ? parseFloat(parts[1]) : null,
       reference: parts[2],
       wind_speed: parts[3] ? parseFloat(parts[3]) : null,
       speed_unit: parts[4],
-      status: parts[5]
+      status: parts[5],
     };
   }
 
@@ -345,18 +344,18 @@ export class PureNmeaParser {
    */
   private parseDINFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // PGN in hex
-      field_2: parts[2],  // Data field 1
-      field_3: parts[3],  // Data field 2
-      field_4: parts[4],  // Data field 3
-      field_5: parts[5],  // Data field 4
-      field_6: parts[6],  // Data field 5
-      field_7: parts[7],  // Data field 6
-      field_8: parts[8],  // Data field 7
+      field_1: parts[1], // PGN in hex
+      field_2: parts[2], // Data field 1
+      field_3: parts[3], // Data field 2
+      field_4: parts[4], // Data field 3
+      field_5: parts[5], // Data field 4
+      field_6: parts[6], // Data field 5
+      field_7: parts[7], // Data field 6
+      field_8: parts[8], // Data field 7
       // Parsed values
       pgn_hex: parts[1],
       pgn_number: parts[1] ? parseInt(parts[1], 16) : null,
-      data_fields: parts.slice(2, 9)
+      data_fields: parts.slice(2, 9),
     };
   }
 
@@ -365,15 +364,15 @@ export class PureNmeaParser {
    */
   private parseRMCFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Time
-      field_2: parts[2],  // Status
-      field_3: parts[3],  // Latitude
-      field_4: parts[4],  // Latitude direction
-      field_5: parts[5],  // Longitude
-      field_6: parts[6],  // Longitude direction
-      field_7: parts[7],  // Speed knots
-      field_8: parts[8],  // Track true
-      field_9: parts[9],  // Date
+      field_1: parts[1], // Time
+      field_2: parts[2], // Status
+      field_3: parts[3], // Latitude
+      field_4: parts[4], // Latitude direction
+      field_5: parts[5], // Longitude
+      field_6: parts[6], // Longitude direction
+      field_7: parts[7], // Speed knots
+      field_8: parts[8], // Track true
+      field_9: parts[9], // Date
       field_10: parts[10], // Magnetic variation
       field_11: parts[11], // Variation direction
       field_12: parts[12], // Mode
@@ -386,7 +385,7 @@ export class PureNmeaParser {
       longitude_dir: parts[6],
       speed_knots: parts[7] ? parseFloat(parts[7]) : null,
       track_true: parts[8] ? parseFloat(parts[8]) : null,
-      date: parts[9]
+      date: parts[9],
     };
   }
 
@@ -396,19 +395,19 @@ export class PureNmeaParser {
    */
   private parseZDAFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Time hhmmss.ss
-      field_2: parts[2],  // Day dd
-      field_3: parts[3],  // Month mm
-      field_4: parts[4],  // Year yyyy
-      field_5: parts[5],  // Local zone hours
-      field_6: parts[6],  // Local zone minutes
+      field_1: parts[1], // Time hhmmss.ss
+      field_2: parts[2], // Day dd
+      field_3: parts[3], // Month mm
+      field_4: parts[4], // Year yyyy
+      field_5: parts[5], // Local zone hours
+      field_6: parts[6], // Local zone minutes
       // Parsed values
       time: parts[1] || null,
       day: parts[2] ? parseInt(parts[2]) : null,
       month: parts[3] ? parseInt(parts[3]) : null,
       year: parts[4] ? parseInt(parts[4]) : null,
       lz_hours: parts[5] ? parseInt(parts[5]) : null,
-      lz_minutes: parts[6] ? parseInt(parts[6]) : null
+      lz_minutes: parts[6] ? parseInt(parts[6]) : null,
     };
   }
 
@@ -417,17 +416,17 @@ export class PureNmeaParser {
    */
   private parseHDGFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Magnetic heading
-      field_2: parts[2],  // Magnetic deviation
-      field_3: parts[3],  // Deviation direction
-      field_4: parts[4],  // Magnetic variation
-      field_5: parts[5],  // Variation direction
+      field_1: parts[1], // Magnetic heading
+      field_2: parts[2], // Magnetic deviation
+      field_3: parts[3], // Deviation direction
+      field_4: parts[4], // Magnetic variation
+      field_5: parts[5], // Variation direction
       // Parsed values
       magnetic_heading: parts[1] ? parseFloat(parts[1]) : null,
       magnetic_deviation: parts[2] ? parseFloat(parts[2]) : null,
       deviation_dir: parts[3],
       magnetic_variation: parts[4] ? parseFloat(parts[4]) : null,
-      variation_dir: parts[5]
+      variation_dir: parts[5],
     };
   }
 
@@ -436,13 +435,13 @@ export class PureNmeaParser {
    */
   private parseDPTFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Depth meters
-      field_2: parts[2],  // Offset
-      field_3: parts[3],  // Maximum range
+      field_1: parts[1], // Depth meters
+      field_2: parts[2], // Offset
+      field_3: parts[3], // Maximum range
       // Parsed values
       depth_meters: parts[1] ? parseFloat(parts[1]) : null,
       offset: parts[2] ? parseFloat(parts[2]) : null,
-      max_range: parts[3] ? parseFloat(parts[3]) : null
+      max_range: parts[3] ? parseFloat(parts[3]) : null,
     };
   }
 
@@ -454,24 +453,22 @@ export class PureNmeaParser {
   private parseVHWFields(parts: string[]): Record<string, any> {
     // Debug: Log VHW parsing
     if (Math.random() < 0.02) {
-      console.log(`🔍 VHW parts:`, parts);
-      console.log(`🔍 VHW parts[5]="${parts[5]}" parts[7]="${parts[7]}"`);
     }
-    
+
     return {
-      field_1: parts[1],  // Heading degrees true
-      field_2: parts[2],  // True indicator
-      field_3: parts[3],  // Heading degrees magnetic
-      field_4: parts[4],  // Magnetic indicator
-      field_5: parts[5],  // Speed knots
-      field_6: parts[6],  // Knots indicator
-      field_7: parts[7],  // Speed km/h
-      field_8: parts[8],  // Km/h indicator
+      field_1: parts[1], // Heading degrees true
+      field_2: parts[2], // True indicator
+      field_3: parts[3], // Heading degrees magnetic
+      field_4: parts[4], // Magnetic indicator
+      field_5: parts[5], // Speed knots
+      field_6: parts[6], // Knots indicator
+      field_7: parts[7], // Speed km/h
+      field_8: parts[8], // Km/h indicator
       // Parsed values
       heading_true: parts[1] ? parseFloat(parts[1]) : null,
       heading_magnetic: parts[3] ? parseFloat(parts[3]) : null,
       speed_knots: parts[5] ? parseFloat(parts[5]) : null,
-      speed_kmh: parts[7] ? parseFloat(parts[7]) : null
+      speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
     };
   }
 
@@ -482,20 +479,20 @@ export class PureNmeaParser {
    */
   private parseVWRFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Wind angle (0-180)
-      field_2: parts[2],  // Direction (L/R)
-      field_3: parts[3],  // Wind speed knots
-      field_4: parts[4],  // Knots indicator
-      field_5: parts[5],  // Wind speed m/s
-      field_6: parts[6],  // m/s indicator
-      field_7: parts[7],  // Wind speed km/h
-      field_8: parts[8],  // km/h indicator
+      field_1: parts[1], // Wind angle (0-180)
+      field_2: parts[2], // Direction (L/R)
+      field_3: parts[3], // Wind speed knots
+      field_4: parts[4], // Knots indicator
+      field_5: parts[5], // Wind speed m/s
+      field_6: parts[6], // m/s indicator
+      field_7: parts[7], // Wind speed km/h
+      field_8: parts[8], // km/h indicator
       // Parsed values
       wind_angle: parts[1] ? parseFloat(parts[1]) : null,
       direction: parts[2],
       wind_speed_knots: parts[3] ? parseFloat(parts[3]) : null,
       wind_speed_ms: parts[5] ? parseFloat(parts[5]) : null,
-      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null
+      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
     };
   }
 
@@ -506,20 +503,20 @@ export class PureNmeaParser {
    */
   private parseVWTFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Wind angle (0-180)
-      field_2: parts[2],  // Direction (L/R)
-      field_3: parts[3],  // Wind speed knots
-      field_4: parts[4],  // Knots indicator
-      field_5: parts[5],  // Wind speed m/s
-      field_6: parts[6],  // m/s indicator
-      field_7: parts[7],  // Wind speed km/h
-      field_8: parts[8],  // km/h indicator
+      field_1: parts[1], // Wind angle (0-180)
+      field_2: parts[2], // Direction (L/R)
+      field_3: parts[3], // Wind speed knots
+      field_4: parts[4], // Knots indicator
+      field_5: parts[5], // Wind speed m/s
+      field_6: parts[6], // m/s indicator
+      field_7: parts[7], // Wind speed km/h
+      field_8: parts[8], // km/h indicator
       // Parsed values
       wind_angle: parts[1] ? parseFloat(parts[1]) : null,
       direction: parts[2],
       wind_speed_knots: parts[3] ? parseFloat(parts[3]) : null,
       wind_speed_ms: parts[5] ? parseFloat(parts[5]) : null,
-      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null
+      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
     };
   }
 
@@ -530,20 +527,20 @@ export class PureNmeaParser {
    */
   private parseGLLFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Latitude
-      field_2: parts[2],  // Latitude direction (N/S)
-      field_3: parts[3],  // Longitude
-      field_4: parts[4],  // Longitude direction (E/W)
-      field_5: parts[5],  // UTC time
-      field_6: parts[6],  // Status (A=valid, V=invalid)
-      field_7: parts[7],  // Mode indicator (optional)
+      field_1: parts[1], // Latitude
+      field_2: parts[2], // Latitude direction (N/S)
+      field_3: parts[3], // Longitude
+      field_4: parts[4], // Longitude direction (E/W)
+      field_5: parts[5], // UTC time
+      field_6: parts[6], // Status (A=valid, V=invalid)
+      field_7: parts[7], // Mode indicator (optional)
       // Parsed values
       latitude_raw: parts[1],
       latitude_dir: parts[2],
       longitude_raw: parts[3],
       longitude_dir: parts[4],
       time: parts[5],
-      status: parts[6]
+      status: parts[6],
     };
   }
 
@@ -554,10 +551,10 @@ export class PureNmeaParser {
    */
   private parseHDMFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Magnetic heading
-      field_2: parts[2],  // M indicator
+      field_1: parts[1], // Magnetic heading
+      field_2: parts[2], // M indicator
       // Parsed values
-      magnetic_heading: parts[1] ? parseFloat(parts[1]) : null
+      magnetic_heading: parts[1] ? parseFloat(parts[1]) : null,
     };
   }
 
@@ -568,10 +565,10 @@ export class PureNmeaParser {
    */
   private parseHDTFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // True heading
-      field_2: parts[2],  // T indicator
+      field_1: parts[1], // True heading
+      field_2: parts[2], // T indicator
       // Parsed values
-      true_heading: parts[1] ? parseFloat(parts[1]) : null
+      true_heading: parts[1] ? parseFloat(parts[1]) : null,
     };
   }
 
@@ -582,15 +579,15 @@ export class PureNmeaParser {
    */
   private parseBWCFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],   // UTC time
-      field_2: parts[2],   // Waypoint latitude
-      field_3: parts[3],   // Latitude direction
-      field_4: parts[4],   // Waypoint longitude
-      field_5: parts[5],   // Longitude direction
-      field_6: parts[6],   // Bearing true
-      field_7: parts[7],   // T indicator
-      field_8: parts[8],   // Bearing magnetic
-      field_9: parts[9],   // M indicator
+      field_1: parts[1], // UTC time
+      field_2: parts[2], // Waypoint latitude
+      field_3: parts[3], // Latitude direction
+      field_4: parts[4], // Waypoint longitude
+      field_5: parts[5], // Longitude direction
+      field_6: parts[6], // Bearing true
+      field_7: parts[7], // T indicator
+      field_8: parts[8], // Bearing magnetic
+      field_9: parts[9], // M indicator
       field_10: parts[10], // Distance nautical miles
       field_11: parts[11], // N indicator
       field_12: parts[12], // Waypoint ID
@@ -603,7 +600,7 @@ export class PureNmeaParser {
       bearing_true: parts[6] ? parseFloat(parts[6]) : null,
       bearing_magnetic: parts[8] ? parseFloat(parts[8]) : null,
       distance_nm: parts[10] ? parseFloat(parts[10]) : null,
-      waypoint_id: parts[12]
+      waypoint_id: parts[12],
     };
   }
 
@@ -614,15 +611,15 @@ export class PureNmeaParser {
    */
   private parseRMBFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],   // Status (A=valid, V=warning)
-      field_2: parts[2],   // Cross track error
-      field_3: parts[3],   // Steer direction (L/R)
-      field_4: parts[4],   // Origin waypoint ID
-      field_5: parts[5],   // Destination waypoint ID
-      field_6: parts[6],   // Destination latitude
-      field_7: parts[7],   // Latitude direction
-      field_8: parts[8],   // Destination longitude
-      field_9: parts[9],   // Longitude direction
+      field_1: parts[1], // Status (A=valid, V=warning)
+      field_2: parts[2], // Cross track error
+      field_3: parts[3], // Steer direction (L/R)
+      field_4: parts[4], // Origin waypoint ID
+      field_5: parts[5], // Destination waypoint ID
+      field_6: parts[6], // Destination latitude
+      field_7: parts[7], // Latitude direction
+      field_8: parts[8], // Destination longitude
+      field_9: parts[9], // Longitude direction
       field_10: parts[10], // Range to destination
       field_11: parts[11], // Bearing to destination
       field_12: parts[12], // Velocity toward destination
@@ -640,7 +637,7 @@ export class PureNmeaParser {
       range_nm: parts[10] ? parseFloat(parts[10]) : null,
       bearing: parts[11] ? parseFloat(parts[11]) : null,
       vmg: parts[12] ? parseFloat(parts[12]) : null,
-      arrival_status: parts[13]
+      arrival_status: parts[13],
     };
   }
 
@@ -651,16 +648,16 @@ export class PureNmeaParser {
    */
   private parseXTEFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Status 1 (A=valid, V=warning)
-      field_2: parts[2],  // Status 2 (A=valid, V=warning)
-      field_3: parts[3],  // Cross track error magnitude
-      field_4: parts[4],  // Direction to steer (L/R)
-      field_5: parts[5],  // Units (N=nautical miles)
+      field_1: parts[1], // Status 1 (A=valid, V=warning)
+      field_2: parts[2], // Status 2 (A=valid, V=warning)
+      field_3: parts[3], // Cross track error magnitude
+      field_4: parts[4], // Direction to steer (L/R)
+      field_5: parts[5], // Units (N=nautical miles)
       // Parsed values
       status: parts[1],
       cross_track_error: parts[3] ? parseFloat(parts[3]) : null,
       steer_direction: parts[4],
-      units: parts[5]
+      units: parts[5],
     };
   }
 
@@ -671,17 +668,17 @@ export class PureNmeaParser {
    */
   private parseBODFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Bearing true
-      field_2: parts[2],  // T indicator
-      field_3: parts[3],  // Bearing magnetic
-      field_4: parts[4],  // M indicator
-      field_5: parts[5],  // Destination waypoint ID
-      field_6: parts[6],  // Origin waypoint ID
+      field_1: parts[1], // Bearing true
+      field_2: parts[2], // T indicator
+      field_3: parts[3], // Bearing magnetic
+      field_4: parts[4], // M indicator
+      field_5: parts[5], // Destination waypoint ID
+      field_6: parts[6], // Origin waypoint ID
       // Parsed values
       bearing_true: parts[1] ? parseFloat(parts[1]) : null,
       bearing_magnetic: parts[3] ? parseFloat(parts[3]) : null,
       dest_waypoint: parts[5],
-      origin_waypoint: parts[6]
+      origin_waypoint: parts[6],
     };
   }
 
@@ -692,17 +689,17 @@ export class PureNmeaParser {
    */
   private parseWPLFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Latitude
-      field_2: parts[2],  // Latitude direction
-      field_3: parts[3],  // Longitude
-      field_4: parts[4],  // Longitude direction
-      field_5: parts[5],  // Waypoint ID
+      field_1: parts[1], // Latitude
+      field_2: parts[2], // Latitude direction
+      field_3: parts[3], // Longitude
+      field_4: parts[4], // Longitude direction
+      field_5: parts[5], // Waypoint ID
       // Parsed values
       latitude: parts[1],
       latitude_dir: parts[2],
       longitude: parts[3],
       longitude_dir: parts[4],
-      waypoint_id: parts[5]
+      waypoint_id: parts[5],
     };
   }
 
@@ -710,31 +707,32 @@ export class PureNmeaParser {
    * Get parsing statistics
    */
   getStats(): { parseCount: number; errorCount: number; successRate: number } {
-    const successRate = this.parseCount > 0 ? ((this.parseCount - this.errorCount) / this.parseCount) * 100 : 0;
+    const successRate =
+      this.parseCount > 0 ? ((this.parseCount - this.errorCount) / this.parseCount) * 100 : 0;
     return {
       parseCount: this.parseCount,
       errorCount: this.errorCount,
-      successRate: Math.round(successRate * 100) / 100
+      successRate: Math.round(successRate * 100) / 100,
     };
   }
 
   /**
-   * Parse DBK (Depth Below Keel) fields  
+   * Parse DBK (Depth Below Keel) fields
    * Format: $xxDBK,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F*hh
    * Fields: Same format as DBT but represents depth below keel
    */
   private parseDBKFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Depth feet
-      field_2: parts[2],  // Feet unit
-      field_3: parts[3],  // Depth meters
-      field_4: parts[4],  // Meters unit
-      field_5: parts[5],  // Depth fathoms
-      field_6: parts[6],  // Fathoms unit
+      field_1: parts[1], // Depth feet
+      field_2: parts[2], // Feet unit
+      field_3: parts[3], // Depth meters
+      field_4: parts[4], // Meters unit
+      field_5: parts[5], // Depth fathoms
+      field_6: parts[6], // Fathoms unit
       // Parsed values
       depth_feet: parts[1] ? parseFloat(parts[1]) : null,
       depth_meters: parts[3] ? parseFloat(parts[3]) : null,
-      depth_fathoms: parts[5] ? parseFloat(parts[5]) : null
+      depth_fathoms: parts[5] ? parseFloat(parts[5]) : null,
     };
   }
 
@@ -745,11 +743,11 @@ export class PureNmeaParser {
    */
   private parseMTWFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Temperature
-      field_2: parts[2],  // Unit (C)
+      field_1: parts[1], // Temperature
+      field_2: parts[2], // Unit (C)
       // Parsed values
       temperature_celsius: parts[1] ? parseFloat(parts[1]) : null,
-      unit: parts[2] || 'C'
+      unit: parts[2] || 'C',
     };
   }
 
@@ -760,17 +758,17 @@ export class PureNmeaParser {
    */
   private parseRPMFields(parts: string[]): Record<string, any> {
     return {
-      field_1: parts[1],  // Source
-      field_2: parts[2],  // Instance
-      field_3: parts[3],  // RPM Value
-      field_4: parts[4],  // Pitch %
-      field_5: parts[5],  // Status
+      field_1: parts[1], // Source
+      field_2: parts[2], // Instance
+      field_3: parts[3], // RPM Value
+      field_4: parts[4], // Pitch %
+      field_5: parts[5], // Status
       // Parsed values - these are the field names our NmeaSensorProcessor expects
       source: parts[1] || '',
       instance: parts[2] || '',
       rpm: parts[3] || '',
       pitch: parts[4] || '',
-      status: parts[5] || ''
+      status: parts[5] || '',
     };
   }
 
@@ -788,7 +786,7 @@ export class PureNmeaParser {
       starboard_angle: parts[1] ? parseFloat(parts[1]) : null,
       starboard_status: parts[2],
       port_angle: parts[3] ? parseFloat(parts[3]) : null,
-      port_status: parts[4]
+      port_status: parts[4],
     };
   }
 
@@ -827,12 +825,12 @@ export class PureNmeaParser {
       bearing_present_type: parts[12],
       heading_to_steer: parts[13] ? parseFloat(parts[13]) : null,
       heading_type: parts[14],
-      status_faa_mode: parts[15]
+      status_faa_mode: parts[15],
     };
   }
 
   /**
-   * Parse APA (Autopilot Sentence A) fields  
+   * Parse APA (Autopilot Sentence A) fields
    * Format: $xxAPA,<status1>,<status2>,<xte_mag>,<dir>,<xte_units>,<status3>,<status4>,<bearing>,<dir>,<dest_id>*hh
    */
   private parseAPAFields(parts: string[]): Record<string, any> {
@@ -856,7 +854,7 @@ export class PureNmeaParser {
       status_perpendicular: parts[7],
       bearing_to_dest: parts[8] ? parseFloat(parts[8]) : null,
       bearing_type: parts[9],
-      destination_id: parts[10]
+      destination_id: parts[10],
     };
   }
 

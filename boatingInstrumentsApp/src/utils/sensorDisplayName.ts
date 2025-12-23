@@ -48,7 +48,7 @@ export function formatSensorTypeInstance(sensorType: SensorType | null, instance
   if (!sensorType) {
     return `Sensor ${instance}`;
   }
-  
+
   // Capitalize first letter of sensor type
   const typeLabel = sensorType.charAt(0).toUpperCase() + sensorType.slice(1);
   return `${typeLabel} ${instance}`;

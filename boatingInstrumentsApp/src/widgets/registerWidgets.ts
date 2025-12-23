@@ -30,7 +30,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    DepthWidget
+    DepthWidget,
   );
 
   WidgetRegistry.register(
@@ -43,7 +43,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    SpeedWidget
+    SpeedWidget,
   );
 
   WidgetRegistry.register(
@@ -56,7 +56,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    GPSWidget
+    GPSWidget,
   );
 
   WidgetRegistry.register(
@@ -69,7 +69,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    CompassWidget
+    CompassWidget,
   );
 
   WidgetRegistry.register(
@@ -82,7 +82,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 200, height: 200 },
       configurable: true,
     },
-    NavigationWidget
+    NavigationWidget,
   );
 
   // Environment widgets
@@ -96,7 +96,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    WindWidget
+    WindWidget,
   );
 
   // Register multi-instance temperature widget (supports all NMEA temperature zones)
@@ -110,7 +110,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    TemperatureWidget
+    TemperatureWidget,
   );
 
   // Engine widgets
@@ -124,7 +124,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    EngineWidget
+    EngineWidget,
   );
 
   // Electrical widgets
@@ -138,7 +138,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    BatteryWidget
+    BatteryWidget,
   );
 
   WidgetRegistry.register(
@@ -151,7 +151,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    TanksWidget
+    TanksWidget,
   );
 
   // Register individual tank widget (for multi-instance tank-0, tank-1, etc.)
@@ -165,7 +165,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    TanksWidget
+    TanksWidget,
   );
 
   // Autopilot widgets
@@ -179,7 +179,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    AutopilotWidget
+    AutopilotWidget,
   );
 
   WidgetRegistry.register(
@@ -192,7 +192,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    RudderWidget
+    RudderWidget,
   );
 
   // Utility widgets
@@ -206,7 +206,7 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 400, height: 300 },
       configurable: true,
     },
-    ThemeWidget
+    ThemeWidget,
   );
 
   // Custom widgets
@@ -220,6 +220,6 @@ export function registerAllWidgets(): void {
       defaultSize: { width: 160, height: 160 },
       configurable: true,
     },
-    CustomWidget
+    CustomWidget,
   );
 }

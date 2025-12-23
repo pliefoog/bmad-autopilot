@@ -66,7 +66,7 @@ export class AlarmConfigurationManager {
   private alarmHistory: AlarmHistoryEntry[] = [];
   private maxHistorySize: number = 10000;
   private snoozeTimers: Map<string, NodeJS.Timeout> = new Map();
-  
+
   constructor() {
     this.initializeDefaultProfile();
   }
@@ -120,7 +120,7 @@ export class AlarmConfigurationManager {
         enabled: true,
         hysteresis: 0.1,
       },
-      
+
       // Engine monitoring - critical for vessel operation
       {
         id: 'engine-temp-warning',
@@ -142,7 +142,7 @@ export class AlarmConfigurationManager {
         enabled: true,
         hysteresis: 2,
       },
-      
+
       // Electrical system monitoring
       {
         id: 'battery-voltage-warning',
@@ -164,7 +164,7 @@ export class AlarmConfigurationManager {
         enabled: true,
         hysteresis: 0.1,
       },
-      
+
       // Additional marine safety thresholds
       {
         id: 'wind-speed-warning',
@@ -210,7 +210,7 @@ export class AlarmConfigurationManager {
    * Get default critical alarm configurations
    */
   private getDefaultCriticalAlarmConfigs(): CriticalAlarmConfig[] {
-    return Object.values(CriticalAlarmType).map(type => ({
+    return Object.values(CriticalAlarmType).map((type) => ({
       type,
       enabled: true,
       thresholds: this.getDefaultCriticalThresholds(type),
@@ -267,7 +267,11 @@ export class AlarmConfigurationManager {
 
   private requiresConfirmation(type: CriticalAlarmType): boolean {
     // Critical navigation alarms require explicit confirmation
-    return [CriticalAlarmType.SHALLOW_WATER, CriticalAlarmType.AUTOPILOT_FAILURE, CriticalAlarmType.GPS_LOSS].includes(type);
+    return [
+      CriticalAlarmType.SHALLOW_WATER,
+      CriticalAlarmType.AUTOPILOT_FAILURE,
+      CriticalAlarmType.GPS_LOSS,
+    ].includes(type);
   }
 
   private allowSnooze(type: CriticalAlarmType): boolean {
@@ -286,9 +290,9 @@ export class AlarmConfigurationManager {
    * Create new configuration profile
    */
   public createProfile(
-    name: string, 
-    description: string, 
-    baseProfileId: string = 'default'
+    name: string,
+    description: string,
+    baseProfileId: string = 'default',
   ): AlarmConfigurationProfile {
     const baseProfile = this.profiles.get(baseProfileId);
     if (!baseProfile) {
@@ -377,13 +381,11 @@ export class AlarmConfigurationManager {
     const results: AlarmTestResult[] = [];
     const profile = this.getCurrentProfile();
 
-    console.log('AlarmConfigurationManager: Starting comprehensive alarm system test');
-
     // Test critical alarm audio system
     for (const alarmType of Object.values(CriticalAlarmType)) {
       try {
         const startTime = Date.now();
-        
+
         // Test audio alert
         const audioManager = new MarineAudioAlertManager({
           targetAudioLevelDb: 85,
@@ -398,7 +400,11 @@ export class AlarmConfigurationManager {
           engineNoiseCompensation: true,
         });
 
-        const audioResult = await audioManager.testAlarmSound(alarmType, AlarmEscalationLevel.WARNING, 2000);
+        const audioResult = await audioManager.testAlarmSound(
+          alarmType,
+          AlarmEscalationLevel.WARNING,
+          2000,
+        );
         const duration = Date.now() - startTime;
 
         results.push({
@@ -409,7 +415,6 @@ export class AlarmConfigurationManager {
           timestamp: Date.now(),
           notes: audioResult ? 'Audio test successful' : 'Audio test failed',
         });
-
       } catch (error) {
         results.push({
           alarmType,
@@ -437,7 +442,6 @@ export class AlarmConfigurationManager {
         timestamp: Date.now(),
         notes: 'Visual alert system test completed',
       });
-
     } catch (error) {
       results.push({
         alarmType: 'visual-system',
@@ -464,7 +468,6 @@ export class AlarmConfigurationManager {
         timestamp: Date.now(),
         notes: `Marine compliance: ${complianceStatus.compliant}, Response time: ${complianceStatus.averageResponseTime}ms`,
       });
-
     } catch (error) {
       results.push({
         alarmType: 'alarm-manager',
@@ -476,10 +479,8 @@ export class AlarmConfigurationManager {
       });
     }
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
     const totalTests = results.length;
-
-    console.log(`AlarmConfigurationManager: Alarm system test completed - ${successCount}/${totalTests} tests passed`);
 
     return results;
   }
@@ -488,8 +489,8 @@ export class AlarmConfigurationManager {
    * Test specific alarm type
    */
   public async testAlarmType(
-    alarmType: CriticalAlarmType, 
-    testTypes: ('visual' | 'audio' | 'combined')[] = ['audio']
+    alarmType: CriticalAlarmType,
+    testTypes: ('visual' | 'audio' | 'combined')[] = ['audio'],
   ): Promise<AlarmTestResult[]> {
     const results: AlarmTestResult[] = [];
     const profile = this.getCurrentProfile();
@@ -514,8 +515,12 @@ export class AlarmConfigurationManager {
               weatherCompensation: true,
               engineNoiseCompensation: true,
             });
-            
-            success = await audioManager.testAlarmSound(alarmType, AlarmEscalationLevel.WARNING, 3000);
+
+            success = await audioManager.testAlarmSound(
+              alarmType,
+              AlarmEscalationLevel.WARNING,
+              3000,
+            );
             notes = success ? 'Audio alarm test successful' : 'Audio alarm test failed';
             break;
 
@@ -541,7 +546,6 @@ export class AlarmConfigurationManager {
           timestamp: Date.now(),
           notes,
         });
-
       } catch (error) {
         results.push({
           alarmType,
@@ -579,34 +583,38 @@ export class AlarmConfigurationManager {
   /**
    * Get alarm history with filtering options
    */
-  public getAlarmHistory(options: {
-    startDate?: number;
-    endDate?: number;
-    alarmTypes?: (CriticalAlarmType | string)[];
-    escalationLevels?: (AlarmEscalationLevel | AlarmLevel)[];
-    acknowledgedOnly?: boolean;
-    limit?: number;
-  } = {}): AlarmHistoryEntry[] {
+  public getAlarmHistory(
+    options: {
+      startDate?: number;
+      endDate?: number;
+      alarmTypes?: (CriticalAlarmType | string)[];
+      escalationLevels?: (AlarmEscalationLevel | AlarmLevel)[];
+      acknowledgedOnly?: boolean;
+      limit?: number;
+    } = {},
+  ): AlarmHistoryEntry[] {
     let filtered = this.alarmHistory;
 
     if (options.startDate) {
-      filtered = filtered.filter(entry => entry.triggeredAt >= options.startDate!);
+      filtered = filtered.filter((entry) => entry.triggeredAt >= options.startDate!);
     }
 
     if (options.endDate) {
-      filtered = filtered.filter(entry => entry.triggeredAt <= options.endDate!);
+      filtered = filtered.filter((entry) => entry.triggeredAt <= options.endDate!);
     }
 
     if (options.alarmTypes) {
-      filtered = filtered.filter(entry => options.alarmTypes!.includes(entry.type));
+      filtered = filtered.filter((entry) => options.alarmTypes!.includes(entry.type));
     }
 
     if (options.escalationLevels) {
-      filtered = filtered.filter(entry => options.escalationLevels!.includes(entry.escalationLevel));
+      filtered = filtered.filter((entry) =>
+        options.escalationLevels!.includes(entry.escalationLevel),
+      );
     }
 
     if (options.acknowledgedOnly) {
-      filtered = filtered.filter(entry => entry.acknowledgedAt !== undefined);
+      filtered = filtered.filter((entry) => entry.acknowledgedAt !== undefined);
     }
 
     // Sort by most recent first
@@ -631,7 +639,7 @@ export class AlarmConfigurationManager {
     mostFrequentAlarms: Array<{ type: string; count: number }>;
   } {
     const cutoffTime = Date.now() - timeRangeMs;
-    const recentAlarms = this.alarmHistory.filter(entry => entry.triggeredAt >= cutoffTime);
+    const recentAlarms = this.alarmHistory.filter((entry) => entry.triggeredAt >= cutoffTime);
 
     const alarmsByType: Record<string, number> = {};
     const alarmsByLevel: Record<string, number> = {};
@@ -639,7 +647,7 @@ export class AlarmConfigurationManager {
     let acknowledgedCount = 0;
     let falsePositiveCount = 0;
 
-    recentAlarms.forEach(entry => {
+    recentAlarms.forEach((entry) => {
       // Count by type
       alarmsByType[entry.type] = (alarmsByType[entry.type] || 0) + 1;
 
@@ -659,7 +667,8 @@ export class AlarmConfigurationManager {
     });
 
     const averageResponseTime = acknowledgedCount > 0 ? totalResponseTime / acknowledgedCount : 0;
-    const falsePositiveRate = recentAlarms.length > 0 ? falsePositiveCount / recentAlarms.length : 0;
+    const falsePositiveRate =
+      recentAlarms.length > 0 ? falsePositiveCount / recentAlarms.length : 0;
 
     const mostFrequentAlarms = Object.entries(alarmsByType)
       .map(([type, count]) => ({ type, count }))
@@ -683,23 +692,30 @@ export class AlarmConfigurationManager {
     const { alarmId, duration, reason, allowCritical } = options;
 
     // Find alarm in history to check if it's snooze-able
-    const alarmEntry = this.alarmHistory.find(entry => entry.alarmId === alarmId);
+    const alarmEntry = this.alarmHistory.find((entry) => entry.alarmId === alarmId);
     if (!alarmEntry) {
       console.warn(`AlarmConfigurationManager: Alarm ${alarmId} not found in history`);
       return false;
     }
 
     // Check if alarm type allows snoozing
-    if (typeof alarmEntry.type === 'string' && Object.values(CriticalAlarmType).includes(alarmEntry.type as CriticalAlarmType)) {
+    if (
+      typeof alarmEntry.type === 'string' &&
+      Object.values(CriticalAlarmType).includes(alarmEntry.type as CriticalAlarmType)
+    ) {
       const criticalType = alarmEntry.type as CriticalAlarmType;
       if (!this.allowSnooze(criticalType) && !allowCritical) {
-        console.warn(`AlarmConfigurationManager: Cannot snooze critical alarm type ${criticalType}`);
+        console.warn(
+          `AlarmConfigurationManager: Cannot snooze critical alarm type ${criticalType}`,
+        );
         return false;
       }
 
       const maxSnoozeTime = this.getMaxSnoozeTime(criticalType);
       if (maxSnoozeTime && duration > maxSnoozeTime) {
-        console.warn(`AlarmConfigurationManager: Snooze duration ${duration}ms exceeds maximum ${maxSnoozeTime}ms for ${criticalType}`);
+        console.warn(
+          `AlarmConfigurationManager: Snooze duration ${duration}ms exceeds maximum ${maxSnoozeTime}ms for ${criticalType}`,
+        );
         return false;
       }
     }
@@ -713,7 +729,6 @@ export class AlarmConfigurationManager {
     // Set new snooze timer
     const timer = setTimeout(() => {
       this.snoozeTimers.delete(alarmId);
-      console.log(`AlarmConfigurationManager: Snooze expired for alarm ${alarmId}`);
       // In real implementation, this would re-trigger the alarm if condition still exists
     }, duration);
 
@@ -723,15 +738,16 @@ export class AlarmConfigurationManager {
     const updatedEntry = {
       ...alarmEntry,
       snoozeCount: alarmEntry.snoozeCount + 1,
-      notes: `${alarmEntry.notes || ''} Snoozed for ${duration}ms. Reason: ${reason || 'none'}`.trim(),
+      notes: `${alarmEntry.notes || ''} Snoozed for ${duration}ms. Reason: ${
+        reason || 'none'
+      }`.trim(),
     };
 
-    const historyIndex = this.alarmHistory.findIndex(entry => entry.id === alarmEntry.id);
+    const historyIndex = this.alarmHistory.findIndex((entry) => entry.id === alarmEntry.id);
     if (historyIndex >= 0) {
       this.alarmHistory[historyIndex] = updatedEntry;
     }
 
-    console.log(`AlarmConfigurationManager: Alarm ${alarmId} snoozed for ${duration}ms`);
     return true;
   }
 
@@ -743,7 +759,6 @@ export class AlarmConfigurationManager {
     if (timer) {
       clearTimeout(timer);
       this.snoozeTimers.delete(alarmId);
-      console.log(`AlarmConfigurationManager: Snooze cancelled for alarm ${alarmId}`);
       return true;
     }
     return false;
@@ -773,7 +788,7 @@ export class AlarmConfigurationManager {
   public importProfile(profileJson: string): AlarmConfigurationProfile {
     try {
       const profile: AlarmConfigurationProfile = JSON.parse(profileJson);
-      
+
       // Validate profile structure
       if (!profile.id || !profile.name || !profile.thresholds || !profile.settings) {
         throw new Error('Invalid profile structure');
@@ -785,9 +800,10 @@ export class AlarmConfigurationManager {
 
       this.profiles.set(profile.id, profile);
       return profile;
-
     } catch (error) {
-      throw new Error(`Failed to import profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to import profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -815,7 +831,7 @@ export class AlarmConfigurationManager {
     }
 
     // Check for invalid threshold values
-    profile.thresholds.forEach(threshold => {
+    profile.thresholds.forEach((threshold) => {
       if (threshold.value <= 0 && threshold.type !== 'range') {
         configurationErrors.push(`Invalid threshold value for ${threshold.name}`);
       }

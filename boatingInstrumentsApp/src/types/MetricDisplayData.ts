@@ -1,6 +1,6 @@
 /**
  * MetricDisplayData Interface
- * 
+ *
  * Unified interface for metric display data with stable layout information.
  * Eliminates dual-system conflicts between legacy useUnitConversion and presentations.
  */
@@ -10,16 +10,16 @@ import { Presentation } from '../presentation/presentations';
 export interface MetricDisplayData {
   /** The unit abbreviation/symbol (e.g., "kts", "m", "°C") */
   mnemonic: string;
-  
+
   /** The formatted display value (e.g., "15.5", "4 Bf (Moderate Breeze)") */
   value: string;
-  
+
   /** The full unit name (e.g., "knots", "meters", "Celsius") */
   unit: string;
-  
+
   /** The original raw value in base units */
   rawValue: number;
-  
+
   /** Layout information for stable rendering */
   layout: {
     /** Minimum width in pixels for layout stability */
@@ -29,7 +29,7 @@ export interface MetricDisplayData {
     /** Font size recommendation */
     fontSize?: number;
   };
-  
+
   /** Presentation metadata */
   presentation: {
     /** Presentation ID for tracking */
@@ -39,7 +39,7 @@ export interface MetricDisplayData {
     /** Format pattern used */
     pattern: string;
   };
-  
+
   /** Validation and status */
   status: {
     /** Whether the measurement is valid */

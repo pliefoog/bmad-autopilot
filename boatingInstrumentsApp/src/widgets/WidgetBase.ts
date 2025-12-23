@@ -22,12 +22,12 @@ export interface WidgetMeta {
 export abstract class BaseWidget<T extends WidgetProps = WidgetProps> {
   abstract meta: WidgetMeta;
   abstract render(props: T): React.ReactElement;
-  
+
   // Common lifecycle methods
   onMount?(): void;
   onUnmount?(): void;
   onDataUpdate?(data: any): void;
-  
+
   // Default configuration
   getDefaultProps(): Partial<T> {
     return {
@@ -35,7 +35,7 @@ export abstract class BaseWidget<T extends WidgetProps = WidgetProps> {
       refreshRate: 1000, // 1 second default
     } as Partial<T>;
   }
-  
+
   // Validation
   validateProps(props: T): boolean {
     return !!(props.id && props.title);

@@ -1,13 +1,13 @@
 /**
  * Command Pattern Infrastructure
  * Story 4.4 AC13: Undo/Redo capabilities for configuration changes
- * 
+ *
  * Implements the Command pattern for reversible actions:
  * - Theme changes
  * - Widget additions/removals
  * - Connection settings
  * - Alarm configurations
- * 
+ *
  * Features:
  * - Command stack with configurable history limit
  * - Undo/redo operations
@@ -23,25 +23,25 @@
 export interface Command {
   /** Unique identifier for the command */
   id: string;
-  
+
   /** Human-readable description of the command */
   description: string;
-  
+
   /** Timestamp when command was created */
   timestamp: number;
-  
+
   /** Execute the command (do the action) */
   execute(): void | Promise<void>;
-  
+
   /** Undo the command (reverse the action) */
   undo(): void | Promise<void>;
-  
+
   /** Optional: Redo the command (can default to execute) */
   redo?(): void | Promise<void>;
-  
+
   /** Optional: Check if command can be undone */
   canUndo?(): boolean;
-  
+
   /** Optional: Check if command can be redone */
   canRedo?(): boolean;
 }
@@ -63,12 +63,12 @@ export interface CommandGroup {
  */
 export class UndoRedoManager {
   private static instance: UndoRedoManager;
-  
+
   private undoStack: (Command | CommandGroup)[] = [];
   private redoStack: (Command | CommandGroup)[] = [];
   private maxHistorySize: number = 50;
   private isExecuting: boolean = false;
-  
+
   // Callbacks for UI updates
   private onStackChange?: () => void;
   private onCommandExecute?: (command: Command) => void;
@@ -97,27 +97,25 @@ export class UndoRedoManager {
 
     try {
       this.isExecuting = true;
-      
+
       // Execute the command
       await command.execute();
-      
+
       // Add to undo stack
       this.undoStack.push(command);
-      
+
       // Clear redo stack (new action invalidates redo history)
       this.redoStack = [];
-      
+
       // Limit history size
       if (this.undoStack.length > this.maxHistorySize) {
         this.undoStack.shift();
       }
-      
+
       // Save history and notify listeners
       this.saveHistory();
       this.notifyStackChange();
       this.onCommandExecute?.(command);
-      
-      console.log('[UndoRedo] Command executed:', command.description);
     } catch (error) {
       console.error('[UndoRedo] Failed to execute command:', error);
       throw error;
@@ -137,29 +135,27 @@ export class UndoRedoManager {
 
     try {
       this.isExecuting = true;
-      
+
       // Execute all commands in the group
       for (const command of group.commands) {
         await command.execute();
         this.onCommandExecute?.(command);
       }
-      
+
       // Add group to undo stack
       this.undoStack.push(group);
-      
+
       // Clear redo stack
       this.redoStack = [];
-      
+
       // Limit history size
       if (this.undoStack.length > this.maxHistorySize) {
         this.undoStack.shift();
       }
-      
+
       // Save history and notify listeners
       this.saveHistory();
       this.notifyStackChange();
-      
-      console.log('[UndoRedo] Command group executed:', group.description);
     } catch (error) {
       console.error('[UndoRedo] Failed to execute command group:', error);
       throw error;
@@ -184,9 +180,9 @@ export class UndoRedoManager {
 
     try {
       this.isExecuting = true;
-      
+
       const item = this.undoStack.pop()!;
-      
+
       if (this.isCommandGroup(item)) {
         // Undo commands in reverse order
         for (let i = item.commands.length - 1; i >= 0; i--) {
@@ -194,20 +190,18 @@ export class UndoRedoManager {
           await command.undo();
           this.onCommandUndo?.(command);
         }
-        console.log('[UndoRedo] Command group undone:', item.description);
       } else {
         await item.undo();
         this.onCommandUndo?.(item);
-        console.log('[UndoRedo] Command undone:', item.description);
       }
-      
+
       // Move to redo stack
       this.redoStack.push(item);
-      
+
       // Save history and notify listeners
       this.saveHistory();
       this.notifyStackChange();
-      
+
       return true;
     } catch (error) {
       console.error('[UndoRedo] Failed to undo:', error);
@@ -233,9 +227,9 @@ export class UndoRedoManager {
 
     try {
       this.isExecuting = true;
-      
+
       const item = this.redoStack.pop()!;
-      
+
       if (this.isCommandGroup(item)) {
         // Redo commands in forward order
         for (const command of item.commands) {
@@ -246,7 +240,6 @@ export class UndoRedoManager {
           }
           this.onCommandRedo?.(command);
         }
-        console.log('[UndoRedo] Command group redone:', item.description);
       } else {
         if (item.redo) {
           await item.redo();
@@ -254,16 +247,15 @@ export class UndoRedoManager {
           await item.execute();
         }
         this.onCommandRedo?.(item);
-        console.log('[UndoRedo] Command redone:', item.description);
       }
-      
+
       // Move back to undo stack
       this.undoStack.push(item);
-      
+
       // Save history and notify listeners
       this.saveHistory();
       this.notifyStackChange();
-      
+
       return true;
     } catch (error) {
       console.error('[UndoRedo] Failed to redo:', error);
@@ -327,7 +319,6 @@ export class UndoRedoManager {
     this.redoStack = [];
     this.saveHistory();
     this.notifyStackChange();
-    console.log('[UndoRedo] History cleared');
   }
 
   /**
@@ -335,12 +326,12 @@ export class UndoRedoManager {
    */
   public setMaxHistorySize(size: number): void {
     this.maxHistorySize = size;
-    
+
     // Trim if necessary
     while (this.undoStack.length > this.maxHistorySize) {
       this.undoStack.shift();
     }
-    
+
     this.saveHistory();
   }
 
@@ -393,21 +384,20 @@ export class UndoRedoManager {
   private saveHistory(): void {
     try {
       const historyMetadata = {
-        undoStack: this.undoStack.map(item => ({
+        undoStack: this.undoStack.map((item) => ({
           id: item.id,
           description: item.description,
           timestamp: item.timestamp,
         })),
-        redoStack: this.redoStack.map(item => ({
+        redoStack: this.redoStack.map((item) => ({
           id: item.id,
           description: item.description,
           timestamp: item.timestamp,
         })),
       };
-      
+
       // In a real implementation, save to AsyncStorage
       // For now, just log
-      console.log('[UndoRedo] History saved:', historyMetadata);
     } catch (error) {
       console.error('[UndoRedo] Failed to save history:', error);
     }
@@ -421,7 +411,6 @@ export class UndoRedoManager {
     try {
       // In a real implementation, load from AsyncStorage
       // For now, start with empty stacks
-      console.log('[UndoRedo] History loaded (empty stacks)');
     } catch (error) {
       console.error('[UndoRedo] Failed to load history:', error);
     }

@@ -18,18 +18,6 @@ import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 // - PGN 65288: Autopilot status (via PCDIN/binary)
 
 /**
- * Display information cached for a sensor field
- * Generated once at sensor detection/update and cached for efficient access
- */
-export interface DisplayInfo {
-  value: number; // The converted display value (not SI)
-  unit: string; // Unit symbol (e.g., "V", "°C", "m", "kn")
-  formatted: string; // Fully formatted string (e.g., "12.6 V", "15.3°C")
-  convert: (siValue: number) => number; // Convert SI to display units
-  convertBack: (displayValue: number) => number; // Convert display to SI units
-}
-
-/**
  * Context-aware configuration for sensors
  */
 export interface SensorContext {
@@ -42,9 +30,9 @@ export interface SensorContext {
 /**
  * Alarm threshold configuration for sensor instances
  * Values are in SI units (meters, celsius, volts, etc.)
- * 
+ *
  * For multi-metric sensors (battery, engine), alarms are stored per metric.
- * Use metric key as property name: 'voltage', 'soc', 'temperature', 'current', 
+ * Use metric key as property name: 'voltage', 'soc', 'temperature', 'current',
  * 'coolantTemp', 'oilPressure', 'rpm'
  */
 export interface SensorAlarmThresholds {
@@ -86,7 +74,7 @@ export interface BaseSensorData {
   history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
   historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
   alarmThresholds?: SensorAlarmThresholds; // Per-instance alarm configuration
-  display?: Record<string, DisplayInfo>; // Cached presentation data for all fields (e.g., { voltage: { value: 12.6, unit: "V", formatted: "12.6 V" } })
+  // NOTE: Display fields now managed by SensorInstance.metrics (MetricValue instances)
 }
 
 export interface TankSensorData extends BaseSensorData {
@@ -132,19 +120,22 @@ export interface SpeedSensorData extends BaseSensorData {
 }
 
 export interface GpsSensorData extends BaseSensorData {
-  position?: {
-    latitude: number;
-    longitude: number;
-  }; // PRIMARY metric
+  latitude?: number; // PRIMARY metric - decimal degrees (MetricValue with 'coordinates' category)
+  longitude?: number; // PRIMARY metric - decimal degrees (MetricValue with 'coordinates' category)
+  utcTime?: number; // PRIMARY metric - UTC timestamp from GPS (MetricValue with 'time' category)
   courseOverGround?: number; // PRIMARY metric
   speedOverGround?: number; // PRIMARY metric
   quality?: {
     fixType: number; // 0=no fix, 1=GPS, 2=DGPS, 3=PPS
     satellites: number;
     hdop: number; // Horizontal dilution of precision
-  };
-  utcTime?: number; // UTC timestamp from GPS
+  }; // Special complex field - accessed directly, not via getMetric()
   timeSource?: 'RMC' | 'ZDA' | 'GGA'; // Source sentence for priority selection (RMC > ZDA > GGA)
+  // Legacy field for backward compatibility during migration - will be removed
+  position?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface TemperatureSensorData extends BaseSensorData {
@@ -170,7 +161,7 @@ export interface DepthSensorData extends BaseSensorData {
   // Metadata: Which NMEA sentence provided the depth value
   // Used for display mnemonic in MetricCell (DBT, DPT, or DBK)
   depthSource?: 'DBT' | 'DPT' | 'DBK';
-  
+
   // Reference point for the depth measurement (for user understanding)
   depthReferencePoint?: 'waterline' | 'transducer' | 'keel';
 
@@ -187,9 +178,11 @@ export interface DepthSensorData extends BaseSensorData {
 }
 
 export interface CompassSensorData extends BaseSensorData {
-  heading?: number; // PRIMARY metric (0-360°)
-  variation?: number; // Magnetic variation
-  deviation?: number; // Compass deviation
+  heading?: number; // PRIMARY metric - can be magnetic or true (0-360°) - DEPRECATED, use magneticHeading or trueHeading
+  magneticHeading?: number; // Magnetic heading (0-360°)
+  trueHeading?: number; // True heading (0-360°)
+  variation?: number; // Magnetic variation (difference between true and magnetic north)
+  deviation?: number; // Compass deviation (local magnetic disturbance)
   rateOfTurn?: number; // Rate of turn in degrees per minute
 }
 
@@ -259,17 +252,38 @@ export type SensorType =
   | 'autopilot'
   | 'navigation';
 
+// Import SensorInstance type for new storage pattern
+import type { SensorInstance } from './SensorInstance';
+
 // Main sensors data structure
+// NEW: Stores SensorInstance class instances instead of plain objects
+// Provides automatic enrichment, history management, and alarm evaluation
 export interface SensorsData {
-  tank: { [instance: number]: TankSensorData };
-  engine: { [instance: number]: EngineSensorData };
-  battery: { [instance: number]: BatterySensorData };
-  wind: { [instance: number]: WindSensorData };
-  speed: { [instance: number]: SpeedSensorData };
-  gps: { [instance: number]: GpsSensorData };
-  temperature: { [instance: number]: TemperatureSensorData };
-  depth: { [instance: number]: DepthSensorData };
-  compass: { [instance: number]: CompassSensorData };
-  autopilot: { [instance: number]: AutopilotSensorData };
-  navigation: { [instance: number]: NavigationSensorData };
+  tank: { [instance: number]: SensorInstance<TankSensorData> };
+  engine: { [instance: number]: SensorInstance<EngineSensorData> };
+  battery: { [instance: number]: SensorInstance<BatterySensorData> };
+  wind: { [instance: number]: SensorInstance<WindSensorData> };
+  speed: { [instance: number]: SensorInstance<SpeedSensorData> };
+  gps: { [instance: number]: SensorInstance<GpsSensorData> };
+  temperature: { [instance: number]: SensorInstance<TemperatureSensorData> };
+  depth: { [instance: number]: SensorInstance<DepthSensorData> };
+  compass: { [instance: number]: SensorInstance<CompassSensorData> };
+  autopilot: { [instance: number]: SensorInstance<AutopilotSensorData> };
+  navigation: { [instance: number]: SensorInstance<NavigationSensorData> };
+}
+
+// Serialization types for Zustand persistence
+// Plain objects for JSON storage, restored to SensorInstance on load
+export interface SerializedSensorsData {
+  tank: { [instance: number]: ReturnType<SensorInstance<TankSensorData>['toJSON']> };
+  engine: { [instance: number]: ReturnType<SensorInstance<EngineSensorData>['toJSON']> };
+  battery: { [instance: number]: ReturnType<SensorInstance<BatterySensorData>['toJSON']> };
+  wind: { [instance: number]: ReturnType<SensorInstance<WindSensorData>['toJSON']> };
+  speed: { [instance: number]: ReturnType<SensorInstance<SpeedSensorData>['toJSON']> };
+  gps: { [instance: number]: ReturnType<SensorInstance<GpsSensorData>['toJSON']> };
+  temperature: { [instance: number]: ReturnType<SensorInstance<TemperatureSensorData>['toJSON']> };
+  depth: { [instance: number]: ReturnType<SensorInstance<DepthSensorData>['toJSON']> };
+  compass: { [instance: number]: ReturnType<SensorInstance<CompassSensorData>['toJSON']> };
+  autopilot: { [instance: number]: ReturnType<SensorInstance<AutopilotSensorData>['toJSON']> };
+  navigation: { [instance: number]: ReturnType<SensorInstance<NavigationSensorData>['toJSON']> };
 }

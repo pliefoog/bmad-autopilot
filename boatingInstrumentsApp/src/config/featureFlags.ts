@@ -1,9 +1,9 @@
 /**
  * VIP Platform Feature Flags
- * 
+ *
  * Progressive rollout system for Epic 13 VIP Platform features.
  * All flags default to false (disabled) for safe production deployment.
- * 
+ *
  * Epic 13 Phase Structure:
  * - Phase 0: Critical fixes & infrastructure (13.1.x)
  * - Phase 1: Unified Settings System (13.2.x)
@@ -90,26 +90,26 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
  */
 export const FEATURE_FLAG_DESCRIPTIONS: Record<keyof FeatureFlags, string> = {
   USE_FEATURE_FLAG_SYSTEM: 'Feature flag infrastructure (always enabled)',
-  
+
   USE_UNIFIED_SETTINGS_MODALS: 'Phase 1: Base settings modal foundation',
   USE_PLATFORM_INPUT_COMPONENTS: 'Phase 1: Platform-specific input components',
   USE_UNIFIED_CONNECTION_SETTINGS: 'Phase 1: Unified connection settings pattern',
   USE_UNIFIED_UNITS_ALARMS_SETTINGS: 'Phase 1: Refactored units/alarms settings',
-  
+
   USE_NAVIGATION_SESSION_STORE: 'Phase 2: Navigation session state management',
   USE_CONSOLIDATED_STORE_ARCHITECTURE: 'Phase 2: Consolidated store architecture',
   USE_UI_DENSITY_SYSTEM: 'Phase 2: UI density system (glove mode)',
   USE_DASHBOARD_DENSITY_INTEGRATION: 'Phase 2: Dashboard density integration',
-  
+
   USE_PLATFORM_NAVIGATION: 'Phase 3: Platform-native navigation (master toggle)',
   USE_IOS_TAB_BAR_NAVIGATION: 'Phase 3: iOS tab bar navigation',
   USE_ANDROID_DRAWER_NAVIGATION: 'Phase 3: Android drawer navigation',
   USE_WEB_SIDEBAR_NAVIGATION: 'Phase 3: Web sidebar navigation',
-  
+
   USE_BLE_PROXIMITY_DETECTION: 'Phase 4: BLE proximity detection',
   USE_MULTI_DEVICE_STATE_SYNC: 'Phase 4: Multi-device state synchronization',
   USE_PROXIMITY_DASHBOARD_SWITCHING: 'Phase 4: Proximity-based dashboard switching',
-  
+
   USE_TV_PLATFORM_SUPPORT: 'Phase 5: TV platform support (master toggle)',
   USE_TV_DPAD_NAVIGATION: 'Phase 5: D-pad navigation system',
   USE_TV_10_FOOT_UI: 'Phase 5: 10-foot UI dashboard',

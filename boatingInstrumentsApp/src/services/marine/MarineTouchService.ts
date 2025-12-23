@@ -1,12 +1,12 @@
 /**
  * Marine Touch Service
  * Story 4.4 AC15: Touch gesture optimization for marine environments
- * 
+ *
  * Provides gesture threshold adjustments for challenging conditions:
  * - Wet hands and gloves
  * - Boat motion and instability
  * - Emergency situations requiring quick access
- * 
+ *
  * Features:
  * - Increased tap delay tolerance
  * - Enhanced long-press detection
@@ -26,28 +26,28 @@ import { useSettingsStore } from '../../store/settingsStore';
 export interface MarineTouchConfig {
   /** Minimum time for tap detection (ms) - prevents accidental taps from motion */
   tapMinDuration: number;
-  
+
   /** Maximum time for tap detection (ms) - allows slower taps with wet/gloved hands */
   tapMaxDuration: number;
-  
+
   /** Long press duration (ms) - extended for marine conditions */
   longPressDuration: number;
-  
+
   /** Tap slop radius (px) - allows finger movement during tap */
   tapSlopRadius: number;
-  
+
   /** Swipe minimum distance (px) - requires deliberate swipes */
   swipeMinDistance: number;
-  
+
   /** Swipe velocity threshold (px/ms) - slower swipes for gloves */
   swipeMinVelocity: number;
-  
+
   /** Double tap max delay (ms) - extended for wet hands */
   doubleTapMaxDelay: number;
-  
+
   /** Touch target size addition for glove mode (px) */
   gloveModeTargetBoost: number;
-  
+
   /** Gesture timeout for safety (ms) - quick access in emergencies */
   gestureTimeout: number;
 }
@@ -57,15 +57,15 @@ export interface MarineTouchConfig {
  * Standard settings for typical marine use
  */
 const DEFAULT_MARINE_CONFIG: MarineTouchConfig = {
-  tapMinDuration: 50,           // Ignore very quick taps (motion rejection)
-  tapMaxDuration: 800,          // Allow slower taps (wet/gloved hands)
-  longPressDuration: 800,       // Longer than typical 500ms for gloves
-  tapSlopRadius: 20,            // Allow 20px movement during tap (boat motion)
-  swipeMinDistance: 60,         // Require deliberate swipes (vs accidental)
-  swipeMinVelocity: 0.3,        // Slower swipes acceptable (gloves reduce speed)
-  doubleTapMaxDelay: 500,       // Extended from typical 300ms
-  gloveModeTargetBoost: 8,      // Add 8px to all touch targets in glove mode
-  gestureTimeout: 10000,        // 10s gesture timeout for safety
+  tapMinDuration: 50, // Ignore very quick taps (motion rejection)
+  tapMaxDuration: 800, // Allow slower taps (wet/gloved hands)
+  longPressDuration: 800, // Longer than typical 500ms for gloves
+  tapSlopRadius: 20, // Allow 20px movement during tap (boat motion)
+  swipeMinDistance: 60, // Require deliberate swipes (vs accidental)
+  swipeMinVelocity: 0.3, // Slower swipes acceptable (gloves reduce speed)
+  doubleTapMaxDelay: 500, // Extended from typical 300ms
+  gloveModeTargetBoost: 8, // Add 8px to all touch targets in glove mode
+  gestureTimeout: 10000, // 10s gesture timeout for safety
 };
 
 /**
@@ -73,15 +73,15 @@ const DEFAULT_MARINE_CONFIG: MarineTouchConfig = {
  * Enhanced settings for wearing gloves
  */
 const GLOVE_MODE_CONFIG: MarineTouchConfig = {
-  tapMinDuration: 100,          // Longer min to prevent glove drag taps
-  tapMaxDuration: 1200,         // Even more time for gloved taps
-  longPressDuration: 1000,      // Extra long for thick gloves
-  tapSlopRadius: 30,            // More movement tolerance
-  swipeMinDistance: 80,         // Longer swipes required
-  swipeMinVelocity: 0.2,        // Much slower swipes OK
-  doubleTapMaxDelay: 700,       // More time between taps
-  gloveModeTargetBoost: 12,     // Even larger touch targets
-  gestureTimeout: 15000,        // 15s timeout for gloves
+  tapMinDuration: 100, // Longer min to prevent glove drag taps
+  tapMaxDuration: 1200, // Even more time for gloved taps
+  longPressDuration: 1000, // Extra long for thick gloves
+  tapSlopRadius: 30, // More movement tolerance
+  swipeMinDistance: 80, // Longer swipes required
+  swipeMinVelocity: 0.2, // Much slower swipes OK
+  doubleTapMaxDelay: 700, // More time between taps
+  gloveModeTargetBoost: 12, // Even larger touch targets
+  gestureTimeout: 15000, // 15s timeout for gloves
 };
 
 /**
@@ -89,15 +89,15 @@ const GLOVE_MODE_CONFIG: MarineTouchConfig = {
  * Fastest response for critical situations
  */
 const EMERGENCY_MODE_CONFIG: MarineTouchConfig = {
-  tapMinDuration: 0,            // Any duration counts
-  tapMaxDuration: 2000,         // Very long taps OK in emergency
-  longPressDuration: 600,       // Slightly faster long press
-  tapSlopRadius: 40,            // Maximum movement tolerance
-  swipeMinDistance: 50,         // Shorter swipes OK
-  swipeMinVelocity: 0.2,        // Any swipe speed acceptable
-  doubleTapMaxDelay: 800,       // Generous double tap timing
-  gloveModeTargetBoost: 8,      // Standard boost
-  gestureTimeout: 20000,        // 20s timeout for emergency
+  tapMinDuration: 0, // Any duration counts
+  tapMaxDuration: 2000, // Very long taps OK in emergency
+  longPressDuration: 600, // Slightly faster long press
+  tapSlopRadius: 40, // Maximum movement tolerance
+  swipeMinDistance: 50, // Shorter swipes OK
+  swipeMinVelocity: 0.2, // Any swipe speed acceptable
+  doubleTapMaxDelay: 800, // Generous double tap timing
+  gloveModeTargetBoost: 8, // Standard boost
+  gestureTimeout: 20000, // 20s timeout for emergency
 };
 
 /**
@@ -168,7 +168,7 @@ class MarineTouchService {
   public setGloveMode(enabled: boolean): void {
     this.isGloveModeEnabled = enabled;
     this.updateConfiguration();
-    
+
     // Update settings store
     useSettingsStore.setState((state) => ({
       themeSettings: {
@@ -207,7 +207,7 @@ class MarineTouchService {
   public getAdjustedTouchTarget(baseSize: number): number {
     const boost = this.currentConfig.gloveModeTargetBoost;
     const marineMinimum = 56; // Marine minimum from AC9
-    
+
     const adjustedSize = baseSize + boost;
     return Math.max(adjustedSize, marineMinimum);
   }
@@ -225,7 +225,7 @@ class MarineTouchService {
     const baseSlop = 12; // Base marine slop
     const boost = this.currentConfig.gloveModeTargetBoost / 2;
     const totalSlop = baseSlop + boost + additionalSlop;
-    
+
     return {
       top: totalSlop,
       bottom: totalSlop,
@@ -239,8 +239,7 @@ class MarineTouchService {
    */
   public isValidTapDuration(duration: number): boolean {
     return (
-      duration >= this.currentConfig.tapMinDuration &&
-      duration <= this.currentConfig.tapMaxDuration
+      duration >= this.currentConfig.tapMinDuration && duration <= this.currentConfig.tapMaxDuration
     );
   }
 

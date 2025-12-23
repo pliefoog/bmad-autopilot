@@ -1,7 +1,7 @@
 /**
  * Tooltip Component
  * Story 4.4 AC12: Contextual help tooltip overlay
- * 
+ *
  * Displays help content in an overlay with proper positioning,
  * dismissal handling, and accessibility support.
  */
@@ -26,27 +26,27 @@ export interface TooltipProps {
    * Whether the tooltip is visible
    */
   visible: boolean;
-  
+
   /**
    * Callback when tooltip should be dismissed
    */
   onDismiss: () => void;
-  
+
   /**
    * Title of the help content
    */
   title: string;
-  
+
   /**
    * Main help content (can include multiple paragraphs)
    */
   content: string | string[];
-  
+
   /**
    * Optional additional tips or warnings
    */
   tips?: string[];
-  
+
   /**
    * Optional related help topics (shows as links)
    */
@@ -54,7 +54,7 @@ export interface TooltipProps {
     title: string;
     onPress: () => void;
   }>;
-  
+
   /**
    * Test ID for automated testing
    */
@@ -63,7 +63,7 @@ export interface TooltipProps {
 
 /**
  * Tooltip - Contextual help overlay component
- * 
+ *
  * Usage:
  * ```tsx
  * <Tooltip
@@ -89,22 +89,19 @@ export const Tooltip: React.FC<TooltipProps> = ({
 }) => {
   const theme = useTheme();
   const { width: screenWidth } = Dimensions.get('window');
-  
+
   // Announce tooltip content to screen readers when opened
   useEffect(() => {
     if (visible) {
       const contentText = Array.isArray(content) ? content.join('. ') : content;
-      AccessibilityService.announce(
-        `Help: ${title}. ${contentText}`,
-        'polite'
-      );
+      AccessibilityService.announce(`Help: ${title}. ${contentText}`, 'polite');
     }
   }, [visible, title, content]);
-  
+
   if (!visible) return null;
-  
+
   const contentArray = Array.isArray(content) ? content : [content];
-  
+
   return (
     <Modal
       visible={visible}
@@ -129,7 +126,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
               backgroundColor: theme.background,
               borderColor: theme.text,
               maxWidth: Math.min(500, screenWidth - 40),
-            }
+            },
           ]}
           accessible={true}
           accessibilityRole="alert"
@@ -138,9 +135,9 @@ export const Tooltip: React.FC<TooltipProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Ionicons 
-                name="information-circle" 
-                size={24} 
+              <Ionicons
+                name="information-circle"
+                size={24}
                 color={theme.primary}
                 style={styles.headerIcon}
               />
@@ -161,14 +158,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
               accessibilityLabel="Close help"
               testID={`${testID}-close`}
             >
-              <Ionicons 
-                name="close" 
-                size={24} 
-                color={theme.textSecondary}
-              />
+              <Ionicons name="close" size={24} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
-          
+
           {/* Scrollable Content */}
           <ScrollView
             style={styles.scrollView}
@@ -179,24 +172,18 @@ export const Tooltip: React.FC<TooltipProps> = ({
             {contentArray.map((paragraph, index) => (
               <Text
                 key={`content-${index}`}
-                style={[
-                  styles.content,
-                  { color: theme.text },
-                  index > 0 && styles.contentSpacing,
-                ]}
+                style={[styles.content, { color: theme.text }, index > 0 && styles.contentSpacing]}
                 accessible={true}
                 accessibilityRole="text"
               >
                 {paragraph}
               </Text>
             ))}
-            
-            {/* Tips Section */}
             {tips && tips.length > 0 && (
               <View
                 style={[
                   styles.tipsContainer,
-                  { 
+                  {
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     borderLeftColor: theme.warning,
                   },
@@ -212,11 +199,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
                 {tips.map((tip, index) => (
                   <Text
                     key={`tip-${index}`}
-                    style={[
-                      styles.tipText,
-                      { color: theme.text },
-                      index > 0 && styles.tipSpacing,
-                    ]}
+                    style={[styles.tipText, { color: theme.text }, index > 0 && styles.tipSpacing]}
                     accessible={true}
                     accessibilityRole="text"
                   >
@@ -225,8 +208,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
                 ))}
               </View>
             )}
-            
-            {/* Related Topics */}
             {relatedTopics && relatedTopics.length > 0 && (
               <View style={styles.relatedContainer}>
                 <Text
@@ -240,10 +221,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
                   <TouchableOpacity
                     key={`related-${index}`}
                     onPress={topic.onPress}
-                    style={[
-                      styles.relatedTopic,
-                      { borderBottomColor: theme.textSecondary + '30' },
-                    ]}
+                    style={[styles.relatedTopic, { borderBottomColor: theme.textSecondary + '30' }]}
                     accessible={true}
                     accessibilityRole="button"
                     accessibilityLabel={`View help for ${topic.title}`}
@@ -252,11 +230,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
                     <Text style={[styles.relatedTopicText, { color: theme.primary }]}>
                       {topic.title}
                     </Text>
-                    <Ionicons 
-                      name="chevron-forward" 
-                      size={16} 
-                      color={theme.primary}
-                    />
+                    <Ionicons name="chevron-forward" size={16} color={theme.primary} />
                   </TouchableOpacity>
                 ))}
               </View>

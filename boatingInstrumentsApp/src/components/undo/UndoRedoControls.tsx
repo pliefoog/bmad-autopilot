@@ -12,13 +12,13 @@ import { useUndoRedo, useKeyboardShortcuts } from '../../hooks/useUndoRedo';
 export interface UndoRedoControlsProps {
   /** Show keyboard shortcut hints */
   showShortcutHints?: boolean;
-  
+
   /** Compact mode (smaller buttons) */
   compact?: boolean;
-  
+
   /** Position in header or footer */
   position?: 'header' | 'footer' | 'floating';
-  
+
   /** Enable keyboard shortcuts */
   enableKeyboardShortcuts?: boolean;
 }
@@ -31,7 +31,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
 }) => {
   const theme = useTheme();
   const { canUndo, canRedo, undoDescription, redoDescription, undo, redo } = useUndoRedo();
-  
+
   // Register keyboard shortcuts
   useKeyboardShortcuts(enableKeyboardShortcuts);
 
@@ -64,7 +64,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
       <TouchableOpacity
         style={[
           styles.button,
-          { 
+          {
             width: buttonSize,
             height: buttonSize,
             backgroundColor: canUndo ? theme.surface : theme.border + '40',
@@ -88,7 +88,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
       <TouchableOpacity
         style={[
           styles.button,
-          { 
+          {
             width: buttonSize,
             height: buttonSize,
             backgroundColor: canRedo ? theme.surface : theme.border + '40',
@@ -117,7 +117,9 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
           </Text>
           <Text style={[styles.hintSeparator, { color: theme.border }]}>•</Text>
           <Text style={[styles.hintText, { color: theme.textSecondary }]}>
-            {typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent) ? '⌘⇧Z' : 'Ctrl+Shift+Z'}
+            {typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent)
+              ? '⌘⇧Z'
+              : 'Ctrl+Shift+Z'}
           </Text>
         </View>
       )}
@@ -131,7 +133,8 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
  */
 export const UndoRedoMenuItems: React.FC = () => {
   const theme = useTheme();
-  const { canUndo, canRedo, undoDescription, redoDescription, undo, redo, clearHistory } = useUndoRedo();
+  const { canUndo, canRedo, undoDescription, redoDescription, undo, redo, clearHistory } =
+    useUndoRedo();
 
   return (
     <View style={styles.menuContainer}>
@@ -185,16 +188,9 @@ export const UndoRedoMenuItems: React.FC = () => {
         style={[styles.menuItem, { backgroundColor: theme.surface }]}
         onPress={clearHistory}
       >
-        <Ionicons
-          name="trash-outline"
-          size={24}
-          color={theme.error}
-          style={styles.menuIcon}
-        />
+        <Ionicons name="trash-outline" size={24} color={theme.error} style={styles.menuIcon} />
         <View style={styles.menuTextContainer}>
-          <Text style={[styles.menuTitle, { color: theme.error }]}>
-            Clear History
-          </Text>
+          <Text style={[styles.menuTitle, { color: theme.error }]}>Clear History</Text>
           <Text style={[styles.menuDescription, { color: theme.textSecondary }]}>
             Remove all undo/redo history
           </Text>

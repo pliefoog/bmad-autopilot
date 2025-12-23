@@ -35,13 +35,7 @@ const MarineWidget: React.FC<MarineWidgetProps> = ({
   testID,
 }) => {
   return (
-    <Card
-      variant="elevated"
-      padding="none"
-      rounded="medium"
-      style={style}
-      testID={testID}
-    >
+    <Card variant="elevated" padding="none" rounded="medium" style={style} testID={testID}>
       <WidgetHeader
         title={title}
         subtitle={subtitle}
@@ -50,7 +44,7 @@ const MarineWidget: React.FC<MarineWidgetProps> = ({
         onPress={onHeaderPress}
         testID={testID ? `${testID}-header` : undefined}
       />
-      
+
       <View style={styles.content}>
         <MetricDisplay
           label={label || title}

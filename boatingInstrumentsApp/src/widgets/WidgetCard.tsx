@@ -54,26 +54,26 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   // Build comprehensive accessibility label if not provided
   const defaultAccessibilityLabel = React.useMemo(() => {
     if (accessibilityLabel) return accessibilityLabel;
-    
+
     const parts: string[] = [title];
-    
+
     if (value !== undefined && value !== null && value !== '---' && value !== '--') {
       parts.push(`${value} ${unit || ''}`);
     } else if (state === 'no-data') {
       parts.push('no data available');
     }
-    
+
     if (secondary) {
       parts.push(secondary);
     }
-    
+
     // Add state information for critical states
     if (state === 'alarm') {
       parts.push('ALARM');
     } else if (state === 'highlighted') {
       parts.push('WARNING');
     }
-    
+
     return parts.join(', ');
   }, [accessibilityLabel, title, value, unit, secondary, state]);
 
@@ -84,10 +84,10 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   const handleCaretLongPress = () => {
     onPinToggle?.();
   };
-  
+
   return (
-    <View 
-      style={widgetStyles.widgetContainer} 
+    <View
+      style={widgetStyles.widgetContainer}
       testID={testID}
       accessible={true}
       accessibilityLabel={defaultAccessibilityLabel}
@@ -98,47 +98,41 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
         disabled: state === 'no-data',
         selected: expanded,
       }}
-      accessibilityLiveRegion={state === 'alarm' ? 'assertive' : state === 'highlighted' ? 'polite' : 'none'}
+      accessibilityLiveRegion={
+        state === 'alarm' ? 'assertive' : state === 'highlighted' ? 'polite' : 'none'
+      }
     >
-      
       {/* Widget Header with Chevron/Pin Indicator */}
       <View style={widgetStyles.widgetHeader}>
-        <UniversalIcon 
-          name={icon} 
-          size={12} 
-          color={theme.textSecondary} 
-          style={widgetStyles.widgetIcon} 
+        <UniversalIcon
+          name={icon}
+          size={12}
+          color={theme.textSecondary}
+          style={widgetStyles.widgetIcon}
         />
         <Text style={widgetStyles.widgetTitle} testID={`${testID}-title`}>
           {title.toUpperCase()}
         </Text>
-        
+
         {/* Story 2.15: Pin indicator or chevron */}
         <View
           style={widgetStyles.caretContainer}
           testID={`${testID}-caret`}
           accessible={true}
-          accessibilityLabel={isPinned ? 'Pinned' : (expanded ? 'Collapse widget' : 'Expand widget')}
+          accessibilityLabel={isPinned ? 'Pinned' : expanded ? 'Collapse widget' : 'Expand widget'}
           accessibilityHint={isPinned ? 'Widget is pinned' : 'Tap to toggle expansion'}
           accessibilityRole="text"
         >
           {isPinned ? (
-            <UniversalIcon 
-              name="pin" 
-              size={12} 
-              color={theme.accent}
-            />
+            <UniversalIcon name="pin" size={12} color={theme.accent} />
           ) : (
-            <Text 
-              style={widgetStyles.widgetChevron}
-              testID={`${testID}-chevron`}
-            >
+            <Text style={widgetStyles.widgetChevron} testID={`${testID}-chevron`}>
               {expanded ? '⌃' : '⌄'}
             </Text>
           )}
         </View>
       </View>
-      
+
       {/* Widget Content */}
       <View style={widgetStyles.widgetContent} testID={`${testID}-content`}>
         {/* Primary value display - show when value provided and either no children or value explicitly set */}
@@ -147,21 +141,16 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
             <Text style={[widgetStyles.metricValue, { color: displayColor }]}>
               {value !== null ? value : '---'}
             </Text>
-            {unit && <Text style={widgetStyles.metricUnit}>{unit}</Text>}
+            {unit && unit.trim() !== '' && <Text style={widgetStyles.metricUnit}>{unit}</Text>}
           </View>
         )}
-        
-        {/* Secondary Info */}
         {secondary && (
           <Text style={widgetStyles.secondaryText} testID={`${testID}-secondary`}>
             {secondary}
           </Text>
         )}
-        
-        {/* Main Content (PrimaryMetricCells, graphs, etc.) */}
         {children}
       </View>
-      
     </View>
   );
 };

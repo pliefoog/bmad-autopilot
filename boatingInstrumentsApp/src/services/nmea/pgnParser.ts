@@ -1,6 +1,6 @@
 /**
  * Enhanced PGN Parser for Instance-Aware NMEA 2000 Messages
- * 
+ *
  * Handles parsing of PGNs that contain instance information for
  * multi-engine, multi-battery, and multi-tank configurations.
  */
@@ -51,13 +51,15 @@ export class PgnParser {
   public parsePgn(pgnNumber: number, data: string, sourceAddress?: number): PgnData | null {
     try {
       const timestamp = Date.now();
-      
+
       // Use canboat library to parse the PGN if possible
       let parsedData: Record<string, any> = {};
-      
+
       try {
         // Attempt to parse with canboat
-        const parsed = this.fromPgn.parseString(`${timestamp},0,${pgnNumber},${sourceAddress || 0},255,${data.length},${data}`);
+        const parsed = this.fromPgn.parseString(
+          `${timestamp},0,${pgnNumber},${sourceAddress || 0},255,${data.length},${data}`,
+        );
         if (parsed && parsed.fields) {
           parsedData = this.extractFieldsFromCanboat(parsed.fields);
         }
@@ -79,7 +81,6 @@ export class PgnParser {
       }
 
       return basePgnData;
-
     } catch (error) {
       console.error(`[PgnParser] Error parsing PGN ${pgnNumber}:`, error);
       return null;
@@ -89,7 +90,11 @@ export class PgnParser {
   /**
    * Parse engine-specific PGN data
    */
-  public parseEnginePgn(pgnNumber: number, data: string, sourceAddress: number): EnginePgnData | null {
+  public parseEnginePgn(
+    pgnNumber: number,
+    data: string,
+    sourceAddress: number,
+  ): EnginePgnData | null {
     const basePgn = this.parsePgn(pgnNumber, data, sourceAddress);
     if (!basePgn) return null;
 
@@ -119,7 +124,11 @@ export class PgnParser {
   /**
    * Parse battery-specific PGN data
    */
-  public parseBatteryPgn(pgnNumber: number, data: string, sourceAddress?: number): BatteryPgnData | null {
+  public parseBatteryPgn(
+    pgnNumber: number,
+    data: string,
+    sourceAddress?: number,
+  ): BatteryPgnData | null {
     const basePgn = this.parsePgn(pgnNumber, data, sourceAddress);
     if (!basePgn || basePgn.instance === undefined) return null;
 
@@ -185,14 +194,14 @@ export class PgnParser {
   public parseDepthPgn(data: string): { depth: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 5) return null;
-    
+
     // Instance from SID byte (byte 0)
     const instance = bytes[0] || 0;
-    
+
     // Depth in 0.01m resolution (bytes 1-4, little-endian 32-bit)
     const depthRaw = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
-    if (depthRaw === 0xFFFFFFFF) return null; // Invalid
-    
+    if (depthRaw === 0xffffffff) return null; // Invalid
+
     return { depth: depthRaw * 0.01, instance };
   }
 
@@ -204,14 +213,14 @@ export class PgnParser {
   public parseSpeedPgn(data: string): { speed: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 5) return null;
-    
+
     // Instance from SID byte (byte 0)
     const instance = bytes[0] || 0;
-    
+
     // Speed in 0.01 m/s resolution (bytes 1-2, little-endian 16-bit)
     const speedRaw = bytes[1] | (bytes[2] << 8);
-    if (speedRaw === 0xFFFF) return null; // Invalid
-    
+    if (speedRaw === 0xffff) return null; // Invalid
+
     return { speed: speedRaw * 0.01 * 1.94384, instance }; // Convert m/s to knots
   }
 
@@ -221,24 +230,26 @@ export class PgnParser {
    * Bytes 1-2: Wind speed in 0.01 m/s resolution
    * Bytes 3-4: Wind angle in 0.0001 radians resolution
    */
-  public parseWindPgn(data: string): { windSpeed: number; windAngle: number; instance: number } | null {
+  public parseWindPgn(
+    data: string,
+  ): { windSpeed: number; windAngle: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 6) return null;
-    
+
     // Instance from SID byte (byte 0)
     const instance = bytes[0] || 0;
-    
+
     // Wind speed in 0.01 m/s resolution (bytes 1-2, little-endian 16-bit)
     const speedRaw = bytes[1] | (bytes[2] << 8);
     // Wind angle in 0.0001 radians resolution (bytes 3-4, little-endian 16-bit)
     const angleRaw = bytes[3] | (bytes[4] << 8);
-    
-    if (speedRaw === 0xFFFF || angleRaw === 0xFFFF) return null;
-    
+
+    if (speedRaw === 0xffff || angleRaw === 0xffff) return null;
+
     return {
       windSpeed: speedRaw * 0.01 * 1.94384, // Convert m/s to knots
       windAngle: angleRaw * 0.0001 * (180 / Math.PI), // Convert radians to degrees
-      instance
+      instance,
     };
   }
 
@@ -248,24 +259,26 @@ export class PgnParser {
    * Bytes 5-8: Latitude in 1e-7 degree resolution
    * Bytes 9-12: Longitude in 1e-7 degree resolution
    */
-  public parseGPSPgn(data: string): { latitude: number; longitude: number; instance: number } | null {
+  public parseGPSPgn(
+    data: string,
+  ): { latitude: number; longitude: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 13) return null;
-    
+
     // Instance from SID byte (byte 0)
     const instance = bytes[0] || 0;
-    
+
     // Latitude in 1e-7 degree resolution (bytes 5-8, little-endian 32-bit signed)
     const latRaw = bytes[5] | (bytes[6] << 8) | (bytes[7] << 16) | (bytes[8] << 24);
     // Longitude in 1e-7 degree resolution (bytes 9-12, little-endian 32-bit signed)
     const lonRaw = bytes[9] | (bytes[10] << 8) | (bytes[11] << 16) | (bytes[12] << 24);
-    
-    if (latRaw === 0x7FFFFFFF || lonRaw === 0x7FFFFFFF) return null;
-    
+
+    if (latRaw === 0x7fffffff || lonRaw === 0x7fffffff) return null;
+
     // Convert to signed 32-bit
-    const latitude = (latRaw > 0x7FFFFFFF ? latRaw - 0x100000000 : latRaw) * 1e-7;
-    const longitude = (lonRaw > 0x7FFFFFFF ? lonRaw - 0x100000000 : lonRaw) * 1e-7;
-    
+    const latitude = (latRaw > 0x7fffffff ? latRaw - 0x100000000 : latRaw) * 1e-7;
+    const longitude = (lonRaw > 0x7fffffff ? lonRaw - 0x100000000 : lonRaw) * 1e-7;
+
     return { latitude, longitude, instance };
   }
 
@@ -277,14 +290,14 @@ export class PgnParser {
   public parseHeadingPgn(data: string): { heading: number; instance: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 3) return null;
-    
+
     // Instance from SID byte (byte 0)
     const instance = bytes[0] || 0;
-    
+
     // Heading in 0.0001 radians resolution (bytes 1-2, little-endian 16-bit)
     const headingRaw = bytes[1] | (bytes[2] << 8);
-    if (headingRaw === 0xFFFF) return null;
-    
+    if (headingRaw === 0xffff) return null;
+
     return { heading: headingRaw * 0.0001 * (180 / Math.PI), instance }; // Convert radians to degrees
   }
 
@@ -294,23 +307,25 @@ export class PgnParser {
    * Byte 1: Temperature Instance/Source (0=Sea, 1=Outside, 2=Inside, 3=Engine Room, 4=Main Cabin, etc.)
    * Bytes 3-4: Temperature in 0.01K resolution
    */
-  public parseTemperaturePgn(data: string): { temperature: number; instance: number; source: number } | null {
+  public parseTemperaturePgn(
+    data: string,
+  ): { temperature: number; instance: number; source: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 5) return null;
-    
+
     // Instance from SID byte (byte 0) - can be used to differentiate multiple temp sensors
     const instance = bytes[0] || 0;
     // Temperature source (byte 1) - identifies location/type of temperature sensor
     const source = bytes[1] || 0;
-    
+
     // Temperature in 0.01K resolution (bytes 3-4, little-endian 16-bit)
     const tempRaw = bytes[3] | (bytes[4] << 8);
-    if (tempRaw === 0xFFFF) return null;
-    
-    return { 
+    if (tempRaw === 0xffff) return null;
+
+    return {
       temperature: tempRaw * 0.01 - 273.15, // Convert Kelvin to Celsius
       instance: source, // Use source as instance for temperature differentiation
-      source 
+      source,
     };
   }
 
@@ -320,13 +335,13 @@ export class PgnParser {
   public parseRudderPgn(data: string): { rudderAngle: number } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 6) return null;
-    
+
     // Rudder angle in 0.0001 radians resolution (bytes 4-5, little-endian 16-bit signed)
     const angleRaw = bytes[4] | (bytes[5] << 8);
-    if (angleRaw === 0xFFFF) return null;
-    
+    if (angleRaw === 0xffff) return null;
+
     // Convert to signed 16-bit
-    const angleSigned = angleRaw > 0x7FFF ? angleRaw - 0x10000 : angleRaw;
+    const angleSigned = angleRaw > 0x7fff ? angleRaw - 0x10000 : angleRaw;
     return { rudderAngle: angleSigned * 0.0001 * (180 / Math.PI) }; // Convert radians to degrees
   }
 
@@ -334,24 +349,26 @@ export class PgnParser {
    * Parse Cross Track Error PGN (129283)
    * Navigation - Cross Track Error
    */
-  public parseCrossTrackErrorPgn(data: string): { crossTrackError: number; steerDirection?: 'left' | 'right' } | null {
+  public parseCrossTrackErrorPgn(
+    data: string,
+  ): { crossTrackError: number; steerDirection?: 'left' | 'right' } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 6) return null;
-    
+
     // XTE Mode (byte 0): 0=Autonomous, 1=Differential, 2=Estimated, 3=Simulator, 4=Manual
     // Navigation Terminated (byte 1): 0=No, 1=Yes
-    
+
     // Cross Track Error in meters (bytes 2-5, little-endian 32-bit signed)
     const xteRaw = bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24);
-    if (xteRaw === 0x7FFFFFFF) return null;
-    
+    if (xteRaw === 0x7fffffff) return null;
+
     // Convert to signed 32-bit and convert meters to nautical miles
-    const xteSigned = xteRaw > 0x7FFFFFFF ? xteRaw - 0x100000000 : xteRaw;
+    const xteSigned = xteRaw > 0x7fffffff ? xteRaw - 0x100000000 : xteRaw;
     const xteNauticalMiles = xteSigned / 1852.0; // 1 nautical mile = 1852 meters
-    
+
     return {
       crossTrackError: xteNauticalMiles,
-      steerDirection: xteSigned < 0 ? 'left' : 'right'
+      steerDirection: xteSigned < 0 ? 'left' : 'right',
     };
   }
 
@@ -370,47 +387,47 @@ export class PgnParser {
   } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 21) return null;
-    
+
     const result: any = {};
-    
+
     // Distance to waypoint (bytes 0-3, little-endian 32-bit unsigned) in meters
     const distRaw = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
-    if (distRaw !== 0xFFFFFFFF) {
+    if (distRaw !== 0xffffffff) {
       result.distanceToWaypoint = distRaw / 1852.0; // Convert meters to nautical miles
     }
-    
+
     // Bearing reference (byte 4): 0=True, 1=Magnetic
     // Perpendicular Crossed (byte 5): 0=No, 1=Yes
     result.perpendicularPassed = bytes[5] === 1;
-    
+
     // Arrival Circle Entered (byte 6): 0=No, 1=Yes
     result.arrivalCircleEntered = bytes[6] === 1;
-    
+
     // Bearing to waypoint (bytes 8-9, little-endian 16-bit unsigned) in 0.0001 radians
     const bearingRaw = bytes[8] | (bytes[9] << 8);
-    if (bearingRaw !== 0xFFFF) {
+    if (bearingRaw !== 0xffff) {
       result.bearingToWaypoint = bearingRaw * 0.0001 * (180 / Math.PI); // Convert to degrees
     }
-    
+
     // Origin waypoint ID (bytes 10-13, little-endian 32-bit)
     const originId = bytes[10] | (bytes[11] << 8) | (bytes[12] << 16) | (bytes[13] << 24);
-    if (originId !== 0xFFFFFFFF) {
+    if (originId !== 0xffffffff) {
       result.originWaypointId = originId;
     }
-    
+
     // Destination waypoint ID (bytes 14-17, little-endian 32-bit)
     const destId = bytes[14] | (bytes[15] << 8) | (bytes[16] << 16) | (bytes[17] << 24);
-    if (destId !== 0xFFFFFFFF) {
+    if (destId !== 0xffffffff) {
       result.destinationWaypointId = destId;
     }
-    
+
     // Waypoint closing velocity (bytes 18-19, little-endian 16-bit signed) in 0.01 m/s
     const velocityRaw = bytes[18] | (bytes[19] << 8);
-    if (velocityRaw !== 0xFFFF) {
-      const velocitySigned = velocityRaw > 0x7FFF ? velocityRaw - 0x10000 : velocityRaw;
-      result.waypointClosingVelocity = (velocitySigned * 0.01) * 1.94384; // Convert m/s to knots
+    if (velocityRaw !== 0xffff) {
+      const velocitySigned = velocityRaw > 0x7fff ? velocityRaw - 0x10000 : velocityRaw;
+      result.waypointClosingVelocity = velocitySigned * 0.01 * 1.94384; // Convert m/s to knots
     }
-    
+
     return Object.keys(result).length > 0 ? result : null;
   }
 
@@ -426,35 +443,39 @@ export class PgnParser {
   } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 21) return null;
-    
+
     const result: any = {};
-    
+
     // Start RPS# (bytes 0-1, little-endian 16-bit)
     // nItems (byte 2)
     // Database ID (bytes 3-4, little-endian 16-bit)
     // Route ID (bytes 5-6, little-endian 16-bit)
     // Navigation direction (byte 7): 0=Forward, 1=Reverse
     // Supplementary Route/WP data available (byte 8)
-    
+
     // Waypoint ID (bytes 10-13, little-endian 32-bit)
     const waypointId = bytes[10] | (bytes[11] << 8) | (bytes[12] << 16) | (bytes[13] << 24);
-    if (waypointId !== 0xFFFFFFFF) {
+    if (waypointId !== 0xffffffff) {
       result.waypointId = waypointId;
     }
-    
+
     // Waypoint Name (bytes 14+, variable length string)
     // Try to extract ASCII name from remaining bytes
     let nameEndIndex = 14;
-    while (nameEndIndex < bytes.length && bytes[nameEndIndex] !== 0 && bytes[nameEndIndex] !== 0xFF) {
+    while (
+      nameEndIndex < bytes.length &&
+      bytes[nameEndIndex] !== 0 &&
+      bytes[nameEndIndex] !== 0xff
+    ) {
       nameEndIndex++;
     }
     if (nameEndIndex > 14) {
       result.waypointName = String.fromCharCode(...bytes.slice(14, nameEndIndex));
     }
-    
+
     // Note: Latitude/Longitude would follow name in variable-length message
     // For now, we'll handle just ID and name as these are most critical
-    
+
     return Object.keys(result).length > 0 ? result : null;
   }
 
@@ -463,7 +484,7 @@ export class PgnParser {
    */
   private extractFieldsFromCanboat(fields: any): Record<string, any> {
     const extracted: Record<string, any> = {};
-    
+
     if (Array.isArray(fields)) {
       for (const field of fields) {
         if (field.name && field.value !== undefined) {
@@ -473,7 +494,7 @@ export class PgnParser {
         }
       }
     }
-    
+
     return extracted;
   }
 
@@ -482,7 +503,7 @@ export class PgnParser {
    */
   private mapCanboatFieldName(canboatName: string): string {
     const fieldMap: Record<string, string> = {
-      'Instance': 'instance',
+      Instance: 'instance',
       'Engine Speed': 'engineSpeed',
       'Engine Boost Pressure': 'engineBoostPressure',
       'Engine Tilt/Trim': 'engineTiltTrim',
@@ -490,10 +511,10 @@ export class PgnParser {
       'Battery Current': 'batteryCurrent',
       'Battery Temperature': 'batteryTemperature',
       'Fluid Type': 'fluidType',
-      'Level': 'level',
-      'Capacity': 'capacity',
+      Level: 'level',
+      Capacity: 'capacity',
     };
-    
+
     return fieldMap[canboatName] || canboatName.toLowerCase().replace(/\s+/g, '');
   }
 
@@ -502,11 +523,11 @@ export class PgnParser {
    */
   private manualParsePgn(pgnNumber: number, data: string): Record<string, any> {
     const parsed: Record<string, any> = {};
-    
+
     try {
       // Convert hex string to bytes for parsing
       const bytes = this.hexStringToBytes(data);
-      
+
       switch (pgnNumber) {
         case 127488: // Engine Parameters, Rapid Update
           if (bytes.length >= 8) {
@@ -516,29 +537,33 @@ export class PgnParser {
             parsed.engineSpeed = ((bytes[2] << 8) | bytes[1]) * 0.25;
           }
           break;
-          
+
         case 127505: // Fluid Level
           if (bytes.length >= 8) {
             // Instance from byte 0
-            parsed.instance = bytes[0] & 0x0F;
+            parsed.instance = bytes[0] & 0x0f;
             // Fluid type from byte 0 (upper 4 bits)
-            parsed.fluidType = (bytes[0] & 0xF0) >> 4;
+            parsed.fluidType = (bytes[0] & 0xf0) >> 4;
             // Level from bytes 1-2 (0.004% resolution)
             parsed.level = ((bytes[2] << 8) | bytes[1]) * 0.004;
           }
           break;
-          
+
         case 127508: // Battery Status
           if (bytes.length >= 8) {
             // Instance from byte 0
             parsed.instance = bytes[0];
             // Voltage from bytes 1-2 (0.01V resolution)
             parsed.batteryVoltage = ((bytes[2] << 8) | bytes[1]) * 0.01;
-            // Current from bytes 3-4 (0.1A resolution)
-            parsed.batteryCurrent = ((bytes[4] << 8) | bytes[3]) * 0.1;
+            // Current from bytes 3-4 (0.1A resolution, signed)
+            const currentRaw = (bytes[4] << 8) | bytes[3];
+            parsed.batteryCurrent = (currentRaw > 32767 ? currentRaw - 65536 : currentRaw) * 0.1;
+            // Temperature from bytes 5-6 (0.01K resolution)
+            const tempKRaw = ((bytes[6] << 8) | bytes[5]) * 0.01;
+            parsed.batteryTemperature = tempKRaw; // Will be converted from K to C in processor
           }
           break;
-          
+
         case 127513: // Battery Configuration Status
           if (bytes.length >= 8) {
             // Instance from byte 0
@@ -550,7 +575,7 @@ export class PgnParser {
     } catch (error) {
       console.warn(`[PgnParser] Manual parsing failed for PGN ${pgnNumber}:`, error);
     }
-    
+
     return parsed;
   }
 
@@ -561,14 +586,14 @@ export class PgnParser {
     const bytes: number[] = [];
     // Remove any spaces or non-hex characters
     const cleanHex = hexString.replace(/[^0-9A-Fa-f]/g, '');
-    
+
     for (let i = 0; i < cleanHex.length; i += 2) {
       const byte = parseInt(cleanHex.substr(i, 2), 16);
       if (!isNaN(byte)) {
         bytes.push(byte);
       }
     }
-    
+
     return bytes;
   }
 }

@@ -1,12 +1,12 @@
 /**
  * Universal Icon Component - Cross-Platform Icon System
- * 
+ *
  * Provides consistent icon rendering across web and mobile platforms:
  * - Mobile: Uses react-native-vector-icons/Ionicons (vector icons)
  * - Web: Uses enhanced __mocks__/Ionicons.js (monochromatic fallbacks)
  * - Integrates with theme system for automatic color adaptation
  * - Uses Widget Metadata Registry for consistent icon naming
- * 
+ *
  * This replaces direct Ionicons imports and provides a single icon API.
  */
 
@@ -35,21 +35,21 @@ export interface UniversalIconProps {
 
 /**
  * Universal Icon Component
- * 
+ *
  * Automatically handles platform differences and theme integration.
  * Uses Widget Metadata Registry for icon validation and consistency.
- * 
+ *
  * @example
  * // Basic usage
  * <UniversalIcon name="navigate-outline" size={24} />
- * 
+ *
  * // With theme colors
  * <UniversalIcon name="water-outline" color={theme.primary} />
- * 
+ *
  * // With accessibility
- * <UniversalIcon 
- *   name="battery-charging-outline" 
- *   accessibilityLabel="Battery status" 
+ * <UniversalIcon
+ *   name="battery-charging-outline"
+ *   accessibilityLabel="Battery status"
  * />
  */
 export const UniversalIcon: React.FC<UniversalIconProps> = ({
@@ -66,7 +66,6 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
   if (typeof window !== 'undefined') {
     window.__universalIconCalls = window.__universalIconCalls || [];
     if (window.__universalIconCalls.length < 5) {
-      console.log('🎯 UniversalIcon called:', { name, size, color });
       window.__universalIconCalls.push(name);
     }
   }
@@ -78,25 +77,51 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
   if (__DEV__) {
     const validIcons = [
       // Marine instruments
-      'navigate-outline', 'compass-outline', 'speedometer-outline', 
-      'cloud-outline', 'water-outline', 'thermometer-outline',
-      // Multi-instance devices  
-      'car-outline', 'battery-charging-outline', 'cube-outline',
+      'navigate-outline',
+      'compass-outline',
+      'speedometer-outline',
+      'cloud-outline',
+      'water-outline',
+      'thermometer-outline',
+      // Multi-instance devices
+      'car-outline',
+      'battery-charging-outline',
+      'cube-outline',
       // Alarm configuration icons
-      'arrow-down-outline', 'arrow-forward-outline', 'swap-horizontal-outline',
-      'chevron-back-outline', 'chevron-forward-outline', 'chevron-down-outline',
+      'arrow-down-outline',
+      'arrow-forward-outline',
+      'swap-horizontal-outline',
+      'chevron-back-outline',
+      'chevron-forward-outline',
+      'chevron-down-outline',
       'volume-high-outline',
       // UI elements
-      'add', 'pin', 'close', 'close-outline', 'checkmark-circle-outline',
-      'refresh-outline', 'remove', 'layers-outline', 'settings-outline',
-      'grid-outline', 'alert-circle-outline', 'wifi-outline', 
-      'information-circle-outline', 'notifications-outline', 'warning-outline',
+      'add',
+      'pin',
+      'close',
+      'close-outline',
+      'checkmark-circle-outline',
+      'refresh-outline',
+      'remove',
+      'layers-outline',
+      'settings-outline',
+      'grid-outline',
+      'alert-circle-outline',
+      'wifi-outline',
+      'information-circle-outline',
+      'notifications-outline',
+      'warning-outline',
+      'color-palette-outline',
       // Menu and navigation
-      'menu-outline', 'home-outline', 'list-outline'
+      'menu-outline',
+      'home-outline',
+      'list-outline',
     ];
 
     if (!validIcons.includes(name)) {
-      console.warn(`[UniversalIcon] Unknown icon: "${name}". Consider adding to Widget Metadata Registry.`);
+      console.warn(
+        `[UniversalIcon] Unknown icon: "${name}". Consider adding to Widget Metadata Registry.`,
+      );
     }
   }
 
@@ -115,14 +140,14 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
 
 /**
  * Convenience hook for theme-aware icon colors
- * 
+ *
  * @example
  * const iconColors = useIconColors();
  * <UniversalIcon name="alert" color={iconColors.warning} />
  */
 export const useIconColors = () => {
   const theme = useTheme();
-  
+
   return {
     primary: theme.iconPrimary || theme.primary,
     secondary: theme.textSecondary,
@@ -139,7 +164,7 @@ export const useIconColors = () => {
  */
 export const IconSizes = {
   xs: 12,
-  sm: 16, 
+  sm: 16,
   md: 20,
   lg: 24,
   xl: 32,
@@ -150,7 +175,7 @@ export type IconSize = keyof typeof IconSizes;
 
 /**
  * Preset Icon Component with standard sizes
- * 
+ *
  * @example
  * <PresetIcon name="navigate-outline" size="lg" />
  */
@@ -160,9 +185,9 @@ interface PresetIconProps extends Omit<UniversalIconProps, 'size'> {
 
 export const PresetIcon: React.FC<PresetIconProps> = ({ size = 'sm', ...props }) => {
   const resolvedSize = typeof size === 'string' ? IconSizes[size] : size;
-  
+
   return <UniversalIcon {...props} size={resolvedSize} />;
 };
 
-// Export default for convenience  
+// Export default for convenience
 export default UniversalIcon;

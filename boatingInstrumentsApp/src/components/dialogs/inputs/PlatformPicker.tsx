@@ -1,7 +1,7 @@
 /**
  * PlatformPicker Component
  * Story 13.2.2 - Task 3: Platform-appropriate selection UI
- * 
+ *
  * Features:
  * - iOS: Native picker sheet (slides up from bottom)
  * - Android: Native picker dropdown
@@ -35,10 +35,10 @@ import { hasKeyboard } from '../../../utils/platformDetection';
 export interface PlatformPickerItem {
   /** Display label */
   label: string;
-  
+
   /** Item value */
   value: string | number;
-  
+
   /** Optional icon name */
   icon?: string;
 }
@@ -49,25 +49,25 @@ export interface PlatformPickerItem {
 export interface PlatformPickerProps {
   /** Current selected value */
   value: string | number;
-  
+
   /** Change handler */
   onValueChange: (value: string | number) => void;
-  
+
   /** Picker items */
   items: PlatformPickerItem[];
-  
+
   /** Optional label */
   label?: string;
-  
+
   /** Placeholder text when no value selected */
   placeholder?: string;
-  
+
   /** Disabled state */
   disabled?: boolean;
-  
+
   /** Multi-column support (not implemented yet - future) */
   multiColumn?: boolean;
-  
+
   /** Test ID for testing */
   testID?: string;
 }
@@ -89,9 +89,9 @@ const WebDropdown: React.FC<{
   const [buttonLayout, setButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const buttonRef = useRef<View>(null);
   const keyboardEnabled = hasKeyboard();
-  
-  const selectedItem = items.find(item => item.value === value);
-  
+
+  const selectedItem = items.find((item) => item.value === value);
+
   /**
    * Handle dropdown toggle with button position measurement
    */
@@ -105,63 +105,66 @@ const WebDropdown: React.FC<{
       setIsOpen(false);
     }
   }, [isOpen]);
-  
+
   /**
    * Handle keyboard navigation (↑↓ arrow keys)
    */
-  const handleKeyDown = useCallback((event: any) => {
-    if (!isOpen || !keyboardEnabled) return;
-    
-    switch (event.key) {
-      case 'ArrowUp':
-        event.preventDefault();
-        setSelectedIndex(prev => Math.max(0, prev - 1));
-        break;
-      case 'ArrowDown':
-        event.preventDefault();
-        setSelectedIndex(prev => Math.min(items.length - 1, prev + 1));
-        break;
-      case 'Enter':
-        event.preventDefault();
-        onValueChange(items[selectedIndex].value);
-        setIsOpen(false);
-        break;
-      case 'Escape':
-        event.preventDefault();
-        setIsOpen(false);
-        break;
-    }
-  }, [isOpen, selectedIndex, items, onValueChange, keyboardEnabled]);
-  
+  const handleKeyDown = useCallback(
+    (event: any) => {
+      if (!isOpen || !keyboardEnabled) return;
+
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault();
+          setSelectedIndex((prev) => Math.max(0, prev - 1));
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          setSelectedIndex((prev) => Math.min(items.length - 1, prev + 1));
+          break;
+        case 'Enter':
+          event.preventDefault();
+          onValueChange(items[selectedIndex].value);
+          setIsOpen(false);
+          break;
+        case 'Escape':
+          event.preventDefault();
+          setIsOpen(false);
+          break;
+      }
+    },
+    [isOpen, selectedIndex, items, onValueChange, keyboardEnabled],
+  );
+
   useEffect(() => {
     if (isOpen && keyboardEnabled && typeof window !== 'undefined') {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
   }, [isOpen, handleKeyDown, keyboardEnabled]);
-  
+
   return (
     <>
       <View ref={buttonRef} style={webDropdownStyles.container}>
         <TouchableOpacity
           onPress={handleToggle}
-        style={[
-          webDropdownStyles.button,
-          { height: touchTargetSize, borderColor: theme.border, backgroundColor: theme.surface },
-        ]}
-        testID={testID}
-      >
-        <Text style={[webDropdownStyles.buttonText, { color: theme.text }]}>
-          {selectedItem?.label || 'Select...'}
-        </Text>
-        <UniversalIcon
-          name={isOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
-          size={20}
-          color={theme.text}
-        />
-      </TouchableOpacity>
+          style={[
+            webDropdownStyles.button,
+            { height: touchTargetSize, borderColor: theme.border, backgroundColor: theme.surface },
+          ]}
+          testID={testID}
+        >
+          <Text style={[webDropdownStyles.buttonText, { color: theme.text }]}>
+            {selectedItem?.label || 'Select...'}
+          </Text>
+          <UniversalIcon
+            name={isOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+            size={20}
+            color={theme.text}
+          />
+        </TouchableOpacity>
       </View>
-      
+
       {/* Dropdown in Modal - breaks out of ScrollView clipping */}
       <Modal
         visible={isOpen}
@@ -206,7 +209,12 @@ const WebDropdown: React.FC<{
                   testID={`${testID}-item-${item.value}`}
                 >
                   {item.icon && (
-                    <UniversalIcon name={item.icon} size={20} color={theme.text} style={webDropdownStyles.itemIcon} />
+                    <UniversalIcon
+                      name={item.icon}
+                      size={20}
+                      color={theme.text}
+                      style={webDropdownStyles.itemIcon}
+                    />
                   )}
                   <Text style={[webDropdownStyles.dropdownItemText, { color: theme.text }]}>
                     {item.label}
@@ -273,7 +281,7 @@ const webDropdownStyles = StyleSheet.create({
 
 /**
  * Platform-appropriate picker component
- * 
+ *
  * @example
  * <PlatformPicker
  *   label="Unit System"
@@ -300,29 +308,32 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const touchTargetSize = useTouchTargetSize();
   const haptics = useHapticFeedback();
-  
+
   const [showPicker, setShowPicker] = useState(false);
-  
-  const selectedItem = items.find(item => item.value === value);
-  
+
+  const selectedItem = items.find((item) => item.value === value);
+
   /**
    * Handle value change with haptic feedback
    */
-  const handleValueChange = useCallback((newValue: string | number) => {
-    haptics.triggerLight();
-    onValueChange(newValue);
-    if (Platform.OS === 'ios') {
-      // iOS picker stays open, close manually
-      setTimeout(() => setShowPicker(false), 100);
-    }
-  }, [onValueChange, haptics]);
-  
+  const handleValueChange = useCallback(
+    (newValue: string | number) => {
+      haptics.triggerLight();
+      onValueChange(newValue);
+      if (Platform.OS === 'ios') {
+        // iOS picker stays open, close manually
+        setTimeout(() => setShowPicker(false), 100);
+      }
+    },
+    [onValueChange, haptics],
+  );
+
   // iOS: Modal with native picker
   if (Platform.OS === 'ios') {
     return (
       <View style={styles.container} testID={testID}>
-        {label && <Text style={styles.label}>{label}</Text>}
-        
+        {label && label.trim() !== '' && <Text style={styles.label}>{label}</Text>}
+
         <TouchableOpacity
           onPress={() => !disabled && setShowPicker(true)}
           style={[styles.pickerButton, { height: touchTargetSize }, disabled && styles.disabled]}
@@ -333,7 +344,7 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
           </Text>
           <UniversalIcon name="chevron-down-outline" size={20} color={theme.text} />
         </TouchableOpacity>
-        
+
         <Modal
           visible={showPicker}
           transparent
@@ -357,7 +368,7 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
                 onValueChange={handleValueChange}
                 testID={`${testID}-picker`}
               >
-                {items.map(item => (
+                {items.map((item) => (
                   <Picker.Item key={item.value} label={item.label} value={item.value} />
                 ))}
               </Picker>
@@ -367,12 +378,12 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
       </View>
     );
   }
-  
+
   // Android: Native picker (no modal needed)
   if (Platform.OS === 'android') {
     return (
       <View style={[styles.container, disabled && styles.disabled]} testID={testID}>
-        {label && <Text style={styles.label}>{label}</Text>}
+        {label && label.trim() !== '' && <Text style={styles.label}>{label}</Text>}
         <View style={[styles.pickerContainer, { height: touchTargetSize }]}>
           <Picker
             selectedValue={value}
@@ -381,7 +392,7 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
             style={styles.picker}
             testID={`${testID}-picker`}
           >
-            {items.map(item => (
+            {items.map((item) => (
               <Picker.Item key={item.value} label={item.label} value={item.value} />
             ))}
           </Picker>
@@ -389,11 +400,11 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
       </View>
     );
   }
-  
+
   // Web: Custom dropdown
   return (
     <View style={[styles.container, disabled && styles.disabled]} testID={testID}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && label.trim() !== '' && <Text style={styles.label}>{label}</Text>}
       <WebDropdown
         value={value}
         items={items}
@@ -409,90 +420,91 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
 /**
  * Create themed styles
  */
-const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
-  container: {
-    marginBottom: settingsTokens.spacing.md,
-  },
-  
-  label: {
-    fontSize: settingsTokens.typography.label.fontSize,
-    fontWeight: settingsTokens.typography.label.fontWeight,
-    color: theme.text,
-    marginBottom: settingsTokens.spacing.xs,
-  },
-  
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: settingsTokens.borderRadius.input,
-    paddingHorizontal: settingsTokens.spacing.md,
-  },
-  
-  pickerButtonText: {
-    fontSize: settingsTokens.typography.body.fontSize,
-    color: theme.text,
-  },
-  
-  placeholder: {
-    color: theme.textSecondary,
-  },
-  
-  pickerContainer: {
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: settingsTokens.borderRadius.input,
-    justifyContent: 'center',
-  },
-  
-  picker: {
-    color: theme.text,
-  },
-  
-  disabled: {
-    opacity: 0.5,
-  },
-  
-  // iOS Modal styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  
-  modalContent: {
-    borderTopLeftRadius: settingsTokens.borderRadius.modal,
-    borderTopRightRadius: settingsTokens.borderRadius.modal,
-  },
-  
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingHorizontal: settingsTokens.spacing.lg,
-    paddingVertical: settingsTokens.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  
-  doneButton: {
-    padding: settingsTokens.spacing.sm,
-  },
-  
-  doneButtonText: {
-    fontSize: settingsTokens.typography.body.fontSize,
-    fontWeight: '600',
-  },
-});
+const createStyles = (theme: ReturnType<typeof useTheme>) =>
+  StyleSheet.create({
+    container: {
+      marginBottom: settingsTokens.spacing.md,
+    },
+
+    label: {
+      fontSize: settingsTokens.typography.label.fontSize,
+      fontWeight: settingsTokens.typography.label.fontWeight,
+      color: theme.text,
+      marginBottom: settingsTokens.spacing.xs,
+    },
+
+    pickerButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: settingsTokens.borderRadius.input,
+      paddingHorizontal: settingsTokens.spacing.md,
+    },
+
+    pickerButtonText: {
+      fontSize: settingsTokens.typography.body.fontSize,
+      color: theme.text,
+    },
+
+    placeholder: {
+      color: theme.textSecondary,
+    },
+
+    pickerContainer: {
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: settingsTokens.borderRadius.input,
+      justifyContent: 'center',
+    },
+
+    picker: {
+      color: theme.text,
+    },
+
+    disabled: {
+      opacity: 0.5,
+    },
+
+    // iOS Modal styles
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+
+    modalBackdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+
+    modalContent: {
+      borderTopLeftRadius: settingsTokens.borderRadius.modal,
+      borderTopRightRadius: settingsTokens.borderRadius.modal,
+    },
+
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      paddingHorizontal: settingsTokens.spacing.lg,
+      paddingVertical: settingsTokens.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+
+    doneButton: {
+      padding: settingsTokens.spacing.sm,
+    },
+
+    doneButtonText: {
+      fontSize: settingsTokens.typography.body.fontSize,
+      fontWeight: '600',
+    },
+  });

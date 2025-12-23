@@ -25,7 +25,7 @@ const ThemedErrorFallback: React.FC<{
 }> = ({ error, retry }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
-  
+
   return (
     <View style={styles.errorContainer}>
       <Text style={styles.errorTitle}>Something went wrong</Text>
@@ -46,7 +46,7 @@ const ThemedWidgetErrorFallback: React.FC<{
 }> = ({ error, retry, widgetId, widgetType }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
-  
+
   return (
     <View style={styles.errorContainer}>
       <Text style={styles.errorIcon}>⚠️</Text>
@@ -69,14 +69,18 @@ const ThemedConnectionErrorFallback: React.FC<{
 }> = ({ error, retry, connectionType, hostAddress, port }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
-  
+
   return (
     <View style={styles.errorContainer}>
       <Text style={styles.errorIcon}>📡</Text>
-      <Text style={styles.errorTitle}>Connection Error ({connectionType?.toUpperCase() || 'UNKNOWN'})</Text>
+      <Text style={styles.errorTitle}>
+        Connection Error ({connectionType?.toUpperCase() || 'UNKNOWN'})
+      </Text>
       <Text style={styles.errorMessage}>Failed to connect to NMEA bridge</Text>
       {hostAddress && (
-        <Text style={styles.errorDetails}>Host: {hostAddress}:{port}</Text>
+        <Text style={styles.errorDetails}>
+          Host: {hostAddress}:{port}
+        </Text>
       )}
       <TouchableOpacity style={styles.retryButton} onPress={retry}>
         <Text style={styles.retryButtonText}>Reconnect</Text>
@@ -94,15 +98,15 @@ const ThemedDataErrorFallback: React.FC<{
 }> = ({ error, retry, dataType, sourceId }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
-  
+
   return (
     <View style={styles.errorContainer}>
       <Text style={styles.errorIcon}>📊</Text>
-      <Text style={styles.errorTitle}>Data Processing Error ({dataType?.toUpperCase() || 'UNKNOWN'})</Text>
+      <Text style={styles.errorTitle}>
+        Data Processing Error ({dataType?.toUpperCase() || 'UNKNOWN'})
+      </Text>
       <Text style={styles.errorMessage}>Failed to process marine data</Text>
-      {sourceId && (
-        <Text style={styles.errorDetails}>Source: {sourceId}</Text>
-      )}
+      {sourceId && <Text style={styles.errorDetails}>Source: {sourceId}</Text>}
       <TouchableOpacity style={styles.retryButton} onPress={retry}>
         <Text style={styles.retryButtonText}>Retry Parsing</Text>
       </TouchableOpacity>
@@ -110,7 +114,10 @@ const ThemedDataErrorFallback: React.FC<{
   );
 };
 
-export class SimpleBaseErrorBoundary extends Component<BaseErrorBoundaryProps, BaseErrorBoundaryState> {
+export class SimpleBaseErrorBoundary extends Component<
+  BaseErrorBoundaryProps,
+  BaseErrorBoundaryState
+> {
   constructor(props: BaseErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -151,7 +158,10 @@ interface WidgetErrorBoundaryProps extends BaseErrorBoundaryProps {
   widgetType: string;
 }
 
-export class SimpleWidgetErrorBoundary extends Component<WidgetErrorBoundaryProps, BaseErrorBoundaryState> {
+export class SimpleWidgetErrorBoundary extends Component<
+  WidgetErrorBoundaryProps,
+  BaseErrorBoundaryState
+> {
   constructor(props: WidgetErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -171,9 +181,9 @@ export class SimpleWidgetErrorBoundary extends Component<WidgetErrorBoundaryProp
   };
 
   renderWidgetFallback = (error: Error, retry: () => void): ReactNode => (
-    <ThemedWidgetErrorFallback 
-      error={error} 
-      retry={retry} 
+    <ThemedWidgetErrorFallback
+      error={error}
+      retry={retry}
       widgetId={this.props.widgetId}
       widgetType={this.props.widgetType}
     />
@@ -195,7 +205,10 @@ interface ConnectionErrorBoundaryProps extends BaseErrorBoundaryProps {
   port?: number;
 }
 
-export class SimpleConnectionErrorBoundary extends Component<ConnectionErrorBoundaryProps, BaseErrorBoundaryState> {
+export class SimpleConnectionErrorBoundary extends Component<
+  ConnectionErrorBoundaryProps,
+  BaseErrorBoundaryState
+> {
   constructor(props: ConnectionErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -239,7 +252,10 @@ interface DataErrorBoundaryProps extends BaseErrorBoundaryProps {
   sourceId?: string;
 }
 
-export class SimpleDataErrorBoundary extends Component<DataErrorBoundaryProps, BaseErrorBoundaryState> {
+export class SimpleDataErrorBoundary extends Component<
+  DataErrorBoundaryProps,
+  BaseErrorBoundaryState
+> {
   constructor(props: DataErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -276,50 +292,51 @@ export class SimpleDataErrorBoundary extends Component<DataErrorBoundaryProps, B
   }
 }
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: theme.surface,
-  },
-  errorIcon: {
-    fontSize: 32,
-    marginBottom: 10,
-  },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.error,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorDetails: {
-    fontSize: 12,
-    color: theme.textSecondary,
-    marginBottom: 16,
-    textAlign: 'center',
-    fontFamily: 'monospace',
-  },
-  retryButton: {
-    backgroundColor: theme.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-  },
-  retryButtonText: {
-    color: theme.surface,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+      backgroundColor: theme.surface,
+    },
+    errorIcon: {
+      fontSize: 32,
+      marginBottom: 10,
+    },
+    errorTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.error,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    errorMessage: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    errorDetails: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginBottom: 16,
+      textAlign: 'center',
+      fontFamily: 'monospace',
+    },
+    retryButton: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 6,
+    },
+    retryButtonText: {
+      color: theme.surface,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+  });
 
 // Export aliases for backward compatibility
 export const BaseErrorBoundary = SimpleBaseErrorBoundary;

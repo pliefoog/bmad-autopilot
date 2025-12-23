@@ -41,46 +41,34 @@ export const AlignmentValidation: Story = {
     <View style={{ padding: 20, gap: 16, backgroundColor: '#f5f5f5' }}>
       {/* Wind Speed - Right Aligned with decimal precision */}
       <View style={{ alignItems: 'flex-end', borderWidth: 1, borderColor: '#ddd' }}>
-        <PrimaryMetricCell 
-          mnemonic="AWS" 
-          value="12.5" 
-          unit="m/s" 
-          category="wind_speed" 
-          state="normal" 
+        <PrimaryMetricCell
+          mnemonic="AWS"
+          value="12.5"
+          unit="m/s"
+          category="wind_speed"
+          state="normal"
         />
       </View>
-      
+
       {/* GPS Coordinates - Right Aligned (fixed 2025-10-21) */}
       <View style={{ alignItems: 'flex-end', borderWidth: 1, borderColor: '#ddd' }}>
-        <PrimaryMetricCell 
-          mnemonic="LAT" 
-          value="48° 38.199′ N" 
-          unit="°" 
-          category="coordinates" 
-          state="normal" 
+        <PrimaryMetricCell
+          mnemonic="LAT"
+          value="48° 38.199′ N"
+          unit="°"
+          category="coordinates"
+          state="normal"
         />
       </View>
-      
+
       {/* Navigation Angles - Right Aligned integer */}
       <View style={{ alignItems: 'flex-end', borderWidth: 1, borderColor: '#ddd' }}>
-        <PrimaryMetricCell 
-          mnemonic="AWA" 
-          value="045" 
-          unit="°" 
-          category="angle" 
-          state="normal" 
-        />
+        <PrimaryMetricCell mnemonic="AWA" value="045" unit="°" category="angle" state="normal" />
       </View>
 
       {/* Depth - Right Aligned with decimal */}
       <View style={{ alignItems: 'flex-end', borderWidth: 1, borderColor: '#ddd' }}>
-        <PrimaryMetricCell 
-          mnemonic="DPT" 
-          value="23.4" 
-          unit="m" 
-          category="depth" 
-          state="normal" 
-        />
+        <PrimaryMetricCell mnemonic="DPT" value="23.4" unit="m" category="depth" state="normal" />
       </View>
     </View>
   ),
@@ -91,30 +79,30 @@ export const StateVariations: Story = {
   render: () => (
     <View style={{ padding: 20, flexDirection: 'row', gap: 16 }}>
       <View style={{ alignItems: 'flex-end' }}>
-        <PrimaryMetricCell 
-          mnemonic="AWS" 
-          value="12.5" 
-          unit="m/s" 
-          category="wind_speed" 
-          state="normal" 
+        <PrimaryMetricCell
+          mnemonic="AWS"
+          value="12.5"
+          unit="m/s"
+          category="wind_speed"
+          state="normal"
         />
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <PrimaryMetricCell 
-          mnemonic="AWS" 
-          value="25.8" 
-          unit="m/s" 
-          category="wind_speed" 
-          state="warning" 
+        <PrimaryMetricCell
+          mnemonic="AWS"
+          value="25.8"
+          unit="m/s"
+          category="wind_speed"
+          state="warning"
         />
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <PrimaryMetricCell 
-          mnemonic="AWS" 
-          value="35.2" 
-          unit="m/s" 
-          category="wind_speed" 
-          state="alarm" 
+        <PrimaryMetricCell
+          mnemonic="AWS"
+          value="35.2"
+          unit="m/s"
+          category="wind_speed"
+          state="alarm"
         />
       </View>
     </View>
@@ -142,12 +130,12 @@ export const DecimalAlignment: Story = {
 export const NoData: Story = {
   render: () => (
     <View style={{ alignItems: 'flex-end' }}>
-      <PrimaryMetricCell 
-        mnemonic="AWS" 
-        value="---" 
-        unit="m/s" 
-        category="wind_speed" 
-        state="normal" 
+      <PrimaryMetricCell
+        mnemonic="AWS"
+        value="---"
+        unit="m/s"
+        category="wind_speed"
+        state="normal"
       />
     </View>
   ),

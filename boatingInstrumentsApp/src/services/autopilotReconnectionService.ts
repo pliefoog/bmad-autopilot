@@ -11,7 +11,7 @@ export enum ReconnectionState {
   CONNECTED = 'connected',
   DISCONNECTED = 'disconnected',
   RECONNECTING = 'reconnecting',
-  FAILED = 'failed'
+  FAILED = 'failed',
 }
 
 /**
@@ -52,7 +52,7 @@ export class AutopilotReconnectionService {
     backoffMultiplier: 1.5,
     healthCheckIntervalMs: 5000, // Check every 5 seconds
     connectionTimeoutMs: 10000, // 10 second timeout
-    successThreshold: 3 // 3 consecutive successes = stable
+    successThreshold: 3, // 3 consecutive successes = stable
   };
 
   private state = ReconnectionState.CONNECTED;
@@ -64,7 +64,7 @@ export class AutopilotReconnectionService {
     consecutiveSuccesses: 0,
     totalReconnectionAttempts: 0,
     averageReconnectionTime: 0,
-    lastReconnectionAttempt: 0
+    lastReconnectionAttempt: 0,
   };
 
   private healthCheckInterval?: ReturnType<typeof setInterval>;
@@ -72,10 +72,7 @@ export class AutopilotReconnectionService {
   private reconnectionTimes: number[] = [];
   private connectionTestFunc?: () => Promise<boolean>;
 
-  constructor(
-    strategy?: Partial<ReconnectionStrategy>,
-    connectionTest?: () => Promise<boolean>
-  ) {
+  constructor(strategy?: Partial<ReconnectionStrategy>, connectionTest?: () => Promise<boolean>) {
     this.strategy = { ...AutopilotReconnectionService.DEFAULT_STRATEGY, ...strategy };
     this.connectionTestFunc = connectionTest || this.defaultConnectionTest;
     this.startHealthChecking();
@@ -96,7 +93,7 @@ export class AutopilotReconnectionService {
   private async performHealthCheck(): Promise<void> {
     try {
       const isHealthy = await this.testConnection();
-      
+
       if (isHealthy) {
         this.handleSuccessfulHealthCheck();
       } else {
@@ -120,10 +117,10 @@ export class AutopilotReconnectionService {
       // Connection restored
       this.connectionHealth.isConnected = true;
       this.state = ReconnectionState.CONNECTED;
-      
+
       autopilotMonitoringService.logConnectionEvent('connected', {
         reconnectionTime: this.getLastReconnectionTime(),
-        totalAttempts: this.connectionHealth.totalReconnectionAttempts
+        totalAttempts: this.connectionHealth.totalReconnectionAttempts,
       });
 
       this.notifyConnectionRestored();
@@ -146,9 +143,9 @@ export class AutopilotReconnectionService {
       // Connection lost
       this.connectionHealth.isConnected = false;
       this.state = ReconnectionState.DISCONNECTED;
-      
+
       autopilotMonitoringService.logConnectionEvent('disconnected', {
-        consecutiveFailures: this.connectionHealth.consecutiveFailures
+        consecutiveFailures: this.connectionHealth.consecutiveFailures,
       });
 
       this.startReconnectionProcess();
@@ -165,9 +162,9 @@ export class AutopilotReconnectionService {
 
     this.state = ReconnectionState.RECONNECTING;
     this.connectionHealth.totalReconnectionAttempts = 0;
-    
+
     autopilotMonitoringService.logConnectionEvent('reconnecting');
-    
+
     this.attemptReconnection();
   }
 
@@ -182,16 +179,18 @@ export class AutopilotReconnectionService {
 
     this.connectionHealth.totalReconnectionAttempts++;
     this.connectionHealth.lastReconnectionAttempt = Date.now();
-    
+
     const attemptStartTime = Date.now();
 
     try {
-      console.info(`[Reconnection] Attempt ${this.connectionHealth.totalReconnectionAttempts}/${this.strategy.maxAttempts}`);
-      
+      console.info(
+        `[Reconnection] Attempt ${this.connectionHealth.totalReconnectionAttempts}/${this.strategy.maxAttempts}`,
+      );
+
       const result = await autopilotRetryManager.executeWithTimeout(
         () => this.performReconnection(),
         this.strategy.connectionTimeoutMs,
-        'connection'
+        'connection',
       );
 
       if (result.success) {
@@ -202,14 +201,15 @@ export class AutopilotReconnectionService {
       } else {
         throw new Error(result.error || 'Reconnection failed');
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.warn(`[Reconnection] Attempt ${this.connectionHealth.totalReconnectionAttempts} failed: ${errorMessage}`);
-      
+      console.warn(
+        `[Reconnection] Attempt ${this.connectionHealth.totalReconnectionAttempts} failed: ${errorMessage}`,
+      );
+
       // Schedule next attempt with backoff
       const delay = this.calculateReconnectionDelay();
-      
+
       this.reconnectionTimeout = setTimeout(() => {
         this.attemptReconnection();
       }, delay);
@@ -227,7 +227,7 @@ export class AutopilotReconnectionService {
     }
 
     const isConnected = await this.connectionTestFunc();
-    
+
     if (isConnected) {
       // Update NMEA store connection status
       useNmeaStore.getState().setConnectionStatus('connected');
@@ -246,11 +246,13 @@ export class AutopilotReconnectionService {
     this.connectionHealth.consecutiveSuccesses = 1;
     this.state = ReconnectionState.CONNECTED;
 
-    console.info(`[Reconnection] Successfully reconnected after ${this.connectionHealth.totalReconnectionAttempts} attempts`);
-    
+    console.info(
+      `[Reconnection] Successfully reconnected after ${this.connectionHealth.totalReconnectionAttempts} attempts`,
+    );
+
     autopilotMonitoringService.logConnectionEvent('connected', {
       attemptsRequired: this.connectionHealth.totalReconnectionAttempts,
-      totalTime: this.getLastReconnectionTime()
+      totalTime: this.getLastReconnectionTime(),
     });
 
     this.notifyConnectionRestored();
@@ -262,17 +264,17 @@ export class AutopilotReconnectionService {
    */
   private handleReconnectionFailure(): void {
     this.state = ReconnectionState.FAILED;
-    
+
     console.error(`[Reconnection] Failed to reconnect after ${this.strategy.maxAttempts} attempts`);
-    
+
     const error = AutopilotErrorManager.createError('CONN_002', {
       maxAttempts: this.strategy.maxAttempts,
       totalTime: this.getTotalReconnectionTime(),
-      lastAttempt: this.connectionHealth.lastReconnectionAttempt
+      lastAttempt: this.connectionHealth.lastReconnectionAttempt,
     });
 
     AutopilotErrorManager.formatErrorForUser(error);
-    
+
     // Continue health checking for manual recovery
     this.scheduleRetryAfterDelay();
   }
@@ -282,7 +284,7 @@ export class AutopilotReconnectionService {
    */
   private scheduleRetryAfterDelay(): void {
     const extendedDelay = this.strategy.maxDelayMs * 2; // Double max delay
-    
+
     this.reconnectionTimeout = setTimeout(() => {
       console.info('[Reconnection] Retrying after extended delay...');
       this.connectionHealth.totalReconnectionAttempts = 0; // Reset attempt counter
@@ -296,7 +298,7 @@ export class AutopilotReconnectionService {
    */
   private onConnectionStabilized(): void {
     console.info('[Reconnection] Connection stabilized');
-    
+
     // Clear any retry timeouts
     if (this.reconnectionTimeout) {
       clearTimeout(this.reconnectionTimeout);
@@ -309,15 +311,15 @@ export class AutopilotReconnectionService {
    */
   private calculateReconnectionDelay(): number {
     const attempt = this.connectionHealth.totalReconnectionAttempts;
-    const exponentialDelay = this.strategy.baseDelayMs * 
-      Math.pow(this.strategy.backoffMultiplier, attempt - 1);
-    
+    const exponentialDelay =
+      this.strategy.baseDelayMs * Math.pow(this.strategy.backoffMultiplier, attempt - 1);
+
     // Cap at maximum delay
     const cappedDelay = Math.min(exponentialDelay, this.strategy.maxDelayMs);
-    
+
     // Add jitter (±10%)
     const jitter = cappedDelay * 0.1 * (Math.random() * 2 - 1);
-    
+
     return Math.max(1000, cappedDelay + jitter); // Minimum 1 second
   }
 
@@ -326,14 +328,14 @@ export class AutopilotReconnectionService {
    */
   private recordReconnectionTime(timeMs: number): void {
     this.reconnectionTimes.push(timeMs);
-    
+
     // Keep only last 10 reconnection times
     if (this.reconnectionTimes.length > 10) {
       this.reconnectionTimes.shift();
     }
-    
+
     // Update average
-    this.connectionHealth.averageReconnectionTime = 
+    this.connectionHealth.averageReconnectionTime =
       this.reconnectionTimes.reduce((sum, time) => sum + time, 0) / this.reconnectionTimes.length;
   }
 
@@ -341,8 +343,9 @@ export class AutopilotReconnectionService {
    * Get time for last reconnection attempt
    */
   private getLastReconnectionTime(): number {
-    return this.reconnectionTimes.length > 0 ? 
-      this.reconnectionTimes[this.reconnectionTimes.length - 1] : 0;
+    return this.reconnectionTimes.length > 0
+      ? this.reconnectionTimes[this.reconnectionTimes.length - 1]
+      : 0;
   }
 
   /**
@@ -360,13 +363,15 @@ export class AutopilotReconnectionService {
    */
   private notifyConnectionRestored(): void {
     const store = useNmeaStore.getState();
-    
-    store.updateAlarms([{
-      id: `connection_restored_${Date.now()}`,
-      message: `Connection restored after ${this.connectionHealth.totalReconnectionAttempts} attempts`,
-      level: 'info',
-      timestamp: Date.now()
-    }]);
+
+    store.updateAlarms([
+      {
+        id: `connection_restored_${Date.now()}`,
+        message: `Connection restored after ${this.connectionHealth.totalReconnectionAttempts} attempts`,
+        level: 'info',
+        timestamp: Date.now(),
+      },
+    ]);
   }
 
   /**
@@ -375,7 +380,7 @@ export class AutopilotReconnectionService {
   private restoreSystemState(): void {
     // Clear connection-related errors
     useNmeaStore.getState().setLastError(undefined);
-    
+
     // Allow safety manager to reassess system health
     const healthMetrics = autopilotSafetyManager.getHealthMetrics();
     healthMetrics.connectionStatus = 'healthy';
@@ -389,11 +394,11 @@ export class AutopilotReconnectionService {
     try {
       // Check NMEA store connection status
       const store = useNmeaStore.getState();
-      
+
       // Simple test: has recent data or connection status is good
       const hasRecentData = store.nmeaData && Object.keys(store.nmeaData).length > 0;
       const connectionGood = store.connectionStatus === 'connected';
-      
+
       return hasRecentData || connectionGood;
     } catch {
       return false;
@@ -407,7 +412,7 @@ export class AutopilotReconnectionService {
     if (!this.connectionTestFunc) {
       return false;
     }
-    
+
     try {
       return await this.connectionTestFunc();
     } catch {
@@ -437,7 +442,7 @@ export class AutopilotReconnectionService {
   getConnectionHealth(): ConnectionHealth & { state: ReconnectionState } {
     return {
       ...this.connectionHealth,
-      state: this.state
+      state: this.state,
     };
   }
 
@@ -446,7 +451,7 @@ export class AutopilotReconnectionService {
    */
   updateStrategy(strategy: Partial<ReconnectionStrategy>): void {
     this.strategy = { ...this.strategy, ...strategy };
-    
+
     // Restart health checking with new interval if changed
     if (strategy.healthCheckIntervalMs && this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
@@ -462,7 +467,7 @@ export class AutopilotReconnectionService {
       clearTimeout(this.reconnectionTimeout);
       this.reconnectionTimeout = undefined;
     }
-    
+
     if (this.state === ReconnectionState.RECONNECTING) {
       this.state = ReconnectionState.DISCONNECTED;
     }
@@ -485,7 +490,7 @@ export class AutopilotReconnectionService {
       clearInterval(this.healthCheckInterval);
       this.healthCheckInterval = undefined;
     }
-    
+
     if (this.reconnectionTimeout) {
       clearTimeout(this.reconnectionTimeout);
       this.reconnectionTimeout = undefined;

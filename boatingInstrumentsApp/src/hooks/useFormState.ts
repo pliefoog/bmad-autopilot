@@ -1,18 +1,18 @@
 /**
  * useFormState Hook
- * 
+ *
  * Consolidates multiple useState hooks into single form state manager with:
  * - Debounced auto-save (300ms default)
  * - Immediate save on explicit saveNow() call (for onBlur, onClose, onTabChange)
  * - Dirty tracking (compare current vs initial)
  * - Zod schema validation with error messages
  * - isSaving state for loading indicators
- * 
+ *
  * @example
  * ```typescript
  * const { formData, updateField, errors, saveNow } = useFormState<MyFormData>(
  *   initialData,
- *   { 
+ *   {
  *     validationSchema: MyFormDataSchema,
  *     debounceMs: 300,
  *     onSave: async (data) => {
@@ -33,19 +33,19 @@ import { z } from 'zod';
 export interface UseFormStateOptions<T> {
   /** Callback to save form data (called on debounce or explicit save) */
   onSave?: (data: T) => Promise<void> | void;
-  
+
   /** Debounce delay in milliseconds (default: 300ms) */
   debounceMs?: number;
-  
+
   /** Zod schema for validation */
   validationSchema?: z.ZodSchema<T>;
-  
+
   /** Callback when validation fails */
   onValidationError?: (errors: Partial<Record<keyof T, string>>) => void;
-  
+
   /** Callback when save succeeds */
   onSaveSuccess?: () => void;
-  
+
   /** Callback when save fails */
   onSaveError?: (error: Error) => void;
 }
@@ -56,51 +56,51 @@ export interface UseFormStateOptions<T> {
 export interface UseFormStateReturn<T> {
   /** Current form data */
   formData: T;
-  
+
   /** Update a single field (triggers debounced save) */
   updateField: <K extends keyof T>(field: K, value: T[K]) => void;
-  
+
   /** Update multiple fields at once */
   updateFields: (updates: Partial<T>) => void;
-  
+
   /** Reset form to initial or provided data */
   reset: (data?: T) => void;
-  
+
   /** Check if form has unsaved changes */
   isDirty: boolean;
-  
+
   /** Validation errors by field */
   errors: Partial<Record<keyof T, string>>;
-  
+
   /** Validate current form data */
   validate: () => boolean;
-  
+
   /** Save immediately (bypasses debounce) */
   saveNow: () => Promise<void>;
-  
+
   /** Indicates save operation in progress */
   isSaving: boolean;
-  
+
   /** Clear all validation errors */
   clearErrors: () => void;
 }
 
 /**
  * useFormState Hook
- * 
+ *
  * Manages form state with debounced auto-save, validation, and dirty tracking.
- * 
+ *
  * @template T - Form data type (must be a plain object with serializable values)
  * @param initialData - Initial form values (becomes baseline for dirty tracking)
  * @param options - Configuration options for save, validation, and callbacks
  * @returns Form state manager with update functions and validation
- * 
+ *
  * **Limitations:**
  * - Only works with plain objects (no circular references, functions, or complex classes)
  * - Debouncing uses setTimeout - rapid saves may be batched
  * - isDirty uses JSON.stringify for comparison (objects must be serializable)
  * - Validation runs synchronously - async validation not supported
- * 
+ *
  * **Usage Notes:**
  * - updateField() triggers debounced save (default 300ms)
  * - saveNow() bypasses debounce for immediate persistence (use on blur/close)
@@ -109,7 +109,7 @@ export interface UseFormStateReturn<T> {
  */
 export function useFormState<T extends Record<string, any>>(
   initialData: T,
-  options?: UseFormStateOptions<T>
+  options?: UseFormStateOptions<T>,
 ): UseFormStateReturn<T> {
   const {
     onSave,
@@ -122,19 +122,19 @@ export function useFormState<T extends Record<string, any>>(
 
   // Form data state
   const [formData, setFormData] = useState<T>(initialData);
-  
+
   // Validation errors state
   const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
-  
+
   // Save operation state
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Store initial data for dirty tracking
   const initialDataRef = useRef<T>(initialData);
-  
+
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Check if form is dirty (has unsaved changes)
   const isDirty = JSON.stringify(formData) !== JSON.stringify(initialDataRef.current);
 
@@ -143,7 +143,7 @@ export function useFormState<T extends Record<string, any>>(
    */
   const validate = useCallback((): boolean => {
     if (!validationSchema) return true;
-    
+
     try {
       validationSchema.parse(formData);
       setErrors({});
@@ -205,55 +205,61 @@ export function useFormState<T extends Record<string, any>>(
   /**
    * Update a single field (triggers debounced save)
    */
-  const updateField = useCallback(<K extends keyof T>(field: K, value: T[K]): void => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    
-    // Clear error for this field when user makes changes
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+  const updateField = useCallback(
+    <K extends keyof T>(field: K, value: T[K]): void => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Debounced save
-    if (onSave) {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      // Clear error for this field when user makes changes
+      if (errors[field]) {
+        setErrors((prev) => {
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        });
       }
-      debounceTimerRef.current = setTimeout(() => {
-        saveNow();
-      }, debounceMs);
-    }
-  }, [errors, onSave, debounceMs, saveNow]);
+
+      // Debounced save
+      if (onSave) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+          saveNow();
+        }, debounceMs);
+      }
+    },
+    [errors, onSave, debounceMs, saveNow],
+  );
 
   /**
    * Update multiple fields at once
    */
-  const updateFields = useCallback((updates: Partial<T>): void => {
-    setFormData((prev) => ({ ...prev, ...updates }));
-    
-    // Clear errors for updated fields
-    const updatedFields = Object.keys(updates) as (keyof T)[];
-    setErrors((prev) => {
-      const next = { ...prev };
-      updatedFields.forEach((field) => {
-        delete next[field];
-      });
-      return next;
-    });
+  const updateFields = useCallback(
+    (updates: Partial<T>): void => {
+      setFormData((prev) => ({ ...prev, ...updates }));
 
-    // Debounced save
-    if (onSave) {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      // Clear errors for updated fields
+      const updatedFields = Object.keys(updates) as (keyof T)[];
+      setErrors((prev) => {
+        const next = { ...prev };
+        updatedFields.forEach((field) => {
+          delete next[field];
+        });
+        return next;
+      });
+
+      // Debounced save
+      if (onSave) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+          saveNow();
+        }, debounceMs);
       }
-      debounceTimerRef.current = setTimeout(() => {
-        saveNow();
-      }, debounceMs);
-    }
-  }, [onSave, debounceMs, saveNow]);
+    },
+    [onSave, debounceMs, saveNow],
+  );
 
   /**
    * Reset form to initial or provided data

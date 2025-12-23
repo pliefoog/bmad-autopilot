@@ -1,6 +1,6 @@
 /**
  * Memory Monitor Component
- * 
+ *
  * Real-time memory usage display in the UI.
  * Shows current usage, growth rate, and leak warnings.
  */
@@ -15,9 +15,9 @@ interface MemoryMonitorProps {
   updateInterval?: number; // milliseconds
 }
 
-export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({ 
+export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({
   position = 'bottom-right',
-  updateInterval = 1000 
+  updateInterval = 1000,
 }) => {
   const theme = useTheme();
   const [currentSnapshot, setCurrentSnapshot] = useState<MemorySnapshot | null>(null);
@@ -64,7 +64,7 @@ export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({
       style={[
         styles.container,
         positionStyles[position],
-        { backgroundColor: theme.surface, borderColor: getLeakColor() }
+        { backgroundColor: theme.surface, borderColor: getLeakColor() },
       ]}
       onPress={() => setIsExpanded(!isExpanded)}
       activeOpacity={0.8}
@@ -85,7 +85,7 @@ export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({
               {currentSnapshot.usedMB.toFixed(2)} MB
             </Text>
           </View>
-          
+
           <View style={styles.row}>
             <Text style={[styles.expandedLabel, { color: theme.textSecondary }]}>Total:</Text>
             <Text style={[styles.expandedValue, { color: theme.text }]}>
@@ -103,7 +103,8 @@ export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({
           <View style={styles.row}>
             <Text style={[styles.expandedLabel, { color: theme.textSecondary }]}>Growth:</Text>
             <Text style={[styles.expandedValue, { color: getLeakColor() }]}>
-              {growthRate > 0 ? '+' : ''}{growthRate.toFixed(2)} MB/min
+              {growthRate > 0 ? '+' : ''}
+              {growthRate.toFixed(2)} MB/min
             </Text>
           </View>
 

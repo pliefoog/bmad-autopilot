@@ -32,15 +32,13 @@ export * from './stressTestService';
 export const initServices = async () => {
   const { serviceRegistry } = await import('./registry');
   await serviceRegistry.initialize();
-  console.log('Domain-separated services initialized with service registry');
-  console.log('Available domains: NMEA, Connection, Autopilot, Playback, Storage, UI');
   return 'Services initialized with registry';
 };
 
 // Service domain utilities
 export const getServiceDomains = () => ({
   nmea: 'NMEA data parsing and connection management',
-  connection: 'Network connectivity and reconnection strategies', 
+  connection: 'Network connectivity and reconnection strategies',
   autopilot: 'Autopilot control, safety, and monitoring',
   playback: 'Data simulation, testing, and mock generation',
   storage: 'Data persistence and file management',

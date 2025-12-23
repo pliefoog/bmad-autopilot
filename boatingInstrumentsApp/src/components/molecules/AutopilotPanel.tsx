@@ -1,12 +1,5 @@
 import React, { useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Modal, 
-  TouchableOpacity, 
-  SafeAreaView 
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { AutopilotState } from '../../hooks/useAutopilotStatus';
 
@@ -61,9 +54,7 @@ export const AutopilotPanel: React.FC<AutopilotPanelProps> = ({
         <View style={styles.content}>
           {/* Status Display */}
           <View style={[styles.statusSection, { backgroundColor: theme.background }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Current Status
-            </Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Current Status</Text>
             <Text style={[styles.statusText, { color: theme.text }]}>
               {autopilotState.status.toUpperCase()} - {autopilotState.mode.toUpperCase()}
             </Text>
@@ -82,47 +73,35 @@ export const AutopilotPanel: React.FC<AutopilotPanelProps> = ({
           {/* Quick Controls */}
           {autopilotState.isActive && (
             <View style={[styles.controlsSection, { backgroundColor: theme.background }]}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Heading Adjustment
-              </Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Heading Adjustment</Text>
               <View style={styles.headingControls}>
                 <TouchableOpacity
                   style={[styles.headingButton, { backgroundColor: theme.primary }]}
                   onPress={() => adjustHeading(-10)}
                 >
-                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>
-                    -10°
-                  </Text>
+                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>-10°</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.headingButton, { backgroundColor: theme.primary }]}
                   onPress={() => adjustHeading(-1)}
                 >
-                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>
-                    -1°
-                  </Text>
+                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>-1°</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.headingButton, { backgroundColor: theme.primary }]}
                   onPress={() => adjustHeading(1)}
                 >
-                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>
-                    +1°
-                  </Text>
+                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>+1°</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.headingButton, { backgroundColor: theme.primary }]}
                   onPress={() => adjustHeading(10)}
                 >
-                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>
-                    +10°
-                  </Text>
+                  <Text style={[styles.headingButtonText, { color: theme.surface }]}>+10°</Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
-
-          {/* Emergency Disengage */}
           <View style={[styles.emergencySection, { backgroundColor: theme.background }]}>
             <TouchableOpacity
               style={[styles.disengageButton, { backgroundColor: theme.error }]}
@@ -139,97 +118,98 @@ export const AutopilotPanel: React.FC<AutopilotPanelProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    backgroundColor: theme.overlay,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  headerButtonText: {
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  statusSection: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  controlsSection: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  emergencySection: {
-    padding: 16,
-    borderRadius: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  headingText: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  headingControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  headingButton: {
-    padding: 12,
-    borderRadius: 6,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  headingButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  disengageButton: {
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  disengageButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    dragHandle: {
+      width: 36,
+      height: 5,
+      backgroundColor: theme.overlay,
+      borderRadius: 3,
+      alignSelf: 'center',
+      marginTop: 5,
+      marginBottom: 5,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+    },
+    headerButton: {
+      padding: 8,
+      minWidth: 60,
+    },
+    headerButtonText: {
+      fontSize: 17,
+      fontWeight: '400',
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: '600',
+      flex: 1,
+      textAlign: 'center',
+    },
+    content: {
+      flex: 1,
+      padding: 16,
+    },
+    statusSection: {
+      padding: 16,
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    controlsSection: {
+      padding: 16,
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    emergencySection: {
+      padding: 16,
+      borderRadius: 8,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginBottom: 12,
+    },
+    statusText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
+    headingText: {
+      fontSize: 14,
+      marginBottom: 4,
+    },
+    headingControls: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    headingButton: {
+      padding: 12,
+      borderRadius: 6,
+      minWidth: 60,
+      alignItems: 'center',
+    },
+    headingButtonText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    disengageButton: {
+      padding: 16,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    disengageButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      letterSpacing: 1,
+    },
+  });
 
 export default AutopilotPanel;

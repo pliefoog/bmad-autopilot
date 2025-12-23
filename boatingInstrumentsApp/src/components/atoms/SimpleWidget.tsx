@@ -1,11 +1,5 @@
 import React, { useCallback, useRef, useMemo } from 'react';
-import { 
-  View, 
-  Text,
-  TouchableOpacity, 
-  Animated, 
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 import { getUseNativeDriver } from '../../utils/animationUtils';
@@ -32,10 +26,10 @@ export interface SimpleWidgetProps {
 /**
  * SimpleWidget - A single component that handles everything:
  * - Display (title, icon, value, unit)
- * - Animation (expand/collapse) 
+ * - Animation (expand/collapse)
  * - Touch handling (with smart nesting prevention)
  * - Styling (theme-aware)
- * 
+ *
  * No more complex component hierarchies!
  */
 export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
@@ -49,7 +43,7 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
   onToggle,
   children,
   testID = 'simple-widget',
-  hasInteractiveContent = false
+  hasInteractiveContent = false,
 }) => {
   const theme = useTheme();
   const heightAnimation = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
@@ -82,10 +76,14 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
   // Get state color
   const getStateColor = () => {
     switch (state) {
-      case 'alarm': return theme.error;
-      case 'warning': return theme.warning;
-      case 'no-data': return theme.textSecondary;
-      default: return theme.text;
+      case 'alarm':
+        return theme.error;
+      case 'warning':
+        return theme.warning;
+      case 'no-data':
+        return theme.textSecondary;
+      default:
+        return theme.text;
     }
   };
 
@@ -93,13 +91,16 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
   const stateColor = getStateColor();
 
   // Smart touch handling: use View if expanded and has interactive content
-  const WrapperComponent = (expanded && hasInteractiveContent) ? View : TouchableOpacity;
-  const wrapperProps = (expanded && hasInteractiveContent) ? {} : {
-    onPress: onToggle,
-    activeOpacity: 0.95,
-    accessibilityRole: 'button' as const,
-    accessibilityLabel: `${expanded ? 'Collapse' : 'Expand'} ${title} widget`,
-  };
+  const WrapperComponent = expanded && hasInteractiveContent ? View : TouchableOpacity;
+  const wrapperProps =
+    expanded && hasInteractiveContent
+      ? {}
+      : {
+          onPress: onToggle,
+          activeOpacity: 0.95,
+          accessibilityRole: 'button' as const,
+          accessibilityLabel: `${expanded ? 'Collapse' : 'Expand'} ${title} widget`,
+        };
 
   return (
     <Animated.View style={[styles.container, { height: heightAnimation }]} testID={testID}>
@@ -115,7 +116,7 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
               </Animated.View>
             )}
           </View>
-          
+
           {/* Main value display */}
           <View style={styles.valueRow}>
             <Text style={[styles.value, { color: stateColor }]} testID={`${testID}-value`}>
@@ -123,7 +124,7 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
             </Text>
             <Text style={[styles.unit, { color: theme.textSecondary }]}>{unit}</Text>
           </View>
-          
+
           {/* Secondary info */}
           {secondary && (
             <Text style={[styles.secondary, { color: theme.textSecondary }]}>{secondary}</Text>
@@ -147,67 +148,68 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
   );
 };
 
-const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    width: 180,
-    backgroundColor: theme.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    shadowColor: theme.text,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  content: {
-    flex: 1,
-    padding: 12,
-  },
-  header: {
-    marginBottom: 8,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    flex: 1,
-    marginLeft: 6,
-  },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 32,
-    fontWeight: '300',
-    letterSpacing: -1,
-  },
-  unit: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
-    marginBottom: 4,
-  },
-  secondary: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  expandedContent: {
-    flex: 1,
-    marginTop: 8,
-  },
-  collapseButton: {
-    alignSelf: 'center',
-    padding: 8,
-    marginTop: 8,
-  },
-});
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    container: {
+      width: 180,
+      backgroundColor: theme.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: theme.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      overflow: 'hidden',
+    },
+    content: {
+      flex: 1,
+      padding: 12,
+    },
+    header: {
+      marginBottom: 8,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    title: {
+      fontSize: 12,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+      flex: 1,
+      marginLeft: 6,
+    },
+    valueRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      marginBottom: 4,
+    },
+    value: {
+      fontSize: 32,
+      fontWeight: '300',
+      letterSpacing: -1,
+    },
+    unit: {
+      fontSize: 14,
+      fontWeight: '500',
+      marginLeft: 4,
+      marginBottom: 4,
+    },
+    secondary: {
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    expandedContent: {
+      flex: 1,
+      marginTop: 8,
+    },
+    collapseButton: {
+      alignSelf: 'center',
+      padding: 8,
+      marginTop: 8,
+    },
+  });

@@ -5,7 +5,10 @@
  */
 
 import { isSimulatorAvailable } from './SimulatorTestClient';
-import { Epic710SimulatorIntegration, getRecommendedTestScenarios } from './Epic710SimulatorIntegration';
+import {
+  Epic710SimulatorIntegration,
+  getRecommendedTestScenarios,
+} from './Epic710SimulatorIntegration';
 
 export interface TestEnvironmentCapabilities {
   simulatorAvailable: boolean;
@@ -53,14 +56,12 @@ export class TestEnvironmentConfig {
    */
   async discoverCapabilities(): Promise<TestEnvironmentCapabilities> {
     const now = Date.now();
-    
+
     // Use cached result if still valid
-    if (this.capabilities && (now - this.lastDiscoveryTime) < this.discoveryTtl) {
+    if (this.capabilities && now - this.lastDiscoveryTime < this.discoveryTtl) {
       return this.capabilities;
     }
 
-    console.log('🔍 Discovering test environment capabilities...');
-    
     const discoveredPorts: number[] = [];
     let simulatorAvailable = false;
     let apiControlSupported = false;
@@ -68,14 +69,14 @@ export class TestEnvironmentConfig {
 
     // AC3.5: Integration with existing Epic 7/10 NMEA Bridge Simulator API
     const testPorts = [9090, 8080, 2000];
-    
+
     for (const port of testPorts) {
       try {
         const available = await isSimulatorAvailable([port], 2000);
         if (available) {
           discoveredPorts.push(port);
           simulatorAvailable = true;
-          
+
           // Check specific capabilities by port
           if (port === 9090) {
             apiControlSupported = await this.checkApiControlCapability(port);
@@ -84,9 +85,7 @@ export class TestEnvironmentConfig {
             webSocketSupported = await this.checkWebSocketCapability(port);
           }
         }
-      } catch (error) {
-        console.log(`Port ${port} not available: ${error}`);
-      }
+      } catch (error) {}
     }
 
     // AC3.2: Dynamic test suite configuration based on available services
@@ -104,9 +103,8 @@ export class TestEnvironmentConfig {
         simulatorAvailable,
         webSocketSupported,
         apiControlSupported,
-        testTier
+        testTier,
       });
-      console.log(`📚 Epic 7/10: ${scenarios.length} recommended scenarios available`);
     } catch (error) {
       console.warn('Epic 7/10 scenario integration warning:', error);
     }
@@ -118,12 +116,11 @@ export class TestEnvironmentConfig {
       performanceMonitoringEnabled: simulatorAvailable && apiControlSupported,
       testTier,
       discoveredPorts,
-      recommendedTestSuites
+      recommendedTestSuites,
     };
 
     this.lastDiscoveryTime = now;
-    
-    console.log(`✅ Test environment discovered: ${testTier} mode with ${discoveredPorts.length} available services`);
+
     return this.capabilities;
   }
 
@@ -132,10 +129,10 @@ export class TestEnvironmentConfig {
    */
   async createExecutionPlan(): Promise<TestExecutionPlan> {
     const capabilities = await this.discoverCapabilities();
-    
+
     let environment: 'mock' | 'simulator' | 'hybrid' = 'mock';
     const enabledFeatures: string[] = [];
-    
+
     if (capabilities.simulatorAvailable) {
       if (capabilities.webSocketSupported && capabilities.apiControlSupported) {
         environment = 'simulator';
@@ -155,20 +152,20 @@ export class TestEnvironmentConfig {
     const performanceThresholds = {
       discovery: 5000, // 5-second timeout for discovery
       injection: 2000, // <2000ms per integration test scenario
-      scenarioLoad: 2000 // <2000ms per integration test scenario
+      scenarioLoad: 2000, // <2000ms per integration test scenario
     };
 
     const testCategories = {
       unit: true, // Always available
       integration: capabilities.apiControlSupported,
-      e2e: capabilities.testTier === 'full-scenario'
+      e2e: capabilities.testTier === 'full-scenario',
     };
 
     return {
       environment,
       enabledFeatures,
       performanceThresholds,
-      testCategories
+      testCategories,
     };
   }
 
@@ -177,15 +174,15 @@ export class TestEnvironmentConfig {
    */
   async shouldRunTestSuite(suiteName: string): Promise<boolean> {
     const capabilities = await this.discoverCapabilities();
-    
+
     const suiteRequirements: Record<string, (caps: TestEnvironmentCapabilities) => boolean> = {
-      'unit': () => true, // Always run unit tests
-      'mock': () => true, // Always run mock tests
+      unit: () => true, // Always run unit tests
+      mock: () => true, // Always run mock tests
       'integration-api': (caps) => caps.apiControlSupported,
       'integration-websocket': (caps) => caps.webSocketSupported,
       'e2e-full-scenario': (caps) => caps.testTier === 'full-scenario',
-      'performance': (caps) => caps.performanceMonitoringEnabled,
-      'simulator-dependent': (caps) => caps.simulatorAvailable
+      performance: (caps) => caps.performanceMonitoringEnabled,
+      'simulator-dependent': (caps) => caps.simulatorAvailable,
     };
 
     const requirement = suiteRequirements[suiteName];
@@ -209,12 +206,12 @@ export class TestEnvironmentConfig {
   }
 
   // Private helper methods
-  
+
   private async checkApiControlCapability(port: number): Promise<boolean> {
     try {
       const response = await fetch(`http://localhost:${port}/api/health`, {
         method: 'GET',
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(2000),
       });
       return response.ok;
     } catch {
@@ -226,14 +223,14 @@ export class TestEnvironmentConfig {
     return new Promise((resolve) => {
       try {
         const ws = new WebSocket(`ws://localhost:${port}`);
-        
+
         ws.onopen = () => {
           ws.close();
           resolve(true);
         };
-        
+
         ws.onerror = () => resolve(false);
-        
+
         // Timeout after 2 seconds
         setTimeout(() => {
           if (ws.readyState === WebSocket.CONNECTING) {
@@ -241,7 +238,6 @@ export class TestEnvironmentConfig {
             resolve(false);
           }
         }, 2000);
-        
       } catch {
         resolve(false);
       }
@@ -250,11 +246,11 @@ export class TestEnvironmentConfig {
 
   private getRecommendedTestSuites(testTier: string, availablePorts: number[]): string[] {
     const suites: string[] = ['unit-tests', 'mock-tests']; // Always recommend basic tests
-    
+
     switch (testTier) {
       case 'full-scenario':
         suites.push('e2e-tests', 'performance-tests', 'integration-websocket');
-        // fallthrough
+      // fallthrough
       case 'api-injection':
         suites.push('integration-api', 'scenario-tests');
         break;

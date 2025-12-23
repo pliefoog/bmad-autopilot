@@ -1,26 +1,30 @@
 /**
  * Widget Factory Service - Centralized Widget Management
- * 
+ *
  * Provides unified API for:
  * - Widget creation and configuration
  * - Title and icon resolution using Widget Metadata Registry
  * - Instance widget management (engines, batteries, tanks, temperatures)
  * - Widget ID parsing and normalization
  * - Legacy widget mapping support
- * 
+ *
  * This replaces scattered widget creation logic across multiple files.
  */
 
-import { WidgetMetadataRegistry, type WidgetMetadata, type InstanceMapping } from '../registry/WidgetMetadataRegistry';
+import {
+  WidgetMetadataRegistry,
+  type WidgetMetadata,
+  type InstanceMapping,
+} from '../registry/WidgetMetadataRegistry';
 
 export interface WidgetInstance {
-  id: string;           // e.g., "engine-0", "battery-1", "temperature-0"  
-  baseType: string;     // e.g., "engine", "battery", "temperature"
-  instance?: number;    // Instance number (0, 1, 2, ...)
-  title: string;        // Display title
-  icon: string;         // Ionicon name
-  category: string;     // Widget category
-  priority: number;     // Display/sort priority
+  id: string; // e.g., "engine-0", "battery-1", "temperature-0"
+  baseType: string; // e.g., "engine", "battery", "temperature"
+  instance?: number; // Instance number (0, 1, 2, ...)
+  title: string; // Display title
+  icon: string; // Ionicon name
+  category: string; // Widget category
+  priority: number; // Display/sort priority
   metadata: InstanceMapping; // Full instance metadata
 }
 
@@ -34,7 +38,7 @@ export interface WidgetInstance {
 export class WidgetFactory {
   /**
    * Parse widget ID to extract base type and instance information
-   * 
+   *
    * Examples:
    * - "gps" -> { baseType: "gps", instance: undefined }
    * - "engine-0" -> { baseType: "engine", instance: 0 }
@@ -48,14 +52,14 @@ export class WidgetFactory {
     originalId: string;
   } {
     const originalId = widgetId;
-    
+
     // Handle legacy mappings first
     if (widgetId === 'water-temperature') {
-      return { 
+      return {
         baseType: 'temperature', // Updated to use unified temperature widget
         instance: 0, // Map to seawater source (NMEA 2000 source 0)
         fluidType: 'seawater',
-        originalId 
+        originalId,
       };
     }
 
@@ -64,8 +68,8 @@ export class WidgetFactory {
       engine: /^engine-(\d+)$/,
       battery: /^battery-(\d+)$/,
       tank: /^tank-(\w+)-(\d+)$/,
-      tankSimple: /^tank-(\d+)$/,  // Simple tank pattern "tank-0", "tank-1"
-      temperature: /^temp-(\d+)$/,  // Consistent pattern "temp-0", "temp-1"
+      tankSimple: /^tank-(\d+)$/, // Simple tank pattern "tank-0", "tank-1"
+      temperature: /^temp-(\d+)$/, // Consistent pattern "temp-0", "temp-1"
     };
 
     // Check engine pattern: "engine-0"
@@ -74,17 +78,17 @@ export class WidgetFactory {
       return {
         baseType: 'engine',
         instance: parseInt(engineMatch[1]),
-        originalId
+        originalId,
       };
     }
 
-    // Check battery pattern: "battery-1" 
+    // Check battery pattern: "battery-1"
     const batteryMatch = widgetId.match(patterns.battery);
     if (batteryMatch) {
       return {
         baseType: 'battery',
         instance: parseInt(batteryMatch[1]),
-        originalId
+        originalId,
       };
     }
 
@@ -92,9 +96,9 @@ export class WidgetFactory {
     const tankSimpleMatch = widgetId.match(patterns.tankSimple);
     if (tankSimpleMatch) {
       return {
-        baseType: 'tank',  // Use 'tank' baseType (registered in WidgetMetadataRegistry)
+        baseType: 'tank', // Use 'tank' baseType (registered in WidgetMetadataRegistry)
         instance: parseInt(tankSimpleMatch[1]),
-        originalId
+        originalId,
       };
     }
 
@@ -105,7 +109,7 @@ export class WidgetFactory {
         baseType: 'tanks',
         instance: parseInt(tankMatch[2]),
         fluidType: tankMatch[1],
-        originalId
+        originalId,
       };
     }
 
@@ -115,7 +119,7 @@ export class WidgetFactory {
       return {
         baseType: 'temperature', // Updated to use unified temperature widget
         instance: parseInt(tempMatch[1]),
-        originalId
+        originalId,
       };
     }
 
@@ -137,7 +141,7 @@ export class WidgetFactory {
   static getWidgetTitle(widgetId: string, instanceData?: any): string {
     const { baseType, instance, fluidType } = this.parseWidgetId(widgetId);
     const metadata = WidgetMetadataRegistry.getMetadata(baseType);
-    
+
     if (!metadata) {
       console.warn(`[WidgetFactory] No metadata found for widget: ${widgetId}`);
       return widgetId.toUpperCase();
@@ -147,7 +151,7 @@ export class WidgetFactory {
     if (metadata.type === 'multi-instance' && instance !== undefined) {
       const data = { ...instanceData };
       if (fluidType) data.fluidType = fluidType;
-      
+
       return WidgetMetadataRegistry.getTitle(baseType, instance, data);
     }
 
@@ -160,7 +164,7 @@ export class WidgetFactory {
   static getWidgetIcon(widgetId: string, instanceData?: any): string {
     const { baseType, instance, fluidType } = this.parseWidgetId(widgetId);
     const metadata = WidgetMetadataRegistry.getMetadata(baseType);
-    
+
     if (!metadata) {
       console.warn(`[WidgetFactory] No metadata found for widget: ${widgetId}`);
       return 'help-outline';
@@ -170,7 +174,7 @@ export class WidgetFactory {
     if (metadata.type === 'multi-instance' && instance !== undefined) {
       const data = { ...instanceData };
       if (fluidType) data.fluidType = fluidType;
-      
+
       return WidgetMetadataRegistry.getIcon(baseType, instance, data);
     }
 
@@ -189,13 +193,13 @@ export class WidgetFactory {
    * Create a widget instance object with complete metadata
    */
   static createWidgetInstance(
-    widgetId: string, 
+    widgetId: string,
     instanceData?: any,
-    priority?: number
+    priority?: number,
   ): WidgetInstance {
     const { baseType, instance } = this.parseWidgetId(widgetId);
     const metadata = WidgetMetadataRegistry.getMetadata(baseType);
-    
+
     if (!metadata) {
       throw new Error(`Cannot create widget instance: No metadata for ${widgetId}`);
     }
@@ -205,9 +209,9 @@ export class WidgetFactory {
     const category = this.getWidgetCategory(widgetId);
 
     // Get instance metadata if applicable
-    let instanceMetadata: InstanceMapping = { 
-      title, 
-      priority: priority || 0 
+    let instanceMetadata: InstanceMapping = {
+      title,
+      priority: priority || 0,
     };
 
     if (metadata.type === 'multi-instance' && instance !== undefined && metadata.instanceMapping) {
@@ -233,7 +237,7 @@ export class WidgetFactory {
   static createWidgetConfig(
     widgetId: string,
     instanceData?: any,
-    overrides?: any
+    overrides?: any,
   ): {
     id: string;
     type: string;
@@ -245,7 +249,7 @@ export class WidgetFactory {
   } {
     const instance = this.createWidgetInstance(widgetId, instanceData);
     const now = Date.now();
-    
+
     return {
       id: widgetId,
       type: instance.baseType,
@@ -268,14 +272,14 @@ export class WidgetFactory {
    * Get all available widget types
    */
   static getAvailableWidgetTypes(): string[] {
-    return WidgetMetadataRegistry.getAllMetadata().map(meta => meta.id);
+    return WidgetMetadataRegistry.getAllMetadata().map((meta) => meta.id);
   }
 
   /**
    * Get widget types by category
    */
   static getWidgetTypesByCategory(category: string): string[] {
-    return WidgetMetadataRegistry.getByCategory(category as any).map(meta => meta.id);
+    return WidgetMetadataRegistry.getByCategory(category as any).map((meta) => meta.id);
   }
 
   /**
@@ -293,11 +297,7 @@ export class WidgetFactory {
   /**
    * Generate widget ID for instance widgets
    */
-  static generateInstanceWidgetId(
-    baseType: string, 
-    instance: number, 
-    fluidType?: string
-  ): string {
+  static generateInstanceWidgetId(baseType: string, instance: number, fluidType?: string): string {
     if (fluidType) {
       return `tank-${fluidType}-${instance}`;
     }

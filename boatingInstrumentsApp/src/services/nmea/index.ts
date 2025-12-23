@@ -29,16 +29,16 @@ export * from './instanceDetection';
 export * from './types';
 
 // Re-export commonly used types for convenience
-export type { 
-  NMEAParseResult, 
-  PGNDecodeResult, 
-  AutopilotCommand, 
+export type {
+  NMEAParseResult,
+  PGNDecodeResult,
+  AutopilotCommand,
   AutopilotState,
   NavigationData,
   EngineData,
   BatteryData,
   TankData,
-  NMEAError
+  NMEAError,
 } from './types';
 //   NmeaMessage,
 //   SentenceType,

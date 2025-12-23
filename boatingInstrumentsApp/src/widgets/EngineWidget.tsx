@@ -39,49 +39,41 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
 
     // Widget state management per ui-architecture.md v2.3
 
-    // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-    const rpm = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.rpm ?? null,
-      (a, b) => a === b,
-    );
-    const coolantTemp = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.coolantTemp ?? null,
-      (a, b) => a === b,
-    );
-    const oilPressure = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.oilPressure ?? null,
-      (a, b) => a === b,
-    );
-    const alternatorVoltage = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.alternatorVoltage ?? null,
-      (a, b) => a === b,
-    );
-    const fuelRate = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.fuelRate ?? null,
-      (a, b) => a === b,
-    );
-    const hours = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.hours ?? null,
-      (a, b) => a === b,
-    );
-    const shaftRpm = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.shaftRpm ?? null,
-      (a, b) => a === b,
-    );
-    const engineTimestamp = useNmeaStore(
-      (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.timestamp,
-      (a, b) => a === b,
-    );
-    const engineSensorData = useNmeaStore(
+    // NMEA data selectors - Read SensorInstance and extract metrics
+    const engineSensorInstance = useNmeaStore(
       (state) => state.nmeaData.sensors.engine?.[instanceNumber],
       (a, b) => a === b,
     );
+
+    // Extract metrics from SensorInstance using getMetric()
+    const rpmMetric = engineSensorInstance?.getMetric('rpm');
+    const rpm = rpmMetric?.si_value ?? null;
+
+    const coolantTempMetric = engineSensorInstance?.getMetric('temperature');
+    const coolantTemp = coolantTempMetric?.si_value ?? null;
+
+    const oilPressureMetric = engineSensorInstance?.getMetric('oilPressure');
+    const oilPressure = oilPressureMetric?.si_value ?? null;
+
+    const alternatorVoltageMetric = engineSensorInstance?.getMetric('alternatorVoltage');
+    const alternatorVoltage = alternatorVoltageMetric?.si_value ?? null;
+
+    const fuelRateMetric = engineSensorInstance?.getMetric('fuelRate');
+    const fuelRate = fuelRateMetric?.si_value ?? null;
+
+    const hoursMetric = engineSensorInstance?.getMetric('hours');
+    const hours = hoursMetric?.si_value ?? null;
+
+    const shaftRpmMetric = engineSensorInstance?.getMetric('shaftRpm');
+    const shaftRpm = shaftRpmMetric?.si_value ?? null;
+
+    const engineTimestamp = engineSensorInstance?.timestamp;
 
     // NEW: Use cached display info from sensor.display (Phase 3 migration)
     // Helper function to create MetricDisplayData from sensor display
     const getEngineDisplay = useCallback(
       (
-        displayInfo: any,
+        metric: any,
         value: number | null,
         engineMnemonic: string,
         fallbackSymbol: string = '',
@@ -110,12 +102,12 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           };
         }
 
-        // If display info available, use pre-formatted string (not the numeric value!)
-        if (displayInfo?.formatted) {
+        // Use MetricValue's pre-enriched display values
+        if (metric) {
           return {
             mnemonic: engineMnemonic,
-            value: displayInfo.formatted.replace(` ${displayInfo.unit}`, ''), // Remove unit from formatted string
-            unit: displayInfo.unit,
+            value: metric.formattedValue, // Already formatted without unit
+            unit: metric.unit,
             rawValue: value,
             layout: {
               minWidth: 60,
@@ -136,7 +128,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
         // Fallback to raw value formatting
         return {
           mnemonic: engineMnemonic,
-          value: value.toFixed(1),
+          value: '---',
           unit: fallbackSymbol,
           rawValue: value,
           layout: {
@@ -157,40 +149,40 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       [],
     );
 
-    // Engine display values using sensor.display cache
+    // Engine display values using MetricValue from SensorInstance (Phase 4)
     const rpmDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.rpm, rpm, 'RPM', 'rpm'),
-      [rpm, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(rpmMetric, rpm, 'RPM', 'rpm'),
+      [rpm, rpmMetric, getEngineDisplay],
     );
 
     const coolantTempDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.temperature, coolantTemp, 'ECT', '°C'),
-      [coolantTemp, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(coolantTempMetric, coolantTemp, 'ECT', '°C'),
+      [coolantTemp, coolantTempMetric, getEngineDisplay],
     );
 
     const oilPressureDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.oilPressure, oilPressure, 'EOP', 'bar'),
-      [oilPressure, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(oilPressureMetric, oilPressure, 'EOP', 'bar'),
+      [oilPressure, oilPressureMetric, getEngineDisplay],
     );
 
     const alternatorVoltageDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.alternatorVoltage, alternatorVoltage, 'ALT', 'V'),
-      [alternatorVoltage, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(alternatorVoltageMetric, alternatorVoltage, 'ALT', 'V'),
+      [alternatorVoltage, alternatorVoltageMetric, getEngineDisplay],
     );
 
     const fuelFlowDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.fuelRate, fuelRate, 'EFF', 'L/h'),
-      [fuelRate, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(fuelRateMetric, fuelRate, 'EFF', 'L/h'),
+      [fuelRate, fuelRateMetric, getEngineDisplay],
     );
 
     const engineHoursDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.hours, hours, 'EHR', 'h'),
-      [hours, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(hoursMetric, hours, 'EHR', 'h'),
+      [hours, hoursMetric, getEngineDisplay],
     );
 
     const shaftRpmDisplay = useMemo(
-      () => getEngineDisplay(engineSensorData?.display?.shaftRpm, shaftRpm, 'SRPM', 'rpm'),
-      [shaftRpm, getEngineDisplay, engineSensorData],
+      () => getEngineDisplay(shaftRpmMetric, shaftRpm, 'SRPM', 'rpm'),
+      [shaftRpm, shaftRpmMetric, getEngineDisplay],
     );
 
     // Marine safety thresholds for engine monitoring
@@ -279,7 +271,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
             {getSensorDisplayName(
               'engine',
               instanceNumber,
-              engineSensorData?.alarmThresholds,
+              engineSensorInstance?.alarmThresholds,
               title,
             )}
           </Text>

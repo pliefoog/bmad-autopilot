@@ -9,9 +9,7 @@ interface AutopilotFooterProps {
   onOpenAutopilotControl: () => void;
 }
 
-export const AutopilotFooter: React.FC<AutopilotFooterProps> = ({
-  onOpenAutopilotControl,
-}) => {
+export const AutopilotFooter: React.FC<AutopilotFooterProps> = ({ onOpenAutopilotControl }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const autopilotState = useAutopilotStatus();
@@ -31,7 +29,7 @@ export const AutopilotFooter: React.FC<AutopilotFooterProps> = ({
   const footerHeight = 88 + insets.bottom;
 
   return (
-    <View 
+    <View
       style={[
         styles.container,
         {
@@ -39,7 +37,7 @@ export const AutopilotFooter: React.FC<AutopilotFooterProps> = ({
           borderTopColor: theme.border,
           height: footerHeight,
           paddingBottom: insets.bottom,
-        }
+        },
       ]}
       testID="autopilot-footer"
     >

@@ -4,15 +4,15 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Animated, 
-  Dimensions, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Dimensions,
   Platform,
   ViewStyle,
-  TextStyle
+  TextStyle,
 } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useAlarmStore, Alarm, AlarmLevel } from '../../store/alarmStore';
@@ -24,18 +24,18 @@ const MARINE_COLORS = {
   // Critical navigation hazards - Pure Red (IMO standard)
   CRITICAL_RED: '#FF0000',
   CRITICAL_RED_FLASH: '#FF3333',
-  
+
   // Warning conditions - Amber/Yellow (IMO standard)
   WARNING_AMBER: '#FFA500',
   WARNING_AMBER_FLASH: '#FFD700',
-  
+
   // Information - Blue (IMO standard)
   INFO_BLUE: '#0066FF',
   INFO_BLUE_FLASH: '#3399FF',
-  
+
   // High contrast text - Black (for amber backgrounds)
   TEXT_BLACK: '#000000',
-  
+
   // Overlay transparency for critical alerts
   OVERLAY_CRITICAL: 'rgba(255, 0, 0, 0.2)',
 };
@@ -72,11 +72,7 @@ interface FlashingAnimationProps {
  * Flashing animation component for marine visibility
  * Uses different flash rates based on alarm severity
  */
-const FlashingAnimation: React.FC<FlashingAnimationProps> = ({
-  level,
-  children,
-  enabled
-}) => {
+const FlashingAnimation: React.FC<FlashingAnimationProps> = ({ level, children, enabled }) => {
   const opacity = useRef(new Animated.Value(1)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -88,8 +84,7 @@ const FlashingAnimation: React.FC<FlashingAnimationProps> = ({
     }
 
     // Marine flash rates based on severity
-    const flashDuration = level === 'critical' ? 300 : 
-                         level === 'warning' ? 500 : 800;
+    const flashDuration = level === 'critical' ? 300 : level === 'warning' ? 500 : 800;
 
     const flash = () => {
       animationRef.current = Animated.loop(
@@ -104,7 +99,7 @@ const FlashingAnimation: React.FC<FlashingAnimationProps> = ({
             duration: flashDuration,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       animationRef.current.start();
     };
@@ -116,11 +111,7 @@ const FlashingAnimation: React.FC<FlashingAnimationProps> = ({
     };
   }, [level, enabled, opacity]);
 
-  return (
-    <Animated.View style={{ opacity: enabled ? opacity : 1 }}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={{ opacity: enabled ? opacity : 1 }}>{children}</Animated.View>;
 };
 
 /**
@@ -130,16 +121,16 @@ const FlashingAnimation: React.FC<FlashingAnimationProps> = ({
 export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
   alarm,
   onAcknowledge,
-  style
+  style,
 }) => {
   const theme = useTheme();
   const [showFlashing, setShowFlashing] = useState(true);
 
   // Stop flashing after 30 seconds for critical, 20s for warning, 10s for info
   useEffect(() => {
-    const flashDuration = alarm.level === 'critical' ? 30000 :
-                         alarm.level === 'warning' ? 20000 : 10000;
-    
+    const flashDuration =
+      alarm.level === 'critical' ? 30000 : alarm.level === 'warning' ? 20000 : 10000;
+
     const timer = setTimeout(() => {
       setShowFlashing(false);
     }, flashDuration);
@@ -175,7 +166,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
   };
 
   const colors = getAlarmColors(alarm.level);
-  
+
   const dynamicStyles = StyleSheet.create({
     container: {
       backgroundColor: colors.background,
@@ -198,8 +189,8 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
       fontWeight: 'bold',
       textAlign: 'center',
       marginBottom: 8,
-      textShadowColor: colors.background === MARINE_COLORS.WARNING_AMBER ? 
-                       theme.text : MARINE_COLORS.TEXT_BLACK,
+      textShadowColor:
+        colors.background === MARINE_COLORS.WARNING_AMBER ? theme.text : MARINE_COLORS.TEXT_BLACK,
       textShadowOffset: { width: 1, height: 1 },
       textShadowRadius: 2,
     },
@@ -238,20 +229,18 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
   };
 
   return (
-    <FlashingAnimation 
-      level={alarm.level} 
-      enabled={showFlashing && !alarm.acknowledged}
-    >
+    <FlashingAnimation level={alarm.level} enabled={showFlashing && !alarm.acknowledged}>
       <View style={[dynamicStyles.container, style]} testID="critical-alarm-indicator">
         <View style={dynamicStyles.levelBadge}>
-          <Text style={dynamicStyles.levelText}>
-            {alarm.level.toUpperCase()}
-          </Text>
+          <Text style={dynamicStyles.levelText}>{alarm.level.toUpperCase()}</Text>
         </View>
 
         <Text style={dynamicStyles.titleText} testID="alarm-title">
-          {alarm.level === 'critical' ? '⚠️ CRITICAL ALARM' :
-           alarm.level === 'warning' ? '⚠️ WARNING' : 'ℹ️ INFO'}
+          {alarm.level === 'critical'
+            ? '⚠️ CRITICAL ALARM'
+            : alarm.level === 'warning'
+            ? '⚠️ WARNING'
+            : 'ℹ️ INFO'}
         </Text>
 
         <Text style={dynamicStyles.messageText} testID="alarm-message">
@@ -259,32 +248,39 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
         </Text>
 
         {alarm.value !== undefined && alarm.threshold !== undefined && (
-          <Text style={[dynamicStyles.messageText, { marginTop: 4, fontSize: MARINE_STYLES.fontSize[alarm.level] - 6 }]}>
+          <Text
+            style={[
+              dynamicStyles.messageText,
+              { marginTop: 4, fontSize: MARINE_STYLES.fontSize[alarm.level] - 6 },
+            ]}
+          >
             Value: {alarm.value} | Threshold: {alarm.threshold}
           </Text>
         )}
 
-        <Text style={dynamicStyles.timestamp}>
-          {formatTimestamp(alarm.timestamp)}
-        </Text>
+        <Text style={dynamicStyles.timestamp}>{formatTimestamp(alarm.timestamp)}</Text>
 
         {alarm.acknowledged && (
-          <View style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: theme.overlayDark,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 8,
-          }}>
-            <Text style={{
-              color: theme.text,
-              fontSize: 16,
-              fontWeight: 'bold',
-            }}>
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: theme.overlayDark,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: theme.text,
+                fontSize: 16,
+                fontWeight: 'bold',
+              }}
+            >
               ✓ ACKNOWLEDGED
             </Text>
           </View>
@@ -305,13 +301,13 @@ interface AlarmOverlaySystemProps {
 export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children }) => {
   const theme = useTheme();
   const { alarms, acknowledgeAlarm } = useAlarmStore();
-  const unacknowledgedAlarms = activeAlarms.filter(alarm => !alarm.acknowledged);
-  
+  const unacknowledgedAlarms = activeAlarms.filter((alarm) => !alarm.acknowledged);
+
   // Prioritize critical alarms for overlay display
-  const criticalAlarms = unacknowledgedAlarms.filter(alarm => alarm.level === 'critical');
-  const warningAlarms = unacknowledgedAlarms.filter(alarm => alarm.level === 'warning');
-  const infoAlarms = unacknowledgedAlarms.filter(alarm => alarm.level === 'info');
-  
+  const criticalAlarms = unacknowledgedAlarms.filter((alarm) => alarm.level === 'critical');
+  const warningAlarms = unacknowledgedAlarms.filter((alarm) => alarm.level === 'warning');
+  const infoAlarms = unacknowledgedAlarms.filter((alarm) => alarm.level === 'info');
+
   const prioritizedAlarms = [...criticalAlarms, ...warningAlarms, ...infoAlarms];
   const shouldShowOverlay = prioritizedAlarms.length > 0;
 
@@ -367,7 +363,7 @@ export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children
   });
 
   const handleAcknowledgeAll = () => {
-    prioritizedAlarms.forEach(alarm => {
+    prioritizedAlarms.forEach((alarm) => {
       acknowledgeAlarm(alarm.id);
     });
   };
@@ -375,39 +371,47 @@ export const AlarmOverlaySystem: React.FC<AlarmOverlaySystemProps> = ({ children
   return (
     <View style={{ flex: 1 }}>
       {children}
-      
+
       {shouldShowOverlay && (
         <View style={overlayStyles.overlay} testID="alarm-overlay-system">
           <View style={overlayStyles.overlayContent}>
-            {prioritizedAlarms.slice(0, 3).map((alarm) => ( // Show max 3 alarms
-              <CriticalAlarmIndicator
-                key={alarm.id}
-                alarm={alarm}
-                onAcknowledge={acknowledgeAlarm}
-              />
-            ))}
-            
+            {prioritizedAlarms.slice(0, 3).map(
+              (
+                alarm, // Show max 3 alarms
+              ) => (
+                <CriticalAlarmIndicator
+                  key={alarm.id}
+                  alarm={alarm}
+                  onAcknowledge={acknowledgeAlarm}
+                />
+              ),
+            )}
+
             {prioritizedAlarms.length > 3 && (
-              <View style={{
-                backgroundColor: MARINE_COLORS.INFO_BLUE,
-                padding: 12,
-                borderRadius: 8,
-                margin: 8,
-                alignItems: 'center',
-              }}>
-                <Text style={{
-                  color: theme.text,
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                }}>
+              <View
+                style={{
+                  backgroundColor: MARINE_COLORS.INFO_BLUE,
+                  padding: 12,
+                  borderRadius: 8,
+                  margin: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                  }}
+                >
                   + {prioritizedAlarms.length - 3} more alarms
                 </Text>
               </View>
             )}
 
             <View style={overlayStyles.acknowledgeButton}>
-              <Text 
-                style={overlayStyles.acknowledgeText} 
+              <Text
+                style={overlayStyles.acknowledgeText}
                 onPress={handleAcknowledgeAll}
                 testID="acknowledge-all-button"
               >
@@ -432,24 +436,24 @@ interface CompactAlarmBarProps {
 
 export const CompactAlarmBar: React.FC<CompactAlarmBarProps> = ({ style, onPress }) => {
   const { activeAlarms } = useAlarmStore();
-  const unacknowledgedAlarms = activeAlarms.filter(alarm => !alarm.acknowledged);
-  
+  const unacknowledgedAlarms = activeAlarms.filter((alarm) => !alarm.acknowledged);
+
   if (unacknowledgedAlarms.length === 0) {
     return null;
   }
 
-  const criticalCount = unacknowledgedAlarms.filter(a => a.level === 'critical').length;
-  const warningCount = unacknowledgedAlarms.filter(a => a.level === 'warning').length;
-  const infoCount = unacknowledgedAlarms.filter(a => a.level === 'info').length;
+  const criticalCount = unacknowledgedAlarms.filter((a) => a.level === 'critical').length;
+  const warningCount = unacknowledgedAlarms.filter((a) => a.level === 'warning').length;
+  const infoCount = unacknowledgedAlarms.filter((a) => a.level === 'info').length;
 
-  const highestLevel = criticalCount > 0 ? 'critical' : 
-                      warningCount > 0 ? 'warning' : 'info';
+  const highestLevel = criticalCount > 0 ? 'critical' : warningCount > 0 ? 'warning' : 'info';
 
-  const colors = highestLevel === 'critical' ? 
-    { bg: MARINE_COLORS.CRITICAL_RED, text: theme.text } :
-    highestLevel === 'warning' ?
-    { bg: MARINE_COLORS.WARNING_AMBER, text: MARINE_COLORS.TEXT_BLACK } :
-    { bg: MARINE_COLORS.INFO_BLUE, text: theme.text };
+  const colors =
+    highestLevel === 'critical'
+      ? { bg: MARINE_COLORS.CRITICAL_RED, text: theme.text }
+      : highestLevel === 'warning'
+      ? { bg: MARINE_COLORS.WARNING_AMBER, text: MARINE_COLORS.TEXT_BLACK }
+      : { bg: MARINE_COLORS.INFO_BLUE, text: theme.text };
 
   const compactStyles = StyleSheet.create({
     container: {
@@ -485,8 +489,8 @@ export const CompactAlarmBar: React.FC<CompactAlarmBarProps> = ({ style, onPress
 
   return (
     <FlashingAnimation level={highestLevel} enabled={true}>
-      <View 
-        style={[compactStyles.container, style]} 
+      <View
+        style={[compactStyles.container, style]}
         testID="compact-alarm-bar"
         onTouchStart={onPress}
       >

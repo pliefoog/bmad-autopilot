@@ -2,7 +2,7 @@
  * Settings Design Tokens
  * Story 13.2.1 - Phase 1: Create Settings Design Tokens
  * Enhanced with platform-specific variants for iOS, Android, and TV
- * 
+ *
  * Centralized design system for all settings modals
  * Ensures cross-platform consistency with marine-optimized touch targets
  */
@@ -18,13 +18,13 @@ export const settingsTokens = {
   modal: {
     // Width varies by platform
     width: {
-      phone: '90%',    // 90% viewport width on phones
-      tablet: 500,     // Fixed 500pt on tablets
-      desktop: 600,    // Fixed 600pt on desktop
+      phone: '90%', // 90% viewport width on phones
+      tablet: 500, // Fixed 500pt on tablets
+      desktop: 600, // Fixed 600pt on desktop
     },
-    maxWidth: 800,     // Maximum width constraint
-    maxHeight: '90%',  // Maximum height as viewport percentage
-    minHeight: 400,    // Minimum height to prevent collapsing
+    maxWidth: 800, // Maximum width constraint
+    maxHeight: '90%', // Maximum height as viewport percentage
+    minHeight: 400, // Minimum height to prevent collapsing
   },
 
   /**
@@ -32,9 +32,9 @@ export const settingsTokens = {
    * Based on designTokens.ts touchTargets
    */
   touchTargets: {
-    phone: 44,         // iOS minimum (bare hands)
-    tablet: 56,        // Marine-optimized (dashboard/helm)
-    glove: 64,         // Enhanced for glove use
+    phone: 44, // iOS minimum (bare hands)
+    tablet: 56, // Marine-optimized (dashboard/helm)
+    glove: 64, // Enhanced for glove use
   },
 
   /**
@@ -42,12 +42,12 @@ export const settingsTokens = {
    * Consistent spacing throughout settings dialogs
    */
   spacing: {
-    xs: 4,             // Extra small - tight spacing
-    sm: 8,             // Small - compact layouts
-    md: 12,            // Medium - standard spacing
-    lg: 16,            // Large - section separation
-    xl: 24,            // Extra large - major sections
-    xxl: 32,           // Extra extra large - modal padding
+    xs: 4, // Extra small - tight spacing
+    sm: 8, // Small - compact layouts
+    md: 12, // Medium - standard spacing
+    lg: 16, // Large - section separation
+    xl: 24, // Extra large - major sections
+    xxl: 32, // Extra extra large - modal padding
   },
 
   /**
@@ -55,9 +55,9 @@ export const settingsTokens = {
    * Fast enough to feel responsive, slow enough to be smooth
    */
   animation: {
-    enter: 300,        // Modal entrance animation
-    exit: 250,         // Modal exit animation (faster for responsiveness)
-    transition: 200,   // General transitions (tabs, sections)
+    enter: 300, // Modal entrance animation
+    exit: 250, // Modal exit animation (faster for responsiveness)
+    transition: 200, // General transitions (tabs, sections)
   },
 
   /**
@@ -95,10 +95,10 @@ export const settingsTokens = {
    * Border radius values
    */
   borderRadius: {
-    modal: 12,         // Modal container corners
-    button: 8,         // Button corners
-    input: 6,          // Input field corners
-    badge: 4,          // Small badges/tags
+    modal: 12, // Modal container corners
+    button: 8, // Button corners
+    input: 6, // Input field corners
+    badge: 4, // Small badges/tags
   },
 
   /**
@@ -110,14 +110,14 @@ export const settingsTokens = {
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.3,
       shadowRadius: 24,
-      elevation: 12,   // Android elevation
+      elevation: 12, // Android elevation
     },
     button: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 4,
-      elevation: 2,    // Android elevation
+      elevation: 2, // Android elevation
     },
   },
 
@@ -125,12 +125,12 @@ export const settingsTokens = {
    * Layout constants
    */
   layout: {
-    headerHeight: 60,  // Modal header height
-    footerHeight: 80,  // Modal footer height (with padding)
+    headerHeight: 60, // Modal header height
+    footerHeight: 80, // Modal footer height (with padding)
     buttonHeight: {
-      phone: 44,       // Minimum iOS touch target
-      tablet: 56,      // Marine-optimized
-      glove: 64,       // Glove-friendly
+      phone: 44, // Minimum iOS touch target
+      tablet: 56, // Marine-optimized
+      glove: 64, // Glove-friendly
     },
   },
 
@@ -138,15 +138,15 @@ export const settingsTokens = {
    * Backdrop overlay configuration
    */
   backdrop: {
-    opacity: 0.6,      // 60% opacity for backdrop
-    color: '#000000',  // Black backdrop
+    opacity: 0.6, // 60% opacity for backdrop
+    color: '#000000', // Black backdrop
   },
 
   /**
    * Opacity values for various states
    */
   opacity: {
-    disabled: 0.5,     // 50% opacity for disabled elements
+    disabled: 0.5, // 50% opacity for disabled elements
   },
 } as const;
 
@@ -357,29 +357,25 @@ export function getPlatformTokens() {
   const isTV = variant === 'tvos' || variant === 'androidtv';
   const isTablet = variant.includes('tablet');
   const isIOS = variant.startsWith('ios');
-  
+
   return {
-    modal: isTV 
-      ? modalPresentationStyles.tv 
+    modal: isTV
+      ? modalPresentationStyles.tv
       : isIOS
-        ? modalPresentationStyles.ios[isTablet ? 'tablet' : 'phone']
-        : modalPresentationStyles.android[isTablet ? 'tablet' : 'phone'],
+      ? modalPresentationStyles.ios[isTablet ? 'tablet' : 'phone']
+      : modalPresentationStyles.android[isTablet ? 'tablet' : 'phone'],
     typography: isTV
       ? platformTypography.tv
       : isIOS
-        ? platformTypography.ios
-        : platformTypography.android,
-    spacing: isTV
-      ? platformSpacing.tv
-      : isTablet
-        ? platformSpacing.tablet
-        : platformSpacing.phone,
+      ? platformTypography.ios
+      : platformTypography.android,
+    spacing: isTV ? platformSpacing.tv : isTablet ? platformSpacing.tablet : platformSpacing.phone,
     touchTarget: isTV ? touchTargets.tv : isTablet ? touchTargets.tablet : touchTargets.phone,
     animations: isTV
       ? platformAnimations.tv
       : isTablet
-        ? platformAnimations.tablet
-        : platformAnimations.phone,
+      ? platformAnimations.tablet
+      : platformAnimations.phone,
     viewingDistanceScale: scale,
   };
 }

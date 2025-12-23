@@ -35,9 +35,13 @@ export const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({
           backgroundColor: disabled ? theme.interactiveDisabled : theme.interactive,
           opacity: disabled ? 0.5 : 1,
         },
-        Platform.OS === 'ios' ? styles.shadowIOS : 
-        Platform.OS === 'android' ? styles.shadowAndroid :
-        Platform.OS === 'web' ? styles.shadowWeb : null,
+        Platform.OS === 'ios'
+          ? styles.shadowIOS
+          : Platform.OS === 'android'
+          ? styles.shadowAndroid
+          : Platform.OS === 'web'
+          ? styles.shadowWeb
+          : null,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -73,9 +77,7 @@ export const AddWidgetButtonPositioned: React.FC<AddWidgetButtonPositionedProps>
   containerStyle,
   ...buttonProps
 }) => {
-  const positionStyle = position === 'center' 
-    ? styles.centeredPosition 
-    : styles.endOfGridPosition;
+  const positionStyle = position === 'center' ? styles.centeredPosition : styles.endOfGridPosition;
 
   return (
     <View style={[positionStyle, containerStyle]}>

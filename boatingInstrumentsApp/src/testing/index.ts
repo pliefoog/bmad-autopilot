@@ -1,4 +1,4 @@
-// Testing Infrastructure Index  
+// Testing Infrastructure Index
 // Centralized export point for all testing utilities and helpers
 // Triple-Tier Testing Architecture (Story 11.1)
 
@@ -22,7 +22,7 @@ export * from './helpers/testHelpers';
  * Triple-Tier Testing Architecture Components (Story 11.1)
  */
 export * from './helpers/SimulatorTestClient';
-export * from './helpers/ScenarioEngine';  
+export * from './helpers/ScenarioEngine';
 export * from './helpers/TestTierManager';
 
 /**
@@ -30,24 +30,17 @@ export * from './helpers/TestTierManager';
  */
 
 // Quick test setup for NMEA data testing
-export { 
+export {
   renderWithProviders as renderWithNmeaData,
   createMockNmeaService as mockNmea,
   createTestNmeaData as testData,
 } from './helpers/testHelpers';
 
 // Performance testing utilities
-export {
-  PerformanceProfiler,
-  measureMemoryUsage,
-  mockTimers,
-} from './helpers/testHelpers';
+export { PerformanceProfiler, measureMemoryUsage, mockTimers } from './helpers/testHelpers';
 
 // Network simulation
-export {
-  NetworkSimulator,
-  waitForCondition,
-} from './helpers/testHelpers';
+export { NetworkSimulator, waitForCondition } from './helpers/testHelpers';
 
 /**
  * Testing Configuration
@@ -57,15 +50,15 @@ export const testConfig = {
   defaultTimeout: 5000,
   renderTimeout: 1000,
   animationTimeout: 300,
-  
+
   // Performance thresholds
   slowRenderThreshold: 16, // 16ms (60fps)
   memoryLeakThreshold: 50, // 50MB
-  
+
   // Network simulation defaults
   defaultLatency: 100,
   defaultErrorRate: 0.1,
-  
+
   // Data quality thresholds
   qualityThresholds: {
     excellent: { accuracy: 95, completeness: 90, freshness: 1000 },
@@ -73,18 +66,18 @@ export const testConfig = {
     fair: { accuracy: 70, completeness: 50, freshness: 5000 },
     poor: { accuracy: 50, completeness: 25, freshness: 10000 },
   },
-  
+
   // Test data defaults
   defaultNmeaFields: [
     'latitude',
-    'longitude', 
+    'longitude',
     'speed',
     'heading',
     'depth',
     'windSpeed',
-    'windDirection'
+    'windDirection',
   ],
-  
+
   // Widget testing defaults
   defaultWidgetConfig: {
     position: { x: 0, y: 0 },
@@ -105,31 +98,31 @@ export const navigationTestUtils = {
     longitude: lon,
     timestamp: Date.now(),
   }),
-  
+
   createSpeedData: (speed: number, units: 'knots' | 'mph' | 'kph' = 'knots') => ({
     speed,
     timestamp: Date.now(),
   }),
-  
+
   createCompassData: (heading: number) => ({
     heading: heading % 360,
     timestamp: Date.now(),
   }),
 };
 
-// Engine testing utilities  
+// Engine testing utilities
 export const engineTestUtils = {
   createEngineData: (rpm: number, temp: number) => ({
     engineRpm: rpm,
     engineTemperature: temp,
     timestamp: Date.now(),
   }),
-  
+
   createFuelData: (level: number) => ({
     fuelLevel: Math.max(0, Math.min(100, level)),
     timestamp: Date.now(),
   }),
-  
+
   createBatteryData: (voltage: number) => ({
     batteryVoltage: voltage,
     timestamp: Date.now(),
@@ -143,12 +136,12 @@ export const environmentTestUtils = {
     windDirection: direction % 360,
     timestamp: Date.now(),
   }),
-  
+
   createDepthData: (depth: number) => ({
     depth: Math.max(0, depth),
     timestamp: Date.now(),
   }),
-  
+
   createTemperatureData: (water: number, air: number) => ({
     waterTemperature: water,
     airTemperature: air,
@@ -161,16 +154,17 @@ export const autopilotTestUtils = {
   createAutopilotData: (
     status: 'standby' | 'active' | 'alarm',
     mode: 'compass' | 'wind' | 'nav',
-    heading?: number
+    heading?: number,
   ) => ({
     autopilotStatus: status,
     autopilotMode: mode,
     autopilotHeading: heading,
     timestamp: Date.now(),
   }),
-  
+
   createStandbyState: () => autopilotTestUtils.createAutopilotData('standby', 'compass'),
-  createActiveState: (heading: number) => autopilotTestUtils.createAutopilotData('active', 'compass', heading),
+  createActiveState: (heading: number) =>
+    autopilotTestUtils.createAutopilotData('active', 'compass', heading),
   createAlarmState: () => autopilotTestUtils.createAutopilotData('alarm', 'compass'),
 };
 
@@ -184,23 +178,23 @@ export const testAssertions = {
     expect(quality.completeness).toBeGreaterThan(70);
     expect(quality.freshness).toBeLessThan(5000);
   },
-  
+
   expectExcellentDataQuality: (quality: any) => {
     expect(quality.accuracy).toBeGreaterThan(95);
     expect(quality.completeness).toBeGreaterThan(90);
     expect(quality.freshness).toBeLessThan(1000);
   },
-  
+
   // Performance assertions
   expectFastRender: (renderTime: number) => {
     expect(renderTime).toBeLessThan(testConfig.slowRenderThreshold);
   },
-  
+
   expectNoMemoryLeak: (beforeUsage: number, afterUsage: number) => {
     const increase = afterUsage - beforeUsage;
     expect(increase).toBeLessThan(testConfig.memoryLeakThreshold);
   },
-  
+
   // Data validation assertions
   expectValidCoordinates: (lat: number, lon: number) => {
     expect(lat).toBeGreaterThanOrEqual(-90);
@@ -208,12 +202,12 @@ export const testAssertions = {
     expect(lon).toBeGreaterThanOrEqual(-180);
     expect(lon).toBeLessThanOrEqual(180);
   },
-  
+
   expectValidSpeed: (speed: number) => {
     expect(speed).toBeGreaterThanOrEqual(0);
     expect(speed).toBeLessThan(100); // Reasonable max for marine vessels
   },
-  
+
   expectValidHeading: (heading: number) => {
     expect(heading).toBeGreaterThanOrEqual(0);
     expect(heading).toBeLessThan(360);
@@ -228,11 +222,11 @@ export const testSetup = {
   setupTestEnvironment: () => {
     // Configure global test settings
     jest.setTimeout(testConfig.defaultTimeout);
-    
+
     // Mock console methods to reduce noise
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     // Setup performance monitoring
     if (typeof global.performance === 'undefined') {
       global.performance = {
@@ -240,18 +234,18 @@ export const testSetup = {
       } as any;
     }
   },
-  
+
   // Cleanup after tests
   cleanupTestEnvironment: () => {
     jest.restoreAllMocks();
     jest.clearAllTimers();
     jest.useRealTimers();
   },
-  
+
   // Setup for integration tests
   setupIntegrationTest: () => {
     testSetup.setupTestEnvironment();
-    
+
     // Additional setup for integration testing
     // Mock native modules if needed
     jest.mock('react-native', () => ({

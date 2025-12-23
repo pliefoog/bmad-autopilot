@@ -2,7 +2,7 @@
  * PlatformToggle Component
  * Story 13.2.2 - Task 2: Platform-native toggle/switch rendering
  * Epic 8 - Phase 1: TV Support Extension
- * 
+ *
  * Features:
  * - iOS: Native Switch component
  * - Android: Material Design toggle
@@ -14,15 +14,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  Switch,
-  StyleSheet,
-  Platform,
-  TouchableOpacity,
-  Animated,
-} from 'react-native';
+import { View, Text, Switch, StyleSheet, Platform, TouchableOpacity, Animated } from 'react-native';
 import { useTheme } from '../../../store/themeStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { settingsTokens, getPlatformTokens } from '../../../theme/settingsTokens';
@@ -35,19 +27,19 @@ import { isTV } from '../../../utils/platformDetection';
 export interface PlatformToggleProps {
   /** Current toggle state */
   value: boolean;
-  
+
   /** Change handler */
   onValueChange: (value: boolean) => void;
-  
+
   /** Accessible label text */
   label: string;
-  
+
   /** Disabled state */
   disabled?: boolean;
-  
+
   /** TV focus state (for TV navigation) */
   focused?: boolean;
-  
+
   /** Test ID for testing */
   testID?: string;
 }
@@ -68,7 +60,7 @@ const WebToggle: React.FC<{
 }> = ({ value, onValueChange, disabled, color, trackColor, thumbColor, testID, gloveMode }) => {
   const animatedValue = React.useRef(new Animated.Value(value ? 1 : 0)).current;
   const [isHovered, setIsHovered] = React.useState(false);
-  
+
   React.useEffect(() => {
     Animated.timing(animatedValue, {
       toValue: value ? 1 : 0,
@@ -76,29 +68,29 @@ const WebToggle: React.FC<{
       useNativeDriver: false,
     }).start();
   }, [value, animatedValue]);
-  
+
   const trackBackgroundColor = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [trackColor, color],
   });
-  
+
   // Scale dimensions based on glove mode
   const trackWidth = gloveMode ? 60 : 51;
   const trackHeight = gloveMode ? 36 : 31;
   const thumbSize = gloveMode ? 32 : 27;
   const thumbTranslate = gloveMode ? 26 : 22;
-  
+
   const thumbTranslateX = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [2, thumbTranslate],
   });
-  
+
   const handlePress = () => {
     if (!disabled) {
       onValueChange(!value);
     }
   };
-  
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -113,24 +105,24 @@ const WebToggle: React.FC<{
       <Animated.View
         style={[
           {
-        width: trackWidth,
-        height: trackHeight,
-        borderRadius: trackHeight / 2,
-        justifyContent: 'center',
+            width: trackWidth,
+            height: trackHeight,
+            borderRadius: trackHeight / 2,
+            justifyContent: 'center',
           },
           {
-        backgroundColor: trackBackgroundColor,
-        transform: isHovered && !disabled ? [{ scale: 1.05 }] : [{ scale: 1 }],
+            backgroundColor: trackBackgroundColor,
+            transform: isHovered && !disabled ? [{ scale: 1.05 }] : [{ scale: 1 }],
           },
         ]}
       >
         <Animated.View
           style={{
-        width: thumbSize,
-        height: thumbSize,
-        borderRadius: thumbSize / 2,
-        backgroundColor: thumbColor,
-        transform: [{ translateX: thumbTranslateX }],
+            width: thumbSize,
+            height: thumbSize,
+            borderRadius: thumbSize / 2,
+            backgroundColor: thumbColor,
+            transform: [{ translateX: thumbTranslateX }],
           }}
         />
       </Animated.View>
@@ -140,7 +132,7 @@ const WebToggle: React.FC<{
 
 /**
  * Platform-native toggle/switch component
- * 
+ *
  * @example
  * <PlatformToggle
  *   value={enabled}
@@ -162,24 +154,27 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   const tvMode = isTV();
   const styles = React.useMemo(
     () => createStyles(theme, platformTokens, tvMode, focused),
-    [theme, platformTokens, tvMode, focused]
+    [theme, platformTokens, tvMode, focused],
   );
   const haptics = useHapticFeedback();
-  
+
   // Use dedicated toggle theme colors for full control
   const labelColor = disabled ? theme.textSecondary : theme.text;
   const thumbColor = disabled ? theme.toggle.thumbDisabled : theme.toggle.thumb;
   const trackColorOff = disabled ? theme.toggle.trackOffDisabled : theme.toggle.trackOff;
   const trackColorOn = disabled ? theme.toggle.trackOnDisabled : theme.toggle.trackOn;
-  
+
   /**
    * Handle toggle change with haptic feedback
    */
-  const handleValueChange = React.useCallback((newValue: boolean) => {
-    haptics.triggerMedium(); // Medium impact for toggle action
-    onValueChange(newValue);
-  }, [onValueChange, haptics]);
-  
+  const handleValueChange = React.useCallback(
+    (newValue: boolean) => {
+      haptics.triggerMedium(); // Medium impact for toggle action
+      onValueChange(newValue);
+    },
+    [onValueChange, haptics],
+  );
+
   // Use native Switch for iOS and Android
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return (
@@ -200,7 +195,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
       </View>
     );
   }
-  
+
   // Use custom toggle for web
   return (
     <View style={styles.container} testID={testID}>
@@ -226,28 +221,30 @@ const createStyles = (
   theme: ReturnType<typeof useTheme>,
   platformTokens: ReturnType<typeof getPlatformTokens>,
   tvMode: boolean,
-  focused: boolean
-) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: settingsTokens.spacing.sm,
-    minHeight: tvMode ? platformTokens.touchTarget : settingsTokens.touchTargets.phone,
-    // TV focus border
-    ...(tvMode && focused && {
-      borderWidth: 4,
-      borderColor: theme.interactive,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-    }),
-  },
-  
-  label: {
-    flex: 1,
-    fontSize: platformTokens.typography.body.fontSize,
-    fontWeight: platformTokens.typography.body.fontWeight,
-    fontFamily: platformTokens.typography.fontFamily,
-    marginRight: settingsTokens.spacing.md,
-  },
-});
+  focused: boolean,
+) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: settingsTokens.spacing.sm,
+      minHeight: tvMode ? platformTokens.touchTarget : settingsTokens.touchTargets.phone,
+      // TV focus border
+      ...(tvMode &&
+        focused && {
+          borderWidth: 4,
+          borderColor: theme.interactive,
+          borderRadius: 8,
+          paddingHorizontal: 12,
+        }),
+    },
+
+    label: {
+      flex: 1,
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      fontFamily: platformTokens.typography.fontFamily,
+      marginRight: settingsTokens.spacing.md,
+    },
+  });

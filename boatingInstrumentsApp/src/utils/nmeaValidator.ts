@@ -19,7 +19,11 @@ export function computeChecksum(sentence: string): string {
   return hex.length === 1 ? '0' + hex : hex;
 }
 
-export function validateChecksum(sentence: string): { ok: boolean; expected?: string; found?: string } {
+export function validateChecksum(sentence: string): {
+  ok: boolean;
+  expected?: string;
+  found?: string;
+} {
   const found = checksumFromSentence(sentence);
   const expected = computeChecksum(sentence);
   if (!found) return { ok: false, expected, found: undefined };
@@ -44,7 +48,7 @@ export function validateStructure(sentence: string): { ok: boolean; errors: stri
       errors.push('invalid-checksum-format');
     }
   }
-  const body = (starIdx === -1 ? sentence.slice(1) : sentence.slice(1, starIdx));
+  const body = starIdx === -1 ? sentence.slice(1) : sentence.slice(1, starIdx);
   const fields = body.split(',');
   if (fields.length < 1) {
     errors.push('no-fields');
@@ -56,7 +60,11 @@ export function validateStructure(sentence: string): { ok: boolean; errors: stri
   return { ok: errors.length === 0, errors };
 }
 
-export function parseAndValidate(sentence: string): { ok: boolean; errors?: string[]; checksum?: { ok: boolean; expected?: string; found?: string } } {
+export function parseAndValidate(sentence: string): {
+  ok: boolean;
+  errors?: string[];
+  checksum?: { ok: boolean; expected?: string; found?: string };
+} {
   const struct = validateStructure(sentence);
   const cs = validateChecksum(sentence);
   const errors: string[] = [];

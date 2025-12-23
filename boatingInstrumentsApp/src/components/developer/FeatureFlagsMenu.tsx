@@ -1,6 +1,6 @@
 /**
  * Feature Flags Developer Menu
- * 
+ *
  * Developer UI for toggling VIP Platform feature flags.
  * Displays flags grouped by phase with descriptions.
  */
@@ -9,10 +9,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Modal } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 import { useFeatureFlagStore } from '../../store/featureFlagStore';
-import { 
-  FeatureFlags, 
-  FEATURE_FLAG_DESCRIPTIONS, 
-  FEATURE_FLAG_PHASES 
+import {
+  FeatureFlags,
+  FEATURE_FLAG_DESCRIPTIONS,
+  FEATURE_FLAG_PHASES,
 } from '../../config/featureFlags';
 
 interface FeatureFlagsMenuProps {
@@ -22,13 +22,8 @@ interface FeatureFlagsMenuProps {
 
 export const FeatureFlagsMenu: React.FC<FeatureFlagsMenuProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const { 
-    setFeatureFlag, 
-    resetToDefaults, 
-    enablePhase, 
-    disablePhase,
-    ...flags 
-  } = useFeatureFlagStore();
+  const { setFeatureFlag, resetToDefaults, enablePhase, disablePhase, ...flags } =
+    useFeatureFlagStore();
 
   const styles = StyleSheet.create({
     container: {
@@ -179,9 +174,7 @@ export const FeatureFlagsMenu: React.FC<FeatureFlagsMenuProps> = ({ visible, onC
           <View style={styles.headerContent}>
             <View>
               <Text style={styles.headerTitle}>VIP Platform Feature Flags</Text>
-              <Text style={styles.headerSubtitle}>
-                Epic 13 Progressive Rollout System
-              </Text>
+              <Text style={styles.headerSubtitle}>Epic 13 Progressive Rollout System</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
@@ -191,10 +184,7 @@ export const FeatureFlagsMenu: React.FC<FeatureFlagsMenuProps> = ({ visible, onC
 
         {/* Action Bar */}
         <View style={styles.actionBar}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={resetToDefaults}
-          >
+          <TouchableOpacity style={styles.actionButton} onPress={resetToDefaults}>
             <Text style={styles.actionButtonText}>Reset Defaults</Text>
           </TouchableOpacity>
         </View>
@@ -203,8 +193,8 @@ export const FeatureFlagsMenu: React.FC<FeatureFlagsMenuProps> = ({ visible, onC
         <ScrollView style={styles.scrollContent}>
           {FEATURE_FLAG_PHASES.map((phase) => {
             const phaseNum = getPhaseNumber(phase.phase);
-            const enabledCount = phase.flags.filter(flag => flags[flag]).length;
-            
+            const enabledCount = phase.flags.filter((flag) => flags[flag]).length;
+
             return (
               <View key={phase.phase} style={styles.phaseSection}>
                 {/* Phase Header */}
@@ -235,9 +225,7 @@ export const FeatureFlagsMenu: React.FC<FeatureFlagsMenuProps> = ({ visible, onC
                   <View key={flag} style={styles.flagRow}>
                     <View style={styles.flagInfo}>
                       <Text style={styles.flagName}>{flag}</Text>
-                      <Text style={styles.flagDescription}>
-                        {FEATURE_FLAG_DESCRIPTIONS[flag]}
-                      </Text>
+                      <Text style={styles.flagDescription}>{FEATURE_FLAG_DESCRIPTIONS[flag]}</Text>
                       <Text style={styles.flagStatus}>
                         Status: {flags[flag] ? '✅ Enabled' : '❌ Disabled'}
                       </Text>
@@ -246,9 +234,9 @@ export const FeatureFlagsMenu: React.FC<FeatureFlagsMenuProps> = ({ visible, onC
                       style={styles.switch}
                       value={flags[flag]}
                       onValueChange={() => handleToggleFlag(flag)}
-                      trackColor={{ 
-                        false: theme.border, 
-                        true: theme.primary 
+                      trackColor={{
+                        false: theme.border,
+                        true: theme.primary,
                       }}
                       thumbColor={flags[flag] ? '#FFFFFF' : theme.surface}
                       disabled={flag === 'USE_FEATURE_FLAG_SYSTEM'}

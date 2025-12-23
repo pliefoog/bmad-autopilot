@@ -10,7 +10,7 @@ export enum SafetyEventType {
   GPS_FAILURE = 'gps_failure',
   COMPASS_FAILURE = 'compass_failure',
   COMMAND_TIMEOUT = 'command_timeout',
-  SYSTEM_DEGRADATION = 'system_degradation'
+  SYSTEM_DEGRADATION = 'system_degradation',
 }
 
 /**
@@ -19,7 +19,7 @@ export enum SafetyEventType {
 export enum SafetyAlertLevel {
   INFO = 'info',
   WARNING = 'warning',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 /**
@@ -79,7 +79,7 @@ export class AutopilotSafetyManager {
       failedCommands: 0,
       autopilotStatus: 'unknown',
       gpsStatus: 'unknown',
-      compassStatus: 'unknown'
+      compassStatus: 'unknown',
     };
 
     this.initializeMonitoring();
@@ -101,11 +101,11 @@ export class AutopilotSafetyManager {
             level: SafetyAlertLevel.CRITICAL,
             message: 'NMEA connection lost - Autopilot unavailable',
             timestamp: Date.now(),
-            data: { timeSinceLastData }
+            data: { timeSinceLastData },
           });
 
           this.healthMetrics.connectionStatus = 'failed';
-          
+
           // Immediately disengage autopilot for safety
           this.handleConnectionLoss();
         }
@@ -124,25 +124,26 @@ export class AutopilotSafetyManager {
   private initializeAutopilotFaultMonitoring(): void {
     const faultMonitor = setInterval(() => {
       const autopilotData = useNmeaStore.getState().nmeaData.autopilot;
-      
+
       if (autopilotData) {
         // Check for command timeouts
-        if (autopilotData.commandStatus === 'sending' && 
-            autopilotData.lastCommandTime && 
-            Date.now() - autopilotData.lastCommandTime > AutopilotSafetyManager.COMMAND_TIMEOUT_MS) {
-          
+        if (
+          autopilotData.commandStatus === 'sending' &&
+          autopilotData.lastCommandTime &&
+          Date.now() - autopilotData.lastCommandTime > AutopilotSafetyManager.COMMAND_TIMEOUT_MS
+        ) {
           this.raiseEvent({
             id: `command_timeout_${Date.now()}`,
             type: SafetyEventType.COMMAND_TIMEOUT,
             level: SafetyAlertLevel.WARNING,
             message: 'Autopilot command timed out',
             timestamp: Date.now(),
-            data: { lastCommandTime: autopilotData.lastCommandTime }
+            data: { lastCommandTime: autopilotData.lastCommandTime },
           });
 
           // Update command status in store
           useNmeaStore.getState().setNmeaData({
-            autopilot: { ...autopilotData, commandStatus: 'timeout' }
+            autopilot: { ...autopilotData, commandStatus: 'timeout' },
           });
         }
 
@@ -154,7 +155,7 @@ export class AutopilotSafetyManager {
             level: SafetyAlertLevel.CRITICAL,
             message: 'Autopilot system fault detected',
             timestamp: Date.now(),
-            data: autopilotData
+            data: autopilotData,
           });
 
           this.healthMetrics.autopilotStatus = 'fault';
@@ -172,35 +173,37 @@ export class AutopilotSafetyManager {
     const overrideMonitor = setInterval(() => {
       const nmeaData = useNmeaStore.getState().nmeaData;
       const autopilotData = nmeaData.autopilot;
-      
+
       if (autopilotData?.active && nmeaData.heading !== undefined) {
         if (this.lastKnownHeading !== undefined) {
           const headingDifference = Math.abs(nmeaData.heading - this.lastKnownHeading);
-          const targetDifference = autopilotData.targetHeading ? 
-            Math.abs(nmeaData.heading - autopilotData.targetHeading) : 0;
+          const targetDifference = autopilotData.targetHeading
+            ? Math.abs(nmeaData.heading - autopilotData.targetHeading)
+            : 0;
 
           // Detect manual override if heading changes significantly without autopilot command
-          if (headingDifference > AutopilotSafetyManager.MANUAL_OVERRIDE_THRESHOLD && 
-              targetDifference > AutopilotSafetyManager.MANUAL_OVERRIDE_THRESHOLD &&
-              Date.now() - this.lastManualOverrideCheck > 5000) {
-            
+          if (
+            headingDifference > AutopilotSafetyManager.MANUAL_OVERRIDE_THRESHOLD &&
+            targetDifference > AutopilotSafetyManager.MANUAL_OVERRIDE_THRESHOLD &&
+            Date.now() - this.lastManualOverrideCheck > 5000
+          ) {
             this.raiseEvent({
               id: `manual_override_${Date.now()}`,
               type: SafetyEventType.MANUAL_OVERRIDE,
               level: SafetyAlertLevel.WARNING,
               message: 'Manual steering override detected',
               timestamp: Date.now(),
-              data: { 
-                currentHeading: nmeaData.heading, 
+              data: {
+                currentHeading: nmeaData.heading,
                 targetHeading: autopilotData.targetHeading,
-                difference: headingDifference 
-              }
+                difference: headingDifference,
+              },
             });
 
             this.lastManualOverrideCheck = Date.now();
           }
         }
-        
+
         this.lastKnownHeading = nmeaData.heading;
       }
     }, 2000);
@@ -222,14 +225,17 @@ export class AutopilotSafetyManager {
         if (this.healthMetrics.gpsStatus === 'failed') {
           this.resolveGpsFailure();
         }
-      } else if (now - this.healthMetrics.lastDataReceived > AutopilotSafetyManager.GPS_TIMEOUT_MS) {
+      } else if (
+        now - this.healthMetrics.lastDataReceived >
+        AutopilotSafetyManager.GPS_TIMEOUT_MS
+      ) {
         if (this.healthMetrics.gpsStatus !== 'failed') {
           this.raiseEvent({
             id: `gps_failure_${now}`,
             type: SafetyEventType.GPS_FAILURE,
             level: SafetyAlertLevel.CRITICAL,
             message: 'GPS signal lost - Navigation unreliable',
-            timestamp: now
+            timestamp: now,
           });
           this.healthMetrics.gpsStatus = 'failed';
         }
@@ -246,7 +252,7 @@ export class AutopilotSafetyManager {
           type: SafetyEventType.COMPASS_FAILURE,
           level: SafetyAlertLevel.CRITICAL,
           message: 'Compass data unavailable - Autopilot unreliable',
-          timestamp: now
+          timestamp: now,
         });
         this.healthMetrics.compassStatus = 'failed';
       }
@@ -292,15 +298,15 @@ export class AutopilotSafetyManager {
    */
   private handleConnectionLoss(): void {
     const store = useNmeaStore.getState();
-    
+
     // Immediately set autopilot to inactive for safety
     store.setNmeaData({
       autopilot: {
         ...store.nmeaData.autopilot,
         active: false,
         commandStatus: 'error',
-        commandMessage: 'Connection lost - Autopilot disengaged'
-      }
+        commandMessage: 'Connection lost - Autopilot disengaged',
+      },
     });
 
     // Update connection status
@@ -313,10 +319,10 @@ export class AutopilotSafetyManager {
   private resolveConnectionIssues(): void {
     this.healthMetrics.connectionStatus = 'healthy';
     this.healthMetrics.lastDataReceived = Date.now();
-    
+
     // Resolve related safety events
     this.resolveSafetyEvents(SafetyEventType.CONNECTION_LOSS);
-    
+
     useNmeaStore.getState().setConnectionStatus('connected');
   }
 
@@ -341,14 +347,16 @@ export class AutopilotSafetyManager {
    */
   private raiseEvent(event: SafetyEvent): void {
     this.safetyEvents.push(event);
-    
+
     // Add to NMEA store alarms
-    useNmeaStore.getState().updateAlarms([{
-      id: event.id,
-      message: event.message,
-      level: event.level,
-      timestamp: event.timestamp
-    }]);
+    useNmeaStore.getState().updateAlarms([
+      {
+        id: event.id,
+        message: event.message,
+        level: event.level,
+        timestamp: event.timestamp,
+      },
+    ]);
 
     // Log to console for debugging
     console.warn(`[AutopilotSafety] ${event.type}: ${event.message}`, event.data);
@@ -360,8 +368,8 @@ export class AutopilotSafetyManager {
   private resolveSafetyEvents(eventType: SafetyEventType): void {
     const now = Date.now();
     this.safetyEvents
-      .filter(event => event.type === eventType && !event.resolved)
-      .forEach(event => {
+      .filter((event) => event.type === eventType && !event.resolved)
+      .forEach((event) => {
         event.resolved = true;
         event.resolvedAt = now;
       });
@@ -374,7 +382,7 @@ export class AutopilotSafetyManager {
     this.commandHistory.push({
       timestamp: Date.now(),
       success,
-      responseTime
+      responseTime,
     });
 
     // Keep only last 100 commands for metrics
@@ -387,11 +395,12 @@ export class AutopilotSafetyManager {
     if (!success) {
       this.healthMetrics.failedCommands++;
     }
-    
-    this.healthMetrics.commandSuccessRate = 
-      ((this.healthMetrics.totalCommands - this.healthMetrics.failedCommands) / 
-       this.healthMetrics.totalCommands) * 100;
-    
+
+    this.healthMetrics.commandSuccessRate =
+      ((this.healthMetrics.totalCommands - this.healthMetrics.failedCommands) /
+        this.healthMetrics.totalCommands) *
+      100;
+
     this.healthMetrics.commandResponseTime = responseTime;
   }
 
@@ -407,7 +416,7 @@ export class AutopilotSafetyManager {
    */
   getSafetyEvents(resolved?: boolean): SafetyEvent[] {
     if (resolved !== undefined) {
-      return this.safetyEvents.filter(event => event.resolved === resolved);
+      return this.safetyEvents.filter((event) => event.resolved === resolved);
     }
     return [...this.safetyEvents];
   }
@@ -417,8 +426,8 @@ export class AutopilotSafetyManager {
    */
   clearOldEvents(olderThanMs: number = 24 * 60 * 60 * 1000): void {
     const cutoff = Date.now() - olderThanMs;
-    this.safetyEvents = this.safetyEvents.filter(event => 
-      !event.resolved || (event.resolvedAt && event.resolvedAt > cutoff)
+    this.safetyEvents = this.safetyEvents.filter(
+      (event) => !event.resolved || (event.resolvedAt && event.resolvedAt > cutoff),
     );
   }
 
@@ -426,7 +435,7 @@ export class AutopilotSafetyManager {
    * Cleanup method to stop all monitoring
    */
   destroy(): void {
-    this.monitoringIntervals.forEach(interval => clearInterval(interval));
+    this.monitoringIntervals.forEach((interval) => clearInterval(interval));
     this.monitoringIntervals = [];
   }
 }

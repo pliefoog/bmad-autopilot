@@ -4,7 +4,13 @@
 /**
  * Service lifecycle and state
  */
-export type ServiceStatus = 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'restarting';
+export type ServiceStatus =
+  | 'stopped'
+  | 'starting'
+  | 'running'
+  | 'stopping'
+  | 'error'
+  | 'restarting';
 
 export type ServicePriority = 'low' | 'normal' | 'high' | 'critical';
 
@@ -66,7 +72,7 @@ export interface ServiceMetrics {
 /**
  * Service events and lifecycle
  */
-export type ServiceEventType = 
+export type ServiceEventType =
   | 'starting'
   | 'started'
   | 'stopping'
@@ -185,29 +191,21 @@ export interface AutopilotService extends BaseService {
  * Service factory and dependency injection
  */
 export interface ServiceFactory {
-  createService<T extends BaseService>(
-    type: string, 
-    config: ServiceConfig
-  ): Promise<T>;
-  
+  createService<T extends BaseService>(type: string, config: ServiceConfig): Promise<T>;
+
   registerServiceType<T extends BaseService>(
-    type: string, 
-    constructor: new (config: ServiceConfig) => T
+    type: string,
+    constructor: new (config: ServiceConfig) => T,
   ): void;
-  
+
   getSupportedTypes(): string[];
 }
 
 export interface ServiceContainer {
-  register<T extends BaseService>(
-    identifier: string, 
-    service: T
-  ): void;
-  
-  resolve<T extends BaseService>(
-    identifier: string
-  ): T;
-  
+  register<T extends BaseService>(identifier: string, service: T): void;
+
+  resolve<T extends BaseService>(identifier: string): T;
+
   inject(target: any): void;
 }
 
@@ -219,7 +217,7 @@ export interface ServiceLogger {
   info(serviceId: string, message: string, context?: any): void;
   warn(serviceId: string, message: string, context?: any): void;
   error(serviceId: string, message: string, error?: Error, context?: any): void;
-  
+
   getLogs(serviceId?: string, level?: string, limit?: number): ServiceLogEntry[];
 }
 
@@ -308,20 +306,20 @@ export interface ServiceResilience {
     maxDelay: number;
     exponentialBackoff: boolean;
   };
-  
+
   circuitBreaker: {
     enabled: boolean;
     failureThreshold: number;
     recoveryTimeout: number;
     halfOpenMaxCalls: number;
   };
-  
+
   bulkhead: {
     enabled: boolean;
     maxConcurrentCalls: number;
     queueSize: number;
   };
-  
+
   timeout: {
     enabled: boolean;
     duration: number;

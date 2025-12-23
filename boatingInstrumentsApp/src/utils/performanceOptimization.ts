@@ -6,7 +6,7 @@ import React, { memo, useMemo, useCallback, useRef } from 'react';
 // Custom comparison function for React.memo with deep object comparison
 export const createMemoComparison = <T extends Record<string, any>>(
   shallowKeys: (keyof T)[] = [],
-  deepKeys: (keyof T)[] = []
+  deepKeys: (keyof T)[] = [],
 ) => {
   return (prevProps: T, nextProps: T): boolean => {
     // Check shallow keys first (fastest)
@@ -30,18 +30,28 @@ export const createMemoComparison = <T extends Record<string, any>>(
 // Marine widget specific memoization for NMEA data
 export const marineMemoComparison = (
   prevProps: { data?: any; theme?: any; config?: any },
-  nextProps: { data?: any; theme?: any; config?: any }
+  nextProps: { data?: any; theme?: any; config?: any },
 ): boolean => {
   // Fast path: check if data references are the same
-  if (prevProps.data === nextProps.data && 
-      prevProps.theme === nextProps.theme && 
-      prevProps.config === nextProps.config) {
+  if (
+    prevProps.data === nextProps.data &&
+    prevProps.theme === nextProps.theme &&
+    prevProps.config === nextProps.config
+  ) {
     return true;
   }
 
   // Check data values that actually matter for marine widgets
-  const marineFields = ['heading', 'speed', 'depth', 'latitude', 'longitude', 'windSpeed', 'windDirection'];
-  
+  const marineFields = [
+    'heading',
+    'speed',
+    'depth',
+    'latitude',
+    'longitude',
+    'windSpeed',
+    'windDirection',
+  ];
+
   for (const field of marineFields) {
     if (prevProps.data?.[field] !== nextProps.data?.[field]) {
       return false;
@@ -62,17 +72,19 @@ export const marineMemoComparison = (
 // HOC for marine widget optimization
 export function withMarineOptimization<T extends object>(
   WrappedComponent: React.ComponentType<T>,
-  componentName?: string
+  componentName?: string,
 ): React.ComponentType<T> {
   const OptimizedComponent = memo(WrappedComponent, marineMemoComparison);
-  OptimizedComponent.displayName = `MarineOptimized(${componentName || WrappedComponent.displayName || 'Component'})`;
+  OptimizedComponent.displayName = `MarineOptimized(${
+    componentName || WrappedComponent.displayName || 'Component'
+  })`;
   return OptimizedComponent;
 }
 
 // Performance-optimized selector hook for NMEA data
 export function useOptimizedNMEASelector<T>(
   selector: (state: any) => T,
-  equalityFn?: (left: T, right: T) => boolean
+  equalityFn?: (left: T, right: T) => boolean,
 ) {
   const lastResultRef = useRef<T | undefined>(undefined);
   const lastSelectorRef = useRef(selector);
@@ -85,11 +97,11 @@ export function useOptimizedNMEASelector<T>(
     // Return memoized selector
     return (state: any): T => {
       const result = selector(state);
-      
+
       if (lastResultRef.current === undefined || !isEqual(lastResultRef.current, result)) {
         lastResultRef.current = result;
       }
-      
+
       return lastResultRef.current;
     };
   }, [selector, equalityFn]);
@@ -98,61 +110,67 @@ export function useOptimizedNMEASelector<T>(
 // Throttled callback hook for high-frequency updates
 export function useThrottledCallback<T extends (...args: any[]) => any>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
   const lastCallTime = useRef(0);
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  return useCallback((...args: Parameters<T>) => {
-    const now = Date.now();
-    
-    if (now - lastCallTime.current >= delay) {
-      lastCallTime.current = now;
-      callback(...args);
-    } else {
-      // Clear existing timeout and set new one
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      timeoutRef.current = setTimeout(() => {
-        lastCallTime.current = Date.now();
+  return useCallback(
+    (...args: Parameters<T>) => {
+      const now = Date.now();
+
+      if (now - lastCallTime.current >= delay) {
+        lastCallTime.current = now;
         callback(...args);
-      }, delay - (now - lastCallTime.current));
-    }
-  }, [callback, delay]) as T;
+      } else {
+        // Clear existing timeout and set new one
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          lastCallTime.current = Date.now();
+          callback(...args);
+        }, delay - (now - lastCallTime.current));
+      }
+    },
+    [callback, delay],
+  ) as T;
 }
 
 // Debounced callback hook
 export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  return useCallback((...args: Parameters<T>) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      callback(...args);
-    }, delay);
-  }, [callback, delay]) as T;
+  return useCallback(
+    (...args: Parameters<T>) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    },
+    [callback, delay],
+  ) as T;
 }
 
 // Memoized value with custom equality
 export function useMemoWithEquality<T>(
   factory: () => T,
   deps: React.DependencyList,
-  equalityFn: (prev: T, next: T) => boolean
+  equalityFn: (prev: T, next: T) => boolean,
 ): T {
   const valueRef = useRef<T | undefined>(undefined);
   const depsRef = useRef<React.DependencyList | undefined>(undefined);
 
   return useMemo(() => {
     const newValue = factory();
-    
+
     // First render
     if (valueRef.current === undefined) {
       valueRef.current = newValue;
@@ -161,7 +179,8 @@ export function useMemoWithEquality<T>(
     }
 
     // Check if we should recalculate
-    const shouldRecalculate = !depsRef.current || 
+    const shouldRecalculate =
+      !depsRef.current ||
       deps.length !== depsRef.current.length ||
       deps.some((dep, index) => dep !== depsRef.current![index]);
 
@@ -178,19 +197,16 @@ export function useMemoWithEquality<T>(
 }
 
 // Performance measurement decorator
-export function measurePerformance<T extends (...args: any[]) => any>(
-  fn: T,
-  label?: string
-): T {
+export function measurePerformance<T extends (...args: any[]) => any>(fn: T, label?: string): T {
   return ((...args: Parameters<T>) => {
     const start = performance.now();
     const result = fn(...args);
     const end = performance.now();
-    
-    if (__DEV__ && end - start > 1) { // Only log if > 1ms
-      console.log(`⏱️  ${label || fn.name}: ${(end - start).toFixed(2)}ms`);
+
+    if (__DEV__ && end - start > 1) {
+      // Only log if > 1ms
     }
-    
+
     return result;
   }) as T;
 }
@@ -203,18 +219,18 @@ class MarineDataCache {
   get<T>(key: string): T | undefined {
     const entry = this.cache.get(key);
     if (!entry) return undefined;
-    
+
     if (Date.now() - entry.timestamp > this.TTL) {
       this.cache.delete(key);
       return undefined;
     }
-    
+
     return entry.value;
   }
 
   set(key: string, value: any): void {
     this.cache.set(key, { value, timestamp: Date.now() });
-    
+
     // Cleanup old entries periodically
     if (this.cache.size > 100) {
       const now = Date.now();
@@ -237,7 +253,7 @@ export const marineDataCache = new MarineDataCache();
 export function useCachedMarineCalculation<T>(
   key: string,
   calculator: () => T,
-  deps: React.DependencyList
+  deps: React.DependencyList,
 ): T {
   return useMemo(() => {
     const cached = marineDataCache.get<T>(key);
@@ -257,12 +273,12 @@ export const WidgetPerformanceConfig = {
   FAST_RENDER: 8,
   NORMAL_RENDER: 16,
   SLOW_RENDER: 32,
-  
+
   // Update frequencies for different data types
-  HIGH_FREQUENCY: 100,  // GPS, heading, speed
+  HIGH_FREQUENCY: 100, // GPS, heading, speed
   MEDIUM_FREQUENCY: 500, // Depth, temperature
-  LOW_FREQUENCY: 1000,   // Engine data, tanks
-  
+  LOW_FREQUENCY: 1000, // Engine data, tanks
+
   // Cache TTL values
   SHORT_CACHE: 250,
   MEDIUM_CACHE: 500,

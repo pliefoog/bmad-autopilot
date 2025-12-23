@@ -48,10 +48,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   ];
 
   return (
-    <Animated.View
-      style={[spinnerStyle, { transform: [{ rotate: spin }] }]}
-      testID={testID}
-    />
+    <Animated.View style={[spinnerStyle, { transform: [{ rotate: spin }] }]} testID={testID} />
   );
 };
 

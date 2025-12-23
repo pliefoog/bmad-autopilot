@@ -15,7 +15,7 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
 }) => {
   const theme = useTheme();
   const styles = createStyles(theme);
-  
+
   const {
     resetLayoutToAutoDiscovery,
     enableWidgetAutoRemoval,
@@ -24,9 +24,7 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
     setWidgetExpirationTimeout,
   } = useWidgetStore();
 
-  const dashboardConfig = useWidgetStore(state => 
-    state.dashboard
-  );
+  const dashboardConfig = useWidgetStore((state) => state.dashboard);
 
   // Convert timeout from ms to minutes for display
   const timeoutMinutes = Math.round(widgetExpirationTimeout / 60000);
@@ -46,7 +44,7 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
             onClose();
           },
         },
-      ]
+      ],
     );
   };
 
@@ -65,17 +63,8 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
   ];
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
-        onPress={onClose}
-      >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
         <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
           <View style={styles.menuContainer}>
             {/* Header */}
@@ -89,12 +78,12 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
             {/* Layout Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Layout</Text>
-              
+
               <View style={styles.infoBox}>
-                <UniversalIcon 
-                  name="information-circle-outline" 
-                  size={20} 
-                  color={theme.primary} 
+                <UniversalIcon
+                  name="information-circle-outline"
+                  size={20}
+                  color={theme.primary}
                   style={styles.infoIcon}
                 />
                 <Text style={styles.infoText}>
@@ -110,10 +99,10 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
                   onPress={handleResetLayout}
                   activeOpacity={0.7}
                 >
-                  <UniversalIcon 
-                    name="refresh" 
-                    size={20} 
-                    color={theme.error} 
+                  <UniversalIcon
+                    name="refresh"
+                    size={20}
+                    color={theme.error}
                     style={styles.buttonIcon}
                   />
                   <Text style={styles.resetButtonText}>Reset to Auto Layout</Text>
@@ -124,7 +113,7 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
             {/* Auto-Removal Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Widget Lifecycle</Text>
-              
+
               <View style={styles.settingRow}>
                 <View style={styles.settingLabel}>
                   <Text style={styles.settingText}>Auto-remove stale widgets</Text>
@@ -143,7 +132,8 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
               {enableWidgetAutoRemoval && (
                 <View style={styles.timeoutContainer}>
                   <Text style={styles.timeoutLabel}>
-                    Expiration timeout: {selectedTimeout} {selectedTimeout === 1 ? 'minute' : 'minutes'}
+                    Expiration timeout: {selectedTimeout}{' '}
+                    {selectedTimeout === 1 ? 'minute' : 'minutes'}
                   </Text>
                   <View style={styles.timeoutOptions}>
                     {timeoutOptions.map((option) => (
@@ -173,11 +163,7 @@ const DashboardSettingsMenuComponent: React.FC<DashboardSettingsMenuProps> = ({
 
             {/* Footer */}
             <View style={styles.footer}>
-              <TouchableOpacity
-                style={styles.doneButton}
-                onPress={onClose}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={styles.doneButton} onPress={onClose} activeOpacity={0.7}>
                 <Text style={styles.doneButtonText}>Done</Text>
               </TouchableOpacity>
             </View>

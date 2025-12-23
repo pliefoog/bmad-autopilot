@@ -21,31 +21,31 @@ export const AnimationConfig = {
     duration: 300,
     useNativeDriver: getUseNativeDriver(),
   },
-  
-  // Fast timing animation  
+
+  // Fast timing animation
   timingFast: {
     duration: 200,
     useNativeDriver: getUseNativeDriver(),
   },
-  
+
   // Slow timing animation
   timingSlow: {
     duration: 500,
     useNativeDriver: getUseNativeDriver(),
   },
-  
+
   // Menu slide animation
   menuSlide: {
     duration: 300,
     useNativeDriver: getUseNativeDriver(),
   },
-  
+
   // Toast animation
   toast: {
     duration: 250,
     useNativeDriver: getUseNativeDriver(),
   },
-  
+
   // Loading spinner animation
   spinner: {
     duration: 1000,
@@ -72,7 +72,7 @@ export const PlatformStyles = {
         textShadowRadius: radius,
       },
     }),
-    
+
   /**
    * Cross-platform box shadow
    * Uses boxShadow on web, shadow* properties on native

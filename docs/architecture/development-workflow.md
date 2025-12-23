@@ -12,6 +12,23 @@ npm --version
 npm install -g expo-cli eas-cli
 ```
 
+**Install Debugging Tools:**
+
+1. **Redux DevTools Extension** (for Zustand DevTools):
+   - **Chrome:** https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd
+   - **Firefox:** https://addons.mozilla.org/firefox/addon/reduxdevtools/
+   - **Edge:** Uses Chrome Web Store (same link as Chrome)
+
+2. **Verification:**
+   - Open browser DevTools (`F12` or `Cmd+Option+I`)
+   - Look for **Redux** tab
+   - Should show 9 stores: NMEA Store, Widget Store, Theme Store, Settings Store, Alarm Store, Toast Store, Sensor Config Store, Connection Store, Feature Flag Store
+
+3. **Usage:**
+   - See comprehensive guide: `docs/DEBUGGING-TOOLS-GUIDE.md`
+   - Time-travel debugging, state inspection, action filtering
+   - Zero performance impact when not open
+
 **Initial Setup:**
 ```bash
 # Clone repository

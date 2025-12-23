@@ -18,7 +18,12 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({ visible, o
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.surface, borderBottomColor: theme.border },
+          ]}
+        >
           <Pressable onPress={onClose} style={styles.headerButton}>
             <Text style={[styles.headerButtonText, { color: theme.primary }]}>Done</Text>
           </Pressable>
@@ -26,7 +31,9 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({ visible, o
           <View style={styles.headerButton} />
         </View>
         <View style={styles.content}>
-          <Text style={[styles.testText, { color: theme.text }]}>Minimal version - no errors expected</Text>
+          <Text style={[styles.testText, { color: theme.text }]}>
+            Minimal version - no errors expected
+          </Text>
         </View>
       </View>
     </Modal>
@@ -35,13 +42,13 @@ export const AlarmConfigDialog: React.FC<AlarmConfigDialogProps> = ({ visible, o
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16, 
-    paddingVertical: 12, 
-    borderBottomWidth: 1 
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
   headerButton: { width: 80, alignItems: 'center' },
   headerButtonText: { fontSize: 17, fontWeight: '600' },

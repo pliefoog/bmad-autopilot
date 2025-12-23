@@ -1,43 +1,42 @@
 /**
  * Units Configuration Dialog (Refactored)
  * CONFIG-DIALOG-REFACTOR-SPECIFICATION.md - Phase 5
- * 
+ *
  * Refactoring improvements:
  * - Zod schema for preset + 17 category validation
  * - useFormState with debouncing (300ms auto-save)
  * - Compact mobile-optimized layout (no collapsible sections)
  * - Preset preview with formatted example values
  * - Grid layout for unit selection (responsive wrapping)
- * 
+ *
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
  * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
  * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
- * 
+ *
  * Original: 470 lines | Refactored: 537 lines (14% increase due to Zod schema + preset preview feature)
  */
 
 import React, { useMemo, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { usePresentationStore } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
-import { PRESENTATIONS, Presentation, getPresentationConfigLabel } from '../../presentation/presentations';
+import {
+  PRESENTATIONS,
+  Presentation,
+  getPresentationConfigLabel,
+} from '../../presentation/presentations';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { useFormState } from '../../hooks/useFormState';
 
 /**
  * Units Configuration Dialog Props
- * 
+ *
  * @property visible - Controls modal visibility
  * @property onClose - Callback when dialog closes (auto-saves before closing)
- * 
+ *
  * **Component Behavior:**
  * - 4 presets: Nautical (EU/UK/US) + Custom
  * - 17 unit categories displayed compactly in scrollable list
@@ -45,7 +44,7 @@ import { useFormState } from '../../hooks/useFormState';
  * - Shows preset preview with example formatted values
  * - Custom mode enables individual unit selection
  * - Preset mode locks unit selection (switch to Custom to modify)
- * 
+ *
  * **Limitations:**
  * - Presets are static (not user-definable)
  * - Example values in preview are hardcoded samples
@@ -72,7 +71,7 @@ interface CategoryConfig {
 
 /**
  * Presentation Preset Structure
- * 
+ *
  * Defines a complete set of unit preferences for a region/standard.
  * Examples array provides sample formatted values for preview display.
  */
@@ -195,8 +194,18 @@ const CATEGORIES: CategoryConfig[] = [
   { key: 'current', name: 'Current', iconName: 'flash-outline', defaultCollapsed: true },
   { key: 'volume', name: 'Volume (Tanks)', iconName: 'cube-outline' },
   { key: 'time', name: 'Time', iconName: 'time-outline', defaultCollapsed: true },
-  { key: 'distance', name: 'Distance', iconName: 'arrows-horizontal-outline', defaultCollapsed: true },
-  { key: 'capacity', name: 'Battery Capacity', iconName: 'battery-charging-outline', defaultCollapsed: true },
+  {
+    key: 'distance',
+    name: 'Distance',
+    iconName: 'arrows-horizontal-outline',
+    defaultCollapsed: true,
+  },
+  {
+    key: 'capacity',
+    name: 'Battery Capacity',
+    iconName: 'battery-charging-outline',
+    defaultCollapsed: true,
+  },
   { key: 'flowRate', name: 'Flow Rate', iconName: 'water-outline', defaultCollapsed: true },
   { key: 'frequency', name: 'Frequency (AC)', iconName: 'radio-outline', defaultCollapsed: true },
   { key: 'power', name: 'Power', iconName: 'flash-outline', defaultCollapsed: true },
@@ -231,13 +240,10 @@ type UnitsFormData = z.infer<typeof unitsFormSchema>;
 
 // === MAIN COMPONENT ===
 
-export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
-  visible,
-  onClose,
-}) => {
+export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  
+
   const presentationStore = usePresentationStore();
   const { setPresentationForCategory, selectedPresentations } = presentationStore;
 
@@ -249,7 +255,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
     for (const preset of PRESETS) {
       if (preset.id === 'custom') continue;
       const matches = Object.entries(preset.presentations).every(
-        ([cat, presId]) => selectedPresentations[cat as DataCategory] === presId
+        ([cat, presId]) => selectedPresentations[cat as DataCategory] === presId,
       );
       if (matches) {
         detectedPreset = preset.id;
@@ -281,25 +287,19 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
   // === FORM STATE ===
 
-  const {
-    formData,
-    updateField,
-    updateFields,
-    reset,
-    isDirty,
-    saveNow,
-  } = useFormState<UnitsFormData>(initialFormData, {
-    onSave: (data) => {
-      // Apply all category selections to presentation store
-      CATEGORIES.forEach(({ key }) => {
-        if (data[key]) {
-          setPresentationForCategory(key, data[key]!);
-        }
-      });
-    },
-    debounceMs: 300,
-    validationSchema: unitsFormSchema,
-  });
+  const { formData, updateField, updateFields, reset, isDirty, saveNow } =
+    useFormState<UnitsFormData>(initialFormData, {
+      onSave: (data) => {
+        // Apply all category selections to presentation store
+        CATEGORIES.forEach(({ key }) => {
+          if (data[key]) {
+            setPresentationForCategory(key, data[key]!);
+          }
+        });
+      },
+      debounceMs: 300,
+      validationSchema: unitsFormSchema,
+    });
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -314,22 +314,25 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
    * Handle preset selection
    * Applies preset unit configuration to all 17 categories, or switches to Custom mode.
    */
-  const handlePresetSelect = useCallback((presetId: string) => {
-    if (presetId === 'custom') {
-      updateField('preset', presetId);
-      return;
-    }
+  const handlePresetSelect = useCallback(
+    (presetId: string) => {
+      if (presetId === 'custom') {
+        updateField('preset', presetId);
+        return;
+      }
 
-    const preset = PRESETS.find(p => p.id === presetId);
-    if (!preset) return;
+      const preset = PRESETS.find((p) => p.id === presetId);
+      if (!preset) return;
 
-    // Apply preset to form (triggers debounced save)
-    const updates: Partial<UnitsFormData> = { preset: presetId as any };
-    Object.entries(preset.presentations).forEach(([cat, presId]) => {
-      updates[cat as keyof UnitsFormData] = presId as any;
-    });
-    updateFields(updates);
-  }, [updateField, updateFields]);
+      // Apply preset to form (triggers debounced save)
+      const updates: Partial<UnitsFormData> = { preset: presetId as any };
+      Object.entries(preset.presentations).forEach(([cat, presId]) => {
+        updates[cat as keyof UnitsFormData] = presId as any;
+      });
+      updateFields(updates);
+    },
+    [updateField, updateFields],
+  );
 
   // === UNIT SELECTION ===
 
@@ -337,12 +340,15 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
    * Handle individual unit selection
    * Automatically switches to Custom preset when user modifies any category.
    */
-  const handleUnitSelect = useCallback((category: DataCategory, presentationId: string) => {
-    updateFields({
-      preset: 'custom',
-      [category]: presentationId,
-    });
-  }, [updateFields]);
+  const handleUnitSelect = useCallback(
+    (category: DataCategory, presentationId: string) => {
+      updateFields({
+        preset: 'custom',
+        [category]: presentationId,
+      });
+    },
+    [updateFields],
+  );
 
   // === CLOSE HANDLER ===
 
@@ -359,7 +365,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
 
   // === PRESET PREVIEW ===
 
-  const currentPreset = PRESETS.find(p => p.id === formData.preset);
+  const currentPreset = PRESETS.find((p) => p.id === formData.preset);
 
   // === RENDER ===
 
@@ -370,120 +376,123 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({
       onClose={handleClose}
       testID="units-config-dialog"
     >
-        {/* Preset Selector */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Preset</Text>
-        <Text style={[styles.hint, { color: theme.textSecondary }]}>
-          Choose a standard preset or customize individual units
-        </Text>
+      {/* Preset Selector */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Preset</Text>
+      <Text style={[styles.hint, { color: theme.textSecondary }]}>
+        Choose a standard preset or customize individual units
+      </Text>
 
-        <View style={styles.presetRow}>
-          {PRESETS.map(preset => (
-            <TouchableOpacity
-              key={preset.id}
+      <View style={styles.presetRow}>
+        {PRESETS.map((preset) => (
+          <TouchableOpacity
+            key={preset.id}
+            style={[
+              styles.presetChip,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+              formData.preset === preset.id && {
+                borderColor: theme.interactive,
+                backgroundColor: `${theme.interactive}15`,
+              },
+            ]}
+            onPress={() => handlePresetSelect(preset.id)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: formData.preset === preset.id }}
+            accessibilityLabel={`${preset.name}: ${preset.description}`}
+          >
+            <Text
               style={[
-                styles.presetChip,
-                { backgroundColor: theme.surface, borderColor: theme.border },
+                styles.presetText,
+                { color: theme.textSecondary },
                 formData.preset === preset.id && {
-                  borderColor: theme.interactive,
-                  backgroundColor: `${theme.interactive}15`,
+                  color: theme.text,
+                  fontWeight: '600',
                 },
               ]}
-              onPress={() => handlePresetSelect(preset.id)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: formData.preset === preset.id }}
-              accessibilityLabel={`${preset.name}: ${preset.description}`}
             >
-              <Text
-                style={[
-                  styles.presetText,
-                  { color: theme.textSecondary },
-                  formData.preset === preset.id && {
-                    color: theme.text,
-                    fontWeight: '600',
-                  },
-                ]}
-              >
-                {preset.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Preset Preview */}
-        {currentPreset && currentPreset.examples.length > 0 && (
-          <View style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>
-              Preview:
+              {preset.name}
             </Text>
-            <View style={styles.previewRow}>
-              {currentPreset.examples.map((ex, idx) => (
-                <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
-                  {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
-                </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Preset Preview */}
+      {currentPreset && currentPreset.examples.length > 0 && (
+        <View
+          style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}
+        >
+          <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>Preview:</Text>
+          <View style={styles.previewRow}>
+            {currentPreset.examples.map((ex, idx) => (
+              <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
+                {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Section divider */}
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+      {/* Locked mode hint */}
+      {formData.preset !== 'custom' && (
+        <View style={[styles.lockHintBox, { backgroundColor: `${theme.textSecondary}08` }]}>
+          <Text style={[styles.lockHintText, { color: theme.textSecondary }]}>
+            💡 Switch to Custom preset to modify individual units
+          </Text>
+        </View>
+      )}
+
+      {/* Individual Category Sections */}
+      {CATEGORIES.map((category) => {
+        const presentations = PRESENTATIONS[category.key]?.presentations || [];
+        const selectedPresId = formData[category.key];
+        const isCustomMode = formData.preset === 'custom';
+
+        return (
+          <View key={category.key} style={styles.categorySection}>
+            <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+
+            <View style={styles.unitsGrid}>
+              {presentations.map((pres) => (
+                <TouchableOpacity
+                  key={pres.id}
+                  style={[
+                    styles.unitButton,
+                    { backgroundColor: theme.surface, borderColor: theme.border },
+                    selectedPresId === pres.id && {
+                      borderColor: theme.interactive,
+                      backgroundColor: `${theme.interactive}15`,
+                    },
+                    !isCustomMode && { opacity: 0.5 },
+                  ]}
+                  onPress={() => isCustomMode && handleUnitSelect(category.key, pres.id)}
+                  disabled={!isCustomMode}
+                  accessibilityRole="radio"
+                  accessibilityState={{
+                    checked: selectedPresId === pres.id,
+                    disabled: !isCustomMode,
+                  }}
+                  accessibilityLabel={getPresentationConfigLabel(pres)}
+                >
+                  <Text
+                    style={[
+                      styles.unitText,
+                      { color: theme.textSecondary },
+                      selectedPresId === pres.id && {
+                        color: theme.text,
+                        fontWeight: '600',
+                      },
+                    ]}
+                  >
+                    {getPresentationConfigLabel(pres)}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
-        )}
-
-        {/* Section divider */}
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-        {/* Locked mode hint */}
-        {formData.preset !== 'custom' && (
-          <View style={[styles.lockHintBox, { backgroundColor: `${theme.textSecondary}08` }]}>
-            <Text style={[styles.lockHintText, { color: theme.textSecondary }]}>
-              💡 Switch to Custom preset to modify individual units
-            </Text>
-          </View>
-        )}
-
-        {/* Individual Category Sections */}
-        {CATEGORIES.map(category => {
-          const presentations = PRESENTATIONS[category.key]?.presentations || [];
-          const selectedPresId = formData[category.key];
-          const isCustomMode = formData.preset === 'custom';
-
-          return (
-            <View key={category.key} style={styles.categorySection}>
-              <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
-              
-              <View style={styles.unitsGrid}>
-                {presentations.map(pres => (
-                  <TouchableOpacity
-                    key={pres.id}
-                    style={[
-                      styles.unitButton,
-                      { backgroundColor: theme.surface, borderColor: theme.border },
-                      selectedPresId === pres.id && {
-                        borderColor: theme.interactive,
-                        backgroundColor: `${theme.interactive}15`,
-                      },
-                      !isCustomMode && { opacity: 0.5 },
-                    ]}
-                    onPress={() => isCustomMode && handleUnitSelect(category.key, pres.id)}
-                    disabled={!isCustomMode}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selectedPresId === pres.id, disabled: !isCustomMode }}
-                    accessibilityLabel={getPresentationConfigLabel(pres)}
-                  >
-                    <Text
-                      style={[
-                        styles.unitText,
-                        { color: theme.textSecondary },
-                        selectedPresId === pres.id && {
-                          color: theme.text,
-                          fontWeight: '600',
-                        },
-                      ]}
-                    >
-                      {getPresentationConfigLabel(pres)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          );
-        })}
+        );
+      })}
     </BaseConfigDialog>
   );
 };

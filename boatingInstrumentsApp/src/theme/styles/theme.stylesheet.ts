@@ -1,23 +1,6 @@
-import { StyleSheet, TextStyle, ViewStyle, Platform } from 'react-native';
+import { StyleSheet, TextStyle, ViewStyle } from 'react-native';
 import { ThemeColors } from '../store/themeStore';
-
-/**
- * Helper function to create cross-platform box shadow styles
- */
-const createBoxShadow = (color: string, offset: { x: number; y: number }, radius: number, opacity: number) => {
-  if (Platform.OS === 'ios') {
-    return {
-      shadowColor: color,
-      shadowOffset: offset,
-      shadowOpacity: opacity,
-      shadowRadius: radius,
-    };
-  } else {
-    return {
-      elevation: radius,
-    };
-  }
-};
+import { createShadow } from '../../utils/shadowUtils';
 
 /**
  * Creates a comprehensive themed stylesheet for all widget components.
@@ -31,7 +14,7 @@ const createBoxShadow = (color: string, offset: { x: number; y: number }, radius
  * ```typescript
  * const theme = useTheme();
  * const styles = createThemedStyles(theme);
- * 
+ *
  * <View style={styles.widgetContainer}>
  *   <View style={styles.widgetHeader}>
  *     <Text style={styles.title}>DEPTH</Text>
@@ -47,7 +30,7 @@ export const createThemedStyles = (theme: ThemeColors) => {
     // =========================
     // 1. CONTAINER STYLES
     // =========================
-    
+
     /**
      * Base widget wrapper container with theme-aware surface styling.
      * Includes proper shadow, border, and background for marine instrument displays.
@@ -60,7 +43,7 @@ export const createThemedStyles = (theme: ThemeColors) => {
       padding: 0,
       margin: 4,
       minWidth: 120,
-      ...createBoxShadow(theme.shadow, { x: 0, y: 2 }, 4, 0.1),
+      ...createShadow({ color: theme.shadow, offsetY: 2, radius: 4, opacity: 0.1 }),
       overflow: 'hidden',
     } as ViewStyle,
 
@@ -540,14 +523,14 @@ export const createThemedStyles = (theme: ThemeColors) => {
 
 /**
  * Helper function to get state-specific color from theme.
- * 
+ *
  * @param state - Widget state: 'normal' | 'warning' | 'error' | 'success' | 'no-data'
  * @param theme - ThemeColors object
  * @returns Color string for the specified state
  */
 export const getStateColor = (
   state: 'normal' | 'warning' | 'error' | 'success' | 'no-data' | 'alarm' | 'highlighted',
-  theme: ThemeColors
+  theme: ThemeColors,
 ): string => {
   switch (state) {
     case 'warning':

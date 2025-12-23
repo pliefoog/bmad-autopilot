@@ -2,7 +2,7 @@
  * PlatformButton Component
  * Story 13.2.2 - Task 4: Consistent button with platform feel
  * Epic 8 - Phase 1: TV Support Extension
- * 
+ *
  * Features:
  * - Adaptive touch target sizing (44pt phone, 56pt tablet, 60pt TV)
  * - Variants: primary, secondary, danger
@@ -39,35 +39,35 @@ export type ButtonVariant = 'primary' | 'secondary' | 'danger';
 export interface PlatformButtonProps {
   /** Press handler */
   onPress: () => void;
-  
+
   /** Button text */
   title: string;
-  
+
   /** Button variant (default: 'primary') */
   variant?: ButtonVariant;
-  
+
   /** Disabled state */
   disabled?: boolean;
-  
+
   /** Full width (stretches to container width) */
   fullWidth?: boolean;
-  
+
   /** Loading state (shows spinner, disables interaction) */
   loading?: boolean;
-  
+
   /** Optional icon name (from Ionicons) */
   icon?: string;
-  
+
   /** TV focus state (for TV navigation) */
   focused?: boolean;
-  
+
   /** Test ID for testing */
   testID?: string;
 }
 
 /**
  * Consistent button component with variants and haptic feedback
- * 
+ *
  * @example
  * <PlatformButton
  *   title="Save"
@@ -75,13 +75,13 @@ export interface PlatformButtonProps {
  *   onPress={handleSave}
  *   icon="checkmark-outline"
  * />
- * 
+ *
  * <PlatformButton
  *   title="Cancel"
  *   variant="secondary"
  *   onPress={handleCancel}
  * />
- * 
+ *
  * <PlatformButton
  *   title="Delete"
  *   variant="danger"
@@ -105,30 +105,30 @@ export const PlatformButton: React.FC<PlatformButtonProps> = ({
   const tvMode = isTV();
   const styles = React.useMemo(
     () => createStyles(theme, platformTokens, tvMode, focused),
-    [theme, platformTokens, tvMode, focused]
+    [theme, platformTokens, tvMode, focused],
   );
   const touchTargetSize = tvMode ? platformTokens.touchTarget : useTouchTargetSize();
   const haptics = useHapticFeedback();
-  
+
   /**
    * Handle press with haptic feedback
    */
   const handlePress = useCallback(() => {
     if (disabled || loading) return;
-    
+
     // Trigger appropriate haptic feedback based on variant
     if (variant === 'danger') {
       haptics.triggerMedium(); // Stronger feedback for destructive action
     } else {
       haptics.triggerLight(); // Light feedback for standard actions
     }
-    
+
     onPress();
   }, [disabled, loading, variant, haptics, onPress]);
-  
+
   // Get variant-specific styles
   const variantStyles = getVariantStyles(variant, theme);
-  
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -159,12 +159,12 @@ export const PlatformButton: React.FC<PlatformButtonProps> = ({
               style={styles.icon}
             />
           )}
-          <Text 
+          <Text
             style={[
-              styles.text, 
+              styles.text,
               variantStyles.text,
               // Force visibility with inline color as last resort
-              { color: variantStyles.text.color }
+              { color: variantStyles.text.color },
             ]}
             numberOfLines={1}
             allowFontScaling={false}
@@ -192,7 +192,7 @@ const getVariantStyles = (variant: ButtonVariant, theme: ReturnType<typeof useTh
           fontWeight: '600' as const,
         },
       };
-    
+
     case 'secondary':
       return {
         button: {
@@ -205,7 +205,7 @@ const getVariantStyles = (variant: ButtonVariant, theme: ReturnType<typeof useTh
           fontWeight: '500' as const,
         },
       };
-    
+
     case 'danger':
       return {
         button: {
@@ -216,7 +216,7 @@ const getVariantStyles = (variant: ButtonVariant, theme: ReturnType<typeof useTh
           fontWeight: '600' as const,
         },
       };
-    
+
     default:
       return {
         button: {
@@ -237,45 +237,47 @@ const createStyles = (
   theme: ReturnType<typeof useTheme>,
   platformTokens: ReturnType<typeof getPlatformTokens>,
   tvMode: boolean,
-  focused: boolean
-) => StyleSheet.create({
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: settingsTokens.spacing.lg,
-    borderRadius: settingsTokens.borderRadius.button,
-    // TV focus border
-    ...(tvMode && focused && {
-      borderWidth: 4,
-      borderColor: theme.interactive,
-    }),
-  },
-  
-  fullWidth: {
-    width: '100%',
-  },
-  
-  disabled: {
-    opacity: 0.5,
-  },
-  
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  
-  icon: {
-    marginRight: settingsTokens.spacing.sm,
-  },
-  
-  text: {
-    fontSize: platformTokens.typography.body.fontSize,
-    fontWeight: '500' as const,
-    fontFamily: platformTokens.typography.fontFamily,
-    // Ensure text is always visible with explicit color
-    ...(Platform.OS === 'web' && {
-      WebkitFontSmoothing: 'antialiased' as any,
-    }),
-  },
-});
+  focused: boolean,
+) =>
+  StyleSheet.create({
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: settingsTokens.spacing.lg,
+      borderRadius: settingsTokens.borderRadius.button,
+      // TV focus border
+      ...(tvMode &&
+        focused && {
+          borderWidth: 4,
+          borderColor: theme.interactive,
+        }),
+    },
+
+    fullWidth: {
+      width: '100%',
+    },
+
+    disabled: {
+      opacity: 0.5,
+    },
+
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+
+    icon: {
+      marginRight: settingsTokens.spacing.sm,
+    },
+
+    text: {
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: '500' as const,
+      fontFamily: platformTokens.typography.fontFamily,
+      // Ensure text is always visible with explicit color
+      ...(Platform.OS === 'web' && {
+        WebkitFontSmoothing: 'antialiased' as any,
+      }),
+    },
+  });

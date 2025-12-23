@@ -19,20 +19,19 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
   const { toasts } = useToastStore();
 
   // Sort toasts by priority and timestamp
-  const sortedToasts = [...toasts]
-    .sort((a, b) => {
-      // First by priority (critical > high > normal > low)
-      const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
-      const priorityA = priorityOrder[a.priority || 'normal'];
-      const priorityB = priorityOrder[b.priority || 'normal'];
-      
-      if (priorityA !== priorityB) {
-        return priorityB - priorityA; // Higher priority first
-      }
-      
-      // Then by timestamp (newer first)
-      return b.timestamp - a.timestamp;
-    });
+  const sortedToasts = [...toasts].sort((a, b) => {
+    // First by priority (critical > high > normal > low)
+    const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+    const priorityA = priorityOrder[a.priority || 'normal'];
+    const priorityB = priorityOrder[b.priority || 'normal'];
+
+    if (priorityA !== priorityB) {
+      return priorityB - priorityA; // Higher priority first
+    }
+
+    // Then by timestamp (newer first)
+    return b.timestamp - a.timestamp;
+  });
 
   // Limit number of visible toasts
   const visibleToasts = sortedToasts.slice(0, maxToasts);
@@ -49,7 +48,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
   ];
 
   return (
-    <View style={containerStyles} pointerEvents="box-none">
+    <View style={[containerStyles, { pointerEvents: 'box-none' }]}>
       {visibleToasts.map((toast, index) => (
         <ToastItem
           key={toast.id}
@@ -71,26 +70,26 @@ const styles = StyleSheet.create({
     zIndex: 9999, // Ensure toasts are above everything
     pointerEvents: 'box-none',
   },
-  
+
   // Position styles
   position_top: {
     top: Platform.OS === 'web' ? 80 : 60, // Account for HeaderBar
   },
-  
+
   position_center: {
     top: '50%',
     transform: [{ translateY: -50 }],
   },
-  
+
   position_bottom: {
     bottom: Platform.OS === 'web' ? 20 : 40,
   },
-  
+
   // Stack direction styles
   stack_vertical: {
     flexDirection: 'column',
   },
-  
+
   stack_horizontal: {
     flexDirection: 'row',
     flexWrap: 'wrap',

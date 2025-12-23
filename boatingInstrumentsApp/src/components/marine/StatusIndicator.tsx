@@ -6,11 +6,11 @@ import { getUseNativeDriver } from '../../utils/animationUtils';
 
 /**
  * StatusIndicator - Multi-state LED indicator component for marine safety status
- * 
+ *
  * Acceptance Criteria Satisfied:
  * - AC 4: Status Indicator Component with multi-state LED indicators for various marine equipment status
  * - AC 23: Marine Safety Colors with standard green (normal), amber (caution), red (alarm) color coding
- * 
+ *
  * Features:
  * - Multi-state LED indicators matching marine safety standards
  * - Standard marine color coding: green (normal), amber (caution), red (alarm)
@@ -51,7 +51,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
 }) => {
   const theme = useTheme();
   const pulseAnimation = useRef(new Animated.Value(1)).current;
-  
+
   // Get marine safety colors (AC 23) - theme-aware for red-night mode compliance
   const getStatusColor = (state: StatusState): string => {
     switch (state) {
@@ -69,7 +69,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
         return '#2A2A2A';
     }
   };
-  
+
   // Get status text
   const getStatusText = (state: StatusState): string => {
     switch (state) {
@@ -87,7 +87,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
         return 'OFF';
     }
   };
-  
+
   // Get size dimensions
   const getSizeDimensions = (sizeVariant: StatusSize) => {
     switch (sizeVariant) {
@@ -101,9 +101,9 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
         return { led: 16, font: 12, container: 20 };
     }
   };
-  
+
   const dimensions = getSizeDimensions(size);
-  
+
   // Pulsing animation for alarm states
   useEffect(() => {
     if (animated && status === 'alarm') {
@@ -119,10 +119,10 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
             duration: ANIMATION_DURATIONS.FAST,
             useNativeDriver: getUseNativeDriver(),
           }),
-        ])
+        ]),
       );
       pulseSequence.start();
-      
+
       return () => pulseSequence.stop();
     } else {
       // Reset to full opacity for non-alarm states
@@ -133,22 +133,18 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
       }).start();
     }
   }, [animated, status, pulseAnimation]);
-  
+
   const statusColor = getStatusColor(status);
   const statusText = getStatusText(status);
   const isActive = status !== 'off' && status !== 'unknown';
-  
+
   const styles = createStyles(theme, dimensions, statusColor, isActive);
-  
+
   return (
     <View style={[styles.container, style]} testID={testID}>
-      
       {/* LED Indicator */}
       <Animated.View
-        style={[
-          styles.ledContainer,
-          { opacity: pulseAnimation }
-        ]}
+        style={[styles.ledContainer, { opacity: pulseAnimation }]}
         testID={testID ? `${testID}-led` : 'status-led'}
       >
         <View style={styles.ledOuter}>
@@ -157,36 +153,27 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
           {isActive && <View style={styles.ledGlow} />}
         </View>
       </Animated.View>
-      
+
       {/* Status Text */}
       {showStatusText && (
-        <Text 
-          style={styles.statusText}
-          testID={testID ? `${testID}-text` : 'status-text'}
-        >
+        <Text style={styles.statusText} testID={testID ? `${testID}-text` : 'status-text'}>
           {statusText}
         </Text>
       )}
-      
-      {/* Optional Label */}
       {label && (
-        <Text 
-          style={styles.labelText}
-          testID={testID ? `${testID}-label` : 'status-label'}
-        >
+        <Text style={styles.labelText} testID={testID ? `${testID}-label` : 'status-label'}>
           {label}
         </Text>
       )}
-      
     </View>
   );
 };
 
 const createStyles = (
-  theme: any, 
-  dimensions: { led: number; font: number; container: number }, 
+  theme: any,
+  dimensions: { led: number; font: number; container: number },
   statusColor: string,
-  isActive: boolean
+  isActive: boolean,
 ) => {
   return StyleSheet.create({
     container: {
@@ -195,7 +182,7 @@ const createStyles = (
       minWidth: dimensions.container * 3,
       paddingVertical: 4,
     },
-    
+
     ledContainer: {
       width: dimensions.container,
       height: dimensions.container,
@@ -203,7 +190,7 @@ const createStyles = (
       justifyContent: 'center',
       marginBottom: 4,
     },
-    
+
     ledOuter: {
       width: dimensions.led,
       height: dimensions.led,
@@ -221,7 +208,7 @@ const createStyles = (
       shadowRadius: 3,
       elevation: 3,
     },
-    
+
     ledInner: {
       width: dimensions.led * 0.7,
       height: dimensions.led * 0.7,
@@ -229,7 +216,7 @@ const createStyles = (
       backgroundColor: isActive ? theme.text : statusColor,
       opacity: isActive ? 0.8 : 0.3,
     },
-    
+
     ledGlow: {
       position: 'absolute',
       width: dimensions.led * 1.5,
@@ -239,7 +226,7 @@ const createStyles = (
       opacity: 0.3,
       zIndex: -1,
     },
-    
+
     statusText: {
       fontSize: dimensions.font,
       fontFamily: 'monospace',
@@ -249,7 +236,7 @@ const createStyles = (
       marginTop: 2,
       letterSpacing: 0.5,
     },
-    
+
     labelText: {
       fontSize: dimensions.font - 2,
       fontFamily: 'monospace',

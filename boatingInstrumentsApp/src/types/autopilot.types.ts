@@ -4,26 +4,26 @@
 /**
  * Autopilot modes and states
  */
-export type AutopilotMode = 
+export type AutopilotMode =
   | 'standby'
-  | 'compass' 
-  | 'wind' 
+  | 'compass'
+  | 'wind'
   | 'gps'
   | 'track'
   | 'no-drift'
   | 'pilot-wind'
   | 'vane-wind';
 
-export type AutopilotStatus = 
+export type AutopilotStatus =
   | 'off'
-  | 'standby' 
+  | 'standby'
   | 'engaged'
   | 'turning'
   | 'tracking'
   | 'error'
   | 'calibrating';
 
-export type AutopilotResponseType = 
+export type AutopilotResponseType =
   | 'none'
   | 'acknowledge'
   | 'error'
@@ -34,7 +34,7 @@ export type AutopilotResponseType =
 /**
  * Autopilot command types
  */
-export type AutopilotCommandType = 
+export type AutopilotCommandType =
   | 'heading'
   | 'wind_angle'
   | 'track'
@@ -86,7 +86,7 @@ export interface AutopilotCapabilities {
   headingRange: { min: number; max: number };
   windAngleRange: { min: number; max: number };
   incrementSizes: number[];
-  
+
   // Feature support
   hasCompassMode: boolean;
   hasWindMode: boolean;
@@ -96,14 +96,14 @@ export interface AutopilotCapabilities {
   hasWaypointNavigation: boolean;
   hasAutoTrim: boolean;
   hasDodge: boolean;
-  
+
   // Performance characteristics
   maxCommandRate: number; // commands per minute
   responseTime: number; // milliseconds
   accuracy: number; // degrees
   stability: number; // degrees RMS
   maxTurnRate: number; // degrees per second
-  
+
   // Hardware info
   manufacturer?: string;
   model?: string;
@@ -140,22 +140,22 @@ export interface AutopilotPerformance {
   courseKeeping: number; // percentage on course
   averageError: number;
   maxError: number;
-  
+
   // Efficiency metrics
   rudderActivity: number; // degrees per minute
   energyEfficiency: number; // 0-100 score
   fuelEfficiency: number; // relative to manual steering
-  
+
   // Usage statistics
   engagedTime: number; // total time engaged
   commandsExecuted: number;
   successRate: number; // percentage successful
   averageResponseTime: number;
-  
+
   // Environmental adaptation
   seaStatePerformance: Record<number, number>; // sea state 0-9 vs performance
   windSpeedPerformance: Record<number, number>; // wind speed vs performance
-  
+
   timestamp: number;
 }
 
@@ -168,13 +168,13 @@ export interface AutopilotSafety {
   maxWindAngleDeviation: number;
   maxTurnRate: number;
   stallTimeout: number;
-  
+
   // Monitoring
   watchdog: boolean;
   deadManSwitch: boolean;
   collisionAvoidance: boolean;
   weatherRouting: boolean;
-  
+
   // Emergency procedures
   emergencyDisengage: boolean;
   autoStandbyConditions: string[];
@@ -202,14 +202,14 @@ export interface AutopilotConfig {
   defaultIncrement: number;
   responseLevel: 'slow' | 'medium' | 'fast';
   damping: number; // 0-100
-  
+
   // Advanced tuning
   proportionalGain: number;
   integralGain: number;
   derivativeGain: number;
   deadband: number;
   rateLimiting: boolean;
-  
+
   // Safety settings
   safetyLimits: AutopilotSafety;
   autoDisengage: {
@@ -219,7 +219,7 @@ export interface AutopilotConfig {
     depthThreshold: number;
     onManOverboard: boolean;
   };
-  
+
   // Display preferences
   showPerformanceMetrics: boolean;
   alertsEnabled: boolean;
@@ -289,19 +289,19 @@ export interface AutopilotIntegration {
   nmeaVersion: '0183' | '2000';
   talkerIds: string[];
   sentenceTypes: string[];
-  
+
   // Navigation system integration
   gpsIntegration: boolean;
   chartPlotterIntegration: boolean;
   radarIntegration: boolean;
   aisIntegration: boolean;
-  
+
   // Instrument integration
   windInstruments: boolean;
   depthSounders: boolean;
   speedLogs: boolean;
   gyrocompass: boolean;
-  
+
   // Control interfaces
   networkControl: boolean;
   remoteControl: boolean;
@@ -319,7 +319,7 @@ export interface AutopilotCalibration {
     deviation: Record<number, number>; // heading -> deviation
     lastCalibrated: number;
   };
-  
+
   rudderCalibration: {
     centerPosition: number;
     portLimit: number;
@@ -327,7 +327,7 @@ export interface AutopilotCalibration {
     gainSettings: Record<string, number>;
     lastCalibrated: number;
   };
-  
+
   seatrialData: {
     completed: boolean;
     conditions: string;

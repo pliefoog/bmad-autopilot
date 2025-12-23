@@ -44,25 +44,25 @@ export class Epic710SimulatorIntegration {
       return this.libraryConfig;
     }
 
-    console.log('📚 Loading Epic 7/10 scenario library...');
-
     const categories: string[] = [];
     const availableScenarios: ScenarioMetadata[] = [];
-    let epic11Scenarios: ScenarioMetadata[] = [];
+    const epic11Scenarios: ScenarioMetadata[] = [];
 
     try {
       // Scan all category directories
-      const categoryDirs = await fs.promises.readdir(this.scenariosBasePath, { withFileTypes: true });
-      
+      const categoryDirs = await fs.promises.readdir(this.scenariosBasePath, {
+        withFileTypes: true,
+      });
+
       for (const dir of categoryDirs) {
         if (dir.isDirectory() && !dir.name.startsWith('.')) {
           categories.push(dir.name);
-          
+
           const categoryPath = path.join(this.scenariosBasePath, dir.name);
           const scenarios = await this.loadScenariosFromCategory(dir.name, categoryPath);
-          
+
           availableScenarios.push(...scenarios);
-          
+
           // Filter Epic 11 specific scenarios
           if (dir.name === 'epic-11-widget-testing' || dir.name === 'story-validation') {
             epic11Scenarios.push(...scenarios);
@@ -75,16 +75,16 @@ export class Epic710SimulatorIntegration {
         categories,
         totalScenarios: availableScenarios.length,
         epic11Scenarios,
-        availableScenarios
+        availableScenarios,
       };
 
-      console.log(`✅ Scenario library loaded: ${this.libraryConfig.totalScenarios} scenarios across ${categories.length} categories`);
-      console.log(`📊 Epic 11 scenarios: ${epic11Scenarios.length}`);
-      
       return this.libraryConfig;
-
     } catch (error) {
-      throw new Error(`Failed to load scenario library: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load scenario library: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
   }
 
@@ -93,7 +93,7 @@ export class Epic710SimulatorIntegration {
    */
   async getScenariosByCategory(category: string): Promise<ScenarioMetadata[]> {
     const library = await this.loadScenarioLibrary();
-    return library.availableScenarios.filter(scenario => scenario.category === category);
+    return library.availableScenarios.filter((scenario) => scenario.category === category);
   }
 
   /**
@@ -101,10 +101,11 @@ export class Epic710SimulatorIntegration {
    */
   async getStory11Scenarios(): Promise<ScenarioMetadata[]> {
     const library = await this.loadScenarioLibrary();
-    return library.epic11Scenarios.filter(scenario => 
-      scenario.name.includes('11.3') || 
-      scenario.name.includes('simulator-discovery') ||
-      scenario.name.includes('auto-discovery')
+    return library.epic11Scenarios.filter(
+      (scenario) =>
+        scenario.name.includes('11.3') ||
+        scenario.name.includes('simulator-discovery') ||
+        scenario.name.includes('auto-discovery'),
     );
   }
 
@@ -128,8 +129,8 @@ export class Epic710SimulatorIntegration {
    */
   async loadScenarioContent(scenarioName: string): Promise<any> {
     const library = await this.loadScenarioLibrary();
-    const scenario = library.availableScenarios.find(s => s.name === scenarioName);
-    
+    const scenario = library.availableScenarios.find((s) => s.name === scenarioName);
+
     if (!scenario) {
       throw new Error(`Scenario '${scenarioName}' not found in library`);
     }
@@ -137,12 +138,14 @@ export class Epic710SimulatorIntegration {
     try {
       const content = await fs.promises.readFile(scenario.path, 'utf8');
       const parsed = yaml.load(content);
-      
-      console.log(`📄 Loaded scenario: ${scenarioName} from ${scenario.category}`);
+
       return parsed;
-      
     } catch (error) {
-      throw new Error(`Failed to load scenario content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load scenario content: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
   }
 
@@ -163,11 +166,9 @@ export class Epic710SimulatorIntegration {
       recommendations = await this.getScenariosByCategory('navigation');
       const autopilotScenarios = await this.getScenariosByCategory('autopilot');
       recommendations.push(...autopilotScenarios.slice(0, 2)); // Add 2 autopilot scenarios
-      
     } else if (capabilities.testTier === 'api-injection') {
       // API-only testing - recommend simpler scenarios
       recommendations = (await this.getScenariosByCategory('navigation')).slice(0, 3);
-      
     } else {
       // Mock testing - recommend basic scenarios for validation
       recommendations = (await this.getBasicTestScenarios()).slice(0, 1);
@@ -182,15 +183,14 @@ export class Epic710SimulatorIntegration {
   async validateScenarioCompatibility(scenarioName: string): Promise<boolean> {
     try {
       const content = await this.loadScenarioContent(scenarioName);
-      
+
       // Check for required fields and structure
       const requiredFields = ['metadata', 'config', 'messages'];
-      const hasRequiredFields = requiredFields.every(field => 
-        content && typeof content === 'object' && field in content
+      const hasRequiredFields = requiredFields.every(
+        (field) => content && typeof content === 'object' && field in content,
       );
-      
+
       return hasRequiredFields;
-      
     } catch (error) {
       console.warn(`Scenario compatibility check failed for '${scenarioName}': ${error}`);
       return false;
@@ -208,36 +208,35 @@ export class Epic710SimulatorIntegration {
     defaultScenarios: string[];
   } {
     return {
-      apiPort: 9090,   // Simulator Control API
-      wsPort: 8080,    // WebSocket server
-      tcpPort: 2000,   // TCP/UDP server
+      apiPort: 9090, // Simulator Control API
+      wsPort: 8080, // WebSocket server
+      tcpPort: 2000, // TCP/UDP server
       bindHost: '0.0.0.0',
-      defaultScenarios: [
-        'basic-navigation',
-        'coastal-sailing', 
-        'autopilot-engagement'
-      ]
+      defaultScenarios: ['basic-navigation', 'coastal-sailing', 'autopilot-engagement'],
     };
   }
 
   // Private helper methods
 
-  private async loadScenariosFromCategory(category: string, categoryPath: string): Promise<ScenarioMetadata[]> {
+  private async loadScenariosFromCategory(
+    category: string,
+    categoryPath: string,
+  ): Promise<ScenarioMetadata[]> {
     const scenarios: ScenarioMetadata[] = [];
-    
+
     try {
       const files = await fs.promises.readdir(categoryPath);
-      
+
       for (const file of files) {
         if (file.endsWith('.yml') || file.endsWith('.yaml')) {
           const scenarioPath = path.join(categoryPath, file);
           const scenarioName = path.basename(file, path.extname(file));
-          
+
           try {
             // Quick metadata extraction without full parsing
             const content = await fs.promises.readFile(scenarioPath, 'utf8');
             const parsed = yaml.load(content) as any;
-            
+
             scenarios.push({
               name: scenarioName,
               category,
@@ -246,19 +245,17 @@ export class Epic710SimulatorIntegration {
               duration: parsed?.metadata?.duration || parsed?.config?.duration,
               parameters: parsed?.config?.parameters,
               epic: parsed?.metadata?.epic,
-              story: parsed?.metadata?.story
+              story: parsed?.metadata?.story,
             });
-            
           } catch (error) {
             console.warn(`Failed to load scenario ${file}: ${error}`);
           }
         }
       }
-      
     } catch (error) {
       console.warn(`Failed to read category ${category}: ${error}`);
     }
-    
+
     return scenarios;
   }
 }

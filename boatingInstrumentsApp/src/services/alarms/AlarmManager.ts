@@ -1,10 +1,10 @@
 /**
  * AlarmManager - Central coordinator for all critical alarm functionality
  * Manages priority queue, escalation system, audio/visual coordination, and platform-specific alert delivery
- * 
+ *
  * Marine Safety Standards:
  * - False positive rate: <1%
- * - False negative rate: <0.1% 
+ * - False negative rate: <0.1%
  * - Threshold accuracy: ±5%
  * - Response time: <500ms
  * - Audio level: >85dB at 1 meter
@@ -12,7 +12,12 @@
 
 import { EventEmitter } from 'events';
 import type { AlarmLevel, Alarm } from '../../store/alarmStore';
-import { CriticalAlarmType, AlarmEscalationLevel, CriticalAlarmEvent, CriticalAlarmConfig } from './types';
+import {
+  CriticalAlarmType,
+  AlarmEscalationLevel,
+  CriticalAlarmEvent,
+  CriticalAlarmConfig,
+} from './types';
 import { MarineAudioAlertManager } from './MarineAudioAlertManager';
 import { AlarmHistoryLogger } from './AlarmHistoryLogger';
 import { AccessibilityService } from '../accessibility/AccessibilityService';
@@ -32,17 +37,17 @@ export interface AlarmManagerConfig {
   audioLevelDb: number; // >85dB requirement
   falsePositiveRateThreshold: number; // <1% requirement
   falseNegativeRateThreshold: number; // <0.1% requirement
-  
+
   // Persistence settings
   surviveAppBackgrounding: boolean;
   surviveDeviceSleep: boolean;
   continueUntilAcknowledged: boolean;
-  
+
   // Escalation timing
   escalationIntervals: {
     [key in AlarmEscalationLevel]: number; // milliseconds between escalations
   };
-  
+
   // Platform overrides
   platformSpecificAudio: boolean;
   visualOverrideCapability: boolean;
@@ -50,20 +55,20 @@ export interface AlarmManagerConfig {
 
 export class AlarmManager extends EventEmitter {
   private static instance: AlarmManager | null = null;
-  
+
   private config: AlarmManagerConfig;
   private alarmStore: AlarmStore;
   private audioManager: MarineAudioAlertManager;
   private historyLogger: AlarmHistoryLogger;
   private activeAlarmQueue: Map<string, CriticalAlarmEvent> = new Map();
   private escalationTimers: Map<string, NodeJS.Timeout> = new Map();
-  
+
   // Marine safety performance tracking
   private responseTimeMetrics: number[] = [];
   private falsePositiveCount = 0;
   private falseNegativeCount = 0;
   private totalAlarmsTriggered = 0;
-  
+
   private constructor(config: AlarmManagerConfig, alarmStore: AlarmStore) {
     super();
     this.config = config;
@@ -73,21 +78,23 @@ export class AlarmManager extends EventEmitter {
       platformSpecific: config.platformSpecificAudio,
     });
     this.historyLogger = new AlarmHistoryLogger();
-    
+
     // Initialize marine safety monitoring
     this.initializeMarineSafetyMonitoring();
   }
-  
+
   public static getInstance(config?: AlarmManagerConfig, alarmStore?: AlarmStore): AlarmManager {
     if (!AlarmManager.instance) {
       if (!config || !alarmStore) {
-        throw new Error('AlarmManager requires configuration and alarm store on first instantiation');
+        throw new Error(
+          'AlarmManager requires configuration and alarm store on first instantiation',
+        );
       }
       AlarmManager.instance = new AlarmManager(config, alarmStore);
     }
     return AlarmManager.instance;
   }
-  
+
   /**
    * Initialize marine safety monitoring and performance tracking
    */
@@ -96,30 +103,32 @@ export class AlarmManager extends EventEmitter {
     this.on('alarmTriggered', (event: CriticalAlarmEvent) => {
       const responseTime = Date.now() - event.detectedAt;
       this.responseTimeMetrics.push(responseTime);
-      
+
       // Keep only last 1000 measurements for rolling average
       if (this.responseTimeMetrics.length > 1000) {
         this.responseTimeMetrics.shift();
       }
-      
+
       // Alert if response time exceeds marine safety requirement
       if (responseTime > this.config.responseTimeThresholdMs) {
-        console.warn(`AlarmManager: Response time ${responseTime}ms exceeds marine safety requirement of ${this.config.responseTimeThresholdMs}ms`);
+        console.warn(
+          `AlarmManager: Response time ${responseTime}ms exceeds marine safety requirement of ${this.config.responseTimeThresholdMs}ms`,
+        );
       }
     });
-    
+
     // Monitor false positive/negative rates
     this.on('falsePositive', () => {
       this.falsePositiveCount++;
       this.checkMarineSafetyCompliance();
     });
-    
+
     this.on('falseNegative', () => {
       this.falseNegativeCount++;
       this.checkMarineSafetyCompliance();
     });
   }
-  
+
   /**
    * Trigger a critical alarm with marine safety requirements
    */
@@ -131,11 +140,11 @@ export class AlarmManager extends EventEmitter {
       message?: string;
       source?: string;
       metadata?: Record<string, any>;
-    }
+    },
   ): Promise<void> {
     const startTime = Date.now();
     const alarmId = `critical-${type}-${startTime}`;
-    
+
     // Create critical alarm event
     const alarmEvent: CriticalAlarmEvent = {
       id: alarmId,
@@ -151,12 +160,12 @@ export class AlarmManager extends EventEmitter {
       priority: this.getCriticalAlarmPriority(type),
       marineSafetyClassification: this.getMarineSafetyClassification(type),
     };
-    
+
     try {
       // Add to priority queue (fail-safe: always add critical alarms)
       this.activeAlarmQueue.set(alarmId, alarmEvent);
       this.totalAlarmsTriggered++;
-      
+
       // Add to alarm store with enhanced metadata
       this.alarmStore.addAlarm({
         message: alarmEvent.message,
@@ -165,30 +174,29 @@ export class AlarmManager extends EventEmitter {
         value: alarmEvent.value,
         threshold: alarmEvent.threshold,
       });
-      
+
       // Immediate audio/visual alerts (marine requirement: no delay)
       await this.triggerImmediateAlerts(alarmEvent);
-      
+
       // Start escalation timer if not acknowledged
       this.scheduleEscalation(alarmEvent);
-      
+
       // Log to history with marine safety context
       await this.historyLogger.logCriticalAlarm(alarmEvent);
-      
+
       // Emit event for UI components
       this.emit('alarmTriggered', alarmEvent);
-      
+
       // Track response time compliance
       const responseTime = Date.now() - startTime;
       this.emit('responseTimeRecorded', { alarmId, responseTime });
-      
     } catch (error) {
       console.error('AlarmManager: Failed to trigger critical alarm', {
         type,
         alarmId,
         error: error instanceof Error ? error.message : error,
       });
-      
+
       // Fail-safe: Still add to alarm store even if enhanced features fail
       this.alarmStore.addAlarm({
         message: `SYSTEM ALERT: ${type} - ${data.value} (threshold: ${data.threshold})`,
@@ -199,20 +207,20 @@ export class AlarmManager extends EventEmitter {
       });
     }
   }
-  
+
   /**
    * Acknowledge critical alarm with marine safety validation
    */
   public async acknowledgeCriticalAlarm(
     alarmId: string,
     acknowledgedBy: string = 'user',
-    requiresConfirmation: boolean = true
+    requiresConfirmation: boolean = true,
   ): Promise<boolean> {
     const alarmEvent = this.activeAlarmQueue.get(alarmId);
     if (!alarmEvent) {
       return false;
     }
-    
+
     try {
       // Marine safety requirement: Critical alarms require explicit acknowledgment
       if (requiresConfirmation && alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY) {
@@ -222,45 +230,44 @@ export class AlarmManager extends EventEmitter {
           return false;
         }
       }
-      
+
       // Update alarm event
       alarmEvent.acknowledgedAt = Date.now();
       alarmEvent.acknowledgedBy = acknowledgedBy;
-      
+
       // Stop escalation
       const escalationTimer = this.escalationTimers.get(alarmId);
       if (escalationTimer) {
         clearTimeout(escalationTimer);
         this.escalationTimers.delete(alarmId);
       }
-      
+
       // Stop audio alerts
       await this.audioManager.stopAlarmSound(alarmEvent.type);
-      
+
       // Story 4.4 AC10: Announce alarm acknowledgment to screen readers
       try {
         await AccessibilityService.announce(
           `${this.getAlarmTypeName(alarmEvent.type)} alarm acknowledged`,
-          'polite'
+          'polite',
         );
       } catch (error) {
         console.warn('AlarmManager: Failed to announce acknowledgment', error);
       }
-      
+
       // Update alarm store
       this.alarmStore.acknowledgeAlarm(alarmId, acknowledgedBy);
-      
+
       // Log acknowledgment
       await this.historyLogger.logAlarmAcknowledgment(alarmEvent, acknowledgedBy);
-      
+
       // Remove from active queue
       this.activeAlarmQueue.delete(alarmId);
-      
+
       // Emit acknowledgment event
       this.emit('alarmAcknowledged', { alarmEvent, acknowledgedBy });
-      
+
       return true;
-      
     } catch (error) {
       console.error('AlarmManager: Failed to acknowledge critical alarm', {
         alarmId,
@@ -269,7 +276,7 @@ export class AlarmManager extends EventEmitter {
       return false;
     }
   }
-  
+
   /**
    * Get marine safety compliance status
    */
@@ -280,32 +287,48 @@ export class AlarmManager extends EventEmitter {
     falseNegativeRate: number;
     issues: string[];
   } {
-    const avgResponseTime = this.responseTimeMetrics.length > 0
-      ? this.responseTimeMetrics.reduce((sum, time) => sum + time, 0) / this.responseTimeMetrics.length
-      : 0;
-      
-    const falsePositiveRate = this.totalAlarmsTriggered > 0
-      ? (this.falsePositiveCount / this.totalAlarmsTriggered) * 100
-      : 0;
-      
-    const falseNegativeRate = this.totalAlarmsTriggered > 0
-      ? (this.falseNegativeCount / this.totalAlarmsTriggered) * 100
-      : 0;
-      
+    const avgResponseTime =
+      this.responseTimeMetrics.length > 0
+        ? this.responseTimeMetrics.reduce((sum, time) => sum + time, 0) /
+          this.responseTimeMetrics.length
+        : 0;
+
+    const falsePositiveRate =
+      this.totalAlarmsTriggered > 0
+        ? (this.falsePositiveCount / this.totalAlarmsTriggered) * 100
+        : 0;
+
+    const falseNegativeRate =
+      this.totalAlarmsTriggered > 0
+        ? (this.falseNegativeCount / this.totalAlarmsTriggered) * 100
+        : 0;
+
     const issues: string[] = [];
-    
+
     if (avgResponseTime > this.config.responseTimeThresholdMs) {
-      issues.push(`Average response time ${avgResponseTime.toFixed(1)}ms exceeds ${this.config.responseTimeThresholdMs}ms requirement`);
+      issues.push(
+        `Average response time ${avgResponseTime.toFixed(1)}ms exceeds ${
+          this.config.responseTimeThresholdMs
+        }ms requirement`,
+      );
     }
-    
+
     if (falsePositiveRate > this.config.falsePositiveRateThreshold) {
-      issues.push(`False positive rate ${falsePositiveRate.toFixed(2)}% exceeds ${this.config.falsePositiveRateThreshold}% threshold`);
+      issues.push(
+        `False positive rate ${falsePositiveRate.toFixed(2)}% exceeds ${
+          this.config.falsePositiveRateThreshold
+        }% threshold`,
+      );
     }
-    
+
     if (falseNegativeRate > this.config.falseNegativeRateThreshold) {
-      issues.push(`False negative rate ${falseNegativeRate.toFixed(2)}% exceeds ${this.config.falseNegativeRateThreshold}% threshold`);
+      issues.push(
+        `False negative rate ${falseNegativeRate.toFixed(2)}% exceeds ${
+          this.config.falseNegativeRateThreshold
+        }% threshold`,
+      );
     }
-    
+
     return {
       compliant: issues.length === 0,
       averageResponseTime: avgResponseTime,
@@ -314,7 +337,7 @@ export class AlarmManager extends EventEmitter {
       issues,
     };
   }
-  
+
   /**
    * Test all alarm systems (marine safety requirement)
    */
@@ -332,42 +355,46 @@ export class AlarmManager extends EventEmitter {
       escalation: false,
       overall: false,
     };
-    
+
     try {
       // Test audio system
       results.audio = await this.audioManager.testAudioSystem();
-      
+
       // Test visual system (trigger test alarm)
       const testAlarmId = await this.triggerTestAlarm();
       results.visual = testAlarmId !== null;
-      
+
       // Test persistence (simulate app backgrounding)
       results.persistence = await this.testAlarmPersistence();
-      
+
       // Test escalation system
       results.escalation = await this.testEscalationSystem();
-      
+
       // Clean up test alarm
       if (testAlarmId) {
         await this.acknowledgeCriticalAlarm(testAlarmId, 'system-test', false);
       }
-      
-      results.overall = results.audio && results.visual && results.persistence && results.escalation;
-      
+
+      results.overall =
+        results.audio && results.visual && results.persistence && results.escalation;
+
       // Log test results
       await this.historyLogger.logSystemTest(results);
-      
+
       return results;
-      
     } catch (error) {
       console.error('AlarmManager: System test failed', error);
       return results;
     }
   }
-  
+
   // Private helper methods
-  
-  private determineEscalationLevel(type: CriticalAlarmType, value: number, threshold: number): AlarmEscalationLevel {
+
+  private determineEscalationLevel(
+    type: CriticalAlarmType,
+    value: number,
+    threshold: number,
+  ): AlarmEscalationLevel {
     // Marine-grade escalation based on severity and safety impact
     switch (type) {
       case CriticalAlarmType.SHALLOW_WATER:
@@ -375,28 +402,28 @@ export class AlarmManager extends EventEmitter {
         if (depthRatio <= 0.5) return AlarmEscalationLevel.EMERGENCY;
         if (depthRatio <= 0.75) return AlarmEscalationLevel.CRITICAL;
         return AlarmEscalationLevel.WARNING;
-        
+
       case CriticalAlarmType.ENGINE_OVERHEAT:
         const tempExcess = (value - threshold) / threshold;
         if (tempExcess >= 0.2) return AlarmEscalationLevel.EMERGENCY;
         if (tempExcess >= 0.1) return AlarmEscalationLevel.CRITICAL;
         return AlarmEscalationLevel.WARNING;
-        
+
       case CriticalAlarmType.LOW_BATTERY:
         const batteryLevel = value / threshold;
         if (batteryLevel <= 0.5) return AlarmEscalationLevel.CRITICAL;
         if (batteryLevel <= 0.75) return AlarmEscalationLevel.WARNING;
         return AlarmEscalationLevel.CAUTION;
-        
+
       case CriticalAlarmType.AUTOPILOT_FAILURE:
       case CriticalAlarmType.GPS_LOSS:
         return AlarmEscalationLevel.CRITICAL; // Always critical for navigation safety
-        
+
       default:
         return AlarmEscalationLevel.WARNING;
     }
   }
-  
+
   private getCriticalAlarmPriority(type: CriticalAlarmType): number {
     // Higher numbers = higher priority
     const priorityMap = {
@@ -406,10 +433,10 @@ export class AlarmManager extends EventEmitter {
       [CriticalAlarmType.GPS_LOSS]: 70, // Navigation system failure
       [CriticalAlarmType.LOW_BATTERY]: 60, // Power system monitoring
     };
-    
+
     return priorityMap[type] || 50;
   }
-  
+
   private getMarineSafetyClassification(type: CriticalAlarmType): string {
     // Classification based on marine safety standards
     const classificationMap = {
@@ -419,11 +446,15 @@ export class AlarmManager extends EventEmitter {
       [CriticalAlarmType.AUTOPILOT_FAILURE]: 'NAVIGATION_SYSTEM',
       [CriticalAlarmType.GPS_LOSS]: 'NAVIGATION_SYSTEM',
     };
-    
+
     return classificationMap[type] || 'GENERAL';
   }
-  
-  private generateDefaultMessage(type: CriticalAlarmType, value: number, threshold: number): string {
+
+  private generateDefaultMessage(
+    type: CriticalAlarmType,
+    value: number,
+    threshold: number,
+  ): string {
     switch (type) {
       case CriticalAlarmType.SHALLOW_WATER:
         return `SHALLOW WATER: ${value.toFixed(1)}m (limit: ${threshold.toFixed(1)}m)`;
@@ -457,8 +488,10 @@ export class AlarmManager extends EventEmitter {
         return 'Critical Alarm';
     }
   }
-  
-  private mapEscalationToAlarmLevel(escalation: AlarmEscalationLevel): 'info' | 'warning' | 'critical' {
+
+  private mapEscalationToAlarmLevel(
+    escalation: AlarmEscalationLevel,
+  ): 'info' | 'warning' | 'critical' {
     switch (escalation) {
       case AlarmEscalationLevel.INFO:
         return 'info';
@@ -472,71 +505,73 @@ export class AlarmManager extends EventEmitter {
         return 'warning';
     }
   }
-  
+
   private async triggerImmediateAlerts(alarmEvent: CriticalAlarmEvent): Promise<void> {
     // Audio alert (marine requirement: >85dB)
     await this.audioManager.playAlarmSound(alarmEvent.type, alarmEvent.escalationLevel);
-    
+
     // Story 4.4 AC10: Haptic feedback for critical alarms (accessibility feature)
     try {
-      const hapticPattern = alarmEvent.escalationLevel === AlarmEscalationLevel.CRITICAL || 
-                          alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY
-        ? [300, 150, 300, 150, 300] // Strong triple pulse for critical
-        : [200, 100, 200]; // Double pulse for warning/caution
-      
+      const hapticPattern =
+        alarmEvent.escalationLevel === AlarmEscalationLevel.CRITICAL ||
+        alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY
+          ? [300, 150, 300, 150, 300] // Strong triple pulse for critical
+          : [200, 100, 200]; // Double pulse for warning/caution
+
       vibratePattern(hapticPattern);
     } catch (error) {
       console.warn('AlarmManager: Failed to trigger haptic feedback', error);
       // Don't fail alarm trigger if haptic feedback fails
     }
-    
+
     // Story 4.4 AC10: Screen reader accessibility announcement for critical alarms
     try {
-      const severity = alarmEvent.escalationLevel === AlarmEscalationLevel.CRITICAL || 
-                      alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY
-        ? 'critical'
-        : 'warning';
-      
+      const severity =
+        alarmEvent.escalationLevel === AlarmEscalationLevel.CRITICAL ||
+        alarmEvent.escalationLevel === AlarmEscalationLevel.EMERGENCY
+          ? 'critical'
+          : 'warning';
+
       await AccessibilityService.announceAlarm(
         this.getAlarmTypeName(alarmEvent.type),
         severity,
-        alarmEvent.message
+        alarmEvent.message,
       );
     } catch (error) {
       console.warn('AlarmManager: Failed to announce alarm via accessibility service', error);
       // Don't fail alarm trigger if accessibility announcement fails
     }
-    
+
     // Visual alert handled by UI components listening to alarmTriggered event
-    
+
     // Platform notifications for background alerts
     if (this.config.surviveAppBackgrounding) {
       // Implementation would depend on platform-specific notification system
     }
   }
-  
+
   private scheduleEscalation(alarmEvent: CriticalAlarmEvent): void {
     const escalationInterval = this.config.escalationIntervals[alarmEvent.escalationLevel];
-    
+
     if (escalationInterval > 0) {
       const timer = setTimeout(() => {
         this.escalateAlarm(alarmEvent.id);
       }, escalationInterval);
-      
+
       this.escalationTimers.set(alarmEvent.id, timer);
     }
   }
-  
+
   private async escalateAlarm(alarmId: string): Promise<void> {
     const alarmEvent = this.activeAlarmQueue.get(alarmId);
     if (!alarmEvent || alarmEvent.acknowledgedAt) {
       return; // Alarm no longer active or already acknowledged
     }
-    
+
     // Increase escalation level if possible
     const currentLevel = alarmEvent.escalationLevel;
     let nextLevel: AlarmEscalationLevel;
-    
+
     switch (currentLevel) {
       case AlarmEscalationLevel.INFO:
         nextLevel = AlarmEscalationLevel.WARNING;
@@ -557,38 +592,40 @@ export class AlarmManager extends EventEmitter {
       default:
         nextLevel = AlarmEscalationLevel.WARNING;
     }
-    
+
     // Update alarm event
     alarmEvent.escalationLevel = nextLevel;
-    
+
     // Trigger escalated alerts
     await this.triggerImmediateAlerts(alarmEvent);
-    
+
     // Log escalation
     await this.historyLogger.logAlarmEscalation(alarmEvent, currentLevel, nextLevel);
-    
+
     // Schedule next escalation
     this.scheduleEscalation(alarmEvent);
-    
+
     // Emit escalation event
     this.emit('alarmEscalated', { alarmEvent, previousLevel: currentLevel, newLevel: nextLevel });
   }
-  
-  private async requestEmergencyAcknowledgmentConfirmation(alarmEvent: CriticalAlarmEvent): Promise<boolean> {
+
+  private async requestEmergencyAcknowledgmentConfirmation(
+    alarmEvent: CriticalAlarmEvent,
+  ): Promise<boolean> {
     // This would typically show a modal or special UI for emergency acknowledgment
     // For now, return true - implementation depends on UI framework
     return true;
   }
-  
+
   private checkMarineSafetyCompliance(): void {
     const compliance = this.getMarineSafetyComplianceStatus();
-    
+
     if (!compliance.compliant) {
       console.warn('AlarmManager: Marine safety compliance issues detected', compliance.issues);
       this.emit('complianceIssue', compliance);
     }
   }
-  
+
   private async triggerTestAlarm(): Promise<string | null> {
     try {
       const testAlarmId = `test-${Date.now()}`;
@@ -604,13 +641,13 @@ export class AlarmManager extends EventEmitter {
       return null;
     }
   }
-  
+
   private async testAlarmPersistence(): Promise<boolean> {
     // Test that alarms persist across app lifecycle changes
     // This would involve testing with actual app backgrounding scenarios
     return true; // Placeholder - actual implementation would test persistence
   }
-  
+
   private async testEscalationSystem(): Promise<boolean> {
     // Test escalation timing and behavior
     // This would involve creating a test alarm and verifying escalation

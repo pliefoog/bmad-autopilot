@@ -9,7 +9,13 @@ interface ProgressBarProps extends AccessibilityProps {
   testID?: string;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 6, style, testID, accessibilityLabel }) => {
+const ProgressBar: React.FC<ProgressBarProps> = ({
+  progress,
+  height = 6,
+  style,
+  testID,
+  accessibilityLabel,
+}) => {
   const theme = useTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const safeProgress = Math.max(0, Math.min(100, progress));
@@ -22,21 +28,25 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ progress, height = 6, style, 
       style={[styles.container, { height }, style]}
       testID={testID}
     >
-      <View testID={testID ? `${testID}-fill` : 'progress-fill'} style={[styles.fill, { width: `${safeProgress}%` }]} />
+      <View
+        testID={testID ? `${testID}-fill` : 'progress-fill'}
+        style={[styles.fill, { width: `${safeProgress}%` }]}
+      />
     </View>
   );
 };
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    backgroundColor: theme.borderLight,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    backgroundColor: theme.accent,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: theme.borderLight,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      backgroundColor: theme.accent,
+    },
+  });
 
 export default ProgressBar;

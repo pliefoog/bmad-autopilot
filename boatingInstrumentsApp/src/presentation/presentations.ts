@@ -1,22 +1,22 @@
 /**
  * Data Presentation Definitions
- * 
+ *
  * Defines how each data category can be presented to users.
  * Each presentation combines unit conversion + formatting.
- * 
+ *
  * Marine-focused with common sailing preferences.
  */
 
 import { DataCategory } from './categories';
 
 export interface PresentationFormat {
-  pattern: string;        // Marine format pattern (e.g., "xxx.x", "x Bf (Description)")
-  decimals: number;       // Number of decimal places
-  minWidth: number;       // Minimum width in characters for layout stability
+  pattern: string; // Marine format pattern (e.g., "xxx.x", "x Bf (Description)")
+  decimals: number; // Number of decimal places
+  minWidth: number; // Minimum width in characters for layout stability
   testCases: {
-    min: number;          // Minimum test value for worst-case measurement
-    max: number;          // Maximum test value for worst-case measurement  
-    typical: number;      // Typical value for normal measurement
+    min: number; // Minimum test value for worst-case measurement
+    max: number; // Maximum test value for worst-case measurement
+    typical: number; // Typical value for normal measurement
   };
 }
 
@@ -25,25 +25,28 @@ export interface Presentation {
   name: string;
   symbol: string;
   description: string;
-  
+
   // Conversion from base unit to display unit
   convert: (baseValue: number) => number;
-  
+
   // Format the converted value for display with optional metadata
-  format: (convertedValue: number, metadata?: { isLatitude?: boolean; [key: string]: any }) => string;
-  
+  format: (
+    convertedValue: number,
+    metadata?: { isLatitude?: boolean; [key: string]: any },
+  ) => string;
+
   // Reverse conversion for input/settings
   convertBack: (displayValue: number) => number;
-  
+
   // Enhanced format specification for layout stability
   formatSpec: PresentationFormat;
-  
+
   // UI properties
   isDefault?: boolean;
   isMetric?: boolean;
   isImperial?: boolean;
   isNautical?: boolean;
-  
+
   // Marine region preferences
   preferredInRegion?: ('eu' | 'us' | 'uk' | 'international')[];
 }
@@ -67,14 +70,14 @@ const DEPTH_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 6,
-      testCases: { min: 0.1, max: 999.9, typical: 15.5 }
+      testCases: { min: 0.1, max: 999.9, typical: 15.5 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
+    preferredInRegion: ['eu', 'international'],
   },
   {
-    id: 'm_0', 
+    id: 'm_0',
     name: 'Meters (integer)',
     symbol: 'm',
     description: 'Metric depth in meters, whole numbers only',
@@ -85,13 +88,13 @@ const DEPTH_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 1, max: 999, typical: 15 }
+      testCases: { min: 1, max: 999, typical: 15 },
     },
-    isMetric: true
+    isMetric: true,
   },
   {
     id: 'ft_0',
-    name: 'Feet (integer)', 
+    name: 'Feet (integer)',
     symbol: 'ft',
     description: 'Imperial depth in feet, whole numbers',
     convert: (meters) => meters * 3.28084,
@@ -101,15 +104,15 @@ const DEPTH_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 4,
-      testCases: { min: 1, max: 3280, typical: 50 }
+      testCases: { min: 1, max: 3280, typical: 50 },
     },
     isImperial: true,
-    preferredInRegion: ['us']
+    preferredInRegion: ['us'],
   },
   {
     id: 'ft_1',
     name: 'Feet (1 decimal)',
-    symbol: 'ft', 
+    symbol: 'ft',
     description: 'Imperial depth in feet with 1 decimal place',
     convert: (meters) => meters * 3.28084,
     format: (value) => value.toFixed(1),
@@ -118,9 +121,9 @@ const DEPTH_PRESENTATIONS: Presentation[] = [
       pattern: 'xxxx.x',
       decimals: 1,
       minWidth: 6,
-      testCases: { min: 0.3, max: 3280.8, typical: 50.9 }
+      testCases: { min: 0.3, max: 3280.8, typical: 50.9 },
     },
-    isImperial: true
+    isImperial: true,
   },
   {
     id: 'fth_1',
@@ -128,17 +131,17 @@ const DEPTH_PRESENTATIONS: Presentation[] = [
     symbol: 'fth',
     description: 'Nautical depth in fathoms with 1 decimal place',
     convert: (meters) => meters * 0.546807,
-    format: (value) => value.toFixed(1), 
+    format: (value) => value.toFixed(1),
     convertBack: (display) => display / 0.546807,
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.5, max: 546.8, typical: 8.2 }
+      testCases: { min: 0.5, max: 546.8, typical: 8.2 },
     },
     isNautical: true,
-    preferredInRegion: ['uk']
-  }
+    preferredInRegion: ['uk'],
+  },
 ];
 
 // ===== SPEED PRESENTATIONS =====
@@ -155,16 +158,16 @@ const SPEED_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.1, max: 99.9, typical: 6.5 }
+      testCases: { min: 0.1, max: 99.9, typical: 6.5 },
     },
     isDefault: true,
     isNautical: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'kts_0',
     name: 'Knots (integer)',
-    symbol: 'kts', 
+    symbol: 'kts',
     description: 'Nautical speed in knots, whole numbers',
     convert: (ms) => ms * 1.94384, // m/s to knots
     format: (value) => Math.round(value).toString(),
@@ -173,9 +176,9 @@ const SPEED_PRESENTATIONS: Presentation[] = [
       pattern: 'xx',
       decimals: 0,
       minWidth: 2,
-      testCases: { min: 1, max: 99, typical: 7 }
+      testCases: { min: 1, max: 99, typical: 7 },
     },
-    isNautical: true
+    isNautical: true,
   },
   {
     id: 'kmh_1',
@@ -189,9 +192,9 @@ const SPEED_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.2, max: 185.2, typical: 12.0 }
+      testCases: { min: 0.2, max: 185.2, typical: 12.0 },
     },
-    isMetric: true
+    isMetric: true,
   },
   {
     id: 'mph_1',
@@ -205,13 +208,13 @@ const SPEED_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.1, max: 114.8, typical: 7.5 }
+      testCases: { min: 0.1, max: 114.8, typical: 7.5 },
     },
-    isImperial: true
-  }
+    isImperial: true,
+  },
 ];
 
-// ===== WIND PRESENTATIONS =====  
+// ===== WIND PRESENTATIONS =====
 const WIND_PRESENTATIONS: Presentation[] = [
   {
     id: 'wind_kts_1',
@@ -225,11 +228,11 @@ const WIND_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 80.0, typical: 15.5 }
+      testCases: { min: 0.0, max: 80.0, typical: 15.5 },
     },
     isDefault: true,
     isNautical: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'bf_desc',
@@ -254,9 +257,19 @@ const WIND_PRESENTATIONS: Presentation[] = [
     },
     format: (bf) => {
       const descriptions = [
-        'Calm', 'Light Air', 'Light Breeze', 'Gentle Breeze',
-        'Moderate Breeze', 'Fresh Breeze', 'Strong Breeze', 'Near Gale',
-        'Gale', 'Strong Gale', 'Storm', 'Violent Storm', 'Hurricane'
+        'Calm',
+        'Light Air',
+        'Light Breeze',
+        'Gentle Breeze',
+        'Moderate Breeze',
+        'Fresh Breeze',
+        'Strong Breeze',
+        'Near Gale',
+        'Gale',
+        'Strong Gale',
+        'Storm',
+        'Violent Storm',
+        'Hurricane',
       ];
       return `${Math.round(bf)} Bf (${descriptions[Math.round(bf)] || 'Extreme'})`;
     },
@@ -269,10 +282,10 @@ const WIND_PRESENTATIONS: Presentation[] = [
       pattern: 'x Bf (Description)',
       decimals: 0,
       minWidth: 22,
-      testCases: { min: 0, max: 12, typical: 4 }
+      testCases: { min: 0, max: 12, typical: 4 },
     },
     isNautical: true,
-    preferredInRegion: ['uk']
+    preferredInRegion: ['uk'],
   },
   {
     id: 'bf_0',
@@ -304,9 +317,9 @@ const WIND_PRESENTATIONS: Presentation[] = [
       pattern: 'xx',
       decimals: 0,
       minWidth: 2,
-      testCases: { min: 0, max: 12, typical: 4 }
+      testCases: { min: 0, max: 12, typical: 4 },
     },
-    isNautical: true
+    isNautical: true,
   },
   {
     id: 'kmh_0',
@@ -320,10 +333,10 @@ const WIND_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 0, max: 148, typical: 29 }
+      testCases: { min: 0, max: 148, typical: 29 },
     },
-    isMetric: true
-  }
+    isMetric: true,
+  },
 ];
 
 // ===== TEMPERATURE PRESENTATIONS =====
@@ -340,11 +353,11 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: -40.0, max: 50.0, typical: 22.5 }
+      testCases: { min: -40.0, max: 50.0, typical: 22.5 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'uk', 'international']
+    preferredInRegion: ['eu', 'uk', 'international'],
   },
   {
     id: 'c_0',
@@ -358,43 +371,43 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: -40, max: 50, typical: 23 }
+      testCases: { min: -40, max: 50, typical: 23 },
     },
-    isMetric: true
+    isMetric: true,
   },
   {
     id: 'f_1',
     name: 'Fahrenheit (1 decimal)',
     symbol: '°F',
     description: 'Temperature in Fahrenheit with 1 decimal place',
-    convert: (celsius) => celsius * 9/5 + 32,
+    convert: (celsius) => (celsius * 9) / 5 + 32,
     format: (value) => value.toFixed(1),
-    convertBack: (display) => (display - 32) * 5/9,
+    convertBack: (display) => ((display - 32) * 5) / 9,
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: -40.0, max: 122.0, typical: 72.5 }
+      testCases: { min: -40.0, max: 122.0, typical: 72.5 },
     },
     isImperial: true,
-    preferredInRegion: ['us']
+    preferredInRegion: ['us'],
   },
   {
     id: 'f_0',
     name: 'Fahrenheit (integer)',
     symbol: '°F',
     description: 'Temperature in Fahrenheit, whole degrees',
-    convert: (celsius) => celsius * 9/5 + 32,
+    convert: (celsius) => (celsius * 9) / 5 + 32,
     format: (value) => Math.round(value).toString(),
-    convertBack: (display) => (display - 32) * 5/9,
+    convertBack: (display) => ((display - 32) * 5) / 9,
     formatSpec: {
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: -40, max: 122, typical: 73 }
+      testCases: { min: -40, max: 122, typical: 73 },
     },
-    isImperial: true
-  }
+    isImperial: true,
+  },
 ];
 
 // ===== PRESSURE PRESENTATIONS =====
@@ -411,11 +424,11 @@ const PRESSURE_PRESENTATIONS: Presentation[] = [
       pattern: 'x.x',
       decimals: 1,
       minWidth: 3,
-      testCases: { min: 2.0, max: 5.5, typical: 3.4 }
+      testCases: { min: 2.0, max: 5.5, typical: 3.4 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
+    preferredInRegion: ['eu', 'international'],
   },
   {
     id: 'bar_3',
@@ -429,10 +442,10 @@ const PRESSURE_PRESENTATIONS: Presentation[] = [
       pattern: 'x.xxx',
       decimals: 3,
       minWidth: 5,
-      testCases: { min: 0.950, max: 1.050, typical: 1.013 }
+      testCases: { min: 0.95, max: 1.05, typical: 1.013 },
     },
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
+    preferredInRegion: ['eu', 'international'],
   },
   {
     id: 'psi_1',
@@ -446,10 +459,10 @@ const PRESSURE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 13.8, max: 15.2, typical: 14.7 }
+      testCases: { min: 13.8, max: 15.2, typical: 14.7 },
     },
     isImperial: true,
-    preferredInRegion: ['us']
+    preferredInRegion: ['us'],
   },
   {
     id: 'inhg_2',
@@ -463,11 +476,11 @@ const PRESSURE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.xx',
       decimals: 2,
       minWidth: 5,
-      testCases: { min: 28.0, max: 31.0, typical: 29.92 }
+      testCases: { min: 28.0, max: 31.0, typical: 29.92 },
     },
     isImperial: true,
-    preferredInRegion: ['us', 'uk']
-  }
+    preferredInRegion: ['us', 'uk'],
+  },
 ];
 
 // ===== ANGLE PRESENTATIONS =====
@@ -484,11 +497,11 @@ const ANGLE_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 0, max: 360, typical: 180 }
+      testCases: { min: 0, max: 360, typical: 180 },
     },
     isDefault: true,
     isNautical: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'deg_1',
@@ -502,11 +515,11 @@ const ANGLE_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 360.0, typical: 180.5 }
+      testCases: { min: 0.0, max: 360.0, typical: 180.5 },
     },
     isNautical: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== COORDINATES PRESENTATIONS =====
@@ -520,7 +533,8 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     format: (deg: number, metadata?: { isLatitude?: boolean }) => {
       const absValue = Math.abs(deg);
       if (metadata?.isLatitude !== undefined) {
-        const direction = deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : (metadata.isLatitude ? 'S' : 'W');
+        const direction =
+          deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : metadata.isLatitude ? 'S' : 'W';
         return `${absValue.toFixed(6)}° ${direction}`;
       }
       return deg.toFixed(6); // Fallback without hemisphere
@@ -530,11 +544,11 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.xxxxxx° X',
       decimals: 6,
       minWidth: 14,
-      testCases: { min: 0.000000, max: 180.000000, typical: 73.123456 }
+      testCases: { min: 0.0, max: 180.0, typical: 73.123456 },
     },
     isDefault: true,
     isNautical: true,
-    preferredInRegion: ['international']
+    preferredInRegion: ['international'],
   },
   {
     id: 'ddm_3',
@@ -547,22 +561,23 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       const d = Math.floor(absValue);
       const m = (absValue - d) * 60;
       const baseFormat = `${d}° ${m.toFixed(3).padStart(6, '0')}′`;
-      
+
       if (metadata?.isLatitude !== undefined) {
-        const direction = deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : (metadata.isLatitude ? 'S' : 'W');
+        const direction =
+          deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : metadata.isLatitude ? 'S' : 'W';
         return `${baseFormat} ${direction}`;
       }
       return deg < 0 ? `-${baseFormat}` : baseFormat;
     },
     convertBack: (deg: number) => deg,
     formatSpec: {
-      pattern: "xxx° xx.xxx′ X",
+      pattern: 'xxx° xx.xxx′ X',
       decimals: 3,
       minWidth: 15,
-      testCases: { min: 0, max: 180, typical: 73.5 }
+      testCases: { min: 0, max: 180, typical: 73.5 },
     },
     isNautical: true,
-    preferredInRegion: ['eu', 'us', 'uk']
+    preferredInRegion: ['eu', 'us', 'uk'],
   },
   {
     id: 'dms_1',
@@ -578,9 +593,10 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       const s = (minTotal - m) * 60;
       // Compact format with minimal spacing
       const baseFormat = `${d}°${m.toString().padStart(2, '0')}′${s.toFixed(1).padStart(4, '0')}″`;
-      
+
       if (metadata?.isLatitude !== undefined) {
-        const direction = deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : (metadata.isLatitude ? 'S' : 'W');
+        const direction =
+          deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : metadata.isLatitude ? 'S' : 'W';
         return `${baseFormat}\u2009${direction}`; // Thin space (U+2009) for compact but readable separation
       }
       return deg < 0 ? `-${baseFormat}` : baseFormat;
@@ -590,10 +606,10 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       pattern: `xxx°xx′xx.x″ X`,
       decimals: 1,
       minWidth: 15,
-      testCases: { min: 0, max: 180, typical: 73.5 }
+      testCases: { min: 0, max: 180, typical: 73.5 },
     },
     isNautical: true,
-    preferredInRegion: ['uk', 'international']
+    preferredInRegion: ['uk', 'international'],
   },
   {
     id: 'utm',
@@ -610,11 +626,11 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       pattern: 'UTM xxx',
       decimals: 0,
       minWidth: 8,
-      testCases: { min: 0, max: 60, typical: 32 }
+      testCases: { min: 0, max: 60, typical: 32 },
     },
     isNautical: false,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== VOLTAGE PRESENTATIONS =====
@@ -631,11 +647,11 @@ const VOLTAGE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.xx',
       decimals: 2,
       minWidth: 5,
-      testCases: { min: 10.50, max: 14.80, typical: 12.60 }
+      testCases: { min: 10.5, max: 14.8, typical: 12.6 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'v_1',
@@ -649,11 +665,11 @@ const VOLTAGE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 10.5, max: 14.8, typical: 12.6 }
+      testCases: { min: 10.5, max: 14.8, typical: 12.6 },
     },
     isMetric: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== CURRENT PRESENTATIONS =====
@@ -670,11 +686,11 @@ const CURRENT_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.xx',
       decimals: 2,
       minWidth: 6,
-      testCases: { min: 0.00, max: 100.00, typical: 5.25 }
+      testCases: { min: 0.0, max: 100.0, typical: 5.25 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'a_1',
@@ -688,11 +704,11 @@ const CURRENT_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 100.0, typical: 5.2 }
+      testCases: { min: 0.0, max: 100.0, typical: 5.2 },
     },
     isMetric: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== VOLUME PRESENTATIONS =====
@@ -709,11 +725,11 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 0, max: 500, typical: 150 }
+      testCases: { min: 0, max: 500, typical: 150 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
+    preferredInRegion: ['eu', 'international'],
   },
   {
     id: 'gal_us_1',
@@ -727,10 +743,10 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 132.1, typical: 39.6 }
+      testCases: { min: 0.0, max: 132.1, typical: 39.6 },
     },
     isImperial: true,
-    preferredInRegion: ['us']
+    preferredInRegion: ['us'],
   },
   {
     id: 'gal_uk_1',
@@ -744,11 +760,11 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 110.0, typical: 33.0 }
+      testCases: { min: 0.0, max: 110.0, typical: 33.0 },
     },
     isImperial: true,
-    preferredInRegion: ['uk']
-  }
+    preferredInRegion: ['uk'],
+  },
 ];
 
 // ===== TIME PRESENTATIONS =====
@@ -765,11 +781,11 @@ const TIME_PRESENTATIONS: Presentation[] = [
       pattern: 'xxxx.x',
       decimals: 1,
       minWidth: 6,
-      testCases: { min: 0.0, max: 9999.9, typical: 123.5 }
+      testCases: { min: 0.0, max: 9999.9, typical: 123.5 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'h_0',
@@ -783,11 +799,11 @@ const TIME_PRESENTATIONS: Presentation[] = [
       pattern: 'xxxx',
       decimals: 0,
       minWidth: 4,
-      testCases: { min: 0, max: 9999, typical: 123 }
+      testCases: { min: 0, max: 9999, typical: 123 },
     },
     isMetric: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== DISTANCE PRESENTATIONS =====
@@ -804,11 +820,11 @@ const DISTANCE_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 100.0, typical: 12.5 }
+      testCases: { min: 0.0, max: 100.0, typical: 12.5 },
     },
     isDefault: true,
     isNautical: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'km_1',
@@ -822,10 +838,10 @@ const DISTANCE_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 185.2, typical: 23.1 }
+      testCases: { min: 0.0, max: 185.2, typical: 23.1 },
     },
     isMetric: true,
-    preferredInRegion: ['eu']
+    preferredInRegion: ['eu'],
   },
   {
     id: 'mi_1',
@@ -839,11 +855,11 @@ const DISTANCE_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 115.1, typical: 14.3 }
+      testCases: { min: 0.0, max: 115.1, typical: 14.3 },
     },
     isImperial: true,
-    preferredInRegion: ['us']
-  }
+    preferredInRegion: ['us'],
+  },
 ];
 
 // ===== CAPACITY PRESENTATIONS =====
@@ -860,29 +876,29 @@ const CAPACITY_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 50, max: 800, typical: 200 }
+      testCases: { min: 50, max: 800, typical: 200 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'kwh_1',
     name: 'Kilowatt-hours (1 decimal)',
     symbol: 'kWh',
     description: 'Energy capacity in kilowatt-hours',
-    convert: (ampHours: number) => ampHours * 12 / 1000, // Assuming 12V system
+    convert: (ampHours: number) => (ampHours * 12) / 1000, // Assuming 12V system
     format: (kwh: number) => kwh.toFixed(1),
-    convertBack: (kwh: number) => kwh * 1000 / 12,
+    convertBack: (kwh: number) => (kwh * 1000) / 12,
     formatSpec: {
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 0.6, max: 9.6, typical: 2.4 }
+      testCases: { min: 0.6, max: 9.6, typical: 2.4 },
     },
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
-  }
+    preferredInRegion: ['eu', 'international'],
+  },
 ];
 
 // ===== FLOW RATE PRESENTATIONS =====
@@ -899,11 +915,11 @@ const FLOW_RATE_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 50.0, typical: 8.5 }
+      testCases: { min: 0.0, max: 50.0, typical: 8.5 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
+    preferredInRegion: ['eu', 'international'],
   },
   {
     id: 'gph_us_1',
@@ -917,10 +933,10 @@ const FLOW_RATE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 0.0, max: 13.2, typical: 2.2 }
+      testCases: { min: 0.0, max: 13.2, typical: 2.2 },
     },
     isImperial: true,
-    preferredInRegion: ['us']
+    preferredInRegion: ['us'],
   },
   {
     id: 'gph_uk_1',
@@ -934,11 +950,11 @@ const FLOW_RATE_PRESENTATIONS: Presentation[] = [
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 0.0, max: 11.0, typical: 1.9 }
+      testCases: { min: 0.0, max: 11.0, typical: 1.9 },
     },
     isImperial: true,
-    preferredInRegion: ['uk']
-  }
+    preferredInRegion: ['uk'],
+  },
 ];
 
 // ===== FREQUENCY PRESENTATIONS =====
@@ -955,11 +971,11 @@ const FREQUENCY_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 45.0, max: 65.0, typical: 60.0 }
+      testCases: { min: 45.0, max: 65.0, typical: 60.0 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'hz_0',
@@ -973,11 +989,11 @@ const FREQUENCY_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 45, max: 65, typical: 60 }
+      testCases: { min: 45, max: 65, typical: 60 },
     },
     isMetric: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== POWER PRESENTATIONS =====
@@ -994,11 +1010,11 @@ const POWER_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 100.0, typical: 22.4 }
+      testCases: { min: 0.0, max: 100.0, typical: 22.4 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'international']
+    preferredInRegion: ['eu', 'international'],
   },
   {
     id: 'hp_0',
@@ -1012,10 +1028,10 @@ const POWER_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 0, max: 134, typical: 30 }
+      testCases: { min: 0, max: 134, typical: 30 },
     },
     isImperial: true,
-    preferredInRegion: ['us', 'uk']
+    preferredInRegion: ['us', 'uk'],
   },
   {
     id: 'w_0',
@@ -1029,11 +1045,11 @@ const POWER_PRESENTATIONS: Presentation[] = [
       pattern: 'xxxxx',
       decimals: 0,
       minWidth: 5,
-      testCases: { min: 0, max: 100000, typical: 22400 }
+      testCases: { min: 0, max: 100000, typical: 22400 },
     },
     isMetric: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== RPM PRESENTATIONS =====
@@ -1050,11 +1066,11 @@ const RPM_PRESENTATIONS: Presentation[] = [
       pattern: 'xxxx',
       decimals: 0,
       minWidth: 4,
-      testCases: { min: 0, max: 6000, typical: 2200 }
+      testCases: { min: 0, max: 6000, typical: 2200 },
     },
     isDefault: true,
     isMetric: true,
-    preferredInRegion: ['eu', 'us', 'uk', 'international']
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
     id: 'rps_1',
@@ -1068,84 +1084,84 @@ const RPM_PRESENTATIONS: Presentation[] = [
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 100.0, typical: 36.7 }
+      testCases: { min: 0.0, max: 100.0, typical: 36.7 },
     },
     isMetric: true,
-    preferredInRegion: ['international']
-  }
+    preferredInRegion: ['international'],
+  },
 ];
 
 // ===== PRESENTATION REGISTRY =====
 export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
   depth: {
     category: 'depth',
-    presentations: DEPTH_PRESENTATIONS
+    presentations: DEPTH_PRESENTATIONS,
   },
   speed: {
-    category: 'speed', 
-    presentations: SPEED_PRESENTATIONS
+    category: 'speed',
+    presentations: SPEED_PRESENTATIONS,
   },
   wind: {
     category: 'wind',
-    presentations: WIND_PRESENTATIONS
+    presentations: WIND_PRESENTATIONS,
   },
   temperature: {
     category: 'temperature',
-    presentations: TEMPERATURE_PRESENTATIONS
+    presentations: TEMPERATURE_PRESENTATIONS,
   },
-  
+
   pressure: {
     category: 'pressure',
-    presentations: PRESSURE_PRESENTATIONS
+    presentations: PRESSURE_PRESENTATIONS,
   },
   angle: {
     category: 'angle',
-    presentations: ANGLE_PRESENTATIONS
+    presentations: ANGLE_PRESENTATIONS,
   },
   coordinates: {
     category: 'coordinates',
-    presentations: COORDINATES_PRESENTATIONS
+    presentations: COORDINATES_PRESENTATIONS,
   },
   voltage: {
     category: 'voltage',
-    presentations: VOLTAGE_PRESENTATIONS
+    presentations: VOLTAGE_PRESENTATIONS,
   },
   current: {
     category: 'current',
-    presentations: CURRENT_PRESENTATIONS
+    presentations: CURRENT_PRESENTATIONS,
   },
   volume: {
     category: 'volume',
-    presentations: VOLUME_PRESENTATIONS
+    presentations: VOLUME_PRESENTATIONS,
   },
   time: {
     category: 'time',
-    presentations: TIME_PRESENTATIONS
+    presentations: TIME_PRESENTATIONS,
   },
   distance: {
     category: 'distance',
-    presentations: DISTANCE_PRESENTATIONS
+    presentations: DISTANCE_PRESENTATIONS,
   },
   capacity: {
     category: 'capacity',
-    presentations: CAPACITY_PRESENTATIONS
+    presentations: CAPACITY_PRESENTATIONS,
   },
   flowRate: {
     category: 'flowRate',
-    presentations: FLOW_RATE_PRESENTATIONS
+    presentations: FLOW_RATE_PRESENTATIONS,
   },
   frequency: {
     category: 'frequency',
-    presentations: FREQUENCY_PRESENTATIONS
+    presentations: FREQUENCY_PRESENTATIONS,
   },
   power: {
     category: 'power',
-    presentations: POWER_PRESENTATIONS
+    presentations: POWER_PRESENTATIONS,
   },
   rpm: {
     category: 'rpm',
-    presentations: RPM_PRESENTATIONS
-  }
+    presentations: RPM_PRESENTATIONS,
+  },
 };
 
 // ===== HELPER FUNCTIONS =====
@@ -1162,28 +1178,29 @@ export function getPresentationsForCategory(category: DataCategory): Presentatio
  */
 export function getDefaultPresentation(category: DataCategory): Presentation | undefined {
   const presentations = getPresentationsForCategory(category);
-  return presentations.find(p => p.isDefault) || presentations[0];
+  return presentations.find((p) => p.isDefault) || presentations[0];
 }
 
 /**
  * Find a specific presentation by ID
  */
-export function findPresentation(category: DataCategory, presentationId: string): Presentation | undefined {
+export function findPresentation(
+  category: DataCategory,
+  presentationId: string,
+): Presentation | undefined {
   const presentations = getPresentationsForCategory(category);
-  return presentations.find(p => p.id === presentationId);
+  return presentations.find((p) => p.id === presentationId);
 }
 
 /**
  * Get presentations suitable for a specific marine region
  */
 export function getPresentationsForRegion(
-  category: DataCategory, 
-  region: 'eu' | 'us' | 'uk' | 'international'
+  category: DataCategory,
+  region: 'eu' | 'us' | 'uk' | 'international',
 ): Presentation[] {
   const presentations = getPresentationsForCategory(category);
-  return presentations.filter(p => 
-    !p.preferredInRegion || p.preferredInRegion.includes(region)
-  );
+  return presentations.filter((p) => !p.preferredInRegion || p.preferredInRegion.includes(region));
 }
 
 /**
@@ -1194,19 +1211,21 @@ export function getPresentationsForRegion(
 export function getPresentationConfigLabel(presentation: Presentation): string {
   // For units with same symbol but different regions (e.g., US vs Imperial gallons)
   // show the full name to distinguish them
-  const hasRegionVariant = presentation.name.includes('US ') || 
-                           presentation.name.includes('Imperial ') ||
-                           presentation.name.includes('UK ');
-  
+  const hasRegionVariant =
+    presentation.name.includes('US ') ||
+    presentation.name.includes('Imperial ') ||
+    presentation.name.includes('UK ');
+
   if (hasRegionVariant) {
     // Extract the unit type and region: "US Gallons/hour" -> "GPH (US)"
     const isUS = presentation.name.includes('US ');
     const isUK = presentation.name.includes('UK ') || presentation.name.includes('Imperial ');
     const region = isUS ? 'US' : isUK ? 'UK' : '';
-    return region ? `${presentation.symbol} (${region}) (${presentation.formatSpec.pattern})` 
-                  : `${presentation.symbol} (${presentation.formatSpec.pattern})`;
+    return region
+      ? `${presentation.symbol} (${region}) (${presentation.formatSpec.pattern})`
+      : `${presentation.symbol} (${presentation.formatSpec.pattern})`;
   }
-  
+
   return `${presentation.symbol} (${presentation.formatSpec.pattern})`;
 }
 

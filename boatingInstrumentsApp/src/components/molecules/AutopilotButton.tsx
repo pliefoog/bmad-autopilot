@@ -1,11 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  Platform,
-} from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 import { AutopilotStatus, AutopilotMode } from '../../types/autopilot.types';
 
@@ -121,16 +115,10 @@ export const AutopilotButton: React.FC<AutopilotButtonProps> = ({
       >
         {buttonState.text}
       </Text>
-      
+
       {/* Mode indicator for engaged state */}
       {buttonState.isActive && mode !== 'standby' && (
-        <Text
-          style={[
-            styles.modeText,
-            { color: buttonState.textColor }
-          ]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.modeText, { color: buttonState.textColor }]} numberOfLines={1}>
           {mode.toUpperCase()} MODE
         </Text>
       )}

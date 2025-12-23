@@ -8,7 +8,7 @@ export enum CommandPriority {
   LOW = 0,
   NORMAL = 1,
   HIGH = 2,
-  EMERGENCY = 3
+  EMERGENCY = 3,
 }
 
 /**
@@ -20,7 +20,7 @@ export enum CommandStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
-  EXPIRED = 'expired'
+  EXPIRED = 'expired',
 }
 
 /**
@@ -60,7 +60,7 @@ export class AutopilotCommandQueue {
     maxQueueSize: 50,
     defaultExpiryMs: 60000, // 1 minute
     processingIntervalMs: 1000, // Check every second
-    emergencyTimeoutMs: 5000 // Emergency commands timeout quickly
+    emergencyTimeoutMs: 5000, // Emergency commands timeout quickly
   };
 
   private queue: QueuedCommand[] = [];
@@ -71,7 +71,7 @@ export class AutopilotCommandQueue {
 
   constructor(
     config?: Partial<QueueConfig>,
-    commandExecutor?: (command: AutopilotCommand, params?: any) => Promise<boolean>
+    commandExecutor?: (command: AutopilotCommand, params?: any) => Promise<boolean>,
   ) {
     this.config = { ...AutopilotCommandQueue.DEFAULT_CONFIG, ...config };
     this.commandExecutor = commandExecutor;
@@ -85,15 +85,14 @@ export class AutopilotCommandQueue {
     command: AutopilotCommand,
     params?: any,
     priority: CommandPriority = CommandPriority.NORMAL,
-    expiryMs?: number
+    expiryMs?: number,
   ): string {
-    
     // Generate unique command ID
     const commandId = `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Calculate expiry time based on priority
     const expiry = expiryMs || this.getDefaultExpiryForPriority(priority);
-    
+
     const queuedCommand: QueuedCommand = {
       id: commandId,
       command,
@@ -103,7 +102,7 @@ export class AutopilotCommandQueue {
       createdAt: Date.now(),
       expiresAt: Date.now() + expiry,
       retryCount: 0,
-      maxRetries: this.getMaxRetriesForPriority(priority)
+      maxRetries: this.getMaxRetriesForPriority(priority),
     };
 
     // Handle emergency commands - clear non-emergency queue and prioritize
@@ -115,13 +114,13 @@ export class AutopilotCommandQueue {
       if (this.queue.length >= this.config.maxQueueSize) {
         this.removeOldestLowPriorityCommand();
       }
-      
+
       // Insert command in priority order
       this.insertCommandByPriority(queuedCommand);
     }
 
     console.info(`[CommandQueue] Enqueued ${command} with priority ${priority}, ID: ${commandId}`);
-    
+
     return commandId;
   }
 
@@ -129,11 +128,11 @@ export class AutopilotCommandQueue {
    * Cancel specific command
    */
   cancelCommand(commandId: string): boolean {
-    const commandIndex = this.queue.findIndex(cmd => cmd.id === commandId);
-    
+    const commandIndex = this.queue.findIndex((cmd) => cmd.id === commandId);
+
     if (commandIndex !== -1) {
       const command = this.queue[commandIndex];
-      
+
       if (command.status === CommandStatus.QUEUED) {
         command.status = CommandStatus.CANCELLED;
         this.queue.splice(commandIndex, 1);
@@ -141,7 +140,7 @@ export class AutopilotCommandQueue {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -149,11 +148,13 @@ export class AutopilotCommandQueue {
    * Clear all non-emergency commands
    */
   clearNonEmergencyCommands(): void {
-    const emergencyCommands = this.queue.filter(cmd => cmd.priority === CommandPriority.EMERGENCY);
+    const emergencyCommands = this.queue.filter(
+      (cmd) => cmd.priority === CommandPriority.EMERGENCY,
+    );
     const cancelledCount = this.queue.length - emergencyCommands.length;
-    
+
     this.queue = emergencyCommands;
-    
+
     if (cancelledCount > 0) {
       console.warn(`[CommandQueue] Cleared ${cancelledCount} non-emergency commands for emergency`);
     }
@@ -174,27 +175,31 @@ export class AutopilotCommandQueue {
       byStatus: {} as { [key in CommandStatus]: number },
       byPriority: {} as { [key in CommandPriority]: number },
       oldestCommand: undefined as QueuedCommand | undefined,
-      processingCommand: undefined as QueuedCommand | undefined
+      processingCommand: undefined as QueuedCommand | undefined,
     };
 
     // Initialize counters
-    Object.values(CommandStatus).forEach(s => status.byStatus[s] = 0);
-    [CommandPriority.LOW, CommandPriority.NORMAL, CommandPriority.HIGH, CommandPriority.EMERGENCY]
-      .forEach(p => status.byPriority[p] = 0);
+    Object.values(CommandStatus).forEach((s) => (status.byStatus[s] = 0));
+    [
+      CommandPriority.LOW,
+      CommandPriority.NORMAL,
+      CommandPriority.HIGH,
+      CommandPriority.EMERGENCY,
+    ].forEach((p) => (status.byPriority[p] = 0));
 
     // Count commands
-    this.queue.forEach(cmd => {
+    this.queue.forEach((cmd) => {
       status.byStatus[cmd.status]++;
       status.byPriority[cmd.priority]++;
     });
 
     // Find oldest and processing commands
-    status.oldestCommand = this.queue.reduce((oldest, cmd) => 
-      !oldest || cmd.createdAt < oldest.createdAt ? cmd : oldest, 
-      undefined as QueuedCommand | undefined
+    status.oldestCommand = this.queue.reduce(
+      (oldest, cmd) => (!oldest || cmd.createdAt < oldest.createdAt ? cmd : oldest),
+      undefined as QueuedCommand | undefined,
     );
 
-    status.processingCommand = this.queue.find(cmd => cmd.status === CommandStatus.EXECUTING);
+    status.processingCommand = this.queue.find((cmd) => cmd.status === CommandStatus.EXECUTING);
 
     return status;
   }
@@ -203,13 +208,15 @@ export class AutopilotCommandQueue {
    * Get command by ID
    */
   getCommand(commandId: string): QueuedCommand | undefined {
-    return this.queue.find(cmd => cmd.id === commandId);
+    return this.queue.find((cmd) => cmd.id === commandId);
   }
 
   /**
    * Set command executor function
    */
-  setCommandExecutor(executor: (command: AutopilotCommand, params?: any) => Promise<boolean>): void {
+  setCommandExecutor(
+    executor: (command: AutopilotCommand, params?: any) => Promise<boolean>,
+  ): void {
     this.commandExecutor = executor;
   }
 
@@ -249,11 +256,11 @@ export class AutopilotCommandQueue {
 
     try {
       console.info(`[CommandQueue] Executing ${nextCommand.command} (${nextCommand.id})`);
-      
+
       // Execute command with retry logic
       const result = await autopilotRetryManager.executeWithRetry(
         () => this.commandExecutor!(nextCommand.command, nextCommand.params),
-        'command'
+        'command',
       );
 
       if (result.success) {
@@ -263,17 +270,19 @@ export class AutopilotCommandQueue {
       } else {
         this.handleCommandFailure(nextCommand, result.error || 'Unknown error');
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.handleCommandFailure(nextCommand, errorMessage);
     } finally {
       this.isProcessing = false;
-      
+
       // Remove completed/failed commands (check final status after processing)
-      const finalCommand = this.queue.find(cmd => cmd.id === nextCommand.id);
-      if (finalCommand && (finalCommand.status === CommandStatus.COMPLETED || 
-          finalCommand.status === CommandStatus.FAILED)) {
+      const finalCommand = this.queue.find((cmd) => cmd.id === nextCommand.id);
+      if (
+        finalCommand &&
+        (finalCommand.status === CommandStatus.COMPLETED ||
+          finalCommand.status === CommandStatus.FAILED)
+      ) {
         this.removeCommand(nextCommand.id);
       }
     }
@@ -289,7 +298,9 @@ export class AutopilotCommandQueue {
     if (command.retryCount < command.maxRetries && Date.now() < command.expiresAt) {
       // Retry command
       command.status = CommandStatus.QUEUED;
-      console.warn(`[CommandQueue] Command ${command.id} failed, retry ${command.retryCount}/${command.maxRetries}: ${error}`);
+      console.warn(
+        `[CommandQueue] Command ${command.id} failed, retry ${command.retryCount}/${command.maxRetries}: ${error}`,
+      );
     } else {
       // Max retries reached or expired
       command.status = CommandStatus.FAILED;
@@ -303,7 +314,7 @@ export class AutopilotCommandQueue {
    */
   private getNextCommand(): QueuedCommand | undefined {
     return this.queue
-      .filter(cmd => cmd.status === CommandStatus.QUEUED)
+      .filter((cmd) => cmd.status === CommandStatus.QUEUED)
       .sort((a, b) => {
         // Sort by priority (descending), then by creation time (ascending)
         if (a.priority !== b.priority) {
@@ -318,14 +329,14 @@ export class AutopilotCommandQueue {
    */
   private insertCommandByPriority(command: QueuedCommand): void {
     let insertIndex = this.queue.length;
-    
+
     for (let i = 0; i < this.queue.length; i++) {
       if (this.queue[i].priority < command.priority) {
         insertIndex = i;
         break;
       }
     }
-    
+
     this.queue.splice(insertIndex, 0, command);
   }
 
@@ -333,7 +344,7 @@ export class AutopilotCommandQueue {
    * Remove command from queue
    */
   private removeCommand(commandId: string): void {
-    const index = this.queue.findIndex(cmd => cmd.id === commandId);
+    const index = this.queue.findIndex((cmd) => cmd.id === commandId);
     if (index !== -1) {
       this.queue.splice(index, 1);
     }
@@ -344,7 +355,7 @@ export class AutopilotCommandQueue {
    */
   private removeOldestLowPriorityCommand(): void {
     const lowPriorityCommands = this.queue
-      .filter(cmd => cmd.priority === CommandPriority.LOW && cmd.status === CommandStatus.QUEUED)
+      .filter((cmd) => cmd.priority === CommandPriority.LOW && cmd.status === CommandStatus.QUEUED)
       .sort((a, b) => a.createdAt - b.createdAt);
 
     if (lowPriorityCommands.length > 0) {
@@ -352,9 +363,11 @@ export class AutopilotCommandQueue {
     } else {
       // If no low priority commands, remove oldest normal priority
       const normalCommands = this.queue
-        .filter(cmd => cmd.priority === CommandPriority.NORMAL && cmd.status === CommandStatus.QUEUED)
+        .filter(
+          (cmd) => cmd.priority === CommandPriority.NORMAL && cmd.status === CommandStatus.QUEUED,
+        )
         .sort((a, b) => a.createdAt - b.createdAt);
-      
+
       if (normalCommands.length > 0) {
         this.removeCommand(normalCommands[0].id);
       }
@@ -366,16 +379,16 @@ export class AutopilotCommandQueue {
    */
   private cleanupExpiredCommands(): void {
     const now = Date.now();
-    const expiredCommands = this.queue.filter(cmd => 
-      cmd.status === CommandStatus.QUEUED && cmd.expiresAt < now
+    const expiredCommands = this.queue.filter(
+      (cmd) => cmd.status === CommandStatus.QUEUED && cmd.expiresAt < now,
     );
 
-    expiredCommands.forEach(cmd => {
+    expiredCommands.forEach((cmd) => {
       cmd.status = CommandStatus.EXPIRED;
       console.warn(`[CommandQueue] Command ${cmd.id} expired`);
     });
 
-    this.queue = this.queue.filter(cmd => cmd.status !== CommandStatus.EXPIRED);
+    this.queue = this.queue.filter((cmd) => cmd.status !== CommandStatus.EXPIRED);
   }
 
   /**
@@ -422,7 +435,7 @@ export class AutopilotCommandQueue {
       clearInterval(this.processingInterval);
       this.processingInterval = undefined;
     }
-    
+
     this.queue = [];
     this.isProcessing = false;
   }

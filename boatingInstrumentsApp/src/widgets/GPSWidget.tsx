@@ -17,7 +17,7 @@ import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 interface GPSWidgetProps {
   id: string;
   title: string;
-  width?: number;  // Widget width for responsive scaling
+  width?: number; // Widget width for responsive scaling
   height?: number; // Widget height for responsive scaling
 }
 
@@ -29,73 +29,65 @@ interface GPSWidgetProps {
 export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, width, height }) => {
   const theme = useTheme();
   const fontSize = useResponsiveFontSize(width || 0, height || 0);
-  
+
   // Responsive header sizing using proper base-size scaling
   const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
-  
+
   // Date/time formatting still uses useUnitConversion (Story 9.6 scope)
   const { getGpsFormattedDateTime } = useUnitConversion();
 
   // GPS settings for date/time formatting
   // Coordinate format handled by useMetricDisplay hook
-  const gpsDateFormat = useSettingsStore((state) => state.gps.dateFormat); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const gpsTimeFormat = useSettingsStore((state) => state.gps.timeFormat); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const gpsDateFormat = useSettingsStore((state) => state.gps.dateFormat);
+  const gpsTimeFormat = useSettingsStore((state) => state.gps.timeFormat);
   const gpsTimezone = useSettingsStore((state) => state.gps.timezone); // eslint-disable-line @typescript-eslint/no-unused-vars
-  
+
   // Widget state management per ui-architecture.md v2.3
-  
+
   // Widget interaction handlers per ui-architecture.md v2.3
-  
+
   // NMEA data selectors - NMEA Store v2.0 sensor-based interface
-  // Phase 1 Optimization: Selective field subscriptions with shallow equality
-  // Use shallow() to compare field values, not object references
-  const utcTime = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.utcTime, (a, b) => a === b);
-  const gpsPosition = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.position, (a, b) => JSON.stringify(a) === JSON.stringify(b));
-  const gpsQuality = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.quality, (a, b) => JSON.stringify(a) === JSON.stringify(b));
-  const gpsTimestamp = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.timestamp, (a, b) => a === b);
-
-  // Use useMetricDisplay for coordinate formatting with hemisphere support
-  const latMetric = useMetricDisplay(
-    'coordinates',
-    gpsPosition?.latitude,
-    'LAT',
-    { metadata: { isLatitude: true } }
+  // Using SensorInstance pattern with getMetric() for proper MetricValue access
+  const gpsInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.gps?.[0],
+    (a, b) => a === b,
   );
 
-  const lonMetric = useMetricDisplay(
-    'coordinates',
-    gpsPosition?.longitude,
-    'LON',
-    { metadata: { isLatitude: false } }
-  );
+  // Extract MetricValues for coordinates and time (proper formatting per user preferences)
+  const latitudeMetric = gpsInstance?.getMetric('latitude');
+  const longitudeMetric = gpsInstance?.getMetric('longitude');
+  const utcTimeMetric = gpsInstance?.getMetric('utcTime');
 
-  // Extract individual props for PrimaryMetricCell (DepthWidget pattern)
+  // Extract special complex fields (accessed directly, not via getMetric)
+  const gpsQuality = gpsInstance?.quality;
+  const gpsTimestamp = gpsInstance?.timestamp;
+
+  // Extract display values from MetricValues (pre-enriched with user formatting)
   const latDisplay = {
-    mnemonic: latMetric.mnemonic || 'LAT',
-    value: latMetric.value && String(latMetric.value).trim() !== '' ? latMetric.value : '---',
-    unit: latMetric.unit && String(latMetric.unit).trim() !== '' ? latMetric.unit : ''
+    mnemonic: 'LAT',
+    value: latitudeMetric?.formattedValue ?? '---',
+    unit: latitudeMetric?.unit ?? '',
   };
 
   const lonDisplay = {
-    mnemonic: lonMetric.mnemonic || 'LON',
-    value: lonMetric.value && String(lonMetric.value).trim() !== '' ? lonMetric.value : '---',
-    unit: lonMetric.unit && String(lonMetric.unit).trim() !== '' ? lonMetric.unit : ''
+    mnemonic: 'LON',
+    value: longitudeMetric?.formattedValue ?? '---',
+    unit: longitudeMetric?.unit ?? '',
   };
-
-
 
   // Date and Time formatting - GPS always displays UTC time (marine standard)
   const dateTimeFormatted = useMemo(() => {
+    const utcTime = utcTimeMetric?.si_value; // Get timestamp from MetricValue
     if (!utcTime) {
-      return { 
-        date: '--- ---, ----', 
+      return {
+        date: '--- ---, ----',
         time: '--:--:--',
-        timezone: 'UTC'
+        timezone: 'UTC',
       };
     }
 
     const date = new Date(utcTime); // utcTime is already a UTC timestamp
-    
+
     // GPS always shows UTC time - format directly without timezone conversion
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth();
@@ -103,93 +95,129 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
     const hours = date.getUTCHours();
     const minutes = date.getUTCMinutes();
     const seconds = date.getUTCSeconds();
-    
+
     // Format date based on GPS date format setting
     let formattedDate: string;
     switch (gpsDateFormat) {
       case 'iso_date':
-        formattedDate = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        formattedDate = `${year}-${(month + 1).toString().padStart(2, '0')}-${day
+          .toString()
+          .padStart(2, '0')}`;
         break;
       case 'us_date':
-        formattedDate = `${(month + 1).toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+        formattedDate = `${(month + 1).toString().padStart(2, '0')}/${day
+          .toString()
+          .padStart(2, '0')}/${year}`;
         break;
       case 'eu_date':
-        formattedDate = `${day.toString().padStart(2, '0')}.${(month + 1).toString().padStart(2, '0')}.${year}`;
+        formattedDate = `${day.toString().padStart(2, '0')}.${(month + 1)
+          .toString()
+          .padStart(2, '0')}.${year}`;
         break;
       case 'uk_date':
-        formattedDate = `${day.toString().padStart(2, '0')}/${(month + 1).toString().padStart(2, '0')}/${year}`;
+        formattedDate = `${day.toString().padStart(2, '0')}/${(month + 1)
+          .toString()
+          .padStart(2, '0')}/${year}`;
         break;
       case 'nautical_date':
       default:
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthNames = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        formattedDate = `${dayNames[date.getUTCDay()]} ${monthNames[month]} ${day.toString().padStart(2, '0')}, ${year}`;
+        formattedDate = `${dayNames[date.getUTCDay()]} ${monthNames[month]} ${day
+          .toString()
+          .padStart(2, '0')}, ${year}`;
         break;
     }
-    
+
     // Format time based on GPS time format setting
     let formattedTime: string;
     switch (gpsTimeFormat) {
       case 'time_24h':
-        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}`;
         break;
       case 'time_12h':
         const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
         const ampm = hours >= 12 ? 'PM' : 'AM';
-        formattedTime = `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        formattedTime = `${hours12.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')} ${ampm}`;
         break;
       case 'time_12h_full':
         const hours12Full = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
         const ampmFull = hours >= 12 ? 'PM' : 'AM';
-        formattedTime = `${hours12Full.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampmFull}`;
+        formattedTime = `${hours12Full.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampmFull}`;
         break;
       case 'time_compact':
-        formattedTime = `${hours.toString().padStart(2, '0')}.${minutes.toString().padStart(2, '0')}`;
+        formattedTime = `${hours.toString().padStart(2, '0')}.${minutes
+          .toString()
+          .padStart(2, '0')}`;
         break;
       case 'time_24h_full':
       default:
-        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         break;
     }
-    
+
     return {
       date: formattedDate,
       time: formattedTime,
-      timezone: 'UTC'
+      timezone: 'UTC',
     };
-  }, [utcTime, gpsDateFormat, gpsTimeFormat]);
+  }, [utcTimeMetric, gpsDateFormat, gpsTimeFormat]);
 
-  const handleLongPressOnPin = useCallback(() => {
-  }, [id]);
+  const handleLongPressOnPin = useCallback(() => {}, [id]);
 
   // Data staleness detection (>10s = stale for GPS)
-  const isStale = gpsTimestamp ? (Date.now() - gpsTimestamp) > 10000 : true;
+  const isStale = gpsTimestamp ? Date.now() - gpsTimestamp > 10000 : true;
 
   // Widget header component with responsive sizing
   const headerComponent = (
-    <View style={{
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%',
-      paddingHorizontal: 16,
-    }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 16,
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <UniversalIcon 
-          name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'location-outline'} 
-          size={headerIconSize} 
+        <UniversalIcon
+          name={WidgetMetadataRegistry.getMetadata('gps')?.icon || 'location-outline'}
+          size={headerIconSize}
           color={theme.iconPrimary}
         />
-        <Text style={{
-          fontSize: headerFontSize,
-          fontWeight: 'bold',
-          letterSpacing: 0.5,
-          color: theme.textSecondary,
-          textTransform: 'uppercase',
-        }}>{title}</Text>
+        <Text
+          style={{
+            fontSize: headerFontSize,
+            fontWeight: 'bold',
+            letterSpacing: 0.5,
+            color: theme.textSecondary,
+            textTransform: 'uppercase',
+          }}
+        >
+          {title}
+        </Text>
       </View>
-      
-
     </View>
   );
 
@@ -204,55 +232,63 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
       columns={1}
       testID={`gps-widget-${id}`}
     >
-        {/* Row 1: Latitude */}
-        <PrimaryMetricCell
-          mnemonic={latDisplay.mnemonic}
-          value={latDisplay.value}
-          unit={latDisplay.unit}
-          state={isStale ? 'warning' : 'normal'}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        {/* Row 2: Longitude */}
-        <PrimaryMetricCell
-          mnemonic={lonDisplay.mnemonic}
-          value={lonDisplay.value}
-          unit={lonDisplay.unit}
-          state={isStale ? 'warning' : 'normal'}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        {/* Separator after row 2 */}
-        {/* Row 3: Date */}
-        <SecondaryMetricCell
-          mnemonic="DATE"
-          value={dateTimeFormatted.date && String(dateTimeFormatted.date).trim() !== '' ? dateTimeFormatted.date : '--- ---, ----'}
-          state="normal"
-          compact={true}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        {/* Row 4: Time */}
-        <SecondaryMetricCell
-          mnemonic="TIME"
-          value={dateTimeFormatted.time && dateTimeFormatted.timezone ? `${dateTimeFormatted.time} ${dateTimeFormatted.timezone}` : '---'}
-          state="normal"
-          compact={true}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
+      {/* Row 1: Latitude */}
+      <PrimaryMetricCell
+        mnemonic={latDisplay.mnemonic}
+        value={latDisplay.value}
+        unit={latDisplay.unit}
+        state={isStale ? 'warning' : 'normal'}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+      {/* Row 2: Longitude */}
+      <PrimaryMetricCell
+        mnemonic={lonDisplay.mnemonic}
+        value={lonDisplay.value}
+        unit={lonDisplay.unit}
+        state={isStale ? 'warning' : 'normal'}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+      {/* Separator after row 2 */}
+      {/* Row 3: Date */}
+      <SecondaryMetricCell
+        mnemonic="DATE"
+        value={
+          dateTimeFormatted.date && String(dateTimeFormatted.date).trim() !== ''
+            ? dateTimeFormatted.date
+            : '--- ---, ----'
+        }
+        state="normal"
+        compact={true}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+      {/* Row 4: Time */}
+      <SecondaryMetricCell
+        mnemonic="TIME"
+        value={
+          dateTimeFormatted.time && dateTimeFormatted.timezone
+            ? `${dateTimeFormatted.time} ${dateTimeFormatted.timezone}`
+            : '---'
+        }
+        state="normal"
+        compact={true}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
     </UnifiedWidgetGrid>
   );
 });

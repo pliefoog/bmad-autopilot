@@ -73,7 +73,7 @@ export class ScenarioEngine {
   private simulatorClient?: SimulatorTestClient;
   private scenarios: Map<string, ScenarioDefinition> = new Map();
   private userJourneys: Map<string, UserJourney> = new Map();
-  
+
   // AC3 Requirements: <30 seconds per complete user journey
   private static readonly AC3_MAX_JOURNEY_TIME = 30000;
   private static readonly MARINE_DATA_LATENCY_THRESHOLD = 100; // <100ms NMEA → widget update
@@ -90,12 +90,13 @@ export class ScenarioEngine {
       // In a real implementation, this would use a YAML parser
       // For now, we'll accept JSON-parsed objects for simplicity
       const scenario: ScenarioDefinition = JSON.parse(scenarioYaml);
-      
+
       this.validateScenario(scenario);
       this.scenarios.set(scenario.name, scenario);
-      
     } catch (error) {
-      throw new Error(`Failed to load scenario: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load scenario: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -142,15 +143,20 @@ export class ScenarioEngine {
       // AC3.3: Validate <30 seconds per complete user journey
       this.profiler.mark('journey-completion');
       const perf = this.profiler.validateE2ETestPerformance('journey-completion');
-      
+
       if (!perf.passed) {
-        throw new Error(`User journey '${journeyId}' exceeded AC3 time limit: ${perf.time}ms > ${perf.threshold}ms`);
+        throw new Error(
+          `User journey '${journeyId}' exceeded AC3 time limit: ${perf.time}ms > ${perf.threshold}ms`,
+        );
       }
 
       return results;
-
     } catch (error) {
-      throw new Error(`User journey execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `User journey execution failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
   }
 
@@ -171,7 +177,7 @@ export class ScenarioEngine {
       steps: [],
       performance: this.initializePerformanceMetrics(),
       errors: [],
-      marineSafetyViolations: []
+      marineSafetyViolations: [],
     };
 
     try {
@@ -202,7 +208,6 @@ export class ScenarioEngine {
       result.performance = await this.collectPerformanceMetrics();
 
       return result;
-
     } catch (error) {
       result.passed = false;
       result.errors.push(error instanceof Error ? error.message : 'Unknown error');
@@ -218,7 +223,7 @@ export class ScenarioEngine {
       name: step.name,
       passed: false,
       duration: 0,
-      expected: step.expected
+      expected: step.expected,
     };
 
     const stepStart = Date.now();
@@ -228,28 +233,28 @@ export class ScenarioEngine {
         case 'action':
           await this.executeAction(step);
           break;
-          
+
         case 'assertion':
           const actual = await this.executeAssertion(step);
           stepResult.actual = actual;
-          
+
           if (step.expected !== undefined) {
             stepResult.passed = this.compareValues(actual, step.expected);
           } else {
             stepResult.passed = !!actual;
           }
           break;
-          
+
         case 'wait':
           await this.executeWait(step);
           stepResult.passed = true;
           break;
-          
+
         case 'inject':
           await this.executeInjection(step);
           stepResult.passed = true;
           break;
-          
+
         default:
           throw new Error(`Unknown step type: ${step.type}`);
       }
@@ -257,7 +262,6 @@ export class ScenarioEngine {
       if (stepResult.passed === undefined) {
         stepResult.passed = true;
       }
-
     } catch (error) {
       stepResult.passed = false;
       stepResult.error = error instanceof Error ? error.message : 'Unknown error';
@@ -275,7 +279,6 @@ export class ScenarioEngine {
     // This is a placeholder for widget interaction actions
     if (step.target && step.data) {
       // Simulate widget interaction
-      console.log(`Executing action on ${step.target} with data:`, step.data);
     }
   }
 
@@ -293,7 +296,7 @@ export class ScenarioEngine {
    */
   private async executeWait(step: ScenarioStep): Promise<void> {
     const waitTime = step.data?.duration || 1000;
-    await new Promise(resolve => setTimeout(resolve, waitTime));
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
   /**
@@ -303,7 +306,7 @@ export class ScenarioEngine {
     if (!this.simulatorClient) {
       this.simulatorClient = await SimulatorTestClient.autoConnect();
     }
-    
+
     if (step.data?.sentence) {
       await this.simulatorClient.injectNmeaMessage(step.data.sentence, step.data.options);
     }
@@ -315,31 +318,39 @@ export class ScenarioEngine {
   private async validateCrossPlatformBehavior(): Promise<void> {
     // Placeholder for cross-platform validation logic
     // Would test React Native Web vs Native behavior
-    console.log('Validating cross-platform behavior...');
   }
 
   /**
    * AC3.2: Marine safety constraint validation
    */
-  private async validateMarineSafetyConstraints(constraints: string[], result: ScenarioResult): Promise<void> {
+  private async validateMarineSafetyConstraints(
+    constraints: string[],
+    result: ScenarioResult,
+  ): Promise<void> {
     for (const constraint of constraints) {
       // Example marine safety validations
       switch (constraint) {
         case 'autopilot-engagement-safety':
           if (result.performance.dataLatency > ScenarioEngine.MARINE_DATA_LATENCY_THRESHOLD) {
-            result.marineSafetyViolations.push(`Data latency ${result.performance.dataLatency}ms exceeds marine safety threshold`);
+            result.marineSafetyViolations.push(
+              `Data latency ${result.performance.dataLatency}ms exceeds marine safety threshold`,
+            );
           }
           break;
-          
+
         case 'emergency-response-time':
           if (result.duration > 5000) {
-            result.marineSafetyViolations.push(`Emergency response time ${result.duration}ms too slow`);
+            result.marineSafetyViolations.push(
+              `Emergency response time ${result.duration}ms too slow`,
+            );
           }
           break;
-          
+
         case 'system-reliability':
-          if (result.steps.filter(s => !s.passed).length > 0) {
-            result.marineSafetyViolations.push('System reliability compromised due to failed steps');
+          if (result.steps.filter((s) => !s.passed).length > 0) {
+            result.marineSafetyViolations.push(
+              'System reliability compromised due to failed steps',
+            );
           }
           break;
       }
@@ -353,9 +364,11 @@ export class ScenarioEngine {
     if (!scenario.name || !scenario.steps || scenario.steps.length === 0) {
       throw new Error('Invalid scenario definition: name and steps are required');
     }
-    
+
     if (scenario.timeout > ScenarioEngine.AC3_MAX_JOURNEY_TIME) {
-      throw new Error(`Scenario timeout ${scenario.timeout}ms exceeds AC3 limit ${ScenarioEngine.AC3_MAX_JOURNEY_TIME}ms`);
+      throw new Error(
+        `Scenario timeout ${scenario.timeout}ms exceeds AC3 limit ${ScenarioEngine.AC3_MAX_JOURNEY_TIME}ms`,
+      );
     }
   }
 
@@ -378,7 +391,7 @@ export class ScenarioEngine {
       cpuUsage: 0,
       networkLatency: 0,
       widgetRenderTime: 0,
-      dataLatency: 0
+      dataLatency: 0,
     };
   }
 
@@ -388,14 +401,14 @@ export class ScenarioEngine {
   private async collectPerformanceMetrics(): Promise<PerformanceMetrics> {
     // In a real implementation, this would collect actual performance data
     const memoryUsage = (performance as any).memory?.usedJSHeapSize || 0;
-    
+
     return {
       totalDuration: Date.now(),
       memoryUsage,
       cpuUsage: 0, // Would need platform-specific implementation
       networkLatency: 50,
       widgetRenderTime: 16, // Target 60fps
-      dataLatency: 80 // Should be <100ms for marine safety
+      dataLatency: 80, // Should be <100ms for marine safety
     };
   }
 
@@ -414,7 +427,6 @@ export class ScenarioEngine {
    */
   private async validatePreconditions(preconditions: Record<string, any>): Promise<void> {
     // Implementation would check system state against preconditions
-    console.log('Validating preconditions:', preconditions);
   }
 
   /**
@@ -422,7 +434,6 @@ export class ScenarioEngine {
    */
   private async validatePostconditions(postconditions: Record<string, any>): Promise<void> {
     // Implementation would check system state against postconditions
-    console.log('Validating postconditions:', postconditions);
   }
 
   /**

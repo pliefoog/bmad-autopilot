@@ -1,6 +1,6 @@
 /**
  * Built-in Widget Registrations
- * 
+ *
  * Defines sensor dependencies and creation logic for all 15 built-in widget types.
  * Each registration declares which sensors are required vs optional, replacing
  * the old polling-based detection system.
@@ -8,7 +8,6 @@
 
 import type { WidgetRegistration } from '../services/WidgetRegistrationService';
 import type { WidgetConfig } from '../types/widget.types';
-import { WidgetFactory } from '../services/WidgetFactory';
 
 /**
  * Helper to create widget configuration
@@ -17,13 +16,19 @@ function createWidgetConfig(
   widgetType: string,
   instance: number,
   title: string,
-  icon: string
+  icon: string,
 ): WidgetConfig {
-  const instanceId = WidgetFactory.generateInstanceWidgetId(widgetType, instance);
-  return WidgetFactory.createWidgetConfig(instanceId, { instance }, {
+  const instanceId = `${widgetType}-${instance}`;
+  return {
+    id: instanceId,
+    type: widgetType,
     title,
-    settings: { icon },
-  });
+    settings: {
+      icon,
+      instance,
+      instanceId,
+    },
+  };
 }
 
 /**
@@ -42,8 +47,8 @@ export const DEPTH_WIDGET_REGISTRATION: WidgetRegistration = {
   expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
-      category: 'depth',
-      measurementType: 'depth',
+      sensorType: 'depth',
+      metricName: 'depth',
       required: true,
       label: 'Depth',
     },
@@ -66,16 +71,16 @@ export const SPEED_WIDGET_REGISTRATION: WidgetRegistration = {
   expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
-      category: 'speed',
-      measurementType: 'overGround', // SOG
+      sensorType: 'speed',
+      metricName: 'overGround', // SOG
       required: true,
       label: 'Speed Over Ground',
     },
   ],
   optionalSensors: [
     {
-      category: 'speed',
-      measurementType: 'throughWater', // STW
+      sensorType: 'speed',
+      metricName: 'throughWater', // STW
       required: false,
       label: 'Speed Through Water',
     },
@@ -97,28 +102,28 @@ export const WIND_WIDGET_REGISTRATION: WidgetRegistration = {
   expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
-      category: 'wind',
-      measurementType: 'direction',
+      sensorType: 'wind',
+      metricName: 'direction',
       required: true,
       label: 'Apparent Wind Direction',
     },
     {
-      category: 'wind',
-      measurementType: 'speed',
+      sensorType: 'wind',
+      metricName: 'speed',
       required: true,
       label: 'Apparent Wind Speed',
     },
   ],
   optionalSensors: [
     {
-      category: 'wind',
-      measurementType: 'trueDirection',
+      sensorType: 'wind',
+      metricName: 'trueDirection',
       required: false,
       label: 'True Wind Direction',
     },
     {
-      category: 'wind',
-      measurementType: 'trueSpeed',
+      sensorType: 'wind',
+      metricName: 'trueSpeed',
       required: false,
       label: 'True Wind Speed',
     },
@@ -139,22 +144,22 @@ export const COMPASS_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 80,
   requiredSensors: [
     {
-      category: 'compass',
-      measurementType: 'heading',
+      sensorType: 'compass',
+      metricName: 'heading',
       required: true,
       label: 'Heading',
     },
   ],
   optionalSensors: [
     {
-      category: 'compass',
-      measurementType: 'variation',
+      sensorType: 'compass',
+      metricName: 'variation',
       required: false,
       label: 'Magnetic Variation',
     },
     {
-      category: 'compass',
-      measurementType: 'rateOfTurn',
+      sensorType: 'compass',
+      metricName: 'rateOfTurn',
       required: false,
       label: 'Rate of Turn',
     },
@@ -175,28 +180,40 @@ export const GPS_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 75,
   requiredSensors: [
     {
-      category: 'gps',
-      measurementType: 'position',
+      sensorType: 'gps',
+      metricName: 'latitude',
       required: true,
-      label: 'Position',
+      label: 'Latitude',
+    },
+    {
+      sensorType: 'gps',
+      metricName: 'longitude',
+      required: true,
+      label: 'Longitude',
     },
   ],
   optionalSensors: [
     {
-      category: 'gps',
-      measurementType: 'courseOverGround',
+      sensorType: 'gps',
+      metricName: 'courseOverGround',
       required: false,
       label: 'Course Over Ground',
     },
     {
-      category: 'gps',
-      measurementType: 'speedOverGround',
+      sensorType: 'gps',
+      metricName: 'speedOverGround',
       required: false,
       label: 'Speed Over Ground',
     },
     {
-      category: 'gps',
-      measurementType: 'quality',
+      sensorType: 'gps',
+      metricName: 'utcTime',
+      required: false,
+      label: 'UTC Time',
+    },
+    {
+      sensorType: 'gps',
+      metricName: 'quality',
       required: false,
       label: 'GPS Quality',
     },
@@ -220,34 +237,40 @@ export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 100,
   requiredSensors: [
     {
-      category: 'autopilot',
-      measurementType: 'engaged',
+      sensorType: 'compass',
+      metricName: 'heading',
       required: true,
-      label: 'Engaged Status',
+      label: 'Compass Heading',
     },
   ],
   optionalSensors: [
     {
-      category: 'autopilot',
-      measurementType: 'mode',
+      sensorType: 'autopilot',
+      metricName: 'engaged',
+      required: false,
+      label: 'Engaged Status',
+    },
+    {
+      sensorType: 'autopilot',
+      metricName: 'mode',
       required: false,
       label: 'Autopilot Mode',
     },
     {
-      category: 'autopilot',
-      measurementType: 'targetHeading',
+      sensorType: 'autopilot',
+      metricName: 'targetHeading',
       required: false,
       label: 'Target Heading',
     },
     {
-      category: 'autopilot',
-      measurementType: 'currentHeading',
+      sensorType: 'autopilot',
+      metricName: 'currentHeading',
       required: false,
       label: 'Current Heading',
     },
     {
-      category: 'autopilot',
-      measurementType: 'rudderAngle',
+      sensorType: 'autopilot',
+      metricName: 'rudderAngle',
       required: false,
       label: 'Rudder Angle',
     },
@@ -273,46 +296,46 @@ export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
   expirationTimeout: 600000, // 10 minutes - engine can idle
   requiredSensors: [
     {
-      category: 'engine',
-      measurementType: 'rpm',
+      sensorType: 'engine',
+      metricName: 'rpm',
       required: true,
       label: 'RPM',
     },
   ],
   optionalSensors: [
     {
-      category: 'engine',
-      measurementType: 'coolantTemp',
+      sensorType: 'engine',
+      metricName: 'coolantTemp',
       required: false,
       label: 'Coolant Temperature',
     },
     {
-      category: 'engine',
-      measurementType: 'oilPressure',
+      sensorType: 'engine',
+      metricName: 'oilPressure',
       required: false,
       label: 'Oil Pressure',
     },
     {
-      category: 'engine',
-      measurementType: 'alternatorVoltage',
+      sensorType: 'engine',
+      metricName: 'alternatorVoltage',
       required: false,
       label: 'Alternator Voltage',
     },
     {
-      category: 'engine',
-      measurementType: 'fuelRate',
+      sensorType: 'engine',
+      metricName: 'fuelRate',
       required: false,
       label: 'Fuel Rate',
     },
     {
-      category: 'engine',
-      measurementType: 'hours',
+      sensorType: 'engine',
+      metricName: 'hours',
       required: false,
       label: 'Engine Hours',
     },
     {
-      category: 'engine',
-      measurementType: 'shaftRpm',
+      sensorType: 'engine',
+      metricName: 'shaftRpm',
       required: false,
       label: 'Shaft RPM',
     },
@@ -330,41 +353,46 @@ export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
 export const BATTERY_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'battery',
   displayName: 'Battery',
-  category: 'engine',
+  category: 'environment',
   icon: 'battery-charging-outline',
   multiInstance: true,
   maxInstances: 8,
   priority: 65,
   requiredSensors: [
     {
-      category: 'battery',
-      measurementType: 'voltage',
+      sensorType: 'battery',
+      metricName: 'voltage',
       required: true,
       label: 'Voltage',
     },
   ],
   optionalSensors: [
     {
-      category: 'battery',
-      measurementType: 'current',
+      sensorType: 'battery',
+      metricName: 'current',
       required: false,
       label: 'Current',
     },
     {
-      category: 'battery',
-      measurementType: 'stateOfCharge',
+      sensorType: 'battery',
+      metricName: 'stateOfCharge',
       required: false,
       label: 'State of Charge',
     },
     {
-      category: 'battery',
-      measurementType: 'temperature',
+      sensorType: 'battery',
+      metricName: 'temperature',
       required: false,
       label: 'Temperature',
     },
   ],
   createWidget: (instance, sensorData) => {
-    return createWidgetConfig('battery', instance, `Battery ${instance}`, 'battery-charging-outline');
+    return createWidgetConfig(
+      'battery',
+      instance,
+      `Battery ${instance}`,
+      'battery-charging-outline',
+    );
   },
 };
 
@@ -383,28 +411,22 @@ export const TANK_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 60,
   requiredSensors: [
     {
-      category: 'tank',
-      measurementType: 'level',
+      sensorType: 'tank',
+      metricName: 'level',
       required: true,
       label: 'Tank Level',
-    },
-    {
-      category: 'tank',
-      measurementType: 'type',
-      required: true,
-      label: 'Tank Type',
     },
   ],
   optionalSensors: [
     {
-      category: 'tank',
-      measurementType: 'capacity',
+      sensorType: 'tank',
+      metricName: 'capacity',
       required: false,
       label: 'Tank Capacity',
     },
     {
-      category: 'tank',
-      measurementType: 'temperature',
+      sensorType: 'tank',
+      metricName: 'temperature',
       required: false,
       label: 'Tank Temperature',
     },
@@ -431,22 +453,22 @@ export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 55,
   requiredSensors: [
     {
-      category: 'temperature',
-      measurementType: 'value',
+      sensorType: 'temperature',
+      metricName: 'value',
       required: true,
       label: 'Temperature',
-    },
-    {
-      category: 'temperature',
-      measurementType: 'location',
-      required: true,
-      label: 'Location',
     },
   ],
   optionalSensors: [],
   createWidget: (instance, sensorData) => {
+    // Location is a direct property, not a metric measurement
     const location = sensorData['temperature.0.location'] || 'Temperature';
-    return createWidgetConfig('temperature', instance, `${location} ${instance}`, 'thermometer-outline');
+    return createWidgetConfig(
+      'temperature',
+      instance,
+      `${location} ${instance}`,
+      'thermometer-outline',
+    );
   },
 };
 
@@ -455,29 +477,25 @@ export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
  * All built-in widget types in priority order
  */
 export const BUILT_IN_WIDGET_REGISTRATIONS: WidgetRegistration[] = [
-  AUTOPILOT_WIDGET_REGISTRATION,      // Priority: 100
-  SPEED_WIDGET_REGISTRATION,          // Priority: 95
-  DEPTH_WIDGET_REGISTRATION,          // Priority: 90
-  WIND_WIDGET_REGISTRATION,           // Priority: 85
-  COMPASS_WIDGET_REGISTRATION,        // Priority: 80
-  GPS_WIDGET_REGISTRATION,            // Priority: 75
-  ENGINE_WIDGET_REGISTRATION,         // Priority: 70
-  BATTERY_WIDGET_REGISTRATION,        // Priority: 65
-  TANK_WIDGET_REGISTRATION,           // Priority: 60
-  TEMPERATURE_WIDGET_REGISTRATION,    // Priority: 55
+  AUTOPILOT_WIDGET_REGISTRATION, // Priority: 100
+  SPEED_WIDGET_REGISTRATION, // Priority: 95
+  DEPTH_WIDGET_REGISTRATION, // Priority: 90
+  WIND_WIDGET_REGISTRATION, // Priority: 85
+  COMPASS_WIDGET_REGISTRATION, // Priority: 80
+  GPS_WIDGET_REGISTRATION, // Priority: 75
+  ENGINE_WIDGET_REGISTRATION, // Priority: 70
+  BATTERY_WIDGET_REGISTRATION, // Priority: 65
+  TANK_WIDGET_REGISTRATION, // Priority: 60
+  TEMPERATURE_WIDGET_REGISTRATION, // Priority: 55
 ];
 
 /**
  * Register all built-in widgets with the registration service
  */
 export function registerBuiltInWidgets(
-  registrationService: any // WidgetRegistrationService
+  registrationService: any, // WidgetRegistrationService
 ): void {
-  console.log('📋 Registering built-in widgets...');
-  
-  BUILT_IN_WIDGET_REGISTRATIONS.forEach(registration => {
+  BUILT_IN_WIDGET_REGISTRATIONS.forEach((registration) => {
     registrationService.registerWidget(registration);
   });
-  
-  console.log(`✅ Registered ${BUILT_IN_WIDGET_REGISTRATIONS.length} built-in widget types`);
 }

@@ -11,33 +11,34 @@ interface LabelProps {
   testID?: string;
 }
 
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  label: {
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  label_default: {
-    color: theme.text,
-  },
-  label_required: {
-    color: theme.text,
-  },
-  label_optional: {
-    color: theme.textSecondary,
-  },
-  label_error: {
-    color: theme.error,
-  },
-  label_small: {
-    fontSize: 12,
-  },
-  label_medium: {
-    fontSize: 14,
-  },
-  label_large: {
-    fontSize: 16,
-  },
-});
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    label: {
+      fontWeight: '500',
+      marginBottom: 4,
+    },
+    label_default: {
+      color: theme.text,
+    },
+    label_required: {
+      color: theme.text,
+    },
+    label_optional: {
+      color: theme.textSecondary,
+    },
+    label_error: {
+      color: theme.error,
+    },
+    label_small: {
+      fontSize: 12,
+    },
+    label_medium: {
+      fontSize: 14,
+    },
+    label_large: {
+      fontSize: 16,
+    },
+  });
 
 const Label: React.FC<LabelProps> = ({
   children,
@@ -48,18 +49,14 @@ const Label: React.FC<LabelProps> = ({
 }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const textStyle = [
-    styles.label,
-    styles[`label_${variant}`],
-    styles[`label_${size}`],
-    style,
-  ];
+  const textStyle = [styles.label, styles[`label_${variant}`], styles[`label_${size}`], style];
 
-  const displayText = variant === 'required' 
-    ? `${children} *` 
-    : variant === 'optional'
-    ? `${children} (optional)`
-    : children;
+  const displayText =
+    variant === 'required'
+      ? `${children} *`
+      : variant === 'optional'
+      ? `${children} (optional)`
+      : children;
 
   return (
     <Text style={textStyle} testID={testID}>

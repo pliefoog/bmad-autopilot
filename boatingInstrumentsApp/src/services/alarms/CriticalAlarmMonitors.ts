@@ -25,35 +25,35 @@ interface AutopilotStatus {
   mode?: string;
 }
 
-type AlarmCallback = (type: CriticalAlarmType, data: { 
-  value: number; 
-  threshold: number; 
-  message: string;
-  metadata?: any;
-}) => Promise<void>;
+type AlarmCallback = (
+  type: CriticalAlarmType,
+  data: {
+    value: number;
+    threshold: number;
+    message: string;
+    metadata?: any;
+  },
+) => Promise<void>;
 
 export class CriticalAlarmMonitors {
   private config: MonitoringConfig;
   private onAlarmCallback?: AlarmCallback;
   private monitoringIntervals: NodeJS.Timeout[] = [];
-  
+
   // Status tracking
   private lastGPSStatus: GPSStatus | null = null;
   private lastAutopilotStatus: AutopilotStatus | null = null;
   private gpsLossAlarmActive = false;
   private autopilotFailureAlarmActive = false;
 
-  constructor(
-    config: Partial<MonitoringConfig> = {},
-    onAlarmCallback?: AlarmCallback
-  ) {
+  constructor(config: Partial<MonitoringConfig> = {}, onAlarmCallback?: AlarmCallback) {
     this.config = {
       gpsTimeoutMs: 60000, // 1 minute without GPS update
       autopilotHeartbeatTimeoutMs: 10000, // 10 seconds without autopilot heartbeat
       monitoringIntervalMs: 5000, // Check every 5 seconds
       ...config,
     };
-    
+
     this.onAlarmCallback = onAlarmCallback;
   }
 
@@ -62,30 +62,26 @@ export class CriticalAlarmMonitors {
    */
   public startMonitoring(): void {
     this.stopMonitoring(); // Clear any existing intervals
-    
+
     // GPS monitoring
     const gpsMonitor = setInterval(() => {
       this.checkGPSStatus();
     }, this.config.monitoringIntervalMs);
-    
+
     // Autopilot monitoring
     const autopilotMonitor = setInterval(() => {
       this.checkAutopilotStatus();
     }, this.config.monitoringIntervalMs);
-    
+
     this.monitoringIntervals.push(gpsMonitor, autopilotMonitor);
-    
-    console.log('CriticalAlarmMonitors: Started monitoring GPS and autopilot systems');
   }
 
   /**
    * Stop all monitoring
    */
   public stopMonitoring(): void {
-    this.monitoringIntervals.forEach(interval => clearInterval(interval));
+    this.monitoringIntervals.forEach((interval) => clearInterval(interval));
     this.monitoringIntervals = [];
-    
-    console.log('CriticalAlarmMonitors: Stopped monitoring');
   }
 
   /**
@@ -136,7 +132,7 @@ export class CriticalAlarmMonitors {
         this.triggerGPSLossAlarm(
           `GPS signal lost - no update for ${secondsSinceUpdate} seconds`,
           secondsSinceUpdate,
-          Math.floor(this.config.gpsTimeoutMs / 1000)
+          Math.floor(this.config.gpsTimeoutMs / 1000),
         );
       }
       return;
@@ -148,7 +144,7 @@ export class CriticalAlarmMonitors {
         this.triggerGPSLossAlarm(
           'GPS fix lost - no position available',
           0, // No fix
-          1  // Need fix
+          1, // Need fix
         );
       }
       return;
@@ -188,7 +184,7 @@ export class CriticalAlarmMonitors {
         this.triggerAutopilotFailureAlarm(
           `Autopilot communication lost - no response for ${secondsSinceHeartbeat} seconds`,
           secondsSinceHeartbeat,
-          Math.floor(this.config.autopilotHeartbeatTimeoutMs / 1000)
+          Math.floor(this.config.autopilotHeartbeatTimeoutMs / 1000),
         );
       }
       return;
@@ -200,7 +196,7 @@ export class CriticalAlarmMonitors {
         this.triggerAutopilotFailureAlarm(
           'Autopilot system failure detected - manual steering required',
           1, // Failure state
-          1  // Normal operation expected
+          1, // Normal operation expected
         );
       }
       return;
@@ -226,9 +222,13 @@ export class CriticalAlarmMonitors {
   /**
    * Trigger GPS loss alarm
    */
-  private async triggerGPSLossAlarm(message: string, value: number, threshold: number): Promise<void> {
+  private async triggerGPSLossAlarm(
+    message: string,
+    value: number,
+    threshold: number,
+  ): Promise<void> {
     this.gpsLossAlarmActive = true;
-    
+
     if (this.onAlarmCallback) {
       try {
         await this.onAlarmCallback(CriticalAlarmType.GPS_LOSS, {
@@ -246,7 +246,7 @@ export class CriticalAlarmMonitors {
         console.error('CriticalAlarmMonitors: Failed to trigger GPS loss alarm', error);
       }
     }
-    
+
     console.warn('CriticalAlarmMonitors: GPS loss alarm triggered -', message);
   }
 
@@ -255,15 +255,18 @@ export class CriticalAlarmMonitors {
    */
   private clearGPSLossAlarm(): void {
     this.gpsLossAlarmActive = false;
-    console.log('CriticalAlarmMonitors: GPS signal restored - alarm cleared');
   }
 
   /**
    * Trigger autopilot failure alarm
    */
-  private async triggerAutopilotFailureAlarm(message: string, value: number, threshold: number): Promise<void> {
+  private async triggerAutopilotFailureAlarm(
+    message: string,
+    value: number,
+    threshold: number,
+  ): Promise<void> {
     this.autopilotFailureAlarmActive = true;
-    
+
     if (this.onAlarmCallback) {
       try {
         await this.onAlarmCallback(CriticalAlarmType.AUTOPILOT_FAILURE, {
@@ -281,7 +284,7 @@ export class CriticalAlarmMonitors {
         console.error('CriticalAlarmMonitors: Failed to trigger autopilot failure alarm', error);
       }
     }
-    
+
     console.warn('CriticalAlarmMonitors: Autopilot failure alarm triggered -', message);
   }
 
@@ -290,7 +293,6 @@ export class CriticalAlarmMonitors {
    */
   private clearAutopilotFailureAlarm(): void {
     this.autopilotFailureAlarmActive = false;
-    console.log('CriticalAlarmMonitors: Autopilot restored - alarm cleared');
   }
 
   /**
@@ -321,7 +323,6 @@ export class CriticalAlarmMonitors {
    */
   public updateConfig(newConfig: Partial<MonitoringConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    console.log('CriticalAlarmMonitors: Configuration updated', this.config);
   }
 
   /**

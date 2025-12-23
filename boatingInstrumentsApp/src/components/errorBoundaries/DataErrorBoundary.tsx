@@ -76,7 +76,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
     };
 
     // Store the enhanced error
-    this.setState({ 
+    this.setState({
       error: dataErrorInfo,
       hasError: true,
     });
@@ -96,30 +96,36 @@ export class DataErrorBoundary extends BaseErrorBoundary {
 
   private determineDataErrorSeverity(error: Error): DataErrorInfo['severity'] {
     const message = error.message.toLowerCase();
-    
+
     // Critical data errors
-    if (message.includes('corrupted') || 
-        message.includes('invalid format') ||
-        message.includes('malformed') ||
-        this.parsingErrorCount > (this.dataProps.maxParsingErrors || 10)) {
+    if (
+      message.includes('corrupted') ||
+      message.includes('invalid format') ||
+      message.includes('malformed') ||
+      this.parsingErrorCount > (this.dataProps.maxParsingErrors || 10)
+    ) {
       return 'high';
     }
-    
+
     // Medium severity data errors
-    if (message.includes('parsing error') ||
-        message.includes('validation failed') ||
-        message.includes('unexpected') ||
-        this.parsingErrorCount > 5) {
+    if (
+      message.includes('parsing error') ||
+      message.includes('validation failed') ||
+      message.includes('unexpected') ||
+      this.parsingErrorCount > 5
+    ) {
       return 'medium';
     }
-    
+
     // Low severity data errors
-    if (message.includes('checksum') ||
-        message.includes('incomplete') ||
-        message.includes('missing field')) {
+    if (
+      message.includes('checksum') ||
+      message.includes('incomplete') ||
+      message.includes('missing field')
+    ) {
       return 'low';
     }
-    
+
     return 'medium';
   }
 
@@ -158,7 +164,11 @@ export class DataErrorBoundary extends BaseErrorBoundary {
   }
 
   private assessCorruptionLevel(message: string): 'low' | 'medium' | 'high' {
-    if (message.includes('completely') || message.includes('corrupted') || message.includes('malformed')) {
+    if (
+      message.includes('completely') ||
+      message.includes('corrupted') ||
+      message.includes('malformed')
+    ) {
       return 'high';
     }
     if (message.includes('partial') || message.includes('missing') || message.includes('invalid')) {
@@ -226,7 +236,6 @@ export class DataErrorBoundary extends BaseErrorBoundary {
     if (__DEV__) {
       console.group(`📊 Data Error: ${dataError.dataType || 'Unknown'}`);
       console.error('Original Error:', originalError);
-      console.log('Data Error Info:', logData);
       console.groupEnd();
     }
   }
@@ -268,27 +277,41 @@ export class DataErrorBoundary extends BaseErrorBoundary {
           <Text style={styles(theme).dataErrorMessage}>
             {error.severity === 'high'
               ? 'Critical data parsing error detected. The data format may be corrupted or unsupported.'
-              : 'Data parsing temporarily interrupted. Some marine data may be unavailable.'
-            }
+              : 'Data parsing temporarily interrupted. Some marine data may be unavailable.'}
           </Text>
 
           {parsingDetails && (
             <View style={styles(theme).parsingInfo}>
               <Text style={styles(theme).parsingTitle}>Parsing Details:</Text>
               {parsingDetails.expectedFormat && (
-                <Text style={styles(theme).parsingText}>Expected: {parsingDetails.expectedFormat}</Text>
+                <Text style={styles(theme).parsingText}>
+                  Expected: {parsingDetails.expectedFormat}
+                </Text>
               )}
               {parsingDetails.parsePosition && (
-                <Text style={styles(theme).parsingText}>Error at position: {parsingDetails.parsePosition}</Text>
+                <Text style={styles(theme).parsingText}>
+                  Error at position: {parsingDetails.parsePosition}
+                </Text>
               )}
               {parsingDetails.errorPattern && (
-                <Text style={styles(theme).parsingText}>Pattern: {parsingDetails.errorPattern}</Text>
+                <Text style={styles(theme).parsingText}>
+                  Pattern: {parsingDetails.errorPattern}
+                </Text>
               )}
               {parsingDetails.corruptionLevel && (
-                <Text style={[styles(theme).parsingText, { 
-                  color: parsingDetails.corruptionLevel === 'high' ? theme.error : 
-                         parsingDetails.corruptionLevel === 'medium' ? theme.warning : theme.success
-                }]}>
+                <Text
+                  style={[
+                    styles(theme).parsingText,
+                    {
+                      color:
+                        parsingDetails.corruptionLevel === 'high'
+                          ? theme.error
+                          : parsingDetails.corruptionLevel === 'medium'
+                          ? theme.warning
+                          : theme.success,
+                    },
+                  ]}
+                >
                   Corruption Level: {parsingDetails.corruptionLevel}
                 </Text>
               )}
@@ -300,7 +323,6 @@ export class DataErrorBoundary extends BaseErrorBoundary {
               )}
             </View>
           )}
-
           {statistics && (
             <View style={styles(theme).statisticsInfo}>
               <Text style={styles(theme).statisticsTitle}>Statistics:</Text>
@@ -314,9 +336,14 @@ export class DataErrorBoundary extends BaseErrorBoundary {
               </View>
               <View style={styles(theme).statRow}>
                 <Text style={styles(theme).statLabel}>Error Rate:</Text>
-                <Text style={[styles(theme).statValue, { 
-                  color: (statistics.errorRate || 0) > 50 ? theme.error : theme.success
-                }]}>
+                <Text
+                  style={[
+                    styles(theme).statValue,
+                    {
+                      color: (statistics.errorRate || 0) > 50 ? theme.error : theme.success,
+                    },
+                  ]}
+                >
                   {(statistics.errorRate || 0).toFixed(1)}%
                 </Text>
               </View>
@@ -326,16 +353,16 @@ export class DataErrorBoundary extends BaseErrorBoundary {
               </View>
             </View>
           )}
-
           {suggestions && suggestions.length > 0 && (
             <View style={styles(theme).suggestionsInfo}>
               <Text style={styles(theme).suggestionsTitle}>Suggestions:</Text>
               {suggestions.map((suggestion, index) => (
-                <Text key={index} style={styles(theme).suggestionText}>• {suggestion}</Text>
+                <Text key={index} style={styles(theme).suggestionText}>
+                  • {suggestion}
+                </Text>
               ))}
             </View>
           )}
-
           {__DEV__ && (
             <View style={styles(theme).dataDebugInfo}>
               <Text style={styles(theme).debugTitle}>Debug Info:</Text>
@@ -348,22 +375,16 @@ export class DataErrorBoundary extends BaseErrorBoundary {
         </View>
 
         <View style={styles(theme).dataErrorActions}>
-          <TouchableOpacity 
-            style={styles(theme).recoveryButton} 
-            onPress={this.handleDataRecovery}
-          >
+          <TouchableOpacity style={styles(theme).recoveryButton} onPress={this.handleDataRecovery}>
             <Text style={styles(theme).recoveryButtonText}>Retry Parsing</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles(theme).resetButton} 
-            onPress={this.handleParsingReset}
-          >
+          <TouchableOpacity style={styles(theme).resetButton} onPress={this.handleParsingReset}>
             <Text style={styles(theme).resetButtonText}>Reset Parser</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles(theme).fallbackButton} 
+          <TouchableOpacity
+            style={styles(theme).fallbackButton}
             onPress={this.handleFallbackParser}
           >
             <Text style={styles(theme).fallbackButtonText}>Fallback Mode</Text>
@@ -382,177 +403,178 @@ export class DataErrorBoundary extends BaseErrorBoundary {
   }
 }
 
-const styles = (theme: ThemeColors) => StyleSheet.create({
-  dataErrorContainer: {
-    flex: 1,
-    backgroundColor: theme.appBackground,
-  },
-  dataErrorHeader: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  dataErrorIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  dataErrorTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.error,
-    textAlign: 'center',
-  },
-  dataErrorBody: {
-    padding: 20,
-  },
-  dataErrorMessage: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  parsingInfo: {
-    backgroundColor: theme.surfaceDim,
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 12,
-  },
-  parsingTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: theme.text,
-    marginBottom: 6,
-  },
-  parsingText: {
-    fontSize: 11,
-    color: theme.textSecondary,
-    marginBottom: 2,
-  },
-  rawDataContainer: {
-    backgroundColor: theme.appBackground,
-    padding: 8,
-    borderRadius: 4,
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: theme.borderLight,
-  },
-  rawDataTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: theme.text,
-    marginBottom: 4,
-  },
-  rawDataText: {
-    fontSize: 9,
-    color: theme.textSecondary,
-    fontFamily: 'monospace',
-    backgroundColor: theme.surfaceHighlight,
-    padding: 4,
-    borderRadius: 2,
-  },
-  statisticsInfo: {
-    backgroundColor: theme.appBackground,
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.borderLight,
-  },
-  statisticsTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: theme.text,
-    marginBottom: 8,
-  },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: theme.textSecondary,
-  },
-  statValue: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
-  suggestionsInfo: {
-    backgroundColor: theme.surfaceHighlight,
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.success,
-  },
-  suggestionsTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: theme.success,
-    marginBottom: 6,
-  },
-  suggestionText: {
-    fontSize: 11,
-    color: theme.success,
-    marginBottom: 3,
-    paddingLeft: 4,
-  },
-  dataDebugInfo: {
-    backgroundColor: theme.surfaceDim,
-    padding: 12,
-    borderRadius: 6,
-    marginTop: 8,
-  },
-  debugTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: theme.text,
-    marginBottom: 6,
-  },
-  debugText: {
-    fontSize: 10,
-    color: theme.textSecondary,
-    fontFamily: 'monospace',
-    marginBottom: 3,
-  },
-  dataErrorActions: {
-    alignItems: 'center',
-    padding: 20,
-    gap: 10,
-  },
-  recoveryButton: {
-    backgroundColor: theme.interactive,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-  },
-  recoveryButtonText: {
-    color: theme.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  resetButton: {
-    backgroundColor: theme.success,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  resetButtonText: {
-    color: theme.text,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  fallbackButton: {
-    backgroundColor: theme.textSecondary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  fallbackButtonText: {
-    color: theme.text,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-});
+const styles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    dataErrorContainer: {
+      flex: 1,
+      backgroundColor: theme.appBackground,
+    },
+    dataErrorHeader: {
+      alignItems: 'center',
+      paddingVertical: 20,
+    },
+    dataErrorIcon: {
+      fontSize: 32,
+      marginBottom: 8,
+    },
+    dataErrorTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.error,
+      textAlign: 'center',
+    },
+    dataErrorBody: {
+      padding: 20,
+    },
+    dataErrorMessage: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    parsingInfo: {
+      backgroundColor: theme.surfaceDim,
+      padding: 12,
+      borderRadius: 6,
+      marginBottom: 12,
+    },
+    parsingTitle: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 6,
+    },
+    parsingText: {
+      fontSize: 11,
+      color: theme.textSecondary,
+      marginBottom: 2,
+    },
+    rawDataContainer: {
+      backgroundColor: theme.appBackground,
+      padding: 8,
+      borderRadius: 4,
+      marginTop: 6,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+    },
+    rawDataTitle: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 4,
+    },
+    rawDataText: {
+      fontSize: 9,
+      color: theme.textSecondary,
+      fontFamily: 'monospace',
+      backgroundColor: theme.surfaceHighlight,
+      padding: 4,
+      borderRadius: 2,
+    },
+    statisticsInfo: {
+      backgroundColor: theme.appBackground,
+      padding: 12,
+      borderRadius: 6,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+    },
+    statisticsTitle: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 8,
+    },
+    statRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 11,
+      color: theme.textSecondary,
+    },
+    statValue: {
+      fontSize: 11,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    suggestionsInfo: {
+      backgroundColor: theme.surfaceHighlight,
+      padding: 12,
+      borderRadius: 6,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: theme.success,
+    },
+    suggestionsTitle: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.success,
+      marginBottom: 6,
+    },
+    suggestionText: {
+      fontSize: 11,
+      color: theme.success,
+      marginBottom: 3,
+      paddingLeft: 4,
+    },
+    dataDebugInfo: {
+      backgroundColor: theme.surfaceDim,
+      padding: 12,
+      borderRadius: 6,
+      marginTop: 8,
+    },
+    debugTitle: {
+      fontSize: 11,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 6,
+    },
+    debugText: {
+      fontSize: 10,
+      color: theme.textSecondary,
+      fontFamily: 'monospace',
+      marginBottom: 3,
+    },
+    dataErrorActions: {
+      alignItems: 'center',
+      padding: 20,
+      gap: 10,
+    },
+    recoveryButton: {
+      backgroundColor: theme.interactive,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 6,
+    },
+    recoveryButtonText: {
+      color: theme.text,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    resetButton: {
+      backgroundColor: theme.success,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 6,
+    },
+    resetButtonText: {
+      color: theme.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    fallbackButton: {
+      backgroundColor: theme.textSecondary,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 6,
+    },
+    fallbackButtonText: {
+      color: theme.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+  });

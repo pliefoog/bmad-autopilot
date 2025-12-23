@@ -1,6 +1,6 @@
 /**
  * TutorialManager - Manages interactive tutorials and user progress
- * 
+ *
  * Features:
  * - Tutorial lifecycle management (start, pause, complete, skip)
  * - Progress tracking with persistence
@@ -38,14 +38,12 @@ export class TutorialManager {
    */
   public async initialize(tutorials: Tutorial[]): Promise<void> {
     // Register tutorials
-    tutorials.forEach(tutorial => {
+    tutorials.forEach((tutorial) => {
       this.tutorials.set(tutorial.id, tutorial);
     });
 
     // Load saved progress
     await this.loadProgress();
-
-    console.log(`[TutorialManager] Initialized with ${tutorials.length} tutorials`);
   }
 
   /**
@@ -53,7 +51,6 @@ export class TutorialManager {
    */
   public registerTutorial(tutorial: Tutorial): void {
     this.tutorials.set(tutorial.id, tutorial);
-    console.log(`[TutorialManager] Registered tutorial: ${tutorial.id}`);
   }
 
   /**
@@ -67,7 +64,7 @@ export class TutorialManager {
    * Get tutorials by category
    */
   public getTutorialsByCategory(category: Tutorial['category']): Tutorial[] {
-    return Array.from(this.tutorials.values()).filter(t => t.category === category);
+    return Array.from(this.tutorials.values()).filter((t) => t.category === category);
   }
 
   /**
@@ -90,7 +87,7 @@ export class TutorialManager {
     // Check prerequisites
     if (tutorial.prerequisites && tutorial.prerequisites.length > 0) {
       const unmetPrereqs = tutorial.prerequisites.filter(
-        prereqId => !this.isTutorialCompleted(prereqId)
+        (prereqId) => !this.isTutorialCompleted(prereqId),
       );
       if (unmetPrereqs.length > 0) {
         console.warn(`[TutorialManager] Prerequisites not met for ${tutorialId}:`, unmetPrereqs);
@@ -115,7 +112,6 @@ export class TutorialManager {
 
     this.notifyListeners(tutorialId, progress);
 
-    console.log(`[TutorialManager] Started tutorial: ${tutorialId}`);
     return true;
   }
 
@@ -155,7 +151,6 @@ export class TutorialManager {
 
     this.notifyListeners(tutorialId, progress);
 
-    console.log(`[TutorialManager] Advanced to step ${progress.currentStep + 1} of ${tutorial.id}`);
     return true;
   }
 
@@ -174,7 +169,6 @@ export class TutorialManager {
 
     this.notifyListeners(tutorialId, progress);
 
-    console.log(`[TutorialManager] Returned to step ${progress.currentStep + 1}`);
     return true;
   }
 
@@ -200,7 +194,6 @@ export class TutorialManager {
     await this.saveProgress();
     this.notifyListeners(tutorialId, progress);
 
-    console.log(`[TutorialManager] Completed tutorial: ${tutorialId}`);
     return true;
   }
 
@@ -226,8 +219,6 @@ export class TutorialManager {
 
     await this.saveProgress();
     this.notifyListeners(tutorialId, progress);
-
-    console.log(`[TutorialManager] Skipped tutorial: ${tutorialId}`);
   }
 
   /**
@@ -235,14 +226,12 @@ export class TutorialManager {
    */
   public async resetTutorial(tutorialId: string): Promise<void> {
     this.progress.delete(tutorialId);
-    
+
     if (this.currentTutorial === tutorialId) {
       this.currentTutorial = null;
     }
 
     await this.saveProgress();
-
-    console.log(`[TutorialManager] Reset tutorial: ${tutorialId}`);
   }
 
   /**
@@ -278,10 +267,10 @@ export class TutorialManager {
     completionRate: number;
   } {
     const total = this.tutorials.size;
-    const completed = Array.from(this.progress.values()).filter(p => p.completed).length;
-    const skipped = Array.from(this.progress.values()).filter(p => p.skipped).length;
+    const completed = Array.from(this.progress.values()).filter((p) => p.completed).length;
+    const skipped = Array.from(this.progress.values()).filter((p) => p.skipped).length;
     const inProgress = Array.from(this.progress.values()).filter(
-      p => !p.completed && !p.skipped
+      (p) => !p.completed && !p.skipped,
     ).length;
 
     return {
@@ -299,14 +288,14 @@ export class TutorialManager {
   public getRecommendedTutorial(): Tutorial | null {
     // Find highest priority uncompleted tutorial with met prerequisites
     const incomplete = Array.from(this.tutorials.values()).filter(
-      t => !this.isTutorialCompleted(t.id)
+      (t) => !this.isTutorialCompleted(t.id),
     );
 
-    const eligible = incomplete.filter(t => {
+    const eligible = incomplete.filter((t) => {
       if (!t.prerequisites || t.prerequisites.length === 0) {
         return true;
       }
-      return t.prerequisites.every(prereqId => this.isTutorialCompleted(prereqId));
+      return t.prerequisites.every((prereqId) => this.isTutorialCompleted(prereqId));
     });
 
     // Sort by priority: required > recommended > optional
@@ -328,7 +317,7 @@ export class TutorialManager {
    * Notify all listeners of progress update
    */
   private notifyListeners(tutorialId: string, progress: TutorialProgress): void {
-    this.listeners.forEach(callback => callback(tutorialId, progress));
+    this.listeners.forEach((callback) => callback(tutorialId, progress));
   }
 
   /**
@@ -347,7 +336,6 @@ export class TutorialManager {
           }
           this.progress.set(id, progress);
         });
-        console.log(`[TutorialManager] Loaded progress for ${this.progress.size} tutorials`);
       }
     } catch (error) {
       console.error('[TutorialManager] Failed to load progress:', error);
@@ -376,7 +364,6 @@ export class TutorialManager {
     this.progress.clear();
     this.currentTutorial = null;
     await AsyncStorage.removeItem(STORAGE_KEY);
-    console.log('[TutorialManager] Cleared all tutorial data');
   }
 }
 

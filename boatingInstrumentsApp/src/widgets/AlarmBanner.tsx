@@ -85,30 +85,29 @@ const styles = StyleSheet.create({
 export const AlarmBanner: React.FC<{ alarms: Alarm[] }> = ({ alarms }) => {
   const highContrast = useSettingsStore((state) => state.themeSettings.highContrast);
   const theme = useTheme();
-  
+
   if (!alarms || alarms.length === 0) return null;
-  
+
   return (
-    <View style={[
-      styles.banner,
-      {
-        backgroundColor: theme.surface,
-        borderColor: theme.border,
-      }
-    ]}>
+    <View
+      style={[
+        styles.banner,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+        },
+      ]}
+    >
       {alarms.map((alarm) => (
-        <View 
-          key={alarm.id} 
-          style={[
-            styles.alarm, 
-            getAlarmStyle(alarm.level, highContrast, theme)
-          ]}
+        <View
+          key={alarm.id}
+          style={[styles.alarm, getAlarmStyle(alarm.level, highContrast, theme)]}
         >
-          <Text 
+          <Text
             style={[
               styles.message,
               { color: theme.text },
-              highContrast && styles.messageHighContrast
+              highContrast && styles.messageHighContrast,
             ]}
           >
             {alarm.message}

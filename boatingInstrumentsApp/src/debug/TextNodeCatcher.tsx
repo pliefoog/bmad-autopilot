@@ -36,9 +36,7 @@ export class TextNodeCatcher extends Component<Props, State> {
           <Text style={{ color: '#fff', fontWeight: 'bold' }}>
             Error in {this.props.widgetName}
           </Text>
-          <Text style={{ color: '#fff', fontSize: 10 }}>
-            {this.state.error?.message}
-          </Text>
+          <Text style={{ color: '#fff', fontSize: 10 }}>{this.state.error?.message}</Text>
         </View>
       );
     }

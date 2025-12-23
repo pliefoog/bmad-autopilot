@@ -1,7 +1,7 @@
 /**
  * Platform Section Header Component
  * Epic 8 - Phase 1: Cross-Platform Dialog Unification
- * 
+ *
  * Platform-native section header for settings
  * iOS: Uppercase, small, gray text above section
  * Android: Prominent colored text with bottom padding
@@ -17,7 +17,7 @@ import { getPlatformVariant, isTV } from '../../utils/platformDetection';
 interface PlatformSectionHeaderProps {
   /** Section title */
   title: string;
-  
+
   /** Test ID */
   testID?: string;
 }
@@ -36,7 +36,7 @@ export const PlatformSectionHeader: React.FC<PlatformSectionHeaderProps> = ({
   const tvMode = isTV();
   const styles = React.useMemo(
     () => createStyles(theme, platformTokens, variant, tvMode),
-    [theme, platformTokens, variant, tvMode]
+    [theme, platformTokens, variant, tvMode],
   );
 
   return (
@@ -53,7 +53,7 @@ function createStyles(
   theme: ThemeColors,
   platformTokens: ReturnType<typeof getPlatformTokens>,
   variant: ReturnType<typeof getPlatformVariant>,
-  tvMode: boolean
+  tvMode: boolean,
 ) {
   const isIOS = variant.startsWith('ios');
   const isAndroid = variant.startsWith('android');
@@ -61,19 +61,21 @@ function createStyles(
   return StyleSheet.create({
     container: {
       // iOS: Compact header above section
-      ...(isIOS && !tvMode && {
-        paddingTop: 12,
-        paddingBottom: 6,
-        paddingHorizontal: platformTokens.spacing.inset,
-      }),
-      
+      ...(isIOS &&
+        !tvMode && {
+          paddingTop: 12,
+          paddingBottom: 6,
+          paddingHorizontal: platformTokens.spacing.inset,
+        }),
+
       // Android: Prominent header with spacing
-      ...(isAndroid && !tvMode && {
-        paddingTop: 16,
-        paddingBottom: 8,
-        paddingHorizontal: platformTokens.spacing.inset,
-      }),
-      
+      ...(isAndroid &&
+        !tvMode && {
+          paddingTop: 16,
+          paddingBottom: 8,
+          paddingHorizontal: platformTokens.spacing.inset,
+        }),
+
       // TV: Extra large spacing
       ...(tvMode && {
         paddingTop: platformTokens.spacing.section,
@@ -83,25 +85,27 @@ function createStyles(
     },
     title: {
       fontFamily: platformTokens.typography.fontFamily,
-      
+
       // iOS: Uppercase, small, secondary text
-      ...(isIOS && !tvMode && {
-        fontSize: 13,
-        fontWeight: '400',
-        lineHeight: 18,
-        color: theme.textSecondary,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-      }),
-      
+      ...(isIOS &&
+        !tvMode && {
+          fontSize: 13,
+          fontWeight: '400',
+          lineHeight: 18,
+          color: theme.textSecondary,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }),
+
       // Android: Prominent, colored text
-      ...(isAndroid && !tvMode && {
-        fontSize: platformTokens.typography.sectionHeader.fontSize,
-        fontWeight: platformTokens.typography.sectionHeader.fontWeight,
-        lineHeight: platformTokens.typography.sectionHeader.lineHeight,
-        color: theme.interactive,
-      }),
-      
+      ...(isAndroid &&
+        !tvMode && {
+          fontSize: platformTokens.typography.sectionHeader.fontSize,
+          fontWeight: platformTokens.typography.sectionHeader.fontWeight,
+          lineHeight: platformTokens.typography.sectionHeader.lineHeight,
+          color: theme.interactive,
+        }),
+
       // TV: Large prominent text
       ...(tvMode && {
         fontSize: platformTokens.typography.sectionHeader.fontSize,

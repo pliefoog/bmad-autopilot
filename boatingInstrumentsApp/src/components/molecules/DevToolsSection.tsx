@@ -13,7 +13,7 @@ interface DevToolsSectionProps {
 export const DevToolsSection: React.FC<DevToolsSectionProps> = ({
   sections,
   onItemPress,
-  actionHandlers = {}
+  actionHandlers = {},
 }) => {
   const theme = useTheme();
 
@@ -26,9 +26,7 @@ export const DevToolsSection: React.FC<DevToolsSectionProps> = ({
     <View style={styles.container}>
       {/* Development Tools Header */}
       <View style={[styles.devHeader, { borderTopColor: theme.border }]}>
-        <Text style={[styles.devHeaderText, { color: theme.warning }]}>
-          🛠️ DEVELOPMENT TOOLS
-        </Text>
+        <Text style={[styles.devHeaderText, { color: theme.warning }]}>🛠️ DEVELOPMENT TOOLS</Text>
         <Text style={[styles.devSubtext, { color: theme.textSecondary }]}>
           Only visible in development builds
         </Text>

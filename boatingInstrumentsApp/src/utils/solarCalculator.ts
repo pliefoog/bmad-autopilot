@@ -30,7 +30,7 @@ export interface SolarTimes {
 export function calculateSolarTimes(
   latitude: number,
   longitude: number,
-  date: Date = new Date()
+  date: Date = new Date(),
 ): SolarTimes {
   // Input validation
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
@@ -39,30 +39,33 @@ export function calculateSolarTimes(
 
   // Get comprehensive sun times using SunCalc
   const times = SunCalc.getTimes(date, latitude, longitude);
-  
+
   // Handle polar day/night cases where times might be invalid
-  const sunrise = times.sunrise && !isNaN(times.sunrise.getTime()) 
-    ? times.sunrise 
-    : new Date(date.getTime() - 24 * 60 * 60 * 1000); // Yesterday if polar night
-    
-  const sunset = times.sunset && !isNaN(times.sunset.getTime()) 
-    ? times.sunset 
-    : new Date(date.getTime() + 24 * 60 * 60 * 1000);  // Tomorrow if polar day
-  
-  const solarNoon = times.solarNoon || new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-  
+  const sunrise =
+    times.sunrise && !isNaN(times.sunrise.getTime())
+      ? times.sunrise
+      : new Date(date.getTime() - 24 * 60 * 60 * 1000); // Yesterday if polar night
+
+  const sunset =
+    times.sunset && !isNaN(times.sunset.getTime())
+      ? times.sunset
+      : new Date(date.getTime() + 24 * 60 * 60 * 1000); // Tomorrow if polar day
+
+  const solarNoon =
+    times.solarNoon || new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+
   // Twilight times for marine navigation
   const civilTwilightDawn = times.dawn || new Date(sunrise.getTime() - 30 * 60 * 1000);
   const civilTwilightDusk = times.dusk || new Date(sunset.getTime() + 30 * 60 * 1000);
   const nauticalTwilightDawn = times.nauticalDawn || new Date(sunrise.getTime() - 60 * 60 * 1000);
   const nauticalTwilightDusk = times.nauticalDusk || new Date(sunset.getTime() + 60 * 60 * 1000);
-  
+
   // Calculate current state
   const now = new Date();
   const isDay = now >= sunrise && now <= sunset;
   const isDawn = now >= civilTwilightDawn && now < sunrise;
   const isDusk = now > sunset && now <= civilTwilightDusk;
-  
+
   return {
     sunrise,
     sunset,
@@ -73,7 +76,7 @@ export function calculateSolarTimes(
     civilTwilightDawn,
     civilTwilightDusk,
     nauticalTwilightDawn,
-    nauticalTwilightDusk
+    nauticalTwilightDusk,
   };
 }
 
@@ -88,12 +91,12 @@ export function calculateSolarTimes(
 export function getSolarBasedThemeMode(
   latitude: number,
   longitude: number,
-  date?: Date
+  date?: Date,
 ): 'day' | 'night' | 'red-night' {
   try {
     const solar = calculateSolarTimes(latitude, longitude, date);
     const now = new Date();
-    
+
     if (solar.isDay) {
       return 'day';
     } else if (solar.isDawn || solar.isDusk) {
@@ -114,7 +117,7 @@ export function getSolarBasedThemeMode(
     console.warn('Solar calculation failed, falling back to time-based mode:', error);
     // Fallback to current time-based logic
     const hour = new Date().getHours();
-    return (hour >= 6 && hour < 20) ? 'day' : 'night';
+    return hour >= 6 && hour < 20 ? 'day' : 'night';
   }
 }
 
@@ -123,15 +126,15 @@ export function getSolarBasedThemeMode(
  * Shows sunrise/sunset with current solar state
  */
 export function formatSolarTimes(solar: SolarTimes): string {
-  const sunriseTime = solar.sunrise.toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const sunriseTime = solar.sunrise.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
   });
-  const sunsetTime = solar.sunset.toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const sunsetTime = solar.sunset.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
   });
-  
+
   return `↑${sunriseTime} ↓${sunsetTime}`;
 }
 
@@ -145,36 +148,42 @@ export function getSolarInfo(solar: SolarTimes): {
   nextEventTime: string;
 } {
   const now = new Date();
-  
+
   if (solar.isDay) {
     return {
       status: 'Daylight',
       nextEvent: 'Sunset',
-      nextEventTime: solar.sunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      nextEventTime: solar.sunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
   } else if (solar.isDawn) {
     return {
       status: 'Dawn Twilight',
       nextEvent: 'Sunrise',
-      nextEventTime: solar.sunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      nextEventTime: solar.sunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
   } else if (solar.isDusk) {
     return {
       status: 'Dusk Twilight',
       nextEvent: 'Night',
-      nextEventTime: solar.civilTwilightDusk.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      nextEventTime: solar.civilTwilightDusk.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
     };
   } else if (now < solar.civilTwilightDawn) {
     return {
       status: 'Night',
       nextEvent: 'Dawn',
-      nextEventTime: solar.civilTwilightDawn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      nextEventTime: solar.civilTwilightDawn.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
     };
   } else {
     return {
       status: 'Night',
       nextEvent: 'Dawn',
-      nextEventTime: 'Tomorrow'
+      nextEventTime: 'Tomorrow',
     };
   }
 }
@@ -186,13 +195,13 @@ export function getSolarInfo(solar: SolarTimes): {
 export function getSunPosition(
   latitude: number,
   longitude: number,
-  date: Date = new Date()
+  date: Date = new Date(),
 ): { altitude: number; azimuth: number } {
   try {
     const position = SunCalc.getPosition(date, latitude, longitude);
     return {
-      altitude: position.altitude * 180 / Math.PI, // Convert to degrees
-      azimuth: position.azimuth * 180 / Math.PI    // Convert to degrees
+      altitude: (position.altitude * 180) / Math.PI, // Convert to degrees
+      azimuth: (position.azimuth * 180) / Math.PI, // Convert to degrees
     };
   } catch (error) {
     console.warn('Sun position calculation failed:', error);

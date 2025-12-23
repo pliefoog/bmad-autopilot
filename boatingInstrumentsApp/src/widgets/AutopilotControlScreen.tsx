@@ -1,13 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Vibration,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Vibration, Alert } from 'react-native';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import Sound from 'react-native-sound';
 import { useNmeaStore } from '../store/nmeaStore';
@@ -35,14 +27,20 @@ interface AutopilotControlScreenProps {
  */
 export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   visible,
-  onClose
+  onClose,
 }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  
-  // Clean sensor data access - NMEA Store v2.0
-  const autopilotData = useNmeaStore((state) => state.getSensorData('autopilot', 0));
-  const compassData = useNmeaStore((state) => state.getSensorData('compass', 0));
+
+  // Clean sensor data access - NMEA Store v2.0 with SensorInstance
+  const autopilotInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.autopilot?.[0],
+    (a, b) => a === b,
+  );
+  const compassInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.compass?.[0],
+    (a, b) => a === b,
+  );
 
   // Autopilot service instance
   const commandManager = useRef<AutopilotCommandManager | null>(null);
@@ -90,26 +88,21 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const [isCommandPending, setIsCommandPending] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [activeHelpId, setActiveHelpId] = useState<string | null>(null);
-  
+
   // Safety confirmation system for large heading changes
   const [cumulativeHeadingChange, setCumulativeHeadingChange] = useState(0);
   const [showLargeChangeConfirmation, setShowLargeChangeConfirmation] = useState(false);
   const [pendingHeadingAdjustment, setPendingHeadingAdjustment] = useState<number>(0);
 
-  // Extract sensor data with proper typing and defaults
-  const autopilot = autopilotData as any; // Type assertion for legacy compatibility
-  const compass = compassData as any;
-  
-  // Extract heading from compass or autopilot
-  const currentHeading = autopilot?.currentHeading ?? compass?.heading ?? 0;
-  
-  // Autopilot status with defaults  
-  const {
-    mode = 'STANDBY',
-    engaged = false,
-    active = false,
-    targetHeading = currentHeading,
-  } = autopilot || {};
+  // Extract metrics from SensorInstance
+  const currentHeading =
+    autopilotInstance?.getMetric('currentHeading')?.si_value ??
+    compassInstance?.getMetric('heading')?.si_value ??
+    0;
+  const mode = autopilotInstance?.getMetric('mode')?.si_value ?? 'STANDBY';
+  const engaged = autopilotInstance?.getMetric('engaged')?.si_value ?? false;
+  const active = autopilotInstance?.getMetric('active')?.si_value ?? false;
+  const targetHeading = autopilotInstance?.getMetric('targetHeading')?.si_value ?? currentHeading;
 
   // Haptic feedback for all interactions
   const triggerHaptic = useCallback(() => {
@@ -217,46 +210,52 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   }, [triggerHaptic, playDisengageAlert, playErrorAlert]);
 
   // Heading adjustment with cumulative safety tracking
-  const adjustHeading = useCallback(async (adjustment: number) => {
-    triggerHaptic();
-    
-    // Check if this adjustment would exceed the safety threshold
-    const newCumulativeChange = Math.abs(cumulativeHeadingChange + adjustment);
-    
-    if (newCumulativeChange > 20) {
-      // Show safety confirmation for large cumulative changes
-      setPendingHeadingAdjustment(adjustment);
-      setShowLargeChangeConfirmation(true);
-      return;
-    }
-    
-    // Proceed with normal adjustment
-    await executeHeadingAdjustment(adjustment);
-  }, [cumulativeHeadingChange, triggerHaptic]);
+  const adjustHeading = useCallback(
+    async (adjustment: number) => {
+      triggerHaptic();
+
+      // Check if this adjustment would exceed the safety threshold
+      const newCumulativeChange = Math.abs(cumulativeHeadingChange + adjustment);
+
+      if (newCumulativeChange > 20) {
+        // Show safety confirmation for large cumulative changes
+        setPendingHeadingAdjustment(adjustment);
+        setShowLargeChangeConfirmation(true);
+        return;
+      }
+
+      // Proceed with normal adjustment
+      await executeHeadingAdjustment(adjustment);
+    },
+    [cumulativeHeadingChange, triggerHaptic],
+  );
 
   // Execute the actual heading adjustment (separated for confirmation workflow)
-  const executeHeadingAdjustment = useCallback(async (adjustment: number) => {
-    setIsCommandPending(true);
-    setCommandError(null);
+  const executeHeadingAdjustment = useCallback(
+    async (adjustment: number) => {
+      setIsCommandPending(true);
+      setCommandError(null);
 
-    try {
-      if (commandManager.current) {
-        const success = await commandManager.current.adjustHeading(adjustment);
-        if (success) {
-          // Update cumulative tracking on successful adjustment
-          setCumulativeHeadingChange(prev => prev + adjustment);
-        } else {
-          setCommandError(`Failed to adjust heading ${adjustment > 0 ? '+' : ''}${adjustment}°`);
-          playErrorAlert();
+      try {
+        if (commandManager.current) {
+          const success = await commandManager.current.adjustHeading(adjustment);
+          if (success) {
+            // Update cumulative tracking on successful adjustment
+            setCumulativeHeadingChange((prev) => prev + adjustment);
+          } else {
+            setCommandError(`Failed to adjust heading ${adjustment > 0 ? '+' : ''}${adjustment}°`);
+            playErrorAlert();
+          }
         }
+      } catch (error) {
+        setCommandError(error instanceof Error ? error.message : 'Heading adjustment failed');
+        playErrorAlert();
+      } finally {
+        setIsCommandPending(false);
       }
-    } catch (error) {
-      setCommandError(error instanceof Error ? error.message : 'Heading adjustment failed');
-      playErrorAlert();
-    } finally {
-      setIsCommandPending(false);
-    }
-  }, [playErrorAlert]);
+    },
+    [playErrorAlert],
+  );
 
   // Confirmation handlers for large heading changes
   const handleLargeChangeConfirm = useCallback(async () => {
@@ -300,24 +299,27 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   };
 
   // Dynamic theme-aware styles for marine safety compliance
-  const dynamicStyles = useMemo(() => ({
-    headingValueCurrent: {
-      fontSize: 32,
-      fontWeight: 'bold' as const,
-      color: theme.success, // Theme-aware (red in red-night mode)
-      fontFamily: 'monospace',
-    },
-    engageButton: {
-      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
-    },
-    confirmEngageButton: {
-      flex: 1,
-      padding: 15,
-      borderRadius: 8,
-      backgroundColor: theme.success, // Theme-aware (red in red-night mode)
-      alignItems: 'center' as const,
-    },
-  }), [theme]);
+  const dynamicStyles = useMemo(
+    () => ({
+      headingValueCurrent: {
+        fontSize: 32,
+        fontWeight: 'bold' as const,
+        color: theme.success, // Theme-aware (red in red-night mode)
+        fontFamily: 'monospace',
+      },
+      engageButton: {
+        backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+      },
+      confirmEngageButton: {
+        flex: 1,
+        padding: 15,
+        borderRadius: 8,
+        backgroundColor: theme.success, // Theme-aware (red in red-night mode)
+        alignItems: 'center' as const,
+      },
+    }),
+    [theme],
+  );
 
   // Get current help content
   const helpContent = activeHelpId ? getHelpContent(activeHelpId) : null;
@@ -331,16 +333,14 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* iOS Drag Handle */}
         <View style={styles.dragHandle} />
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.headerButton}>
             <Text style={styles.headerButtonText}>Done</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Autopilot</Text>
-          <HelpButton 
-            helpId="autopilot-modes" 
+          <HelpButton
+            helpId="autopilot-modes"
             onPress={() => showHelp('autopilot-modes')}
             size={24}
             style={styles.helpButton}
@@ -372,22 +372,13 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
               </TouchableOpacity>
             </View>
           )}
-
-          {/* Heading Display with Compass */}
           <View style={styles.headingDisplay}>
             <Text style={styles.headingLabel}>HEADING</Text>
 
             {/* Simple Compass Circle */}
             <View style={styles.compassContainer}>
               <Svg width={180} height={180}>
-                <Circle
-                  cx={90}
-                  cy={90}
-                  r={75}
-                  fill="none"
-                  stroke={theme.border}
-                  strokeWidth="2"
-                />
+                <Circle cx={90} cy={90} r={75} fill="none" stroke={theme.border} strokeWidth="2" />
                 {/* North indicator */}
                 <Line
                   x1={90}
@@ -556,10 +547,13 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
             <View style={styles.confirmationDialog}>
               <Text style={styles.confirmationTitle}>LARGE HEADING CHANGE</Text>
               <Text style={styles.confirmationMessage}>
-                Adjusting {pendingHeadingAdjustment > 0 ? '+' : ''}{pendingHeadingAdjustment}° will result in a total change of {Math.abs(cumulativeHeadingChange + pendingHeadingAdjustment)}°.
+                Adjusting {pendingHeadingAdjustment > 0 ? '+' : ''}
+                {pendingHeadingAdjustment}° will result in a total change of{' '}
+                {Math.abs(cumulativeHeadingChange + pendingHeadingAdjustment)}°.
               </Text>
               <Text style={styles.confirmationDetails}>
-                Current: {Math.round(currentHeading)}° → Target: {Math.round(currentHeading + cumulativeHeadingChange + pendingHeadingAdjustment)}°
+                Current: {Math.round(currentHeading)}° → Target:{' '}
+                {Math.round(currentHeading + cumulativeHeadingChange + pendingHeadingAdjustment)}°
               </Text>
 
               <View style={styles.confirmationButtons}>
@@ -591,7 +585,7 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
             title={helpContent.title}
             content={helpContent.content}
             tips={helpContent.tips}
-            relatedTopics={relatedTopics.map(t => ({
+            relatedTopics={relatedTopics.map((t) => ({
               title: t.title,
               onPress: () => navigateToRelatedTopic(t.id),
             }))}
@@ -603,316 +597,317 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
 };
 
 // Theme-aware style factory
-const createStyles = (theme: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.surface,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    backgroundColor: theme.overlay,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  headerButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  headerButtonText: {
-    color: theme.primary,
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  helpButton: {
-    padding: 8,
-    minWidth: 60,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: theme.text,
-    flex: 1,
-    textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
+const createStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.surface,
+    },
+    dragHandle: {
+      width: 36,
+      height: 5,
+      backgroundColor: theme.overlay,
+      borderRadius: 3,
+      alignSelf: 'center',
+      marginTop: 5,
+      marginBottom: 5,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    headerButton: {
+      padding: 8,
+      minWidth: 60,
+    },
+    headerButtonText: {
+      color: theme.primary,
+      fontSize: 17,
+      fontWeight: '400',
+    },
+    helpButton: {
+      padding: 8,
+      minWidth: 60,
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: theme.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    content: {
+      flex: 1,
+      padding: 20,
+    },
 
-  // Status Display
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    backgroundColor: theme.surfaceDim,
-    padding: 15,
-    borderRadius: 8,
-  },
-  statusIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  statusTextContainer: {
-    flex: 1,
-  },
-  statusText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
-  modeText: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    marginTop: 2,
-  },
+    // Status Display
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
+      backgroundColor: theme.surfaceDim,
+      padding: 15,
+      borderRadius: 8,
+    },
+    statusIndicator: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      marginRight: 12,
+    },
+    statusTextContainer: {
+      flex: 1,
+    },
+    statusText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    modeText: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
 
-  // Error Display
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.error,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-  },
-  errorMessageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 8,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
-  errorCloseButton: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  errorCloseText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
+    // Error Display
+    errorContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: theme.error,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 15,
+    },
+    errorMessageContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: 8,
+    },
+    errorText: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    errorCloseButton: {
+      width: 24,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 8,
+    },
+    errorCloseText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
 
-  // Heading Display
-  headingDisplay: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  headingLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: theme.textSecondary,
-    marginBottom: 15,
-    letterSpacing: 1,
-  },
-  compassContainer: {
-    marginBottom: 20,
-  },
-  headingValues: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    gap: 20,
-  },
-  headingValue: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  headingValueLabel: {
-    fontSize: 12,
-    color: theme.textTertiary,
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  headingValueCurrent: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: theme.text,
-    fontFamily: 'monospace',
-  },
-  headingValueTarget: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: theme.warning,
-    fontFamily: 'monospace',
-  },
+    // Heading Display
+    headingDisplay: {
+      alignItems: 'center',
+      marginBottom: 30,
+    },
+    headingLabel: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
+      marginBottom: 15,
+      letterSpacing: 1,
+    },
+    compassContainer: {
+      marginBottom: 20,
+    },
+    headingValues: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      width: '100%',
+      gap: 20,
+    },
+    headingValue: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    headingValueLabel: {
+      fontSize: 12,
+      color: theme.textTertiary,
+      marginBottom: 8,
+      fontWeight: '600',
+    },
+    headingValueCurrent: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.text,
+      fontFamily: 'monospace',
+    },
+    headingValueTarget: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.warning,
+      fontFamily: 'monospace',
+    },
 
-  // Control Grid
-  controlGrid: {
-    marginTop: 20,
-  },
-  primaryControlRow: {
-    marginBottom: 30,
-  },
-  primaryButton: {
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 70,
-  },
-  engageButton: {
-    backgroundColor: theme.interactive,
-  },
-  standbyButton: {
-    backgroundColor: theme.warning,
-  },
-  primaryButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.text,
-    letterSpacing: 1,
-  },
+    // Control Grid
+    controlGrid: {
+      marginTop: 20,
+    },
+    primaryControlRow: {
+      marginBottom: 30,
+    },
+    primaryButton: {
+      padding: 20,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 70,
+    },
+    engageButton: {
+      backgroundColor: theme.interactive,
+    },
+    standbyButton: {
+      backgroundColor: theme.warning,
+    },
+    primaryButtonText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.text,
+      letterSpacing: 1,
+    },
 
-  // Adjustment Grid
-  adjustmentGrid: {
-    backgroundColor: theme.surfaceDim,
-    padding: 20,
-    borderRadius: 12,
-  },
-  adjustmentLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: theme.textSecondary,
-    marginBottom: 15,
-    letterSpacing: 1,
-    textAlign: 'center',
-  },
-  adjustmentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 12,
-  },
-  adjustButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: theme.interactive,
-    minHeight: 60,
-  },
-  adjustButtonLarge: {
-    minHeight: 70,
-  },
-  adjustButtonSmall: {
-    minHeight: 60,
-  },
-  adjustButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.text,
-    fontFamily: 'monospace',
-  },
+    // Adjustment Grid
+    adjustmentGrid: {
+      backgroundColor: theme.surfaceDim,
+      padding: 20,
+      borderRadius: 12,
+    },
+    adjustmentLabel: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.textSecondary,
+      marginBottom: 15,
+      letterSpacing: 1,
+      textAlign: 'center',
+    },
+    adjustmentRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+      gap: 12,
+    },
+    adjustButton: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+      backgroundColor: theme.interactive,
+      minHeight: 60,
+    },
+    adjustButtonLarge: {
+      minHeight: 70,
+    },
+    adjustButtonSmall: {
+      minHeight: 60,
+    },
+    adjustButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+      fontFamily: 'monospace',
+    },
 
-  // Footer
-  footer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
-  },
-  emergencyButton: {
-    backgroundColor: theme.error,
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    minHeight: 70,
-    justifyContent: 'center',
-  },
-  emergencyButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.text,
-    letterSpacing: 1,
-  },
+    // Footer
+    footer: {
+      padding: 20,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    emergencyButton: {
+      backgroundColor: theme.error,
+      padding: 20,
+      borderRadius: 12,
+      alignItems: 'center',
+      minHeight: 70,
+      justifyContent: 'center',
+    },
+    emergencyButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+      letterSpacing: 1,
+    },
 
-  // Confirmation Modal
-  confirmationOverlay: {
-    flex: 1,
-    backgroundColor: theme.overlayDark,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  confirmationDialog: {
-    backgroundColor: theme.surfaceDim,
-    borderRadius: 16,
-    padding: 30,
-    margin: 20,
-    minWidth: 300,
-    maxWidth: 400,
-  },
-  confirmationTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.text,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  confirmationMessage: {
-    fontSize: 16,
-    color: theme.textSecondary,
-    marginBottom: 15,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  confirmationDetails: {
-    fontSize: 14,
-    color: theme.textTertiary,
-    marginBottom: 25,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  confirmationButtons: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  confirmCancelButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 8,
-    backgroundColor: theme.surfaceHighlight,
-    alignItems: 'center',
-  },
-  confirmCancelText: {
-    color: theme.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  confirmEngageButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 8,
-    backgroundColor: theme.interactive,
-    alignItems: 'center',
-  },
-  confirmEngageText: {
-    color: theme.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+    // Confirmation Modal
+    confirmationOverlay: {
+      flex: 1,
+      backgroundColor: theme.overlayDark,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    confirmationDialog: {
+      backgroundColor: theme.surfaceDim,
+      borderRadius: 16,
+      padding: 30,
+      margin: 20,
+      minWidth: 300,
+      maxWidth: 400,
+    },
+    confirmationTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 15,
+      textAlign: 'center',
+    },
+    confirmationMessage: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      marginBottom: 15,
+      textAlign: 'center',
+      lineHeight: 24,
+    },
+    confirmationDetails: {
+      fontSize: 14,
+      color: theme.textTertiary,
+      marginBottom: 25,
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    confirmationButtons: {
+      flexDirection: 'row',
+      gap: 15,
+    },
+    confirmCancelButton: {
+      flex: 1,
+      padding: 15,
+      borderRadius: 8,
+      backgroundColor: theme.surfaceHighlight,
+      alignItems: 'center',
+    },
+    confirmCancelText: {
+      color: theme.text,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    confirmEngageButton: {
+      flex: 1,
+      padding: 15,
+      borderRadius: 8,
+      backgroundColor: theme.interactive,
+      alignItems: 'center',
+    },
+    confirmEngageText: {
+      color: theme.text,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
 
 // Default export for compatibility with existing tests
 export default AutopilotControlScreen;

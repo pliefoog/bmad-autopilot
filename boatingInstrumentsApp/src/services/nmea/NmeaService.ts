@@ -1,6 +1,6 @@
 /**
  * SIMPLIFIED NMEA Service - Clean Implementation
- * 
+ *
  * Key Changes:
  * 1. Removed ProcessingMetrics interface and array (saves 10MB memory)
  * 2. Removed getDiagnostics() method (150 lines deleted)
@@ -9,7 +9,12 @@
  * 5. Removed getPerformanceMetrics() and clearMetrics()
  */
 
-import { PureConnectionManager, type ConnectionConfig, type ConnectionStatus, type BinaryPgnFrame } from './connection/PureConnectionManager';
+import {
+  PureConnectionManager,
+  type ConnectionConfig,
+  type ConnectionStatus,
+  type BinaryPgnFrame,
+} from './connection/PureConnectionManager';
 import { PureNmeaParser, type ParsedNmeaMessage } from './parsing/PureNmeaParser';
 import { PureStoreUpdater, type UpdateResult } from './data/PureStoreUpdater';
 
@@ -47,20 +52,20 @@ export interface NmeaServiceStatus {
 
 export class NmeaService {
   private static instance: NmeaService;
-  
+
   // Component instances
   private connectionManager: PureConnectionManager;
   private parser: PureNmeaParser;
   private storeUpdater: PureStoreUpdater;
-  
+
   // Service state
   private isRunning = false;
   private currentConfig: NmeaServiceConfig | null = null;
-  
+
   // SIMPLIFIED: Only track message count and start time
   private messageCount = 0;
   private startTime: number | null = null;
-  
+
   static getInstance(): NmeaService {
     if (!NmeaService.instance) {
       NmeaService.instance = new NmeaService();
@@ -72,15 +77,12 @@ export class NmeaService {
     this.connectionManager = new PureConnectionManager();
     this.parser = PureNmeaParser.getInstance();
     this.storeUpdater = PureStoreUpdater.getInstance();
-    
+
     this.setupConnectionEvents();
   }
 
   async start(config: NmeaServiceConfig): Promise<boolean> {
-    console.log('[NmeaService] Starting with config:', config);
-    
     if (this.isRunning) {
-      console.log('[NmeaService] Already running, stopping first...');
       await this.stop();
     }
 
@@ -90,10 +92,9 @@ export class NmeaService {
 
     try {
       const success = await this.connectionManager.connect(config.connection);
-      
+
       if (success) {
         this.isRunning = true;
-        console.log('[NmeaService] Started successfully');
         return true;
       } else {
         console.error('[NmeaService] Failed to establish connection');
@@ -101,16 +102,15 @@ export class NmeaService {
       }
     } catch (error) {
       console.error('[NmeaService] Start error:', error);
-      this.storeUpdater.updateError(`Start failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.storeUpdater.updateError(
+        `Start failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
       return false;
     }
   }
 
   async stop(): Promise<void> {
-    console.log('[NmeaService] Stopping...');
-    
     if (!this.isRunning) {
-      console.log('[NmeaService] Not running, nothing to stop');
       return;
     }
 
@@ -118,7 +118,6 @@ export class NmeaService {
       await this.connectionManager.disconnect();
       this.isRunning = false;
       this.currentConfig = null;
-      console.log('[NmeaService] Stopped successfully');
     } catch (error) {
       console.error('[NmeaService] Stop error:', error);
     }
@@ -131,7 +130,7 @@ export class NmeaService {
     const connectionStatus = this.connectionManager.getStatus();
     const parsingStats = this.parser.getStats();
     const updateStats = this.storeUpdater.getStats();
-    
+
     const elapsedSeconds = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
     const messagesPerSecond = elapsedSeconds > 0 ? this.messageCount / elapsedSeconds : 0;
 
@@ -141,17 +140,17 @@ export class NmeaService {
         totalMessages: parsingStats.parseCount,
         successfulParses: parsingStats.parseCount - parsingStats.errorCount,
         failedParses: parsingStats.errorCount,
-        successRate: parsingStats.successRate
+        successRate: parsingStats.successRate,
       },
       updates: {
         totalUpdates: updateStats.updateCount,
         throttledUpdates: updateStats.throttledCount,
         batchedUpdates: updateStats.batchedCount,
-        throttleRate: updateStats.throttleRate
+        throttleRate: updateStats.throttleRate,
       },
       performance: {
-        messagesPerSecond: Math.round(messagesPerSecond * 100) / 100
-      }
+        messagesPerSecond: Math.round(messagesPerSecond * 100) / 100,
+      },
     };
   }
 
@@ -164,38 +163,35 @@ export class NmeaService {
   }
 
   async updateConfig(newConfig: NmeaServiceConfig): Promise<boolean> {
-    console.log('[NmeaService] Updating configuration...');
-    
     if (this.isRunning) {
       await this.stop();
     }
-    
+
     return await this.start(newConfig);
   }
 
   private setupConnectionEvents(): void {
     this.connectionManager.setEventHandlers({
       onStateChange: (status) => {
-        console.log('[NmeaService] Connection state changed:', status.state);
         this.storeUpdater.updateConnectionStatus({ state: status.state });
-        
+
         if (status.lastError) {
           this.storeUpdater.updateError(status.lastError);
         }
       },
-      
+
       onDataReceived: (data) => {
         this.processNmeaMessage(data);
       },
-      
+
       onBinaryDataReceived: (frame) => {
         this.processBinaryPgnFrame(frame);
       },
-      
+
       onError: (error) => {
         console.error('[NmeaService] Connection error:', error);
         this.storeUpdater.updateError(error);
-      }
+      },
     });
   }
 
@@ -218,13 +214,14 @@ export class NmeaService {
 
       const parsedMessage = parseResult.data;
       const updateOptions = this.currentConfig?.updates || {};
-      
+
       // SIMPLIFIED: Only use NmeaSensorProcessor path (no legacy transformer)
       this.storeUpdater.processNmeaMessage(parsedMessage, updateOptions);
-
     } catch (error) {
       console.error('[NmeaService] Processing error:', error);
-      this.storeUpdater.updateError(`Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.storeUpdater.updateError(
+        `Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -235,15 +232,14 @@ export class NmeaService {
     this.messageCount++;
 
     try {
-      console.log(`[NmeaService] Processing binary PGN ${frame.pgn} (0x${frame.pgn.toString(16).toUpperCase()})`);
-      
       // Process the binary frame directly through the store updater
       const updateOptions = this.currentConfig?.updates || {};
       this.storeUpdater.processBinaryPgnFrame(frame, updateOptions);
-
     } catch (error) {
       console.error('[NmeaService] Binary frame processing error:', error);
-      this.storeUpdater.updateError(`Binary frame error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.storeUpdater.updateError(
+        `Binary frame error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 }

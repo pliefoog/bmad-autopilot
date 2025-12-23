@@ -1,7 +1,7 @@
 /**
  * TV Focus Manager Hook
  * Epic 8 - Phase 1: Cross-Platform Dialog Unification
- * 
+ *
  * Manages focus and navigation for TV platforms (tvOS, Android TV)
  * Features:
  * - D-pad navigation (up, down, left, right, select, back)
@@ -9,7 +9,7 @@
  * - Focus animations
  * - Focus trap within modal
  * - Accessibility integration
- * 
+ *
  * @example
  * ```tsx
  * function MyTVComponent() {
@@ -18,7 +18,7 @@
  *     onSelect: (index) => handleItemSelect(index),
  *     onBack: () => closeModal(),
  *   });
- * 
+ *
  *   return items.map((item, index) => (
  *     <FocusableButton
  *       key={index}
@@ -38,35 +38,27 @@ import { isTV } from '../utils/platformDetection';
  * TV Event Handler Types
  * tvOS uses TVEventHandler, Android TV uses BackHandler + key events
  */
-type TVEventType = 
-  | 'up'
-  | 'down'
-  | 'left'
-  | 'right'
-  | 'select'
-  | 'playPause'
-  | 'menu'
-  | 'back';
+type TVEventType = 'up' | 'down' | 'left' | 'right' | 'select' | 'playPause' | 'menu' | 'back';
 
 interface TVFocusManagerOptions {
   /** Number of focusable items */
   itemCount: number;
-  
+
   /** Initial focused index (default: 0) */
   initialIndex?: number;
-  
+
   /** Callback when select/enter is pressed */
   onSelect?: (index: number) => void;
-  
+
   /** Callback when back/menu is pressed */
   onBack?: () => void;
-  
+
   /** Whether to wrap focus at edges (default: false) */
   wrapFocus?: boolean;
-  
+
   /** Whether focus manager is enabled (default: true) */
   enabled?: boolean;
-  
+
   /** Optional grid layout configuration */
   grid?: {
     columns: number;
@@ -77,25 +69,25 @@ interface TVFocusManagerOptions {
 interface TVFocusManagerResult {
   /** Currently focused item index */
   focusedIndex: number;
-  
+
   /** Manually set focused index */
   setFocusedIndex: (index: number) => void;
-  
+
   /** Move focus up */
   moveFocusUp: () => void;
-  
+
   /** Move focus down */
   moveFocusDown: () => void;
-  
+
   /** Move focus left */
   moveFocusLeft: () => void;
-  
+
   /** Move focus right */
   moveFocusRight: () => void;
-  
+
   /** Trigger select action */
   selectFocusedItem: () => void;
-  
+
   /** Focus animation value (0-1) */
   focusAnim: Animated.Value;
 }
@@ -125,7 +117,7 @@ export function useTVFocusManager(options: TVFocusManagerOptions): TVFocusManage
   const clampIndex = useCallback(
     (index: number): number => {
       if (itemCount === 0) return 0;
-      
+
       if (wrapFocus) {
         // Wrap around at edges
         if (index < 0) return itemCount - 1;
@@ -136,7 +128,7 @@ export function useTVFocusManager(options: TVFocusManagerOptions): TVFocusManage
         return Math.max(0, Math.min(itemCount - 1, index));
       }
     },
-    [itemCount, wrapFocus]
+    [itemCount, wrapFocus],
   );
 
   /**
@@ -172,7 +164,7 @@ export function useTVFocusManager(options: TVFocusManagerOptions): TVFocusManage
         animateFocusChange();
       }
     },
-    [focusedIndex, clampIndex, animateFocusChange]
+    [focusedIndex, clampIndex, animateFocusChange],
   );
 
   /**
@@ -294,15 +286,7 @@ export function useTVFocusManager(options: TVFocusManagerOptions): TVFocusManage
           break;
       }
     },
-    [
-      enabled,
-      moveFocusUp,
-      moveFocusDown,
-      moveFocusLeft,
-      moveFocusRight,
-      selectFocusedItem,
-      onBack,
-    ]
+    [enabled, moveFocusUp, moveFocusDown, moveFocusLeft, moveFocusRight, selectFocusedItem, onBack],
   );
 
   /**

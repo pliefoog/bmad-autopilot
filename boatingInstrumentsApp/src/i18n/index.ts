@@ -1,6 +1,6 @@
 /**
  * i18n Exports
- * 
+ *
  * Central export point for internationalization utilities
  */
 

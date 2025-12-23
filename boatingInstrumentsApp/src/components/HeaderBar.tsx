@@ -85,23 +85,29 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     }
   };
 
-  const getCombinedAccessibilityLabel = (status: ConnectionStatus, session?: { isRecording: boolean }): string => {
+  const getCombinedAccessibilityLabel = (
+    status: ConnectionStatus,
+    session?: { isRecording: boolean },
+  ): string => {
     const connectionLabel = getAccessibilityLabel(status);
-    
+
     if (status === 'connected') {
-      const recordingLabel = session?.isRecording 
-        ? 'Recording navigation session - tap to stop' 
+      const recordingLabel = session?.isRecording
+        ? 'Recording navigation session - tap to stop'
         : 'Ready to record - tap to start navigation session';
       return `${connectionLabel}. ${recordingLabel}`;
     }
-    
+
     return `${connectionLabel}. Long press to open connection settings`;
   };
 
-  const getNavigationIcon = (status: ConnectionStatus, session?: { isRecording: boolean }): string | null => {
+  const getNavigationIcon = (
+    status: ConnectionStatus,
+    session?: { isRecording: boolean },
+  ): string | null => {
     // Only show navigation control when connected with data
     if (status !== 'connected') return null;
-    
+
     // Black circle for ready to record, black square for recording
     return session?.isRecording ? '■' : '●';
   };
@@ -127,10 +133,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   return (
     <>
-      <View 
-        style={styles.headerContainer}
-        testID="header-container"
-      >
+      <View style={styles.headerContainer} testID="header-container">
         {/* Left: Hamburger Menu Icon */}
         <TouchableOpacity
           style={styles.hamburgerButton}
@@ -161,7 +164,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               <Ionicons name="boat-outline" size={20} color={theme.iconPrimary} />
             </TouchableOpacity>
           )}
-          
+
           {/* Combined Connection Status + Navigation Session Button */}
           <TouchableOpacity
             style={[styles.combinedStatusButton, { marginLeft: 8 }]}
