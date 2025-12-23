@@ -6,12 +6,12 @@ import { MetricDisplayData } from '../types/MetricDisplayData';
 interface PrimaryMetricCellProps {
   // New unified interface (preferred)
   data?: MetricDisplayData;
-  
+
   // Legacy individual props (for backward compatibility)
   mnemonic?: string;
   value?: string | number;
   unit?: string;
-  
+
   // Common props
   state?: 'normal' | 'warning' | 'alarm';
   style?: any;
@@ -19,7 +19,7 @@ interface PrimaryMetricCellProps {
   cellHeight?: number; // Cell height from UnifiedWidgetGrid
   minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
   testID?: string;
-  
+
   // Responsive font sizes (optional - overrides defaults)
   fontSize?: {
     mnemonic?: number;
@@ -35,7 +35,7 @@ interface PrimaryMetricCellProps {
  * - Unit: 16pt, regular, theme.textSecondary
  * - Spacing: 4pt between mnemonic and value, 2pt between value and unit
  * - Dynamic sizing: Adjusts font size based on content length and available width
- * 
+ *
  * Story 9.6: Removed legacy useUnitConversion - uses MetricDisplayData exclusively
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
@@ -57,69 +57,68 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   const mnemonic = data?.mnemonic ?? legacyMnemonic ?? '';
   const value = data?.value ?? legacyValue ?? '';
   const unit = data?.unit ?? legacyUnit ?? '';
-  
+
   // Use layout information from MetricDisplayData if available
   const minWidth = data?.layout?.minWidth ?? legacyMinWidth;
   const alignment = data?.layout?.alignment ?? 'right';
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
-    const displayValue = (value !== undefined && value !== null && value !== '') 
-      ? value.toString() 
-      : '---';
-    
+    const displayValue =
+      value !== undefined && value !== null && value !== '' ? value.toString() : '---';
+
     // BASE COMPOSITION - Standard sizes for MetricCell
     const BASE_MNEMONIC_SIZE = customFontSize?.mnemonic ?? 12;
     const BASE_VALUE_SIZE = customFontSize?.value ?? 36;
     const BASE_UNIT_SIZE = customFontSize?.unit ?? 12; // Same as mnemonic
     const BASE_SPACE_SIZE = 4; // Constant space between mnemonic and value
-    
+
     // Calculate total base height
     const BASE_TOTAL_HEIGHT = BASE_MNEMONIC_SIZE + BASE_SPACE_SIZE + BASE_VALUE_SIZE;
-    
+
     let mnemonicFontSize = BASE_MNEMONIC_SIZE;
     let valueFontSize = BASE_VALUE_SIZE;
     let unitFontSize = BASE_UNIT_SIZE;
     let spaceSize = BASE_SPACE_SIZE;
-    
+
     // HEIGHT SCALING - Scale all elements proportionally to fit available height
     if (cellHeight && cellHeight > 0) {
       const availableHeight = cellHeight;
-      
+
       // Calculate height scaling factor
       const heightScaleFactor = availableHeight / BASE_TOTAL_HEIGHT;
-      
+
       // Apply height scaling to all elements
       mnemonicFontSize = BASE_MNEMONIC_SIZE * heightScaleFactor;
       valueFontSize = BASE_VALUE_SIZE * heightScaleFactor;
       unitFontSize = BASE_UNIT_SIZE * heightScaleFactor;
       spaceSize = BASE_SPACE_SIZE * heightScaleFactor;
     }
-    
+
     // WIDTH SCALING - Only scale value if it exceeds available width
     if (maxWidth && maxWidth > 0) {
       // Account for internal container padding (paddingRight: 6)
       const CONTAINER_PADDING_RIGHT = 0;
       const actualAvailableWidth = maxWidth - CONTAINER_PADDING_RIGHT;
-      
+
       // Character width estimation for monospace
       // Account for degree symbols, directional letters, special characters
       const CHAR_WIDTH_RATIO = 0.6;
       const PADDING_RESERVE = 0.95; // Use 95% of actual width, leave 5% padding
-      
+
       // Calculate required width for scaled value
       const scaledValueWidth = displayValue.length * (valueFontSize * CHAR_WIDTH_RATIO);
       const targetWidth = actualAvailableWidth * PADDING_RESERVE;
-      
+
       // If value exceeds available width, calculate width scaling factor
       if (scaledValueWidth > targetWidth) {
         const widthScaleFactor = targetWidth / scaledValueWidth;
-        
+
         // Apply width scaling ONLY to value (not mnemonic, not unit, not space)
         valueFontSize = valueFontSize * widthScaleFactor;
       }
     }
-    
+
     return {
       value: Math.max(1, valueFontSize), // Minimum 1pt to prevent zero-size
       mnemonic: Math.max(1, mnemonicFontSize),
@@ -143,33 +142,44 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   };
 
   // Format value for display
-  const displayValue = (value !== undefined && value !== null && value !== '') 
-    ? value.toString() 
-    : '---';
+  const displayValue =
+    value !== undefined && value !== null && value !== '' ? value.toString() : '---';
 
-    // Apply consistent width styling - prefer MetricDisplayData layout info
+  // Apply consistent width styling - prefer MetricDisplayData layout info
   const containerStyle = [
-    styles.container, 
-    style, 
-    minWidth ? { minWidth } : null, 
+    styles.container,
+    style,
+    minWidth ? { minWidth } : null,
     maxWidth ? { maxWidth } : null,
     cellHeight ? { height: cellHeight } : null,
     // Use MetricDisplayData layout info if available
-    data?.layout ? {
-      minWidth: data.layout.minWidth,
-      alignItems: alignment === 'center' ? 'center' as const : 
-                 alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
-    } : null
+    data?.layout
+      ? {
+          minWidth: data.layout.minWidth,
+          alignItems:
+            alignment === 'center'
+              ? ('center' as const)
+              : alignment === 'right'
+              ? ('flex-end' as const)
+              : ('flex-start' as const),
+        }
+      : null,
   ].filter(Boolean);
 
-  // Value container styling with consistent width and typography for stability  
+  // Value container styling with consistent width and typography for stability
   const valueContainerStyle = [
     styles.valueContainer,
     // Use MetricDisplayData layout info if available
-    data?.layout ? {
-      alignItems: alignment === 'center' ? 'center' as const : 
-                 alignment === 'right' ? 'flex-end' as const : 'flex-start' as const
-    } : null
+    data?.layout
+      ? {
+          alignItems:
+            alignment === 'center'
+              ? ('center' as const)
+              : alignment === 'right'
+              ? ('flex-end' as const)
+              : ('flex-start' as const),
+        }
+      : null,
   ].filter(Boolean);
 
   // Value text styling
@@ -179,18 +189,19 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   };
 
   return (
-    <View style={containerStyle} testID={testID || "primary-metric-cell"}>
-      {/* First line: Mnemonic and Unit */}
+    <View style={containerStyle} testID={testID || 'primary-metric-cell'}>
       <View style={styles.mnemonicUnitRow}>
-        <Text style={styles.mnemonic} testID="metric-mnemonic">{mnemonic.toUpperCase()}</Text>
-        {unit && unit.trim() !== '' && <Text style={styles.unit} testID="metric-unit">({unit})</Text>}
+        <Text style={styles.mnemonic} testID="metric-mnemonic">
+          {mnemonic.toUpperCase()}
+        </Text>
+        {unit && unit.trim() !== '' ? (
+          <Text style={styles.unit} testID="metric-unit">
+            ({unit})
+          </Text>
+        ) : null}
       </View>
-      {/* Second line: Value */}
       <View style={valueContainerStyle}>
-        <Text 
-          style={valueTextStyle}
-          testID="metric-value"
-        >
+        <Text style={valueTextStyle} testID="metric-value">
           {displayValue}
         </Text>
       </View>
@@ -198,7 +209,10 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   );
 };
 
-const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit: number; space: number }) =>
+const createStyles = (
+  theme: any,
+  sizes: { value: number; mnemonic: number; unit: number; space: number },
+) =>
   StyleSheet.create({
     container: {
       width: '100%', // Fill parent cell width
@@ -227,14 +241,14 @@ const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit
       marginRight: 4, // spacing between mnemonic and unit
       flexShrink: 1, // Allow shrinking if needed
     },
-    
+
     valueContainer: {
       flex: 1, // Take all remaining space to push value to bottom
       flexDirection: 'row',
       alignItems: 'flex-end', // Align text to bottom of container
       justifyContent: 'flex-end', // Right-align the value within its container
     },
-    
+
     // AC 2: Value: 36-48pt, monospace, bold, theme.text (now dynamic)
     value: {
       fontSize: sizes.value,
@@ -244,7 +258,7 @@ const createStyles = (theme: any, sizes: { value: number; mnemonic: number; unit
       lineHeight: sizes.value, // Tight line height = font size for full vertical fill
       flexShrink: 0, // Prevent shrinking to maintain consistent width
     },
-    
+
     // AC 2: Unit: 14-16pt, regular, theme.textSecondary (now dynamic)
     unit: {
       fontSize: sizes.unit,
