@@ -1,24 +1,18 @@
 /**
- * Sensor Configuration Dialog - Per-Instance Configuration (Registry-Driven)
+ * Sensor Configuration Dialog - Refactored Architecture
+ *
+ * Streamlined from 1700 lines to ~600 lines by extracting components:
+ * - AlarmThresholdSlider: Dual-threshold range slider with zone visualization
+ * - SoundPatternControl: Unified mobile/desktop sound pattern selection
+ * - InstanceTabBar: Multi-instance tab navigation
+ * - MetricSelector: Multi-metric alarm configuration dropdown
  *
  * Features:
- * - Sensor naming and context configuration
- * - Instance tab navigation for multi-instance sensors
- * - Alarm threshold configuration (warning + critical)
- * - Location-aware threshold defaults
- * - SI unit storage with presentation system conversion
- * - Real-time configuration updates to NMEA store
  * - Registry-driven dynamic form rendering
- * - Reusable ThresholdEditor components
  * - Explicit save timing (transitions only, no auto-save)
- * 
- * **Architecture:**
- * - Uses BaseConfigDialog for consistent Modal/header/footer structure
- * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
- * - SensorConfigRegistry: Single source of truth for all sensor-specific requirements
- * - NMEA Store: Runtime source of truth (widgets read from here)
- * - AsyncStorage: Background persistence only
- * - FormData: In-memory editing state with explicit saves on transitions
+ * - SI unit storage with presentation system conversion
+ * - Multi-metric alarm support (battery: voltage/SOC/temp/current)
+ * - Direction-aware threshold validation
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -28,76 +22,54 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   Platform,
   Alert,
   useWindowDimensions,
 } from 'react-native';
 import { z } from 'zod';
-import Slider from '@react-native-community/slider';
-import RangeSlider from 'rn-range-slider';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
 import { SensorType, SensorAlarmThresholds } from '../../types/SensorData';
-import { useCategoryPresentation } from '../../presentation/useCategoryPresentation';
 import { DataCategory } from '../../presentation/categories';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
-import { ThresholdEditor } from './inputs/ThresholdEditor';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
-import { SOUND_PATTERNS, MarineAudioAlertManager } from '../../services/alarms/MarineAudioAlertManager';
+import {
+  SOUND_PATTERNS,
+  MarineAudioAlertManager,
+} from '../../services/alarms/MarineAudioAlertManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../../services/alarms/types';
-import { SENSOR_CONFIG_REGISTRY, getSensorConfig, getAlarmDefaults, shouldShowField } from '../../registry/SensorConfigRegistry';
+import {
+  SENSOR_CONFIG_REGISTRY,
+  getSensorConfig,
+  getAlarmDefaults,
+  shouldShowField,
+} from '../../registry/SensorConfigRegistry';
+import { ThresholdPresentationService } from '../../services/ThresholdPresentationService';
 
-/**
- * Sensor Configuration Dialog Props
- * 
- * @property visible - Controls modal visibility
- * @property onClose - Callback when dialog closes (via X button or backdrop)
- * @property sensorType - Optional sensor type filter (shows only that sensor)
- * 
- * **Component Behavior:**
- * - Opens modal with platform-specific presentation (pageSheet on iOS)
- * - Shows tabs for multi-instance sensors (e.g., multiple batteries)
- * - Supports multi-metric alarms (battery: voltage/SOC/temp/current)
- * - Explicit saves only on transitions (instance/sensor/close), NOT on field edits
- * - Converts display units ↔ SI units using presentation system
- * - Persists to NMEA store (immediate) then AsyncStorage (background)
- * 
- * **Save Timing (Explicit):**
- * ✅ Saves when: Switching instance, switching sensor type, closing dialog
- * ❌ Does NOT save: Field edits, metric selection changes, slider dragging
- * 
- * **Store Architecture:**
- * 1. **NMEA Store**: Runtime source of truth (widgets read from here)
- * 2. **AsyncStorage**: Background persistence (loaded on app startup)
- * 3. **FormData**: In-memory editing buffer (explicit saves on transitions)
- * 
- * **Registry-Driven Rendering:**
- * - All sensor-specific fields defined in SensorConfigRegistry
- * - Dynamic form rendering via renderConfigFields()
- * - Hardware-provided fields automatically show read-only
- * - New sensors work without component changes
- * 
- * **Limitations:**
- * - Requires at least one sensor instance to be available
- * - Threshold validation enforces warning < critical (or vice versa based on direction)
- * - Toggle/slider field types defined in registry but not yet implemented
- */
+/* Extracted Components */
+import { AlarmThresholdSlider } from './sensor-config/AlarmThresholdSlider';
+import { SoundPatternControl } from './sensor-config/SoundPatternControl';
+import { InstanceTabBar } from './sensor-config/InstanceTabBar';
+import { MetricSelector } from './sensor-config/MetricSelector';
+
+/* Utilities */
+import {
+  getCriticalSliderRange,
+  getWarningSliderRange,
+  clampToRange,
+} from '../../utils/alarmSliderUtils';
+
 export interface SensorConfigDialogProps {
   visible: boolean;
   onClose: () => void;
   sensorType?: SensorType;
 }
-
-// Hardcoded sensor configuration removed - now using SensorConfigRegistry as single source of truth
-
-// getMetricPresentation removed - Phase 4: Use sensor.display for reading values
-// Presentation hooks still used for convertBack() during saves
 
 interface SensorInstance {
   instance: number;
@@ -106,32 +78,34 @@ interface SensorInstance {
   lastUpdate?: number;
 }
 
-// Zod schema for form validation with direction-aware threshold validation
-const createSensorFormSchema = (direction?: 'above' | 'below') => z.object({
-  name: z.string().optional(),
-  enabled: z.boolean(),
-  batteryChemistry: z.enum(['lead-acid', 'agm', 'lifepo4']).optional(),
-  engineType: z.enum(['diesel', 'gasoline', 'outboard']).optional(),
-  selectedMetric: z.string().optional(),
-  criticalValue: z.number().optional(),
-  warningValue: z.number().optional(),
-  criticalSoundPattern: z.string(),
-  warningSoundPattern: z.string(),
-}).refine((data) => {
-  // Validate threshold relationship based on alarm direction
-  if (data.warningValue !== undefined && data.criticalValue !== undefined && direction) {
-    if (direction === 'above') {
-      // For 'above' alarms: warning must be less than critical
-      return data.warningValue < data.criticalValue;
-    } else {
-      // For 'below' alarms: warning must be greater than critical
-      return data.warningValue > data.criticalValue;
-    }
-  }
-  return true;
-}, {
-  message: 'Warning threshold must be less severe than critical threshold',
-});
+const createSensorFormSchema = (direction?: 'above' | 'below') =>
+  z
+    .object({
+      name: z.string().optional(),
+      enabled: z.boolean(),
+      batteryChemistry: z.enum(['lead-acid', 'agm', 'lifepo4']).optional(),
+      engineType: z.enum(['diesel', 'gasoline', 'outboard']).optional(),
+      selectedMetric: z.string().optional(),
+      criticalValue: z.number().optional(),
+      warningValue: z.number().optional(),
+      criticalSoundPattern: z.string(),
+      warningSoundPattern: z.string(),
+    })
+    .refine(
+      (data) => {
+        if (data.warningValue !== undefined && data.criticalValue !== undefined && direction) {
+          if (direction === 'above') {
+            return data.warningValue < data.criticalValue;
+          } else {
+            return data.warningValue > data.criticalValue;
+          }
+        }
+        return true;
+      },
+      {
+        message: 'Warning threshold must be less severe than critical threshold',
+      },
+    );
 
 type SensorFormData = z.infer<ReturnType<typeof createSensorFormSchema>>;
 
@@ -141,194 +115,167 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   sensorType: initialSensorType,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
 
-  // NMEA store access
-  const getSensorInstances = useNmeaStore((state) => state.getSensorInstances);
+  /* NMEA Store Access */
+  const getAllSensorInstances = useNmeaStore((state) => state.getAllSensorInstances);
   const updateSensorThresholds = useNmeaStore((state) => state.updateSensorThresholds);
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
   const rawSensorData = useNmeaStore((state) => state.nmeaData.sensors);
   const setConfig = useSensorConfigStore((state) => state.setConfig);
 
-  // Available sensor types
+  /* Available Sensors */
   const availableSensorTypes = useMemo(() => {
     const sensorTypes = Object.keys(rawSensorData) as SensorType[];
-    return sensorTypes.filter((type) => getSensorInstances(type).length > 0);
-  }, [getSensorInstances, rawSensorData]);
+    return sensorTypes.filter((type) => getAllSensorInstances(type).length > 0);
+  }, [getAllSensorInstances, rawSensorData]);
 
-  // Selected sensor and instance
+  /* Selected Sensor & Instance */
   const [selectedSensorType, setSelectedSensorType] = useState<SensorType | null>(
-    initialSensorType || null
+    initialSensorType || null,
   );
   const [selectedInstance, setSelectedInstance] = useState<number>(0);
 
-  // Get instances for selected sensor
+  /* Instances for Selected Sensor */
   const instances = useMemo(() => {
     if (!selectedSensorType) return [];
-    const detected = getSensorInstances(selectedSensorType);
-    return detected.map(({ instance, data }) => ({
+    const detected = getAllSensorInstances(selectedSensorType);
+    return detected.map(({ instance, sensorInstance }) => ({
       instance,
-      name: data.name,
-      location: (data as any).location,
-      lastUpdate: data.timestamp,
+      name: `${selectedSensorType} ${instance}`,
+      location: undefined,
+      lastUpdate: Date.now(),
     })) as SensorInstance[];
-  }, [selectedSensorType, getSensorInstances]);
+  }, [selectedSensorType, getAllSensorInstances]);
 
-  // Initialize selected sensor type when dialog opens (if not provided by prop)
+  /* Initialize selected sensor on open */
   useEffect(() => {
     if (visible && !initialSensorType && !selectedSensorType && availableSensorTypes.length > 0) {
-      // Auto-select first available sensor when dialog opens without a specific sensor
       setSelectedSensorType(availableSensorTypes[0]);
     }
   }, [visible, initialSensorType, selectedSensorType, availableSensorTypes]);
 
-  // Reset to initialSensorType when dialog visibility changes (handles re-opening)
   useEffect(() => {
     if (visible && initialSensorType && initialSensorType !== selectedSensorType) {
       setSelectedSensorType(initialSensorType);
     }
   }, [visible, initialSensorType]);
 
-  // Update selected instance when instances change
   useEffect(() => {
-    if (instances.length > 0 && !instances.find(i => i.instance === selectedInstance)) {
+    if (instances.length > 0 && !instances.find((i) => i.instance === selectedInstance)) {
       setSelectedInstance(instances[0].instance);
     }
   }, [instances, selectedInstance]);
 
-  // Get presentation for selected sensor - derive category from registry
+  /* Derive category from registry */
   const category = useMemo(() => {
     if (!selectedSensorType) return null;
     const sensorConfig = getSensorConfig(selectedSensorType);
-    
-    // Multi-metric: use first metric's category
+
     if (sensorConfig.alarmMetrics && sensorConfig.alarmMetrics.length > 0) {
       return sensorConfig.alarmMetrics[0].category || null;
     }
-    
-    // Single-metric: infer category from sensor type
+
     const categoryMap: Partial<Record<SensorType, DataCategory>> = {
       depth: 'depth',
       speed: 'speed',
       wind: 'wind',
       temperature: 'temperature',
     };
-    
+
     return categoryMap[selectedSensorType] || null;
   }, [selectedSensorType]);
-  
-  const rawPresentation = useCategoryPresentation(category || 'depth');
-  
-  // Pre-call all possible metric presentation hooks (React hooks must be called unconditionally)
-  const voltagePresentation = useCategoryPresentation('voltage');
-  const temperaturePresentation = useCategoryPresentation('temperature');
-  const currentPresentation = useCategoryPresentation('current');
-  const pressurePresentation = useCategoryPresentation('pressure');
-  const rpmPresentation = useCategoryPresentation('rpm');
-  const speedPresentation = useCategoryPresentation('speed');
-  
-  const presentation = useMemo(
-    () => category ? rawPresentation : {
-      isValid: false,
-      convert: (v: number) => v,
-      convertBack: (v: number) => v,
-      symbol: '',
-    },
-    [category, rawPresentation]
-  );
 
-  // Get alarm configuration from registry
+  /* Sensor Config from Registry */
   const sensorConfig = selectedSensorType ? getSensorConfig(selectedSensorType) : null;
   const requiresMetricSelection = sensorConfig?.alarmSupport === 'multi-metric';
   const supportsAlarms = sensorConfig?.alarmSupport !== 'none';
-  
-  // Memoize sound pattern picker items (include "None" option)
-  const soundPatternItems = useMemo(
+
+  /* Sound Pattern Items */
+  const soundPatternItems = useMemo<PlatformPickerItem[]>(
     () => [
       { label: 'None', value: 'none' },
-      ...SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value }))
+      ...SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value })),
     ],
-    []
+    [],
   );
 
-  // Get current thresholds from NMEA store (single source of truth at runtime)
+  /* Current Thresholds from Store */
   const currentThresholds = useMemo(() => {
     if (!selectedSensorType) return { enabled: false };
     return getSensorThresholds(selectedSensorType, selectedInstance) || { enabled: false };
   }, [selectedSensorType, selectedInstance, getSensorThresholds]);
 
-  // Get sensor-provided chemistry (read-only for safety)
-  const sensorProvidedChemistry = useMemo(() => {
-    if (selectedSensorType !== 'battery') return undefined;
-    const sensorData = rawSensorData.battery?.[selectedInstance];
-    return sensorData && typeof sensorData === 'object' && 'chemistry' in sensorData
-      ? (sensorData as { chemistry?: string }).chemistry
-      : undefined;
-  }, [selectedSensorType, selectedInstance, rawSensorData]);
+  /* Initial Metric (for enrichment before formData exists) */
+  const initialMetric = useMemo(() => {
+    if (!selectedSensorType || !requiresMetricSelection) return undefined;
+    const config = getSensorConfig(selectedSensorType);
+    return config?.alarmMetrics?.[0]?.key;
+  }, [selectedSensorType, requiresMetricSelection]);
 
-  // Initialize form data
+  /* Initial Enriched Thresholds (before formData) */
+  const initialEnrichedThresholds = useMemo(() => {
+    if (!selectedSensorType) return null;
+
+    const enriched = ThresholdPresentationService.getEnrichedThresholds(
+      selectedSensorType,
+      selectedInstance,
+      initialMetric,
+    );
+
+    if (!enriched) {
+      console.warn(
+        `[SensorConfigDialog] Failed to get initial enriched thresholds for ${selectedSensorType} instance ${selectedInstance}${
+          initialMetric ? ` metric ${initialMetric}` : ''
+        }`,
+      );
+    }
+
+    return enriched;
+  }, [selectedSensorType, selectedInstance, initialMetric]);
+
+  /* Initialize Form Data */
   const initialFormData: SensorFormData = useMemo(() => {
-    const currentSensorData = selectedSensorType ? rawSensorData[selectedSensorType]?.[selectedInstance] : undefined;
+    const currentSensorData = selectedSensorType
+      ? rawSensorData[selectedSensorType]?.[selectedInstance]
+      : undefined;
     const displayName = selectedSensorType
-      ? getSensorDisplayName(selectedSensorType, selectedInstance, currentThresholds, currentSensorData?.name)
+      ? getSensorDisplayName(
+          selectedSensorType,
+          selectedInstance,
+          currentThresholds,
+          currentSensorData?.name,
+        )
       : '';
 
-    // Phase 4: Simplified threshold initialization
-    // For threshold values, we convert from SI units to display units using presentation
     const firstMetric = requiresMetricSelection && sensorConfig?.alarmMetrics?.[0]?.key;
     let criticalValue: number | undefined;
     let warningValue: number | undefined;
     let criticalSoundPattern = 'rapid_pulse';
     let warningSoundPattern = 'warble';
 
+    {
+      /* Use initial enriched thresholds to get display values */
+    }
+    if (initialEnrichedThresholds) {
+      {
+        /* Values are already in display units */
+      }
+      criticalValue = initialEnrichedThresholds.display.critical?.value;
+      warningValue = initialEnrichedThresholds.display.warning?.value;
+    }
+
+    {
+      /* Get sound patterns from store */
+    }
     if (requiresMetricSelection && firstMetric) {
       const metricConfig = currentThresholds.metrics?.[firstMetric];
-      
-      // Get presentation for the first metric's category
-      const metricInfo = sensorConfig?.alarmMetrics?.find(m => m.key === firstMetric);
-      const categoryPresentationMap: Partial<Record<DataCategory, any>> = {
-        voltage: voltagePresentation,
-        temperature: temperaturePresentation,
-        current: currentPresentation,
-        pressure: pressurePresentation,
-        rpm: rpmPresentation,
-        speed: speedPresentation,
-      };
-      const initialMetricPresentation = metricInfo?.category 
-        ? (categoryPresentationMap[metricInfo.category] || presentation)
-        : presentation;
-      
       if (metricConfig) {
-        // Convert from SI units to display units using initialMetricPresentation
-        criticalValue = metricConfig.critical !== undefined && initialMetricPresentation.isValid
-          ? initialMetricPresentation.convert(metricConfig.critical)
-          : metricConfig.critical;
-        warningValue = metricConfig.warning !== undefined && initialMetricPresentation.isValid
-          ? initialMetricPresentation.convert(metricConfig.warning)
-          : metricConfig.warning;
         criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
         warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
-      } else {
-        // No saved config - use defaults and convert
-        const defaults = getAlarmDefaults(selectedSensorType!, currentThresholds.context);
-        const metricDefaults = defaults?.metrics?.[firstMetric];
-        if (metricDefaults) {
-          criticalValue = metricDefaults.critical !== undefined && initialMetricPresentation.isValid
-            ? initialMetricPresentation.convert(metricDefaults.critical)
-            : metricDefaults.critical;
-          warningValue = metricDefaults.warning !== undefined && initialMetricPresentation.isValid
-            ? initialMetricPresentation.convert(metricDefaults.warning)
-            : metricDefaults.warning;
-        }
       }
     } else {
-      // Single-metric sensor - convert from SI units to display units
-      criticalValue = currentThresholds.critical !== undefined && presentation.isValid
-        ? presentation.convert(currentThresholds.critical)
-        : currentThresholds.critical;
-      warningValue = currentThresholds.warning !== undefined && presentation.isValid
-        ? presentation.convert(currentThresholds.warning)
-        : currentThresholds.warning;
       criticalSoundPattern = currentThresholds.criticalSoundPattern || 'rapid_pulse';
       warningSoundPattern = currentThresholds.warningSoundPattern || 'warble';
     }
@@ -336,8 +283,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     return {
       name: displayName,
       enabled: currentThresholds.enabled || false,
-      batteryChemistry: (currentThresholds.context?.batteryChemistry as 'lead-acid' | 'agm' | 'lifepo4') || 'lead-acid',
-      engineType: (currentThresholds.context?.engineType as 'diesel' | 'gasoline' | 'outboard') || 'diesel',
+      batteryChemistry:
+        (currentThresholds.context?.batteryChemistry as 'lead-acid' | 'agm' | 'lifepo4') ||
+        'lead-acid',
+      engineType:
+        (currentThresholds.context?.engineType as 'diesel' | 'gasoline' | 'outboard') || 'diesel',
       selectedMetric: firstMetric || '',
       criticalValue,
       warningValue,
@@ -345,1352 +295,743 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       warningSoundPattern,
     };
   }, [
-    selectedSensorType, 
-    selectedInstance, 
-    currentThresholds, 
-    requiresMetricSelection, 
-    sensorConfig, 
+    selectedSensorType,
+    selectedInstance,
+    currentThresholds,
+    requiresMetricSelection,
+    sensorConfig,
     rawSensorData,
-    presentation,
-    voltagePresentation,
-    temperaturePresentation,
-    currentPresentation,
-    pressurePresentation,
-    rpmPresentation,
-    speedPresentation,
+    initialEnrichedThresholds,
   ]);
 
-  // Form state - simple useState, no auto-save
   const [formData, setFormData] = useState<SensorFormData>(initialFormData);
-  
-  // For multi-metric sensors, get the currently selected metric's threshold config
-  // For single-metric sensors, return the top-level threshold
-  const currentMetricThresholds = useMemo(() => {
-    if (!selectedSensorType) return currentThresholds;
-    
-    const sensorConfig = getSensorConfig(selectedSensorType);
-    if (sensorConfig.alarmSupport === 'multi-metric' && formData.selectedMetric) {
-      const metricThresholds = currentThresholds.metrics?.[formData.selectedMetric] || currentThresholds;
-      console.log(`[SensorConfigDialog] currentMetricThresholds for ${selectedSensorType}[${selectedInstance}].${formData.selectedMetric}:`, {
-        currentThresholds,
-        metricThresholds,
-        hasMin: 'min' in metricThresholds,
-        hasMax: 'max' in metricThresholds,
-        min: 'min' in metricThresholds ? metricThresholds.min : undefined,
-        max: 'max' in metricThresholds ? metricThresholds.max : undefined
-      });
-      return metricThresholds;
+
+  /* Update form when sensor/instance changes */
+  useEffect(() => {
+    setFormData(initialFormData);
+  }, [initialFormData]);
+
+  /* Update Field */
+  const updateField = useCallback(
+    <K extends keyof SensorFormData>(field: K, value: SensorFormData[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
+
+  /* Get Metric-Specific Category for enrichment */
+  const currentMetricForEnrichment = useMemo(() => {
+    if (!selectedSensorType) return undefined;
+    return requiresMetricSelection ? formData.selectedMetric : undefined;
+  }, [selectedSensorType, requiresMetricSelection, formData.selectedMetric]);
+
+  /* Memoized Enriched Thresholds - Single Source of Truth */
+  const enrichedThresholds = useMemo(() => {
+    if (!selectedSensorType) return null;
+
+    const enriched = ThresholdPresentationService.getEnrichedThresholds(
+      selectedSensorType,
+      selectedInstance,
+      currentMetricForEnrichment,
+    );
+
+    if (!enriched) {
+      console.warn(
+        `[SensorConfigDialog] Failed to get enriched thresholds for ${selectedSensorType} instance ${selectedInstance}${
+          currentMetricForEnrichment ? ` metric ${currentMetricForEnrichment}` : ''
+        }`,
+      );
     }
-    
-    return currentThresholds;
-  }, [selectedSensorType, selectedInstance, currentThresholds, formData.selectedMetric]);
-  
-  // Update single field
-  const updateField = useCallback(<K extends keyof SensorFormData>(
-    field: K,
-    value: SensorFormData[K]
-  ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
-  
-  // Update multiple fields at once
-  const updateFields = useCallback((updates: Partial<SensorFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  }, []);
-  
-  /**
-   * Save current FormData to stores
-   * 
-   * **Architecture:**
-   * This function implements the explicit save pattern - changes are NOT auto-saved
-   * on every field edit. Instead, saves occur only on explicit user transitions.
-   * 
-   * **When Called:**
-   * 1. User switches to different sensor instance → handleInstanceSwitch()
-   * 2. User switches to different sensor type → handleSensorTypeSwitch()
-   * 3. User closes dialog → handleClose()
-   * 
-   * **NOT Called When:**
-   * - User edits a field (just updates FormData state)
-   * - User switches between alarm metrics (voltage → current)
-   * - User drags a slider (updates FormData, no save)
-   * 
-   * **Save Flow:**
-   * ```
-   * FormData (in-memory)
-   *     ↓
-   * Convert display units → SI units (presentation.convertBack)
-   *     ↓
-   * Build SensorAlarmThresholds object
-   *     ↓
-   * 1. updateSensorThresholds(NMEA store)    ← Widgets see immediately
-   *     ↓
-   * 2. setConfig(AsyncStorage)                ← Background persistence
-   * ```
-   * 
-   * **Error Handling:**
-   * - Try/catch wraps entire save operation
-   * - User gets alert on failure (platform-specific)
-   * - Console error logged for debugging
-   * - Partial saves are possible (NMEA succeeds, AsyncStorage fails)
-   * 
-   * **Unit Conversion:**
-   * - Multi-metric sensors: Uses metric-specific presentation (voltagePresentation, etc.)
-   * - Single-metric sensors: Uses main presentation hook
-   * - Raw values (SOC %): No conversion, stored as-is
-   * 
-   * @async Waits for save completion before resolving
-   */
+
+    return enriched;
+  }, [selectedSensorType, selectedInstance, currentMetricForEnrichment]);
+
+  /* Full Presentation for Formatting */
+  const metricCategory = useMemo(() => {
+    if (!requiresMetricSelection || !formData.selectedMetric || !sensorConfig?.alarmMetrics) {
+      return category;
+    }
+    const metricInfo = sensorConfig.alarmMetrics.find((m) => m.key === formData.selectedMetric);
+    return metricInfo?.category || category;
+  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, category]);
+
+  const formatMetricValue = useCallback(
+    (siValue: number): string => {
+      if (!enrichedThresholds) {
+        console.warn(`[SensorConfigDialog] Cannot format value - enriched thresholds unavailable`);
+        return siValue.toFixed(1);
+      }
+
+      {
+        /* Convert SI to display and format using memoized enriched data */
+      }
+      return enrichedThresholds.formatValue(enrichedThresholds.convertFromSI(siValue));
+    },
+    [enrichedThresholds],
+  );
+
+  /* Save Current Form */
   const saveCurrentForm = useCallback(async () => {
     if (!selectedSensorType) return;
 
     const updates: Partial<SensorAlarmThresholds> = {
       name: formData.name?.trim() || undefined,
       enabled: formData.enabled,
-      direction: getAlarmDirection(selectedSensorType).direction,
+      direction: getAlarmDirection(
+        selectedSensorType,
+        requiresMetricSelection ? formData.selectedMetric : undefined,
+      ).direction,
       criticalSoundPattern: formData.criticalSoundPattern,
       warningSoundPattern: formData.warningSoundPattern,
     };
 
-    // Add context from form fields
-    if (selectedSensorType === 'battery' && formData.batteryChemistry) {
-      updates.context = { batteryChemistry: formData.batteryChemistry };
-    } else if (selectedSensorType === 'engine' && formData.engineType) {
-      updates.context = { engineType: formData.engineType };
+    {
+      /* Validate enriched thresholds available before saving */
+    }
+    if (!enrichedThresholds) {
+      const errorMsg =
+        'Cannot save thresholds - unit conversion unavailable. This would corrupt data.';
+      console.error(`[SensorConfigDialog] ${errorMsg}`);
+      if (Platform.OS === 'web') {
+        alert(errorMsg);
+      } else {
+        Alert.alert('Configuration Error', errorMsg);
+      }
+      return;
     }
 
-    // Convert thresholds back to SI units using metricPresentation (computed below)
     if (requiresMetricSelection && formData.selectedMetric) {
-      updates.metrics = { ...currentThresholds.metrics };
-      if (!updates.metrics) updates.metrics = {};
-      updates.metrics[formData.selectedMetric] = {
-        enabled: true,
-        direction: getAlarmDirection(selectedSensorType, formData.selectedMetric).direction,
-        critical: formData.criticalValue !== undefined && metricPresentation.isValid ? metricPresentation.convertBack(formData.criticalValue) : undefined,
-        warning: formData.warningValue !== undefined && metricPresentation.isValid ? metricPresentation.convertBack(formData.warningValue) : undefined,
-        criticalSoundPattern: formData.criticalSoundPattern,
-        warningSoundPattern: formData.warningSoundPattern,
+      {
+        /* Multi-metric: convert display values to SI */
+      }
+      const criticalSI =
+        formData.criticalValue !== undefined
+          ? enrichedThresholds.convertToSI(formData.criticalValue)
+          : undefined;
+      const warningSI =
+        formData.warningValue !== undefined
+          ? enrichedThresholds.convertToSI(formData.warningValue)
+          : undefined;
+
+      updates.metrics = {
+        [formData.selectedMetric]: {
+          critical: criticalSI,
+          warning: warningSI,
+          criticalSoundPattern: formData.criticalSoundPattern,
+          warningSoundPattern: formData.warningSoundPattern,
+          enabled: formData.enabled,
+        },
       };
     } else {
-      if (formData.criticalValue !== undefined && presentation.isValid) {
-        updates.critical = presentation.convertBack(formData.criticalValue);
+      {
+        /* Single-metric: convert display values to SI */
       }
-      if (formData.warningValue !== undefined && presentation.isValid) {
-        updates.warning = presentation.convertBack(formData.warningValue);
-      }
+      updates.critical =
+        formData.criticalValue !== undefined
+          ? enrichedThresholds.convertToSI(formData.criticalValue)
+          : undefined;
+      updates.warning =
+        formData.warningValue !== undefined
+          ? enrichedThresholds.convertToSI(formData.warningValue)
+          : undefined;
     }
 
-    // Save to stores with error handling
+    if (formData.batteryChemistry) {
+      updates.context = { ...updates.context, batteryChemistry: formData.batteryChemistry };
+    }
+    if (formData.engineType) {
+      updates.context = { ...updates.context, engineType: formData.engineType };
+    }
+
     try {
-      // 1. Write to NMEA store FIRST (immediate, widgets see changes)
       updateSensorThresholds(selectedSensorType, selectedInstance, updates);
-      
-      // 2. Write to AsyncStorage in background (persistence)
-      setConfig(selectedSensorType, selectedInstance, updates);
-      
-      console.log(`[SensorConfigDialog] Saved ${selectedSensorType}:${selectedInstance}`);
+      await setConfig(selectedSensorType, selectedInstance, updates);
     } catch (error) {
-      console.error('[SensorConfigDialog] Save failed:', error);
+      console.error('Error saving sensor config:', error);
       if (Platform.OS === 'web') {
-        alert('Failed to save sensor configuration. Please try again.');
+        alert('Failed to save configuration. Please try again.');
       } else {
-        Alert.alert('Save Failed', 'Could not save sensor configuration. Please try again.');
+        Alert.alert('Error', 'Failed to save configuration. Please try again.');
       }
     }
-  }, [selectedSensorType, selectedInstance, formData, presentation, requiresMetricSelection, currentThresholds, setConfig, updateSensorThresholds, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
-  
-  // Get alarm direction for validation
-  const alarmDirection = useMemo(() => {
-    if (!selectedSensorType) return undefined;
-    const metric = requiresMetricSelection ? formData.selectedMetric : undefined;
-    return getAlarmDirection(selectedSensorType, metric).direction;
-  }, [selectedSensorType, requiresMetricSelection, formData.selectedMetric]);
+  }, [
+    selectedSensorType,
+    selectedInstance,
+    formData,
+    requiresMetricSelection,
+    enrichedThresholds,
+    updateSensorThresholds,
+    setConfig,
+  ]);
 
-  // Load instance data when sensor type or instance changes
-  // NOTE: Only trigger on sensor type/instance change, NOT when initialFormData changes
-  // This prevents the bug where enabling alarms causes formData to reset
-  useEffect(() => {
-    if (selectedSensorType && selectedInstance !== undefined) {
-      setFormData(initialFormData);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSensorType, selectedInstance]);
-
-  // Ensure selectedMetric defaults to first metric for multi-metric sensors
-  useEffect(() => {
-    if (requiresMetricSelection && sensorConfig?.alarmMetrics && (!formData.selectedMetric || formData.selectedMetric === '')) {
-      const firstMetric = sensorConfig.alarmMetrics[0]?.key;
-      if (firstMetric) {
-        updateField('selectedMetric', firstMetric);
-      }
-    }
-  }, [requiresMetricSelection, sensorConfig, formData.selectedMetric, updateField]);
-
-  // Handle metric switching - load thresholds for selected metric
-  useEffect(() => {
-    if (formData.selectedMetric) {
-      
-      if (requiresMetricSelection && formData.selectedMetric && currentThresholds.metrics) {
-        const metricConfig = currentThresholds.metrics[formData.selectedMetric];
-        
-        if (metricConfig) {
-          // Load stored thresholds for this metric (use metricPresentation for conversion)
-          updateFields({
-            criticalValue: metricConfig.critical !== undefined && metricPresentation.isValid
-              ? metricPresentation.convert(metricConfig.critical)
-              : undefined,
-            warningValue: metricConfig.warning !== undefined && metricPresentation.isValid
-              ? metricPresentation.convert(metricConfig.warning)
-              : undefined,
-            criticalSoundPattern: metricConfig.criticalSoundPattern || 'rapid_pulse',
-            warningSoundPattern: metricConfig.warningSoundPattern || 'warble',
-          });
-        } else if (selectedSensorType && formData.selectedMetric) {
-          // No saved config for this metric - use smart defaults
-          const defaults = getAlarmDefaults(selectedSensorType, currentThresholds.context);
-
-          // Extract metric-specific defaults from multi-metric structure
-          if (defaults?.metrics?.[formData.selectedMetric]) {
-            const metricDefaults = defaults.metrics[formData.selectedMetric];
-            updateFields({
-              criticalValue: metricDefaults.critical !== undefined && metricPresentation.isValid
-                ? metricPresentation.convert(metricDefaults.critical)
-                : undefined,
-              warningValue: metricDefaults.warning !== undefined && metricPresentation.isValid
-                ? metricPresentation.convert(metricDefaults.warning)
-                : undefined,
-              criticalSoundPattern: 'rapid_pulse',
-              warningSoundPattern: 'warble',
-            });
-          }
-        }
-      }
-    }
-  }, [formData.selectedMetric, requiresMetricSelection, currentThresholds.metrics, selectedSensorType, currentThresholds.context, updateFields]);
-
-  /**
-   * Get metric-specific presentation for multi-metric sensors
-   * 
-   * Maps the currently selected metric's category to the appropriate pre-called presentation hook.
-   * Returns default presentation for single-metric sensors or when no metric is selected.
-   * 
-   * **Why this approach:**
-   * - Cannot call useDataPresentation() conditionally (violates React Rules of Hooks)
-   * - Pre-call all needed presentations at top level, then select in this memo
-   * - Category map only includes categories actually used by multi-metric sensors
-   */
-  const metricPresentation = useMemo(() => {
-    if (!requiresMetricSelection || !formData.selectedMetric || !sensorConfig?.alarmMetrics) {
-      return presentation;
-    }
-    
-    const metricInfo = sensorConfig.alarmMetrics.find(m => m.key === formData.selectedMetric);
-    if (metricInfo?.category) {
-      // Map category to pre-called presentation hook (avoids conditional hook calls)
-      // Only map categories actually used by multi-metric sensors
-      const categoryPresentationMap: Partial<Record<DataCategory, any>> = {
-        voltage: voltagePresentation,
-        temperature: temperaturePresentation,
-        current: currentPresentation,
-        pressure: pressurePresentation,
-        rpm: rpmPresentation,
-        speed: speedPresentation,
-      };
-      return categoryPresentationMap[metricInfo.category] || presentation;
-    }
-    
-    return presentation;
-  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, presentation, voltagePresentation, temperaturePresentation, currentPresentation, pressurePresentation, rpmPresentation, speedPresentation]);
-
-  // Compute constrained slider ranges based on alarm direction and other slider's value
-  const criticalSliderRange = useMemo(() => {
-    const baseMin = (currentMetricThresholds as any).min ?? 0;
-    const baseMax = (currentMetricThresholds as any).max ?? 100;
-    
-    return {
-      min: alarmDirection === 'above' ? (formData.warningValue ?? baseMin) : baseMin,
-      max: alarmDirection === 'below' ? (formData.warningValue ?? baseMax) : baseMax
-    };
-  }, [currentMetricThresholds, metricPresentation, alarmDirection, formData.warningValue]);
-  
-  const warningSliderRange = useMemo(() => {
-    const baseMin = (currentMetricThresholds as any).min ?? 0;
-    const baseMax = (currentMetricThresholds as any).max ?? 100;
-    
-    return {
-      min: alarmDirection === 'below' ? (formData.criticalValue ?? baseMin) : baseMin,
-      max: alarmDirection === 'above' ? (formData.criticalValue ?? baseMax) : baseMax
-    };
-  }, [currentMetricThresholds, metricPresentation, alarmDirection, formData.criticalValue]);
-
-  // Auto-clamp slider values when their allowed range changes due to other slider movement
-  useEffect(() => {
-    // Clamp critical value to its allowed range
-    if (formData.criticalValue !== undefined) {
-      const clampedCritical = Math.max(criticalSliderRange.min, Math.min(criticalSliderRange.max, formData.criticalValue));
-      if (clampedCritical !== formData.criticalValue) {
-        setFormData(prev => ({ ...prev, criticalValue: clampedCritical }));
-      }
-    }
-    
-    // Clamp warning value to its allowed range
-    if (formData.warningValue !== undefined) {
-      const clampedWarning = Math.max(warningSliderRange.min, Math.min(warningSliderRange.max, formData.warningValue));
-      if (clampedWarning !== formData.warningValue) {
-        setFormData(prev => ({ ...prev, warningValue: clampedWarning }));
-      }
-    }
-  }, [criticalSliderRange.min, criticalSliderRange.max, warningSliderRange.min, warningSliderRange.max, formData.criticalValue, formData.warningValue]);
-
-  /**
-   * Handle instance switch (e.g., Battery 1 → Battery 2)
-   * Saves current form, then switches instance (form auto-reloads via useEffect)
-   */
-  const handleInstanceSwitch = useCallback(async (newInstance: number) => {
-    await saveCurrentForm();
-    setSelectedInstance(newInstance);
-  }, [saveCurrentForm]);
-
-  /**
-   * Handle sensor type switch (e.g., Battery → Engine)
-   * Saves current form, switches sensor type, resets to first instance
-   */
-  const handleSensorTypeSwitch = useCallback(async (value: string) => {
-    if (value && value !== '') {
+  /* Handle Instance Switch */
+  const handleInstanceSwitch = useCallback(
+    async (newInstance: number) => {
       await saveCurrentForm();
-      setSelectedSensorType(value as SensorType);
-      const newInstances = getSensorInstances(value as SensorType);
-      setSelectedInstance(newInstances.length > 0 ? newInstances[0].instance : 0);
-    }
-  }, [saveCurrentForm, getSensorInstances]);
+      setSelectedInstance(newInstance);
+    },
+    [saveCurrentForm],
+  );
 
-  /**
-   * Handle metric change - NO SAVE, just switch metric
-   * useEffect will load thresholds for new metric from NMEA store
-   */
-  const handleMetricChange = useCallback((newMetric: string) => {
-    updateField('selectedMetric', newMetric);
-  }, [updateField]);
+  /* Handle Sensor Type Switch */
+  const handleSensorTypeSwitch = useCallback(
+    async (newType: SensorType) => {
+      await saveCurrentForm();
+      setSelectedSensorType(newType);
+      setSelectedInstance(0);
+    },
+    [saveCurrentForm],
+  );
 
-  /**
-   * Handle alarm enable/disable with safety confirmation
-   * Shows confirmation dialog for critical sensors (depth, battery, engine).
-   */
-  const handleEnabledChange = useCallback((value: boolean) => {
-    const isCritical = selectedSensorType && ['depth', 'battery', 'engine'].includes(selectedSensorType);
-    
-    if (!value && isCritical) {
-      if (Platform.OS === 'web') {
-        if (confirm(`${selectedSensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`)) {
-          updateField('enabled', value);
+  /* Handle Metric Change */
+  const handleMetricChange = useCallback(
+    (newMetric: string) => {
+      if (!selectedSensorType || !sensorConfig) return;
+
+      {
+        /* Get enriched thresholds for the NEW metric (can't use memoized one) */
+      }
+      const enriched = ThresholdPresentationService.getEnrichedThresholds(
+        selectedSensorType,
+        selectedInstance,
+        newMetric,
+      );
+
+      if (!enriched) {
+        console.warn(`[SensorConfigDialog] Cannot load thresholds for metric ${newMetric}`);
+      }
+
+      const criticalValue = enriched?.display.critical?.value;
+      const warningValue = enriched?.display.warning?.value;
+
+      setFormData((prev) => ({
+        ...prev,
+        selectedMetric: newMetric,
+        criticalValue,
+        warningValue,
+      }));
+    },
+    [selectedSensorType, selectedInstance, sensorConfig],
+  );
+
+  /* Handle Alarm Enable with Safety Confirmation */
+  const handleEnabledChange = useCallback(
+    (value: boolean) => {
+      const isCritical =
+        selectedSensorType && ['depth', 'battery', 'engine'].includes(selectedSensorType);
+
+      if (!value && isCritical) {
+        if (Platform.OS === 'web') {
+          if (
+            confirm(
+              `${selectedSensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`,
+            )
+          ) {
+            updateField('enabled', value);
+          }
+        } else {
+          Alert.alert(
+            'Disable Critical Alarm?',
+            `${selectedSensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Disable',
+                style: 'destructive',
+                onPress: () => updateField('enabled', value),
+              },
+            ],
+          );
         }
       } else {
-        Alert.alert(
-          'Disable Critical Alarm?',
-          `${selectedSensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Disable', style: 'destructive', onPress: () => updateField('enabled', value) },
-          ]
-        );
+        updateField('enabled', value);
       }
-    } else {
-      updateField('enabled', value);
-    }
-  }, [selectedSensorType, updateField]);
+    },
+    [selectedSensorType, updateField],
+  );
 
-  /**
-   * Handle dialog close - always save current form before closing
-   */
+  /* Handle Close */
   const handleClose = useCallback(async () => {
     await saveCurrentForm();
     onClose();
   }, [saveCurrentForm, onClose]);
 
-  /**
-   * Reset to defaults - loads app defaults into FormData (NOT saved yet)
-   * User can review defaults and edit before saving by switching instance/sensor/closing
-   */
-  const handleMasterReset = useCallback(() => {
-    if (!selectedSensorType) return;
-
-    const sensorConfig = getSensorConfig(selectedSensorType);
-    
-    const performReset = () => {
-      // Build context from current FormData
-      const context: Record<string, string> = {};
-      if (selectedSensorType === 'battery') {
-        context.batteryChemistry = formData.batteryChemistry || 'lead-acid';
-      } else if (selectedSensorType === 'engine') {
-        context.engineType = formData.engineType || 'diesel';
-      }
-
-      // Get defaults from registry
-      const defaults = getAlarmDefaults(selectedSensorType, context);
-
-      if (defaults) {
-        // Build reset FormData
-        const resetData: Partial<SensorFormData> = {
-          name: getSensorDisplayName(selectedSensorType, selectedInstance),
-          enabled: defaults.enabled || false,
-        };
-
-        // Handle single-metric vs multi-metric
-        if (sensorConfig.alarmSupport === 'single-metric') {
-          resetData.criticalValue = defaults.critical !== undefined && presentation.isValid
-            ? presentation.convert(defaults.critical)
-            : undefined;
-          resetData.warningValue = defaults.warning !== undefined && presentation.isValid
-            ? presentation.convert(defaults.warning)
-            : undefined;
-        } else if (sensorConfig.alarmSupport === 'multi-metric' && formData.selectedMetric) {
-          // Reset current metric's thresholds
-          const metricDefaults = defaults.metrics?.[formData.selectedMetric];
-          if (metricDefaults) {
-            resetData.criticalValue = metricDefaults.critical !== undefined && metricPresentation.isValid
-              ? metricPresentation.convert(metricDefaults.critical)
-              : undefined;
-            resetData.warningValue = metricDefaults.warning !== undefined && metricPresentation.isValid
-              ? metricPresentation.convert(metricDefaults.warning)
-              : undefined;
-          }
-        }
-
-        // Reset sound patterns
-        resetData.criticalSoundPattern = defaults.criticalSoundPattern || 'rapid_pulse';
-        resetData.warningSoundPattern = defaults.warningSoundPattern || 'warble';
-
-        // Reset context fields (preserve from formData, not from context which is just for defaults lookup)
-        if (selectedSensorType === 'battery') {
-          resetData.batteryChemistry = formData.batteryChemistry;
-        }
-        if (selectedSensorType === 'engine') {
-          resetData.engineType = formData.engineType;
-        }
-
-        // Update FormData with defaults (NOT saved yet - user can edit)
-        updateFields(resetData);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (confirm(`Reset ${sensorConfig.displayName} to application defaults?`)) {
-        performReset();
-      }
-    } else {
-      Alert.alert(
-        'Reset to Defaults?',
-        `Reset ${sensorConfig.displayName} to application defaults? You can edit before saving.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Reset', style: 'destructive', onPress: performReset },
-        ]
-      );
-    }
-  }, [selectedSensorType, selectedInstance, formData, presentation, metricPresentation, updateFields]);
-
-  // Test alarm sound
+  /* Test Sound */
   const handleTestSound = useCallback(async (soundPattern: string) => {
     if (soundPattern === 'none') return;
-    
+
     try {
       const audioManager = MarineAudioAlertManager.getInstance();
-      
-      // Use appropriate alarm type for testing
-      const testAlarmType = CriticalAlarmType.ENGINE_OVERHEAT; // Generic test alarm
-      const escalationLevel = AlarmEscalationLevel.WARNING;
-      
-      console.log(`Testing sound: ${soundPattern}`);
-      const success = await audioManager.testAlarmSound(
-        testAlarmType,
-        escalationLevel,
-        3000, // 3 second duration
-        soundPattern
+      await audioManager.testAlarmSound(
+        CriticalAlarmType.ENGINE_OVERHEAT,
+        AlarmEscalationLevel.WARNING,
+        3000,
+        soundPattern,
       );
-      
-      if (!success) {
-        console.warn('Failed to play test sound');
-      }
     } catch (error) {
       console.error('Error playing test sound:', error);
     }
   }, []);
 
-  // Close handler (already defined earlier with async save completion)
-
-  // Get display unit and label from registry (using presentation system for units)
+  /* Get Unit Symbol and Label */
   const { unitSymbol, metricLabel } = useMemo(() => {
+    if (!selectedSensorType) {
+      return { unitSymbol: '', metricLabel: '' };
+    }
+
     if (requiresMetricSelection && formData.selectedMetric && sensorConfig?.alarmMetrics) {
-      const metricInfo = sensorConfig.alarmMetrics.find(m => m.key === formData.selectedMetric);
-      // Get unit from presentation system via category (SI values stored, presentation converts)
-      const metricCategory = metricInfo?.category;
-      let symbol = '';
-      if (metricCategory === 'voltage') symbol = voltagePresentation.symbol || 'V';
-      else if (metricCategory === 'current') symbol = currentPresentation.symbol || 'A';
-      else if (metricCategory === 'temperature') symbol = temperaturePresentation.symbol || '°C';
-      else if (metricCategory === 'pressure') symbol = pressurePresentation.symbol || 'kPa';
-      else if (metricCategory === 'rpm') symbol = rpmPresentation.symbol || 'RPM';
-      else if (metricInfo?.key === 'soc') symbol = '%';  // SOC has no category (raw %)
-      
+      const metricInfo = sensorConfig.alarmMetrics.find((m) => m.key === formData.selectedMetric);
+      const symbol = enrichedThresholds?.display.min.unit || (metricInfo?.key === 'soc' ? '%' : '');
+
       return {
         unitSymbol: symbol,
         metricLabel: metricInfo?.label || '',
       };
     }
 
-    // Single-metric sensors: use registry displayName
+    const symbol = enrichedThresholds?.display.min.unit || '';
     return {
-      unitSymbol: presentation.isValid ? presentation.symbol || '' : '',
-      metricLabel: selectedSensorType ? sensorConfig?.displayName || selectedSensorType : '',
+      unitSymbol: symbol,
+      metricLabel: sensorConfig?.displayName || selectedSensorType,
     };
-  }, [requiresMetricSelection, formData.selectedMetric, sensorConfig, selectedSensorType, presentation, 
-      voltagePresentation, currentPresentation, temperaturePresentation, pressurePresentation, rpmPresentation]);
+  }, [
+    requiresMetricSelection,
+    formData.selectedMetric,
+    sensorConfig,
+    selectedSensorType,
+    enrichedThresholds,
+  ]);
 
-  /**
-   * Render sensor-specific configuration fields dynamically from registry
-   * 
-   * **Architecture:**
-   * This function eliminates hardcoded sensor-specific UI logic by reading
-   * field definitions from SensorConfigRegistry and rendering them generically.
-   * 
-   * **Before Refactoring (Hardcoded):**
-   * ```tsx
-   * {selectedSensorType === 'battery' && (
-   *   <View>
-   *     <Text>Battery Chemistry</Text>
-   *     <Picker ... />
-   *   </View>
-   * )}
-   * {selectedSensorType === 'engine' && (
-   *   <View>
-   *     <Text>Engine Type</Text>
-   *     <Picker ... />
-   *   </View>
-   * )}
-   * ```
-   * 
-   * **After Refactoring (Registry-Driven):**
-   * ```tsx
-   * {renderConfigFields()}
-   * ```
-   * 
-   * **Supported Field Types:**
-   * - `text`: String input (TextInput)
-   * - `number`: Numeric input (TextInput with numeric keyboard)
-   * - `picker`: Dropdown selection (PlatformPicker)
-   * - `toggle`: Boolean switch (TODO: not yet implemented)
-   * - `slider`: Range selector (TODO: not yet implemented)
-   * 
-   * **Hardware Integration:**
-   * Fields with `readOnly: true` and `hardwareField` check sensor data first:
-   * - If hardware provides value → Show read-only with "(Provided by sensor hardware)"
-   * - If no hardware value → Show editable input
-   * 
-   * **Example - Battery Chemistry:**
-   * ```typescript
-   * // Registry definition:
-   * {
-   *   key: 'batteryChemistry',
-   *   type: 'picker',
-   *   readOnly: true,
-   *   hardwareField: 'chemistry'
-   * }
-   * 
-   * // If BMS provides chemistry → Read-only: "LiFePO4 (sensor provided)"
-   * // If no BMS → Editable picker: [Lead Acid, AGM, Gel, LiFePO4, ...]
-   * ```
-   * 
-   * **Extensibility:**
-   * New sensors automatically render their fields without code changes:
-   * 1. Add sensor to registry with fields array
-   * 2. Fields render automatically in dialog
-   * 3. No conditional logic needed in component
-   * 
-   * @returns React elements for all configured fields, or null if no sensor selected
-   */
+  /* Get Alarm Configuration */
+  const alarmConfig = useMemo(() => {
+    if (!selectedSensorType) return null;
+
+    const metric = requiresMetricSelection ? formData.selectedMetric : undefined;
+    const direction = getAlarmDirection(selectedSensorType, metric).direction;
+    const triggerHint = getAlarmTriggerHint(selectedSensorType);
+
+    const defaults = getAlarmDefaults(selectedSensorType, currentThresholds.context);
+    const metricKey = requiresMetricSelection ? formData.selectedMetric : undefined;
+    const metricDefaults = metricKey && defaults?.metrics?.[metricKey];
+
+    const baseMin = metricDefaults?.min ?? defaults?.min ?? 0;
+    const baseMax = metricDefaults?.max ?? defaults?.max ?? 100;
+    const step = metricDefaults?.step ?? defaults?.step ?? 0.1;
+
+    return { direction, triggerHint, min: baseMin, max: baseMax, step };
+  }, [selectedSensorType, currentThresholds, requiresMetricSelection, formData.selectedMetric]);
+
+  /* Slider Range Calculations */
+  const criticalSliderRange = useMemo(() => {
+    if (!alarmConfig) return { min: 0, max: 100 };
+    return getCriticalSliderRange(
+      alarmConfig.min,
+      alarmConfig.max,
+      formData.warningValue,
+      alarmConfig.direction,
+    );
+  }, [alarmConfig, formData.warningValue]);
+
+  const warningSliderRange = useMemo(() => {
+    if (!alarmConfig) return { min: 0, max: 100 };
+    return getWarningSliderRange(
+      alarmConfig.min,
+      alarmConfig.max,
+      formData.criticalValue,
+      alarmConfig.direction,
+    );
+  }, [alarmConfig, formData.criticalValue]);
+
+  /* Auto-clamp slider values when ranges change */
+  useEffect(() => {
+    if (formData.criticalValue !== undefined) {
+      const clampedCritical = clampToRange(
+        formData.criticalValue,
+        criticalSliderRange.min,
+        criticalSliderRange.max,
+      );
+      if (clampedCritical !== formData.criticalValue) {
+        setFormData((prev) => ({ ...prev, criticalValue: clampedCritical }));
+      }
+    }
+
+    if (formData.warningValue !== undefined) {
+      const clampedWarning = clampToRange(
+        formData.warningValue,
+        warningSliderRange.min,
+        warningSliderRange.max,
+      );
+      if (clampedWarning !== formData.warningValue) {
+        setFormData((prev) => ({ ...prev, warningValue: clampedWarning }));
+      }
+    }
+  }, [
+    criticalSliderRange.min,
+    criticalSliderRange.max,
+    warningSliderRange.min,
+    warningSliderRange.max,
+    formData.criticalValue,
+    formData.warningValue,
+  ]);
+
+  /* Render Config Fields */
   const renderConfigFields = useCallback(() => {
     if (!selectedSensorType) return null;
-    
-    const sensorConfig = getSensorConfig(selectedSensorType);
-    
-    return sensorConfig.fields
-      // Filter out pure read-only sensor data fields (voltage, current, rpm, etc.)
-      // Only show configurable fields: readWrite or readOnlyIfValue
-      .filter(field => field.iostate !== 'readOnly')
+
+    const config = getSensorConfig(selectedSensorType);
+
+    return config.fields
+      .filter((field) => field.iostate !== 'readOnly')
       .map((field) => {
-      // Check field dependencies - hide field if dependency not satisfied
-      if (!shouldShowField(field, formData)) {
-        return null;
-      }
-      
-      // Check iostate and hardware value
-      const sensorData = rawSensorData[selectedSensorType]?.[selectedInstance];
-      const hardwareValue = field.hardwareField ? (sensorData as any)?.[field.hardwareField] : undefined;
-      
-      // Determine if field is read-only based on iostate
-      const isReadOnly = 
-        field.iostate === 'readOnly' || 
-        (field.iostate === 'readOnlyIfValue' && hardwareValue !== undefined);
-      
-      // Use hardware value if available, otherwise use form data or default
-      const currentValue = hardwareValue !== undefined ? hardwareValue : 
-        (formData[field.key as keyof SensorFormData] ?? field.default);
-      
-      switch (field.type) {
-        case 'text':
-          return (
-            <View key={field.key} style={styles.field}>
-              <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                value={String(currentValue || '')}
-                onChangeText={(text) => updateField(field.key as keyof SensorFormData, text)}
-                placeholder={field.helpText}
-                placeholderTextColor={theme.textSecondary}
-                editable={!isReadOnly}
-                accessibilityLabel={field.label}
-                accessibilityHint={field.helpText}
-                accessibilityRole="text"
-                accessibilityState={{ disabled: isReadOnly }}
-              />
-              {field.helpText && (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
-                  {field.helpText}
-                </Text>
-              )}
-            </View>
-          );
-          
-        case 'number':
-          return (
-            <View key={field.key} style={styles.field}>
-              <Text style={[styles.label, { color: theme.text }]}>
-                {field.label}
-                {field.min !== undefined && field.max !== undefined && 
-                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                    {` (${field.min}-${field.max})`}
-                  </Text>
-                }
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                value={String(currentValue ?? '')}
-                onChangeText={(text) => {
-                  let num = parseFloat(text);
-                  // Validate against min/max if defined
-                  if (!isNaN(num)) {
-                    if (field.min !== undefined && num < field.min) num = field.min;
-                    if (field.max !== undefined && num > field.max) num = field.max;
-                  }
-                  updateField(field.key as keyof SensorFormData, isNaN(num) ? undefined : num);
-                }}
-                placeholder={field.helpText}
-                placeholderTextColor={theme.textSecondary}
-                keyboardType="numeric"
-                editable={!isReadOnly}
-                accessibilityLabel={field.label}
-                accessibilityHint={field.helpText}
-                accessibilityRole="none"
-                accessibilityState={{ disabled: isReadOnly }}
-              />
-              {field.helpText && (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
-                  {field.helpText}
-                </Text>
-              )}
-            </View>
-          );
-          
-        case 'picker':
-          // Find default option if no value is set
-          const defaultOption = field.options?.find(opt => opt.default)?.value;
-          const pickerValue = String(currentValue ?? defaultOption ?? '');
-          
-          if (isReadOnly && hardwareValue !== undefined) {
+        if (!shouldShowField(field, formData)) {
+          return null;
+        }
+
+        const sensorData = rawSensorData[selectedSensorType]?.[selectedInstance];
+        const hardwareValue = field.hardwareField
+          ? (sensorData as any)?.[field.hardwareField]
+          : undefined;
+        const isReadOnly =
+          field.iostate === 'readOnly' ||
+          (field.iostate === 'readOnlyIfValue' && hardwareValue !== undefined);
+        const currentValue =
+          hardwareValue !== undefined
+            ? hardwareValue
+            : formData[field.key as keyof SensorFormData] ?? field.default;
+
+        switch (field.type) {
+          case 'text':
             return (
               <View key={field.key} style={styles.field}>
                 <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
-                <View style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, opacity: 0.7 }]}>
-                  <Text style={[styles.readonlyText, { color: theme.text }]}>
-                    {field.options?.find(opt => opt.value === hardwareValue)?.label || hardwareValue}
-                  </Text>
-                </View>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.background,
+                      color: theme.text,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  value={String(currentValue || '')}
+                  onChangeText={(text) => updateField(field.key as keyof SensorFormData, text)}
+                  placeholder={field.helpText}
+                  placeholderTextColor={theme.textSecondary}
+                  editable={!isReadOnly}
+                />
                 {field.helpText && (
-                  <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
+                  <Text style={[styles.helpText, { color: theme.textSecondary }]}>
                     {field.helpText}
                   </Text>
                 )}
               </View>
             );
-          }
-          
-          return (
-            <View key={field.key} style={styles.field}>
-              <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
-              <PlatformPicker
-                value={pickerValue}
-                onValueChange={(value) => updateField(field.key as keyof SensorFormData, value)}
-                items={field.options || []}
-              />
-              {field.helpText && (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
-                  {field.helpText}
-                </Text>
-              )}
-            </View>
-          );
-          
-        default:
-          return null;
-      }
-    });
-    // NOTE: formData IS needed in dependencies because currentValue accesses it
-    // Performance concern: This causes re-render on every keystroke
-    // TODO: Optimize by extracting individual field components with React.memo
-  }, [selectedSensorType, selectedInstance, formData, rawSensorData, theme, updateField]);
 
-  // Render instance tabs
-  const renderInstanceTabs = () => {
-    if (instances.length <= 1) return null;
-
-    return (
-      <View style={[styles.tabContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <FlatList
-          data={instances}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.instance.toString()}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
-          renderItem={({ item: inst }) => {
-            const isSelected = inst.instance === selectedInstance;
-            const displayName = inst.name || inst.location || `Instance ${inst.instance}`;
-
+          case 'number':
             return (
-              <TouchableOpacity
-                style={[
-                  styles.tab,
-                  { backgroundColor: theme.surface, borderColor: theme.border },
-                  isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
-                ]}
-                onPress={() => handleInstanceSwitch(inst.instance)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.tabText, { color: isSelected ? theme.textInverse : theme.text }]}>
-                  {displayName}
+              <View key={field.key} style={styles.field}>
+                <Text style={[styles.label, { color: theme.text }]}>
+                  {field.label}
+                  {field.min !== undefined && field.max !== undefined && (
+                    <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                      {` (${field.min}-${field.max})`}
+                    </Text>
+                  )}
                 </Text>
-              </TouchableOpacity>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.background,
+                      color: theme.text,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  value={String(currentValue ?? '')}
+                  onChangeText={(text) => {
+                    let num = parseFloat(text);
+                    if (!isNaN(num)) {
+                      if (field.min !== undefined && num < field.min) num = field.min;
+                      if (field.max !== undefined && num > field.max) num = field.max;
+                    }
+                    updateField(field.key as keyof SensorFormData, isNaN(num) ? undefined : num);
+                  }}
+                  placeholder={field.helpText}
+                  placeholderTextColor={theme.textSecondary}
+                  keyboardType="numeric"
+                  editable={!isReadOnly}
+                />
+                {field.helpText && (
+                  <Text style={[styles.helpText, { color: theme.textSecondary }]}>
+                    {field.helpText}
+                  </Text>
+                )}
+              </View>
             );
-          }}
-        />
-      </View>
-    );
-  };
 
-  // Get responsive layout breakpoints
-  const { width } = useWindowDimensions();
-  const isNarrow = width < 600; // Mobile
-  const isTablet = width >= 600 && width < 1024; // Tablet
-  const isWide = width >= 1024; // Desktop/Web
+          case 'picker':
+            return (
+              <View key={field.key} style={styles.field}>
+                <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+                <PlatformPicker
+                  value={String(currentValue || field.default || '')}
+                  onValueChange={(value) =>
+                    updateField(field.key as keyof SensorFormData, String(value))
+                  }
+                  items={
+                    field.options?.map((opt) =>
+                      typeof opt === 'string'
+                        ? { label: opt, value: opt }
+                        : { label: opt.label, value: opt.value },
+                    ) || []
+                  }
+                />
+                {isReadOnly && (
+                  <Text style={[styles.helpText, { color: theme.success }]}>
+                    Provided by sensor hardware
+                  </Text>
+                )}
+              </View>
+            );
+
+          default:
+            return null;
+        }
+      });
+  }, [selectedSensorType, formData, rawSensorData, selectedInstance, theme, updateField]);
+
+  /* Empty State */
+  if (availableSensorTypes.length === 0) {
+    return (
+      <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
+        <View style={styles.emptyState}>
+          <UniversalIcon name="alert-circle-outline" size={64} color={theme.textSecondary} />
+          <Text style={[styles.emptyStateText, { color: theme.text }]}>No sensors detected</Text>
+          <Text style={[styles.emptyStateSubtext, { color: theme.textSecondary }]}>
+            Connect to an NMEA network to configure sensors
+          </Text>
+        </View>
+      </BaseConfigDialog>
+    );
+  }
+
+  if (!selectedSensorType) {
+    return (
+      <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
+        <View style={styles.emptyState}>
+          <Text style={[styles.emptyStateText, { color: theme.text }]}>
+            Select a sensor to configure
+          </Text>
+        </View>
+      </BaseConfigDialog>
+    );
+  }
 
   return (
-    <BaseConfigDialog
-      visible={visible}
-      title="Sensor Configuration"
-      onClose={handleClose}
-      testID="sensor-config-dialog"
-    >
-          {/* No sensors detected */}
-          {availableSensorTypes.length === 0 && (
-            <View style={styles.emptyState}>
-              <UniversalIcon name="alert-circle-outline" size={64} color={theme.textSecondary} />
-              <Text style={[styles.emptyText, { color: theme.text }]}>No Sensors Detected</Text>
-              <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                Sensor configuration will be available once NMEA sensor data is received
-              </Text>
+    <BaseConfigDialog visible={visible} onClose={handleClose} title="Sensor Configuration">
+      <ScrollView style={styles.container}>
+        {/* Sensor Type Picker */}
+        {!initialSensorType && availableSensorTypes.length > 1 && (
+          <View style={[styles.field, styles.sensorPickerField]}>
+            <Text style={[styles.label, { color: theme.text }]}>Sensor Type</Text>
+            <PlatformPicker
+              value={selectedSensorType}
+              onValueChange={(value) => handleSensorTypeSwitch(value as SensorType)}
+              items={availableSensorTypes.map((type) => ({
+                label: getSensorConfig(type).displayName,
+                value: type,
+              }))}
+            />
+          </View>
+        )}
+
+        {/* Instance Tabs */}
+        <InstanceTabBar
+          instances={instances}
+          selectedInstance={selectedInstance}
+          onInstanceSelect={handleInstanceSwitch}
+          theme={theme}
+        />
+
+        {/* Config Fields */}
+        {renderConfigFields()}
+
+        {/* Alarm Configuration */}
+        {supportsAlarms && (
+          <View style={styles.alarmSection}>
+            <View style={styles.alarmHeader}>
+              <Text style={[styles.alarmTitle, { color: theme.text }]}>Alarm Configuration</Text>
+              <PlatformToggle
+                label=""
+                value={formData.enabled}
+                onValueChange={handleEnabledChange}
+              />
             </View>
-          )}
 
-          {/* Sensor selection and configuration */}
-          {availableSensorTypes.length > 0 && (
-            <>
-              {/* Sensor Type Picker */}
-                <View style={[styles.field, { marginTop: 20, marginBottom: 0 }]}>
-                <PlatformPicker
-                  label=""
-                  value={selectedSensorType || availableSensorTypes[0] || ''}
-                  onValueChange={(value) => handleSensorTypeSwitch(String(value))}
-                  items={availableSensorTypes.map((type) => ({
-                  label: type.charAt(0).toUpperCase() + type.slice(1),
-                  value: type,
-                  }))}
-                />
-                </View>
+            {formData.enabled && (
+              <View>
+                {/* Metric Selector */}
+                {requiresMetricSelection && sensorConfig?.alarmMetrics ? (
+                  <MetricSelector
+                    alarmMetrics={sensorConfig.alarmMetrics}
+                    selectedMetric={formData.selectedMetric}
+                    onMetricChange={handleMetricChange}
+                    theme={theme}
+                  />
+                ) : null}
 
-              {/* Instance tabs */}
-              {renderInstanceTabs()}
+                {/* Threshold Slider */}
+                {alarmConfig && (
+                  <View style={styles.sliderSection}>
+                    <View style={styles.sliderRow}>
+                      <View style={styles.sliderMinMax}>
+                        <Text style={[styles.minMaxText, { color: theme.textSecondary }]}>
+                          {formatMetricValue(alarmConfig.min)} {unitSymbol}
+                        </Text>
+                      </View>
 
-              {/* Configuration form */}
-              {selectedSensorType && instances.length > 0 && (
-                <>
-                  {/* Dynamic fields from registry */}
-                  <View style={{ marginTop: 16 }}>
-                    {renderConfigFields()}
-                  </View>
-
-                  {/* No alarms message */}
-                  {!supportsAlarms && (
-                    <View style={[styles.infoBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                      <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-                        ℹ️ {selectedSensorType?.charAt(0).toUpperCase()}{selectedSensorType?.slice(1)} sensors provide informational data only. No alarm thresholds are needed.
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Alarm Configuration */}
-                  {supportsAlarms && (
-                    <>
-                      {/* Alarms Toggle - Inline */}
-                      <View style={[styles.field, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                        <Text style={[styles.label, { color: theme.text, marginBottom: 0 }]}>Alarms</Text>
-                        <PlatformToggle
-                          value={formData.enabled}
-                          onValueChange={handleEnabledChange}
-                          label=""
+                      <View style={styles.sliderContainer}>
+                        <AlarmThresholdSlider
+                          min={alarmConfig.min}
+                          max={alarmConfig.max}
+                          step={alarmConfig.step}
+                          warningValue={formData.warningValue}
+                          criticalValue={formData.criticalValue}
+                          alarmDirection={alarmConfig.direction}
+                          formatValue={formatMetricValue}
+                          unitSymbol={unitSymbol}
+                          onWarningChange={(value) => {
+                            const clamped = clampToRange(
+                              value,
+                              warningSliderRange.min,
+                              warningSliderRange.max,
+                            );
+                            updateField('warningValue', clamped);
+                          }}
+                          onCriticalChange={(value) => {
+                            const clamped = clampToRange(
+                              value,
+                              criticalSliderRange.min,
+                              criticalSliderRange.max,
+                            );
+                            updateField('criticalValue', clamped);
+                          }}
+                          theme={theme}
                         />
                       </View>
 
-                      {/* Alarm Configuration (shown when enabled) */}
-                      {formData.enabled && (
-                        <View style={[styles.alarmRowsContainer, { backgroundColor: `${theme.surface}88`, borderColor: theme.border }]}>
-                          {/* Metric Selection (multi-metric sensors only) */}
-                          {requiresMetricSelection && sensorConfig?.alarmMetrics && (
-                            <View style={[styles.field, styles.metricPickerField, { marginBottom: 12 }]}>
-                              <Text style={[styles.label, { color: theme.text }]}>Metric</Text>
-                              <PlatformPicker
-                                value={formData.selectedMetric || ''}
-                                onValueChange={(value) => handleMetricChange(String(value))}
-                                items={sensorConfig.alarmMetrics.map((m) => {
-                                  // Get unit from presentation system via category
-                                  let unit = '';
-                                  if (m.category === 'voltage') unit = voltagePresentation.symbol || 'V';
-                                  else if (m.category === 'current') unit = currentPresentation.symbol || 'A';
-                                  else if (m.category === 'temperature') unit = temperaturePresentation.symbol || '°C';
-                                  else if (m.category === 'pressure') unit = pressurePresentation.symbol || 'kPa';
-                                  else if (m.category === 'rpm') unit = rpmPresentation.symbol || 'RPM';
-                                  else if (m.key === 'soc') unit = '%';
-                                  
-                                  return {
-                                    label: `${m.label}${unit ? ` (${unit})` : ''}`,
-                                    value: m.key,
-                                  };
-                                })}
-                              />
-                            </View>
-                          )}
+                      <View style={styles.sliderMinMax}>
+                        <Text style={[styles.minMaxText, { color: theme.textSecondary }]}>
+                          {formatMetricValue(alarmConfig.max)} {unitSymbol}
+                        </Text>
+                      </View>
+                    </View>
 
-                          {/* Alarm Thresholds - Combined Multi-Slider */}
-                          <View>
-                            <View style={[styles.alarmRow, { borderColor: theme.border, paddingBottom: 16 }]}>
-                              {/* Range Slider with min/max on sides */}
-                              <View style={{ flexDirection: 'row', gap: 8, paddingTop: 20 }}>
-                                {/* Min value - left side, aligned with track */}
-                                <View style={{ height: 60, paddingTop: 5 }}>
-                                    <Text style={{ fontSize: 10, color: theme.textSecondary, minWidth: 40, textAlign: 'right', fontWeight: 'bold' }}>
-                                    {((currentMetricThresholds as any).min ?? 0).toFixed((metricPresentation as any).formatSpec?.decimals ?? 1)}{unitSymbol}
-                                    </Text>
-                                </View>
-                                
-                                {/* Slider container */}
-                                <View style={{ flex: 1, position: 'relative' }}>
-                                  <RangeSlider
-                                    style={{ width: '100%', height: 60 }}
-                                  min={(currentMetricThresholds as any).min ?? 0}
-                                  max={(currentMetricThresholds as any).max ?? 100}
-                                  step={Math.pow(10, -((metricPresentation as any).formatSpec?.decimals ?? 1))}
-                                  low={alarmDirection === 'above' ? (formData.warningValue || 0) : (formData.criticalValue || 0)}
-                                  high={alarmDirection === 'above' ? (formData.criticalValue || 0) : (formData.warningValue || 0)}
-                                  onValueChanged={(low, high) => {
-                                    if (alarmDirection === 'above') {
-                                      // For 'above': warning < critical
-                                      updateField('warningValue', low);
-                                      updateField('criticalValue', high);
-                                    } else {
-                                      // For 'below': critical < warning
-                                      updateField('criticalValue', low);
-                                      updateField('warningValue', high);
-                                    }
-                                  }}
-                                  renderThumb={(name) => {
-                                    // Determine colors, labels, and values based on threshold type
-                                    const isWarning = (name === 'low' && alarmDirection === 'above') || (name === 'high' && alarmDirection === 'below');
-                                    const thumbColor = isWarning ? (theme.warning || '#F59E0B') : (theme.error || '#EF4444');
-                                    const thresholdLabel = isWarning ? 'Warning' : 'Critical';
-                                    const thresholdValue = isWarning ? formData.warningValue : formData.criticalValue;
-                                    const decimals = (metricPresentation as any).formatSpec?.decimals ?? 1;
-                                    
-                                    return (
-                                      <View>
-                                        {/* Label above thumb */}
-                                        <Text style={{
-                                          position: 'absolute',
-                                          bottom: 26,
-                                          left: -20,
-                                          right: -20,
-                                          textAlign: 'center',
-                                          fontSize: 11,
-                                          fontWeight: '600',
-                                          color: thumbColor,
-                                        }}>
-                                          {thresholdLabel}
-                                        </Text>
-                                        {/* Thumb circle at rail level */}
-                                        <View style={{
-                                          height: 18,
-                                          width: 18,
-                                          borderRadius: 14,
-                                          backgroundColor: thumbColor,
-                                          borderWidth: 3,
-                                          borderColor: thumbColor,
-                                          shadowColor: '#000',
-                                          shadowOffset: { width: 0, height: 2 },
-                                          shadowOpacity: 0.25,
-                                          shadowRadius: 3.84,
-                                          elevation: 5,
-                                        }} />
-                                        {/* Threshold value below thumb */}
-                                        <Text style={{
-                                          position: 'absolute',
-                                          top: 24,
-                                          left: -20,
-                                          right: -20,
-                                          textAlign: 'center',
-                                          fontSize: 11,
-                                          fontWeight: '600',
-                                          color: thumbColor,
-                                        }}>
-                                          {thresholdValue?.toFixed(decimals)}{unitSymbol}
-                                        </Text>
-                                      </View>
-                                    );
-                                  }}
-                                  renderRail={() => {
-                                    const min = (currentMetricThresholds as any).min ?? 0;
-                                    const max = (currentMetricThresholds as any).max ?? 100;
-                                    const range = max - min;
-                                    
-                                    // Get threshold values
-                                    const warning = formData.warningValue ?? 0;
-                                    const critical = formData.criticalValue ?? 0;
-                                    
-                                    // Calculate percentages for each zone
-                                    // For 'above' direction: safe < warning < critical
-                                    // For 'below' direction: critical < warning < safe
-                                    let safePercent, warningPercent, criticalPercent;
-                                    
-                                    if (alarmDirection === 'above') {
-                                      // Values increase left to right: [0%...warning...critical...100%]
-                                      warningPercent = Math.max(0, Math.min(100, ((warning - min) / range) * 100));
-                                      criticalPercent = Math.max(0, Math.min(100, ((critical - min) / range) * 100));
-                                      safePercent = warningPercent;
-                                      
-                                      return (
-                                        <View style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
-                                          {/* Safe zone (left - green) */}
-                                          <View style={{
-                                            position: 'absolute',
-                                            left: 0,
-                                            width: `${safePercent}%`,
-                                            height: 6,
-                                            backgroundColor: theme.success || '#22C55E',
-                                          }} />
-                                          
-                                          {/* Warning zone (middle - yellow/orange) */}
-                                          <View style={{
-                                            position: 'absolute',
-                                            left: `${warningPercent}%`,
-                                            width: `${Math.max(0, criticalPercent - warningPercent)}%`,
-                                            height: 6,
-                                            backgroundColor: theme.warning || '#F59E0B',
-                                          }} />
-                                          
-                                          {/* Critical zone (right - red) */}
-                                          <View style={{
-                                            position: 'absolute',
-                                            left: `${criticalPercent}%`,
-                                            width: `${Math.max(0, 100 - criticalPercent)}%`,
-                                            height: 6,
-                                            backgroundColor: theme.error || '#EF4444',
-                                          }} />
-                                        </View>
-                                      );
-                                    } else {
-                                      // 'below' direction: Values decrease left to right: [critical...warning...safe]
-                                      criticalPercent = Math.max(0, Math.min(100, ((critical - min) / range) * 100));
-                                      warningPercent = Math.max(0, Math.min(100, ((warning - min) / range) * 100));
-                                      
-                                      return (
-                                        <View style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
-                                          {/* Critical zone (left - red) */}
-                                          <View style={{
-                                            position: 'absolute',
-                                            left: 0,
-                                            width: `${criticalPercent}%`,
-                                            height: 6,
-                                            backgroundColor: theme.error || '#EF4444',
-                                          }} />
-                                          
-                                          {/* Warning zone (middle - yellow/orange) */}
-                                          <View style={{
-                                            position: 'absolute',
-                                            left: `${criticalPercent}%`,
-                                            width: `${Math.max(0, warningPercent - criticalPercent)}%`,
-                                            height: 6,
-                                            backgroundColor: theme.warning || '#F59E0B',
-                                          }} />
-                                          
-                                          {/* Safe zone (right - green) */}
-                                          <View style={{
-                                            position: 'absolute',
-                                            left: `${warningPercent}%`,
-                                            width: `${Math.max(0, 100 - warningPercent)}%`,
-                                            height: 6,
-                                            backgroundColor: theme.success || '#22C55E',
-                                          }} />
-                                        </View>
-                                      );
-                                    }
-                                  }}
-                                  renderRailSelected={() => (
-                                    // Make the selected rail transparent since we're showing zones in the base rail
-                                    <View style={{ flex: 1, height: 6, backgroundColor: 'transparent' }} />
-                                  )}
-                                />
-                                </View>
-                                
-                                {/* Max value - right side, aligned with track */}
-                                <View style={{ height: 60, paddingTop: 5 }}>
-                                    <Text style={{ fontSize: 10, color: theme.textSecondary, minWidth: 40, textAlign: 'left', fontWeight: 'bold' }}>
-                                    {((currentMetricThresholds as any).max ?? 100).toFixed((metricPresentation as any).formatSpec?.decimals ?? 1)}{unitSymbol}
-                                    </Text>
-                                </View>
-                              </View>
+                    {alarmConfig.triggerHint && (
+                      <Text style={[styles.helpText, { color: theme.textSecondary }]}>
+                        {alarmConfig.triggerHint}
+                      </Text>
+                    )}
+                  </View>
+                )}
 
-                              {/* Sound Controls */}
-                              {isNarrow ? (
-                                // Mobile: Stacked sound controls with proper z-index
-                                <View style={{ marginTop: 16, gap: 12 }}>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <Text style={{ flex: 0, minWidth: 80, color: theme.error, fontWeight: '600' }}>Critical:</Text>
-                                    <View style={{ flex: 1 }}>
-                                      <PlatformPicker
-                                        label=""
-                                        value={formData.criticalSoundPattern || 'none'}
-                                        onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                                        items={soundPatternItems}
-                                      />
-                                    </View>
-                                    <TouchableOpacity
-                                      style={[
-                                        styles.alarmRowTestButton,
-                                        { backgroundColor: theme.error, borderColor: theme.error },
-                                        formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
-                                      ]}
-                                      onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
-                                      disabled={formData.criticalSoundPattern === 'none'}
-                                    >
-                                      <UniversalIcon 
-                                        name="volume-high-outline" 
-                                        size={20} 
-                                        color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
-                                      />
-                                    </TouchableOpacity>
-                                  </View>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <Text style={{ flex: 0, minWidth: 80, color: theme.warning, fontWeight: '600' }}>Warning:</Text>
-                                    <View style={{ flex: 1 }}>
-                                      <PlatformPicker
-                                        label=""
-                                        value={formData.warningSoundPattern || 'none'}
-                                        onValueChange={(value) => updateField('warningSoundPattern', String(value))}
-                                        items={soundPatternItems}
-                                      />
-                                    </View>
-                                    <TouchableOpacity
-                                      style={[
-                                        styles.alarmRowTestButton,
-                                        { backgroundColor: theme.warning, borderColor: theme.warning },
-                                        formData.warningSoundPattern === 'none' && { opacity: 0.3 }
-                                      ]}
-                                      onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
-                                      disabled={formData.warningSoundPattern === 'none'}
-                                    >
-                                      <UniversalIcon 
-                                        name="volume-high-outline" 
-                                        size={20} 
-                                        color={formData.warningSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
-                                      />
-                                    </TouchableOpacity>
-                                  </View>
-                                </View>
-                              ) : (
-                                // Desktop: Horizontal sound controls
-                                <View style={{ marginTop: 16, flexDirection: 'row', gap: 16 }}>
-                                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <Text style={{ minWidth: 80, color: theme.error, fontWeight: '600' }}>Critical:</Text>
-                                    <View style={{ flex: 1 }}>
-                                      <PlatformPicker
-                                        label=""
-                                        value={formData.criticalSoundPattern || 'none'}
-                                        onValueChange={(value) => updateField('criticalSoundPattern', String(value))}
-                                        items={soundPatternItems}
-                                      />
-                                    </View>
-                                    <TouchableOpacity
-                                      style={[
-                                        styles.alarmRowTestButton,
-                                        { backgroundColor: theme.error, borderColor: theme.error },
-                                        formData.criticalSoundPattern === 'none' && { opacity: 0.3 }
-                                      ]}
-                                      onPress={() => handleTestSound(formData.criticalSoundPattern || 'none')}
-                                      disabled={formData.criticalSoundPattern === 'none'}
-                                    >
-                                      <UniversalIcon 
-                                        name="volume-high-outline" 
-                                        size={20} 
-                                        color={formData.criticalSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
-                                      />
-                                    </TouchableOpacity>
-                                  </View>
-                                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <Text style={{ minWidth: 80, color: theme.warning, fontWeight: '600' }}>Warning:</Text>
-                                    <View style={{ flex: 1 }}>
-                                      <PlatformPicker
-                                        label=""
-                                        value={formData.warningSoundPattern || 'none'}
-                                        onValueChange={(value) => updateField('warningSoundPattern', String(value))}
-                                        items={soundPatternItems}
-                                      />
-                                    </View>
-                                    <TouchableOpacity
-                                      style={[
-                                        styles.alarmRowTestButton,
-                                        { backgroundColor: theme.warning, borderColor: theme.warning },
-                                        formData.warningSoundPattern === 'none' && { opacity: 0.3 }
-                                      ]}
-                                      onPress={() => handleTestSound(formData.warningSoundPattern || 'none')}
-                                      disabled={formData.warningSoundPattern === 'none'}
-                                    >
-                                      <UniversalIcon 
-                                        name="volume-high-outline" 
-                                        size={20} 
-                                        color={formData.warningSoundPattern === 'none' ? theme.textSecondary : '#FFFFFF'} 
-                                      />
-                                    </TouchableOpacity>
-                                  </View>
-                                </View>
-                              )}
-                            </View>
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
-
-                  {/* Master Reset Button - Global */}
-                  {selectedSensorType && (
-                    <TouchableOpacity
-                      style={styles.resetButtonLink}
-                      onPress={handleMasterReset}
-                    >
-                      <UniversalIcon name="refresh-outline" size={14} color={theme.textSecondary} />
-                      <Text style={[styles.resetButtonLinkText, { color: theme.textSecondary }]}>Reset to Defaults</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-            </>
-          )}
+                {/* Sound Pattern Control */}
+                <SoundPatternControl
+                  criticalPattern={formData.criticalSoundPattern}
+                  warningPattern={formData.warningSoundPattern}
+                  soundPatternItems={soundPatternItems}
+                  onCriticalChange={(pattern) => updateField('criticalSoundPattern', pattern)}
+                  onWarningChange={(pattern) => updateField('warningSoundPattern', pattern)}
+                  onTestSound={handleTestSound}
+                  isNarrow={isNarrow}
+                  theme={theme}
+                />
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
     </BaseConfigDialog>
   );
 };
 
-const createStyles = (theme: ThemeColors) =>
-  StyleSheet.create({
-    emptyState: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 32,
-    },
-    emptyText: {
-      fontSize: 17,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-      marginTop: 16,
-    },
-    emptySubtext: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
-      marginTop: 8,
-      textAlign: 'center',
-    },
-    tabContainer: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      paddingVertical: 8,
-      paddingHorizontal: 0,
-      marginTop: 20,
-    },
-    tab: {
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      marginRight: 8,
-      borderRadius: 8,
-      borderWidth: StyleSheet.hairlineWidth,
-      minHeight: 36,
-    },
-    tabText: {
-      fontSize: 15,
-      fontWeight: '500',
-      fontFamily: 'sans-serif',
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-      marginBottom: 12,
-    },
-    field: {
-      marginBottom: 12,
-    },
-    metricPickerField: {
-      zIndex: 100,
-      elevation: 100, // Android
-    },
-    alarmHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginTop: 16,
-      marginBottom: 0,
-    },
-    alarmHeaderLeft: {
-      flex: 1,
-    },
-    alarmHeaderTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-    },
-    alarmHeaderHint: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
-      lineHeight: 18,
-    },
-    alarmContent: {
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginBottom: 12,
-    },
-    alarmRowsContainer: {
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginTop: 12,
-    },
-    alarmRow: {
-      marginBottom: 12,
-      paddingBottom: 12,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-    alarmRowHeader: {
-      marginBottom: 8,
-    },
-    alarmRowTitle: {
-      fontSize: 15,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-    },
-    // Desktop/Tablet horizontal layout
-    alarmRowControls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    alarmRowSlider: {
-      flex: 1,
-    },
-    alarmRowSound: {
-      width: 140,
-    },
-    alarmRowTestButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 8,
-      borderWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    // Mobile stacked layout
-    alarmRowMobile: {
-      gap: 10,
-    },
-    alarmRowMobileThreshold: {
-      width: '100%',
-    },
-    alarmRowMobileSoundControls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    label: {
-      fontSize: 13,
-      fontWeight: '600',
-      fontFamily: 'sans-serif',
-      marginBottom: 6,
-    },
-    input: {
-      height: 40,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      fontSize: 15,
-      fontFamily: 'sans-serif',
-      justifyContent: 'center',
-    },
-    readonlyText: {
-      fontSize: 15,
-      fontFamily: 'sans-serif',
-    },
-    infoBox: {
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginBottom: 12,
-    },
-    infoText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-    resetButtonLink: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 20,
-      gap: 6,
-      alignSelf: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-    },
-    resetButtonLinkText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
-    },
-  });
-
-export default SensorConfigDialog;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  field: {
+    marginBottom: 16,
+  },
+  sensorPickerField: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  input: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 16,
+  },
+  helpText: {
+    fontSize: 11,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  alarmSection: {
+    marginTop: 24,
+    paddingTop: 24,
+  },
+  alarmHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alarmTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  sliderSection: {
+    marginTop: 16,
+  },
+  sliderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 20,
+  },
+  sliderMinMax: {
+    height: 60,
+    paddingTop: 5,
+  },
+  minMaxText: {
+    fontSize: 10,
+    minWidth: 40,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  sliderContainer: {
+    flex: 1,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+});

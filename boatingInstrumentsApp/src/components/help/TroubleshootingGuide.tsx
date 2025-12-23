@@ -1,6 +1,6 @@
 /**
  * TroubleshootingGuide - Step-by-step troubleshooting with diagnostic integration
- * 
+ *
  * Features:
  * - Common issue troubleshooting flows
  * - Diagnostic integration
@@ -136,7 +136,8 @@ const commonIssues: TroubleshootingIssue[] = [
       },
       {
         id: 'check-battery',
-        instruction: 'Low battery can throttle performance. Charge device or enable power saving mode.',
+        instruction:
+          'Low battery can throttle performance. Charge device or enable power saving mode.',
         action: 'check',
       },
       {
@@ -172,7 +173,8 @@ const commonIssues: TroubleshootingIssue[] = [
       },
       {
         id: 'safety-warning',
-        instruction: '⚠️ NEVER rely solely on remote autopilot control. Always maintain proper lookout.',
+        instruction:
+          '⚠️ NEVER rely solely on remote autopilot control. Always maintain proper lookout.',
         action: 'check',
       },
     ],
@@ -202,7 +204,7 @@ const commonIssues: TroubleshootingIssue[] = [
       },
       {
         id: 'test-alarm',
-        instruction: 'Test alarm sound to verify it\'s working',
+        instruction: "Test alarm sound to verify it's working",
         action: 'open-settings',
         actionLabel: 'Test Alarm',
       },
@@ -232,43 +234,48 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
     setDiagnosticResult(null);
   }, []);
 
-  const handleStepAction = useCallback(async (step: TroubleshootingStep) => {
-    switch (step.action) {
-      case 'run-diagnostic':
-        setDiagnosticRunning(true);
-        // Simulate diagnostic run
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const success = Math.random() > 0.3; // Simulate 70% success rate
-        setDiagnosticResult(success ? step.successMessage || 'Check passed' : step.failureMessage || 'Check failed');
-        setDiagnosticRunning(false);
-        
-        // Log diagnostic run
-        DiagnosticCollector.logConnection(
-          success ? 'info' : 'warning',
-          'Troubleshooting',
-          `Diagnostic: ${step.instruction}`,
-          { result: success ? 'passed' : 'failed' }
-        );
-        break;
+  const handleStepAction = useCallback(
+    async (step: TroubleshootingStep) => {
+      switch (step.action) {
+        case 'run-diagnostic':
+          setDiagnosticRunning(true);
+          // Simulate diagnostic run
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const success = Math.random() > 0.3; // Simulate 70% success rate
+          setDiagnosticResult(
+            success ? step.successMessage || 'Check passed' : step.failureMessage || 'Check failed',
+          );
+          setDiagnosticRunning(false);
 
-      case 'open-settings':
-        if (onOpenSettings) {
-          onOpenSettings(step.id);
-        }
-        break;
+          // Log diagnostic run
+          DiagnosticCollector.logConnection(
+            success ? 'info' : 'warning',
+            'Troubleshooting',
+            `Diagnostic: ${step.instruction}`,
+            { result: success ? 'passed' : 'failed' },
+          );
+          break;
 
-      case 'contact-support':
-        if (onContactSupport) {
-          onContactSupport();
-        }
-        break;
+        case 'open-settings':
+          if (onOpenSettings) {
+            onOpenSettings(step.id);
+          }
+          break;
 
-      case 'check':
-      default:
-        // Just move to next step
-        break;
-    }
-  }, [onOpenSettings, onContactSupport]);
+        case 'contact-support':
+          if (onContactSupport) {
+            onContactSupport();
+          }
+          break;
+
+        case 'check':
+        default:
+          // Just move to next step
+          break;
+      }
+    },
+    [onOpenSettings, onContactSupport],
+  );
 
   const handleNextStep = useCallback(() => {
     if (selectedIssue && currentStep < selectedIssue.steps.length - 1) {
@@ -289,28 +296,27 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
     return (
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            🔧 Troubleshooting
-          </Text>
+          <Text style={[styles.title, { color: colors.text }]}>🔧 Troubleshooting</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Select an issue for step-by-step resolution
           </Text>
         </View>
 
         <View style={styles.issueList}>
-          {commonIssues.map(issue => (
+          {commonIssues.map((issue) => (
             <TouchableOpacity
               key={issue.id}
-              style={[styles.issueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              style={[
+                styles.issueCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
               onPress={() => handleSelectIssue(issue)}
               accessibilityRole="button"
               accessibilityLabel={issue.title}
             >
               <Text style={styles.issueIcon}>{issue.icon}</Text>
               <View style={styles.issueContent}>
-                <Text style={[styles.issueTitle, { color: colors.text }]}>
-                  {issue.title}
-                </Text>
+                <Text style={[styles.issueTitle, { color: colors.text }]}>{issue.title}</Text>
                 <Text style={[styles.issueDescription, { color: colors.textSecondary }]}>
                   {issue.description}
                 </Text>
@@ -336,9 +342,7 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.issueIconLarge}>{selectedIssue.icon}</Text>
-          <Text style={[styles.stepTitle, { color: colors.text }]}>
-            {selectedIssue.title}
-          </Text>
+          <Text style={[styles.stepTitle, { color: colors.text }]}>{selectedIssue.title}</Text>
         </View>
         <Text style={[styles.stepCounter, { color: colors.textSecondary }]}>
           Step {currentStep + 1} of {selectedIssue.steps.length}
@@ -347,12 +351,10 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
 
       {/* Step content */}
       <ScrollView style={styles.stepContent} contentContainerStyle={styles.stepContentContainer}>
-        <Text style={[styles.stepInstruction, { color: colors.text }]}>
-          {step.instruction}
-        </Text>
+        <Text style={[styles.stepInstruction, { color: colors.text }]}>{step.instruction}</Text>
 
         {/* Action button */}
-        {step.action && step.actionLabel && (
+        {step.action && step.actionLabel ? (
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.primary }]}
             onPress={() => handleStepAction(step)}
@@ -366,9 +368,7 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
               <Text style={styles.actionButtonText}>{step.actionLabel}</Text>
             )}
           </TouchableOpacity>
-        )}
-
-        {/* Diagnostic result */}
+        ) : null}
         {diagnosticResult && (
           <View
             style={[
@@ -385,8 +385,7 @@ export const TroubleshootingGuide: React.FC<TroubleshootingGuideProps> = ({
               style={[
                 styles.diagnosticResultText,
                 {
-                  color:
-                    diagnosticResult === step.successMessage ? colors.success : colors.error,
+                  color: diagnosticResult === step.successMessage ? colors.success : colors.error,
                 },
               ]}
             >
