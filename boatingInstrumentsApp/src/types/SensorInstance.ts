@@ -171,17 +171,20 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
-   * Get metric by field name (from history buffer latest)
+   * Get metric by field name (enriched with display values)
+   *
+   * Returns the latest history point with cached display values.
+   * Widgets should access formattedValue, unit, etc. as properties.
    *
    * @param fieldName - Field name (e.g., 'depth', 'voltage')
-   * @returns MetricValue or undefined
+   * @returns Enriched history point or undefined
    */
-  getMetric(fieldName: string): MetricValue | undefined {
+  getMetric(fieldName: string): HistoryPoint | undefined {
     const buffer = this._history.get(fieldName);
     if (!buffer) return undefined;
 
     const latest = buffer.getLatest();
-    return latest?.value ? new MetricValue(latest.value.si_value, latest.value.timestamp) : undefined;
+    return latest?.value; // Return the enriched HistoryPoint directly
   }
 
   /**
