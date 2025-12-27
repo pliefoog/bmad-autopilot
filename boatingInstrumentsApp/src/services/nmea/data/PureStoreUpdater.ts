@@ -427,6 +427,17 @@ export class PureStoreUpdater {
           }));
         }
 
+        // Debug: Log tank updates to trace string field flow
+        if (update.sensorType === 'tank') {
+          log.app('PureStoreUpdater calling updateSensorData for tank', () => ({
+            sensorType: update.sensorType,
+            instance: update.instance,
+            data: update.data,
+            hasType: 'type' in update.data,
+            typeValue: (update.data as any).type,
+          }));
+        }
+
         useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data);
         updatedFields.push(fieldKey);
         anyUpdated = true;
