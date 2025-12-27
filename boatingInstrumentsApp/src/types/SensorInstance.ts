@@ -162,6 +162,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
                 this._alarmStates.set(fieldName, newState);
               } else {
                 // Store string values directly in history
+                log.app('Storing string value', () => ({
+                  sensorType: this.sensorType,
+                  instance: this.instance,
+                  fieldName,
+                  value: fieldValue,
+                }));
                 this._addStringToHistory(fieldName, fieldValue, now);
               }
             }
