@@ -200,7 +200,7 @@ export class AlarmManager extends EventEmitter {
       // Fail-safe: Still add to alarm store even if enhanced features fail
       this.alarmStore.addAlarm({
         message: `SYSTEM ALERT: ${type} - ${data.value} (threshold: ${data.threshold})`,
-        level: 'critical',
+        level: 3, // CRITICAL
         source: 'AlarmManager-FailSafe',
         value: data.value,
         threshold: data.threshold,
@@ -489,20 +489,18 @@ export class AlarmManager extends EventEmitter {
     }
   }
 
-  private mapEscalationToAlarmLevel(
-    escalation: AlarmEscalationLevel,
-  ): 'info' | 'warning' | 'critical' {
+  private mapEscalationToAlarmLevel(escalation: AlarmEscalationLevel): AlarmLevel {
     switch (escalation) {
       case AlarmEscalationLevel.INFO:
-        return 'info';
+        return 0; // NONE
       case AlarmEscalationLevel.WARNING:
       case AlarmEscalationLevel.CAUTION:
-        return 'warning';
+        return 2; // WARNING
       case AlarmEscalationLevel.CRITICAL:
       case AlarmEscalationLevel.EMERGENCY:
-        return 'critical';
+        return 3; // CRITICAL
       default:
-        return 'warning';
+        return 2; // WARNING (default)
     }
   }
 
