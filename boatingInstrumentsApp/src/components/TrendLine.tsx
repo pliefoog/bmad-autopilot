@@ -229,6 +229,10 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       };
     }
 
+    // Calculate time window for X-axis positioning
+    const now = Date.now();
+    const timeWindowMs = timeWindowMinutes * 60 * 1000;
+
     const values = filteredData.map((p) => p.value);
     let dataMin = minValue !== undefined ? minValue : Math.min(...values);
     let dataMax = maxValue !== undefined ? maxValue : Math.max(...values);
