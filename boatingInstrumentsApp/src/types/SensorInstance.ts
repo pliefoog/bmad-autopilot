@@ -184,7 +184,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     if (!buffer) return undefined;
 
     const latest = buffer.getLatest();
-    return latest?.value; // Return the enriched HistoryPoint directly
+    return latest; // Return the enriched HistoryPoint directly
   }
 
   /**
