@@ -15,7 +15,7 @@
  */
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import { EventEmitter } from 'events';
 import { SensorInstance } from '../types/SensorInstance';
 import { ReEnrichmentCoordinator } from '../utils/ReEnrichmentCoordinator';
@@ -24,7 +24,6 @@ import { log } from '../utils/logging/logger';
 
 import type {
   SensorsData,
-  SerializedSensorsData,
   SensorType,
   SensorData,
   SensorAlarmThresholds,
@@ -155,65 +154,12 @@ function evaluateAlarms(sensors: SensorsData): Alarm[] {
 }
 
 /**
- * Serialize SensorsData for persistence
- * Converts SensorInstance class instances to plain objects
- */
-function serializeSensorsData(sensors: SensorsData): SerializedSensorsData {
-  const serialized: SerializedSensorsData = {} as SerializedSensorsData;
-
-  for (const [sensorType, instances] of Object.entries(sensors)) {
-    serialized[sensorType as SensorType] = {};
-
-    for (const [instanceNum, sensorInstance] of Object.entries(instances)) {
-      if (sensorInstance instanceof SensorInstance) {
-        serialized[sensorType as SensorType][parseInt(instanceNum, 10)] = sensorInstance.toJSON();
-      }
-    }
-  }
-
-  return serialized;
-}
-
-/**
- * Deserialize SensorsData from persistence
- * Reconstructs SensorInstance class instances from plain objects
- */
-function deserializeSensorsData(serialized: SerializedSensorsData): SensorsData {
-  const sensors: SensorsData = {
-    tank: {},
-    engine: {},
-    battery: {},
-    wind: {},
-    speed: {},
-    gps: {},
-    temperature: {},
-    depth: {},
-    compass: {},
-    autopilot: {},
-    navigation: {},
-  };
-
-  for (const [sensorType, instances] of Object.entries(serialized)) {
-    for (const [instanceNum, plainData] of Object.entries(instances)) {
-      const sensorInstance = SensorInstance.fromPlain(plainData);
-
-      // Re-register with ReEnrichmentCoordinator
-      ReEnrichmentCoordinator.register(sensorInstance);
-
-      sensors[sensorType as SensorType][parseInt(instanceNum, 10)] = sensorInstance;
-    }
-  }
-
-  return sensors;
-}
-
-/**
  * Create NMEA Store with SensorInstance architecture
+ * Note: No persistence - NMEA data is volatile stream data
  */
 export const useNmeaStore = create<NmeaStore>()(
   devtools(
-    persist(
-      (set, get) => ({
+    (set, get) => ({
         // Initial state
         connectionStatus: 'disconnected',
         nmeaData: {
@@ -512,42 +458,9 @@ export const useNmeaStore = create<NmeaStore>()(
           log.app('Factory reset complete - all sensor data cleared');
         },
       }),
-      {
-        name: 'nmea-storage',
-        version: 3, // Increment version for schema change
-
-        // Custom serialization for SensorInstance persistence
-        partialize: (state) => ({
-          connectionStatus: state.connectionStatus,
-          debugMode: state.debugMode,
-          nmeaData: {
-            sensors: serializeSensorsData(state.nmeaData.sensors),
-            timestamp: state.nmeaData.timestamp,
-            messageCount: state.nmeaData.messageCount,
-          },
-        }),
-
-        // Custom deserialization to reconstruct SensorInstance objects
-        merge: (persistedState: any, currentState: NmeaStore) => {
-          if (!persistedState) return currentState;
-
-          return {
-            ...currentState,
-            ...persistedState,
-            nmeaData: {
-              ...currentState.nmeaData,
-              ...persistedState.nmeaData,
-              sensors: persistedState.nmeaData?.sensors
-                ? deserializeSensorsData(persistedState.nmeaData.sensors)
-                : currentState.nmeaData.sensors,
-            },
-          };
-        },
-      },
-    ),
     {
-      name: 'NMEA Store v3',
-      enabled: __DEV__, // Re-enabled after fixing infinite loop
+      name: 'NMEA Store v3 (volatile)',
+      enabled: __DEV__,
     },
   ),
 );

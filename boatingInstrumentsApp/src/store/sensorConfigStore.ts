@@ -67,6 +67,7 @@ interface SensorConfigStoreState {
   ) => void;
   deleteConfig: (sensorType: SensorType, instance: number) => void;
   getAllConfigs: () => SensorConfigMap;
+  getMetricThresholds: (sensorType: SensorType, instance: number, metricKey: string) => any | undefined;
   clearAll: () => void;
 
   // Utility
@@ -89,7 +90,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
       (set, get) => ({
         // Initial state
         configs: {},
-        version: 1,
+        version: 2, // v2: MetricValue/SensorInstance refactor - clean slate
         lastSyncTimestamp: undefined,
 
         // Generate storage key
@@ -143,6 +144,24 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
           return get().configs;
         },
 
+        // Get metric-specific thresholds (for new MetricThresholds interface)
+        getMetricThresholds: (sensorType: SensorType, instance: number, metricKey: string) => {
+          const config = get().getConfig(sensorType, instance);
+          if (!config) return undefined;
+
+          // Extract metric-specific thresholds from sensor config
+          // This will be enhanced when we add per-metric threshold storage
+          return {
+            critical: config.critical || {},
+            warning: config.warning || {},
+            hysteresis: config.criticalHysteresis || config.warningHysteresis,
+            criticalSoundPattern: config.criticalSoundPattern,
+            warningSoundPattern: config.warningSoundPattern,
+            staleThresholdMs: 5000, // Default 5s, will be made configurable
+            enabled: config.enabled ?? true,
+          };
+        },
+
         // Clear all configurations (for reset/testing)
         clearAll: () => {
           set({ configs: {}, lastSyncTimestamp: undefined });
@@ -151,7 +170,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
       {
         name: 'sensor-config-storage', // AsyncStorage key
         storage: createJSONStorage(() => AsyncStorage),
-        version: 1,
+        version: 2,
 
         // Partial persistence - only persist configs, not derived state
         partialize: (state) => ({
@@ -159,6 +178,22 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
           version: state.version,
           lastSyncTimestamp: state.lastSyncTimestamp,
         }),
+
+        // Migration strategy: Clean slate on version mismatch
+        migrate: (persistedState: any, version: number) => {
+          if (version !== 2) {
+            console.warn(
+              '[SensorConfigStore] Migration: Wiping configs due to version mismatch',
+              `(stored: v${version}, expected: v2)`,
+            );
+            return {
+              configs: {},
+              version: 2,
+              lastSyncTimestamp: undefined,
+            };
+          }
+          return persistedState;
+        },
 
         // Handle storage errors gracefully
         onRehydrateStorage: () => {

@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { CriticalAlarmType } from '../services/alarms/types';
-
-export type AlarmLevel = 'info' | 'warning' | 'critical';
+import { AlarmLevel } from '../types/AlarmTypes';
 
 export interface Alarm {
   id: string;
@@ -35,11 +34,7 @@ export interface AlarmSettings {
   autoAcknowledge: boolean;
   autoAcknowledgeTime: number; // milliseconds
   muteUntil?: number; // timestamp
-  levelMuting: {
-    info: boolean;
-    warning: boolean;
-    critical: boolean;
-  };
+  levelMuting: Record<AlarmLevel, boolean>;
 }
 
 interface AlarmState {
@@ -90,15 +85,18 @@ interface AlarmActions {
 
 type AlarmStore = AlarmState & AlarmActions;
 
+const STORAGE_VERSION = 2; // v2: numeric alarm levels (0|1|2|3)
+
 const defaultSettings: AlarmSettings = {
   soundEnabled: true,
   vibrationEnabled: true,
   autoAcknowledge: false,
   autoAcknowledgeTime: 30000, // 30 seconds
   levelMuting: {
-    info: false,
-    warning: false,
-    critical: false,
+    0: false, // NONE
+    1: false, // STALE
+    2: false, // WARNING
+    3: false, // CRITICAL
   },
 };
 
@@ -449,11 +447,30 @@ export const useAlarmStore = create<AlarmStore>()(
       }),
       {
         name: 'alarm-store',
+        version: STORAGE_VERSION,
+        
         partialize: (state) => ({
           thresholds: state.thresholds,
           settings: state.settings,
           alarmHistory: state.alarmHistory.slice(-100), // Keep last 100 in storage
         }),
+
+        // Migration: Clean slate on version mismatch (string → numeric levels)
+        migrate: (persistedState: any, version: number) => {
+          if (version !== STORAGE_VERSION) {
+            console.warn(
+              '[AlarmStore] Migration: Wiping alarm history due to version mismatch',
+              `(stored: v${version}, expected: v${STORAGE_VERSION})`,
+            );
+            // Return default state, wipe old string-based alarms
+            return {
+              thresholds: defaultThresholds,
+              settings: defaultSettings,
+              alarmHistory: [],
+            };
+          }
+          return persistedState;
+        },
       },
     ),
     { name: 'Alarm Store', enabled: __DEV__ },

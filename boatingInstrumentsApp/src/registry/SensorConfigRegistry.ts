@@ -72,12 +72,19 @@ export type AlarmSupport = 'multi-metric' | 'single-metric' | 'none';
 export type IOState = 'readOnly' | 'readWrite' | 'readOnlyIfValue';
 
 /**
- * Standard sound patterns for alarms
+ * ISO 9692 Maritime Alarm Sound Patterns
+ * - rapid_pulse: Critical alarms (shallow water, engine failure)
+ * - morse_u: Warning alarms (shallow water warning)
+ * - warble: Engine alarms (overheat, low pressure)
+ * - triple_blast: Electrical alarms (low battery)
+ * - intermittent: General warnings
  */
 export const ALARM_SOUND_PATTERNS = {
-  critical: 'rapid_pulse',
-  warning: 'warble',
-  info: 'single_beep',
+  critical: 'rapid_pulse', // ISO 9692 critical alarm
+  warning: 'morse_u', // ISO 9692 warning alarm
+  engine_critical: 'warble', // ISO 9692 engine alarm
+  battery_critical: 'triple_blast', // ISO 9692 electrical alarm
+  info: 'intermittent',
   none: 'none',
 } as const;
 
@@ -593,10 +600,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warning: 2.5,
         direction: 'below' as const,
         enabled: true,
-        criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-        warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+        criticalSoundPattern: ALARM_SOUND_PATTERNS.critical, // rapid_pulse
+        warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
         criticalHysteresis: 0.3,
         warningHysteresis: 0.3,
+        staleThresholdMs: 2000, // 2s - navigation-critical sensor
         min: 0,
         max: 100,
       },
@@ -735,10 +743,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 2600,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 50,
               warningHysteresis: 50,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 3500,
             },
@@ -747,10 +756,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 95,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 120,
             },
@@ -759,10 +769,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 20,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 600,
             },
@@ -775,10 +786,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 3400,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 100,
               warningHysteresis: 100,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 4500,
             },
@@ -787,10 +799,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 100,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 130,
             },
@@ -799,10 +812,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 15,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 500,
             },
@@ -815,10 +829,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 5500,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 100,
               warningHysteresis: 100,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 6500,
             },
@@ -827,10 +842,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 75,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 100,
             },
@@ -839,10 +855,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 12,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical, // warble
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 2,
               warningHysteresis: 2,
+              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 400,
             },
