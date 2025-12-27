@@ -49,8 +49,8 @@ import { log } from '../utils/logging/logger';
  * Stored in history buffer for chart rendering
  */
 export interface HistoryPoint {
-  si_value: number;
-  value: number; // Display value
+  si_value: number | string; // Support both numeric and string values
+  value: number | string; // Display value
   formattedValue: string; // Without unit
   formattedValueWithUnit: string; // With unit
   unit: string;
@@ -125,37 +125,46 @@ export class SensorInstance<T extends SensorData = SensorData> {
       const fieldName = field.key;
       const fieldValue = (data as any)[fieldName];
 
-      // Only process numeric values
-      if (fieldValue !== undefined && Number.isFinite(fieldValue)) {
-        try {
-          // Check if value changed
-          const existingMetric = this.getMetric(fieldName);
-          const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
+      // Process both numeric and string values
+      if (fieldValue !== undefined && fieldValue !== null) {
+        const isNumeric = Number.isFinite(fieldValue);
+        const isString = typeof fieldValue === 'string';
 
-          if (valueChanged) {
-            hasChanges = true;
+        if (isNumeric || isString) {
+          try {
+            // Check if value changed
+            const existingMetric = this.getMetric(fieldName);
+            const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
 
-            // Create minimal MetricValue (16 bytes)
-            const metric = new MetricValue(fieldValue, now);
+            if (valueChanged) {
+              hasChanges = true;
 
-            // Add to history
-            this._addToHistory(fieldName, metric);
+              if (isNumeric) {
+                // Create minimal MetricValue (16 bytes) for numeric values
+                const metric = new MetricValue(fieldValue, now);
 
-            // Evaluate alarm with priority logic
-            const thresholds = this._thresholds.get(fieldName);
-            const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
-            const previousState = this._alarmStates.get(fieldName) ?? 0;
+                // Add to history
+                this._addToHistory(fieldName, metric);
 
-            const newState = evaluateAlarm(
-              fieldValue,
-              now,
-              thresholds,
-              previousState,
-              staleThreshold
-            );
+                // Evaluate alarm with priority logic
+                const thresholds = this._thresholds.get(fieldName);
+                const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
+                const previousState = this._alarmStates.get(fieldName) ?? 0;
 
-            this._alarmStates.set(fieldName, newState);
-          }
+                const newState = evaluateAlarm(
+                  fieldValue,
+                  now,
+                  thresholds,
+                  previousState,
+                  staleThreshold
+                );
+
+                this._alarmStates.set(fieldName, newState);
+              } else {
+                // Store string values directly in history
+                this._addStringToHistory(fieldName, fieldValue, now);
+              }
+            }
         } catch (error) {
           log.app('ERROR in updateMetrics', () => ({
             fieldName,
@@ -321,6 +330,32 @@ export class SensorInstance<T extends SensorData = SensorData> {
         timestamp: metric.timestamp,
       },
       metric.timestamp
+    );
+  }
+
+  /**
+   * Add string metric to history (internal)
+   * Stores string values directly without enrichment
+   */
+  private _addStringToHistory(fieldName: string, value: string, timestamp: number): void {
+    if (!this._history.has(fieldName)) {
+      // Create buffer: 100 recent, 100 old, 60s threshold, 10x decimation
+      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(100, 100, 60000, 10));
+    }
+
+    const buffer = this._history.get(fieldName)!;
+
+    // Store string as-is (no formatting needed)
+    buffer.add(
+      {
+        si_value: value,
+        value: value,
+        formattedValue: value,
+        formattedValueWithUnit: value,
+        unit: '',
+        timestamp,
+      },
+      timestamp
     );
   }
 
