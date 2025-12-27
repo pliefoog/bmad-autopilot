@@ -122,7 +122,7 @@ let lastAlarmEvaluation = 0;
 
 /**
  * Evaluate alarms from all sensor instances
- * SensorInstance provides getAlarmState(metricName) for each metric
+ * SensorInstance provides getAlarmState(metricKey) returning numeric 0|1|2|3
  */
 function evaluateAlarms(sensors: SensorsData): Alarm[] {
   const alarms: Alarm[] = [];
@@ -133,16 +133,27 @@ function evaluateAlarms(sensors: SensorsData): Alarm[] {
     Object.entries(instances).forEach(([instanceNum, sensorInstance]) => {
       if (!(sensorInstance instanceof SensorInstance)) return;
 
-      // Check each metric in the sensor
-      const allMetrics = sensorInstance.getAllMetrics();
-      for (const [metricKey, metric] of Object.entries(allMetrics)) {
-        const alarmState = sensorInstance.getAlarmState(metricKey);
+      // Get all metrics from history buffer
+      const buffer = (sensorInstance as any)._history;
+      if (!buffer) return;
 
-        if (alarmState.level !== 'none' && alarmState.message) {
+      const latestPoint = buffer.getLatest();
+      if (!latestPoint) return;
+
+      // Check each metric's alarm state
+      for (const metricKey of Object.keys(latestPoint.enriched)) {
+        const alarmLevel = sensorInstance.getAlarmState(metricKey);
+
+        // AlarmLevel: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL
+        if (alarmLevel >= 2) {
+          // WARNING or CRITICAL
+          const level: AlarmLevel = alarmLevel === 3 ? 'critical' : 'warning';
+          const metricValue = sensorInstance.getMetric(metricKey);
+
           alarms.push({
             id: `${sensorType}-${instanceNum}-${metricKey}`,
-            message: alarmState.message,
-            level: alarmState.level === 'critical' ? 'critical' : 'warning',
+            message: `${sensorType}[${instanceNum}].${metricKey}: ${level.toUpperCase()}`,
+            level,
             timestamp: now,
           });
         }
@@ -229,29 +240,15 @@ export const useNmeaStore = create<NmeaStore>()(
           let needsStoreUpdate = isNewInstance;
 
           if (!sensorInstance) {
-            // Create new instance
-            const context = {
-              batteryChemistry: (data as any)?.chemistry,
-              engineType: (data as any)?.type,
-            };
-            const defaults = getAlarmDefaults(sensorType, context) || {
-              enabled: false,
-              name: `${sensorType}-${instance}`,
-            };
-
-            // Auto-enable critical sensors
-            const criticalSensors = ['depth', 'battery', 'engine'];
-            if (criticalSensors.includes(sensorType)) {
-              defaults.enabled = true;
-            }
-
-            sensorInstance = new SensorInstance(sensorType, instance, defaults);
+            // Create new instance with simplified constructor (no thresholds parameter)
+            sensorInstance = new SensorInstance(sensorType, instance);
 
             // Register with ReEnrichmentCoordinator
             ReEnrichmentCoordinator.register(sensorInstance);
 
             log.storeInit(`🆕 NEW SENSOR: ${sensorType}[${instance}]`, () => ({
-              thresholds: defaults,
+              sensorType,
+              instance,
             }));
             needsStoreUpdate = true;
           }
