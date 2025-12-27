@@ -68,6 +68,12 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
 
     const batteryTimestamp = batterySensorInstance?.timestamp;
 
+    // Extract alarm levels for battery metrics
+    const voltageAlarmLevel = batterySensorInstance?.getAlarmState('voltage') ?? 0;
+    const currentAlarmLevel = batterySensorInstance?.getAlarmState('current') ?? 0;
+    const temperatureAlarmLevel = batterySensorInstance?.getAlarmState('temperature') ?? 0;
+    const socAlarmLevel = batterySensorInstance?.getAlarmState('soc') ?? 0;
+
     // Helper function to create MetricDisplayData from MetricValue
     const getBatteryDisplay = useCallback(
       (
@@ -238,55 +244,6 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
 
     const isStale = !batteryTimestamp || voltage === null;
 
-    // Marine safety thresholds for battery monitoring
-    const getBatteryState = useCallback((voltage: number | null, soc: number | null) => {
-      if (voltage === null) return 'warning';
-
-      // Critical conditions for marine batteries
-      if (voltage < 10.5) return 'alarm'; // Deep discharge danger
-      if (voltage < 11.8) return 'warning'; // Low battery warning
-      if (voltage > 15.0) return 'alarm'; // Dangerous overcharge
-      if (voltage > 14.8) return 'warning'; // Overcharge warning
-
-      // State of charge warnings (if available)
-      if (soc !== null) {
-        if (soc < 20) return 'warning'; // Low SOC
-        if (soc < 10) return 'alarm'; // Critical SOC
-      }
-
-      return 'normal';
-    }, []);
-
-    // Individual metric states for enhanced monitoring
-    const getVoltageState = useCallback(
-      () => getBatteryState(voltage, stateOfCharge),
-      [voltage, stateOfCharge, getBatteryState],
-    );
-
-    const getCurrentState = useCallback(() => {
-      if (current === null) return 'normal';
-      if (Math.abs(current) > 100) return 'warning'; // High current draw/charge
-      if (Math.abs(current) > 200) return 'alarm'; // Dangerous current
-      return 'normal';
-    }, [current]);
-
-    const getTempState = useCallback(() => {
-      if (temperature === null) return 'normal';
-      if (temperature > 50) return 'alarm'; // Dangerous temperature
-      if (temperature > 40) return 'warning'; // High temperature
-      if (temperature < 0) return 'warning'; // Freezing
-      return 'normal';
-    }, [temperature]);
-
-    const getSOCState = useCallback(() => {
-      if (stateOfCharge === null) return 'normal';
-      if (stateOfCharge < 10) return 'alarm'; // Critical SOC
-      if (stateOfCharge < 20) return 'warning'; // Low SOC
-      return 'normal';
-    }, [stateOfCharge]);
-
-    const batteryState = getBatteryState(voltage, stateOfCharge);
-
     const handleLongPressOnPin = useCallback(() => {}, [id]);
 
     // Responsive header sizing using proper base-size scaling
@@ -342,8 +299,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
       >
         {/* Row 1: VOLT | CURR */}
         <PrimaryMetricCell
-          data={voltageDisplay}
-          state={getVoltageState()}
+          data={{ ...voltageDisplay, alarmState: voltageAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -351,8 +307,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          data={currentDisplay}
-          state={getCurrentState()}
+          data={{ ...currentDisplay, alarmState: currentAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -361,8 +316,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
         />
         {/* Row 2: TEMP | SOC */}
         <PrimaryMetricCell
-          data={temperatureDisplay}
-          state={getTempState()}
+          data={{ ...temperatureDisplay, alarmState: temperatureAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -370,8 +324,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          data={stateOfChargeDisplay}
-          state={getSOCState()}
+          data={{ ...stateOfChargeDisplay, alarmState: socAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,

@@ -201,7 +201,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
               : '---'
           }
           unit="°"
-          state={isStale ? 'warning' : 'normal'}
+          data={{ alarmState: isStale ? 1 : 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -221,7 +221,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
               : '---'
           }
           unit="°"
-          state={isStale ? 'warning' : 'normal'}
+          data={{ alarmState: isStale ? 1 : 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -231,8 +231,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
         {/* Separator after row 2 */}
         {/* Row 3: Variation */}
         <SecondaryMetricCell
-          data={variationDisplay}
-          state="normal"
+          data={{ ...variationDisplay, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,
@@ -242,8 +241,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
         />
         {/* Row 4: Deviation */}
         <SecondaryMetricCell
-          data={deviationDisplay}
-          state="normal"
+          data={{ ...deviationDisplay, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,

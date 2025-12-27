@@ -68,6 +68,9 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
 
     const temperatureTimestamp = temperatureSensorData?.timestamp;
 
+    // Extract alarm level for temperature
+    const temperatureAlarmLevel = temperatureSensorData?.getAlarmState('value') ?? 0;
+
     // Check if data is stale (> 5 seconds old)
     // Use state + useEffect to detect staleness without causing re-renders on every cycle
     const [isStale, setIsStale] = useState(true);
@@ -96,38 +99,6 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
     const valueMetric = temperatureSensorData?.getMetric('value');
     const displayTemperature = valueMetric?.value ?? null;
     const displayUnit = valueMetric?.unit || '°C';
-
-    // Marine safety thresholds for temperature monitoring
-    const getTemperatureState = useCallback((temp: number | null, location: string) => {
-      if (temp === null) return 'warning';
-
-      // Critical conditions for marine temperature sensors
-      switch (location) {
-        case 'engine':
-          if (temp > 95) return 'alarm'; // Dangerous engine temperature
-          if (temp > 85) return 'warning'; // High engine temperature
-          break;
-        case 'exhaust':
-          if (temp > 65) return 'alarm'; // Dangerous exhaust temperature
-          if (temp > 55) return 'warning'; // High exhaust temperature
-          break;
-        case 'engineRoom':
-          if (temp > 50) return 'alarm'; // Dangerous engine room temperature
-          if (temp > 40) return 'warning'; // High engine room temperature
-          break;
-        case 'seawater':
-          if (temp > 30 || temp < 0) return 'warning'; // Unusual seawater temperature
-          break;
-        case 'cabin':
-        case 'outside':
-          if (temp > 40 || temp < -10) return 'warning'; // Extreme air temperature
-          break;
-      }
-
-      return 'normal';
-    }, []);
-
-    const temperatureState = getTemperatureState(temperature, location);
 
     // Note: Alarm thresholds for TrendLine are now auto-subscribed within the component
     // No need to fetch and convert them here
@@ -220,7 +191,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
           mnemonic="TEMP"
           value={displayTemperature !== null ? String(displayTemperature) : '---'}
           unit={displayUnit}
-          state={isStale ? 'warning' : temperatureState}
+          data={{ alarmState: isStale ? 1 : temperatureAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -233,7 +204,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
           instance={instanceNumber}
           metric="value"
           timeWindowMs={5 * 60 * 1000}
-          usePrimaryLine={temperatureState === 'normal'}
+          usePrimaryLine={temperatureAlarmLevel === 0}
           showXAxis={true}
           showYAxis={true}
           xAxisPosition="bottom"

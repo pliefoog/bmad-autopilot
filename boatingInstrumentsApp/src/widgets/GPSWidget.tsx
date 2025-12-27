@@ -237,7 +237,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
         mnemonic={latDisplay.mnemonic}
         value={latDisplay.value}
         unit={latDisplay.unit}
-        state={isStale ? 'warning' : 'normal'}
+        data={{ alarmState: isStale ? 1 : 0 }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -249,7 +249,7 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
         mnemonic={lonDisplay.mnemonic}
         value={lonDisplay.value}
         unit={lonDisplay.unit}
-        state={isStale ? 'warning' : 'normal'}
+        data={{ alarmState: isStale ? 1 : 0 }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,

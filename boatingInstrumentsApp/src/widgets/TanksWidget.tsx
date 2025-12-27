@@ -53,6 +53,9 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
     const tankName = tankSensorInstance?.getMetric('name')?.si_value ?? title;
     const tankTimestamp = tankSensorInstance?.timestamp;
 
+    // Extract alarm level for tank level
+    const tankLevelAlarmLevel = tankSensorInstance?.getAlarmState('level') ?? 0;
+
     // Extract tank values
     const level = tankLevel ? tankLevel * 100 : null; // Convert ratio to percentage
 
@@ -63,27 +66,6 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
       }
       return null;
     }, [capacity, tankLevel]);
-
-    // Marine safety thresholds for tank monitoring
-    const getTankState = useCallback((level: number | null, tankType: string) => {
-      if (level === null) return 'warning';
-
-      // Critical conditions for marine tanks
-      if (tankType === 'fuel') {
-        if (level < 10) return 'alarm'; // Critical fuel level
-        if (level < 25) return 'warning'; // Low fuel warning
-      } else if (tankType === 'water') {
-        if (level < 15) return 'alarm'; // Critical water level
-        if (level < 30) return 'warning'; // Low water warning
-      } else if (tankType === 'waste' || tankType === 'blackwater') {
-        if (level > 90) return 'alarm'; // Nearly full waste
-        if (level > 75) return 'warning'; // High waste level
-      }
-
-      return 'normal';
-    }, []);
-
-    const tankState = getTankState(level, tankType);
 
     const handleLongPressOnPin = useCallback(() => {}, [id]);
 
@@ -158,7 +140,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
           mnemonic="LEVEL"
           value={level !== null ? `${Math.round(level)}` : '---'}
           unit="%"
-          state={tankState}
+          data={{ alarmState: tankLevelAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -170,7 +152,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
           mnemonic="CAP"
           value={capacity !== null ? String(Math.round(capacity)) : '---'}
           unit="L"
-          state="normal"
+          data={{ alarmState: 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,

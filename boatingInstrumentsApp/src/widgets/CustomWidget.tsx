@@ -221,7 +221,7 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
             mnemonic={metric.mnemonic}
             value={metric.value}
             unit={metric.unit}
-            state="normal"
+            data={{ alarmState: 0 }}
             fontSize={{
               mnemonic: fontSize.label,
               value: fontSize.value,
@@ -237,7 +237,7 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
             mnemonic={metric.mnemonic}
             value={metric.value}
             unit={metric.unit}
-            state="normal"
+            data={{ alarmState: 0 }}
             compact={true}
             fontSize={{
               mnemonic: fontSize.label,

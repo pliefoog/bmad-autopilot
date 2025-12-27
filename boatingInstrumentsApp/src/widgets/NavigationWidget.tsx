@@ -149,7 +149,7 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
           mnemonic={bearingDisplay.mnemonic}
           value={bearingDisplay.value}
           unit={bearingDisplay.unit}
-          state={isStale ? 'warning' : 'normal'}
+          data={{ alarmState: isStale ? 1 : 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -160,7 +160,7 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
           mnemonic={distanceDisplay.mnemonic}
           value={distanceDisplay.value}
           unit={distanceDisplay.unit}
-          state={isStale ? 'warning' : 'normal'}
+          data={{ alarmState: isStale ? 1 : 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -172,7 +172,7 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
           mnemonic={xteDisplay.mnemonic}
           value={xteDisplay.value}
           unit={xteDisplay.unit}
-          state={isStale ? 'warning' : 'normal'}
+          data={{ alarmState: isStale ? 1 : 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -183,7 +183,7 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
           mnemonic={vmgDisplay.mnemonic}
           value={vmgDisplay.value}
           unit={vmgDisplay.unit}
-          state={isStale ? 'warning' : 'normal'}
+          data={{ alarmState: isStale ? 1 : 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,

@@ -130,19 +130,8 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
       };
     }, [depth, sessionStats, depthMetric]);
 
-    // Depth alarm states
-    const depthState = useMemo(() => {
-      if (depth === undefined || depth === null) return 'normal';
-
-      // Critical depth alarm at 1.5m / 5ft
-      const criticalDepthMeters = 1.5;
-      // Shallow water warning at 3.0m / 10ft
-      const shallowDepthMeters = 3.0;
-
-      if (depth < criticalDepthMeters) return 'alarm';
-      if (depth < shallowDepthMeters) return 'warning';
-      return 'normal';
-    }, [depth]);
+    // Get alarm level from SensorInstance (Phase 5 refactor)
+    const depthAlarmLevel = depthSensorInstance?.getAlarmState('depth') ?? 0;
 
     // Generate depth source info for user display
     const depthSourceInfo = useMemo(() => {
@@ -211,9 +200,11 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
       >
         {/* Row 1: Current depth with large value */}
         <PrimaryMetricCell
-          mnemonic={depthSourceInfo.shortLabel || 'DEPTH'}
-          {...convertDepth.current}
-          state={isStale ? 'warning' : depthState}
+          data={{
+            mnemonic: depthSourceInfo.shortLabel || 'DEPTH',
+            ...convertDepth.current,
+            alarmState: isStale ? 1 : depthAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -239,9 +230,11 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
           forceZero={true}
         />
         <SecondaryMetricCell
-          mnemonic="MIN"
-          {...convertDepth.sessionMin}
-          state="normal"
+          data={{
+            mnemonic: 'MIN',
+            ...convertDepth.sessionMin,
+            alarmState: 0,
+          }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,
@@ -252,9 +245,11 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
 
         {/* Row 4: Session maximum depth */}
         <SecondaryMetricCell
-          mnemonic="MAX"
-          {...convertDepth.sessionMax}
-          state="normal"
+          data={{
+            mnemonic: 'MAX',
+            ...convertDepth.sessionMax,
+            alarmState: 0,
+          }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,

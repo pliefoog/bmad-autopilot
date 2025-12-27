@@ -43,6 +43,10 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   const windSpeed = windSpeedMetric?.si_value; // AWS
   const windTimestamp = windSensorData?.timestamp;
 
+  // Extract alarm levels for wind metrics
+  const windSpeedAlarmLevel = windSensorData?.getAlarmState('speed') ?? 0;
+  const windAngleAlarmLevel = windSensorData?.getAlarmState('direction') ?? 0;
+
   const compassInstance = useNmeaStore(
     (state) => state.nmeaData.sensors.compass?.[0],
     (a, b) => a === b,
@@ -359,8 +363,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     >
       {/* Row 1: AWS | TWS */}
       <PrimaryMetricCell
-        data={windDisplayData.windSpeed}
-        state={isStale ? 'warning' : 'normal'}
+        data={{ ...windDisplayData.windSpeed, alarmState: isStale ? 1 : windSpeedAlarmLevel }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -368,8 +371,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
         }}
       />
       <PrimaryMetricCell
-        data={windDisplayData.trueWindSpeed}
-        state={isStale ? 'warning' : 'normal'}
+        data={{ ...windDisplayData.trueWindSpeed, alarmState: isStale ? 1 : 0 }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -378,8 +380,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
       />
       {/* Row 2: AWA | TWA */}
       <PrimaryMetricCell
-        data={windDisplayData.windAngle}
-        state={isStale ? 'warning' : 'normal'}
+        data={{ ...windDisplayData.windAngle, alarmState: isStale ? 1 : windAngleAlarmLevel }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -387,8 +388,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
         }}
       />
       <PrimaryMetricCell
-        data={windDisplayData.trueWindAngle}
-        state={isStale ? 'warning' : 'normal'}
+        data={{ ...windDisplayData.trueWindAngle, alarmState: isStale ? 1 : 0 }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -398,8 +398,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
       {/* Separator after row 2 */}
       {/* Row 3: Apparent Gust | True Gust */}
       <SecondaryMetricCell
-        data={windDisplayData.apparentGust}
-        state="normal"
+        data={{ ...windDisplayData.apparentGust, alarmState: 0 }}
         compact={true}
         fontSize={{
           mnemonic: fontSize.label,
@@ -408,8 +407,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
         }}
       />
       <SecondaryMetricCell
-        data={windDisplayData.trueGust}
-        state="normal"
+        data={{ ...windDisplayData.trueGust, alarmState: 0 }}
         compact={true}
         fontSize={{
           mnemonic: fontSize.label,
@@ -419,8 +417,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
       />
       {/* Row 4: Apparent Variation | True Variation */}
       <SecondaryMetricCell
-        data={windDisplayData.apparentVariation}
-        state="normal"
+        data={{ ...windDisplayData.apparentVariation, alarmState: 0 }}
         compact={true}
         fontSize={{
           mnemonic: fontSize.label,
@@ -429,8 +426,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
         }}
       />
       <SecondaryMetricCell
-        data={windDisplayData.trueVariation}
-        state="normal"
+        data={{ ...windDisplayData.trueVariation, alarmState: 0 }}
         compact={true}
         fontSize={{
           mnemonic: fontSize.label,

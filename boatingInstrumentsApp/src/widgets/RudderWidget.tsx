@@ -36,6 +36,9 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
     const rudderAngle = autopilotSensorData?.rudderAngle ?? 0; // Note: field is rudderAngle in AutopilotSensorData
     const rudderTimestamp = autopilotSensorData?.timestamp;
 
+    // Extract alarm level for rudder angle
+    const rudderAngleAlarmLevel = autopilotSensorData?.getAlarmState('rudderAngle') ?? 0;
+
     // Extract rudder data with defaults
     const isStale = !rudderTimestamp;
 
@@ -89,16 +92,6 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
       };
     }, [autopilotSensorData, rudderAngle]);
 
-    // Marine safety evaluation for rudder position
-    const getRudderState = useCallback((angle: number) => {
-      const absAngle = Math.abs(angle);
-      if (absAngle > 30) return 'alarm'; // Extreme rudder angle warning
-      if (absAngle > 20) return 'warning'; // Caution zone
-      return 'normal';
-    }, []);
-
-    const rudderState = getRudderState(rudderAngle);
-
     // Format rudder display with direction (PORT/STBD)
     const formatRudderDisplay = useCallback((angle: number) => {
       if (angle === 0) return { value: '0', unit: '°' };
@@ -123,9 +116,9 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
         borderRadius: 8,
         borderWidth: 1,
         borderColor:
-          rudderState === 'alarm'
+          rudderAngleAlarmLevel === 3
             ? theme.error
-            : rudderState === 'warning'
+            : rudderAngleAlarmLevel === 2
             ? theme.warning
             : theme.border,
         padding: 16,
@@ -180,9 +173,9 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
         height: 8,
         borderRadius: 4,
         backgroundColor:
-          rudderState === 'alarm'
+          rudderAngleAlarmLevel === 3
             ? theme.error
-            : rudderState === 'warning'
+            : rudderAngleAlarmLevel === 2
             ? theme.warning
             : theme.success,
         opacity: isStale ? 0.3 : 1,
@@ -193,9 +186,9 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
         textAlign: 'center',
         marginTop: 8,
         color:
-          rudderState === 'alarm'
+          rudderAngleAlarmLevel === 3
             ? theme.error
-            : rudderState === 'warning'
+            : rudderAngleAlarmLevel === 2
             ? theme.warning
             : theme.textSecondary,
       },
@@ -229,8 +222,7 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
         {/* Primary Grid (1×1): Rudder angle with direction */}
         <View style={styles.primaryGrid}>
           <PrimaryMetricCell
-            data={rudderAngleDisplay}
-            state={getRudderState(rudderAngle)}
+            data={{ ...rudderAngleDisplay, alarmState: rudderAngleAlarmLevel }}
             fontSize={{
               mnemonic: fontSize.primaryLabel,
               value: fontSize.primaryValue,
@@ -247,9 +239,9 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
         <View style={styles.rudderVisualization}>
           <RudderIndicator angle={rudderAngle} theme={theme} />
           <Text style={styles.warningText}>
-            {rudderState === 'alarm'
+            {rudderAngleAlarmLevel === 3
               ? 'EXTREME ANGLE!'
-              : rudderState === 'warning'
+              : rudderAngleAlarmLevel === 2
               ? 'High Angle'
               : isStale
               ? 'No Data'

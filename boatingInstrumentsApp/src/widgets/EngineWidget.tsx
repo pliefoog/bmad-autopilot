@@ -208,34 +208,11 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
     const engineState = getEngineState(rpm, coolantTemp, oilPressure);
     const isStale = !engineTimestamp;
 
-    // Individual metric state functions for PrimaryMetricCell
-    const getRpmState = useCallback(() => {
-      if (rpm === null) return 'normal';
-      if (rpm > 4200) return 'alarm';
-      if (rpm > 3800) return 'warning';
-      return 'normal';
-    }, [rpm]);
-
-    const getTempState = useCallback(() => {
-      if (coolantTemp === null) return 'normal';
-      if (coolantTemp > 100) return 'alarm';
-      if (coolantTemp > 85) return 'warning';
-      return 'normal';
-    }, [coolantTemp]);
-
-    const getOilState = useCallback(() => {
-      if (oilPressure === null) return 'normal';
-      if (oilPressure < 5) return 'alarm';
-      if (oilPressure < 10) return 'warning';
-      return 'normal';
-    }, [oilPressure]);
-
-    const getVoltState = useCallback(() => {
-      if (alternatorVoltage === null) return 'normal';
-      if (alternatorVoltage < 11.8 || alternatorVoltage > 14.8) return 'warning';
-      if (alternatorVoltage < 11.0 || alternatorVoltage > 15.5) return 'alarm';
-      return 'normal';
-    }, [alternatorVoltage]);
+    // Get alarm levels from SensorInstance (Phase 5 refactor)
+    const rpmAlarmLevel = engineSensorInstance?.getAlarmState('rpm') ?? 0;
+    const tempAlarmLevel = engineSensorInstance?.getAlarmState('temperature') ?? 0;
+    const oilAlarmLevel = engineSensorInstance?.getAlarmState('oilPressure') ?? 0;
+    const voltAlarmLevel = engineSensorInstance?.getAlarmState('alternatorVoltage') ?? 0;
 
     const handleLongPressOnPin = useCallback(() => {}, [id]);
 
@@ -292,8 +269,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       >
         {/* Row 1: RPM | TEMP */}
         <PrimaryMetricCell
-          data={rpmDisplay}
-          state={getRpmState()}
+          data={{ ...rpmDisplay, alarmState: rpmAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -301,8 +277,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          data={coolantTempDisplay}
-          state={getTempState()}
+          data={{ ...coolantTempDisplay, alarmState: tempAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -311,8 +286,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
         />
         {/* Row 2: OIL | VOLT */}
         <PrimaryMetricCell
-          data={oilPressureDisplay}
-          state={getOilState()}
+          data={{ ...oilPressureDisplay, alarmState: oilAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -320,8 +294,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          data={alternatorVoltageDisplay}
-          state={getVoltState()}
+          data={{ ...alternatorVoltageDisplay, alarmState: voltAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -331,8 +304,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
         {/* Separator after row 2 */}
         {/* Row 3: Fuel Rate (spans 2 columns) */}
         <SecondaryMetricCell
-          data={fuelFlowDisplay}
-          state="normal"
+          data={{ ...fuelFlowDisplay, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,
@@ -341,8 +313,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           }}
         />
         <SecondaryMetricCell
-          data={engineHoursDisplay}
-          state="normal"
+          data={{ ...engineHoursDisplay, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,
@@ -353,8 +324,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
 
         {/* Row 4: Shaft RPM (spans 2 columns) */}
         <SecondaryMetricCell
-          data={shaftRpmDisplay}
-          state="normal"
+          data={{ ...shaftRpmDisplay, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,

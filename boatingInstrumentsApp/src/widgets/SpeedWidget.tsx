@@ -64,6 +64,10 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
       }
     }, [sog, stw]);
 
+    // Get alarm levels from SensorInstance (Phase 5 refactor)
+    const sogAlarmLevel = gpsSensorData?.getAlarmState('speedOverGround') ?? 0;
+    const stwAlarmLevel = speedSensorData?.getAlarmState('throughWater') ?? 0;
+
     // Calculate averages and maximums for secondary view using store history
     // Use getSessionStats which is optimized and updates correctly
     const calculations = useMemo(() => {
@@ -195,8 +199,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
       >
         {/* Row 0: SOG and STW (current values) */}
         <PrimaryMetricCell
-          data={speedDisplayData.sog}
-          state={isStale ? 'warning' : 'normal'}
+          data={{ ...speedDisplayData.sog, alarmState: isStale ? 1 : sogAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -204,8 +207,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          data={speedDisplayData.stw}
-          state={isStale ? 'warning' : 'normal'}
+          data={{ ...speedDisplayData.stw, alarmState: isStale ? 1 : stwAlarmLevel }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -215,8 +217,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
 
         {/* Row 1: MAX SOG and MAX STW */}
         <PrimaryMetricCell
-          data={speedDisplayData.sogMax}
-          state="normal"
+          data={{ ...speedDisplayData.sogMax, alarmState: 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -224,8 +225,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          data={speedDisplayData.stwMax}
-          state="normal"
+          data={{ ...speedDisplayData.stwMax, alarmState: 0 }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -233,8 +233,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
           }}
         />
         <SecondaryMetricCell
-          data={speedDisplayData.sogAvg}
-          state="normal"
+          data={{ ...speedDisplayData.sogAvg, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,
@@ -243,8 +242,7 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
           }}
         />
         <SecondaryMetricCell
-          data={speedDisplayData.stwAvg}
-          state="normal"
+          data={{ ...speedDisplayData.stwAvg, alarmState: 0 }}
           compact={true}
           fontSize={{
             mnemonic: fontSize.label,
