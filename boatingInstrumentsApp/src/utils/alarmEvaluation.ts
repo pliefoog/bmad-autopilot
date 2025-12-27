@@ -7,7 +7,7 @@
  * 3. Warning threshold check with hysteresis
  */
 
-import { MetricThresholds } from '@/types/SensorData';
+import { MetricThresholds } from '../types/SensorData';
 
 /**
  * Evaluates alarm state for a metric with priority-based logic

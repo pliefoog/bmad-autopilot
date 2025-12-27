@@ -145,7 +145,7 @@ class SensorConfigCoordinatorService {
       }
 
       const duration = Date.now() - startTime;
-      log.performance(`Threshold sync completed`, () => ({
+      log.app(`Threshold sync completed`, () => ({
         syncCount,
         duration,
         avgPerSensor: syncCount > 0 ? (duration / syncCount).toFixed(2) : 0,
@@ -165,18 +165,12 @@ class SensorConfigCoordinatorService {
     }
 
     // Subscribe to config store changes
-    this.unsubscribe = useSensorConfigStore.subscribe(
-      (state) => state.configs,
-      (configs, prevConfigs) => {
-        // Only trigger if configs actually changed
-        if (configs !== prevConfigs) {
-          log.app('Sensor configs changed, triggering threshold sync', () => ({
-            configCount: Object.keys(configs).length,
-          }));
-          this.triggerSync();
-        }
-      },
-    );
+    this.unsubscribe = useSensorConfigStore.subscribe((state) => {
+      log.app('Sensor configs changed, triggering threshold sync', () => ({
+        configCount: Object.keys(state.configs).length,
+      }));
+      this.triggerSync();
+    });
 
     log.app('SensorConfigCoordinator initialized');
   }

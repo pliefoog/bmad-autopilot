@@ -5,7 +5,6 @@ import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useUnitConversion } from '../hooks/useUnitConversion';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
