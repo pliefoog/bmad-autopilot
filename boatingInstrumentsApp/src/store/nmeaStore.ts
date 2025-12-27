@@ -19,6 +19,7 @@ import { devtools } from 'zustand/middleware';
 import { EventEmitter } from 'events';
 import { SensorInstance } from '../types/SensorInstance';
 import { ReEnrichmentCoordinator } from '../utils/ReEnrichmentCoordinator';
+import { SensorConfigCoordinator } from '../utils/SensorConfigCoordinator';
 import { getAlarmDefaults } from '../registry/SensorConfigRegistry';
 import { log } from '../utils/logging/logger';
 
@@ -243,8 +244,9 @@ export const useNmeaStore = create<NmeaStore>()(
             // Create new instance with simplified constructor (no thresholds parameter)
             sensorInstance = new SensorInstance(sensorType, instance);
 
-            // Register with ReEnrichmentCoordinator
+            // Register with coordinators
             ReEnrichmentCoordinator.register(sensorInstance);
+            SensorConfigCoordinator.register(sensorInstance);
 
             log.storeInit(`🆕 NEW SENSOR: ${sensorType}[${instance}]`, () => ({
               sensorType,
@@ -463,10 +465,11 @@ export const useNmeaStore = create<NmeaStore>()(
 );
 
 /**
- * Initialize ReEnrichmentCoordinator
+ * Initialize ReEnrichmentCoordinator and SensorConfigCoordinator
  * Call once at app startup
  */
 export function initializeNmeaStore() {
   ReEnrichmentCoordinator.initialize();
-  log.app('NMEA Store v3 initialized with ReEnrichmentCoordinator');
+  SensorConfigCoordinator.initialize();
+  log.app('NMEA Store v3 initialized with coordinators');
 }
