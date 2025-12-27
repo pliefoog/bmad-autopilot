@@ -28,6 +28,26 @@ export interface SensorContext {
 }
 
 /**
+ * Per-metric threshold configuration (NEW - Alarm Refactoring)
+ * Used by SensorInstance for per-metric alarm evaluation
+ */
+export interface MetricThresholds {
+  critical: {
+    min?: number; // SI units
+    max?: number; // SI units
+  };
+  warning: {
+    min?: number; // SI units
+    max?: number; // SI units
+  };
+  hysteresis?: number; // Hysteresis factor (0.1 = 10%)
+  criticalSoundPattern?: string; // ISO 9692 sound pattern
+  warningSoundPattern?: string; // ISO 9692 sound pattern
+  staleThresholdMs: number; // Time after which data is stale
+  enabled: boolean;
+}
+
+/**
  * Alarm threshold configuration for sensor instances
  * Values are in SI units (meters, celsius, volts, etc.)
  *
