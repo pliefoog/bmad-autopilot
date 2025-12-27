@@ -2,6 +2,9 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
 import { MetricDisplayData } from '../types/MetricDisplayData';
+import { FlashingText } from './FlashingText';
+import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
+import type { AlarmLevel } from '../types/AlarmTypes';
 
 interface PrimaryMetricCellProps {
   // New unified interface (preferred)
@@ -129,16 +132,19 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
 
   const styles = createStyles(theme, dynamicSizes);
 
+  // Get alarm state from data or fall back to legacy state prop
+  const alarmLevel: AlarmLevel = data?.alarmState ?? (
+    state === 'alarm' ? 3 : state === 'warning' ? 2 : 0
+  );
+
+  // Get color based on alarm level
   const getValueColor = () => {
-    switch (state) {
-      case 'alarm':
-        return theme.error;
-      case 'warning':
-        return theme.warning;
-      case 'normal':
-      default:
-        return theme.text;
-    }
+    const visualState = ALARM_VISUAL_STATES[alarmLevel];
+    return visualState.color === 'red' 
+      ? theme.error 
+      : visualState.color === 'orange' 
+      ? theme.warning 
+      : theme.text;
   };
 
   // Format value for display
@@ -201,9 +207,13 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
         ) : null}
       </View>
       <View style={valueContainerStyle}>
-        <Text style={valueTextStyle} testID="metric-value">
+        <FlashingText 
+          alarmLevel={alarmLevel}
+          style={valueTextStyle}
+          flashingEnabled={ALARM_VISUAL_STATES[alarmLevel].flash}
+        >
           {displayValue}
-        </Text>
+        </FlashingText>
       </View>
     </View>
   );

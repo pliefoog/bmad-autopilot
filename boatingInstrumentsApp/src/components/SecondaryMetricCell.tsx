@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
+import { FlashingText } from './FlashingText';
+import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
+import type { AlarmLevel } from '../types/AlarmTypes';
 
 interface SecondaryMetricCellProps {
   data?: any;
@@ -56,6 +59,11 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         : String(value)
       : '---';
 
+  // Determine alarm level - prefer data.alarmState over legacy state prop
+  const alarmLevel: AlarmLevel = data?.alarmState ?? (
+    state === 'alarm' ? 3 : state === 'warning' ? 2 : 0
+  );
+
   // Calculate dynamic font sizes
   const dynamicSizes = useMemo(() => {
     const BASE_MNEMONIC_SIZE = customFontSize?.mnemonic ?? 12;
@@ -97,7 +105,15 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     };
   }, [displayValue, maxWidth, cellHeight, customFontSize]);
 
-  const styles = createStyles(theme, dynamicSizes);
+  // Get alarm-based color
+  const valueColor = (() => {
+    const visualState = ALARM_VISUAL_STATES[alarmLevel];
+    if (visualState.color === 'red') return theme.error;
+    if (visualState.color === 'orange') return theme.warning;
+    return theme.textSecondary;
+  })();
+
+  const styles = createStyles(theme, dynamicSizes, valueColor);
 
   return (
     <View style={styles.container}>
@@ -105,7 +121,9 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         {mnemonic.toUpperCase()}
         {unit && unit.trim() !== '' ? ` (${unit})` : ''}
       </Text>
-      <Text style={styles.value}>{displayValue}</Text>
+      <FlashingText alarmLevel={alarmLevel} style={styles.value}>
+        {displayValue}
+      </FlashingText>
     </View>
   );
 };
@@ -113,6 +131,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 const createStyles = (
   theme: any,
   sizes: { value: number; mnemonic: number; unit: number; space: number },
+  valueColor: string,
 ) =>
   StyleSheet.create({
     container: {
@@ -130,7 +149,7 @@ const createStyles = (
       fontSize: sizes.value,
       fontWeight: '700',
       fontFamily: 'monospace',
-      color: theme.textSecondary,
+      color: valueColor,
     },
   });
 

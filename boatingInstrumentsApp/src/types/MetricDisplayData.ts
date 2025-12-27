@@ -3,9 +3,12 @@
  *
  * Unified interface for metric display data with stable layout information.
  * Eliminates dual-system conflicts between legacy useUnitConversion and presentations.
+ *
+ * Phase 1 Refactor: Added alarmState for integrated alarm visualization
  */
 
 import { Presentation } from '../presentation/presentations';
+import type { AlarmLevel } from './AlarmTypes';
 
 export interface MetricDisplayData {
   /** The unit abbreviation/symbol (e.g., "kts", "m", "°C") */
@@ -19,6 +22,9 @@ export interface MetricDisplayData {
 
   /** The original raw value in base units */
   rawValue: number;
+
+  /** Alarm state: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL */
+  alarmState: AlarmLevel;
 
   /** Layout information for stable rendering */
   layout: {
