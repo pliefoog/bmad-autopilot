@@ -536,6 +536,27 @@ export class TimeSeriesBuffer<T> {
   }
 
   /**
+   * Get data within time window (optimized for widgets)
+   * More efficient than getForChart for simple time-windowed queries
+   * 
+   * @param timeWindowMs - Time window in milliseconds from now
+   * @returns Array of data points within window
+   */
+  getInWindow(timeWindowMs: number): Array<{ timestamp: number; value: T }> {
+    const now = Date.now();
+    const startTime = now - timeWindowMs;
+    
+    // Optimization: Only scan recent data if window is small
+    if (timeWindowMs <= this.recentThresholdMs) {
+      // Fast path: only recent data needs scanning
+      return this.recentData.toArray().filter((point) => point.timestamp >= startTime);
+    }
+    
+    // Full path: scan both buffers
+    return this.getRange(startTime, now);
+  }
+
+  /**
    * Get data statistics without full array copy
    * Efficiently calculates min/max/avg from ring buffers
    */

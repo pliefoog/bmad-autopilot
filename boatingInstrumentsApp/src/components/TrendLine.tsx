@@ -150,7 +150,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
 
   // Fetch history when sensor updates (memoized to prevent infinite loops)
-  // Note: getSensorHistory is NOT in deps because it's a stable Zustand method
+  // Note: Use getSensorHistory which internally uses TimeSeriesBuffer.getInWindow()
+  // for efficient windowed queries (optimized in Phase 4)
   const trendData = useMemo(() => {
     const data = getSensorHistory(sensor, instance, metric, { timeWindowMs });
     return data;
@@ -210,10 +211,9 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       };
     }
 
-    // Filter data to only include points within the time window
-    const now = Date.now();
-    const timeWindowMs = timeWindowMinutes * 60 * 1000;
-    const filteredData = trendData.filter((point) => point.timestamp > now - timeWindowMs);
+    // Data is already filtered by getInWindow() in Phase 4 optimization
+    // No need to filter again - getSensorHistory uses TimeSeriesBuffer.getInWindow()
+    const filteredData = trendData;
 
     if (filteredData.length < 2) {
       return {
