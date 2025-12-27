@@ -5,7 +5,6 @@ import { WidgetCard } from './WidgetCard';
 import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
-import { useMetricDisplay } from '../hooks/useMetricDisplay';
 import { AutopilotCommandManager, AutopilotMode } from '../services/autopilotService';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
@@ -293,20 +292,15 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
     );
   };
 
-  // Get metric states for autopilot parameters
-  const getHeadingMetricState = (): 'normal' | 'warning' | 'alarm' | undefined => {
-    if (alarms && alarms.length > 0) return 'alarm';
-    if (!(active || engaged)) return undefined; // No data when inactive
-    return 'normal';
-  };
+  // Get alarm levels from SensorInstance (Phase 5 refactor)
+  const actualHeadingAlarmLevel = autopilotInstance?.getAlarmState('actualHeading') ?? 0;
+  const targetHeadingAlarmLevel = autopilotInstance?.getAlarmState('targetHeading') ?? 0;
+  const rudderPositionAlarmLevel = autopilotInstance?.getAlarmState('rudderPosition') ?? 0;
 
-  const getRudderMetricState = (): 'normal' | 'warning' | 'alarm' | undefined => {
-    if (rudderPosition === undefined) return undefined;
-    if (alarms && alarms.length > 0) return 'alarm';
-    const absRudder = Math.abs(rudderPosition);
-    if (absRudder > 20) return 'warning'; // High rudder angle
-    return 'normal';
-  };
+  // Calculate aggregate alarm state (CRITICAL=3 if alarms exist, else use individual levels)
+  const hasAlarms = alarms && alarms.length > 0;
+  const headingAlarm = hasAlarms ? 3 : (active || engaged) ? actualHeadingAlarmLevel : 0;
+  const rudderAlarm = hasAlarms ? 3 : rudderPosition !== undefined ? rudderPositionAlarmLevel : 0;
 
   const renderOverview = () => (
     <View style={styles.overview}>
@@ -324,22 +318,43 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
 
       <View style={styles.metricGrid}>
         <PrimaryMetricCell
-          mnemonic="ACTUAL"
-          data={actualHeadingDisplay}
-          state={getHeadingMetricState()}
+          data={{
+            mnemonic: 'ACTUAL',
+            value: actualHeadingDisplay?.formattedValue ?? '---',
+            unit: actualHeadingDisplay?.unit ?? '°',
+            rawValue: actualHeading,
+            alarmState: headingAlarm,
+            layout: { minWidth: 60, alignment: 'right' },
+            presentation: { id: 'heading', name: 'Heading', pattern: 'xxx°' },
+            status: { isValid: true },
+          }}
           style={styles.metricCell}
         />
         <PrimaryMetricCell
-          mnemonic="TARGET"
-          data={targetHeadingDisplay}
-          state={getHeadingMetricState()}
+          data={{
+            mnemonic: 'TARGET',
+            value: targetHeadingDisplay?.formattedValue ?? '---',
+            unit: targetHeadingDisplay?.unit ?? '°',
+            rawValue: targetHeading,
+            alarmState: headingAlarm,
+            layout: { minWidth: 60, alignment: 'right' },
+            presentation: { id: 'heading', name: 'Heading', pattern: 'xxx°' },
+            status: { isValid: true },
+          }}
           style={styles.metricCell}
         />
         {rudderPosition !== undefined && (
           <PrimaryMetricCell
-            mnemonic="RUD"
-            data={rudderPositionDisplay}
-            state={getRudderMetricState()}
+            data={{
+              mnemonic: 'RUD',
+              value: rudderPositionDisplay?.formattedValue ?? '---',
+              unit: rudderPositionDisplay?.unit ?? '°',
+              rawValue: rudderPosition,
+              alarmState: rudderAlarm,
+              layout: { minWidth: 60, alignment: 'right' },
+              presentation: { id: 'angle', name: 'Angle', pattern: 'xx°' },
+              status: { isValid: true },
+            }}
             style={styles.metricCell}
           />
         )}
