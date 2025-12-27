@@ -427,14 +427,14 @@ export class PureStoreUpdater {
           }));
         }
 
-        // Debug: Log battery updates to trace string field flow (chem field)
+        // Debug: Log battery updates to trace string field flow (chemistry field)
         if (update.sensorType === 'battery') {
           log.app('PureStoreUpdater calling updateSensorData for battery', () => ({
             sensorType: update.sensorType,
             instance: update.instance,
             data: update.data,
-            hasChem: 'chem' in update.data,
-            chemValue: (update.data as any).chem,
+            hasChemistry: 'chemistry' in update.data,
+            chemistryValue: (update.data as any).chemistry,
           }));
         }
 
