@@ -134,22 +134,18 @@ function evaluateAlarms(sensors: SensorsData): Alarm[] {
     Object.entries(instances).forEach(([instanceNum, sensorInstance]) => {
       if (!(sensorInstance instanceof SensorInstance)) return;
 
-      // Get all metrics from history buffer
-      const buffer = (sensorInstance as any)._history;
-      if (!buffer) return;
+      // Access _history Map to get all metric keys
+      const historyMap = (sensorInstance as any)._history as Map<string, any>;
+      if (!historyMap || historyMap.size === 0) return;
 
-      const latestPoint = buffer.getLatest();
-      if (!latestPoint) return;
-
-      // Check each metric's alarm state
-      for (const metricKey of Object.keys(latestPoint.enriched)) {
+      // Check alarm state for each metric in the history
+      for (const metricKey of historyMap.keys()) {
         const alarmLevel = sensorInstance.getAlarmState(metricKey);
 
         // AlarmLevel: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL
         if (alarmLevel >= 2) {
           // WARNING or CRITICAL
           const level: AlarmLevel = alarmLevel === 3 ? 'critical' : 'warning';
-          const metricValue = sensorInstance.getMetric(metricKey);
 
           alarms.push({
             id: `${sensorType}-${instanceNum}-${metricKey}`,
