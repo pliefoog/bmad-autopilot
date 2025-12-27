@@ -148,13 +148,6 @@ class ConversionRegistryService {
     const presentation = this.getPresentation(category);
     const displayValue = presentation.convert(siValue);
 
-    log.app('Converted SI → display', () => ({
-      category,
-      siValue,
-      displayValue,
-      unit: presentation.symbol,
-    }));
-
     return displayValue;
   }
 
