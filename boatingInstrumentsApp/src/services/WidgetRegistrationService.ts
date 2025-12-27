@@ -393,19 +393,17 @@ export class WidgetRegistrationService {
       );
     }
 
+    // Track whether any NEW widgets were detected (not just updates)
+    let hasNewInstances = false;
+
     affectedWidgets.forEach((registration) => {
       const instanceKey = `${registration.widgetType}-${instance}`;
 
-      // Early exit: If widget already detected, just update sensor data
+      // Early exit: If widget already detected, skip entirely (sensorData updates not needed for widget detection)
       if (this.detectedInstances.has(instanceKey)) {
-        const existingInstance = this.detectedInstances.get(instanceKey)!;
-        // Update sensor data
-        this.detectedInstances.set(instanceKey, {
-          ...existingInstance,
-          sensorData: this.buildSensorValueMap(registration, instance, allSensors),
-        });
-        return; // Skip validation for already-detected widgets
+        return; // Already detected, no need to update
       }
+
       // Build sensor value map for this widget type
       const sensorValueMap = this.buildSensorValueMap(registration, instance, allSensors);
 
@@ -437,6 +435,7 @@ export class WidgetRegistrationService {
         this.detectedInstances.set(instanceKey, detectedInstance);
 
         if (isNewInstance) {
+          hasNewInstances = true;
           if (DEBUG_WIDGET_REGISTRATION || (DEBUG_DEPTH_DETECTION && sensorType === 'depth')) {
             console.log(`✅ Detected new widget instance: ${instanceKey}`);
           }
@@ -444,8 +443,10 @@ export class WidgetRegistrationService {
       }
     });
 
-    // Directly update widgetStore with all detected instances
-    this.updateWidgetStore();
+    // Only update widgetStore if new instances were detected
+    if (hasNewInstances) {
+      this.updateWidgetStore();
+    }
   }
 
   /**

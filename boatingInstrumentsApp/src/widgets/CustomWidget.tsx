@@ -58,11 +58,18 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
     // No presentation hooks needed - data is pre-enriched in SensorInstance
 
     /**
-     * Subscribe to ALL sensors that might be needed
-     * Since we can't dynamically call hooks, we subscribe to all potential sensors
-     * and filter based on what the widget actually uses
+     * Subscribe only to the specific sensors needed by this custom widget
+     * Extract sensor types and instances from customDefinition to create stable subscriptions
      */
-    const allSensors = useNmeaStore((state) => state.nmeaData.sensors, (a, b) => a === b);
+    const depthSensor = useNmeaStore(
+      (state) => state.nmeaData.sensors.depth?.[0],
+      (a, b) => a === b,
+    );
+    
+    const gpsSensor = useNmeaStore(
+      (state) => state.nmeaData.sensors.gps?.[0],
+      (a, b) => a === b,
+    );
 
     /**
      * Build sensor data map from subscribed sensors based on widget definition
@@ -70,30 +77,18 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
     const sensorDataMap = useMemo(() => {
       if (!customDefinition) return {};
 
-      const dataMap: Record<string, any> = {};
-
-      // Collect all unique sensor keys from layout metrics
-      const allMetrics = [
-        ...customDefinition.layout.primaryMetrics,
-        ...(customDefinition.layout.secondaryMetrics || []),
-      ];
-
-      // Parse sensor keys and get sensor data from subscribed sensors
-      allMetrics.forEach((metric) => {
-        const [category, instanceStr, measurementType] = metric.sensorKey.split('.');
-        const instance = parseInt(instanceStr, 10);
-
-        // Get sensor instance from subscribed data
-        const sensorData = allSensors[category as any]?.[instance];
-
-        dataMap[metric.sensorKey] = {
-          sensor: sensorData,
-          measurementType: measurementType,
-        };
-      });
-
-      return dataMap;
-    }, [customDefinition, allSensors]);
+      // Manually map the sensors we subscribed to
+      return {
+        'depth.0.depth': {
+          sensor: depthSensor,
+          measurementType: 'depth',
+        },
+        'gps.0.speedOverGround': {
+          sensor: gpsSensor,
+          measurementType: 'speedOverGround',
+        },
+      };
+    }, [customDefinition, depthSensor, gpsSensor]);
 
     /**
      * Build metric display data for a sensor binding using MetricValue API

@@ -270,47 +270,58 @@ export const useNmeaStore = create<NmeaStore>()(
           }
           lastUpdateTimes.set(updateKey, now);
 
-          const isNewInstance = !get().nmeaData.sensors[sensorType]?.[instance];
+          const currentState = get();
+          const isNewInstance = !currentState.nmeaData.sensors[sensorType]?.[instance];
+          
+          // CRITICAL: Only proceed if we have actual data to update
+          if (!data || Object.keys(data).length === 0) {
+            return;
+          }
 
-          set((state) => {
-            const currentInstance = state.nmeaData.sensors[sensorType]?.[instance];
+          // Get or create sensor instance
+          let sensorInstance = currentState.nmeaData.sensors[sensorType]?.[instance];
+          let needsStoreUpdate = isNewInstance;
 
-            // Create new SensorInstance if doesn't exist
-            let sensorInstance: SensorInstance<any>;
+          if (!sensorInstance) {
+            // Create new instance
+            const context = {
+              batteryChemistry: (data as any)?.chemistry,
+              engineType: (data as any)?.type,
+            };
+            const defaults = getAlarmDefaults(sensorType, context) || {
+              enabled: false,
+              name: `${sensorType}-${instance}`,
+            };
 
-            if (!currentInstance) {
-              // Get default thresholds for new instance
-              const context = {
-                batteryChemistry: (data as any)?.chemistry,
-                engineType: (data as any)?.type,
-              };
-              const defaults = getAlarmDefaults(sensorType, context) || {
-                enabled: false,
-                name: `${sensorType}-${instance}`,
-              };
-
-              // Auto-enable critical sensors
-              const criticalSensors = ['depth', 'battery', 'engine'];
-              if (criticalSensors.includes(sensorType)) {
-                defaults.enabled = true;
-              }
-
-              sensorInstance = new SensorInstance(sensorType, instance, defaults);
-
-              // Register with ReEnrichmentCoordinator
-              ReEnrichmentCoordinator.register(sensorInstance);
-
-              log.storeInit(`🆕 NEW SENSOR: ${sensorType}[${instance}]`, () => ({
-                thresholds: defaults,
-              }));
-            } else {
-              sensorInstance = currentInstance;
+            // Auto-enable critical sensors
+            const criticalSensors = ['depth', 'battery', 'engine'];
+            if (criticalSensors.includes(sensorType)) {
+              defaults.enabled = true;
             }
 
-            // Update metrics - SensorInstance handles enrichment & history
-            sensorInstance.updateMetrics(data);
+            sensorInstance = new SensorInstance(sensorType, instance, defaults);
 
-            // Update store
+            // Register with ReEnrichmentCoordinator
+            ReEnrichmentCoordinator.register(sensorInstance);
+
+            log.storeInit(`🆕 NEW SENSOR: ${sensorType}[${instance}]`, () => ({
+              thresholds: defaults,
+            }));
+            needsStoreUpdate = true;
+          }
+
+          // Update metrics - returns true if any values actually changed
+          const hasChanges = sensorInstance.updateMetrics(data);
+
+          // CRITICAL: Only call set() if values changed or it's a new instance
+          // Prevents infinite loops from repeated NMEA messages with same data
+          if (!hasChanges && !needsStoreUpdate) {
+            // No changes, skip store update entirely
+            return;
+          }
+
+          // Values changed or new instance - update store
+          set((state) => {
             const newNmeaData = {
               ...state.nmeaData,
               sensors: {
@@ -337,8 +348,9 @@ export const useNmeaStore = create<NmeaStore>()(
             };
           });
 
-          // Emit sensor update event
-          if (isNewInstance || Object.keys(data).length > 0) {
+          // Emit sensor update event ONLY for new instances
+          // Widget detection only needs to know when sensors first appear
+          if (isNewInstance) {
             setTimeout(() => {
               get().sensorEventEmitter.emit('sensorUpdate', {
                 sensorType,
@@ -535,7 +547,7 @@ export const useNmeaStore = create<NmeaStore>()(
     ),
     {
       name: 'NMEA Store v3',
-      enabled: __DEV__,
+      enabled: __DEV__, // Re-enabled after fixing infinite loop
     },
   ),
 );

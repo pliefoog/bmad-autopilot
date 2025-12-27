@@ -14,7 +14,6 @@ import {
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { log as logger } from '../../utils/logging/logger';
-import { useNmeaStore } from '../../store/nmeaStore';
 import { MenuSection } from '../molecules/MenuSection';
 import { DevToolsSection } from '../molecules/DevToolsSection';
 import { useMenuState } from '../../hooks/useMenuState';
@@ -52,7 +51,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const menuWidth = Math.min(screenWidth * 0.8, MAX_MENU_WIDTH);
   const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible, menuWidth);
   const { resetAppToDefaults } = useWidgetStore();
-  const nmeaStore = useNmeaStore();
   const [showFeatureFlags, setShowFeatureFlags] = useState(false);
 
   // Log menu state for debugging

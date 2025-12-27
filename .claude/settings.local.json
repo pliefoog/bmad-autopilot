@@ -3,7 +3,8 @@
     "allow": [
       "SlashCommand(/bmad:bmm:workflows:story-context)",
       "Bash(npm test:*)",
-      "SlashCommand(/bmad:bmm:workflows:code-review)"
+      "SlashCommand(/bmad:bmm:workflows:code-review)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

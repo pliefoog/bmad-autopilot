@@ -131,9 +131,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @example
    * instance.updateMetrics({ depth: 2.5, offset: 0.3 });
    * instance.updateMetrics({ value: 23.5, location: 'engine', units: 'C' });
+   * 
+   * @returns true if any metric values changed, false if all values are the same
    */
-  updateMetrics(data: Partial<T>): void {
+  updateMetrics(data: Partial<T>): boolean {
     const fields = [...getDataFields(this.type), ...getConfigFields(this.type)];
+    let hasChanges = false;
 
     for (const field of fields) {
       const fieldName = field.key;
@@ -144,6 +147,14 @@ export class SensorInstance<T extends SensorData = SensorData> {
       // Process numeric MetricValues
       if (fieldValue !== undefined && Number.isFinite(fieldValue)) {
         try {
+          // Check if value changed
+          const existingMetric = this._metrics.get(fieldName);
+          const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
+          
+          if (valueChanged) {
+            hasChanges = true;
+          }
+
           // Create numeric MetricValue with or without category
           const metric = new MetricValue(fieldValue, field.category);
 
@@ -162,8 +173,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
           // Store metric using field.key (not hardwareField)
           this._metrics.set(fieldName, metric);
 
-          // Add to history
-          this._addToHistory(fieldName, metric);
+          // Add to history only if changed
+          if (valueChanged) {
+            this._addToHistory(fieldName, metric);
+          }
         } catch (error) {
           log.app('ERROR in updateMetrics (numeric)', () => ({
             fieldName,
@@ -179,6 +192,14 @@ export class SensorInstance<T extends SensorData = SensorData> {
       // Process string MetricValues (metadata like location, units, name)
       else if (fieldValue !== undefined && typeof fieldValue === 'string') {
         try {
+          // Check if value changed
+          const existingMetric = this._metrics.get(fieldName);
+          const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
+          
+          if (valueChanged) {
+            hasChanges = true;
+          }
+
           // Create string MetricValue (no category, no enrichment needed)
           const metric = new MetricValue(fieldValue, undefined); // undefined category for strings
 
@@ -202,7 +223,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
       instance: this.instance,
       metricCount: this._metrics.size,
       fields: Array.from(this._metrics.keys()),
+      hasChanges,
     }));
+
+    return hasChanges;
   }
 
   /**

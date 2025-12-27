@@ -109,21 +109,31 @@ export const useWidgetStore = create<WidgetStore>()(
             (inst) => toAdd.has(inst.id) && !existingWidgetIds.has(inst.id),
           );
 
-          // STEP 2.5: Update existing widgets that have widgetConfig with missing data
-          // This handles cases where widgets were created before widgetConfig was added
+          // STEP 2.5: Update existing widgets that are missing customDefinition
+          // Only check if we have widgets to potentially update
+          let widgetsModified = false;
           detectedInstances.forEach((instance) => {
             if (instance.widgetConfig && existingWidgetIds.has(instance.id)) {
               const existingWidget = widgets.find(w => w.id === instance.id);
               if (existingWidget && !existingWidget.settings?.customDefinition && 
                   instance.widgetConfig.settings?.customDefinition) {
-                // Update the existing widget with the full config
-                Object.assign(existingWidget, {
-                  ...instance.widgetConfig,
-                  createdAt: existingWidget.createdAt, // Preserve original creation time
-                });
+                // Replace the widget entirely (don't mutate)
+                const widgetIndex = widgets.findIndex(w => w.id === instance.id);
+                if (widgetIndex !== -1) {
+                  widgets[widgetIndex] = {
+                    ...instance.widgetConfig,
+                    createdAt: existingWidget.createdAt,
+                  };
+                  widgetsModified = true;
+                }
               }
             }
           });
+          
+          // Only proceed if we added widgets or modified existing ones
+          if (instancesToAdd.length === 0 && !widgetsModified) {
+            return;
+          }
 
           if (instancesToAdd.length > 0) {
             const now = Date.now();
