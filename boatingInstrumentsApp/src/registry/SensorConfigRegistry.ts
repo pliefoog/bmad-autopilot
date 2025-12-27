@@ -1768,7 +1768,8 @@ export function getSensorField(
  */
 export function getDataFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  return config?.fields?.filter((f) => f.category !== undefined) ?? [];
+  // Include fields with category (numeric metrics) AND fields with hardwareField but no category (string fields like chemistry, type)
+  return config?.fields?.filter((f) => f.category !== undefined || f.hardwareField !== undefined) ?? [];
 }
 
 /**
