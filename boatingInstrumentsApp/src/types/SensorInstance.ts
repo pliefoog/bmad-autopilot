@@ -165,11 +165,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
                 this._addStringToHistory(fieldName, fieldValue, now);
               }
             }
-        } catch (error) {
-          log.app('ERROR in updateMetrics', () => ({
-            fieldName,
-            error: error instanceof Error ? error.message : String(error),
-          }));
+          } catch (error) {
+            log.app('ERROR in updateMetrics', () => ({
+              fieldName,
+              error: error instanceof Error ? error.message : String(error),
+            }));
+          }
         }
       }
     }
