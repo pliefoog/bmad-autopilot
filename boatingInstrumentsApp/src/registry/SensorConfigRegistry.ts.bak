@@ -347,11 +347,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 12.0,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 10.5,
               max: 16.0,
             },
@@ -360,11 +359,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 30,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 100,
             },
@@ -373,22 +371,20 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 45,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
             },
             current: {
               critical: 200,
               warning: 150,
               direction: 'above' as const,
               enabled: false,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 500,
             },
@@ -401,11 +397,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 12.2,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 10.5,
               max: 16.0,
             },
@@ -414,11 +409,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 30,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 100,
             },
@@ -427,11 +421,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 45,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: -20,
               max: 80,
             },
@@ -440,11 +433,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 200,
               direction: 'above' as const,
               enabled: false,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 500,
             },
@@ -457,11 +449,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 12.1,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 10.5,
               max: 16.0,
             },
@@ -470,11 +461,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 30,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 100,
             },
@@ -483,11 +473,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 40,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: -20,
               max: 70,
             },
@@ -496,11 +485,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 140,
               direction: 'above' as const,
               enabled: false,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 400,
             },
@@ -513,11 +501,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 13.0,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 12.0,
               max: 15.0,
             },
@@ -526,22 +513,20 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 20,
               direction: 'below' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
             },
             temperature: {
               critical: 55,
               warning: 50,
               direction: 'above' as const,
               enabled: true,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: -20,
               max: 60,
             },
@@ -550,7 +535,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warning: 250,
               direction: 'above' as const,
               enabled: false,
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical, // triple_blast
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
@@ -948,7 +933,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
         criticalHysteresis: 3,
         warningHysteresis: 3,
-        staleThresholdMs: 5000, // 5s - wind data (navigation-critical)
         min: 0,
         max: 60,
       },
@@ -1003,7 +987,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.info,
         criticalHysteresis: 0.5,
         warningHysteresis: 0.5,
-        staleThresholdMs: 5000, // 5s - speed data (navigation-critical)
         min: 0,
         max: 15,
       },
@@ -1072,7 +1055,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: 0,
             max: 150,
           },
@@ -1087,7 +1069,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -10,
             max: 50,
           },
@@ -1102,7 +1083,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 1,
             warningHysteresis: 1,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -10,
             max: 20,
           },
@@ -1117,7 +1097,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -30,
             max: 0,
           },
@@ -1132,7 +1111,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.none,
             criticalHysteresis: 3,
             warningHysteresis: 3,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -20,
             max: 60,
           },
@@ -1147,7 +1125,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.none,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -5,
             max: 40,
           },
@@ -1492,7 +1469,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1507,7 +1483,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1522,7 +1497,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1537,7 +1511,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 3,
             warningHysteresis: 3,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1552,7 +1525,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1567,7 +1539,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
