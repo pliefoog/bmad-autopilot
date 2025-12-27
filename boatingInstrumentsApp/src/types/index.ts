@@ -408,3 +408,10 @@ export type {
   NMEAStoreActions,
   WidgetStoreActions,
 } from './store.types';
+/**
+ * Phase 1-7 Refactored Alarm System - Core Exports (Step 25)
+ */
+export { MetricValue } from './MetricValue';
+export { SensorInstance } from './SensorInstance';
+export { AlarmLevel, ALARM_VISUAL_STATES } from './AlarmTypes';
+export type { AlarmThresholds, AlarmThresholdConfig } from './AlarmTypes';
