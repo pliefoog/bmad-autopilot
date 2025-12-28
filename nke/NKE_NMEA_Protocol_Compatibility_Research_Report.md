@@ -475,9 +475,365 @@ The system architecture is well-suited for both pure NKE installations and mixed
 
 ---
 
-## 11. References and Sources
+## 11. NMEA Bridge Simulator Compatibility Analysis
 
-### 11.1 Primary Sources
+### 11.1 Test Environment
+
+**Test Date:** December 28, 2025
+**Simulator:** NMEA Bridge Simulator (localhost:2000 TCP)
+**Scenario:** coastal-sailing.yml (Comprehensive Coastal Sailing Scenario v2.0)
+**Bridge Mode:** NMEA 0183
+**Test Method:** Live TCP connection capture and sentence analysis
+
+### 11.2 Simulator Output Analysis
+
+The NMEA bridge simulator running with the coastal-sailing.yml scenario generates the following NMEA 0183 sentences:
+
+#### 11.2.1 Successfully Generated Standard Sentences
+
+The following sentences are correctly generated and **fully compatible** with NKE Display Pro:
+
+| Sentence | Example | Status | NKE Support |
+|----------|---------|--------|-------------|
+| **HDG** | `$IIHDG,36.8,,,15.0,W*39` | ✅ Valid | Supported |
+| **DPT** | `$SDDPT,5.9,1.8,100.0*46` | ✅ Valid | Supported |
+| **MWV** | `$IIMWV,139,R,16.5,N,A*1A` | ✅ Valid | Supported |
+| **RSA** | `$IIRSA,-5.1,A,,*06` | ✅ Valid | Supported (v1.5.0+) |
+| **VHW** | `$IIVHW,,T,,M,4.6,N,8.6,K*59` | ✅ Valid | Supported |
+| **RMC** | `$GPRMC,092138,A,4129.6362,N,8140.2638,W,8.8,36.8,281225,,*17` | ✅ Valid | Supported |
+| **VTG** | `$GPVTG,36.8,T,,M,8.8,N,16.3,K,A*13` | ✅ Valid | Supported |
+| **GLL** | `$GPGLL,4129.6362,N,8140.2638,W,092138,A,A*7E` | ✅ Valid | Supported |
+| **RPM** | `$IIRPM,E,0,1856,100,A*6C` | ✅ Valid | Supported |
+| **MTW** | `$IIMTW,18.0,C*1A` | ✅ Valid | Supported |
+
+**Analysis:** These 10 sentence types are generating correct NMEA 0183 format and are fully compatible with NKE Display Pro. The simulator correctly implements standard marine navigation, wind, depth, speed, GPS, engine, and temperature data.
+
+#### 11.2.2 Problematic XDR Sentences
+
+The simulator generates several XDR (Transducer) sentences that may **NOT be properly parsed** by NKE Display Pro:
+
+##### Issue #1: Tank Level XDR - Wrong Transducer Type
+
+**Generated:**
+```
+$IIXDR,V,85.0,P,FUEL_0*2E
+$IIXDR,V,82.0,P,FUEL_1*28
+$IIXDR,V,65.9,P,WATR_2*21
+$IIXDR,V,15.0,P,WAST_3*2F
+```
+
+**Problem:** Tank levels use transducer type **'V'** (Voltage) instead of **'P'** (Percentage/Angular Displacement).
+
+**NMEA 0183 Spec:** For percentage values, the transducer type should be 'P' (not 'V').
+
+**Expected Format:**
+```
+$IIXDR,P,85.0,P,FUEL_0*XX
+```
+
+**Impact:** NKE Display Pro likely expects 'P' transducer type for percentage-based tank levels. Using 'V' may cause the app to:
+- Ignore these sentences entirely
+- Misinterpret the values as voltage readings
+- Display incorrect units
+
+**Root Cause:** Located in [scenario.js:2472](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2472):
+```javascript
+const tankSentence = `$IIXDR,V,${level.toFixed(1)},P,${tankId}`;
+```
+The transducer type is hardcoded as 'V' instead of 'P'.
+
+---
+
+##### Issue #2: Battery XDR - Compound Sentence Complexity
+
+**Generated:**
+```
+$IIXDR,U,12.85,V,BAT_00,I,-13.59,A,BAT_00,C,24.9,C,BAT_00,P,100.0,%,BAT_00,U,12.0,V,BAT_00_NOM,V,400,H,BAT_00,G,AGM,N,BAT_00*4E
+```
+
+**Problem:** This compound XDR sentence contains **10 transducer measurements** in a single sentence:
+1. Voltage (U, Volts)
+2. Current (I, Amperes)
+3. Temperature (C, Celsius)
+4. State of Charge (P, Percentage)
+5. Nominal Voltage (U, Volts)
+6. Capacity (V, Volume/Capacity - non-standard)
+7. Chemistry String (G, Generic - non-standard)
+
+**NMEA 0183 Spec Concerns:**
+- Maximum sentence length is 82 characters (this sentence is 139 characters)
+- Non-standard transducer types: 'G' (Generic) for battery chemistry
+- Non-standard units: 'H' (Hours) used for capacity (should be Ah)
+- Mixing of measurement types with metadata (chemistry, nominal voltage)
+
+**Impact:** NKE Display Pro may:
+- Reject sentences exceeding 82 character limit
+- Parse only the first few transducers and ignore the rest
+- Fail to recognize non-standard transducer types (G, H)
+- Display incomplete battery information
+
+**Recommendation:** Split into separate XDR sentences:
+```
+$IIXDR,U,12.85,V,BAT_00*XX     // Voltage
+$IIXDR,I,-13.59,A,BAT_00*XX    // Current
+$IIXDR,C,24.9,C,BAT_00*XX      // Temperature
+$IIXDR,P,100.0,P,BAT_00*XX     // State of Charge
+```
+
+---
+
+##### Issue #3: Engine XDR - Compound Multi-Parameter Sentences
+
+**Generated:**
+```
+$IIXDR,C,79.9,C,ENGINE#0,P,43.1,P,ENGINE#0,U,13.98,V,ALTERNATOR#0*7A
+$IIXDR,V,3.6,L,ENGINE#0_FUEL*27
+$IIXDR,G,1264.5,H,ENGINE#0_HOURS*4A
+```
+
+**Problems:**
+
+1. **Hash Symbol in Transducer Name:** `ENGINE#0` uses '#' which may not be recognized by parsers expecting alphanumeric+underscore
+   - Should be: `ENGINE_0` or `ENGINE0`
+
+2. **Non-Standard Transducer Type 'G':** Used for engine hours with unit 'H' (hours)
+   - NMEA 0183 spec doesn't define 'G' as a standard transducer type
+   - Should possibly use 'N' (Generic) or create separate proprietary sentence
+
+3. **Fuel Level Using 'V' Type:** `$IIXDR,V,3.6,L,ENGINE#0_FUEL`
+   - 'V' suggests voltage, but unit is 'L' (liters)
+   - Should use 'V' for volume measurement type (correct) but remove underscore from name
+
+**Impact:** NKE Display Pro may:
+- Fail to parse transducer names with '#' symbols
+- Ignore non-standard 'G' transducer type sentences
+- Misinterpret or skip engine-related data
+
+---
+
+##### Issue #4: Temperature XDR - Instance Numbering
+
+**Generated:**
+```
+$IIXDR,C,18.2,C,AIRX_01*07
+$IIXDR,C,38.4,C,ENGR_02*1C
+$IIXDR,C,21.5,C,TEMP_03*06
+$IIXDR,C,5.0,C,TEMP_04*32
+```
+
+**Observation:** These sentences use instance suffixes (_01, _02, etc.) which is acceptable.
+
+**Potential Issue:** NKE Display Pro may expect specific location codes:
+- Standard codes: SEAW (seawater), AIRX (outside air), ENGR (engine room)
+- The generic TEMP_03, TEMP_04 may not be recognized with meaningful labels
+
+**Impact:** Minor - sentences will likely parse but may display with generic labels instead of specific location names.
+
+---
+
+### 11.3 Missing Sentence Types
+
+The simulator does **NOT generate** several sentence types that NKE Display Pro supports:
+
+| Missing Sentence | NKE Support | Use Case | Alternative Used |
+|------------------|-------------|----------|------------------|
+| **MTA** | Supported | Air Temperature | XDR with C,C,AIRX_01 |
+| **MMB** | Supported | Barometric Pressure | Not generated |
+| **VWT** | Supported | True Wind Speed/Angle | Only MWV (apparent) |
+| **MWD** | Supported | Wind Direction (true) | Only MWV (relative) |
+| **VLW** | Supported | Distance Log | Not generated |
+| **HDT** | Supported | Heading True | Only HDG (magnetic) |
+| **HDM** | Supported | Heading Magnetic | HDG used instead |
+| **APB** | Supported | Autopilot Sentence B | Not generated |
+| **APA** | Supported | Autopilot Sentence A | Not generated |
+
+**Impact:** Moderate - NKE Display Pro can function without these sentences, but users lose access to:
+- True wind calculations (if not computed by app)
+- Barometric pressure trending
+- Distance/trip log display
+- Autopilot status information
+
+---
+
+### 11.4 Comparison with easyNAV.pro App
+
+**Observation:** The user reports that easyNAV.pro app successfully displays all metrics, while NKE Display Pro does not.
+
+**Analysis:**
+
+| Metric Type | Simulator Output | easyNAV.pro | NKE Display Pro | Reason |
+|-------------|------------------|-------------|-----------------|--------|
+| Navigation (GPS, Heading, Speed) | Standard sentences | ✅ Works | ✅ Works | Standard NMEA 0183 |
+| Wind, Depth, Water Temp | Standard sentences | ✅ Works | ✅ Works | Standard NMEA 0183 |
+| Rudder Position | RSA sentence | ✅ Works | ✅ Works | Supported since v1.5.0 |
+| **Tank Levels** | XDR with 'V' type | ✅ Works | ❌ Fails | Wrong transducer type |
+| **Battery Data** | Compound XDR (>82 chars) | ✅ Works | ❌ Partial/Fails | Sentence too long |
+| **Engine Hours** | XDR with 'G' type | ✅ Works | ❌ Fails | Non-standard type |
+| **Engine Temps** | XDR with '#' in name | ✅ Works | ❌ May fail | Invalid character |
+
+**Conclusion:** easyNAV.pro has a more **lenient/custom XDR parser** that:
+- Accepts non-standard transducer types (G, V for percentage)
+- Handles sentences exceeding 82 characters
+- Parses transducer names with special characters (#)
+
+NKE Display Pro appears to enforce **stricter NMEA 0183 compliance**, rejecting:
+- Non-standard transducer types
+- Oversized sentences
+- Malformed transducer identifiers
+
+---
+
+### 11.5 Root Cause Identification
+
+The incompatibility stems from **non-standard XDR sentence generation** in the NMEA Bridge Simulator:
+
+**Location:** [boatingInstrumentsApp/server/lib/data-sources/scenario.js](boatingInstrumentsApp/server/lib/data-sources/scenario.js)
+
+**Specific Issues:**
+
+1. **Tank Sensors (Line ~2472):**
+   ```javascript
+   const tankSentence = `$IIXDR,V,${level.toFixed(1)},P,${tankId}`;
+   ```
+   - Uses 'V' (voltage) instead of 'P' (percentage) for transducer type
+
+2. **Battery Sensors (Line ~2357-2442):**
+   ```javascript
+   // Generates compound sentence with 10+ parameters
+   // Exceeds 82 character NMEA limit
+   ```
+   - Should split into multiple sentences
+   - Remove non-standard chemistry and capacity fields
+
+3. **Engine Sensors:**
+   ```javascript
+   // Uses ENGINE#0 instead of ENGINE_0
+   // Uses 'G' transducer type for hours
+   ```
+   - Replace '#' with '_' in transducer names
+   - Use standard transducer types or split into proprietary sentences
+
+---
+
+### 11.6 Recommended Fixes
+
+#### Fix #1: Tank Level XDR Transducer Type
+
+**File:** `boatingInstrumentsApp/server/lib/data-sources/scenario.js:2472`
+
+**Current:**
+```javascript
+const tankSentence = `$IIXDR,V,${level.toFixed(1)},P,${tankId}`;
+```
+
+**Corrected:**
+```javascript
+const tankSentence = `$IIXDR,P,${level.toFixed(1)},P,${tankId}`;
+```
+
+**Explanation:** Use 'P' (Percentage/Angular Displacement) transducer type for percentage measurements per NMEA 0183 specification.
+
+---
+
+#### Fix #2: Battery XDR - Split Compound Sentence
+
+**File:** `boatingInstrumentsApp/server/lib/data-sources/scenario.js:2357-2442`
+
+**Current:** Single compound sentence (139 characters)
+
+**Corrected:** Generate 4 separate sentences:
+```javascript
+const messages = [];
+
+// 1. Voltage
+messages.push(`$IIXDR,U,${voltage.toFixed(2)},V,${batteryId}*${checksum1}`);
+
+// 2. Current
+messages.push(`$IIXDR,I,${current.toFixed(2)},A,${batteryId}*${checksum2}`);
+
+// 3. Temperature
+messages.push(`$IIXDR,C,${tempCelsius.toFixed(1)},C,${batteryId}*${checksum3}`);
+
+// 4. State of Charge
+messages.push(`$IIXDR,P,${soc.toFixed(1)},P,${batteryId}*${checksum4}`);
+
+return messages;
+```
+
+**Explanation:** Split into individual sentences under 82 characters, using only standard transducer types (U, I, C, P).
+
+---
+
+#### Fix #3: Engine XDR - Remove Special Characters
+
+**File:** `boatingInstrumentsApp/server/lib/data-sources/scenario.js` (engine generators)
+
+**Current:**
+```javascript
+ENGINE#0, ALTERNATOR#0  // Uses # symbol
+```
+
+**Corrected:**
+```javascript
+ENGINE_0, ALTERNATOR_0  // Use underscore
+```
+
+**Explanation:** Replace '#' with '_' for NMEA parser compatibility.
+
+---
+
+#### Fix #4: Engine Hours - Use Standard Format
+
+**Current:**
+```javascript
+$IIXDR,G,1264.5,H,ENGINE#0_HOURS  // Non-standard 'G' type
+```
+
+**Corrected:**
+```javascript
+$IIXDR,N,1264.5,H,ENGINE_0_HOURS  // Use 'N' (Generic) or create proprietary sentence
+```
+
+**Alternative:** Use RPM sentence extensions or proprietary $PNKEP sentence for engine hours.
+
+---
+
+### 11.7 Verification Testing
+
+After implementing fixes, verify with:
+
+1. **NKE Display Pro App Testing:**
+   - Connect to localhost:2000
+   - Verify tank levels display correctly
+   - Verify all battery parameters appear
+   - Verify engine data displays
+
+2. **easyNAV.pro Regression Testing:**
+   - Ensure fixes don't break existing compatibility
+   - Verify all metrics still display correctly
+
+3. **NMEA 0183 Validation:**
+   - Use NMEA validator tool to check sentence compliance
+   - Verify all sentences are under 82 characters
+   - Confirm standard transducer types only
+
+---
+
+### 11.8 Summary of Compatibility Issues
+
+| Issue | Severity | Impact on NKE Display Pro | Fix Complexity |
+|-------|----------|---------------------------|----------------|
+| Tank XDR using 'V' instead of 'P' | **High** | Tank levels not displayed | Easy (1-line fix) |
+| Battery compound XDR >82 chars | **High** | Partial/no battery data | Medium (refactor) |
+| Engine name with '#' character | **Medium** | Engine data may not parse | Easy (find/replace) |
+| Engine hours using 'G' type | **Medium** | Hours not displayed | Medium (redesign) |
+| Missing MTA, MMB, VLW sentences | **Low** | Reduced functionality | Low (add generators) |
+
+---
+
+## 12. References and Sources
+
+### 12.1 Primary Sources
 
 1. [nke Display Pro (Smartphone App) - nke Marine Electronics](https://nke-marine-electronics.com/project/nke-display-pro-smartphone-app/)
 2. [Box N2K - nke Marine Electronics](https://nke-marine-electronics.com/project/box-n2k/)

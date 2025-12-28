@@ -26,7 +26,7 @@
  *
  * // Save display value back to SI
  * const criticalSI = ThresholdPresentationService.convertDisplayToSI(
- *   enriched.category,
+ *   enriched.unitType,
  *   formData.criticalValue
  * );
  * updateSensorThresholds(sensorType, instance, { critical: criticalSI });
@@ -58,7 +58,7 @@ export interface EnrichedThresholdInfo {
   direction?: 'above' | 'below';
 
   // Metadata
-  category: DataCategory;
+  unitType: DataCategory;
 
   // Display information (formatted with user's preferred units)
   display: {
@@ -245,7 +245,7 @@ class ThresholdPresentationServiceClass {
       min: minSI,
       max: maxSI,
       direction,
-      category,
+      unitType: category,
       display: {
         critical: criticalDisplay,
         warning: warningDisplay,
@@ -290,33 +290,27 @@ class ThresholdPresentationServiceClass {
         return null;
       }
       const metricConfig = config.alarmMetrics.find((m) => m.key === metric);
-      if (!metricConfig?.category) {
+      if (!metricConfig?.unitType) {
         console.warn(
-          `[ThresholdPresentationService] No category found for ${sensorType}.${metric}`,
+          `[ThresholdPresentationService] No unitType found for ${sensorType}.${metric}`,
         );
       }
-      return metricConfig?.category || null;
+      return metricConfig?.unitType || null;
     }
 
-    // For single-metric sensors, find the data field with a category
-    // Priority: field with direction set (indicates primary alarm field)
-    const primaryField = config.fields.find((f) => f.category && f.direction);
-    if (primaryField?.category) {
-      return primaryField.category as DataCategory;
+    // For single-metric sensors, find the data field with a unitType
+    // Priority: field that appears in defaults.threshold (indicates primary alarm field)
+    const fieldWithUnit = config.fields.find((f) => f.unitType);
+    if (!fieldWithUnit?.unitType) {
+      console.warn(`[ThresholdPresentationService] No field with unitType found for ${sensorType}`);
     }
-
-    // Fallback: first field with a category
-    const fieldWithCategory = config.fields.find((f) => f.category);
-    if (!fieldWithCategory?.category) {
-      console.warn(`[ThresholdPresentationService] No field with category found for ${sensorType}`);
-    }
-    return (fieldWithCategory?.category as DataCategory) || null;
+    return (fieldWithUnit?.unitType as DataCategory) || null;
   }
 
   /**
-   * Get fallback min/max range for a category when defaults are not available
+   * Get fallback min/max range for a unitType when defaults are not available
    *
-   * @param category - Data category
+   * @param unitType - Data category
    * @returns Fallback range in SI units
    */
   private getFallbackRange(category: DataCategory): { min: number; max: number } {
