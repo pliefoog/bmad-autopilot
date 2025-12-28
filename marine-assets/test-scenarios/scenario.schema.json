@@ -564,11 +564,12 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["sine_wave", "gaussian", "random_walk", "constant", "linear", "sawtooth", "triangle", "square", "tidal_cycle", "boat_movement", "great_circle", "waypoint_sequence", "gps_track", "smooth_transitions", "calculated"]
+          "enum": ["sine", "sine_wave", "gaussian", "random_walk", "constant", "linear", "sawtooth", "triangle", "square", "tidal_cycle", "boat_movement", "great_circle", "waypoint_sequence", "gps_track", "smooth_transitions", "calculated"]
         },
         "base": {"type": "number"},
         "amplitude": {"type": "number"},
         "period": {"type": "number", "minimum": 0.1},
+        "phase": {"type": "number", "description": "Phase offset in degrees"},
         "phase_shift": {"type": "number"},
         "mean": {"type": "number"},
         "std_dev": {"type": "number", "minimum": 0},
@@ -643,7 +644,7 @@
           "type": "string",
           "description": "Data generation pattern type",
           "enum": [
-            "sine_wave", "gaussian", "random_walk", "constant",
+            "sine", "sine_wave", "gaussian", "random_walk", "constant",
             "tidal_cycle", "coastal_sailing", "ocean_passage",
             "autopilot_track", "progressive_shallow", "failure_simulation",
             "physics_calculated", "polar_interpolation", "sailing_dynamics",
