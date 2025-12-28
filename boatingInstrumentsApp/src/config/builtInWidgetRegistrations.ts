@@ -473,6 +473,53 @@ export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
 };
 
 /**
+ * WEATHER STATION WIDGETS
+ */
+
+// 11. Weather Widget - Atmospheric conditions monitoring
+export const WEATHER_WIDGET_REGISTRATION: WidgetRegistration = {
+  widgetType: 'weather',
+  displayName: 'Weather Station',
+  category: 'environment',
+  icon: 'partly-sunny-outline',
+  multiInstance: true,
+  maxInstances: 5,
+  priority: 54,
+  expirationTimeout: 300000, // 5 minutes - atmospheric data changes slowly
+  requiredSensors: [
+    {
+      sensorType: 'weather',
+      metricName: 'pressure',
+      required: true,
+      label: 'Barometric Pressure',
+    },
+  ],
+  optionalSensors: [
+    {
+      sensorType: 'weather',
+      metricName: 'airTemperature',
+      required: false,
+      label: 'Air Temperature',
+    },
+    {
+      sensorType: 'weather',
+      metricName: 'humidity',
+      required: false,
+      label: 'Humidity',
+    },
+  ],
+  createWidget: (instance, sensorData) => {
+    const name = sensorData['weather.0.name'] || 'Weather Station';
+    return createWidgetConfig(
+      'weather',
+      instance,
+      instance === 0 ? name : `Weather ${instance}`,
+      'partly-sunny-outline',
+    );
+  },
+};
+
+/**
  * CONSOLIDATED REGISTRATIONS ARRAY
  * All built-in widget types in priority order
  */
@@ -487,6 +534,7 @@ export const BUILT_IN_WIDGET_REGISTRATIONS: WidgetRegistration[] = [
   BATTERY_WIDGET_REGISTRATION, // Priority: 65
   TANK_WIDGET_REGISTRATION, // Priority: 60
   TEMPERATURE_WIDGET_REGISTRATION, // Priority: 55
+  WEATHER_WIDGET_REGISTRATION, // Priority: 54
 ];
 
 /**
