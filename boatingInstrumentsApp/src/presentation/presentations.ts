@@ -13,7 +13,8 @@ export interface PresentationFormat {
   pattern: string; // Marine format pattern (e.g., "xxx.x", "x Bf (Description)")
   decimals: number; // Number of decimal places
   minWidth: number; // Minimum width in characters for layout stability
-  testCases: {
+  layoutRanges: {
+    // Renamed from testCases for clarity - used by FontMeasurementService
     min: number; // Minimum test value for worst-case measurement
     max: number; // Maximum test value for worst-case measurement
     typical: number; // Typical value for normal measurement
@@ -26,34 +27,113 @@ export interface Presentation {
   symbol: string;
   description: string;
 
-  // Conversion from base unit to display unit
-  convert: (baseValue: number) => number;
+  // NEW: Simplified conversion for linear transformations (display = SI * conversionFactor)
+  // For identity: conversionFactor = 1, For linear: conversionFactor = number
+  // Leave undefined for non-linear conversions (Fahrenheit, Beaufort)
+  conversionFactor?: number;
 
-  // Format the converted value for display with optional metadata
-  format: (
+  // Conversion functions (optional - auto-derived from conversionFactor if not provided)
+  // Required for non-linear conversions like Fahrenheit, Beaufort
+  convert?: (baseValue: number) => number;
+  convertBack?: (displayValue: number) => number;
+
+  // Format function (optional - auto-generated from formatSpec.pattern if not provided)
+  // Required for custom formats like coordinates with metadata, Beaufort descriptions
+  format?: (
     convertedValue: number,
     metadata?: { isLatitude?: boolean; [key: string]: any },
   ) => string;
-
-  // Reverse conversion for input/settings
-  convertBack: (displayValue: number) => number;
 
   // Enhanced format specification for layout stability
   formatSpec: PresentationFormat;
 
   // UI properties
   isDefault?: boolean;
-  isMetric?: boolean;
-  isImperial?: boolean;
-  isNautical?: boolean;
+  // Removed: isMetric, isImperial, isNautical (unused in codebase)
 
-  // Marine region preferences
+  // Marine region preferences (kept - used by getPresentationsForRegion)
   preferredInRegion?: ('eu' | 'us' | 'uk' | 'international')[];
 }
 
 export interface CategoryPresentations {
   category: DataCategory;
   presentations: Presentation[];
+}
+
+// ===== UTILITY FUNCTIONS =====
+
+/**
+ * Auto-generate format function from formatSpec pattern
+ * Handles simple patterns: 'xxx.x' → toFixed(decimals), 'xxx' → Math.round()
+ */
+function autoGenerateFormat(formatSpec: PresentationFormat): (value: number) => string {
+  const { pattern, decimals } = formatSpec;
+
+  // Pattern with decimal point
+  if (pattern.includes('.')) {
+    return (value: number) => value.toFixed(decimals);
+  }
+
+  // Integer pattern
+  if (/^x+$/.test(pattern)) {
+    return (value: number) => Math.round(value).toString();
+  }
+
+  // Percentage pattern
+  if (pattern.includes('%')) {
+    return (value: number) => `${Math.round(value)}%`;
+  }
+
+  // Fallback for unrecognized patterns
+  return (value: number) => value.toFixed(decimals);
+}
+
+/**
+ * Ensure presentation has a format function (use explicit or auto-generate)
+ */
+export function ensureFormatFunction(
+  presentation: Presentation,
+): (value: number, metadata?: any) => string {
+  if (presentation.format) {
+    return presentation.format;
+  }
+  const autoFormat = autoGenerateFormat(presentation.formatSpec);
+  return (value: number) => autoFormat(value);
+}
+
+/**
+ * Get convert function (use explicit or derive from conversionFactor)
+ */
+export function getConvertFunction(presentation: Presentation): (baseValue: number) => number {
+  if (presentation.convert) {
+    return presentation.convert;
+  }
+  if (presentation.conversionFactor !== undefined) {
+    const factor = presentation.conversionFactor;
+    return (baseValue: number) => baseValue * factor;
+  }
+  // Identity conversion as fallback
+  return (baseValue: number) => baseValue;
+}
+
+/**
+ * Get convertBack function (use explicit or derive from conversionFactor)
+ */
+export function getConvertBackFunction(
+  presentation: Presentation,
+): (displayValue: number) => number {
+  if (presentation.convertBack) {
+    return presentation.convertBack;
+  }
+  if (presentation.conversionFactor !== undefined) {
+    const factor = presentation.conversionFactor;
+    if (factor === 0) {
+      throw new Error(`Invalid conversionFactor: 0 for presentation ${presentation.id}`);
+    }
+    return (displayValue: number) => displayValue / factor;
+  }
+  // Identity conversion as fallback
+  return (displayValue: number) => displayValue;
 }
 
 // ===== DEPTH PRESENTATIONS =====
