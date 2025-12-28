@@ -271,7 +271,6 @@ export type SensorType =
   | 'autopilot'
   | 'navigation'
   | 'weather';
-  | 'weather';
 
 // Import SensorInstance type for new storage pattern
 import type { SensorInstance } from './SensorInstance';
