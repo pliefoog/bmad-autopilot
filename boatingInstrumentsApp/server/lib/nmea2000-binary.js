@@ -464,7 +464,7 @@ class NMEA2000BinaryGenerator {
   generatePGN_130311(sensor) {
     let temperatureC = 22.0;
     let humidity = 65.0;
-    let pressure = 101325; // Pa
+    let pressureMb = 1013.25; // Default in millibars
     
     if (sensor.data_generation?.temperature) {
       temperatureC = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
@@ -475,8 +475,12 @@ class NMEA2000BinaryGenerator {
     }
     
     if (sensor.data_generation?.pressure) {
-      pressure = this.getYAMLDataValue('pressure', sensor.data_generation.pressure);
+      // YAML pressure is in millibars, convert to Pascals for transmission
+      pressureMb = this.getYAMLDataValue('pressure', sensor.data_generation.pressure);
     }
+    
+    // Convert millibars to Pascals (1 mb = 100 Pa)
+    const pressure = pressureMb * 100;
     
     const data = Buffer.alloc(8);
     
