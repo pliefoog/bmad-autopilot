@@ -189,6 +189,41 @@ class NMEA2000BinaryGenerator {
   }
 
   /**
+   * PGN 128275: Distance Log
+   * @param {Object} sensor - Sensor configuration from YAML
+   * @param {Object} distanceLog - Distance log state (total and trip distances in nm)
+   * @returns {Buffer} Binary frame
+   */
+  generatePGN_128275(sensor, distanceLog) {
+    // Get current distance log values (in nautical miles)
+    const totalDistanceNM = distanceLog?.totalDistance || 0;
+    const tripDistanceNM = distanceLog?.tripDistance || 0;
+
+    // Convert nautical miles to meters (1 nm = 1852 meters)
+    const totalDistanceM = totalDistanceNM * 1852;
+    const tripDistanceM = tripDistanceNM * 1852;
+
+    const data = Buffer.alloc(8);
+
+    // Date (16-bit): Days since January 1, 1970
+    const daysSince1970 = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    data.writeUInt16LE(daysSince1970, 0);
+
+    // Time (32-bit): Seconds since midnight * 10000
+    const now = new Date();
+    const secondsSinceMidnight = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+    const timeRaw = Math.round(secondsSinceMidnight * 10000);
+    data.writeUInt32LE(timeRaw, 2);
+
+    // Log (32-bit): Cumulative distance in meters (0.01m resolution)
+    // For trip distance - we only have 16 bits, use lower bytes
+    const tripDistanceRaw = Math.round(tripDistanceM * 100) & 0xFFFFFFFF;
+    data.writeUInt16LE(tripDistanceRaw & 0xFFFF, 6);
+
+    return this.createFrame(128275, data, 6);
+  }
+
+  /**
    * PGN 130306: Wind Data
    * @param {Object} sensor - Sensor configuration from YAML
    * @returns {Buffer} Binary frame

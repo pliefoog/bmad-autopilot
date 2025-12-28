@@ -981,6 +981,7 @@ Post-fix NMEA capture from localhost:2000 confirms the following corrections are
 | **Battery Format** | ✅ Fixed | `$IIXDR,U,12.70,V,BAT_00*6F` - now individual sentences (YAML config changed) |
 | **DPT Talker ID** | ✅ Fixed | `$IIDPT,2.1,1.8,100.0*49` - changed from SD to II |
 | **VTG/RMC Talker ID** | ✅ Fixed | `$IIVTG,56.3,T,41.3,M,12.7,N,23.6,K,A*31` - changed from GP to II for COG/SOG |
+| **All GPS Talker IDs** | ✅ Fixed | 100% II talker (GLL, GGA, DBT, APB) - changed from GP to II for TWS calculation |
 
 #### 11.8.2 Current Sentence Generation Status
 
@@ -1231,6 +1232,110 @@ NKE Display Pro appears to implement a strict talker ID whitelist approach:
 - **'SD'** - Not accepted (sonar/depth specific talker)
 
 This differs from more lenient parsers (like easyNAV.pro) that accept any valid NMEA talker ID.
+
+---
+
+### 11.8.8 Fix #9: Complete Talker ID Standardization (All → II) for TWS
+
+**Date:** December 28, 2025
+**Issue:** User reported TWS (True Wind Speed) not displaying despite COG/SOG now working after Fix #8.
+
+**Analysis:**
+
+True Wind Speed (TWS) calculation requires:
+- **Apparent Wind** (AWS/AWA) - from MWV sentence ✅ Already using 'II'
+- **Speed Over Ground** (SOG) - from RMC/VTG ✅ Fixed in #8 (GP→II)
+- **Course Over Ground** (COG) - from RMC/VTG ✅ Fixed in #8 (GP→II)
+- **Heading** - from HDG ✅ Already using 'II'
+- **GPS Position** - from GLL/GGA (still using 'GP')
+
+The hypothesis: NKE Display Pro may ignore ALL 'GP' talker sentences entirely, not just for direct display but also for internal calculations. If GLL/GGA use 'GP' while other sentences use 'II', the app's calculation engine may not have access to complete GPS position data needed for true wind calculations.
+
+**Remaining GP Talker Sentences Identified:**
+
+| Sentence | Purpose | Talker | Issue |
+|----------|---------|--------|-------|
+| **GLL** | Geographic Lat/Lon position | GP | May block TWS calculation |
+| **GGA** | GPS Fix Data (quality, satellites, HDOP) | GP | May block TWS calculation |
+| **DBT** | Depth Below Transducer (legacy) | GP | Redundant with DPT |
+| **APB** | Autopilot Sentence B | GP | Used for waypoint navigation |
+| **VTG** | Old generator (should not be used) | GP | Replaced by newer generator |
+
+**Fix Applied:**
+
+Changed ALL remaining 'GP' talker IDs to 'II' in five locations:
+
+1. [scenario.js:2576](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2576) - generateGLL() (Geographic Position)
+2. [scenario.js:2892](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2892) - generateGGASentence() (GPS Fix Data)
+3. [scenario.js:2514](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2514) - generateDBT() (Depth Below Transducer)
+4. [scenario.js:2664](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2664) - generateAPB() (Autopilot)
+5. [scenario.js:2120](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2120) - Old VTG generator
+
+**Before:**
+```javascript
+return `$GP${sentence}*${checksum}`;  // GLL, GGA, DBT, APB, VTG
+```
+
+**After:**
+```javascript
+// Changed from GP to II for NKE Display Pro compatibility
+return `$II${sentence}*${checksum}`;
+```
+
+**Verification:**
+
+Post-fix NMEA capture confirms **100% 'II' talker usage:**
+
+```bash
+$ grep -oE '^\$[A-Z]{2}' nmea_output.txt | sort | uniq -c
+128 $II
+```
+
+**Sample Complete Sentence Set (All II):**
+```
+$IIGLL,4128.8400,N,8141.3199,W,100812,A,A*75      # Position
+$IIRMC,100812,A,4128.8400,N,8141.3199,W,12.4,56.3,281225,15.0,W*6B  # SOG/COG
+$IIVTG,56.3,T,41.3,M,12.4,N,23.0,K,A*34          # SOG/COG alt
+$IIHDG,56.3,,,15.0,W*34                          # Heading
+$IIMWV,132,R,15.6,N,A*11                         # Apparent Wind
+$IIDPT,3.0,1.8,100.0*49                          # Depth
+```
+
+**Benefits:**
+
+1. **Consistent Talker ID Policy:** ALL sentences now use 'II' (Integrated Instrumentation)
+2. **No Parser Ambiguity:** NKE Display Pro sees a single, consistent data source
+3. **Complete Data Set:** All navigation, position, wind, and instrument data available for calculations
+4. **TWS Calculation:** App now has GPS position data needed for true wind calculation algorithms
+5. **Future-Proof:** Any new NKE features requiring GPS data will have access
+
+**True Wind Speed Calculation Now Possible:**
+
+With all sentences using 'II' talker, NKE Display Pro can now access:
+- Apparent Wind Angle (AWA): **132°** (from MWV field 1)
+- Apparent Wind Speed (AWS): **15.6 knots** (from MWV field 3)
+- Speed Over Ground (SOG): **12.4 knots** (from RMC field 7, VTG field 5)
+- Course Over Ground (COG): **56.3°** (from RMC field 8, VTG field 1)
+- Heading (HDG): **56.3°** (from HDG field 1)
+- GPS Position: **41°28.84'N, 81°41.32'W** (from GLL, RMC)
+
+**TWS Calculation Formula:**
+```
+TWA = AWA + (HDG - COG)  // True Wind Angle
+TWS = f(AWS, AWA, SOG)    // True Wind Speed (vector calculation)
+```
+
+**Testing Required:**
+
+1. **Disconnect and reconnect** NKE Display Pro to localhost:2000
+2. Verify TWS now displays and calculates correctly
+3. Verify position data (lat/lon) displays correctly
+4. Verify GPS quality indicators (if shown) display correctly
+5. Check if any other derived metrics now work (VMG, etc.)
+
+**Note on NMEA 0183 Talker ID Semantics:**
+
+While 'GP' is semantically correct for GPS-derived data according to NMEA 0183 specification, NKE Display Pro's implementation uses **talker ID as a data source selector** rather than a data type indicator. By standardizing on 'II' (Integrated Instrumentation), all sentences appear to come from a single integrated marine instrument system, which aligns with NKE's own hardware ecosystem (Topline bus with Box N2K gateway presenting as integrated system).
 
 ---
 

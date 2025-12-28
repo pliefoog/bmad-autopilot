@@ -30,8 +30,8 @@ const SENSOR_TYPE_REGISTRY = {
     }
   },
   speed_sensor: {
-    nmea0183: ['VHW', 'VTG'],
-    nmea2000: [128259],
+    nmea0183: ['VHW', 'VTG', 'VLW'],  // VLW = Distance log (cumulative distance through water)
+    nmea2000: [128259, 128275],  // 128275 = Distance Log
     physical_properties: {
       sensor_type: { type: 'enum', values: ['paddle_wheel', 'electromagnetic', 'pitot_tube'], description: 'Speed sensor technology' },
       mounting_location: { type: 'string', description: 'Hull mounting position' },
@@ -67,12 +67,22 @@ const SENSOR_TYPE_REGISTRY = {
     }
   },
   temperature_sensor: {
-    nmea0183: ['MTW', 'XDR'],
+    nmea0183: ['MTW', 'MTA', 'XDR'],  // MTW=water, MTA=air, XDR=generic
     nmea2000: [130310, 130311, 130312, 130316],
     physical_properties: {
       sensor_location: { type: 'enum', values: ['sea_water', 'engine_room', 'cabin', 'refrigeration', 'exhaust', 'oil'], description: 'Temperature sensor location', nmea0183_field: 'XDR.transducer_name', nmea2000_field: 'byte[4]' },
       sensor_depth: { unit: 'm', description: 'Depth of water temperature sensor' },
       calibration_offset: { unit: '°C', description: 'Temperature calibration offset', nmea0183_field: 'applied_to_celsius', nmea2000_field: 'applied_to_kelvin' }
+    }
+  },
+  atmospheric_pressure_sensor: {
+    nmea0183: ['MMB', 'XDR'],
+    nmea2000: [130314],
+    physical_properties: {
+      sensor_type: { type: 'enum', values: ['barometric', 'absolute'], description: 'Pressure sensor type' },
+      location: { type: 'string', description: 'Sensor location', nmea0183_field: 'XDR.transducer_name' },
+      unit: { type: 'enum', values: ['millibars', 'bars', 'pascals'], description: 'Pressure unit' },
+      precision: { unit: 'mb', description: 'Sensor precision' }
     }
   },
   engine_sensor: {
@@ -142,15 +152,22 @@ class ScenarioDataSource extends EventEmitter {
     // State for smooth heading transitions
     this.currentSmoothedHeading = null;
     this.lastHeadingUpdateTime = null;
-    
+
     // State for cross-track error calculation
     this.currentLegStartWaypoint = null;
     this.currentLegEndWaypoint = null;
 
+    // State for VLW distance log tracking (cumulative distance through water)
+    this.distanceLog = {
+      totalDistance: 0,      // Total cumulative distance in nautical miles
+      tripDistance: 0,       // Trip distance (resettable) in nautical miles
+      lastUpdateTime: null   // Last time distance was updated
+    };
+
     // NMEA data generators for common scenarios
     this.dataGenerators = new Map();
     this.initializeDataGenerators();
-    
+
     // Binary NMEA 2000 PGN generator
     this.binaryGenerator = new NMEA2000BinaryGenerator();
   }
@@ -1014,25 +1031,36 @@ class ScenarioDataSource extends EventEmitter {
     // Use the first (primary) sentence type for this sensor
     let primarySentence = sentenceTypes[0];
     
-    // Special case: temperature sensors support both MTW and XDR
-    // MTW is only for seawater temperature, use XDR for all other locations
-    if (sensor.type === 'temperature_sensor' && sentenceTypes.includes('XDR')) {
+    // Special case: temperature sensors support MTW (water), MTA (air), and XDR (generic)
+    // MTW is only for seawater temperature, MTA is for air temperature, XDR for everything else
+    if (sensor.type === 'temperature_sensor') {
       const locationCode = sensor.physical_properties?.location || sensor.physical_properties?.sensor_type || '';
-      const isWaterTemp = locationCode.toUpperCase() === 'SEAW' || 
-                          locationCode === 'sea_water' || 
+      const isWaterTemp = locationCode.toUpperCase() === 'SEAW' ||
+                          locationCode === 'sea_water' ||
                           locationCode === 'water' ||
                           sensor.physical_properties?.sensor_type === 'water';
-      
-      // Use MTW only for water temperature, XDR for everything else
-      primarySentence = isWaterTemp && sentenceTypes.includes('MTW') ? 'MTW' : 'XDR';
+      const isAirTemp = locationCode.toUpperCase() === 'AIRX' ||
+                        locationCode === 'air' ||
+                        sensor.physical_properties?.sensor_type === 'air';
+
+      // Select appropriate sentence type: MTW for water, MTA for air, XDR for others
+      if (isWaterTemp && sentenceTypes.includes('MTW')) {
+        primarySentence = 'MTW';
+      } else if (isAirTemp && sentenceTypes.includes('MTA')) {
+        primarySentence = 'MTA';
+      } else {
+        primarySentence = 'XDR';
+      }
     }
     
-    // Special case: speed sensors support both VHW and VTG
+    // Special case: speed sensors support VHW, VTG, and VLW
     // VHW is for STW (Speed Through Water), VTG is for SOG (Speed Over Ground)
+    // VLW is for distance log (cumulative distance through water)
     if (sensor.type === 'speed_sensor') {
       const speedType = sensor.physical_properties?.speed_type || 'STW';
-      
-      // Use VTG for SOG, VHW for STW
+
+      // VLW has special handling - generate it alongside VHW/VTG
+      // Primary sentence is still VHW or VTG for speed
       primarySentence = speedType === 'SOG' && sentenceTypes.includes('VTG') ? 'VTG' : 'VHW';
     }
     
@@ -1056,7 +1084,10 @@ class ScenarioDataSource extends EventEmitter {
       
       case 'temperature_sensor':
         return this.generateTemperatureFromSensor(sensor, primarySentence);
-      
+
+      case 'atmospheric_pressure_sensor':
+        return this.generatePressureFromSensor(sensor, primarySentence);
+
       case 'engine_sensor':
         return this.generateEngineFromSensor(sensor, primarySentence);
       
@@ -1093,10 +1124,13 @@ class ScenarioDataSource extends EventEmitter {
     switch (sensor.type) {
       case 'depth_sensor':
         return this.binaryGenerator.generatePGN_128267(sensor); // Water Depth
-      
+
       case 'speed_sensor':
-        return this.binaryGenerator.generatePGN_128259(sensor); // Speed
-      
+        // Generate both Speed and Distance Log PGNs (like NMEA 0183 generates both VHW and VLW)
+        const speedPGN = this.binaryGenerator.generatePGN_128259(sensor); // Speed
+        const distanceLogPGN = this.binaryGenerator.generatePGN_128275(sensor, this.distanceLog); // Distance Log
+        return [speedPGN, distanceLogPGN];
+
       case 'wind_sensor':
         return this.binaryGenerator.generatePGN_130306(sensor); // Wind Data
       
@@ -1108,7 +1142,10 @@ class ScenarioDataSource extends EventEmitter {
       
       case 'temperature_sensor':
         return this.binaryGenerator.generatePGN_130310(sensor); // Environmental Parameters
-      
+
+      case 'atmospheric_pressure_sensor':
+        return this.binaryGenerator.generatePGN_130314(sensor); // Actual Pressure
+
       case 'engine_sensor':
         // Try rapid update first (127488), fall back to dynamic (127489)
         const rapidUpdate = this.binaryGenerator.generatePGN_127488(sensor);
@@ -2079,11 +2116,11 @@ class ScenarioDataSource extends EventEmitter {
   
   generateSpeedFromSensor(sensor, sentenceType) {
     let speedKnots = 5.0;
-    
+
     // Get speed from sensor data_generation
     if (sensor.data_generation?.speed) {
       const speedConfig = sensor.data_generation.speed;
-      
+
       // Handle gps_track type - calculate from waypoints
       if (speedConfig.type === 'gps_track' || speedConfig.source === 'gps_track') {
         const calculatedSpeed = this.getSpeedFromTrack();
@@ -2099,15 +2136,23 @@ class ScenarioDataSource extends EventEmitter {
         }
       }
     }
-    
+
     // Apply calibration factor
     const calibrationFactor = sensor.physical_properties?.calibration_factor || 1.0;
     speedKnots *= calibrationFactor;
-    
+
     // Determine sentence type based on speed_type property
     const speedType = sensor.physical_properties?.speed_type || 'STW';
     const instance = sensor.instance || 0;
-    
+
+    // Generate multiple sentences for speed sensor (like GPS does)
+    const sentences = [];
+
+    // Handle VLW (Distance Log) separately - it needs cumulative distance tracking
+    if (sentenceType === 'VLW') {
+      return this.generateVLW(speedKnots, instance);
+    }
+
     // Use VTG for SOG (Speed Over Ground), VHW for STW (Speed Through Water)
     if (speedType === 'SOG' || sentenceType === 'VTG') {
       // Generate VTG sentence for SOG
@@ -2116,12 +2161,22 @@ class ScenarioDataSource extends EventEmitter {
       const sentence = `VTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
       const checksum = this.calculateChecksum(sentence);
       console.log(`🚤 VTG (instance ${instance}): SOG=${speedKnots.toFixed(2)} knots, heading=${heading.toFixed(1)}°`);
-      return `$GP${sentence}*${checksum}`;
+      // Changed from GP to II for NKE Display Pro compatibility
+      sentences.push(`$II${sentence}*${checksum}`);
     } else {
       // Generate VHW sentence for STW
       console.log(`🚤 VHW (instance ${instance}): STW=${speedKnots.toFixed(2)} knots`);
-      return this.generateVHW(speedKnots);
+      sentences.push(this.generateVHW(speedKnots));
     }
+
+    // Also generate VLW for STW-based distance log
+    // VLW is important for navigation and should be sent alongside speed
+    if (speedType === 'STW') {
+      sentences.push(this.generateVLW(speedKnots, instance));
+    }
+
+    // Return array if multiple sentences, single sentence otherwise
+    return sentences.length > 1 ? sentences : sentences[0];
   }
   
   generateWindFromSensor(sensor, sentenceType) {
@@ -2258,18 +2313,29 @@ class ScenarioDataSource extends EventEmitter {
     
     // Check if this is water temperature for MTW sentence
     // MTW (Mean Temperature of Water) is only for seawater temperature
-    const isWaterTemp = locationCode.toUpperCase() === 'SEAW' || 
-                        locationCode === 'sea_water' || 
+    const isWaterTemp = locationCode.toUpperCase() === 'SEAW' ||
+                        locationCode === 'sea_water' ||
                         locationCode === 'water' ||
                         sensor.physical_properties?.sensor_type === 'water';
-    
-    // Use MTW only for seawater temperature sensors, XDR for all others
+
+    // Check if this is air temperature for MTA sentence
+    // MTA (Meteorological Air Temperature) is for outside air temperature
+    const isAirTemp = locationCode.toUpperCase() === 'AIRX' ||
+                      locationCode === 'air' ||
+                      sensor.physical_properties?.sensor_type === 'air';
+
+    // Use MTW for seawater temperature
     if (sentenceType === 'MTW' && isWaterTemp) {
-      // MTW is specifically for water temperature
       const checksum = this.calculateChecksum(`MTW,${temperature.toFixed(1)},C`);
       return `$IIMTW,${temperature.toFixed(1)},C*${checksum}`;
-    } else {
-      // XDR format for all temperature sensors (including seawater if not using MTW)
+    }
+    // Use MTA for air temperature (NKE Display Pro expects this)
+    else if (sentenceType === 'MTA' && isAirTemp) {
+      const checksum = this.calculateChecksum(`MTA,${temperature.toFixed(1)},C`);
+      return `$IIMTA,${temperature.toFixed(1)},C*${checksum}`;
+    }
+    else {
+      // XDR format for all temperature sensors (including seawater/air if not using MTW/MTA)
       // Format: SEAW_00, AIRX_01, ENGR_02, TEMP_03
       const transducerName = `${locationCode.toUpperCase()}_${String(instance).padStart(2, '0')}`;
       const sentence = `IIXDR,C,${temperature.toFixed(1)},C,${transducerName}`;
@@ -2277,7 +2343,34 @@ class ScenarioDataSource extends EventEmitter {
       return `$${sentence}*${checksum}`;
     }
   }
-  
+
+  generatePressureFromSensor(sensor, sentenceType) {
+    let pressure = 1013.25;  // Default standard atmospheric pressure in millibars
+
+    // Get pressure from sensor data_generation
+    if (sensor.data_generation?.pressure) {
+      pressure = this.getYAMLDataValue('pressure', sensor.data_generation.pressure);
+    }
+
+    // MMB is the primary sentence for barometric pressure
+    if (sentenceType === 'MMB') {
+      const pressureBars = (pressure / 1000).toFixed(4);  // Convert millibars to bars
+      const pressureInches = (pressure * 0.02953).toFixed(3);  // Convert mb to inches of mercury
+
+      const checksum = this.calculateChecksum(`MMB,${pressureInches},I,${pressureBars},B`);
+      return `$IIMMB,${pressureInches},I,${pressureBars},B*${checksum}`;
+    } else {
+      // XDR format for pressure
+      // Transducer type 'P' for pressure, unit 'B' for bars
+      const instance = sensor.instance || 0;
+      const transducerName = `BARO_${String(instance).padStart(2, '0')}`;
+      const pressureBars = (pressure / 1000).toFixed(4);
+      const sentence = `IIXDR,P,${pressureBars},B,${transducerName}`;
+      const checksum = this.calculateChecksum(sentence);
+      return `$${sentence}*${checksum}`;
+    }
+  }
+
   generateEngineFromSensor(sensor, sentenceType) {
     const messages = [];
     const engineInstance = sensor.physical_properties?.engine_instance || sensor.instance || 0;
@@ -2524,6 +2617,50 @@ class ScenarioDataSource extends EventEmitter {
     return sentence;
   }
 
+  /**
+   * Generate VLW sentence (Distance Log)
+   * VLW reports cumulative distance through water based on STW integration
+   * Format: $--VLW,total_distance,N,trip_distance,N*checksum
+   * Distances are in nautical miles
+   */
+  generateVLW(speedKnots, instance = 0) {
+    const now = Date.now();
+
+    // Initialize on first call
+    if (this.distanceLog.lastUpdateTime === null) {
+      this.distanceLog.lastUpdateTime = now;
+      console.log(`📊 VLW (instance ${instance}): Initialized distance log`);
+    }
+
+    // Calculate time delta in hours
+    const timeDeltaMs = now - this.distanceLog.lastUpdateTime;
+    const timeDeltaHours = timeDeltaMs / (1000 * 60 * 60);
+
+    // Calculate distance traveled: distance = speed × time
+    // speedKnots is in nautical miles per hour, so distance is in nautical miles
+    const distanceTraveled = speedKnots * timeDeltaHours;
+
+    // Update cumulative distances
+    this.distanceLog.totalDistance += distanceTraveled;
+    this.distanceLog.tripDistance += distanceTraveled;
+    this.distanceLog.lastUpdateTime = now;
+
+    // Format distances with one decimal place
+    const totalNM = this.distanceLog.totalDistance.toFixed(1);
+    const tripNM = this.distanceLog.tripDistance.toFixed(1);
+
+    // Generate VLW sentence
+    const sentence = `VLW,${totalNM},N,${tripNM},N`;
+    const checksum = this.calculateChecksum(sentence);
+
+    // Log occasionally (every ~20 calls = ~20 seconds at 1Hz)
+    if (Math.random() < 0.05) {
+      console.log(`📊 VLW (instance ${instance}): Total=${totalNM}nm, Trip=${tripNM}nm, STW=${speedKnots.toFixed(2)}kts`);
+    }
+
+    return `$II${sentence}*${checksum}`;
+  }
+
   generateMWV(angle, speed) {
     const checksum = this.calculateChecksum(`MWV,${angle.toFixed(0)},R,${speed.toFixed(1)},N,A`);
     return `$IIMWV,${angle.toFixed(0)},R,${speed.toFixed(1)},N,A*${checksum}`;
@@ -2659,7 +2796,8 @@ class ScenarioDataSource extends EventEmitter {
     // Build APB sentence
     const sentence = `APB,${status},${lockStatus},${crossTrackError.toFixed(2)},${xteDirection},${arrivalStatus},${waypointPassed},${waypointPassed},${bearingToWaypoint.toFixed(1)},M,${waypointId},${bearingToWaypoint.toFixed(1)},M,${currentHeading.toFixed(1)},M`;
     const checksum = this.calculateChecksum(sentence);
-    return `$GP${sentence}*${checksum}`;
+    // Changed from GP to II for NKE Display Pro compatibility
+    return `$II${sentence}*${checksum}`;
   }
 
   /**
@@ -2722,7 +2860,25 @@ class ScenarioDataSource extends EventEmitter {
 
     const tempC = this.getYAMLDataValue('water_temp', tempConfig);
     const checksum = this.calculateChecksum(`MTW,${tempC.toFixed(1)},C`);
-    return [`$SDMTW,${tempC.toFixed(1)},C*${checksum}`];
+    // Changed from SD to II for NKE Display Pro compatibility
+    return [`$IIMTW,${tempC.toFixed(1)},C*${checksum}`];
+  }
+
+  /**
+   * Generate MMB sentence (Barometric Pressure)
+   * MMB reports atmospheric pressure in bars or millibars
+   * Format: $--MMB,pressure_inches,I,pressure_bars,B*checksum
+   */
+  generateMMBSentence() {
+    const pressureConfig = this.scenario?.data?.atmospheric_pressure || this.scenario?.data?.pressure;
+    if (!pressureConfig) return [];
+
+    const pressureMb = this.getYAMLDataValue('atmospheric_pressure', pressureConfig);
+    const pressureBars = (pressureMb / 1000).toFixed(4);  // Convert millibars to bars
+    const pressureInches = (pressureMb * 0.02953).toFixed(3);  // Convert mb to inches of mercury
+
+    const checksum = this.calculateChecksum(`MMB,${pressureInches},I,${pressureBars},B`);
+    return [`$IIMMB,${pressureInches},I,${pressureBars},B*${checksum}`];
   }
 
   /**
@@ -2886,7 +3042,8 @@ class ScenarioDataSource extends EventEmitter {
     
     const sentence = `GGA,${timeStr},${Math.floor(latDeg)}${latMin},${latDir},${String(Math.floor(lonDeg)).padStart(3, '0')}${lonMin},${lonDir},${quality},${String(satellites).padStart(2, '0')},${hdop},${altitude},M,0.0,M,,`;
     const checksum = this.calculateChecksum(sentence);
-    return [`$GP${sentence}*${checksum}`];
+    // Changed from GP to II for NKE Display Pro compatibility
+    return [`$II${sentence}*${checksum}`];
   }
 
   /**

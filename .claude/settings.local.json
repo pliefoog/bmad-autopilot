@@ -12,7 +12,14 @@
       "Bash(timeout 5 bash:*)",
       "Bash(kill:*)",
       "Bash(xargs kill:*)",
-      "Bash(timeout 6 bash -c 'exec 3<>/dev/tcp/localhost/2000; cat <&3')"
+      "Bash(timeout 6 bash -c 'exec 3<>/dev/tcp/localhost/2000; cat <&3')",
+      "Bash(timeout 8 bash -c 'exec 3<>/dev/tcp/localhost/2000; cat <&3')",
+      "Bash(timeout 10 bash -c 'exec 3<>/dev/tcp/localhost/2000; cat <&3')",
+      "Bash(bc:*)",
+      "Bash(timeout 15 bash -c 'exec 3<>/dev/tcp/localhost/2000; cat <&3')",
+      "Bash(timeout 60 bash:*)",
+      "Bash(pkill:*)",
+      "Bash(/opt/homebrew/opt/node@20/bin/node:*)"
     ],
     "deny": [],
     "ask": []
