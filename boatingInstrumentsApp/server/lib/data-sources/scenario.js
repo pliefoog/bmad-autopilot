@@ -2355,7 +2355,9 @@ class ScenarioDataSource extends EventEmitter {
     // Engine Hours (separate XDR sentence)
     if (sensorTypes.includes('engine_hours') && sensor.data_generation?.engine_hours) {
       const hours = this.getYAMLDataValue('engine_hours', sensor.data_generation.engine_hours);
-      const hoursSentence = `IIXDR,G,${hours.toFixed(1)},H,${engineId}_HOURS`;
+      // Fix: Changed transducer type from 'G' (non-standard) to 'N' (Generic) for NMEA compliance
+      // Unit 'H' (hours) is acceptable with 'N' type
+      const hoursSentence = `IIXDR,N,${hours.toFixed(1)},H,${engineId}_HOURS`;
       messages.push(`$${hoursSentence}*${this.calculateChecksum(hoursSentence)}`);
     }
     
@@ -2541,8 +2543,14 @@ class ScenarioDataSource extends EventEmitter {
     // Use provided speed/track, or fallback to defaults
     const speedKnots = speed !== null ? speed.toFixed(1) : '0.0';
     const trackDegrees = track !== null ? track.toFixed(1) : '0.0';
-    
-    const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${speedKnots},${trackDegrees},${dateStr},,`;
+
+    // Get magnetic variation from scenario configuration
+    // Fix: Include magnetic variation instead of leaving empty
+    const variation = this.scenario?.parameters?.compass?.magnetic_variation || 0;
+    const variationAbs = Math.abs(variation).toFixed(1);
+    const variationDir = variation >= 0 ? 'E' : 'W';
+
+    const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${speedKnots},${trackDegrees},${dateStr},${variationAbs},${variationDir}`;
     const checksum = this.calculateChecksum(sentence);
     return `$GP${sentence}*${checksum}`;
   }

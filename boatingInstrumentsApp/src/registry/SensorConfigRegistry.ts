@@ -2006,3 +2006,22 @@ export function getSmartDefaults(
 ): SensorAlarmThresholds | ThresholdConfig | undefined {
   return getAlarmDefaults(sensorType, context);
 }
+
+/**
+ * Freeze the registry to prevent runtime mutations
+ * This ensures field definitions remain immutable after initialization
+ */
+Object.freeze(SENSOR_CONFIG_REGISTRY);
+Object.values(SENSOR_CONFIG_REGISTRY).forEach((config) => {
+  Object.freeze(config);
+  Object.freeze(config.fields);
+  config.fields.forEach((field) => Object.freeze(field));
+  if (config.alarmMetrics) {
+    Object.freeze(config.alarmMetrics);
+    config.alarmMetrics.forEach((metric) => Object.freeze(metric));
+  }
+  if (config.defaults) {
+    Object.freeze(config.defaults);
+    if (config.defaults.threshold) Object.freeze(config.defaults.threshold);
+  }
+});
