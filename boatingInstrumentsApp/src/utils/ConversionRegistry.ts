@@ -13,7 +13,7 @@
  *
  * **Usage:**
  * ```typescript
- * // Convert SI to display
+ * // Convert SI to display (unitType specifies conversion category)
  * const displayValue = ConversionRegistry.convertToDisplay(2.5, 'depth');
  *
  * // Convert display to SI
@@ -30,7 +30,7 @@
  * - ✅ Single location for all conversions
  * - ✅ Automatic cache invalidation on preference changes
  * - ✅ Lazy initialization (no module-load side effects)
- * - ✅ Type-safe with DataCategory enum
+ * - ✅ Type-safe with DataCategory enum (unitType parameter)
  * - ✅ Comprehensive logging for debugging
  */
 
@@ -42,7 +42,7 @@ import { log } from './logging/logger';
  * Cached presentation data with version tracking
  */
 interface CachedPresentation {
-  category: DataCategory;
+  unitType: DataCategory;
   presentation: any; // Presentation object from store
   version: number; // For cache invalidation
 }
@@ -117,7 +117,7 @@ class ConversionRegistryService {
 
     // Cache for future use
     this.cache.set(category, {
-      category,
+      unitType: category,
       presentation,
       version: this.currentVersion,
     });

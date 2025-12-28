@@ -841,21 +841,21 @@ After implementing fixes, verify with:
 4. [NKE NMEA Output Interface Documentation](https://nke-marine-electronics.fr/wp-content/uploads/2017/01/NMEA-ouput-interface.pdf)
 5. [Box N2K User Manual (EN)](https://nke-marine-electronics.fr/wp-content/uploads/user_manuals/EN/71_Box_N2K_um_EN.pdf)
 
-### 11.2 Product Information
+### 12.2 Product Information
 
 6. [NKE Box N2K - Comptoir Nautique](https://en.comptoirnautique.com/nmea-interfaces/43795-nke-box-n2k.html)
 7. [nke Display on Google Play](https://play.google.com/store/apps/details?id=nke.appandroid.activities&hl=en_US)
 8. [nke display pro on App Store](https://apps.apple.com/us/app/nke-display-pro/id711603919)
 9. [NKE Box WiFi - AMZ eShop](https://www.amz-eshop.com/en/box-wifi-nmea-interface.html)
 
-### 11.3 Technical Resources
+### 12.3 Technical Resources
 
 10. [Topline Bus - open-boat-projects.org](https://open-boat-projects.org/en/topline-bus-von-nke/)
 11. [NMEA 0183 and NMEA 2000 Guide - Ocean Science Technology](https://www.oceansciencetechnology.com/resources/nmea-2000-nmea-0183-guide/)
 12. [NMEA 2000 Standards - National Marine Electronics Association](https://www.nmea.org/nmea-2000.html)
 13. [NMEA 0183 Standards - National Marine Electronics Association](https://www.nmea.org/nmea-0183.html)
 
-### 11.4 Community and Implementation
+### 12.4 Community and Implementation
 
 14. [Garmin chartplotter in a NKE system - SV-Tatooine](https://sv-tatooine.com/garmin-chartplotter-in-a-nke-system/)
 15. [NKE wind transducer to which wind display via NMEA 0183? - SailNet Community](https://www.sailnet.com/threads/nke-wind-transducer-to-which-wind-display-via-nmea-0183.119313/)
