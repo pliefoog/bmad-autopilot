@@ -63,7 +63,7 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
     const capacityMetric = batterySensorInstance?.getMetric('capacity');
     const capacity = capacityMetric?.si_value ?? null;
 
-    // batteryChemistry is a text config field (no category, not numeric)
+    // batteryChemistry is a text config field (no unitType, not numeric)
     const chemistry = batterySensorInstance?.getMetric('batteryChemistry')?.si_value ?? null;
 
     const batteryTimestamp = batterySensorInstance?.timestamp;

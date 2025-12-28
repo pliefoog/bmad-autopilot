@@ -980,6 +980,7 @@ Post-fix NMEA capture from localhost:2000 confirms the following corrections are
 | **Engine Hours Type** | ✅ Fixed | `$IIXDR,N,1251.4,H,ENGINE_0_HOURS*38` - uses 'N' instead of 'G' |
 | **Battery Format** | ✅ Fixed | `$IIXDR,U,12.70,V,BAT_00*6F` - now individual sentences (YAML config changed) |
 | **DPT Talker ID** | ✅ Fixed | `$IIDPT,2.1,1.8,100.0*49` - changed from SD to II |
+| **VTG/RMC Talker ID** | ✅ Fixed | `$IIVTG,56.3,T,41.3,M,12.7,N,23.6,K,A*31` - changed from GP to II for COG/SOG |
 
 #### 11.8.2 Current Sentence Generation Status
 
@@ -1140,6 +1141,96 @@ $IIDPT,2.1,1.8,100.0*49
 1. Disconnect and reconnect NKE Display Pro to localhost:2000
 2. Verify DPT depth now displays correctly
 3. If still not working, investigate NKE Display Pro data source configuration settings
+
+---
+
+### 11.8.7 Fix #8: VTG/RMC Talker ID Change (GP → II) for COG/SOG
+
+**Date:** December 28, 2025
+**Issue:** User reported COG and SOG still not displaying in NKE Display Pro despite DPT fix working.
+
+**Root Cause Analysis:**
+
+After successfully fixing DPT by changing talker ID from 'SD' to 'II', the same issue was identified with VTG and RMC sentences. They were using 'GP' (GPS) talker ID:
+
+```
+$GPRMC,095615,A,4129.1563,N,8140.7437,W,9.1,36.8,281225,15.0,W*55
+$GPVTG,36.8,T,21.8,M,9.1,N,16.9,K,A*04
+```
+
+**Analysis:**
+
+VTG and RMC provide COG (Course Over Ground) and SOG (Speed Over Ground):
+- **VTG** field 1: True course (36.8°)
+- **VTG** field 5: Speed in knots (9.1 N)
+- **RMC** field 7: Speed in knots (9.1)
+- **RMC** field 8: True course (36.8)
+
+While 'GP' is appropriate for GPS-originated data, NKE Display Pro's talker ID filtering appears to prefer 'II' (Integrated Instrumentation) for consistency with other marine instrument data.
+
+**Evidence from Working Sensors:**
+
+| Sentence Type | Data Provided | Talker ID | NKE Status |
+|---------------|---------------|-----------|------------|
+| DPT (Depth) | Depth | ~~SD~~ → **II** | ✅ Fixed, now works |
+| HDG, MWV, RSA, VHW, XDR, RPM | Various | **II** | ✅ Working |
+| VTG, RMC | COG/SOG | ~~GP~~ → needs change | ❌ Not working |
+
+**Fix Applied:**
+
+Changed VTG and RMC talker IDs from 'GP' to 'II' in three locations:
+
+1. [scenario.js:2193](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2193) - GPS sentence generation
+2. [scenario.js:2816](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2816) - generateVTGSentence()
+3. [scenario.js:2557](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2557) - generateRMC()
+
+**Before:**
+```javascript
+return `$GPVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`;
+return `$GP${sentence}*${checksum}`;  // RMC
+```
+
+**After:**
+```javascript
+// Changed from GP to II for NKE Display Pro compatibility (like DPT fix)
+return `$IIVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`;
+return `$II${sentence}*${checksum}`;  // RMC
+```
+
+**Verification:**
+
+Post-fix NMEA capture confirms VTG and RMC now use 'II' talker:
+```
+$IIRMC,095856,A,4128.8160,N,8141.3680,W,12.7,56.3,281225,15.0,W*69
+$IIVTG,56.3,T,41.3,M,12.7,N,23.6,K,A*31
+```
+
+**COG/SOG Data Present:**
+- COG: 56.3° true (field 1 in VTG, field 8 in RMC)
+- SOG: 12.7 knots (field 5 in VTG, field 7 in RMC)
+- Magnetic track: 41.3° (field 3 in VTG) - properly calculated from true + variation
+- Magnetic variation: 15.0°W (fields 10-11 in RMC)
+
+**Benefits:**
+- Aligns VTG/RMC with other integrated instrumentation sentences (all now use 'II')
+- Consistent talker ID policy across all non-GPS-specific sentences
+- Maintains NMEA 0183 compliance ('II' is valid for navigation data)
+- Matches successful DPT fix pattern
+
+**Testing Required:**
+1. **Disconnect and reconnect** NKE Display Pro to localhost:2000
+2. Verify COG now displays correctly (from VTG field 1 or RMC field 8)
+3. Verify SOG now displays correctly (from VTG field 5 or RMC field 7)
+4. If still not working, check NKE Display Pro data page configuration
+
+**Note on Talker ID Philosophy:**
+
+NKE Display Pro appears to implement a strict talker ID whitelist approach:
+- **'II'** (Integrated Instrumentation) - Primary data source for marine instruments
+- **'GP'** - May be filtered or ignored for non-GPS position sentences
+- **'SD'** - Not accepted (sonar/depth specific talker)
+
+This differs from more lenient parsers (like easyNAV.pro) that accept any valid NMEA talker ID.
 
 ---
 

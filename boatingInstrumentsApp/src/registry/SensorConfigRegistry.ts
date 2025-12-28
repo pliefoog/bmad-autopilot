@@ -1880,8 +1880,8 @@ export function getSensorField(
 }
 
 /**
- * Get all data fields (fields with category) from a sensor
- * These are fields that represent sensor measurements with units
+ * Get all data fields (fields with unitType or hardwareField) from a sensor
+ * These are fields that represent sensor measurements with units or hardware-provided values
  *
  * @param sensorType - Type of sensor
  * @returns Array of data field configurations
@@ -1906,7 +1906,7 @@ export function getConfigFields(sensorType: SensorType): SensorFieldConfig[] {
 
 /**
  * Get all alarm-capable fields from a sensor
- * For multi-metric sensors: returns fields with category
+ * For multi-metric sensors: returns fields with unitType (numeric measurements)
  * For single-metric sensors: returns the primary data field
  *
  * @param sensorType - Type of sensor
@@ -1922,7 +1922,7 @@ export function getAlarmFields(sensorType: SensorType): SensorFieldConfig[] {
   }
 
   // Single-metric sensors: find the primary alarm field
-  // This is typically the first data field with a category
+  // This is typically the first data field with a unitType
   if (config.alarmSupport === 'single-metric') {
     const dataFields = getDataFields(sensorType);
     return dataFields.slice(0, 1); // Return first data field

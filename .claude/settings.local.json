@@ -10,7 +10,9 @@
       "Bash(timeout 3 bash:*)",
       "Bash(cat:*)",
       "Bash(timeout 5 bash:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(xargs kill:*)",
+      "Bash(timeout 6 bash -c 'exec 3<>/dev/tcp/localhost/2000; cat <&3')"
     ],
     "deny": [],
     "ask": []

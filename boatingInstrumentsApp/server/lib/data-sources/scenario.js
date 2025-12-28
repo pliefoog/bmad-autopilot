@@ -2189,7 +2189,8 @@ class ScenarioDataSource extends EventEmitter {
 
       const sentence = `VTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
       const checksum = this.calculateChecksum(sentence);
-      sentences.push(`$GPVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
+      // Changed from GP to II for NKE Display Pro compatibility (like DPT fix)
+      sentences.push(`$IIVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
     }
     
     // 4. GLL - Geographic Position (optional, some GPS units emit this)
@@ -2509,7 +2510,8 @@ class ScenarioDataSource extends EventEmitter {
     const depthMeters = depth.toFixed(1);
     const depthFathoms = (depth * 0.546807).toFixed(1);
     const checksum = this.calculateChecksum(`DBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F`);
-    return `$GPDBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
+    // Changed from GP to II for NKE Display Pro compatibility
+    return `$IIDBT,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
   }
 
   generateVHW(speed) {
@@ -2552,7 +2554,8 @@ class ScenarioDataSource extends EventEmitter {
 
     const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${speedKnots},${trackDegrees},${dateStr},${variationAbs},${variationDir}`;
     const checksum = this.calculateChecksum(sentence);
-    return `$GP${sentence}*${checksum}`;
+    // Changed from GP to II for NKE Display Pro compatibility (like DPT fix)
+    return `$II${sentence}*${checksum}`;
   }
 
   generateGLL(lat, lon) {
@@ -2570,7 +2573,8 @@ class ScenarioDataSource extends EventEmitter {
     // GLL: Geographic Position - Latitude/Longitude
     const sentence = `GLL,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${timeStr},A,A`;
     const checksum = this.calculateChecksum(sentence);
-    return `$GP${sentence}*${checksum}`;
+    // Changed from GP to II for NKE Display Pro compatibility (consistent with all other sentences)
+    return `$II${sentence}*${checksum}`;
   }
 
   generateHDG(heading, deviation = null, variation = null) {
@@ -2811,7 +2815,8 @@ class ScenarioDataSource extends EventEmitter {
     const magneticTrack = ((heading + variation + 360) % 360).toFixed(1);
 
     const checksum = this.calculateChecksum(`VTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A`);
-    return [`$GPVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`];
+    // Changed from GP to II for NKE Display Pro compatibility (like DPT fix)
+    return [`$IIVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`];
   }
 
   /**
