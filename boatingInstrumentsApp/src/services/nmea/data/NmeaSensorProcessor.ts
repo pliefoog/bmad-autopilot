@@ -484,16 +484,14 @@ export class NmeaSensorProcessor {
       };
     }
 
-    // Create GPS sensor update
+    // Create GPS sensor update with flattened quality fields
     const gpsData: Partial<GpsSensorData> = {
       name: 'GPS Receiver',
       latitude: latitude, // Decimal degrees (base unit) - MetricValue with 'coordinates' category
       longitude: longitude, // Decimal degrees (base unit) - MetricValue with 'coordinates' category
-      quality: {
-        fixType: fields.fix_quality || 0,
-        satellites: fields.satellites || 0,
-        hdop: fields.hdop || 99.9,
-      },
+      fixType: fields.fix_quality || 0,
+      satellites: fields.satellites || 0,
+      hdop: fields.hdop || 99.9,
       timeSource: 'GGA', // Priority 3 (lowest)
       timestamp: timestamp,
     };

@@ -1611,13 +1611,13 @@ class ScenarioDataSource extends EventEmitter {
         case 'coolant_temperature':
           if (scenario?.engine?.main_engine) {
             const temp = scenario.engine.main_engine.coolant_normal || 180;
-            transducers.push(`C,${temp.toFixed(1)},F,ENGINE#1`);
+            transducers.push(`C,${temp.toFixed(1)},F,ENGINE_1`);
           }
           break;
         case 'oil_pressure':
           if (scenario?.engine?.main_engine) {
             const pressure = scenario.engine.main_engine.oil_normal || 45;
-            transducers.push(`P,${pressure.toFixed(1)},P,ENGINE#1`);
+            transducers.push(`P,${pressure.toFixed(1)},P,ENGINE_1`);
           }
           break;
         case 'alternator_voltage':
@@ -2280,7 +2280,8 @@ class ScenarioDataSource extends EventEmitter {
   generateEngineFromSensor(sensor, sentenceType) {
     const messages = [];
     const engineInstance = sensor.physical_properties?.engine_instance || sensor.instance || 0;
-    const engineId = `ENGINE#${engineInstance}`;
+    // Fix: Changed from ENGINE#X to ENGINE_X for NMEA parser compatibility
+    const engineId = `ENGINE_${engineInstance}`;
     const source = engineInstance === 0 ? 'E' : 'E1';
     
     // Check which sensor types are configured
@@ -2334,7 +2335,8 @@ class ScenarioDataSource extends EventEmitter {
     // Alternator Voltage
     if (sensorTypes.includes('alternator_voltage') && sensor.data_generation?.alternator_voltage) {
       const voltage = this.getYAMLDataValue('alternator_voltage', sensor.data_generation.alternator_voltage);
-      xdrComponents.push(`U,${voltage.toFixed(2)},V,ALTERNATOR#${engineInstance}`);
+      // Fix: Changed from ALTERNATOR#X to ALTERNATOR_X for NMEA parser compatibility
+      xdrComponents.push(`U,${voltage.toFixed(2)},V,ALTERNATOR_${engineInstance}`);
     }
     
     // Generate compound XDR sentence if we have any components
