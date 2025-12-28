@@ -16,6 +16,7 @@
 import { useMemo } from 'react';
 import { DataCategory } from './categories';
 import { useCurrentPresentation } from './presentationStore';
+import { getConvertFunction, getConvertBackFunction } from './presentations';
 
 export interface CategoryPresentationResult {
   /** Unit symbol (e.g., 'V', '°F', 'kts') */
@@ -54,8 +55,8 @@ export function useCategoryPresentation(category: DataCategory): CategoryPresent
 
     return {
       symbol: presentation.symbol,
-      convert: presentation.convert,
-      convertBack: presentation.convertBack,
+      convert: getConvertFunction(presentation),
+      convertBack: getConvertBackFunction(presentation),
       isValid: true,
     };
   }, [presentation]);

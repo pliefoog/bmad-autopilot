@@ -8,7 +8,12 @@
 import { useMemo } from 'react';
 import { useCurrentPresentation } from '../presentation/presentationStore';
 import { MetricDisplayData, MetricDisplayOptions } from '../types/MetricDisplayData';
-import { PRESENTATIONS, getDefaultPresentation } from '../presentation/presentations';
+import {
+  PRESENTATIONS,
+  getDefaultPresentation,
+  getConvertFunction,
+  ensureFormatFunction,
+} from '../presentation/presentations';
 import { DataCategory } from '../presentation/categories';
 import { FontMeasurementService } from '../services/FontMeasurementService';
 
@@ -43,8 +48,10 @@ export function useMetricDisplay(
 
     try {
       // Convert and format the value with optional metadata
-      const convertedValue = activePresentation.convert(rawValue);
-      const formattedValue = activePresentation.format(convertedValue, options?.metadata);
+      const convertFn = getConvertFunction(activePresentation);
+      const formatFn = ensureFormatFunction(activePresentation);
+      const convertedValue = convertFn(rawValue);
+      const formattedValue = formatFn(convertedValue, options?.metadata);
 
       // Calculate optimal width for layout stability
       const fontSize = options?.fontSize || 16;
