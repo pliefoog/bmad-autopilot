@@ -140,8 +140,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
               hasChanges = true;
 
               if (isNumeric) {
-                // Create minimal MetricValue (16 bytes) for numeric values
-                const metric = new MetricValue(fieldValue, now);
+                // Get unitType for this field
+                const unitType = this._metricUnitTypes.get(fieldName);
+                
+                // Create minimal MetricValue with optional unitType
+                const metric = unitType
+                  ? new MetricValue(fieldValue, now, unitType)
+                  : new MetricValue(fieldValue, now);
 
                 // Add to history
                 this._addToHistory(fieldName, metric);
@@ -286,21 +291,21 @@ export class SensorInstance<T extends SensorData = SensorData> {
   reEnrich(): void {
     // History points need re-enrichment (they store enriched values)
     for (const [fieldName, buffer] of this._history.entries()) {
-      const category = this._metricCategories.get(fieldName);
-      if (!category) continue;
+      const unitType = this._metricUnitTypes.get(fieldName);
+      if (!unitType) continue;
 
       // Re-enrich all history points
       // This is expensive but only happens on unit preference changes
       const allPoints = buffer.getAll();
       for (const point of allPoints) {
         const historyPoint = point.value;
-        const metric = new MetricValue(historyPoint.si_value, historyPoint.timestamp);
+        const metric = new MetricValue(historyPoint.si_value, historyPoint.timestamp, unitType);
         
         // Update display values
-        historyPoint.value = metric.getDisplayValue(category);
-        historyPoint.unit = metric.getUnit(category);
-        historyPoint.formattedValue = metric.getFormattedValue(category);
-        historyPoint.formattedValueWithUnit = metric.getFormattedValueWithUnit(category);
+        historyPoint.value = metric.getDisplayValue();
+        historyPoint.unit = metric.getUnit();
+        historyPoint.formattedValue = metric.getFormattedValue();
+        historyPoint.formattedValueWithUnit = metric.getFormattedValueWithUnit();
       }
     }
 
@@ -316,9 +321,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Creates enriched history point for storage
    */
   private _addToHistory(fieldName: string, metric: MetricValue): void {
-    const category = this._metricCategories.get(fieldName);
-    if (!category) return;
-
     if (!this._history.has(fieldName)) {
       // Create buffer: 100 recent, 100 old, 60s threshold, 10x decimation
       this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(100, 100, 60000, 10));
@@ -327,13 +329,14 @@ export class SensorInstance<T extends SensorData = SensorData> {
     const buffer = this._history.get(fieldName)!;
 
     // Store enriched history point (computed once at storage time)
+    // MetricValue has optional unitType, so it handles conversion internally
     buffer.add(
       {
         si_value: metric.si_value,
-        value: metric.getDisplayValue(category),
-        formattedValue: metric.getFormattedValue(category),
-        formattedValueWithUnit: metric.getFormattedValueWithUnit(category),
-        unit: metric.getUnit(category),
+        value: metric.getDisplayValue(),
+        formattedValue: metric.getFormattedValue(),
+        formattedValueWithUnit: metric.getFormattedValueWithUnit(),
+        unit: metric.getUnit(),
         timestamp: metric.timestamp,
       },
       metric.timestamp

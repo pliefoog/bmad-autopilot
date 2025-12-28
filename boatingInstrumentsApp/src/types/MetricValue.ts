@@ -1,30 +1,26 @@
 /**
- * MetricValue - Minimal 16-Byte Storage with Lazy Computation
+ * MetricValue - Minimal Storage with Optional Unit Type
  *
- * **NEW ARCHITECTURE (Post-Refactor):**
- * - Stores ONLY: si_value (8 bytes) + timestamp (8 bytes) = 16 bytes
- * - Display values computed on-demand (lazy getters)
+ * **Architecture:**
+ * - Stores: si_value (8 bytes) + timestamp (8 bytes) + unitType (optional)
+ * - Display values computed on-demand (lazy getters) OR at construction if unitType provided
  * - No persistence methods (toJSON/fromPlain removed)
  * - No alarm state storage (moved to SensorInstance)
- * - 92% memory reduction vs. old architecture (200 bytes → 16 bytes)
  *
  * **Usage:**
  * ```typescript
- * // Create metric (minimal storage)
- * const metric = new MetricValue(2.5, Date.now());
+ * // With unitType (enriched at construction)
+ * const metric = new MetricValue(2.5, Date.now(), 'depth');
+ * const formatted = metric.getFormattedValue(); // "8.2" (pre-computed)
  *
- * // Get display values (computed on-demand, requires category)
- * const displayValue = metric.getDisplayValue(category); // 8.202
- * const formatted = metric.getFormattedValue(category); // "8.2"
- * const unit = metric.getUnit(category); // "ft"
- * const withUnit = metric.getFormattedValueWithUnit(category); // "8.2 ft"
+ * // Without unitType (lazy computation)
+ * const metric = new MetricValue(2.5, Date.now());
+ * const display = metric.getDisplayValue('depth'); // 8.202 (computed on-demand)
  * ```
  *
- * **Benefits:**
- * - ✅ 92% memory reduction for history storage
- * - ✅ Lazy computation (only when needed)
- * - ✅ Immutable (thread-safe)
- * - ✅ No category duplication (passed as parameter)
+ * **NaN Handling:**
+ * - NaN is valid sentinel for "no valid reading"
+ * - Display values return "---" for NaN
  */
 
 import { DataCategory } from '../presentation/categories';
@@ -33,50 +29,79 @@ import { ConversionRegistry } from '../utils/ConversionRegistry';
 /**
  * MetricValue - Minimal metric storage
  *
- * Stores only SI value and timestamp (16 bytes total).
- * All display values computed on-demand via lazy getters.
+ * Stores SI value, timestamp, and optional unitType.
+ * Display values computed on-demand or at construction if unitType provided.
  */
 export class MetricValue {
-  /** Value in SI units (8 bytes) */
+  /** Value in SI units (number or NaN for "no reading") */
   readonly si_value: number;
   
-  /** Timestamp in ms (8 bytes) */
+  /** Timestamp in ms */
   readonly timestamp: number;
 
+  /** Unit type for this metric (optional) */
+  private _unitType?: DataCategory;
+
   /**
-   * Create MetricValue with minimal storage
+   * Create MetricValue
    *
-   * @param si_value - Value in SI units (must be finite)
+   * @param si_value - Value in SI units (can be NaN for "no reading")
    * @param timestamp - Timestamp in ms (defaults to now)
-   * @throws Error if si_value is not finite
+   * @param unitType - Optional unit type for enrichment
    */
-  constructor(si_value: number, timestamp: number = Date.now()) {
-    if (!Number.isFinite(si_value)) {
-      throw new Error(`MetricValue: si_value must be finite, got ${si_value}`);
+  constructor(si_value: number, timestamp: number = Date.now(), unitType?: DataCategory) {
+    // Allow NaN as valid sentinel value
+    if (typeof si_value !== 'number') {
+      throw new Error(`MetricValue: si_value must be number, got ${typeof si_value}`);
+    }
+    if (!Number.isNaN(si_value) && !Number.isFinite(si_value)) {
+      throw new Error(`MetricValue: si_value cannot be Infinity`);
     }
 
     this.si_value = si_value;
     this.timestamp = timestamp;
+    this._unitType = unitType;
+  }
+
+  /**
+   * Get unitType for this metric
+   */
+  getUnitType(): DataCategory | undefined {
+    return this._unitType;
   }
 
   /**
    * Get display value (lazy computation)
    * Converts SI → user-preferred units
    *
-   * @param category - Data category for conversion
-   * @returns Display value in user units
+   * @param unitType - Data unitType for conversion (uses stored unitType if not provided)
+   * @returns Display value in user units, or NaN if source is NaN
    */
-  getDisplayValue(category: DataCategory): number {
+  getDisplayValue(unitType?: DataCategory): number {
+    if (Number.isNaN(this.si_value)) {
+      return NaN;
+    }
+    const category = unitType || this._unitType;
+    if (!category) {
+      return this.si_value; // No conversion
+    }
     return ConversionRegistry.convertToDisplay(this.si_value, category);
   }
 
   /**
    * Get formatted value without unit (lazy computation)
    *
-   * @param category - Data category for formatting
-   * @returns Formatted value (e.g., "8.2")
+   * @param unitType - Data unitType for formatting (uses stored unitType if not provided)
+   * @returns Formatted value (e.g., "8.2") or "---" for NaN
    */
-  getFormattedValue(category: DataCategory): string {
+  getFormattedValue(unitType?: DataCategory): string {
+    if (Number.isNaN(this.si_value)) {
+      return '---';
+    }
+    const category = unitType || this._unitType;
+    if (!category) {
+      return String(this.si_value); // No formatting
+    }
     const displayValue = this.getDisplayValue(category);
     return ConversionRegistry.format(displayValue, category, false);
   }
@@ -84,20 +109,34 @@ export class MetricValue {
   /**
    * Get unit symbol (lazy computation)
    *
-   * @param category - Data category for unit lookup
-   * @returns Unit symbol (e.g., "ft", "°C")
+   * @param unitType - Data unitType for unit lookup (uses stored unitType if not provided)
+   * @returns Unit symbol (e.g., "ft", "°C") or empty string for NaN/no unitType
    */
-  getUnit(category: DataCategory): string {
+  getUnit(unitType?: DataCategory): string {
+    if (Number.isNaN(this.si_value)) {
+      return '';
+    }
+    const category = unitType || this._unitType;
+    if (!category) {
+      return '';
+    }
     return ConversionRegistry.getUnit(category);
   }
 
   /**
    * Get formatted value with unit (lazy computation)
    *
-   * @param category - Data category for formatting
-   * @returns Formatted with unit (e.g., "8.2 ft")
+   * @param unitType - Data unitType for formatting (uses stored unitType if not provided)
+   * @returns Formatted with unit (e.g., "8.2 ft") or "---" for NaN
    */
-  getFormattedValueWithUnit(category: DataCategory): string {
+  getFormattedValueWithUnit(unitType?: DataCategory): string {
+    if (Number.isNaN(this.si_value)) {
+      return '---';
+    }
+    const category = unitType || this._unitType;
+    if (!category) {
+      return String(this.si_value);
+    }
     const displayValue = this.getDisplayValue(category);
     return ConversionRegistry.format(displayValue, category, true);
   }
