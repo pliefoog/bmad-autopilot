@@ -67,7 +67,6 @@
 import { SensorType, SensorAlarmThresholds } from '../types/SensorData';
 import { DataCategory } from '../presentation/categories';
 
-export type FieldType = 'text' | 'picker' | 'toggle' | 'slider' | 'number';
 export type AlarmSupport = 'multi-metric' | 'single-metric' | 'none';
 export type IOState = 'readOnly' | 'readWrite' | 'readOnlyIfValue';
 
@@ -93,47 +92,88 @@ export type AlarmSoundPattern = (typeof ALARM_SOUND_PATTERNS)[keyof typeof ALARM
 /**
  * Field configuration for sensor-specific inputs
  *
+ * **Architecture - Separation of Concerns:**
+ * - `valueType`: Data storage type (string/number/boolean)
+ * - `uiType`: UI component to render (textInput/picker/toggle/null)
+ * - `unitType`: Unit conversion category (only for numeric measurements)
+ *
  * **IOState Behavior:**
  * - `readOnly`: Always load from sensor[instance][hardwareField], disable editing
  * - `readWrite`: Load from sensor[instance][hardwareField], allow editing
  * - `readOnlyIfValue`: If sensor has value → read-only, if no value → editable with defaults
  *
  * **Field Roles:**
- * - UI/Configuration fields: batteryChemistry, engineType, capacity - no category
- * - Data fields: voltage, temperature, rpm - have category for presentation
+ * - Configuration fields: name, batteryChemistry, engineType - no unitType (strings/config values)
+ * - Data fields: voltage, temperature, rpm - have unitType for unit conversion
+ *
+ * Future extensibility:
+ * - uiType: 'custom' with customRenderer?: (props) => JSX.Element for specialized controls
  */
-export interface SensorFieldConfig {
-  key: string; // FormData key
+
+/**
+ * Base field properties shared by all field types
+ */
+interface BaseFieldConfig {
+  readonly key: string; // FormData key (immutable)
   label: string; // Display label
-  type: FieldType; // Input type
-  iostate: IOState; // Read/write behavior
-  hardwareField?: string; // Sensor data field name to read from sensor[instance][field]
-
-  // Type-specific configurations
-  default?: any; // Default value for text/number when no sensor value
-  options?: Array<{
-    // For picker type
-    label: string;
-    value: string;
-    default?: boolean; // Mark default option
-  }>;
-
-  // Number/Slider constraints
-  min?: number; // Minimum value (SI units)
-  max?: number; // Maximum value (SI units)
-  step?: number; // Step increment for slider
-
-  // Validation rules
-  required?: boolean; // Field must have value
-  dependsOn?: string; // Only valid if another field is set
-
-  // UI metadata
+  readonly iostate: IOState; // Read/write behavior (immutable)
+  readonly hardwareField?: string; // Sensor data property name (immutable)
+  default?: any; // Default value when no sensor value
   helpText?: string; // User guidance tooltip
-
-  // Presentation (for data fields only - UI fields don't have category)
-  category?: DataCategory; // For presentation cache (voltage, temperature, etc.)
-  direction?: 'above' | 'below'; // Default alarm direction for this field
 }
+
+/**
+ * Numeric field with unit conversion (voltage, temperature, pressure, etc.)
+ * Requires min/max for threshold slider bounds
+ */
+interface NumericWithUnit extends BaseFieldConfig {
+  readonly valueType: 'number';
+  unitType: DataCategory; // Enables SI ↔ user unit conversion
+  readonly min: number; // Threshold slider minimum (SI units)
+  readonly max: number; // Threshold slider maximum (SI units)
+  uiType: 'numericInput' | null; // null = not exposed in UI
+}
+
+/**
+ * Numeric field without unit conversion (percentages, counts, ratios)
+ * min/max optional (not always have thresholds)
+ */
+interface NumericRaw extends BaseFieldConfig {
+  readonly valueType: 'number';
+  unitType?: never; // No unit conversion
+  readonly min?: number; // Optional threshold bounds
+  readonly max?: number;
+  uiType: 'numericInput' | null;
+}
+
+/**
+ * String field (text input or picker enum)
+ */
+interface StringField extends BaseFieldConfig {
+  readonly valueType: 'string';
+  unitType?: never; // Strings don't have unit conversion
+  min?: never; // No numeric constraints
+  max?: never;
+  uiType: 'textInput' | 'picker' | null;
+  options?: Array<{ label: string; value: string; default?: boolean }>; // For picker type
+}
+
+/**
+ * Boolean field (toggle switch)
+ */
+interface BooleanField extends BaseFieldConfig {
+  readonly valueType: 'boolean';
+  unitType?: never; // Booleans don't have unit conversion
+  min?: never; // No numeric constraints
+  max?: never;
+  uiType: 'toggle' | null;
+}
+
+/**
+ * Discriminated union of all field types
+ * TypeScript enforces constraints at compile time
+ */
+export type SensorFieldConfig = NumericWithUnit | NumericRaw | StringField | BooleanField;
 
 /**
  * Alarm metric configuration for multi-metric sensors
@@ -144,25 +184,24 @@ export interface SensorFieldConfig {
  * **Example - Battery with 4 metrics:**
  * ```typescript
  * alarmMetrics: [
- *   { key: 'voltage', label: 'Voltage', category: 'voltage', unit: 'V', direction: 'below' },
- *   { key: 'current', label: 'Current', category: 'current', unit: 'A', direction: 'above' },
- *   { key: 'soc', label: 'State of Charge', unit: '%', direction: 'below' },  // No category = raw value
- *   { key: 'temperature', label: 'Temperature', category: 'temperature', unit: '°C', direction: 'above' },
+ *   { key: 'voltage', label: 'Voltage', unitType: 'voltage', direction: 'below' },
+ *   { key: 'current', label: 'Current', unitType: 'current', direction: 'above' },
+ *   { key: 'soc', label: 'State of Charge', direction: 'below' },  // No unitType = raw value
+ *   { key: 'temperature', label: 'Temperature', unitType: 'temperature', direction: 'above' },
  * ]
  * ```
  *
  * **Field Documentation:**
  * - `key`: Metric identifier used in FormData and threshold storage (camelCase)
  * - `label`: Human-readable name shown in UI
- * - `category`: DataCategory for presentation system (voltage, temperature, current, etc.)
- *              Optional - omit for raw values that don't need unit conversion (like percentages)
- * - `unit`: SI unit for storage (V, A, °C, kPa, etc.) or display unit for raw values (%)
+ * - `unitType`: DataCategory for unit conversion system (voltage, temperature, current, etc.)
+ *               Optional - omit for raw values that don't need unit conversion (like percentages)
  * - `direction`: Alarm triggers 'above' threshold (overtemp) or 'below' threshold (low voltage)
  */
 export interface SensorAlarmMetricConfig {
   key: string; // Metric identifier (e.g., 'voltage')
   label: string; // Display name
-  category?: DataCategory; // For presentation system (optional for raw values like percentages)
+  unitType?: DataCategory; // For unit conversion system (optional for raw values like percentages)
   direction: 'above' | 'below'; // Alarm direction
   // NOTE: No 'unit' field - values are ALWAYS stored in SI units
   // Presentation system handles conversion to user-selected units
@@ -230,7 +269,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Battery Name',
-        type: 'text',
+        valueType: 'string',
+        uiType: 'textInput',
         iostate: 'readWrite',
         default: '',
         helpText: 'Descriptive name for this battery (e.g., House Bank, Starter)',
@@ -238,7 +278,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'batteryChemistry',
         label: 'Battery Chemistry',
-        type: 'picker',
+        valueType: 'string',
+        uiType: 'picker',
         iostate: 'readOnlyIfValue',
         hardwareField: 'chemistry',
         options: [
@@ -252,60 +293,70 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'capacity',
         label: 'Capacity (Ah)',
-        type: 'number',
+        valueType: 'number',
+        unitType: 'capacity',
+        uiType: 'numericInput',
         iostate: 'readOnlyIfValue',
         hardwareField: 'capacity',
         default: 140,
         min: 40,
         max: 5000,
-        category: 'capacity',
         helpText: 'Battery capacity in amp-hours. Hardware may provide this value.',
       },
-      // Data fields (with categories for presentation)
+      // Data fields (with unitType for presentation)
       {
         key: 'voltage',
         label: 'Voltage',
-        type: 'number',
+        valueType: 'number',
+        unitType: 'voltage',
+        uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'voltage',
-        category: 'voltage',
-        direction: 'below',
+        min: 10.5,
+        max: 16.0,
       },
       {
         key: 'nominalVoltage',
         label: 'Nominal Voltage',
-        type: 'number',
+        valueType: 'number',
+        unitType: 'voltage',
+        uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'nominalVoltage',
-        category: 'voltage',
         helpText: 'Rated/nominal voltage (e.g., 12V, 24V, 48V)',
       },
       {
         key: 'current',
         label: 'Current',
-        type: 'number',
+        valueType: 'number',
+        unitType: 'current',
+        uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'current',
-        category: 'current',
-        direction: 'above',
+        min: 0,
+        max: 500,
       },
       {
         key: 'temperature',
         label: 'Temperature',
-        type: 'number',
+        valueType: 'number',
+        unitType: 'temperature',
+        uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'temperature',
-        category: 'temperature',
-        direction: 'above',
+        min: -20,
+        max: 80,
       },
       {
         key: 'soc',
         label: 'State of Charge',
-        type: 'number',
+        valueType: 'number',
+        uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'stateOfCharge',
-        direction: 'below',
-        // Raw percentage 0-100, no category = no unit conversion
+        min: 0,
+        max: 100,
+        // Raw percentage 0-100, no unitType = no unit conversion
       },
     ],
 
@@ -314,26 +365,26 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'voltage',
         label: 'Voltage',
-        category: 'voltage',
+        unitType: 'voltage',
         direction: 'below',
       },
       {
         key: 'current',
         label: 'Current',
-        category: 'current',
+        unitType: 'current',
         direction: 'above',
       },
       {
         key: 'temperature',
         label: 'Temperature',
-        category: 'temperature',
+        unitType: 'temperature',
         direction: 'above',
       },
       {
         key: 'soc',
         label: 'State of Charge',
         direction: 'below',
-        // Raw percentage 0-100, no category = no unit conversion
+        // Raw percentage 0-100, no unitType = no unit conversion
       },
     ],
 
