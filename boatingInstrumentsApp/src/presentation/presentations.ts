@@ -1,10 +1,106 @@
 /**
- * Data Presentation Definitions
- *
- * Defines how each data category can be presented to users.
- * Each presentation combines unit conversion + formatting.
- *
- * Marine-focused with common sailing preferences.
+ * @file presentations.ts
+ * @module presentation
+ * 
+ * # Data Presentation Architecture
+ * 
+ * Central registry for unit conversions and formatting across all marine sensor data.
+ * Defines how raw SI sensor values are converted and formatted for display to users.
+ * 
+ * ## Architecture Overview
+ * 
+ * This file uses a **streamlined architecture** with three conversion patterns:
+ * 
+ * ### 1. Identity Conversion (conversionFactor: 1)
+ * For units that match SI base units:
+ * - Celsius (°C), meters (m), volts (V), amperes (A), degrees (°)
+ * - Example: `{ conversionFactor: 1 }` → display = SI value
+ * 
+ * ### 2. Linear Conversion (conversionFactor: number)
+ * For simple multiplicative conversions:
+ * - Feet (3.28084), knots (1.94384), kPa (0.001), hPa (0.01)
+ * - Example: `{ conversionFactor: 3.28084 }` → feet = meters × 3.28084
+ * - Auto-generates convert/convertBack functions via helper utilities
+ * 
+ * ### 3. Non-Linear Conversion (explicit convert/convertBack)
+ * For complex formulas requiring explicit functions:
+ * - Fahrenheit: `(C × 9/5) + 32` (affine transformation)
+ * - Beaufort scale: conditional lookup table (wind speed ranges)
+ * - Example: `{ convert: (c) => (c * 9/5) + 32, convertBack: (f) => ((f - 32) * 5/9) }`
+ * 
+ * ## Format Auto-Generation
+ * 
+ * Format functions are auto-generated from `formatSpec.pattern`:
+ * - `'xxx.x'` → `value.toFixed(1)` (1 decimal)
+ * - `'xxx'` → `Math.round(value).toString()` (integer)
+ * - `'xxx%'` → `value.toFixed(0) + '%'` (percentage)
+ * 
+ * **Custom format functions** are required for:
+ * - Coordinates (dd_6, ddm_3, dms_1): metadata parameter for hemisphere direction
+ * - Beaufort (bf_desc): lookup table with wind condition descriptions
+ * 
+ * ## Usage Patterns
+ * 
+ * ### In Widgets (Read-Only):
+ * ```typescript
+ * const depthInstance = useNmeaStore(state => state.nmeaData.sensors.depth?.[0]);
+ * const metric = depthInstance?.getMetric('depth'); // Returns enriched MetricValue
+ * const display = metric?.formattedValue; // "8.2" (pre-formatted, no unit)
+ * const unit = metric?.unit; // "ft"
+ * ```
+ * 
+ * ### In Services (Conversion/Formatting):
+ * ```typescript
+ * import { getConvertFunction, ensureFormatFunction } from './presentations';
+ * 
+ * const presentation = getPresentationById('ft_0');
+ * const convertFn = getConvertFunction(presentation); // Auto-derived or explicit
+ * const formatFn = ensureFormatFunction(presentation); // Auto-generated or explicit
+ * 
+ * const displayValue = convertFn(2.5); // 8.2 feet
+ * const formatted = formatFn(displayValue); // "8"
+ * ```
+ * 
+ * ### In Configuration Dialogs:
+ * ```typescript
+ * const enriched = ThresholdPresentationService.getEnrichedThresholds(
+ *   sensor, metric, presentation
+ * );
+ * // Returns display values with convertFn/formatFn for editing
+ * ```
+ * 
+ * ## Migration History (Dec 2024)
+ * 
+ * **Before:** All presentations had explicit convert/format/convertBack functions
+ * - 46 presentations with redundant linear conversion code
+ * - 450+ lines of duplicate formatting logic
+ * - Violated DRY principle
+ * 
+ * **After:** Streamlined architecture with helper utilities
+ * - conversionFactor for 46 linear/identity presentations
+ * - Auto-generation for format functions
+ * - Explicit functions only for 9 non-linear/custom cases
+ * - 143 net lines removed
+ * 
+ * ## Non-Linear Presentations (Explicit Functions Required)
+ * 
+ * These 9 presentations cannot use conversionFactor due to complexity:
+ * 
+ * 1. **f_1, f_0** (Fahrenheit): Affine transformation `(C × 9/5) + 32`
+ * 2. **bf_desc, bf_0** (Beaufort): Non-linear lookup with conditional ranges
+ * 3. **dd_6, ddm_3, dms_1** (Coordinates): Custom format with metadata parameter
+ * 4. **utm** (UTM Coordinates): Complex zone calculations
+ * 
+ * ## Backward Compatibility
+ * 
+ * - Helper functions support both old and new formats transparently
+ * - Services use `getConvertFunction()` which checks for explicit convert or derives from conversionFactor
+ * - Services use `ensureFormatFunction()` which checks for explicit format or auto-generates
+ * - No breaking changes for consuming components
+ * 
+ * @see {@link ConversionRegistry} - Service that uses these definitions
+ * @see {@link ThresholdPresentationService} - Enrichment for threshold editing
+ * @see {@link SensorPresentationCache} - Display caching for widgets
  */
 
 import { DataCategory } from './categories';
@@ -63,8 +159,26 @@ export interface CategoryPresentations {
 // ===== UTILITY FUNCTIONS =====
 
 /**
- * Auto-generate format function from formatSpec pattern
- * Handles simple patterns: 'xxx.x' → toFixed(decimals), 'xxx' → Math.round()
+ * Auto-generate format function from formatSpec pattern.
+ * 
+ * Parses simple format patterns and returns appropriate formatting function:
+ * - `'xxx.x'` → `value.toFixed(1)` (1 decimal place)
+ * - `'xxx'` → `Math.round(value).toString()` (integer)
+ * - `'xxx%'` → `value.toFixed(0) + '%'` (percentage with symbol)
+ * 
+ * Used by `ensureFormatFunction()` when presentation doesn't provide explicit format.
+ * 
+ * @param formatSpec - Presentation format specification with pattern and decimals
+ * @returns Format function that converts number to formatted string
+ * 
+ * @example
+ * ```typescript
+ * const spec = { pattern: 'xxx.x', decimals: 1, minWidth: 5, layoutRanges: {...} };
+ * const format = autoGenerateFormat(spec);
+ * format(12.345); // "12.3"
+ * ```
+ * 
+ * @internal Not exported - used internally by ensureFormatFunction
  */
 function autoGenerateFormat(formatSpec: PresentationFormat): (value: number) => string {
   const { pattern, decimals } = formatSpec;
@@ -89,7 +203,25 @@ function autoGenerateFormat(formatSpec: PresentationFormat): (value: number) => 
 }
 
 /**
- * Ensure presentation has a format function (use explicit or auto-generate)
+ * Ensure presentation has a format function (explicit or auto-generated).
+ * 
+ * Returns the presentation's explicit format function if provided,
+ * otherwise auto-generates one from formatSpec.pattern.
+ * 
+ * **Services should always use this** instead of accessing presentation.format directly.
+ * 
+ * @param presentation - Presentation definition
+ * @returns Format function (explicit or auto-generated)
+ * 
+ * @example
+ * ```typescript
+ * const presentation = getPresentationById('ft_0');
+ * const formatFn = ensureFormatFunction(presentation);
+ * formatFn(8.2); // "8"
+ * ```
+ * 
+ * @see {@link autoGenerateFormat} - Used internally for auto-generation
+ * @see {@link ConversionRegistry.format} - Primary consumer
  */
 export function ensureFormatFunction(
   presentation: Presentation,
@@ -102,7 +234,27 @@ export function ensureFormatFunction(
 }
 
 /**
- * Get convert function (use explicit or derive from conversionFactor)
+ * Get conversion function (explicit or auto-derived from conversionFactor).
+ * 
+ * Returns SI → display conversion function. Checks in order:
+ * 1. Explicit presentation.convert (for non-linear: Fahrenheit, Beaufort)
+ * 2. Auto-derived from conversionFactor: `display = SI × factor`
+ * 3. Identity function (returns value unchanged)
+ * 
+ * **Services should always use this** instead of accessing presentation.convert directly.
+ * 
+ * @param presentation - Presentation definition
+ * @returns Convert function (explicit or auto-derived)
+ * 
+ * @example
+ * ```typescript
+ * const presentation = getPresentationById('ft_0'); // conversionFactor: 3.28084
+ * const convertFn = getConvertFunction(presentation);
+ * convertFn(2.5); // 8.2021 feet
+ * ```
+ * 
+ * @see {@link getConvertBackFunction} - Inverse conversion (display → SI)
+ * @see {@link ConversionRegistry.convertToDisplay} - Primary consumer
  */
 export function getConvertFunction(presentation: Presentation): (baseValue: number) => number {
   if (presentation.convert) {
@@ -117,7 +269,31 @@ export function getConvertFunction(presentation: Presentation): (baseValue: numb
 }
 
 /**
- * Get convertBack function (use explicit or derive from conversionFactor)
+ * Get inverse conversion function (explicit or auto-derived from conversionFactor).
+ * 
+ * Returns display → SI conversion function. Checks in order:
+ * 1. Explicit presentation.convertBack (for non-linear: Fahrenheit, Beaufort)
+ * 2. Auto-derived from conversionFactor: `SI = display ÷ factor`
+ * 3. Identity function (returns value unchanged)
+ * 
+ * **Throws error** if conversionFactor is 0 (would cause division by zero).
+ * 
+ * **Services should always use this** instead of accessing presentation.convertBack directly.
+ * 
+ * @param presentation - Presentation definition
+ * @returns Inverse convert function (explicit or auto-derived)
+ * @throws {Error} If conversionFactor is 0
+ * 
+ * @example
+ * ```typescript
+ * const presentation = getPresentationById('ft_0'); // conversionFactor: 3.28084
+ * const convertBackFn = getConvertBackFunction(presentation);
+ * convertBackFn(8.2); // 2.499... meters
+ * ```
+ * 
+ * @see {@link getConvertFunction} - Forward conversion (SI → display)
+ * @see {@link ConversionRegistry.convertToSI} - Primary consumer
+ * @see {@link ThresholdPresentationService} - Used for threshold editing
  */
 export function getConvertBackFunction(
   presentation: Presentation,
