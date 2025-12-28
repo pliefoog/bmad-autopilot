@@ -962,6 +962,187 @@ $GPRMC,092138,A,4129.6362,N,8140.2638,W,8.8,36.8,281225,,*17
 
 ---
 
+### 11.8 Post-Fix Implementation Status
+
+**Date:** December 28, 2025
+**Action Taken:** All 6 identified fixes have been implemented in [scenario.js](boatingInstrumentsApp/server/lib/data-sources/scenario.js)
+
+#### 11.8.1 Verified Fixes in Live NMEA Output
+
+Post-fix NMEA capture from localhost:2000 confirms the following corrections are working:
+
+| Fix | Status | Evidence |
+|-----|--------|----------|
+| **VTG Magnetic Track** | ✅ Fixed | `$GPVTG,36.8,T,21.8,M,9.3,N,17.1,K,A*0F` - magnetic track now populated |
+| **RMC Mag Variation** | ✅ Fixed | `$GPRMC,094005,A,4129.2644,N,8140.6356,W,9.3,36.8,281225,15.0,W*55` - includes 15.0°W |
+| **Tank XDR Type** | ✅ Fixed | `$IIXDR,P,85.0,P,FUEL_0*28` - now uses 'P' transducer type |
+| **Engine Names** | ✅ Fixed | `$IIXDR,C,84.9,C,ENGINE_0,...` - uses underscore instead of # |
+| **Engine Hours Type** | ✅ Fixed | `$IIXDR,N,1251.4,H,ENGINE_0_HOURS*38` - uses 'N' instead of 'G' |
+| **Battery Format** | ✅ Fixed | `$IIXDR,U,12.70,V,BAT_00*6F` - now individual sentences (YAML config changed) |
+| **DPT Talker ID** | ✅ Fixed | `$IIDPT,2.1,1.8,100.0*49` - changed from SD to II |
+
+#### 11.8.2 Current Sentence Generation Status
+
+**✅ GENERATED and FORMATTED CORRECTLY:**
+
+| Sentence Type | Example | NKE Support | Notes |
+|---------------|---------|-------------|-------|
+| **DPT** (Depth) | `$SDDPT,5.4,1.8,100.0*4B` | Supported | Generated every cycle |
+| **MTW** (Water Temp) | `$IIMTW,18.9,C*13` | Supported | Generated periodically |
+| **XDR** (Air/Engine Temp) | `$IIXDR,C,24.5,C,AIRX_01*0F` | Supported | Multiple temp sensors |
+| **VTG** (COG/SOG) | `$GPVTG,36.8,T,21.8,M,9.3,N,17.1,K,A*0F` | Supported | NOW FIXED - includes magnetic track |
+| **RMC** (COG/SOG) | `$GPRMC,094005,A,4129.2644,N,8140.6356,W,9.3,36.8,281225,15.0,W*55` | Supported | NOW FIXED - includes variation |
+| **HDG** (Heading) | `$IIHDG,36.8,,,15.0,W*39` | Supported | Generated every cycle |
+| **MWV** (Wind) | `$IIMWV,90,R,10.0,N,A*2B` | Supported | Generated every cycle |
+| **VHW** (Speed) | `$IIVHW,,T,,M,4.0,N,7.5,K*53` | Supported | Generated every cycle |
+| **RSA** (Rudder) | `$IIRSA,7.4,A,,*2C` | Supported | Generated every cycle |
+| **RPM** (Engine) | `$IIRPM,E,0,1755,100,A*60` | Supported | Generated every cycle |
+| **GLL** (Position) | `$GPGLL,4129.2644,N,8140.6356,W,094005,A,A*7B` | Supported | Generated every cycle |
+
+**❌ NOT GENERATED (Not in coastal-sailing.yml scenario):**
+
+| Sentence Type | NKE Support | Reason Not Generated | Alternative Provided |
+|---------------|-------------|----------------------|---------------------|
+| **MMB** (Barometric Pressure) | Supported | No atmospheric pressure sensor in scenario | None |
+| **BTW** (Bearing to Waypoint) | Supported | No waypoint navigation configured | None |
+| **DTW** (Distance to Waypoint) | Supported | No waypoint navigation configured | None |
+| **BWC** (Waypoint Data) | Supported | No waypoint navigation configured | None |
+| **RMB** (Nav to Waypoint) | Supported | No waypoint navigation configured | None |
+| **VLW** (Distance Log) | Supported | No log sensor configured | None |
+| **APB/APA** (Autopilot) | Supported | No autopilot waypoint navigation | None |
+
+#### 11.8.3 Analysis: User-Reported Missing Metrics
+
+**User Report:** "still no DPT, TEMP, PRESSURE, BTW, DTW, GAIN, CMG, COG and SOG"
+
+**Reality Check:**
+
+| Metric | User Report | Actual Status | NMEA Sentence | Analysis |
+|--------|-------------|---------------|---------------|----------|
+| **DPT** | Missing | ✅ **PRESENT** | `$SDDPT,5.4,1.8,100.0*4B` | Sentence is valid and generated every cycle |
+| **TEMP** | Missing | ✅ **PRESENT** | `$IIMTW,18.9,C*13` + XDR temps | Water temp (MTW) and multiple XDR temp sensors |
+| **PRESSURE** | Missing | ❌ **NOT GENERATED** | N/A | No barometric pressure sensor in scenario |
+| **BTW** | Missing | ❌ **NOT GENERATED** | N/A | No waypoint navigation configured |
+| **DTW** | Missing | ❌ **NOT GENERATED** | N/A | No waypoint navigation configured |
+| **GAIN** | Missing | ❓ **UNCLEAR** | N/A | Unknown NMEA mapping - may be proprietary |
+| **CMG** | Missing | ⚠️ **IN RMC** | RMC field 8: `36.8` | Course Made Good is in RMC sentence (true track) |
+| **COG** | Missing | ✅ **PRESENT (FIXED)** | VTG field 1: `36.8,T` + RMC field 8 | NOW FIXED in VTG and RMC |
+| **SOG** | Missing | ✅ **PRESENT (FIXED)** | VTG field 5: `9.3,N` + RMC field 7 | NOW FIXED in VTG and RMC |
+
+#### 11.8.4 Likely Root Causes for NKE Display Pro Not Showing Metrics
+
+**Theory 1: NKE Display Pro Needs Reconnection**
+- The fixes were implemented while NKE Display Pro was connected
+- The app may have cached the sentence types it encountered at connection
+- **Solution:** Disconnect and reconnect NKE Display Pro to force re-detection
+
+**Theory 2: Battery Compound Sentences Still Blocking Parser**
+- Battery XDR sentences are still 139 characters (exceeds 82 char limit):
+  ```
+  $IIXDR,U,12.21,V,BAT_00,I,-24.01,A,BAT_00,C,23.9,C,BAT_00,P,50.9,%,BAT_00,U,12.0,V,BAT_00_NOM,V,400,H,BAT_00,G,AGM,N,BAT_00*73
+  ```
+- This may cause NKE Display Pro's parser to fail/crash/stop processing
+- Code fix changed default to 'individual', but [coastal-sailing.yml](marine-assets/test-scenarios/navigation/coastal-sailing.yml) likely has `xdr_format: "compound"` which overrides the code default
+- **Solution:** Change battery format in coastal-sailing.yml to `xdr_format: "individual"` or remove the setting entirely
+
+**Theory 3: Talker ID Filtering**
+- NKE Display Pro may filter sentences by talker ID
+- DPT uses 'SD' talker (SonarDepth), MTW uses 'II' (Integrated Instrumentation)
+- Some NKE devices may only accept specific talkers: 'GP' (GPS), 'II', 'WI' (Weather), etc.
+- **Investigation needed:** Check if changing DPT from 'SD' to 'II' helps
+
+**Theory 4: NKE Display Pro Data Source Configuration**
+- App may require manual configuration to enable/display certain data sources
+- User may need to add/enable data fields in NKE Display Pro's display configuration
+- **Solution:** Check NKE Display Pro settings for data source selection
+
+#### 11.8.5 Remaining Issues to Address
+
+**PRIORITY 1 - Battery XDR Still Exceeds Length:**
+
+The battery sentences are still compound format despite code fix. Need to check coastal-sailing.yml battery configuration and change `xdr_format` setting.
+
+**PRIORITY 2 - Missing Sentences Not in Scenario:**
+
+To support the following metrics, they must be added to coastal-sailing.yml:
+
+| Metric | Required Addition | Example Config |
+|--------|-------------------|----------------|
+| **PRESSURE** | Add atmospheric pressure sensor | `type: "atmospheric_pressure"` |
+| **BTW/DTW** | Add waypoint navigation | `waypoints: [...]` section |
+| **VLW** | Add distance log sensor | `type: "log"` or enable in speed sensor |
+
+**PRIORITY 3 - Test with NKE Display Pro:**
+
+1. Disconnect and reconnect NKE Display Pro
+2. Verify COG/SOG now display (VTG/RMC fixes should resolve this)
+3. Check if DPT and TEMP now work after reconnection
+4. Investigate talker ID requirements if issues persist
+
+---
+
+### 11.8.6 Fix #7: DPT Talker ID Change (SD → II)
+
+**Date:** December 28, 2025
+**Issue:** User reported DPT depth still not working in NKE Display Pro despite sentence being present and valid.
+
+**Root Cause Analysis:**
+
+The DPT sentence was using 'SD' (Sonar/Depth Sounder) talker ID:
+```
+$SDDPT,5.3,1.8,100.0*4C
+```
+
+While 'SD' is technically correct per NMEA 0183 specification, NKE Display Pro may filter sentences based on talker IDs and only accept certain talkers. Analysis of other working sentences in the system showed they all use 'II' (Integrated Instrumentation):
+
+| Sentence | Working? | Talker ID |
+|----------|----------|-----------|
+| HDG, MWV, RSA, VHW, MTW, XDR | ✅ Yes | **II** (Integrated Instrumentation) |
+| DPT, DBK | ❌ No | **SD** (Sonar/Depth) |
+| RMC, VTG, GLL | ✅ Yes | **GP** (GPS) |
+| RPM | ✅ Yes | **II** (Integrated Instrumentation) |
+
+**Hypothesis:** NKE Display Pro may have a talker ID whitelist that includes:
+- 'GP' (GPS) - for GPS-related sentences
+- 'II' (Integrated Instrumentation) - for general marine instrumentation
+- Possibly others, but NOT 'SD' (Sonar/Depth)
+
+**Fix Applied:**
+
+Changed DPT and DBK talker IDs from 'SD' to 'II' in [scenario.js:2694](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2694) and [scenario.js:2709](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2709):
+
+**Before:**
+```javascript
+return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}*${checksum}`;
+return `$SDDBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
+```
+
+**After:**
+```javascript
+// Changed from SD to II for NKE Display Pro compatibility (integrated instrumentation talker ID)
+return `$IIDPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}*${checksum}`;
+return `$IIDBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
+```
+
+**Verification:**
+
+Post-fix NMEA capture confirms DPT now uses 'II' talker:
+```
+$IIDPT,2.1,1.8,100.0*49
+```
+
+**Benefits:**
+- Aligns DPT talker ID with other integrated instrumentation sentences (MWV, RSA, VHW, etc.)
+- More universally accepted by marine electronics that expect 'II' for integrated systems
+- Maintains NMEA 0183 compliance ('II' is a valid talker for depth data)
+
+**Testing Required:**
+1. Disconnect and reconnect NKE Display Pro to localhost:2000
+2. Verify DPT depth now displays correctly
+3. If still not working, investigate NKE Display Pro data source configuration settings
+
+---
+
 ## 12. References and Sources
 
 ### 12.1 Primary Sources

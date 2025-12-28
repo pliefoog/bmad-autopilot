@@ -1888,20 +1888,20 @@ export function getSensorField(
  */
 export function getDataFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  // Include fields with category (numeric metrics) AND fields with hardwareField but no category (string fields like chemistry, type)
-  return config?.fields?.filter((f) => f.category !== undefined || f.hardwareField !== undefined) ?? [];
+  // Include fields with unitType (numeric metrics with unit conversion) AND fields with hardwareField but no unitType (string/boolean fields)
+  return config?.fields?.filter((f) => f.unitType !== undefined || f.hardwareField !== undefined) ?? [];
 }
 
 /**
- * Get all UI/configuration fields (fields without category) from a sensor
- * These are fields used for sensor configuration like type, capacity, etc.
+ * Get all UI/configuration fields (fields without unitType) from a sensor
+ * These are fields used for sensor configuration like name, type, capacity, etc.
  *
  * @param sensorType - Type of sensor
  * @returns Array of UI field configurations
  */
 export function getConfigFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  return config?.fields?.filter((f) => f.category === undefined) ?? [];
+  return config?.fields?.filter((f) => f.unitType === undefined) ?? [];
 }
 
 /**

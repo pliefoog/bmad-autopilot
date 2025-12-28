@@ -2690,7 +2690,8 @@ class ScenarioDataSource extends EventEmitter {
     // Max range: from parameters or default to 100m
     const range = maxRange !== null ? maxRange : (this.scenario.parameters?.sonar?.max_range || 100.0);
     const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}`);
-    return `$SDDPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}*${checksum}`;
+    // Changed from SD to II for NKE Display Pro compatibility (integrated instrumentation talker ID)
+    return `$IIDPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}*${checksum}`;
   }
 
   /**
@@ -2704,7 +2705,8 @@ class ScenarioDataSource extends EventEmitter {
     const depthMeters = depthBelowKeel.toFixed(1);
     const depthFathoms = (depthBelowKeel * 0.546807).toFixed(1);
     const checksum = this.calculateChecksum(`DBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F`);
-    return `$SDDBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
+    // Changed from SD to II for NKE Display Pro compatibility (integrated instrumentation talker ID)
+    return `$IIDBK,${depthFeet},f,${depthMeters},M,${depthFathoms},F*${checksum}`;
   }
 
   /**

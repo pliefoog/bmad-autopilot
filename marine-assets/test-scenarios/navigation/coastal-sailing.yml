@@ -308,7 +308,7 @@ sensors:
       nominal_voltage: 12           # V
       capacity: 400                 # Ah
       chemistry: "AGM"              # Battery chemistry: FLA (Flooded Lead-Acid), AGM (Absorbed Glass Mat), GEL, LiFePO4
-      xdr_format: "compound"        # XDR format: "compound" (single sentence, all params) or "individual" (separate sentences per param)
+      xdr_format: "individual"      # XDR format: "compound" (single sentence, all params) or "individual" (separate sentences per param) - changed to individual for NKE Display Pro compatibility
     data_generation:
       voltage:
         type: "sine_wave"
@@ -339,7 +339,7 @@ sensors:
       nominal_voltage: 12
       capacity: 100
       chemistry: "FLA"              # Battery chemistry
-      xdr_format: "compound"        # XDR format
+      xdr_format: "individual"      # XDR format - changed to individual for NKE Display Pro compatibility
     data_generation:
       voltage:
         type: "gaussian"
