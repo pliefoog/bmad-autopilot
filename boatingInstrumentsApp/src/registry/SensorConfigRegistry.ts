@@ -1744,35 +1744,24 @@ export function validateFieldDependencies(
   sensorType: SensorType,
   formData: Record<string, any>,
 ): string[] {
-  const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  const errors: string[] = [];
-
-  for (const field of config.fields) {
-    if (field.dependsOn) {
-      const dependentValue = formData[field.dependsOn];
-
-      // Check if dependent field has a value
-      if (dependentValue === undefined || dependentValue === null || dependentValue === '') {
-        errors.push(`${field.label} requires ${field.dependsOn} to be set first`);
-      }
-    }
-  }
-
-  return errors;
+  // Field dependencies removed in refactor - no validation needed
+  return [];
 }
 
 /**
  * Check if a specific field should be shown based on dependencies
  *
+ * **NOTE:** Field dependencies (dependsOn) were removed in the category→unitType refactor.
+ * This function is maintained for backward compatibility but always returns true.
+ *
  * @param field - Field configuration
  * @param formData - Current form values
  * @returns true if field should be shown, false if dependencies not satisfied
+ * @deprecated Field dependencies removed - this function always returns true
  */
 export function shouldShowField(field: SensorFieldConfig, formData: Record<string, any>): boolean {
-  if (!field.dependsOn) return true;
-
-  const dependentValue = formData[field.dependsOn];
-  return dependentValue !== undefined && dependentValue !== null && dependentValue !== '';
+  // Field dependencies removed in refactor - all fields visible
+  return true;
 }
 
 /**

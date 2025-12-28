@@ -57,8 +57,12 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
   const longitudeMetric = gpsInstance?.getMetric('longitude');
   const utcTimeMetric = gpsInstance?.getMetric('utcTime');
 
-  // Extract special complex fields (accessed directly, not via getMetric)
-  const gpsQuality = gpsInstance?.quality;
+  // Extract MetricValues for GPS quality fields (numeric fields, not nested object)
+  const fixTypeMetric = gpsInstance?.getMetric('fixType');
+  const satellitesMetric = gpsInstance?.getMetric('satellites');
+  const hdopMetric = gpsInstance?.getMetric('hdop');
+
+  // GPS timestamp for staleness detection
   const gpsTimestamp = gpsInstance?.timestamp;
 
   // Extract display values from MetricValues (pre-enriched with user formatting)

@@ -8,7 +8,8 @@
       "Bash(timeout 5 nc:*)",
       "Bash(timeout 3 nc:*)",
       "Bash(timeout 3 bash:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout 5 bash:*)"
     ],
     "deny": [],
     "ask": []

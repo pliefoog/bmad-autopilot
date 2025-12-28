@@ -145,11 +145,9 @@ export interface GpsSensorData extends BaseSensorData {
   utcTime?: number; // PRIMARY metric - UTC timestamp from GPS (MetricValue with 'time' category)
   courseOverGround?: number; // PRIMARY metric
   speedOverGround?: number; // PRIMARY metric
-  quality?: {
-    fixType: number; // 0=no fix, 1=GPS, 2=DGPS, 3=PPS
-    satellites: number;
-    hdop: number; // Horizontal dilution of precision
-  }; // Special complex field - accessed directly, not via getMetric()
+  fixType?: number; // 0=no fix, 1=GPS, 2=DGPS, 3=PPS (flattened from quality.fixType)
+  satellites?: number; // Number of satellites (flattened from quality.satellites)
+  hdop?: number; // Horizontal dilution of precision (flattened from quality.hdop)
   timeSource?: 'RMC' | 'ZDA' | 'GGA'; // Source sentence for priority selection (RMC > ZDA > GGA)
   // Legacy field for backward compatibility during migration - will be removed
   position?: {
