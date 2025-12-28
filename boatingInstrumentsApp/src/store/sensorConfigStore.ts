@@ -18,6 +18,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, devtools } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SensorType, SensorAlarmThresholds } from '../types/SensorData';
+import { useToastStore } from './toastStore';
 
 /**
  * Unique sensor configuration key
@@ -90,7 +91,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
       (set, get) => ({
         // Initial state
         configs: {},
-        version: 2, // v2: MetricValue/SensorInstance refactor - clean slate
+        version: 3, // Schema version (category→unitType refactor) // v2: MetricValue/SensorInstance refactor - clean slate
         lastSyncTimestamp: undefined,
 
         // Generate storage key
@@ -170,7 +171,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
       {
         name: 'sensor-config-storage', // AsyncStorage key
         storage: createJSONStorage(() => AsyncStorage),
-        version: 2,
+        version: 3, // Bumped from 2 → 3 for category→unitType refactor
 
         // Partial persistence - only persist configs, not derived state
         partialize: (state) => ({
@@ -181,14 +182,23 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
 
         // Migration strategy: Clean slate on version mismatch
         migrate: (persistedState: any, version: number) => {
-          if (version !== 2) {
+          if (version !== 3) {
             console.warn(
-              '[SensorConfigStore] Migration: Wiping configs due to version mismatch',
-              `(stored: v${version}, expected: v2)`,
+              '[SensorConfigStore] Migration: Clearing configs due to schema version change',
+              `(stored: v${version}, expected: v3 - category→unitType refactor)`,
             );
+
+            // Show user-friendly notification
+            useToastStore.getState().addToast({
+              type: 'info',
+              message: 'Sensor configurations cleared due to app update. Please reconfigure sensors.',
+              duration: 8000,
+              priority: 'high',
+            });
+
             return {
               configs: {},
-              version: 2,
+              version: 3,
               lastSyncTimestamp: undefined,
             };
           }

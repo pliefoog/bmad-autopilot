@@ -4,7 +4,11 @@
       "SlashCommand(/bmad:bmm:workflows:story-context)",
       "Bash(npm test:*)",
       "SlashCommand(/bmad:bmm:workflows:code-review)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(timeout 5 nc:*)",
+      "Bash(timeout 3 nc:*)",
+      "Bash(timeout 3 bash:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
