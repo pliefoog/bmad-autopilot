@@ -162,44 +162,49 @@ export interface CategoryPresentations {
  * Auto-generate format function from formatSpec pattern.
  * 
  * Parses simple format patterns and returns appropriate formatting function:
- * - `'xxx.x'` → `value.toFixed(1)` (1 decimal place)
- * - `'xxx'` → `Math.round(value).toString()` (integer)
+ * - `'xxx.x'` → `value.toFixed(1).padStart(5)` (1 decimal, right-aligned in minWidth)
+ * - `'xxx'` → `Math.round(value).toString().padStart(3)` (integer, right-aligned)
  * - `'xxx%'` → `value.toFixed(0) + '%'` (percentage with symbol)
+ * 
+ * **CRITICAL:** Uses minWidth for consistent visual alignment. Numbers are padded with
+ * leading spaces so "10.0" occupies same space as "123.4" for layout stability.
  * 
  * Used by `ensureFormatFunction()` when presentation doesn't provide explicit format.
  * 
  * @param formatSpec - Presentation format specification with pattern and decimals
- * @returns Format function that converts number to formatted string
+ * @returns Format function that converts number to formatted string with padding
  * 
  * @example
  * ```typescript
  * const spec = { pattern: 'xxx.x', decimals: 1, minWidth: 5, layoutRanges: {...} };
  * const format = autoGenerateFormat(spec);
- * format(12.345); // "12.3"
+ * format(12.3);  // "12.3" (width 4, padded to 5: " 12.3")
+ * format(123.4); // "123.4" (width 5)
+ * format(10.0);  // "10.0" (trailing zero preserved, padded: " 10.0")
  * ```
  * 
  * @internal Not exported - used internally by ensureFormatFunction
  */
 function autoGenerateFormat(formatSpec: PresentationFormat): (value: number) => string {
-  const { pattern, decimals } = formatSpec;
+  const { pattern, decimals, minWidth } = formatSpec;
 
-  // Pattern with decimal point
+  // Pattern with decimal point - preserve trailing zeros and pad to minWidth
   if (pattern.includes('.')) {
-    return (value: number) => value.toFixed(decimals);
+    return (value: number) => value.toFixed(decimals).padStart(minWidth, ' ');
   }
 
-  // Integer pattern
+  // Integer pattern - pad to minWidth for alignment
   if (/^x+$/.test(pattern)) {
-    return (value: number) => Math.round(value).toString();
+    return (value: number) => Math.round(value).toString().padStart(minWidth, ' ');
   }
 
-  // Percentage pattern
+  // Percentage pattern - no padding (includes % symbol)
   if (pattern.includes('%')) {
     return (value: number) => `${Math.round(value)}%`;
   }
 
-  // Fallback for unrecognized patterns
-  return (value: number) => value.toFixed(decimals);
+  // Fallback for unrecognized patterns - use toFixed with padding
+  return (value: number) => value.toFixed(decimals).padStart(minWidth, ' ');
 }
 
 /**
@@ -632,8 +637,8 @@ const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
     description: 'Standard meteorological pressure unit - hPa = mbar',
     conversionFactor: 0.01, // Pa to hPa
     formatSpec: {
-      pattern: 'xxxx.x',
-      decimals: 1,
+      pattern: 'xxxx',
+      decimals: 0,
       minWidth: 6,
       layoutRanges: { min: 950.0, max: 1050.0, typical: 1013.2 },
     },
@@ -642,13 +647,13 @@ const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
   },
   {
     id: 'mbar_1',
-    name: 'Millibars (1 decimal)',
+    name: 'Millibars',
     symbol: 'mbar',
     description: 'Alternative name for hPa (1 mbar = 1 hPa)',
     conversionFactor: 0.01, // Pa to mbar
     formatSpec: {
-      pattern: 'xxxx.x',
-      decimals: 1,
+      pattern: 'xxxx',
+      decimals: 0,
       minWidth: 6,
       layoutRanges: { min: 950.0, max: 1050.0, typical: 1013.2 },
     },
