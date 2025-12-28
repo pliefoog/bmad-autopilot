@@ -42,6 +42,20 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.weather?.[instanceNumber],
     );
 
+    // DEBUG: Log available data
+    useEffect(() => {
+      if (weatherSensorData) {
+        console.log('WeatherWidget - Metrics:', {
+          pressure: weatherSensorData.getMetric('pressure'),
+          airTemperature: weatherSensorData.getMetric('airTemperature'),
+          humidity: weatherSensorData.getMetric('humidity'),
+          dewPoint: weatherSensorData.getMetric('dewPoint'),
+        });
+      } else {
+        console.log('WeatherWidget - No sensor data for instance', instanceNumber);
+      }
+    }, [weatherSensorData, instanceNumber]);
+
     // Extract MetricValues for all weather fields
     const pressureMetric = weatherSensorData?.getMetric('pressure');
     const airTempMetric = weatherSensorData?.getMetric('airTemperature');
@@ -139,6 +153,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
         columns={2}
         primaryRows={2}
         secondaryRows={2}
+        columnSpans={[1, 1, 1, 1, 2, 2]}
         testID={`weather-widget-${instanceNumber}`}
       >
         {/* Primary Grid 2x2 */}
