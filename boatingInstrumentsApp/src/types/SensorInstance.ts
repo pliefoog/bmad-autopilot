@@ -267,8 +267,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
       ? new MetricValue(dewPoint, now, unitType)
       : new MetricValue(dewPoint, now);
 
+    // Only add to history (metrics Map was removed in refactor)
     this._addToHistory('dewPoint', metric);
-    this.metrics.set('dewPoint', metric);
   }
 
   /**
