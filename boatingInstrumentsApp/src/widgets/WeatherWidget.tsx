@@ -23,7 +23,7 @@ interface WeatherWidgetProps {
 /**
  * WeatherWidget - Atmospheric conditions monitoring
  * Primary Grid (2x2): Pressure, Air Temp, Humidity, Dew Point
- * Secondary Grid: Pressure trend line
+ * Secondary Grid (2 rows): Pressure trend line + Air Temperature trend line
  * Supports multi-instance weather stations (up to 5)
  */
 export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
@@ -138,7 +138,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
         widgetHeight={height || 240}
         columns={2}
         primaryRows={2}
-        secondaryRows={1}
+        secondaryRows={2}
         testID={`weather-widget-${instanceNumber}`}
       >
         {/* Primary Grid 2x2 */}
@@ -194,7 +194,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
           }}
         />
 
-        {/* Secondary Row 1: Pressure Trend Line */}
+        {/* Secondary Row 1: Pressure Trend Line (full width) */}
         <TrendLine
           sensor="weather"
           instance={instanceNumber}
@@ -205,6 +205,24 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
           showYAxis={true}
           xAxisPosition="top"
           yAxisDirection="down"
+          timeWindowMinutes={5}
+          showTimeLabels={true}
+          showGrid={true}
+          strokeWidth={2}
+          forceZero={false}
+        />
+
+        {/* Secondary Row 2: Air Temperature Trend Line (full width) */}
+        <TrendLine
+          sensor="weather"
+          instance={instanceNumber}
+          metric="airTemperature"
+          timeWindowMs={5 * 60 * 1000}
+          usePrimaryLine={true}
+          showXAxis={true}
+          showYAxis={true}
+          xAxisPosition="top"
+          yAxisDirection="up"
           timeWindowMinutes={5}
           showTimeLabels={true}
           showGrid={true}
