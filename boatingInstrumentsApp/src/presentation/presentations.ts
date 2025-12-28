@@ -777,16 +777,14 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     id: 'dd_6',
     name: 'Decimal Degrees (6 decimals)',
     symbol: 'DD',
-    description: 'Decimal degrees with 6 decimal places',
+    description: 'Decimal degrees with 6 decimal places and hemisphere indicator',
     convert: (degrees: number) => degrees,
     format: (deg: number, metadata?: { isLatitude?: boolean }) => {
       const absValue = Math.abs(deg);
-      if (metadata?.isLatitude !== undefined) {
-        const direction =
-          deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : metadata.isLatitude ? 'S' : 'W';
-        return `${absValue.toFixed(6)}° ${direction}`;
-      }
-      return deg.toFixed(6); // Fallback without hemisphere
+      // Default to longitude (E/W) if metadata not provided
+      const isLat = metadata?.isLatitude ?? false;
+      const direction = deg >= 0 ? (isLat ? 'N' : 'E') : isLat ? 'S' : 'W';
+      return `${absValue.toFixed(6)}° ${direction}`;
     },
     convertBack: (deg: number) => deg,
     formatSpec: {
@@ -802,7 +800,7 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     id: 'ddm_3',
     name: 'Degrees Decimal Minutes (3 decimals)',
     symbol: 'DDM',
-    description: 'Degrees and decimal minutes format',
+    description: 'Degrees and decimal minutes format with hemisphere indicator',
     convert: (degrees: number) => degrees,
     format: (deg: number, metadata?: { isLatitude?: boolean }) => {
       const absValue = Math.abs(deg);
@@ -810,12 +808,10 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       const m = (absValue - d) * 60;
       const baseFormat = `${d}° ${m.toFixed(3).padStart(6, '0')}′`;
 
-      if (metadata?.isLatitude !== undefined) {
-        const direction =
-          deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : metadata.isLatitude ? 'S' : 'W';
-        return `${baseFormat} ${direction}`;
-      }
-      return deg < 0 ? `-${baseFormat}` : baseFormat;
+      // Default to longitude (E/W) if metadata not provided
+      const isLat = metadata?.isLatitude ?? false;
+      const direction = deg >= 0 ? (isLat ? 'N' : 'E') : isLat ? 'S' : 'W';
+      return `${baseFormat} ${direction}`;
     },
     convertBack: (deg: number) => deg,
     formatSpec: {
@@ -830,7 +826,7 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
     id: 'dms_1',
     name: 'Degrees Minutes Seconds (1 decimal)',
     symbol: 'DMS',
-    description: 'Degrees, minutes, and seconds format',
+    description: 'Degrees, minutes, and seconds format with hemisphere indicator',
     convert: (degrees: number) => degrees,
     format: (deg: number, metadata?: { isLatitude?: boolean }) => {
       const absValue = Math.abs(deg);
@@ -841,12 +837,10 @@ const COORDINATES_PRESENTATIONS: Presentation[] = [
       // Compact format with minimal spacing
       const baseFormat = `${d}°${m.toString().padStart(2, '0')}′${s.toFixed(1).padStart(4, '0')}″`;
 
-      if (metadata?.isLatitude !== undefined) {
-        const direction =
-          deg >= 0 ? (metadata.isLatitude ? 'N' : 'E') : metadata.isLatitude ? 'S' : 'W';
-        return `${baseFormat}\u2009${direction}`; // Thin space (U+2009) for compact but readable separation
-      }
-      return deg < 0 ? `-${baseFormat}` : baseFormat;
+      // Default to longitude (E/W) if metadata not provided
+      const isLat = metadata?.isLatitude ?? false;
+      const direction = deg >= 0 ? (isLat ? 'N' : 'E') : isLat ? 'S' : 'W';
+      return `${baseFormat}\u2009${direction}`; // Thin space (U+2009) for compact but readable separation
     },
     convertBack: (deg: number) => deg,
     formatSpec: {
