@@ -1553,6 +1553,139 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     alarmSupport: 'none',
   },
 
+  weather: {
+    sensorType: 'weather',
+    displayName: 'Weather Station',
+    description: 'Atmospheric conditions monitoring',
+
+    fields: [
+      // Configuration fields
+      {
+        key: 'name',
+        label: 'Station Name',
+        valueType: 'string',
+        uiType: 'textInput',
+        iostate: 'readWrite',
+        hardwareField: 'name',
+        default: 'Weather Station',
+        helpText: 'Descriptive name for this weather station',
+      },
+      // Hardware data fields
+      {
+        key: 'pressure',
+        label: 'Barometric Pressure',
+        valueType: 'number',
+        unitType: 'pressure',
+        uiType: 'numericInput',
+        iostate: 'readOnly',
+        hardwareField: 'pressure',
+        min: 90000,
+        max: 110000,
+        helpText: 'Atmospheric pressure in Pascals (PRIMARY metric)',
+      },
+      {
+        key: 'airTemperature',
+        label: 'Air Temperature',
+        valueType: 'number',
+        unitType: 'temperature',
+        uiType: 'numericInput',
+        iostate: 'readOnly',
+        hardwareField: 'airTemperature',
+        min: -40,
+        max: 50,
+        helpText: 'Outside air temperature in Celsius',
+      },
+      {
+        key: 'humidity',
+        label: 'Relative Humidity',
+        valueType: 'number',
+        unitType: 'percentage',
+        uiType: 'numericInput',
+        iostate: 'readOnly',
+        hardwareField: 'humidity',
+        min: 0,
+        max: 100,
+        helpText: 'Relative humidity percentage (0-100%)',
+      },
+      {
+        key: 'dewPoint',
+        label: 'Dew Point',
+        valueType: 'number',
+        unitType: 'temperature',
+        uiType: null, // Not editable - calculated or hardware provided
+        iostate: 'readOnly',
+        hardwareField: 'dewPoint',
+        helpText: 'Dew point temperature (calculated if not provided by hardware)',
+      },
+    ],
+
+    alarmSupport: 'multi-metric',
+
+    alarmMetrics: [
+      {
+        key: 'pressure',
+        label: 'Barometric Pressure',
+        unitType: 'pressure',
+        direction: 'both',
+        context: 'marine',
+        helpText: 'Alert on rapid pressure changes indicating weather systems',
+      },
+      {
+        key: 'airTemperature',
+        label: 'Air Temperature',
+        unitType: 'temperature',
+        direction: 'above',
+        context: 'outside',
+        helpText: 'Alert when temperature exceeds safe operating range',
+      },
+    ],
+
+    defaults: {
+      metrics: {
+        pressure: {
+          threshold: {
+            critical: {
+              min: 95000,
+              max: 106000,
+            },
+            warning: {
+              min: 97000,
+              max: 104000,
+            },
+            direction: 'both' as const,
+            enabled: true,
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            criticalHysteresis: 500,
+            warningHysteresis: 500,
+            staleThresholdMs: 300000, // 5 minutes - atmospheric data changes slowly
+            min: 90000,
+            max: 110000,
+          },
+        },
+        airTemperature: {
+          threshold: {
+            critical: {
+              max: 45,
+            },
+            warning: {
+              max: 40,
+            },
+            direction: 'above' as const,
+            enabled: false, // Disabled by default (marine context - heat warnings optional)
+            criticalSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            warningSoundPattern: ALARM_SOUND_PATTERNS.info,
+            criticalHysteresis: 2,
+            warningHysteresis: 2,
+            staleThresholdMs: 300000, // 5 minutes
+            min: -40,
+            max: 50,
+          },
+        },
+      },
+    },
+  },
+
   tank: {
     sensorType: 'tank',
     displayName: 'Tank Level',

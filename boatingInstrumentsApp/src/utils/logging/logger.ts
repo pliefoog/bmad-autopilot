@@ -40,11 +40,13 @@ const DEBUG_FLAGS: Record<string, boolean> = {
   'nmea.battery': false,
   'nmea.tank': false,
   'nmea.temperature': false,
+  'nmea.weather': false,
   nmea: false, // Parent category
 
   // Widget categories (widget.registration ENABLED for custom widget debugging)
   'widget.depth': false,
   'widget.engine': false,
+  'widget.weather': false,
   'widget.registration': true, // ✅ ENABLED: Custom widget detection
   'widget.rendering': false,
   widget: false, // Parent category
@@ -126,10 +128,12 @@ export const log = {
   battery: (msg: string, dataFn?: () => any) => log.debug('nmea.battery', msg, dataFn),
   tank: (msg: string, dataFn?: () => any) => log.debug('nmea.tank', msg, dataFn),
   temperature: (msg: string, dataFn?: () => any) => log.debug('nmea.temperature', msg, dataFn),
+  weather: (msg: string, dataFn?: () => any) => log.debug('nmea.weather', msg, dataFn),
 
   // Widget convenience methods
   widgetDepth: (msg: string, dataFn?: () => any) => log.debug('widget.depth', msg, dataFn),
   widgetEngine: (msg: string, dataFn?: () => any) => log.debug('widget.engine', msg, dataFn),
+  widgetWeather: (msg: string, dataFn?: () => any) => log.debug('widget.weather', msg, dataFn),
   widgetRegistration: (msg: string, dataFn?: () => any) =>
     log.debug('widget.registration', msg, dataFn),
   widgetRendering: (msg: string, dataFn?: () => any) => log.debug('widget.rendering', msg, dataFn),

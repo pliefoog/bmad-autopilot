@@ -219,6 +219,10 @@ export class PureNmeaParser {
         return this.parseDBKFields(parts);
       case 'MTW':
         return this.parseMTWFields(parts);
+      case 'MDA':
+        return this.parseMDAFields(parts);
+      case 'MMB':
+        return this.parseMMBFields(parts);
       case 'VHW':
         return this.parseVHWFields(parts);
       case 'VWR':
@@ -855,6 +859,50 @@ export class PureNmeaParser {
       bearing_to_dest: parts[8] ? parseFloat(parts[8]) : null,
       bearing_type: parts[9],
       destination_id: parts[10],
+    };
+  }
+
+  /**
+   * Parse MDA (Meteorological Composite) fields
+   * Format: $IIMDA,<p_inches>,I,<p_bars>,B,<air_temp>,C,<water_temp>,C,<rel_humid>,<abs_humid>,<dew_point>,C,<wind_dir_true>,T,<wind_dir_mag>,M,<wind_speed_kts>,N,<wind_speed_ms>,M*hh
+   * Fields: 1=Pressure(inHg), 2=I, 3=Pressure(bars), 4=B, 5=AirTemp(C), 6=C, 7=WaterTemp(C), 8=C, 9=RelHumid(%), 10=AbsHumid, 11=DewPoint(C), 12=C, 13-20=Wind data
+   * Extract: Field 3 (pressure_bars × 100000 → Pa), 5 (air_temp), 9 (humidity), 11 (dew_point)
+   * Ignore: Field 7 (water_temp - handled by MTW), 13-20 (wind - handled by MWV/VWR/VWT)
+   */
+  private parseMDAFields(parts: string[]): Record<string, any> {
+    const field3 = parts[3] ? parseFloat(parts[3]) : null; // Pressure in bars
+    const field5 = parts[5] ? parseFloat(parts[5]) : null; // Air temperature C
+    const field9 = parts[9] ? parseFloat(parts[9]) : null; // Humidity %
+    const field11 = parts[11] ? parseFloat(parts[11]) : null; // Dew point C
+
+    return {
+      field_3: parts[3], // Pressure in bars
+      field_5: parts[5], // Air temperature
+      field_9: parts[9], // Humidity
+      field_11: parts[11], // Dew point
+      // Parsed values for processor
+      pressure_bars: field3,
+      pressure_pa: field3 !== null ? field3 * 100000 : null, // Convert bars to Pascals
+      air_temperature_celsius: field5,
+      humidity_percent: field9,
+      dew_point_celsius: field11,
+    };
+  }
+
+  /**
+   * Parse MMB (Barometer) fields
+   * Format: $IIMMB,<p_bars>,B,<p_inches>,I*hh
+   * Fields: 1=Pressure(bars), 2=B, 3=Pressure(inHg), 4=I
+   * Extract: Field 1 (pressure_bars × 100000 → Pa)
+   */
+  private parseMMBFields(parts: string[]): Record<string, any> {
+    const field1 = parts[1] ? parseFloat(parts[1]) : null; // Pressure in bars
+
+    return {
+      field_1: parts[1], // Pressure in bars
+      // Parsed values for processor
+      pressure_bars: field1,
+      pressure_pa: field1 !== null ? field1 * 100000 : null, // Convert bars to Pascals
     };
   }
 

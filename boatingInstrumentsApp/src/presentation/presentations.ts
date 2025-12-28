@@ -1091,6 +1091,27 @@ const RPM_PRESENTATIONS: Presentation[] = [
   },
 ];
 
+const PERCENTAGE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'pct_0',
+    name: 'Percentage',
+    symbol: '%',
+    description: 'Percentage display (0-100%)',
+    convert: (value: number) => value, // Identity conversion
+    format: (value: number) => `${Math.round(value)}%`,
+    convertBack: (value: number) => value,
+    formatSpec: {
+      pattern: 'xxx%',
+      decimals: 0,
+      minWidth: 4,
+      testCases: { min: 0, max: 100, typical: 65 },
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
+  },
+];
+
 // ===== PRESENTATION REGISTRY =====
 export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
   depth: {
@@ -1161,6 +1182,10 @@ export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
   rpm: {
     category: 'rpm',
     presentations: RPM_PRESENTATIONS,
+  },
+  percentage: {
+    category: 'percentage',
+    presentations: PERCENTAGE_PRESENTATIONS,
   },
 };
 

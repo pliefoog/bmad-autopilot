@@ -254,7 +254,8 @@ export type SensorData =
   | DepthSensorData
   | CompassSensorData
   | AutopilotSensorData
-  | NavigationSensorData;
+  | NavigationSensorData
+  | WeatherSensorData;
 
 // Sensor type identifiers
 export type SensorType =
@@ -268,7 +269,9 @@ export type SensorType =
   | 'depth'
   | 'compass'
   | 'autopilot'
-  | 'navigation';
+  | 'navigation'
+  | 'weather';
+  | 'weather';
 
 // Import SensorInstance type for new storage pattern
 import type { SensorInstance } from './SensorInstance';
@@ -288,6 +291,7 @@ export interface SensorsData {
   compass: { [instance: number]: SensorInstance<CompassSensorData> };
   autopilot: { [instance: number]: SensorInstance<AutopilotSensorData> };
   navigation: { [instance: number]: SensorInstance<NavigationSensorData> };
+  weather: { [instance: number]: SensorInstance<WeatherSensorData> };
 }
 
 // Serialization types for Zustand persistence
@@ -304,4 +308,5 @@ export interface SerializedSensorsData {
   compass: { [instance: number]: ReturnType<SensorInstance<CompassSensorData>['toJSON']> };
   autopilot: { [instance: number]: ReturnType<SensorInstance<AutopilotSensorData>['toJSON']> };
   navigation: { [instance: number]: ReturnType<SensorInstance<NavigationSensorData>['toJSON']> };
+  weather: { [instance: number]: ReturnType<SensorInstance<WeatherSensorData>['toJSON']> };
 }

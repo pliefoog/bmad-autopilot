@@ -391,6 +391,7 @@
             "heading_sensor",
             "temperature_sensor",
             "pressure_sensor",
+            "atmospheric_pressure_sensor",
             "engine_sensor",
             "battery_sensor",
             "tank_sensor",
@@ -431,7 +432,7 @@
           "properties": {
             "unit": {
               "type": "string",
-              "enum": ["meters", "feet", "knots", "mps", "kph", "degrees", "radians", "celsius", "fahrenheit", "kelvin", "mbar", "bar", "psi", "volts", "amps", "rpm", "liters", "gallons", "percent"]
+              "enum": ["meters", "feet", "knots", "mps", "kph", "degrees", "radians", "celsius", "fahrenheit", "kelvin", "mbar", "millibars", "bar", "bars", "pascals", "psi", "volts", "amps", "rpm", "liters", "gallons", "percent"]
             },
             "precision": {
               "type": "number",
@@ -445,7 +446,7 @@
             },
             "sensor_type": {
               "type": "string",
-              "enum": ["water", "air", "engine", "exhaust", "cabin", "refrigeration", "atmospheric"],
+              "enum": ["water", "air", "engine", "exhaust", "cabin", "refrigeration", "atmospheric", "barometric", "absolute"],
               "description": "Temperature/pressure sensor type"
             },
             "location": {
@@ -563,7 +564,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["sine_wave", "gaussian", "random_walk", "constant", "linear", "sawtooth", "triangle", "square", "tidal_cycle", "boat_movement", "great_circle", "waypoint_sequence", "gps_track", "smooth_transitions"]
+          "enum": ["sine_wave", "gaussian", "random_walk", "constant", "linear", "sawtooth", "triangle", "square", "tidal_cycle", "boat_movement", "great_circle", "waypoint_sequence", "gps_track", "smooth_transitions", "calculated"]
         },
         "base": {"type": "number"},
         "amplitude": {"type": "number"},
@@ -618,6 +619,18 @@
             "std_dev": {"type": "number", "minimum": 0},
             "period": {"type": "number", "minimum": 0.1}
           }
+        },
+        "source": {
+          "type": "string",
+          "description": "Source field for calculated type (e.g., 'rpm' for shaft_rpm calculation)"
+        },
+        "divisor": {
+          "type": "number",
+          "description": "Divisor for calculated type (e.g., gear reduction ratio)"
+        },
+        "multiplier": {
+          "type": "number",
+          "description": "Multiplier for calculated type"
         }
       }
     },

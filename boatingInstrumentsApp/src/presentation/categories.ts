@@ -30,7 +30,8 @@ export type DataCategory =
   | 'flowRate' // Flow rates (fuel, water, cooling)
   | 'frequency' // Electrical/generator frequency
   | 'power' // Engine/electrical power
-  | 'rpm'; // Rotational speeds
+  | 'rpm' // Rotational speeds
+  | 'percentage'; // Humidity, battery SOC, tank levels (0-100%)
 
 export interface DataCategoryInfo {
   id: DataCategory;
@@ -211,5 +212,15 @@ export const DATA_CATEGORIES: Record<DataCategory, DataCategoryInfo> = {
     icon: '⚙️',
     precision: 0,
     typical_range: [0, 6000], // 0-6000 RPM typical marine engine range
+  },
+
+  percentage: {
+    id: 'percentage',
+    name: 'Percentage',
+    description: 'Percentage values (humidity, battery SOC, tank levels)',
+    baseUnit: 'percent',
+    icon: '%',
+    precision: 0,
+    typical_range: [0, 100], // 0-100%
   },
 };

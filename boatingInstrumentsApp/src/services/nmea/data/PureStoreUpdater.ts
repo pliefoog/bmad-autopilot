@@ -271,20 +271,102 @@ export class PureStoreUpdater {
         }
 
         case 130310: {
-          // Temperature
-          const tempData = pgnParser.parseTemperaturePgn(hexData);
-          if (tempData) {
+          // Environmental Data (Temperature, Humidity, Pressure) - Source-based routing
+          const envData = pgnParser.parseTemperaturePgn(hexData);
+          if (envData) {
+            const source = envData.source;
+
+            if (source === 0) {
+              // Source 0 = Sea temperature → temperature sensor
+              if (envData.temperature !== undefined) {
+                updates.push({
+                  sensorType: 'temperature',
+                  instance: 0,
+                  value: envData.temperature,
+                  unit: 'celsius',
+                  timestamp,
+                  data: {
+                    value: envData.temperature,
+                    location: 'seawater' as const,
+                    units: 'C' as const,
+                  },
+                });
+              }
+            } else if (source === 1 || source === 2) {
+              // Source 1/2 = Outside/Inside air → weather sensor
+              const weatherData: any = { timestamp };
+              
+              if (envData.temperature !== undefined) {
+                weatherData.airTemperature = envData.temperature;
+              }
+              if (envData.humidity !== undefined) {
+                weatherData.humidity = envData.humidity;
+              }
+              if (envData.pressure !== undefined) {
+                weatherData.pressure = envData.pressure;
+              }
+
+              updates.push({
+                sensorType: 'weather',
+                instance: 0,
+                value: envData.pressure || envData.temperature || 0,
+                unit: envData.pressure ? 'pascals' : 'celsius',
+                timestamp,
+                data: weatherData,
+              });
+            } else {
+              // Source 3-255 = Other locations → temperature sensor
+              if (envData.temperature !== undefined) {
+                const locationMap: Record<number, string> = {
+                  3: 'engine-room',
+                  4: 'cabin',
+                  5: 'refrigerator',
+                  6: 'freezer',
+                  // Add more as needed
+                };
+                const location = locationMap[source] || 'unknown';
+
+                updates.push({
+                  sensorType: 'temperature',
+                  instance: source,
+                  value: envData.temperature,
+                  unit: 'celsius',
+                  timestamp,
+                  data: {
+                    value: envData.temperature,
+                    location: location as any,
+                    units: 'C' as const,
+                  },
+                });
+              }
+            }
+          }
+          break;
+        }
+
+        case 130311: {
+          // Environmental Parameters (Atmospheric) - Always → weather sensor
+          const atmData = pgnParser.parseEnvironmentalPgn(hexData);
+          if (atmData) {
+            const weatherData: any = { timestamp };
+
+            if (atmData.temperature !== undefined) {
+              weatherData.airTemperature = atmData.temperature;
+            }
+            if (atmData.humidity !== undefined) {
+              weatherData.humidity = atmData.humidity;
+            }
+            if (atmData.pressure !== undefined) {
+              weatherData.pressure = atmData.pressure;
+            }
+
             updates.push({
-              sensorType: 'temperature',
-              instance: 0,
-              value: tempData.temperature,
-              unit: 'celsius',
+              sensorType: 'weather',
+              instance: atmData.instance || 0,
+              value: atmData.pressure || atmData.temperature || 0,
+              unit: atmData.pressure ? 'pascals' : 'celsius',
               timestamp,
-              data: {
-                value: tempData.temperature,
-                location: 'seawater' as const,
-                units: 'C' as const,
-              },
+              data: weatherData,
             });
           }
           break;

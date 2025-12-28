@@ -31,6 +31,7 @@ import type {
   TankSensorData,
   AutopilotSensorData,
   NavigationSensorData,
+  WeatherSensorData,
 } from '../../../types/SensorData';
 import { useWidgetStore } from '../../../store/widgetStore';
 import { useNmeaStore } from '../../../store/nmeaStore';
@@ -159,6 +160,12 @@ export class NmeaSensorProcessor {
           break;
         case 'MTW':
           result = this.processMTW(parsedMessage, timestamp);
+          break;
+        case 'MDA':
+          result = this.processMDA(parsedMessage, timestamp);
+          break;
+        case 'MMB':
+          result = this.processMMB(parsedMessage, timestamp);
           break;
         case 'ZDA':
           result = this.processZDA(parsedMessage, timestamp);
@@ -1332,6 +1339,119 @@ export class NmeaSensorProcessor {
         },
       ],
       messageType: 'MTW',
+    };
+  }
+
+  /**
+   * Process MDA (Meteorological Composite) message
+   * Extract atmospheric fields, validate ranges, map to weather sensor instance 0
+   * Allow partial updates - pressure OR temperature OR humidity can be null
+   */
+  private processMDA(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    log.weather('MDA fields', () => fields);
+
+    const weatherData: Partial<WeatherSensorData> = {
+      name: 'Weather Station',
+      timestamp: timestamp,
+    };
+
+    let hasValidData = false;
+
+    // Extract pressure (bars → Pa)
+    if (fields.pressure_pa !== null && !isNaN(fields.pressure_pa)) {
+      // Validate range: 900-1100 hPa = 90000-110000 Pa
+      if (fields.pressure_pa >= 90000 && fields.pressure_pa <= 110000) {
+        weatherData.pressure = fields.pressure_pa;
+        hasValidData = true;
+      }
+    }
+
+    // Extract air temperature (Celsius)
+    if (fields.air_temperature_celsius !== null && !isNaN(fields.air_temperature_celsius)) {
+      // Validate range: -40 to 50°C
+      if (fields.air_temperature_celsius >= -40 && fields.air_temperature_celsius <= 50) {
+        weatherData.airTemperature = fields.air_temperature_celsius;
+        hasValidData = true;
+      }
+    }
+
+    // Extract humidity (percentage)
+    if (fields.humidity_percent !== null && !isNaN(fields.humidity_percent)) {
+      // Validate range: 0-100%
+      if (fields.humidity_percent >= 0 && fields.humidity_percent <= 100) {
+        weatherData.humidity = fields.humidity_percent;
+        hasValidData = true;
+      }
+    }
+
+    // Extract dew point (Celsius) if provided
+    if (fields.dew_point_celsius !== null && !isNaN(fields.dew_point_celsius)) {
+      weatherData.dewPoint = fields.dew_point_celsius;
+    }
+
+    if (!hasValidData) {
+      return {
+        success: false,
+        errors: ['No valid atmospheric data in MDA sentence'],
+        messageType: 'MDA',
+      };
+    }
+
+    return {
+      success: true,
+      updates: [
+        {
+          sensorType: 'weather',
+          instance: 0, // Single weather station
+          data: weatherData,
+        },
+      ],
+      messageType: 'MDA',
+    };
+  }
+
+  /**
+   * Process MMB (Barometer) message
+   * Extract pressure only, map to weather sensor
+   */
+  private processMMB(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    log.weather('MMB fields', () => fields);
+
+    if (fields.pressure_pa === null || isNaN(fields.pressure_pa)) {
+      return {
+        success: false,
+        errors: ['Invalid pressure data in MMB sentence'],
+        messageType: 'MMB',
+      };
+    }
+
+    // Validate range: 900-1100 hPa = 90000-110000 Pa
+    if (fields.pressure_pa < 90000 || fields.pressure_pa > 110000) {
+      return {
+        success: false,
+        errors: [`Pressure out of range: ${fields.pressure_pa} Pa`],
+        messageType: 'MMB',
+      };
+    }
+
+    const weatherData: Partial<WeatherSensorData> = {
+      name: 'Weather Station',
+      pressure: fields.pressure_pa,
+      timestamp: timestamp,
+    };
+
+    return {
+      success: true,
+      updates: [
+        {
+          sensorType: 'weather',
+          instance: 0,
+          data: weatherData,
+        },
+      ],
+      messageType: 'MMB',
     };
   }
 

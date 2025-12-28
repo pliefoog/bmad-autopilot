@@ -307,26 +307,108 @@ export class PgnParser {
    * Byte 1: Temperature Instance/Source (0=Sea, 1=Outside, 2=Inside, 3=Engine Room, 4=Main Cabin, etc.)
    * Bytes 3-4: Temperature in 0.01K resolution
    */
+  /**
+   * Parse environmental data from PGN 130310 (Extended Temperature)
+   * Byte 0: SID (instance)
+   * Byte 1: Source (0=sea, 1=outside air, 2=inside air, 3+=specific locations)
+   * Bytes 2-3: Temperature (0.01K, little-endian, unsigned)
+   * Bytes 4-5: Humidity (0.004%, little-endian, unsigned) - OPTIONAL
+   * Bytes 6-7: Pressure (100 Pa, little-endian, unsigned) - OPTIONAL
+   */
   public parseTemperaturePgn(
     data: string,
-  ): { temperature: number; instance: number; source: number } | null {
+  ): { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } | null {
     const bytes = this.hexStringToBytes(data);
-    if (bytes.length < 5) return null;
+    if (bytes.length < 4) return null;
 
     // Instance from SID byte (byte 0) - can be used to differentiate multiple temp sensors
     const instance = bytes[0] || 0;
     // Temperature source (byte 1) - identifies location/type of temperature sensor
     const source = bytes[1] || 0;
 
-    // Temperature in 0.01K resolution (bytes 3-4, little-endian 16-bit)
-    const tempRaw = bytes[3] | (bytes[4] << 8);
-    if (tempRaw === 0xffff) return null;
-
-    return {
-      temperature: tempRaw * 0.01 - 273.15, // Convert Kelvin to Celsius
+    const result: { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } = {
       instance: source, // Use source as instance for temperature differentiation
       source,
     };
+
+    // Temperature in 0.01K resolution (bytes 2-3, little-endian 16-bit)
+    if (bytes.length >= 4) {
+      const tempRaw = bytes[2] | (bytes[3] << 8);
+      if (tempRaw !== 0xffff) {
+        result.temperature = tempRaw * 0.01 - 273.15; // Convert Kelvin to Celsius
+      }
+    }
+
+    // Humidity in 0.004% resolution (bytes 4-5, little-endian 16-bit) - Optional
+    if (bytes.length >= 6) {
+      const humidRaw = bytes[4] | (bytes[5] << 8);
+      if (humidRaw !== 0xffff) {
+        result.humidity = humidRaw * 0.004; // Convert to percentage
+      }
+    }
+
+    // Pressure in 100 Pa resolution (bytes 6-7, little-endian 16-bit) - Optional
+    if (bytes.length >= 8) {
+      const pressureRaw = bytes[6] | (bytes[7] << 8);
+      if (pressureRaw !== 0xffff) {
+        result.pressure = pressureRaw * 100; // Convert to Pascals
+      }
+    }
+
+    // Return null if no valid fields parsed
+    if (result.temperature === undefined && result.humidity === undefined && result.pressure === undefined) {
+      return null;
+    }
+
+    return result;
+  }
+
+  /**
+   * Parse environmental data from PGN 130311 (Environmental Parameters - Atmospheric)
+   * Byte 0: SID (instance)
+   * Byte 1: Source (1=outside air, 2=inside air, etc.)
+   * Bytes 2-3: Temperature (0.01K, little-endian, unsigned)
+   * Bytes 4-5: Humidity (0.004%, little-endian, unsigned)
+   * Bytes 6-7: Pressure (1 hPa = 100 Pa, little-endian, unsigned)
+   */
+  public parseEnvironmentalPgn(
+    data: string,
+  ): { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } | null {
+    const bytes = this.hexStringToBytes(data);
+    if (bytes.length < 8) return null;
+
+    const instance = bytes[0] || 0;
+    const source = bytes[1] || 1; // Default to outside air
+
+    const result: { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } = {
+      instance,
+      source,
+    };
+
+    // Temperature in 0.01K resolution (bytes 2-3)
+    const tempRaw = bytes[2] | (bytes[3] << 8);
+    if (tempRaw !== 0xffff) {
+      result.temperature = tempRaw * 0.01 - 273.15;
+    }
+
+    // Humidity in 0.004% resolution (bytes 4-5)
+    const humidRaw = bytes[4] | (bytes[5] << 8);
+    if (humidRaw !== 0xffff) {
+      result.humidity = humidRaw * 0.004;
+    }
+
+    // Pressure in 1 hPa resolution (bytes 6-7) - NOTE: 1 hPa = 100 Pa
+    const pressureRaw = bytes[6] | (bytes[7] << 8);
+    if (pressureRaw !== 0xffff) {
+      result.pressure = pressureRaw * 100; // Convert hPa to Pascals
+    }
+
+    // Return null if no valid fields
+    if (result.temperature === undefined && result.humidity === undefined && result.pressure === undefined) {
+      return null;
+    }
+
+    return result;
   }
 
   /**

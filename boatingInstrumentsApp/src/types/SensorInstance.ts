@@ -225,7 +225,50 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     this.timestamp = now;
 
+    // Calculate dew point for weather sensors if we have temp + humidity
+    if (this.sensorType === 'weather' && hasChanges) {
+      this._calculateDewPoint();
+    }
+
     return hasChanges;
+  }
+
+  /**
+   * Calculate dew point using Magnus formula
+   * Only for weather sensors with both airTemperature and humidity
+   * Formula: Td = (b*α)/(a-α), where α = ln(RH/100) + (a*T)/(b+T)
+   * Constants: a = 17.27, b = 237.7
+   */
+  private _calculateDewPoint(): void {
+    const tempMetric = this.getMetric('airTemperature');
+    const humidityMetric = this.getMetric('humidity');
+
+    if (!tempMetric || !humidityMetric) return;
+    if (tempMetric.si_value === null || humidityMetric.si_value === null) return;
+
+    const T = tempMetric.si_value; // Celsius
+    const RH = humidityMetric.si_value; // Percentage 0-100
+
+    // Validate ranges
+    if (RH <= 0 || RH > 100 || T < -40 || T > 50) return;
+
+    // Magnus formula constants
+    const a = 17.27;
+    const b = 237.7;
+
+    // Calculate
+    const alpha = Math.log(RH / 100) + (a * T) / (b + T);
+    const dewPoint = (b * alpha) / (a - alpha);
+
+    // Store as computed metric (reuse existing MetricValue infrastructure)
+    const now = Date.now();
+    const unitType = this._metricUnitTypes.get('dewPoint');
+    const metric = unitType
+      ? new MetricValue(dewPoint, now, unitType)
+      : new MetricValue(dewPoint, now);
+
+    this._addToHistory('dewPoint', metric);
+    this.metrics.set('dewPoint', metric);
   }
 
   /**
