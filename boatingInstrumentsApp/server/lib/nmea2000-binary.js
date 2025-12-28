@@ -457,6 +457,67 @@ class NMEA2000BinaryGenerator {
   }
 
   /**
+   * PGN 130311: Environmental Parameters (Atmospheric)
+   * @param {Object} sensor - Sensor configuration from YAML
+   * @returns {Buffer} Binary frame
+   */
+  generatePGN_130311(sensor) {
+    let temperatureC = 22.0;
+    let humidity = 65.0;
+    let pressure = 101325; // Pa
+    
+    if (sensor.data_generation?.temperature) {
+      temperatureC = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
+    }
+    
+    if (sensor.data_generation?.humidity) {
+      humidity = this.getYAMLDataValue('humidity', sensor.data_generation.humidity);
+    }
+    
+    if (sensor.data_generation?.pressure) {
+      pressure = this.getYAMLDataValue('pressure', sensor.data_generation.pressure);
+    }
+    
+    const data = Buffer.alloc(8);
+    
+    // Byte 0: SID (Sequence ID)
+    data.writeUInt8(0xFF, 0); // 0xFF = not available
+    
+    // Byte 1: Source (1 = outside, 2 = inside)
+    const source = sensor.physical_properties?.location === 'inside' ? 2 : 1;
+    data.writeUInt8(source, 1);
+    
+    // Bytes 2-3: Temperature in 0.01 Kelvin resolution (16-bit unsigned)
+    const tempK = temperatureC + 273.15;
+    const tempRaw = Math.round(tempK * 100); // Convert to 0.01K units
+    if (tempRaw >= 0 && tempRaw <= 65533) {
+      data.writeUInt16LE(tempRaw, 2);
+    } else {
+      data.writeUInt16LE(0xFFFF, 2); // Invalid marker
+    }
+    
+    // Bytes 4-5: Humidity in 0.004% resolution (16-bit unsigned)
+    const humidityRaw = Math.round(humidity / 0.004); // Convert to 0.004% units
+    if (humidityRaw >= 0 && humidityRaw <= 25000) { // 0-100% range
+      data.writeUInt16LE(humidityRaw, 4);
+    } else {
+      data.writeUInt16LE(0xFFFF, 4); // Invalid marker
+    }
+    
+    // Bytes 6-7: Pressure in 1 hPa resolution (16-bit unsigned)
+    // NOTE: 1 hPa = 100 Pa
+    const pressureHPa = pressure / 100; // Convert Pa to hPa
+    const pressureRaw = Math.round(pressureHPa);
+    if (pressureRaw >= 0 && pressureRaw <= 65533) {
+      data.writeUInt16LE(pressureRaw, 6);
+    } else {
+      data.writeUInt16LE(0xFFFF, 6); // Invalid marker
+    }
+    
+    return this.createFrame(130311, data, 5);
+  }
+
+  /**
    * PGN 127245: Rudder
    * @param {Object} sensor - Sensor configuration from YAML
    * @returns {Buffer} Binary frame

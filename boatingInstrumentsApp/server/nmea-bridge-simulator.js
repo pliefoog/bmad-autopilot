@@ -918,6 +918,50 @@ class NMEABridgeSimulator {
   }
 
   /**
+   * Generate MDA (Meteorological Composite) sentence
+   * Full format with all 20 fields, but only populate atmospheric data
+   * @param {Object} atmosphericData - Object with pressure, temperature, humidity, dewPoint
+   */
+  generateMDASentence(atmosphericData) {
+    const { pressure, temperature, humidity, dewPoint } = atmosphericData;
+    
+    // Convert Pascals to bars (1 bar = 100000 Pa)
+    const pressureBars = pressure ? (pressure / 100000).toFixed(5) : '';
+    const pressureInHg = pressure ? (pressure / 3386.39).toFixed(3) : '';
+    
+    // Temperature in Celsius
+    const airTempC = temperature !== undefined ? temperature.toFixed(2) : '';
+    
+    // Humidity percentage
+    const relHumid = humidity !== undefined ? Math.round(humidity) : '';
+    
+    // Dew point in Celsius
+    const dewPointC = dewPoint !== undefined ? dewPoint.toFixed(2) : '';
+    
+    // MDA format: $IIMDA,<p_inHg>,I,<p_bars>,B,<air_temp>,C,<water_temp>,C,<rel_humid>,<abs_humid>,<dew_point>,C,<wind_dir_true>,T,<wind_dir_mag>,M,<wind_speed_kts>,N,<wind_speed_ms>,M
+    // Leave water temp (field 7) and wind fields (13-20) empty - handled by other sentences
+    const sentence = `$IIMDA,${pressureInHg},I,${pressureBars},B,${airTempC},C,,C,${relHumid},,${dewPointC},C,,T,,M,,N,,M`;
+    
+    return this.addChecksum(sentence);
+  }
+
+  /**
+   * Generate MMB (Barometer) sentence
+   * Simple pressure-only format
+   * @param {number} pressurePa - Pressure in Pascals
+   */
+  generateMMBSentence(pressurePa) {
+    // Convert Pascals to bars (1 bar = 100000 Pa)
+    const pressureBars = (pressurePa / 100000).toFixed(5);
+    const pressureInHg = (pressurePa / 3386.39).toFixed(3);
+    
+    // MMB format: $IIMMB,<p_bars>,B,<p_inHg>,I
+    const sentence = `$IIMMB,${pressureBars},B,${pressureInHg},I`;
+    
+    return this.addChecksum(sentence);
+  }
+
+  /**
    * Generate speed sentence (VTG - Speed Over Ground)
    */
   generateSpeedSentence() {

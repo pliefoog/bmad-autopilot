@@ -244,7 +244,7 @@ sensors:
   # ========== ATMOSPHERIC PRESSURE SENSOR ==========
   - type: atmospheric_pressure_sensor
     instance: 0
-    name: "Barometric Pressure Sensor"
+    name: "Main Weather Station"
     update_rate: 0.2  # Hz (every 5 seconds - slow changing data)
     physical_properties:
       sensor_type: "barometric"
@@ -258,6 +258,22 @@ sensors:
         max: 1030                   # millibars - high pressure system
         period: 60                  # 60 seconds - one full cycle per minute
         phase: 0                    # Start at minimum pressure
+      
+      # NEW: Air temperature (outside ambient temperature)
+      temperature:
+        type: "sine"                # Smooth daily temperature variation
+        min: 18.0                   # °C - cooler morning temperature
+        max: 28.0                   # °C - warmer afternoon temperature
+        period: 86400               # 24-hour daily cycle (86400 seconds)
+        phase: 180                  # Start at mid-range (around 23°C)
+      
+      # NEW: Relative humidity (inversely correlated with temperature)
+      humidity:
+        type: "sine"                # Smooth daily humidity variation
+        min: 50.0                   # % - lower humidity during warm afternoon
+        max: 80.0                   # % - higher humidity during cool morning
+        period: 86400               # 24-hour daily cycle
+        phase: 0                    # Start at maximum (peaks at dawn when temp is lowest)
 
   # ========== ENGINE SENSOR ==========
   - type: engine_sensor
