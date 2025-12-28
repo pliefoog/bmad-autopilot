@@ -29,6 +29,7 @@ import { AutopilotWidget } from '../../widgets/AutopilotWidget';
 import { ThemeWidget } from '../../widgets/ThemeWidget';
 import { NavigationWidget } from '../../widgets/NavigationWidget';
 import { TemperatureWidget } from '../../widgets/TemperatureWidget';
+import { WeatherWidget } from '../../widgets/WeatherWidget';
 import { RudderWidget } from '../../widgets/RudderWidget';
 import CustomWidget from '../../widgets/CustomWidget';
 
@@ -100,6 +101,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       theme: ThemeWidget,
       navigation: NavigationWidget,
       temperature: TemperatureWidget,
+      weather: WeatherWidget,
       rudder: RudderWidget,
       customT1: CustomWidget, // Custom T1 Widget
     }),
