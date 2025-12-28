@@ -301,6 +301,33 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
       );
     },
   },
+
+  // Weather Station Widgets (barometric pressure, air temperature, humidity)
+  weather: {
+    id: 'weather',
+    type: 'multi-instance',
+    title: 'Weather Station',
+    icon: 'partly-sunny-outline',
+    category: 'environment',
+    description: 'Atmospheric conditions monitoring (pressure, air temperature, humidity)',
+    maxInstances: 5, // Support up to 5 weather stations
+    instanceMapping: (instance: number) => {
+      if (instance === 0) {
+        return {
+          title: 'MAIN WEATHER',
+          priority: 1,
+          location: 'main',
+          icon: 'partly-sunny-outline',
+        };
+      }
+      return {
+        title: `WEATHER ${instance}`,
+        priority: instance + 1,
+        location: `station${instance}`,
+        icon: 'partly-sunny-outline',
+      };
+    },
+  },
 };
 
 /**

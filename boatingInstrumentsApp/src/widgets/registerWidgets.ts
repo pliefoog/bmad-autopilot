@@ -11,6 +11,7 @@ import { TanksWidget } from './TanksWidget';
 import { AutopilotWidget } from './AutopilotWidget';
 import { RudderWidget } from './RudderWidget';
 import { TemperatureWidget } from './TemperatureWidget';
+import { WeatherWidget } from './WeatherWidget';
 import { ThemeWidget } from './ThemeWidget';
 import CustomWidget from './CustomWidget';
 
@@ -111,6 +112,20 @@ export function registerAllWidgets(): void {
       configurable: true,
     },
     TemperatureWidget,
+  );
+
+  // Register multi-instance weather station widget
+  WidgetRegistry.register(
+    {
+      id: 'weather',
+      title: 'Weather Station',
+      icon: 'partly-sunny-outline',
+      description: 'Atmospheric conditions (pressure, temperature, humidity)',
+      category: 'environment',
+      defaultSize: { width: 320, height: 240 },
+      configurable: true,
+    },
+    WeatherWidget,
   );
 
   // Engine widgets
