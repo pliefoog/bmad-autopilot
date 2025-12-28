@@ -81,6 +81,7 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'compass-outline',
       'speedometer-outline',
       'cloud-outline',
+      'partly-sunny-outline',
       'water-outline',
       'thermometer-outline',
       // Multi-instance devices
