@@ -458,17 +458,14 @@ const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'Hectopascals (1 decimal)',
     symbol: 'hPa',
     description: 'Standard meteorological pressure unit - hPa = mbar',
-    convert: (pascals: number) => pascals / 100,
-    format: (hpa: number) => hpa.toFixed(1),
-    convertBack: (hpa: number) => hpa * 100,
+    conversionFactor: 0.01, // Pa to hPa
     formatSpec: {
       pattern: 'xxxx.x',
       decimals: 1,
       minWidth: 6,
-      testCases: { min: 950.0, max: 1050.0, typical: 1013.2 },
+      layoutRanges: { min: 950.0, max: 1050.0, typical: 1013.2 },
     },
     isDefault: true,
-    isMetric: true,
     preferredInRegion: ['eu', 'international', 'uk'],
   },
   {
@@ -476,16 +473,13 @@ const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'Millibars (1 decimal)',
     symbol: 'mbar',
     description: 'Alternative name for hPa (1 mbar = 1 hPa)',
-    convert: (pascals: number) => pascals / 100,
-    format: (mbar: number) => mbar.toFixed(1),
-    convertBack: (mbar: number) => mbar * 100,
+    conversionFactor: 0.01, // Pa to mbar
     formatSpec: {
       pattern: 'xxxx.x',
       decimals: 1,
       minWidth: 6,
-      testCases: { min: 950.0, max: 1050.0, typical: 1013.2 },
+      layoutRanges: { min: 950.0, max: 1050.0, typical: 1013.2 },
     },
-    isMetric: true,
     preferredInRegion: ['international'],
   },
   {
@@ -493,16 +487,13 @@ const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'Bar (3 decimals)',
     symbol: 'bar',
     description: 'Metric pressure in bar - atmospheric range',
-    convert: (pascals: number) => pascals / 100000,
-    format: (bar: number) => bar.toFixed(3),
-    convertBack: (bar: number) => bar * 100000,
+    conversionFactor: 0.00001, // Pa to bar
     formatSpec: {
       pattern: 'x.xxx',
       decimals: 3,
       minWidth: 5,
-      testCases: { min: 0.95, max: 1.05, typical: 1.013 },
+      layoutRanges: { min: 0.95, max: 1.05, typical: 1.013 },
     },
-    isMetric: true,
     preferredInRegion: ['eu'],
   },
   {
@@ -510,16 +501,13 @@ const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'Inches Mercury (2 decimals)',
     symbol: 'inHg',
     description: 'Imperial atmospheric pressure',
-    convert: (pascals: number) => pascals / 3386.39,
-    format: (inhg: number) => inhg.toFixed(2),
-    convertBack: (inhg: number) => inhg * 3386.39,
+    conversionFactor: 0.00029530, // Pa to inHg
     formatSpec: {
       pattern: 'xx.xx',
       decimals: 2,
       minWidth: 5,
-      testCases: { min: 28.0, max: 31.0, typical: 29.92 },
+      layoutRanges: { min: 28.0, max: 31.0, typical: 29.92 },
     },
-    isImperial: true,
     preferredInRegion: ['us'],
   },
 ];
@@ -531,17 +519,14 @@ const MECHANICAL_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'Bar (1 decimal)',
     symbol: 'bar',
     description: 'Metric mechanical pressure - ideal for engine oil pressure',
-    convert: (pascals: number) => pascals / 100000,
-    format: (bar: number) => bar.toFixed(1),
-    convertBack: (bar: number) => bar * 100000,
+    conversionFactor: 0.00001, // Pa to bar
     formatSpec: {
       pattern: 'x.x',
       decimals: 1,
       minWidth: 3,
-      testCases: { min: 2.0, max: 6.0, typical: 4.0 },
+      layoutRanges: { min: 2.0, max: 6.0, typical: 4.0 },
     },
     isDefault: true,
-    isMetric: true,
     preferredInRegion: ['eu', 'international'],
   },
   {
@@ -549,16 +534,13 @@ const MECHANICAL_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'Kilopascals (integer)',
     symbol: 'kPa',
     description: 'Metric mechanical pressure in kilopascals',
-    convert: (pascals: number) => pascals / 1000,
-    format: (kpa: number) => Math.round(kpa).toString(),
-    convertBack: (kpa: number) => kpa * 1000,
+    conversionFactor: 0.001, // Pa to kPa
     formatSpec: {
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 200, max: 600, typical: 400 },
+      layoutRanges: { min: 200, max: 600, typical: 400 },
     },
-    isMetric: true,
     preferredInRegion: ['international'],
   },
   {
@@ -566,17 +548,14 @@ const MECHANICAL_PRESSURE_PRESENTATIONS: Presentation[] = [
     name: 'PSI (1 decimal)',
     symbol: 'psi',
     description: 'Imperial mechanical pressure - pounds per square inch',
-    convert: (pascals: number) => pascals / 6894.76,
-    format: (psi: number) => psi.toFixed(1),
-    convertBack: (psi: number) => psi * 6894.76,
+    conversionFactor: 0.000145038, // Pa to psi
     formatSpec: {
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 30.0, max: 90.0, typical: 58.0 },
+      layoutRanges: { min: 30.0, max: 90.0, typical: 58.0 },
     },
     isDefault: true,
-    isImperial: true,
     preferredInRegion: ['us'],
   },
 ];
@@ -871,17 +850,14 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
     name: 'Liters (integer)',
     symbol: 'L',
     description: 'Volume in liters, integer value',
-    convert: (liters: number) => liters,
-    format: (l: number) => Math.round(l).toString(),
-    convertBack: (l: number) => l,
+    conversionFactor: 1,
     formatSpec: {
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 0, max: 500, typical: 150 },
+      layoutRanges: { min: 0, max: 500, typical: 150 },
     },
     isDefault: true,
-    isMetric: true,
     preferredInRegion: ['eu', 'international'],
   },
   {
@@ -889,16 +865,13 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
     name: 'US Gallons (1 decimal)',
     symbol: 'gal',
     description: 'Volume in US gallons, 1 decimal place',
-    convert: (liters: number) => liters / 3.78541,
-    format: (gal: number) => gal.toFixed(1),
-    convertBack: (gal: number) => gal * 3.78541,
+    conversionFactor: 0.264172, // liters to US gallons
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 132.1, typical: 39.6 },
+      layoutRanges: { min: 0.0, max: 132.1, typical: 39.6 },
     },
-    isImperial: true,
     preferredInRegion: ['us'],
   },
   {
@@ -906,16 +879,13 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
     name: 'Imperial Gallons (1 decimal)',
     symbol: 'gal',
     description: 'Volume in imperial gallons, 1 decimal place',
-    convert: (liters: number) => liters / 4.54609,
-    format: (gal: number) => gal.toFixed(1),
-    convertBack: (gal: number) => gal * 4.54609,
+    conversionFactor: 0.219969, // liters to imperial gallons
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 110.0, typical: 33.0 },
+      layoutRanges: { min: 0.0, max: 110.0, typical: 33.0 },
     },
-    isImperial: true,
     preferredInRegion: ['uk'],
   },
 ];
@@ -1043,17 +1013,14 @@ const FLOW_RATE_PRESENTATIONS: Presentation[] = [
     name: 'Liters/hour (1 decimal)',
     symbol: 'L/h',
     description: 'Flow rate in liters per hour, 1 decimal place',
-    convert: (litersPerHour: number) => litersPerHour,
-    format: (lph: number) => lph.toFixed(1),
-    convertBack: (lph: number) => lph,
+    conversionFactor: 1,
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 50.0, typical: 8.5 },
+      layoutRanges: { min: 0.0, max: 50.0, typical: 8.5 },
     },
     isDefault: true,
-    isMetric: true,
     preferredInRegion: ['eu', 'international'],
   },
   {
@@ -1061,16 +1028,13 @@ const FLOW_RATE_PRESENTATIONS: Presentation[] = [
     name: 'US Gallons/hour (1 decimal)',
     symbol: 'GPH',
     description: 'Flow rate in US gallons per hour',
-    convert: (litersPerHour: number) => litersPerHour / 3.78541,
-    format: (gph: number) => gph.toFixed(1),
-    convertBack: (gph: number) => gph * 3.78541,
+    conversionFactor: 0.264172, // L/h to US gal/h
     formatSpec: {
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 0.0, max: 13.2, typical: 2.2 },
+      layoutRanges: { min: 0.0, max: 13.2, typical: 2.2 },
     },
-    isImperial: true,
     preferredInRegion: ['us'],
   },
   {
@@ -1078,16 +1042,13 @@ const FLOW_RATE_PRESENTATIONS: Presentation[] = [
     name: 'Imperial Gallons/hour (1 decimal)',
     symbol: 'GPH',
     description: 'Flow rate in imperial gallons per hour',
-    convert: (litersPerHour: number) => litersPerHour / 4.54609,
-    format: (gph: number) => gph.toFixed(1),
-    convertBack: (gph: number) => gph * 4.54609,
+    conversionFactor: 0.219969, // L/h to imperial gal/h
     formatSpec: {
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: 0.0, max: 11.0, typical: 1.9 },
+      layoutRanges: { min: 0.0, max: 11.0, typical: 1.9 },
     },
-    isImperial: true,
     preferredInRegion: ['uk'],
   },
 ];
