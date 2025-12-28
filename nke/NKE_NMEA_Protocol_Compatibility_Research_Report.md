@@ -798,12 +798,67 @@ $IIXDR,N,1264.5,H,ENGINE_0_HOURS  // Use 'N' (Generic) or create proprietary sen
 
 ---
 
+#### Fix #5: VTG Sentence - Remove Malformed Magnetic Field (CRITICAL)
+
+**File:** `boatingInstrumentsApp/server/lib/data-sources/scenario.js:2186`
+
+**Current (INCORRECT):**
+```javascript
+const sentence = `VTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+```
+
+**Corrected (Option 1 - Remove magnetic fields entirely):**
+```javascript
+const sentence = `VTG,${heading.toFixed(1)},T,,,,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+```
+
+**Corrected (Option 2 - Calculate and include magnetic track - RECOMMENDED):**
+```javascript
+// Get magnetic variation from scenario or default
+const variation = this.scenario?.parameters?.compass?.magnetic_variation || 0;
+const magneticTrack = ((heading + variation + 360) % 360).toFixed(1);
+const sentence = `VTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+```
+
+**Explanation:**
+- **Option 1** (Quick Fix): Simply remove the orphaned `M` marker by adding two extra commas, leaving magnetic track fields empty
+- **Option 2** (Proper Fix): Calculate magnetic track from true track and magnetic variation configured in the scenario, then populate both magnetic fields properly
+
+**Why This is CRITICAL:**
+This malformed VTG sentence is the **most likely cause** of COG/SOG not displaying in NKE Display Pro. The parser encounters the inconsistent field structure (`,,M,` - empty value with a reference marker) and either:
+- Rejects the entire sentence
+- Stops parsing at that point
+- Fails to extract the COG (field 1) and SOG (field 5) values
+
+**Similar Fix for RMC:**
+
+**File:** `boatingInstrumentsApp/server/lib/data-sources/scenario.js:2540`
+
+**Current:**
+```javascript
+const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${speedKnots},${trackDegrees},${dateStr},,`;
+```
+
+**Corrected:**
+```javascript
+// Get magnetic variation from scenario
+const variation = this.scenario?.parameters?.compass?.magnetic_variation || 0;
+const variationAbs = Math.abs(variation).toFixed(1);
+const variationDir = variation >= 0 ? 'E' : 'W';
+const sentence = `RMC,${timeStr},A,${Math.floor(latDeg)}${latMin},${latDir},${Math.floor(lonDeg)}${lonMin},${lonDir},${speedKnots},${trackDegrees},${dateStr},${variationAbs},${variationDir}`;
+```
+
+**Explanation:** Include the magnetic variation value and direction (E/W) in the RMC sentence, using the value configured in the scenario (15.0°W in coastal-sailing.yml).
+
+---
+
 ### 11.7 Verification Testing
 
 After implementing fixes, verify with:
 
 1. **NKE Display Pro App Testing:**
    - Connect to localhost:2000
+   - **Verify COG/SOG display correctly** (PRIORITY - Fix #5)
    - Verify tank levels display correctly
    - Verify all battery parameters appear
    - Verify engine data displays
@@ -819,14 +874,90 @@ After implementing fixes, verify with:
 
 ---
 
+##### Issue #5: COG/SOG - Missing Magnetic Course Field in VTG
+
+**Generated:**
+```
+$GPVTG,36.8,T,,M,8.8,N,16.3,K,A*13
+```
+
+**Analysis of VTG Fields:**
+- Field 1: `36.8` - True track (COG in degrees True) ✅
+- Field 2: `T` - Track reference (True) ✅
+- Field 3: `,` - **EMPTY** - Magnetic track ❌
+- Field 4: `M` - Track reference (Magnetic) ⚠️
+- Field 5: `8.8` - Speed (SOG in knots) ✅
+- Field 6: `N` - Speed units (Knots) ✅
+- Field 7: `16.3` - Speed in km/h ✅
+- Field 8: `K` - Speed units (Km/h) ✅
+- Field 9: `A` - Mode indicator ✅
+
+**Problem:** The VTG sentence includes the magnetic track reference marker `M` in field 4, but provides no actual magnetic track value in field 3. This creates an **inconsistent/malformed sentence**.
+
+**NMEA 0183 Spec:**
+- If magnetic track (field 3) is empty, field 4 should also be empty
+- OR both fields 3 and 4 should be populated with magnetic course
+
+**Expected Format (Option 1 - True only):**
+```
+$GPVTG,36.8,T,,,,8.8,N,16.3,K,A*XX
+```
+
+**Expected Format (Option 2 - True and Magnetic):**
+```
+$GPVTG,36.8,T,21.8,M,8.8,N,16.3,K,A*XX
+```
+(Where 21.8° = 36.8° - 15.0° variation)
+
+**Impact on NKE Display Pro:**
+
+NKE Display Pro's VTG parser may:
+
+1. **Reject the entire sentence** due to malformed field structure (presence of `M` marker without value)
+2. **Fail to extract COG/SOG** despite the values being present in the sentence
+3. **Parse only the first few fields** and stop when encountering the empty magnetic field with a marker
+
+This would explain why **COG and SOG are not displayed** in NKE Display Pro, even though the values are being transmitted.
+
+**Root Cause:** Located in [scenario.js:2186](boatingInstrumentsApp/server/lib/data-sources/scenario.js#L2186):
+```javascript
+const sentence = `VTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+```
+
+The template hardcodes `,,M,` which creates the inconsistent field structure.
+
+**Similar Issue in generateRMC:**
+
+**Generated:**
+```
+$GPRMC,092138,A,4129.6362,N,8140.2638,W,8.8,36.8,281225,,*17
+```
+
+**RMC Field Analysis:**
+- Fields 1-9: All populated correctly ✅
+- Field 10: `,,` - **EMPTY** magnetic variation ❌
+- Field 11: `,` - **EMPTY** variation direction (E/W) ❌
+
+**Problem:** RMC sentence has empty magnetic variation fields at the end before checksum. While this is more acceptable per NMEA spec (trailing empty fields), some parsers may have issues.
+
+**However:** The scenario configuration specifies `magnetic_variation: -15.0` in the compass parameters (line 21 of coastal-sailing.yml), but this is **not being used** in RMC or VTG sentence generation.
+
+**Impact:**
+- Moderate - RMC may still parse correctly with empty variation
+- But magnetic information is lost even though it's configured
+
+---
+
 ### 11.8 Summary of Compatibility Issues
 
 | Issue | Severity | Impact on NKE Display Pro | Fix Complexity |
 |-------|----------|---------------------------|----------------|
+| **VTG malformed magnetic field** | **CRITICAL** | **COG/SOG not displayed** | Easy (remove `M` or calculate) |
 | Tank XDR using 'V' instead of 'P' | **High** | Tank levels not displayed | Easy (1-line fix) |
 | Battery compound XDR >82 chars | **High** | Partial/no battery data | Medium (refactor) |
 | Engine name with '#' character | **Medium** | Engine data may not parse | Easy (find/replace) |
 | Engine hours using 'G' type | **Medium** | Hours not displayed | Medium (redesign) |
+| RMC missing magnetic variation | **Low** | Reduced functionality | Low (add variation) |
 | Missing MTA, MMB, VLW sentences | **Low** | Reduced functionality | Low (add generators) |
 
 ---

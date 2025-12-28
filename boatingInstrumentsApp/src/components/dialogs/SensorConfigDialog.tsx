@@ -26,6 +26,7 @@ import {
   Platform,
   Alert,
   useWindowDimensions,
+  Switch,
 } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -699,8 +700,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             ? hardwareValue
             : formData[field.key as keyof SensorFormData] ?? field.default;
 
-        switch (field.type) {
-          case 'text':
+        // Switch on uiType to determine rendering (valueType determines data handling)
+        switch (field.uiType) {
+          case 'textInput':
             return (
               <View key={field.key} style={styles.field}>
                 <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
@@ -714,29 +716,44 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                     },
                   ]}
                   value={String(currentValue || '')}
-                  onChangeText={(text) => updateField(field.key as keyof SensorFormData, text)}
+                  onChangeText={(text) => {
+                    // Strict parsing based on valueType
+                    if (field.valueType === 'string') {
+                      updateField(field.key as keyof SensorFormData, text);
+                    } else if (field.valueType === 'number') {
+                      const num = parseFloat(text);
+                      updateField(
+                        field.key as keyof SensorFormData,
+                        Number.isNaN(num) ? undefined : num,
+                      );
+                    }
+                  }}
                   placeholder={field.helpText}
                   placeholderTextColor={theme.textSecondary}
                   editable={!isReadOnly}
                 />
-                {field.helpText && (
+                {field.helpText ? (
                   <Text style={[styles.helpText, { color: theme.textSecondary }]}>
                     {field.helpText}
                   </Text>
-                )}
+                ) : null}
               </View>
             );
 
-          case 'number':
+          case 'numericInput':
             return (
               <View key={field.key} style={styles.field}>
                 <Text style={[styles.label, { color: theme.text }]}>
                   {field.label}
-                  {field.min !== undefined && field.max !== undefined && (
+                  {field.valueType === 'number' &&
+                  'min' in field &&
+                  'max' in field &&
+                  field.min !== undefined &&
+                  field.max !== undefined ? (
                     <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
                       {` (${field.min}-${field.max})`}
                     </Text>
-                  )}
+                  ) : null}
                 </Text>
                 <TextInput
                   style={[
@@ -749,23 +766,36 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   ]}
                   value={String(currentValue ?? '')}
                   onChangeText={(text) => {
-                    let num = parseFloat(text);
-                    if (!isNaN(num)) {
-                      if (field.min !== undefined && num < field.min) num = field.min;
-                      if (field.max !== undefined && num > field.max) num = field.max;
+                    const num = parseFloat(text);
+                    
+                    // Strict validation: allow NaN (no valid reading), reject Infinity
+                    if (!Number.isNaN(num) && !Number.isFinite(num)) {
+                      // Reject Infinity (parser bug)
+                      return;
                     }
-                    updateField(field.key as keyof SensorFormData, isNaN(num) ? undefined : num);
+
+                    // Apply min/max clamping if defined
+                    let finalValue = num;
+                    if (!Number.isNaN(num) && field.valueType === 'number' && 'min' in field && 'max' in field) {
+                      if (field.min !== undefined && num < field.min) finalValue = field.min;
+                      if (field.max !== undefined && num > field.max) finalValue = field.max;
+                    }
+
+                    updateField(
+                      field.key as keyof SensorFormData,
+                      Number.isNaN(finalValue) ? undefined : finalValue,
+                    );
                   }}
                   placeholder={field.helpText}
                   placeholderTextColor={theme.textSecondary}
                   keyboardType="numeric"
                   editable={!isReadOnly}
                 />
-                {field.helpText && (
+                {field.helpText ? (
                   <Text style={[styles.helpText, { color: theme.textSecondary }]}>
                     {field.helpText}
                   </Text>
-                )}
+                ) : null}
               </View>
             );
 
@@ -775,26 +805,73 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
                 <PlatformPicker
                   value={String(currentValue || field.default || '')}
-                  onValueChange={(value) =>
-                    updateField(field.key as keyof SensorFormData, String(value))
-                  }
+                  onValueChange={(value) => {
+                    // Enum validation for string fields
+                    if (field.valueType === 'string' && 'options' in field && field.options) {
+                      const isValid = field.options.some((opt) =>
+                        typeof opt === 'string' ? opt === value : opt.value === value,
+                      );
+                      if (!isValid) {
+                        console.error(
+                          `[SensorConfigDialog] Invalid enum value '${value}' for ${field.key}`,
+                        );
+                        return;
+                      }
+                    }
+                    updateField(field.key as keyof SensorFormData, String(value));
+                  }}
                   items={
-                    field.options?.map((opt) =>
-                      typeof opt === 'string'
-                        ? { label: opt, value: opt }
-                        : { label: opt.label, value: opt.value },
-                    ) || []
+                    field.valueType === 'string' && 'options' in field && field.options
+                      ? field.options.map((opt) =>
+                          typeof opt === 'string'
+                            ? { label: opt, value: opt }
+                            : { label: opt.label, value: opt.value },
+                        )
+                      : []
                   }
                 />
-                {isReadOnly && (
+                {isReadOnly ? (
                   <Text style={[styles.helpText, { color: theme.success }]}>
                     Provided by sensor hardware
                   </Text>
-                )}
+                ) : null}
               </View>
             );
 
+          case 'toggle':
+            return (
+              <View key={field.key} style={styles.field}>
+                <View style={styles.toggleRow}>
+                  <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+                  <Switch
+                    value={Boolean(currentValue ?? field.default ?? false)}
+                    onValueChange={(value) => {
+                      // Strict boolean validation
+                      if (typeof value !== 'boolean') {
+                        console.error(
+                          `[SensorConfigDialog] Invalid boolean value for ${field.key}`,
+                        );
+                        return;
+                      }
+                      updateField(field.key as keyof SensorFormData, value);
+                    }}
+                    disabled={isReadOnly}
+                  />
+                </View>
+                {field.helpText ? (
+                  <Text style={[styles.helpText, { color: theme.textSecondary }]}>
+                    {field.helpText}
+                  </Text>
+                ) : null}
+              </View>
+            );
+
+          case null:
+            // Field not exposed in UI (internal/computed)
+            return null;
+
           default:
+            console.warn(`[SensorConfigDialog] Unknown uiType: ${field.uiType} for ${field.key}`);
             return null;
         }
       });
@@ -981,6 +1058,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     fontStyle: 'italic',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   alarmSection: {
     marginTop: 24,

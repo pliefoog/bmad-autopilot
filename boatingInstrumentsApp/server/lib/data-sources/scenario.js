@@ -2181,9 +2181,15 @@ class ScenarioDataSource extends EventEmitter {
     // 3. VTG - Track and ground speed (provides SOG for speed widget)
     if (sentenceTypes.includes('VTG') && speedKnots !== null) {
       const speedKmh = (speedKnots * 1.852).toFixed(1);
-      const sentence = `VTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+
+      // Calculate magnetic track from true heading using configured variation
+      // Fix: Populate magnetic fields properly instead of using malformed ",,M," pattern
+      const variation = this.scenario?.parameters?.compass?.magnetic_variation || 0;
+      const magneticTrack = ((heading + variation + 360) % 360).toFixed(1);
+
+      const sentence = `VTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
       const checksum = this.calculateChecksum(sentence);
-      sentences.push(`$GPVTG,${heading.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
+      sentences.push(`$GPVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
     }
     
     // 4. GLL - Geographic Position (optional, some GPS units emit this)
@@ -2784,13 +2790,19 @@ class ScenarioDataSource extends EventEmitter {
     }
 
     const heading = gpsConfig ? this.getCurrentHeading() : 0;
-    
+
     // Always log the actual speed value
     console.log(`🚤 VTG SOG: ${speed.toFixed(2)} knots, heading: ${heading.toFixed(1)}°`);
-    
+
     const speedKmh = (speed * 1.852).toFixed(1);
-    const checksum = this.calculateChecksum(`VTG,${heading.toFixed(1)},T,,M,${speed.toFixed(1)},N,${speedKmh},K,A`);
-    return [`$GPVTG,${heading.toFixed(1)},T,,M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`];
+
+    // Calculate magnetic track from true heading using configured variation
+    // Fix: Populate magnetic fields properly instead of using malformed ",,M," pattern
+    const variation = this.scenario?.parameters?.compass?.magnetic_variation || 0;
+    const magneticTrack = ((heading + variation + 360) % 360).toFixed(1);
+
+    const checksum = this.calculateChecksum(`VTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A`);
+    return [`$GPVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speed.toFixed(1)},N,${speedKmh},K,A*${checksum}`];
   }
 
   /**
