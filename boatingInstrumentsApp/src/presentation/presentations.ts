@@ -410,7 +410,137 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
   },
 ];
 
-// ===== PRESSURE PRESENTATIONS =====
+// ===== ATMOSPHERIC PRESSURE PRESENTATIONS =====
+const ATMOSPHERIC_PRESSURE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'hpa_1',
+    name: 'Hectopascals (1 decimal)',
+    symbol: 'hPa',
+    description: 'Standard meteorological pressure unit - hPa = mbar',
+    convert: (pascals: number) => pascals / 100,
+    format: (hpa: number) => hpa.toFixed(1),
+    convertBack: (hpa: number) => hpa * 100,
+    formatSpec: {
+      pattern: 'xxxx.x',
+      decimals: 1,
+      minWidth: 6,
+      testCases: { min: 950.0, max: 1050.0, typical: 1013.2 },
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international', 'uk'],
+  },
+  {
+    id: 'mbar_1',
+    name: 'Millibars (1 decimal)',
+    symbol: 'mbar',
+    description: 'Alternative name for hPa (1 mbar = 1 hPa)',
+    convert: (pascals: number) => pascals / 100,
+    format: (mbar: number) => mbar.toFixed(1),
+    convertBack: (mbar: number) => mbar * 100,
+    formatSpec: {
+      pattern: 'xxxx.x',
+      decimals: 1,
+      minWidth: 6,
+      testCases: { min: 950.0, max: 1050.0, typical: 1013.2 },
+    },
+    isMetric: true,
+    preferredInRegion: ['international'],
+  },
+  {
+    id: 'bar_3',
+    name: 'Bar (3 decimals)',
+    symbol: 'bar',
+    description: 'Metric pressure in bar - atmospheric range',
+    convert: (pascals: number) => pascals / 100000,
+    format: (bar: number) => bar.toFixed(3),
+    convertBack: (bar: number) => bar * 100000,
+    formatSpec: {
+      pattern: 'x.xxx',
+      decimals: 3,
+      minWidth: 5,
+      testCases: { min: 0.95, max: 1.05, typical: 1.013 },
+    },
+    isMetric: true,
+    preferredInRegion: ['eu'],
+  },
+  {
+    id: 'inhg_2',
+    name: 'Inches Mercury (2 decimals)',
+    symbol: 'inHg',
+    description: 'Imperial atmospheric pressure',
+    convert: (pascals: number) => pascals / 3386.39,
+    format: (inhg: number) => inhg.toFixed(2),
+    convertBack: (inhg: number) => inhg * 3386.39,
+    formatSpec: {
+      pattern: 'xx.xx',
+      decimals: 2,
+      minWidth: 5,
+      testCases: { min: 28.0, max: 31.0, typical: 29.92 },
+    },
+    isImperial: true,
+    preferredInRegion: ['us'],
+  },
+];
+
+// ===== MECHANICAL PRESSURE PRESENTATIONS =====
+const MECHANICAL_PRESSURE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'bar_1',
+    name: 'Bar (1 decimal)',
+    symbol: 'bar',
+    description: 'Metric mechanical pressure - ideal for engine oil pressure',
+    convert: (pascals: number) => pascals / 100000,
+    format: (bar: number) => bar.toFixed(1),
+    convertBack: (bar: number) => bar * 100000,
+    formatSpec: {
+      pattern: 'x.x',
+      decimals: 1,
+      minWidth: 3,
+      testCases: { min: 2.0, max: 6.0, typical: 4.0 },
+    },
+    isDefault: true,
+    isMetric: true,
+    preferredInRegion: ['eu', 'international'],
+  },
+  {
+    id: 'kpa_0',
+    name: 'Kilopascals (integer)',
+    symbol: 'kPa',
+    description: 'Metric mechanical pressure in kilopascals',
+    convert: (pascals: number) => pascals / 1000,
+    format: (kpa: number) => Math.round(kpa).toString(),
+    convertBack: (kpa: number) => kpa * 1000,
+    formatSpec: {
+      pattern: 'xxx',
+      decimals: 0,
+      minWidth: 3,
+      testCases: { min: 200, max: 600, typical: 400 },
+    },
+    isMetric: true,
+    preferredInRegion: ['international'],
+  },
+  {
+    id: 'psi_1',
+    name: 'PSI (1 decimal)',
+    symbol: 'psi',
+    description: 'Imperial mechanical pressure - pounds per square inch',
+    convert: (pascals: number) => pascals / 6894.76,
+    format: (psi: number) => psi.toFixed(1),
+    convertBack: (psi: number) => psi * 6894.76,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      testCases: { min: 30.0, max: 90.0, typical: 58.0 },
+    },
+    isDefault: true,
+    isImperial: true,
+    preferredInRegion: ['us'],
+  },
+];
+
+// ===== LEGACY PRESSURE PRESENTATIONS (DEPRECATED - for backwards compatibility) =====
 const PRESSURE_PRESENTATIONS: Presentation[] = [
   {
     id: 'bar_1',
@@ -1131,6 +1261,14 @@ export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
     presentations: TEMPERATURE_PRESENTATIONS,
   },
 
+  atmospheric_pressure: {
+    category: 'atmospheric_pressure',
+    presentations: ATMOSPHERIC_PRESSURE_PRESENTATIONS,
+  },
+  mechanical_pressure: {
+    category: 'mechanical_pressure',
+    presentations: MECHANICAL_PRESSURE_PRESENTATIONS,
+  },
   pressure: {
     category: 'pressure',
     presentations: PRESSURE_PRESENTATIONS,

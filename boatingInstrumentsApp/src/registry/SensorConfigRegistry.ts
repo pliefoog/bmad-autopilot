@@ -749,7 +749,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'oilPressure',
         label: 'Oil Pressure',
         valueType: 'number',
-        unitType: 'pressure',
+        unitType: 'mechanical_pressure',
         uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'oilPressure',
@@ -806,7 +806,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'oilPressure',
         label: 'Oil Pressure',
-        unitType: 'pressure',
+        unitType: 'mechanical_pressure',
         direction: 'below',
       },
       {
@@ -1575,7 +1575,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'pressure',
         label: 'Barometric Pressure',
         valueType: 'number',
-        unitType: 'pressure',
+        unitType: 'atmospheric_pressure',
         uiType: 'numericInput',
         iostate: 'readOnly',
         hardwareField: 'pressure',
@@ -1625,7 +1625,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'pressure',
         label: 'Barometric Pressure',
-        unitType: 'pressure',
+        unitType: 'atmospheric_pressure',
         direction: 'both',
         context: 'marine',
         helpText: 'Alert on rapid pressure changes indicating weather systems',

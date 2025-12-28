@@ -18,7 +18,8 @@ export type DataCategory =
   | 'speed' // Vessel speed (SOG/STW)
   | 'wind' // Wind speed (apparent/true)
   | 'temperature' // Water/air temperature
-  | 'pressure' // Atmospheric/engine pressure
+  | 'atmospheric_pressure' // Barometric/weather pressure (hPa, inHg, mbar)
+  | 'mechanical_pressure' // Engine/technical pressure (psi, bar, kPa)
   | 'angle' // Heading, bearing, wind angle
   | 'coordinates' // GPS position
   | 'voltage' // Electrical voltage
@@ -84,14 +85,24 @@ export const DATA_CATEGORIES: Record<DataCategory, DataCategoryInfo> = {
     typical_range: [-5, 35], // -5°C to 35°C
   },
 
-  pressure: {
-    id: 'pressure',
-    name: 'Pressure',
-    description: 'Atmospheric or engine pressure',
+  atmospheric_pressure: {
+    id: 'atmospheric_pressure',
+    name: 'Atmospheric Pressure',
+    description: 'Barometric pressure for weather monitoring',
     baseUnit: 'pascals',
-    icon: '🔘',
-    precision: 0,
-    typical_range: [95000, 105000], // 950-1050 hPa
+    icon: '🌥️',
+    precision: 1,
+    typical_range: [95000, 105000], // 950-1050 hPa (95-105 kPa)
+  },
+
+  mechanical_pressure: {
+    id: 'mechanical_pressure',
+    name: 'Mechanical Pressure',
+    description: 'Engine oil pressure, hydraulic pressure, etc.',
+    baseUnit: 'pascals',
+    icon: '🔧',
+    precision: 1,
+    typical_range: [200000, 600000], // 2-6 bar typical oil pressure (200-600 kPa)
   },
 
   angle: {

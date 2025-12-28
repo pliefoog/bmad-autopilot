@@ -35,7 +35,9 @@ const DEFAULT_PRESENTATION_IDS: Record<DataCategory, string> = {
   speed: 'kts_1', // Knots (1 decimal)
   wind: 'wind_kts_1', // Wind knots (1 decimal)
   temperature: 'c_1', // Celsius (1 decimal)
-  pressure: 'bar_3', // Bar (3 decimals)
+  atmospheric_pressure: 'hpa_1', // Hectopascals (1 decimal)
+  mechanical_pressure: 'bar_1', // Bar (1 decimal)
+  pressure: 'bar_3', // Bar (3 decimals) - LEGACY
   angle: 'deg_0', // Degrees (integer)
   coordinates: 'dd_6', // Decimal degrees (6 decimals)
   voltage: 'v_2', // Volts (2 decimals)
@@ -48,6 +50,7 @@ const DEFAULT_PRESENTATION_IDS: Record<DataCategory, string> = {
   frequency: 'hz_1', // Hertz (1 decimal)
   power: 'kw_1', // Kilowatts (1 decimal)
   rpm: 'rpm_0', // RPM (integer)
+  percentage: 'pct_0', // Percentage (integer)
 };
 
 // Region-specific defaults (override above for specific regions)
@@ -60,7 +63,9 @@ const REGION_DEFAULTS: Record<
     speed: 'kts_1',
     wind: 'wind_kts_1',
     temperature: 'c_1',
-    pressure: 'bar_3',
+    atmospheric_pressure: 'hpa_1',
+    mechanical_pressure: 'bar_1',
+    pressure: 'bar_3', // LEGACY
     angle: 'deg_0',
     coordinates: 'ddm_3',
     voltage: 'v_2',
@@ -73,13 +78,16 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'kw_1',
     rpm: 'rpm_0',
+    percentage: 'pct_0',
   },
   us: {
     depth: 'ft_1',
     speed: 'kts_1',
     wind: 'wind_kts_1',
     temperature: 'f_1',
-    pressure: 'psi_1',
+    atmospheric_pressure: 'inhg_2',
+    mechanical_pressure: 'psi_1',
+    pressure: 'psi_1', // LEGACY
     angle: 'deg_0',
     coordinates: 'ddm_3',
     voltage: 'v_2',
@@ -92,13 +100,16 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'hp_0',
     rpm: 'rpm_0',
+    percentage: 'pct_0',
   },
   uk: {
     depth: 'fth_1',
     speed: 'kts_1',
     wind: 'bf_desc',
     temperature: 'c_1',
-    pressure: 'inhg_2',
+    atmospheric_pressure: 'inhg_2',
+    mechanical_pressure: 'bar_1',
+    pressure: 'inhg_2', // LEGACY
     angle: 'deg_0',
     coordinates: 'dms_1',
     voltage: 'v_2',
@@ -111,13 +122,16 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'hp_0',
     rpm: 'rpm_0',
+    percentage: 'pct_0',
   },
   international: {
     depth: 'm_1',
     speed: 'kts_1',
     wind: 'wind_kts_1',
     temperature: 'c_1',
-    pressure: 'bar_3',
+    atmospheric_pressure: 'hpa_1',
+    mechanical_pressure: 'bar_1',
+    pressure: 'bar_3', // LEGACY
     angle: 'deg_0',
     coordinates: 'dd_6',
     voltage: 'v_2',
