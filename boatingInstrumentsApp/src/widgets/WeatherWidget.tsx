@@ -9,6 +9,7 @@ import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
+import { TrendLine } from '../components/TrendLine';
 
 interface WeatherWidgetProps {
   id: string;
@@ -21,8 +22,8 @@ interface WeatherWidgetProps {
 
 /**
  * WeatherWidget - Atmospheric conditions monitoring
- * Primary Grid (3 rows): Barometric Pressure + Air Temperature + Humidity
- * Secondary Grid: Dew Point (if available)
+ * Primary Grid (2x2): Pressure, Air Temp, Humidity, Dew Point
+ * Secondary Grid: Pressure trend line
  * Supports multi-instance weather stations (up to 5)
  */
 export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
@@ -54,6 +55,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
     // Extract alarm levels
     const pressureAlarmLevel = weatherSensorData?.getAlarmState('pressure') ?? 0;
     const airTempAlarmLevel = weatherSensorData?.getAlarmState('airTemperature') ?? 0;
+    const humidityAlarmLevel = weatherSensorData?.getAlarmState('humidity') ?? 0;
+    const dewPointAlarmLevel = weatherSensorData?.getAlarmState('dewPoint') ?? 0;
 
     // Display values from MetricValue (pre-enriched with unit conversion)
     const displayPressure = pressureMetric?.formattedValue ?? null;
@@ -133,12 +136,13 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
         header={headerComponent}
         widgetWidth={width || 320}
         widgetHeight={height || 240}
-        columns={1}
-        primaryRows={3}
+        columns={2}
+        primaryRows={2}
         secondaryRows={1}
         testID={`weather-widget-${instanceNumber}`}
       >
-        {/* Primary Row 1: Barometric Pressure */}
+        {/* Primary Grid 2x2 */}
+        {/* Row 1, Col 1: Barometric Pressure */}
         <PrimaryMetricCell
           mnemonic="PRESS"
           value={displayPressure !== null ? String(displayPressure) : '---'}
@@ -151,7 +155,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
           }}
         />
 
-        {/* Primary Row 2: Air Temperature */}
+        {/* Row 1, Col 2: Air Temperature */}
         <PrimaryMetricCell
           mnemonic="AIR"
           value={displayAirTemp !== null ? String(displayAirTemp) : '---'}
@@ -164,12 +168,12 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
           }}
         />
 
-        {/* Primary Row 3: Humidity */}
+        {/* Row 2, Col 1: Humidity */}
         <PrimaryMetricCell
           mnemonic="HUM"
           value={displayHumidity !== null ? String(displayHumidity) : '---'}
           unit={displayHumidityUnit}
-          state={isStale ? 'warning' : 'normal'}
+          state={isStale ? 'warning' : humidityAlarmLevel > 0 ? 'alarm' : 'normal'}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -177,18 +181,35 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
           }}
         />
 
-        {/* Secondary Row 1: Dew Point (if available) */}
-        <SecondaryMetricCell
+        {/* Row 2, Col 2: Dew Point */}
+        <PrimaryMetricCell
           mnemonic="DEW"
           value={displayDewPoint !== null ? String(displayDewPoint) : '---'}
           unit={displayDewPointUnit}
-          state="normal"
-          compact={true}
+          state={isStale ? 'warning' : dewPointAlarmLevel > 0 ? 'alarm' : 'normal'}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
             unit: fontSize.unit,
           }}
+        />
+
+        {/* Secondary Row 1: Pressure Trend Line */}
+        <TrendLine
+          sensor="weather"
+          instance={instanceNumber}
+          metric="pressure"
+          timeWindowMs={5 * 60 * 1000}
+          usePrimaryLine={true}
+          showXAxis={true}
+          showYAxis={true}
+          xAxisPosition="top"
+          yAxisDirection="down"
+          timeWindowMinutes={5}
+          showTimeLabels={true}
+          showGrid={true}
+          strokeWidth={2}
+          forceZero={false}
         />
       </UnifiedWidgetGrid>
     );
