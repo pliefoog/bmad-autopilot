@@ -68,7 +68,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
   readonly instance: number;
 
   // Cached lookups (built once, referenced by all metrics)
-  private _metricCategories: Map<string, DataCategory> = new Map();
+  private _metricUnitTypes: Map<string, DataCategory> = new Map();
   private _alarmStates: Map<string, 0 | 1 | 2 | 3> = new Map();
   private _thresholds: Map<string, MetricThresholds> = new Map();
 
@@ -93,11 +93,11 @@ export class SensorInstance<T extends SensorData = SensorData> {
     this.name = `${sensorType}-${instance}`;
     this.timestamp = Date.now();
 
-    // Build category cache from registry
+    // Build unitType cache from registry
     const fields = getDataFields(sensorType);
     for (const field of fields) {
-      if (field.category) {
-        this._metricCategories.set(field.key, field.category);
+      if (field.unitType) {
+        this._metricUnitTypes.set(field.key, field.unitType);
       }
     }
 
@@ -105,7 +105,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       sensorType,
       instance,
       name: this.name,
-      categories: Array.from(this._metricCategories.keys()),
+      unitTypes: Array.from(this._metricUnitTypes.keys()),
     }));
   }
 
@@ -274,8 +274,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @param metricKey - Metric field name
    * @returns DataCategory or undefined
    */
-  getCategory(metricKey: string): DataCategory | undefined {
-    return this._metricCategories.get(metricKey);
+  getUnitType(metricKey: string): DataCategory | undefined {
+    return this._metricUnitTypes.get(metricKey);
   }
 
   /**
@@ -392,7 +392,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     this._history.clear();
     this._alarmStates.clear();
     this._thresholds.clear();
-    this._metricCategories.clear();
+    this._metricUnitTypes.clear();
 
     log.app('SensorInstance destroyed', () => ({
       sensorType: this.sensorType,
