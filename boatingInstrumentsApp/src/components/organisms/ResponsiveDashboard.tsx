@@ -256,7 +256,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       // Use widget TYPE to look up component
       const WidgetComponent = widgetComponents[widgetConfig.type];
       if (!WidgetComponent) {
-        log.widgetRegistration(
+        logger.widgetRegistration(
           `⚠️ No component found for widget type: ${widgetConfig.type}`,
           () => ({
             widgetId,
