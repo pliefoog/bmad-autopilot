@@ -45,12 +45,18 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
     // DEBUG: Log available data
     useEffect(() => {
       if (weatherSensorData) {
+        console.log('WeatherWidget - Sensor exists, timestamp:', weatherSensorData.timestamp);
+        console.log('WeatherWidget - Full sensor:', weatherSensorData);
         console.log('WeatherWidget - Metrics:', {
           pressure: weatherSensorData.getMetric('pressure'),
           airTemperature: weatherSensorData.getMetric('airTemperature'),
           humidity: weatherSensorData.getMetric('humidity'),
           dewPoint: weatherSensorData.getMetric('dewPoint'),
         });
+        
+        // Enable weather logging in console
+        console.log('%c📊 To debug weather data, run this in console:', 'color: cyan; font-weight: bold');
+        console.log('%cenableLog("nmea.weather")', 'color: yellow');
       } else {
         console.log('WeatherWidget - No sensor data for instance', instanceNumber);
       }

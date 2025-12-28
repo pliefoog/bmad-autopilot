@@ -1792,6 +1792,7 @@ class ScenarioDataSource extends EventEmitter {
    * Generate sine wave values
    * Supports both "base" and "start" parameter naming for compatibility
    * Supports both "frequency" (Hz) and "period" (seconds) for wave definition
+   * Supports min/max range (auto-calculates amplitude and base)
    */
   generateSineWave(config, currentTime) {
     const time = currentTime / 1000; // Convert to seconds
@@ -1809,10 +1810,29 @@ class ScenarioDataSource extends EventEmitter {
       phase = (2 * Math.PI * time) / 60;
     }
     
-    const baseValue = config.base || config.start || 0;
-    const value = baseValue + config.amplitude * Math.sin(phase);
+    // Apply phase offset if specified (in degrees)
+    if (config.phase !== undefined) {
+      phase += (config.phase * Math.PI) / 180;
+    }
     
-    // Apply min/max constraints if specified
+    // Calculate amplitude and base from min/max if provided
+    let amplitude, baseValue;
+    if (config.min !== undefined && config.max !== undefined) {
+      // Calculate amplitude and base from min/max range
+      amplitude = (config.max - config.min) / 2;
+      baseValue = config.min + amplitude;
+    } else if (config.amplitude !== undefined) {
+      // Use explicit amplitude if provided
+      amplitude = config.amplitude;
+      baseValue = config.base || config.start || 0;
+    } else {
+      // No amplitude or range specified - return 0
+      return 0;
+    }
+    
+    const value = baseValue + amplitude * Math.sin(phase);
+    
+    // Apply min/max constraints if specified (for safety)
     if (config.min !== undefined || config.max !== undefined) {
       return Math.max(config.min || -Infinity, Math.min(config.max || Infinity, value));
     }
