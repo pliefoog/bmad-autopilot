@@ -37,6 +37,11 @@
 import { DataCategory } from '../presentation/categories';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { log } from './logging/logger';
+import {
+  getConvertFunction,
+  getConvertBackFunction,
+  ensureFormatFunction,
+} from '../presentation/presentations';
 
 /**
  * Cached presentation data with version tracking
@@ -146,7 +151,8 @@ class ConversionRegistryService {
     }
 
     const presentation = this.getPresentation(category);
-    const displayValue = presentation.convert(siValue);
+    const convertFn = getConvertFunction(presentation);
+    const displayValue = convertFn(siValue);
 
     return displayValue;
   }
@@ -167,7 +173,8 @@ class ConversionRegistryService {
     }
 
     const presentation = this.getPresentation(category);
-    const siValue = presentation.convertBack(displayValue);
+    const convertBackFn = getConvertBackFunction(presentation);
+    const siValue = convertBackFn(displayValue);
 
     log.app('Converted display → SI', () => ({
       category,
@@ -197,7 +204,8 @@ class ConversionRegistryService {
     }
 
     const presentation = this.getPresentation(category);
-    const formatted = presentation.format(value); // Uses user's format pattern
+    const formatFn = ensureFormatFunction(presentation);
+    const formatted = formatFn(value); // Uses user's format pattern
 
     if (includeUnit) {
       return `${formatted} ${presentation.symbol}`;

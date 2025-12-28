@@ -192,18 +192,18 @@ export class FontMeasurementService {
     fontFamily: string = 'system',
     fontWeight: string = 'normal',
   ): number {
-    const { testCases } = format;
+    const { layoutRanges } = format;
 
-    // Generate test strings from test cases
+    // Generate test strings from layoutRanges
     const testStrings: string[] = [];
 
     // Format test values according to the presentation format
     if (format.pattern.includes('.')) {
       // Decimal format
       testStrings.push(
-        testCases.min.toFixed(format.decimals),
-        testCases.max.toFixed(format.decimals),
-        testCases.typical.toFixed(format.decimals),
+        layoutRanges.min.toFixed(format.decimals),
+        layoutRanges.max.toFixed(format.decimals),
+        layoutRanges.typical.toFixed(format.decimals),
       );
     } else if (format.pattern.includes('Bf (Description)')) {
       // Beaufort format - use longest description
@@ -211,9 +211,9 @@ export class FontMeasurementService {
     } else {
       // Integer format
       testStrings.push(
-        Math.round(testCases.min).toString(),
-        Math.round(testCases.max).toString(),
-        Math.round(testCases.typical).toString(),
+        Math.round(layoutRanges.min).toString(),
+        Math.round(layoutRanges.max).toString(),
+        Math.round(layoutRanges.typical).toString(),
       );
     }
 
