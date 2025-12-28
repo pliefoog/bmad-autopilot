@@ -125,64 +125,101 @@ export class SensorInstance<T extends SensorData = SensorData> {
       const fieldName = field.key;
       const fieldValue = (data as any)[fieldName];
 
-      // Process both numeric and string values
-      if (fieldValue !== undefined && fieldValue !== null) {
-        const isNumeric = Number.isFinite(fieldValue);
-        const isString = typeof fieldValue === 'string';
+      // Skip undefined/null values
+      if (fieldValue === undefined || fieldValue === null) {
+        continue;
+      }
 
-        if (isNumeric || isString) {
-          try {
-            // Check if value changed
-            const existingMetric = this.getMetric(fieldName);
-            const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
-
-            if (valueChanged) {
-              hasChanges = true;
-
-              if (isNumeric) {
-                // Get unitType for this field
-                const unitType = this._metricUnitTypes.get(fieldName);
-                
-                // Create minimal MetricValue with optional unitType
-                const metric = unitType
-                  ? new MetricValue(fieldValue, now, unitType)
-                  : new MetricValue(fieldValue, now);
-
-                // Add to history
-                this._addToHistory(fieldName, metric);
-
-                // Evaluate alarm with priority logic
-                const thresholds = this._thresholds.get(fieldName);
-                const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
-                const previousState = this._alarmStates.get(fieldName) ?? 0;
-
-                const newState = evaluateAlarm(
-                  fieldValue,
-                  now,
-                  thresholds,
-                  previousState,
-                  staleThreshold
-                );
-
-                this._alarmStates.set(fieldName, newState);
-              } else {
-                // Store string values directly in history
-                log.app('Storing string value', () => ({
-                  sensorType: this.sensorType,
-                  instance: this.instance,
-                  fieldName,
-                  value: fieldValue,
-                }));
-                this._addStringToHistory(fieldName, fieldValue, now);
-              }
-            }
-          } catch (error) {
-            log.app('ERROR in updateMetrics', () => ({
-              fieldName,
-              error: error instanceof Error ? error.message : String(error),
-            }));
+      // STRICT VALIDATION: Type checking based on field.valueType
+      if (field.valueType === 'number') {
+        if (typeof fieldValue !== 'number') {
+          throw new Error(
+            `[PARSER BUG] Expected number for ${this.sensorType}[${this.instance}].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
+          );
+        }
+        // Allow NaN (sentinel for "no valid reading"), reject Infinity (parser bug)
+        if (!Number.isNaN(fieldValue) && !Number.isFinite(fieldValue)) {
+          throw new Error(
+            `[PARSER BUG] Numeric field ${this.sensorType}[${this.instance}].${fieldName} cannot be Infinity`,
+          );
+        }
+      } else if (field.valueType === 'string') {
+        if (typeof fieldValue !== 'string') {
+          throw new Error(
+            `[PARSER BUG] Expected string for ${this.sensorType}[${this.instance}].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
+          );
+        }
+        // Enum validation for picker fields
+        if ('options' in field && field.options) {
+          const isValidEnum = field.options.some((opt) =>
+            typeof opt === 'string' ? opt === fieldValue : opt.value === fieldValue,
+          );
+          if (!isValidEnum) {
+            throw new Error(
+              `[PARSER BUG] Invalid enum value '${fieldValue}' for ${this.sensorType}[${this.instance}].${fieldName}. Valid options: ${JSON.stringify(field.options)}`,
+            );
           }
         }
+      } else if (field.valueType === 'boolean') {
+        if (typeof fieldValue !== 'boolean') {
+          throw new Error(
+            `[PARSER BUG] Expected boolean for ${this.sensorType}[${this.instance}].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
+          );
+        }
+      }
+
+      // Process validated values
+      try {
+        // Check if value changed
+        const existingMetric = this.getMetric(fieldName);
+        const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
+
+        if (valueChanged) {
+          hasChanges = true;
+
+          if (field.valueType === 'number') {
+            // Get unitType for this field
+            const unitType = this._metricUnitTypes.get(fieldName);
+            
+            // Create minimal MetricValue with optional unitType
+            const metric = unitType
+              ? new MetricValue(fieldValue, now, unitType)
+              : new MetricValue(fieldValue, now);
+
+            // Add to history
+            this._addToHistory(fieldName, metric);
+
+            // Evaluate alarm with priority logic
+            const thresholds = this._thresholds.get(fieldName);
+            const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
+            const previousState = this._alarmStates.get(fieldName) ?? 0;
+
+            const newState = evaluateAlarm(
+              fieldValue,
+              now,
+              thresholds,
+              previousState,
+              staleThreshold
+            );
+
+            this._alarmStates.set(fieldName, newState);
+          } else if (field.valueType === 'string') {
+            // Store string values directly in history
+            log.app('Storing string value', () => ({
+              sensorType: this.sensorType,
+              instance: this.instance,
+              fieldName,
+              value: fieldValue,
+            }));
+            this._addStringToHistory(fieldName, fieldValue, now);
+          }
+          // Boolean values are stored but don't have history/alarms currently
+        }
+      } catch (error) {
+        log.app('ERROR in updateMetrics', () => ({
+          fieldName,
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
 

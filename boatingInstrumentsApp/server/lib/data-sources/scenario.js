@@ -2400,48 +2400,44 @@ class ScenarioDataSource extends EventEmitter {
     
     // Temperature in Celsius
     const tempCelsius = temperature - 273.15;
-    
-    // Check XDR format preference from sensor configuration (default to compound for backward compatibility)
-    const xdrFormat = sensor.physical_properties?.xdr_format || 'compound';
-    
+
+    // Check XDR format preference from sensor configuration
+    // Fix: Changed default from 'compound' to 'individual' for NKE Display Pro compatibility
+    // Compound sentences exceed 82 char NMEA limit and use non-standard transducer types
+    const xdrFormat = sensor.physical_properties?.xdr_format || 'individual';
+
     if (xdrFormat === 'compound') {
-      // Generate single compound XDR sentence with all battery parameters
-      // Format: $IIXDR,U,voltage,V,BAT_X,I,current,A,BAT_X,C,temp,C,BAT_X,P,soc,%,BAT_X,U,nominal,V,BAT_X_NOM,V,capacity,H,BAT_X,G,chemistry,N,BAT_X*XX
+      // Legacy compound format - NOT RECOMMENDED for NKE Display Pro
+      // Exceeds 82 character NMEA 0183 limit and contains non-standard transducer types
       const sentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId},I,${current.toFixed(2)},A,${batteryId},C,${tempCelsius.toFixed(1)},C,${batteryId},P,${soc.toFixed(1)},%,${batteryId},U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM,V,${capacity.toFixed(0)},H,${batteryId},G,${chemistry},N,${batteryId}`;
       return [`$${sentence}*${this.calculateChecksum(sentence)}`];
     } else {
       // Generate individual XDR sentences (one per parameter)
-      // All use the SAME base battery ID (BAT_X) so parser can merge them
+      // Fix: Use only standard transducer types for NKE Display Pro compatibility
+      // Each sentence under 82 characters
       const messages = [];
-      
-      // Voltage - use base battery ID
+
+      // Voltage - Standard U (Voltage) transducer type
       const voltageSentence = `IIXDR,U,${voltage.toFixed(2)},V,${batteryId}`;
       messages.push(`$${voltageSentence}*${this.calculateChecksum(voltageSentence)}`);
-      
-      // Current - use base battery ID
+
+      // Current - Standard I (Current) transducer type
       const currentSentence = `IIXDR,I,${current.toFixed(2)},A,${batteryId}`;
       messages.push(`$${currentSentence}*${this.calculateChecksum(currentSentence)}`);
-      
-      // Temperature - use base battery ID (parser will recognize C type as temperature)
+
+      // Temperature - Standard C (Temperature) transducer type
       const tempSentence = `IIXDR,C,${tempCelsius.toFixed(1)},C,${batteryId}`;
       messages.push(`$${tempSentence}*${this.calculateChecksum(tempSentence)}`);
-      
-      // State of Charge - use base battery ID (parser will recognize P type as percentage/SOC)
-      const socSentence = `IIXDR,P,${soc.toFixed(1)},%,${batteryId}`;
+
+      // State of Charge - Standard P (Percentage) transducer type
+      // Fix: Use 'P' unit instead of '%' for NMEA compliance
+      const socSentence = `IIXDR,P,${soc.toFixed(1)},P,${batteryId}`;
       messages.push(`$${socSentence}*${this.calculateChecksum(socSentence)}`);
-      
-      // Nominal Voltage - use base battery ID with N suffix for disambiguation
-      const nomSentence = `IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
-      messages.push(`$${nomSentence}*${this.calculateChecksum(nomSentence)}`);
-      
-      // Capacity - use base battery ID with CAP suffix
-      const capSentence = `IIXDR,V,${capacity.toFixed(0)},H,${batteryId}_CAP`;
-      messages.push(`$${capSentence}*${this.calculateChecksum(capSentence)}`);
-      
-      // Chemistry - use base battery ID with CHEM suffix
-      const chemSentence = `IIXDR,G,${chemistry},N,${batteryId}_CHEM`;
-      messages.push(`$${chemSentence}*${this.calculateChecksum(chemSentence)}`);
-      
+
+      // Note: Omitting non-standard fields (chemistry, nominal voltage, capacity)
+      // These are not part of standard NMEA 0183 and cause parsing issues
+      // If needed, they can be transmitted via proprietary sentences
+
       return messages;
     }
   }
@@ -2475,9 +2471,10 @@ class ScenarioDataSource extends EventEmitter {
     
     // NMEA 0183 doesn't have standard tank sentences, use XDR
     // Format: FUEL_0, WATR_1, WAST_0 (no TANK_ prefix - matches parser expectations)
-    // Use 'P' for percentage per NMEA 0183 spec (not '%' symbol)
+    // Use 'P' for percentage transducer type per NMEA 0183 spec
+    // Fix: Changed from 'V' (Voltage) to 'P' (Percentage/Angular Displacement)
     const tankId = `${tankMnemonic}_${tankInstance}`;
-    const sentence = `IIXDR,V,${level.toFixed(1)},P,${tankId}`;
+    const sentence = `IIXDR,P,${level.toFixed(1)},P,${tankId}`;
     const checksum = this.calculateChecksum(sentence);
     return `$${sentence}*${checksum}`;
   }
