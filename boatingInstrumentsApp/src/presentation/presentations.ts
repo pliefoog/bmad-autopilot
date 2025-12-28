@@ -274,17 +274,14 @@ const WIND_PRESENTATIONS: Presentation[] = [
     name: 'Knots (1 decimal)',
     symbol: 'kt',
     description: 'Wind speed in knots with 1 decimal place',
-    convert: (knots) => knots, // knots to knots (identity)
-    format: (value) => value.toFixed(1),
-    convertBack: (display) => display,
+    conversionFactor: 1, // knots to knots (identity)
     formatSpec: {
       pattern: 'xxx.x',
       decimals: 1,
       minWidth: 5,
-      testCases: { min: 0.0, max: 80.0, typical: 15.5 },
+      layoutRanges: { min: 0.0, max: 80.0, typical: 15.5 },
     },
     isDefault: true,
-    isNautical: true,
     preferredInRegion: ['eu', 'us', 'uk', 'international'],
   },
   {
@@ -379,16 +376,13 @@ const WIND_PRESENTATIONS: Presentation[] = [
     name: 'km/h (integer)',
     symbol: 'kmh',
     description: 'Wind speed in kilometers per hour',
-    convert: (knots) => knots * 1.852, // knots to km/h
-    format: (value) => Math.round(value).toString(),
-    convertBack: (display) => display / 1.852,
+    conversionFactor: 1.852, // knots to km/h
     formatSpec: {
       pattern: 'xxx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: 0, max: 148, typical: 29 },
+      layoutRanges: { min: 0, max: 148, typical: 29 },
     },
-    isMetric: true,
   },
 ];
 
@@ -399,17 +393,14 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
     name: 'Celsius (1 decimal)',
     symbol: '°C',
     description: 'Temperature in Celsius with 1 decimal place',
-    convert: (celsius) => celsius,
-    format: (value) => value.toFixed(1),
-    convertBack: (display) => display,
+    conversionFactor: 1,
     formatSpec: {
       pattern: 'xx.x',
       decimals: 1,
       minWidth: 4,
-      testCases: { min: -40.0, max: 50.0, typical: 22.5 },
+      layoutRanges: { min: -40.0, max: 50.0, typical: 22.5 },
     },
     isDefault: true,
-    isMetric: true,
     preferredInRegion: ['eu', 'uk', 'international'],
   },
   {
@@ -417,16 +408,13 @@ const TEMPERATURE_PRESENTATIONS: Presentation[] = [
     name: 'Celsius (integer)',
     symbol: '°C',
     description: 'Temperature in Celsius, whole degrees',
-    convert: (celsius) => celsius,
-    format: (value) => Math.round(value).toString(),
-    convertBack: (display) => display,
+    conversionFactor: 1,
     formatSpec: {
       pattern: 'xx',
       decimals: 0,
       minWidth: 3,
-      testCases: { min: -40, max: 50, typical: 23 },
+      layoutRanges: { min: -40, max: 50, typical: 23 },
     },
-    isMetric: true,
   },
   {
     id: 'f_1',
