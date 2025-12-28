@@ -561,78 +561,6 @@ const MECHANICAL_PRESSURE_PRESENTATIONS: Presentation[] = [
 ];
 
 // ===== LEGACY PRESSURE PRESENTATIONS (DEPRECATED - for backwards compatibility) =====
-const PRESSURE_PRESENTATIONS: Presentation[] = [
-  {
-    id: 'bar_1',
-    name: 'Bar (1 decimal)',
-    symbol: 'bar',
-    description: 'Metric pressure in bar, 1 decimal place - ideal for engine oil pressure',
-    convert: (pascals: number) => pascals / 100000,
-    format: (bar: number) => bar.toFixed(1),
-    convertBack: (bar: number) => bar * 100000,
-    formatSpec: {
-      pattern: 'x.x',
-      decimals: 1,
-      minWidth: 3,
-      testCases: { min: 2.0, max: 5.5, typical: 3.4 },
-    },
-    isDefault: true,
-    isMetric: true,
-    preferredInRegion: ['eu', 'international'],
-  },
-  {
-    id: 'bar_3',
-    name: 'Bar (3 decimals)',
-    symbol: 'bar',
-    description: 'Metric pressure in bar, 3 decimal places - for atmospheric pressure',
-    convert: (pascals: number) => pascals / 100000,
-    format: (bar: number) => bar.toFixed(3),
-    convertBack: (bar: number) => bar * 100000,
-    formatSpec: {
-      pattern: 'x.xxx',
-      decimals: 3,
-      minWidth: 5,
-      testCases: { min: 0.95, max: 1.05, typical: 1.013 },
-    },
-    isMetric: true,
-    preferredInRegion: ['eu', 'international'],
-  },
-  {
-    id: 'psi_1',
-    name: 'PSI (1 decimal)',
-    symbol: 'psi',
-    description: 'Imperial pressure in pounds per square inch',
-    convert: (pascals: number) => pascals / 6894.76,
-    format: (psi: number) => psi.toFixed(1),
-    convertBack: (psi: number) => psi * 6894.76,
-    formatSpec: {
-      pattern: 'xx.x',
-      decimals: 1,
-      minWidth: 4,
-      testCases: { min: 13.8, max: 15.2, typical: 14.7 },
-    },
-    isImperial: true,
-    preferredInRegion: ['us'],
-  },
-  {
-    id: 'inhg_2',
-    name: 'Inches Mercury (2 decimals)',
-    symbol: 'inHg',
-    description: 'Imperial pressure in inches of mercury',
-    convert: (pascals: number) => pascals / 3386.39,
-    format: (inhg: number) => inhg.toFixed(2),
-    convertBack: (inhg: number) => inhg * 3386.39,
-    formatSpec: {
-      pattern: 'xx.xx',
-      decimals: 2,
-      minWidth: 5,
-      testCases: { min: 28.0, max: 31.0, typical: 29.92 },
-    },
-    isImperial: true,
-    preferredInRegion: ['us', 'uk'],
-  },
-];
-
 // ===== ANGLE PRESENTATIONS =====
 const ANGLE_PRESENTATIONS: Presentation[] = [
   {
@@ -1211,10 +1139,6 @@ export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
   mechanical_pressure: {
     category: 'mechanical_pressure',
     presentations: MECHANICAL_PRESSURE_PRESENTATIONS,
-  },
-  pressure: {
-    category: 'pressure',
-    presentations: PRESSURE_PRESENTATIONS,
   },
   angle: {
     category: 'angle',
