@@ -76,8 +76,8 @@ const SENSOR_TYPE_REGISTRY = {
     }
   },
   atmospheric_pressure_sensor: {
-    nmea0183: ['MMB', 'XDR'],
-    nmea2000: [130314],
+    nmea0183: ['MDA', 'MMB', 'XDR'],  // MDA=full meteorological, MMB=pressure only
+    nmea2000: [130311],  // PGN 130311 = Environmental Parameters (Atmospheric)
     physical_properties: {
       sensor_type: { type: 'enum', values: ['barometric', 'absolute'], description: 'Pressure sensor type' },
       location: { type: 'string', description: 'Sensor location', nmea0183_field: 'XDR.transducer_name' },
@@ -1064,6 +1064,21 @@ class ScenarioDataSource extends EventEmitter {
       primarySentence = speedType === 'SOG' && sentenceTypes.includes('VTG') ? 'VTG' : 'VHW';
     }
     
+    // Special case: atmospheric pressure sensors support MDA (full), MMB (pressure-only)
+    // Use MDA if temperature or humidity data is available, otherwise MMB
+    if (sensor.type === 'atmospheric_pressure_sensor') {
+      const hasTemperature = sensor.data_generation?.temperature !== undefined;
+      const hasHumidity = sensor.data_generation?.humidity !== undefined;
+      
+      if ((hasTemperature || hasHumidity) && sentenceTypes.includes('MDA')) {
+        primarySentence = 'MDA';  // Full meteorological composite
+      } else if (sentenceTypes.includes('MMB')) {
+        primarySentence = 'MMB';  // Simple barometer
+      } else {
+        primarySentence = 'XDR';  // Generic transducer fallback
+      }
+    }
+    
     // Route to specific generator based on sensor type
     switch (sensor.type) {
       case 'depth_sensor':
@@ -1144,7 +1159,7 @@ class ScenarioDataSource extends EventEmitter {
         return this.binaryGenerator.generatePGN_130310(sensor); // Environmental Parameters
 
       case 'atmospheric_pressure_sensor':
-        return this.binaryGenerator.generatePGN_130314(sensor); // Actual Pressure
+        return this.binaryGenerator.generatePGN_130311(sensor); // Environmental Parameters (Atmospheric)
 
       case 'engine_sensor':
         // Try rapid update first (127488), fall back to dynamic (127489)
@@ -2345,30 +2360,72 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   generatePressureFromSensor(sensor, sentenceType) {
-    let pressure = 1013.25;  // Default standard atmospheric pressure in millibars
-
-    // Get pressure from sensor data_generation
+    // Get pressure from sensor data_generation (in millibars from YAML)
+    let pressureMb = 1013.25;  // Default standard atmospheric pressure in millibars
     if (sensor.data_generation?.pressure) {
-      pressure = this.getYAMLDataValue('pressure', sensor.data_generation.pressure);
+      pressureMb = this.getYAMLDataValue('pressure', sensor.data_generation.pressure);
+    }
+    
+    // Get temperature and humidity if available (for MDA sentence)
+    let temperatureC = null;
+    let humidity = null;
+    let dewPoint = null;
+    
+    if (sensor.data_generation?.temperature) {
+      temperatureC = this.getYAMLDataValue('temperature', sensor.data_generation.temperature);
+    }
+    
+    if (sensor.data_generation?.humidity) {
+      humidity = this.getYAMLDataValue('humidity', sensor.data_generation.humidity);
+    }
+    
+    // Calculate dew point if temp and humidity available (Magnus formula)
+    if (temperatureC !== null && humidity !== null) {
+      const a = 17.27;
+      const b = 237.7;
+      const alpha = ((a * temperatureC) / (b + temperatureC)) + Math.log(humidity / 100);
+      dewPoint = (b * alpha) / (a - alpha);
     }
 
-    // MMB is the primary sentence for barometric pressure
-    if (sentenceType === 'MMB') {
-      const pressureBars = (pressure / 1000).toFixed(4);  // Convert millibars to bars
-      const pressureInches = (pressure * 0.02953).toFixed(3);  // Convert mb to inches of mercury
-
-      const checksum = this.calculateChecksum(`MMB,${pressureInches},I,${pressureBars},B`);
-      return `$IIMMB,${pressureInches},I,${pressureBars},B*${checksum}`;
-    } else {
-      // XDR format for pressure
-      // Transducer type 'P' for pressure, unit 'B' for bars
-      const instance = sensor.instance || 0;
-      const transducerName = `BARO_${String(instance).padStart(2, '0')}`;
-      const pressureBars = (pressure / 1000).toFixed(4);
-      const sentence = `IIXDR,P,${pressureBars},B,${transducerName}`;
+    // MDA = Meteorological Composite (full atmospheric data)
+    if (sentenceType === 'MDA') {
+      // Convert millibars to bars and inches of mercury
+      const pressureBars = (pressureMb / 1000).toFixed(5);  // mb to bars
+      const pressureInches = (pressureMb * 0.02953).toFixed(3);  // mb to inHg
+      
+      // Format temperature (Celsius)
+      const airTempC = temperatureC !== null ? temperatureC.toFixed(2) : '';
+      
+      // Format humidity (percentage)
+      const relHumid = humidity !== null ? Math.round(humidity) : '';
+      
+      // Format dew point (Celsius)
+      const dewPointC = dewPoint !== null ? dewPoint.toFixed(2) : '';
+      
+      // MDA format: $IIMDA,<p_inHg>,I,<p_bars>,B,<air_temp>,C,<water_temp>,C,<rel_humid>,<abs_humid>,<dew_point>,C,<wind_dir_true>,T,<wind_dir_mag>,M,<wind_speed_kts>,N,<wind_speed_ms>,M
+      // Leave water temp (field 7) and wind fields (13-20) empty - handled by other sentences
+      const sentence = `IIMDA,${pressureInches},I,${pressureBars},B,${airTempC},C,,C,${relHumid},,${dewPointC},C,,T,,M,,N,,M`;
       const checksum = this.calculateChecksum(sentence);
       return `$${sentence}*${checksum}`;
     }
+    
+    // MMB = Barometric pressure only (simple format)
+    if (sentenceType === 'MMB') {
+      const pressureBars = (pressureMb / 1000).toFixed(4);  // Convert millibars to bars
+      const pressureInches = (pressureMb * 0.02953).toFixed(3);  // Convert mb to inches of mercury
+
+      const checksum = this.calculateChecksum(`MMB,${pressureInches},I,${pressureBars},B`);
+      return `$IIMMB,${pressureInches},I,${pressureBars},B*${checksum}`;
+    }
+    
+    // XDR format for pressure (generic transducer)
+    // Transducer type 'P' for pressure, unit 'B' for bars
+    const instance = sensor.instance || 0;
+    const transducerName = `BARO_${String(instance).padStart(2, '0')}`;
+    const pressureBars = (pressureMb / 1000).toFixed(4);
+    const sentence = `IIXDR,P,${pressureBars},B,${transducerName}`;
+    const checksum = this.calculateChecksum(sentence);
+    return `$${sentence}*${checksum}`;
   }
 
   generateEngineFromSensor(sensor, sentenceType) {
@@ -2822,18 +2879,22 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   /**
-   * Generate DPT sentence (Depth with offset and max range)
+   * Generate DPT sentence (Depth with offset and range scale)
    * Matches NMEA 2000→0183 bridge behavior: PGN 128267 → DPT
-   * Format: $--DPT,depth_meters,offset_meters,max_range_meters*checksum
+   * NMEA 0183 4.10 Format: $--DPT,depth,offset,range_scale*checksum
+   * Field 3 = Maximum range scale IN USE (not sonar max capability)
+   *          = User-selected display range (e.g., 0-20m, 0-50m, 0-100m)
+   *          = Should be empty if not reported by equipment
    */
-  generateDPT(depth, transducerDepth = null, maxRange = null) {
+  generateDPT(depth, transducerDepth = null, rangeScale = null) {
     // Offset: transducer depth below waterline (positive) or keel depth (negative)
     const offset = transducerDepth !== null ? transducerDepth : this.scenario.parameters?.vessel?.keel_offset || 0;
-    // Max range: from parameters or default to 100m
-    const range = maxRange !== null ? maxRange : (this.scenario.parameters?.sonar?.max_range || 100.0);
-    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}`);
+    // Range scale: User-selected display range (usually not reported, leave empty)
+    const scale = rangeScale !== null ? rangeScale : (this.scenario.parameters?.sonar?.range_scale || '');
+    const scaleField = scale !== '' ? `,${scale.toFixed(1)}` : ',';
+    const checksum = this.calculateChecksum(`DPT,${depth.toFixed(1)},${offset.toFixed(1)}${scaleField}`);
     // Changed from SD to II for NKE Display Pro compatibility (integrated instrumentation talker ID)
-    return `$IIDPT,${depth.toFixed(1)},${offset.toFixed(1)},${range.toFixed(1)}*${checksum}`;
+    return `$IIDPT,${depth.toFixed(1)},${offset.toFixed(1)}${scaleField}*${checksum}`;
   }
 
   /**

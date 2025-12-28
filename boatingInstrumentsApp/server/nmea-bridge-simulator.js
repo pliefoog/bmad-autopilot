@@ -874,13 +874,19 @@ class NMEABridgeSimulator {
 
   /**
    * Generate DPT (Depth of Water) sentence
+   * NMEA 0183 4.10 Format: $--DPT,x.x,x.x,x.x*hh
+   * Field 1: Water depth relative to transducer (meters)
+   * Field 2: Offset from transducer (meters, + = transducer to waterline, - = transducer to keel)
+   * Field 3: Maximum range scale in use (meters) - NOT sonar max capability
+   *          Should be empty if not available or not applicable
    */
   generateDPTSentence(depthMeters) {
-    // DPT format: $xxDPT,<depth_meters>,<offset>,<max_range>*hh
     const offset = this.scenario?.parameters?.vessel?.keel_offset || 0.0; // Keel offset in meters
-    const maxRange = this.scenario?.parameters?.sonar?.max_range || 100.0; // Sonar max range
+    // Field 3: Range scale currently displayed (user-selected, e.g. 0-20m, 0-50m)
+    // Leave empty if not explicitly configured - most sounders don't report this
+    const rangeScale = this.scenario?.parameters?.sonar?.range_scale || ''; // Usually empty
     
-    const sentence = `$IIDPT,${depthMeters.toFixed(2)},${offset.toFixed(1)},${maxRange.toFixed(1)}`;
+    const sentence = `$IIDPT,${depthMeters.toFixed(2)},${offset.toFixed(1)},${rangeScale}`;
     return this.addChecksum(sentence);
   }
 
