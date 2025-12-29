@@ -9,7 +9,7 @@ export const sampleNmeaData: NmeaData = {
   longitude: -122.4194,
   altitude: 15.2,
   speed: 8.5, // knots
-  heading: 275.3,
+  magneticHeading: 275.3,
   course: 273.1,
 
   // Wind Data
@@ -231,7 +231,7 @@ export function generateTimeSeriesData(
       ...baseData,
       timestamp,
       speed: Math.max(0, (baseData.speed || 0) + variation * 2),
-      heading: ((baseData.heading || 0) + variation * 5) % 360,
+      magneticHeading: ((baseData.magneticHeading || 0) + variation * 5) % 360,
       windSpeed: Math.max(0, (baseData.windSpeed || 0) + variation * 3),
       depth: Math.max(0, (baseData.depth || 0) + variation * 1),
     });

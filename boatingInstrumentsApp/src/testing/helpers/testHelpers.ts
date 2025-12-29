@@ -264,7 +264,7 @@ export function generateBulkNmeaData(
       ...baseData,
       timestamp: Date.now() + i * 1000,
       speed: Math.max(0, (baseData.speed || 0) + variation * 2),
-      heading: ((baseData.heading || 0) + variation * 10) % 360,
+      magneticHeading: ((baseData.magneticHeading || 0) + variation * 10) % 360,
       latitude: (baseData.latitude || 0) + variation * 0.001,
       longitude: (baseData.longitude || 0) + variation * 0.001,
     });

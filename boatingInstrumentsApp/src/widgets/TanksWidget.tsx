@@ -137,10 +137,12 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
       >
         {/* Row 1: Level */}
         <PrimaryMetricCell
-          mnemonic="LEVEL"
-          value={level !== null ? `${Math.round(level)}` : '---'}
-          unit="%"
-          data={{ alarmState: tankLevelAlarmLevel }}
+          data={{
+            mnemonic: 'LEVEL',
+            value: level !== null ? `${Math.round(level)}` : '---',
+            unit: '%',
+            alarmState: tankLevelAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -149,10 +151,12 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
         />
         {/* Row 2: Capacity */}
         <PrimaryMetricCell
-          mnemonic="CAP"
-          value={capacity !== null ? String(Math.round(capacity)) : '---'}
-          unit="L"
-          data={{ alarmState: 0 }}
+          data={{
+            mnemonic: 'CAP',
+            value: capacity !== null ? String(Math.round(capacity)) : '---',
+            unit: 'L',
+            alarmState: 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -162,9 +166,11 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
         {/* Separator after row 2 */}
         {/* Row 3: Available */}
         <SecondaryMetricCell
-          mnemonic="AVAIL"
-          value={availableCapacity !== null ? String(Math.round(availableCapacity)) : '---'}
-          unit="L"
+          data={{
+            mnemonic: 'AVAIL',
+            value: availableCapacity !== null ? String(Math.round(availableCapacity)) : '---',
+            unit: 'L',
+          }}
           state="normal"
           compact={true}
           fontSize={{
@@ -175,9 +181,11 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
         />
         {/* Row 4: Type */}
         <SecondaryMetricCell
-          mnemonic="TYPE"
-          value={tankType.toUpperCase()}
-          unit=""
+          data={{
+            mnemonic: 'TYPE',
+            value: tankType.toUpperCase(),
+            unit: '',
+          }}
           state="normal"
           compact={true}
           fontSize={{

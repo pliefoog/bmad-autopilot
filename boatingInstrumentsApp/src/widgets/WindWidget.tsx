@@ -11,6 +11,8 @@ import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
+import { useCurrentPresentation } from '../presentation/presentationStore';
+import { MetricValue } from '../types/MetricValue';
 
 interface WindWidgetProps {
   id: string;
@@ -47,19 +49,19 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   const windSpeedAlarmLevel = windSensorData?.getAlarmState('speed') ?? 0;
   const windAngleAlarmLevel = windSensorData?.getAlarmState('direction') ?? 0;
 
-  const compassInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.compass?.[0],
-    (a, b) => a === b,
-  );
-  const headingMetric = compassInstance?.getMetric('heading');
-  const heading = headingMetric?.si_value; // For true wind
+  // Get true wind from sensor (either hardware VWT or calculated)
+  const trueSpeedMetric = windSensorData?.getMetric('trueSpeed');
+  const trueSpeed = trueSpeedMetric?.si_value;
+  const trueDirectionMetric = windSensorData?.getMetric('trueDirection');
+  const trueDirection = trueDirectionMetric?.si_value;
 
+  // Get GPS data for reference (STW - Speed Through Water)
   const speedInstance = useNmeaStore(
     (state) => state.nmeaData.sensors.speed?.[0],
     (a, b) => a === b,
   );
-  const sogMetric = speedInstance?.getMetric('overGround');
-  const sog = sogMetric?.si_value; // For true wind
+  const stwMetric = speedInstance?.getMetric('throughWater');
+  const stw = stwMetric?.si_value; // Speed through water (for reference only)
 
   // Wind history for gust calculations
   const [windHistory, setWindHistory] = useState<{
@@ -102,57 +104,18 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     }
   }, [windSpeed, windAngle]);
 
-  // Calculate True Wind from Apparent Wind
-  const trueWind = useMemo(() => {
-    if (windSpeed === undefined || windAngle === undefined || sog === undefined || sog === null) {
-      return { angle: null, speed: null };
-    }
-
-    // Convert apparent wind to true wind
-    // AWA is relative to bow, convert to true wind relative to north
-    const awsKnots = windSpeed;
-    const awaRadians = (windAngle * Math.PI) / 180;
-    const sogKnots = sog;
-    const headingRadians = heading ? (heading * Math.PI) / 180 : 0;
-
-    // Vector calculation for true wind
-    const apparentWindX = awsKnots * Math.sin(awaRadians);
-    const apparentWindY = awsKnots * Math.cos(awaRadians);
-
-    const vesselSpeedX = sogKnots * Math.sin(headingRadians);
-    const vesselSpeedY = sogKnots * Math.cos(headingRadians);
-
-    const trueWindX = apparentWindX - vesselSpeedX;
-    const trueWindY = apparentWindY - vesselSpeedY;
-
-    const trueWindSpeed = Math.sqrt(trueWindX * trueWindX + trueWindY * trueWindY);
-    let trueWindAngle = (Math.atan2(trueWindX, trueWindY) * 180) / Math.PI;
-
-    // Normalize angle to 0-360
-    if (trueWindAngle < 0) trueWindAngle += 360;
-
-    return {
-      speed: trueWindSpeed,
-      angle: trueWindAngle,
-    };
-  }, [windSpeed, windAngle, sog, heading]);
-
-  // Get wind stats from store (triggers on sensor updates via windTimestamp dependency)
-  const apparentSpeedStats = useMemo(() => {
-    const stats = useNmeaStore.getState().getSessionStats('wind', 0, 'speed');
-    return stats;
-  }, [windTimestamp, windSpeed]);
-
-  const trueSpeedStats = useMemo(() => {
-    const stats = useNmeaStore.getState().getSessionStats('wind', 0, 'trueSpeed');
-    return stats;
-  }, [windTimestamp]);
-
   // Calculate wind gusts from store session stats (Phase 4 architecture)
-  const gustCalculations = useMemo(() => {
-    const apparentGust = apparentSpeedStats.max;
-    const trueGust = trueSpeedStats.max;
+  // PERFORMANCE: Cache formatted stats with timestamp-based dependency (fine-grained)
+  const apparentStats = useMemo(
+    () => windSensorData?.getFormattedSessionStats('speed'),
+    [windSensorData?.timestamp],
+  );
+  const trueStats = useMemo(
+    () => windSensorData?.getFormattedSessionStats('trueSpeed'),
+    [windSensorData?.timestamp],
+  );
 
+  const gustCalculations = useMemo(() => {
     // Direction variation calculation still uses local history
     // (angle stats need different calculation than simple min/max)
     const calculateVariation = (data: { angle: number; timestamp: number }[]) => {
@@ -171,43 +134,27 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     };
 
     return {
-      apparentGust,
-      trueGust,
+      apparentStats,
+      trueStats,
       apparentVariation: calculateVariation(windHistory.apparent),
       trueVariation: calculateVariation(windHistory.true),
     };
-  }, [apparentSpeedStats, trueSpeedStats, windHistory]);
+  }, [apparentStats, trueStats, windHistory]);
 
-  // NEW: Use cached display info from sensor.display (Phase 3 migration)
-  // Helper function to create MetricDisplayData from sensor display or manual value
+  // Get current wind presentation for proper conversion
+  const windPresentation = useCurrentPresentation('wind');
+
+  // Use MetricValue's enriched properties (consistent with other widgets)
   const getWindDisplay = useCallback(
     (
-      windValue: number | null | undefined,
-      displayInfo: any,
+      metricValue: MetricValue | undefined,
       label: string = 'Wind',
     ): MetricDisplayData => {
-      // If no valid value, return N/A
-      if (windValue === null || windValue === undefined) {
-        return {
-          mnemonic: label,
-          value: '---',
-          unit: 'kt',
-          rawValue: 0,
-          layout: { minWidth: 60, alignment: 'right' },
-          presentation: { id: 'wind', name: 'Wind', pattern: 'xxx.x' },
-          status: { isValid: false, isFallback: true },
-        };
-      }
-
-      // Use displayInfo if available, otherwise format the raw value
       return {
         mnemonic: label,
-        value: displayInfo?.value ?? windValue.toFixed(1),
-        unit: displayInfo?.unit ?? 'kt',
-        rawValue: windValue,
-        layout: { minWidth: 60, alignment: 'right' },
-        presentation: { id: 'wind', name: 'Wind', pattern: 'xxx.x' },
-        status: { isValid: true, isFallback: !displayInfo },
+        value: metricValue?.formattedValue,
+        unit: metricValue?.unit,
+        alarmState: 0,
       };
     },
     [],
@@ -219,12 +166,9 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
       if (angleValue === undefined || angleValue === null) {
         return {
           mnemonic: label,
-          value: '---',
-          unit: '°',
-          rawValue: 0,
-          layout: { minWidth: 70, alignment: 'right' },
-          presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
-          status: { isValid: false, error: 'No data', isFallback: true },
+          value: undefined,
+          unit: undefined,
+          alarmState: 0,
         };
       }
 
@@ -237,24 +181,15 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
           mnemonic: label,
           value: Math.round(absAngle).toString(),
           unit: `° ${side}`,
-          rawValue: angleValue,
-          layout: { minWidth: 70, alignment: 'right' },
-          presentation: { id: 'awa_deg', name: 'AWA with Port/Starboard', pattern: 'xxx° SSS' },
-          status: {
-            isValid: true,
-            isFallback: false,
-          },
+          alarmState: 0,
         };
       }
 
       return {
-        mnemonic: label, // NMEA source abbreviation like "TWA"
+        mnemonic: label,
         value: Math.round(angleValue).toString(),
-        unit: '°', // Presentation symbol for degrees
-        rawValue: angleValue,
-        layout: { minWidth: 70, alignment: 'right' },
-        presentation: { id: 'deg_0', name: 'Degrees (integer)', pattern: 'xxx' },
-        status: { isValid: true, isFallback: false },
+        unit: '°',
+        alarmState: 0,
       };
     },
     [],
@@ -262,13 +197,23 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
 
   // Wind display data using MetricValue from SensorInstance (Phase 4)
   const windDisplayData = useMemo(() => {
+    // Create display data for gusts using formatted stats
+    const createGustDisplay = (stats: { formattedMaxValue: string; unit: string } | undefined, label: string): MetricDisplayData => {
+      return {
+        mnemonic: label,
+        value: stats?.formattedMaxValue,
+        unit: stats?.unit,
+        alarmState: 0,
+      };
+    };
+
     return {
-      windSpeed: getWindDisplay(windSpeed, windSensorData?.getMetric('speed'), 'AWS'),
-      trueWindSpeed: getWindDisplay(trueWind.speed, windSensorData?.getMetric('trueSpeed'), 'TWS'),
+      windSpeed: getWindDisplay(windSensorData?.getMetric('speed'), 'AWS'),
+      trueWindSpeed: getWindDisplay(windSensorData?.getMetric('trueSpeed'), 'TWS'),
       windAngle: getAngleDisplay(windAngle, 'AWA'),
-      trueWindAngle: getAngleDisplay(trueWind.angle, 'TWA'),
-      apparentGust: getWindDisplay(gustCalculations.apparentGust, null, 'MAX'),
-      trueGust: getWindDisplay(gustCalculations.trueGust, null, 'MAX'),
+      trueWindAngle: getAngleDisplay(trueDirection, 'TWA'),
+      apparentGust: createGustDisplay(gustCalculations.apparentStats, 'MAX'),
+      trueGust: createGustDisplay(gustCalculations.trueStats, 'MAX'),
       apparentVariation: getAngleDisplay(gustCalculations.apparentVariation, 'VAR'),
       trueVariation: getAngleDisplay(gustCalculations.trueVariation, 'VAR'),
     };
@@ -277,14 +222,16 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     getAngleDisplay,
     windSpeed,
     windAngle,
-    trueWind,
+    trueSpeed,
+    trueDirection,
     gustCalculations,
     windSensorData,
+    windPresentation,
   ]);
 
   // Update true wind history
   useEffect(() => {
-    if (trueWind.speed !== null && trueWind.angle !== null) {
+    if (trueSpeed !== null && trueSpeed !== undefined && trueDirection !== null && trueDirection !== undefined) {
       const now = Date.now();
       const tenMinutesAgo = now - 10 * 60 * 1000;
 
@@ -293,8 +240,8 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
         const lastEntry = prev.true[prev.true.length - 1];
         if (
           lastEntry &&
-          Math.abs(lastEntry.speed - trueWind.speed!) < 0.01 &&
-          Math.abs(lastEntry.angle - trueWind.angle!) < 0.1 &&
+          Math.abs(lastEntry.speed - trueSpeed) < 0.01 &&
+          Math.abs(lastEntry.angle - trueDirection) < 0.1 &&
           now - lastEntry.timestamp < 1000
         ) {
           return prev; // Skip if same values within 1 second
@@ -302,13 +249,13 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
 
         return {
           ...prev,
-          true: [...prev.true, { speed: trueWind.speed!, angle: trueWind.angle!, timestamp: now }]
+          true: [...prev.true, { speed: trueSpeed, angle: trueDirection, timestamp: now }]
             .filter((entry) => entry.timestamp > tenMinutesAgo)
             .slice(-300),
         };
       });
     }
-  }, [trueWind.speed, trueWind.angle]); // Use specific values instead of whole object
+  }, [trueSpeed, trueDirection]);
 
   const handleLongPressOnPin = useCallback(() => {}, [id]);
 

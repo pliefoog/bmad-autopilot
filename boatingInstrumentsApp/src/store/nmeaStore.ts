@@ -254,6 +254,26 @@ export const useNmeaStore = create<NmeaStore>()(
           // Update metrics - returns true if any values actually changed
           const hasChanges = sensorInstance.updateMetrics(data);
 
+          // Calculate derived metrics for wind sensor after primary updates
+          if (sensorType === 'wind' && hasChanges) {
+            log.wind('Wind sensor updated, checking for true wind calculation', () => ({
+              sensorType,
+              instance,
+              data: Object.keys(data),
+            }));
+            const gpsInstance = get().nmeaData.sensors.gps?.[0];
+            const compassInstance = get().nmeaData.sensors.compass?.[0];
+            log.wind('Fetched GPS and compass instances', () => ({
+              hasGPS: !!gpsInstance,
+              hasCompass: !!compassInstance,
+            }));
+            if (gpsInstance && compassInstance) {
+              (sensorInstance as any)._maybeCalculateTrueWind(gpsInstance, compassInstance);
+            } else {
+              log.wind('Missing GPS or compass instance for true wind calculation');
+            }
+          }
+
           // CRITICAL: Only call set() if values changed or it's a new instance
           // Prevents infinite loops from repeated NMEA messages with same data
           if (!hasChanges && !needsStoreUpdate) {

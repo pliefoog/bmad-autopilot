@@ -118,7 +118,7 @@ export interface AutopilotState {
   mode: AutopilotMode;
   status: AutopilotStatus;
   targetHeading?: number;
-  currentHeading?: number;
+  actualHeading?: number;
   targetWindAngle?: number;
   currentWindAngle?: number;
   headingError?: number;

@@ -43,10 +43,18 @@
  * 
  * ### In Widgets (Read-Only):
  * ```typescript
+ * // Current value with formatting
  * const depthInstance = useNmeaStore(state => state.nmeaData.sensors.depth?.[0]);
  * const metric = depthInstance?.getMetric('depth'); // Returns enriched MetricValue
  * const display = metric?.formattedValue; // "8.2" (pre-formatted, no unit)
  * const unit = metric?.unit; // "ft"
+ * 
+ * // Session statistics (min/max/avg) with formatting
+ * const stats = depthInstance?.getFormattedSessionStats('depth');
+ * stats?.formattedMinValue;  // "5.2" (formatted in user's units)
+ * stats?.formattedMaxValue;  // "8.7" (formatted in user's units)
+ * stats?.formattedAvgValue;  // "6.5" (formatted in user's units)
+ * stats?.unit;               // "ft"
  * ```
  * 
  * ### In Services (Conversion/Formatting):
@@ -515,7 +523,6 @@ const WIND_PRESENTATIONS: Presentation[] = [
       minWidth: 22,
       layoutRanges: { min: 0, max: 12, typical: 4 },
     },
-    preferredInRegion: ['uk'],
   },
   {
     id: 'bf_0',
@@ -1260,6 +1267,39 @@ const RPM_PRESENTATIONS: Presentation[] = [
   },
 ];
 
+// ===== ANGULAR VELOCITY PRESENTATIONS =====
+const ANGULAR_VELOCITY_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'deg_per_min_0',
+    name: 'Degrees per minute (1 decimal)',
+    symbol: '°/min',
+    description: 'Rate of turn in degrees per minute',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'xx.x',
+      decimals: 1,
+      minWidth: 4,
+      layoutRanges: { min: -10, max: 10, typical: 3 },
+    },
+    isDefault: true,
+    preferredInRegion: ['eu', 'us', 'uk', 'international'],
+  },
+  {
+    id: 'deg_per_sec_1',
+    name: 'Degrees per second (2 decimals)',
+    symbol: '°/s',
+    description: 'Rate of turn in degrees per second',
+    conversionFactor: 0.0166667, // degrees/min to degrees/sec (1/60)
+    formatSpec: {
+      pattern: 'x.xx',
+      decimals: 2,
+      minWidth: 4,
+      layoutRanges: { min: -0.17, max: 0.17, typical: 0.05 },
+    },
+    preferredInRegion: ['international'],
+  },
+];
+
 const PERCENTAGE_PRESENTATIONS: Presentation[] = [
   {
     id: 'pct_0',
@@ -1353,6 +1393,10 @@ export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
   rpm: {
     category: 'rpm',
     presentations: RPM_PRESENTATIONS,
+  },
+  angularVelocity: {
+    category: 'angularVelocity',
+    presentations: ANGULAR_VELOCITY_PRESENTATIONS,
   },
   percentage: {
     category: 'percentage',

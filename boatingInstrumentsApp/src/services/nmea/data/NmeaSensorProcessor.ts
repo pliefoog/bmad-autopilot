@@ -636,8 +636,9 @@ export class NmeaSensorProcessor {
       if (existingUpdate) {
         // Add SOG/COG to existing GPS update
         existingUpdate.data.speedOverGround = fields.speed_knots;
-        if (fields.course !== null && !isNaN(fields.course)) {
-          existingUpdate.data.courseOverGround = fields.course;
+        // RMC field 8 is parsed as 'track_true' (COG - Course Over Ground)
+        if (fields.track_true !== null && !isNaN(fields.track_true)) {
+          existingUpdate.data.courseOverGround = fields.track_true;
         }
       } else {
         // Create new GPS update with SOG/COG
@@ -647,8 +648,7 @@ export class NmeaSensorProcessor {
           data: {
             name: 'GPS Receiver',
             speedOverGround: fields.speed_knots,
-            courseOverGround:
-              fields.course !== null && !isNaN(fields.course) ? fields.course : undefined,
+            courseOverGround: fields.track_true !== null && !isNaN(fields.track_true) ? fields.track_true : undefined,
             timestamp: timestamp,
           },
         });
@@ -744,7 +744,6 @@ export class NmeaSensorProcessor {
       const compassData: Partial<CompassSensorData> = {
         name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
         trueHeading: fields.heading_true, // True heading in degrees (base unit)
-        heading: fields.heading_true, // Legacy field for backward compatibility
         timestamp: timestamp,
       };
 
@@ -757,7 +756,6 @@ export class NmeaSensorProcessor {
       const compassData: Partial<CompassSensorData> = {
         name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
         magneticHeading: fields.heading_magnetic, // Magnetic heading in degrees (base unit)
-        heading: fields.heading_magnetic, // Legacy field for backward compatibility
         timestamp: timestamp,
       };
 
@@ -973,7 +971,6 @@ export class NmeaSensorProcessor {
     const compassData: Partial<CompassSensorData> = {
       name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
       magneticHeading: fields.magnetic_heading, // Magnetic heading in degrees (base unit)
-      heading: fields.magnetic_heading, // Legacy field for backward compatibility
       timestamp: timestamp,
     };
 
@@ -1009,7 +1006,6 @@ export class NmeaSensorProcessor {
     const compassData: Partial<CompassSensorData> = {
       name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
       magneticHeading: fields.magnetic_heading, // Magnetic heading
-      heading: fields.magnetic_heading, // Legacy field for backward compatibility
       timestamp: timestamp,
     };
 
@@ -1045,7 +1041,6 @@ export class NmeaSensorProcessor {
     const compassData: Partial<CompassSensorData> = {
       name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
       trueHeading: fields.true_heading, // True heading
-      heading: fields.true_heading, // Legacy field for backward compatibility
       timestamp: timestamp,
     };
 
@@ -1565,28 +1560,33 @@ export class NmeaSensorProcessor {
         }
       }
 
-      // Check if this is engine measurement (ENGINE#X identifiers)
+      // Check if this is engine measurement (ENGINE#X or ENGINE_X identifiers)
       if (identifier) {
-        // Engine coolant temperature (C=temperature, C/F=celsius/fahrenheit, ENGINE#X)
-        const engineTempMatch = identifier.match(/^ENGINE#(\d+)$/);
+        // Engine coolant temperature (C=temperature, C/F=celsius/fahrenheit, ENGINE#X or ENGINE_X)
+        const engineTempMatch = identifier.match(/^ENGINE[#_](\d+)$/);
         log.engine(
-          `XDR Engine check: identifier="${identifier}", tempMatch=${!!engineTempMatch}, type="${measurementType}", units="${units}"`,
+          `XDR Engine check: identifier="${identifier}", tempMatch=${!!engineTempMatch}, type="${measurementType}", units="${units}", value="${measurementValue}"`,
         );
 
-        if (engineTempMatch && measurementType === 'C' && (units === 'F' || units === 'C')) {
+        if (engineTempMatch && measurementType === 'C' && (units === 'F' || units === 'C' || units === 'c')) {
           const instance = parseInt(engineTempMatch[1], 10); // ENGINE#0 -> instance 0
           let temperature = parseFloat(measurementValue);
 
+          log.engine(
+            `🔍 XDR Engine Temp MATCHED: instance=${instance}, temp=${temperature}, units=${units}, isNaN=${isNaN(temperature)}`,
+          );
+
           if (!isNaN(temperature) && !isNaN(instance)) {
             // Convert to Celsius if needed
-            if (units === 'F') {
+            if (units === 'F' || units === 'f') {
               temperature = (temperature - 32) * (5 / 9);
             }
-            // If units === 'C', already in Celsius
+            // If units === 'C' or 'c', already in Celsius
 
             const engineData: Partial<EngineSensorData> = {
               coolantTemp: temperature,
               timestamp: timestamp,
+              name: `Engine ${instance + 1}`,
             };
 
             log.engine(
@@ -1604,8 +1604,8 @@ export class NmeaSensorProcessor {
           }
         }
 
-        // Engine oil pressure (P=pressure, P=PSI per NMEA XDR standard, ENGINE#X)
-        const enginePressureMatch = identifier.match(/^ENGINE#(\d+)$/);
+        // Engine oil pressure (P=pressure, P=PSI per NMEA XDR standard, ENGINE#X or ENGINE_X)
+        const enginePressureMatch = identifier.match(/^ENGINE[#_](\d+)$/);
         if (enginePressureMatch && measurementType === 'P' && units === 'P') {
           const instance = parseInt(enginePressureMatch[1], 10); // ENGINE#0 -> instance 0
           let pressure = parseFloat(measurementValue); // PSI from NMEA
@@ -1635,8 +1635,8 @@ export class NmeaSensorProcessor {
           }
         }
 
-        // Alternator voltage (U=voltage, V=volts, ALTERNATOR or ALTERNATOR#X)
-        const alternatorMatch = identifier?.match(/^ALTERNATOR(?:#(\d+))?$/);
+        // Alternator voltage (U=voltage, V=volts, ALTERNATOR, ALTERNATOR#X, or ALTERNATOR_X)
+        const alternatorMatch = identifier?.match(/^ALTERNATOR(?:[#_](\d+))?$/);
         if (alternatorMatch && measurementType === 'U' && units === 'V') {
           const voltage = parseFloat(measurementValue);
           const instance = alternatorMatch[1] ? parseInt(alternatorMatch[1], 10) : 0; // ALTERNATOR#0 -> instance 0, ALTERNATOR -> instance 0
@@ -1658,8 +1658,8 @@ export class NmeaSensorProcessor {
           }
         }
 
-        // Engine fuel flow (V=volume, L=liters per hour, ENGINE#X_FUEL)
-        const engineFuelMatch = identifier.match(/^ENGINE#(\d+)_FUEL$/);
+        // Engine fuel flow (V=volume, L=liters per hour, ENGINE#X_FUEL or ENGINE_X_FUEL)
+        const engineFuelMatch = identifier.match(/^ENGINE[#_](\d+)_FUEL$/);
         if (engineFuelMatch && measurementType === 'V' && units === 'L') {
           const instance = parseInt(engineFuelMatch[1], 10); // ENGINE#0_FUEL -> instance 0
           const fuelRate = parseFloat(measurementValue); // L/h from NMEA
@@ -1683,9 +1683,9 @@ export class NmeaSensorProcessor {
           }
         }
 
-        // Engine hours (G=generic, H=hours, ENGINE#X_HOURS)
-        const engineHoursMatch = identifier.match(/^ENGINE#(\d+)_HOURS$/);
-        if (engineHoursMatch && measurementType === 'G' && units === 'H') {
+        // Engine hours (G=generic or N=numeric, H=hours, ENGINE#X_HOURS or ENGINE_X_HOURS)
+        const engineHoursMatch = identifier.match(/^ENGINE[#_](\d+)_HOURS$/);
+        if (engineHoursMatch && (measurementType === 'G' || measurementType === 'N') && units === 'H') {
           const instance = parseInt(engineHoursMatch[1], 10); // ENGINE#0_HOURS -> instance 0
           const hours = parseFloat(measurementValue);
 
@@ -2106,7 +2106,7 @@ export class NmeaSensorProcessor {
 
     // Bearing to destination
     if (fields.bearing_present_to_dest !== null && !isNaN(fields.bearing_present_to_dest)) {
-      autopilotData.mode = 'nav'; // APB indicates navigation mode
+      autopilotData.mode = 'NAV'; // APB indicates navigation mode
     }
 
     // Arrival status
@@ -2150,7 +2150,7 @@ export class NmeaSensorProcessor {
 
     // Bearing to destination indicates navigation mode
     if (fields.bearing_to_dest !== null && !isNaN(fields.bearing_to_dest)) {
-      autopilotData.mode = 'nav';
+      autopilotData.mode = 'NAV';
       autopilotData.targetHeading = fields.bearing_to_dest;
     }
 

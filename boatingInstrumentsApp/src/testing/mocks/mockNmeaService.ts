@@ -89,7 +89,7 @@ export class MockNmeaService {
           latitude: Math.round((this.data.latitude || 0) * 100000) / 100000, // 5 decimal precision
           longitude: Math.round((this.data.longitude || 0) * 100000) / 100000,
           speed: Math.round((this.data.speed || 0) * 10) / 10, // 1 decimal precision
-          heading: Math.round((this.data.heading || 0) * 10) / 10,
+          magneticHeading: Math.round((this.data.magneticHeading || 0) * 10) / 10,
           timestamp: Date.now(), // Fresh timestamp
         });
         break;
@@ -131,7 +131,7 @@ export class MockNmeaService {
         // Frequently omit fields
         if (Math.random() > 0.3) poorData.windSpeed = undefined;
         if (Math.random() > 0.4) poorData.depth = undefined;
-        if (Math.random() > 0.6) poorData.heading = undefined;
+        if (Math.random() > 0.6) poorData.magneticHeading = undefined;
 
         this.updateData(poorData);
         break;
@@ -142,7 +142,7 @@ export class MockNmeaService {
           latitude: NaN,
           longitude: null as any,
           speed: -1, // Invalid negative speed
-          heading: 400, // Invalid heading > 360
+          magneticHeading: 400, // Invalid heading > 360
           depth: undefined,
           timestamp: Date.now() - 15000, // Very stale data
         });

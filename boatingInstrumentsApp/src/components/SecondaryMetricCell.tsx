@@ -6,10 +6,10 @@ import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
 
 interface SecondaryMetricCellProps {
-  data?: any;
-  mnemonic?: string;
-  value?: string | number | null;
-  unit?: string;
+  // Unified interface (required)
+  data: any;
+  
+  // Common props
   precision?: number;
   state?: 'normal' | 'warning' | 'alarm';
   compact?: boolean;
@@ -32,9 +32,6 @@ interface SecondaryMetricCellProps {
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   data,
-  mnemonic: legacyMnemonic,
-  value: legacyValue,
-  unit: legacyUnit,
   precision = 1,
   state = 'normal',
   align = 'right',
@@ -47,10 +44,10 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Extract values - prefer data prop over legacy individual props
-  const mnemonic = data?.mnemonic ?? legacyMnemonic ?? '';
-  const value = data?.value ?? legacyValue ?? '';
-  const unit = data?.unit ?? legacyUnit ?? '';
+  // Extract values from data prop
+  const mnemonic = data.mnemonic ?? '';
+  const value = data.value ?? '';
+  const unit = data.unit ?? '';
 
   const displayValue =
     value !== null && value !== undefined && value !== ''
@@ -60,7 +57,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       : '---';
 
   // Determine alarm level - prefer data.alarmState over legacy state prop
-  const alarmLevel: AlarmLevel = data?.alarmState ?? (
+  const alarmLevel: AlarmLevel = data.alarmState ?? (
     state === 'alarm' ? 3 : state === 'warning' ? 2 : 0
   );
 

@@ -146,10 +146,12 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
       >
         {/* Primary Grid Row 1: Bearing and Distance */}
         <PrimaryMetricCell
-          mnemonic={bearingDisplay.mnemonic}
-          value={bearingDisplay.value}
-          unit={bearingDisplay.unit}
-          data={{ alarmState: isStale ? 1 : 0 }}
+          data={{
+            mnemonic: bearingDisplay.mnemonic,
+            value: bearingDisplay.value,
+            unit: bearingDisplay.unit,
+            alarmState: isStale ? 1 : 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -157,10 +159,12 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          mnemonic={distanceDisplay.mnemonic}
-          value={distanceDisplay.value}
-          unit={distanceDisplay.unit}
-          data={{ alarmState: isStale ? 1 : 0 }}
+          data={{
+            mnemonic: distanceDisplay.mnemonic,
+            value: distanceDisplay.value,
+            unit: distanceDisplay.unit,
+            alarmState: isStale ? 1 : 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -169,10 +173,12 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
         />
         {/* Primary Grid Row 2: XTE and VMG */}
         <PrimaryMetricCell
-          mnemonic={xteDisplay.mnemonic}
-          value={xteDisplay.value}
-          unit={xteDisplay.unit}
-          data={{ alarmState: isStale ? 1 : 0 }}
+          data={{
+            mnemonic: xteDisplay.mnemonic,
+            value: xteDisplay.value,
+            unit: xteDisplay.unit,
+            alarmState: isStale ? 1 : 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -180,10 +186,12 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
           }}
         />
         <PrimaryMetricCell
-          mnemonic={vmgDisplay.mnemonic}
-          value={vmgDisplay.value}
-          unit={vmgDisplay.unit}
-          data={{ alarmState: isStale ? 1 : 0 }}
+          data={{
+            mnemonic: vmgDisplay.mnemonic,
+            value: vmgDisplay.value,
+            unit: vmgDisplay.unit,
+            alarmState: isStale ? 1 : 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -192,8 +200,10 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
         />
         {/* Secondary Grid Row 1: Waypoint */}
         <SecondaryMetricCell
-          mnemonic="WAYPOINT"
-          value={waypointDisplay}
+          data={{
+            mnemonic: 'WAYPOINT',
+            value: waypointDisplay,
+          }}
           state="normal"
           compact={true}
           fontSize={{
@@ -204,8 +214,10 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
         />
         {/* Secondary Grid Row 2: ETA */}
         <SecondaryMetricCell
-          mnemonic="ETA"
-          value={etaDisplay}
+          data={{
+            mnemonic: 'ETA',
+            value: etaDisplay,
+          }}
           state="normal"
           compact={true}
           fontSize={{

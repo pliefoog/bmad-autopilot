@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
-import { WidgetCard } from './WidgetCard';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 import { PrimaryMetricCell } from '../components/PrimaryMetricCell';
+import { SecondaryMetricCell } from '../components/SecondaryMetricCell';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { AutopilotCommandManager, AutopilotMode } from '../services/autopilotService';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
+import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
+import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 
 interface AutopilotWidgetProps {
   id: string;
@@ -23,33 +25,43 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
   height,
   showControls = false,
 }) => {
-  // Clean sensor data access - NMEA Store v2.0 with SensorInstance
-  const autopilotInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.autopilot?.[0],
-    (a, b) => a === b,
-  );
-  const compassInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.compass?.[0],
-    (a, b) => a === b,
-  );
+  // Sensor subscriptions (separate for reactivity)
+  const autopilotInstance = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]);
+  const compassInstance = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]);
+  const navigationInstance = useNmeaStore((state) => state.nmeaData.sensors.navigation?.[0]);
+  const windInstance = useNmeaStore((state) => state.nmeaData.sensors.wind?.[0]);
   const theme = useTheme();
 
-  // Extract metrics from SensorInstance
-  const actualHeading =
-    autopilotInstance?.getMetric('actualHeading')?.si_value ??
-    compassInstance?.getMetric('heading')?.si_value ??
-    0;
-  const targetHeading = autopilotInstance?.getMetric('targetHeading')?.si_value ?? 0;
-  const rudderPosition = autopilotInstance?.getMetric('rudderPosition')?.si_value ?? 0;
+  // Extract metrics from SensorInstance (memoized for performance)
+  // Priority for actualHeading: autopilot.actualHeading (if set) → compass.magneticHeading → compass.trueHeading
+  // Note: Most autopilots don't broadcast actualHeading; widget reads from compass sensor
+  const actualHeadingMetric = useMemo(
+    () => autopilotInstance?.getMetric('actualHeading') ?? compassInstance?.getMetric('magneticHeading') ?? compassInstance?.getMetric('trueHeading'),
+    [autopilotInstance, compassInstance],
+  );
+  const targetHeadingMetric = useMemo(
+    () => autopilotInstance?.getMetric('targetHeading'),
+    [autopilotInstance],
+  );
+  const rudderMetric = useMemo(
+    () => autopilotInstance?.getMetric('rudderAngle'),
+    [autopilotInstance],
+  );
+  const turnRateMetric = useMemo(
+    () => compassInstance?.getMetric('rateOfTurn'),
+    [compassInstance],
+  );
 
-  // Use pre-enriched display data from MetricValue
-  const actualHeadingDisplay =
-    autopilotInstance?.getMetric('actualHeading') ?? compassInstance?.getMetric('heading');
-  const targetHeadingDisplay = autopilotInstance?.getMetric('targetHeading');
-  const rudderPositionDisplay = autopilotInstance?.getMetric('rudderPosition');
-  const [selectedView, setSelectedView] = useState<'overview' | 'details' | 'controls'>('overview');
+  // Extract SI values for logic (ensure numbers)
+  const actualHeading = typeof actualHeadingMetric?.si_value === 'number' ? actualHeadingMetric.si_value : 0;
+  const targetHeading = typeof targetHeadingMetric?.si_value === 'number' ? targetHeadingMetric.si_value : 0;
+  const rudderPosition = typeof rudderMetric?.si_value === 'number' ? rudderMetric.si_value : 0;
   const [isCommandPending, setIsCommandPending] = useState(false);
   const commandManager = useRef<AutopilotCommandManager | null>(null);
+
+  // Responsive sizing
+  const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
+  const fontSize = useResponsiveFontSize(width, height);
 
   // Initialize command manager
   useEffect(() => {
@@ -66,27 +78,42 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
   }, []);
 
   // Autopilot data with defaults - extracted from SensorInstance
-  const mode = autopilotInstance?.getMetric('mode')?.si_value ?? 'STANDBY';
+  const mode = autopilotInstance?.getMetric('mode')?.si_value as string | undefined ?? 'STANDBY';
   const engaged = autopilotInstance?.getMetric('engaged')?.si_value ?? false;
   const active = autopilotInstance?.getMetric('active')?.si_value ?? false;
-  const windAngle = autopilotInstance?.getMetric('windAngle')?.si_value;
-  const crossTrackError = autopilotInstance?.getMetric('crossTrackError')?.si_value;
-  const turnRate = autopilotInstance?.getMetric('turnRate')?.si_value;
   const headingSource = autopilotInstance?.getMetric('headingSource')?.si_value ?? 'COMPASS';
-  const alarms = autopilotInstance?.getMetric('alarms')?.si_value ?? [];
+  const alarm = autopilotInstance?.getMetric('alarm')?.si_value ?? false;
+
+  // Conditional metrics based on mode (from correct sensors)
+  const windAngleMetric = useMemo(
+    () => mode === 'WIND' || mode === 'wind' ? windInstance?.getMetric('direction') : undefined,
+    [mode, windInstance],
+  );
+  const crossTrackErrorMetric = useMemo(
+    () => (mode === 'NAV' || mode === 'nav' || mode === 'TRACK' || mode === 'track') ? navigationInstance?.getMetric('crossTrackError') : undefined,
+    [mode, navigationInstance],
+  );
+
+  // Alarm states
+  const headingAlarm = autopilotInstance?.getAlarmState('actualHeading') ?? 0;
+  const rudderAlarm = autopilotInstance?.getAlarmState('rudderAngle') ?? 0;
+  const turnRateAlarm = compassInstance?.getAlarmState('rateOfTurn') ?? 0;
+  const hasAlarms = alarm;
 
   // Status color determination
   const getStatusColor = () => {
-    if (alarms && alarms.length > 0) return theme.error;
+    if (hasAlarms) return theme.error;
     if (!active && !engaged) return theme.textSecondary;
-    if (mode === 'AUTO' || mode === 'WIND' || mode === 'TRACK') return theme.success;
+    const modeUpper = mode?.toUpperCase();
+    if (modeUpper === 'AUTO' || modeUpper === 'WIND' || modeUpper === 'TRACK' || modeUpper === 'NAV') return theme.success;
     return theme.warning;
   };
 
   const getWidgetState = () => {
     if (autopilotInstance === undefined) return 'no-data';
-    if (alarms && alarms.length > 0) return 'alarm';
-    if ((active || engaged) && (mode === 'AUTO' || mode === 'WIND' || mode === 'TRACK'))
+    if (hasAlarms) return 'alarm';
+    const modeUpper = mode?.toUpperCase();
+    if ((active || engaged) && (modeUpper === 'AUTO' || modeUpper === 'WIND' || modeUpper === 'TRACK'))
       return 'normal';
     if (active || engaged) return 'alarm';
     return 'normal';
@@ -117,7 +144,7 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
 
     setIsCommandPending(true);
     try {
-      const success = await commandManager.current.engageCompassMode(currentHeading);
+      const success = await commandManager.current.engageCompassMode(actualHeading);
       if (!success) {
         Alert.alert('Command Failed', 'Failed to engage autopilot');
       }
@@ -207,518 +234,137 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = ({
     );
   };
 
-  const CompassRose: React.FC<{ actual?: number; target?: number; size: number }> = ({
-    actual,
-    target,
-    size = 80,
-  }) => {
-    const center = size / 2;
-    const radius = size * 0.4;
-
-    return (
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Outer compass ring */}
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke={theme.border}
-          strokeWidth={1}
+  // Header component with responsive sizing
+  const headerComponent = useMemo(() => (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 16,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <UniversalIcon
+          name="swap-horizontal-outline"
+          size={headerIconSize}
+          color={theme.iconPrimary}
         />
-
-        {/* Cardinal directions */}
-        <SvgText
-          x={center}
-          y={center - radius + 8}
-          textAnchor="middle"
-          fill={theme.text}
-          fontSize={10}
-        >
-          N
-        </SvgText>
-        <SvgText
-          x={center + radius - 4}
-          y={center + 3}
-          textAnchor="middle"
-          fill={theme.text}
-          fontSize={10}
-        >
-          E
-        </SvgText>
-        <SvgText
-          x={center}
-          y={center + radius - 2}
-          textAnchor="middle"
-          fill={theme.text}
-          fontSize={10}
-        >
-          S
-        </SvgText>
-        <SvgText
-          x={center - radius + 4}
-          y={center + 3}
-          textAnchor="middle"
-          fill={theme.text}
-          fontSize={10}
-        >
-          W
-        </SvgText>
-
-        {/* Target heading */}
-        {target !== undefined && (
-          <Line
-            x1={center}
-            y1={center}
-            x2={center + Math.sin((target * Math.PI) / 180) * (radius - 5)}
-            y2={center - Math.cos((target * Math.PI) / 180) * (radius - 5)}
-            stroke={theme.accent}
-            strokeWidth={2}
-            strokeDasharray="3,2"
-          />
-        )}
-        {actual !== undefined && (
-          <Line
-            x1={center}
-            y1={center}
-            x2={center + Math.sin((actual * Math.PI) / 180) * radius}
-            y2={center - Math.cos((actual * Math.PI) / 180) * radius}
-            stroke={getStatusColor()}
-            strokeWidth={3}
-          />
-        )}
-        <Circle cx={center} cy={center} r={2} fill={theme.text} />
-      </Svg>
-    );
-  };
-
-  // Get alarm levels from SensorInstance (Phase 5 refactor)
-  const actualHeadingAlarmLevel = autopilotInstance?.getAlarmState('actualHeading') ?? 0;
-  const targetHeadingAlarmLevel = autopilotInstance?.getAlarmState('targetHeading') ?? 0;
-  const rudderPositionAlarmLevel = autopilotInstance?.getAlarmState('rudderPosition') ?? 0;
-
-  // Calculate aggregate alarm state (CRITICAL=3 if alarms exist, else use individual levels)
-  const hasAlarms = alarms && alarms.length > 0;
-  const headingAlarm = hasAlarms ? 3 : (active || engaged) ? actualHeadingAlarmLevel : 0;
-  const rudderAlarm = hasAlarms ? 3 : rudderPosition !== undefined ? rudderPositionAlarmLevel : 0;
-
-  const renderOverview = () => (
-    <View style={styles.overview}>
-      <View style={styles.statusRow}>
-        <Text style={[styles.modeText, { color: getStatusColor() }]}>{mode}</Text>
         <Text
-          style={[
-            styles.engagedText,
-            { color: active || engaged ? theme.success : theme.textSecondary },
-          ]}
+          style={{
+            fontSize: headerFontSize,
+            fontWeight: 'bold',
+            letterSpacing: 0.5,
+            color: theme.textSecondary,
+            textTransform: 'uppercase',
+          }}
         >
-          {active || engaged ? 'ACTIVE' : 'STANDBY'}
+          {title}
         </Text>
       </View>
-
-      <View style={styles.metricGrid}>
-        <PrimaryMetricCell
-          data={{
-            mnemonic: 'ACTUAL',
-            value: actualHeadingDisplay?.formattedValue ?? '---',
-            unit: actualHeadingDisplay?.unit ?? '°',
-            rawValue: actualHeading,
-            alarmState: headingAlarm,
-            layout: { minWidth: 60, alignment: 'right' },
-            presentation: { id: 'heading', name: 'Heading', pattern: 'xxx°' },
-            status: { isValid: true },
-          }}
-          style={styles.metricCell}
-        />
-        <PrimaryMetricCell
-          data={{
-            mnemonic: 'TARGET',
-            value: targetHeadingDisplay?.formattedValue ?? '---',
-            unit: targetHeadingDisplay?.unit ?? '°',
-            rawValue: targetHeading,
-            alarmState: headingAlarm,
-            layout: { minWidth: 60, alignment: 'right' },
-            presentation: { id: 'heading', name: 'Heading', pattern: 'xxx°' },
-            status: { isValid: true },
-          }}
-          style={styles.metricCell}
-        />
-        {rudderPosition !== undefined && (
-          <PrimaryMetricCell
-            data={{
-              mnemonic: 'RUD',
-              value: rudderPositionDisplay?.formattedValue ?? '---',
-              unit: rudderPositionDisplay?.unit ?? '°',
-              rawValue: rudderPosition,
-              alarmState: rudderAlarm,
-              layout: { minWidth: 60, alignment: 'right' },
-              presentation: { id: 'angle', name: 'Angle', pattern: 'xx°' },
-              status: { isValid: true },
-            }}
-            style={styles.metricCell}
-          />
-        )}
-      </View>
-
-      <View style={styles.compassContainer}>
-        <CompassRose actual={actualHeading} target={targetHeading} size={80} />
-      </View>
-
-      {alarms && alarms.length > 0 && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-          <UniversalIcon
-            name="warning-outline"
-            size={14}
-            color={theme.error}
-            style={{ marginRight: 4 }}
-          />
-          <Text style={[styles.alarmText, { color: theme.error }]}>{alarms[0]}</Text>
-        </View>
-      )}
     </View>
-  );
-
-  const renderDetails = () => (
-    <View style={styles.details}>
-      <View style={styles.detailRow}>
-        <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Heading Source:</Text>
-        <Text style={[styles.detailValue, { color: theme.text }]}>{headingSource}</Text>
-      </View>
-
-      {windAngle !== undefined && (
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Wind Angle:</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>{windAngle.toFixed(0)}°</Text>
-        </View>
-      )}
-      {crossTrackError !== undefined && (
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>XTE:</Text>
-          <Text
-            style={[
-              styles.detailValue,
-              {
-                color: Math.abs(crossTrackError) > 50 ? theme.warning : theme.text,
-              },
-            ]}
-          >
-            {`${crossTrackError > 0 ? 'STB' : 'PORT'} ${Math.abs(crossTrackError).toFixed(1)}m`}
-          </Text>
-        </View>
-      )}
-      {turnRate !== undefined && (
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Turn Rate:</Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {`${turnRate > 0 ? '+' : ''}${turnRate.toFixed(1)}°/min`}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-
-  const renderControls = () => (
-    <View style={styles.controls}>
-      {/* AC13: Command status display */}
-      {autopilot?.commandStatus && (
-        <View
-          style={[
-            styles.commandStatus,
-            {
-              backgroundColor:
-                autopilot.commandStatus === 'success'
-                  ? theme.success + '20'
-                  : autopilot.commandStatus === 'error'
-                  ? theme.error + '20'
-                  : theme.warning + '20',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.commandStatusText,
-              {
-                color:
-                  autopilot.commandStatus === 'success'
-                    ? theme.success
-                    : autopilot.commandStatus === 'error'
-                    ? theme.error
-                    : theme.warning,
-              },
-            ]}
-          >
-            {autopilot.commandMessage || 'Command in progress...'}
-          </Text>
-        </View>
-      )}
-      <View style={styles.emergencyRow}>
-        <TouchableOpacity
-          style={[styles.emergencyButton, { backgroundColor: theme.error }]}
-          onPress={handleEmergencyDisengage}
-          disabled={isCommandPending}
-        >
-          <Text style={[styles.emergencyButtonText, { color: theme.surface }]}>EMERGENCY STOP</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Main Controls */}
-      <View style={styles.controlRow}>
-        {!active && !engaged ? (
-          <TouchableOpacity
-            style={[styles.controlButton, styles.engageButton, { backgroundColor: theme.success }]}
-            onPress={handleEngage}
-            disabled={isCommandPending || !heading}
-          >
-            <Text style={[styles.controlButtonText, { color: theme.surface }]}>ENGAGE</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.controlButton,
-              styles.disengageButton,
-              { backgroundColor: theme.warning },
-            ]}
-            onPress={handleDisengage}
-            disabled={isCommandPending}
-          >
-            <Text style={[styles.controlButtonText, { color: theme.surface }]}>DISENGAGE</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.controlButton, { backgroundColor: theme.textSecondary }]}
-          onPress={handleStandby}
-          disabled={isCommandPending}
-        >
-          <Text style={[styles.controlButtonText, { color: theme.surface }]}>STANDBY</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Heading Adjustments - AC3: ±1° and ±10° increments */}
-      {(active || engaged) && (
-        <>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            HEADING ADJUSTMENT
-          </Text>
-
-          <View style={styles.headingControls}>
-            <View style={styles.headingRow}>
-              <TouchableOpacity
-                style={[styles.headingButton, { borderColor: theme.accent }]}
-                onPress={() => handleHeadingAdjust(-10)}
-                disabled={isCommandPending}
-              >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>-10°</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.headingButton, { borderColor: theme.accent }]}
-                onPress={() => handleHeadingAdjust(-1)}
-                disabled={isCommandPending}
-              >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>-1°</Text>
-              </TouchableOpacity>
-
-              <View style={styles.currentHeading}>
-                <Text style={[styles.currentHeadingValue, { color: theme.text }]}>
-                  {targetHeading ? Math.round(targetHeading) : '--'}°
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.headingButton, { borderColor: theme.accent }]}
-                onPress={() => handleHeadingAdjust(1)}
-                disabled={isCommandPending}
-              >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>+1°</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.headingButton, { borderColor: theme.accent }]}
-                onPress={() => handleHeadingAdjust(10)}
-                disabled={isCommandPending}
-              >
-                <Text style={[styles.headingButtonText, { color: theme.accent }]}>+10°</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </>
-      )}
-    </View>
-  );
-
-  const cycleView = () => {
-    if (selectedView === 'overview') {
-      setSelectedView('details');
-    } else if (selectedView === 'details') {
-      setSelectedView(showControls ? 'controls' : 'overview');
-    } else {
-      setSelectedView('overview');
-    }
-  };
+  ), [headerIconSize, headerFontSize, theme, title]);
 
   return (
-    <TouchableOpacity onPress={cycleView} style={styles.container}>
-      <WidgetCard title="Autopilot" icon="swap-horizontal-outline" state={getWidgetState()}>
-        {selectedView === 'overview' && renderOverview()}
-        {selectedView === 'details' && renderDetails()}
-        {selectedView === 'controls' && renderControls()}
-      </WidgetCard>
-    </TouchableOpacity>
+    <UnifiedWidgetGrid
+      theme={theme}
+      header={headerComponent}
+      widgetWidth={width || 400}
+      widgetHeight={height || 300}
+      columns={2}
+      primaryRows={2}
+      secondaryRows={2}
+      columnSpans={[1, 1, 1, 1, 2, 2]}
+      testID={`autopilot-widget-${id}`}
+    >
+      {/* Row 1: Actual Heading | Target Heading */}
+      <PrimaryMetricCell
+        data={{
+          mnemonic: 'HDG',
+          value: actualHeadingMetric?.formattedValue,
+          unit: actualHeadingMetric?.unit,
+          alarmState: headingAlarm,
+        }}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+      <PrimaryMetricCell
+        data={{
+          mnemonic: 'TGT',
+          value: targetHeadingMetric?.formattedValue,
+          unit: targetHeadingMetric?.unit,
+          alarmState: headingAlarm,
+        }}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+
+      {/* Row 2: Rudder Position | Turn Rate */}
+      <PrimaryMetricCell
+        data={{
+          mnemonic: 'RUDR',
+          value: rudderMetric?.formattedValue,
+          unit: rudderMetric?.unit,
+          alarmState: rudderAlarm,
+        }}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+      <PrimaryMetricCell
+        data={{
+          mnemonic: 'TURN',
+          value: turnRateMetric?.formattedValue,
+          unit: turnRateMetric?.unit,
+          alarmState: turnRateAlarm,
+        }}
+        fontSize={{
+          mnemonic: fontSize.label,
+          value: fontSize.value,
+          unit: fontSize.unit,
+        }}
+      />
+
+      {/* Row 3 (Secondary): Autopilot Mode with Engagement Status */}
+      <SecondaryMetricCell
+        data={{
+          mnemonic: 'MODE',
+          value: mode,
+          unit: (active || engaged) ? '(ACTIVE)' : '',
+          alarmState: hasAlarms ? 2 : 0,
+        }}
+        fontSize={{
+          mnemonic: fontSize.label * 0.7,
+          value: fontSize.value * 0.7,
+          unit: fontSize.unit * 0.7,
+        }}
+      />
+
+      {/* Row 4 (Secondary): Heading Source or Alarm */}
+      <SecondaryMetricCell
+        data={{
+          mnemonic: hasAlarms ? 'ALARM' : 'HDG SRC',
+          value: hasAlarms ? 'CHECK SYSTEM' : (headingSource as string || 'COMPASS'),
+          unit: '',
+          alarmState: hasAlarms ? 2 : 0,
+        }}
+        fontSize={{
+          mnemonic: fontSize.label * 0.7,
+          value: fontSize.value * 0.7,
+          unit: fontSize.unit * 0.7,
+        }}
+      />
+    </UnifiedWidgetGrid>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  metricGrid: {
-    flexDirection: 'row',
-    flex: 1,
-    marginBottom: 8,
-  },
-  metricCell: {
-    flex: 1,
-  },
-  overview: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 8,
-  },
-  modeText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  engagedText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  compassContainer: {
-    marginBottom: 8,
-  },
-  headingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 8,
-  },
-  headingItem: {
-    alignItems: 'center',
-  },
-  headingLabel: {
-    fontSize: 10,
-  },
-  headingValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-  },
-  rudderText: {
-    fontSize: 11,
-    marginBottom: 4,
-  },
-  alarmText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  details: {
-    paddingVertical: 8,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 4,
-  },
-  detailLabel: {
-    fontSize: 12,
-  },
-  detailValue: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-  },
-  // Control styles for autopilot command interface
-  controls: {
-    paddingVertical: 8,
-  },
-  commandStatus: {
-    padding: 8,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  commandStatusText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  emergencyRow: {
-    marginBottom: 12,
-  },
-  emergencyButton: {
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  emergencyButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  controlRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    gap: 8,
-  },
-  controlButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  engageButton: {
-    // Additional styles for engage button if needed
-  },
-  disengageButton: {
-    // Additional styles for disengage button if needed
-  },
-  controlButtonText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  headingControls: {
-    alignItems: 'center',
-  },
-  headingButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderRadius: 4,
-    minWidth: 44, // AC6: Accessibility - 44pt touch targets
-  },
-  headingButtonText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  currentHeading: {
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  currentHeadingValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-  },
-});
 
 export default AutopilotWidget;

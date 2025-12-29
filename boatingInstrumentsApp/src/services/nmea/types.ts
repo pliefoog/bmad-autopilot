@@ -47,7 +47,7 @@ export interface AutopilotState {
   mode: 'standby' | 'auto' | 'wind' | 'nav' | 'track';
   targetHeading?: number;
   targetSpeed?: number;
-  currentHeading?: number;
+  actualHeading?: number;
   currentSpeed?: number;
   lastUpdate: number;
 }

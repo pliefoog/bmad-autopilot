@@ -237,10 +237,12 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
     >
       {/* Row 1: Latitude */}
       <PrimaryMetricCell
-        mnemonic={latDisplay.mnemonic}
-        value={latDisplay.value}
-        unit={latDisplay.unit}
-        data={{ alarmState: isStale ? 1 : 0 }}
+        data={{
+          mnemonic: latDisplay.mnemonic,
+          value: latDisplay.value,
+          unit: latDisplay.unit,
+          alarmState: isStale ? 1 : 0,
+        }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -249,10 +251,12 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
       />
       {/* Row 2: Longitude */}
       <PrimaryMetricCell
-        mnemonic={lonDisplay.mnemonic}
-        value={lonDisplay.value}
-        unit={lonDisplay.unit}
-        data={{ alarmState: isStale ? 1 : 0 }}
+        data={{
+          mnemonic: lonDisplay.mnemonic,
+          value: lonDisplay.value,
+          unit: lonDisplay.unit,
+          alarmState: isStale ? 1 : 0,
+        }}
         fontSize={{
           mnemonic: fontSize.label,
           value: fontSize.value,
@@ -262,12 +266,13 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
       {/* Separator after row 2 */}
       {/* Row 3: Date */}
       <SecondaryMetricCell
-        mnemonic="DATE"
-        value={
-          dateTimeFormatted.date && String(dateTimeFormatted.date).trim() !== ''
-            ? dateTimeFormatted.date
-            : '--- ---, ----'
-        }
+        data={{
+          mnemonic: 'DATE',
+          value:
+            dateTimeFormatted.date && String(dateTimeFormatted.date).trim() !== ''
+              ? dateTimeFormatted.date
+              : '--- ---, ----',
+        }}
         state="normal"
         compact={true}
         fontSize={{
@@ -278,12 +283,13 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, title, widt
       />
       {/* Row 4: Time */}
       <SecondaryMetricCell
-        mnemonic="TIME"
-        value={
-          dateTimeFormatted.time && dateTimeFormatted.timezone
-            ? `${dateTimeFormatted.time} ${dateTimeFormatted.timezone}`
-            : '---'
-        }
+        data={{
+          mnemonic: 'TIME',
+          value:
+            dateTimeFormatted.time && dateTimeFormatted.timezone
+              ? `${dateTimeFormatted.time} ${dateTimeFormatted.timezone}`
+              : '---',
+        }}
         state="normal"
         compact={true}
         fontSize={{

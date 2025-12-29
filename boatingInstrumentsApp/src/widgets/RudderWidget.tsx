@@ -43,54 +43,21 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
     const isStale = !rudderTimestamp;
 
     // Phase 4: Use MetricValue from SensorInstance
+    // PERFORMANCE: Cache MetricValue with timestamp-based dependency (fine-grained)
+    const rudderAngleMetric = useMemo(
+      () => autopilotSensorData?.getMetric('rudderAngle'),
+      [autopilotSensorData?.timestamp],
+    );
+    
     // Access rudderAngle MetricValue (angles don't typically convert, but use for consistency)
     const rudderAngleDisplay = useMemo((): MetricDisplayData => {
-      const metricValue = autopilotSensorData?.getMetric('rudderAngle');
-
-      if (!metricValue) {
-        // Fallback if display info not available
-        return {
-          mnemonic: 'RUD',
-          value: '---',
-          unit: '°',
-          rawValue: Math.abs(rudderAngle),
-          layout: {
-            minWidth: 60,
-            alignment: 'right',
-          },
-          presentation: {
-            id: 'angle',
-            name: 'Angle',
-            pattern: 'xxx.x',
-          },
-          status: {
-            isValid: false,
-            isFallback: true,
-          },
-        };
-      }
-
-      // Use cached display info from presentation cache
       return {
         mnemonic: 'RUD',
-        value: displayInfo.value,
-        unit: displayInfo.unit,
-        rawValue: Math.abs(displayInfo.value),
-        layout: {
-          minWidth: 60,
-          alignment: 'right',
-        },
-        presentation: {
-          id: 'angle',
-          name: 'Angle',
-          pattern: 'xxx.x',
-        },
-        status: {
-          isValid: true,
-          isFallback: false,
-        },
+        value: rudderAngleMetric?.formattedValue,
+        unit: rudderAngleMetric?.unit,
+        alarmState: 0,
       };
-    }, [autopilotSensorData, rudderAngle]);
+    }, [rudderAngleMetric]);
 
     // Format rudder display with direction (PORT/STBD)
     const formatRudderDisplay = useCallback((angle: number) => {

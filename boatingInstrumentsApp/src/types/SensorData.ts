@@ -196,7 +196,6 @@ export interface DepthSensorData extends BaseSensorData {
 }
 
 export interface CompassSensorData extends BaseSensorData {
-  heading?: number; // PRIMARY metric - can be magnetic or true (0-360°) - DEPRECATED, use magneticHeading or trueHeading
   magneticHeading?: number; // Magnetic heading (0-360°)
   trueHeading?: number; // True heading (0-360°)
   variation?: number; // Magnetic variation (difference between true and magnetic north)
@@ -206,12 +205,14 @@ export interface CompassSensorData extends BaseSensorData {
 
 export interface AutopilotSensorData extends BaseSensorData {
   engaged: boolean; // PRIMARY status
-  mode?: 'compass' | 'gps' | 'wind' | 'nav';
-  targetHeading?: number; // Target heading
-  currentHeading?: number; // Current heading
+  active?: boolean; // Autopilot active (separate from engaged)
+  mode?: 'STANDBY' | 'AUTO' | 'WIND' | 'TRACK' | 'NAV'; // Autopilot operating mode
+  targetHeading?: number; // Target heading (commanded heading)
+  actualHeading?: number; // Current actual heading being maintained
+  headingSource?: 'COMPASS' | 'GPS' | 'GYRO'; // Source of heading data
   rudderAngle?: number; // Current rudder position (-35 to +35 degrees)
   locked?: boolean; // Heading lock status
-  alarm?: boolean; // Autopilot alarm condition
+  alarm?: boolean; // Autopilot alarm condition (threshold-based)
 }
 
 export interface NavigationSensorData extends BaseSensorData {

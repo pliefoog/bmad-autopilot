@@ -7,20 +7,14 @@ import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
 
 interface PrimaryMetricCellProps {
-  // New unified interface (preferred)
-  data?: MetricDisplayData;
-
-  // Legacy individual props (for backward compatibility)
-  mnemonic?: string;
-  value?: string | number;
-  unit?: string;
+  // Unified interface (required)
+  data: MetricDisplayData;
 
   // Common props
   state?: 'normal' | 'warning' | 'alarm';
   style?: any;
   maxWidth?: number; // Optional max width constraint
   cellHeight?: number; // Cell height from UnifiedWidgetGrid
-  minWidth?: number; // Optional min width constraint (legacy - use data.layout.minWidth)
   testID?: string;
 
   // Responsive font sizes (optional - overrides defaults)
@@ -38,32 +32,26 @@ interface PrimaryMetricCellProps {
  * - Unit: 16pt, regular, theme.textSecondary
  * - Spacing: 4pt between mnemonic and value, 2pt between value and unit
  * - Dynamic sizing: Adjusts font size based on content length and available width
- *
- * Story 9.6: Removed legacy useUnitConversion - uses MetricDisplayData exclusively
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   data,
-  mnemonic: legacyMnemonic,
-  value: legacyValue,
-  unit: legacyUnit,
   state = 'normal',
   style,
   maxWidth,
   cellHeight,
-  minWidth: legacyMinWidth,
   testID,
   fontSize: customFontSize,
 }) => {
   const theme = useTheme();
 
-  // Extract values - prefer data prop over legacy individual props
-  const mnemonic = data?.mnemonic ?? legacyMnemonic ?? '';
-  const value = data?.value ?? legacyValue ?? '';
-  const unit = data?.unit ?? legacyUnit ?? '';
+  // Extract values from data prop
+  const mnemonic = data.mnemonic ?? '';
+  const value = data.value ?? '';
+  const unit = data.unit ?? '';
 
   // Use layout information from MetricDisplayData if available
-  const minWidth = data?.layout?.minWidth ?? legacyMinWidth;
-  const alignment = data?.layout?.alignment ?? 'right';
+  const minWidth = data.layout?.minWidth;
+  const alignment = data.layout?.alignment ?? 'right';
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {

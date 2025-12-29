@@ -95,9 +95,11 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const [pendingHeadingAdjustment, setPendingHeadingAdjustment] = useState<number>(0);
 
   // Extract metrics from SensorInstance
+  // Priority: autopilot.actualHeading → compass.magneticHeading → compass.trueHeading
   const currentHeading =
-    autopilotInstance?.getMetric('currentHeading')?.si_value ??
-    compassInstance?.getMetric('heading')?.si_value ??
+    autopilotInstance?.getMetric('actualHeading')?.si_value ??
+    compassInstance?.getMetric('magneticHeading')?.si_value ??
+    compassInstance?.getMetric('trueHeading')?.si_value ??
     0;
   const mode = autopilotInstance?.getMetric('mode')?.si_value ?? 'STANDBY';
   const engaged = autopilotInstance?.getMetric('engaged')?.si_value ?? false;

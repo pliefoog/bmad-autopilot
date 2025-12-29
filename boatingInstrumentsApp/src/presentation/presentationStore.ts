@@ -29,32 +29,9 @@ export interface PresentationSettings {
   getPresentationForCategory: (category: DataCategory) => Presentation | undefined;
 }
 
-// Default presentation IDs for each category
-const DEFAULT_PRESENTATION_IDS: Record<DataCategory, string> = {
-  depth: 'm_1', // Meters (1 decimal)
-  speed: 'kts_1', // Knots (1 decimal)
-  wind: 'wind_kts_1', // Wind knots (1 decimal)
-  temperature: 'c_1', // Celsius (1 decimal)
-  atmospheric_pressure: 'hpa_1', // Hectopascals (1 decimal)
-  mechanical_pressure: 'bar_1', // Bar (1 decimal)
-  pressure: 'bar_3', // Bar (3 decimals) - LEGACY
-  angle: 'deg_0', // Degrees (integer)
-  coordinates: 'dd_6', // Decimal degrees (6 decimals)
-  voltage: 'v_2', // Volts (2 decimals)
-  current: 'a_2', // Amperes (2 decimals)
-  volume: 'l_0', // Liters (integer)
-  time: 'h_1', // Hours (1 decimal)
-  distance: 'nm_1', // Nautical miles (1 decimal)
-  capacity: 'ah_0', // Amp-hours (integer)
-  flowRate: 'lph_1', // Liters per hour (1 decimal)
-  frequency: 'hz_1', // Hertz (1 decimal)
-  power: 'kw_1', // Kilowatts (1 decimal)
-  rpm: 'rpm_0', // RPM (integer)
-  percentage: 'pct_0', // Percentage (integer)
-};
-
 // Region-specific defaults (override above for specific regions)
-const REGION_DEFAULTS: Record<
+// EXPORTED as single source of truth for preset configurations
+export const REGION_DEFAULTS: Record<
   'eu' | 'us' | 'uk' | 'international',
   Partial<Record<DataCategory, string>>
 > = {
@@ -65,7 +42,6 @@ const REGION_DEFAULTS: Record<
     temperature: 'c_1',
     atmospheric_pressure: 'hpa_1',
     mechanical_pressure: 'bar_1',
-    pressure: 'bar_3', // LEGACY
     angle: 'deg_0',
     coordinates: 'ddm_3',
     voltage: 'v_2',
@@ -78,6 +54,7 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'kw_1',
     rpm: 'rpm_0',
+    angularVelocity: 'deg_per_min_0',
     percentage: 'pct_0',
   },
   us: {
@@ -87,7 +64,6 @@ const REGION_DEFAULTS: Record<
     temperature: 'f_1',
     atmospheric_pressure: 'inhg_2',
     mechanical_pressure: 'psi_1',
-    pressure: 'psi_1', // LEGACY
     angle: 'deg_0',
     coordinates: 'ddm_3',
     voltage: 'v_2',
@@ -100,16 +76,16 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'hp_0',
     rpm: 'rpm_0',
+    angularVelocity: 'deg_per_min_0',
     percentage: 'pct_0',
   },
   uk: {
     depth: 'fth_1',
     speed: 'kts_1',
-    wind: 'bf_desc',
+    wind: 'bf_0',
     temperature: 'c_1',
     atmospheric_pressure: 'inhg_2',
     mechanical_pressure: 'bar_1',
-    pressure: 'inhg_2', // LEGACY
     angle: 'deg_0',
     coordinates: 'dms_1',
     voltage: 'v_2',
@@ -122,6 +98,7 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'hp_0',
     rpm: 'rpm_0',
+    angularVelocity: 'deg_per_min_0',
     percentage: 'pct_0',
   },
   international: {
@@ -131,7 +108,6 @@ const REGION_DEFAULTS: Record<
     temperature: 'c_1',
     atmospheric_pressure: 'hpa_1',
     mechanical_pressure: 'bar_1',
-    pressure: 'bar_3', // LEGACY
     angle: 'deg_0',
     coordinates: 'dd_6',
     voltage: 'v_2',
@@ -144,14 +120,16 @@ const REGION_DEFAULTS: Record<
     frequency: 'hz_1',
     power: 'kw_1',
     rpm: 'rpm_0',
+    angularVelocity: 'deg_per_min_0',
+    percentage: 'pct_0',
   },
 };
 
 export const usePresentationStore = create<PresentationSettings>()(
   persist(
     (set, get) => ({
-      // Initial state
-      selectedPresentations: DEFAULT_PRESENTATION_IDS,
+      // Initial state - use international as default region
+      selectedPresentations: REGION_DEFAULTS['international'] as Record<DataCategory, string>,
       marineRegion: 'international',
 
       // Actions
@@ -187,7 +165,8 @@ export const usePresentationStore = create<PresentationSettings>()(
       resetToDefaults: () => {
         const { marineRegion } = get();
         const regionDefaults = REGION_DEFAULTS[marineRegion];
-        const resetPresentations = { ...DEFAULT_PRESENTATION_IDS };
+        // Start with international as base, then apply region overrides
+        const resetPresentations = { ...REGION_DEFAULTS['international'] } as Record<DataCategory, string>;
 
         // Apply current region defaults
         Object.entries(regionDefaults).forEach(([category, presentationId]) => {
@@ -294,4 +273,118 @@ export function useAllPresentationSelections() {
  */
 export function usePresentationReset() {
   return usePresentationStore((state) => state.resetToDefaults);
+}
+
+// ===== REGION METADATA =====
+
+export type MarineRegion = 'eu' | 'us' | 'uk' | 'international';
+
+export interface RegionMetadata {
+  id: MarineRegion;
+  name: string;
+  description: string;
+}
+
+/**
+ * Get metadata for all available regions/presets
+ */
+export function getRegionMetadata(): RegionMetadata[] {
+  return [
+    {
+      id: 'eu',
+      name: 'Nautical (EU)',
+      description: 'European sailing standard',
+    },
+    {
+      id: 'uk',
+      name: 'Nautical (UK)',
+      description: 'British sailing standard',
+    },
+    {
+      id: 'us',
+      name: 'Nautical (USA)',
+      description: 'US sailing standard',
+    },
+    {
+      id: 'international',
+      name: 'International',
+      description: 'SI/Metric maritime standard',
+    },
+  ];
+}
+
+// ===== VALIDATION =====
+
+/**
+ * Validate that REGION_DEFAULTS contains all required DataCategory entries
+ * 
+ * Called on startup in dev mode to catch configuration gaps.
+ * Returns array of issues found, empty array if valid.
+ * 
+ * @returns Array of validation error messages
+ */
+export function validateRegionDefaults(): string[] {
+  const issues: string[] = [];
+  const regions: MarineRegion[] = ['eu', 'us', 'uk', 'international'];
+  
+  // All DataCategories that should have regional defaults
+  const requiredCategories: DataCategory[] = [
+    'depth',
+    'speed',
+    'wind',
+    'temperature',
+    'atmospheric_pressure',
+    'mechanical_pressure',
+    'angle',
+    'coordinates',
+    'voltage',
+    'current',
+    'volume',
+    'time',
+    'distance',
+    'capacity',
+    'flowRate',
+    'frequency', // Future-proofed
+    'power',
+    'rpm',
+    'angularVelocity',
+    'percentage',
+  ];
+
+  for (const region of regions) {
+    const regionDefaults = REGION_DEFAULTS[region];
+    for (const category of requiredCategories) {
+      if (!regionDefaults[category]) {
+        issues.push(`❌ Missing '${category}' in '${region}' preset`);
+      }
+    }
+  }
+
+  // Check for unknown categories (typos in REGION_DEFAULTS)
+  for (const region of regions) {
+    const regionDefaults = REGION_DEFAULTS[region];
+    for (const key in regionDefaults) {
+      if (!requiredCategories.includes(key as DataCategory)) {
+        issues.push(`⚠️ Unknown category '${key}' in '${region}' preset (typo?)`);
+      }
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * Validate configuration and log issues (dev mode only)
+ * Call this on app startup to catch configuration problems early.
+ */
+export function validateAndLogConfiguration(): void {
+  if (__DEV__) {
+    const issues = validateRegionDefaults();
+    if (issues.length > 0) {
+      console.warn('⚠️ PresentationStore Configuration Issues:');
+      issues.forEach(issue => console.warn('  ' + issue));
+    } else {
+      console.log('✅ PresentationStore: All regional presets validated successfully');
+    }
+  }
 }

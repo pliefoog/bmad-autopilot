@@ -145,7 +145,7 @@ export const COMPASS_WIDGET_REGISTRATION: WidgetRegistration = {
   requiredSensors: [
     {
       sensorType: 'compass',
-      metricName: 'heading',
+      metricName: 'magneticHeading',
       required: true,
       label: 'Heading',
     },
@@ -238,7 +238,7 @@ export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
   requiredSensors: [
     {
       sensorType: 'compass',
-      metricName: 'heading',
+      metricName: 'magneticHeading',
       required: true,
       label: 'Compass Heading',
     },
@@ -264,9 +264,9 @@ export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
     },
     {
       sensorType: 'autopilot',
-      metricName: 'currentHeading',
+      metricName: 'actualHeading',
       required: false,
-      label: 'Current Heading',
+      label: 'Actual Heading',
     },
     {
       sensorType: 'autopilot',

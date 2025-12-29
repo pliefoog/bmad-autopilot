@@ -285,7 +285,7 @@ describe('useNMEAData Hook - Enhanced Testing', () => {
         mockService.updateData(
           createTestNmeaData({
             speed: undefined,
-            heading: undefined,
+            magneticHeading: undefined,
           }),
         );
       });

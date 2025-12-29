@@ -165,10 +165,12 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
         {/* Primary Grid 2x2 */}
         {/* Row 1, Col 1: Barometric Pressure */}
         <PrimaryMetricCell
-          mnemonic="PRESS"
-          value={displayPressure !== null ? String(displayPressure) : '---'}
-          unit={displayPressureUnit}
-          state={isStale ? 'warning' : pressureAlarmLevel > 0 ? 'alarm' : 'normal'}
+          data={{
+            mnemonic: 'PRESS',
+            value: displayPressure !== null ? String(displayPressure) : '---',
+            unit: displayPressureUnit,
+            alarmState: isStale ? 1 : pressureAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -178,10 +180,12 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
 
         {/* Row 1, Col 2: Air Temperature */}
         <PrimaryMetricCell
-          mnemonic="AIR"
-          value={displayAirTemp !== null ? String(displayAirTemp) : '---'}
-          unit={displayAirTempUnit}
-          state={isStale ? 'warning' : airTempAlarmLevel > 0 ? 'alarm' : 'normal'}
+          data={{
+            mnemonic: 'AIR',
+            value: displayAirTemp !== null ? String(displayAirTemp) : '---',
+            unit: displayAirTempUnit,
+            alarmState: isStale ? 1 : airTempAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -191,10 +195,12 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
 
         {/* Row 2, Col 1: Humidity */}
         <PrimaryMetricCell
-          mnemonic="HUM"
-          value={displayHumidity !== null ? String(displayHumidity) : '---'}
-          unit={displayHumidityUnit}
-          state={isStale ? 'warning' : humidityAlarmLevel > 0 ? 'alarm' : 'normal'}
+          data={{
+            mnemonic: 'HUM',
+            value: displayHumidity !== null ? String(displayHumidity) : '---',
+            unit: displayHumidityUnit,
+            alarmState: isStale ? 1 : humidityAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -204,10 +210,12 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
 
         {/* Row 2, Col 2: Dew Point */}
         <PrimaryMetricCell
-          mnemonic="DEW"
-          value={displayDewPoint !== null ? String(displayDewPoint) : '---'}
-          unit={displayDewPointUnit}
-          state={isStale ? 'warning' : dewPointAlarmLevel > 0 ? 'alarm' : 'normal'}
+          data={{
+            mnemonic: 'DEW',
+            value: displayDewPoint !== null ? String(displayDewPoint) : '---',
+            unit: displayDewPointUnit,
+            alarmState: isStale ? 1 : dewPointAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,

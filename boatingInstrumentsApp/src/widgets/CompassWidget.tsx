@@ -47,10 +47,6 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
     const trueHeadingMetric = compassSensorData?.getMetric('trueHeading');
     const trueHeading = trueHeadingMetric?.si_value;
 
-    // Legacy heading field (for backward compatibility)
-    const headingMetric = compassSensorData?.getMetric('heading');
-    const heading = headingMetric?.si_value;
-
     const variationMetric = compassSensorData?.getMetric('variation');
     const variation = variationMetric?.si_value;
 
@@ -64,23 +60,17 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
     const variationMetricDisplay = compassSensorData?.getMetric('variation');
     const variationDisplay: MetricDisplayData = {
       mnemonic: 'VAR',
-      value: variationMetricDisplay?.formattedValue ?? '---',
-      unit: variationMetricDisplay?.unit ?? '°',
-      rawValue: variation ?? 0,
-      layout: { minWidth: 60, alignment: 'right' },
-      presentation: { id: 'angle', name: 'Angle', pattern: 'xxx.x' },
-      status: { isValid: variation !== undefined && variation !== null, isFallback: false },
+      value: variationMetricDisplay?.formattedValue,
+      unit: variationMetricDisplay?.unit,
+      alarmState: 0,
     };
 
     const deviationMetricDisplay = compassSensorData?.getMetric('deviation');
     const deviationDisplay: MetricDisplayData = {
       mnemonic: 'DEV',
-      value: deviationMetricDisplay?.formattedValue ?? '---',
-      unit: deviationMetricDisplay?.unit ?? '°',
-      rawValue: deviation ?? 0,
-      layout: { minWidth: 60, alignment: 'right' },
-      presentation: { id: 'angle', name: 'Angle', pattern: 'xxx.x' },
-      status: { isValid: deviation !== undefined && deviation !== null, isFallback: false },
+      value: deviationMetricDisplay?.formattedValue,
+      unit: deviationMetricDisplay?.unit,
+      alarmState: 0,
     };
 
     // Compass mode state with toggle capability
@@ -102,15 +92,15 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
         case 'TRUE':
           // Prefer trueHeading if available, otherwise calculate from magnetic + variation
           return (
-            trueHeading ?? (magneticHeading && variation ? magneticHeading + variation : heading)
+            trueHeading ?? (magneticHeading && variation ? magneticHeading + variation : magneticHeading)
           );
         case 'MAGNETIC':
           // Prefer magneticHeading if available, otherwise calculate from true - variation
-          return magneticHeading ?? (trueHeading && variation ? trueHeading - variation : heading);
+          return magneticHeading ?? (trueHeading && variation ? trueHeading - variation : trueHeading);
         default:
-          return trueHeading ?? magneticHeading ?? heading;
+          return trueHeading ?? magneticHeading;
       }
-    }, [trueHeading, magneticHeading, heading, variation, compassMode]);
+    }, [trueHeading, magneticHeading, variation, compassMode]);
 
     // Data staleness detection (>5s = stale)
     const isStale = headingTimestamp ? Date.now() - headingTimestamp > 5000 : true;
@@ -194,14 +184,15 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
       >
         {/* Row 1: True Heading */}
         <PrimaryMetricCell
-          mnemonic="TRUE"
-          value={
-            heading !== null && heading !== undefined
-              ? Math.round(heading).toString().padStart(3, '0')
-              : '---'
-          }
-          unit="°"
-          data={{ alarmState: isStale ? 1 : 0 }}
+          data={{
+            mnemonic: 'TRUE',
+            value:
+              currentHeading !== null && currentHeading !== undefined
+                ? Math.round(currentHeading).toString().padStart(3, '0')
+                : '---',
+            unit: '°',
+            alarmState: isStale ? 1 : 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -210,18 +201,19 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
         />
         {/* Row 2: Magnetic Heading */}
         <PrimaryMetricCell
-          mnemonic="MAG"
-          value={
-            magneticHeading !== null && magneticHeading !== undefined
-              ? Math.round(magneticHeading).toString().padStart(3, '0')
-              : heading && variation
-              ? Math.round(heading - variation)
-                  .toString()
-                  .padStart(3, '0')
-              : '---'
-          }
-          unit="°"
-          data={{ alarmState: isStale ? 1 : 0 }}
+          data={{
+            mnemonic: 'MAG',
+            value:
+              magneticHeading !== null && magneticHeading !== undefined
+                ? Math.round(magneticHeading).toString().padStart(3, '0')
+                : trueHeading && variation
+                ? Math.round(trueHeading - variation)
+                    .toString()
+                    .padStart(3, '0')
+                : '---',
+            unit: '°',
+            alarmState: isStale ? 1 : 0,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,

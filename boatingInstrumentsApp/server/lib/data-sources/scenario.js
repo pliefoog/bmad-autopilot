@@ -2249,8 +2249,15 @@ class ScenarioDataSource extends EventEmitter {
     }
     
     // Get calculated values for all sentences
-    const heading = this.getCurrentHeading();
+    // CRITICAL: COG (Course Over Ground) is where vessel is actually tracking (from GPS waypoints)
+    //          Heading is where the bow is pointing (from compass)
+    //          These can differ due to current, wind, leeway
+    const cog = this.getCurrentCOG(); // Course over ground from GPS track
+    const heading = this.getCurrentHeading(); // Heading (for logging/compass sentences)
     const speedKnots = this.getSpeedFromTrack(); // SOG from GPS track
+    
+    // DEBUG: Log COG vs Heading to verify they're different
+    console.log(`🔍 DEBUG: COG=${cog.toFixed(1)}°, Heading=${heading.toFixed(1)}°`);
     
     // Real GPS emits multiple sentences per cycle
     // Typical consumer GPS: RMC, GGA, VTG (minimum realistic output)
@@ -2258,7 +2265,7 @@ class ScenarioDataSource extends EventEmitter {
     
     // 1. RMC - Recommended Minimum (most important - position, speed, course, date)
     if (sentenceTypes.includes('RMC')) {
-      const rmc = this.generateRMC(latitude, longitude, speedKnots, heading);
+      const rmc = this.generateRMC(latitude, longitude, speedKnots, cog);
       if (rmc) sentences.push(rmc);
     }
     
@@ -2272,15 +2279,15 @@ class ScenarioDataSource extends EventEmitter {
     if (sentenceTypes.includes('VTG') && speedKnots !== null) {
       const speedKmh = (speedKnots * 1.852).toFixed(1);
 
-      // Calculate magnetic track from true heading using configured variation
-      // Fix: Populate magnetic fields properly instead of using malformed ",,M," pattern
+      // Calculate magnetic track from true COG using configured variation
+      // VTG uses COG (actual track over ground), NOT heading (bow direction)
       const variation = this.scenario?.parameters?.compass?.magnetic_variation || 0;
-      const magneticTrack = ((heading + variation + 360) % 360).toFixed(1);
+      const magneticTrack = ((cog + variation + 360) % 360).toFixed(1);
 
-      const sentence = `VTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
+      const sentence = `VTG,${cog.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A`;
       const checksum = this.calculateChecksum(sentence);
       // Changed from GP to II for NKE Display Pro compatibility (like DPT fix)
-      sentences.push(`$IIVTG,${heading.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
+      sentences.push(`$IIVTG,${cog.toFixed(1)},T,${magneticTrack},M,${speedKnots.toFixed(1)},N,${speedKmh},K,A*${checksum}`);
     }
     
     // 4. GLL - Geographic Position (optional, some GPS units emit this)
@@ -2291,7 +2298,7 @@ class ScenarioDataSource extends EventEmitter {
     
     // Log once per cycle (not per sentence)
     if (sentences.length > 0 && speedKnots !== null) {
-      console.log(`🛰️ GPS: ${sentences.length} sentences, SOG=${speedKnots.toFixed(2)} knots, heading=${heading.toFixed(1)}°`);
+      console.log(`🛰️ GPS: ${sentences.length} sentences, SOG=${speedKnots.toFixed(2)} knots, COG=${cog.toFixed(1)}°, HDG=${heading.toFixed(1)}°`);
     }
     
     // Return array of sentences or single sentence if only one
@@ -3358,7 +3365,102 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   /**
+   * Get current Course Over Ground (COG) from GPS waypoints
+   * Calculates the actual track over ground based on waypoint bearing
+   * This is different from heading - COG is where you're actually going, heading is where bow points
+   * @param {boolean} smooth - Whether to apply smooth transitions (default: true)
+   * @returns {number} Current COG in degrees (0-360)
+   */
+  getCurrentCOG(smooth = true) {
+    // Find GPS sensor with waypoint-based position
+    const gpsSensor = this.scenario?.sensors?.find(
+      sensor => sensor.type === 'gps_sensor' && 
+                sensor.data_generation?.position?.type === 'gps_track'
+    );
+
+    if (!gpsSensor) {
+      return 0; // No GPS track defined
+    }
+
+    const waypoints = gpsSensor.data_generation.position.waypoints;
+    if (!waypoints || waypoints.length < 2) {
+      return 0;
+    }
+
+    // Calculate current time position in scenario
+    const elapsed = (Date.now() - (this.stats.startTime || Date.now())) / 1000;
+    const duration = this.scenario.duration || 300;
+    const progress = (elapsed % duration) / duration;
+    const totalTime = waypoints[waypoints.length - 1].time;
+    const currentTime = progress * totalTime;
+    
+    // Find the current waypoint segment
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const wp1 = waypoints[i];
+      const wp2 = waypoints[i + 1];
+      
+      if (currentTime >= wp1.time && currentTime <= wp2.time) {
+        // Calculate great circle bearing between waypoints (this IS the COG)
+        const lat1 = wp1.latitude * Math.PI / 180;
+        const lat2 = wp2.latitude * Math.PI / 180;
+        const dLon = (wp2.longitude - wp1.longitude) * Math.PI / 180;
+        
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        
+        let targetCOG = Math.atan2(y, x) * 180 / Math.PI;
+        if (targetCOG < 0) targetCOG += 360;
+        
+        if (!smooth) {
+          return targetCOG;
+        }
+        
+        // Apply smooth transitions (max 10°/s rate of change)
+        if (this.lastCOG === undefined) {
+          this.lastCOG = targetCOG;
+          this.lastCOGTime = Date.now();
+          return targetCOG;
+        }
+        
+        const now = Date.now();
+        const deltaTime = (now - this.lastCOGTime) / 1000; // seconds
+        const maxChange = 10 * deltaTime; // 10°/s max rate
+        
+        let deltaCOG = targetCOG - this.lastCOG;
+        
+        // Handle wrap-around (e.g., 359° -> 1°)
+        if (deltaCOG > 180) deltaCOG -= 360;
+        if (deltaCOG < -180) deltaCOG += 360;
+        
+        const clampedDelta = Math.max(-maxChange, Math.min(maxChange, deltaCOG));
+        const smoothCOG = (this.lastCOG + clampedDelta + 360) % 360;
+        
+        this.lastCOG = smoothCOG;
+        this.lastCOGTime = now;
+        
+        return smoothCOG;
+      }
+    }
+    
+    // If past all waypoints, use bearing to last waypoint
+    const lastWp = waypoints[waypoints.length - 2];
+    const finalWp = waypoints[waypoints.length - 1];
+    const lat1 = lastWp.latitude * Math.PI / 180;
+    const lat2 = finalWp.latitude * Math.PI / 180;
+    const dLon = (finalWp.longitude - lastWp.longitude) * Math.PI / 180;
+    
+    const y = Math.sin(dLon) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    
+    let finalCOG = Math.atan2(y, x) * 180 / Math.PI;
+    if (finalCOG < 0) finalCOG += 360;
+    
+    return finalCOG;
+  }
+
+  /**
    * Get current heading from GPS track with optional smoothing
+   * Uses autopilot state if available, otherwise calculates from waypoints
    * @param {boolean} smooth - Apply rate limiting for realistic heading changes
    * @returns {number} Heading in degrees (0-360)
    */
