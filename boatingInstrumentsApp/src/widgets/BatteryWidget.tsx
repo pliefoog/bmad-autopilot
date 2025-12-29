@@ -44,23 +44,41 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
       (a, b) => a === b,
     );
 
-    // Extract all metrics from SensorInstance
-    const voltageMetric = batterySensorInstance?.getMetric('voltage');
+    // PERFORMANCE: Cache MetricValue objects with timestamp-based dependencies (fine-grained)
+    const voltageMetric = useMemo(
+      () => batterySensorInstance?.getMetric('voltage'),
+      [batterySensorInstance?.timestamp],
+    );
     const voltage = voltageMetric?.si_value ?? null;
 
-    const nominalVoltageMetric = batterySensorInstance?.getMetric('nominalVoltage');
+    const nominalVoltageMetric = useMemo(
+      () => batterySensorInstance?.getMetric('nominalVoltage'),
+      [batterySensorInstance?.timestamp],
+    );
     const nominalVoltage = nominalVoltageMetric?.si_value ?? null;
 
-    const currentMetric = batterySensorInstance?.getMetric('current');
+    const currentMetric = useMemo(
+      () => batterySensorInstance?.getMetric('current'),
+      [batterySensorInstance?.timestamp],
+    );
     const current = currentMetric?.si_value ?? null;
 
-    const temperatureMetric = batterySensorInstance?.getMetric('temperature');
+    const temperatureMetric = useMemo(
+      () => batterySensorInstance?.getMetric('temperature'),
+      [batterySensorInstance?.timestamp],
+    );
     const temperature = temperatureMetric?.si_value ?? null;
 
-    const stateOfChargeMetric = batterySensorInstance?.getMetric('soc');
+    const stateOfChargeMetric = useMemo(
+      () => batterySensorInstance?.getMetric('soc'),
+      [batterySensorInstance?.timestamp],
+    );
     const stateOfCharge = stateOfChargeMetric?.si_value ?? null;
 
-    const capacityMetric = batterySensorInstance?.getMetric('capacity');
+    const capacityMetric = useMemo(
+      () => batterySensorInstance?.getMetric('capacity'),
+      [batterySensorInstance?.timestamp],
+    );
     const capacity = capacityMetric?.si_value ?? null;
 
     // batteryChemistry is a text config field (no unitType, not numeric)
@@ -87,20 +105,10 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
             mnemonic: batteryMnemonic,
             value: '---',
             unit: fallbackSymbol,
-            rawValue: 0,
+            alarmState: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
-            },
-            presentation: {
-              id: 'default',
-              name: batteryMnemonic,
-              pattern: 'xxx',
-            },
-            status: {
-              isValid: false,
-              error: 'No data',
-              isFallback: true,
             },
           };
         }
@@ -110,19 +118,10 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
             mnemonic: batteryMnemonic,
             value: metric.formattedValue,
             unit: metric.unit,
-            rawValue: value,
+            alarmState: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
-            },
-            presentation: {
-              id: 'battery',
-              name: batteryMnemonic,
-              pattern: 'xxx.x',
-            },
-            status: {
-              isValid: true,
-              isFallback: false,
             },
           };
         }
@@ -131,20 +130,10 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           mnemonic: batteryMnemonic,
           value: '---',
           unit: fallbackSymbol,
-          rawValue: value,
+          alarmState: 0,
           layout: {
             minWidth: 60,
             alignment: 'right',
-          },
-          presentation: {
-            id: 'battery',
-            name: batteryMnemonic,
-            pattern: 'xxx.x',
-          },
-          status: {
-            isValid: false,
-            error: 'No metric',
-            isFallback: true,
           },
         };
       },
@@ -154,22 +143,22 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
     // Battery display values with proper NMEA mnemonics using MetricValue
     const voltageDisplay = useMemo(
       () => getBatteryDisplay(voltageMetric, voltage, 'VLT', 'V'),
-      [voltage, voltageMetric, getBatteryDisplay],
+      [voltage, voltageMetric],
     );
 
     const nominalVoltageDisplay = useMemo(
       () => getBatteryDisplay(nominalVoltageMetric, nominalVoltage, 'NOM', 'V'),
-      [nominalVoltage, nominalVoltageMetric, getBatteryDisplay],
+      [nominalVoltage, nominalVoltageMetric],
     );
 
     const currentDisplay = useMemo(
       () => getBatteryDisplay(currentMetric, current, 'AMP', 'A'),
-      [current, currentMetric, getBatteryDisplay],
+      [current, currentMetric],
     );
 
     const temperatureDisplay = useMemo(
       () => getBatteryDisplay(temperatureMetric, temperature, 'TMP', '°C'),
-      [temperature, temperatureMetric, getBatteryDisplay],
+      [temperature, temperatureMetric],
     );
 
     const stateOfChargeDisplay = useMemo(() => {
@@ -178,10 +167,8 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           mnemonic: 'SOC',
           value: '---',
           unit: '%',
-          rawValue: 0,
+          alarmState: 0,
           layout: { minWidth: 60, alignment: 'right' },
-          presentation: { id: 'battery', name: 'SOC', pattern: 'xxx' },
-          status: { isValid: false, error: 'No data', isFallback: true },
         };
       }
       // SOC has no category (raw percentage), but might have metric for formatting
@@ -190,20 +177,16 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           mnemonic: 'SOC',
           value: stateOfChargeMetric.formattedValue,
           unit: '%',
-          rawValue: stateOfCharge,
+          alarmState: 0,
           layout: { minWidth: 60, alignment: 'right' },
-          presentation: { id: 'battery', name: 'SOC', pattern: 'xxx' },
-          status: { isValid: true, isFallback: false },
         };
       }
       return {
         mnemonic: 'SOC',
         value: String(Math.round(stateOfCharge)),
         unit: '%',
-        rawValue: stateOfCharge,
+        alarmState: 0,
         layout: { minWidth: 60, alignment: 'right' },
-        presentation: { id: 'battery', name: 'SOC', pattern: 'xxx' },
-        status: { isValid: true, isFallback: false },
       };
     }, [stateOfCharge, stateOfChargeMetric]);
 
@@ -213,10 +196,8 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           mnemonic: 'CAP',
           value: '---',
           unit: 'Ah',
-          rawValue: 0,
+          alarmState: 0,
           layout: { minWidth: 60, alignment: 'right' },
-          presentation: { id: 'battery', name: 'CAP', pattern: 'xxx' },
-          status: { isValid: false, error: 'No data', isFallback: true },
         };
       }
       // Capacity has category, use metric if available
@@ -225,20 +206,16 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           mnemonic: 'CAP',
           value: capacityMetric.formattedValue,
           unit: capacityMetric.unit,
-          rawValue: capacity,
+          alarmState: 0,
           layout: { minWidth: 60, alignment: 'right' },
-          presentation: { id: 'battery', name: 'CAP', pattern: 'xxx' },
-          status: { isValid: true, isFallback: false },
         };
       }
       return {
         mnemonic: 'CAP',
         value: String(Math.round(capacity)),
         unit: 'Ah',
-        rawValue: capacity,
+        alarmState: 0,
         layout: { minWidth: 60, alignment: 'right' },
-        presentation: { id: 'battery', name: 'CAP', pattern: 'xxx' },
-        status: { isValid: true, isFallback: false },
       };
     }, [capacity, capacityMetric]);
 
@@ -334,9 +311,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
         {/* Separator after row 2 */}
         {/* Row 3: NOM | CAP */}
         <SecondaryMetricCell
-          mnemonic={nominalVoltageDisplay.mnemonic}
-          value={nominalVoltageDisplay.value}
-          unit={nominalVoltageDisplay.unit}
+          data={{
+            mnemonic: nominalVoltageDisplay.mnemonic,
+            value: nominalVoltageDisplay.value,
+            unit: nominalVoltageDisplay.unit,
+          }}
           state="normal"
           compact={true}
           fontSize={{
@@ -346,9 +325,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           }}
         />
         <SecondaryMetricCell
-          mnemonic={capacityDisplay.mnemonic}
-          value={capacityDisplay.value}
-          unit={capacityDisplay.unit}
+          data={{
+            mnemonic: capacityDisplay.mnemonic,
+            value: capacityDisplay.value,
+            unit: capacityDisplay.unit,
+          }}
           state="normal"
           compact={true}
           fontSize={{
@@ -359,9 +340,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
         />
         {/* Row 4: CHEM | INST */}
         <SecondaryMetricCell
-          mnemonic="CHEM"
-          value={chemistry || 'Unknown'}
-          unit=""
+          data={{
+            mnemonic: 'CHEM',
+            value: chemistry || 'Unknown',
+            unit: '',
+          }}
           state="normal"
           compact={true}
           fontSize={{
@@ -371,9 +354,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(
           }}
         />
         <SecondaryMetricCell
-          mnemonic="INST"
-          value={`#${instanceNumber}`}
-          unit=""
+          data={{
+            mnemonic: 'INST',
+            value: `#${instanceNumber}`,
+            unit: '',
+          }}
           state="normal"
           compact={true}
           fontSize={{

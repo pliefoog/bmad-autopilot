@@ -32,6 +32,7 @@ export type DataCategory =
   | 'frequency' // Electrical/generator frequency
   | 'power' // Engine/electrical power
   | 'rpm' // Rotational speeds
+  | 'angularVelocity' // Rate of turn, rotation rates
   | 'percentage'; // Humidity, battery SOC, tank levels (0-100%)
 
 export interface DataCategoryInfo {
@@ -223,6 +224,16 @@ export const DATA_CATEGORIES: Record<DataCategory, DataCategoryInfo> = {
     icon: '⚙️',
     precision: 0,
     typical_range: [0, 6000], // 0-6000 RPM typical marine engine range
+  },
+
+  angularVelocity: {
+    id: 'angularVelocity',
+    name: 'Angular Velocity',
+    description: 'Rate of rotation or turn (degrees per minute)',
+    baseUnit: 'degrees_per_minute',
+    icon: '🔄',
+    precision: 1,
+    typical_range: [-10, 10], // ±10°/min typical vessel turn rate
   },
 
   percentage: {

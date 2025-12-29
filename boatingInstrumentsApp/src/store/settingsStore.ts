@@ -87,6 +87,28 @@ export interface ThemeSettings {
 interface SettingsState {
   themeMode: ThemeMode;
   themeSettings: ThemeSettings;
+  
+  /**
+   * ⚠️ DEPRECATED: Legacy unit configuration
+   * 
+   * This object is NO LONGER used for widget display.
+   * All widgets now use:
+   *   1. MetricValue.formattedValue (respects presentationStore settings)
+   *   2. presentationStore.REGION_DEFAULTS (single source of truth)
+   * 
+   * **Current Usage:**
+   * - Only used internally by useUnitConversion hook
+   * - useUnitConversion only used by GPSWidget for date/time formatting (non-numeric)
+   * 
+   * **Do NOT:**
+   * - Read from this in widgets (use MetricValue instead)
+   * - Add new categories here (add to presentationStore instead)
+   * - Use for sensor data conversion (use ConversionRegistry + MetricValue)
+   * 
+   * @deprecated Use presentationStore.REGION_DEFAULTS for unit preferences
+   * @see src/presentation/presentationStore.ts
+   * @see src/types/MetricValue.ts
+   */
   units: {
     depth: 'meters' | 'feet' | 'fathoms';
     speed: 'knots' | 'mph' | 'kmh' | 'ms';
@@ -96,6 +118,7 @@ interface SettingsState {
     volume: 'liters' | 'gallons' | 'imperial-gallons';
     wind: 'knots' | 'mph' | 'kmh' | 'ms' | 'beaufort';
   };
+  
   gps: {
     coordinateFormat: 'decimal_degrees' | 'degrees_minutes' | 'degrees_minutes_seconds' | 'utm';
     dateFormat: 'iso_date' | 'us_date' | 'eu_date' | 'uk_date' | 'nautical_date';

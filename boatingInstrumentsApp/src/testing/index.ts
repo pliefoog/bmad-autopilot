@@ -105,7 +105,7 @@ export const navigationTestUtils = {
   }),
 
   createCompassData: (heading: number) => ({
-    heading: heading % 360,
+    magneticHeading: heading % 360,
     timestamp: Date.now(),
   }),
 };

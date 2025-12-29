@@ -245,7 +245,7 @@ sensors:
   - type: atmospheric_pressure_sensor
     instance: 0
     name: "Main Weather Station"
-    update_rate: 0.2  # Hz (every 5 seconds - slow changing data)
+    update_rate: 1  # Hz (every second for responsive trending)
     physical_properties:
       sensor_type: "barometric"
       location: "atmospheric"
@@ -259,21 +259,21 @@ sensors:
         period: 60                  # 60 seconds - one full cycle per minute
         phase: 0                    # Start at minimum pressure
       
-      # NEW: Air temperature (outside ambient temperature)
+      # Air temperature (outside ambient temperature) - faster variation for testing
       temperature:
-        type: "sine"                # Smooth daily temperature variation
-        min: 18.0                   # °C - cooler morning temperature
-        max: 28.0                   # °C - warmer afternoon temperature
-        period: 86400               # 24-hour daily cycle (86400 seconds)
+        type: "sine"                # Smooth temperature variation
+        min: 18.0                   # °C - cooler temperature
+        max: 28.0                   # °C - warmer temperature
+        period: 300                 # 5-minute cycle for visible trending
         phase: 180                  # Start at mid-range (around 23°C)
       
-      # NEW: Relative humidity (inversely correlated with temperature)
+      # Relative humidity (inversely correlated with temperature)
       humidity:
-        type: "sine"                # Smooth daily humidity variation
-        min: 50.0                   # % - lower humidity during warm afternoon
-        max: 80.0                   # % - higher humidity during cool morning
-        period: 86400               # 24-hour daily cycle
-        phase: 0                    # Start at maximum (peaks at dawn when temp is lowest)
+        type: "sine"                # Smooth humidity variation
+        min: 50.0                   # % - lower humidity during warm periods
+        max: 80.0                   # % - higher humidity during cool periods
+        period: 300                 # 5-minute cycle (matches temperature)
+        phase: 0                    # Start at maximum (peaks when temp is lowest)
 
   # ========== ENGINE SENSOR ==========
   - type: engine_sensor

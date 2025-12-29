@@ -112,7 +112,7 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
 
   async setMode(mode: string): Promise<void> {
     try {
-      const validModes = ['standby', 'auto', 'wind', 'nav', 'track'];
+      const validModes = ['STANDBY', 'AUTO', 'WIND', 'NAV', 'TRACK', 'standby', 'auto', 'wind', 'nav', 'track'];
       if (!validModes.includes(mode)) {
         throw new Error(`Invalid mode: ${mode}. Valid modes: ${validModes.join(', ')}`);
       }

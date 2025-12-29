@@ -187,6 +187,7 @@ export class AutopilotSafetyManager {
             targetDifference > AutopilotSafetyManager.MANUAL_OVERRIDE_THRESHOLD &&
             Date.now() - this.lastManualOverrideCheck > 5000
           ) {
+            const compassInstance = useNmeaStore.getState().getSensorInstance('compass', 0);
             this.raiseEvent({
               id: `manual_override_${Date.now()}`,
               type: SafetyEventType.MANUAL_OVERRIDE,
@@ -194,7 +195,7 @@ export class AutopilotSafetyManager {
               message: 'Manual steering override detected',
               timestamp: Date.now(),
               data: {
-                currentHeading: nmeaData.heading,
+                currentHeading: compassInstance?.getMetric('magneticHeading')?.si_value,
                 targetHeading: autopilotData.targetHeading,
                 difference: headingDifference,
               },

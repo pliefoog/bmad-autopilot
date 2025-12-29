@@ -43,6 +43,7 @@ import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 import { getDataFields } from '../registry/SensorConfigRegistry';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
+import { calculateTrueWind } from '../utils/calculations/windCalculations';
 
 /**
  * History point with enriched display values
@@ -230,6 +231,9 @@ export class SensorInstance<T extends SensorData = SensorData> {
       this._calculateDewPoint();
     }
 
+    // Note: True wind calculation for wind sensors is handled in nmeaStore
+    // after updateMetrics returns, to avoid circular dependencies
+
     return hasChanges;
   }
 
@@ -272,15 +276,250 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
+   * Calculate Rate of Turn (ROT) from heading differential
+   * Only for compass sensors with heading history
+   * Formula: ROT (°/min) = (Δheading / Δt_seconds) × 60
+   * Handles 359°→0° wrap-around
+   * 
+   * @returns Calculated ROT in degrees per minute, or null if insufficient data
+   */
+  private _calculateROT(): number | null {
+    if (this.sensorType !== 'compass') return null;
+
+    // Try magneticHeading first, then trueHeading
+    let headingField: string | null = null;
+    if (this._history.has('magneticHeading')) {
+      headingField = 'magneticHeading';
+    } else if (this._history.has('trueHeading')) {
+      headingField = 'trueHeading';
+    }
+
+    if (!headingField) return null;
+
+    const buffer = this._history.get(headingField);
+    if (!buffer) return null;
+
+    // Need at least 2 points for differential
+    const latest = buffer.getLatest();
+    const history = buffer.getAll();
+    if (history.length < 2 || !latest) return null;
+
+    // Get previous point (second most recent)
+    const previous = history[history.length - 2];
+    if (!previous || latest.si_value === null || previous.si_value === null) return null;
+
+    const currentHeading = latest.si_value;
+    const previousHeading = previous.si_value;
+    const deltaTime = (latest.timestamp - previous.timestamp) / 1000; // Convert to seconds
+
+    // Need reasonable time delta (at least 100ms, max 5s for accuracy)
+    if (deltaTime < 0.1 || deltaTime > 5) return null;
+
+    // Calculate delta heading with wrap-around handling
+    let deltaHeading = currentHeading - previousHeading;
+    if (deltaHeading > 180) deltaHeading -= 360;
+    if (deltaHeading < -180) deltaHeading += 360;
+
+    // Convert to degrees per minute
+    const rot = (deltaHeading / deltaTime) * 60;
+
+    return rot;
+  }
+
+  /**
+   * Calculate true wind if hardware values are stale or missing
+   * Only for wind sensors with apparent wind data
+   * Requires GPS (SOG, COG) and compass (heading) data
+   * 
+   * @param gpsInstance GPS sensor instance for SOG/COG
+   * @param compassInstance Compass sensor instance for heading
+   */
+  private _maybeCalculateTrueWind(
+    gpsInstance?: SensorInstance<any>,
+    compassInstance?: SensorInstance<any>,
+  ): void {
+    const now = Date.now();
+    const STALENESS_THRESHOLD_MS = 1000; // 1 second
+
+    log.wind('_maybeCalculateTrueWind called', () => ({
+      hasGPS: !!gpsInstance,
+      hasCompass: !!compassInstance,
+    }));
+
+    // Check if hardware true wind values are fresh
+    const hardwareTrueSpeed = this.getMetric('trueSpeed');
+    const hardwareTrueDirection = this.getMetric('trueDirection');
+
+    if (hardwareTrueSpeed && hardwareTrueDirection) {
+      const speedAge = now - hardwareTrueSpeed.timestamp;
+      const directionAge = now - hardwareTrueDirection.timestamp;
+
+      log.wind('Hardware true wind exists', () => ({
+        speedAge,
+        directionAge,
+        threshold: STALENESS_THRESHOLD_MS,
+      }));
+
+      // If both hardware values are fresh, don't calculate
+      if (speedAge < STALENESS_THRESHOLD_MS && directionAge < STALENESS_THRESHOLD_MS) {
+        log.wind('Hardware values fresh, skipping calculation');
+        return;
+      }
+    }
+
+    // Get apparent wind from this sensor
+    const awsMetric = this.getMetric('speed');
+    const awaMetric = this.getMetric('direction');
+
+    log.wind('Checking apparent wind', () => ({
+      hasAWS: !!awsMetric,
+      hasAWA: !!awaMetric,
+      aws: awsMetric?.si_value,
+      awa: awaMetric?.si_value,
+    }));
+
+    if (!awsMetric || !awaMetric) {
+      log.wind('Missing AWS or AWA, skipping calculation');
+      return;
+    }
+    if (awsMetric.si_value === null || awaMetric.si_value === null) {
+      log.wind('AWS or AWA is null, skipping calculation');
+      return;
+    }
+
+    // Check if GPS and compass data are available
+    if (!gpsInstance || !compassInstance) {
+      log.wind('Missing GPS or compass instance, skipping calculation');
+      return;
+    }
+
+    const sogMetric = gpsInstance.getMetric('speedOverGround');
+    const cogMetric = gpsInstance.getMetric('courseOverGround');
+    const headingMetric = compassInstance.getMetric('magneticHeading') ?? compassInstance.getMetric('trueHeading');
+
+    log.wind('Checking GPS/compass data', () => ({
+      hasSOG: !!sogMetric,
+      hasCOG: !!cogMetric,
+      hasHeading: !!headingMetric,
+      sog: sogMetric?.si_value,
+      cog: cogMetric?.si_value,
+      heading: headingMetric?.si_value,
+    }));
+
+    if (!sogMetric || !cogMetric || !headingMetric) {
+      log.wind('Missing SOG, COG, or heading metric - calculation requires all three', () => ({
+        hasSOG: !!sogMetric,
+        hasCOG: !!cogMetric,
+        hasHeading: !!headingMetric,
+      }));
+      return;
+    }
+    if (sogMetric.si_value === null || cogMetric.si_value === null || headingMetric.si_value === null) {
+      log.wind('SOG, COG, or heading is null - calculation requires valid values', () => ({
+        sog: sogMetric?.si_value,
+        cog: cogMetric?.si_value,
+        heading: headingMetric?.si_value,
+      }));
+      return;
+    }
+
+    // Calculate true wind using proper vector math
+    const trueWind = calculateTrueWind(
+      awsMetric.si_value,
+      awaMetric.si_value,
+      sogMetric.si_value,
+      cogMetric.si_value,
+      headingMetric.si_value,
+    );
+
+    log.wind('Calculated true wind', () => ({
+      input: {
+        aws: awsMetric.si_value,
+        awa: awaMetric.si_value,
+        sog: sogMetric.si_value,
+        cog: cogMetric.si_value,
+        heading: headingMetric.si_value,
+      },
+      result: trueWind,
+    }));
+
+    // Store calculated values using same field names as hardware
+    const speedUnitType = this._metricUnitTypes.get('trueSpeed');
+    const directionUnitType = this._metricUnitTypes.get('trueDirection');
+
+    log.wind('UnitTypes for true wind', () => ({
+      speedUnitType,
+      directionUnitType,
+      allUnitTypes: Array.from(this._metricUnitTypes.entries()),
+    }));
+
+    const speedMetric = speedUnitType
+      ? new MetricValue(trueWind.speed, now, speedUnitType)
+      : new MetricValue(trueWind.speed, now);
+
+    const directionMetric = directionUnitType
+      ? new MetricValue(trueWind.direction, now, directionUnitType)
+      : new MetricValue(trueWind.direction, now);
+
+    this._addToHistory('trueSpeed', speedMetric);
+    this._addToHistory('trueDirection', directionMetric);
+
+    log.wind('Stored calculated true wind', () => ({
+      trueSpeed: trueWind.speed,
+      trueDirection: trueWind.direction,
+    }));
+  }
+
+  /**
    * Get metric by field name (enriched with display values)
    *
    * Returns the latest history point with cached display values.
    * Widgets should access formattedValue, unit, etc. as properties.
+   * 
+   * Special handling:
+   * - rateOfTurn: Returns hardware value if fresh (<1s), otherwise calculates from heading
    *
    * @param fieldName - Field name (e.g., 'depth', 'voltage')
    * @returns Enriched history point or undefined
    */
   getMetric(fieldName: string): HistoryPoint | undefined {
+    // Special handling for Rate of Turn (ROT)
+    if (fieldName === 'rateOfTurn' && this.sensorType === 'compass') {
+      const buffer = this._history.get('rateOfTurn');
+      const now = Date.now();
+
+      // Check if we have fresh hardware ROT (less than 1 second old)
+      if (buffer) {
+        const latest = buffer.getLatest();
+        if (latest && latest.si_value !== null && (now - latest.timestamp) < 1000) {
+          return latest; // Use hardware value
+        }
+      }
+
+      // No fresh hardware ROT - calculate from heading differential
+      const calculatedROT = this._calculateROT();
+      if (calculatedROT !== null) {
+        const unitType = this._metricUnitTypes.get('rateOfTurn');
+        const metric = unitType
+          ? new MetricValue(calculatedROT, now, unitType)
+          : new MetricValue(calculatedROT, now);
+        
+        // Convert MetricValue to HistoryPoint (on-demand, not stored in history)
+        return {
+          si_value: calculatedROT,
+          value: metric.getDisplayValue(),
+          formattedValue: metric.getFormattedValue(),
+          formattedValueWithUnit: metric.getFormattedValueWithUnit(),
+          unit: metric.getUnit(),
+          timestamp: now,
+        };
+      }
+
+      // Fall through to return undefined if calculation failed
+      return undefined;
+    }
+
+    // Standard metric retrieval for all other fields
     const buffer = this._history.get(fieldName);
     if (!buffer) return undefined;
 
@@ -453,18 +692,76 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Get session statistics for a metric
    *
    * @param metricKey - Metric field name
-   * @returns Object with min, max, avg or undefined
+   * @returns Object with min, max, avg in SI units or undefined
    */
   getSessionStats(metricKey: string): { min: number; max: number; avg: number } | undefined {
     const history = this.getHistoryForMetric(metricKey);
     if (history.length === 0) return undefined;
 
-    const values = history.map((p) => p.si_value);
+    // Filter to only numeric SI values
+    const values = history
+      .map((p) => p.si_value)
+      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+    
+    if (values.length === 0) return undefined;
+
     const min = Math.min(...values);
     const max = Math.max(...values);
     const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
 
     return { min, max, avg };
+  }
+
+  /**
+   * Get formatted session statistics for a metric
+   * 
+   * Calculates min/max/avg from history and formats in user's selected units.
+   * On-demand calculation - only computes when called.
+   * 
+   * @param metricKey - Metric field name
+   * @returns Object with formatted min/max/avg or undefined
+   * 
+   * @example
+   * ```typescript
+   * const stats = depthInstance.getFormattedSessionStats('depth');
+   * console.log(stats.formattedMinValue);  // "5.2" (in user's units)
+   * console.log(stats.formattedMaxValue);  // "8.7" (in user's units)
+   * console.log(stats.formattedAvgValue);  // "6.5" (in user's units)
+   * console.log(stats.unit);               // "ft"
+   * ```
+   */
+  getFormattedSessionStats(metricKey: string): {
+    formattedMinValue: string;
+    formattedMaxValue: string;
+    formattedAvgValue: string;
+    unit: string;
+  } | undefined {
+    const stats = this.getSessionStats(metricKey);
+    if (!stats) return undefined;
+
+    // Get unitType for this metric
+    const unitType = this._metricUnitTypes.get(metricKey);
+    if (!unitType) {
+      // No unitType - return SI values as strings
+      return {
+        formattedMinValue: stats.min.toFixed(1),
+        formattedMaxValue: stats.max.toFixed(1),
+        formattedAvgValue: stats.avg.toFixed(1),
+        unit: '',
+      };
+    }
+
+    // Create MetricValue instances to leverage existing formatting
+    const minMetric = new MetricValue(stats.min, Date.now(), unitType);
+    const maxMetric = new MetricValue(stats.max, Date.now(), unitType);
+    const avgMetric = new MetricValue(stats.avg, Date.now(), unitType);
+
+    return {
+      formattedMinValue: minMetric.getFormattedValue(),
+      formattedMaxValue: maxMetric.getFormattedValue(),
+      formattedAvgValue: avgMetric.getFormattedValue(),
+      unit: minMetric.getUnit(),
+    };
   }
 
   /**

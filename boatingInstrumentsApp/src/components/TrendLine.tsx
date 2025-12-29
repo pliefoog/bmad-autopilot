@@ -154,6 +154,17 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // for efficient windowed queries (optimized in Phase 4)
   const trendData = useMemo(() => {
     const data = getSensorHistory(sensor, instance, metric, { timeWindowMs });
+    
+    // DEBUG: Log history fetch results
+    console.log(`[TrendLine] ${sensor}.${instance}.${metric} history:`, {
+      dataPoints: data.length,
+      timeWindow: timeWindowMs,
+      sensorTimestamp,
+      firstPoint: data[0],
+      lastPoint: data[data.length - 1],
+      allData: data,
+    });
+    
     return data;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);

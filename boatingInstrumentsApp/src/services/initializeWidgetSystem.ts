@@ -13,6 +13,7 @@
 import { widgetRegistrationService } from '../services/WidgetRegistrationService';
 import { registerBuiltInWidgets } from '../config/builtInWidgetRegistrations';
 import { registerDefaultCustomWidgets } from '../config/defaultCustomWidgets';
+import { validateAndLogConfiguration } from '../presentation/presentationStore';
 
 let isInitialized = false;
 
@@ -37,6 +38,9 @@ export function initializeWidgetSystem(): void {
     console.warn('[WidgetSystem] ⚠️ Widget system already initialized');
     return;
   }
+
+  // Step 0: Validate presentation system configuration (dev mode only)
+  validateAndLogConfiguration();
 
   // Step 1: Register all built-in widget types
   registerBuiltInWidgets(widgetRegistrationService);

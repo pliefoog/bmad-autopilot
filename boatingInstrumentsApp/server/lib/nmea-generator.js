@@ -478,7 +478,9 @@ class NmeaGenerator {
 
     // Speed over ground (knots) and course over ground (true)
     const sog = this.scenario?.data?.speed?.currentValue ?? 0;
-    const cog = (this.autopilotState.currentHeading || 0);
+    // CRITICAL: COG comes from GPS track (scenario calculates from waypoints), NOT from heading
+    // Heading is compass direction (bow), COG is actual track over ground
+    const cog = this.scenario?.data?.gps?.cog ?? 0;
 
     // Status A=valid, V=warning
     const status = 'A';

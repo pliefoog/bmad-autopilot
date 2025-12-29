@@ -1,59 +1,31 @@
 /**
  * MetricDisplayData Interface
  *
- * Unified interface for metric display data with stable layout information.
- * Eliminates dual-system conflicts between legacy useUnitConversion and presentations.
- *
- * Phase 1 Refactor: Added alarmState for integrated alarm visualization
+ * Minimal interface for metric display cells - cells are "dumb" display components
+ * that only render what they're given. All formatting/conversion handled by MetricValue.
  */
 
-import { Presentation } from '../presentation/presentations';
 import type { AlarmLevel } from './AlarmTypes';
 
 export interface MetricDisplayData {
-  /** The unit abbreviation/symbol (e.g., "kts", "m", "°C") */
+  /** Metric label/abbreviation (e.g., "HDG", "SPD", "DEPTH") */
   mnemonic: string;
 
-  /** The formatted display value (e.g., "15.5", "4 Bf (Moderate Breeze)") */
-  value: string;
+  /** Pre-formatted display value from MetricValue.formattedValue */
+  value?: string;
 
-  /** The full unit name (e.g., "knots", "meters", "Celsius") */
-  unit: string;
+  /** Unit symbol from MetricValue.unit */
+  unit?: string;
 
-  /** The original raw value in base units */
-  rawValue: number;
-
-  /** Alarm state: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL */
+  /** Visual alarm state for color styling: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL */
   alarmState: AlarmLevel;
 
-  /** Layout information for stable rendering */
-  layout: {
+  /** Optional layout hints (cells may ignore these) */
+  layout?: {
     /** Minimum width in pixels for layout stability */
-    minWidth: number;
+    minWidth?: number;
     /** Text alignment preference */
-    alignment: 'left' | 'center' | 'right';
-    /** Font size recommendation */
-    fontSize?: number;
-  };
-
-  /** Presentation metadata */
-  presentation: {
-    /** Presentation ID for tracking */
-    id: string;
-    /** Display name of the presentation */
-    name: string;
-    /** Format pattern used */
-    pattern: string;
-  };
-
-  /** Validation and status */
-  status: {
-    /** Whether the measurement is valid */
-    isValid: boolean;
-    /** Error message if invalid */
-    error?: string;
-    /** Whether this is a fallback/estimated value */
-    isFallback?: boolean;
+    alignment?: 'left' | 'center' | 'right';
   };
 }
 

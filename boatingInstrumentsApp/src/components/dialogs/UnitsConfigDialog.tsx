@@ -21,7 +21,12 @@ import React, { useMemo, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
-import { usePresentationStore } from '../../presentation/presentationStore';
+import {
+  usePresentationStore,
+  REGION_DEFAULTS,
+  getRegionMetadata,
+  MarineRegion,
+} from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
 import {
   PRESENTATIONS,
@@ -67,13 +72,15 @@ interface CategoryConfig {
   defaultCollapsed?: boolean; // Collapse less common categories
 }
 
-// === PRESET DEFINITIONS ===
+// === PRESET DEFINITIONS (LOADED FROM STORE) ===
 
 /**
  * Presentation Preset Structure
  *
  * Defines a complete set of unit preferences for a region/standard.
  * Examples array provides sample formatted values for preview display.
+ *
+ * **SINGLE SOURCE OF TRUTH:** Loaded from presentationStore.REGION_DEFAULTS
  */
 interface PresentationPreset {
   id: string;
@@ -83,102 +90,74 @@ interface PresentationPreset {
   examples: { category: string; value: string }[]; // Preview examples
 }
 
-const PRESETS: PresentationPreset[] = [
-  {
-    id: 'nautical_eu',
-    name: 'Nautical (EU)',
-    description: 'European sailing standard',
-    presentations: {
-      depth: 'm_1',
-      speed: 'kts_1',
-      wind: 'wind_kts_1',
-      temperature: 'c_1',
-      pressure: 'bar_3',
-      angle: 'deg_0',
-      coordinates: 'ddm_3',
-      voltage: 'v_2',
-      current: 'a_2',
-      volume: 'l_0',
-      time: 'h_1',
-      distance: 'nm_1',
-      capacity: 'ah_0',
-      flowRate: 'lph_1',
-      frequency: 'hz_1',
-      power: 'kw_1',
-      rpm: 'rpm_0',
-    },
-    examples: [
+/**
+ * Build presets from store's REGION_DEFAULTS (single source of truth)
+ */
+function buildPresetsFromStore(): PresentationPreset[] {
+  const regionMetadata = getRegionMetadata();
+  
+  // Example values for preview (could be made dynamic in future)
+  const examplesByRegion: Record<MarineRegion, { category: string; value: string }[]> = {
+    eu: [
       { category: 'Depth', value: '5.2 m' },
       { category: 'Speed', value: '6.8 kts' },
-      { category: 'Temp', value: '18.5°C' },
+      { category: 'Wind', value: '12.5 kts' },
+      { category: 'Temperature', value: '18.5°C' },
+      { category: 'Pressure', value: '1013.2 mbar' },
+      { category: 'Distance', value: '2.4 NM' },
+      { category: 'Volume', value: '83.0 L' },
     ],
-  },
-  {
-    id: 'nautical_uk',
-    name: 'Nautical (UK)',
-    description: 'British sailing standard',
-    presentations: {
-      depth: 'fth_1',
-      speed: 'kts_1',
-      wind: 'bf_desc',
-      temperature: 'c_1',
-      pressure: 'inhg_2',
-      angle: 'deg_0',
-      coordinates: 'dms_1',
-      voltage: 'v_2',
-      current: 'a_2',
-      volume: 'gal_uk_1',
-      time: 'h_1',
-      distance: 'nm_1',
-      capacity: 'ah_0',
-      flowRate: 'gph_uk_1',
-      frequency: 'hz_1',
-      power: 'hp_0',
-      rpm: 'rpm_0',
-    },
-    examples: [
+    uk: [
       { category: 'Depth', value: '3.0 fth' },
       { category: 'Speed', value: '6.8 kts' },
+      { category: 'Wind', value: '12.5 kts' },
+      { category: 'Temperature', value: '18.5°C' },
+      { category: 'Pressure', value: '1013.2 mbar' },
+      { category: 'Distance', value: '2.4 NM' },
       { category: 'Volume', value: '22.0 gal' },
     ],
-  },
-  {
-    id: 'nautical_us',
-    name: 'Nautical (USA)',
-    description: 'US sailing standard',
-    presentations: {
-      depth: 'ft_1',
-      speed: 'kts_1',
-      wind: 'wind_kts_1',
-      temperature: 'f_1',
-      pressure: 'psi_1',
-      angle: 'deg_0',
-      coordinates: 'ddm_3',
-      voltage: 'v_2',
-      current: 'a_2',
-      volume: 'gal_us_1',
-      time: 'h_1',
-      distance: 'nm_1',
-      capacity: 'ah_0',
-      flowRate: 'gph_us_1',
-      frequency: 'hz_1',
-      power: 'hp_0',
-      rpm: 'rpm_0',
-    },
-    examples: [
+    us: [
       { category: 'Depth', value: '17.1 ft' },
       { category: 'Speed', value: '6.8 kts' },
-      { category: 'Temp', value: '65.3°F' },
+      { category: 'Wind', value: '12.5 kts' },
+      { category: 'Temperature', value: '65.3°F' },
+      { category: 'Pressure', value: '29.92 inHg' },
+      { category: 'Distance', value: '2.4 NM' },
+      { category: 'Volume', value: '22.0 gal' },
     ],
-  },
-  {
+    international: [
+      { category: 'Depth', value: '5.2 m' },
+      { category: 'Speed', value: '6.8 kts' },
+      { category: 'Wind', value: '12.5 kts' },
+      { category: 'Temperature', value: '18.5°C' },
+      { category: 'Pressure', value: '1013.2 mbar' },
+      { category: 'Distance', value: '2.4 NM' },
+      { category: 'Volume', value: '83.0 L' },
+    ],
+  };
+
+  const presets: PresentationPreset[] = regionMetadata.map((region) => ({
+    id: region.id,
+    name: region.name,
+    description: region.description,
+    presentations: REGION_DEFAULTS[region.id],
+    examples: examplesByRegion[region.id],
+  }));
+
+  // Add custom preset
+  presets.push({
     id: 'custom',
     name: 'Custom',
     description: 'User-defined selections',
     presentations: {},
     examples: [],
-  },
-];
+  });
+
+  return presets;
+}
+
+// Build presets once at module level
+const PRESETS = buildPresetsFromStore();
 
 // === CATEGORY DEFINITIONS ===
 

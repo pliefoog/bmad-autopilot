@@ -1,5 +1,28 @@
-// useUnitConversion Hook
-// Custom hook for unit conversion management with dynamic preferences and real-time conversion
+/**
+ * ⚠️ DEPRECATED: useUnitConversion Hook
+ * 
+ * This hook is LEGACY and should NOT be used for sensor data conversion.
+ * 
+ * **For Sensor Data:**
+ * Use the MetricValue pattern with presentationStore.REGION_DEFAULTS:
+ * ```typescript
+ * const depthMetric = sensorInstance?.getMetric('depth');
+ * const displayValue = depthMetric?.formattedValue; // Pre-enriched, respects user preferences
+ * ```
+ * 
+ * **Current Usage:**
+ * - GPSWidget: Date/time formatting (non-numeric, legitimate exception - Story 9.6)
+ * 
+ * **Why Deprecated:**
+ * - 2784 lines of complex conversion logic
+ * - Duplicates ConversionRegistry/MetricValue functionality
+ * - Not integrated with presentation system
+ * - Only needed for non-numeric formatting (dates)
+ * 
+ * @deprecated Use MetricValue.formattedValue for sensor data. Only use this for date/time formatting.
+ * @see src/types/MetricValue.ts
+ * @see src/presentation/presentationStore.ts
+ */
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useSettingsStore } from '../store/settingsStore';

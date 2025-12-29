@@ -43,9 +43,6 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
 
     // Widget state management
 
-    // NEW: Get session stats method from store
-    const getSessionStats = useNmeaStore((state) => state.getSessionStats);
-
     // NMEA data - Read SensorInstance once, extract all metrics via getMetric()
     const temperatureSensorData = useNmeaStore(
       (state) => state.nmeaData.sensors.temperature?.[instanceNumber],
@@ -188,10 +185,12 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
       >
         {/* Primary Row 1: Temperature */}
         <PrimaryMetricCell
-          mnemonic="TEMP"
-          value={displayTemperature !== null ? String(displayTemperature) : '---'}
-          unit={displayUnit}
-          data={{ alarmState: isStale ? 1 : temperatureAlarmLevel }}
+          data={{
+            mnemonic: 'TEMP',
+            value: displayTemperature !== null ? String(displayTemperature) : '---',
+            unit: displayUnit,
+            alarmState: isStale ? 1 : temperatureAlarmLevel,
+          }}
           fontSize={{
             mnemonic: fontSize.label,
             value: fontSize.value,
@@ -217,9 +216,11 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
 
         {/* Secondary Row 1: Location */}
         <SecondaryMetricCell
-          mnemonic="LOC"
-          value={location && location.trim().length > 0 ? location.toUpperCase() : 'UNKNOWN'}
-          unit=""
+          data={{
+            mnemonic: 'LOC',
+            value: location && location.trim().length > 0 ? location.toUpperCase() : 'UNKNOWN',
+            unit: '',
+          }}
           state="normal"
           compact={true}
           fontSize={{
@@ -230,9 +231,11 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(
         />
         {/* Secondary Row 2: Instance */}
         <SecondaryMetricCell
-          mnemonic="INST"
-          value={typeof instanceNumber === 'number' ? String(instanceNumber) : '0'}
-          unit=""
+          data={{
+            mnemonic: 'INST',
+            value: typeof instanceNumber === 'number' ? String(instanceNumber) : '0',
+            unit: '',
+          }}
           state="normal"
           compact={true}
           fontSize={{

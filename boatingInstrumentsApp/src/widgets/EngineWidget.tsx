@@ -45,26 +45,47 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       (a, b) => a === b,
     );
 
-    // Extract metrics from SensorInstance using getMetric()
-    const rpmMetric = engineSensorInstance?.getMetric('rpm');
+    // PERFORMANCE: Cache MetricValue objects with timestamp-based dependencies (fine-grained)
+    const rpmMetric = useMemo(
+      () => engineSensorInstance?.getMetric('rpm'),
+      [engineSensorInstance?.timestamp],
+    );
     const rpm = rpmMetric?.si_value ?? null;
 
-    const coolantTempMetric = engineSensorInstance?.getMetric('temperature');
+    const coolantTempMetric = useMemo(
+      () => engineSensorInstance?.getMetric('coolantTemp'),
+      [engineSensorInstance?.timestamp],
+    );
     const coolantTemp = coolantTempMetric?.si_value ?? null;
 
-    const oilPressureMetric = engineSensorInstance?.getMetric('oilPressure');
+    const oilPressureMetric = useMemo(
+      () => engineSensorInstance?.getMetric('oilPressure'),
+      [engineSensorInstance?.timestamp],
+    );
     const oilPressure = oilPressureMetric?.si_value ?? null;
 
-    const alternatorVoltageMetric = engineSensorInstance?.getMetric('alternatorVoltage');
+    const alternatorVoltageMetric = useMemo(
+      () => engineSensorInstance?.getMetric('alternatorVoltage'),
+      [engineSensorInstance?.timestamp],
+    );
     const alternatorVoltage = alternatorVoltageMetric?.si_value ?? null;
 
-    const fuelRateMetric = engineSensorInstance?.getMetric('fuelRate');
+    const fuelRateMetric = useMemo(
+      () => engineSensorInstance?.getMetric('fuelRate'),
+      [engineSensorInstance?.timestamp],
+    );
     const fuelRate = fuelRateMetric?.si_value ?? null;
 
-    const hoursMetric = engineSensorInstance?.getMetric('hours');
+    const hoursMetric = useMemo(
+      () => engineSensorInstance?.getMetric('hours'),
+      [engineSensorInstance?.timestamp],
+    );
     const hours = hoursMetric?.si_value ?? null;
 
-    const shaftRpmMetric = engineSensorInstance?.getMetric('shaftRpm');
+    const shaftRpmMetric = useMemo(
+      () => engineSensorInstance?.getMetric('shaftRpm'),
+      [engineSensorInstance?.timestamp],
+    );
     const shaftRpm = shaftRpmMetric?.si_value ?? null;
 
     const engineTimestamp = engineSensorInstance?.timestamp;
@@ -84,20 +105,10 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
             mnemonic: engineMnemonic,
             value: '---',
             unit: fallbackSymbol,
-            rawValue: 0,
+            alarmState: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
-            },
-            presentation: {
-              id: 'default',
-              name: engineMnemonic,
-              pattern: 'xxx',
-            },
-            status: {
-              isValid: false,
-              error: 'No data',
-              isFallback: true,
             },
           };
         }
@@ -108,19 +119,10 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
             mnemonic: engineMnemonic,
             value: metric.formattedValue, // Already formatted without unit
             unit: metric.unit,
-            rawValue: value,
+            alarmState: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
-            },
-            presentation: {
-              id: 'engine',
-              name: engineMnemonic,
-              pattern: 'xxx.x',
-            },
-            status: {
-              isValid: true,
-              isFallback: false,
             },
           };
         }
@@ -130,19 +132,10 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
           mnemonic: engineMnemonic,
           value: '---',
           unit: fallbackSymbol,
-          rawValue: value,
+          alarmState: 0,
           layout: {
             minWidth: 60,
             alignment: 'right',
-          },
-          presentation: {
-            id: 'engine',
-            name: engineMnemonic,
-            pattern: 'xxx.x',
-          },
-          status: {
-            isValid: true,
-            isFallback: false,
           },
         };
       },
@@ -152,37 +145,37 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
     // Engine display values using MetricValue from SensorInstance (Phase 4)
     const rpmDisplay = useMemo(
       () => getEngineDisplay(rpmMetric, rpm, 'RPM', 'rpm'),
-      [rpm, rpmMetric, getEngineDisplay],
+      [rpm, rpmMetric],
     );
 
     const coolantTempDisplay = useMemo(
       () => getEngineDisplay(coolantTempMetric, coolantTemp, 'ECT', '°C'),
-      [coolantTemp, coolantTempMetric, getEngineDisplay],
+      [coolantTemp, coolantTempMetric],
     );
 
     const oilPressureDisplay = useMemo(
       () => getEngineDisplay(oilPressureMetric, oilPressure, 'EOP', 'bar'),
-      [oilPressure, oilPressureMetric, getEngineDisplay],
+      [oilPressure, oilPressureMetric],
     );
 
     const alternatorVoltageDisplay = useMemo(
       () => getEngineDisplay(alternatorVoltageMetric, alternatorVoltage, 'ALT', 'V'),
-      [alternatorVoltage, alternatorVoltageMetric, getEngineDisplay],
+      [alternatorVoltage, alternatorVoltageMetric],
     );
 
     const fuelFlowDisplay = useMemo(
       () => getEngineDisplay(fuelRateMetric, fuelRate, 'EFF', 'L/h'),
-      [fuelRate, fuelRateMetric, getEngineDisplay],
+      [fuelRate, fuelRateMetric],
     );
 
     const engineHoursDisplay = useMemo(
       () => getEngineDisplay(hoursMetric, hours, 'EHR', 'h'),
-      [hours, hoursMetric, getEngineDisplay],
+      [hours, hoursMetric],
     );
 
     const shaftRpmDisplay = useMemo(
       () => getEngineDisplay(shaftRpmMetric, shaftRpm, 'SRPM', 'rpm'),
-      [shaftRpm, shaftRpmMetric, getEngineDisplay],
+      [shaftRpm, shaftRpmMetric],
     );
 
     // Marine safety thresholds for engine monitoring

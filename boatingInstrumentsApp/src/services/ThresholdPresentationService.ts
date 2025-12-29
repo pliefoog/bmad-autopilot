@@ -45,6 +45,12 @@ import { useNmeaStore } from '../store/nmeaStore';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { SENSOR_CONFIG_REGISTRY, getAlarmDefaults } from '../registry/SensorConfigRegistry';
 import { DataCategory } from '../presentation/categories';
+import {
+  findPresentation,
+  getConvertFunction,
+  getConvertBackFunction,
+  ensureFormatFunction,
+} from '../presentation/presentations';
 
 /**
  * Enriched threshold information with display details
@@ -187,15 +193,19 @@ class ThresholdPresentationServiceClass {
       }
     }
 
+    // Get helper functions for conversions and formatting
+    const convertFn = getConvertFunction(presentation);
+    const formatFn = ensureFormatFunction(presentation);
+
     // Convert all values to display units (with safety checks)
     const criticalDisplay =
       critical !== undefined
         ? (() => {
-            const converted = presentation.convert(critical);
+            const converted = convertFn(critical);
             return {
               value: converted,
               unit: presentation.symbol,
-              formattedValue: `${presentation.format(converted)} ${presentation.symbol}`,
+              formattedValue: `${formatFn(converted)} ${presentation.symbol}`,
             };
           })()
         : undefined;
@@ -203,11 +213,11 @@ class ThresholdPresentationServiceClass {
     const warningDisplay =
       warning !== undefined
         ? (() => {
-            const converted = presentation.convert(warning);
+            const converted = convertFn(warning);
             return {
               value: converted,
               unit: presentation.symbol,
-              formattedValue: `${presentation.format(converted)} ${presentation.symbol}`,
+              formattedValue: `${formatFn(converted)} ${presentation.symbol}`,
             };
           })()
         : undefined;
@@ -224,19 +234,19 @@ class ThresholdPresentationServiceClass {
       maxSI = maxSI ?? fallback.max;
     }
 
-    const minConverted = presentation.convert(minSI);
-    const maxConverted = presentation.convert(maxSI);
+    const minConverted = convertFn(minSI);
+    const maxConverted = convertFn(maxSI);
 
     const minDisplay = {
       value: minConverted,
       unit: presentation.symbol,
-      formattedValue: `${presentation.format(minConverted)} ${presentation.symbol}`,
+      formattedValue: `${formatFn(minConverted)} ${presentation.symbol}`,
     };
 
     const maxDisplay = {
       value: maxConverted,
       unit: presentation.symbol,
-      formattedValue: `${presentation.format(maxConverted)} ${presentation.symbol}`,
+      formattedValue: `${formatFn(maxConverted)} ${presentation.symbol}`,
     };
 
     return {
@@ -252,10 +262,9 @@ class ThresholdPresentationServiceClass {
         min: minDisplay,
         max: maxDisplay,
       },
-      convertToSI: presentation.convertBack,
-      convertFromSI: presentation.convert,
-      formatValue: (displayValue: number) =>
-        `${presentation.format(displayValue)} ${presentation.symbol}`,
+      convertToSI: getConvertBackFunction(presentation),
+      convertFromSI: getConvertFunction(presentation),
+      formatValue: (displayValue: number) => `${formatFn(displayValue)} ${presentation.symbol}`,
     };
   }
 

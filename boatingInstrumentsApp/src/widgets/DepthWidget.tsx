@@ -13,6 +13,8 @@ import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
+import { MetricValue } from '../types/MetricValue';
+import { createMetricDisplay } from '../utils/metricDisplayHelpers';
 
 interface DepthWidgetProps {
   id: string;
@@ -45,8 +47,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
     );
 
     // Extract metrics from SensorInstance
-    const depthMetric = depthSensorInstance?.getMetric('depth');
-    const depth = depthMetric?.si_value;
+    const depth = depthSensorInstance?.getMetric('depth')?.si_value;
     const depthSource = depthSensorInstance?.getMetric('depthSource')?.si_value;
     const depthReferencePoint = depthSensorInstance?.getMetric('depthReferencePoint')?.si_value;
     const sensorTimestamp = depthSensorInstance?.getMetric('timestamp')?.si_value;
@@ -59,14 +60,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
     // Simple stale check without interval
     const isStale = !sensorTimestamp || Date.now() - sensorTimestamp > 5000;
 
-    // Get store methods
-    const getSessionStats = useNmeaStore((state) => state.getSessionStats);
-
-    // Get session stats from store (instance 0 - all depth measurements merged here)
-    const sessionStats = useMemo(() => {
-      return getSessionStats('depth', 0, 'depth');
-    }, [getSessionStats, depth, sensorTimestamp]); // Re-calculate when depth changes
-
     // Note: Alarm thresholds for TrendLine are now auto-subscribed within the component
     // No need to fetch and convert them here
 
@@ -78,6 +71,25 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
     // NEW: Use MetricValue display fields from SensorInstance (Phase 3 migration)
     // No more presentation hooks needed - MetricValue has pre-enriched display data
     // 🛡️ ARCHITECTURAL VALIDATION: MetricValue MUST exist - no fallbacks allowed
+    
+    // PERFORMANCE: Cache MetricValue with timestamp-based dependency (fine-grained)
+    const depthMetric = useMemo(
+      () => depthSensorInstance?.getMetric('depth'),
+      [depthSensorInstance?.timestamp],
+    );
+    
+    // PERFORMANCE: Cache formatted stats with timestamp-based dependency (fine-grained)
+    const sessionStats = useMemo(
+      () => depthSensorInstance?.getFormattedSessionStats('depth'),
+      [depthSensorInstance?.timestamp],
+    );
+
+    // PERFORMANCE: Cache alarm level with timestamp-based dependency (fine-grained)
+    const depthAlarmLevel = useMemo(
+      () => depthSensorInstance?.getAlarmState('depth') ?? 0,
+      [depthSensorInstance?.timestamp],
+    );
+
     const convertDepth = useMemo(() => {
       // CRITICAL: If depth exists but metric is missing, this is a BUG
       if (depth !== null && depth !== undefined && !depthMetric) {
@@ -97,41 +109,26 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
       }
 
       return {
-        current: {
-          value: depthMetric?.formattedValue ?? '---',
-          unit: depthMetric?.unit ?? 'm',
-        },
-        sessionMin: {
-          value: (() => {
-            if (sessionStats.min === null) return '---';
-            // Convert using MetricValue's conversion method
-            if (depthMetric?.convertToDisplay) {
-              const converted = depthMetric.convertToDisplay(sessionStats.min);
-              return converted.toFixed(1);
-            }
-            // Fallback
-            return sessionStats.min.toFixed(1);
-          })(),
-          unit: depthMetric?.unit ?? 'm',
-        },
-        sessionMax: {
-          value: (() => {
-            if (sessionStats.max === null) return '---';
-            // Convert using MetricValue's conversion method
-            if (depthMetric?.convertToDisplay) {
-              const converted = depthMetric.convertToDisplay(sessionStats.max);
-              return converted.toFixed(1);
-            }
-            // Fallback
-            return sessionStats.max.toFixed(1);
-          })(),
-          unit: depthMetric?.unit ?? 'm',
-        },
+        current: createMetricDisplay(
+          'DEPTH',
+          depthMetric?.formattedValue,
+          depthMetric?.unit,
+          depthAlarmLevel,
+        ),
+        sessionMin: createMetricDisplay(
+          'MIN',
+          sessionStats?.formattedMinValue,
+          sessionStats?.unit,
+          0,
+        ),
+        sessionMax: createMetricDisplay(
+          'MAX',
+          sessionStats?.formattedMaxValue,
+          sessionStats?.unit,
+          0,
+        ),
       };
-    }, [depth, sessionStats, depthMetric]);
-
-    // Get alarm level from SensorInstance (Phase 5 refactor)
-    const depthAlarmLevel = depthSensorInstance?.getAlarmState('depth') ?? 0;
+    }, [depth, depthMetric, sessionStats, depthAlarmLevel]);
 
     // Generate depth source info for user display
     const depthSourceInfo = useMemo(() => {
@@ -201,8 +198,8 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
         {/* Row 1: Current depth with large value */}
         <PrimaryMetricCell
           data={{
-            mnemonic: depthSourceInfo.shortLabel || 'DEPTH',
             ...convertDepth.current,
+            mnemonic: depthSourceInfo.shortLabel || 'DEPTH',
             alarmState: isStale ? 1 : depthAlarmLevel,
           }}
           fontSize={{
@@ -231,7 +228,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
         />
         <SecondaryMetricCell
           data={{
-            mnemonic: 'MIN',
             ...convertDepth.sessionMin,
             alarmState: 0,
           }}
@@ -246,7 +242,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(
         {/* Row 4: Session maximum depth */}
         <SecondaryMetricCell
           data={{
-            mnemonic: 'MAX',
             ...convertDepth.sessionMax,
             alarmState: 0,
           }}

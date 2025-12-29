@@ -11,6 +11,7 @@ import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
+import { MetricValue } from '../types/MetricValue';
 
 interface SpeedWidgetProps {
   id: string;
@@ -36,10 +37,6 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
     // Widget state management per ui-architecture.md v2.3
 
     // NOTE: History now tracked automatically in sensor data - no subscription needed
-
-    // NEW: Get history and stats methods from store
-    const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
-    const getSessionStats = useNmeaStore((state) => state.getSessionStats);
 
     // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
     // ARCHITECTURAL FIX: STW from speed sensor (paddlewheel), SOG from GPS sensor (GPS-calculated)
@@ -68,86 +65,77 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
     const sogAlarmLevel = gpsSensorData?.getAlarmState('speedOverGround') ?? 0;
     const stwAlarmLevel = speedSensorData?.getAlarmState('throughWater') ?? 0;
 
-    // Calculate averages and maximums for secondary view using store history
-    // Use getSessionStats which is optimized and updates correctly
-    const calculations = useMemo(() => {
-      const sogStats = getSessionStats('gps', 0, 'speedOverGround'); // GPS sensor tracks speedOverGround
-      const stwStats = getSessionStats('speed', 0, 'throughWater'); // Speed sensor tracks throughWater
-
-      return {
-        sog: {
-          avg: sogStats.avg,
-          max: sogStats.max,
-        },
-        stw: {
-          avg: stwStats.avg,
-          max: stwStats.max,
-        },
-      };
-    }, [getSessionStats, sog, stw, speedTimestamp]); // Re-calculate when sensor updates
-
     // NEW: Use MetricValue from SensorInstance (Phase 4 migration)
     // No more presentation hooks needed - data is pre-formatted in MetricValue
+    
+    // PERFORMANCE: Cache formatted stats with timestamp-based dependencies (fine-grained)
+    const sogStats = useMemo(
+      () => gpsSensorData?.getFormattedSessionStats('speedOverGround'),
+      [gpsSensorData?.timestamp],
+    );
+    const stwStats = useMemo(
+      () => speedSensorData?.getFormattedSessionStats('throughWater'),
+      [speedSensorData?.timestamp],
+    );
+    
+    // PERFORMANCE: Cache MetricValue objects with timestamp-based dependencies
+    const sogMetric = useMemo(
+      () => gpsSensorData?.getMetric('speedOverGround'),
+      [gpsSensorData?.timestamp],
+    );
+    const stwMetric = useMemo(
+      () => speedSensorData?.getMetric('throughWater'),
+      [speedSensorData?.timestamp],
+    );
+    
     const speedDisplayData = useMemo(() => {
       const createDisplay = (
         value: number | null | undefined,
         metricValue: any,
         mnemonic: string,
+        statValue?: string,
+        statUnit?: string,
       ): MetricDisplayData => {
+        // For session stats, use formatted values from getFormattedSessionStats
+        if (statValue !== undefined) {
+          return {
+            mnemonic,
+            value: statValue,
+            unit: statUnit ?? 'kts',
+            alarmState: 0,
+            layout: { minWidth: 60, alignment: 'right' },
+          };
+        }
+
         // For direct sensor values, use MetricValue if available
         if (metricValue) {
           return {
             mnemonic,
             value: metricValue.formattedValue ?? '---',
             unit: metricValue.unit ?? 'kts',
-            rawValue: value ?? 0,
+            alarmState: 0,
             layout: { minWidth: 60, alignment: 'right' },
-            presentation: { id: 'speed', name: 'Speed', pattern: 'xxx.x' },
-            status: { isValid: value !== undefined && value !== null, isFallback: false },
           };
-        }
-
-        // For calculated values (avg, max), format using the same MetricValue's convert function if available
-        let formattedValue = '---';
-        let unit = 'kts';
-
-        if (value !== null && value !== undefined) {
-          // Get MetricValue from either GPS or speed sensor
-          const availableMetric =
-            gpsSensorData?.getMetric('speedOverGround') ||
-            speedSensorData?.getMetric('throughWater');
-
-          if (availableMetric && availableMetric.convertToDisplay) {
-            // Use the same conversion and formatting as the primary sensor
-            const converted = availableMetric.convertToDisplay(value);
-            formattedValue = converted.toFixed(1); // Use same precision as main values
-            unit = availableMetric.unit;
-          } else {
-            // Fallback: no formatting available
-            formattedValue = value.toFixed(1);
-          }
         }
 
         return {
           mnemonic,
-          value: formattedValue,
-          unit,
-          rawValue: value ?? 0,
+          value: '---',
+          unit: 'kts',
+          alarmState: 0,
           layout: { minWidth: 60, alignment: 'right' },
-          presentation: { id: 'speed', name: 'Speed', pattern: 'xxx.x' },
-          status: { isValid: value !== undefined && value !== null, isFallback: false },
         };
       };
 
       return {
-        sog: createDisplay(sog, gpsSensorData?.getMetric('speedOverGround'), 'SOG'),
-        stw: createDisplay(stw, speedSensorData?.getMetric('throughWater'), 'STW'),
-        sogAvg: createDisplay(calculations.sog.avg, null, 'AVG'),
-        stwAvg: createDisplay(calculations.stw.avg, null, 'AVG'),
-        sogMax: createDisplay(calculations.sog.max, null, 'MAX'),
-        stwMax: createDisplay(calculations.stw.max, null, 'MAX'),
+        sog: createDisplay(sog, sogMetric, 'SOG'),
+        stw: createDisplay(stw, stwMetric, 'STW'),
+        sogAvg: createDisplay(null, null, 'AVG', sogStats?.formattedAvgValue, sogStats?.unit),
+        stwAvg: createDisplay(null, null, 'AVG', stwStats?.formattedAvgValue, stwStats?.unit),
+        sogMax: createDisplay(null, null, 'MAX', sogStats?.formattedMaxValue, sogStats?.unit),
+        stwMax: createDisplay(null, null, 'MAX', stwStats?.formattedMaxValue, stwStats?.unit),
       };
-    }, [sog, stw, calculations, gpsSensorData, speedSensorData]);
+    }, [sog, stw, sogMetric, stwMetric, sogStats, stwStats]);
 
     const handleLongPressOnPin = useCallback(() => {}, [id]);
 

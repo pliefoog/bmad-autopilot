@@ -253,7 +253,7 @@ export class PureStoreUpdater {
         }
 
         case 127250: {
-          // Heading
+          // Heading (PGN doesn't specify magnetic/true, assume magnetic)
           const headingData = pgnParser.parseHeadingPgn(hexData);
           if (headingData) {
             updates.push({
@@ -263,7 +263,7 @@ export class PureStoreUpdater {
               unit: 'degrees',
               timestamp,
               data: {
-                heading: headingData.heading,
+                magneticHeading: headingData.heading,
               },
             });
           }
@@ -517,6 +517,30 @@ export class PureStoreUpdater {
             data: update.data,
             hasChemistry: 'chemistry' in update.data,
             chemistryValue: (update.data as any).chemistry,
+          }));
+        }
+
+        // Debug: Log engine updates to trace field flow
+        if (update.sensorType == 'engine') {
+          log.engine('PureStoreUpdater calling updateSensorData for engine', () => ({
+            sensorType: update.sensorType,
+            instance: update.instance,
+            data: update.data,
+            fields: Object.keys(update.data),
+            coolantTemp: (update.data as any).coolantTemp,
+            oilPressure: (update.data as any).oilPressure,
+          }));
+        }
+
+        // Debug: Log speed updates to trace SOG/STW
+        if (update.sensorType === 'speed') {
+          log.speed('PureStoreUpdater calling updateSensorData for speed', () => ({
+            sensorType: update.sensorType,
+            instance: update.instance,
+            data: update.data,
+            fields: Object.keys(update.data),
+            overGround: (update.data as any).overGround,
+            throughWater: (update.data as any).throughWater,
           }));
         }
 

@@ -108,20 +108,10 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
             mnemonic,
             value: '---',
             unit: fallbackUnit,
-            rawValue: 0,
+            alarmState: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
-            },
-            presentation: {
-              id: 'default',
-              name: label,
-              pattern: 'xxx',
-            },
-            status: {
-              isValid: false,
-              error: 'No data',
-              isFallback: true,
             },
           };
         }
@@ -136,20 +126,10 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
             mnemonic,
             value: '---',
             unit: fallbackUnit,
-            rawValue: 0,
+            alarmState: 0,
             layout: {
               minWidth: 60,
               alignment: 'right',
-            },
-            presentation: {
-              id: 'default',
-              name: label,
-              pattern: 'xxx',
-            },
-            status: {
-              isValid: false,
-              error: 'No data',
-              isFallback: true,
             },
           };
         }
@@ -159,19 +139,10 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
           mnemonic,
           value: metricValue.formattedValue, // ⭐ Use formattedValue (without unit)
           unit: metricValue.unit || fallbackUnit,
-          rawValue: typeof metricValue.si_value === 'number' ? metricValue.si_value : 0,
+          alarmState: 0,
           layout: {
             minWidth: 60,
             alignment: 'right',
-          },
-          presentation: {
-            id: measurementType,
-            name: label,
-            pattern: 'xxx.x',
-          },
-          status: {
-            isValid: true,
-            isFallback: false,
           },
         };
       },
@@ -218,10 +189,12 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
         {primaryMetrics.map((metric, index) => (
           <PrimaryMetricCell
             key={`primary-${index}`}
-            mnemonic={metric.mnemonic}
-            value={metric.value}
-            unit={metric.unit}
-            data={{ alarmState: 0 }}
+            data={{
+              mnemonic: metric.mnemonic,
+              value: metric.value,
+              unit: metric.unit,
+              alarmState: 0,
+            }}
             fontSize={{
               mnemonic: fontSize.label,
               value: fontSize.value,
@@ -234,10 +207,12 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
         {secondaryMetrics.map((metric, index) => (
           <SecondaryMetricCell
             key={`secondary-${index}`}
-            mnemonic={metric.mnemonic}
-            value={metric.value}
-            unit={metric.unit}
-            data={{ alarmState: 0 }}
+            data={{
+              mnemonic: metric.mnemonic,
+              value: metric.value,
+              unit: metric.unit,
+              alarmState: 0,
+            }}
             compact={true}
             fontSize={{
               mnemonic: fontSize.label,
