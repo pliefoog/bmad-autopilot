@@ -48,7 +48,7 @@ Renamed `SensorAlarmThresholds` → `SensorConfiguration` because:
 
 ## Implementation Details
 
-### Files Modified (25 total)
+### Files Modified (12 total, ~30 individual changes)
 
 **Core Types:**
 - `src/types/SensorData.ts` - Renamed interface, added backward compatibility type alias
