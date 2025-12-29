@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-22T11:57:07.985Z",
+  "timestamp": "2025-12-29T21:00:41.041Z",
   "thresholds": {
     "maxRenderTimeMs": 16,
     "maxMemoryIncreaseMb": 50,
@@ -8,60 +8,60 @@
   },
   "metrics": [
     {
-      "renderTime": 2.7702500000000327,
-      "memoryUsage": 38.8453369140625,
-      "dataLatency": 54.72969973810563,
-      "throughput": 600.7022423945283,
+      "renderTime": 1.1492079999989073,
+      "memoryUsage": -4.915008544921875,
+      "dataLatency": 56.13510867018523,
+      "throughput": 555.4192575722781,
       "testName": "nmeaStore Serialization SensorInstance serialization should serialize and deserialize depth sensor correctly",
-      "timestamp": 1766404627970
+      "timestamp": 1767042041032
     },
     {
-      "renderTime": 0.5823330000002898,
-      "memoryUsage": 39.49944305419922,
-      "dataLatency": 64.2414563387081,
-      "throughput": 492.2548871761738,
+      "renderTime": 0.532999999999447,
+      "memoryUsage": -4.3548736572265625,
+      "dataLatency": 61.071211881043965,
+      "throughput": 581.9487724220953,
       "testName": "nmeaStore Serialization SensorInstance serialization should handle multi-metric sensors (engine)",
-      "timestamp": 1766404627974
+      "timestamp": 1767042041036
     },
     {
-      "renderTime": 0.39545799999996234,
-      "memoryUsage": 35.074974060058594,
-      "dataLatency": 60.86189917696634,
-      "throughput": 521.5932810828506,
+      "renderTime": 0.8638339999997697,
+      "memoryUsage": -4.052818298339844,
+      "dataLatency": 59.38285962347375,
+      "throughput": 526.4791601373995,
       "testName": "nmeaStore Serialization SensorInstance serialization should not persist history (regenerates on reconnect)",
-      "timestamp": 1766404627983
+      "timestamp": 1767042041038
     },
     {
-      "renderTime": 0.14658300000019153,
-      "memoryUsage": 35.529396057128906,
-      "dataLatency": 53.019382881269166,
-      "throughput": 547.1240439014969,
+      "renderTime": 0.1714170000013837,
+      "memoryUsage": -3.8758392333984375,
+      "dataLatency": 60.60400846513103,
+      "throughput": 547.4294106576317,
       "testName": "nmeaStore Serialization SensorInstance serialization should preserve threshold version",
-      "timestamp": 1766404627983
+      "timestamp": 1767042041038
     },
     {
-      "renderTime": 0.3758339999999407,
-      "memoryUsage": 35.82427978515625,
-      "dataLatency": 68.11363807879411,
-      "throughput": 541.8376167659444,
+      "renderTime": 0.20679099999688333,
+      "memoryUsage": -3.6936416625976562,
+      "dataLatency": 61.402138709507206,
+      "throughput": 583.9681012259009,
       "testName": "nmeaStore Serialization SensorInstance serialization should handle sensors with no metrics (new sensor)",
-      "timestamp": 1766404627984
+      "timestamp": 1767042041039
     },
     {
-      "renderTime": 0.13258300000006784,
-      "memoryUsage": 36.033164978027344,
-      "dataLatency": 64.02221580463834,
-      "throughput": 589.6762848420883,
+      "renderTime": 0.7544170000001031,
+      "memoryUsage": -3.3389434814453125,
+      "dataLatency": 39.062013265082456,
+      "throughput": 560.8077855144059,
       "testName": "nmeaStore Serialization Full store serialization should serialize empty sensor structure",
-      "timestamp": 1766404627984
+      "timestamp": 1767042041040
     }
   ],
   "summary": {
     "totalTests": 6,
-    "averageRenderTime": 0.7338401666667475,
-    "averageMemoryUsage": 36.801099141438804,
-    "averageDataLatency": 60.831382003080286,
-    "averageThroughput": 548.8647260271804,
-    "thresholdViolations": 1
+    "averageRenderTime": 0.6131111666660823,
+    "averageMemoryUsage": -4.038520812988281,
+    "averageDataLatency": 56.27622343573727,
+    "averageThroughput": 559.342081254952,
+    "thresholdViolations": 0
   }
 }
