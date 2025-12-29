@@ -433,7 +433,7 @@ export const TANK_WIDGET_REGISTRATION: WidgetRegistration = {
   ],
   createWidget: (instance, sensorData) => {
     // Determine tank type for title and icon
-    const tankType = sensorData['tank.0.type'] || 'Tank';
+    const tankType = sensorData[`tank.${instance}.type`] || 'Tank';
     return createWidgetConfig('tank', instance, `${tankType} ${instance}`, 'water');
   },
 };
@@ -462,7 +462,7 @@ export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
   optionalSensors: [],
   createWidget: (instance, sensorData) => {
     // Location is a direct property, not a metric measurement
-    const location = sensorData['temperature.0.location'] || 'Temperature';
+    const location = sensorData[`temperature.${instance}.location`] || 'Temperature';
     return createWidgetConfig(
       'temperature',
       instance,
@@ -509,7 +509,7 @@ export const WEATHER_WIDGET_REGISTRATION: WidgetRegistration = {
     },
   ],
   createWidget: (instance, sensorData) => {
-    const name = sensorData['weather.0.name'] || 'Weather Station';
+    const name = sensorData[`weather.${instance}.name`] || 'Weather Station';
     return createWidgetConfig(
       'weather',
       instance,

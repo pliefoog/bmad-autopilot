@@ -1707,11 +1707,14 @@ export class NmeaSensorProcessor {
         }
       }
 
-      // Check if this is a tank level measurement (V=volume with L=liters or P/% = percentage)
-      // Support both 'P' (NMEA 0183 spec) and '%' (common vendor practice)
+      // Check if this is a tank level measurement
+      // Supports:
+      // - V (volume) with L (liters) - absolute volume
+      // - P (pressure/percentage) with P (percent) - percentage format  
+      // - V (volume) with % - legacy percentage format
       if (
-        measurementType === 'V' &&
-        (units === 'L' || units === '%' || units === 'P') &&
+        ((measurementType === 'V' && (units === 'L' || units === '%')) ||
+          (measurementType === 'P' && units === 'P')) &&
         identifier
       ) {
         const tankMatch = identifier.match(/^(FUEL|WATR|WAST|BALL|BWAT)_(\d+)$/);
@@ -1761,6 +1764,12 @@ export class NmeaSensorProcessor {
               capacity: defaultCapacities[tankType] || 150, // Default to 150L if unknown type
               timestamp: timestamp,
             };
+
+            log.tank(
+              `XDR Tank: identifier="${identifier}", type="${tankType}", instance=${instance}, level=${(
+                level * 100
+              ).toFixed(1)}%`,
+            );
 
             updates.push({
               sensorType: 'tank',
@@ -1838,6 +1847,12 @@ export class NmeaSensorProcessor {
             location: 'cabin',
             name: `Temperature ${instance}`,
           };
+
+          log.temperature(
+            `XDR Temp: identifier="${identifier}", locationCode="${locationCode}", instance=${instance}, temp=${temperature.toFixed(
+              1,
+            )}°C, location="${locationInfo.location}"`,
+          );
 
           const temperatureData: Partial<TemperatureSensorData> = {
             name: locationInfo.name,
