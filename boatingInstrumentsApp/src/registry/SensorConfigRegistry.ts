@@ -64,7 +64,7 @@
  * ```
  */
 
-import { SensorType, SensorAlarmThresholds } from '../types/SensorData';
+import { SensorType, SensorConfiguration } from '../types/SensorData';
 import { DataCategory } from '../presentation/categories';
 
 export type AlarmSupport = 'multi-metric' | 'single-metric' | 'none';
@@ -2153,7 +2153,7 @@ export function getAlarmDefaults(
 export function getSmartDefaults(
   sensorType: SensorType,
   context?: Record<string, any>,
-): SensorAlarmThresholds | ThresholdConfig | undefined {
+): SensorConfiguration | ThresholdConfig | undefined {
   return getAlarmDefaults(sensorType, context);
 }
 

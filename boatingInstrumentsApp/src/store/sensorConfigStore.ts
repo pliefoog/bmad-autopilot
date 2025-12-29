@@ -17,7 +17,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, devtools } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SensorType, SensorAlarmThresholds } from '../types/SensorData';
+import { SensorType, SensorConfiguration } from '../types/SensorData';
 import { useToastStore } from './toastStore';
 
 /**
@@ -31,8 +31,8 @@ export interface SensorConfigKey {
 /**
  * Stored sensor configuration
  */
-export interface StoredSensorConfig extends SensorAlarmThresholds {
-  // Inherited from SensorAlarmThresholds:
+export interface StoredSensorConfig extends SensorConfiguration {
+  // Inherited from SensorConfiguration:
   // name, context, critical, warning, direction,
   // criticalSoundPattern, warningSoundPattern,
   // criticalHysteresis, warningHysteresis, enabled, lastModified
@@ -64,7 +64,7 @@ interface SensorConfigStoreState {
   setConfig: (
     sensorType: SensorType,
     instance: number,
-    config: Partial<SensorAlarmThresholds>,
+    config: Partial<SensorConfiguration>,
   ) => void;
   deleteConfig: (sensorType: SensorType, instance: number) => void;
   getAllConfigs: () => SensorConfigMap;
@@ -107,7 +107,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
         setConfig: (
           sensorType: SensorType,
           instance: number,
-          config: Partial<SensorAlarmThresholds>,
+          config: Partial<SensorConfiguration>,
         ) => {
           const key = generateKey(sensorType, instance);
           const now = Date.now();
@@ -229,7 +229,7 @@ export const syncConfigsToNmeaStore = (
   nmeaStoreUpdateFn: (
     sensorType: SensorType,
     instance: number,
-    config: SensorAlarmThresholds,
+    config: SensorConfiguration,
   ) => void,
 ) => {
   const allConfigs = useSensorConfigStore.getState().getAllConfigs();

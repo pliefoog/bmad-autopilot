@@ -9,7 +9,7 @@
  * - 'below' alarms: warning > critical (lower = more severe)
  */
 
-import { SensorAlarmThresholds } from '../types/SensorData';
+import { SensorConfiguration } from '../types/SensorData';
 
 /**
  * Calculate valid slider range for critical threshold based on warning value

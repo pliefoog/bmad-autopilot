@@ -48,14 +48,15 @@ export interface MetricThresholds {
 }
 
 /**
- * Alarm threshold configuration for sensor instances
+ * Persistent configuration for sensor instances
+ * Includes user-assigned names, alarm thresholds, context, and settings.
  * Values are in SI units (meters, celsius, volts, etc.)
  *
  * For multi-metric sensors (battery, engine), alarms are stored per metric.
  * Use metric key as property name: 'voltage', 'soc', 'temperature', 'current',
  * 'coolantTemp', 'oilPressure', 'rpm'
  */
-export interface SensorAlarmThresholds {
+export interface SensorConfiguration {
   name?: string; // User-assigned name for this sensor instance (e.g., "House Battery")
   context?: SensorContext; // Context information for intelligent defaults
 
@@ -88,12 +89,18 @@ export interface SensorAlarmThresholds {
   lastModified?: number; // Timestamp of last threshold change
 }
 
+/**
+ * @deprecated Use SensorConfiguration instead
+ * Kept for backward compatibility during migration
+ */
+export type SensorAlarmThresholds = SensorConfiguration;
+
 export interface BaseSensorData {
   name: string; // Human-readable instance name
   timestamp: number; // When this data was last updated
   history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
   historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
-  alarmThresholds?: SensorAlarmThresholds; // Per-instance alarm configuration
+  alarmThresholds?: SensorConfiguration; // Per-instance alarm configuration (deprecated field - use SensorInstance.thresholds)
   // NOTE: Display fields now managed by SensorInstance.metrics (MetricValue instances)
 }
 

@@ -27,7 +27,7 @@ import type {
   SensorsData,
   SensorType,
   SensorData,
-  SensorAlarmThresholds,
+  SensorConfiguration,
 } from '../types/SensorData';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'no-data';
@@ -89,13 +89,13 @@ interface NmeaStore {
   updateSensorThresholds: <T extends SensorType>(
     sensorType: T,
     instance: number,
-    thresholds: Partial<SensorAlarmThresholds>,
+    thresholds: Partial<SensorConfiguration>,
   ) => void;
 
   getSensorThresholds: <T extends SensorType>(
     sensorType: T,
     instance: number,
-  ) => SensorAlarmThresholds | undefined;
+  ) => SensorConfiguration | undefined;
 
   // History and statistics (for widget compatibility)
   getSensorHistory: <T extends SensorType>(
@@ -346,7 +346,7 @@ export const useNmeaStore = create<NmeaStore>()(
         updateSensorThresholds: <T extends SensorType>(
           sensorType: T,
           instance: number,
-          thresholds: Partial<SensorAlarmThresholds>,
+          thresholds: Partial<SensorConfiguration>,
         ) => {
           set((state) => {
             const sensorInstance = state.nmeaData.sensors[sensorType]?.[instance];

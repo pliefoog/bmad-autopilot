@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
-import type { SensorType, SensorAlarmThresholds } from '../types/SensorData';
+import type { SensorType, SensorConfiguration } from '../types/SensorData';
 
 export interface AlarmThresholdValues {
   warning?: number;

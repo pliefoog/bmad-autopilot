@@ -5,7 +5,7 @@
  * Priority: config.name → nmeaData.name → "type:instance" fallback
  */
 
-import { SensorType, SensorAlarmThresholds } from '../types/SensorData';
+import { SensorType, SensorConfiguration } from '../types/SensorData';
 
 /**
  * Get display name for a sensor instance
@@ -19,7 +19,7 @@ import { SensorType, SensorAlarmThresholds } from '../types/SensorData';
 export function getSensorDisplayName(
   sensorType: SensorType | null,
   instance: number,
-  config?: SensorAlarmThresholds,
+  config?: SensorConfiguration,
   nmeaName?: string,
 ): string {
   // Priority 1: User-assigned name from configuration
@@ -67,7 +67,7 @@ export function formatSensorTypeInstance(sensorType: SensorType | null, instance
 export function getShortSensorDisplayName(
   sensorType: SensorType,
   instance: number,
-  config?: SensorAlarmThresholds,
+  config?: SensorConfiguration,
   nmeaName?: string,
   maxLength: number = 20,
 ): string {

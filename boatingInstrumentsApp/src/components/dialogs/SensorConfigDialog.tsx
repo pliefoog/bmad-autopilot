@@ -32,7 +32,7 @@ import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
-import { SensorType, SensorAlarmThresholds } from '../../types/SensorData';
+import { SensorType, SensorConfiguration } from '../../types/SensorData';
 import { DataCategory } from '../../presentation/categories';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
@@ -375,7 +375,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const saveCurrentForm = useCallback(async () => {
     if (!selectedSensorType) return;
 
-    const updates: Partial<SensorAlarmThresholds> = {
+    const updates: Partial<SensorConfiguration> = {
       name: formData.name?.trim() || undefined,
       enabled: formData.enabled,
       direction: getAlarmDirection(

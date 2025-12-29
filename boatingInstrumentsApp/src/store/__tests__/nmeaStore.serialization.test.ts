@@ -5,13 +5,13 @@
  */
 
 import { SensorInstance } from '../../types/SensorInstance';
-import { SensorAlarmThresholds } from '../../types/SensorData';
+import { SensorConfiguration } from '../../types/SensorData';
 
 describe('nmeaStore Serialization', () => {
   describe('SensorInstance serialization', () => {
     it('should serialize and deserialize depth sensor correctly', () => {
       // Create a depth sensor with thresholds
-      const thresholds: SensorAlarmThresholds = {
+      const thresholds: SensorConfiguration = {
         enabled: true,
         name: 'Depth Alarm',
         warning: 3.0,
@@ -57,7 +57,7 @@ describe('nmeaStore Serialization', () => {
     });
 
     it('should handle multi-metric sensors (engine)', () => {
-      const thresholds: SensorAlarmThresholds = {
+      const thresholds: SensorConfiguration = {
         enabled: true,
         name: 'Engine 1',
         metrics: {
