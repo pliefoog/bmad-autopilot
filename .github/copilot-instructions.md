@@ -100,6 +100,66 @@ const unit = depthMetric?.unit;  // "ft"
 - Use `formattedValueWithUnit` for display with unit
 - Access via `sensorInstance.getMetric(fieldName)`
 
+## Registry-First Widget Architecture (Dec 2024)
+
+**Philosophy:** Widgets are pure configuration, zero logic. All metadata in `SensorConfigRegistry`, all rendering in reusable components.
+
+**✅ Declarative Widget Pattern:**
+```tsx
+export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
+  const instance = useNmeaStore((state) => state.nmeaData.sensors.battery?.[0]);
+  
+  return (
+    <TemplatedWidget
+      template="2Rx2C-SEP-2Rx2C"
+      sensorInstance={instance}
+      sensorType="battery"
+    >
+      <PrimaryMetricCell metricKey="voltage" />
+      <PrimaryMetricCell metricKey="current" />
+      <SecondaryMetricCell metricKey="capacity" />
+    </TemplatedWidget>
+  );
+});
+```
+
+**Grid Templates** (`GridTemplateRegistry.ts`):
+- `2Rx2C-SEP-2Rx2C`: Two rows of 2 columns (primary) + separator + two rows of 2 columns (secondary)
+- `2Rx2C-SEP-2Rx2C-WIDE`: Same but secondary cells span full width
+- `2Rx1C-SEP-2Rx1C`: Simple vertical layout
+- `4Rx2C-NONE`: Dense 4-row primary grid
+- `3Rx2C-SEP-1Rx2C`: 3-row primary + 1-row secondary
+
+**Auto-Fetch Pattern** (SensorContext):
+```tsx
+{/* MetricCells auto-fetch everything via useSensorContext() */}
+<PrimaryMetricCell metricKey="voltage" />
+{/* Fetches: mnemonic, value, unit, alarm state, category config */}
+```
+
+**Mandatory Mnemonics:**
+All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startup validation throws if missing.
+
+**⚠️ ANTI-PATTERNS:**
+- ❌ Manual metric extraction in widgets
+- ❌ Creating display data objects
+- ❌ Hardcoded mnemonics
+- ❌ Prop drilling (use Context)
+- ❌ Widget-specific logic (belongs in SensorInstance)
+
+**✅ CORRECT PATTERNS:**
+- ✅ Template name + metricKey list = entire widget
+- ✅ Let TemplatedWidget handle layout
+- ✅ Let MetricCells auto-fetch everything
+- ✅ Keep widgets <70 lines (avg 25-60 lines)
+- ✅ SensorInstance methods for computed metrics
+
+**Results:**
+- 77% code reduction (855 → 183 lines across 3 widgets)
+- Zero duplication
+- XML-ready structure
+- Type-safe throughout
+
 ## Project Overview
 
 **React Native cross-platform marine instrument display** connecting to boat NMEA networks via WiFi bridges. Runs entirely on-device (no server), transforming smartphones/tablets/desktops into comprehensive marine displays with Raymarine autopilot control.
