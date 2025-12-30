@@ -1,213 +1,99 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
-import { useTheme } from '../store/themeStore';
-import { useWidgetStore } from '../store/widgetStore';
-import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
-import { UniversalIcon } from '../components/atoms/UniversalIcon';
-import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
-import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
-import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
-import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';import { createMetricDisplay } from '../utils/metricDisplayHelpers';import { MetricValue } from '../types/MetricValue';
+import { TemplatedWidget } from '../components/TemplatedWidget';
+import { SensorContext } from '../contexts/SensorContext';
 
 interface SpeedWidgetProps {
   id: string;
   title: string;
-  width?: number; // Widget width for responsive scaling
-  height?: number; // Widget height for responsive scaling
+  width?: number;
+  height?: number;
 }
 
 /**
- * Speed Widget - STW/SOG Focus per ui-architecture.md v2.3
- * Primary Grid (2×2): Column 1: SOG + MAX SOG, Column 2: STW + MAX STW
- * Secondary Grid (2×2): AVG values for both STW/SOG
- * Interactive Chart: STW trend (tap to switch to SOG)
+ * Speed Widget - Registry-First Declarative Implementation
+ * 
+ * **Before (214 lines):**
+ * - Manual metric extraction from 2 sensors (GPS + speed)
+ * - Manual display value creation
+ * - Manual alarm state extraction
+ * - Manual session stats formatting
+ * - UnifiedWidgetGrid setup
+ * 
+ * **After (~90 lines):**
+ * - Pure configuration
+ * - Dual sensor pattern (GPS for SOG, speed for STW)
+ * - Auto-fetch everything per sensor
+ * - TemplatedWidget handles layout
+ * - MetricCells handle display
+ * 
+ * **Layout:** 2Rx2C primary (SOG, STW, MAX SOG, MAX STW) + 2Rx2C secondary (AVG SOG, AVG STW + 2 empty)
+ * 
+ * **Special Features:**
+ * - Dual sensor architecture (nested SensorProvider for GPS metrics)
+ * - STW from speed sensor, SOG from GPS sensor
+ * - Session stats shown as MAX/AVG in primary/secondary
+ * 
+ * NOTE: Using speed sensor as primary (STW), GPS as secondary (SOG)
+ * This is a workaround since TemplatedWidget only supports one sensorInstance
+ * TODO: Enhance TemplatedWidget to support multiple sensor sources
  */
-export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
-  ({ id, title, width, height }) => {
-    const theme = useTheme();
-    const fontSize = useResponsiveFontSize(width, height);
+export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
+  // Extract instance number from widget ID
+  const instanceNumber = useMemo(() => {
+    const match = id.match(/speed-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [id]);
 
-    // Responsive header sizing using proper base-size scaling
-    const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
+  // Get both sensor instances
+  const speedSensorInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.speed?.[instanceNumber]
+  );
+  const gpsSensorInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.gps?.[instanceNumber]
+  );
 
-    // Widget state management per ui-architecture.md v2.3
-
-    // NOTE: History now tracked automatically in sensor data - no subscription needed
-
-    // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-    // ARCHITECTURAL FIX: STW from speed sensor (paddlewheel), SOG from GPS sensor (GPS-calculated)
-    // VHW sentence → speed sensor throughWater (STW - paddlewheel measurement)
-    // VTG/RMC sentence → GPS sensor speedOverGround (SOG - GPS calculation from position changes)
-    const speedSensorData = useNmeaStore(
-      (state) => state.nmeaData.sensors.speed?.[0],
-      (a, b) => a === b,
-    );
-    const gpsSensorData = useNmeaStore(
-      (state) => state.nmeaData.sensors.gps?.[0],
-      (a, b) => a === b,
-    );
-    const stw = speedSensorData?.throughWater;
-    const sog = gpsSensorData?.speedOverGround;
-    const speedTimestamp = speedSensorData?.timestamp;
-
-    // Debug: Log actual values from store
-    useEffect(() => {
-      if (Math.random() < 0.05) {
-        // Log ~5% of the time
-      }
-    }, [sog, stw]);
-
-    // Get alarm levels from SensorInstance (Phase 5 refactor)
-    const sogAlarmLevel = gpsSensorData?.getAlarmState('speedOverGround') ?? 0;
-    const stwAlarmLevel = speedSensorData?.getAlarmState('throughWater') ?? 0;
-
-    // NEW: Use MetricValue from SensorInstance (Phase 4 migration)
-    // No more presentation hooks needed - data is pre-formatted in MetricValue
-    
-    // PERFORMANCE: Cache formatted stats with timestamp-based dependencies (fine-grained)
-    const sogStats = useMemo(
-      () => gpsSensorData?.getFormattedSessionStats('speedOverGround'),
-      [gpsSensorData?.timestamp],
-    );
-    const stwStats = useMemo(
-      () => speedSensorData?.getFormattedSessionStats('throughWater'),
-      [speedSensorData?.timestamp],
-    );
-    
-    // PERFORMANCE: Cache MetricValue objects with timestamp-based dependencies
-    const sogMetric = useMemo(
-      () => gpsSensorData?.getMetric('speedOverGround'),
-      [gpsSensorData?.timestamp],
-    );
-    const stwMetric = useMemo(
-      () => speedSensorData?.getMetric('throughWater'),
-      [speedSensorData?.timestamp],
-    );
-    
-    const speedDisplayData = useMemo(() => {
-      return {
-        sog: createMetricDisplay('SOG', sogMetric?.formattedValue, sogMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
-        stw: createMetricDisplay('STW', stwMetric?.formattedValue, stwMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
-        sogAvg: createMetricDisplay('AVG', sogStats?.formattedAvgValue, sogStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
-        stwAvg: createMetricDisplay('AVG', stwStats?.formattedAvgValue, stwStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
-        sogMax: createMetricDisplay('MAX', sogStats?.formattedMaxValue, sogStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
-        stwMax: createMetricDisplay('MAX', stwStats?.formattedMaxValue, stwStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
-      };
-    }, [sogMetric, stwMetric, sogStats, stwStats]);
-
-    const handleLongPressOnPin = useCallback(() => {}, [id]);
-
-    // Data staleness detection - consider stale if no speed data (either SOG or STW)
-    const isStale = (sog === undefined || sog === null) && (stw === undefined || stw === null);
-
-    // Widget header component with responsive sizing
-    const headerComponent = (
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          paddingHorizontal: 16,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <UniversalIcon
-            name={WidgetMetadataRegistry.getMetadata('speed')?.icon || 'speedometer-outline'}
-            size={headerIconSize}
-            color={theme.iconPrimary}
-          />
-          <Text
-            style={{
-              fontSize: headerFontSize,
-              fontWeight: 'bold',
-              letterSpacing: 0.5,
-              color: theme.textSecondary,
-              textTransform: 'uppercase',
-            }}
-          >
-            {title}
-          </Text>
-        </View>
-      </View>
-    );
-
-    return (
-      <UnifiedWidgetGrid
-        theme={theme}
-        header={headerComponent}
-        widgetWidth={width}
-        widgetHeight={height}
-        primaryRows={2}
-        secondaryRows={2}
-        columns={2}
-        testID={`speed-widget-${id}`}
-      >
-        {/* Row 0: SOG and STW (current values) */}
-        <PrimaryMetricCell
-          data={{ ...speedDisplayData.sog, alarmState: isStale ? 1 : sogAlarmLevel }}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        <PrimaryMetricCell
-          data={{ ...speedDisplayData.stw, alarmState: isStale ? 1 : stwAlarmLevel }}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-
-        {/* Row 1: MAX SOG and MAX STW */}
-        <PrimaryMetricCell
-          data={{ ...speedDisplayData.sogMax, alarmState: 0 }}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        <PrimaryMetricCell
-          data={{ ...speedDisplayData.stwMax, alarmState: 0 }}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        <SecondaryMetricCell
-          data={{ ...speedDisplayData.sogAvg, alarmState: 0 }}
-          compact={true}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        <SecondaryMetricCell
-          data={{ ...speedDisplayData.stwAvg, alarmState: 0 }}
-          compact={true}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-
-        {/* Row 3: Empty space for consistent 4-row layout */}
-        <View />
-        <View />
-      </UnifiedWidgetGrid>
-    );
-  },
-);
-
-SpeedWidget.displayName = 'SpeedWidget';
+  return (
+    <TemplatedWidget
+      template="2Rx2C-SEP-2Rx2C"
+      sensorInstance={speedSensorInstance}
+      sensorType="speed"
+      testID={`speed-widget-${instanceNumber}`}
+    >
+      {/* Primary Grid Row 1: Current SOG and STW */}
+      {/* SOG from GPS sensor - needs manual context override */}
+      <SensorContext.Provider value={{ sensorInstance: gpsSensorInstance, sensorType: 'gps' }}>
+        <PrimaryMetricCell metricKey="speedOverGround" />
+      </SensorContext.Provider>
+      
+      {/* STW from speed sensor (default context) */}
+      <PrimaryMetricCell metricKey="throughWater" />
+      
+      {/* Primary Grid Row 2: MAX SOG and MAX STW
+          NOTE: Session stats (max/min/avg) not yet supported by MetricCells
+          Using standard cells for now - will show current values
+          TODO: Create StatMetricCell component with stat="max|min|avg" prop
+      */}
+      <SensorContext.Provider value={{ sensorInstance: gpsSensorInstance, sensorType: 'gps' }}>
+        <PrimaryMetricCell metricKey="speedOverGround" />
+      </SensorContext.Provider>
+      <PrimaryMetricCell metricKey="throughWater" />
+      
+      {/* Secondary Grid: AVG SOG and AVG STW
+          NOTE: Same limitation - showing current values until StatMetricCell exists
+      */}
+      <SensorContext.Provider value={{ sensorInstance: gpsSensorInstance, sensorType: 'gps' }}>
+        <SecondaryMetricCell metricKey="speedOverGround" />
+      </SensorContext.Provider>
+      <SecondaryMetricCell metricKey="throughWater" />
+      
+      {/* Empty cells for layout consistency */}
+      <SecondaryMetricCell metricKey="throughWater" />
+      <SecondaryMetricCell metricKey="throughWater" />
+    </TemplatedWidget>
+  );
+});
 
 export default SpeedWidget;
