@@ -22,12 +22,27 @@ import { View, StyleSheet } from 'react-native';
 import { SensorContext } from '../contexts/SensorContext';
 import type { SensorInstance } from '../types/SensorInstance';
 import type { SensorType } from '../types/SensorData';
+import { log } from '../utils/logging/logger';
 import {
   getGridTemplate,
   validateTemplateCellCount,
   type GridSection,
 } from '../registry/GridTemplateRegistry';
 import { useTheme } from '../store/themeStore';
+import WidgetHeader from './molecules/WidgetHeader';
+import WidgetFooter from './molecules/WidgetFooter';
+import { WIDGET_METADATA_REGISTRY } from '../registry/WidgetMetadataRegistry';
+
+/**
+ * Additional sensor configuration for multi-sensor widgets
+ */
+interface AdditionalSensor {
+  /** Sensor type identifier (gps, speed, etc.) */
+  sensorType: SensorType;
+  
+  /** Explicit instance number to use */
+  instance: number;
+}
 
 /**
  * TemplatedWidget Props
@@ -36,14 +51,32 @@ interface TemplatedWidgetProps {
   /** Grid template name (e.g., "2Rx2C-SEP-2Rx2C") */
   template: string;
 
-  /** Sensor instance with live data */
+  /** Primary sensor instance with live data */
   sensorInstance: SensorInstance | null | undefined;
 
-  /** Sensor type identifier (battery, engine, etc.) */
+  /** Primary sensor type identifier (battery, engine, etc.) */
   sensorType: SensorType;
+
+  /** Widget ID for header lookup (optional, defaults to sensorType) */
+  widgetId?: string;
+
+  /** Debug mode - shows colored borders on all grid elements */
+  debugLayout?: boolean;
 
   /** Metric cells to render (PrimaryMetricCell, SecondaryMetricCell) */
   children: ReactElement | ReactElement[];
+
+  /**
+   * Additional sensors for multi-sensor widgets (e.g., SpeedWidget needs both speed + gps)
+   * 
+   * TODO: Implement master instance selection mechanism
+   * Currently requires explicit instance numbers. Future enhancement:
+   * - Add sensor priority/master designation in settingsStore
+   * - Allow marking one GPS/speed sensor as "primary" in settings
+   * - Auto-resolve "master" instance instead of hardcoding instance numbers
+   * - Example: additionalSensors: [{ sensorType: 'gps', useMaster: true }]
+   */
+  additionalSensors?: AdditionalSensor[];
 
   /** Optional container styling */
   style?: any;
@@ -61,11 +94,33 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   template: templateName,
   sensorInstance,
   sensorType,
+  widgetId,
+  debugLayout = false,
+  additionalSensors,
   children,
   style,
   testID,
 }) => {
   const theme = useTheme();
+
+  // Measure widget dimensions using onLayout
+  const [widgetDimensions, setWidgetDimensions] = React.useState({ width: 0, height: 0 });
+  
+  const handleWidgetLayout = (event: any) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width !== widgetDimensions.width || height !== widgetDimensions.height) {
+      setWidgetDimensions({ width, height });
+    }
+  };
+
+  // Get widget metadata for header
+  const widgetMetadata = WIDGET_METADATA_REGISTRY[widgetId ?? sensorType];
+  const instanceNumber = sensorInstance?.instanceNumber ?? 0;
+  
+  // Build header title with instance if multi-instance
+  const headerTitle = widgetMetadata?.type === 'multi' && instanceNumber > 0
+    ? `${widgetMetadata.title} ${instanceNumber + 1}`
+    : widgetMetadata?.title ?? sensorType.toUpperCase();
 
   // Normalize children to array
   const childArray = React.Children.toArray(children) as ReactElement[];
@@ -75,6 +130,26 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 
   // Validate cell count matches template
   validateTemplateCellCount(templateName, childArray.length);
+
+  // Build additional sensors map for multi-sensor widgets
+  const additionalSensorsMap = React.useMemo(() => {
+    if (!additionalSensors || additionalSensors.length === 0) {
+      return undefined;
+    }
+    
+    const map = new Map<SensorType, SensorInstance | null | undefined>();
+    
+    // Import useNmeaStore dynamically to avoid circular dependencies
+    const { useNmeaStore } = require('../store/nmeaStore');
+    const nmeaState = useNmeaStore.getState();
+    
+    additionalSensors.forEach(({ sensorType: addlSensorType, instance }) => {
+      const addlInstance = nmeaState.nmeaData.sensors[addlSensorType]?.[instance];
+      map.set(addlSensorType, addlInstance);
+    });
+    
+    return map;
+  }, [additionalSensors]);
 
   // Calculate cell distribution
   const primaryCellCount = template.primaryGrid.rows * template.primaryGrid.columns;
@@ -86,32 +161,80 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   const primaryChildren = childArray.slice(0, primaryCellCount);
   const secondaryChildren = childArray.slice(primaryCellCount);
 
+  // Calculate row dimensions (like UnifiedWidgetGrid did)
+  const headerFooterHeight = Math.max(30, widgetDimensions.height * 0.10);
+  const footerHeight = headerFooterHeight / 3;
+  const gridPadding = 12;
+  const separatorHeight = template.showSeparator && template.secondaryGrid ? 1 : 0;
+  const separatorMargin = template.showSeparator && template.secondaryGrid ? 24 : 0; // 12px top + 12px bottom
+  
+  const availableGridHeight = widgetDimensions.height - headerFooterHeight - footerHeight - (gridPadding * 2) - separatorHeight - separatorMargin;
+  
+  // Total rows across both sections
+  const totalRows = template.primaryGrid.rows + (template.secondaryGrid?.rows || 0);
+  const rowGap = 8;
+  const totalRowGaps = (totalRows - 1) * rowGap;
+  
+  // Calculate row height - all rows get equal height
+  const rowHeight = totalRows > 0 ? (availableGridHeight - totalRowGaps) / totalRows : 60;
+
   // Create styles
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, debugLayout);
 
   return (
-    <SensorContext.Provider value={{ sensorInstance, sensorType }}>
-      <View style={[styles.container, style]} testID={testID || `widget-${sensorType}`}>
-        {/* Primary Grid */}
-        <GridSectionRenderer
-          section={template.primaryGrid}
-          children={primaryChildren}
-          testID="primary-section"
-        />
-
-        {/* Separator (if template has secondary grid) */}
-        {template.showSeparator && template.secondaryGrid && (
-          <View style={styles.separator} />
-        )}
-
-        {/* Secondary Grid */}
-        {template.secondaryGrid && (
-          <GridSectionRenderer
-            section={template.secondaryGrid}
-            children={secondaryChildren}
-            testID="secondary-section"
+    <SensorContext.Provider 
+      value={{ 
+        sensorInstance, 
+        sensorType,
+        additionalSensors: additionalSensorsMap,
+      }}
+    >
+      <View 
+        style={[styles.wrapper, style]} 
+        testID={testID || `widget-${sensorType}`}
+        onLayout={handleWidgetLayout}
+      >
+        {/* Widget Header - Full Width */}
+        {widgetMetadata && (
+          <WidgetHeader
+            title={headerTitle}
+            iconName={widgetMetadata.icon}
+            testID={testID ? `${testID}-header` : undefined}
           />
         )}
+
+        {/* Grid Content - Padded */}
+        <View style={styles.gridContainer}>
+          {/* Primary Grid */}
+          <GridSectionRenderer
+            section={template.primaryGrid}
+            children={primaryChildren}
+            rowHeight={rowHeight}
+            widgetWidth={widgetDimensions.width}
+            debugLayout={debugLayout}
+            testID="primary-section"
+          />
+
+          {/* Separator (if template has secondary grid) */}
+          {template.showSeparator && template.secondaryGrid && (
+            <View style={styles.separator} />
+          )}
+
+          {/* Secondary Grid */}
+          {template.secondaryGrid && (
+            <GridSectionRenderer
+              section={template.secondaryGrid}
+              children={secondaryChildren}
+              rowHeight={rowHeight}
+              widgetWidth={widgetDimensions.width}
+              debugLayout={debugLayout}
+              testID="secondary-section"
+            />
+          )}
+        </View>
+
+        {/* Widget Footer - Visual spacing for balance */}
+        <WidgetFooter testID={testID ? `${testID}-footer` : undefined} />
       </View>
     </SensorContext.Provider>
   );
@@ -123,6 +246,9 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 interface GridSectionRendererProps {
   section: GridSection;
   children: ReactElement[];
+  rowHeight: number;
+  widgetWidth: number;
+  debugLayout?: boolean;
   testID?: string;
 }
 
@@ -135,15 +261,37 @@ interface GridSectionRendererProps {
 const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
   section,
   children,
+  rowHeight,
+  widgetWidth,
+  debugLayout = false,
   testID,
 }) => {
   const theme = useTheme();
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, debugLayout);
 
-  // Calculate grid dimensions
-  const { rows, columns, cellSpans } = section;
+  // Calculate cell width
+  // Note: gridContainer already has padding: 12, so available width is reduced by 24px
+  const { rows, columns } = section;
+  const GRID_PADDING = 12; // Must match gridContainer padding in styles
+  let availableWidth = widgetWidth - (GRID_PADDING * 2); // Width inside gridContainer (green border)
+  
+  // React Native uses box-sizing: border-box by default
+  // This means borderWidth is INCLUDED in the width, not added to it
+  // So we DON'T need to subtract border widths from available space
+  // The wrapper's width includes its own borders automatically
+  
+  const colGap = 8;
+  
+  // Calculate width for each cell (border-box: borders are included)
+  const cellWidth = columns === 1 
+    ? availableWidth  // Single column takes full width (borders included)
+    : (availableWidth - colGap) / 2;  // Two columns share width minus gap
+  
+  // Child component receives same width (will fit inside parent's border-box)
+  const contentWidth = cellWidth;
 
   // Create row groups
+  const { cellSpans } = section;
   const rowGroups: ReactElement[][] = [];
   for (let row = 0; row < rows; row++) {
     const rowCells: ReactElement[] = [];
@@ -155,15 +303,30 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
         // Check if this cell should span full width
         const shouldSpan = cellSpans?.includes(cellIndex) ?? false;
         
-        // Clone cell with spatial props injected
-        const cellWithProps = React.cloneElement(cell, {
-          // Inject cell width constraint for dynamic sizing
-          maxWidth: shouldSpan ? undefined : `${100 / columns}%`,
-          // Note: cellHeight can be added if needed for vertical scaling
-          key: `cell-${cellIndex}`,
-        } as any);
+        // Clone element and inject dimensions
+        // Child fills wrapper's content area (cellWidth is already the content area)
+        const enhancedCell = React.cloneElement(cell as ReactElement<any>, {
+          cellWidth: contentWidth,
+          cellHeight: rowHeight,
+        });
         
-        rowCells.push(cellWithProps);
+        // Wrap cell in container View for proper constraint
+        const isSingleColumn = columns === 1;
+        const cellWithContainer = (
+          <View 
+            key={`cell-${cellIndex}`}
+            style={[
+              styles.cell,
+              { height: rowHeight, width: cellWidth },
+              isSingleColumn && styles.cellFullWidth,
+              shouldSpan && styles.cellSpan,
+            ]}
+          >
+            {enhancedCell}
+          </View>
+        );
+        
+        rowCells.push(cellWithContainer);
       }
     }
     rowGroups.push(rowCells);
@@ -172,7 +335,7 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
   return (
     <View style={styles.section} testID={testID}>
       {rowGroups.map((rowCells, rowIndex) => (
-        <View key={`row-${rowIndex}`} style={styles.row}>
+        <View key={`row-${rowIndex}`} style={[styles.row, { height: rowHeight }]}>
           {rowCells}
         </View>
       ))}
@@ -183,23 +346,47 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
 /**
  * Styles
  */
-const createStyles = (theme: any) =>
+const createStyles = (theme: any, debugLayout: boolean = false) =>
   StyleSheet.create({
-    container: {
+    wrapper: {
       flex: 1,
       flexDirection: 'column',
       backgroundColor: theme.widgetBackground,
       borderRadius: 8,
+      borderWidth: debugLayout ? 3 : 1,
+      borderColor: debugLayout ? '#FF0000' : theme.border,
+      overflow: 'hidden',
+    },
+    gridContainer: {
+      flexGrow: 1,
+      flexShrink: 1,
       padding: 12,
+      ...(debugLayout && { borderWidth: 2, borderColor: '#00FF00' }),
     },
     section: {
       flexDirection: 'column',
       gap: 8,
+      ...(debugLayout && { borderWidth: 2, borderColor: '#0000FF' }),
     },
     row: {
+      // Height set explicitly by GridSectionRenderer based on calculated rowHeight
       flexDirection: 'row',
       gap: 8,
-      minHeight: 60, // Minimum row height for readability
+      alignSelf: 'stretch',
+      ...(debugLayout && { borderWidth: 2, borderColor: '#FFFF00' }),
+    },
+    cell: {
+      flex: 1,
+      minWidth: 0,
+      ...(debugLayout && { borderWidth: 2, borderColor: '#FF00FF' }),
+    },
+    cellFullWidth: {
+      width: '100%',
+      alignSelf: 'stretch',
+      ...(debugLayout && { borderWidth: 2, borderColor: '#00FFFF' }),
+    },
+    cellSpan: {
+      flexGrow: 999, // Span full width by having much larger flex value
     },
     separator: {
       height: 1,

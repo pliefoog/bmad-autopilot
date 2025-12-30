@@ -4,8 +4,9 @@ import { useTheme } from '../store/themeStore';
 import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
+import type { SensorType } from '../types/SensorData';
 import { useSensorContext } from '../contexts/SensorContext';
-import { getSensorFieldConfig } from '../registry/SensorConfigRegistry';
+import { getSensorField } from '../registry/SensorConfigRegistry';
 
 /**
  * PrimaryMetricCell Props
@@ -14,7 +15,7 @@ import { getSensorFieldConfig } from '../registry/SensorConfigRegistry';
  * Only requires metricKey - everything else auto-fetched from context:
  * - Sensor instance from useSensorContext()
  * - Metric data via instance.getMetric(metricKey)
- * - Field config via getSensorFieldConfig(sensorType, metricKey)
+ * - Field config via getSensorField(sensorType, metricKey)
  * 
  * **For AI Agents:**
  * This is the new widget architecture - cells are pure config,
@@ -27,9 +28,16 @@ interface PrimaryMetricCellProps {
    */
   metricKey: string;
 
+  /**
+   * Sensor key for multi-sensor widgets (e.g., 'gps', 'speed')
+   * Defaults to primary sensor if not specified.
+   * Use for widgets that display metrics from multiple sensors.
+   */
+  sensorKey?: SensorType;
+
   // Optional styling overrides
   style?: any;
-  maxWidth?: number; // Optional max width constraint
+  cellWidth?: number; // Optional width constraint from parent
   cellHeight?: number; // Cell height from UnifiedWidgetGrid
   testID?: string;
 
@@ -47,14 +55,14 @@ interface PrimaryMetricCellProps {
  * **Auto-Fetch Pattern:**
  * 1. Reads sensor context (instance + type)
  * 2. Fetches MetricValue via instance.getMetric(metricKey)
- * 3. Fetches field config via getSensorFieldConfig(sensorType, metricKey)
+ * 3. Fetches field config via getSensorField(sensorType, metricKey)
  * 4. Displays: mnemonic, value, unit, alarm state
  * 
  * **Dynamic Sizing:**
  * - Mnemonic: 12pt, uppercase, semibold, theme.textSecondary
  * - Value: 36pt, monospace, bold, theme.text (or alarm color)
  * - Unit: 12pt, regular, theme.textSecondary
- * - Auto-scales based on cellHeight and maxWidth
+ * - Auto-scales based on cellHeight and cellWidth
  * 
  * **For AI Agents:**
  * This component is now "dumb" - it just displays what it fetches.
@@ -63,16 +71,17 @@ interface PrimaryMetricCellProps {
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   metricKey,
+  sensorKey,
   style,
-  maxWidth,
+  cellWidth,
   cellHeight,
   testID,
   fontSize: customFontSize,
 }) => {
   const theme = useTheme();
   
-  // Auto-fetch sensor data from context
-  const { sensorInstance, sensorType } = useSensorContext();
+  // Auto-fetch sensor data from context (primary or secondary sensor)
+  const { sensorInstance, sensorType } = useSensorContext(sensorKey);
   
   // Auto-fetch metric value from sensor instance
   const metricValue = sensorInstance?.getMetric(metricKey);
@@ -80,7 +89,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   // Auto-fetch field configuration from registry
   const fieldConfig = useMemo(() => {
     try {
-      return getSensorFieldConfig(sensorType, metricKey);
+      return getSensorField(sensorType, metricKey);
     } catch (error) {
       console.error(`PrimaryMetricCell: Invalid metricKey "${metricKey}" for sensor "${sensorType}"`, error);
       return null;
@@ -91,9 +100,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
   const value = metricValue?.formattedValue ?? '---';
   const unit = metricValue?.unit ?? '';
-  const alarmLevel: AlarmLevel = metricValue?.getAlarmState(
-    sensorInstance?.getThresholds(metricKey)
-  ) ?? 0;
+  const alarmLevel: AlarmLevel = sensorInstance?.getAlarmState(metricKey) ?? 0;
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
@@ -129,10 +136,10 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     }
 
     // WIDTH SCALING - Only scale value if it exceeds available width
-    if (maxWidth && maxWidth > 0) {
+    if (cellWidth && cellWidth > 0) {
       // Account for internal container padding (paddingRight: 6)
       const CONTAINER_PADDING_RIGHT = 0;
-      const actualAvailableWidth = maxWidth - CONTAINER_PADDING_RIGHT;
+      const actualAvailableWidth = cellWidth - CONTAINER_PADDING_RIGHT;
 
       // Character width estimation for monospace
       // Account for degree symbols, directional letters, special characters
@@ -158,7 +165,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
       unit: Math.max(1, unitFontSize),
       space: Math.max(1, spaceSize), // Return calculated space for layout
     };
-  }, [value, mnemonic, unit, maxWidth, cellHeight, customFontSize]);
+  }, [value, mnemonic, unit, cellWidth, cellHeight, customFontSize]);
 
   const styles = createStyles(theme, dynamicSizes);
 
@@ -175,11 +182,11 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   // Format value for display (already formatted by MetricValue)
   const displayValue = value;
 
-  // Container styling - simplified (no layout info from MetricDisplayData)
+  // Container styling - explicit dimensions from TemplatedWidget
   const containerStyle = [
     styles.container,
     style,
-    maxWidth ? { maxWidth } : null,
+    cellWidth ? { width: cellWidth } : null,
     cellHeight ? { height: cellHeight } : null,
   ].filter(Boolean);
 
@@ -192,27 +199,22 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     color: getValueColor(),
   };
 
+  // DEBUG: Render yellow translucent box to visualize dimensions
   return (
-    <View style={containerStyle} testID={testID || `primary-metric-${metricKey}`}>
-      <View style={styles.mnemonicUnitRow}>
-        <Text style={styles.mnemonic} testID="metric-mnemonic">
-          {mnemonic.toUpperCase()}
-        </Text>
-        {unit && unit.trim() !== '' ? (
-          <Text style={styles.unit} testID="metric-unit">
-            ({unit})
-          </Text>
-        ) : null}
-      </View>
-      <View style={valueContainerStyle}>
-        <FlashingText 
-          alarmLevel={alarmLevel}
-          style={valueTextStyle}
-          flashingEnabled={ALARM_VISUAL_STATES[alarmLevel].flash}
-        >
-          {displayValue}
-        </FlashingText>
-      </View>
+    <View 
+      style={[
+        containerStyle,
+        { 
+          backgroundColor: 'rgba(255, 255, 0, 0.5)', // Yellow with 50% opacity
+          justifyContent: 'center',
+          alignItems: 'center',
+        }
+      ]} 
+      testID={testID || `primary-metric-${metricKey}`}
+    >
+      <Text style={{ fontSize: 10, color: '#000' }}>
+        {cellWidth ? `${cellWidth.toFixed(0)}×${cellHeight?.toFixed(0)}` : 'no dims'}
+      </Text>
     </View>
   );
 };
@@ -223,8 +225,8 @@ const createStyles = (
 ) =>
   StyleSheet.create({
     container: {
-      width: '100%', // Fill parent cell width
-      height: '100%', // Fill parent cell height
+      // No width: '100%' - explicit width from TemplatedWidget via cellWidth prop
+      // No height: '100%' - explicit height from TemplatedWidget via cellHeight prop
       flexDirection: 'column', // Stack vertically
       alignItems: 'flex-end', // Right-align all content within the cell
       justifyContent: 'flex-start', // Align to top, let flex handle spacing

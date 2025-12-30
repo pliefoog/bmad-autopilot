@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
 import { SensorType } from '../types/SensorData';
 import { useCategoryPresentation } from '../presentation/useCategoryPresentation';
 import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
+import { useSensorContext } from '../contexts/SensorContext';
+import { log } from '../utils/logging/logger';
 
 export interface DataPoint {
   value: number;
@@ -13,17 +15,15 @@ export interface DataPoint {
 }
 
 export interface TrendLineProps {
-  // Self-subscribe to sensor history (new pattern - required)
-  sensor: SensorType;
-  instance: number;
-  metric: string; // NEW: The metric field name to display (e.g., 'depth', 'speed', 'temperature')
+  // Auto-fetch pattern via SensorContext (REQUIRED)
+  metricKey: string; // The metric field name (e.g., 'pressure', 'airTemperature', 'depth')
+  // Auto-fetches sensor/instance from SensorContext provided by TemplatedWidget
+  
   timeWindowMs: number;
 
-  // Dimensions - accept both naming conventions
-  width?: number; // From direct usage
-  height?: number; // From direct usage
-  maxWidth?: number; // From UnifiedWidgetGrid injection
-  cellHeight?: number; // From UnifiedWidgetGrid injection
+  // Dimensions (injected by TemplatedWidget/UnifiedWidgetGrid)
+  cellWidth?: number;
+  cellHeight?: number;
 
   // Axis configuration
   showXAxis?: boolean;
@@ -59,6 +59,13 @@ export interface TrendLineProps {
  * TrendLine Component
  *
  * A configurable trend line chart with axis support for displaying time-series data.
+ * MUST be used within TemplatedWidget (or other SensorContext provider).
+ *
+ * **Usage Pattern:**
+ *    ```tsx
+ *    <TrendLine metricKey="pressure" timeWindowMs={300000} showXAxis showYAxis />
+ *    ```
+ *    Automatically gets sensor/instance from SensorContext
  *
  * Features:
  * - Configurable X/Y axes with top/bottom and up/down orientations
@@ -67,20 +74,11 @@ export interface TrendLineProps {
  * - Optional grid lines
  * - Auto-scaling or fixed value ranges
  * - Responsive sizing
- *
- * Use Cases:
- * - Temperature trends (standard orientation)
- * - Depth trends (inverted Y-axis with X-axis at top)
- * - Speed trends, wind trends, etc.
  */
 export const TrendLine: React.FC<TrendLineProps> = ({
-  sensor,
-  instance,
-  metric,
+  metricKey,
   timeWindowMs,
-  width: widthProp,
-  height: heightProp,
-  maxWidth,
+  cellWidth,
   cellHeight,
   showXAxis = false,
   showYAxis = false,
@@ -98,8 +96,16 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   showDataPoints = false,
   dataPointRadius = 3,
 }) => {
-  // Get theme colors directly from store
+  // Auto-fetch from SensorContext (provided by TemplatedWidget)
+  const context = useSensorContext();
+  
+  // Get theme colors directly from store (MUST be called before any returns)
   const theme = useTheme();
+  
+  // Extract sensor/instance from context
+  const sensor = context?.sensorType;
+  const instance = context?.sensorInstance?.instanceNumber ?? 0;
+  const metric = metricKey;
 
   // Get presentation system for this sensor (for unit conversion)
   const presentation = useCategoryPresentation(sensor);
@@ -137,9 +143,10 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   const thresholdType = alarmThresholds.thresholdType;
 
-  // Derive actual dimensions from either prop naming convention
-  const width = widthProp ?? maxWidth ?? 300;
-  const height = heightProp ?? cellHeight ?? 60;
+  // Use explicit dimensions provided by TemplatedWidget
+  // These are already calculated based on available widget space
+  const width = cellWidth || 300;
+  const height = cellHeight || 60;
 
   // Subscribe to sensor timestamp to trigger updates when new data arrives
   const sensorTimestamp = useNmeaStore(
@@ -153,21 +160,33 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // Note: Use getSensorHistory which internally uses TimeSeriesBuffer.getInWindow()
   // for efficient windowed queries (optimized in Phase 4)
   const trendData = useMemo(() => {
+    if (!sensor || instance === undefined || !metric) return [];
     const data = getSensorHistory(sensor, instance, metric, { timeWindowMs });
     
-    // DEBUG: Log history fetch results
-    console.log(`[TrendLine] ${sensor}.${instance}.${metric} history:`, {
+    // Conditional DEBUG logging for TrendLine history
+    log.uiLayout('TrendLine history fetch', () => ({
+      sensor: `${sensor}.${instance}.${metric}`,
       dataPoints: data.length,
       timeWindow: timeWindowMs,
       sensorTimestamp,
       firstPoint: data[0],
       lastPoint: data[data.length - 1],
-      allData: data,
-    });
+    }));
     
     return data;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);
+
+  // Validate we have required data (AFTER all hooks are called)
+  if (!sensor || instance === undefined || !metric) {
+    return (
+      <View style={{ width: 100, height: 60, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>
+          {metricKey ? 'Context required' : 'Props required'}
+        </Text>
+      </View>
+    );
+  }
 
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;
@@ -180,22 +199,6 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const labelColor = theme.trendline.label;
   const gridColor = theme.trendline.grid;
 
-  // Guard against invalid dimensions
-  if (!width || !height || width <= 0 || height <= 0) {
-    return (
-      <View
-        style={{
-          width: width || 100,
-          height: height || 60,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>Loading...</Text>
-      </View>
-    );
-  }
-
   // Calculate axis dimensions - use 5px padding on all sides
   const PADDING_LEFT = showYAxis ? 20 : 5;
   const PADDING_RIGHT = 5;
@@ -204,7 +207,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   const chartWidth = width - PADDING_LEFT - PADDING_RIGHT;
   const chartHeight = height - PADDING_TOP - PADDING_BOTTOM;
-  const AXIS_MARGIN = PADDING_LEFT;
+  const AXIS_MARGIN = PADDING_LEFT; // Left margin for Y-axis labels
 
   // Calculate data range and scaling
   const { dataMin, dataMax, range, pointsData, yLabels, thresholdPositions } = useMemo(() => {
@@ -368,20 +371,13 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     return labels;
   }, [showTimeLabels, timeWindowMinutes, trendData.length, chartWidth, AXIS_MARGIN]);
 
-  if (trendData.length < 2) {
-    return (
-      <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>No trend data</Text>
-      </View>
-    );
-  }
-
   const xAxisY = xAxisPosition === 'top' ? PADDING_TOP : height - PADDING_BOTTOM;
   const chartStartY = xAxisPosition === 'top' ? PADDING_TOP : PADDING_TOP;
 
-  return (
-    <View style={{ width, height }}>
-      <Svg width={width} height={height}>
+  // Render SVG directly with explicit dimensions (no flex wrapper needed)
+  // Width and height are provided explicitly by TemplatedWidget
+  return trendData.length >= 2 ? (
+    <Svg width={width} height={height}>
         {/* Grid lines */}
         {showGrid && (
           <>
@@ -524,6 +520,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
             />
           ))}
       </Svg>
+  ) : (
+    <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ color: theme.textSecondary, fontSize: 10 }}>
+        No trend data
+      </Text>
     </View>
   );
 };

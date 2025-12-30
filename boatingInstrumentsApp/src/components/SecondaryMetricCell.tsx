@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
 import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
+import type { SensorType } from '../types/SensorData';
 import { useSensorContext } from '../contexts/SensorContext';
-import { getSensorFieldConfig } from '../registry/SensorConfigRegistry';
+import { getSensorField } from '../registry/SensorConfigRegistry';
 
 /**
  * SecondaryMetricCell Props
@@ -19,10 +20,14 @@ interface SecondaryMetricCellProps {
    * Must match field key in SensorConfigRegistry
    */
   metricKey: string;
-  
+  /**
+   * Sensor key for multi-sensor widgets (e.g., 'gps', 'speed')
+   * Defaults to primary sensor if not specified.
+   */
+  sensorKey?: SensorType;  
   // Optional styling overrides
   style?: any;
-  maxWidth?: number;
+  cellWidth?: number;
   cellHeight?: number;
   testID?: string;
   fontSize?: {
@@ -43,16 +48,17 @@ interface SecondaryMetricCellProps {
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   metricKey,
+  sensorKey,
   style,
-  maxWidth,
+  cellWidth,
   cellHeight,
   testID,
   fontSize: customFontSize,
 }) => {
   const theme = useTheme();
 
-  // Auto-fetch sensor data from context
-  const { sensorInstance, sensorType } = useSensorContext();
+  // Auto-fetch sensor data from context (primary or secondary sensor)
+  const { sensorInstance, sensorType } = useSensorContext(sensorKey);
   
   // Auto-fetch metric value from sensor instance
   const metricValue = sensorInstance?.getMetric(metricKey);
@@ -60,7 +66,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   // Auto-fetch field configuration from registry
   const fieldConfig = useMemo(() => {
     try {
-      return getSensorFieldConfig(sensorType, metricKey);
+      return getSensorField(sensorType, metricKey);
     } catch (error) {
       console.error(`SecondaryMetricCell: Invalid metricKey "${metricKey}" for sensor "${sensorType}"`, error);
       return null;
@@ -71,9 +77,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
   const value = metricValue?.formattedValue ?? '---';
   const unit = metricValue?.unit ?? '';
-  const alarmLevel: AlarmLevel = metricValue?.getAlarmState(
-    sensorInstance?.getThresholds(metricKey)
-  ) ?? 0;
+  const alarmLevel: AlarmLevel = sensorInstance?.getAlarmState(metricKey) ?? 0;
 
   const displayValue = value;
 
@@ -98,8 +102,8 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       spaceSize = BASE_SPACE_SIZE * heightScaleFactor;
     }
 
-    if (maxWidth && maxWidth > 0) {
-      const actualAvailableWidth = maxWidth;
+    if (cellWidth && cellWidth > 0) {
+      const actualAvailableWidth = cellWidth;
       const CHAR_WIDTH_RATIO = 0.6;
       const PADDING_RESERVE = 0.95;
       const scaledValueWidth = displayValue.length * (valueFontSize * CHAR_WIDTH_RATIO);
@@ -116,7 +120,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       unit: Math.max(1, unitFontSize),
       space: Math.max(1, spaceSize),
     };
-  }, [displayValue, maxWidth, cellHeight, customFontSize]);
+  }, [displayValue, cellWidth, cellHeight, customFontSize]);
 
   // Get alarm-based color
   const valueColor = (() => {
@@ -128,15 +132,24 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
   const styles = createStyles(theme, dynamicSizes, valueColor);
 
+  // DEBUG: Render orange translucent box to visualize dimensions
   return (
-    <View style={styles.container} testID={testID || `secondary-metric-${metricKey}`}>
-      <Text style={styles.mnemonic}>
-        {mnemonic.toUpperCase()}
-        {unit && unit.trim() !== '' ? ` (${unit})` : ''}
+    <View 
+      style={[
+        styles.container,
+        cellWidth && { width: cellWidth },
+        cellHeight && { height: cellHeight },
+        { 
+          backgroundColor: 'rgba(255, 165, 0, 0.5)', // Orange with 50% opacity
+          justifyContent: 'center',
+          alignItems: 'center',
+        }
+      ]} 
+      testID={testID || `secondary-metric-${metricKey}`}
+    >
+      <Text style={{ fontSize: 10, color: '#000' }}>
+        {cellWidth ? `${cellWidth.toFixed(0)}×${cellHeight?.toFixed(0)}` : 'no dims'}
       </Text>
-      <FlashingText alarmLevel={alarmLevel} style={styles.value}>
-        {displayValue}
-      </FlashingText>
     </View>
   );
 };
@@ -148,7 +161,7 @@ const createStyles = (
 ) =>
   StyleSheet.create({
     container: {
-      flex: 1,
+      // Don't use flex: 1 - explicit width from TemplatedWidget
       flexDirection: 'column',
       alignItems: 'flex-end',
       justifyContent: 'flex-start',
