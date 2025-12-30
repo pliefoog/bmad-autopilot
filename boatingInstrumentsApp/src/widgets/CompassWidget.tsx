@@ -12,6 +12,7 @@ import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
+import { createMetricDisplay } from '../utils/metricDisplayHelpers';
 
 interface CompassWidgetProps {
   id: string;
@@ -56,22 +57,9 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
     const compassTimestamp = compassSensorData?.timestamp;
     const headingTimestamp = compassTimestamp; // Use sensor timestamp
 
-    // Create display data from MetricValues (pre-enriched with user formatting)
-    const variationMetricDisplay = compassSensorData?.getMetric('variation');
-    const variationDisplay: MetricDisplayData = {
-      mnemonic: 'VAR',
-      value: variationMetricDisplay?.formattedValue,
-      unit: variationMetricDisplay?.unit,
-      alarmState: 0,
-    };
-
-    const deviationMetricDisplay = compassSensorData?.getMetric('deviation');
-    const deviationDisplay: MetricDisplayData = {
-      mnemonic: 'DEV',
-      value: deviationMetricDisplay?.formattedValue,
-      unit: deviationMetricDisplay?.unit,
-      alarmState: 0,
-    };
+    // Create display data from MetricValues using shared utility
+    const variationDisplay = createMetricDisplay('VAR', compassSensorData?.getMetric('variation')?.formattedValue, compassSensorData?.getMetric('variation')?.unit, 0);
+    const deviationDisplay = createMetricDisplay('DEV', compassSensorData?.getMetric('deviation')?.formattedValue, compassSensorData?.getMetric('deviation')?.unit, 0);
 
     // Compass mode state with toggle capability
     const [compassMode, setCompassMode] = useState<CompassMode>('TRUE'); // Default to TRUE per marine standards

@@ -140,4 +140,52 @@ export class MetricValue {
     const displayValue = this.getDisplayValue(category);
     return ConversionRegistry.format(displayValue, category, true);
   }
+
+  // ============================================================================
+  // PROPERTY GETTERS (Widget API Convenience)
+  // ============================================================================
+  // Widgets expect these as properties for cleaner syntax
+
+  /**
+   * Display value (converted to user units)
+   * Convenience property getter for getDisplayValue()
+   */
+  get value(): number {
+    return this.getDisplayValue();
+  }
+
+  /**
+   * Formatted value WITHOUT unit
+   * Convenience property getter for getFormattedValue()
+   * Example: "8.2"
+   */
+  get formattedValue(): string {
+    return this.getFormattedValue();
+  }
+
+  /**
+   * Formatted value WITH unit
+   * Convenience property getter for getFormattedValueWithUnit()
+   * Example: "8.2 ft"
+   */
+  get formattedValueWithUnit(): string {
+    return this.getFormattedValueWithUnit();
+  }
+
+  /**
+   * Unit symbol
+   * Convenience property getter for getUnit()
+   * Example: "ft", "°C", "%"
+   */
+  get unit(): string {
+    return this.getUnit();
+  }
+
+  /**
+   * Data category/unit type
+   * Convenience property getter for getUnitType()
+   */
+  get category(): DataCategory | undefined {
+    return this._unitType;
+  }
 }

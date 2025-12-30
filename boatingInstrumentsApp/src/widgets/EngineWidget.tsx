@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
@@ -12,6 +12,7 @@ import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 import { getSensorDisplayName } from '../utils/sensorDisplayName';
+import { createMetricDisplay } from '../utils/metricDisplayHelpers';
 
 interface EngineWidgetProps {
   id: string;
@@ -50,164 +51,80 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(
       () => engineSensorInstance?.getMetric('rpm'),
       [engineSensorInstance?.timestamp],
     );
-    const rpm = rpmMetric?.si_value ?? null;
 
     const coolantTempMetric = useMemo(
       () => engineSensorInstance?.getMetric('coolantTemp'),
       [engineSensorInstance?.timestamp],
     );
-    const coolantTemp = coolantTempMetric?.si_value ?? null;
 
     const oilPressureMetric = useMemo(
       () => engineSensorInstance?.getMetric('oilPressure'),
       [engineSensorInstance?.timestamp],
     );
-    const oilPressure = oilPressureMetric?.si_value ?? null;
 
     const alternatorVoltageMetric = useMemo(
       () => engineSensorInstance?.getMetric('alternatorVoltage'),
       [engineSensorInstance?.timestamp],
     );
-    const alternatorVoltage = alternatorVoltageMetric?.si_value ?? null;
 
     const fuelRateMetric = useMemo(
       () => engineSensorInstance?.getMetric('fuelRate'),
       [engineSensorInstance?.timestamp],
     );
-    const fuelRate = fuelRateMetric?.si_value ?? null;
 
     const hoursMetric = useMemo(
       () => engineSensorInstance?.getMetric('hours'),
       [engineSensorInstance?.timestamp],
     );
-    const hours = hoursMetric?.si_value ?? null;
 
     const shaftRpmMetric = useMemo(
       () => engineSensorInstance?.getMetric('shaftRpm'),
       [engineSensorInstance?.timestamp],
     );
-    const shaftRpm = shaftRpmMetric?.si_value ?? null;
 
-    const engineTimestamp = engineSensorInstance?.timestamp;
-
-    // NEW: Use cached display info from sensor.display (Phase 3 migration)
-    // Helper function to create MetricDisplayData from sensor display
-    const getEngineDisplay = useCallback(
-      (
-        metric: any,
-        value: number | null,
-        engineMnemonic: string,
-        fallbackSymbol: string = '',
-      ): MetricDisplayData => {
-        // Check for both null and undefined to prevent toFixed() errors
-        if (value === null || value === undefined) {
-          return {
-            mnemonic: engineMnemonic,
-            value: '---',
-            unit: fallbackSymbol,
-            alarmState: 0,
-            layout: {
-              minWidth: 60,
-              alignment: 'right',
-            },
-          };
-        }
-
-        // Use MetricValue's pre-enriched display values
-        if (metric) {
-          return {
-            mnemonic: engineMnemonic,
-            value: metric.formattedValue, // Already formatted without unit
-            unit: metric.unit,
-            alarmState: 0,
-            layout: {
-              minWidth: 60,
-              alignment: 'right',
-            },
-          };
-        }
-
-        // Fallback to raw value formatting
-        return {
-          mnemonic: engineMnemonic,
-          value: '---',
-          unit: fallbackSymbol,
-          alarmState: 0,
-          layout: {
-            minWidth: 60,
-            alignment: 'right',
-          },
-        };
-      },
-      [],
-    );
-
-    // Engine display values using MetricValue from SensorInstance (Phase 4)
+    // Engine display values using shared createMetricDisplay utility
     const rpmDisplay = useMemo(
-      () => getEngineDisplay(rpmMetric, rpm, 'RPM', 'rpm'),
-      [rpm, rpmMetric],
+      () => createMetricDisplay('RPM', rpmMetric?.formattedValue, rpmMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [rpmMetric],
     );
 
     const coolantTempDisplay = useMemo(
-      () => getEngineDisplay(coolantTempMetric, coolantTemp, 'ECT', '°C'),
-      [coolantTemp, coolantTempMetric],
+      () => createMetricDisplay('ECT', coolantTempMetric?.formattedValue, coolantTempMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [coolantTempMetric],
     );
 
     const oilPressureDisplay = useMemo(
-      () => getEngineDisplay(oilPressureMetric, oilPressure, 'EOP', 'bar'),
-      [oilPressure, oilPressureMetric],
+      () => createMetricDisplay('EOP', oilPressureMetric?.formattedValue, oilPressureMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [oilPressureMetric],
     );
 
     const alternatorVoltageDisplay = useMemo(
-      () => getEngineDisplay(alternatorVoltageMetric, alternatorVoltage, 'ALT', 'V'),
-      [alternatorVoltage, alternatorVoltageMetric],
+      () => createMetricDisplay('ALT', alternatorVoltageMetric?.formattedValue, alternatorVoltageMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [alternatorVoltageMetric],
     );
 
     const fuelFlowDisplay = useMemo(
-      () => getEngineDisplay(fuelRateMetric, fuelRate, 'EFF', 'L/h'),
-      [fuelRate, fuelRateMetric],
+      () => createMetricDisplay('EFF', fuelRateMetric?.formattedValue, fuelRateMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [fuelRateMetric],
     );
 
     const engineHoursDisplay = useMemo(
-      () => getEngineDisplay(hoursMetric, hours, 'EHR', 'h'),
-      [hours, hoursMetric],
+      () => createMetricDisplay('EHR', hoursMetric?.formattedValue, hoursMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [hoursMetric],
     );
 
     const shaftRpmDisplay = useMemo(
-      () => getEngineDisplay(shaftRpmMetric, shaftRpm, 'SRPM', 'rpm'),
-      [shaftRpm, shaftRpmMetric],
+      () => createMetricDisplay('SRPM', shaftRpmMetric?.formattedValue, shaftRpmMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+      [shaftRpmMetric],
     );
 
-    // Marine safety thresholds for engine monitoring
-    const getEngineState = useCallback(
-      (rpm: number | null, temp: number | null, oil: number | null) => {
-        if (rpm === null && temp === null && oil === null) return 'warning';
-
-        // Critical alarms - immediate attention required
-        if (temp && temp > 100) return 'critical'; // Overheating
-        if (oil && oil < 5) return 'critical'; // Low oil pressure
-        if (rpm && rpm > 4200) return 'critical'; // Over-rev
-
-        // Warning conditions
-        if (temp && temp > 85) return 'warning'; // High temp warning
-        if (oil && oil < 10) return 'warning'; // Low oil warning
-        if (rpm && rpm > 3800) return 'warning'; // High RPM warning
-
-        return 'normal';
-      },
-      [],
-    );
-
-    const engineState = getEngineState(rpm, coolantTemp, oilPressure);
-    const isStale = !engineTimestamp;
+    const isStale = !engineSensorInstance?.timestamp;
 
     // Get alarm levels from SensorInstance (Phase 5 refactor)
     const rpmAlarmLevel = engineSensorInstance?.getAlarmState('rpm') ?? 0;
     const tempAlarmLevel = engineSensorInstance?.getAlarmState('temperature') ?? 0;
     const oilAlarmLevel = engineSensorInstance?.getAlarmState('oilPressure') ?? 0;
     const voltAlarmLevel = engineSensorInstance?.getAlarmState('alternatorVoltage') ?? 0;
-
-    const handleLongPressOnPin = useCallback(() => {}, [id]);
 
     // Responsive header sizing using proper base-size scaling
     const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);

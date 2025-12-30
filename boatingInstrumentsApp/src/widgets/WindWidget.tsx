@@ -13,6 +13,7 @@ import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
 import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 import { useCurrentPresentation } from '../presentation/presentationStore';
 import { MetricValue } from '../types/MetricValue';
+import { createMetricDisplay } from '../utils/metricDisplayHelpers';
 
 interface WindWidgetProps {
   id: string;
@@ -144,22 +145,6 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
   // Get current wind presentation for proper conversion
   const windPresentation = useCurrentPresentation('wind');
 
-  // Use MetricValue's enriched properties (consistent with other widgets)
-  const getWindDisplay = useCallback(
-    (
-      metricValue: MetricValue | undefined,
-      label: string = 'Wind',
-    ): MetricDisplayData => {
-      return {
-        mnemonic: label,
-        value: metricValue?.formattedValue,
-        unit: metricValue?.unit,
-        alarmState: 0,
-      };
-    },
-    [],
-  );
-
   // Enhanced angle display function with AWA port/starboard indication
   const getAngleDisplay = useCallback(
     (angleValue: number | null | undefined, label: string = 'Angle'): MetricDisplayData => {
@@ -197,28 +182,17 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
 
   // Wind display data using MetricValue from SensorInstance (Phase 4)
   const windDisplayData = useMemo(() => {
-    // Create display data for gusts using formatted stats
-    const createGustDisplay = (stats: { formattedMaxValue: string; unit: string } | undefined, label: string): MetricDisplayData => {
-      return {
-        mnemonic: label,
-        value: stats?.formattedMaxValue,
-        unit: stats?.unit,
-        alarmState: 0,
-      };
-    };
-
     return {
-      windSpeed: getWindDisplay(windSensorData?.getMetric('speed'), 'AWS'),
-      trueWindSpeed: getWindDisplay(windSensorData?.getMetric('trueSpeed'), 'TWS'),
+      windSpeed: createMetricDisplay('AWS', windSensorData?.getMetric('speed')?.formattedValue, windSensorData?.getMetric('speed')?.unit, windSpeedAlarmLevel),
+      trueWindSpeed: createMetricDisplay('TWS', windSensorData?.getMetric('trueSpeed')?.formattedValue, windSensorData?.getMetric('trueSpeed')?.unit, 0),
       windAngle: getAngleDisplay(windAngle, 'AWA'),
       trueWindAngle: getAngleDisplay(trueDirection, 'TWA'),
-      apparentGust: createGustDisplay(gustCalculations.apparentStats, 'MAX'),
-      trueGust: createGustDisplay(gustCalculations.trueStats, 'MAX'),
+      apparentGust: createMetricDisplay('MAX', gustCalculations.apparentStats?.formattedMaxValue, gustCalculations.apparentStats?.unit, 0),
+      trueGust: createMetricDisplay('MAX', gustCalculations.trueStats?.formattedMaxValue, gustCalculations.trueStats?.unit, 0),
       apparentVariation: getAngleDisplay(gustCalculations.apparentVariation, 'VAR'),
       trueVariation: getAngleDisplay(gustCalculations.trueVariation, 'VAR'),
     };
   }, [
-    getWindDisplay,
     getAngleDisplay,
     windSpeed,
     windAngle,
@@ -227,6 +201,7 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id, title, wi
     gustCalculations,
     windSensorData,
     windPresentation,
+    windSpeedAlarmLevel,
   ]);
 
   // Update true wind history

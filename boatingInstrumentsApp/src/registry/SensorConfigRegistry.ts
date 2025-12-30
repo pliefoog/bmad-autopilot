@@ -51,16 +51,24 @@
  * - `toggle`: Boolean switch (not yet implemented)
  * - `slider`: Range selector (not yet implemented)
  *
- * **Hardware Integration:**
- * Fields can be marked read-only if provided by sensor hardware:
+ * **Architecture Contract:**
+ * Registry keys MUST match the interface field names in SensorData.ts exactly.
+ * This ensures type safety and eliminates field name mismatches.
+ *
+ * Example:
  * ```typescript
- * {
- *   key: 'batteryChemistry',
- *   readOnly: true,              // Check hardware first
- *   hardwareField: 'chemistry',   // Sensor data property name
- *   // If hardware provides value, field shows read-only
- *   // Otherwise falls back to user input
+ * // BatterySensorData interface defines:
+ * interface BatterySensorData {
+ *   stateOfCharge?: number;  // Interface field name
  * }
+ *
+ * // Registry MUST use same key:
+ * fields: [
+ *   { key: 'stateOfCharge', label: 'State of Charge', ... }
+ * ]
+ *
+ * // Widget accesses using key:
+ * sensorInstance.getMetric('stateOfCharge')
  * ```
  */
 
@@ -93,17 +101,18 @@ export type AlarmSoundPattern = (typeof ALARM_SOUND_PATTERNS)[keyof typeof ALARM
  * Field configuration for sensor-specific inputs
  *
  * **Architecture - Separation of Concerns:**
+ * - `key`: Field identifier - MUST match interface field name in SensorData.ts
  * - `valueType`: Data storage type (string/number/boolean)
  * - `uiType`: UI component to render (textInput/picker/toggle/null)
  * - `unitType`: Unit conversion category (only for numeric measurements)
  *
  * **IOState Behavior:**
- * - `readOnly`: Always load from sensor[instance][hardwareField], disable editing
- * - `readWrite`: Load from sensor[instance][hardwareField], allow editing
+ * - `readOnly`: Always load from sensor data, disable editing
+ * - `readWrite`: Load from sensor data, allow editing
  * - `readOnlyIfValue`: If sensor has value → read-only, if no value → editable with defaults
  *
  * **Field Roles:**
- * - Configuration fields: name, batteryChemistry, engineType - no unitType (strings/config values)
+ * - Configuration fields: name, chemistry, engineType - no unitType (strings/config values)
  * - Data fields: voltage, temperature, rpm - have unitType for unit conversion
  *
  * Future extensibility:
@@ -114,23 +123,23 @@ export type AlarmSoundPattern = (typeof ALARM_SOUND_PATTERNS)[keyof typeof ALARM
  * Base field properties shared by all field types
  */
 interface BaseFieldConfig {
-  readonly key: string; // FormData key (immutable)
+  readonly key: string; // Field identifier - MUST match SensorData interface field name (immutable)
   label: string; // Display label
+  readonly mnemonic: string; // Short 2-5 character display code (VLT, RPM, TMP, etc.) - MANDATORY for registry-first architecture
   readonly iostate: IOState; // Read/write behavior (immutable)
-  readonly hardwareField?: string; // Sensor data property name (immutable)
   default?: any; // Default value when no sensor value
   helpText?: string; // User guidance tooltip
 }
 
 /**
  * Numeric field with unit conversion (voltage, temperature, pressure, etc.)
- * Requires min/max for threshold slider bounds
+ * min/max optional: only required if field has alarm thresholds
  */
 interface NumericWithUnit extends BaseFieldConfig {
   readonly valueType: 'number';
   unitType: DataCategory; // Enables SI ↔ user unit conversion
-  readonly min: number; // Threshold slider minimum (SI units)
-  readonly max: number; // Threshold slider maximum (SI units)
+  readonly min?: number; // Threshold slider minimum (SI units) - optional
+  readonly max?: number; // Threshold slider maximum (SI units) - optional
   uiType: 'numericInput' | null; // null = not exposed in UI
 }
 
@@ -269,6 +278,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Battery Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -276,12 +286,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         helpText: 'Descriptive name for this battery (e.g., House Bank, Starter)',
       },
       {
-        key: 'batteryChemistry',
+        key: 'chemistry',
         label: 'Battery Chemistry',
+        mnemonic: 'CHEM',
         valueType: 'string',
         uiType: 'picker',
         iostate: 'readOnlyIfValue',
-        hardwareField: 'chemistry',
         options: [
           { label: 'Lead Acid', value: 'lead-acid', default: true },
           { label: 'AGM', value: 'agm' },
@@ -293,11 +303,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'capacity',
         label: 'Capacity (Ah)',
+        mnemonic: 'CAP',
         valueType: 'number',
         unitType: 'capacity',
         uiType: 'numericInput',
         iostate: 'readOnlyIfValue',
-        hardwareField: 'capacity',
         default: 140,
         min: 40,
         max: 5000,
@@ -307,56 +317,56 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'voltage',
         label: 'Voltage',
+        mnemonic: 'VLT',
         valueType: 'number',
         unitType: 'voltage',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'voltage',
         min: 10.5,
         max: 16.0,
       },
       {
         key: 'nominalVoltage',
         label: 'Nominal Voltage',
+        mnemonic: 'NOM',
         valueType: 'number',
         unitType: 'voltage',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'nominalVoltage',
         helpText: 'Rated/nominal voltage (e.g., 12V, 24V, 48V)',
       },
       {
         key: 'current',
         label: 'Current',
+        mnemonic: 'AMP',
         valueType: 'number',
         unitType: 'current',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'current',
         min: 0,
         max: 500,
       },
       {
         key: 'temperature',
         label: 'Temperature',
+        mnemonic: 'TMP',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'temperature',
         min: -20,
         max: 80,
       },
       {
-        key: 'soc',
+        key: 'stateOfCharge',
         label: 'State of Charge',
+        mnemonic: 'SOC',
         valueType: 'number',
+        unitType: 'percentage',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'stateOfCharge',
         min: 0,
         max: 100,
-        // Raw percentage 0-100, no unitType = no unit conversion
       },
     ],
 
@@ -381,7 +391,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         direction: 'above',
       },
       {
-        key: 'soc',
+        key: 'stateOfCharge',
         label: 'State of Charge',
         direction: 'below',
         // Raw percentage 0-100, no unitType = no unit conversion
@@ -389,7 +399,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
     ],
 
     defaults: {
-      contextKey: 'batteryChemistry',
+      contextKey: 'chemistry',
       contexts: {
         'lead-acid': {
           metrics: {
@@ -402,11 +412,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 10.5,
               max: 16.0,
             },
-            soc: {
+            stateOfCharge: {
               critical: 20,
               warning: 30,
               direction: 'below' as const,
@@ -415,7 +424,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 100,
             },
@@ -428,7 +436,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
             },
             current: {
               critical: 200,
@@ -439,7 +446,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 500,
             },
@@ -456,11 +462,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 10.5,
               max: 16.0,
             },
-            soc: {
+            stateOfCharge: {
               critical: 20,
               warning: 30,
               direction: 'below' as const,
@@ -469,7 +474,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 100,
             },
@@ -482,7 +486,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: -20,
               max: 80,
             },
@@ -495,7 +498,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 500,
             },
@@ -512,11 +514,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 10.5,
               max: 16.0,
             },
-            soc: {
+            stateOfCharge: {
               critical: 20,
               warning: 30,
               direction: 'below' as const,
@@ -525,7 +526,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 100,
             },
@@ -538,7 +538,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: -20,
               max: 70,
             },
@@ -551,7 +550,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 10,
               warningHysteresis: 10,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 0,
               max: 400,
             },
@@ -568,11 +566,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 0.2,
               warningHysteresis: 0.2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: 12.0,
               max: 15.0,
             },
-            soc: {
+            stateOfCharge: {
               critical: 10,
               warning: 20,
               direction: 'below' as const,
@@ -581,7 +578,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 5,
               warningHysteresis: 5,
-              staleThresholdMs: 10000, // 10s - battery data
             },
             temperature: {
               critical: 55,
@@ -592,7 +588,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 10000, // 10s - battery data
               min: -20,
               max: 60,
             },
@@ -624,6 +619,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Depth Sounder Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -634,30 +630,30 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'depth',
         label: 'Depth',
+        mnemonic: 'DPT',
         valueType: 'number',
         unitType: 'depth',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'depth',
         min: 0,
         max: 100,
       },
       {
         key: 'depthSource',
         label: 'Depth Source',
+        mnemonic: 'SRC',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
-        hardwareField: 'depthSource',
         helpText: 'NMEA sentence type providing depth (DPT/DBT/DBK)',
       },
       {
         key: 'depthReferencePoint',
         label: 'Reference Point',
+        mnemonic: 'REF',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
-        hardwareField: 'depthReferencePoint',
         helpText: 'Measurement reference (waterline/transducer/keel)',
       },
     ],
@@ -675,7 +671,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
         criticalHysteresis: 0.3,
         warningHysteresis: 0.3,
-        staleThresholdMs: 2000, // 2s - navigation-critical sensor
         min: 0,
         max: 100,
       },
@@ -692,6 +687,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Engine Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -701,6 +697,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'engineType',
         label: 'Engine Type',
+        mnemonic: 'TYPE',
         valueType: 'string',
         uiType: 'picker',
         iostate: 'readWrite',
@@ -714,6 +711,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'maxRpm',
         label: 'Maximum RPM',
+        mnemonic: 'MAX',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readWrite',
@@ -726,71 +724,71 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'rpm',
         label: 'Engine RPM',
+        mnemonic: 'RPM',
         valueType: 'number',
         unitType: 'rpm',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'rpm',
         min: 0,
         max: 6500,
       },
       {
         key: 'coolantTemp',
         label: 'Coolant Temperature',
+        mnemonic: 'ECT',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'coolantTemp',
         min: 0,
         max: 130,
       },
       {
         key: 'oilPressure',
         label: 'Oil Pressure',
+        mnemonic: 'EOP',
         valueType: 'number',
         unitType: 'mechanical_pressure',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'oilPressure',
         min: 0,
         max: 600,
       },
       {
         key: 'alternatorVoltage',
         label: 'Alternator Voltage',
+        mnemonic: 'ALT',
         valueType: 'number',
         unitType: 'voltage',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'alternatorVoltage',
       },
       {
         key: 'fuelRate',
         label: 'Fuel Rate',
+        mnemonic: 'FLOW',
         valueType: 'number',
         unitType: 'flowRate',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'fuelRate',
       },
       {
         key: 'hours',
         label: 'Engine Hours',
+        mnemonic: 'EHR',
         valueType: 'number',
         unitType: 'time',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'hours',
       },
       {
         key: 'shaftRpm',
         label: 'Shaft RPM',
+        mnemonic: 'SRPM',
         valueType: 'number',
         unitType: 'rpm',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'shaftRpm',
         helpText: 'Propeller shaft revolutions per minute',
       },
     ],
@@ -831,7 +829,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 50,
               warningHysteresis: 50,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 3500,
             },
@@ -844,7 +841,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 120,
             },
@@ -857,7 +853,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 600,
             },
@@ -874,7 +869,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 100,
               warningHysteresis: 100,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 4500,
             },
@@ -887,7 +881,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 130,
             },
@@ -900,7 +893,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 500,
             },
@@ -917,7 +909,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 100,
               warningHysteresis: 100,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 6500,
             },
@@ -930,7 +921,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 3,
               warningHysteresis: 3,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 100,
             },
@@ -943,7 +933,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
               warningSoundPattern: ALARM_SOUND_PATTERNS.warning, // morse_u
               criticalHysteresis: 2,
               warningHysteresis: 2,
-              staleThresholdMs: 5000, // 5s - engine data
               min: 0,
               max: 400,
             },
@@ -963,6 +952,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Wind Sensor Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -973,42 +963,40 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'speed',
         label: 'Wind Speed',
+        mnemonic: 'SPD',
         valueType: 'number',
         unitType: 'wind',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'speed',
         min: 0,
         max: 60,
       },
       {
         key: 'direction',
         label: 'Wind Direction',
+        mnemonic: 'DIR',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'direction',
       },
       {
         key: 'trueSpeed',
         label: 'True Wind Speed',
+        mnemonic: 'TS',
         valueType: 'number',
         unitType: 'wind',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'trueSpeed',
-        canBeCalculated: true, // Auto-calculated from AWS + GPS + heading if hardware VWT unavailable
       },
       {
         key: 'trueDirection',
         label: 'True Wind Direction',
+        mnemonic: 'TWD',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'trueDirection',
-        canBeCalculated: true, // Auto-calculated from AWA + GPS + heading if hardware VWT unavailable
       },
     ],
 
@@ -1025,7 +1013,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
         criticalHysteresis: 3,
         warningHysteresis: 3,
-        staleThresholdMs: 5000, // 5s - wind data (navigation-critical)
         min: 0,
         max: 60,
       },
@@ -1042,6 +1029,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Speed Log Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -1052,22 +1040,22 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'throughWater',
         label: 'Speed Through Water',
+        mnemonic: 'STW',
         valueType: 'number',
         unitType: 'speed',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'throughWater',
         min: 0,
         max: 15,
       },
       {
         key: 'overGround',
         label: 'Speed Over Ground',
+        mnemonic: 'SOG',
         valueType: 'number',
         unitType: 'speed',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'overGround',
       },
     ],
 
@@ -1084,7 +1072,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         warningSoundPattern: ALARM_SOUND_PATTERNS.info,
         criticalHysteresis: 0.5,
         warningHysteresis: 0.5,
-        staleThresholdMs: 5000, // 5s - speed data (navigation-critical)
         min: 0,
         max: 15,
       },
@@ -1101,30 +1088,30 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Sensor Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
-        hardwareField: 'name',
         default: '',
         helpText: 'Descriptive name for this temperature sensor (e.g., Engine Room)',
       },
       {
         key: 'location',
         label: 'Location',
+        mnemonic: 'LOC',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
-        hardwareField: 'location',
         default: 'unknown',
         helpText: 'Physical location - string MetricValue without formatting/conversion',
       },
       {
         key: 'units',
         label: 'Temperature Units',
+        mnemonic: 'UNITS',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
-        hardwareField: 'units',
         default: 'C',
         helpText: 'Temperature units (C or F) - string MetricValue',
       },
@@ -1132,11 +1119,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'value',
         label: 'Temperature',
+        mnemonic: 'VAL',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'value',
         min: -30,
         max: 150,
       },
@@ -1158,7 +1145,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: 0,
             max: 150,
           },
@@ -1173,7 +1159,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -10,
             max: 50,
           },
@@ -1188,7 +1173,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 1,
             warningHysteresis: 1,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -10,
             max: 20,
           },
@@ -1203,7 +1187,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -30,
             max: 0,
           },
@@ -1218,7 +1201,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.none,
             criticalHysteresis: 3,
             warningHysteresis: 3,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -20,
             max: 60,
           },
@@ -1233,7 +1215,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.none,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 15000, // 15s - temperature data
             min: -5,
             max: 40,
           },
@@ -1252,6 +1233,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Compass Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -1262,51 +1244,51 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'magneticHeading',
         label: 'Magnetic Heading',
+        mnemonic: 'HDM',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'magneticHeading',
         helpText: 'Magnetic heading (0-360°) - not corrected for variation',
       },
       {
         key: 'trueHeading',
         label: 'True Heading',
+        mnemonic: 'HDT',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'trueHeading',
         helpText: 'True heading (0-360°) - corrected for magnetic variation',
       },
       {
         key: 'variation',
         label: 'Magnetic Variation',
+        mnemonic: 'VAR',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'variation',
         helpText: 'Magnetic variation (difference between true and magnetic north)',
       },
       {
         key: 'deviation',
         label: 'Compass Deviation',
+        mnemonic: 'DEV',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'deviation',
         helpText: 'Compass deviation (local magnetic disturbance)',
       },
       {
         key: 'rateOfTurn',
         label: 'Rate of Turn',
+        mnemonic: 'ROT',
         valueType: 'number',
         unitType: 'angularVelocity',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'rateOfTurn',
         helpText: 'Rate of turn in degrees per minute (calculated from heading if not provided by hardware)',
       },
     ],
@@ -1324,6 +1306,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'GPS Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -1334,22 +1317,22 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'latitude',
         label: 'Latitude',
+        mnemonic: 'LAT',
         valueType: 'number',
         unitType: 'coordinates',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'latitude',
         helpText:
           "GPS latitude in decimal degrees (formatted per user preference: DD.ddddd° or DD° MM.mmm' N/S)",
       },
       {
         key: 'longitude',
         label: 'Longitude',
+        mnemonic: 'LON',
         valueType: 'number',
         unitType: 'coordinates',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'longitude',
         helpText:
           "GPS longitude in decimal degrees (formatted per user preference: DDD.ddddd° or DDD° MM.mmm' E/W)",
       },
@@ -1357,11 +1340,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'utcTime',
         label: 'UTC Time',
+        mnemonic: 'UTCTI',
         valueType: 'number',
         unitType: 'time',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'utcTime',
         helpText:
           'UTC timestamp from GPS in milliseconds (formatted per user date/time preferences)',
       },
@@ -1369,56 +1352,56 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'speedOverGround',
         label: 'Speed Over Ground',
+        mnemonic: 'SOG',
         valueType: 'number',
         unitType: 'speed',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'speedOverGround',
       },
       {
         key: 'courseOverGround',
         label: 'Course Over Ground',
+        mnemonic: 'COG',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'courseOverGround',
       },
       // GPS Quality fields - split from quality object
       {
         key: 'fixType',
         label: 'Fix Type',
+        mnemonic: 'FIXTY',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'fixType',
         helpText: 'GPS fix type (0=No fix, 1=GPS, 2=DGPS, etc.)',
       },
       {
         key: 'satellites',
         label: 'Satellites',
+        mnemonic: 'SATEL',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'satellites',
         helpText: 'Number of satellites in use',
       },
       {
         key: 'hdop',
         label: 'HDOP',
+        mnemonic: 'HDOP',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'hdop',
         helpText: 'Horizontal Dilution of Precision',
       },
       {
         key: 'timeSource',
         label: 'Time Source',
+        mnemonic: 'TIMES',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
-        hardwareField: 'timeSource',
         helpText: 'Source sentence for time priority: RMC (1) > ZDA (2) > GGA (3)',
       },
     ],
@@ -1436,6 +1419,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Autopilot Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -1446,85 +1430,85 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'engaged',
         label: 'Autopilot Engaged',
+        mnemonic: 'ENGAG',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
-        hardwareField: 'engaged',
         helpText: 'Whether autopilot is currently engaged',
       },
       {
         key: 'active',
         label: 'Autopilot Active',
+        mnemonic: 'ACTIV',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
-        hardwareField: 'active',
         helpText: 'Whether autopilot is actively controlling (separate from engaged)',
       },
       {
         key: 'mode',
         label: 'Autopilot Mode',
+        mnemonic: 'MODE',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
-        hardwareField: 'mode',
         helpText: 'Current autopilot mode (STANDBY, AUTO, WIND, TRACK, NAV)',
       },
       {
         key: 'targetHeading',
         label: 'Target Heading',
+        mnemonic: 'TARGE',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'targetHeading',
         helpText: 'Target heading in degrees',
       },
       {
         key: 'actualHeading',
         label: 'Actual Heading',
+        mnemonic: 'ACTUA',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'actualHeading',
         helpText: 'Current actual heading being maintained (degrees)',
       },
       {
         key: 'headingSource',
         label: 'Heading Source',
+        mnemonic: 'HEADI',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
-        hardwareField: 'headingSource',
         helpText: 'Source of heading data (COMPASS, GPS, GYRO)',
       },
       {
         key: 'rudderAngle',
         label: 'Rudder Angle',
+        mnemonic: 'RUD',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'rudderAngle',
         helpText: 'Current rudder position (-35 to +35 degrees, positive = starboard)',
       },
       {
         key: 'locked',
         label: 'Heading Locked',
+        mnemonic: 'LOCKE',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
-        hardwareField: 'locked',
         helpText: 'Whether heading is locked',
       },
       {
         key: 'alarm',
         label: 'Autopilot Alarm',
+        mnemonic: 'ALARM',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
-        hardwareField: 'alarm',
         helpText: 'Autopilot alarm condition (threshold-based)',
       },
     ],
@@ -1542,6 +1526,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'System Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
@@ -1552,29 +1537,29 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'bearingToWaypoint',
         label: 'Bearing to Waypoint',
+        mnemonic: 'BTW',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'bearingToWaypoint',
       },
       {
         key: 'distanceToWaypoint',
         label: 'Distance to Waypoint',
+        mnemonic: 'DTW',
         valueType: 'number',
         unitType: 'distance',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'distanceToWaypoint',
       },
       {
         key: 'crossTrackError',
         label: 'Cross Track Error',
+        mnemonic: 'XTE',
         valueType: 'number',
         unitType: 'distance',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'crossTrackError',
       },
     ],
 
@@ -1591,10 +1576,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Station Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
-        hardwareField: 'name',
         default: 'Weather Station',
         helpText: 'Descriptive name for this weather station',
       },
@@ -1602,11 +1587,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'pressure',
         label: 'Barometric Pressure',
+        mnemonic: 'PRESS',
         valueType: 'number',
         unitType: 'atmospheric_pressure',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'pressure',
         min: 90000,
         max: 110000,
         helpText: 'Atmospheric pressure in Pascals (PRIMARY metric)',
@@ -1614,11 +1599,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'airTemperature',
         label: 'Air Temperature',
+        mnemonic: 'ATMP',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'airTemperature',
         min: -40,
         max: 50,
         helpText: 'Outside air temperature in Celsius',
@@ -1626,11 +1611,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'humidity',
         label: 'Relative Humidity',
+        mnemonic: 'HUM',
         valueType: 'number',
         unitType: 'percentage',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'humidity',
         min: 0,
         max: 100,
         helpText: 'Relative humidity percentage (0-100%)',
@@ -1638,11 +1623,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'dewPoint',
         label: 'Dew Point',
+        mnemonic: 'DEW',
         valueType: 'number',
         unitType: 'temperature',
         uiType: null, // Not editable - calculated or hardware provided
         iostate: 'readOnly',
-        hardwareField: 'dewPoint',
         helpText: 'Dew point temperature (calculated if not provided by hardware)',
       },
     ],
@@ -1654,21 +1639,23 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         key: 'pressure',
         label: 'Barometric Pressure',
         unitType: 'atmospheric_pressure',
-        direction: 'both',
-        context: 'marine',
-        helpText: 'Alert on rapid pressure changes indicating weather systems',
+        direction: 'above',
       },
       {
         key: 'airTemperature',
         label: 'Air Temperature',
         unitType: 'temperature',
         direction: 'above',
-        context: 'outside',
-        helpText: 'Alert when temperature exceeds safe operating range',
       },
     ],
 
     defaults: {
+      // TODO: Weather station is multi-metric but not context-based
+      // Type system currently only supports:
+      // - Single metric: threshold: ThresholdConfig
+      // - Context-based multi-metric: contextKey + contexts
+      // Need to extend AlarmDefaults type to support non-context multi-metric sensors
+      /*
       metrics: {
         pressure: {
           threshold: {
@@ -1686,7 +1673,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 500,
             warningHysteresis: 500,
-            staleThresholdMs: 300000, // 5 minutes - atmospheric data changes slowly
             min: 90000,
             max: 110000,
           },
@@ -1705,12 +1691,12 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 2,
             warningHysteresis: 2,
-            staleThresholdMs: 300000, // 5 minutes
             min: -40,
             max: 50,
           },
         },
       },
+      */
     },
   },
 
@@ -1724,20 +1710,20 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'name',
         label: 'Tank Name',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
-        hardwareField: 'name',
         default: '',
         helpText: 'Descriptive name for this tank (e.g., Port Fuel, Main Water)',
       },
       {
         key: 'type',
         label: 'Tank Type',
+        mnemonic: 'TYPE',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readWrite',
-        hardwareField: 'type',
         default: 'fuel',
         helpText: 'Type of fluid stored - string MetricValue without formatting/conversion',
       },
@@ -1745,10 +1731,10 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'level',
         label: 'Tank Level',
+        mnemonic: 'LVL',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        hardwareField: 'level',
         min: 0,
         max: 100,
         helpText: 'Current tank level (0.0-1.0 ratio) - no unitType, widget converts to %',
@@ -1756,11 +1742,11 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'capacity',
         label: 'Capacity',
+        mnemonic: 'CAP',
         valueType: 'number',
         unitType: 'volume',
         uiType: 'numericInput',
         iostate: 'readWrite',
-        hardwareField: 'capacity',
         default: 200,
         min: 10,
         max: 5000,
@@ -1784,7 +1770,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1799,7 +1784,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1814,7 +1798,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1829,7 +1812,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 3,
             warningHysteresis: 3,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1844,7 +1826,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.info,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1859,7 +1840,6 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
             warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
             criticalHysteresis: 5,
             warningHysteresis: 5,
-            staleThresholdMs: 30000, // 30s - tank data (low frequency)
             min: 0,
             max: 100,
           },
@@ -1987,7 +1967,7 @@ export function getSensorAlarmMetrics(
  * Context value aliases - maps common abbreviations/variations to registry keys
  */
 const CONTEXT_ALIASES: Record<string, Record<string, string>> = {
-  batteryChemistry: {
+  chemistry: {
     fla: 'lead-acid', // Flooded Lead Acid
     flooded: 'lead-acid',
     wet: 'lead-acid',
@@ -2041,16 +2021,16 @@ export function getSensorField(
 }
 
 /**
- * Get all data fields (fields with unitType or hardwareField) from a sensor
- * These are fields that represent sensor measurements with units or hardware-provided values
+ * Get all data fields (fields with valueType and potential unitType) from a sensor
+ * These are fields that represent sensor measurements, both with and without unit conversion
  *
  * @param sensorType - Type of sensor
  * @returns Array of data field configurations
  */
 export function getDataFields(sensorType: SensorType): SensorFieldConfig[] {
   const config = SENSOR_CONFIG_REGISTRY[sensorType];
-  // Include fields with unitType (numeric metrics with unit conversion) AND fields with hardwareField but no unitType (string/boolean fields)
-  return config?.fields?.filter((f) => f.unitType !== undefined || f.hardwareField !== undefined) ?? [];
+  // Data fields: all fields except 'name' (which is UI-only configuration)
+  return config?.fields?.filter((f) => f.key !== 'name') ?? [];
 }
 
 /**
@@ -2156,6 +2136,41 @@ export function getSmartDefaults(
 ): SensorConfiguration | ThresholdConfig | undefined {
   return getAlarmDefaults(sensorType, context);
 }
+
+/**
+ * Validate that all fields have required mnemonic property
+ * 
+ * **Registry-First Architecture Requirement:**
+ * All sensor fields MUST have a mnemonic for auto-fetch display cells.
+ * This validation runs at module initialization to enforce the constraint.
+ * 
+ * **For AI Agents:**
+ * If this throws, a field is missing its mnemonic property.
+ * Mnemonics are short 2-5 character codes (VLT, RPM, TMP, etc.)
+ * 
+ * @throws Error if any field is missing mnemonic property
+ */
+function validateSensorRegistry(): void {
+  const errors: string[] = [];
+  
+  for (const [sensorType, config] of Object.entries(SENSOR_CONFIG_REGISTRY)) {
+    for (const field of config.fields) {
+      if (!field.mnemonic) {
+        errors.push(`❌ ${sensorType}.${field.key} missing required 'mnemonic' property`);
+      }
+    }
+  }
+  
+  if (errors.length > 0) {
+    throw new Error(
+      `SensorConfigRegistry validation failed:\n${errors.join('\n')}\n\n` +
+      `All fields must have a 'mnemonic' property for registry-first widget architecture.`
+    );
+  }
+}
+
+// Run validation at module initialization
+validateSensorRegistry();
 
 /**
  * Freeze the registry to prevent runtime mutations

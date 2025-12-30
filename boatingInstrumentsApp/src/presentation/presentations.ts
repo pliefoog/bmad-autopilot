@@ -1307,7 +1307,7 @@ const PERCENTAGE_PRESENTATIONS: Presentation[] = [
     symbol: '%',
     description: 'Percentage display (0-100%)',
     conversionFactor: 1,
-    format: (value: number) => `${Math.round(value)}%`,
+    format: (value: number) => Math.round(value).toString(),
     formatSpec: {
       pattern: 'xxx%',
       decimals: 0,

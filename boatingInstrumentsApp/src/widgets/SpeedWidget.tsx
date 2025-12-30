@@ -10,8 +10,7 @@ import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
 import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
 import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
-import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
-import { MetricValue } from '../types/MetricValue';
+import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';import { createMetricDisplay } from '../utils/metricDisplayHelpers';import { MetricValue } from '../types/MetricValue';
 
 interface SpeedWidgetProps {
   id: string;
@@ -89,53 +88,15 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(
     );
     
     const speedDisplayData = useMemo(() => {
-      const createDisplay = (
-        value: number | null | undefined,
-        metricValue: any,
-        mnemonic: string,
-        statValue?: string,
-        statUnit?: string,
-      ): MetricDisplayData => {
-        // For session stats, use formatted values from getFormattedSessionStats
-        if (statValue !== undefined) {
-          return {
-            mnemonic,
-            value: statValue,
-            unit: statUnit ?? 'kts',
-            alarmState: 0,
-            layout: { minWidth: 60, alignment: 'right' },
-          };
-        }
-
-        // For direct sensor values, use MetricValue if available
-        if (metricValue) {
-          return {
-            mnemonic,
-            value: metricValue.formattedValue ?? '---',
-            unit: metricValue.unit ?? 'kts',
-            alarmState: 0,
-            layout: { minWidth: 60, alignment: 'right' },
-          };
-        }
-
-        return {
-          mnemonic,
-          value: '---',
-          unit: 'kts',
-          alarmState: 0,
-          layout: { minWidth: 60, alignment: 'right' },
-        };
-      };
-
       return {
-        sog: createDisplay(sog, sogMetric, 'SOG'),
-        stw: createDisplay(stw, stwMetric, 'STW'),
-        sogAvg: createDisplay(null, null, 'AVG', sogStats?.formattedAvgValue, sogStats?.unit),
-        stwAvg: createDisplay(null, null, 'AVG', stwStats?.formattedAvgValue, stwStats?.unit),
-        sogMax: createDisplay(null, null, 'MAX', sogStats?.formattedMaxValue, sogStats?.unit),
-        stwMax: createDisplay(null, null, 'MAX', stwStats?.formattedMaxValue, stwStats?.unit),
+        sog: createMetricDisplay('SOG', sogMetric?.formattedValue, sogMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+        stw: createMetricDisplay('STW', stwMetric?.formattedValue, stwMetric?.unit, 0, { minWidth: 60, alignment: 'right' }),
+        sogAvg: createMetricDisplay('AVG', sogStats?.formattedAvgValue, sogStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
+        stwAvg: createMetricDisplay('AVG', stwStats?.formattedAvgValue, stwStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
+        sogMax: createMetricDisplay('MAX', sogStats?.formattedMaxValue, sogStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
+        stwMax: createMetricDisplay('MAX', stwStats?.formattedMaxValue, stwStats?.unit, 0, { minWidth: 60, alignment: 'right' }),
       };
-    }, [sog, stw, sogMetric, stwMetric, sogStats, stwStats]);
+    }, [sogMetric, stwMetric, sogStats, stwStats]);
 
     const handleLongPressOnPin = useCallback(() => {}, [id]);
 
