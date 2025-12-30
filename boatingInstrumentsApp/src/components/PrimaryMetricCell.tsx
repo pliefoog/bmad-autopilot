@@ -1,17 +1,33 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
-import { MetricDisplayData } from '../types/MetricDisplayData';
 import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
+import { useSensorContext } from '../contexts/SensorContext';
+import { getSensorFieldConfig } from '../registry/SensorConfigRegistry';
 
+/**
+ * PrimaryMetricCell Props
+ * 
+ * **Registry-First Auto-Fetch Pattern:**
+ * Only requires metricKey - everything else auto-fetched from context:
+ * - Sensor instance from useSensorContext()
+ * - Metric data via instance.getMetric(metricKey)
+ * - Field config via getSensorFieldConfig(sensorType, metricKey)
+ * 
+ * **For AI Agents:**
+ * This is the new widget architecture - cells are pure config,
+ * all data fetching happens internally via context + registry.
+ */
 interface PrimaryMetricCellProps {
-  // Unified interface (required)
-  data: MetricDisplayData;
+  /** 
+   * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
+   * Must match field key in SensorConfigRegistry
+   */
+  metricKey: string;
 
-  // Common props
-  state?: 'normal' | 'warning' | 'alarm';
+  // Optional styling overrides
   style?: any;
   maxWidth?: number; // Optional max width constraint
   cellHeight?: number; // Cell height from UnifiedWidgetGrid
@@ -26,16 +42,27 @@ interface PrimaryMetricCellProps {
 }
 
 /**
- * Standardized primary metric display component with dynamic sizing support:
+ * PrimaryMetricCell - Registry-first auto-fetch metric display
+ * 
+ * **Auto-Fetch Pattern:**
+ * 1. Reads sensor context (instance + type)
+ * 2. Fetches MetricValue via instance.getMetric(metricKey)
+ * 3. Fetches field config via getSensorFieldConfig(sensorType, metricKey)
+ * 4. Displays: mnemonic, value, unit, alarm state
+ * 
+ * **Dynamic Sizing:**
  * - Mnemonic: 12pt, uppercase, semibold, theme.textSecondary
- * - Value: 36pt, monospace, bold, theme.text (or state color)
- * - Unit: 16pt, regular, theme.textSecondary
- * - Spacing: 4pt between mnemonic and value, 2pt between value and unit
- * - Dynamic sizing: Adjusts font size based on content length and available width
+ * - Value: 36pt, monospace, bold, theme.text (or alarm color)
+ * - Unit: 12pt, regular, theme.textSecondary
+ * - Auto-scales based on cellHeight and maxWidth
+ * 
+ * **For AI Agents:**
+ * This component is now "dumb" - it just displays what it fetches.
+ * All logic happens in SensorInstance (metric calculation) and
+ * ConversionRegistry (unit conversion + formatting).
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
-  data,
-  state = 'normal',
+  metricKey,
   style,
   maxWidth,
   cellHeight,
@@ -43,15 +70,30 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   fontSize: customFontSize,
 }) => {
   const theme = useTheme();
+  
+  // Auto-fetch sensor data from context
+  const { sensorInstance, sensorType } = useSensorContext();
+  
+  // Auto-fetch metric value from sensor instance
+  const metricValue = sensorInstance?.getMetric(metricKey);
+  
+  // Auto-fetch field configuration from registry
+  const fieldConfig = useMemo(() => {
+    try {
+      return getSensorFieldConfig(sensorType, metricKey);
+    } catch (error) {
+      console.error(`PrimaryMetricCell: Invalid metricKey "${metricKey}" for sensor "${sensorType}"`, error);
+      return null;
+    }
+  }, [sensorType, metricKey]);
 
-  // Extract values from data prop
-  const mnemonic = data.mnemonic ?? '';
-  const value = data.value ?? '';
-  const unit = data.unit ?? '';
-
-  // Use layout information from MetricDisplayData if available
-  const minWidth = data.layout?.minWidth;
-  const alignment = data.layout?.alignment ?? 'right';
+  // Extract display values (all pre-enriched by MetricValue)
+  const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
+  const value = metricValue?.formattedValue ?? '---';
+  const unit = metricValue?.unit ?? '';
+  const alarmLevel: AlarmLevel = metricValue?.getAlarmState(
+    sensorInstance?.getThresholds(metricKey)
+  ) ?? 0;
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
@@ -120,11 +162,6 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
 
   const styles = createStyles(theme, dynamicSizes);
 
-  // Get alarm state from data or fall back to legacy state prop
-  const alarmLevel: AlarmLevel = data?.alarmState ?? (
-    state === 'alarm' ? 3 : state === 'warning' ? 2 : 0
-  );
-
   // Get color based on alarm level
   const getValueColor = () => {
     const visualState = ALARM_VISUAL_STATES[alarmLevel];
@@ -135,46 +172,19 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
       : theme.text;
   };
 
-  // Format value for display
-  const displayValue =
-    value !== undefined && value !== null && value !== '' ? value.toString() : '---';
+  // Format value for display (already formatted by MetricValue)
+  const displayValue = value;
 
-  // Apply consistent width styling - prefer MetricDisplayData layout info
+  // Container styling - simplified (no layout info from MetricDisplayData)
   const containerStyle = [
     styles.container,
     style,
-    minWidth ? { minWidth } : null,
     maxWidth ? { maxWidth } : null,
     cellHeight ? { height: cellHeight } : null,
-    // Use MetricDisplayData layout info if available
-    data?.layout
-      ? {
-          minWidth: data.layout.minWidth,
-          alignItems:
-            alignment === 'center'
-              ? ('center' as const)
-              : alignment === 'right'
-              ? ('flex-end' as const)
-              : ('flex-start' as const),
-        }
-      : null,
   ].filter(Boolean);
 
-  // Value container styling with consistent width and typography for stability
-  const valueContainerStyle = [
-    styles.valueContainer,
-    // Use MetricDisplayData layout info if available
-    data?.layout
-      ? {
-          alignItems:
-            alignment === 'center'
-              ? ('center' as const)
-              : alignment === 'right'
-              ? ('flex-end' as const)
-              : ('flex-start' as const),
-        }
-      : null,
-  ].filter(Boolean);
+  // Value container styling
+  const valueContainerStyle = styles.valueContainer;
 
   // Value text styling
   const valueTextStyle = {
@@ -183,7 +193,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   };
 
   return (
-    <View style={containerStyle} testID={testID || 'primary-metric-cell'}>
+    <View style={containerStyle} testID={testID || `primary-metric-${metricKey}`}>
       <View style={styles.mnemonicUnitRow}>
         <Text style={styles.mnemonic} testID="metric-mnemonic">
           {mnemonic.toUpperCase()}

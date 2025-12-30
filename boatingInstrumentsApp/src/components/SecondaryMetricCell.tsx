@@ -1,23 +1,29 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react';
 import { useTheme } from '../store/themeStore';
 import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
+import { useSensorContext } from '../contexts/SensorContext';
+import { getSensorFieldConfig } from '../registry/SensorConfigRegistry';
 
+/**
+ * SecondaryMetricCell Props
+ * 
+ * **Registry-First Auto-Fetch Pattern:**
+ * Only requires metricKey - everything else auto-fetched from context.
+ */
 interface SecondaryMetricCellProps {
-  // Unified interface (required)
-  data: any;
+  /** 
+   * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
+   * Must match field key in SensorConfigRegistry
+   */
+  metricKey: string;
   
-  // Common props
-  precision?: number;
-  state?: 'normal' | 'warning' | 'alarm';
-  compact?: boolean;
-  align?: 'left' | 'right';
+  // Optional styling overrides
   style?: any;
   maxWidth?: number;
   cellHeight?: number;
-  minWidth?: number;
   testID?: string;
   fontSize?: {
     mnemonic?: number;
@@ -27,39 +33,49 @@ interface SecondaryMetricCellProps {
 }
 
 /**
- * SecondaryMetricCell - Secondary metric display component for expanded widget views
- * Uses inline styles to avoid React Native Web textTransform issues
+ * SecondaryMetricCell - Registry-first auto-fetch secondary metric display
+ * 
+ * **Auto-Fetch Pattern:**
+ * Same as PrimaryMetricCell but with smaller, inline styling.
+ * 
+ * **For AI Agents:**
+ * Secondary cells are for less critical metrics in bottom section of widgets.
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
-  data,
-  precision = 1,
-  state = 'normal',
-  align = 'right',
+  metricKey,
   style,
   maxWidth,
   cellHeight,
-  minWidth,
   testID,
   fontSize: customFontSize,
 }) => {
   const theme = useTheme();
 
-  // Extract values from data prop
-  const mnemonic = data.mnemonic ?? '';
-  const value = data.value ?? '';
-  const unit = data.unit ?? '';
+  // Auto-fetch sensor data from context
+  const { sensorInstance, sensorType } = useSensorContext();
+  
+  // Auto-fetch metric value from sensor instance
+  const metricValue = sensorInstance?.getMetric(metricKey);
+  
+  // Auto-fetch field configuration from registry
+  const fieldConfig = useMemo(() => {
+    try {
+      return getSensorFieldConfig(sensorType, metricKey);
+    } catch (error) {
+      console.error(`SecondaryMetricCell: Invalid metricKey "${metricKey}" for sensor "${sensorType}"`, error);
+      return null;
+    }
+  }, [sensorType, metricKey]);
 
-  const displayValue =
-    value !== null && value !== undefined && value !== ''
-      ? typeof value === 'number'
-        ? value.toFixed(precision)
-        : String(value)
-      : '---';
+  // Extract display values (all pre-enriched by MetricValue)
+  const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
+  const value = metricValue?.formattedValue ?? '---';
+  const unit = metricValue?.unit ?? '';
+  const alarmLevel: AlarmLevel = metricValue?.getAlarmState(
+    sensorInstance?.getThresholds(metricKey)
+  ) ?? 0;
 
-  // Determine alarm level - prefer data.alarmState over legacy state prop
-  const alarmLevel: AlarmLevel = data.alarmState ?? (
-    state === 'alarm' ? 3 : state === 'warning' ? 2 : 0
-  );
+  const displayValue = value;
 
   // Calculate dynamic font sizes
   const dynamicSizes = useMemo(() => {
@@ -113,7 +129,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   const styles = createStyles(theme, dynamicSizes, valueColor);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID={testID || `secondary-metric-${metricKey}`}>
       <Text style={styles.mnemonic}>
         {mnemonic.toUpperCase()}
         {unit && unit.trim() !== '' ? ` (${unit})` : ''}
