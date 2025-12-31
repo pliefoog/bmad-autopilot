@@ -39,6 +39,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) =
     (state) => state.nmeaData.sensors.battery?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.battery?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"

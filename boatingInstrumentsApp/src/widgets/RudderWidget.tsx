@@ -49,6 +49,11 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]
     );
 
+    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+    const _timestamp = useNmeaStore(
+      (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]?.timestamp
+    );
+
     // Get rudder angle for visualization
     const rudderAngle = autopilotInstance?.getMetric('rudderAngle')?.si_value as number ?? 0;
 

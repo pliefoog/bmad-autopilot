@@ -34,6 +34,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0]
     );
 
+    // Subscribe to timestamp to trigger re-renders when data changes
+    const _timestamp = useNmeaStore(
+      (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0]?.timestamp
+    );
+
     return (
       <TemplatedWidget
         template="2Rx2C-SEP-2Rx2C-WIDE"

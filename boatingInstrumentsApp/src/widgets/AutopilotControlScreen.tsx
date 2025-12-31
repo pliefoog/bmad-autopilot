@@ -40,6 +40,14 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
     (state) => state.nmeaData.sensors.compass?.[0]
   );
 
+  // Subscribe to timestamps to trigger re-renders (SensorInstance is mutable)
+  const _autopilotTimestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp
+  );
+  const _compassTimestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.compass?.[0]?.timestamp
+  );
+
   // Autopilot service instance
   const commandManager = useRef<AutopilotCommandManager | null>(null);
 

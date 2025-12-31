@@ -51,6 +51,21 @@
 - ESLint's `react-native/no-raw-text` only catches static text, not dynamic leaks
 - **Always use ternary `? :` for multi-condition rendering in React Native**
 
+**⚠️ DEBUGGING TEXT NODE ERRORS:**
+```bash
+# Run Expo's linter to catch "Unexpected text node: . A text node cannot be a child of a <View>." errors
+npx expo lint
+
+# Or use ESLint directly for more control
+npx eslint src --ext .tsx,.ts --rule 'react-native/no-raw-text: error'
+```
+
+The `react-native/no-raw-text` rule in `.eslintrc.json` catches text nodes outside `<Text>` components. Common causes:
+- String values rendered directly: `{someString}` instead of `<Text>{someString}</Text>`
+- Periods or special characters: `{unit}` when unit is "."
+- Multi-condition `&&` chains leaking intermediate values
+- Comments using wrong syntax: `{/* comment */}` in TypeScript code (use `//` instead)
+
 **No Manual Formatting in Widgets:**
 - ❌ `value.toFixed(1)` - Widgets don't format data
 - ✅ `metricValue?.formattedValue` - Use pre-enriched MetricValue properties

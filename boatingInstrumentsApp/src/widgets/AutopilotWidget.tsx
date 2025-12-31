@@ -44,6 +44,11 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id 
     (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"

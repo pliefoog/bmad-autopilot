@@ -45,6 +45,11 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.compass?.[instanceNumber]
     );
 
+    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+    const _timestamp = useNmeaStore(
+      (state) => state.nmeaData.sensors.compass?.[instanceNumber]?.timestamp
+    );
+
     return (
       <TemplatedWidget
         template="2Rx1C-SEP-2Rx1C"

@@ -28,6 +28,11 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.tank?.[instanceNumber]
     );
 
+    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+    const _timestamp = useNmeaStore(
+      (state) => state.nmeaData.sensors.tank?.[instanceNumber]?.timestamp
+    );
+
     return (
       <TemplatedWidget
         template="2Rx1C-SEP-2Rx1C"

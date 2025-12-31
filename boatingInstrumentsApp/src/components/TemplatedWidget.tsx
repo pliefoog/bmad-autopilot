@@ -121,7 +121,7 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 
   // Get widget metadata for header
   const widgetMetadata = WIDGET_METADATA_REGISTRY[widgetId ?? sensorType];
-  const instanceNumber = sensorInstance?.instanceNumber ?? 0;
+  const instanceNumber = sensorInstance?.instance ?? 0;
   
   // Build header title with instance if multi-instance
   const headerTitle = widgetMetadata?.type === 'multi' && instanceNumber > 0

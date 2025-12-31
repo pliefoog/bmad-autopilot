@@ -45,6 +45,11 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
     (state) => state.nmeaData.sensors.depth?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders when data changes
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.depth?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
@@ -65,7 +70,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
         showYAxis
         xAxisPosition="top"
         yAxisDirection="down"
-        timeWindowMinutes={5}
         showTimeLabels
         showGrid
         strokeWidth={2}

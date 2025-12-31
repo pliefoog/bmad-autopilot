@@ -38,6 +38,11 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id }) => 
     (state) => state.nmeaData.sensors.engine?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.engine?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"

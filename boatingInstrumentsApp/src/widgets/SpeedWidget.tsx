@@ -47,6 +47,11 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
     (state) => state.nmeaData.sensors.speed?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.speed?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"

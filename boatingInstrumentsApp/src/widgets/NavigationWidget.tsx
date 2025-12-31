@@ -23,6 +23,11 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.navigation?.[0]
     );
 
+    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+    const _timestamp = useNmeaStore(
+      (state) => state.nmeaData.sensors.navigation?.[0]?.timestamp
+    );
+
     return (
       <TemplatedWidget
         template="4Rx2C-NONE"

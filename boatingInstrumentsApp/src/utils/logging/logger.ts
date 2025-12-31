@@ -63,6 +63,7 @@ const DEBUG_FLAGS: Record<string, boolean> = {
   // UI categories
   'ui.interaction': false,
   'ui.layout': false,
+  'ui.trendline': false,
   ui: false, // Parent category
 
   // App categories
@@ -148,6 +149,7 @@ export const log = {
   // UI convenience methods
   uiInteraction: (msg: string, dataFn?: () => any) => log.debug('ui.interaction', msg, dataFn),
   uiLayout: (msg: string, dataFn?: () => any) => log.debug('ui.layout', msg, dataFn),
+  uiTrendline: (msg: string, dataFn?: () => any) => log.debug('ui.trendline', msg, dataFn),
 
   // Legacy aliases for backward compatibility
   layout: (msg: string, dataFn?: () => any) => log.debug('ui.layout', msg, dataFn),

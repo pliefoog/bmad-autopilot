@@ -7,6 +7,7 @@ import { SensorType } from '../types/SensorData';
 import { useCategoryPresentation } from '../presentation/useCategoryPresentation';
 import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
 import { useSensorContext } from '../contexts/SensorContext';
+import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { log } from '../utils/logging/logger';
 
 // Default dimensions for TrendLine (baseline for responsive scaling)
@@ -108,8 +109,28 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   
   // Extract sensor/instance from context
   const sensor = context?.sensorType;
-  const instance = context?.sensorInstance?.instanceNumber ?? 0;
+  const instance = context?.sensorInstance?.instance ?? 0;
   const metric = metricKey;
+
+  // Get metric mnemonic from field config for label display
+  const fieldConfig = useMemo(() => {
+    if (!sensor || !metric) return null;
+    try {
+      const { getSensorField } = require('../registry/SensorConfigRegistry');
+      return getSensorField(sensor, metric);
+    } catch (error) {
+      return null;
+    }
+  }, [sensor, metric]);
+  
+  const mnemonic = fieldConfig?.mnemonic ?? metric?.toUpperCase().slice(0, 5) ?? 'N/A';
+
+  // Get current unit from MetricValue to display in label (like MetricCell)
+  const currentMetric = context?.sensorInstance?.getMetric(metric);
+  const unit = currentMetric?.unit ?? '';
+  // Sanitize unit - ensure it's not just whitespace or a single period
+  const sanitizedUnit = unit.trim();
+  const labelText = sanitizedUnit && sanitizedUnit !== '.' ? `${mnemonic} (${sanitizedUnit})` : mnemonic;
 
   // Use explicit dimensions provided by TemplatedWidget
   const width = cellWidth || DEFAULT_TRENDLINE_WIDTH;
@@ -164,8 +185,9 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       errorFontSize: Math.max(6, 10 * heightScaleFactor),
       
       // Padding (conservative scaling prevents cramping)
+      // Y-axis needs extra space for multi-digit labels (e.g., "1029.2" is ~35-40px wide)
       paddingLeft: showYAxis 
-        ? Math.max(10, 20 * paddingScale) 
+        ? Math.max(45, 50 * paddingScale)  // Increased from 20 to accommodate 4-digit values
         : Math.max(2, 5 * paddingScale),
       paddingRight: Math.max(2, 5 * paddingScale),
       paddingTop: xAxisPosition === 'top' 
@@ -229,7 +251,10 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   // Subscribe to sensor timestamp to trigger updates when new data arrives
   const sensorTimestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors[sensor]?.[instance]?.timestamp,
+    (state) => {
+      if (!sensor) return undefined;
+      return state.nmeaData.sensors[sensor as import('../types/SensorData').SensorType]?.[instance]?.timestamp;
+    }
   );
 
   // Get stable reference to getSensorHistory (won't change between renders)
@@ -242,19 +267,29 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     if (!sensor || instance === undefined || !metric) return [];
     const data = getSensorHistory(sensor, instance, metric, { timeWindowMs });
     
-    // Conditional DEBUG logging for TrendLine history
-    log.uiLayout('TrendLine history fetch', () => ({
+    // Conditional DEBUG logging for TrendLine history fetch
+    log.uiTrendline('TrendLine history fetch', () => ({
       sensor: `${sensor}.${instance}.${metric}`,
       dataPoints: data.length,
       timeWindow: timeWindowMs,
+      instanceFromContext: context?.sensorInstance?.instance,
       sensorTimestamp,
       firstPoint: data[0],
       lastPoint: data[data.length - 1],
+      // For pressure debugging: show first 3 values
+      sampleValues: data.slice(0, 3).map(p => p.value),
     }));
     
     return data;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);
+
+  // Get display-value stats from sensor instance (pre-computed min/max/avg in user's units)
+  // This replaces manual min/max calculation from history data
+  const displayStats = useMemo(() => {
+    if (!context?.sensorInstance || !metric) return undefined;
+    return context.sensorInstance.getDisplayValueStats(metric);
+  }, [context?.sensorInstance, metric, sensorTimestamp]);
 
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;
@@ -315,9 +350,62 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     const now = Date.now();
     const timeWindowMs = timeWindowMinutes * 60 * 1000;
 
-    const values = filteredData.map((p) => p.value);
-    let dataMin = minValue !== undefined ? minValue : Math.min(...values);
-    let dataMax = maxValue !== undefined ? maxValue : Math.max(...values);
+    // Use pre-computed stats from sensor instance instead of calculating from history
+    // This ensures consistency with MetricCells and eliminates duplicate logic
+    let dataMin: number;
+    let dataMax: number;
+
+    if (displayStats && displayStats.min !== undefined && displayStats.max !== undefined) {
+      // Use pre-computed stats (preferred - consistent with MetricCells)
+      dataMin = minValue !== undefined ? minValue : displayStats.min;
+      dataMax = maxValue !== undefined ? maxValue : displayStats.max;
+      
+      // DEBUG: Always log for pressure to diagnose Y-axis issue
+      if (metric === 'pressure') {
+        console.log('[TrendLine Y-axis] Using pre-computed stats:', {
+          metric: `${sensor}.${metric}`,
+          statsMin: displayStats.min,
+          statsMax: displayStats.max,
+          dataMin,
+          dataMax,
+          unit: displayStats.unit,
+          displayStatsObj: displayStats,
+        });
+      }
+      
+      log.uiTrendline('Using pre-computed stats for Y-axis', () => ({
+        metric: `${sensor}.${metric}`,
+        statsMin: displayStats.min,
+        statsMax: displayStats.max,
+        dataMin,
+        dataMax,
+        unit: displayStats.unit,
+      }));
+    } else {
+      // Fallback: calculate from visible data (if stats not available)
+      const values = filteredData.map((p) => p.value as number);
+      dataMin = minValue !== undefined ? minValue : Math.min(...values);
+      dataMax = maxValue !== undefined ? maxValue : Math.max(...values);
+      
+      // DEBUG: Always log for pressure to diagnose Y-axis issue
+      if (metric === 'pressure') {
+        console.log('[TrendLine Y-axis] Fallback calculation:', {
+          metric: `${sensor}.${metric}`,
+          valueCount: values.length,
+          dataMin,
+          dataMax,
+          sampleValues: values.slice(0, 5),
+          displayStatsWas: displayStats,
+        });
+      }
+      
+      log.uiTrendline('Fallback: calculating Y-axis from data', () => ({
+        metric: `${sensor}.${metric}`,
+        valueCount: values.length,
+        dataMin,
+        dataMax,
+      }));
+    }
 
     // Force zero into the range if requested (BEFORE calculating thresholds)
     if (forceZero) {
@@ -327,8 +415,25 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
     const range = dataMax - dataMin || 1;
 
-    // Generate Y-axis labels (min and max only)
-    const yLabels: string[] = [dataMin.toFixed(1), dataMax.toFixed(1)];
+    // Generate Y-axis labels (min and max only) using proper category formatting
+    // CRITICAL: Use ConversionRegistry to respect category's decimal precision
+    // (e.g., atmospheric_pressure has 0 decimals, temperature has 1 decimal)
+    // Get unitType from field config (single source of truth)
+    let unitType;
+    try {
+      const { getSensorField } = require('../registry/SensorConfigRegistry');
+      const fieldConfig = sensor && metric ? getSensorField(sensor, metric) : null;
+      unitType = fieldConfig?.unitType;
+    } catch (error) {
+      unitType = undefined;
+    }
+    
+    const yLabels: string[] = unitType
+      ? [
+          ConversionRegistry.format(dataMin, unitType, false), // false = no unit
+          ConversionRegistry.format(dataMax, unitType, false),
+        ]
+      : [dataMin.toFixed(1), dataMax.toFixed(1)]; // Fallback if no unitType
 
     // Calculate threshold Y positions
     const calculateThresholdY = (thresholdValue: number): number => {
@@ -403,6 +508,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     };
   }, [
     trendData,
+    displayStats,
     minValue,
     maxValue,
     forceZero,
@@ -416,6 +522,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     PADDING_TOP,
     trendlineColor,
     timeWindowMinutes,
+    sensor,
+    metric,
   ]);
 
   // Generate time labels for X-axis (0 and max time only)
@@ -466,8 +574,43 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   // Render SVG directly with explicit dimensions (no flex wrapper needed)
   // Width and height are provided explicitly by TemplatedWidget
+  // Metric label shows mnemonic + unit like MetricCell
   return trendData.length >= 2 ? (
     <Svg width={width} height={height}>
+        <SvgText
+          x={PADDING_LEFT}
+          y={xAxisPosition === 'top' ? PADDING_TOP + scaledDimensions.labelFontSize : scaledDimensions.labelFontSize + 2}
+          fill={labelColor}
+          fontSize={scaledDimensions.labelFontSize}
+          fontWeight="600"
+          textAnchor="start"
+        >
+          {labelText}
+        </SvgText>
+
+        {thresholdPositions.warning !== undefined && (
+          <Line
+            x1={AXIS_MARGIN}
+            y1={thresholdPositions.warning}
+            x2={chartWidth + AXIS_MARGIN}
+            y2={thresholdPositions.warning}
+            stroke={warningColor}
+            strokeWidth={scaledDimensions.warningStroke}
+            strokeDasharray={`${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`}
+          />
+        )}
+        {thresholdPositions.alarm !== undefined && (
+          <Line
+            x1={AXIS_MARGIN}
+            y1={thresholdPositions.alarm}
+            x2={chartWidth + AXIS_MARGIN}
+            y2={thresholdPositions.alarm}
+            stroke={alarmColor}
+            strokeWidth={scaledDimensions.alarmStroke}
+            strokeDasharray={`${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`}
+          />
+        )}
+
         {/* Grid lines */}
         {showGrid && (
           <>

@@ -45,6 +45,11 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
     (state) => state.nmeaData.sensors.temperature?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders when data changes
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
@@ -64,7 +69,6 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
         showYAxis
         xAxisPosition="bottom"
         yAxisDirection="up"
-        timeWindowMinutes={5}
         showTimeLabels
         showGrid
         strokeWidth={2}

@@ -37,6 +37,11 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id }) => {
     (state) => state.nmeaData.sensors.wind?.[instanceNumber]
   );
 
+  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.wind?.[instanceNumber]?.timestamp
+  );
+
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"

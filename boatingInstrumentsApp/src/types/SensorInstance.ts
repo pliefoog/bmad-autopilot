@@ -674,21 +674,39 @@ export class SensorInstance<T extends SensorData = SensorData> {
    */
   private _addToHistory(fieldName: string, metric: MetricValue): void {
     if (!this._history.has(fieldName)) {
-      // Create buffer: 100 recent, 100 old, 60s threshold, 10x decimation
-      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(100, 100, 60000, 10));
+      // Create buffer: 300 recent, 300 old, 60s threshold, 10x decimation
+      // 300 recent = 5 minutes at 1Hz, 300 old = 50 minutes decimated (10x)
+      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(300, 300, 60000, 10));
     }
 
     const buffer = this._history.get(fieldName)!;
 
+    // Get unitType from cached map (built in constructor from registry)
+    const unitType = this._metricUnitTypes.get(fieldName);
+
+    // DEBUG: Log conversion details for pressure and airTemperature
+    if (fieldName === 'pressure' || fieldName === 'airTemperature') {
+      const displayValue = metric.getDisplayValue(unitType);
+      const unit = metric.getUnit(unitType);
+      log.app(`_addToHistory ${this.sensorType}.${fieldName}`, () => ({
+        si_value: metric.si_value,
+        unitType,
+        metricInternalUnitType: metric.getUnitType(),
+        displayValue,
+        unit,
+      }));
+    }
+
     // Store enriched history point (computed once at storage time)
-    // MetricValue has optional unitType, so it handles conversion internally
+    // CRITICAL: Always pass unitType explicitly to ensure display value conversion
+    // If unitType is undefined, getDisplayValue() returns SI value unchanged
     buffer.add(
       {
         si_value: metric.si_value,
-        value: metric.getDisplayValue(),
-        formattedValue: metric.getFormattedValue(),
-        formattedValueWithUnit: metric.getFormattedValueWithUnit(),
-        unit: metric.getUnit(),
+        value: metric.getDisplayValue(unitType),  // Pass unitType explicitly
+        formattedValue: metric.getFormattedValue(unitType),
+        formattedValueWithUnit: metric.getFormattedValueWithUnit(unitType),
+        unit: metric.getUnit(unitType),
         timestamp: metric.timestamp,
       },
       metric.timestamp
@@ -701,8 +719,9 @@ export class SensorInstance<T extends SensorData = SensorData> {
    */
   private _addStringToHistory(fieldName: string, value: string, timestamp: number): void {
     if (!this._history.has(fieldName)) {
-      // Create buffer: 100 recent, 100 old, 60s threshold, 10x decimation
-      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(100, 100, 60000, 10));
+      // Create buffer: 300 recent, 300 old, 60s threshold, 10x decimation
+      // Match numeric buffer size for consistency
+      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(300, 300, 60000, 10));
     }
 
     const buffer = this._history.get(fieldName)!;
@@ -795,6 +814,63 @@ export class SensorInstance<T extends SensorData = SensorData> {
       formattedAvgValue: avgMetric.getFormattedValue(),
       unit: minMetric.getUnit(),
     };
+  }
+
+  /**
+   * Get display-value session statistics for a metric (numeric, for charting)
+   * 
+   * Returns min/max/avg in user's selected display units as numbers (not formatted strings).
+   * Used by TrendLine for Y-axis range calculation.
+   * 
+   * @param metricKey - Metric field name
+   * @returns Object with numeric min/max/avg in display units or undefined
+   * 
+   * @example
+   * ```typescript
+   * const stats = depthInstance.getDisplayValueStats('depth');
+   * console.log(stats.min);  // 5.2 (numeric, in user's units)
+   * console.log(stats.max);  // 8.7 (numeric, in user's units)
+   * console.log(stats.unit); // "ft"
+   * ```
+   */
+  getDisplayValueStats(metricKey: string): {
+    min: number;
+    max: number;
+    avg: number;
+    unit: string;
+  } | undefined {
+    const history = this.getHistoryForMetric(metricKey);
+    if (history.length === 0) return undefined;
+
+    // Use display values from history (already converted to user's units)
+    const values = history
+      .map((p) => p.value)
+      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+    
+    if (values.length === 0) return undefined;
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+
+    // Get unit from first history point (all points have same unit)
+    const unit = history[0]?.unit ?? '';
+
+    // DEBUG: Log stats calculation for pressure
+    if (metricKey === 'pressure') {
+      log.app(`getDisplayValueStats ${this.sensorType}.${metricKey}`, () => ({
+        historyCount: history.length,
+        min,
+        max,
+        avg,
+        unit,
+        firstValue: history[0]?.value,
+        lastValue: history[history.length - 1]?.value,
+        sampleValues: values.slice(0, 5),
+      }));
+    }
+
+    return { min, max, avg, unit };
   }
 
   /**

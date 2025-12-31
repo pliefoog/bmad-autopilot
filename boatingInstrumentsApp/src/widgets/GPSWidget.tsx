@@ -21,6 +21,11 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(
       (state) => state.nmeaData.sensors.gps?.[0]
     );
 
+    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+    const _timestamp = useNmeaStore(
+      (state) => state.nmeaData.sensors.gps?.[0]?.timestamp
+    );
+
     return (
       <TemplatedWidget
         template="2Rx1C-SEP-2Rx1C"
