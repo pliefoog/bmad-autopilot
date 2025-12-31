@@ -992,13 +992,13 @@ const VOLUME_PRESENTATIONS: Presentation[] = [
   },
 ];
 
-// ===== TIME PRESENTATIONS =====
-const TIME_PRESENTATIONS: Presentation[] = [
+// ===== DURATION PRESENTATIONS (renamed from TIME) =====
+const DURATION_PRESENTATIONS: Presentation[] = [
   {
     id: 'h_1',
     name: 'Hours (1 decimal)',
     symbol: 'h',
-    description: 'Time in hours, 1 decimal place',
+    description: 'Duration in hours, 1 decimal place',
     conversionFactor: 1,
     formatSpec: {
       pattern: 'xxxx.x',
@@ -1013,7 +1013,7 @@ const TIME_PRESENTATIONS: Presentation[] = [
     id: 'h_0',
     name: 'Hours (integer)',
     symbol: 'h',
-    description: 'Time in hours, integer value',
+    description: 'Duration in hours, integer value',
     conversionFactor: 1,
     formatSpec: {
       pattern: 'xxxx',
@@ -1022,6 +1022,156 @@ const TIME_PRESENTATIONS: Presentation[] = [
       layoutRanges: { min: 0, max: 9999, typical: 123 },
     },
     preferredInRegion: ['international'],
+  },
+];
+
+// ===== TIME-OF-DAY PRESENTATIONS (NEW) =====
+const TIME_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'time_24h_full',
+    name: '24-Hour Full (HH:MM:SS)',
+    symbol: '', // Dynamic based on timezone
+    description: 'Full 24-hour time with seconds',
+    conversionFactor: 1, // Not used - special formatting
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 8,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    isDefault: true,
+    preferredInRegion: ['eu', 'international'],
+  },
+  {
+    id: 'time_24h',
+    name: '24-Hour (HH:MM)',
+    symbol: '',
+    description: '24-hour time without seconds',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 5,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['eu', 'international'],
+  },
+  {
+    id: 'time_12h',
+    name: '12-Hour (HH:MM AM/PM)',
+    symbol: '',
+    description: '12-hour time with AM/PM',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 8,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['us'],
+  },
+  {
+    id: 'time_12h_full',
+    name: '12-Hour Full (HH:MM:SS AM/PM)',
+    symbol: '',
+    description: '12-hour time with seconds and AM/PM',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 11,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['us'],
+  },
+  {
+    id: 'time_compact',
+    name: 'Compact (HH.MM)',
+    symbol: '',
+    description: 'Compact time format with dot separator',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 5,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['international'],
+  },
+];
+
+// ===== DATE PRESENTATIONS (NEW) =====
+const DATE_PRESENTATIONS: Presentation[] = [
+  {
+    id: 'nautical_date',
+    name: 'Nautical (Day Mon DD, YYYY)',
+    symbol: '',
+    description: 'Maritime standard date format',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 15,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    isDefault: true,
+    preferredInRegion: ['international'],
+  },
+  {
+    id: 'iso_date',
+    name: 'ISO (YYYY-MM-DD)',
+    symbol: '',
+    description: 'ISO 8601 standard date',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 10,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['international'],
+  },
+  {
+    id: 'us_date',
+    name: 'US (MM/DD/YYYY)',
+    symbol: '',
+    description: 'US date format',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 10,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['us'],
+  },
+  {
+    id: 'eu_date',
+    name: 'EU (DD.MM.YYYY)',
+    symbol: '',
+    description: 'European date format',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 10,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['eu'],
+  },
+  {
+    id: 'uk_date',
+    name: 'UK (DD/MM/YYYY)',
+    symbol: '',
+    description: 'UK date format',
+    conversionFactor: 1,
+    formatSpec: {
+      pattern: 'custom',
+      decimals: 0,
+      minWidth: 10,
+      layoutRanges: { min: 0, max: 0, typical: 0 },
+    },
+    preferredInRegion: ['uk'],
   },
 ];
 
@@ -1366,9 +1516,21 @@ export const PRESENTATIONS: Record<DataCategory, CategoryPresentations> = {
     category: 'volume',
     presentations: VOLUME_PRESENTATIONS,
   },
+  timestamp: {
+    category: 'timestamp',
+    presentations: [], // Internal use only - no user-facing presentations
+  },
   time: {
     category: 'time',
     presentations: TIME_PRESENTATIONS,
+  },
+  date: {
+    category: 'date',
+    presentations: DATE_PRESENTATIONS,
+  },
+  duration: {
+    category: 'duration',
+    presentations: DURATION_PRESENTATIONS,
   },
   distance: {
     category: 'distance',

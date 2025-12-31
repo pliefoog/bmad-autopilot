@@ -383,8 +383,9 @@ export function validateAndLogConfiguration(): void {
     if (issues.length > 0) {
       console.warn('⚠️ PresentationStore Configuration Issues:');
       issues.forEach(issue => console.warn('  ' + issue));
-    } else {
-      console.log('✅ PresentationStore: All regional presets validated successfully');
     }
+    // else {
+    //   console.log('✅ PresentationStore: All regional presets validated successfully');
+    // }
   }
 }

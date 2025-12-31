@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { GPSWidget } from '../../widgets/GPSWidget';
-import { MaritimeSettingsConfiguration } from '../../components/settings/MaritimeSettingsConfiguration';
+// TODO: Replace with UnitsConfigDialog once GPS settings are integrated
 
 // Import the actual stores to mock them
 import { useNmeaStore } from '../../store/nmeaStore';
@@ -170,6 +170,8 @@ export const NoGPSFix: Story = {
   ),
 };
 
+// TODO: Re-enable once GPS settings are integrated into UnitsConfigDialog
+/*
 // Maritime Settings Configuration - Complete GPS and Ship Time settings
 // This story shows how GPS widget responds to settings changes in real-time
 export const MaritimeSettings: Story = {
@@ -277,6 +279,7 @@ export const MaritimeSettings: Story = {
     );
   },
 };
+*/
 
 const styles = StyleSheet.create({
   previewTitle: {

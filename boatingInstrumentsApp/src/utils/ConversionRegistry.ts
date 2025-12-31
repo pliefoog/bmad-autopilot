@@ -36,12 +36,14 @@
 
 import { DataCategory } from '../presentation/categories';
 import { usePresentationStore } from '../presentation/presentationStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { log } from './logging/logger';
 import {
   getConvertFunction,
   getConvertBackFunction,
   ensureFormatFunction,
 } from '../presentation/presentations';
+import { formatTime, formatDate } from './datetimeFormatters';
 
 /**
  * Cached presentation data with version tracking
@@ -189,20 +191,54 @@ class ConversionRegistryService {
   /**
    * Format value with user's preferred pattern and unit
    *
-   * @param value - Value in display units (not SI)
+   * @param value - Value in display units (not SI) for numeric categories, timestamp for datetime categories
    * @param category - Data category
    * @param includeUnit - Whether to append unit symbol
+   * @param forceTimezone - Force 'utc' for datetime fields (optional, overrides user settings)
    * @returns Formatted string
    *
    * @example
    * ConversionRegistry.format(8.2, 'depth', true)  // "8.2 ft"
    * ConversionRegistry.format(8.2, 'depth', false) // "8.2"
+   * ConversionRegistry.format(1672531200000, 'time', true, 'utc') // "14:00:00 UTC"
    */
-  format(value: number, category: DataCategory, includeUnit: boolean = true): string {
+  format(
+    value: number,
+    category: DataCategory,
+    includeUnit: boolean = true,
+    forceTimezone?: 'utc',
+  ): string {
     if (!Number.isFinite(value)) {
       return '---';
     }
 
+    // Special handling for datetime categories
+    if (category === 'time' || category === 'date') {
+      const settings = useSettingsStore.getState();
+      const presentation = this.getPresentation(category);
+
+      // Determine timezone options
+      const timezoneOptions =
+        forceTimezone === 'utc'
+          ? { forceUTC: true }
+          : category === 'time'
+            ? { timezoneOffset: this.getTimezoneOffset(settings.gps.timezone) }
+            : { timezoneOffset: this.getTimezoneOffset(settings.shipTime.timezone) };
+
+      // Format using datetime formatters
+      if (category === 'time') {
+        const timeFormat = settings.gps.timeFormat;
+        const result = formatTime(value, timeFormat, timezoneOptions);
+        return includeUnit ? `${result.formatted} ${result.unitLabel}` : result.formatted;
+      } else {
+        // category === 'date'
+        const dateFormat = settings.gps.dateFormat;
+        const result = formatDate(value, dateFormat, timezoneOptions);
+        return includeUnit ? `${result.formatted} ${result.unitLabel}` : result.formatted;
+      }
+    }
+
+    // Standard numeric category formatting
     const presentation = this.getPresentation(category);
     const formatFn = ensureFormatFunction(presentation);
     const formatted = formatFn(value); // Uses user's format pattern
@@ -212,6 +248,31 @@ class ConversionRegistryService {
     }
 
     return formatted;
+  }
+
+  /**
+   * Get timezone offset in minutes from timezone string
+   * Supports 'utc', 'local_device', and 'UTC±HH:MM' format
+   */
+  private getTimezoneOffset(timezone: string): number {
+    if (timezone === 'utc') {
+      return 0;
+    }
+    if (timezone === 'local_device') {
+      return -new Date().getTimezoneOffset(); // Device timezone
+    }
+
+    // Parse 'UTC±HH:MM' format
+    const match = timezone.match(/^UTC([+-])(\d{1,2}):(\d{2})$/);
+    if (match) {
+      const sign = match[1] === '+' ? 1 : -1;
+      const hours = parseInt(match[2], 10);
+      const minutes = parseInt(match[3], 10);
+      return sign * (hours * 60 + minutes);
+    }
+
+    log.app('Invalid timezone format, defaulting to UTC', () => ({ timezone }));
+    return 0; // Default to UTC
   }
 
   /**

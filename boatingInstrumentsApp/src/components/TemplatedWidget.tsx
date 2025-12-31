@@ -33,6 +33,12 @@ import WidgetHeader from './molecules/WidgetHeader';
 import WidgetFooter from './molecules/WidgetFooter';
 import { WIDGET_METADATA_REGISTRY } from '../registry/WidgetMetadataRegistry';
 
+// Debug border width constants (used in styles and calculations)
+const DEBUG_WRAPPER_BORDER = 3;
+const DEBUG_GRID_BORDER = 2;
+const DEBUG_CELL_BORDER = 2;
+const NORMAL_WRAPPER_BORDER = 1;
+
 /**
  * Additional sensor configuration for multi-sensor widgets
  */
@@ -173,10 +179,16 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   // Total rows across both sections
   const totalRows = template.primaryGrid.rows + (template.secondaryGrid?.rows || 0);
   const rowGap = 8;
-  const totalRowGaps = (totalRows - 1) * rowGap;
+  const sectionGap = (template.secondaryGrid && template.primaryGrid.rows > 0) ? 8 : 0;
+  const totalRowGaps = ((totalRows - 1) * rowGap) + sectionGap;
   
   // Calculate row height - all rows get equal height
   const rowHeight = totalRows > 0 ? (availableGridHeight - totalRowGaps) / totalRows : 60;
+
+  // Calculate available width for grid (subtract wrapper borders)
+  // widgetDimensions.width includes wrapper borders (box-sizing: border-box)
+  const wrapperBorderWidth = debugLayout ? DEBUG_WRAPPER_BORDER : NORMAL_WRAPPER_BORDER;
+  const availableWidgetWidth = widgetDimensions.width - (wrapperBorderWidth * 2);
 
   // Create styles
   const styles = createStyles(theme, debugLayout);
@@ -210,7 +222,7 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
             section={template.primaryGrid}
             children={primaryChildren}
             rowHeight={rowHeight}
-            widgetWidth={widgetDimensions.width}
+            widgetWidth={availableWidgetWidth}
             debugLayout={debugLayout}
             testID="primary-section"
           />
@@ -226,7 +238,7 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
               section={template.secondaryGrid}
               children={secondaryChildren}
               rowHeight={rowHeight}
-              widgetWidth={widgetDimensions.width}
+              widgetWidth={availableWidgetWidth}
               debugLayout={debugLayout}
               testID="secondary-section"
             />
@@ -273,12 +285,12 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
   // Note: gridContainer already has padding: 12, so available width is reduced by 24px
   const { rows, columns } = section;
   const GRID_PADDING = 12; // Must match gridContainer padding in styles
-  let availableWidth = widgetWidth - (GRID_PADDING * 2); // Width inside gridContainer (green border)
   
-  // React Native uses box-sizing: border-box by default
-  // This means borderWidth is INCLUDED in the width, not added to it
-  // So we DON'T need to subtract border widths from available space
-  // The wrapper's width includes its own borders automatically
+  // Account for debug borders if enabled (React Native uses box-sizing: border-box)
+  const gridBorderWidth = debugLayout ? DEBUG_GRID_BORDER : 0;
+  const cellBorderWidth = debugLayout ? DEBUG_CELL_BORDER : 0;
+  
+  let availableWidth = widgetWidth - (GRID_PADDING * 2) - (gridBorderWidth * 2); // Width inside gridContainer minus grid borders
   
   const colGap = 8;
   
@@ -287,8 +299,8 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
     ? availableWidth  // Single column takes full width (borders included)
     : (availableWidth - colGap) / 2;  // Two columns share width minus gap
   
-  // Child component receives same width (will fit inside parent's border-box)
-  const contentWidth = cellWidth;
+  // Child component receives content width (accounting for cell borders)
+  const contentWidth = cellWidth - (cellBorderWidth * 2);
 
   // Create row groups
   const { cellSpans } = section;
@@ -353,7 +365,7 @@ const createStyles = (theme: any, debugLayout: boolean = false) =>
       flexDirection: 'column',
       backgroundColor: theme.widgetBackground,
       borderRadius: 8,
-      borderWidth: debugLayout ? 3 : 1,
+      borderWidth: debugLayout ? DEBUG_WRAPPER_BORDER : NORMAL_WRAPPER_BORDER,
       borderColor: debugLayout ? '#FF0000' : theme.border,
       overflow: 'hidden',
     },
@@ -361,7 +373,7 @@ const createStyles = (theme: any, debugLayout: boolean = false) =>
       flexGrow: 1,
       flexShrink: 1,
       padding: 12,
-      ...(debugLayout && { borderWidth: 2, borderColor: '#00FF00' }),
+      ...(debugLayout && { borderWidth: DEBUG_GRID_BORDER, borderColor: '#00FF00' }),
     },
     section: {
       flexDirection: 'column',
@@ -378,7 +390,7 @@ const createStyles = (theme: any, debugLayout: boolean = false) =>
     cell: {
       flex: 1,
       minWidth: 0,
-      ...(debugLayout && { borderWidth: 2, borderColor: '#FF00FF' }),
+      ...(debugLayout && { borderWidth: DEBUG_CELL_BORDER, borderColor: '#FF00FF' }),
     },
     cellFullWidth: {
       width: '100%',

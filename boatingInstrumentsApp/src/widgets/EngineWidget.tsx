@@ -6,9 +6,7 @@ import { TemplatedWidget } from '../components/TemplatedWidget';
 
 interface EngineWidgetProps {
   id: string;
-  title: string;
-  width?: number;
-  height?: number;
+  instanceNumber?: number;
 }
 
 /**

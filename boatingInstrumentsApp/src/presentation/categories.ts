@@ -25,7 +25,10 @@ export type DataCategory =
   | 'voltage' // Electrical voltage
   | 'current' // Electrical current
   | 'volume' // Tank levels
-  | 'time' // Time/date display
+  | 'timestamp' // Unix timestamp (internal - milliseconds)
+  | 'time' // Time-of-day display (HH:MM:SS with timezone)
+  | 'date' // Date display (various formats with timezone)
+  | 'duration' // Time duration (hours, minutes)
   | 'distance' // Navigation distances/ranges
   | 'capacity' // Battery capacity (Amp-hours)
   | 'flowRate' // Flow rates (fuel, water, cooling)
@@ -244,5 +247,45 @@ export const DATA_CATEGORIES: Record<DataCategory, DataCategoryInfo> = {
     icon: '%',
     precision: 0,
     typical_range: [0, 100], // 0-100%
+  },
+
+  timestamp: {
+    id: 'timestamp',
+    name: 'Timestamp',
+    description: 'Unix timestamp in milliseconds (internal use)',
+    baseUnit: 'milliseconds',
+    icon: '🕐',
+    precision: 0,
+    typical_range: [0, 2147483647000],
+  },
+
+  time: {
+    id: 'time',
+    name: 'Time',
+    description: 'Time-of-day display with timezone support',
+    baseUnit: 'time_24h_full',
+    icon: '⏰',
+    precision: 0,
+    typical_range: [0, 86400000], // 0-24 hours in ms
+  },
+
+  date: {
+    id: 'date',
+    name: 'Date',
+    description: 'Date display with timezone support',
+    baseUnit: 'nautical_date',
+    icon: '📅',
+    precision: 0,
+    typical_range: [0, 2147483647000],
+  },
+
+  duration: {
+    id: 'duration',
+    name: 'Duration',
+    description: 'Time duration in hours',
+    baseUnit: 'hours',
+    icon: '⏱️',
+    precision: 1,
+    typical_range: [0, 9999], // 0-9999 hours
   },
 };

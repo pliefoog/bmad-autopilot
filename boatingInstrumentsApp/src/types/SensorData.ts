@@ -150,6 +150,7 @@ export interface GpsSensorData extends BaseSensorData {
   latitude?: number; // PRIMARY metric - decimal degrees (MetricValue with 'coordinates' category)
   longitude?: number; // PRIMARY metric - decimal degrees (MetricValue with 'coordinates' category)
   utcTime?: number; // PRIMARY metric - UTC timestamp from GPS (MetricValue with 'time' category)
+  utcDate?: number; // PRIMARY metric - UTC timestamp from GPS (MetricValue with 'date' category)
   courseOverGround?: number; // PRIMARY metric
   speedOverGround?: number; // PRIMARY metric
   fixType?: number; // 0=no fix, 1=GPS, 2=DGPS, 3=PPS (flattened from quality.fixType)

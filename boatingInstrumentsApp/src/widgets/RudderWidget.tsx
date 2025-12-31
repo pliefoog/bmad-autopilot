@@ -1,225 +1,98 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
-import { useWidgetStore } from '../store/widgetStore';
-import { MetricDisplayData } from '../types/MetricDisplayData';
+import { TemplatedWidget } from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
-import { useResponsiveScale } from '../hooks/useResponsiveScale';
-import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
 interface RudderWidgetProps {
   id: string;
-  title: string;
-  width?: number; // Widget width for responsive scaling
-  height?: number; // Widget height for responsive scaling
+  instanceNumber?: number;
 }
 
 /**
- * RudderWidget - Rudder angle display with SVG visualization per ui-architecture.md v2.3
- * Primary Grid (2×1): Rudder angle with direction + Rate
- * Secondary: SVG rudder visualization with boat outline
+ * RudderWidget - Registry-First Declarative Implementation with SVG Visualization
+ * 
+ * **Before (313 lines):**
+ * - Manual metric extraction from autopilot sensor
+ * - Manual display value creation and formatting
+ * - Manual alarm state extraction
+ * - Complex TouchableOpacity container with styling
+ * - Manual separator and layout management
+ * 
+ * **After (~110 lines):**
+ * - Pure declarative configuration for metrics
+ * - Auto-fetch via MetricCell
+ * - TemplatedWidget handles layout
+ * - SVG RudderIndicator component preserved (unique to rudder)
+ * 
+ * **Layout:** 2Rx1C primary (rudderAngle) + Custom secondary (SVG visualization)
+ * 
+ * **Unique Features:**
+ * - SVG rudder indicator with boat outline
+ * - Visual feedback for angle (color-coded: green=0°, yellow>20°, red>30°)
+ * - Port/Starboard labels
  */
 export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
-  ({ id, title, width, height }) => {
+  ({ id }) => {
     const theme = useTheme();
-    const { scaleFactor, fontSize, spacing } = useResponsiveScale(width, height);
 
-    // Widget state management per ui-architecture.md v2.3
+    // Extract instance number from widget ID
+    const instanceNumber = useMemo(() => {
+      const match = id.match(/rudder-(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    }, [id]);
 
-    // NMEA data selectors - Phase 1 Optimization: Selective field subscriptions with shallow equality
-    const autopilotSensorData = useNmeaStore(
-      (state) => state.nmeaData.sensors.autopilot?.[0],
-      (a, b) => a === b,
+    // Get sensor instance (rudder data comes from autopilot sensor)
+    const autopilotInstance = useNmeaStore(
+      (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]
     );
-    const rudderAngle = autopilotSensorData?.rudderAngle ?? 0; // Note: field is rudderAngle in AutopilotSensorData
-    const rudderTimestamp = autopilotSensorData?.timestamp;
 
-    // Extract alarm level for rudder angle
-    const rudderAngleAlarmLevel = autopilotSensorData?.getAlarmState('rudderAngle') ?? 0;
-
-    // Extract rudder data with defaults
-    const isStale = !rudderTimestamp;
-
-    // Phase 4: Use MetricValue from SensorInstance
-    // PERFORMANCE: Cache MetricValue with timestamp-based dependency (fine-grained)
-    const rudderAngleMetric = useMemo(
-      () => autopilotSensorData?.getMetric('rudderAngle'),
-      [autopilotSensorData?.timestamp],
-    );
-    
-    // Access rudderAngle MetricValue (angles don't typically convert, but use for consistency)
-    const rudderAngleDisplay = useMemo((): MetricDisplayData => {
-      return {
-        mnemonic: 'RUD',
-        value: rudderAngleMetric?.formattedValue,
-        unit: rudderAngleMetric?.unit,
-        alarmState: 0,
-      };
-    }, [rudderAngleMetric]);
-
-    // Format rudder display with direction (PORT/STBD)
-    const formatRudderDisplay = useCallback((angle: number) => {
-      if (angle === 0) return { value: '0', unit: '°' };
-
-      const side = angle >= 0 ? 'STBD' : 'PORT';
-      const absValue = Math.abs(angle);
-
-      return {
-        value: `${absValue} ${side}`,
-        unit: '°',
-      };
-    }, []);
-
-    const handleLongPressOnPin = useCallback(() => {}, [id]);
-
-    const styles = StyleSheet.create({
-      container: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
-        backgroundColor: theme.surface,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor:
-          rudderAngleAlarmLevel === 3
-            ? theme.error
-            : rudderAngleAlarmLevel === 2
-            ? theme.warning
-            : theme.border,
-        padding: 16,
-      },
-      header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      },
-      title: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        letterSpacing: 0.5,
-        color: theme.textSecondary,
-        textTransform: 'uppercase',
-      },
-      controls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-      },
-      controlButton: {
-        padding: 4,
-        minWidth: 24,
-        alignItems: 'center',
-      },
-      caret: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: theme.textSecondary,
-      },
-      pinIcon: {
-        fontSize: 12,
-        color: theme.primary,
-      },
-      primaryGrid: {
-        alignItems: 'center',
-        height: '50%',
-        justifyContent: 'center',
-      },
-      // Horizontal separator between primary and secondary views
-      separator: {
-        height: 1,
-        marginVertical: 12,
-      },
-      rudderVisualization: {
-        alignItems: 'center',
-        marginTop: 12,
-      },
-      statusIndicator: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor:
-          rudderAngleAlarmLevel === 3
-            ? theme.error
-            : rudderAngleAlarmLevel === 2
-            ? theme.warning
-            : theme.success,
-        opacity: isStale ? 0.3 : 1,
-      },
-      warningText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 8,
-        color:
-          rudderAngleAlarmLevel === 3
-            ? theme.error
-            : rudderAngleAlarmLevel === 2
-            ? theme.warning
-            : theme.textSecondary,
-      },
-    });
+    // Get rudder angle for visualization
+    const rudderAngle = autopilotInstance?.getMetric('rudderAngle')?.si_value as number ?? 0;
 
     return (
-      <TouchableOpacity
-        style={styles.container}
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        activeOpacity={0.8}
+      <TemplatedWidget
+        template="2Rx1C-SEP-NONE"
+        sensorInstance={autopilotInstance}
+        sensorType="autopilot"
+        testID={`rudder-widget-${instanceNumber}`}
       >
-        {/* Widget Header with Title */}
-        <View style={styles.header}>
-          <Text
-            style={[
-              styles.title,
-              {
-                fontSize: 11,
-                fontWeight: 'bold',
-                letterSpacing: 0.5,
-                textTransform: 'uppercase',
-                color: theme.textSecondary,
-              },
-            ]}
-          >
-            {title}
-          </Text>
-        </View>
+        {/* Primary Grid: Rudder Angle */}
+        <PrimaryMetricCell metricKey="rudderAngle" />
 
-        {/* Primary Grid (1×1): Rudder angle with direction */}
-        <View style={styles.primaryGrid}>
-          <PrimaryMetricCell
-            data={{ ...rudderAngleDisplay, alarmState: rudderAngleAlarmLevel }}
-            fontSize={{
-              mnemonic: fontSize.primaryLabel,
-              value: fontSize.primaryValue,
-              unit: fontSize.primaryUnit,
-            }}
-          />
-        </View>
-
-        {/* Secondary: SVG rudder visualization */}
-        {/* Horizontal separator */}
-        <View style={[styles.separator, { backgroundColor: theme.border }]} />
-
-        {/* RUDDER VISUALIZATION */}
-        <View style={styles.rudderVisualization}>
+        {/* Secondary: Custom SVG Visualization */}
+        <View style={{ alignItems: 'center', marginTop: 16, paddingBottom: 8 }}>
           <RudderIndicator angle={rudderAngle} theme={theme} />
-          <Text style={styles.warningText}>
-            {rudderAngleAlarmLevel === 3
-              ? 'EXTREME ANGLE!'
-              : rudderAngleAlarmLevel === 2
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: '600',
+              textAlign: 'center',
+              marginTop: 8,
+              color: theme.textSecondary,
+            }}
+          >
+            {Math.abs(rudderAngle) > 30
+              ? 'EXTREME ANGLE'
+              : Math.abs(rudderAngle) > 20
               ? 'High Angle'
-              : isStale
-              ? 'No Data'
-              : 'Normal Position'}
+              : rudderAngle === 0
+              ? 'Centered'
+              : 'Normal'}
           </Text>
         </View>
-      </TouchableOpacity>
+      </TemplatedWidget>
     );
   },
 );
 
+/**
+ * RudderIndicator - SVG visualization of rudder position
+ * Shows boat hull outline with rudder angle indicator
+ * Color-coded by angle: green (0°), yellow (>20°), red (>30°)
+ */
 interface RudderIndicatorProps {
   angle: number;
   theme: any;
@@ -235,9 +108,19 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
   // Convert angle to SVG rotation (negative for correct direction)
   const rotation = -clampedAngle;
 
+  // Color based on angle magnitude
+  const rudderColor =
+    angle === 0
+      ? theme.success
+      : Math.abs(angle) > 30
+      ? theme.error
+      : Math.abs(angle) > 20
+      ? theme.warning
+      : theme.primary;
+
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Boat hull outline */}
+      {/* Boat hull outline (triangle pointing up) */}
       <Polygon
         points={`${center},5 ${center - 15},${size - 10} ${center + 15},${size - 10}`}
         fill="none"
@@ -245,30 +128,22 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
         strokeWidth="2"
       />
 
-      {/* Center point */}
+      {/* Center point (rudder pivot) */}
       <Circle cx={center} cy={center + 10} r="2" fill={theme.text} />
 
-      {/* Rudder indicator */}
+      {/* Rudder indicator (rotates around center) */}
       <Line
         x1={center}
         y1={center + 10}
         x2={center}
         y2={center + 25}
-        stroke={
-          angle === 0
-            ? theme.success
-            : Math.abs(angle) > 30
-            ? theme.error
-            : Math.abs(angle) > 20
-            ? theme.warning
-            : theme.primary
-        }
+        stroke={rudderColor}
         strokeWidth="4"
         strokeLinecap="round"
         transform={`rotate(${rotation} ${center} ${center + 10})`}
       />
 
-      {/* Angle reference marks */}
+      {/* Angle reference marks (port and starboard limits) */}
       <Line
         x1={center - 20}
         y1={center + 10}
@@ -309,4 +184,7 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
   );
 };
 
+RudderWidget.displayName = 'RudderWidget';
+
 export default RudderWidget;
+

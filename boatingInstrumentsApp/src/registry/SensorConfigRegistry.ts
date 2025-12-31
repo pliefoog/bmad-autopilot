@@ -129,6 +129,7 @@ interface BaseFieldConfig {
   readonly iostate: IOState; // Read/write behavior (immutable)
   default?: any; // Default value when no sensor value
   helpText?: string; // User guidance tooltip
+  forceTimezone?: 'utc'; // Force UTC display for datetime fields (GPS timestamps)
 }
 
 /**
@@ -1345,8 +1346,20 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         unitType: 'time',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        helpText:
-          'UTC timestamp from GPS in milliseconds (formatted per user date/time preferences)',
+        forceTimezone: 'utc',
+        helpText: 'UTC time from GPS (always displayed in UTC regardless of user settings)',
+      },
+      // Date field - proper MetricValue with date formatting
+      {
+        key: 'utcDate',
+        label: 'UTC Date',
+        mnemonic: 'UTCDT',
+        valueType: 'number',
+        unitType: 'date',
+        uiType: 'numericInput',
+        iostate: 'readOnly',
+        forceTimezone: 'utc',
+        helpText: 'UTC date from GPS (always displayed in UTC regardless of user settings)',
       },
       // Navigation fields - proper MetricValues
       {
@@ -1533,7 +1546,26 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         default: '',
         helpText: 'Descriptive name for this navigation system',
       },
-      // Data fields
+      // Waypoint information fields
+      {
+        key: 'waypointId',
+        label: 'Waypoint ID',
+        mnemonic: 'WPID',
+        valueType: 'string',
+        uiType: null,
+        iostate: 'readOnly',
+        helpText: 'Current waypoint identifier',
+      },
+      {
+        key: 'waypointName',
+        label: 'Waypoint Name',
+        mnemonic: 'WPNM',
+        valueType: 'string',
+        uiType: null,
+        iostate: 'readOnly',
+        helpText: 'Current waypoint name',
+      },
+      // Primary navigation metrics
       {
         key: 'bearingToWaypoint',
         label: 'Bearing to Waypoint',
@@ -1542,6 +1574,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         unitType: 'angle',
         uiType: 'numericInput',
         iostate: 'readOnly',
+        helpText: 'Bearing to active waypoint (0-360°)',
       },
       {
         key: 'distanceToWaypoint',
@@ -1551,6 +1584,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         unitType: 'distance',
         uiType: 'numericInput',
         iostate: 'readOnly',
+        helpText: 'Distance remaining to waypoint',
       },
       {
         key: 'crossTrackError',
@@ -1560,6 +1594,27 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         unitType: 'distance',
         uiType: 'numericInput',
         iostate: 'readOnly',
+        helpText: 'Cross-track error (negative=left, positive=right)',
+      },
+      {
+        key: 'velocityMadeGood',
+        label: 'Velocity Made Good',
+        mnemonic: 'VMG',
+        valueType: 'number',
+        unitType: 'speed',
+        uiType: 'numericInput',
+        iostate: 'readOnly',
+        helpText: 'Speed toward waypoint',
+      },
+      {
+        key: 'timeToWaypoint',
+        label: 'Time to Waypoint',
+        mnemonic: 'TTW',
+        valueType: 'number',
+        unitType: 'duration',
+        uiType: null,
+        iostate: 'readOnly',
+        helpText: 'Estimated time to arrival (seconds as duration)',
       },
     ],
 

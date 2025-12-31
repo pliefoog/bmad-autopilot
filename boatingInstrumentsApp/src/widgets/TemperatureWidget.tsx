@@ -7,9 +7,7 @@ import { TemplatedWidget } from '../components/TemplatedWidget';
 
 interface TemperatureWidgetProps {
   id: string;
-  title: string;
-  width?: number;
-  height?: number;
+  instanceNumber?: number;
 }
 
 /**
@@ -57,20 +55,18 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
       {/* Primary Grid: Current temperature + trend visualization */}
       <PrimaryMetricCell metricKey="value" />
       
-      {/* TrendLine: Self-subscribing pattern - passes sensor/instance/metric */}
+      {/* TrendLine: Auto-fetch pattern via SensorContext */}
       <TrendLine
-        sensor="temperature"
-        instance={instanceNumber}
-        metric="value"
+        metricKey="value"
         timeWindowMs={5 * 60 * 1000}
-        usePrimaryLine={true}
-        showXAxis={true}
-        showYAxis={true}
+        usePrimaryLine
+        showXAxis
+        showYAxis
         xAxisPosition="bottom"
         yAxisDirection="up"
         timeWindowMinutes={5}
-        showTimeLabels={true}
-        showGrid={true}
+        showTimeLabels
+        showGrid
         strokeWidth={2}
       />
       

@@ -9,6 +9,10 @@ import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
 import { useSensorContext } from '../contexts/SensorContext';
 import { log } from '../utils/logging/logger';
 
+// Default dimensions for TrendLine (baseline for responsive scaling)
+const DEFAULT_TRENDLINE_WIDTH = 300;
+const DEFAULT_TRENDLINE_HEIGHT = 60;
+
 export interface DataPoint {
   value: number;
   timestamp: number;
@@ -107,10 +111,90 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const instance = context?.sensorInstance?.instanceNumber ?? 0;
   const metric = metricKey;
 
+  // Use explicit dimensions provided by TemplatedWidget
+  const width = cellWidth || DEFAULT_TRENDLINE_WIDTH;
+  const height = cellHeight || DEFAULT_TRENDLINE_HEIGHT;
+
+  // Calculate responsive scaling factors for all visual elements (needed for error states)
+  const scaledDimensions: {
+    gridStroke: number;
+    axisStroke: number;
+    warningStroke: number;
+    alarmStroke: number;
+    trendlineStroke: number;
+    pointRadius: number;
+    labelFontSize: number;
+    errorFontSize: number;
+    paddingLeft: number;
+    paddingRight: number;
+    paddingTop: number;
+    paddingBottom: number;
+    yLabelOffset: number;
+    yLabelAdjust: number;
+    xLabelTopOffset: number;
+    xLabelBottomOffset: number;
+    dashLength: number;
+    gapLength: number;
+    dashShort: number;
+    gapLong: number;
+  } = useMemo(() => {
+    const BASE_WIDTH = DEFAULT_TRENDLINE_WIDTH;
+    const BASE_HEIGHT = DEFAULT_TRENDLINE_HEIGHT;
+    const BASE_AREA = BASE_WIDTH * BASE_HEIGHT;
+    
+    const widthScaleFactor = width / BASE_WIDTH;
+    const heightScaleFactor = height / BASE_HEIGHT;
+    const actualArea = width * height;
+    const areaScale = Math.sqrt(actualArea / BASE_AREA);
+    const paddingScale = Math.min(widthScaleFactor, heightScaleFactor);
+    
+    return {
+      // Stroke widths (area-based for proportional visual weight)
+      gridStroke: Math.max(0.5, 0.5 * areaScale),
+      axisStroke: Math.max(0.5, 1 * areaScale),
+      warningStroke: Math.max(0.5, 1.5 * areaScale),
+      alarmStroke: Math.max(1, 2 * areaScale),
+      trendlineStroke: Math.max(1, (strokeWidth || 2) * areaScale),
+      
+      // Radius (area-based)
+      pointRadius: Math.max(2, (dataPointRadius || 3) * areaScale),
+      
+      // Font sizes (height-based for readability)
+      labelFontSize: Math.max(6, (fontSize || 9) * heightScaleFactor),
+      errorFontSize: Math.max(6, 10 * heightScaleFactor),
+      
+      // Padding (conservative scaling prevents cramping)
+      paddingLeft: showYAxis 
+        ? Math.max(10, 20 * paddingScale) 
+        : Math.max(2, 5 * paddingScale),
+      paddingRight: Math.max(2, 5 * paddingScale),
+      paddingTop: xAxisPosition === 'top' 
+        ? Math.max(10, 15 * paddingScale) 
+        : Math.max(2, 5 * paddingScale),
+      paddingBottom: xAxisPosition === 'bottom' 
+        ? Math.max(10, 15 * paddingScale) 
+        : Math.max(2, 5 * paddingScale),
+        
+      // Label offsets
+      yLabelOffset: Math.max(2, 5 * widthScaleFactor),
+      yLabelAdjust: Math.max(1, 3 * heightScaleFactor),
+      xLabelTopOffset: Math.max(2, 5 * heightScaleFactor),
+      xLabelBottomOffset: Math.max(6, 14 * heightScaleFactor),
+      
+      // Dash patterns (width-based for temporal consistency)
+      dashLength: Math.max(2, Math.round(4 * widthScaleFactor)),
+      gapLength: Math.max(2, Math.round(4 * widthScaleFactor)),
+      dashShort: Math.max(1, Math.round(2 * widthScaleFactor)),
+      gapLong: Math.max(3, Math.round(6 * widthScaleFactor)),
+    };
+  }, [width, height, strokeWidth, dataPointRadius, fontSize, showYAxis, xAxisPosition]);
+
   // Get presentation system for this sensor (for unit conversion)
+  // MUST be called unconditionally to satisfy React hooks rules
   const presentation = useCategoryPresentation(sensor);
 
   // Subscribe to sensor-instance alarm thresholds
+  // MUST be called unconditionally to satisfy React hooks rules
   const alarmThresholds = useAlarmThresholds(sensor, instance);
 
   // Convert thresholds to display units if enabled
@@ -143,11 +227,6 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   const thresholdType = alarmThresholds.thresholdType;
 
-  // Use explicit dimensions provided by TemplatedWidget
-  // These are already calculated based on available widget space
-  const width = cellWidth || 300;
-  const height = cellHeight || 60;
-
   // Subscribe to sensor timestamp to trigger updates when new data arrives
   const sensorTimestamp = useNmeaStore(
     (state) => state.nmeaData.sensors[sensor]?.[instance]?.timestamp,
@@ -177,17 +256,6 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);
 
-  // Validate we have required data (AFTER all hooks are called)
-  if (!sensor || instance === undefined || !metric) {
-    return (
-      <View style={{ width: 100, height: 60, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: theme.textSecondary, fontSize: 10 }}>
-          {metricKey ? 'Context required' : 'Props required'}
-        </Text>
-      </View>
-    );
-  }
-
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;
   const warningColor = theme.trendline.thresholdWarning;
@@ -199,17 +267,17 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const labelColor = theme.trendline.label;
   const gridColor = theme.trendline.grid;
 
-  // Calculate axis dimensions - use 5px padding on all sides
-  const PADDING_LEFT = showYAxis ? 20 : 5;
-  const PADDING_RIGHT = 5;
-  const PADDING_TOP = xAxisPosition === 'top' ? 15 : 5;
-  const PADDING_BOTTOM = xAxisPosition === 'bottom' ? 15 : 5;
+  // Calculate axis dimensions using responsive padding
+  const PADDING_LEFT = scaledDimensions.paddingLeft;
+  const PADDING_RIGHT = scaledDimensions.paddingRight;
+  const PADDING_TOP = scaledDimensions.paddingTop;
+  const PADDING_BOTTOM = scaledDimensions.paddingBottom;
 
   const chartWidth = width - PADDING_LEFT - PADDING_RIGHT;
   const chartHeight = height - PADDING_TOP - PADDING_BOTTOM;
   const AXIS_MARGIN = PADDING_LEFT; // Left margin for Y-axis labels
 
-  // Calculate data range and scaling
+  // Calculate data range and scaling (MUST be called unconditionally)
   const { dataMin, dataMax, range, pointsData, yLabels, thresholdPositions } = useMemo(() => {
     if (trendData.length < 2) {
       return {
@@ -374,6 +442,28 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const xAxisY = xAxisPosition === 'top' ? PADDING_TOP : height - PADDING_BOTTOM;
   const chartStartY = xAxisPosition === 'top' ? PADDING_TOP : PADDING_TOP;
 
+  // Validate we have required data (AFTER all hooks are called)
+  if (!sensor || instance === undefined || !metric) {
+    return (
+      <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: theme.textSecondary, fontSize: scaledDimensions.errorFontSize }}>
+          {metricKey ? 'Context required' : 'Props required'}
+        </Text>
+      </View>
+    );
+  }
+
+  // Validate dimensions - if chart area is too small, show error
+  if (chartWidth <= 0 || chartHeight <= 0) {
+    return (
+      <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ fontSize: scaledDimensions.errorFontSize, color: theme.textSecondary }}>
+          Insufficient space
+        </Text>
+      </View>
+    );
+  }
+
   // Render SVG directly with explicit dimensions (no flex wrapper needed)
   // Width and height are provided explicitly by TemplatedWidget
   return trendData.length >= 2 ? (
@@ -392,7 +482,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
                   x2={chartWidth + AXIS_MARGIN}
                   y2={y}
                   stroke={gridColor}
-                  strokeWidth="0.5"
+                  strokeWidth={scaledDimensions.gridStroke}
                   opacity="0.3"
                 />
               );
@@ -408,7 +498,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
                   x2={x}
                   y2={chartStartY + chartHeight}
                   stroke={gridColor}
-                  strokeWidth="0.5"
+                  strokeWidth={scaledDimensions.gridStroke}
                   opacity="0.3"
                 />
               );
@@ -423,7 +513,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
               x2={AXIS_MARGIN}
               y2={chartStartY + chartHeight}
               stroke={axisColor}
-              strokeWidth="1"
+              strokeWidth={scaledDimensions.axisStroke}
             />
             {/* Y-axis labels */}
             {yLabels.map((label, idx) => {
@@ -431,9 +521,9 @@ export const TrendLine: React.FC<TrendLineProps> = ({
               return (
                 <SvgText
                   key={`y-label-${idx}`}
-                  x={AXIS_MARGIN - 5}
-                  y={yPos + 3}
-                  fontSize={fontSize}
+                  x={AXIS_MARGIN - scaledDimensions.yLabelOffset}
+                  y={yPos + scaledDimensions.yLabelAdjust}
+                  fontSize={scaledDimensions.labelFontSize}
                   fill={labelColor}
                   textAnchor="end"
                 >
@@ -451,15 +541,15 @@ export const TrendLine: React.FC<TrendLineProps> = ({
               x2={chartWidth + AXIS_MARGIN}
               y2={xAxisY}
               stroke={axisColor}
-              strokeWidth="1"
+              strokeWidth={scaledDimensions.axisStroke}
             />
             {/* X-axis time labels */}
             {timeLabels.map((label, idx) => (
               <SvgText
                 key={`x-label-${idx}`}
                 x={label.position}
-                y={xAxisPosition === 'top' ? xAxisY - 5 : xAxisY + 14}
-                fontSize={fontSize}
+                y={xAxisPosition === 'top' ? xAxisY - scaledDimensions.xLabelTopOffset : xAxisY + scaledDimensions.xLabelBottomOffset}
+                fontSize={scaledDimensions.labelFontSize}
                 fill={labelColor}
                 textAnchor="middle"
               >
@@ -475,8 +565,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
             x2={chartWidth + AXIS_MARGIN}
             y2={thresholdPositions.warning}
             stroke={warningColor}
-            strokeWidth="1.5"
-            strokeDasharray={thresholdType === 'max' ? '4,4' : '2,6'}
+            strokeWidth={scaledDimensions.warningStroke}
+            strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength},${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort},${scaledDimensions.gapLong}`}
             opacity={0.7}
           />
         )}
@@ -487,8 +577,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
             x2={chartWidth + AXIS_MARGIN}
             y2={thresholdPositions.alarm}
             stroke={alarmColor}
-            strokeWidth="2"
-            strokeDasharray={thresholdType === 'max' ? '4,4' : '2,6'}
+            strokeWidth={scaledDimensions.alarmStroke}
+            strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength},${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort},${scaledDimensions.gapLong}`}
             opacity={0.8}
           />
         )}
@@ -505,7 +595,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
               x2={point.x}
               y2={point.y}
               stroke={point.color}
-              strokeWidth={strokeWidth}
+              strokeWidth={scaledDimensions.trendlineStroke}
             />
           );
         })}
@@ -515,14 +605,14 @@ export const TrendLine: React.FC<TrendLineProps> = ({
               key={`point-${index}`}
               cx={point.x}
               cy={point.y}
-              r={dataPointRadius}
+              r={scaledDimensions.pointRadius}
               fill={point.color}
             />
           ))}
       </Svg>
   ) : (
     <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ color: theme.textSecondary, fontSize: 10 }}>
+      <Text style={{ color: theme.textSecondary, fontSize: scaledDimensions.errorFontSize }}>
         No trend data
       </Text>
     </View>

@@ -1,235 +1,261 @@
 /**
- * Custom Widget Component
- *
- * Generic widget that renders user-defined or system-provided custom widgets.
- * Supports dynamic sensor binding, flexible metric layout, and graceful handling
- * of missing optional sensors.
- *
- * Similar architecture to DepthWidget and EngineWidget but with dynamic sensor subscriptions
- * based on CustomWidgetDefinition configuration.
+ * ============================================================================
+ * CUSTOM WIDGET - Definition-Driven Dynamic Renderer
+ * ============================================================================
+ * 
+ * **PURPOSE:**
+ * Renders widgets dynamically from CustomWidgetDefinition without writing
+ * dedicated .tsx files. Supports metric cells, custom components, and
+ * multi-sensor layouts.
+ * 
+ * **ARCHITECTURE:**
+ * Definition → Dynamic Subscriptions → Cell Generation → TemplatedWidget
+ * 
+ * **HUMAN:**
+ * This widget reads widget definitions and creates the UI automatically.
+ * You define WHAT to show (in defaultCustomWidgets.ts), this renders HOW.
+ * 
+ * **AI AGENT:**
+ * Core of definition-driven widget system. Handles:
+ * - Dynamic sensor subscriptions based on grid.primarySensor + grid.additionalSensors
+ * - Cell generation from grid.cells[] array
+ * - Component instantiation from WidgetComponentRegistry
+ * - Conditional rendering (platform-specific)
+ * - Empty cell filling for layout
+ * 
+ * **DATA FLOW:**
+ * 1. Read definition from widgetStore
+ * 2. Subscribe to sensors dynamically
+ * 3. Generate children array from grid.cells:
+ *    - MetricCellDef → PrimaryMetricCell | SecondaryMetricCell
+ *    - ComponentCellDef → Component from registry
+ *    - EmptyCellDef → Empty View
+ * 4. Pass to TemplatedWidget with correct template
  */
 
-import React, { useMemo, useCallback } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Platform } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
-import { useTheme } from '../store/themeStore';
 import { useWidgetStore } from '../store/widgetStore';
-import { MetricDisplayData } from '../types/MetricDisplayData';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
-import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
-import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
-import type { CustomWidgetDefinition } from '../config/defaultCustomWidgets';
+import { TemplatedWidget } from '../components/TemplatedWidget';
+import { getWidgetComponent } from '../registry/WidgetComponentRegistry';
+import { getGridTemplate } from '../registry/GridTemplateRegistry';
+import type { CustomWidgetDefinition, CellDefinition } from '../config/defaultCustomWidgets';
 import type { SensorType } from '../types/SensorData';
 
 interface CustomWidgetProps {
   id: string;
-  title: string;
-  width?: number;
-  height?: number;
+  instanceNumber?: number;
 }
 
 /**
- * Custom Widget - Dynamic multi-sensor display
- *
- * Supports:
- * - Required sensors (must be present for widget to render)
- * - Optional sensors (show "No Data" if missing)
- * - Primary and secondary metric layouts
- * - Dynamic sensor instance selection (uses first available)
+ * Dynamic Sensor Subscription Hook
+ * 
+ * **AI AGENT:**
+ * Generates dynamic sensor subscriptions based on definition. Handles:
+ * - Primary sensor subscription
+ * - Additional sensors array
+ * - Instance resolution (literal vs first-available)
+ * - Stable selector memoization
+ * 
+/**
+ * Cell Renderer
+ * 
+ * **AI AGENT:**
+ * Converts CellDefinition to React element. Handles 3 cell types:
+ * 1. MetricCellDef → PrimaryMetricCell | SecondaryMetricCell
+ * 2. ComponentCellDef → Dynamic component from registry
+ * 3. EmptyCellDef → Empty View for layout
+ * 
+ * **CONDITIONAL RENDERING:**
+ * ComponentCellDef.condition.platform filters by OS. Cell only renders
+ * if current platform matches condition array.
  */
-export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
-  ({ id, title, width, height }) => {
-    const theme = useTheme();
-    const fontSize = useResponsiveFontSize(width || 0, height || 0);
-
-    // Widget state management
-
-    // Get custom widget definition from widget settings
-    const widgetConfig = useWidgetStore((state) =>
-      state.dashboard?.widgets?.find((w) => w.id === id),
-    );
-
-    const customDefinition = useMemo(() => {
-      return widgetConfig?.settings?.customDefinition as CustomWidgetDefinition | undefined;
-    }, [widgetConfig]);
-
-    // Unified Metric Architecture: CustomWidget reads MetricValue objects via getMetric()
-    // No presentation hooks needed - data is pre-enriched in SensorInstance
-
-    /**
-     * Subscribe only to the specific sensors needed by this custom widget
-     * Extract sensor types and instances from customDefinition to create stable subscriptions
-     */
-    const depthSensor = useNmeaStore(
-      (state) => state.nmeaData.sensors.depth?.[0],
-      (a, b) => a === b,
-    );
-    
-    const gpsSensor = useNmeaStore(
-      (state) => state.nmeaData.sensors.gps?.[0],
-      (a, b) => a === b,
-    );
-
-    /**
-     * Build sensor data map from subscribed sensors based on widget definition
-     */
-    const sensorDataMap = useMemo(() => {
-      if (!customDefinition) return {};
-
-      // Manually map the sensors we subscribed to
-      return {
-        'depth.0.depth': {
-          sensor: depthSensor,
-          measurementType: 'depth',
-        },
-        'gps.0.speedOverGround': {
-          sensor: gpsSensor,
-          measurementType: 'speedOverGround',
-        },
-      };
-    }, [customDefinition, depthSensor, gpsSensor]);
-
-    /**
-     * Build metric display data for a sensor binding using MetricValue API
-     */
-    const buildMetricDisplay = useCallback(
-      (
-        sensorKey: string,
-        label: string,
-        mnemonic: string,
-        fallbackUnit: string,
-      ): MetricDisplayData => {
-        const data = sensorDataMap[sensorKey];
-
-        // No sensor data state
-        if (!data || !data.sensor) {
-          return {
-            mnemonic,
-            value: '---',
-            unit: fallbackUnit,
-            alarmState: 0,
-            layout: {
-              minWidth: 60,
-              alignment: 'right',
-            },
-          };
-        }
-
-        // Get MetricValue using Unified Metric Architecture
-        const measurementType = data.measurementType;
-        const metricValue = data.sensor.getMetric?.(measurementType);
-
-        // If no metric value or invalid, show no data
-        if (!metricValue) {
-          return {
-            mnemonic,
-            value: '---',
-            unit: fallbackUnit,
-            alarmState: 0,
-            layout: {
-              minWidth: 60,
-              alignment: 'right',
-            },
-          };
-        }
-
-        // Use pre-enriched MetricValue properties
-        return {
-          mnemonic,
-          value: metricValue.formattedValue, // ⭐ Use formattedValue (without unit)
-          unit: metricValue.unit || fallbackUnit,
-          alarmState: 0,
-          layout: {
-            minWidth: 60,
-            alignment: 'right',
-          },
-        };
-      },
-      [sensorDataMap],
-    );
-
-    // Render nothing if no definition
-    if (!customDefinition) {
-      return null;
+function renderCell(
+  cell: CellDefinition,
+  index: number,
+  sensorKey: string | undefined,
+  isPrimary: boolean,
+): React.ReactElement {
+  // EmptyCellDef: Filler cell for layout
+  if ('empty' in cell && cell.empty) {
+    return <View key={`empty-${index}`} />;
+  }
+  
+  // ComponentCellDef: Custom component from registry
+  if ('component' in cell) {
+    // Platform-specific rendering
+    if (cell.condition?.platform) {
+      const currentPlatform = Platform.OS as 'ios' | 'android' | 'web';
+      if (!cell.condition.platform.includes(currentPlatform)) {
+        return <View key={`hidden-${index}`} />;
+      }
     }
-
-    // Build primary metrics
-    const primaryMetrics = customDefinition.layout.primaryMetrics.map((metric) =>
-      buildMetricDisplay(metric.sensorKey, metric.label, metric.mnemonic, metric.unit),
-    );
-
-    // Build secondary metrics (if any)
-    const secondaryMetrics =
-      customDefinition.layout.secondaryMetrics?.map((metric) =>
-        buildMetricDisplay(metric.sensorKey, metric.label, metric.mnemonic, metric.unit),
-      ) || [];
-
-    // Build header component
-    const headerComponent = (
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 }}>
-        <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'bold' }}>
-          {customDefinition.name}
-        </Text>
-      </View>
-    );
-
+    
+    const Component = getWidgetComponent(cell.component);
+    if (!Component) {
+      console.warn(`[CustomWidget] Component "${cell.component}" not found in registry`);
+      return <View key={`missing-${index}`} />;
+    }
+    
     return (
-      <UnifiedWidgetGrid
-        theme={theme}
-        header={headerComponent}
-        widgetWidth={width || 400}
-        widgetHeight={height || 300}
-        columns={1}
-        primaryRows={primaryMetrics.length}
-        secondaryRows={secondaryMetrics.length}
-        testID={`custom-widget-${id}`}
-      >
-        {/* Render primary metrics */}
-        {primaryMetrics.map((metric, index) => (
-          <PrimaryMetricCell
-            key={`primary-${index}`}
-            data={{
-              mnemonic: metric.mnemonic,
-              value: metric.value,
-              unit: metric.unit,
-              alarmState: 0,
-            }}
-            fontSize={{
-              mnemonic: fontSize.label,
-              value: fontSize.value,
-              unit: fontSize.unit,
-            }}
-          />
-        ))}
-
-        {/* Render secondary metrics */}
-        {secondaryMetrics.map((metric, index) => (
-          <SecondaryMetricCell
-            key={`secondary-${index}`}
-            data={{
-              mnemonic: metric.mnemonic,
-              value: metric.value,
-              unit: metric.unit,
-              alarmState: 0,
-            }}
-            compact={true}
-            fontSize={{
-              mnemonic: fontSize.label,
-              value: fontSize.value,
-              unit: fontSize.unit,
-            }}
-          />
-        ))}
-      </UnifiedWidgetGrid>
+      <Component
+        key={`component-${index}`}
+        metricKey={(cell as any).metricKey}
+        sensorKey={(cell as any).sensorKey}
+        {...(cell.props || {})}
+      />
     );
-  },
-);
+  }
+  
+  // MetricCellDef: Standard metric display (type narrowing)
+  if ('metricKey' in cell) {
+    const metricKey = cell.metricKey;
+    const cellSensorKey = cell.sensorKey || sensorKey;
+    const cellType = cell.cellType || (isPrimary ? 'primary' : 'secondary');
+    
+    if (cellType === 'primary') {
+      return (
+        <PrimaryMetricCell
+          key={`metric-${index}`}
+          metricKey={metricKey}
+          sensorKey={cellSensorKey as any}
+        />
+      );
+    } else {
+      return (
+        <SecondaryMetricCell
+          key={`metric-${index}`}
+          metricKey={metricKey}
+          sensorKey={cellSensorKey as any}
+        />
+      );
+    }
+  }
+  
+  // EmptyCellDef: Return empty view
+  return <View key={`empty-${index}`} />;
+}
+
+/**
+ * CustomWidget Renderer
+ * 
+ * **RENDERING ALGORITHM:**
+ * 1. Get definition from widgetStore
+ * 2. Validate grid configuration
+ * 3. Subscribe to sensors dynamically
+ * 4. Determine primary/secondary split from template
+ * 5. Generate children from grid.cells[]
+ * 6. Pass to TemplatedWidget
+ */
+export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
+  // Get custom widget definition from widget settings
+  const widgetConfig = useWidgetStore((state) =>
+    state.dashboard?.widgets?.find((w) => w.id === id),
+  );
+
+  const definition = useMemo(() => {
+    return widgetConfig?.settings?.customDefinition as CustomWidgetDefinition | undefined;
+  }, [widgetConfig]);
+
+  // Render nothing if no definition or grid configuration
+  if (!definition?.grid) {
+    console.warn('[CustomWidget] No grid configuration found for widget:', id);
+    return null;
+  }
+
+  /**
+   * Dynamic Sensor Subscriptions
+   * 
+   * **LIMITATION:** React hooks rules prevent truly dynamic subscriptions.
+   * Currently supports up to 3 sensors total:
+   * - 1 primary sensor
+   * - 2 additional sensors
+   * 
+   * **Why:** Can't call useNmeaStore in a loop (hooks must be unconditional).
+   * 
+   * **Future:** Refactor to render prop pattern or context-based subscription
+   * if more than 3 sensors are needed for a single custom widget.
+   * 
+   * **AI AGENT NOTE:** This is intentional technical debt. Most custom widgets
+   * need 1-2 sensors. If you encounter a definition with 4+ sensors, you'll
+   * need to refactor this section.
+   */
+  const primarySensorType = definition.grid.primarySensor?.type;
+  const primaryInstance = definition.grid.primarySensor?.instance ?? 0;
+  
+  const primarySensor = useNmeaStore(
+    (state) => primarySensorType ? state.nmeaData.sensors[primarySensorType]?.[primaryInstance] : undefined
+  );
+  
+  // Additional sensor support (max 2 additional sensors = 3 total)
+  const additionalSensor1 = useNmeaStore(
+    (state) => {
+      const sensor = definition.grid.additionalSensors?.[0];
+      return sensor ? state.nmeaData.sensors[sensor.type]?.[sensor.instance ?? 0] : undefined;
+    }
+  );
+  
+  const additionalSensor2 = useNmeaStore(
+    (state) => {
+      const sensor = definition.grid.additionalSensors?.[1];
+      return sensor ? state.nmeaData.sensors[sensor.type]?.[sensor.instance ?? 0] : undefined;
+    }
+  );
+
+  // Build additional sensors array for TemplatedWidget
+  const additionalSensors = useMemo(() => {
+    if (!definition.grid.additionalSensors) return undefined;
+    
+    return definition.grid.additionalSensors.map(sensor => ({
+      sensorType: sensor.type,
+      instance: sensor.instance ?? 0,
+      required: sensor.required,
+    }));
+  }, [definition]);
+
+  // Determine primary/secondary split from GridTemplateRegistry
+  // Template defines exact cell counts: primary = rows × cols, secondary = rows × cols
+  const gridTemplate = getGridTemplate(definition.grid.template);
+  const primaryCellCount = gridTemplate.primaryGrid.rows * gridTemplate.primaryGrid.columns;
+  const secondaryCellCount = gridTemplate.secondaryGrid
+    ? gridTemplate.secondaryGrid.rows * gridTemplate.secondaryGrid.columns
+    : 0;
+  const totalExpectedCells = primaryCellCount + secondaryCellCount;
+  
+  // Validate cell count matches template
+  if (definition.grid.cells.length !== totalExpectedCells) {
+    console.warn(
+      `[CustomWidget] Cell count mismatch for widget ${id}:`,
+      `expected ${totalExpectedCells} cells (${primaryCellCount} primary + ${secondaryCellCount} secondary)`,
+      `but definition has ${definition.grid.cells.length} cells`
+    );
+  }
+
+  // Generate children from cells
+  const children = useMemo(() => {
+    return definition.grid.cells.map((cell, index) => {
+      const isPrimary = index < primaryCellCount;
+      const defaultSensorKey = primarySensorType;
+      
+      return renderCell(cell, index, defaultSensorKey, isPrimary);
+    });
+  }, [definition.grid.cells, primaryCellCount, primarySensorType]);
+
+  return (
+    <TemplatedWidget
+      template={definition.grid.template}
+      sensorInstance={primarySensor}
+      sensorType={primarySensorType!}
+      additionalSensors={additionalSensors}
+    >
+      {children as React.ReactElement | React.ReactElement[]}
+    </TemplatedWidget>
+  );
+});
 
 CustomWidget.displayName = 'CustomWidget';
-
-const styles = StyleSheet.create({
-  // Styles handled by UnifiedWidgetGrid
-});
 
 export default CustomWidget;

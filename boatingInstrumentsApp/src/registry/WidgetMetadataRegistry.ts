@@ -181,6 +181,15 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     description: 'Water depth from sounder',
   },
 
+  autopilot: {
+    id: 'autopilot',
+    type: 'single',
+    title: 'Autopilot',
+    icon: 'swap-horizontal-outline',
+    category: 'navigation',
+    description: 'Autopilot heading control and status',
+  },
+
   // Multi-Instance Devices
   engine: {
     id: 'engine',
@@ -327,6 +336,16 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
         icon: 'partly-sunny-outline',
       };
     },
+  },
+
+  // Non-sensor utility widgets
+  theme: {
+    id: 'theme',
+    type: 'single',
+    title: 'Theme',
+    icon: 'color-palette-outline',
+    category: 'navigation',
+    description: 'Theme mode and brightness controls',
   },
 };
 

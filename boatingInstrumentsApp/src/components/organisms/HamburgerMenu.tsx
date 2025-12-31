@@ -54,9 +54,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const [showFeatureFlags, setShowFeatureFlags] = useState(false);
 
   // Log menu state for debugging
-  React.useEffect(() => {
-    console.log('[HamburgerMenu] Visibility changed:', visible);
-  }, [visible]);
+  // React.useEffect(() => {
+  //   console.log('[HamburgerMenu] Visibility changed:', visible);
+  // }, [visible]);
 
   // Custom action handlers
   const actionHandlers = {

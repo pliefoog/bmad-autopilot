@@ -1,7 +1,7 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "target": "esnext",
     "module": "esnext",
     "lib": [
@@ -43,12 +43,16 @@
   },
   "include": [
     "src/**/*",
-    "__tests__/**/*",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
     "node_modules",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
     "babel.config.js",
     "metro.config.js",
     "jest.config.js"

@@ -7,22 +7,6 @@ export type { UseNMEADataOptions, UseNMEADataReturn } from './useNMEAData';
 export { useConnection } from './useConnection';
 export type { UseConnectionOptions, UseConnectionReturn } from './useConnection';
 
-export { useAlarmThreshold } from './useAlarmThreshold';
-export type {
-  UseAlarmThresholdOptions,
-  UseAlarmThresholdReturn,
-  AlarmThreshold,
-} from './useAlarmThreshold';
-
-export { useUnitConversion } from './useUnitConversion';
-export type {
-  UseUnitConversionOptions,
-  UseUnitConversionReturn,
-  UnitSystem,
-  UnitDefinition,
-  ConversionPreference,
-} from './useUnitConversion';
-
 export { useResponsiveHeader } from './useResponsiveHeader';
 
 // Story 13.2.2 - Platform Input Component Hooks
@@ -40,7 +24,6 @@ export type { UseHapticFeedbackReturn } from './useHapticFeedback';
 // Import hooks for combined usage
 import { useConnection } from './useConnection';
 import { useNMEAData } from './useNMEAData';
-import { useUnitConversion } from './useUnitConversion';
 
 // Re-export commonly used hook combinations
 export const useDataWithConnection = () => {

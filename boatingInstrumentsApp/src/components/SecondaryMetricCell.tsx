@@ -132,24 +132,14 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
   const styles = createStyles(theme, dynamicSizes, valueColor);
 
-  // DEBUG: Render orange translucent box to visualize dimensions
+  // Render metric display (same layout as PrimaryMetricCell, just different color)
   return (
-    <View 
-      style={[
-        styles.container,
-        cellWidth && { width: cellWidth },
-        cellHeight && { height: cellHeight },
-        { 
-          backgroundColor: 'rgba(255, 165, 0, 0.5)', // Orange with 50% opacity
-          justifyContent: 'center',
-          alignItems: 'center',
-        }
-      ]} 
-      testID={testID || `secondary-metric-${metricKey}`}
-    >
-      <Text style={{ fontSize: 10, color: '#000' }}>
-        {cellWidth ? `${cellWidth.toFixed(0)}×${cellHeight?.toFixed(0)}` : 'no dims'}
-      </Text>
+    <View style={styles.container} testID={testID || `secondary-metric-${metricKey}`}>
+      <View style={styles.mnemonicUnitRow}>
+        <Text style={styles.mnemonic}>{mnemonic}</Text>
+        {unit && <Text style={styles.unit}> ({unit})</Text>}
+      </View>
+      <Text style={styles.value}>{displayValue}</Text>
     </View>
   );
 };
@@ -161,18 +151,64 @@ const createStyles = (
 ) =>
   StyleSheet.create({
     container: {
-      // Don't use flex: 1 - explicit width from TemplatedWidget
-      flexDirection: 'column',
-      alignItems: 'flex-end',
-      justifyContent: 'flex-start',
-      paddingRight: 6,
+      // No width: '100%' - explicit width from TemplatedWidget via cellWidth prop
+      // No height: '100%' - explicit height from TemplatedWidget via cellHeight prop
+      flexDirection: 'column', // Stack vertically
+      alignItems: 'flex-end', // Right-align all content within the cell
+      justifyContent: 'flex-start', // Align to top, let flex handle spacing
+      paddingVertical: 0, // No padding for tight fit
+      paddingHorizontal: 0,
+    },
+    // Add row style for mnemonic + unit
+    mnemonicUnitRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'flex-end', // Right-align mnemonic and unit
+      marginBottom: sizes.space, // Constant scaled space between mnemonic and value
     },
     mnemonic: {
       fontSize: sizes.mnemonic,
+      lineHeight: sizes.mnemonic, // Explicit tight line height
+      fontWeight: '600',
       color: theme.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginRight: 4, // spacing between mnemonic and unit
+      flexShrink: 1, // Allow shrinking if needed
+    },
+
+    valueContainer: {
+      flex: 1, // Take all remaining space to push value to bottom
+      flexDirection: 'row',
+      alignItems: 'flex-end', // Align text to bottom of container
+      justifyContent: 'flex-end', // Right-align the value within its container
+    },
+
+    // AC 2: Value: 36-48pt, monospace, bold, alarm-based color (now dynamic)
+    value: {
+      fontSize: sizes.value,
+      fontWeight: '700', // Bold
+      fontFamily: 'monospace', // AC 16: monospace font provides consistent digit widths
+      color: valueColor,
+      letterSpacing: 0,
+      lineHeight: sizes.value, // Tight line height = font size for full vertical fill
+      flexShrink: 0, // Prevent shrinking to maintain consistent width
+    },
+
+    // AC 2: Unit: 14-16pt, regular, theme.textSecondary (now dynamic)
+    unit: {
+      fontSize: sizes.unit,
+      lineHeight: sizes.unit, // Explicit tight line height
+      fontWeight: '400', // Regular
+      color: theme.textSecondary,
+      letterSpacing: 0,
+      marginLeft: 2, // tighter spacing between mnemonic and unit
+      marginTop: 0, // baseline alignment
+      flexShrink: 0, // Don't shrink units
     },
     value: {
       fontSize: sizes.value,
+      lineHeight: sizes.value,
       fontWeight: '700',
       fontFamily: 'monospace',
       color: valueColor,

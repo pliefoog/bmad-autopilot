@@ -1,202 +1,50 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
-import { useTheme } from '../store/themeStore';
-import { useWidgetStore } from '../store/widgetStore';
-import { MetricDisplayData } from '../types/MetricDisplayData';
+import { TemplatedWidget } from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
-import { TankSensorData } from '../types/SensorData';
-import { UniversalIcon } from '../components/atoms/UniversalIcon';
-import { WidgetMetadataRegistry } from '../registry/WidgetMetadataRegistry';
-import { useResponsiveFontSize } from '../hooks/useResponsiveFontSize';
-import { useResponsiveHeader } from '../hooks/useResponsiveHeader';
-import { UnifiedWidgetGrid } from '../components/UnifiedWidgetGrid';
 
 interface TanksWidgetProps {
   id: string;
-  title: string;
-  showUsageRate?: boolean;
-  width?: number; // Widget width for responsive scaling
-  height?: number; // Widget height for responsive scaling
+  instanceNumber?: number;
 }
 
 /**
- * TanksWidget - Enhanced with collapsible functionality and secondary metrics
- * Primary Grid (2×1): Level (%) + Capacity (L)
- * Secondary Grid (2×1): Available Capacity + Type
+ * TanksWidget - Multi-instance tank level monitoring
+ * Template: 2Rx1C-SEP-2Rx1C
+ * Primary: Level (%), Capacity
+ * Secondary: Type, Name
  */
 export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
-  ({ id, title, width, height }) => {
-    const theme = useTheme();
-    const fontSize = useResponsiveFontSize(width || 0, height || 0);
-
-    // Extract tank instance from widget ID (e.g., "tank-0", "tank-1")
+  ({ id, instanceNumber: propInstanceNumber }) => {
+    // Use provided instanceNumber or extract from widget ID
     const instanceNumber = useMemo(() => {
+      if (propInstanceNumber !== undefined) return propInstanceNumber;
       const match = id.match(/tank-(\d+)/);
       return match ? parseInt(match[1], 10) : 0;
-    }, [id]);
+    }, [id, propInstanceNumber]);
 
-    // Widget state management
-
-    // NMEA data - Read SensorInstance once, extract metrics
-    const tankSensorInstance = useNmeaStore(
-      (state) => state.nmeaData.sensors.tank?.[instanceNumber],
-      (a, b) => a === b,
-    );
-
-    const tankLevelMetric = tankSensorInstance?.getMetric('level');
-    const tankLevel = tankLevelMetric?.si_value ?? null;
-    const capacityMetric = tankSensorInstance?.getMetric('capacity');
-    const capacity = capacityMetric?.si_value ?? null;
-    const tankType = tankSensorInstance?.getMetric('type')?.si_value ?? 'unknown';
-    const tankName = tankSensorInstance?.getMetric('name')?.si_value ?? title;
-    const tankTimestamp = tankSensorInstance?.timestamp;
-
-    // Extract alarm level for tank level
-    const tankLevelAlarmLevel = tankSensorInstance?.getAlarmState('level') ?? 0;
-
-    // Extract tank values
-    const level = tankLevel ? tankLevel * 100 : null; // Convert ratio to percentage
-
-    // Calculate available capacity (capacity * level ratio)
-    const availableCapacity = useMemo(() => {
-      if (capacity && tankLevel) {
-        return capacity * tankLevel; // Available liters
-      }
-      return null;
-    }, [capacity, tankLevel]);
-
-    const handleLongPressOnPin = useCallback(() => {}, [id]);
-
-    // Responsive header sizing using proper base-size scaling
-    const { iconSize: headerIconSize, fontSize: headerFontSize } = useResponsiveHeader(height);
-
-    // Auto-generate appropriate title based on tank data
-    const getDisplayTitle = useCallback(() => {
-      // Standard NMEA tank location mapping by instance number
-      const locationMap: Record<number, string> = {
-        0: 'Port',
-        1: 'Stbd',
-        2: 'Center',
-        3: 'Fwd',
-        4: 'Aft',
-        5: 'Port', // Second port tank (e.g., ballast)
-        6: 'Stbd', // Second starboard tank (e.g., ballast)
-      };
-
-      const location = locationMap[instanceNumber] || `#${instanceNumber + 1}`;
-      const typeLabel = tankType.charAt(0).toUpperCase() + tankType.slice(1);
-
-      // Format: "[Type] Tank - [Location]" e.g. "Fuel Tank - Port", "Water Tank - Center"
-      return `${typeLabel} Tank - ${location}`;
-    }, [tankType, instanceNumber]);
-
-    // Header component for UnifiedWidgetGrid v2
-    const headerComponent = (
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          paddingHorizontal: 16,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <UniversalIcon
-            name={WidgetMetadataRegistry.getMetadata('tank')?.icon || 'cube-outline'}
-            size={headerIconSize}
-            color={theme.iconPrimary}
-          />
-          <Text
-            style={{
-              fontSize: headerFontSize,
-              fontWeight: 'bold',
-              letterSpacing: 0.5,
-              color: theme.textSecondary,
-              textTransform: 'uppercase',
-            }}
-          >
-            {getDisplayTitle()}
-          </Text>
-        </View>
-      </View>
+    const tankInstance = useNmeaStore(
+      (state) => state.nmeaData.sensors.tank?.[instanceNumber]
     );
 
     return (
-      <UnifiedWidgetGrid
-        theme={theme}
-        header={headerComponent}
-        widgetWidth={width || 400}
-        widgetHeight={height || 300}
-        columns={1}
-        primaryRows={2}
-        secondaryRows={2}
-        testID={`tank-widget-${id}`}
+      <TemplatedWidget
+        template="2Rx1C-SEP-2Rx1C"
+        sensorInstance={tankInstance}
+        sensorType="tank"
       >
-        {/* Row 1: Level */}
-        <PrimaryMetricCell
-          data={{
-            mnemonic: 'LEVEL',
-            value: level !== null ? `${Math.round(level)}` : '---',
-            unit: '%',
-            alarmState: tankLevelAlarmLevel,
-          }}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        {/* Row 2: Capacity */}
-        <PrimaryMetricCell
-          data={{
-            mnemonic: 'CAP',
-            value: capacity !== null ? String(Math.round(capacity)) : '---',
-            unit: 'L',
-            alarmState: 0,
-          }}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        {/* Separator after row 2 */}
-        {/* Row 3: Available */}
-        <SecondaryMetricCell
-          data={{
-            mnemonic: 'AVAIL',
-            value: availableCapacity !== null ? String(Math.round(availableCapacity)) : '---',
-            unit: 'L',
-          }}
-          state="normal"
-          compact={true}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-        {/* Row 4: Type */}
-        <SecondaryMetricCell
-          data={{
-            mnemonic: 'TYPE',
-            value: tankType.toUpperCase(),
-            unit: '',
-          }}
-          state="normal"
-          compact={true}
-          fontSize={{
-            mnemonic: fontSize.label,
-            value: fontSize.value,
-            unit: fontSize.unit,
-          }}
-        />
-      </UnifiedWidgetGrid>
+        {[
+          <PrimaryMetricCell key="level" metricKey="level" />,
+          <PrimaryMetricCell key="capacity" metricKey="capacity" />,
+          <SecondaryMetricCell key="type" metricKey="type" />,
+          <SecondaryMetricCell key="name" metricKey="name" />,
+        ] as React.ReactElement[]}
+      </TemplatedWidget>
     );
   },
 );
+
+TanksWidget.displayName = 'TanksWidget';
 
 export default TanksWidget;

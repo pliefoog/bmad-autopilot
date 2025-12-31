@@ -42,14 +42,23 @@ export class MetricValue {
   /** Unit type for this metric (optional) */
   private _unitType?: DataCategory;
 
+  /** Force UTC timezone for datetime display (optional) */
+  private _forceTimezone?: 'utc';
+
   /**
    * Create MetricValue
    *
    * @param si_value - Value in SI units (can be NaN for "no reading")
    * @param timestamp - Timestamp in ms (defaults to now)
    * @param unitType - Optional unit type for enrichment
+   * @param forceTimezone - Optional force UTC for datetime display (from field config)
    */
-  constructor(si_value: number, timestamp: number = Date.now(), unitType?: DataCategory) {
+  constructor(
+    si_value: number,
+    timestamp: number = Date.now(),
+    unitType?: DataCategory,
+    forceTimezone?: 'utc',
+  ) {
     // Allow NaN as valid sentinel value
     if (typeof si_value !== 'number') {
       throw new Error(`MetricValue: si_value must be number, got ${typeof si_value}`);
@@ -61,6 +70,7 @@ export class MetricValue {
     this.si_value = si_value;
     this.timestamp = timestamp;
     this._unitType = unitType;
+    this._forceTimezone = forceTimezone;
   }
 
   /**
@@ -103,7 +113,7 @@ export class MetricValue {
       return String(this.si_value); // No formatting
     }
     const displayValue = this.getDisplayValue(category);
-    return ConversionRegistry.format(displayValue, category, false);
+    return ConversionRegistry.format(displayValue, category, false, this._forceTimezone);
   }
 
   /**
@@ -138,7 +148,7 @@ export class MetricValue {
       return String(this.si_value);
     }
     const displayValue = this.getDisplayValue(category);
-    return ConversionRegistry.format(displayValue, category, true);
+    return ConversionRegistry.format(displayValue, category, true, this._forceTimezone);
   }
 
   // ============================================================================

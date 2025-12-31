@@ -27,8 +27,7 @@
 let originalConsole: typeof console | null = null;
 
 // Category definitions with hierarchical organization
-// NOTE: ALL logging disabled by default except widget.registration and store.updates
-// for custom widget detection debugging. Enable others via browser console as needed.
+// NOTE: ALL logging disabled by default. Enable via browser console as needed.
 const DEBUG_FLAGS: Record<string, boolean> = {
   // NMEA processing categories
   'nmea.depth': false,
@@ -43,16 +42,16 @@ const DEBUG_FLAGS: Record<string, boolean> = {
   'nmea.weather': false,
   nmea: false, // Parent category
 
-  // Widget categories (widget.registration ENABLED for custom widget debugging)
+  // Widget categories
   'widget.depth': false,
   'widget.engine': false,
   'widget.weather': false,
-  'widget.registration': true, // ✅ ENABLED: Custom widget detection
+  'widget.registration': false,
   'widget.rendering': false,
   widget: false, // Parent category
 
-  // Store categories (store.updates ENABLED for metrics debugging)
-  'store.updates': true, // ✅ ENABLED: Metrics setting for custom widgets
+  // Store categories
+  'store.updates': false,
   'store.initialization': false,
   store: false, // Parent category
 

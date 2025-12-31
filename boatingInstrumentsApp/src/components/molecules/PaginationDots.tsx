@@ -31,11 +31,11 @@ export const PaginationDots: React.FC<PaginationDotsProps> = ({
   const theme = useTheme();
 
   // Debug logging
-  logger.layout('PaginationDots rendering:', () => ({ currentPage, totalPages, hasIcons: true }));
+  // logger.layout('PaginationDots rendering:', () => ({ currentPage, totalPages, hasIcons: true }));
 
   // Don't render if there's only one page or no pages
   if (totalPages <= 1) {
-    logger.layout('PaginationDots not rendering - only one page or less');
+    // logger.layout('PaginationDots not rendering - only one page or less');
     return null;
   }
 

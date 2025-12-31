@@ -182,10 +182,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
             // Get unitType for this field
             const unitType = this._metricUnitTypes.get(fieldName);
             
-            // Create minimal MetricValue with optional unitType
+            // Get forceTimezone from field config (for datetime fields)
+            const forceTimezone = 'forceTimezone' in field ? field.forceTimezone : undefined;
+            
+            // Create minimal MetricValue with optional unitType and forceTimezone
             const metric = unitType
-              ? new MetricValue(fieldValue, now, unitType)
-              : new MetricValue(fieldValue, now);
+              ? new MetricValue(fieldValue, now, unitType, forceTimezone)
+              : new MetricValue(fieldValue, now, undefined, forceTimezone);
 
             // Add to history
             this._addToHistory(fieldName, metric);
@@ -483,6 +486,36 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @returns Enriched history point or undefined
    */
   getMetric(fieldName: string): HistoryPoint | undefined {
+    // Virtual metric: utcDate from utcTime timestamp (GPS sensor only)
+    if (fieldName === 'utcDate' && this.sensorType === 'gps') {
+      const utcTimeBuffer = this._history.get('utcTime');
+      if (utcTimeBuffer) {
+        const latest = utcTimeBuffer.getLatest();
+        if (latest && latest.si_value !== null) {
+          // utcDate uses same timestamp value but with 'date' category and forceTimezone
+          const unitType = this._metricUnitTypes.get('utcDate');
+          const fields = getDataFields(this.sensorType);
+          const dateField = fields.find((f) => f.key === 'utcDate');
+          const forceTimezone = dateField && 'forceTimezone' in dateField ? dateField.forceTimezone : undefined;
+          
+          const metric = unitType
+            ? new MetricValue(latest.si_value, latest.timestamp, unitType, forceTimezone)
+            : new MetricValue(latest.si_value, latest.timestamp, undefined, forceTimezone);
+          
+          // Convert MetricValue to HistoryPoint
+          return {
+            si_value: latest.si_value,
+            value: metric.getDisplayValue(),
+            formattedValue: metric.getFormattedValue(),
+            formattedValueWithUnit: metric.getFormattedValueWithUnit(),
+            unit: metric.getUnit(),
+            timestamp: latest.timestamp,
+          };
+        }
+      }
+      return undefined;
+    }
+
     // Special handling for Rate of Turn (ROT)
     if (fieldName === 'rateOfTurn' && this.sensorType === 'compass') {
       const buffer = this._history.get('rateOfTurn');

@@ -6,9 +6,7 @@ import { TemplatedWidget } from '../components/TemplatedWidget';
 
 interface WindWidgetProps {
   id: string;
-  title: string;
-  width?: number;
-  height?: number;
+  instanceNumber?: number;
 }
 
 /**

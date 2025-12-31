@@ -7,9 +7,7 @@ import { TemplatedWidget } from '../components/TemplatedWidget';
 
 interface DepthWidgetProps {
   id: string;
-  title: string;
-  width?: number;
-  height?: number;
+  instanceNumber?: number;
 }
 
 /**
@@ -52,27 +50,26 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
       template="2Rx1C-SEP-2Rx1C"
       sensorInstance={depthSensorInstance}
       sensorType="depth"
+      debugLayout={true}
       testID={`depth-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Current depth + trend visualization */}
       <PrimaryMetricCell metricKey="depth" />
       
-      {/* TrendLine: Self-subscribing pattern - passes sensor/instance/metric */}
+      {/* TrendLine: Auto-fetch pattern via SensorContext */}
       <TrendLine
-        sensor="depth"
-        instance={instanceNumber}
-        metric="depth"
+        metricKey="depth"
         timeWindowMs={5 * 60 * 1000}
-        usePrimaryLine={true}
-        showXAxis={true}
-        showYAxis={true}
+        usePrimaryLine
+        showXAxis
+        showYAxis
         xAxisPosition="top"
         yAxisDirection="down"
         timeWindowMinutes={5}
-        showTimeLabels={true}
-        showGrid={true}
+        showTimeLabels
+        showGrid
         strokeWidth={2}
-        forceZero={true}
+        forceZero
       />
       
       {/* Secondary Grid: Session statistics 

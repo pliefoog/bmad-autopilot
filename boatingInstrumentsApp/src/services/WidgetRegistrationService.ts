@@ -265,14 +265,14 @@ export class WidgetRegistrationService {
    */
   public initialize(): void {
     if (this.isInitialized) {
-      console.log('[WidgetRegistrationService] ⚠️ Already initialized');
+      // console.log('[WidgetRegistrationService] ⚠️ Already initialized');
       return;
     }
 
     // Reset cleanup flag at the START of initialization
     this.isCleaningUp = false;
 
-    console.log('[WidgetRegistrationService] 🚀 Initializing...');
+    // console.log('[WidgetRegistrationService] 🚀 Initializing...');
 
     // Import dynamically to avoid circular dependency
     import('../store/nmeaStore').then(({ useNmeaStore }) => {
@@ -299,7 +299,7 @@ export class WidgetRegistrationService {
       this.performInitialScan(useNmeaStore.getState().nmeaData.sensors);
 
       this.isInitialized = true;
-      console.log('[WidgetRegistrationService] ✅ Initialized successfully');
+      // console.log('[WidgetRegistrationService] ✅ Initialized successfully');
     });
   }
 
@@ -341,7 +341,7 @@ export class WidgetRegistrationService {
     this.sensorUpdateHandler = null;
     this.isInitialized = false;
     this.clearDetectedInstances();
-    console.log('[WidgetRegistrationService] 🧹 Cleaned up');
+    // console.log('[WidgetRegistrationService] 🧹 Cleaned up');
   }
 
   /**
@@ -623,7 +623,7 @@ export class WidgetRegistrationService {
   private updateWidgetStore(): void {
     // Don't update store during cleanup to prevent race conditions
     if (this.isCleaningUp) {
-      console.log('⚠️ [WidgetRegistrationService] Skipping store update - cleaning up');
+      // console.log('⚠️ [WidgetRegistrationService] Skipping store update - cleaning up');
       return;
     }
 
@@ -643,12 +643,13 @@ export class WidgetRegistrationService {
               `🔧 [WidgetRegistrationService] Calling store.updateInstanceWidgets with ${instances.length} instances`,
             );
           store.updateInstanceWidgets(instances as any);
-        } else {
-          console.log('⚠️ [WidgetRegistrationService] store.updateInstanceWidgets not available');
         }
+        // else {
+        //   console.log('⚠️ [WidgetRegistrationService] store.updateInstanceWidgets not available');
+        // }
       })
       .catch((error) => {
-        console.log('❌ [WidgetRegistrationService] Error importing widgetStore:', error);
+        // console.log('❌ [WidgetRegistrationService] Error importing widgetStore:', error);
       });
   }
 

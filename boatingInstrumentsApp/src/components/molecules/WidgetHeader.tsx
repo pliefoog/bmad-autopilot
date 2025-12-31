@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Icon, StatusIndicator } from '../atoms';
+import { UniversalIcon } from '../atoms/UniversalIcon';
+import { StatusIndicator } from '../marine/StatusIndicator';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 
 interface WidgetHeaderProps {
@@ -34,10 +35,10 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
     <View style={[styles.container, style]} testID={testID}>
       <View style={styles.leftSection}>
         {iconName && (
-          <Icon
+          <UniversalIcon
             name={iconName}
             size={20}
-            color="#374151"
+            color={theme.iconPrimary}
             style={styles.icon}
             testID={testID ? `${testID}-icon` : undefined}
           />
@@ -77,10 +78,11 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
+      backgroundColor: '#F3F4F6',
     },
     leftSection: {
       flexDirection: 'row',
@@ -93,13 +95,13 @@ const createStyles = (theme: ThemeColors) =>
       gap: 8,
     },
     icon: {
-      marginRight: 8,
+      marginRight: 6,
     },
     titleContainer: {
       flex: 1,
     },
     title: {
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: '600',
       color: theme.text,
     },

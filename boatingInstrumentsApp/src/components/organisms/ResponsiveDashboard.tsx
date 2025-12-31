@@ -272,6 +272,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       const position = pageLayout.cells[index];
       if (!position) return null;
 
+      // Extract instance number from widget ID (e.g., "depth-0" -> 0)
+      const instanceNumber = widgetId.includes('-') 
+        ? parseInt(widgetId.split('-').pop() || '0', 10)
+        : 0;
+
       return (
         <View
           key={`${widgetId}-${pageLayout.pageIndex}`}
@@ -289,11 +294,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         >
           <WidgetComponent
             id={widgetId}
-            title={widgetConfig.title}
-            width={position.width}
-            height={position.height}
-            onPress={() => onWidgetPress?.(widgetId)}
-            onLongPress={() => onWidgetLongPress?.(widgetId)}
+            instanceNumber={instanceNumber}
           />
         </View>
       );
@@ -378,11 +379,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       </PanGestureHandler>
 
       {/* Pagination dots - AC 6: Page Indicator Dots */}
-      {logger.layout('Rendering pagination:', () => ({
+      {/* {logger.layout('Rendering pagination:', () => ({
         currentPage,
         totalPages,
         navigateToPage: !!navigateToPage,
-      }))}
+      }))} */}
       <PaginationDots
         currentPage={currentPage}
         totalPages={totalPages}

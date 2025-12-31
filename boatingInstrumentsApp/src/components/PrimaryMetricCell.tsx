@@ -137,9 +137,8 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
 
     // WIDTH SCALING - Only scale value if it exceeds available width
     if (cellWidth && cellWidth > 0) {
-      // Account for internal container padding (paddingRight: 6)
-      const CONTAINER_PADDING_RIGHT = 0;
-      const actualAvailableWidth = cellWidth - CONTAINER_PADDING_RIGHT;
+      // Use full cellWidth for scaling calculations
+      const actualAvailableWidth = cellWidth;
 
       // Character width estimation for monospace
       // Account for degree symbols, directional letters, special characters
@@ -199,22 +198,14 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     color: getValueColor(),
   };
 
-  // DEBUG: Render yellow translucent box to visualize dimensions
+  // Render metric display
   return (
-    <View 
-      style={[
-        containerStyle,
-        { 
-          backgroundColor: 'rgba(255, 255, 0, 0.5)', // Yellow with 50% opacity
-          justifyContent: 'center',
-          alignItems: 'center',
-        }
-      ]} 
-      testID={testID || `primary-metric-${metricKey}`}
-    >
-      <Text style={{ fontSize: 10, color: '#000' }}>
-        {cellWidth ? `${cellWidth.toFixed(0)}×${cellHeight?.toFixed(0)}` : 'no dims'}
-      </Text>
+    <View style={containerStyle} testID={testID || `primary-metric-${metricKey}`}>
+      <View style={styles.mnemonicUnitRow}>
+        <Text style={styles.mnemonic}>{mnemonic}</Text>
+        {unit && <Text style={styles.unit}> ({unit})</Text>}
+      </View>
+      <Text style={valueTextStyle}>{displayValue}</Text>
     </View>
   );
 };
@@ -232,7 +223,6 @@ const createStyles = (
       justifyContent: 'flex-start', // Align to top, let flex handle spacing
       paddingVertical: 0, // No padding for tight fit
       paddingHorizontal: 0,
-      paddingRight: 6, // Inset from cell border to prevent text overflow
     },
     // Add row style for mnemonic + unit
     mnemonicUnitRow: {

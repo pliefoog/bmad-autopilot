@@ -17,8 +17,8 @@
  * Original: 470 lines | Refactored: 537 lines (14% increase due to Zod schema + preset preview feature)
  */
 
-import React, { useMemo, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import {
@@ -35,6 +35,7 @@ import {
 } from '../../presentation/presentations';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { useFormState } from '../../hooks/useFormState';
+import { useSettingsStore } from '../../store/settingsStore';
 
 /**
  * Units Configuration Dialog Props
@@ -173,6 +174,8 @@ const CATEGORIES: CategoryConfig[] = [
   { key: 'current', name: 'Current', iconName: 'flash-outline', defaultCollapsed: true },
   { key: 'volume', name: 'Volume (Tanks)', iconName: 'cube-outline' },
   { key: 'time', name: 'Time', iconName: 'time-outline', defaultCollapsed: true },
+  { key: 'date', name: 'Date', iconName: 'calendar-outline', defaultCollapsed: true },
+  { key: 'duration', name: 'Duration', iconName: 'timer-outline', defaultCollapsed: true },
   {
     key: 'distance',
     name: 'Distance',
@@ -207,12 +210,17 @@ const unitsFormSchema = z.object({
   current: z.string().optional(),
   volume: z.string().optional(),
   time: z.string().optional(),
+  date: z.string().optional(),
+  duration: z.string().optional(),
   distance: z.string().optional(),
   capacity: z.string().optional(),
   flowRate: z.string().optional(),
   frequency: z.string().optional(),
   power: z.string().optional(),
   rpm: z.string().optional(),
+  // GPS-specific settings (managed via settingsStore, not presentationStore)
+  coordinateFormat: z.enum(['decimal_degrees', 'degrees_minutes', 'degrees_minutes_seconds', 'utm']).optional(),
+  timezone: z.string().optional(),
 });
 
 type UnitsFormData = z.infer<typeof unitsFormSchema>;
@@ -222,9 +230,13 @@ type UnitsFormData = z.infer<typeof unitsFormSchema>;
 export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  
+  const [timezoneExpanded, setTimezoneExpanded] = useState(false);
 
   const presentationStore = usePresentationStore();
   const { setPresentationForCategory, selectedPresentations } = presentationStore;
+  
+  const { gps, setGpsSetting } = useSettingsStore();
 
   // === INITIAL STATE ===
 
@@ -261,8 +273,11 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       frequency: selectedPresentations.frequency,
       power: selectedPresentations.power,
       rpm: selectedPresentations.rpm,
+      // GPS settings from settingsStore
+      coordinateFormat: gps.coordinateFormat,
+      timezone: gps.timezone,
     };
-  }, [selectedPresentations]);
+  }, [selectedPresentations, gps.coordinateFormat, gps.timezone]);
 
   // === FORM STATE ===
 
@@ -275,6 +290,14 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
             setPresentationForCategory(key, data[key]!);
           }
         });
+        
+        // Save GPS settings to settingsStore
+        if (data.coordinateFormat) {
+          setGpsSetting('coordinateFormat', data.coordinateFormat);
+        }
+        if (data.timezone !== undefined) {
+          setGpsSetting('timezone', data.timezone);
+        }
       },
       debounceMs: 300,
       validationSchema: unitsFormSchema,
