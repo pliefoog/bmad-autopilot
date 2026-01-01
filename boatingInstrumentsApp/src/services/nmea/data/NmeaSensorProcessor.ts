@@ -1723,12 +1723,8 @@ export class NmeaSensorProcessor {
           const instance = parseInt(instanceStr, 10);
           let rawValue = parseFloat(measurementValue);
 
-          // Convert percentage to ratio (0.0-1.0) if needed
-          if (units === '%' || units === 'P') {
-            rawValue = rawValue / 100.0; // 85% or 85P → 0.85
-          }
-
-          // XDR tank data in ratio format (0.0-1.0)
+          // Keep percentage as 0-100 (no conversion needed)
+          // XDR sends percentage directly, we store as percentage
           const level = rawValue;
 
           if (isNaN(rawValue) || isNaN(instance)) {
@@ -2427,9 +2423,9 @@ export class NmeaSensorProcessor {
         timestamp,
       };
 
-      // Map level (convert from percentage to ratio 0-1)
+      // Map level (percentage 0-100)
       if (pgnData.level !== undefined && pgnData.level !== null) {
-        tankUpdate.level = pgnData.level / 100.0;
+        tankUpdate.level = pgnData.level;
       }
 
       // Map capacity

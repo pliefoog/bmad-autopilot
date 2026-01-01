@@ -23,7 +23,7 @@ export interface TrendLineProps {
   // Auto-fetch pattern via SensorContext (REQUIRED)
   metricKey: string; // The metric field name (e.g., 'pressure', 'airTemperature', 'depth')
   // Auto-fetches sensor/instance from SensorContext provided by TemplatedWidget
-  
+
   timeWindowMs: number;
 
   // Dimensions (injected by TemplatedWidget/UnifiedWidgetGrid)
@@ -103,10 +103,10 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 }) => {
   // Auto-fetch from SensorContext (provided by TemplatedWidget)
   const context = useSensorContext();
-  
+
   // Get theme colors directly from store (MUST be called before any returns)
   const theme = useTheme();
-  
+
   // Extract sensor/instance from context
   const sensor = context?.sensorType;
   const instance = context?.sensorInstance?.instance ?? 0;
@@ -122,7 +122,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       return null;
     }
   }, [sensor, metric]);
-  
+
   const mnemonic = fieldConfig?.mnemonic ?? metric?.toUpperCase().slice(0, 5) ?? 'N/A';
 
   // Get current unit from MetricValue to display in label (like MetricCell)
@@ -130,7 +130,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const unit = currentMetric?.unit ?? '';
   // Sanitize unit - ensure it's not just whitespace or a single period
   const sanitizedUnit = unit.trim();
-  const labelText = sanitizedUnit && sanitizedUnit !== '.' ? `${mnemonic} (${sanitizedUnit})` : mnemonic;
+  // Explicit boolean check to avoid text node leaks (per Critical React Native Rules)
+  const hasUnit = sanitizedUnit !== '' && sanitizedUnit !== '.';
 
   // Use explicit dimensions provided by TemplatedWidget
   const width = cellWidth || DEFAULT_TRENDLINE_WIDTH;
@@ -144,6 +145,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     alarmStroke: number;
     trendlineStroke: number;
     pointRadius: number;
+    mnemonicFontSize: number;
     labelFontSize: number;
     errorFontSize: number;
     paddingLeft: number;
@@ -162,13 +164,13 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     const BASE_WIDTH = DEFAULT_TRENDLINE_WIDTH;
     const BASE_HEIGHT = DEFAULT_TRENDLINE_HEIGHT;
     const BASE_AREA = BASE_WIDTH * BASE_HEIGHT;
-    
+
     const widthScaleFactor = width / BASE_WIDTH;
     const heightScaleFactor = height / BASE_HEIGHT;
     const actualArea = width * height;
     const areaScale = Math.sqrt(actualArea / BASE_AREA);
     const paddingScale = Math.min(widthScaleFactor, heightScaleFactor);
-    
+
     return {
       // Stroke widths (area-based for proportional visual weight)
       gridStroke: Math.max(0.5, 0.5 * areaScale),
@@ -176,33 +178,36 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       warningStroke: Math.max(0.5, 1.5 * areaScale),
       alarmStroke: Math.max(1, 2 * areaScale),
       trendlineStroke: Math.max(1, (strokeWidth || 2) * areaScale),
-      
+
       // Radius (area-based)
       pointRadius: Math.max(2, (dataPointRadius || 3) * areaScale),
-      
+
       // Font sizes (height-based for readability)
-      labelFontSize: Math.max(6, (fontSize || 9) * heightScaleFactor),
+      // Match MetricCell sizing: base 12pt for mnemonic, 9pt for Y-axis values
+      // Round to avoid sub-pixel rendering differences
+      mnemonicFontSize: Math.max(8, Math.round(12 * heightScaleFactor)),
+      labelFontSize: Math.max(6, Math.round(9 * heightScaleFactor)),
       errorFontSize: Math.max(6, 10 * heightScaleFactor),
-      
+
       // Padding (conservative scaling prevents cramping)
-      // Y-axis needs extra space for multi-digit labels (e.g., "1029.2" is ~35-40px wide)
-      paddingLeft: showYAxis 
-        ? Math.max(45, 50 * paddingScale)  // Increased from 20 to accommodate 4-digit values
+      // Minimal left padding since Y-axis labels now render inside graph
+      paddingLeft: showYAxis
+        ? Math.max(2, 2 * paddingScale)
         : Math.max(2, 5 * paddingScale),
-      paddingRight: Math.max(2, 5 * paddingScale),
-      paddingTop: xAxisPosition === 'top' 
-        ? Math.max(10, 15 * paddingScale) 
+      paddingRight: Math.max(4, 6 * paddingScale), // Minimal right padding
+      paddingTop: xAxisPosition === 'top'
+        ? Math.max(2, 2 * paddingScale)
         : Math.max(2, 5 * paddingScale),
-      paddingBottom: xAxisPosition === 'bottom' 
-        ? Math.max(10, 15 * paddingScale) 
+      paddingBottom: xAxisPosition === 'bottom'
+        ? Math.max(2, 2 * paddingScale)
         : Math.max(2, 5 * paddingScale),
-        
+
       // Label offsets
       yLabelOffset: Math.max(2, 5 * widthScaleFactor),
       yLabelAdjust: Math.max(1, 3 * heightScaleFactor),
       xLabelTopOffset: Math.max(2, 5 * heightScaleFactor),
       xLabelBottomOffset: Math.max(6, 14 * heightScaleFactor),
-      
+
       // Dash patterns (width-based for temporal consistency)
       dashLength: Math.max(2, Math.round(4 * widthScaleFactor)),
       gapLength: Math.max(2, Math.round(4 * widthScaleFactor)),
@@ -266,7 +271,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const trendData = useMemo(() => {
     if (!sensor || instance === undefined || !metric) return [];
     const data = getSensorHistory(sensor, instance, metric, { timeWindowMs });
-    
+
     // Conditional DEBUG logging for TrendLine history fetch
     log.uiTrendline('TrendLine history fetch', () => ({
       sensor: `${sensor}.${instance}.${metric}`,
@@ -279,7 +284,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       // For pressure debugging: show first 3 values
       sampleValues: data.slice(0, 3).map(p => p.value),
     }));
-    
+
     return data;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);
@@ -359,20 +364,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       // Use pre-computed stats (preferred - consistent with MetricCells)
       dataMin = minValue !== undefined ? minValue : displayStats.min;
       dataMax = maxValue !== undefined ? maxValue : displayStats.max;
-      
-      // DEBUG: Always log for pressure to diagnose Y-axis issue
-      if (metric === 'pressure') {
-        console.log('[TrendLine Y-axis] Using pre-computed stats:', {
-          metric: `${sensor}.${metric}`,
-          statsMin: displayStats.min,
-          statsMax: displayStats.max,
-          dataMin,
-          dataMax,
-          unit: displayStats.unit,
-          displayStatsObj: displayStats,
-        });
-      }
-      
+
       log.uiTrendline('Using pre-computed stats for Y-axis', () => ({
         metric: `${sensor}.${metric}`,
         statsMin: displayStats.min,
@@ -386,20 +378,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       const values = filteredData.map((p) => p.value as number);
       dataMin = minValue !== undefined ? minValue : Math.min(...values);
       dataMax = maxValue !== undefined ? maxValue : Math.max(...values);
-      
-      // DEBUG: Always log for pressure to diagnose Y-axis issue
-      if (metric === 'pressure') {
-        console.log('[TrendLine Y-axis] Fallback calculation:', {
-          metric: `${sensor}.${metric}`,
-          valueCount: values.length,
-          dataMin,
-          dataMax,
-          sampleValues: values.slice(0, 5),
-          displayStatsWas: displayStats,
-        });
-      }
-      
-      log.uiTrendline('Fallback: calculating Y-axis from data', () => ({
+
+      log.uiTrendline('Fallback Y-axis calculation (no pre-computed stats)', () => ({
         metric: `${sensor}.${metric}`,
         valueCount: values.length,
         dataMin,
@@ -427,12 +407,12 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     } catch (error) {
       unitType = undefined;
     }
-    
+
     const yLabels: string[] = unitType
       ? [
-          ConversionRegistry.format(dataMin, unitType, false), // false = no unit
-          ConversionRegistry.format(dataMax, unitType, false),
-        ]
+        ConversionRegistry.format(dataMin, unitType, false), // false = no unit
+        ConversionRegistry.format(dataMax, unitType, false),
+      ]
       : [dataMin.toFixed(1), dataMax.toFixed(1)]; // Fallback if no unitType
 
     // Calculate threshold Y positions
@@ -577,182 +557,190 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // Metric label shows mnemonic + unit like MetricCell
   return trendData.length >= 2 ? (
     <Svg width={width} height={height}>
+      {/* === BACKGROUND LAYER: Render graph elements first === */}
+      {/* Grid lines */}
+      {showGrid && (
+        <>
+          {/* Horizontal grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+            const y = chartStartY + ratio * chartHeight;
+            return (
+              <Line
+                key={`h-grid-${idx}`}
+                x1={AXIS_MARGIN}
+                y1={y}
+                x2={chartWidth + AXIS_MARGIN}
+                y2={y}
+                stroke={gridColor}
+                strokeWidth={scaledDimensions.gridStroke}
+                opacity="0.3"
+              />
+            );
+          })}
+          {/* Vertical grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+            const x = AXIS_MARGIN + ratio * chartWidth;
+            return (
+              <Line
+                key={`v-grid-${idx}`}
+                x1={x}
+                y1={chartStartY}
+                x2={x}
+                y2={chartStartY + chartHeight}
+                stroke={gridColor}
+                strokeWidth={scaledDimensions.gridStroke}
+                opacity="0.3"
+              />
+            );
+          })}
+        </>
+      )}
+
+      {/* Y-axis line */}
+      {showYAxis && (
+        <Line
+          x1={AXIS_MARGIN}
+          y1={chartStartY}
+          x2={AXIS_MARGIN}
+          y2={chartStartY + chartHeight}
+          stroke={axisColor}
+          strokeWidth={scaledDimensions.axisStroke}
+        />
+      )}
+
+      {/* X-axis line */}
+      {showXAxis && (
+        <Line
+          x1={AXIS_MARGIN}
+          y1={xAxisY}
+          x2={chartWidth + AXIS_MARGIN}
+          y2={xAxisY}
+          stroke={axisColor}
+          strokeWidth={scaledDimensions.axisStroke}
+        />
+      )}
+
+      {/* Threshold lines */}
+      {thresholdPositions.warning !== undefined && (
+        <Line
+          x1={AXIS_MARGIN}
+          y1={thresholdPositions.warning}
+          x2={chartWidth + AXIS_MARGIN}
+          y2={thresholdPositions.warning}
+          stroke={warningColor}
+          strokeWidth={scaledDimensions.warningStroke}
+          strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`}
+          opacity={0.7}
+        />
+      )}
+      {thresholdPositions.alarm !== undefined && (
+        <Line
+          x1={AXIS_MARGIN}
+          y1={thresholdPositions.alarm}
+          x2={chartWidth + AXIS_MARGIN}
+          y2={thresholdPositions.alarm}
+          stroke={alarmColor}
+          strokeWidth={scaledDimensions.alarmStroke}
+          strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`}
+          opacity={0.8}
+        />
+      )}
+
+      {/* Trendline segments */}
+      {pointsData.map((point, index) => {
+        if (index === 0) return null;
+        const prevPoint = pointsData[index - 1];
+        return (
+          <Line
+            key={`segment-${index}`}
+            x1={prevPoint.x}
+            y1={prevPoint.y}
+            x2={point.x}
+            y2={point.y}
+            stroke={point.color}
+            strokeWidth={scaledDimensions.trendlineStroke}
+          />
+        );
+      })}
+
+      {/* Data points */}
+      {showDataPoints &&
+        pointsData.map((point, index) => (
+          <circle
+            key={`point-${index}`}
+            cx={point.x}
+            cy={point.y}
+            r={scaledDimensions.pointRadius}
+            fill={point.color}
+          />
+        ))}
+
+      {/* === FOREGROUND LAYER: Render text labels last (on top) === */}
+
+      {/* Mnemonic + unit in upper right corner (exactly like MetricCell) */}
+      {/* Render as separate text elements to match MetricCell's separate Text components */}
+      <SvgText
+        x={width - 2}
+        y={2 + scaledDimensions.mnemonicFontSize * 0.85}
+        fill={theme.textSecondary}
+        fontSize={scaledDimensions.mnemonicFontSize}
+        fontWeight="600"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        letterSpacing={0.5}
+        textAnchor="end"
+      >
+        {hasUnit ? `${mnemonic} (${sanitizedUnit})` : mnemonic}
+      </SvgText>
+
+      {/* Y-axis labels - positioned inside graph (right of Y-axis) */}
+      {showYAxis && yLabels.map((label, idx) => {
+        // Calculate Y position for label alignment
+        // idx=0 is max (top), idx=yLabels.length-1 is min (bottom)
+        const isTop = idx === 0;
+        const isBottom = idx === yLabels.length - 1;
+
+        let yPos;
+        if (isTop) {
+          // Top label: align TOP of text with TOP of Y-axis
+          yPos = chartStartY + scaledDimensions.labelFontSize * 0.8;
+        } else if (isBottom) {
+          // Bottom label: align BOTTOM of text with BOTTOM of Y-axis  
+          yPos = chartStartY + chartHeight - 2;
+        } else {
+          // Middle labels (if any)
+          yPos = chartStartY + (idx / (yLabels.length - 1)) * chartHeight + scaledDimensions.yLabelAdjust;
+        }
+
+        return (
+          <SvgText
+            key={`y-label-${idx}`}
+            x={AXIS_MARGIN + scaledDimensions.yLabelOffset}
+            y={yPos}
+            fontSize={scaledDimensions.labelFontSize}
+            fill={labelColor}
+            fontFamily="system-ui, -apple-system, sans-serif"
+            textAnchor="start"
+          >
+            {label}
+          </SvgText>
+        );
+      })}
+
+      {/* X-axis time labels */}
+      {showXAxis && timeLabels.map((label, idx) => (
         <SvgText
-          x={PADDING_LEFT}
-          y={xAxisPosition === 'top' ? PADDING_TOP + scaledDimensions.labelFontSize : scaledDimensions.labelFontSize + 2}
-          fill={labelColor}
+          key={`x-label-${idx}`}
+          x={label.position}
+          y={xAxisPosition === 'top' ? xAxisY - scaledDimensions.xLabelTopOffset : xAxisY + scaledDimensions.xLabelBottomOffset}
           fontSize={scaledDimensions.labelFontSize}
-          fontWeight="600"
-          textAnchor="start"
+          fill={labelColor}
+          fontFamily="system-ui, -apple-system, sans-serif"
+          textAnchor="middle"
         >
-          {labelText}
+          {label.text}
         </SvgText>
-
-        {thresholdPositions.warning !== undefined && (
-          <Line
-            x1={AXIS_MARGIN}
-            y1={thresholdPositions.warning}
-            x2={chartWidth + AXIS_MARGIN}
-            y2={thresholdPositions.warning}
-            stroke={warningColor}
-            strokeWidth={scaledDimensions.warningStroke}
-            strokeDasharray={`${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`}
-          />
-        )}
-        {thresholdPositions.alarm !== undefined && (
-          <Line
-            x1={AXIS_MARGIN}
-            y1={thresholdPositions.alarm}
-            x2={chartWidth + AXIS_MARGIN}
-            y2={thresholdPositions.alarm}
-            stroke={alarmColor}
-            strokeWidth={scaledDimensions.alarmStroke}
-            strokeDasharray={`${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`}
-          />
-        )}
-
-        {/* Grid lines */}
-        {showGrid && (
-          <>
-            {/* Horizontal grid lines */}
-            {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-              const y = chartStartY + ratio * chartHeight;
-              return (
-                <Line
-                  key={`h-grid-${idx}`}
-                  x1={AXIS_MARGIN}
-                  y1={y}
-                  x2={chartWidth + AXIS_MARGIN}
-                  y2={y}
-                  stroke={gridColor}
-                  strokeWidth={scaledDimensions.gridStroke}
-                  opacity="0.3"
-                />
-              );
-            })}
-            {/* Vertical grid lines */}
-            {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-              const x = AXIS_MARGIN + ratio * chartWidth;
-              return (
-                <Line
-                  key={`v-grid-${idx}`}
-                  x1={x}
-                  y1={chartStartY}
-                  x2={x}
-                  y2={chartStartY + chartHeight}
-                  stroke={gridColor}
-                  strokeWidth={scaledDimensions.gridStroke}
-                  opacity="0.3"
-                />
-              );
-            })}
-          </>
-        )}
-        {showYAxis && (
-          <>
-            <Line
-              x1={AXIS_MARGIN}
-              y1={chartStartY}
-              x2={AXIS_MARGIN}
-              y2={chartStartY + chartHeight}
-              stroke={axisColor}
-              strokeWidth={scaledDimensions.axisStroke}
-            />
-            {/* Y-axis labels */}
-            {yLabels.map((label, idx) => {
-              const yPos = chartStartY + (idx / (yLabels.length - 1)) * chartHeight;
-              return (
-                <SvgText
-                  key={`y-label-${idx}`}
-                  x={AXIS_MARGIN - scaledDimensions.yLabelOffset}
-                  y={yPos + scaledDimensions.yLabelAdjust}
-                  fontSize={scaledDimensions.labelFontSize}
-                  fill={labelColor}
-                  textAnchor="end"
-                >
-                  {label}
-                </SvgText>
-              );
-            })}
-          </>
-        )}
-        {showXAxis && (
-          <>
-            <Line
-              x1={AXIS_MARGIN}
-              y1={xAxisY}
-              x2={chartWidth + AXIS_MARGIN}
-              y2={xAxisY}
-              stroke={axisColor}
-              strokeWidth={scaledDimensions.axisStroke}
-            />
-            {/* X-axis time labels */}
-            {timeLabels.map((label, idx) => (
-              <SvgText
-                key={`x-label-${idx}`}
-                x={label.position}
-                y={xAxisPosition === 'top' ? xAxisY - scaledDimensions.xLabelTopOffset : xAxisY + scaledDimensions.xLabelBottomOffset}
-                fontSize={scaledDimensions.labelFontSize}
-                fill={labelColor}
-                textAnchor="middle"
-              >
-                {label.text}
-              </SvgText>
-            ))}
-          </>
-        )}
-        {thresholdPositions.warning !== undefined && (
-          <Line
-            x1={AXIS_MARGIN}
-            y1={thresholdPositions.warning}
-            x2={chartWidth + AXIS_MARGIN}
-            y2={thresholdPositions.warning}
-            stroke={warningColor}
-            strokeWidth={scaledDimensions.warningStroke}
-            strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength},${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort},${scaledDimensions.gapLong}`}
-            opacity={0.7}
-          />
-        )}
-        {thresholdPositions.alarm !== undefined && (
-          <Line
-            x1={AXIS_MARGIN}
-            y1={thresholdPositions.alarm}
-            x2={chartWidth + AXIS_MARGIN}
-            y2={thresholdPositions.alarm}
-            stroke={alarmColor}
-            strokeWidth={scaledDimensions.alarmStroke}
-            strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength},${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort},${scaledDimensions.gapLong}`}
-            opacity={0.8}
-          />
-        )}
-        {pointsData.map((point, index) => {
-          if (index === 0) return null; // Skip first point (need pairs)
-
-          const prevPoint = pointsData[index - 1];
-
-          return (
-            <Line
-              key={`segment-${index}`}
-              x1={prevPoint.x}
-              y1={prevPoint.y}
-              x2={point.x}
-              y2={point.y}
-              stroke={point.color}
-              strokeWidth={scaledDimensions.trendlineStroke}
-            />
-          );
-        })}
-        {showDataPoints &&
-          pointsData.map((point, index) => (
-            <circle
-              key={`point-${index}`}
-              cx={point.x}
-              cy={point.y}
-              r={scaledDimensions.pointRadius}
-              fill={point.color}
-            />
-          ))}
-      </Svg>
+      ))}
+    </Svg>
   ) : (
     <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
       <Text style={{ color: theme.textSecondary, fontSize: scaledDimensions.errorFontSize }}>

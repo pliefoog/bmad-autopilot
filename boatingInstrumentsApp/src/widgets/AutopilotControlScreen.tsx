@@ -64,21 +64,15 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
     Sound.setCategory('Playback');
 
     engageSound.current = new Sound('engage_autopilot.wav', Sound.MAIN_BUNDLE, (error) => {
-      if (error) {
-        console.log('Custom engage sound not available, using system sound');
-      }
+      // Fallback to system sound if custom sound unavailable
     });
 
     disengageSound.current = new Sound('disengage_autopilot.wav', Sound.MAIN_BUNDLE, (error) => {
-      if (error) {
-        console.log('Custom disengage sound not available, using system sound');
-      }
+      // Fallback to system sound if custom sound unavailable
     });
 
     alertSound.current = new Sound('autopilot_alert.wav', Sound.MAIN_BUNDLE, (error) => {
-      if (error) {
-        console.log('Custom alert sound not available, using system sound');
-      }
+      // Fallback to system sound if custom sound unavailable
     });
 
     return () => {
@@ -120,26 +114,20 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
 
   // Audio alerts for autopilot state changes
   const playEngageAlert = useCallback(() => {
-    engageSound.current?.play((success) => {
-      if (!success) {
-        console.log('Failed to play engage sound');
-      }
+    engageSound.current?.play(() => {
+      // Non-critical audio feedback
     });
   }, []);
 
   const playDisengageAlert = useCallback(() => {
-    disengageSound.current?.play((success) => {
-      if (!success) {
-        console.log('Failed to play disengage sound');
-      }
+    disengageSound.current?.play(() => {
+      // Non-critical audio feedback
     });
   }, []);
 
   const playErrorAlert = useCallback(() => {
-    alertSound.current?.play((success) => {
-      if (!success) {
-        console.log('Failed to play error alert sound');
-      }
+    alertSound.current?.play(() => {
+      // Non-critical audio feedback
     });
   }, []);
 

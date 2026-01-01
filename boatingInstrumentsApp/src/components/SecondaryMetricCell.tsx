@@ -7,6 +7,7 @@ import type { AlarmLevel } from '../types/AlarmTypes';
 import type { SensorType } from '../types/SensorData';
 import { useSensorContext } from '../contexts/SensorContext';
 import { getSensorField } from '../registry/SensorConfigRegistry';
+import { ConversionRegistry } from '../utils/ConversionRegistry';
 
 /**
  * SecondaryMetricCell Props
@@ -73,10 +74,47 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     }
   }, [sensorType, metricKey]);
 
-  // Extract display values (all pre-enriched by MetricValue)
+  // Extract display values
   const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
-  const value = metricValue?.formattedValue ?? '---';
-  const unit = metricValue?.unit ?? '';
+  
+  // Handle string fields (name, type, chemistry, etc.) vs numeric fields
+  const value = useMemo(() => {
+    if (fieldConfig?.valueType === 'string') {
+      // String fields: access directly from sensor instance
+      // Cast to any to access dynamic properties
+      const rawData = sensorInstance as any;
+      const stringValue = rawData?.[metricKey];
+      return stringValue ?? '---';
+    }
+    // Numeric fields: use pre-enriched formattedValue from MetricValue
+    return metricValue?.formattedValue ?? '---';
+  }, [fieldConfig?.valueType, sensorInstance, metricKey, metricValue?.formattedValue]);
+  
+  // Get unit: prefer from MetricValue (when data exists), fallback to registry category
+  const unit = useMemo(() => {
+    // String fields don't have units
+    if (fieldConfig?.valueType === 'string') {
+      return '';
+    }
+    
+    // If metricValue has a unit (data exists), use it
+    if (metricValue?.unit) {
+      return metricValue.unit;
+    }
+    
+    // If no data but field has unitType, get unit from ConversionRegistry
+    if (fieldConfig?.unitType) {
+      try {
+        return ConversionRegistry.getUnit(fieldConfig.unitType);
+      } catch (error) {
+        // Category not found, return empty string
+        return '';
+      }
+    }
+    
+    return '';
+  }, [fieldConfig?.valueType, fieldConfig?.unitType, metricValue?.unit]);
+  
   const alarmLevel: AlarmLevel = sensorInstance?.getAlarmState(metricKey) ?? 0;
 
   const displayValue = value;

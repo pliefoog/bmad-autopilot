@@ -318,7 +318,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'voltage',
         label: 'Voltage',
-        mnemonic: 'VLT',
+        mnemonic: 'V',
         valueType: 'number',
         unitType: 'voltage',
         uiType: 'numericInput',
@@ -350,7 +350,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'temperature',
         label: 'Temperature',
-        mnemonic: 'TMP',
+        mnemonic: 'TEMP',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
@@ -631,7 +631,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'depth',
         label: 'Depth',
-        mnemonic: 'DPT',
+        mnemonic: 'DEPTH',
         valueType: 'number',
         unitType: 'depth',
         uiType: 'numericInput',
@@ -736,7 +736,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'coolantTemp',
         label: 'Coolant Temperature',
-        mnemonic: 'ECT',
+        mnemonic: 'TEMP',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
@@ -747,7 +747,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'oilPressure',
         label: 'Oil Pressure',
-        mnemonic: 'EOP',
+        mnemonic: 'PSI',
         valueType: 'number',
         unitType: 'mechanical_pressure',
         uiType: 'numericInput',
@@ -758,7 +758,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'alternatorVoltage',
         label: 'Alternator Voltage',
-        mnemonic: 'ALT',
+        mnemonic: 'V',
         valueType: 'number',
         unitType: 'voltage',
         uiType: 'numericInput',
@@ -964,7 +964,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'speed',
         label: 'Wind Speed',
-        mnemonic: 'SPD',
+        mnemonic: 'AWS',
         valueType: 'number',
         unitType: 'wind',
         uiType: 'numericInput',
@@ -975,7 +975,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'direction',
         label: 'Wind Direction',
-        mnemonic: 'DIR',
+        mnemonic: 'AWD',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
@@ -984,7 +984,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'trueSpeed',
         label: 'True Wind Speed',
-        mnemonic: 'TS',
+        mnemonic: 'TWS',
         valueType: 'number',
         unitType: 'wind',
         uiType: 'numericInput',
@@ -993,7 +993,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'trueDirection',
         label: 'True Wind Direction',
-        mnemonic: 'TWD',
+        mnemonic: 'TWA',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
@@ -1245,7 +1245,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'magneticHeading',
         label: 'Magnetic Heading',
-        mnemonic: 'HDM',
+        mnemonic: 'HEADING',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
@@ -1255,7 +1255,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'trueHeading',
         label: 'True Heading',
-        mnemonic: 'HDT',
+        mnemonic: 'HDG',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
@@ -1341,7 +1341,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'utcTime',
         label: 'UTC Time',
-        mnemonic: 'UTCTI',
+        mnemonic: 'TIME',
         valueType: 'number',
         unitType: 'time',
         uiType: 'numericInput',
@@ -1353,7 +1353,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'utcDate',
         label: 'UTC Date',
-        mnemonic: 'UTCDT',
+        mnemonic: 'DATE',
         valueType: 'number',
         unitType: 'date',
         uiType: 'numericInput',
@@ -1384,7 +1384,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'fixType',
         label: 'Fix Type',
-        mnemonic: 'FIXTY',
+        mnemonic: 'FIX',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readOnly',
@@ -1393,7 +1393,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'satellites',
         label: 'Satellites',
-        mnemonic: 'SATEL',
+        mnemonic: 'SAT',
         valueType: 'number',
         uiType: 'numericInput',
         iostate: 'readOnly',
@@ -1411,7 +1411,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'timeSource',
         label: 'Time Source',
-        mnemonic: 'TIMES',
+        mnemonic: 'TS',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
@@ -1443,7 +1443,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'engaged',
         label: 'Autopilot Engaged',
-        mnemonic: 'ENGAG',
+        mnemonic: 'ENG',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
@@ -1452,7 +1452,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'active',
         label: 'Autopilot Active',
-        mnemonic: 'ACTIV',
+        mnemonic: 'ACT',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
@@ -1470,7 +1470,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'targetHeading',
         label: 'Target Heading',
-        mnemonic: 'TARGE',
+        mnemonic: 'TGT',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
@@ -1480,7 +1480,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'actualHeading',
         label: 'Actual Heading',
-        mnemonic: 'ACTUA',
+        mnemonic: 'ACT',
         valueType: 'number',
         unitType: 'angle',
         uiType: 'numericInput',
@@ -1490,7 +1490,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'headingSource',
         label: 'Heading Source',
-        mnemonic: 'HEADI',
+        mnemonic: 'SRC',
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnly',
@@ -1509,7 +1509,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'locked',
         label: 'Heading Locked',
-        mnemonic: 'LOCKE',
+        mnemonic: 'LOCK',
         valueType: 'boolean',
         uiType: 'toggle',
         iostate: 'readOnly',
@@ -1550,7 +1550,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'waypointId',
         label: 'Waypoint ID',
-        mnemonic: 'WPID',
+        mnemonic: 'WPT',
         valueType: 'string',
         uiType: null,
         iostate: 'readOnly',
@@ -1559,7 +1559,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'waypointName',
         label: 'Waypoint Name',
-        mnemonic: 'WPNM',
+        mnemonic: 'NAME',
         valueType: 'string',
         uiType: null,
         iostate: 'readOnly',
@@ -1609,7 +1609,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'timeToWaypoint',
         label: 'Time to Waypoint',
-        mnemonic: 'TTW',
+        mnemonic: 'ETA',
         valueType: 'number',
         unitType: 'duration',
         uiType: null,
@@ -1642,7 +1642,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'pressure',
         label: 'Barometric Pressure',
-        mnemonic: 'PRESS',
+        mnemonic: 'BAR',
         valueType: 'number',
         unitType: 'atmospheric_pressure',
         uiType: 'numericInput',
@@ -1654,7 +1654,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'airTemperature',
         label: 'Air Temperature',
-        mnemonic: 'ATMP',
+        mnemonic: 'TEMP',
         valueType: 'number',
         unitType: 'temperature',
         uiType: 'numericInput',
@@ -1678,7 +1678,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'dewPoint',
         label: 'Dew Point',
-        mnemonic: 'DEW',
+        mnemonic: 'DP',
         valueType: 'number',
         unitType: 'temperature',
         uiType: null, // Not editable - calculated or hardware provided
@@ -1786,13 +1786,14 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
       {
         key: 'level',
         label: 'Tank Level',
-        mnemonic: 'LVL',
+        mnemonic: 'LEVEL',
         valueType: 'number',
+        unitType: 'percentage',
         uiType: 'numericInput',
         iostate: 'readOnly',
         min: 0,
         max: 100,
-        helpText: 'Current tank level (0.0-1.0 ratio) - no unitType, widget converts to %',
+        helpText: 'Current tank level as percentage (0-100%)',
       },
       {
         key: 'capacity',
