@@ -106,16 +106,22 @@ export function useMetric(
 ): EnrichedMetric | null {
   // Subscribe ONLY to the version number (primitive value)
   // This prevents infinite loops from object reference changes
-  const version = useNmeaStore((state) => {
-    try {
-      if (!state?.nmeaData?.sensors) return -1;
-      const sensor = state.nmeaData.sensors[sensorType]?.[instance];
-      return sensor?.getMetricVersion(metricKey) ?? -1;
-    } catch (error) {
-      // Handle store initialization race condition
-      return -1;
-    }
-  });
+  // Use shallow equality to prevent re-renders on store reference changes
+  const version = useNmeaStore(
+    (state) => {
+      try {
+        // Defensive: return early if store not ready
+        if (!state || !state.nmeaData || !state.nmeaData.sensors) return -1;
+        const sensor = state.nmeaData.sensors[sensorType]?.[instance];
+        return sensor?.getMetricVersion(metricKey) ?? -1;
+      } catch (error) {
+        // Handle any store access errors during initialization
+        return -1;
+      }
+    },
+    // Shallow equality - only re-render if version number changes
+    (prev, next) => prev === next
+  );
 
   // Fetch metric data when version changes (memoized)
   const enrichedMetric = useMemo(() => {
