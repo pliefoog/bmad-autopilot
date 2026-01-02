@@ -62,19 +62,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Responsive grid system (AC 1-5)
   const responsiveGrid: ResponsiveGridState = useResponsiveGrid(headerHeight);
 
-  // Wait for grid to be ready (gives stores time to initialize on first render)
-  if (responsiveGrid.isLoading) {
-    return (
-      <View style={[styles.container, styles.emptyStateContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.text} />
-        <Text style={[styles.emptyStateText, { color: theme.textSecondary, marginTop: 16 }]}>
-          Initializing...
-        </Text>
-      </View>
-    );
-  }
-
-  // Widget store integration - use actual widget array
+  // Widget store integration - use actual widget array (must be called before any conditional returns)
   const dashboard = useWidgetStore((state) => state.dashboard);
   const widgets = useMemo(() => dashboard?.widgets || [], [dashboard?.widgets]);
 
@@ -345,6 +333,18 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     },
     [scrollViewWidth, responsiveGrid.layout.containerHeight, renderWidget, currentPage],
   );
+
+  // Wait for grid to be ready (gives stores time to initialize on first render)
+  if (responsiveGrid.isLoading) {
+    return (
+      <View style={[styles.container, styles.emptyStateContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.text} />
+        <Text style={[styles.emptyStateText, { color: theme.textSecondary, marginTop: 16 }]}>
+          Initializing...
+        </Text>
+      </View>
+    );
+  }
 
   // AC 14: Empty State Display (auto-discovery handles widget creation)
   if (widgets.length === 0) {
