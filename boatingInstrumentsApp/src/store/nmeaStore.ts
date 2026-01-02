@@ -274,13 +274,12 @@ export const useNmeaStore = create<NmeaStore>()(
             }
           }
 
-          // ARCHITECTURE v2.0 CHANGE: Always call set() to notify version-based subscriptions
-          // The version counter in SensorInstance already tracks changes, so subscribers
-          // using version-based equality (useSensorVersion, useMetric) will only re-render
-          // when version actually changes. This ensures reactivity works correctly.
-          // 
-          // Previous behavior (hasChanges check) prevented store.set() when values didn't change,
-          // but this broke version-based subscriptions because subscribers never got notified.
+          // ARCHITECTURE v2.0: Check if we need to notify subscribers
+          // Skip set() if no changes AND not a new instance - prevents infinite loops
+          // Version counter already tracks changes, so subscribers only react to version changes
+          if (!hasChanges && !needsStoreUpdate) {
+            return;
+          }
 
           // Values changed or new instance - update store
           set((state) => {

@@ -104,9 +104,16 @@ export function useMetric(
   instance: number,
   metricKey: string,
 ): EnrichedMetric | null {
-  // Subscribe to specific metric version
-  // Zustand will re-render when the returned object changes
-  const metricData = useNmeaStore((state) => {
+  // Subscribe ONLY to the version number (primitive value)
+  // This prevents infinite loops from object reference changes
+  const version = useNmeaStore((state) => {
+    const sensor = state.nmeaData.sensors[sensorType]?.[instance];
+    return sensor?.getMetricVersion(metricKey) ?? -1;
+  });
+
+  // Fetch metric data when version changes (memoized)
+  const enrichedMetric = useMemo(() => {
+    const state = useNmeaStore.getState();
     const sensor = state.nmeaData.sensors[sensorType]?.[instance];
     if (!sensor) return null;
 
@@ -114,22 +121,6 @@ export function useMetric(
     if (!metric) return null;
 
     const alarmState = sensor.getAlarmState(metricKey);
-    const version = sensor.getMetricVersion(metricKey);
-
-    // Return an object with version - Zustand uses shallow equality by default
-    // So this will only cause re-render when version changes
-    return {
-      metric,
-      alarmState,
-      version,
-    };
-  });
-
-  // Enrich metric data (memoized to prevent recomputation on every render)
-  const enrichedMetric = useMemo(() => {
-    if (!metricData) return null;
-
-    const { metric, alarmState, version } = metricData;
 
     return {
       formattedValue: metric.formattedValue,
@@ -142,7 +133,7 @@ export function useMetric(
       alarmColor: ALARM_COLORS[alarmState],
       version,
     };
-  }, [metricData]);
+  }, [sensorType, instance, metricKey, version]);
 
   return enrichedMetric;
 }
