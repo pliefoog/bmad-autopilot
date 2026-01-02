@@ -77,6 +77,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
   // Note: _metrics Map removed - use buffer.getLatest() instead
   private _history: Map<string, TimeSeriesBuffer<HistoryPoint>> = new Map();
 
+  // Version tracking for change detection (NEW: Architecture v2.0)
+  // Incremented when any metric value changes, enables fine-grained subscriptions
+  private _version: number = 0;
+  // Per-metric version counters for ultra-fine-grained subscriptions
+  private _metricVersions: Map<string, number> = new Map();
+
   // Metadata
   name: string;
   timestamp: number;
@@ -193,6 +199,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
             // Add to history
             this._addToHistory(fieldName, metric);
 
+            // Increment per-metric version for fine-grained subscriptions
+            const currentMetricVersion = this._metricVersions.get(fieldName) ?? 0;
+            this._metricVersions.set(fieldName, currentMetricVersion + 1);
+
             // Evaluate alarm with priority logic
             const thresholds = this._thresholds.get(fieldName);
             const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
@@ -216,6 +226,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
               value: fieldValue,
             }));
             this._addStringToHistory(fieldName, fieldValue, now);
+            
+            // Increment per-metric version for string values too
+            const currentMetricVersion = this._metricVersions.get(fieldName) ?? 0;
+            this._metricVersions.set(fieldName, currentMetricVersion + 1);
           }
           // Boolean values are stored but don't have history/alarms currently
         }
@@ -228,6 +242,11 @@ export class SensorInstance<T extends SensorData = SensorData> {
     }
 
     this.timestamp = now;
+    
+    // Increment sensor-level version if any metric changed
+    if (hasChanges) {
+      this._version++;
+    }
 
     // Calculate dew point for weather sensors if we have temp + humidity
     if (this.sensorType === 'weather' && hasChanges) {
@@ -920,6 +939,53 @@ export class SensorInstance<T extends SensorData = SensorData> {
     }
 
     return { min, max, avg, unit };
+  }
+
+  /**
+   * Get sensor-level version counter (NEW: Architecture v2.0)
+   * Increments whenever any metric value changes
+   * Used for coarse-grained subscriptions (entire sensor)
+   * 
+   * @returns Current sensor version number
+   * 
+   * @example
+   * ```typescript
+   * const depthInstance = useNmeaStore(
+   *   (state) => state.nmeaData.sensors.depth?.[0],
+   *   (a, b) => a?.version === b?.version // Compare versions instead of object references
+   * );
+   * ```
+   */
+  get version(): number {
+    return this._version;
+  }
+
+  /**
+   * Get per-metric version counter (NEW: Architecture v2.0)
+   * Increments only when specific metric changes
+   * Used for fine-grained subscriptions (single metric)
+   * 
+   * @param metricKey - Metric field name
+   * @returns Current metric version number or 0 if metric not found
+   * 
+   * @example
+   * ```typescript
+   * const useMetric = (sensorType, instance, metricKey) => {
+   *   return useNmeaStore(
+   *     (state) => {
+   *       const sensor = state.nmeaData.sensors[sensorType]?.[instance];
+   *       return sensor ? {
+   *         value: sensor.getMetric(metricKey),
+   *         version: sensor.getMetricVersion(metricKey)
+   *       } : null;
+   *     },
+   *     (a, b) => a?.version === b?.version // Only re-render when THIS metric changes
+   *   );
+   * };
+   * ```
+   */
+  getMetricVersion(metricKey: string): number {
+    return this._metricVersions.get(metricKey) ?? 0;
   }
 
   /**
