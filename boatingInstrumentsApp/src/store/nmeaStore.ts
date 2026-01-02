@@ -163,10 +163,19 @@ function evaluateAlarms(sensors: SensorsData): Alarm[] {
 /**
  * Create NMEA Store with SensorInstance architecture
  * Note: No persistence - NMEA data is volatile stream data
- * TEMP: Devtools disabled to debug infinite loop
+ * 
+ * ⚠️ DEVTOOLS PERMANENTLY DISABLED ⚠️
+ * 
+ * Zustand's devtools middleware causes infinite loops with high-frequency NMEA updates:
+ * - Engine data streams at 2Hz per sensor (3 engines = 6 updates/sec)
+ * - Devtools serializes entire state on every update (expensive with SensorInstance objects)
+ * - Redux DevTools extension interferes with React's update batching
+ * - Results in "Maximum update depth exceeded" errors
+ * 
+ * Use browser console + window.useNmeaStore for debugging instead.
  */
 export const useNmeaStore = create<NmeaStore>()((set, get) => ({
-        // Initial state
+          // Initial state
         connectionStatus: 'disconnected',
         nmeaData: {
           sensors: {
@@ -484,7 +493,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
           log.app('Factory reset complete - all sensor data cleared');
         },
       })
-);
+));
 
 /**
  * Initialize ReEnrichmentCoordinator and SensorConfigCoordinator
