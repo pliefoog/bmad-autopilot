@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dimensions, Platform } from 'react-native';
 
 /**
@@ -60,7 +60,6 @@ export interface ResponsiveGridState {
   screenWidth: number;
   screenHeight: number;
   layout: GridLayout;
-  isLoading: boolean;
 }
 
 /**
@@ -71,16 +70,12 @@ export const useResponsiveGrid = (
   headerHeight: number = 60,
 ): ResponsiveGridState => {
   const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
-  const [isLoading, setIsLoading] = useState(true);
 
   // AC 4: Real-time adaptation to screen rotation and window resize events
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setDimensions(window);
     });
-
-    // Initial load complete
-    setIsLoading(false);
 
     return () => subscription?.remove();
   }, []);
@@ -123,9 +118,9 @@ export const useResponsiveGrid = (
     const cellWidth = (availableSpace.width - totalGapWidth) / cols;
     const cellHeight = (availableSpace.height - totalGapHeight) / rows;
 
-    // Calculate actual container dimensions needed
-    const containerWidth = cellWidth * cols + totalGapWidth;
-    const containerHeight = cellHeight * rows + totalGapHeight;
+    // Container dimensions match available space exactly (gap=0 means no extra space needed)
+    const containerWidth = availableSpace.width;
+    const containerHeight = availableSpace.height;
 
     // AC 12: Widget Per Page Limits enforcement
     const widgetsPerPage = cols * rows;
@@ -147,7 +142,6 @@ export const useResponsiveGrid = (
     screenWidth: dimensions.width,
     screenHeight: dimensions.height,
     layout,
-    isLoading,
   };
 };
 
@@ -174,24 +168,7 @@ export const calculatePages = <T>(
   };
 };
 
-/**
- * Utility function to get platform-specific maximum widgets per page
- * Used for AC 12: Widget per page limits enforcement
- */
-export const getMaxWidgetsPerPage = (platform: PlatformType): number => {
-  switch (platform) {
-    case 'phone':
-      return 2; // 1-2 widgets per page
-    case 'tablet':
-      return 6; // 4-6 widgets per page
-    case 'desktop':
-      return 16; // Up to 16 widgets per page (4×4 grid)
-    case 'largeDesktop':
-      return 24; // Up to 24 widgets per page (6×4 grid)
-    default:
-      return 6;
-  }
-};
+
 
 /**
  * Check if device is touch-enabled for AC 16: Touch Interaction support
