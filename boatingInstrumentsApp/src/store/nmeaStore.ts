@@ -274,12 +274,13 @@ export const useNmeaStore = create<NmeaStore>()(
             }
           }
 
-          // CRITICAL: Only call set() if values changed or it's a new instance
-          // Prevents infinite loops from repeated NMEA messages with same data
-          if (!hasChanges && !needsStoreUpdate) {
-            // No changes, skip store update entirely
-            return;
-          }
+          // ARCHITECTURE v2.0 CHANGE: Always call set() to notify version-based subscriptions
+          // The version counter in SensorInstance already tracks changes, so subscribers
+          // using version-based equality (useSensorVersion, useMetric) will only re-render
+          // when version actually changes. This ensures reactivity works correctly.
+          // 
+          // Previous behavior (hasChanges check) prevented store.set() when values didn't change,
+          // but this broke version-based subscriptions because subscribers never got notified.
 
           // Values changed or new instance - update store
           set((state) => {

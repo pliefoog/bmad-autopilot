@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { useNmeaStore } from '../store/nmeaStore';
+import { useSensorVersion } from '../hooks/useMetric';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
+import { useNmeaStore } from '../store/nmeaStore';
 
 interface BatteryWidgetProps {
   id: string;
@@ -10,7 +11,12 @@ interface BatteryWidgetProps {
 }
 
 /**
- * Battery Widget - Registry-First Declarative Implementation
+ * Battery Widget - Registry-First Declarative Implementation (Architecture v2.0)
+ * 
+ * **Version-Based Reactivity:**
+ * - Uses useSensorVersion() for efficient re-renders
+ * - Eliminates timestamp subscription workaround
+ * - Only re-renders when battery sensor data actually changes
  * 
  * **Before (237 lines):**
  * - Manual metric extraction
@@ -18,12 +24,14 @@ interface BatteryWidgetProps {
  * - Manual alarm state extraction  
  * - Manual mnemonic mapping
  * - UnifiedWidgetGrid setup
+ * - Dual subscriptions (instance + timestamp)
  * 
  * **After (25 lines):**
  * - Pure configuration
  * - Auto-fetch everything
  * - TemplatedWidget handles layout
  * - MetricCells handle display
+ * - Single version-based subscription
  * 
  * **Layout:** 2Rx2C primary (VLT, AMP, TMP, SOC) + 2Rx2C secondary (CAP, CHEM, NOM, NAME)
  */
@@ -34,14 +42,12 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) =
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
+  // Subscribe to sensor version (triggers re-render when ANY battery metric changes)
+  const sensorVersion = useSensorVersion('battery', instanceNumber);
+
   // Get SensorInstance - single source of truth
   const batterySensorInstance = useNmeaStore(
     (state) => state.nmeaData.sensors.battery?.[instanceNumber]
-  );
-
-  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.battery?.[instanceNumber]?.timestamp
   );
 
   return (
