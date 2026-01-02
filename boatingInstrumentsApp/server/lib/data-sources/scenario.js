@@ -1866,16 +1866,38 @@ class ScenarioDataSource extends EventEmitter {
   }
 
   /**
-   * Generate linear values (used by comprehensive-engine-monitoring.yml)
-   * Supports both "start" and "rate" format
+   * Generate linear values (used by comprehensive-engine-monitoring.yml and battery scenarios)
+   * Supports multiple formats:
+   *  1. start + rate: linear change at specified rate per second
+   *  2. start + end + duration: linear interpolation from start to end over scenario duration
+   *  3. start only: constant value
    */
   generateLinear(config, currentTime) {
+    const time = currentTime / 1000; // Convert to seconds
+    
+    // Format 1: Explicit rate
     if (config.rate !== undefined) {
       return this.generateLinearIncrease(config, currentTime);
-    } else if (config.start !== undefined) {
-      // Constant value if no rate specified
+    }
+    
+    // Format 2: start + end (interpolate over scenario duration)
+    if (config.start !== undefined && config.end !== undefined) {
+      const scenarioDuration = (this.scenario?.duration || 300); // Default 5 minutes
+      const progress = Math.min(1.0, time / scenarioDuration); // 0-1
+      const value = config.start + (config.end - config.start) * progress;
+      
+      // Apply min/max constraints if specified
+      if (config.min !== undefined || config.max !== undefined) {
+        return Math.max(config.min || -Infinity, Math.min(config.max || Infinity, value));
+      }
+      return value;
+    }
+    
+    // Format 3: Constant value
+    if (config.start !== undefined) {
       return config.start;
     }
+    
     return 0;
   }
 
@@ -2553,7 +2575,7 @@ class ScenarioDataSource extends EventEmitter {
   generateBatteryFromSensor(sensor, sentenceType) {
     let voltage = 12.6;
     let current = 5.0;
-    let temperature = 298.15; // Default 25°C in Kelvin
+    let temperature = 25.0; // Default 25°C (Celsius, not Kelvin!)
     
     // Get battery parameters from sensor data_generation
     if (sensor.data_generation?.voltage) {
@@ -2573,23 +2595,28 @@ class ScenarioDataSource extends EventEmitter {
     const capacity = sensor.physical_properties?.capacity || 100;
     const chemistry = sensor.physical_properties?.chemistry || 'FLA'; // Default to Flooded Lead-Acid
     
-    // Calculate State of Charge (SOC) based on voltage (rough approximation for 12V lead-acid)
-    // 12.6V+ = 100%, 12.4V = 75%, 12.2V = 50%, 12.0V = 25%, 11.8V = 0%
+    // Get State of Charge from YAML if provided, otherwise calculate from voltage
     let soc = 0;
-    if (nominalVoltage === 12) {
-      if (voltage >= 12.6) soc = 100;
-      else if (voltage >= 12.4) soc = 75 + ((voltage - 12.4) / 0.2) * 25;
-      else if (voltage >= 12.2) soc = 50 + ((voltage - 12.2) / 0.2) * 25;
-      else if (voltage >= 12.0) soc = 25 + ((voltage - 12.0) / 0.2) * 25;
-      else if (voltage >= 11.8) soc = ((voltage - 11.8) / 0.2) * 25;
-      else soc = 0;
+    if (sensor.data_generation?.state_of_charge) {
+      soc = this.getYAMLDataValue('state_of_charge', sensor.data_generation.state_of_charge);
     } else {
-      // Simple linear approximation for other voltages
-      soc = Math.max(0, Math.min(100, ((voltage - (nominalVoltage * 0.9)) / (nominalVoltage * 0.2)) * 100));
+      // Calculate SOC based on voltage (rough approximation for 12V lead-acid)
+      // 12.6V+ = 100%, 12.4V = 75%, 12.2V = 50%, 12.0V = 25%, 11.8V = 0%
+      if (nominalVoltage === 12) {
+        if (voltage >= 12.6) soc = 100;
+        else if (voltage >= 12.4) soc = 75 + ((voltage - 12.4) / 0.2) * 25;
+        else if (voltage >= 12.2) soc = 50 + ((voltage - 12.2) / 0.2) * 25;
+        else if (voltage >= 12.0) soc = 25 + ((voltage - 12.0) / 0.2) * 25;
+        else if (voltage >= 11.8) soc = ((voltage - 11.8) / 0.2) * 25;
+        else soc = 0;
+      } else {
+        // Simple linear approximation for other voltages
+        soc = Math.max(0, Math.min(100, ((voltage - (nominalVoltage * 0.9)) / (nominalVoltage * 0.2)) * 100));
+      }
     }
     
-    // Temperature in Celsius
-    const tempCelsius = temperature - 273.15;
+    // Temperature is already in Celsius from YAML
+    const tempCelsius = temperature;
 
     // Check XDR format preference from sensor configuration
     // Fix: Changed default from 'compound' to 'individual' for NKE Display Pro compatibility
