@@ -543,26 +543,28 @@ export function useSubscriptionMonitor<TStore, TResult>(
   selector: Selector<TStore, TResult>,
   warnThreshold: number = 10,
 ): void {
-  if (__DEV__) {
-    const renderCount = useRef(0);
-    const startTime = useRef(Date.now());
+  // Hooks must be called unconditionally
+  const renderCount = useRef(0);
+  const startTime = useRef(Date.now());
 
-    useEffect(() => {
-      renderCount.current++;
+  useEffect(() => {
+    // Only monitor in development
+    if (!__DEV__) return;
+    
+    renderCount.current++;
 
-      const elapsed = Date.now() - startTime.current;
-      const rendersPerSecond = (renderCount.current / elapsed) * 1000;
+    const elapsed = Date.now() - startTime.current;
+    const rendersPerSecond = (renderCount.current / elapsed) * 1000;
 
-      if (rendersPerSecond > warnThreshold) {
-        console.warn(
-          `[State Performance] ${componentName} is re-rendering frequently: ` +
-            `${rendersPerSecond.toFixed(2)} renders/sec ` +
-            `(${renderCount.current} renders in ${elapsed}ms). ` +
+    if (rendersPerSecond > warnThreshold) {
+      console.warn(
+        `[State Performance] ${componentName} is re-rendering frequently: ` +
+          `${rendersPerSecond.toFixed(2)} renders/sec ` +
+          `(${renderCount.current} renders in ${elapsed}ms). ` +
             `Consider optimizing selector or using throttled subscription.`,
         );
       }
-    });
-  }
+  });
 }
 
 /**

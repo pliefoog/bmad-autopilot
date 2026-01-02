@@ -167,7 +167,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
           {/* Combined Connection Status + Navigation Session Button */}
           <TouchableOpacity
-            style={[styles.combinedStatusButton, { marginLeft: 8 }]}
+            style={[styles.combinedStatusButton, styles.combinedStatusButtonMargin]}
             onPress={handleCombinedButtonPress}
             onLongPress={handleConnectionLEDPress}
             accessibilityRole="button"
@@ -290,6 +290,9 @@ const createStyles = (theme: any) =>
       height: 44,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    combinedStatusButtonMargin: {
+      marginLeft: 8,
     },
     statusBackground: {
       width: 20, // Larger than original LED

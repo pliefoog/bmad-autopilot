@@ -52,14 +52,14 @@ export const QuickStartGuide: React.FC<QuickStartGuideProps> = ({
   // Load saved progress
   useEffect(() => {
     loadProgress();
-  }, []);
+  }, [loadProgress]);
 
   // Save progress when it changes
   useEffect(() => {
     if (progress.started) {
       saveProgress();
     }
-  }, [progress]);
+  }, [progress, saveProgress]);
 
   const loadProgress = async () => {
     try {

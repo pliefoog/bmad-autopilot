@@ -88,9 +88,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
       onPressOut={() => setPressed(false)}
       style={[
         styles.helpButton,
-        {
-          opacity: pressed ? 0.6 : 1,
-        },
+        pressed && styles.pressed,
         style,
       ]}
       hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
@@ -108,6 +106,10 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
 const styles = StyleSheet.create({
   helpButton: {
     padding: 4,
+    opacity: 1,
+  },
+  pressed: {
+    opacity: 0.6,
     justifyContent: 'center',
     alignItems: 'center',
   },

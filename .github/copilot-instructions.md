@@ -1,5 +1,101 @@
 # GitHub Copilot Instructions - BMad Autopilot
 
+## Critical React Hooks Rules (MUST FOLLOW)
+
+**⚠️ Rules of Hooks - Unconditional Execution (Jan 2025):**
+
+React Hooks MUST be called:
+1. At the top level (not inside loops, conditions, or nested functions)
+2. In the same order every render
+3. BEFORE any early return statements
+
+**Violation #1: Hooks After Early Return**
+```tsx
+// ❌ WRONG - Hooks called after early return
+export const Widget = ({ data }) => {
+  const config = useStore(state => state.config);
+  
+  if (!data) return null;  // Early return
+  
+  const value = useNmeaStore(state => state.data);  // ERROR: Hook after return
+  const formatted = useMemo(() => format(value), [value]);  // ERROR: Hook after return
+  
+  return <View>{formatted}</View>;
+};
+
+// ✅ CORRECT - All hooks before early return
+export const Widget = ({ data }) => {
+  const config = useStore(state => state.config);
+  const value = useNmeaStore(state => state.data);
+  const formatted = useMemo(() => format(value), [value]);
+  
+  if (!data) return null;  // Early return AFTER all hooks
+  
+  return <View>{formatted}</View>;
+};
+```
+
+**Violation #2: Hooks Inside Conditionals**
+```tsx
+// ❌ WRONG - Hook inside if block
+if (__DEV__) {
+  const renderCount = useRef(0);  // ERROR: Conditional hook
+  useEffect(() => {  // ERROR: Conditional hook
+    console.log('renders:', renderCount.current++);
+  });
+}
+
+// ✅ CORRECT - Hook called unconditionally, logic inside
+const renderCount = useRef(0);
+useEffect(() => {
+  if (!__DEV__) return;  // Conditional logic INSIDE hook
+  console.log('renders:', renderCount.current++);
+});
+```
+
+**Violation #3: Hooks in Ternary/Logical Operators**
+```tsx
+// ❌ WRONG - Hook in ternary expression
+const touchTargetSize = tvMode 
+  ? platformTokens.touchTarget 
+  : useTouchTargetSize();  // ERROR: Conditional hook call
+
+// ✅ CORRECT - Hook called unconditionally, result used conditionally
+const touchTargetSizeHook = useTouchTargetSize();
+const touchTargetSize = tvMode 
+  ? platformTokens.touchTarget 
+  : touchTargetSizeHook;
+
+// ❌ WRONG - Hook in logical AND
+const data = isEnabled && useDataFetch();  // ERROR: Conditional hook
+
+// ✅ CORRECT - Hook unconditional, result used conditionally
+const fetchedData = useDataFetch();
+const data = isEnabled ? fetchedData : null;
+```
+
+**Why This Matters:**
+- Violating Rules of Hooks causes "Maximum update depth exceeded" crashes
+- React throws "React has detected a change in the order of Hooks" errors
+- Zustand stores with devtools + high-frequency updates (NMEA at 2Hz) amplify the issue
+- ESLint rule `react-hooks/rules-of-hooks: error` catches these at lint-time
+
+**Fixed Violations (Jan 2025):**
+- `CustomWidget.tsx`: 5 hooks after early return (lines 190, 195, 202, 210, 239)
+- `stateManagementOptimization.ts`: 3 hooks inside `if(__DEV__)` (lines 547, 548, 550)
+- `PlatformButton.tsx`: 1 hook in ternary expression (line 110)
+
+**ESLint Configuration:**
+```json
+{
+  "plugins": ["react-hooks"],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",  // Catches conditional hooks
+    "react-hooks/exhaustive-deps": "warn"   // Catches missing dependencies
+  }
+}
+```
+
 ## Critical React Native Rules
 
 **⚠️ JSX Comment Syntax (NEVER use `//` inside JSX):**

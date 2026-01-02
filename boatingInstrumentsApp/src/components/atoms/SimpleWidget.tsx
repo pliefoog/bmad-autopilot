@@ -66,7 +66,7 @@ export const SimpleWidget: React.FC<SimpleWidgetProps> = ({
         useNativeDriver: getUseNativeDriver(),
       }),
     ]).start();
-  }, [expanded]);
+  }, [expanded, heightAnimation, chevronAnimation]);
 
   const chevronRotation = chevronAnimation.interpolate({
     inputRange: [0, 1],

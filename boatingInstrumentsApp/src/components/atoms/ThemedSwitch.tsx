@@ -21,6 +21,19 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
 }) => {
   const theme = useTheme();
 
+  // Memoize styles unconditionally (hooks must be called before any conditionals)
+  const containerStyle = React.useMemo(
+    () => ({ backgroundColor: value ? theme.primary : theme.border }),
+    [value, theme.primary, theme.border]
+  );
+  const thumbStyle = React.useMemo(
+    () => ({
+      backgroundColor: value ? theme.text : theme.textSecondary,
+      transform: [{ translateX: value ? 20 : 0 }],
+    }),
+    [value, theme.text, theme.textSecondary]
+  );
+
   // For web, use custom switch implementation to ensure proper theming
   if (Platform.OS === 'web') {
     return (
@@ -29,18 +42,11 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
         disabled={disabled}
         style={[
           styles.webSwitchContainer,
-          { backgroundColor: value ? theme.primary : theme.border, opacity: disabled ? 0.5 : 1 },
+          containerStyle,
+          disabled && styles.disabled,
         ]}
       >
-        <View
-          style={[
-            styles.webSwitchThumb,
-            {
-              backgroundColor: value ? theme.text : theme.textSecondary,
-              transform: [{ translateX: value ? 20 : 0 }],
-            },
-          ]}
-        />
+        <View style={[styles.webSwitchThumb, thumbStyle]} />
       </Pressable>
     );
   }
@@ -59,6 +65,9 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
 };
 
 const styles = StyleSheet.create({
+  disabled: {
+    opacity: 0.5,
+  },
   webSwitchContainer: {
     width: 51,
     height: 31,

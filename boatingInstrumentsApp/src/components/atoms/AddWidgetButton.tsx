@@ -24,17 +24,22 @@ export const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({
 }) => {
   const theme = useTheme();
 
+  const containerStyle = React.useMemo(
+    () => ({
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: disabled ? theme.interactiveDisabled : theme.interactive,
+    }),
+    [size, disabled, theme.interactiveDisabled, theme.interactive]
+  );
+
   return (
     <TouchableOpacity
       style={[
         styles.container,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: disabled ? theme.interactiveDisabled : theme.interactive,
-          opacity: disabled ? 0.5 : 1,
-        },
+        containerStyle,
+        disabled && styles.disabled,
         Platform.OS === 'ios'
           ? styles.shadowIOS
           : Platform.OS === 'android'

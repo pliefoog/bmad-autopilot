@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemeColors } from '../store/themeStore';
 
@@ -103,6 +103,10 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
 
   // For 1-column layout, no centering padding (match 2-column behavior)
   const oneColumnCenterPadding = 0;
+
+  // Memoize conditional styles to avoid creating new objects on every render
+  const rowGapStyle = useMemo(() => ({ height: rowGap }), [rowGap]);
+  const footerStyle = useMemo(() => ({ height: headerFooterHeight / 3 }), [headerFooterHeight]);
 
   if (columnSpans && columnSpans.length !== childArray.length) {
     console.warn('UnifiedWidgetGrid: columnSpans length must match children length');
@@ -242,26 +246,25 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
                   })}
                 </View>
                 {isPrimaryEnd && (
-                  <View style={{ marginVertical: separatorMargin, width: '100%' }}>
+                  <View style={[styles.separatorContainer, { marginVertical: separatorMargin }]}>
                     <View
                       style={[
                         styles.separator,
                         {
                           backgroundColor: theme.text,
                           height: separatorHeight,
-                          opacity: 0.3,
                         },
                       ]}
                     />
                   </View>
                 )}
-                {rowIndex < rows.length - 1 && !isPrimaryEnd ? <View style={{ height: rowGap }} /> : null}
+                {rowIndex < rows.length - 1 && !isPrimaryEnd ? <View style={rowGapStyle} /> : null}
               </React.Fragment>
             );
           })}
         </View>
       </View>
-      <View style={[styles.footer, { height: headerFooterHeight / 3 }]} />
+      <View style={[styles.footer, footerStyle]} />
     </View>
   );
 
@@ -314,6 +317,12 @@ const styles = StyleSheet.create({
   separator: {
     height: 2,
     width: '100%',
-    opacity: 1,
+    opacity: 0.3,
+  },
+  separatorContainer: {
+    width: '100%',
+  },
+  rowGap: {
+    width: '100%',
   },
 });

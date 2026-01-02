@@ -207,26 +207,6 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   }, [triggerHaptic, playDisengageAlert, playErrorAlert]);
 
   // Heading adjustment with cumulative safety tracking
-  const adjustHeading = useCallback(
-    async (adjustment: number) => {
-      triggerHaptic();
-
-      // Check if this adjustment would exceed the safety threshold
-      const newCumulativeChange = Math.abs(cumulativeHeadingChange + adjustment);
-
-      if (newCumulativeChange > 20) {
-        // Show safety confirmation for large cumulative changes
-        setPendingHeadingAdjustment(adjustment);
-        setShowLargeChangeConfirmation(true);
-        return;
-      }
-
-      // Proceed with normal adjustment
-      await executeHeadingAdjustment(adjustment);
-    },
-    [cumulativeHeadingChange, triggerHaptic],
-  );
-
   // Execute the actual heading adjustment (separated for confirmation workflow)
   const executeHeadingAdjustment = useCallback(
     async (adjustment: number) => {
@@ -252,6 +232,26 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
       }
     },
     [playErrorAlert],
+  );
+
+  const adjustHeading = useCallback(
+    async (adjustment: number) => {
+      triggerHaptic();
+
+      // Check if this adjustment would exceed the safety threshold
+      const newCumulativeChange = Math.abs(cumulativeHeadingChange + adjustment);
+
+      if (newCumulativeChange > 20) {
+        // Show safety confirmation for large cumulative changes
+        setPendingHeadingAdjustment(adjustment);
+        setShowLargeChangeConfirmation(true);
+        return;
+      }
+
+      // Proceed with normal adjustment
+      await executeHeadingAdjustment(adjustment);
+    },
+    [cumulativeHeadingChange, triggerHaptic, executeHeadingAdjustment],
   );
 
   // Confirmation handlers for large heading changes

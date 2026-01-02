@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,29 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index, position, st
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const translateY = useRef(new Animated.Value(position === 'top' ? -50 : 50)).current;
 
+  const handleDismiss = useCallback(() => {
+    // Exit animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: getUseNativeDriver(),
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
+        duration: 200,
+        useNativeDriver: getUseNativeDriver(),
+      }),
+      Animated.timing(translateY, {
+        toValue: position === 'top' ? -50 : 50,
+        duration: 200,
+        useNativeDriver: getUseNativeDriver(),
+      }),
+    ]).start(() => {
+      dismiss(toast.id);
+    });
+  }, [fadeAnim, scaleAnim, translateY, position, dismiss, toast.id]);
+
   useEffect(() => {
     // Entry animation
     Animated.parallel([
@@ -56,30 +79,7 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index, position, st
 
       return () => clearTimeout(timer);
     }
-  }, []);
-
-  const handleDismiss = () => {
-    // Exit animation
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: getUseNativeDriver(),
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 0.8,
-        duration: 200,
-        useNativeDriver: getUseNativeDriver(),
-      }),
-      Animated.timing(translateY, {
-        toValue: position === 'top' ? -50 : 50,
-        duration: 200,
-        useNativeDriver: getUseNativeDriver(),
-      }),
-    ]).start(() => {
-      dismiss(toast.id);
-    });
-  };
+  }, [fadeAnim, scaleAnim, translateY, toast.duration, toast.persistent, handleDismiss]);
 
   const handleActionPress = () => {
     if (toast.action) {
