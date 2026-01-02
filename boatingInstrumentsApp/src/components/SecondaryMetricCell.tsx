@@ -86,18 +86,20 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
   
   // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
-  // Only subscribe when sensorInstance exists (prevents subscribing to wrong instance)
-  // This triggers re-render ONLY when THIS metric's version changes
-  const subscribedMetric = sensorInstance
-    ? useMetric(sensorType, sensorInstance.instance, metricKey)
-    : null;
+  // MUST be called unconditionally (Rules of Hooks)
+  // Pass defaults when sensorInstance doesn't exist, hook will return null
+  const subscribedMetric = useMetric(
+    sensorType || 'depth', // Safe default
+    sensorInstance?.instance ?? 0, // Safe default
+    metricKey
+  );
   
   // Fallback to context-based metric access if subscription not available
   // (happens when sensor doesn't exist yet or subscription returns null)
   const contextMetric = sensorInstance?.getMetric(metricKey);
   
-  // Use subscribed metric if available, otherwise fallback to context
-  const metricValue = subscribedMetric ? {
+  // Use subscribed metric only if sensorInstance exists, otherwise fallback
+  const metricValue = (sensorInstance && subscribedMetric) ? {
     formattedValue: subscribedMetric.formattedValue,
     formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
     unit: subscribedMetric.unit,
