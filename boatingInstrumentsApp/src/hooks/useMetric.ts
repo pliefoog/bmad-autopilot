@@ -107,9 +107,14 @@ export function useMetric(
   // Subscribe ONLY to the version number (primitive value)
   // This prevents infinite loops from object reference changes
   const version = useNmeaStore((state) => {
-    if (!state?.nmeaData?.sensors) return -1;
-    const sensor = state.nmeaData.sensors[sensorType]?.[instance];
-    return sensor?.getMetricVersion(metricKey) ?? -1;
+    try {
+      if (!state?.nmeaData?.sensors) return -1;
+      const sensor = state.nmeaData.sensors[sensorType]?.[instance];
+      return sensor?.getMetricVersion(metricKey) ?? -1;
+    } catch (error) {
+      // Handle store initialization race condition
+      return -1;
+    }
   });
 
   // Fetch metric data when version changes (memoized)
@@ -167,24 +172,29 @@ export function useMetrics(
   // Subscribe to combined version (sum of all metric versions)
   // Re-renders when ANY of the specified metrics change
   const metricsData = useNmeaStore((state) => {
-    if (!state?.nmeaData?.sensors) return null;
-    const sensor = state.nmeaData.sensors[sensorType]?.[instance];
-    if (!sensor) return null;
+    try {
+      if (!state?.nmeaData?.sensors) return null;
+      const sensor = state.nmeaData.sensors[sensorType]?.[instance];
+      if (!sensor) return null;
 
-    const metrics = metricKeys.map((key) => ({
-      key,
-      metric: sensor.getMetric(key),
-      alarmState: sensor.getAlarmState(key),
-      version: sensor.getMetricVersion(key),
-    }));
+      const metrics = metricKeys.map((key) => ({
+        key,
+        metric: sensor.getMetric(key),
+        alarmState: sensor.getAlarmState(key),
+        version: sensor.getMetricVersion(key),
+      }));
 
-    // Combined version = sum of all metric versions
-    const combinedVersion = metrics.reduce((sum, m) => sum + m.version, 0);
+      // Combined version = sum of all metric versions
+      const combinedVersion = metrics.reduce((sum, m) => sum + m.version, 0);
 
-    return {
-      metrics,
-      combinedVersion,
-    };
+      return {
+        metrics,
+        combinedVersion,
+      };
+    } catch (error) {
+      // Handle store initialization race condition
+      return null;
+    }
   });
 
   // Enrich all metrics (memoized)
@@ -234,7 +244,12 @@ export function useSensorVersion(
   instance: number,
 ): number | null {
   return useNmeaStore((state) => {
-    if (!state?.nmeaData?.sensors) return null;
-    return state.nmeaData.sensors[sensorType]?.[instance]?.version ?? null;
+    try {
+      if (!state?.nmeaData?.sensors) return null;
+      return state.nmeaData.sensors[sensorType]?.[instance]?.version ?? null;
+    } catch (error) {
+      // Handle store initialization race condition
+      return null;
+    }
   });
 }
