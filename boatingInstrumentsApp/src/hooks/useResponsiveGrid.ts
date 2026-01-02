@@ -3,16 +3,19 @@ import { Dimensions, Platform } from 'react-native';
 
 /**
  * Platform breakpoints based on UI Architecture v2.3 specification
+ * Extended for 4K+ displays
  */
 const BREAKPOINTS = {
   phone: 480, // ≤480px width
   tablet: 1024, // 481px-1024px width
-  desktop: 1025, // >1024px width
+  desktop: 1920, // 1025px-1920px width (Full HD)
+  largeDesktop: 1921, // >1920px width (4K+)
 } as const;
 
 /**
  * Grid density configurations per platform and orientation
  * Based on AC 1: Platform-Specific Widget Density requirements
+ * Optimized for marine use: maximize visible instruments at glance
  */
 const GRID_DENSITY = {
   phone: {
@@ -20,12 +23,16 @@ const GRID_DENSITY = {
     landscape: { cols: 2, rows: 1 }, // 2×1 grid
   },
   tablet: {
-    portrait: { cols: 2, rows: 2 }, // 2×2 grid
-    landscape: { cols: 3, rows: 2 }, // 3×2 grid
+    portrait: { cols: 2, rows: 2 }, // 2×2 grid (4 widgets)
+    landscape: { cols: 3, rows: 2 }, // 3×2 grid (6 widgets)
   },
   desktop: {
-    portrait: { cols: 3, rows: 3 }, // 3×3 grid
-    landscape: { cols: 4, rows: 3 }, // 4×3 grid
+    portrait: { cols: 3, rows: 4 }, // 3×4 grid (12 widgets) - increased rows
+    landscape: { cols: 4, rows: 4 }, // 4×4 grid (16 widgets) - increased rows
+  },
+  largeDesktop: {
+    portrait: { cols: 4, rows: 5 }, // 4×5 grid (20 widgets)
+    landscape: { cols: 6, rows: 4 }, // 6×4 grid (24 widgets) - requested 6 columns
   },
 } as const;
 
@@ -39,7 +46,7 @@ const WIDGET_CONSTRAINTS = {
   padding: 16, // Container padding
 } as const;
 
-export type PlatformType = 'phone' | 'tablet' | 'desktop';
+export type PlatformType = 'phone' | 'tablet' | 'desktop' | 'largeDesktop';
 export type OrientationType = 'portrait' | 'landscape';
 
 export interface GridLayout {
@@ -89,7 +96,8 @@ export const useResponsiveGrid = (
   const platform: PlatformType = useMemo(() => {
     if (dimensions.width <= BREAKPOINTS.phone) return 'phone';
     if (dimensions.width <= BREAKPOINTS.tablet) return 'tablet';
-    return 'desktop';
+    if (dimensions.width <= BREAKPOINTS.desktop) return 'desktop';
+    return 'largeDesktop'; // 4K+ displays
   }, [dimensions.width]);
 
   // Determine orientation
@@ -190,7 +198,9 @@ export const getMaxWidgetsPerPage = (platform: PlatformType): number => {
     case 'tablet':
       return 6; // 4-6 widgets per page
     case 'desktop':
-      return 12; // 9-12 widgets per page
+      return 16; // Up to 16 widgets per page (4×4 grid)
+    case 'largeDesktop':
+      return 24; // Up to 24 widgets per page (6×4 grid)
     default:
       return 6;
   }
