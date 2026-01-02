@@ -308,25 +308,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const renderPage = useCallback(
     (pageLayout: PageLayout, pageIndex: number) => {
       const isPageVisible = pageIndex === currentPage;
-      const shouldRenderPage = Math.abs(pageIndex - currentPage) <= 1; // Current + adjacent pages
-      
-      // Only render current page and adjacent pages (preload buffer)
-      // This dramatically reduces subscription count while maintaining smooth transitions
-      if (!shouldRenderPage) {
-        return (
-          <View
-            key={`page-${pageIndex}`}
-            style={[
-              styles.pageContainer,
-              {
-                width: scrollViewWidth,
-                height: responsiveGrid.layout.containerHeight,
-              },
-            ]}
-            testID={`dashboard-page-${pageIndex}-placeholder`}
-          />
-        );
-      }
       
       return (
         <WidgetVisibilityProvider
@@ -341,7 +322,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               {
                 width: scrollViewWidth,
                 height: responsiveGrid.layout.containerHeight,
-                // Hide off-screen pages but keep them mounted for smooth transitions
+                // Hide off-screen pages but keep them mounted to prevent hook order issues
                 opacity: isPageVisible ? 1 : 0,
                 pointerEvents: isPageVisible ? 'auto' : 'none',
               },
