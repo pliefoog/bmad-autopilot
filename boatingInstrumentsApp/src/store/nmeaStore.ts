@@ -480,4 +480,10 @@ export function initializeNmeaStore() {
   ReEnrichmentCoordinator.initialize();
   SensorConfigCoordinator.initialize();
   log.app('NMEA Store v3 initialized with coordinators');
+  
+  // Expose store to window for debugging in development
+  if (__DEV__ && typeof window !== 'undefined') {
+    (window as any).useNmeaStore = useNmeaStore;
+    console.log('🔧 Debug: useNmeaStore exposed to window.useNmeaStore');
+  }
 }
