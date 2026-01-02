@@ -392,19 +392,21 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </Animated.View>
       </PanGestureHandler>
 
-      {/* Pagination dots - AC 6: Page Indicator Dots */}
+      {/* Pagination dots - AC 6: Page Indicator Dots (Overlays bottom of widgets) */}
       {/* {logger.layout('Rendering pagination:', () => ({
         currentPage,
         totalPages,
         navigateToPage: !!navigateToPage,
       }))} */}
-      <PaginationDots
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPagePress={navigateToPage}
-        animatedValue={pageAnimatedValue}
-        testID="dashboard-pagination"
-      />
+      <View style={styles.paginationOverlay}>
+        <PaginationDots
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPagePress={navigateToPage}
+          animatedValue={pageAnimatedValue}
+          testID="dashboard-pagination"
+        />
+      </View>
 
       {/* REMOVED: Manual widget addition via WidgetSelector - Now pure auto-discovery */}
     </View>
@@ -423,6 +425,14 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexDirection: 'row',
+  },
+  paginationOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    pointerEvents: 'box-none', // Allow touches only on pagination, not overlay
   },
   pageContainer: {
     position: 'relative',

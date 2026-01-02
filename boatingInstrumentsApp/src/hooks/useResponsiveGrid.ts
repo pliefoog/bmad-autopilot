@@ -98,17 +98,13 @@ export const useResponsiveGrid = (
   }, [dimensions.width, dimensions.height]);
 
   // Calculate available space for dashboard content
+  // Note: pageIndicatorHeight NOT subtracted - pagination overlays bottom row
   const availableSpace = useMemo(() => {
     return {
-      width: dimensions.width - WIDGET_CONSTRAINTS.padding * 2,
-      height:
-        dimensions.height -
-        headerHeight -
-        footerHeight -
-        pageIndicatorHeight -
-        WIDGET_CONSTRAINTS.padding * 2,
+      width: dimensions.width,  // Full width (no horizontal padding)
+      height: dimensions.height - headerHeight - footerHeight,  // Pagination overlays widgets
     };
-  }, [dimensions, headerHeight, footerHeight, pageIndicatorHeight]);
+  }, [dimensions, headerHeight, footerHeight]);
 
   // Calculate grid layout based on platform and orientation
   const layout: GridLayout = useMemo(() => {
