@@ -88,7 +88,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
         xAxisPosition="top"
         yAxisDirection="down"
         showTimeLabels
-        showGrid
         strokeWidth={2}
         forceZero
       />

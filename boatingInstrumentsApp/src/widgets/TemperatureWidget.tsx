@@ -71,7 +71,6 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
         xAxisPosition="bottom"
         yAxisDirection="up"
         showTimeLabels
-        showGrid
         strokeWidth={2}
       />
       

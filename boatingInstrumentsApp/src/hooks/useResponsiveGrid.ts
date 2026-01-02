@@ -23,7 +23,7 @@ const GRID_DENSITY = {
     landscape: { cols: 2, rows: 1 }, // 2×1 grid
   },
   tablet: {
-    portrait: { cols: 2, rows: 2 }, // 2×2 grid (4 widgets)
+    portrait: { cols: 2, rows: 3 }, // 2×2 grid (4 widgets)
     landscape: { cols: 3, rows: 2 }, // 3×2 grid (6 widgets)
   },
   desktop: {
