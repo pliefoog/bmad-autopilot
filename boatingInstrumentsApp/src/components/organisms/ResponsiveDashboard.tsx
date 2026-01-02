@@ -15,6 +15,7 @@ import {
   type PageLayout,
 } from '../../utils/layoutUtils';
 import { log as logger } from '../../utils/logging/logger';
+import { WidgetVisibilityProvider } from '../../contexts/WidgetVisibilityContext';
 
 // Import widget components
 import { DepthWidget } from '../../widgets/DepthWidget';
@@ -304,28 +305,35 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
   // Widgets flow left-to-right, top-to-bottom based on widget store array order
+  // Wrapped with WidgetVisibilityProvider for render optimization
   const renderPage = useCallback(
     (pageLayout: PageLayout, pageIndex: number) => {
       return (
-        <View
+        <WidgetVisibilityProvider
           key={`page-${pageIndex}`}
-          style={[
-            styles.pageContainer,
-            {
-              width: scrollViewWidth,
-              height: responsiveGrid.layout.containerHeight,
-            },
-          ]}
-          testID={`dashboard-page-${pageIndex}`}
+          pageIndex={pageIndex}
+          currentPage={currentPage}
+          preloadBuffer={0} // Only render visible page (0 = no preload)
         >
-          {/* Widget grid - positioned via calculateGridPositions (row-by-row, left-to-right) */}
-          <View style={styles.gridContainer}>
-            {pageLayout.widgets.map((widgetId, index) => renderWidget(widgetId, index, pageLayout))}
+          <View
+            style={[
+              styles.pageContainer,
+              {
+                width: scrollViewWidth,
+                height: responsiveGrid.layout.containerHeight,
+              },
+            ]}
+            testID={`dashboard-page-${pageIndex}`}
+          >
+            {/* Widget grid - positioned via calculateGridPositions (row-by-row, left-to-right) */}
+            <View style={styles.gridContainer}>
+              {pageLayout.widgets.map((widgetId, index) => renderWidget(widgetId, index, pageLayout))}
+            </View>
           </View>
-        </View>
+        </WidgetVisibilityProvider>
       );
     },
-    [scrollViewWidth, responsiveGrid.layout.containerHeight, renderWidget],
+    [scrollViewWidth, responsiveGrid.layout.containerHeight, renderWidget, currentPage],
   );
 
   // AC 14: Empty State Display (auto-discovery handles widget creation)

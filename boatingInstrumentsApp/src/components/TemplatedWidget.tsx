@@ -20,6 +20,7 @@
 import React, { ReactElement } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SensorContext } from '../contexts/SensorContext';
+import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import type { SensorInstance } from '../types/SensorInstance';
 import type { SensorType } from '../types/SensorData';
 import { log } from '../utils/logging/logger';
@@ -108,6 +109,14 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   testID,
 }) => {
   const theme = useTheme();
+  
+  // Check widget visibility for render optimization
+  const { isVisible } = useWidgetVisibilityOptional();
+  
+  // Early return for off-screen widgets (prevent store subscriptions)
+  if (!isVisible) {
+    return null;
+  }
 
   // Measure widget dimensions using onLayout
   const [widgetDimensions, setWidgetDimensions] = React.useState({ width: 0, height: 0 });
