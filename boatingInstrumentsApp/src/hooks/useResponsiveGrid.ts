@@ -60,6 +60,7 @@ export interface ResponsiveGridState {
   screenWidth: number;
   screenHeight: number;
   layout: GridLayout;
+  isLoading: boolean;
 }
 
 /**
@@ -70,12 +71,16 @@ export const useResponsiveGrid = (
   headerHeight: number = 60,
 ): ResponsiveGridState => {
   const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
+  const [isLoading, setIsLoading] = useState(true);
 
   // AC 4: Real-time adaptation to screen rotation and window resize events
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setDimensions(window);
     });
+
+    // Mark as loaded after first render - gives stores time to initialize
+    setIsLoading(false);
 
     return () => subscription?.remove();
   }, []);
@@ -142,6 +147,7 @@ export const useResponsiveGrid = (
     screenWidth: dimensions.width,
     screenHeight: dimensions.height,
     layout,
+    isLoading,
   };
 };
 

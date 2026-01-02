@@ -8,7 +8,6 @@ import {
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useResponsiveGrid, type ResponsiveGridState } from '../../hooks/useResponsiveGrid';
-import { useStoreReady } from '../../hooks/useStoreReady';
 import { PaginationDots } from '../molecules/PaginationDots';
 import {
   calculatePageLayouts,
@@ -60,15 +59,24 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Store readiness check - prevent widgets from mounting until store is initialized
-  const isStoreReady = useStoreReady();
+  // Responsive grid system (AC 1-5)
+  const responsiveGrid: ResponsiveGridState = useResponsiveGrid(headerHeight);
+
+  // Wait for grid to be ready (gives stores time to initialize on first render)
+  if (responsiveGrid.isLoading) {
+    return (
+      <View style={[styles.container, styles.emptyStateContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.text} />
+        <Text style={[styles.emptyStateText, { color: theme.textSecondary, marginTop: 16 }]}>
+          Initializing...
+        </Text>
+      </View>
+    );
+  }
 
   // Widget store integration - use actual widget array
   const dashboard = useWidgetStore((state) => state.dashboard);
   const widgets = useMemo(() => dashboard?.widgets || [], [dashboard?.widgets]);
-
-  // Responsive grid system (AC 1-5)
-  const responsiveGrid: ResponsiveGridState = useResponsiveGrid(headerHeight);
 
   // Local page state management
   const [currentPage, setCurrentPage] = useState(0);
@@ -337,18 +345,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     },
     [scrollViewWidth, responsiveGrid.layout.containerHeight, renderWidget, currentPage],
   );
-
-  // Store initialization guard - wait for store to be ready
-  if (!isStoreReady) {
-    return (
-      <View style={[styles.container, styles.emptyStateContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.text} />
-        <Text style={[styles.emptyStateText, { color: theme.textSecondary, marginTop: 16 }]}>
-          Initializing...
-        </Text>
-      </View>
-    );
-  }
 
   // AC 14: Empty State Display (auto-discovery handles widget creation)
   if (widgets.length === 0) {
