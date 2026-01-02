@@ -112,6 +112,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Calculate layout constraints and page layouts - memoized for performance
   // Uses widget store array order as source of truth (array index = display position)
   const { pageLayouts, totalPages } = React.useMemo(() => {
+    // Don't calculate layouts while loading (prevents accessing uninitialized stores)
+    if (responsiveGrid.isLoading || widgets.length === 0) {
+      return { pageLayouts: [], totalPages: 0 };
+    }
+
     // useResponsiveGrid already calculated optimal cellWidth and cellHeight
     // It accounts for gaps: cellWidth = (containerWidth - totalGapWidth) / cols
     // where totalGapWidth = (cols - 1) * gap
@@ -144,6 +149,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     }));
     return { pageLayouts: layouts, totalPages: layouts.length };
   }, [
+    responsiveGrid.isLoading,
     widgets,
     responsiveGrid.layout.containerWidth,
     responsiveGrid.layout.containerHeight,
