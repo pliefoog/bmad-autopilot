@@ -220,6 +220,7 @@ export const useNmeaStore = create<NmeaStore>()(
             return;
           }
 
+          const now = Date.now();
           const currentState = get();
           const isNewInstance = !currentState.nmeaData.sensors[sensorType]?.[instance];
 
