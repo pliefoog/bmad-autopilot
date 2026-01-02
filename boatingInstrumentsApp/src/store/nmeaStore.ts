@@ -116,8 +116,7 @@ interface NmeaStore {
   performFactoryReset: () => void;
 }
 
-// Throttle map to prevent rapid duplicate updates
-const lastUpdateTimes = new Map<string, number>();
+// Alarm evaluation throttle to prevent excessive re-evaluation
 const ALARM_EVALUATION_THROTTLE_MS = 1000;
 let lastAlarmEvaluation = 0;
 
@@ -212,26 +211,17 @@ export const useNmeaStore = create<NmeaStore>()(
           instance: number,
           data: Partial<SensorData>,
         ) => {
-          // Throttle duplicate updates to prevent infinite render loops
-          // Battery sensors need lower throttle to handle rapid XDR bursts (4 messages in ~10ms)
-          // Engine sensors still need 50ms throttle for 20Hz updates
-          const updateKey = `${sensorType}-${instance}`;
-          const now = Date.now();
-          const lastUpdate = lastUpdateTimes.get(updateKey);
-          const throttleMs = sensorType === 'engine' ? 50 : sensorType === 'battery' ? 5 : 100;
-
-          if (lastUpdate && now - lastUpdate < throttleMs) {
-            return;
-          }
-          lastUpdateTimes.set(updateKey, now);
-
-          const currentState = get();
-          const isNewInstance = !currentState.nmeaData.sensors[sensorType]?.[instance];
+          // ARCHITECTURE v2.0: No throttling needed with version-based subscriptions
+          // Each metric has its own version counter - only affected cells re-render
+          // Version only increments when value actually changes (handled in updateMetrics)
           
-          // CRITICAL: Only proceed if we have actual data to update
+          // Skip empty updates
           if (!data || Object.keys(data).length === 0) {
             return;
           }
+
+          const currentState = get();
+          const isNewInstance = !currentState.nmeaData.sensors[sensorType]?.[instance];
 
           // Get or create sensor instance
           let sensorInstance = currentState.nmeaData.sensors[sensorType]?.[instance];
