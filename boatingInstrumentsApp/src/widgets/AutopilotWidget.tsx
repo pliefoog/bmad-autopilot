@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { TemplatedWidget } from '../components/TemplatedWidget';
-import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { useNmeaStore } from '../store/nmeaStore';
@@ -34,14 +33,6 @@ interface AutopilotWidgetProps {
  * **Layout:** 2Rx2C primary (HDG/TGT, RUDR/TURN) + 2Rx2C secondary (MODE/HDG SRC with full-width)
  */
 export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id }) => {
-  // Check visibility before any store subscriptions
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
-  if (!isVisible) {
-    return null;
-  }
-
 
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {

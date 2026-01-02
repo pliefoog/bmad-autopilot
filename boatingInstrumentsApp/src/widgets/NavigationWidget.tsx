@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
 import TemplatedWidget from '../components/TemplatedWidget';
-import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -20,14 +19,6 @@ interface NavigationWidgetProps {
  */
 export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(
   ({ id }) => {
-  // Check visibility before any store subscriptions
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
-  if (!isVisible) {
-    return null;
-  }
-
 
     const navigationInstance = useNmeaStore(
       (state) => state.nmeaData.sensors.navigation?.[0]

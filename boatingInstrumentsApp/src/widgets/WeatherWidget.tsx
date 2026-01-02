@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
 import TemplatedWidget from '../components/TemplatedWidget';
-import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import TrendLine from '../components/TrendLine';
 
@@ -25,14 +24,6 @@ interface WeatherWidgetProps {
  */
 export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
   ({ id }) => {
-  // Check visibility before any store subscriptions
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
-  if (!isVisible) {
-    return null;
-  }
-
 
     // Extract instance number from widget ID (e.g., "weather-0" → 0)
     const instanceNumber = useMemo(() => {

@@ -306,8 +306,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Render page content (AC 2: Dynamic Layout Algorithm)
   // Widgets flow left-to-right, top-to-bottom based on widget store array order
   // Wrapped with WidgetVisibilityProvider for render optimization
+  // Note: Widgets stay mounted but hidden with pointerEvents/opacity to prevent hook order issues
   const renderPage = useCallback(
     (pageLayout: PageLayout, pageIndex: number) => {
+      const isPageVisible = pageIndex === currentPage;
+      
       return (
         <WidgetVisibilityProvider
           key={`page-${pageIndex}`}
@@ -321,6 +324,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               {
                 width: scrollViewWidth,
                 height: responsiveGrid.layout.containerHeight,
+                // Hide off-screen pages but keep them mounted to prevent hook order issues
+                opacity: isPageVisible ? 1 : 0,
+                pointerEvents: isPageVisible ? 'auto' : 'none',
               },
             ]}
             testID={`dashboard-page-${pageIndex}`}

@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
-import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import { useNmeaStore } from '../store/nmeaStore';
 import { EmptyCell } from 'components/EmptyCell';
 
@@ -37,14 +36,6 @@ interface BatteryWidgetProps {
  * **Layout:** 2Rx2C primary (VLT, AMP, TMP, SOC) + 2Rx2C secondary (CAP, CHEM, NOM, NAME)
  */
 export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) => {
-  // Check visibility before any store subscriptions
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
-  if (!isVisible) {
-    return null;
-  }
-
 
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {

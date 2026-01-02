@@ -4,7 +4,6 @@ import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useTheme } from '../store/themeStore';
 import { TemplatedWidget } from '../components/TemplatedWidget';
-import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 
 interface RudderWidgetProps {
@@ -37,14 +36,6 @@ interface RudderWidgetProps {
  */
 export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
   ({ id }) => {
-  // Check visibility before any store subscriptions
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
-  if (!isVisible) {
-    return null;
-  }
-
 
     const theme = useTheme();
 

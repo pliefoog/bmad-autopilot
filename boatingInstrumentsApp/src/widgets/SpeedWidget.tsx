@@ -3,7 +3,6 @@ import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
-import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 
 interface SpeedWidgetProps {
   id: string;
@@ -51,14 +50,6 @@ interface SpeedWidgetProps {
  * - Virtual metrics work with both: `sensorKey="gps" metricKey="speedOverGround.max"`
  */
 export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
-  // Check visibility before any store subscriptions
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
-  if (!isVisible) {
-    return null;
-  }
-
 
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {
