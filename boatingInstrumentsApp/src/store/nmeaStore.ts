@@ -483,12 +483,8 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
 
           log.app('Factory reset complete - all sensor data cleared');
         },
-      }),
-    {
-      name: 'NMEA Store v3 (volatile)',
-      enabled: __DEV__,
-    }),
-);
+      })
+));
 
 /**
  * Initialize ReEnrichmentCoordinator and SensorConfigCoordinator
