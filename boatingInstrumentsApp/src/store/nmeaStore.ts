@@ -220,6 +220,15 @@ export const useNmeaStore = create<NmeaStore>()(
             return;
           }
 
+          // DEBUG: Log incoming battery updates
+          if (sensorType === 'battery') {
+            log.battery(`📥 updateSensorData called`, () => ({
+              instance,
+              fields: Object.keys(data),
+              data: { ...data }
+            }));
+          }
+
           const now = Date.now();
           const currentState = get();
           const isNewInstance = !currentState.nmeaData.sensors[sensorType]?.[instance];
@@ -245,6 +254,17 @@ export const useNmeaStore = create<NmeaStore>()(
 
           // Update metrics - returns true if any values actually changed
           const hasChanges = sensorInstance.updateMetrics(data);
+
+          // DEBUG: Log battery metric updates
+          if (sensorType === 'battery') {
+            log.battery(`📝 updateMetrics result`, () => ({
+              hasChanges,
+              voltage: sensorInstance.getMetric('voltage')?.si_value,
+              current: sensorInstance.getMetric('current')?.si_value,
+              temperature: sensorInstance.getMetric('temperature')?.si_value,
+              stateOfCharge: sensorInstance.getMetric('stateOfCharge')?.si_value,
+            }));
+          }
 
           // Calculate derived metrics for wind sensor after primary updates
           if (sensorType === 'wind' && hasChanges) {
