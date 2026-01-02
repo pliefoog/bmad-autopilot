@@ -120,6 +120,12 @@ interface NmeaStore {
 const ALARM_EVALUATION_THROTTLE_MS = 1000;
 let lastAlarmEvaluation = 0;
 
+// Update throttle to prevent infinite loops from rapid setState calls
+// React has a limit of ~50 nested updates before throwing "Maximum update depth exceeded"
+const UPDATE_THROTTLE_MS = 10; // Allow max 100 updates/second per sensor
+const lastUpdateTime = new Map<string, number>(); // Track last update per sensor instance
+let lastAlarmEvaluation = 0;
+
 /**
  * Evaluate alarms from all sensor instances
  * SensorInstance provides getAlarmState(metricKey) returning numeric 0|1|2|3
@@ -219,9 +225,17 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
           instance: number,
           data: Partial<SensorData>,
         ) => {
-          // ARCHITECTURE v2.0: No throttling needed with version-based subscriptions
-          // Each metric has its own version counter - only affected cells re-render
-          // Version only increments when value actually changes (handled in updateMetrics)
+          // CRITICAL: Throttle updates to prevent infinite loop
+          // React throws "Maximum update depth exceeded" after ~50 nested setState calls
+          const sensorKey = `${sensorType}.${instance}`;
+          const now = Date.now();
+          const lastUpdate = lastUpdateTime.get(sensorKey) || 0;
+          
+          if (now - lastUpdate < UPDATE_THROTTLE_MS) {
+            // Too soon since last update - drop this update
+            return;
+          }
+          lastUpdateTime.set(sensorKey, now);
           
           // Skip empty updates
           if (!data || Object.keys(data).length === 0) {
