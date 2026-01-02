@@ -213,11 +213,12 @@ export const useNmeaStore = create<NmeaStore>()(
           data: Partial<SensorData>,
         ) => {
           // Throttle duplicate updates to prevent infinite render loops
-          // Even fast-updating sensors like engine need throttling (50ms = 20 updates/sec max)
+          // Battery sensors need lower throttle to handle rapid XDR bursts (4 messages in ~10ms)
+          // Engine sensors still need 50ms throttle for 20Hz updates
           const updateKey = `${sensorType}-${instance}`;
           const now = Date.now();
           const lastUpdate = lastUpdateTimes.get(updateKey);
-          const throttleMs = sensorType === 'engine' ? 50 : 100;
+          const throttleMs = sensorType === 'engine' ? 50 : sensorType === 'battery' ? 5 : 100;
 
           if (lastUpdate && now - lastUpdate < throttleMs) {
             return;
