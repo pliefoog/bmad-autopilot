@@ -163,10 +163,9 @@ function evaluateAlarms(sensors: SensorsData): Alarm[] {
 /**
  * Create NMEA Store with SensorInstance architecture
  * Note: No persistence - NMEA data is volatile stream data
+ * TEMP: Devtools disabled to debug infinite loop
  */
-export const useNmeaStore = create<NmeaStore>()(
-  devtools(
-    (set, get) => ({
+export const useNmeaStore = create<NmeaStore>()((set, get) => ({
         // Initial state
         connectionStatus: 'disconnected',
         nmeaData: {
@@ -488,8 +487,7 @@ export const useNmeaStore = create<NmeaStore>()(
     {
       name: 'NMEA Store v3 (volatile)',
       enabled: __DEV__,
-    },
-  ),
+    }),
 );
 
 /**
