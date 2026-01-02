@@ -1,17 +1,17 @@
 /**
  * TemplatedWidget - Registry-First Declarative Widget Renderer
- * 
+ *
  * Renders widgets using grid templates and auto-fetch metric cells.
  * Eliminates 200+ lines of boilerplate from each widget by providing:
  * - Grid template lookup and rendering
  * - SensorContext provision to all cells
  * - Cell count validation
  * - Error boundary for graceful failures
- * 
+ *
  * **Registry-First Architecture:**
  * Widgets are now pure configuration - just specify template + metric keys.
  * All layout, data fetching, and display logic handled here.
- * 
+ *
  * **For AI Agents:**
  * This is the foundation of declarative widgets. Widgets become simple
  * configuration with template name and list of metric keys.
@@ -46,7 +46,7 @@ const NORMAL_WRAPPER_BORDER = 1;
 interface AdditionalSensor {
   /** Sensor type identifier (gps, speed, etc.) */
   sensorType: SensorType;
-  
+
   /** Explicit instance number to use */
   instance: number;
 }
@@ -75,7 +75,7 @@ interface TemplatedWidgetProps {
 
   /**
    * Additional sensors for multi-sensor widgets (e.g., SpeedWidget needs both speed + gps)
-   * 
+   *
    * TODO: Implement master instance selection mechanism
    * Currently requires explicit instance numbers. Future enhancement:
    * - Add sensor priority/master designation in settingsStore
@@ -94,7 +94,7 @@ interface TemplatedWidgetProps {
 
 /**
  * TemplatedWidget Component
- * 
+ *
  * Renders a widget using a grid template and auto-fetch metric cells.
  */
 export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
@@ -112,7 +112,7 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 
   // Measure widget dimensions using onLayout
   const [widgetDimensions, setWidgetDimensions] = React.useState({ width: 0, height: 0 });
-  
+
   const handleWidgetLayout = (event: any) => {
     const { width, height } = event.nativeEvent.layout;
     if (width !== widgetDimensions.width || height !== widgetDimensions.height) {
@@ -123,19 +123,20 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   // Get widget metadata for header
   const widgetMetadata = WIDGET_METADATA_REGISTRY[widgetId ?? sensorType];
   const instanceNumber = sensorInstance?.instance ?? 0;
-  
+
   // Get sensor name from metrics (user-defined or default "sensorType-instance")
   const sensorName = React.useMemo(() => {
     if (!sensorInstance) return undefined;
     const nameMetric = sensorInstance.getMetric('name');
     return nameMetric?.formattedValue;
   }, [sensorInstance]);
-  
+
   // Build header title: "Battery - House Bank" or "Battery 2 - battery-1"
-  const baseTitle = widgetMetadata?.type === 'multi' && instanceNumber > 0
-    ? `${widgetMetadata.title} ${instanceNumber + 1}`
-    : widgetMetadata?.title ?? sensorType.toUpperCase();
-  
+  const baseTitle =
+    widgetMetadata?.type === 'multi' && instanceNumber > 0
+      ? `${widgetMetadata.title} ${instanceNumber + 1}`
+      : widgetMetadata?.title ?? sensorType.toUpperCase();
+
   const headerTitle = sensorName ? `${baseTitle} - ${sensorName}` : baseTitle;
 
   // Normalize children to array
@@ -152,18 +153,18 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
     if (!additionalSensors || additionalSensors.length === 0) {
       return undefined;
     }
-    
+
     const map = new Map<SensorType, SensorInstance | null | undefined>();
-    
+
     // Import useNmeaStore dynamically to avoid circular dependencies
     const { useNmeaStore } = require('../store/nmeaStore');
     const nmeaState = useNmeaStore.getState();
-    
+
     additionalSensors.forEach(({ sensorType: addlSensorType, instance }) => {
       const addlInstance = nmeaState.nmeaData.sensors[addlSensorType]?.[instance];
       map.set(addlSensorType, addlInstance);
     });
-    
+
     return map;
   }, [additionalSensors]);
 
@@ -178,41 +179,47 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   const secondaryChildren = childArray.slice(primaryCellCount);
 
   // Calculate row dimensions (like UnifiedWidgetGrid did)
-  const headerFooterHeight = Math.max(30, widgetDimensions.height * 0.10);
+  const headerFooterHeight = Math.max(30, widgetDimensions.height * 0.1);
   const footerHeight = headerFooterHeight / 3;
   const gridPadding = 12;
   const separatorHeight = template.showSeparator && template.secondaryGrid ? 1 : 0;
   const separatorMargin = template.showSeparator && template.secondaryGrid ? 24 : 0; // 12px top + 12px bottom
-  
-  const availableGridHeight = widgetDimensions.height - headerFooterHeight - footerHeight - (gridPadding * 2) - separatorHeight - separatorMargin;
-  
+
+  const availableGridHeight =
+    widgetDimensions.height -
+    headerFooterHeight -
+    footerHeight -
+    gridPadding * 2 -
+    separatorHeight -
+    separatorMargin;
+
   // Total rows across both sections
   const totalRows = template.primaryGrid.rows + (template.secondaryGrid?.rows || 0);
   const rowGap = 8;
-  const sectionGap = (template.secondaryGrid && template.primaryGrid.rows > 0) ? 8 : 0;
-  const totalRowGaps = ((totalRows - 1) * rowGap) + sectionGap;
-  
+  const sectionGap = template.secondaryGrid && template.primaryGrid.rows > 0 ? 8 : 0;
+  const totalRowGaps = (totalRows - 1) * rowGap + sectionGap;
+
   // Calculate row height - all rows get equal height
   const rowHeight = totalRows > 0 ? (availableGridHeight - totalRowGaps) / totalRows : 60;
 
   // Calculate available width for grid (subtract wrapper borders)
   // widgetDimensions.width includes wrapper borders (box-sizing: border-box)
   const wrapperBorderWidth = debugLayout ? DEBUG_WRAPPER_BORDER : NORMAL_WRAPPER_BORDER;
-  const availableWidgetWidth = widgetDimensions.width - (wrapperBorderWidth * 2);
+  const availableWidgetWidth = widgetDimensions.width - wrapperBorderWidth * 2;
 
   // Create styles
   const styles = createStyles(theme, debugLayout);
 
   return (
-    <SensorContext.Provider 
-      value={{ 
-        sensorInstance, 
+    <SensorContext.Provider
+      value={{
+        sensorInstance,
         sensorType,
         additionalSensors: additionalSensorsMap,
       }}
     >
-      <View 
-        style={[styles.wrapper, style]} 
+      <View
+        style={[styles.wrapper, style]}
         testID={testID || `widget-${sensorType}`}
         onLayout={handleWidgetLayout}
       >
@@ -276,7 +283,7 @@ interface GridSectionRendererProps {
 
 /**
  * GridSectionRenderer - Renders a grid section (primary or secondary)
- * 
+ *
  * Creates the grid layout and injects spatial props (maxWidth, cellHeight)
  * into each cell for responsive sizing.
  */
@@ -295,22 +302,23 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
   // Note: gridContainer already has padding: 12, so available width is reduced by 24px
   const { rows, columns } = section;
   const GRID_PADDING = 12; // Must match gridContainer padding in styles
-  
+
   // Account for debug borders if enabled (React Native uses box-sizing: border-box)
   const gridBorderWidth = debugLayout ? DEBUG_GRID_BORDER : 0;
   const cellBorderWidth = debugLayout ? DEBUG_CELL_BORDER : 0;
-  
-  let availableWidth = widgetWidth - (GRID_PADDING * 2) - (gridBorderWidth * 2); // Width inside gridContainer minus grid borders
-  
+
+  let availableWidth = widgetWidth - GRID_PADDING * 2 - gridBorderWidth * 2; // Width inside gridContainer minus grid borders
+
   const colGap = 8;
-  
+
   // Calculate width for each cell (border-box: borders are included)
-  const cellWidth = columns === 1 
-    ? availableWidth  // Single column takes full width (borders included)
-    : (availableWidth - colGap) / 2;  // Two columns share width minus gap
-  
+  const cellWidth =
+    columns === 1
+      ? availableWidth // Single column takes full width (borders included)
+      : (availableWidth - colGap) / 2; // Two columns share width minus gap
+
   // Child component receives content width (accounting for cell borders)
-  const contentWidth = cellWidth - (cellBorderWidth * 2);
+  const contentWidth = cellWidth - cellBorderWidth * 2;
 
   // Create row groups
   const { cellSpans } = section;
@@ -321,21 +329,21 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
       const cellIndex = row * columns + col;
       if (cellIndex < children.length) {
         const cell = children[cellIndex];
-        
+
         // Check if this cell should span full width
         const shouldSpan = cellSpans?.includes(cellIndex) ?? false;
-        
+
         // Clone element and inject dimensions
         // Child fills wrapper's content area (cellWidth is already the content area)
         const enhancedCell = React.cloneElement(cell as ReactElement<any>, {
           cellWidth: contentWidth,
           cellHeight: rowHeight,
         });
-        
+
         // Wrap cell in container View for proper constraint
         const isSingleColumn = columns === 1;
         const cellWithContainer = (
-          <View 
+          <View
             key={`cell-${cellIndex}`}
             style={[
               styles.cell,
@@ -347,7 +355,7 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
             {enhancedCell}
           </View>
         );
-        
+
         rowCells.push(cellWithContainer);
       }
     }
