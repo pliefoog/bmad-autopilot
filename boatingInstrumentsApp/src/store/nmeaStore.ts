@@ -493,7 +493,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
           log.app('Factory reset complete - all sensor data cleared');
         },
       })
-));
+);
 
 /**
  * Initialize ReEnrichmentCoordinator and SensorConfigCoordinator
