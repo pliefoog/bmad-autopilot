@@ -109,14 +109,6 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   testID,
 }) => {
   const theme = useTheme();
-  
-  // Check widget visibility for render optimization
-  const { isVisible } = useWidgetVisibilityOptional();
-  
-  // Early return for off-screen widgets (prevent store subscriptions)
-  if (!isVisible) {
-    return null;
-  }
 
   // Measure widget dimensions using onLayout
   const [widgetDimensions, setWidgetDimensions] = React.useState({ width: 0, height: 0 });

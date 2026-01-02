@@ -4,6 +4,7 @@ import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
+import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 
 interface DepthWidgetProps {
   id: string;
@@ -50,6 +51,14 @@ interface DepthWidgetProps {
  * - Can render trends of min/max/avg values: `<TrendLine metricKey="depth.max" />`
  */
 export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
+  // Check visibility before any store subscriptions
+  const { isVisible } = useWidgetVisibilityOptional();
+  
+  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
+  if (!isVisible) {
+    return null;
+  }
+
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {
     const match = id.match(/depth-(\d+)/);

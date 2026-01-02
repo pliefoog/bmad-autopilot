@@ -4,6 +4,7 @@ import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
+import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 
 interface TemperatureWidgetProps {
   id: string;
@@ -34,6 +35,15 @@ interface TemperatureWidgetProps {
  * Instance number extracted from widget ID (e.g., "temp-0", "temperature-1")
  */
 export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({ id }) => {
+  // Check visibility before any store subscriptions
+  const { isVisible } = useWidgetVisibilityOptional();
+  
+  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
+  if (!isVisible) {
+    return null;
+  }
+
+
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {
     const match = id.match(/temp(?:erature)?-(\d+)/);

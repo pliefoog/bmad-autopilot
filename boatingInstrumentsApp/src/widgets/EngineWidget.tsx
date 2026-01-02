@@ -3,6 +3,7 @@ import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
+import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 
 interface EngineWidgetProps {
   id: string;
@@ -27,6 +28,15 @@ interface EngineWidgetProps {
  * **Layout:** 2Rx2C primary (RPM, ECT, EOP, ALT) + 2Rx1C-WIDE secondary (FLOW, EHR full-width)
  */
 export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id }) => {
+  // Check visibility before any store subscriptions
+  const { isVisible } = useWidgetVisibilityOptional();
+  
+  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
+  if (!isVisible) {
+    return null;
+  }
+
+
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {
     const match = id.match(/engine-(\d+)/);

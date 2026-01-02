@@ -40,6 +40,7 @@ import { useWidgetStore } from '../store/widgetStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
+import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import { getWidgetComponent } from '../registry/WidgetComponentRegistry';
 import { getGridTemplate } from '../registry/GridTemplateRegistry';
 import type { CustomWidgetDefinition, CellDefinition } from '../config/defaultCustomWidgets';
@@ -151,6 +152,15 @@ function renderCell(
  * 6. Pass to TemplatedWidget
  */
 export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
+  // Check visibility before any store subscriptions
+  const { isVisible } = useWidgetVisibilityOptional();
+  
+  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
+  if (!isVisible) {
+    return null;
+  }
+
+
   // Get custom widget definition from widget settings
   const widgetConfig = useWidgetStore((state) =>
     state.dashboard?.widgets?.find((w) => w.id === id),

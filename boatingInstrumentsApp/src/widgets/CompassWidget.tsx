@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
 import { TemplatedWidget } from '../components/TemplatedWidget';
+import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -34,6 +35,15 @@ interface CompassWidgetProps {
  */
 export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(
   ({ id }) => {
+  // Check visibility before any store subscriptions
+  const { isVisible } = useWidgetVisibilityOptional();
+  
+  // Early return for off-screen widgets (prevents all hooks/subscriptions below)
+  if (!isVisible) {
+    return null;
+  }
+
+
     // Extract instance number from widget ID
     const instanceNumber = useMemo(() => {
       const match = id.match(/compass-(\d+)/);
