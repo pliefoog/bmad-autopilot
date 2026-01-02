@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useSensorVersion } from '../hooks/useMetric';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
@@ -42,10 +41,8 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) =
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Subscribe to sensor version (triggers re-render when ANY battery metric changes)
-  const sensorVersion = useSensorVersion('battery', instanceNumber);
-
-  // Get SensorInstance - single source of truth
+  // Get SensorInstance for context (MetricCells subscribe individually)
+  // Widget no longer needs subscription - cells handle their own reactivity
   const batterySensorInstance = useNmeaStore(
     (state) => state.nmeaData.sensors.battery?.[instanceNumber]
   );

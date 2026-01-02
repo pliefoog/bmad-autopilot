@@ -8,6 +8,7 @@ import type { SensorType } from '../types/SensorData';
 import { useSensorContext } from '../contexts/SensorContext';
 import { getSensorField } from '../registry/SensorConfigRegistry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
+import { useMetric } from '../hooks/useMetric';
 
 /**
  * SecondaryMetricCell Props
@@ -81,12 +82,26 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Auto-fetch sensor data from context (primary or secondary sensor)
+  // Get sensor context for type and instance information
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
   
-  // Auto-fetch metric value from sensor instance
-  // Supports virtual metrics like 'depth.min', 'depth.max', 'depth.avg'
-  const metricValue = sensorInstance?.getMetric(metricKey);
+  // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
+  // This triggers re-render ONLY when THIS metric's version changes
+  const instance = sensorInstance?.instance ?? 0;
+  const subscribedMetric = useMetric(sensorType, instance, metricKey);
+  
+  // Fallback to context-based metric access if subscription not ready
+  const contextMetric = sensorInstance?.getMetric(metricKey);
+  
+  // Use subscribed metric if available, otherwise fallback to context
+  const metricValue = subscribedMetric ? {
+    formattedValue: subscribedMetric.formattedValue,
+    formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
+    unit: subscribedMetric.unit,
+    si_value: subscribedMetric.si_value,
+    value: subscribedMetric.value,
+    timestamp: subscribedMetric.timestamp,
+  } : contextMetric;
   
   // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
   const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');
@@ -151,7 +166,8 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     return '';
   }, [fieldConfig?.valueType, fieldConfig?.unitType, metricValue?.unit]);
   
-  const alarmLevel: AlarmLevel = sensorInstance?.getAlarmState(metricKey) ?? 0;
+  // Use alarm state from subscription if available, otherwise from context
+  const alarmLevel: AlarmLevel = subscribedMetric?.alarmState ?? sensorInstance?.getAlarmState(metricKey) ?? 0;
 
   const displayValue = value;
 
