@@ -459,8 +459,17 @@ export class PureStoreUpdater {
 
   /**
    * Apply sensor updates from NmeaSensorProcessor to NMEA Store v2.0
-   * CRITICAL FIX: Merge multiple updates for same sensor/instance before throttling
-   * This ensures XDR sentences with multiple measurements (temp+pressure+voltage) don't lose data
+   * 
+   * ARCHITECTURE v2.0: NO MERGING - Each update passes through independently
+   * - Each NMEA message → one metric update → immediate updateSensorData call
+   * - No accumulation, no batching, no merging across updates
+   * - SensorInstance handles versioning, history, and change detection
+   * - Version counters only increment when values actually change
+   * 
+   * WHY NO MERGING:
+   * - Battery XDR sends 4 separate messages (V/I/C/P) that should trigger 4 separate updates
+   * - Merging causes: "fields: Array(3)" instead of "fields: Array(1)"
+   * - Each metric should update independently to trigger fine-grained subscriptions
    */
   private applySensorUpdates(updates: SensorUpdate[], options: UpdateOptions = {}): UpdateResult {
     const updatedFields: string[] = [];
@@ -468,26 +477,9 @@ export class PureStoreUpdater {
 
     const { throttleMs = this.DEFAULT_THROTTLE_MS, skipThrottling = false } = options;
 
-    // CRITICAL: Merge updates for same sensor/instance to prevent data loss
-    // XDR sentences often contain multiple measurements (coolantTemp, oilPressure, voltage)
-    // that arrive as separate updates but should be applied together
-    const mergedUpdates = new Map<string, SensorUpdate>();
-
+    // Apply each update independently with field-specific throttling
     for (const update of updates) {
       const fieldKey = `${update.sensorType}.${update.instance}`;
-
-      if (mergedUpdates.has(fieldKey)) {
-        // Merge data fields from this update into existing update
-        const existing = mergedUpdates.get(fieldKey)!;
-        existing.data = { ...existing.data, ...update.data };
-      } else {
-        // First update for this sensor/instance
-        mergedUpdates.set(fieldKey, { ...update, data: { ...update.data } });
-      }
-    }
-
-    // Apply merged updates with field-specific throttling
-    for (const [fieldKey, update] of mergedUpdates.entries()) {
       // Use field-specific throttle settings (engine=0ms, wind/gps=500ms, depth=1500ms, etc.)
       const fieldThrottle = this.getFieldThrottleMs(update.sensorType);
       const effectiveThrottle = skipThrottling ? 0 : fieldThrottle;

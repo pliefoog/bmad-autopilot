@@ -255,7 +255,7 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
                     />
                   </View>
                 )}
-                {rowIndex < rows.length - 1 && !isPrimaryEnd && <View style={{ height: rowGap }} />}
+                {rowIndex < rows.length - 1 && !isPrimaryEnd ? <View style={{ height: rowGap }} /> : null}
               </React.Fragment>
             );
           })}

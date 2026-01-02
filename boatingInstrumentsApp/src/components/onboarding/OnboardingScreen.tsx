@@ -186,7 +186,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         </View>
 
         {/* Embedded Connection Dialog - Only shows on Step 2 */}
-        {currentStep === 'connection' && showConnectionDialog && (
+        {currentStep === 'connection' && showConnectionDialog ? (
           <ConnectionConfigDialog
             visible={showConnectionDialog}
             onClose={() => setShowConnectionDialog(false)}
@@ -194,7 +194,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             currentConfig={getConnectionDefaults()}
             isEmbedded={true}
           />
-        )}
+        ) : null}
       </SafeAreaView>
     </Modal>
   );
@@ -277,7 +277,7 @@ const ConnectionStep: React.FC<ConnectionStepProps> = ({
         your boat's instruments.
       </Text>
 
-      {!showDialog && !connectionTested && (
+      {!showDialog && !connectionTested ? (
         <>
           <View style={styles.instructionList}>
             <InstructionItem
@@ -316,7 +316,7 @@ const ConnectionStep: React.FC<ConnectionStepProps> = ({
             </Text>
           </TouchableOpacity>
         </>
-      )}
+      ) : null}
       {connectionTested && (
         <View style={[styles.successBanner, { backgroundColor: theme.success + '20' }]}>
           <Ionicons name="checkmark-circle" size={32} color={theme.success} />

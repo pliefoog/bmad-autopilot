@@ -208,7 +208,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
                 ))}
               </View>
             )}
-            {relatedTopics && relatedTopics.length > 0 && (
+            {relatedTopics && relatedTopics.length > 0 ? (
               <View style={styles.relatedContainer}>
                 <Text
                   style={[styles.relatedTitle, { color: theme.textSecondary }]}
@@ -234,7 +234,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
                   </TouchableOpacity>
                 ))}
               </View>
-            )}
+            ) : null}
           </ScrollView>
         </TouchableOpacity>
       </TouchableOpacity>

@@ -291,15 +291,9 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         label: 'Battery Chemistry',
         mnemonic: 'CHEM',
         valueType: 'string',
-        uiType: 'picker',
+        uiType: 'textInput',
         iostate: 'readOnlyIfValue',
-        options: [
-          { label: 'Lead Acid', value: 'lead-acid', default: true },
-          { label: 'AGM', value: 'agm' },
-          { label: 'Gel', value: 'gel' },
-          { label: 'LiFePO4', value: 'lifepo4' },
-        ],
-        helpText: 'Battery chemistry type. Hardware may provide this value.',
+        helpText: 'Battery chemistry type from hardware (e.g., AGM, FLA, LiFePO4).',
       },
       {
         key: 'capacity',

@@ -353,7 +353,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
               </View>
             </View>
           )}
-          {suggestions && suggestions.length > 0 && (
+          {suggestions && suggestions.length > 0 ? (
             <View style={styles(theme).suggestionsInfo}>
               <Text style={styles(theme).suggestionsTitle}>Suggestions:</Text>
               {suggestions.map((suggestion, index) => (
@@ -362,7 +362,7 @@ export class DataErrorBoundary extends BaseErrorBoundary {
                 </Text>
               ))}
             </View>
-          )}
+          ) : null}
           {__DEV__ && (
             <View style={styles(theme).dataDebugInfo}>
               <Text style={styles(theme).debugTitle}>Debug Info:</Text>

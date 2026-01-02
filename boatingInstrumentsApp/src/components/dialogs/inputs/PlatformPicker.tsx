@@ -332,7 +332,7 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
   if (Platform.OS === 'ios') {
     return (
       <View style={styles.container} testID={testID}>
-        {label && label.trim() !== '' && <Text style={styles.label}>{label}</Text>}
+        {label && label.trim() !== '' ? <Text style={styles.label}>{label}</Text> : null}
 
         <TouchableOpacity
           onPress={() => !disabled && setShowPicker(true)}
@@ -383,7 +383,7 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
   if (Platform.OS === 'android') {
     return (
       <View style={[styles.container, disabled && styles.disabled]} testID={testID}>
-        {label && label.trim() !== '' && <Text style={styles.label}>{label}</Text>}
+        {label && label.trim() !== '' ? <Text style={styles.label}>{label}</Text> : null}
         <View style={[styles.pickerContainer, { height: touchTargetSize }]}>
           <Picker
             selectedValue={value}
@@ -404,7 +404,7 @@ export const PlatformPicker: React.FC<PlatformPickerProps> = ({
   // Web: Custom dropdown
   return (
     <View style={[styles.container, disabled && styles.disabled]} testID={testID}>
-      {label && label.trim() !== '' && <Text style={styles.label}>{label}</Text>}
+      {label && label.trim() !== '' ? <Text style={styles.label}>{label}</Text> : null}
       <WebDropdown
         value={value}
         items={items}

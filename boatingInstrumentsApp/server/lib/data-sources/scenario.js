@@ -2651,9 +2651,20 @@ class ScenarioDataSource extends EventEmitter {
       const socSentence = `IIXDR,P,${soc.toFixed(1)},P,${batteryId}`;
       messages.push(`$${socSentence}*${this.calculateChecksum(socSentence)}`);
 
-      // Note: Omitting non-standard fields (chemistry, nominal voltage, capacity)
-      // These are not part of standard NMEA 0183 and cause parsing issues
-      // If needed, they can be transmitted via proprietary sentences
+      // Extended battery metrics (non-standard but useful)
+      // Each in its own sentence to stay under 82 char limit
+      
+      // Nominal Voltage - U type with _NOM suffix identifier
+      const nomVoltSentence = `IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
+      messages.push(`$${nomVoltSentence}*${this.calculateChecksum(nomVoltSentence)}`);
+      
+      // Capacity - V type with H (hours) unit for Amp-hours
+      const capSentence = `IIXDR,V,${capacity.toFixed(0)},H,${batteryId}`;
+      messages.push(`$${capSentence}*${this.calculateChecksum(capSentence)}`);
+      
+      // Chemistry - G (generic) type with N (no unit) or text unit
+      const chemSentence = `IIXDR,G,${chemistry},N,${batteryId}`;
+      messages.push(`$${chemSentence}*${this.calculateChecksum(chemSentence)}`);
 
       return messages;
     }

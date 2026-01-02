@@ -517,23 +517,22 @@ export class SensorInstance<T extends SensorData = SensorData> {
       const historyData = buffer.getAll();
       if (historyData.length === 0) return undefined;
       
-      // Extract numeric values (filter out string values)
-      const numericValues = historyData
-        .map(point => point.value)
-        .filter((val): val is HistoryPoint => val !== null && val !== undefined)
-        .map(val => (val as HistoryPoint).value)
-        .filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      // Extract SI values from history points for min/max/avg calculation
+      // NOTE: We use si_value (not display value) because MetricValue will convert to display units
+      const siValues = historyData
+        .map(point => point.value.si_value)
+        .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
       
-      if (numericValues.length === 0) return undefined;
+      if (siValues.length === 0) return undefined;
       
-      // Calculate stat
+      // Calculate stat from SI values
       let statValue: number;
       if (statType === 'min') {
-        statValue = Math.min(...numericValues);
+        statValue = Math.min(...siValues);
       } else if (statType === 'max') {
-        statValue = Math.max(...numericValues);
+        statValue = Math.max(...siValues);
       } else { // avg
-        statValue = numericValues.reduce((sum, v) => sum + v, 0) / numericValues.length;
+        statValue = siValues.reduce((sum, v) => sum + v, 0) / siValues.length;
       }
       
       // Create MetricValue for the stat (same unitType as base field)
@@ -622,7 +621,21 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     // Standard metric retrieval for all other fields
     const buffer = this._history.get(fieldName);
-    if (!buffer) return undefined;
+    if (!buffer) {
+      // Special case: 'name' field may not be in history (defaults to `sensorType-instance`)
+      // Return the instance's default name as a HistoryPoint for consistency
+      if (fieldName === 'name' && this.name) {
+        return {
+          si_value: this.name,
+          value: this.name,
+          formattedValue: this.name,
+          formattedValueWithUnit: this.name,
+          unit: '',
+          timestamp: this.timestamp,
+        };
+      }
+      return undefined;
+    }
 
     const latest = buffer.getLatest();
     return latest; // Return the enriched HistoryPoint directly
@@ -985,6 +998,21 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * ```
    */
   getMetricVersion(metricKey: string): number {
+    // Check if this is a virtual stat metric (e.g., "depth.min", "depth.max")
+    const statMatch = metricKey.match(/^(.+)\.(min|max|avg)$/);
+    if (statMatch) {
+      const [, baseMetric] = statMatch;
+      // Use base metric's version (e.g., depth.min → depth version)
+      // This ensures virtual metrics trigger updates when the base metric changes
+      // 
+      // TODO: Potential optimization - cache calculated virtual metrics
+      //   Current: Re-renders on EVERY base metric update (even if min/max unchanged)
+      //   Trade-off: Extra renders vs. complexity (acceptable for <10 Hz updates)
+      //   Future: Cache virtual metrics with separate version counters if performance issues
+      //   See: REGISTRY-FIRST-WIDGET-TRANSFORMATION.md Option B analysis
+      return this._metricVersions.get(baseMetric) ?? 0;
+    }
+
     return this._metricVersions.get(metricKey) ?? 0;
   }
 

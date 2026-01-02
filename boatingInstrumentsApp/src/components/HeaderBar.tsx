@@ -185,13 +185,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               ]}
             >
               {/* Navigation Icon (only when connected) */}
-              {getNavigationIcon(connectionStatus, navigationSession) && (
+              {getNavigationIcon(connectionStatus, navigationSession) ? (
                 <View style={styles.navigationIcon}>
                   <Text style={styles.navigationIconText}>
                     {getNavigationIcon(connectionStatus, navigationSession)}
                   </Text>
                 </View>
-              )}
+              ) : null}
             </View>
           </TouchableOpacity>
         </View>

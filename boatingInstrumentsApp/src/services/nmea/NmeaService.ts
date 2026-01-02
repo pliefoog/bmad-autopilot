@@ -97,7 +97,7 @@ export class NmeaService {
         this.isRunning = true;
         return true;
       } else {
-        console.error('[NmeaService] Failed to establish connection');
+        // Connection failures are normal in boat environments - no error logging
         return false;
       }
     } catch (error) {
@@ -189,8 +189,8 @@ export class NmeaService {
       },
 
       onError: (error) => {
-        console.error('[NmeaService] Connection error:', error);
-        this.storeUpdater.updateError(error);
+        // Connection errors are normal in boat WiFi - status LED reflects state
+        // Don't propagate to store to avoid triggering toast notifications
       },
     });
   }

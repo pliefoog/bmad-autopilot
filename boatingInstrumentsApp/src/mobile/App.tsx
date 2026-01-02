@@ -250,36 +250,8 @@ const App = () => {
     });
   };
 
-  // Show toast for errors (with duplicate prevention and debouncing)
-  const lastShownError = useRef<string | undefined>(undefined);
-  const errorToastTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    // Clear any pending error toast
-    if (errorToastTimeout.current) {
-      clearTimeout(errorToastTimeout.current);
-      errorToastTimeout.current = null;
-    }
-
-    if (lastError && lastError !== lastShownError.current) {
-      // Debounce error toasts to prevent rapid firing
-      errorToastTimeout.current = setTimeout(() => {
-        toast.showError(lastError, { source: 'nmea_system' });
-        lastShownError.current = lastError;
-        errorToastTimeout.current = null;
-      }, 250); // 250ms debounce
-    } else if (!lastError) {
-      // Clear the reference when error is cleared
-      lastShownError.current = undefined;
-    }
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (errorToastTimeout.current) {
-        clearTimeout(errorToastTimeout.current);
-      }
-    };
-  }, [lastError]);
+  // Connection errors no longer show toasts - status LED provides feedback
+  // Removed: lastError toast handler (marine WiFi connectivity is intermittent)
 
   // Dynamic widget lifecycle management - ONLY create widgets when NMEA data is present
   // Selective subscription: only re-render when sensors actually change
@@ -352,10 +324,10 @@ const App = () => {
         // Note: Widget lifecycle management is now fully event-driven via WidgetRegistrationService
         // No explicit initialization needed - widgets update via onWidgetDetected/onWidgetUpdated events
 
-        toast.showConnectionSuccess('Auto-connecting to NMEA Bridge...');
+        // Status LED shows connection state - no toast needed
       } catch (error) {
         console.error('[App] Failed to initialize services:', error);
-        toast.showConnectionError('Failed to initialize application services');
+        // Status LED shows connection state - no toast needed
       }
     };
 
@@ -402,13 +374,10 @@ const App = () => {
       });
 
       if (success) {
-        toast.showConnectionSuccess(
-          `Connected to ${config.ip}:${config.port} (${config.protocol.toUpperCase()})`,
-        );
+        // Status LED shows connection state - no toast needed
       }
     } catch (error) {
-      console.error('Failed to connect:', error);
-      toast.showConnectionError('Failed to establish connection');
+      // Connection failures are normal in boat WiFi - status LED shows state
     }
   };
 
@@ -423,10 +392,10 @@ const App = () => {
   const handleConnectionDisconnect = async () => {
     try {
       disconnectNmea();
-      toast.showConnectionSuccess('Disconnected from NMEA source');
+      // Status LED shows connection state - no toast needed
     } catch (error) {
       console.error('Failed to disconnect:', error);
-      toast.showConnectionError('Failed to disconnect');
+      // Status LED shows connection state - no toast needed
     }
   };
 

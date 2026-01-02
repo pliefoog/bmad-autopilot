@@ -58,7 +58,7 @@ export const PlatformSettingsSection: React.FC<PlatformSettingsSectionProps> = (
 
   return (
     <View style={[styles.container, style]} testID={testID}>
-      {title && title.trim() !== '' && <PlatformSectionHeader title={title} />}
+      {title && title.trim() !== '' ? <PlatformSectionHeader title={title} /> : null}
       <View style={styles.content} testID={`${testID}-content`}>
         {children}
       </View>

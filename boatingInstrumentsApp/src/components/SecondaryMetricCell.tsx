@@ -133,11 +133,10 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {
     if (fieldConfig?.valueType === 'string') {
-      // String fields: access directly from sensor instance
-      // Cast to any to access dynamic properties
-      const rawData = sensorInstance as any;
-      const stringValue = rawData?.[metricKey];
-      return stringValue ?? '---';
+      // String fields: retrieve from history via getMetric()
+      // SensorInstance stores strings in _history Map, not as direct properties
+      const stringMetric = sensorInstance?.getMetric(metricKey);
+      return stringMetric?.formattedValue ?? '---';
     }
     // Numeric fields: use pre-enriched formattedValue from MetricValue
     // This includes virtual stat metrics (depth_min, depth_max, etc.)
@@ -225,12 +224,15 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
   const styles = createStyles(theme, dynamicSizes, valueColor);
 
+  // Sanitize unit - prevent text node leaks (period character, empty strings)
+  const hasValidUnit = unit && unit.trim() !== '' && unit.trim() !== '.';
+
   // Render metric display (same layout as PrimaryMetricCell, just different color)
   return (
     <View style={styles.container} testID={testID || `secondary-metric-${metricKey}`}>
       <View style={styles.mnemonicUnitRow}>
         <Text style={styles.mnemonic}>{mnemonic}</Text>
-        {unit && <Text style={styles.unit}> ({unit})</Text>}
+        {hasValidUnit ? <Text style={styles.unit}> ({unit})</Text> : null}
       </View>
       <Text style={styles.value}>{displayValue}</Text>
     </View>

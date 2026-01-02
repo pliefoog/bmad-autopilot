@@ -42,8 +42,18 @@ sensors:
         min: 15.0
         max: 35.0
       state_of_charge:
-        type: "linear"
-        start: 85.0
-        end: 75.0  # Slowly discharge from 85% to 75%
-        min: 0.0
-        max: 100.0
+        type: "sine_wave"
+        base: 65.0  # Oscillate around 65%
+        amplitude: 20.0  # Swing ±20% (45% to 85%)
+        period: 120  # 2-minute cycle
+        min: 45.0
+        max: 85.0
+      capacity:
+        type: "constant"
+        value: 400.0  # Ah (constant - battery capacity doesn't change)
+      nominal_voltage:
+        type: "constant"
+        value: 12.0  # V (constant - nominal voltage is fixed)
+      chemistry:
+        type: "constant"
+        value: "AGM"  # Battery chemistry type (constant string)

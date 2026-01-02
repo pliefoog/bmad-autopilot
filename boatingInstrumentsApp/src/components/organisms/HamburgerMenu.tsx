@@ -216,13 +216,13 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   ))}
 
                   {/* Development Tools Section */}
-                  {showDevTools && devSections && (
+                  {showDevTools && devSections ? (
                     <DevToolsSection
                       sections={devSections}
                       onItemPress={handleClose}
                       actionHandlers={actionHandlers}
                     />
-                  )}
+                  ) : null}
                 </ScrollView>
               </SafeAreaView>
             </TouchableOpacity>

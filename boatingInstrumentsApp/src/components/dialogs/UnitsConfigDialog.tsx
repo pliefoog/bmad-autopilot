@@ -418,7 +418,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       </View>
 
       {/* Preset Preview */}
-      {currentPreset && currentPreset.examples.length > 0 && (
+      {currentPreset && currentPreset.examples.length > 0 ? (
         <View
           style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}
         >
@@ -431,7 +431,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
             ))}
           </View>
         </View>
-      )}
+      ) : null}
 
       {/* Section divider */}
       <View style={[styles.divider, { backgroundColor: theme.border }]} />

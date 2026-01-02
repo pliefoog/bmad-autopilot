@@ -247,7 +247,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
           {alarm.message}
         </Text>
 
-        {alarm.value !== undefined && alarm.threshold !== undefined && (
+        {alarm.value !== undefined && alarm.threshold !== undefined ? (
           <Text
             style={[
               dynamicStyles.messageText,
@@ -256,7 +256,7 @@ export const CriticalAlarmIndicator: React.FC<CriticalAlarmOverlayProps> = ({
           >
             Value: {alarm.value} | Threshold: {alarm.threshold}
           </Text>
-        )}
+        ) : null}
 
         <Text style={dynamicStyles.timestamp}>{formatTimestamp(alarm.timestamp)}</Text>
 

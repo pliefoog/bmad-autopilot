@@ -3,6 +3,7 @@ import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
 import { useNmeaStore } from '../store/nmeaStore';
+import { EmptyCell } from 'components/EmptyCell';
 
 interface BatteryWidgetProps {
   id: string;
@@ -60,11 +61,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) =
       <PrimaryMetricCell metricKey="temperature" />
       <PrimaryMetricCell metricKey="stateOfCharge" />
       
-      {/* Secondary Grid: 2x2 configuration/status */}
+      {/* Secondary Grid: 2x2 configuration/status (name now in header) */}
       <SecondaryMetricCell metricKey="capacity" />
       <SecondaryMetricCell metricKey="chemistry" />
       <SecondaryMetricCell metricKey="nominalVoltage" />
-      <SecondaryMetricCell metricKey="name" />
+      <EmptyCell />
     </TemplatedWidget>
   );
 });

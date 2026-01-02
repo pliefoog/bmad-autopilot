@@ -43,7 +43,6 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
           <PrimaryMetricCell key="level" metricKey="level" />,
           <PrimaryMetricCell key="capacity" metricKey="capacity" />,
           <SecondaryMetricCell key="type" metricKey="type" />,
-          <SecondaryMetricCell key="name" metricKey="name" />,
         ] as React.ReactElement[]}
       </TemplatedWidget>
     );

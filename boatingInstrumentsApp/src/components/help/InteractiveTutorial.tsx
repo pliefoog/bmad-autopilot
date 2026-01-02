@@ -229,13 +229,13 @@ export const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
             </Text>
 
             {/* Action hint */}
-            {currentStep.action && currentStep.action !== 'none' && (
+            {currentStep.action && currentStep.action !== 'none' ? (
               <View style={styles.actionHint}>
                 <Text style={[styles.actionHintText, { color: colors.primary }]}>
                   {getActionHintText(currentStep.action)}
                 </Text>
               </View>
-            )}
+            ) : null}
           </View>
 
           {/* Navigation buttons */}

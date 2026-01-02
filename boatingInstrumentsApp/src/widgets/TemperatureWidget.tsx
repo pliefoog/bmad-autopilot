@@ -74,9 +74,8 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
         strokeWidth={2}
       />
       
-      {/* Secondary Grid: Sensor metadata */}
+      {/* Secondary Grid: Sensor metadata (name now in header) */}
       <SecondaryMetricCell metricKey="location" />
-      <SecondaryMetricCell metricKey="name" />
     </TemplatedWidget>
   );
 });

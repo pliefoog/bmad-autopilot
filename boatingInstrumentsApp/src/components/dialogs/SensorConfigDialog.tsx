@@ -908,7 +908,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     <BaseConfigDialog visible={visible} onClose={handleClose} title="Sensor Configuration">
       <ScrollView style={styles.container}>
         {/* Sensor Type Picker */}
-        {!initialSensorType && availableSensorTypes.length > 1 && (
+        {!initialSensorType && availableSensorTypes.length > 1 ? (
           <View style={[styles.field, styles.sensorPickerField]}>
             <Text style={[styles.label, { color: theme.text }]}>Sensor Type</Text>
             <PlatformPicker
@@ -920,7 +920,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               }))}
             />
           </View>
-        )}
+        ) : null}
 
         {/* Instance Tabs */}
         <InstanceTabBar

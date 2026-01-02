@@ -117,11 +117,11 @@ export const AutopilotButton: React.FC<AutopilotButtonProps> = ({
       </Text>
 
       {/* Mode indicator for engaged state */}
-      {buttonState.isActive && mode !== 'standby' && (
+      {buttonState.isActive && mode !== 'standby' ? (
         <Text style={[styles.modeText, { color: buttonState.textColor }]} numberOfLines={1}>
           {mode.toUpperCase()} MODE
         </Text>
-      )}
+      ) : null}
     </TouchableOpacity>
   );
 };

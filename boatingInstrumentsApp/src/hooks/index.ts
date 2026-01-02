@@ -4,9 +4,6 @@
 export { useNMEAData } from './useNMEAData';
 export type { UseNMEADataOptions, UseNMEADataReturn } from './useNMEAData';
 
-export { useConnection } from './useConnection';
-export type { UseConnectionOptions, UseConnectionReturn } from './useConnection';
-
 export { useResponsiveHeader } from './useResponsiveHeader';
 
 // Story 13.2.2 - Platform Input Component Hooks
@@ -20,23 +17,3 @@ export type { ValidatorFunction, UseInputValidationReturn } from './useInputVali
 
 export { useHapticFeedback } from './useHapticFeedback';
 export type { UseHapticFeedbackReturn } from './useHapticFeedback';
-
-// Import hooks for combined usage
-import { useConnection } from './useConnection';
-import { useNMEAData } from './useNMEAData';
-
-// Re-export commonly used hook combinations
-export const useDataWithConnection = () => {
-  const connectionHook = useConnection();
-  const dataHook = useNMEAData({
-    enableRealTimeUpdates: connectionHook.isConnected,
-  });
-
-  return {
-    ...connectionHook,
-    ...dataHook,
-    isDataReady: connectionHook.isConnected && dataHook.isValid,
-  };
-};
-
-// useWidgetWithUnits removed - useWidgetConfig was deleted

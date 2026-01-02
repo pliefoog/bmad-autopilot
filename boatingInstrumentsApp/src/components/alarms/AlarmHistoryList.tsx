@@ -169,11 +169,11 @@ export const AlarmHistoryList: React.FC<AlarmHistoryListProps> = ({
 
         <Text style={styles.message}>{item.message}</Text>
 
-        {item.value !== undefined && item.threshold !== undefined && (
+        {item.value !== undefined && item.threshold !== undefined ? (
           <Text style={styles.valueInfo}>
             Value: {item.value.toFixed(2)} (Threshold: {item.threshold.toFixed(2)})
           </Text>
-        )}
+        ) : null}
 
         <View style={styles.itemFooter}>
           {item.acknowledgedAt && (

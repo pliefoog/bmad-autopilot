@@ -110,6 +110,12 @@ export class PureConnectionManager {
   private connectionTimeout: any = null;
   private readonly CONNECTION_TIMEOUT = 10000; // 10 seconds
 
+  // Automatic reconnection for boat WiFi scenarios
+  private reconnectTimeout: any = null;
+  private readonly RECONNECT_INTERVAL = 5000; // 5 seconds between reconnect attempts
+  private autoReconnect: boolean = true;
+  private manualDisconnect: boolean = false;
+
   // Statistics
   private bytesReceived = 0;
   private messagesReceived = 0;
@@ -139,6 +145,7 @@ export class PureConnectionManager {
     }
 
     this.currentConfig = config;
+    this.manualDisconnect = false; // Reset manual disconnect flag
     this.updateState('connecting');
 
     try {
@@ -161,7 +168,7 @@ export class PureConnectionManager {
           throw new Error(`Unsupported protocol: ${config.protocol}`);
       }
     } catch (error) {
-      console.error('[ConnectionManager] Connection attempt caught error:', error);
+      // Connection failures are normal in boat WiFi environments
       const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
       this.handleError(errorMessage);
       return false;
@@ -172,10 +179,17 @@ export class PureConnectionManager {
    * Disconnect from NMEA source
    */
   disconnect(): void {
-    // Clear timeout
+    // Mark as manual disconnect to prevent auto-reconnect
+    this.manualDisconnect = true;
+
+    // Clear timeouts
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
       this.connectionTimeout = null;
+    }
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
     }
 
     // Close connection based on type
@@ -264,7 +278,7 @@ export class PureConnectionManager {
         };
 
         ws.onerror = (error) => {
-          console.error('[ConnectionManager] WebSocket error:', error);
+          // WebSocket failures are normal in boat WiFi - let status LED show state
           this.handleError('WebSocket connection failed');
           reject(new Error('WebSocket connection failed'));
         };
@@ -272,6 +286,7 @@ export class PureConnectionManager {
         ws.onclose = () => {
           if (this.connectionState === 'connected') {
             this.updateState('disconnected');
+            this.scheduleReconnect(); // Auto-reconnect for boat WiFi scenarios
           }
         };
       } catch (error) {
@@ -431,6 +446,7 @@ export class PureConnectionManager {
         socket.on('close', () => {
           if (this.connectionState === 'connected') {
             this.updateState('disconnected');
+            this.scheduleReconnect(); // Auto-reconnect for boat WiFi scenarios
           }
         });
       } catch (error) {
@@ -619,12 +635,37 @@ export class PureConnectionManager {
    * Handle connection errors
    */
   private handleError(errorMessage: string): void {
-    console.error('[ConnectionManager] Error:', errorMessage);
+    // Connection errors don't call onError - prevents toast spam
+    // Status LED reflects connection state via updateState
     this.updateState('error', errorMessage);
+    this.scheduleReconnect(); // Auto-reconnect for boat WiFi scenarios
+  }
 
-    if (this.events.onError) {
-      this.events.onError(errorMessage);
+  /**
+   * Schedule automatic reconnection attempt (for boat WiFi scenarios)
+   */
+  private scheduleReconnect(): void {
+    // Don't reconnect if manually disconnected or already scheduled
+    if (this.manualDisconnect || this.reconnectTimeout || !this.autoReconnect) {
+      return;
     }
+
+    // Don't reconnect if no config
+    if (!this.currentConfig) {
+      return;
+    }
+
+    // Schedule reconnection attempt
+    this.reconnectTimeout = setTimeout(async () => {
+      this.reconnectTimeout = null;
+      
+      // Only reconnect if still disconnected/error and not manually disconnected
+      if ((this.connectionState === 'disconnected' || this.connectionState === 'error') && 
+          !this.manualDisconnect && 
+          this.currentConfig) {
+        await this.connect(this.currentConfig);
+      }
+    }, this.RECONNECT_INTERVAL);
   }
 
   /**

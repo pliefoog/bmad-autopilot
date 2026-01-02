@@ -241,9 +241,12 @@ export function getGridTemplate(templateName: string): GridTemplate {
 /**
  * Validate template cell count matches provided children
  * 
+ * Allows fewer cells than template capacity (empty cells are valid).
+ * This enables flexible layouts where not all grid slots need to be filled.
+ * 
  * @param templateName - Template identifier
  * @param childCount - Number of child elements (metric cells)
- * @throws Error if cell count mismatch
+ * @throws Error if cell count exceeds template capacity
  */
 export function validateTemplateCellCount(
   templateName: string,
@@ -257,13 +260,16 @@ export function validateTemplateCellCount(
     : 0;
   const totalCells = primaryCells + secondaryCells;
   
-  if (childCount !== totalCells) {
+  if (childCount > totalCells) {
     throw new Error(
-      `Template "${templateName}" expects ${totalCells} cells ` +
+      `Template "${templateName}" has capacity for ${totalCells} cells ` +
       `(${primaryCells} primary + ${secondaryCells} secondary), ` +
-      `but received ${childCount} children`
+      `but received ${childCount} children. Too many cells!`
     );
   }
+  
+  // Allow fewer cells - empty slots are valid
+  // Example: "2Rx2C-SEP-2Rx2C" can have 7 cells with 1 empty slot
 }
 
 /**

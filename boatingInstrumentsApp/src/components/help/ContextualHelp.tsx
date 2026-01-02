@@ -145,7 +145,7 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
               ]}
             >
               {/* Arrow */}
-              {tooltipPos.showArrow && target && (
+              {tooltipPos.showArrow && target ? (
                 <View
                   style={[
                     styles.arrow,
@@ -165,7 +165,7 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
                     },
                   ]}
                 />
-              )}
+              ) : null}
               <View style={styles.content}>
                 {titleText && (
                   <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">

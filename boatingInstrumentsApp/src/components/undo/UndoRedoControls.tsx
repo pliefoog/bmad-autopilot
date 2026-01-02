@@ -110,7 +110,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
       </TouchableOpacity>
 
       {/* Keyboard shortcut hints */}
-      {showShortcutHints && Platform.OS === 'web' && !compact && (
+      {showShortcutHints && Platform.OS === 'web' && !compact ? (
         <View style={styles.hints}>
           <Text style={[styles.hintText, { color: theme.textSecondary }]}>
             {typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent) ? '⌘Z' : 'Ctrl+Z'}
@@ -122,7 +122,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
               : 'Ctrl+Shift+Z'}
           </Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 };

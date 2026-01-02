@@ -123,10 +123,19 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   const widgetMetadata = WIDGET_METADATA_REGISTRY[widgetId ?? sensorType];
   const instanceNumber = sensorInstance?.instance ?? 0;
   
-  // Build header title with instance if multi-instance
-  const headerTitle = widgetMetadata?.type === 'multi' && instanceNumber > 0
+  // Get sensor name from metrics (user-defined or default "sensorType-instance")
+  const sensorName = React.useMemo(() => {
+    if (!sensorInstance) return undefined;
+    const nameMetric = sensorInstance.getMetric('name');
+    return nameMetric?.formattedValue;
+  }, [sensorInstance]);
+  
+  // Build header title: "Battery - House Bank" or "Battery 2 - battery-1"
+  const baseTitle = widgetMetadata?.type === 'multi' && instanceNumber > 0
     ? `${widgetMetadata.title} ${instanceNumber + 1}`
     : widgetMetadata?.title ?? sensorType.toUpperCase();
+  
+  const headerTitle = sensorName ? `${baseTitle} - ${sensorName}` : baseTitle;
 
   // Normalize children to array
   const childArray = React.Children.toArray(children) as ReactElement[];
@@ -228,9 +237,9 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
           />
 
           {/* Separator (if template has secondary grid) */}
-          {template.showSeparator && template.secondaryGrid && (
+          {template.showSeparator && template.secondaryGrid ? (
             <View style={styles.separator} />
-          )}
+          ) : null}
 
           {/* Secondary Grid */}
           {template.secondaryGrid && (

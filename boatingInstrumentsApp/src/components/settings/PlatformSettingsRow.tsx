@@ -109,14 +109,14 @@ export const PlatformSettingsRow: React.FC<PlatformSettingsRowProps> = ({
           </Text>
         )}
         {control && <View style={styles.control}>{control}</View>}
-        {disclosure && !control && (
+        {disclosure && !control ? (
           <UniversalIcon
             name="chevron-forward"
             size={tvMode ? 32 : 20}
             color={disabled ? theme.textSecondary : theme.textTertiary}
             style={styles.disclosure}
           />
-        )}
+        ) : null}
       </View>
     </View>
   );

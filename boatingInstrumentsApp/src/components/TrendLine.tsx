@@ -314,11 +314,24 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);
 
-  // Get display-value stats from sensor instance (pre-computed min/max/avg in user's units)
-  // This replaces manual min/max calculation from history data
+  // Get display-value stats from virtual metrics (depth.min, depth.max, depth.avg)
+  // Uses consistent calculation method: SI values → stat → convert to display
   const displayStats = useMemo(() => {
     if (!context?.sensorInstance || !metric) return undefined;
-    return context.sensorInstance.getDisplayValueStats(metric);
+    
+    // Use virtual metrics for consistent min/max/avg calculation
+    const minMetric = context.sensorInstance.getMetric(`${metric}.min`);
+    const maxMetric = context.sensorInstance.getMetric(`${metric}.max`);
+    const avgMetric = context.sensorInstance.getMetric(`${metric}.avg`);
+    
+    if (!minMetric || !maxMetric || !avgMetric) return undefined;
+    
+    return {
+      min: typeof minMetric.value === 'number' ? minMetric.value : NaN,
+      max: typeof maxMetric.value === 'number' ? maxMetric.value : NaN,
+      avg: typeof avgMetric.value === 'number' ? avgMetric.value : NaN,
+      unit: minMetric.unit,
+    };
   }, [context?.sensorInstance, metric, sensorTimestamp]);
 
   // Derive all colors from theme
