@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, Animated, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Animated, Platform, Text, ActivityIndicator } from 'react-native';
 import {
   PanGestureHandler,
   State,
@@ -8,6 +8,7 @@ import {
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useResponsiveGrid, type ResponsiveGridState } from '../../hooks/useResponsiveGrid';
+import { useStoreReady } from '../../hooks/useStoreReady';
 import { PaginationDots } from '../molecules/PaginationDots';
 import {
   calculatePageLayouts,
@@ -58,6 +59,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   testID = 'responsive-dashboard',
 }) => {
   const theme = useTheme();
+
+  // Store readiness check - prevent widgets from mounting until store is initialized
+  const isStoreReady = useStoreReady();
 
   // Widget store integration - use actual widget array
   const dashboard = useWidgetStore((state) => state.dashboard);
@@ -334,6 +338,18 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     [scrollViewWidth, responsiveGrid.layout.containerHeight, renderWidget, currentPage],
   );
 
+  // Store initialization guard - wait for store to be ready
+  if (!isStoreReady) {
+    return (
+      <View style={[styles.container, styles.emptyStateContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.text} />
+        <Text style={[styles.emptyStateText, { color: theme.textSecondary, marginTop: 16 }]}>
+          Initializing...
+        </Text>
+      </View>
+    );
+  }
+
   // AC 14: Empty State Display (auto-discovery handles widget creation)
   if (widgets.length === 0) {
     return (
@@ -440,6 +456,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 
