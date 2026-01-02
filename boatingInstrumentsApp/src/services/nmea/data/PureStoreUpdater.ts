@@ -566,28 +566,11 @@ export class PureStoreUpdater {
    * Get field-specific throttle settings for sensor types
    */
   private getFieldThrottleMs(sensorType: string): number {
-    // Different sensors have different throttling requirements
-    switch (sensorType) {
-      case 'gps':
-        return 500; // GPS updates every 500ms for smooth movement
-      case 'wind':
-        return 500; // Wind updates more frequently
-      case 'engine':
-        return 0; // Engine data: NO THROTTLING - multi-measurement XDR requires immediate updates
-      case 'battery':
-        return 0; // Battery data: NO THROTTLING - 4 separate XDR messages (V/I/C/P) arrive within 1-3ms at 2Hz
-      case 'speed':
-      case 'compass':
-        return 1000; // Navigation data every second
-      case 'depth':
-        return 500; // Depth updates every 500ms (2Hz) for smooth trendline visualization
-      case 'tank':
-        return 2000; // Tank levels every 2 seconds
-      case 'temperature':
-        return 2000; // Temperature every 2 seconds
-      default:
-        return this.DEFAULT_THROTTLE_MS;
-    }
+    // NO THROTTLING: Version-based subscriptions handle efficiency at React layer
+    // Each NMEA message updates its metric immediately
+    // Store handles version counters, only changed metrics trigger re-renders
+    // This matches architecture principle: parse → update → done (no delays)
+    return 0;
   }
 
   /**
