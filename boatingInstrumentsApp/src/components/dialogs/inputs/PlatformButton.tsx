@@ -107,7 +107,8 @@ export const PlatformButton: React.FC<PlatformButtonProps> = ({
     () => createStyles(theme, platformTokens, tvMode, focused),
     [theme, platformTokens, tvMode, focused],
   );
-  const touchTargetSize = tvMode ? platformTokens.touchTarget : useTouchTargetSize();
+  const touchTargetSizeHook = useTouchTargetSize();
+  const touchTargetSize = tvMode ? platformTokens.touchTarget : touchTargetSizeHook;
   const haptics = useHapticFeedback();
 
   /**

@@ -76,13 +76,13 @@ export interface TrendLineProps {
  * - Max stat: metricKey="depth.max" - renders session maximum trend
  * - Min stat: metricKey="depth.min" - renders session minimum trend
  * - Avg stat: metricKey="depth.avg" - renders session average trend
- * 
+ *
  * Virtual metrics are resolved by SensorInstance.getMetric() which:
  * 1. Parses .stat suffix to identify computation type
  * 2. Fetches history buffer for base metric
  * 3. Calculates statistic across history points
  * 4. Returns enriched MetricValue with proper formatting
- * 
+ *
  * Chart label automatically shows stat prefix (e.g., "MAX DEPTH", "AVG PRESSURE")
  *
  * Features:
@@ -216,16 +216,12 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
       // Padding (conservative scaling prevents cramping)
       // Minimal left padding since Y-axis labels now render inside graph
-      paddingLeft: showYAxis
-        ? Math.max(2, 2 * paddingScale)
-        : Math.max(2, 5 * paddingScale),
+      paddingLeft: showYAxis ? Math.max(2, 2 * paddingScale) : Math.max(2, 5 * paddingScale),
       paddingRight: Math.max(4, 6 * paddingScale), // Minimal right padding
-      paddingTop: xAxisPosition === 'top'
-        ? Math.max(2, 2 * paddingScale)
-        : Math.max(2, 5 * paddingScale),
-      paddingBottom: xAxisPosition === 'bottom'
-        ? Math.max(2, 2 * paddingScale)
-        : Math.max(2, 5 * paddingScale),
+      paddingTop:
+        xAxisPosition === 'top' ? Math.max(2, 2 * paddingScale) : Math.max(2, 5 * paddingScale),
+      paddingBottom:
+        xAxisPosition === 'bottom' ? Math.max(2, 2 * paddingScale) : Math.max(2, 5 * paddingScale),
 
       // Label offsets
       yLabelOffset: Math.max(2, 5 * widthScaleFactor),
@@ -280,12 +276,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const thresholdType = alarmThresholds.thresholdType;
 
   // Subscribe to sensor timestamp to trigger updates when new data arrives
-  const sensorTimestamp = useNmeaStore(
-    (state) => {
-      if (!sensor) return undefined;
-      return state.nmeaData.sensors[sensor as import('../types/SensorData').SensorType]?.[instance]?.timestamp;
-    }
-  );
+  const sensorTimestamp = useNmeaStore((state) => {
+    if (!sensor) return undefined;
+    return state.nmeaData.sensors[sensor as import('../types/SensorData').SensorType]?.[instance]
+      ?.timestamp;
+  });
 
   // Get stable reference to getSensorHistory (won't change between renders)
   const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
@@ -307,7 +302,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       firstPoint: data[0],
       lastPoint: data[data.length - 1],
       // For pressure debugging: show first 3 values
-      sampleValues: data.slice(0, 3).map(p => p.value),
+      sampleValues: data.slice(0, 3).map((p) => p.value),
     }));
 
     return data;
@@ -318,14 +313,14 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // Uses consistent calculation method: SI values → stat → convert to display
   const displayStats = useMemo(() => {
     if (!context?.sensorInstance || !metric) return undefined;
-    
+
     // Use virtual metrics for consistent min/max/avg calculation
     const minMetric = context.sensorInstance.getMetric(`${metric}.min`);
     const maxMetric = context.sensorInstance.getMetric(`${metric}.max`);
     const avgMetric = context.sensorInstance.getMetric(`${metric}.avg`);
-    
+
     if (!minMetric || !maxMetric || !avgMetric) return undefined;
-    
+
     return {
       min: typeof minMetric.value === 'number' ? minMetric.value : NaN,
       max: typeof maxMetric.value === 'number' ? maxMetric.value : NaN,
@@ -448,9 +443,9 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
     const yLabels: string[] = unitType
       ? [
-        ConversionRegistry.format(dataMin, unitType, false), // false = no unit
-        ConversionRegistry.format(dataMax, unitType, false),
-      ]
+          ConversionRegistry.format(dataMin, unitType, false), // false = no unit
+          ConversionRegistry.format(dataMax, unitType, false),
+        ]
       : [dataMin.toFixed(1), dataMax.toFixed(1)]; // Fallback if no unitType
 
     // Calculate threshold Y positions
@@ -667,7 +662,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
           y2={thresholdPositions.warning}
           stroke={warningColor}
           strokeWidth={scaledDimensions.warningStroke}
-          strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`}
+          strokeDasharray={
+            thresholdType === 'max'
+              ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`
+              : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`
+          }
           opacity={0.7}
         />
       )}
@@ -679,7 +678,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
           y2={thresholdPositions.alarm}
           stroke={alarmColor}
           strokeWidth={scaledDimensions.alarmStroke}
-          strokeDasharray={thresholdType === 'max' ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}` : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`}
+          strokeDasharray={
+            thresholdType === 'max'
+              ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`
+              : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`
+          }
           opacity={0.8}
         />
       )}
@@ -731,53 +734,62 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       </SvgText>
 
       {/* Y-axis labels - positioned inside graph (right of Y-axis) */}
-      {showYAxis && yLabels.map((label, idx) => {
-        // Calculate Y position for label alignment
-        // idx=0 is max (top), idx=yLabels.length-1 is min (bottom)
-        const isTop = idx === 0;
-        const isBottom = idx === yLabels.length - 1;
+      {showYAxis &&
+        yLabels.map((label, idx) => {
+          // Calculate Y position for label alignment
+          // idx=0 is max (top), idx=yLabels.length-1 is min (bottom)
+          const isTop = idx === 0;
+          const isBottom = idx === yLabels.length - 1;
 
-        let yPos;
-        if (isTop) {
-          // Top label: align TOP of text with TOP of Y-axis
-          yPos = chartStartY + scaledDimensions.labelFontSize * 0.8;
-        } else if (isBottom) {
-          // Bottom label: align BOTTOM of text with BOTTOM of Y-axis  
-          yPos = chartStartY + chartHeight - 2;
-        } else {
-          // Middle labels (if any)
-          yPos = chartStartY + (idx / (yLabels.length - 1)) * chartHeight + scaledDimensions.yLabelAdjust;
-        }
+          let yPos;
+          if (isTop) {
+            // Top label: align TOP of text with TOP of Y-axis
+            yPos = chartStartY + scaledDimensions.labelFontSize * 0.8;
+          } else if (isBottom) {
+            // Bottom label: align BOTTOM of text with BOTTOM of Y-axis
+            yPos = chartStartY + chartHeight - 2;
+          } else {
+            // Middle labels (if any)
+            yPos =
+              chartStartY +
+              (idx / (yLabels.length - 1)) * chartHeight +
+              scaledDimensions.yLabelAdjust;
+          }
 
-        return (
+          return (
+            <SvgText
+              key={`y-label-${idx}`}
+              x={AXIS_MARGIN + scaledDimensions.yLabelOffset}
+              y={yPos}
+              fontSize={scaledDimensions.labelFontSize}
+              fill={labelColor}
+              fontFamily="system-ui, -apple-system, sans-serif"
+              textAnchor="start"
+            >
+              {label}
+            </SvgText>
+          );
+        })}
+
+      {/* X-axis time labels */}
+      {showXAxis &&
+        timeLabels.map((label, idx) => (
           <SvgText
-            key={`y-label-${idx}`}
-            x={AXIS_MARGIN + scaledDimensions.yLabelOffset}
-            y={yPos}
+            key={`x-label-${idx}`}
+            x={label.position}
+            y={
+              xAxisPosition === 'top'
+                ? xAxisY - scaledDimensions.xLabelTopOffset
+                : xAxisY + scaledDimensions.xLabelBottomOffset
+            }
             fontSize={scaledDimensions.labelFontSize}
             fill={labelColor}
             fontFamily="system-ui, -apple-system, sans-serif"
-            textAnchor="start"
+            textAnchor="middle"
           >
-            {label}
+            {label.text}
           </SvgText>
-        );
-      })}
-
-      {/* X-axis time labels */}
-      {showXAxis && timeLabels.map((label, idx) => (
-        <SvgText
-          key={`x-label-${idx}`}
-          x={label.position}
-          y={xAxisPosition === 'top' ? xAxisY - scaledDimensions.xLabelTopOffset : xAxisY + scaledDimensions.xLabelBottomOffset}
-          fontSize={scaledDimensions.labelFontSize}
-          fill={labelColor}
-          fontFamily="system-ui, -apple-system, sans-serif"
-          textAnchor="middle"
-        >
-          {label.text}
-        </SvgText>
-      ))}
+        ))}
     </Svg>
   ) : (
     <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
