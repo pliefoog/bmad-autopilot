@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, StrictMode } from 'react';
 import {
   View,
   StyleSheet,
@@ -531,4 +531,11 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+// Wrap in StrictMode for development to catch side effects and unsafe patterns
+export default __DEV__ 
+  ? () => (
+      <StrictMode>
+        <App />
+      </StrictMode>
+    )
+  : App;
