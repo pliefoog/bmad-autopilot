@@ -107,18 +107,16 @@ export function useMetric(
   // Subscribe ONLY to the version number (primitive value)
   // This prevents infinite loops from object reference changes
   const version = useNmeaStore((state) => {
-    const sensors = state.nmeaData?.sensors;
-    if (!sensors) return -1;
-    const sensor = sensors[sensorType]?.[instance];
+    if (!state?.nmeaData?.sensors) return -1;
+    const sensor = state.nmeaData.sensors[sensorType]?.[instance];
     return sensor?.getMetricVersion(metricKey) ?? -1;
   });
 
   // Fetch metric data when version changes (memoized)
   const enrichedMetric = useMemo(() => {
     const state = useNmeaStore.getState();
-    const sensors = state.nmeaData?.sensors;
-    if (!sensors) return null;
-    const sensor = sensors[sensorType]?.[instance];
+    if (!state?.nmeaData?.sensors) return null;
+    const sensor = state.nmeaData.sensors[sensorType]?.[instance];
     if (!sensor) return null;
 
     const metric = sensor.getMetric(metricKey);
@@ -169,9 +167,8 @@ export function useMetrics(
   // Subscribe to combined version (sum of all metric versions)
   // Re-renders when ANY of the specified metrics change
   const metricsData = useNmeaStore((state) => {
-    const sensors = state.nmeaData?.sensors;
-    if (!sensors) return null;
-    const sensor = sensors[sensorType]?.[instance];
+    if (!state?.nmeaData?.sensors) return null;
+    const sensor = state.nmeaData.sensors[sensorType]?.[instance];
     if (!sensor) return null;
 
     const metrics = metricKeys.map((key) => ({
@@ -237,8 +234,7 @@ export function useSensorVersion(
   instance: number,
 ): number | null {
   return useNmeaStore((state) => {
-    const sensors = state.nmeaData?.sensors;
-    if (!sensors) return null;
-    return sensors[sensorType]?.[instance]?.version ?? null;
+    if (!state?.nmeaData?.sensors) return null;
+    return state.nmeaData.sensors[sensorType]?.[instance]?.version ?? null;
   });
 }
