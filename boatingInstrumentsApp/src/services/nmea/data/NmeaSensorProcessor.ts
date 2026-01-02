@@ -1469,9 +1469,8 @@ export class NmeaSensorProcessor {
     const fieldCount = Object.keys(fields).filter((key) => key.startsWith('field_')).length;
     const measurementCount = Math.floor(fieldCount / 4);
 
-    // Accumulate battery data across all measurements in this XDR sentence
-    // Key: "battery-{instance}", Value: accumulated battery data
-    const batteryAccumulator = new Map<string, { instance: number; data: Partial<BatterySensorData> }>();
+    // NO ACCUMULATION: Each XDR measurement updates immediately
+    // Battery XDR messages arrive as 4 separate sentences at 2Hz - each should update independently
 
     // Process each measurement group
     for (let i = 0; i < measurementCount; i++) {
@@ -1497,24 +1496,13 @@ export class NmeaSensorProcessor {
           log.battery(`XDR Battery match: identifier="${identifier}", type="${measurementType}", units="${units}", value="${measurementValue}", suffix="${suffix}"`);
 
           if (!isNaN(instance)) {
-            // Get or create accumulator for this battery instance
-            const key = `battery-${instance}`;
-            let accumulated = batteryAccumulator.get(key);
-            if (!accumulated) {
-              accumulated = {
-                instance,
-                data: {
-                  name: `Battery ${instance + 1}`,
-                  timestamp: timestamp,
-                }
-              };
-              batteryAccumulator.set(key, accumulated);
-            }
+            // Create battery data object for THIS MEASUREMENT ONLY (no accumulation)
+            const batteryData: Partial<BatterySensorData> = {
+              name: `Battery ${instance + 1}`,
+              timestamp: timestamp,
+            };
 
-            // Accumulate measurements into the same batteryData object
-            const batteryData = accumulated.data;
-
-            // Handle different measurement types
+            // Handle different measurement types - each updates immediately
             if (measurementType === 'U' && units === 'V') {
               // Voltage measurement
               const voltage = parseFloat(measurementValue);
@@ -1526,6 +1514,11 @@ export class NmeaSensorProcessor {
                   batteryData.voltage = voltage;
                   log.battery(`✅ Battery Voltage: ${voltage}V`);
                 }
+                updates.push({
+                  sensorType: 'battery',
+                  instance: instance,
+                  data: batteryData,
+                });
                 continue;
               }
             } else if (measurementType === 'I' && units === 'A') {
@@ -1533,6 +1526,11 @@ export class NmeaSensorProcessor {
               if (!isNaN(current)) {
                 batteryData.current = current;
                 log.battery(`✅ Battery Current: ${current}A`);
+                updates.push({
+                  sensorType: 'battery',
+                  instance: instance,
+                  data: batteryData,
+                });
                 continue;
               }
             } else if (measurementType === 'C' && (units === 'C' || units === 'F')) {
@@ -1543,6 +1541,11 @@ export class NmeaSensorProcessor {
                 }
                 batteryData.temperature = temperature;
                 log.battery(`✅ Battery Temperature: ${temperature}°C`);
+                updates.push({
+                  sensorType: 'battery',
+                  instance: instance,
+                  data: batteryData,
+                });
                 continue;
               }
             } else if (measurementType === 'P' && (units === '%' || units === 'P')) {
@@ -1550,6 +1553,11 @@ export class NmeaSensorProcessor {
               if (!isNaN(soc)) {
                 batteryData.stateOfCharge = soc;
                 log.battery(`✅ Battery SOC: ${soc}%`);
+                updates.push({
+                  sensorType: 'battery',
+                  instance: instance,
+                  data: batteryData,
+                });
                 continue;
               }
             } else if (measurementType === 'V' && units === 'H') {
@@ -1557,6 +1565,11 @@ export class NmeaSensorProcessor {
               if (!isNaN(capacity)) {
                 batteryData.capacity = capacity;
                 log.battery(`✅ Battery Capacity: ${capacity}Ah`);
+                updates.push({
+                  sensorType: 'battery',
+                  instance: instance,
+                  data: batteryData,
+                });
                 continue;
               }
             } else if (measurementType === 'G' && (units === 'N' || !units)) {
@@ -1564,6 +1577,11 @@ export class NmeaSensorProcessor {
               if (chemistry) {
                 batteryData.chemistry = chemistry;
                 log.battery(`✅ Battery Chemistry: ${chemistry}`);
+                updates.push({
+                  sensorType: 'battery',
+                  instance: instance,
+                  data: batteryData,
+                });
                 continue;
               }
             } else {
@@ -1883,14 +1901,8 @@ export class NmeaSensorProcessor {
       // Not a supported XDR measurement type
     } // End of measurement loop
 
-    // Push accumulated battery data (one update per instance with all measurements)
-    batteryAccumulator.forEach(({ instance, data }) => {
-      updates.push({ sensorType: 'battery', instance, data });
-      log.battery(`📦 Batched battery update for instance ${instance}`, () => ({ 
-        fields: Object.keys(data).filter(k => k !== 'name' && k !== 'timestamp'),
-        data 
-      }));
-    });
+    // NO ACCUMULATION: Battery updates already pushed immediately above
+    // Each XDR message (V/I/C/P) updates its metric independently at 2Hz
 
     // Merge updates for the same sensor instance to prevent overwriting
     const mergedUpdates: Array<{ sensorType: string; instance: number; data: any }> = [];

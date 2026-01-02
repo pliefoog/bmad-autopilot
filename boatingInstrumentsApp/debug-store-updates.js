@@ -10,6 +10,10 @@
  *   3. Paste this script and run it
  * 
  * This runs IN THE BROWSER CONSOLE, not Node.js!
+ * 
+ * IMPORTANT: Redux DevTools cannot serialize ES6 Maps!
+ * _history appears empty in Redux but may contain data.
+ * This script directly inspects the Map to verify.
  */
 
 (function() {
@@ -17,6 +21,7 @@
   const DURATION = 10000; // 10 seconds
   
   console.log('🔍 Starting store update monitor...\n');
+  console.log('⚠️  Redux DevTools shows Maps as empty - this script checks actual Map contents\n');
   console.log('Checking every 500ms for 10 seconds\n');
   console.log('─'.repeat(80));
   
@@ -40,7 +45,24 @@
       return;
     }
     
-    // Extract current values
+    // CRITICAL: Check if _history Map actually has data (Redux can't show Maps)
+    const historyMap = batteryInstance._history;
+    if (checkCount === 1 && historyMap) {
+      console.log('\n🔍 Inspecting _history Map (Redux DevTools cannot serialize Maps):');
+      console.log(`  Map type: ${historyMap instanceof Map ? 'ES6 Map ✅' : 'NOT A MAP ❌'}`);
+      console.log(`  Map size: ${historyMap.size}`);
+      console.log(`  Map keys: ${Array.from(historyMap.keys()).join(', ')}`);
+      
+      // Check if metrics are stored
+      if (historyMap.size > 0) {
+        console.log('  ✅ _history Map contains data (Redux just can\'t show it)');
+      } else {
+        console.error('  ❌ _history Map is genuinely EMPTY - data not being stored!');
+      }
+      console.log('');
+    }
+    
+    // Extract current values via getMetric (bypasses Map serialization issue)
     const voltage = batteryInstance.getMetric('voltage');
     const current = batteryInstance.getMetric('current');
     const temp = batteryInstance.getMetric('temperature');
