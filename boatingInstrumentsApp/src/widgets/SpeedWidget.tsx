@@ -72,7 +72,6 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
       template="2Rx2C-SEP-2Rx2C"
       sensorInstance={speedSensorInstance}
       sensorType="speed"
-      debugLayout={true}
       additionalSensors={[
         { sensorType: 'gps', instance: instanceNumber }
       ]}

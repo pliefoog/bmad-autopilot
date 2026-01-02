@@ -45,7 +45,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
         template="2Rx2C-SEP-2Rx2C-WIDE"
         sensorInstance={weatherInstance}
         sensorType="weather"
-        debugLayout={true}
         testID={id}
       >
         {/* Primary Grid: Weather metrics in 2x2 layout */}

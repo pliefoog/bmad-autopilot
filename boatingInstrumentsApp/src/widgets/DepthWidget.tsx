@@ -72,7 +72,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
       template="2Rx1C-SEP-2Rx1C"
       sensorInstance={depthSensorInstance}
       sensorType="depth"
-      debugLayout={true}
       testID={`depth-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Current depth + trend visualization */}
