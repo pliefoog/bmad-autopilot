@@ -1901,40 +1901,15 @@ export class NmeaSensorProcessor {
       // Not a supported XDR measurement type
     } // End of measurement loop
 
-    // NO ACCUMULATION: Battery updates already pushed immediately above
-    // Each XDR message (V/I/C/P) updates its metric independently at 2Hz
+    // NO SPECIAL PROCESSING: Just return updates directly like depth messages
+    // Each measurement triggers immediate sensor update, no accumulation, no merging
+    // Store handles everything (version counters, history, min/max)
 
-    // Merge updates for the same sensor instance to prevent overwriting
-    const mergedUpdates: Array<{ sensorType: string; instance: number; data: any }> = [];
-    const updateMap = new Map<string, any>();
-
-    updates.forEach((update) => {
-      const key = `${update.sensorType}_${update.instance}`;
-      if (updateMap.has(key)) {
-        // Merge data for same sensor instance
-        const existing = updateMap.get(key);
-        updateMap.set(key, {
-          sensorType: update.sensorType,
-          instance: update.instance,
-          data: {
-            ...existing.data,
-            ...update.data,
-          },
-        });
-      } else {
-        updateMap.set(key, { ...update });
-      }
-    });
-
-    // Convert map to array
-    updateMap.forEach((update) => mergedUpdates.push(update));
-
-    // Return collected updates or error
-    if (mergedUpdates.length > 0) {
-      mergedUpdates.forEach((update) => {});
+    // Return collected updates or error - no special processing
+    if (updates.length > 0) {
       return {
         success: true,
-        updates: mergedUpdates,
+        updates: updates,
         messageType: 'XDR',
       };
     }
