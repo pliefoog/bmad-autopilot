@@ -399,8 +399,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           testID="dashboard-pagination"
         />
       </View>
-
-      {/* REMOVED: Manual widget addition via WidgetSelector - Now pure auto-discovery */}
     </View>
   );
 };

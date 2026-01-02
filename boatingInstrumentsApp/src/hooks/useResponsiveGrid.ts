@@ -37,14 +37,9 @@ const GRID_DENSITY = {
 } as const;
 
 /**
- * Widget constraints - grid system
+ * Grid gap between widgets (0 = border-to-border)
  */
-const WIDGET_CONSTRAINTS = {
-  minSize: { width: 140, height: 140 },
-  maxSize: { width: 300, height: 300 },
-  gap: 0, // No gaps between cells - widgets are border to border
-  padding: 16, // Container padding
-} as const;
+const WIDGET_GAP = 0;
 
 export type PlatformType = 'phone' | 'tablet' | 'desktop' | 'largeDesktop';
 export type OrientationType = 'portrait' | 'landscape';
@@ -119,8 +114,8 @@ export const useResponsiveGrid = (
 
     // Calculate cell dimensions considering gaps
     // AC 5: Equal cell sizing with 8pt gaps between cells
-    const totalGapWidth = (cols - 1) * WIDGET_CONSTRAINTS.gap;
-    const totalGapHeight = (rows - 1) * WIDGET_CONSTRAINTS.gap;
+    const totalGapWidth = (cols - 1) * WIDGET_GAP;
+    const totalGapHeight = (rows - 1) * WIDGET_GAP;
 
     // Calculate cell size to fill available space exactly
     // Widget dimensions are independent - height fills vertical space, width fills horizontal
