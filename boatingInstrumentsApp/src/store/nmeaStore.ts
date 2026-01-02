@@ -124,7 +124,6 @@ let lastAlarmEvaluation = 0;
 // React has a limit of ~50 nested updates before throwing "Maximum update depth exceeded"
 const UPDATE_THROTTLE_MS = 10; // Allow max 100 updates/second per sensor
 const lastUpdateTime = new Map<string, number>(); // Track last update per sensor instance
-let lastAlarmEvaluation = 0;
 
 /**
  * Evaluate alarms from all sensor instances
