@@ -66,11 +66,24 @@ export interface TrendLineProps {
  * A configurable trend line chart with axis support for displaying time-series data.
  * MUST be used within TemplatedWidget (or other SensorContext provider).
  *
- * **Usage Pattern:**
- *    ```tsx
- *    <TrendLine metricKey="pressure" timeWindowMs={300000} showXAxis showYAxis />
- *    ```
- *    Automatically gets sensor/instance from SensorContext
+ * Usage Pattern:
+ *   TrendLine metricKey="pressure" timeWindowMs={300000} showXAxis showYAxis
+ *   TrendLine metricKey="depth.max" timeWindowMs={300000} - for virtual stat metric
+ *   Automatically gets sensor/instance from SensorContext
+ *
+ * Virtual Metrics Support (Dot Notation):
+ * - Base metric: metricKey="depth" - renders current depth values over time
+ * - Max stat: metricKey="depth.max" - renders session maximum trend
+ * - Min stat: metricKey="depth.min" - renders session minimum trend
+ * - Avg stat: metricKey="depth.avg" - renders session average trend
+ * 
+ * Virtual metrics are resolved by SensorInstance.getMetric() which:
+ * 1. Parses .stat suffix to identify computation type
+ * 2. Fetches history buffer for base metric
+ * 3. Calculates statistic across history points
+ * 4. Returns enriched MetricValue with proper formatting
+ * 
+ * Chart label automatically shows stat prefix (e.g., "MAX DEPTH", "AVG PRESSURE")
  *
  * Features:
  * - Configurable X/Y axes with top/bottom and up/down orientations
@@ -79,6 +92,7 @@ export interface TrendLineProps {
  * - Optional grid lines
  * - Auto-scaling or fixed value ranges
  * - Responsive sizing
+ * - Full virtual metrics support
  */
 export const TrendLine: React.FC<TrendLineProps> = ({
   metricKey,
@@ -112,18 +126,29 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const instance = context?.sensorInstance?.instance ?? 0;
   const metric = metricKey;
 
+  // Extract base metric name for registry lookup (remove .min/.max/.avg suffix if present)
+  const baseMetric = metric.replace(/\.(min|max|avg)$/, '');
+
   // Get metric mnemonic from field config for label display
   const fieldConfig = useMemo(() => {
-    if (!sensor || !metric) return null;
+    if (!sensor || !baseMetric) return null;
     try {
       const { getSensorField } = require('../registry/SensorConfigRegistry');
-      return getSensorField(sensor, metric);
+      return getSensorField(sensor, baseMetric);
     } catch (error) {
       return null;
     }
-  }, [sensor, metric]);
+  }, [sensor, baseMetric]);
 
-  const mnemonic = fieldConfig?.mnemonic ?? metric?.toUpperCase().slice(0, 5) ?? 'N/A';
+  const mnemonic = useMemo(() => {
+    const baseMnemonic = fieldConfig?.mnemonic ?? baseMetric?.toUpperCase().slice(0, 5) ?? 'N/A';
+    // Add stat prefix if this is a virtual stat metric (e.g., depth.min → MIN DEPTH)
+    const statMatch = metric.match(/\.(min|max|avg)$/);
+    if (statMatch) {
+      return `${statMatch[1].toUpperCase()} ${baseMnemonic}`;
+    }
+    return baseMnemonic;
+  }, [fieldConfig?.mnemonic, baseMetric, metric]);
 
   // Get current unit from MetricValue to display in label (like MetricCell)
   const currentMetric = context?.sensorInstance?.getMetric(metric);

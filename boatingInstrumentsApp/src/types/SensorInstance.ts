@@ -486,6 +486,55 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @returns Enriched history point or undefined
    */
   getMetric(fieldName: string): HistoryPoint | undefined {
+    // Virtual stat metrics: fieldName.min, fieldName.max, fieldName.avg
+    // Example: 'depth.min' returns minimum depth from session stats
+    const statMatch = fieldName.match(/^(.+)\.(min|max|avg)$/);
+    if (statMatch) {
+      const [, baseField, statType] = statMatch;
+      const buffer = this._history.get(baseField);
+      if (!buffer) return undefined;
+      
+      // Get all history points from buffer
+      const historyData = buffer.getAll();
+      if (historyData.length === 0) return undefined;
+      
+      // Extract numeric values (filter out string values)
+      const numericValues = historyData
+        .map(point => point.value)
+        .filter((val): val is HistoryPoint => val !== null && val !== undefined)
+        .map(val => (val as HistoryPoint).value)
+        .filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      
+      if (numericValues.length === 0) return undefined;
+      
+      // Calculate stat
+      let statValue: number;
+      if (statType === 'min') {
+        statValue = Math.min(...numericValues);
+      } else if (statType === 'max') {
+        statValue = Math.max(...numericValues);
+      } else { // avg
+        statValue = numericValues.reduce((sum, v) => sum + v, 0) / numericValues.length;
+      }
+      
+      // Create MetricValue for the stat (same unitType as base field)
+      const unitType = this._metricUnitTypes.get(baseField);
+      const now = Date.now();
+      const metric = unitType
+        ? new MetricValue(statValue, now, unitType)
+        : new MetricValue(statValue, now);
+      
+      // Convert to HistoryPoint format
+      return {
+        si_value: statValue,
+        value: metric.getDisplayValue(),
+        formattedValue: metric.getFormattedValue(),
+        formattedValueWithUnit: metric.getFormattedValueWithUnit(),
+        unit: metric.getUnit(),
+        timestamp: now,
+      };
+    }
+    
     // Virtual metric: utcDate from utcTime timestamp (GPS sensor only)
     if (fieldName === 'utcDate' && this.sensorType === 'gps') {
       const utcTimeBuffer = this._history.get('utcTime');

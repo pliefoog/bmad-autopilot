@@ -29,9 +29,25 @@ interface DepthWidgetProps {
  * 
  * **Layout:** 2Rx1C primary (depth value + TrendLine) + 2Rx1C secondary (min/max stats)
  * 
- * **Special Features:**
- * - TrendLine renders as primary metric (self-subscribing pattern)
- * - Session stats in secondary cells (need stat-based cell component)
+ * **Virtual Metrics Pattern (Single Sensor):**
+ * - Current depth: `metricKey="depth"` (no sensorKey needed - primary sensor implicit)
+ * - Session minimum: `metricKey="depth.min"` (calculated from history buffer)
+ * - Session maximum: `metricKey="depth.max"` (calculated from history buffer)
+ * - Session average: `metricKey="depth.avg"` (calculated from history buffer)
+ * 
+ * **How Virtual Metrics Work:**
+ * 1. SecondaryMetricCell receives `metricKey="depth.min"`
+ * 2. Strips `.min` suffix to look up "depth" field config in SensorConfigRegistry
+ * 3. Calls `sensorInstance.getMetric('depth.min')` which:
+ *    - Parses suffix using regex `/\.(min|max|avg)$/`
+ *    - Fetches history buffer via `getHistory('depth')`
+ *    - Calculates `Math.min(...values)` across all history points
+ *    - Returns enriched MetricValue with proper units/formatting
+ * 4. Component adds stat prefix to mnemonic: "DEPTH" → "MIN DEPTH"
+ * 
+ * **TrendLine Integration:**
+ * - TrendLine component also supports virtual metrics with same dot notation
+ * - Can render trends of min/max/avg values: `<TrendLine metricKey="depth.max" />`
  */
 export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -76,13 +92,9 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
         forceZero
       />
       
-      {/* Secondary Grid: Session statistics 
-          NOTE: Using standard SecondaryMetricCell - will show current depth value
-          TODO: Create StatMetricCell component for min/max/avg stats display
-          For now, depth will repeat in secondary cells (functional but not ideal)
-      */}
-      <SecondaryMetricCell metricKey="depth" />
-      <SecondaryMetricCell metricKey="depth" />
+      {/* Secondary Grid: Session statistics using virtual metrics */}
+      <SecondaryMetricCell metricKey="depth.min" />
+      <SecondaryMetricCell metricKey="depth.max" />
     </TemplatedWidget>
   );
 });

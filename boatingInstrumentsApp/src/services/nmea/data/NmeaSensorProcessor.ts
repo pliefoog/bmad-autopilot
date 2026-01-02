@@ -1490,6 +1490,8 @@ export class NmeaSensorProcessor {
           const instance = parseInt(batteryMatch[1], 10);
           const suffix = batteryMatch[2]; // undefined for BAT_XX, or NOM/CAP/CHEM/TMP/SOC
 
+          log.battery(`XDR Battery match: identifier="${identifier}", type="${measurementType}", units="${units}", value="${measurementValue}", suffix="${suffix}"`);
+
           if (!isNaN(instance)) {
             const batteryData: Partial<BatterySensorData> = {
               name: `Battery ${instance + 1}`,
@@ -1504,9 +1506,11 @@ export class NmeaSensorProcessor {
                 if (suffix === 'NOM') {
                   // Nominal voltage (BAT_XX_NOM)
                   batteryData.nominalVoltage = voltage;
+                  log.battery(`✅ Battery Nominal Voltage: ${voltage}V`);
                 } else {
                   // Actual voltage (BAT_XX)
                   batteryData.voltage = voltage;
+                  log.battery(`✅ Battery Voltage: ${voltage}V`);
                 }
                 updates.push({ sensorType: 'battery', instance, data: batteryData });
                 continue;
@@ -1516,6 +1520,7 @@ export class NmeaSensorProcessor {
               const current = parseFloat(measurementValue);
               if (!isNaN(current)) {
                 batteryData.current = current;
+                log.battery(`✅ Battery Current: ${current}A`);
                 updates.push({ sensorType: 'battery', instance, data: batteryData });
                 continue;
               }
@@ -1528,6 +1533,7 @@ export class NmeaSensorProcessor {
                   temperature = (temperature - 32) * (5 / 9);
                 }
                 batteryData.temperature = temperature;
+                log.battery(`✅ Battery Temperature: ${temperature}°C`);
                 updates.push({ sensorType: 'battery', instance, data: batteryData });
                 continue;
               }
@@ -1536,6 +1542,7 @@ export class NmeaSensorProcessor {
               const soc = parseFloat(measurementValue);
               if (!isNaN(soc)) {
                 batteryData.stateOfCharge = soc;
+                log.battery(`✅ Battery SOC: ${soc}%`);
                 updates.push({ sensorType: 'battery', instance, data: batteryData });
                 continue;
               }
@@ -1544,6 +1551,7 @@ export class NmeaSensorProcessor {
               const capacity = parseFloat(measurementValue);
               if (!isNaN(capacity)) {
                 batteryData.capacity = capacity;
+                log.battery(`✅ Battery Capacity: ${capacity}Ah`);
                 updates.push({ sensorType: 'battery', instance, data: batteryData });
                 continue;
               }
@@ -1552,9 +1560,12 @@ export class NmeaSensorProcessor {
               const chemistry = measurementValue;
               if (chemistry) {
                 batteryData.chemistry = chemistry;
+                log.battery(`✅ Battery Chemistry: ${chemistry}`);
                 updates.push({ sensorType: 'battery', instance, data: batteryData });
                 continue;
               }
+            } else {
+              log.battery(`❌ Battery XDR unmatched: type="${measurementType}", units="${units}", value="${measurementValue}"`);
             }
           }
         }

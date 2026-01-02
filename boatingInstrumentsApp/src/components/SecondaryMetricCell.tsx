@@ -14,18 +14,33 @@ import { ConversionRegistry } from '../utils/ConversionRegistry';
  * 
  * **Registry-First Auto-Fetch Pattern:**
  * Only requires metricKey - everything else auto-fetched from context.
+ * 
+ * **Virtual Metrics Support (Dot Notation):**
+ * Identical to PrimaryMetricCell - supports computed statistics:
+ * - `metricKey="depth"` → current depth value
+ * - `metricKey="depth.min"` → MIN DEPTH (session minimum)
+ * - `metricKey="depth.max"` → MAX DEPTH (session maximum)
+ * - `metricKey="pressure.avg"` → AVG PRESSURE (session average)
+ * 
+ * Virtual metrics calculated in SensorInstance.getMetric() from history buffer.
  */
 interface SecondaryMetricCellProps {
   /** 
    * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
    * Must match field key in SensorConfigRegistry
+   * 
+   * **Supports virtual stat metrics:**
+   * - 'depth.min' - minimum depth from session stats
+   * - 'depth.max' - maximum depth from session stats
+   * - 'depth.avg' - average depth from session stats
+   * (Pattern: fieldName.min, fieldName.max, fieldName.avg)
    */
   metricKey: string;
   /**
    * Sensor key for multi-sensor widgets (e.g., 'gps', 'speed')
    * Defaults to primary sensor if not specified.
    */
-  sensorKey?: SensorType;  
+  sensorKey?: SensorType;
   // Optional styling overrides
   style?: any;
   cellWidth?: number;
@@ -39,13 +54,21 @@ interface SecondaryMetricCellProps {
 }
 
 /**
- * SecondaryMetricCell - Registry-first auto-fetch secondary metric display
+ * SecondaryMetricCell - Registry-first auto-fetch secondary metric display with virtual metrics
  * 
  * **Auto-Fetch Pattern:**
- * Same as PrimaryMetricCell but with smaller, inline styling.
+ * Same as PrimaryMetricCell but with smaller, inline styling for secondary metrics.
+ * Fully supports virtual stat metrics with dot notation.
+ * 
+ * **Virtual Metrics (Dot Notation):**
+ * - Component strips `.stat` suffix for registry lookup
+ * - Calls `sensorInstance.getMetric(metricKey)` which handles calculation
+ * - Adds stat prefix to mnemonic: "DEPTH" → "MIN DEPTH"
  * 
  * **For AI Agents:**
- * Secondary cells are for less critical metrics in bottom section of widgets.
+ * Secondary cells display less critical metrics in bottom section of widgets.
+ * Use for session stats, metadata, or auxiliary measurements.
+ * Pattern identical to PrimaryMetricCell - NEVER add calculation logic here.
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   metricKey,
@@ -62,20 +85,32 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
   
   // Auto-fetch metric value from sensor instance
+  // Supports virtual metrics like 'depth.min', 'depth.max', 'depth.avg'
   const metricValue = sensorInstance?.getMetric(metricKey);
   
-  // Auto-fetch field configuration from registry
+  // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
+  const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');
+  
+  // Auto-fetch field configuration from registry (use base field name)
   const fieldConfig = useMemo(() => {
     try {
-      return getSensorField(sensorType, metricKey);
+      return getSensorField(sensorType, baseMetricKey);
     } catch (error) {
-      console.error(`SecondaryMetricCell: Invalid metricKey "${metricKey}" for sensor "${sensorType}"`, error);
+      console.error(`SecondaryMetricCell: Invalid metricKey "${baseMetricKey}" for sensor "${sensorType}"`, error);
       return null;
     }
-  }, [sensorType, metricKey]);
+  }, [sensorType, baseMetricKey]);
 
   // Extract display values
-  const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
+  const mnemonic = useMemo(() => {
+    const baseMnemonic = fieldConfig?.mnemonic ?? baseMetricKey.toUpperCase().slice(0, 5);
+    // Add stat prefix if this is a virtual stat metric
+    const statMatch = metricKey.match(/\.(min|max|avg)$/);
+    if (statMatch) {
+      return `${statMatch[1].toUpperCase()} ${baseMnemonic}`;
+    }
+    return baseMnemonic;
+  }, [fieldConfig?.mnemonic, baseMetricKey, metricKey]);
   
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {
@@ -87,6 +122,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
       return stringValue ?? '---';
     }
     // Numeric fields: use pre-enriched formattedValue from MetricValue
+    // This includes virtual stat metrics (depth_min, depth_max, etc.)
     return metricValue?.formattedValue ?? '---';
   }, [fieldConfig?.valueType, sensorInstance, metricKey, metricValue?.formattedValue]);
   

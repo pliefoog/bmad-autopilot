@@ -1,0 +1,33 @@
+name: "Depth Only Test"
+description: "Minimal scenario with only depth sensor - useful for debugging"
+duration: 300  # 5 minutes
+version: "2.0"
+category: "debug"
+bridge_mode: "nmea0183"
+
+# Generator parameters (minimal)
+parameters:
+  vessel:
+    keel_offset: 0.5
+  sonar:
+    max_range: 50.0
+
+# Single depth sensor
+sensors:
+  - type: depth_sensor
+    instance: 0
+    name: "Primary Depth Sounder"
+    update_rate: 1  # Hz (1 message per second)
+    physical_properties:
+      transducer_depth: 0.5
+      keel_offset: 0.5
+      max_range: 50.0
+      mounting_location: "bow"
+    data_generation:
+      depth:
+        type: "sine_wave"
+        base: 5.0         # Average depth of 5 meters
+        amplitude: 2.0    # Varies between 3-7 meters
+        period: 15        # 15-second cycle
+        min: 1.5
+        max: 10.0

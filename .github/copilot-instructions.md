@@ -145,12 +145,81 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
 - `4Rx2C-NONE`: Dense 4-row primary grid
 - `3Rx2C-SEP-1Rx2C`: 3-row primary + 1-row secondary
 
+**Widget Sensor & Metric Reference Pattern (CRITICAL):**
+
+**Single Sensor Widget:**
+```tsx
+// Primary sensor is implicit via sensorInstance prop
+<TemplatedWidget
+  template="2Rx1C-SEP-2Rx1C"
+  sensorInstance={depthInstance}
+  sensorType="depth"
+>
+  {/* Implicit primary sensor - no sensorKey needed */}
+  <PrimaryMetricCell metricKey="depth" />
+  <TrendLine metricKey="depth" timeWindowMs={300000} />
+  
+  {/* Virtual stat metrics using dot notation */}
+  <SecondaryMetricCell metricKey="depth.min" />
+  <SecondaryMetricCell metricKey="depth.max" />
+</TemplatedWidget>
+```
+
+**Multi-Sensor Widget:**
+```tsx
+// Primary sensor: speed (STW), Additional sensor: gps (SOG)
+<TemplatedWidget
+  template="2Rx2C-SEP-2Rx2C"
+  sensorInstance={speedInstance}
+  sensorType="speed"
+  additionalSensors={[
+    { sensorType: 'gps', instance: 0 }
+  ]}
+>
+  {/* GPS metrics require explicit sensorKey */}
+  <PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround" />
+  <PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround.max" />
+  
+  {/* Primary sensor (speed) - no sensorKey needed */}
+  <PrimaryMetricCell metricKey="throughWater" />
+  <PrimaryMetricCell metricKey="throughWater.avg" />
+</TemplatedWidget>
+```
+
+**Virtual Stat Metrics (Session Stats):**
+```tsx
+// Dot notation for computed statistics (calculated in SensorInstance.getMetric())
+<PrimaryMetricCell metricKey="depth.min" />        // MIN DEPTH
+<PrimaryMetricCell metricKey="depth.max" />        // MAX DEPTH  
+<SecondaryMetricCell metricKey="depth.avg" />      // AVG DEPTH
+
+// Works with any numeric metric field
+<PrimaryMetricCell metricKey="speedOverGround.max" />  // MAX SOG
+<SecondaryMetricCell metricKey="pressure.avg" />       // AVG pressure
+```
+
+**How Virtual Metrics Work:**
+1. Component strips `.min/.max/.avg` suffix to look up field config in registry
+2. Calls `sensorInstance.getMetric('fieldName.stat')` which:
+   - Parses suffix using regex `/\.(min|max|avg)$/`
+   - Fetches history buffer via `getHistory(fieldName)`
+   - Calculates stat: `Math.min/max()` or average
+   - Returns enriched MetricValue with proper units/formatting
+3. Component adds stat prefix to mnemonic: "MIN DEPTH", "MAX SOG"
+
 **Auto-Fetch Pattern** (SensorContext):
 ```tsx
 {/* MetricCells auto-fetch everything via useSensorContext() */}
 <PrimaryMetricCell metricKey="voltage" />
 {/* Fetches: mnemonic, value, unit, alarm state, category config */}
 ```
+
+**⚠️ CRITICAL RULES:**
+- **Primary sensor:** Implicit via `sensorInstance` prop - NO `sensorKey` needed
+- **Additional sensors:** MUST use `sensorKey` prop to specify sensor type
+- **Virtual metrics:** ALWAYS use dot notation (`.min`, `.max`, `.avg`) NOT underscore
+- **String fields:** Access directly (e.g., `metricKey="name"`) - NOT virtual metrics
+- **Base metric name:** Used for registry lookup (strips virtual suffix automatically)
 
 **Mandatory Mnemonics:**
 All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startup validation throws if missing.

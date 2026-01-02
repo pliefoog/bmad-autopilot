@@ -198,6 +198,58 @@
 			}
 		},
 		{
+			"label": "Start NMEA Bridge: Depth Only (Debug)",
+			"type": "shell",
+			"comment": "Minimal depth sensor only - useful for debugging depth widget",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/navigation/depth-only.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": [
+						"-c"
+					]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start NMEA Bridge: Battery Only (Debug)",
+			"type": "shell",
+			"comment": "Minimal battery sensor only - useful for debugging battery widget",
+			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/battery/battery-only.yml --loop",
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"shell": {
+					"executable": "/bin/zsh",
+					"args": [
+						"-c"
+					]
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Start NMEA Bridge: Multi-Instance Equipment Detection",
 			"type": "shell",
 			"command": "cd ${workspaceFolder}/boatingInstrumentsApp && /opt/homebrew/opt/node@20/bin/node server/nmea-bridge.js --scenario ../marine-assets/test-scenarios/multi-instance/multi-equipment-detection.yml --loop",

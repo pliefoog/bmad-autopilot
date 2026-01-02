@@ -18,9 +18,22 @@ import { ConversionRegistry } from '../utils/ConversionRegistry';
  * - Metric data via instance.getMetric(metricKey)
  * - Field config via getSensorField(sensorType, metricKey)
  * 
+ * **Virtual Metrics Support (Dot Notation):**
+ * Supports computed statistics using dot notation:
+ * - `metricKey="depth.min"` → MIN DEPTH (session minimum)
+ * - `metricKey="depth.max"` → MAX DEPTH (session maximum)
+ * - `metricKey="speedOverGround.avg"` → AVG SOG (session average)
+ * 
+ * Virtual metrics are calculated in SensorInstance.getMetric() by:
+ * 1. Parsing the `.stat` suffix using regex
+ * 2. Fetching history buffer for the base metric
+ * 3. Calculating min/max/avg across all history points
+ * 4. Returning enriched MetricValue with proper units/formatting
+ * 
  * **For AI Agents:**
- * This is the new widget architecture - cells are pure config,
- * all data fetching happens internally via context + registry.
+ * This is the unified widget architecture - cells are pure config,
+ * all data fetching and calculation happens internally via context + registry.
+ * Never calculate stats in UI components - always use virtual metric pattern.
  */
 interface PrimaryMetricCellProps {
   /** 
@@ -51,13 +64,22 @@ interface PrimaryMetricCellProps {
 }
 
 /**
- * PrimaryMetricCell - Registry-first auto-fetch metric display
+ * PrimaryMetricCell - Registry-first auto-fetch metric display with virtual metrics
  * 
  * **Auto-Fetch Pattern:**
  * 1. Reads sensor context (instance + type)
  * 2. Fetches MetricValue via instance.getMetric(metricKey)
  * 3. Fetches field config via getSensorField(sensorType, metricKey)
  * 4. Displays: mnemonic, value, unit, alarm state
+ * 
+ * **Virtual Metrics (Dot Notation):**
+ * - Base metric: `metricKey="depth"` → displays current depth value
+ * - Min stat: `metricKey="depth.min"` → displays session minimum, mnemonic becomes "MIN DEPTH"
+ * - Max stat: `metricKey="depth.max"` → displays session maximum, mnemonic becomes "MAX DEPTH"
+ * - Avg stat: `metricKey="depth.avg"` → displays session average, mnemonic becomes "AVG DEPTH"
+ * 
+ * Component strips `.stat` suffix for registry lookup, then calls `sensorInstance.getMetric()`
+ * which handles calculation and returns enriched MetricValue.
  * 
  * **Dynamic Sizing:**
  * - Mnemonic: 12pt, uppercase, semibold, theme.textSecondary
@@ -66,9 +88,10 @@ interface PrimaryMetricCellProps {
  * - Auto-scales based on cellHeight and cellWidth
  * 
  * **For AI Agents:**
- * This component is now "dumb" - it just displays what it fetches.
- * All logic happens in SensorInstance (metric calculation) and
+ * This component is "dumb" - it just displays what it fetches.
+ * All logic happens in SensorInstance (metric calculation, virtual stats) and
  * ConversionRegistry (unit conversion + formatting).
+ * NEVER add calculation logic here - extend SensorInstance.getMetric() instead.
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   metricKey,
@@ -85,20 +108,32 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
   
   // Auto-fetch metric value from sensor instance
+  // Supports virtual metrics like 'depth.min', 'depth.max', 'depth.avg'
   const metricValue = sensorInstance?.getMetric(metricKey);
   
-  // Auto-fetch field configuration from registry
+  // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
+  const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');
+  
+  // Auto-fetch field configuration from registry (use base field name)
   const fieldConfig = useMemo(() => {
     try {
-      return getSensorField(sensorType, metricKey);
+      return getSensorField(sensorType, baseMetricKey);
     } catch (error) {
       // Note: Error already logged by registry, no need to log again
       return null;
     }
-  }, [sensorType, metricKey]);
+  }, [sensorType, baseMetricKey]);
 
   // Extract display values
-  const mnemonic = fieldConfig?.mnemonic ?? metricKey.toUpperCase().slice(0, 5);
+  const mnemonic = useMemo(() => {
+    const baseMnemonic = fieldConfig?.mnemonic ?? baseMetricKey.toUpperCase().slice(0, 5);
+    // Add stat prefix if this is a virtual stat metric
+    const statMatch = metricKey.match(/\.(min|max|avg)$/);
+    if (statMatch) {
+      return `${statMatch[1].toUpperCase()} ${baseMnemonic}`;
+    }
+    return baseMnemonic;
+  }, [fieldConfig?.mnemonic, baseMetricKey, metricKey]);
   
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {

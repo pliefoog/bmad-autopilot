@@ -170,6 +170,10 @@ class ScenarioDataSource extends EventEmitter {
 
     // Binary NMEA 2000 PGN generator
     this.binaryGenerator = new NMEA2000BinaryGenerator();
+    
+    // Flag to track if a YAML scenario file was loaded
+    // If true, built-in generators should NEVER start
+    this.hasYAMLScenario = false;
   }
 
   /**
@@ -197,9 +201,11 @@ class ScenarioDataSource extends EventEmitter {
       if (fs.existsSync(scenarioPath)) {
         const yamlContent = fs.readFileSync(scenarioPath, 'utf8');
         this.scenario = yaml.load(yamlContent);
+        this.hasYAMLScenario = true; // YAML file was loaded - disable built-in generators
       } else {
         // Use built-in scenario if file not found
         this.scenario = this.getBuiltInScenario(this.config.scenarioName);
+        this.hasYAMLScenario = false; // Built-in scenario - allow built-in generators
       }
 
       if (!this.scenario) {
@@ -627,21 +633,23 @@ class ScenarioDataSource extends EventEmitter {
     console.log(`🔄 YAML generator types found:`, Array.from(yamlGeneratorTypes));
     console.log(`📡 Sensor generator types found:`, Array.from(sensorGeneratorTypes));
     
-    // Start built-in generators only if no YAML or sensor generator exists for that type
+    // If a YAML scenario file was loaded, NEVER start built-in generators
+    // The scenario file explicitly defines what should be generated
+    if (this.hasYAMLScenario) {
+      console.log(`📋 YAML scenario loaded - built-in generators disabled (scenario defines all data sources)`);
+    }
+    
+    // Start built-in generators ONLY if no YAML scenario file was provided
+    // This is for backwards compatibility with programmatic scenarios
     const builtInGenerators = ['depth', 'speed', 'wind', 'gps'];
     
     builtInGenerators.forEach(generatorName => {
-      // Check if YAML generator exists for this type
-      const hasYAML = yamlGeneratorTypes.has('dpt') || 
-                      yamlGeneratorTypes.has('dbt') || 
-                      yamlGeneratorTypes.has('dbk') ||
-                      yamlGeneratorTypes.has('vhw') ||
-                      yamlGeneratorTypes.has('vtg') ||
-                      yamlGeneratorTypes.has('mwv') ||
-                      yamlGeneratorTypes.has('gga') ||
-                      yamlGeneratorTypes.has('rmc');
+      // Skip if YAML scenario file exists - scenario explicitly defines all generators
+      if (this.hasYAMLScenario) {
+        return;
+      }
       
-      // Skip built-in generator if YAML or sensor version exists
+      // Skip built-in generator if YAML or sensor version exists (for built-in scenarios)
       if (generatorName === 'depth' && (yamlGeneratorTypes.has('dpt') || yamlGeneratorTypes.has('dbt') || yamlGeneratorTypes.has('dbk') || sensorGeneratorTypes.has('depth_sensor'))) {
         console.log(`⏭️ Skipping built-in depth generator (YAML/sensor depth generator exists)`);
         return;
@@ -661,7 +669,7 @@ class ScenarioDataSource extends EventEmitter {
       
       const generator = this.dataGenerators.get(generatorName);
       if (generator) {
-        console.log(`▶️ Starting built-in generator: ${generatorName}`);
+        console.log(`▶️ Starting built-in generator: ${generatorName} (no YAML scenario - legacy mode)`);
         this.startGenerator(generatorName, generator, { name: 'continuous' });
       }
     });
