@@ -36,8 +36,6 @@ import CustomWidget from '../../widgets/CustomWidget';
 
 interface ResponsiveDashboardProps {
   headerHeight?: number;
-  footerHeight?: number;
-  pageIndicatorHeight?: number;
   onWidgetPress?: (widgetId: string) => void;
   onWidgetLongPress?: (widgetId: string) => void;
   testID?: string;
@@ -55,8 +53,6 @@ interface ResponsiveDashboardProps {
  */
 export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   headerHeight = 60,
-  footerHeight = 88,
-  pageIndicatorHeight = 30,
   onWidgetPress,
   onWidgetLongPress,
   testID = 'responsive-dashboard',
@@ -68,11 +64,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const widgets = useMemo(() => dashboard?.widgets || [], [dashboard?.widgets]);
 
   // Responsive grid system (AC 1-5)
-  const responsiveGrid: ResponsiveGridState = useResponsiveGrid(
-    headerHeight,
-    footerHeight,
-    pageIndicatorHeight,
-  );
+  const responsiveGrid: ResponsiveGridState = useResponsiveGrid(headerHeight);
 
   // Local page state management
   const [currentPage, setCurrentPage] = useState(0);

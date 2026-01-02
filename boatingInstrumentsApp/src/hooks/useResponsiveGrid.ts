@@ -74,8 +74,6 @@ export interface ResponsiveGridState {
  */
 export const useResponsiveGrid = (
   headerHeight: number = 60,
-  footerHeight: number = 88,
-  pageIndicatorHeight: number = 30,
 ): ResponsiveGridState => {
   const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
   const [isLoading, setIsLoading] = useState(true);
@@ -106,13 +104,13 @@ export const useResponsiveGrid = (
   }, [dimensions.width, dimensions.height]);
 
   // Calculate available space for dashboard content
-  // Note: pageIndicatorHeight NOT subtracted - pagination overlays bottom row
+  // Note: No footer exists, pagination overlays bottom row
   const availableSpace = useMemo(() => {
     return {
       width: dimensions.width,  // Full width (no horizontal padding)
-      height: dimensions.height - headerHeight - footerHeight,  // Pagination overlays widgets
+      height: dimensions.height - headerHeight,  // Only subtract header height
     };
-  }, [dimensions, headerHeight, footerHeight]);
+  }, [dimensions, headerHeight]);
 
   // Calculate grid layout based on platform and orientation
   const layout: GridLayout = useMemo(() => {
