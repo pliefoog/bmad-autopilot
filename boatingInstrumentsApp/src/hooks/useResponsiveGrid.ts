@@ -124,17 +124,11 @@ export const useResponsiveGrid = (
     const totalGapWidth = (cols - 1) * WIDGET_CONSTRAINTS.gap;
     const totalGapHeight = (rows - 1) * WIDGET_CONSTRAINTS.gap;
 
-    // Calculate cell size to fit available space exactly
-    // Remove maxSize constraint to prevent overflow
-    const cellWidth = Math.max(
-      WIDGET_CONSTRAINTS.minSize.width,
-      (availableSpace.width - totalGapWidth) / cols,
-    );
-
-    const cellHeight = Math.max(
-      WIDGET_CONSTRAINTS.minSize.height,
-      (availableSpace.height - totalGapHeight) / rows,
-    );
+    // Calculate cell size to fill available space exactly
+    // Widget dimensions are independent - height fills vertical space, width fills horizontal
+    // This ensures rows are equally distributed over available height (not locked to aspect ratio)
+    const cellWidth = (availableSpace.width - totalGapWidth) / cols;
+    const cellHeight = (availableSpace.height - totalGapHeight) / rows;
 
     // Calculate actual container dimensions needed
     const containerWidth = cellWidth * cols + totalGapWidth;
