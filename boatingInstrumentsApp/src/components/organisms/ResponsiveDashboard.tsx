@@ -41,6 +41,128 @@ import { WeatherWidget } from '../../widgets/WeatherWidget';
 import { RudderWidget } from '../../widgets/RudderWidget';
 import CustomWidget from '../../widgets/CustomWidget';
 
+// ========================================
+// DRAGGABLE WIDGET COMPONENT
+// ========================================
+// Separate component to properly use hooks for drag animations
+interface DraggableWidgetProps {
+  widgetId: string;
+  index: number;
+  pageIndex: number;
+  position: { x: number; y: number; width: number; height: number };
+  WidgetComponent: React.ComponentType<any>;
+  instanceNumber: number;
+  isBeingDragged: boolean;
+  isDragging: boolean;
+  dragX: Animated.SharedValue<number>;
+  dragY: Animated.SharedValue<number>;
+  dragScale: Animated.SharedValue<number>;
+  dragElevation: Animated.SharedValue<number>;
+  onLongPressStart: (widgetId: string, index: number, pageIndex: number) => void;
+  onDragMove: (translateX: number, translateY: number, absoluteX: number, absoluteY: number) => void;
+  onDragEnd: (translateX: number, translateY: number, absoluteX: number, absoluteY: number) => void;
+}
+
+const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
+  widgetId,
+  index,
+  pageIndex,
+  position,
+  WidgetComponent,
+  instanceNumber,
+  isBeingDragged,
+  isDragging,
+  dragX,
+  dragY,
+  dragScale,
+  dragElevation,
+  onLongPressStart,
+  onDragMove,
+  onDragEnd,
+}) => {
+  // Long press gesture activates drag mode
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
+    .onStart(() => {
+      runOnJS(onLongPressStart)(widgetId, index, pageIndex);
+    })
+    .enabled(!isDragging); // Disable if already dragging
+
+  // Pan gesture for dragging (only active after long press)
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      runOnJS(onDragMove)(
+        event.translationX,
+        event.translationY,
+        event.absoluteX,
+        event.absoluteY,
+      );
+    })
+    .onEnd((event) => {
+      runOnJS(onDragEnd)(
+        event.translationX,
+        event.translationY,
+        event.absoluteX,
+        event.absoluteY,
+      );
+    })
+    .enabled(isBeingDragged); // Only active when this widget is being dragged
+
+  // Combine gestures: long press enables pan
+  const combinedGesture = Gesture.Race(longPressGesture, panGesture);
+
+  // Animated style for dragged widget
+  const animatedStyle = useAnimatedStyle(() => {
+    if (!isBeingDragged) {
+      return {};
+    }
+
+    return {
+      transform: [
+        { translateX: dragX.value },
+        { translateY: dragY.value },
+        { scale: dragScale.value },
+      ],
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: dragElevation.value,
+      zIndex: 999, // Bring to front
+    };
+  }, [isBeingDragged]);
+
+  return (
+    <GestureDetector gesture={combinedGesture}>
+      <Animated.View
+        style={[
+          styles.widgetContainer,
+          {
+            position: 'absolute',
+            left: position.x,
+            top: position.y,
+            width: position.width,
+            height: position.height,
+            opacity: isBeingDragged ? DRAG_CONFIG.DRAGGED_WIDGET_OPACITY : 1,
+          },
+          animatedStyle,
+        ]}
+        testID={`widget-${widgetId}`}
+      >
+        <WidgetComponent
+          id={widgetId}
+          instanceNumber={instanceNumber}
+        />
+      </Animated.View>
+    </GestureDetector>
+  );
+});
+
+DraggableWidget.displayName = 'DraggableWidget';
+
+// ========================================
+// MAIN COMPONENT
+// ========================================
+
 interface ResponsiveDashboardProps {
   headerHeight?: number;
   testID?: string;
@@ -521,87 +643,25 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       // Check if this widget is being dragged
       const isBeingDragged = dragState.isDragging && dragState.widgetId === widgetId;
 
-      // ========================================
-      // GESTURE SETUP
-      // ========================================
-
-      // Long press gesture activates drag mode
-      const longPressGesture = Gesture.LongPress()
-        .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
-        .onStart(() => {
-          runOnJS(handleLongPressStart)(widgetId, index, pageLayout.pageIndex);
-        })
-        .enabled(!dragState.isDragging); // Disable if already dragging
-
-      // Pan gesture for dragging (only active after long press)
-      const panGesture = Gesture.Pan()
-        .onUpdate((event) => {
-          runOnJS(handleDragMove)(
-            event.translationX,
-            event.translationY,
-            event.absoluteX,
-            event.absoluteY,
-          );
-        })
-        .onEnd((event) => {
-          runOnJS(handleDragEnd)(
-            event.translationX,
-            event.translationY,
-            event.absoluteX,
-            event.absoluteY,
-          );
-        })
-        .enabled(isBeingDragged); // Only active when this widget is being dragged
-
-      // Combine gestures: long press enables pan
-      const combinedGesture = Gesture.Race(longPressGesture, panGesture);
-
-      // ========================================
-      // ANIMATED STYLE (for dragged widget)
-      // ========================================
-
-      const animatedStyle = useAnimatedStyle(() => {
-        if (!isBeingDragged) {
-          return {};
-        }
-
-        return {
-          transform: [
-            { translateX: dragX.value },
-            { translateY: dragY.value },
-            { scale: dragScale.value },
-          ],
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: dragElevation.value,
-          zIndex: 999, // Bring to front
-        };
-      }, [isBeingDragged]);
-
       return (
-        <GestureDetector gesture={combinedGesture} key={`${widgetId}-${pageLayout.pageIndex}`}>
-          <Animated.View
-            style={[
-              styles.widgetContainer,
-              {
-                position: 'absolute',
-                left: position.x,
-                top: position.y,
-                width: position.width,
-                height: position.height,
-                opacity: isBeingDragged ? DRAG_CONFIG.DRAGGED_WIDGET_OPACITY : 1,
-              },
-              animatedStyle,
-            ]}
-            testID={`widget-${widgetId}`}
-          >
-            <WidgetComponent
-              id={widgetId}
-              instanceNumber={instanceNumber}
-            />
-          </Animated.View>
-        </GestureDetector>
+        <DraggableWidget
+          key={`${widgetId}-${pageLayout.pageIndex}`}
+          widgetId={widgetId}
+          index={index}
+          pageIndex={pageLayout.pageIndex}
+          position={position}
+          WidgetComponent={WidgetComponent}
+          instanceNumber={instanceNumber}
+          isBeingDragged={isBeingDragged}
+          isDragging={dragState.isDragging}
+          dragX={dragX}
+          dragY={dragY}
+          dragScale={dragScale}
+          dragElevation={dragElevation}
+          onLongPressStart={handleLongPressStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+        />
       );
     },
     [
