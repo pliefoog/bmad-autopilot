@@ -220,28 +220,19 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [isAnimatingPageTransition, setIsAnimatingPageTransition] = useState(false);
 
-  // Drag state management
+  // Drag state management - simplified store-based approach
   const [dragState, setDragState] = useState<{
-    widgetId: string | null;
+    draggedWidget: WidgetConfig | null; // Widget being dragged (removed from array)
     sourceIndex: number | null;
-    sourcePageIndex: number | null;
     isDragging: boolean;
-    touchOffset: { x: number; y: number } | null;
-    placeholderIndex: number | null; // LOCAL placeholder position, not in widget array
   }>({
-    widgetId: null,
+    draggedWidget: null,
     sourceIndex: null,
-    sourcePageIndex: null,
     isDragging: false,
-    touchOffset: null,
-    placeholderIndex: null,
   });
 
-  // Shared values for drag animations (Reanimated)
-  const dragX = useSharedValue(0);
-  const dragY = useSharedValue(0);
-  const dragScale = useSharedValue(1);
-  const dragElevation = useSharedValue(2);
+  // Floating widget position for drag overlay
+  const [floatingPos, setFloatingPos] = useState<{ x: number; y: number } | null>(null);
 
   // Debounce drag end to prevent rapid triggers
   const lastDragEndTime = useRef(0);
@@ -385,62 +376,70 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       dragHaptics.onLift();
 
+      // Remove widget from array, insert placeholder at source
+      const removedWidget = useWidgetStore.getState().startDrag(widgetId, index);
+      if (!removedWidget) {
+        console.error('[DRAG] Failed to start drag - widget not found');
+        return;
+      }
+
+      // Calculate initial floating position (widget's grid position)
+      const pageLayout = pageLayouts[pageIndex];
+      const cellPosition = pageLayout?.cells[index];
+      if (!cellPosition) {
+        console.error('[DRAG] Failed to get cell position');
+        return;
+      }
+
       setDragState({
-        widgetId,
+        draggedWidget: removedWidget,
         sourceIndex: index,
-        sourcePageIndex: pageIndex,
         isDragging: true,
-        touchOffset: { x: touchX, y: touchY },
-        placeholderIndex: index, // Start with placeholder at source position
       });
 
-      // Animate widget lift
-      dragScale.value = withSpring(
-        DRAG_CONFIG.DRAGGED_WIDGET_SCALE,
-        DRAG_CONFIG.DROP_SPRING_CONFIG,
-      );
-      dragElevation.value = withTiming(DRAG_CONFIG.DRAGGED_WIDGET_ELEVATION);
+      setFloatingPos({
+        x: cellPosition.x,
+        y: cellPosition.y,
+      });
 
       logger.dragDrop('Widget lifted', () => ({ widgetId, index, pageIndex, touchX, touchY }));
     },
-    [dragScale, dragElevation],
+    [pageLayouts],
   );
 
   /**
-   * Handle drag move - update position and placeholder
+   * Handle drag move - update floating position and placeholder
    */
   const handleDragMove = useCallback(
     (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
-      if (!dragState.isDragging) return;
+      if (!dragState.isDragging || !floatingPos) return;
 
       console.log('[DRAG] Move:', { translationX, translationY, absoluteX, absoluteY });
 
-      // Update shared values directly - no spring animation on every frame for smooth tracking
-      dragX.value = translationX;
-      dragY.value = translationY;
-
-      console.log('[DRAG] Updated shared values:', dragX.value, dragY.value);
+      // Update floating widget position (follows cursor)
+      setFloatingPos({
+        x: floatingPos.x + translationX,
+        y: floatingPos.y + translationY,
+      });
 
       // Calculate hover index (which cell is being hovered over)
       const hoverIndex = calculateHoverIndex(absoluteX, absoluteY, responsiveGrid, currentPage);
 
-      // Update placeholder if hovering over different position
-      if (hoverIndex !== -1 && hoverIndex !== dragState.placeholderIndex) {
-        if (isDragSignificant(translationX, translationY)) {
-          console.log('[DRAG] Update placeholder:', dragState.placeholderIndex, '→', hoverIndex);
-          setDragState((prev) => ({ ...prev, placeholderIndex: hoverIndex }));
-        }
+      // Update placeholder position if hovering over different cell
+      if (hoverIndex !== -1 && isDragSignificant(translationX, translationY)) {
+        console.log('[DRAG] Move placeholder to index:', hoverIndex);
+        useWidgetStore.getState().insertPlaceholder(hoverIndex);
       }
     },
-    [dragState.isDragging, dragState.placeholderIndex, dragX, dragY, responsiveGrid, currentPage],
+    [dragState.isDragging, floatingPos, responsiveGrid, currentPage],
   );
 
   /**
-   * Handle drag end - complete reorder or cancel
+   * Handle drag end - complete reorder by replacing placeholder with widget
    */
   const handleDragEnd = useCallback(
     (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
-      if (!dragState.isDragging || !dragState.widgetId) return;
+      if (!dragState.isDragging || !dragState.draggedWidget) return;
 
       // Debounce: prevent double-trigger from rapid gestures
       const now = Date.now();
@@ -449,84 +448,52 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }
       lastDragEndTime.current = now;
 
-      // Calculate final drop position
-      const dropIndex = calculateHoverIndex(absoluteX, absoluteY, responsiveGrid, currentPage);
+      // Replace placeholder with dragged widget
+      useWidgetStore.getState().finishDrag(dragState.draggedWidget);
 
-      // Only reorder if moved to different position and movement was significant
-      if (
-        dropIndex !== -1 &&
-        dropIndex !== dragState.sourceIndex &&
-        isDragSignificant(translationX, translationY)
-      ) {
-        useWidgetStore.getState().reorderWidget(dragState.sourceIndex!, dropIndex);
+      // Haptic feedback
+      if (isDragSignificant(translationX, translationY)) {
         dragHaptics.onDrop();
-
-        logger.dragDrop('Widget dropped', () => ({
-          widgetId: dragState.widgetId,
-          fromIndex: dragState.sourceIndex,
-          toIndex: dropIndex,
-        }));
       } else {
         dragHaptics.onCancel();
       }
 
-      // Animate back to normal first, THEN reset state
-      // This ensures spring animation completes while widget is still in drag mode
-      dragScale.value = withSpring(1, DRAG_CONFIG.DROP_SPRING_CONFIG);
-      dragElevation.value = withTiming(2);
-      dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
-      dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
+      // Reset drag state
+      setDragState({
+        draggedWidget: null,
+        sourceIndex: null,
+        isDragging: false,
+      });
+      setFloatingPos(null);
 
-      // Delay state reset until animation completes (spring takes ~300ms to settle)
-      setTimeout(() => {
-        setDragState({
-          widgetId: null,
-          sourceIndex: null,
-          sourcePageIndex: null,
-          isDragging: false,
-          touchOffset: null,
-          placeholderIndex: null,
-        });
-      }, 300);
+      logger.dragDrop('Widget dropped', () => ({
+        widgetId: dragState.draggedWidget!.id,
+      }));
     },
-    [
-      dragState.isDragging,
-      dragState.widgetId,
-      dragState.sourceIndex,
-      dragX,
-      dragY,
-      dragScale,
-      dragElevation,
-      responsiveGrid,
-      currentPage,
-    ],
+    [dragState.isDragging, dragState.draggedWidget],
   );
 
   /**
-   * Cancel drag (Escape key or widget unmounted)
+   * Cancel drag (Escape key or widget unmounted) - return widget to original position
    */
   const handleDragCancel = useCallback(() => {
-    if (!dragState.isDragging) return;
+    if (!dragState.isDragging || !dragState.draggedWidget) return;
 
     dragHaptics.onCancel();
 
+    // Replace placeholder with dragged widget (returns to last placeholder position)
+    useWidgetStore.getState().finishDrag(dragState.draggedWidget);
+
+    // Reset drag state
     setDragState({
-      widgetId: null,
+      draggedWidget: null,
       sourceIndex: null,
-      sourcePageIndex: null,
       isDragging: false,
-      touchOffset: null,
-      placeholderIndex: null,
     });
+    setFloatingPos(null);
 
-    // Animate back to original position
-    dragScale.value = withSpring(1, DRAG_CONFIG.DROP_SPRING_CONFIG);
-    dragElevation.value = withTiming(2);
-    dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
-    dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
-
-    logger.dragDrop('Drag cancelled', () => ({ widgetId: dragState.widgetId }));
-  }, [dragState.isDragging, dragScale, dragElevation, dragX, dragY]);
+    logger.dragDrop('Drag cancelled', () => ({ widgetId: dragState.draggedWidget!.id }));
+  }, [dragState.isDragging, dragState.draggedWidget]);
 
   // Escape key cancels drag (web only)
   useEffect(() => {
@@ -544,13 +511,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Cancel drag if dragged widget no longer exists (safety check)
   useEffect(() => {
-    if (dragState.isDragging && dragState.widgetId) {
-      const widgetExists = widgets.some((w) => w.id === dragState.widgetId);
+    if (dragState.isDragging && dragState.draggedWidget) {
+      const widgetExists = widgets.some((w) => w.id === dragState.draggedWidget!.id);
       if (!widgetExists) {
         handleDragCancel();
       }
     }
-  }, [widgets, dragState.isDragging, dragState.widgetId, handleDragCancel]);
+  }, [widgets, dragState.isDragging, dragState.draggedWidget, handleDragCancel]);
 
   // ========================================
   // PAGE SWIPE GESTURE (New Gesture API)
