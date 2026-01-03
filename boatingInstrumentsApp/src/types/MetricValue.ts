@@ -35,7 +35,7 @@ import { ConversionRegistry } from '../utils/ConversionRegistry';
 export class MetricValue {
   /** Value in SI units (number or NaN for "no reading") */
   readonly si_value: number;
-  
+
   /** Timestamp in ms */
   readonly timestamp: number;
 

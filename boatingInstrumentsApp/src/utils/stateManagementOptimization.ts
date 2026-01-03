@@ -397,7 +397,7 @@ export function createBatchUpdater<TStore>(
 ): (updater: (state: TStore) => Partial<TStore>) => void {
   const { maxWait = 50, maxBatch = 10 } = config;
 
-  let pendingUpdates: Array<(state: TStore) => Partial<TStore>> = [];
+  let pendingUpdates: ((state: TStore) => Partial<TStore>)[] = [];
   let timeoutId: NodeJS.Timeout | null = null;
 
   const flush = () => {
@@ -460,7 +460,7 @@ export function createBatchUpdater<TStore>(
 export function useBatchedUpdates(config: BatchUpdateConfig = {}) {
   const { maxWait = 50, maxBatch = 10 } = config;
 
-  const pendingUpdates = useRef<Array<() => void>>([]);
+  const pendingUpdates = useRef<(() => void)[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const flush = useCallback(() => {
@@ -550,7 +550,7 @@ export function useSubscriptionMonitor<TStore, TResult>(
   useEffect(() => {
     // Only monitor in development
     if (!__DEV__) return;
-    
+
     renderCount.current++;
 
     const elapsed = Date.now() - startTime.current;
@@ -561,9 +561,9 @@ export function useSubscriptionMonitor<TStore, TResult>(
         `[State Performance] ${componentName} is re-rendering frequently: ` +
           `${rendersPerSecond.toFixed(2)} renders/sec ` +
           `(${renderCount.current} renders in ${elapsed}ms). ` +
-            `Consider optimizing selector or using throttled subscription.`,
-        );
-      }
+          `Consider optimizing selector or using throttled subscription.`,
+      );
+    }
   });
 }
 

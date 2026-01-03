@@ -1,6 +1,6 @@
 /**
  * Integration Tests for Multi-Protocol Validation
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC2: Multi-protocol validation - Concurrent TCP/UDP/WebSocket connections across all operational modes
  */
@@ -22,20 +22,20 @@ describe('Multi-Protocol Integration Tests', () => {
     messageCollections = {
       tcp: [],
       udp: [],
-      websocket: []
+      websocket: [],
     };
 
     // Start bridge in scenario mode for consistent data
     const config = {
       mode: 'scenario',
       scenarioName: 'basic-navigation',
-      speed: 1.0
+      speed: 1.0,
     };
 
     await bridge.start(config);
-    
+
     // Wait for servers to be fully ready
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 
   afterEach(async () => {
@@ -104,13 +104,17 @@ describe('Multi-Protocol Integration Tests', () => {
           tcpClient.on('error', reject);
         });
         tcpClient.on('data', (data) => {
-          const messages = data.toString().trim().split('\n').filter(msg => msg.length > 0);
+          const messages = data
+            .toString()
+            .trim()
+            .split('\n')
+            .filter((msg) => msg.length > 0);
           messageCollections.tcp.push(...messages);
         });
 
         // UDP client
         udpClient = dgram.createSocket('udp4');
-        await new Promise(resolve => udpClient.bind(resolve));
+        await new Promise((resolve) => udpClient.bind(resolve));
         udpClient.on('message', (message) => {
           const msg = message.toString().trim();
           if (msg.length > 0) {
@@ -135,7 +139,7 @@ describe('Multi-Protocol Integration Tests', () => {
       await setupClients();
 
       // Allow time for message collection
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Verify all protocols received messages
       expect(messageCollections.tcp.length).toBeGreaterThan(0);
@@ -181,11 +185,13 @@ describe('Multi-Protocol Integration Tests', () => {
 
       // Verify all clients are connected
       const initialStatus = bridge.getStatus();
-      expect(initialStatus.protocolServers.stats.activeConnections).toBeGreaterThanOrEqual(clientCount);
+      expect(initialStatus.protocolServers.stats.activeConnections).toBeGreaterThanOrEqual(
+        clientCount,
+      );
 
       // Disconnect one client
       clients[0].destroy();
-      await new Promise(resolve => setTimeout(resolve, 100)); // Allow time for cleanup
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Allow time for cleanup
 
       // Verify remaining clients still receive data
       const messageReceived = new Promise((resolve) => {
@@ -198,7 +204,7 @@ describe('Multi-Protocol Integration Tests', () => {
 
       const receivedData = await Promise.race([
         messageReceived,
-        new Promise(resolve => setTimeout(() => resolve(false), 3000))
+        new Promise((resolve) => setTimeout(() => resolve(false), 3000)),
       ]);
 
       expect(receivedData).toBe(true);
@@ -206,17 +212,17 @@ describe('Multi-Protocol Integration Tests', () => {
       // Verify connection count decreased
       const finalStatus = bridge.getStatus();
       expect(finalStatus.protocolServers.stats.activeConnections).toBe(
-        initialStatus.protocolServers.stats.activeConnections - 1
+        initialStatus.protocolServers.stats.activeConnections - 1,
       );
 
       // Cleanup remaining clients
-      clients.slice(1).forEach(client => client.destroy());
+      clients.slice(1).forEach((client) => client.destroy());
     }, 15000);
 
     test('should handle WebSocket connection lifecycle correctly', async () => {
       // Test WebSocket connection, disconnection, and reconnection
       wsClient = new WebSocket('ws://localhost:8080');
-      
+
       let messagesReceived = 0;
       const messagePromise = new Promise((resolve) => {
         wsClient.on('message', () => {
@@ -236,7 +242,7 @@ describe('Multi-Protocol Integration Tests', () => {
 
       // Close connection
       wsClient.close();
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Reconnect
       const wsClient2 = new WebSocket('ws://localhost:8080');
@@ -263,26 +269,26 @@ describe('Multi-Protocol Integration Tests', () => {
     test('should handle UDP broadcast reception correctly', async () => {
       // UDP is connectionless, so test broadcast reception
       udpClient = dgram.createSocket('udp4');
-      
+
       const messagesReceived = [];
       udpClient.on('message', (message, remote) => {
         messagesReceived.push({
           message: message.toString(),
           from: remote,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       });
 
-      await new Promise(resolve => udpClient.bind(resolve));
+      await new Promise((resolve) => udpClient.bind(resolve));
 
       // Allow time for UDP messages
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       expect(messagesReceived.length).toBeGreaterThan(0);
 
       // Verify messages are properly formatted NMEA
-      const validMessages = messagesReceived.filter(msg => 
-        msg.message.match(/^\$[A-Z]{2}[A-Z]{3},.*\*[0-9A-F]{2}/)
+      const validMessages = messagesReceived.filter((msg) =>
+        msg.message.match(/^\$[A-Z]{2}[A-Z]{3},.*\*[0-9A-F]{2}/),
       );
       expect(validMessages.length).toBe(messagesReceived.length);
 
@@ -290,7 +296,7 @@ describe('Multi-Protocol Integration Tests', () => {
       if (messagesReceived.length > 1) {
         const intervals = [];
         for (let i = 1; i < messagesReceived.length; i++) {
-          intervals.push(messagesReceived[i].timestamp - messagesReceived[i-1].timestamp);
+          intervals.push(messagesReceived[i].timestamp - messagesReceived[i - 1].timestamp);
         }
         const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
         expect(avgInterval).toBeGreaterThan(100); // At least 100ms between messages
@@ -312,11 +318,11 @@ describe('Multi-Protocol Integration Tests', () => {
           client.connect(2000, 'localhost', resolve);
           client.on('error', reject);
         });
-        
+
         client.on('data', () => {
           messageCounters.tcp++;
         });
-        
+
         clients.tcp.push(client);
       }
 
@@ -327,17 +333,17 @@ describe('Multi-Protocol Integration Tests', () => {
           client.on('open', resolve);
           client.on('error', reject);
         });
-        
+
         client.on('message', () => {
           messageCounters.websocket++;
         });
-        
+
         clients.websocket.push(client);
       }
 
       // Create UDP client
       udpClient = dgram.createSocket('udp4');
-      await new Promise(resolve => udpClient.bind(resolve));
+      await new Promise((resolve) => udpClient.bind(resolve));
       udpClient.on('message', () => {
         messageCounters.udp++;
       });
@@ -345,9 +351,9 @@ describe('Multi-Protocol Integration Tests', () => {
       // Run load test for 10 seconds
       const testDuration = 10000;
       const startTime = Date.now();
-      
-      await new Promise(resolve => setTimeout(resolve, testDuration));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, testDuration));
+
       const endTime = Date.now();
       const actualDuration = (endTime - startTime) / 1000;
 
@@ -370,8 +376,8 @@ describe('Multi-Protocol Integration Tests', () => {
       expect(memoryUsage.heapUsed).toBeLessThan(200 * 1024 * 1024); // <200MB
 
       // Cleanup clients
-      clients.tcp.forEach(client => client.destroy());
-      clients.websocket.forEach(client => client.close());
+      clients.tcp.forEach((client) => client.destroy());
+      clients.websocket.forEach((client) => client.close());
     }, 25000);
   });
 
@@ -391,16 +397,16 @@ describe('Multi-Protocol Integration Tests', () => {
       });
 
       udpClient = dgram.createSocket('udp4');
-      await new Promise(resolve => udpClient.bind(resolve));
+      await new Promise((resolve) => udpClient.bind(resolve));
 
       // Collect messages from initial mode (scenario)
       const preTransitionMessages = { tcp: 0, ws: 0, udp: 0 };
-      
+
       tcpClient.on('data', () => preTransitionMessages.tcp++);
       wsClient.on('message', () => preTransitionMessages.ws++);
       udpClient.on('message', () => preTransitionMessages.udp++);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Verify initial message flow
       expect(preTransitionMessages.tcp).toBeGreaterThan(0);
@@ -409,16 +415,17 @@ describe('Multi-Protocol Integration Tests', () => {
 
       // Switch to file mode
       const testFilePath = require('path').join(__dirname, '../fixtures/mode-switch-test.nmea');
-      require('fs').writeFileSync(testFilePath, 
+      require('fs').writeFileSync(
+        testFilePath,
         '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A\n' +
-        '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\n'
+          '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\n',
       );
 
       const fileConfig = {
         mode: 'file',
         filePath: testFilePath,
         rate: 50,
-        loop: true
+        loop: true,
       };
 
       await bridge.switchMode(fileConfig);
@@ -440,7 +447,7 @@ describe('Multi-Protocol Integration Tests', () => {
       udpClient.on('message', () => postTransitionMessages.udp++);
 
       resetCounters();
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Verify message flow continues after mode switch
       expect(postTransitionMessages.tcp).toBeGreaterThan(0);

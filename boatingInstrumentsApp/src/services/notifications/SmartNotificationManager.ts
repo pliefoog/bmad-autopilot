@@ -837,7 +837,7 @@ interface UserResponsePattern {
 interface GeofenceConfig {
   id: string;
   name: string;
-  coordinates: Array<{ latitude: number; longitude: number }>;
+  coordinates: { latitude: number; longitude: number }[];
   radius?: number; // For circular geofences
   suppressionRules: {
     alarmTypes: string[];

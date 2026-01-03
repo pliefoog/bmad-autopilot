@@ -12,32 +12,32 @@ import { useMetric } from '../hooks/useMetric';
 
 /**
  * PrimaryMetricCell Props
- * 
+ *
  * **Registry-First Auto-Fetch Pattern:**
  * Only requires metricKey - everything else auto-fetched from context:
  * - Sensor instance from useSensorContext()
  * - Metric data via instance.getMetric(metricKey)
  * - Field config via getSensorField(sensorType, metricKey)
- * 
+ *
  * **Virtual Metrics Support (Dot Notation):**
  * Supports computed statistics using dot notation:
  * - `metricKey="depth.min"` → MIN DEPTH (session minimum)
  * - `metricKey="depth.max"` → MAX DEPTH (session maximum)
  * - `metricKey="speedOverGround.avg"` → AVG SOG (session average)
- * 
+ *
  * Virtual metrics are calculated in SensorInstance.getMetric() by:
  * 1. Parsing the `.stat` suffix using regex
  * 2. Fetching history buffer for the base metric
  * 3. Calculating min/max/avg across all history points
  * 4. Returning enriched MetricValue with proper units/formatting
- * 
+ *
  * **For AI Agents:**
  * This is the unified widget architecture - cells are pure config,
  * all data fetching and calculation happens internally via context + registry.
  * Never calculate stats in UI components - always use virtual metric pattern.
  */
 interface PrimaryMetricCellProps {
-  /** 
+  /**
    * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
    * Must match field key in SensorConfigRegistry
    */
@@ -66,28 +66,28 @@ interface PrimaryMetricCellProps {
 
 /**
  * PrimaryMetricCell - Registry-first auto-fetch metric display with virtual metrics
- * 
+ *
  * **Auto-Fetch Pattern:**
  * 1. Reads sensor context (instance + type)
  * 2. Fetches MetricValue via instance.getMetric(metricKey)
  * 3. Fetches field config via getSensorField(sensorType, metricKey)
  * 4. Displays: mnemonic, value, unit, alarm state
- * 
+ *
  * **Virtual Metrics (Dot Notation):**
  * - Base metric: `metricKey="depth"` → displays current depth value
  * - Min stat: `metricKey="depth.min"` → displays session minimum, mnemonic becomes "MIN DEPTH"
  * - Max stat: `metricKey="depth.max"` → displays session maximum, mnemonic becomes "MAX DEPTH"
  * - Avg stat: `metricKey="depth.avg"` → displays session average, mnemonic becomes "AVG DEPTH"
- * 
+ *
  * Component strips `.stat` suffix for registry lookup, then calls `sensorInstance.getMetric()`
  * which handles calculation and returns enriched MetricValue.
- * 
+ *
  * **Dynamic Sizing:**
  * - Mnemonic: 12pt, uppercase, semibold, theme.textSecondary
  * - Value: 36pt, monospace, bold, theme.text (or alarm color)
  * - Unit: 12pt, regular, theme.textSecondary
  * - Auto-scales based on cellHeight and cellWidth
- * 
+ *
  * **For AI Agents:**
  * This component is "dumb" - it just displays what it fetches.
  * All logic happens in SensorInstance (metric calculation, virtual stats) and
@@ -104,36 +104,39 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   fontSize: customFontSize,
 }) => {
   const theme = useTheme();
-  
+
   // Get sensor context for type and instance information
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
-  
+
   // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
   // MUST be called unconditionally (Rules of Hooks)
   // Pass defaults when sensorInstance doesn't exist, hook will return null
   const subscribedMetric = useMetric(
     sensorType || 'depth', // Safe default
     sensorInstance?.instance ?? 0, // Safe default
-    metricKey
+    metricKey,
   );
-  
+
   // Fallback to context-based metric access if subscription not available
   // (happens when sensor doesn't exist yet or subscription returns null)
   const contextMetric = sensorInstance?.getMetric(metricKey);
-  
+
   // Use subscribed metric only if sensorInstance exists, otherwise fallback
-  const metricValue = (sensorInstance && subscribedMetric) ? {
-    formattedValue: subscribedMetric.formattedValue,
-    formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
-    unit: subscribedMetric.unit,
-    si_value: subscribedMetric.si_value,
-    value: subscribedMetric.value,
-    timestamp: subscribedMetric.timestamp,
-  } : contextMetric;
-  
+  const metricValue =
+    sensorInstance && subscribedMetric
+      ? {
+          formattedValue: subscribedMetric.formattedValue,
+          formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
+          unit: subscribedMetric.unit,
+          si_value: subscribedMetric.si_value,
+          value: subscribedMetric.value,
+          timestamp: subscribedMetric.timestamp,
+        }
+      : contextMetric;
+
   // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
   const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');
-  
+
   // Auto-fetch field configuration from registry (use base field name)
   const fieldConfig = useMemo(() => {
     try {
@@ -154,7 +157,7 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     }
     return baseMnemonic;
   }, [fieldConfig?.mnemonic, baseMetricKey, metricKey]);
-  
+
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {
     if (fieldConfig?.valueType === 'string') {
@@ -166,19 +169,19 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     // Numeric fields: use pre-enriched formattedValue from MetricValue
     return metricValue?.formattedValue ?? '---';
   }, [fieldConfig?.valueType, sensorInstance, metricKey, metricValue?.formattedValue]);
-  
+
   // Get unit: prefer from MetricValue (when data exists), fallback to registry category
   const unit = useMemo(() => {
     // String fields don't have units
     if (fieldConfig?.valueType === 'string') {
       return '';
     }
-    
+
     // If metricValue has a unit (data exists), use it
     if (metricValue?.unit) {
       return metricValue.unit;
     }
-    
+
     // If no data but field has unitType, get unit from ConversionRegistry
     if (fieldConfig?.unitType) {
       try {
@@ -188,12 +191,13 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
         return '';
       }
     }
-    
+
     return '';
   }, [fieldConfig?.valueType, fieldConfig?.unitType, metricValue?.unit]);
-  
+
   // Use alarm state from subscription if available, otherwise from context
-  const alarmLevel: AlarmLevel = subscribedMetric?.alarmState ?? sensorInstance?.getAlarmState(metricKey) ?? 0;
+  const alarmLevel: AlarmLevel =
+    subscribedMetric?.alarmState ?? sensorInstance?.getAlarmState(metricKey) ?? 0;
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
@@ -264,10 +268,10 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   // Get color based on alarm level
   const getValueColor = () => {
     const visualState = ALARM_VISUAL_STATES[alarmLevel];
-    return visualState.color === 'red' 
-      ? theme.error 
-      : visualState.color === 'orange' 
-      ? theme.warning 
+    return visualState.color === 'red'
+      ? theme.error
+      : visualState.color === 'orange'
+      ? theme.warning
       : theme.text;
   };
 

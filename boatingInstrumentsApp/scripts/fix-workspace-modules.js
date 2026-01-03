@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Fix workspace module resolution for React Native
- * 
+ *
  * When using npm workspaces, node_modules are hoisted to the root,
  * but React Native's autolinking expects them in the app's node_modules.
  * This script creates symlinks for native modules that need autolinking.
@@ -10,10 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const NATIVE_MODULES = [
-  'react-native-tcp-socket',
-  'react-native-udp',
-];
+const NATIVE_MODULES = ['react-native-tcp-socket', 'react-native-udp'];
 
 const rootNodeModules = path.resolve(__dirname, '../../node_modules');
 const appNodeModules = path.resolve(__dirname, '../node_modules');
@@ -32,13 +29,13 @@ let linksSkipped = 0;
 for (const moduleName of NATIVE_MODULES) {
   const sourcePath = path.join(rootNodeModules, moduleName);
   const targetPath = path.join(appNodeModules, moduleName);
-  
+
   // Check if source exists
   if (!fs.existsSync(sourcePath)) {
     console.log(`[fix-workspace-modules] ⚠️  ${moduleName} not found in root node_modules`);
     continue;
   }
-  
+
   // Check if symlink already exists
   if (fs.existsSync(targetPath)) {
     try {
@@ -53,7 +50,9 @@ for (const moduleName of NATIVE_MODULES) {
         fs.unlinkSync(targetPath);
       } else {
         // Regular directory, skip to avoid data loss
-        console.log(`[fix-workspace-modules] ⚠️  ${moduleName} exists as regular directory, skipping`);
+        console.log(
+          `[fix-workspace-modules] ⚠️  ${moduleName} exists as regular directory, skipping`,
+        );
         linksSkipped++;
         continue;
       }
@@ -62,7 +61,7 @@ for (const moduleName of NATIVE_MODULES) {
       continue;
     }
   }
-  
+
   // Create symlink
   try {
     fs.symlinkSync(sourcePath, targetPath, 'junction');

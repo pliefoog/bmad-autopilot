@@ -11,6 +11,9 @@
  */
 
 // Core alarm management
+// Import CriticalAlarmType for use in utilities
+import { CriticalAlarmType } from './types';
+
 export { AlarmManager, DEFAULT_MARINE_ALARM_CONFIG } from './AlarmManager';
 
 // Audio system for marine environment
@@ -38,9 +41,6 @@ export type {
 } from './types';
 
 export { CriticalAlarmType, AlarmEscalationLevel } from './types';
-
-// Import CriticalAlarmType for use in utilities
-import { CriticalAlarmType } from './types';
 
 // Utility functions for marine alarm system integration
 export const AlarmSystemUtils = {

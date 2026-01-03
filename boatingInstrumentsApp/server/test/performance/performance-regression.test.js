@@ -1,9 +1,9 @@
 /**
  * Performance Regression Testing Framework
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC3: Performance regression testing with Epic 7 performance targets
- * 
+ *
  * Performance Targets from Epic 7:
  * - Throughput: 500+ NMEA messages/second
  * - Memory Usage: <100MB RAM under typical load
@@ -39,20 +39,20 @@ describe('Performance Regression Testing Framework', () => {
   afterEach(async () => {
     if (bridgeProcess) {
       bridgeProcess.kill('SIGTERM');
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         bridgeProcess.on('exit', resolve);
         setTimeout(resolve, 5000);
       });
       bridgeProcess = null;
     }
     // Allow port cleanup
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   });
 
   describe('Throughput Performance Tests', () => {
     test('should achieve 500+ NMEA messages/second throughput target', async () => {
       const performanceMetrics = await measureThroughputPerformance();
-      
+
       console.log(`Throughput Performance Results:
         - Messages/second: ${performanceMetrics.messagesPerSecond}
         - Total messages: ${performanceMetrics.totalMessages}
@@ -61,7 +61,7 @@ describe('Performance Regression Testing Framework', () => {
 
       // Epic 7 performance target
       expect(performanceMetrics.messagesPerSecond).toBeGreaterThanOrEqual(500);
-      
+
       // Regression check against baseline
       if (performanceBaseline?.throughput) {
         const regressionThreshold = performanceBaseline.throughput * 0.85; // Allow 15% degradation
@@ -74,7 +74,7 @@ describe('Performance Regression Testing Framework', () => {
 
     test('should maintain consistent throughput under sustained load', async () => {
       const sustainedMetrics = await measureSustainedThroughput(30000); // 30 second test
-      
+
       console.log(`Sustained Throughput Results:
         - Average rate: ${sustainedMetrics.averageRate} msg/sec
         - Peak rate: ${sustainedMetrics.peakRate} msg/sec
@@ -92,20 +92,20 @@ describe('Performance Regression Testing Framework', () => {
   describe('Memory Usage Performance Tests', () => {
     test('should maintain <100MB RAM usage under typical load', async () => {
       const memoryMetrics = await measureMemoryUsage();
-      
+
       console.log(`Memory Usage Results:
-        - Peak memory: ${(memoryMetrics.peakMemoryMB).toFixed(2)}MB
-        - Average memory: ${(memoryMetrics.averageMemoryMB).toFixed(2)}MB
-        - Memory growth rate: ${(memoryMetrics.growthRateMBPerMin).toFixed(2)}MB/min
+        - Peak memory: ${memoryMetrics.peakMemoryMB.toFixed(2)}MB
+        - Average memory: ${memoryMetrics.averageMemoryMB.toFixed(2)}MB
+        - Memory growth rate: ${memoryMetrics.growthRateMBPerMin.toFixed(2)}MB/min
         - GC efficiency: ${(memoryMetrics.gcEfficiency * 100).toFixed(1)}%`);
 
       // Epic 7 performance target
       expect(memoryMetrics.peakMemoryMB).toBeLessThan(100);
       expect(memoryMetrics.averageMemoryMB).toBeLessThan(80);
-      
+
       // Memory leak detection
       expect(memoryMetrics.growthRateMBPerMin).toBeLessThan(5); // <5MB/min growth
-      
+
       // Regression check
       if (performanceBaseline?.memory) {
         const regressionThreshold = performanceBaseline.memory * 1.2; // Allow 20% increase
@@ -117,9 +117,9 @@ describe('Performance Regression Testing Framework', () => {
 
     test('should handle memory pressure gracefully', async () => {
       const pressureMetrics = await measureMemoryPressure();
-      
+
       console.log(`Memory Pressure Results:
-        - Memory under pressure: ${(pressureMetrics.memoryUnderPressureMB).toFixed(2)}MB
+        - Memory under pressure: ${pressureMetrics.memoryUnderPressureMB.toFixed(2)}MB
         - Recovery time: ${pressureMetrics.recoveryTimeMs}ms
         - GC cycles: ${pressureMetrics.gcCycles}
         - Performance impact: ${(pressureMetrics.performanceImpact * 100).toFixed(1)}%`);
@@ -135,7 +135,7 @@ describe('Performance Regression Testing Framework', () => {
   describe('Concurrent Connection Performance Tests', () => {
     test('should handle 50+ simultaneous connections', async () => {
       const concurrencyMetrics = await measureConcurrentConnections();
-      
+
       console.log(`Concurrent Connection Results:
         - Max concurrent connections: ${concurrencyMetrics.maxConnections}
         - Connection success rate: ${(concurrencyMetrics.successRate * 100).toFixed(1)}%
@@ -153,7 +153,7 @@ describe('Performance Regression Testing Framework', () => {
 
     test('should maintain performance under connection churn', async () => {
       const churnMetrics = await measureConnectionChurn();
-      
+
       console.log(`Connection Churn Results:
         - Connections created: ${churnMetrics.connectionsCreated}
         - Connections destroyed: ${churnMetrics.connectionsDestroyed}
@@ -170,7 +170,7 @@ describe('Performance Regression Testing Framework', () => {
   describe('API Response Time Performance Tests', () => {
     test('should achieve <100ms API response times', async () => {
       const apiMetrics = await measureAPIResponseTimes();
-      
+
       console.log(`API Response Time Results:
         - Average response time: ${apiMetrics.averageResponseTimeMs}ms
         - 95th percentile: ${apiMetrics.p95ResponseTimeMs}ms
@@ -187,7 +187,7 @@ describe('Performance Regression Testing Framework', () => {
 
     test('should maintain API performance under load', async () => {
       const loadMetrics = await measureAPIUnderLoad();
-      
+
       console.log(`API Under Load Results:
         - Requests processed: ${loadMetrics.requestsProcessed}
         - Average response time: ${loadMetrics.avgResponseTimeMs}ms
@@ -205,10 +205,10 @@ describe('Performance Regression Testing Framework', () => {
   describe('CPU Utilization Performance Tests', () => {
     test('should maintain <25% single core CPU utilization', async () => {
       const cpuMetrics = await measureCPUUtilization();
-      
+
       console.log(`CPU Utilization Results:
-        - Average CPU usage: ${(cpuMetrics.averageCpuPercent).toFixed(1)}%
-        - Peak CPU usage: ${(cpuMetrics.peakCpuPercent).toFixed(1)}%
+        - Average CPU usage: ${cpuMetrics.averageCpuPercent.toFixed(1)}%
+        - Peak CPU usage: ${cpuMetrics.peakCpuPercent.toFixed(1)}%
         - CPU efficiency: ${(cpuMetrics.cpuEfficiency * 100).toFixed(1)}%
         - Event loop lag: ${cpuMetrics.eventLoopLagMs}ms`);
 
@@ -225,7 +225,7 @@ describe('Performance Regression Testing Framework', () => {
 
   async function measureThroughputPerformance() {
     bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'basic-navigation']);
-    
+
     const connection = await connectTCP(2000);
     const startTime = performance.now();
     let messageCount = 0;
@@ -246,7 +246,10 @@ describe('Performance Regression Testing Framework', () => {
       }, sampleWindow);
 
       connection.on('data', (data) => {
-        const sentences = data.toString().split('\n').filter(line => line.startsWith('$'));
+        const sentences = data
+          .toString()
+          .split('\n')
+          .filter((line) => line.startsWith('$'));
         messageCount += sentences.length;
         windowMessages += sentences.length;
       });
@@ -264,15 +267,19 @@ describe('Performance Regression Testing Framework', () => {
           totalMessages: messageCount,
           duration,
           peakRate,
-          rates
+          rates,
         });
       }, testDuration);
     });
   }
 
   async function measureSustainedThroughput(duration) {
-    bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'coastal-sailing', '--loop']);
-    
+    bridgeProcess = await startBridgeForPerformanceTest([
+      '--scenario',
+      'coastal-sailing',
+      '--loop',
+    ]);
+
     const connection = await connectTCP(2000);
     const rates = [];
     let totalMessages = 0;
@@ -283,7 +290,10 @@ describe('Performance Regression Testing Framework', () => {
         const windowStart = performance.now();
 
         const dataHandler = (data) => {
-          const sentences = data.toString().split('\n').filter(line => line.startsWith('$'));
+          const sentences = data
+            .toString()
+            .split('\n')
+            .filter((line) => line.startsWith('$'));
           windowMessages += sentences.length;
           totalMessages += sentences.length;
         };
@@ -303,7 +313,9 @@ describe('Performance Regression Testing Framework', () => {
         const averageRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
         const peakRate = Math.max(...rates);
         const minimumRate = Math.min(...rates);
-        const standardDeviation = Math.sqrt(rates.reduce((sum, rate) => sum + Math.pow(rate - averageRate, 2), 0) / rates.length);
+        const standardDeviation = Math.sqrt(
+          rates.reduce((sum, rate) => sum + Math.pow(rate - averageRate, 2), 0) / rates.length,
+        );
 
         resolve({
           averageRate,
@@ -311,7 +323,7 @@ describe('Performance Regression Testing Framework', () => {
           minimumRate,
           standardDeviation,
           totalMessages,
-          samples: rates.length
+          samples: rates.length,
         });
       }, duration);
     });
@@ -319,7 +331,7 @@ describe('Performance Regression Testing Framework', () => {
 
   async function measureMemoryUsage() {
     bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'basic-navigation']);
-    
+
     const memorySnapshots = [];
     const testDuration = 30000; // 30 seconds
     const sampleInterval = 1000; // 1 second
@@ -335,7 +347,7 @@ describe('Performance Regression Testing Framework', () => {
             timestamp: Date.now(),
             rss: Math.random() * 80 + 40, // Simulate 40-120MB usage
             heapUsed: Math.random() * 60 + 30,
-            heapTotal: Math.random() * 70 + 40
+            heapTotal: Math.random() * 70 + 40,
           };
           memorySnapshots.push(memoryUsage);
         }
@@ -344,9 +356,10 @@ describe('Performance Regression Testing Framework', () => {
       setTimeout(() => {
         clearInterval(memoryMonitor);
 
-        const peakMemoryMB = Math.max(...memorySnapshots.map(s => s.rss));
-        const averageMemoryMB = memorySnapshots.reduce((sum, s) => sum + s.rss, 0) / memorySnapshots.length;
-        
+        const peakMemoryMB = Math.max(...memorySnapshots.map((s) => s.rss));
+        const averageMemoryMB =
+          memorySnapshots.reduce((sum, s) => sum + s.rss, 0) / memorySnapshots.length;
+
         // Calculate growth rate
         const firstSnapshot = memorySnapshots[0];
         const lastSnapshot = memorySnapshots[memorySnapshots.length - 1];
@@ -358,7 +371,7 @@ describe('Performance Regression Testing Framework', () => {
           averageMemoryMB,
           growthRateMBPerMin,
           gcEfficiency: 0.95, // Simulated GC efficiency
-          samples: memorySnapshots.length
+          samples: memorySnapshots.length,
         });
       }, testDuration);
     });
@@ -366,22 +379,25 @@ describe('Performance Regression Testing Framework', () => {
 
   async function measureMemoryPressure() {
     // Simulate memory pressure test
-    bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'multi-equipment-detection']);
-    
+    bridgeProcess = await startBridgeForPerformanceTest([
+      '--scenario',
+      'multi-equipment-detection',
+    ]);
+
     // Simulate creating memory pressure
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 10000));
 
     return {
       memoryUnderPressureMB: 85 + Math.random() * 20, // Simulated pressure memory
       recoveryTimeMs: 2000 + Math.random() * 2000,
       gcCycles: 15 + Math.floor(Math.random() * 10),
-      performanceImpact: 0.1 + Math.random() * 0.15
+      performanceImpact: 0.1 + Math.random() * 0.15,
     };
   }
 
   async function measureConcurrentConnections() {
     bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'basic-navigation']);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const connections = [];
     const maxConnections = 60; // Test beyond the 50 target
@@ -395,7 +411,7 @@ describe('Performance Regression Testing Framework', () => {
         const startTime = performance.now();
         const connection = await connectTCP(2000);
         const connectionTime = performance.now() - startTime;
-        
+
         connections.push(connection);
         successfulConnections++;
         totalConnectionTime += connectionTime;
@@ -409,19 +425,19 @@ describe('Performance Regression Testing Framework', () => {
     }
 
     // Cleanup connections
-    connections.forEach(conn => conn.destroy());
+    connections.forEach((conn) => conn.destroy());
 
     return {
       maxConnections: successfulConnections,
       successRate: successfulConnections / maxConnections,
       avgConnectionTimeMs: totalConnectionTime / successfulConnections,
-      dataConsistencyRate: dataConsistencyCount / successfulConnections
+      dataConsistencyRate: dataConsistencyCount / successfulConnections,
     };
   }
 
   async function measureConnectionChurn() {
     bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'coastal-sailing']);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const churnDuration = 20000; // 20 seconds
     const startTime = performance.now();
@@ -434,7 +450,7 @@ describe('Performance Regression Testing Framework', () => {
         try {
           const connection = await connectTCP(2000);
           connectionsCreated++;
-          
+
           // Keep connection for random time
           setTimeout(() => {
             connection.destroy();
@@ -447,12 +463,12 @@ describe('Performance Regression Testing Framework', () => {
 
       setTimeout(() => {
         clearInterval(churnInterval);
-        
+
         resolve({
           connectionsCreated,
           connectionsDestroyed,
           performanceDegradation: 0.1 + Math.random() * 0.15, // Simulated degradation
-          cleanupEfficiency: connectionsDestroyed / connectionsCreated
+          cleanupEfficiency: connectionsDestroyed / connectionsCreated,
         });
       }, churnDuration);
     });
@@ -460,7 +476,7 @@ describe('Performance Regression Testing Framework', () => {
 
   async function measureAPIResponseTimes() {
     bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'basic-navigation']);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const responseTimes = [];
     const numberOfRequests = 100;
@@ -469,10 +485,10 @@ describe('Performance Regression Testing Framework', () => {
     // Simulate API requests (in real implementation, would use actual API endpoints)
     for (let i = 0; i < numberOfRequests; i++) {
       const startTime = performance.now();
-      
+
       try {
         // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 20 + Math.random() * 100));
+        await new Promise((resolve) => setTimeout(resolve, 20 + Math.random() * 100));
         const responseTime = performance.now() - startTime;
         responseTimes.push(responseTime);
       } catch (error) {
@@ -481,7 +497,8 @@ describe('Performance Regression Testing Framework', () => {
     }
 
     responseTimes.sort((a, b) => a - b);
-    const averageResponseTimeMs = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+    const averageResponseTimeMs =
+      responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
     const p95Index = Math.floor(responseTimes.length * 0.95);
     const p95ResponseTimeMs = responseTimes[p95Index];
     const maxResponseTimeMs = Math.max(...responseTimes);
@@ -490,13 +507,13 @@ describe('Performance Regression Testing Framework', () => {
       averageResponseTimeMs,
       p95ResponseTimeMs,
       maxResponseTimeMs,
-      timeoutRate: timeouts / numberOfRequests
+      timeoutRate: timeouts / numberOfRequests,
     };
   }
 
   async function measureAPIUnderLoad() {
     bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'engine-monitoring']);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const loadDuration = 15000; // 15 seconds
     const concurrentRequests = 20;
@@ -511,7 +528,7 @@ describe('Performance Regression Testing Framework', () => {
         const requestStart = performance.now();
         try {
           // Simulate API request under load
-          await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 150));
+          await new Promise((resolve) => setTimeout(resolve, 50 + Math.random() * 150));
           const responseTime = performance.now() - requestStart;
           totalResponseTime += responseTime;
           requestsProcessed++;
@@ -528,32 +545,35 @@ describe('Performance Regression Testing Framework', () => {
       }
 
       setTimeout(() => {
-        intervals.forEach(interval => clearInterval(interval));
-        
+        intervals.forEach((interval) => clearInterval(interval));
+
         const endTime = performance.now();
         const duration = (endTime - startTime) / 1000; // seconds
-        
+
         resolve({
           requestsProcessed,
           avgResponseTimeMs: totalResponseTime / requestsProcessed,
           errorRate: errors / (requestsProcessed + errors),
-          requestsPerSecond: requestsProcessed / duration
+          requestsPerSecond: requestsProcessed / duration,
         });
       }, loadDuration);
     });
   }
 
   async function measureCPUUtilization() {
-    bridgeProcess = await startBridgeForPerformanceTest(['--scenario', 'multi-equipment-detection']);
-    
+    bridgeProcess = await startBridgeForPerformanceTest([
+      '--scenario',
+      'multi-equipment-detection',
+    ]);
+
     // Simulate CPU monitoring (in real implementation, would use actual process monitoring)
-    await new Promise(resolve => setTimeout(resolve, 20000));
+    await new Promise((resolve) => setTimeout(resolve, 20000));
 
     return {
       averageCpuPercent: 15 + Math.random() * 15, // Simulated 15-30% usage
       peakCpuPercent: 25 + Math.random() * 20,
       cpuEfficiency: 0.8 + Math.random() * 0.15,
-      eventLoopLagMs: 2 + Math.random() * 8
+      eventLoopLagMs: 2 + Math.random() * 8,
     };
   }
 
@@ -563,18 +583,21 @@ describe('Performance Regression Testing Framework', () => {
     return new Promise((resolve, reject) => {
       const process = spawn('node', [nmeaBridgePath, ...args], {
         cwd: serverPath,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
 
       let startupOutput = '';
-      
+
       const timeout = setTimeout(() => {
         reject(new Error('Bridge startup timeout'));
       }, 15000);
 
       process.stdout.on('data', (data) => {
         startupOutput += data.toString();
-        if (startupOutput.includes('Server listening') || startupOutput.includes('WebSocket server listening')) {
+        if (
+          startupOutput.includes('Server listening') ||
+          startupOutput.includes('WebSocket server listening')
+        ) {
           clearTimeout(timeout);
           resolve(process);
         }
@@ -590,7 +613,7 @@ describe('Performance Regression Testing Framework', () => {
   async function connectTCP(port) {
     return new Promise((resolve, reject) => {
       const client = new net.Socket();
-      
+
       client.connect(port, 'localhost', () => {
         resolve(client);
       });
@@ -602,7 +625,7 @@ describe('Performance Regression Testing Framework', () => {
   async function receiveDataFromTCP(connection, timeout) {
     return new Promise((resolve) => {
       let data = '';
-      
+
       const timeoutId = setTimeout(() => {
         resolve(data);
       }, timeout);
@@ -627,13 +650,13 @@ describe('Performance Regression Testing Framework', () => {
       environment: {
         nodeVersion: process.version,
         platform: process.platform,
-        arch: process.arch
-      }
+        arch: process.arch,
+      },
     };
 
     const logPath = path.join(__dirname, `performance-results-${Date.now()}.json`);
     fs.writeFileSync(logPath, JSON.stringify(performanceRecord, null, 2));
-    
+
     console.log(`Performance metrics recorded to: ${logPath}`);
   }
 });

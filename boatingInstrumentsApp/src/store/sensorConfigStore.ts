@@ -68,7 +68,11 @@ interface SensorConfigStoreState {
   ) => void;
   deleteConfig: (sensorType: SensorType, instance: number) => void;
   getAllConfigs: () => SensorConfigMap;
-  getMetricThresholds: (sensorType: SensorType, instance: number, metricKey: string) => any | undefined;
+  getMetricThresholds: (
+    sensorType: SensorType,
+    instance: number,
+    metricKey: string,
+  ) => any | undefined;
   clearAll: () => void;
 
   // Utility
@@ -191,7 +195,8 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
             // Show user-friendly notification
             useToastStore.getState().addToast({
               type: 'info',
-              message: 'Sensor configurations cleared due to app update. Please reconfigure sensors.',
+              message:
+                'Sensor configurations cleared due to app update. Please reconfigure sensors.',
               duration: 8000,
               priority: 'high',
             });

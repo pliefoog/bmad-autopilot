@@ -2,11 +2,11 @@
 
 /**
  * Message Scheduler Component
- * 
+ *
  * Manages timing control for NMEA message generation and transmission.
  * Provides high-precision scheduling with configurable frequencies per message type.
  * Handles scenario timing, recording playback timing, and per-client scheduling.
- * 
+ *
  * Implements SimulatorComponent interface for lifecycle management.
  */
 
@@ -20,24 +20,24 @@ class MessageScheduler {
     this.messageInterval = null;
     this.scenarioTimers = [];
     this.lastBroadcastTimes = {};
-    
+
     // Per-client playback tracking
     this.clientSchedulers = new Map(); // clientId -> scheduler state
-    
+
     // Callback handlers
     this.messageGeneratorCallback = null;
     this.messageBroadcastCallback = null;
-    
+
     // Timing configuration
     this.scenarioTiming = null;
     this.scenarioSpeed = 1.0;
-    
+
     // Performance stats
     this.stats = {
       messagesScheduled: 0,
       averageLatency: 0,
       totalLatency: 0,
-      schedulingErrors: 0
+      schedulingErrors: 0,
     };
   }
 
@@ -53,7 +53,7 @@ class MessageScheduler {
     this.config = config;
     this.startTime = Date.now();
     this.isRunning = true;
-    
+
     console.log('✅ Message Scheduler started');
   }
 
@@ -62,17 +62,17 @@ class MessageScheduler {
    */
   async stop() {
     console.log('🔌 Shutting down message scheduler...');
-    
+
     // Clear main interval
     if (this.messageInterval) {
       clearInterval(this.messageInterval);
       this.messageInterval = null;
     }
-    
+
     // Clear scenario timers
-    this.scenarioTimers.forEach(timer => clearTimeout(timer));
+    this.scenarioTimers.forEach((timer) => clearTimeout(timer));
     this.scenarioTimers = [];
-    
+
     // Clear client schedulers
     for (const [clientId, scheduler] of this.clientSchedulers) {
       if (scheduler.timeoutId) {
@@ -80,11 +80,11 @@ class MessageScheduler {
       }
     }
     this.clientSchedulers.clear();
-    
+
     this.isRunning = false;
     this.startTime = null;
     this.lastBroadcastTimes = {};
-    
+
     console.log('✅ Message Scheduler stopped');
   }
 
@@ -97,7 +97,7 @@ class MessageScheduler {
       running: this.isRunning,
       state: this.isRunning ? 'running' : 'stopped',
       error: null,
-      uptime: this.startTime ? Date.now() - this.startTime : 0
+      uptime: this.startTime ? Date.now() - this.startTime : 0,
     };
   }
 
@@ -115,8 +115,8 @@ class MessageScheduler {
         averageLatency: this.stats.averageLatency,
         schedulingErrors: this.stats.schedulingErrors,
         activeTimers: this.scenarioTimers.length,
-        scenarioSpeed: this.scenarioSpeed
-      }
+        scenarioSpeed: this.scenarioSpeed,
+      },
     };
   }
 
@@ -146,7 +146,7 @@ class MessageScheduler {
     }
 
     this.scenarioTiming = timing;
-    
+
     if (timing && this.messageGeneratorCallback) {
       // Use selective generation with precise timing
       this.messageInterval = setInterval(() => {
@@ -211,10 +211,10 @@ class MessageScheduler {
 
       const timerId = setTimeout(() => {
         const scheduleTime = Date.now();
-        
+
         // Extract NMEA message from recording entry
         const nmeaMessage = message.message || message.sentence || message.data || message.raw;
-        
+
         if (nmeaMessage && this.messageBroadcastCallback) {
           this.messageBroadcastCallback(nmeaMessage);
           this.updateLatencyStats(scheduleTime, Date.now());
@@ -231,7 +231,9 @@ class MessageScheduler {
       this.scenarioTimers.push(timerId);
     };
 
-    console.log(`🎬 Starting recording playback (${recordingMessages.length} messages, speed: ${playbackSpeed}x)`);
+    console.log(
+      `🎬 Starting recording playback (${recordingMessages.length} messages, speed: ${playbackSpeed}x)`,
+    );
     scheduleNext();
   }
 
@@ -243,7 +245,13 @@ class MessageScheduler {
    * @param {boolean} loop - Whether to loop playback
    * @param {Function} clientMessageCallback - Callback for sending message to specific client
    */
-  scheduleClientPlayback(clientId, recordingMessages, playbackSpeed = 1.0, loop = false, clientMessageCallback) {
+  scheduleClientPlayback(
+    clientId,
+    recordingMessages,
+    playbackSpeed = 1.0,
+    loop = false,
+    clientMessageCallback,
+  ) {
     if (!recordingMessages || !recordingMessages.length) {
       throw new Error('No recording messages provided for client playback');
     }
@@ -259,12 +267,12 @@ class MessageScheduler {
       loop,
       startTime: Date.now(),
       timeoutId: null,
-      callback: clientMessageCallback
+      callback: clientMessageCallback,
     };
 
     this.clientSchedulers.set(clientId, scheduler);
     console.log(`🎬 Starting per-client playback for ${clientId}`);
-    
+
     this.scheduleNextClientMessage(clientId);
   }
 
@@ -305,10 +313,22 @@ class MessageScheduler {
     const messagesToGenerate = [];
 
     // Check each message type individually
-    const messageTypes = ['depth', 'speed', 'wind', 'gps', 'water_temp', 'tanks', 'electrical', 'engines'];
-    
+    const messageTypes = [
+      'depth',
+      'speed',
+      'wind',
+      'gps',
+      'water_temp',
+      'tanks',
+      'electrical',
+      'engines',
+    ];
+
     for (const messageType of messageTypes) {
-      if (timing[messageType] && this.shouldGenerateMessage(messageType, timing[messageType], now)) {
+      if (
+        timing[messageType] &&
+        this.shouldGenerateMessage(messageType, timing[messageType], now)
+      ) {
         messagesToGenerate.push(messageType);
         this.lastBroadcastTimes[messageType] = now;
       }
@@ -317,14 +337,14 @@ class MessageScheduler {
     if (messagesToGenerate.length > 0) {
       const scheduleTime = Date.now();
       const messages = this.messageGeneratorCallback(messagesToGenerate, timing);
-      
+
       if (messages && messages.length > 0 && this.messageBroadcastCallback) {
-        messages.forEach(message => {
+        messages.forEach((message) => {
           if (message) {
             this.messageBroadcastCallback(message);
           }
         });
-        
+
         this.updateLatencyStats(scheduleTime, Date.now());
         this.stats.messagesScheduled += messages.length;
       }
@@ -342,14 +362,14 @@ class MessageScheduler {
 
     const scheduleTime = Date.now();
     const messages = this.messageGeneratorCallback();
-    
+
     if (messages && messages.length > 0 && this.messageBroadcastCallback) {
-      messages.forEach(message => {
+      messages.forEach((message) => {
         if (message) {
           this.messageBroadcastCallback(message);
         }
       });
-      
+
       this.updateLatencyStats(scheduleTime, Date.now());
       this.stats.messagesScheduled += messages.length;
     }
@@ -364,9 +384,9 @@ class MessageScheduler {
       return false;
     }
 
-    const intervalMs = (1000 / frequencyHz) / this.scenarioSpeed;
+    const intervalMs = 1000 / frequencyHz / this.scenarioSpeed;
     const lastTime = this.lastBroadcastTimes[messageType] || 0;
-    return (now - lastTime) >= intervalMs;
+    return now - lastTime >= intervalMs;
   }
 
   /**
@@ -406,10 +426,10 @@ class MessageScheduler {
 
     scheduler.timeoutId = setTimeout(() => {
       const scheduleTime = Date.now();
-      
+
       // Extract NMEA message from recording entry
       const nmeaMessage = message.message || message.sentence || message.data || message.raw;
-      
+
       if (nmeaMessage && scheduler.callback) {
         scheduler.callback(clientId, nmeaMessage);
         this.updateLatencyStats(scheduleTime, Date.now());
@@ -433,7 +453,7 @@ class MessageScheduler {
     if (!this.startTime) {
       return 0;
     }
-    
+
     const uptimeSeconds = (Date.now() - this.startTime) / 1000;
     return uptimeSeconds > 0 ? Math.round(this.stats.messagesScheduled / uptimeSeconds) : 0;
   }
@@ -445,9 +465,8 @@ class MessageScheduler {
   updateLatencyStats(scheduleTime, executeTime) {
     const latency = executeTime - scheduleTime;
     this.stats.totalLatency += latency;
-    this.stats.averageLatency = this.stats.messagesScheduled > 0 
-      ? this.stats.totalLatency / this.stats.messagesScheduled 
-      : 0;
+    this.stats.averageLatency =
+      this.stats.messagesScheduled > 0 ? this.stats.totalLatency / this.stats.messagesScheduled : 0;
   }
 }
 

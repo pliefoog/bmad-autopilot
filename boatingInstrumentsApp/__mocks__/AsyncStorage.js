@@ -18,14 +18,14 @@ const AsyncStorage = {
   },
   clear: async () => {
     console.log('[Web Mock AsyncStorage] clear');
-    Object.keys(storage).forEach(key => delete storage[key]);
+    Object.keys(storage).forEach((key) => delete storage[key]);
     return Promise.resolve();
   },
   getAllKeys: async () => {
     return Promise.resolve(Object.keys(storage));
   },
   multiGet: async (keys) => {
-    return Promise.resolve(keys.map(key => [key, storage[key] || null]));
+    return Promise.resolve(keys.map((key) => [key, storage[key] || null]));
   },
   multiSet: async (keyValuePairs) => {
     keyValuePairs.forEach(([key, value]) => {

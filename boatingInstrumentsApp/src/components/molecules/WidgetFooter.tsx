@@ -8,7 +8,7 @@ interface WidgetFooterProps {
 
 /**
  * WidgetFooter - Visual spacing/balance for widget layout
- * 
+ *
  * Provides consistent footer spacing below widget grid content.
  * Matches 1/3 of header height for visual symmetry.
  */
@@ -16,13 +16,7 @@ export const WidgetFooter: React.FC<WidgetFooterProps> = ({ testID }) => {
   const theme = useTheme();
 
   return (
-    <View 
-      style={[
-        styles.footer,
-        { backgroundColor: theme.widgetBackground }
-      ]} 
-      testID={testID}
-    />
+    <View style={[styles.footer, { backgroundColor: theme.widgetBackground }]} testID={testID} />
   );
 };
 

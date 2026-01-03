@@ -13,29 +13,29 @@ interface DepthWidgetProps {
 
 /**
  * Depth Widget - Registry-First Declarative Implementation
- * 
+ *
  * **Before (263 lines):**
  * - Manual metric extraction
  * - Manual display value creation
  * - Manual alarm state extraction
  * - Manual source info parsing
  * - UnifiedWidgetGrid setup
- * 
+ *
  * **After (~85 lines):**
  * - Pure configuration
  * - Auto-fetch everything
  * - TemplatedWidget handles layout
  * - MetricCells handle display
  * - TrendLine self-subscribes
- * 
+ *
  * **Layout:** 2Rx1C primary (depth value + TrendLine) + 2Rx1C secondary (min/max stats)
- * 
+ *
  * **Virtual Metrics Pattern (Single Sensor):**
  * - Current depth: `metricKey="depth"` (no sensorKey needed - primary sensor implicit)
  * - Session minimum: `metricKey="depth.min"` (calculated from history buffer)
  * - Session maximum: `metricKey="depth.max"` (calculated from history buffer)
  * - Session average: `metricKey="depth.avg"` (calculated from history buffer)
- * 
+ *
  * **How Virtual Metrics Work:**
  * 1. SecondaryMetricCell receives `metricKey="depth.min"`
  * 2. Strips `.min` suffix to look up "depth" field config in SensorConfigRegistry
@@ -45,7 +45,7 @@ interface DepthWidgetProps {
  *    - Calculates `Math.min(...values)` across all history points
  *    - Returns enriched MetricValue with proper units/formatting
  * 4. Component adds stat prefix to mnemonic: "DEPTH" → "MIN DEPTH"
- * 
+ *
  * **TrendLine Integration:**
  * - TrendLine component also supports virtual metrics with same dot notation
  * - Can render trends of min/max/avg values: `<TrendLine metricKey="depth.max" />`
@@ -59,12 +59,12 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
 
   // Get SensorInstance - single source of truth
   const depthSensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.depth?.[instanceNumber]
+    (state) => state.nmeaData.sensors.depth?.[instanceNumber],
   );
 
   // Subscribe to timestamp to trigger re-renders when data changes
   const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.depth?.[instanceNumber]?.timestamp
+    (state) => state.nmeaData.sensors.depth?.[instanceNumber]?.timestamp,
   );
 
   return (
@@ -76,7 +76,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
     >
       {/* Primary Grid: Current depth + trend visualization */}
       <PrimaryMetricCell metricKey="depth" />
-      
+
       {/* TrendLine: Auto-fetch pattern via SensorContext */}
       <TrendLine
         metricKey="depth"
@@ -90,7 +90,7 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
         strokeWidth={2}
         forceZero
       />
-      
+
       {/* Secondary Grid: Session statistics using virtual metrics */}
       <SecondaryMetricCell metricKey="depth.min" />
       <SecondaryMetricCell metricKey="depth.max" />

@@ -1,9 +1,9 @@
 /**
  * useStoreReady Hook - Store Initialization Safety Guard
- * 
+ *
  * Ensures Zustand stores are fully initialized before components access them.
  * Prevents race conditions during app startup that cause "Cannot read properties of undefined" errors.
- * 
+ *
  * Usage:
  * ```typescript
  * const isStoreReady = useStoreReady();
@@ -27,7 +27,7 @@ export function useStoreReady(): boolean {
     const checkStoreReady = () => {
       try {
         const state = useNmeaStore.getState();
-        
+
         // Verify complete store structure exists
         const ready = !!(
           state &&
@@ -35,11 +35,11 @@ export function useStoreReady(): boolean {
           state.nmeaData.sensors &&
           typeof state.nmeaData.sensors === 'object'
         );
-        
+
         if (ready && !isReady) {
           setIsReady(true);
         }
-        
+
         return ready;
       } catch (error) {
         console.warn('[useStoreReady] Store access error during initialization:', error);

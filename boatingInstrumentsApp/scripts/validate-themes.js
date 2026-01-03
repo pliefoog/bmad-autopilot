@@ -28,7 +28,7 @@ const dayTheme = {
   iconPrimary: '#2196F3',
   iconSecondary: '#666666',
   iconAccent: '#FF5722',
-  iconDisabled: '#CCCCCC'
+  iconDisabled: '#CCCCCC',
 };
 
 const redNightTheme = {
@@ -51,7 +51,7 @@ const redNightTheme = {
   iconPrimary: '#FF0000',
   iconSecondary: '#CC0000',
   iconAccent: '#FF0000',
-  iconDisabled: '#330000'
+  iconDisabled: '#330000',
 };
 
 console.log('🔍 Validating Marine Theme Compliance...\n');

@@ -147,7 +147,7 @@ export class NMEAProtocolConverter {
     const sentenceRules = new Map<string, ConversionRule>();
 
     // Add basic conversion rules (will be expanded in subsequent tasks)
-    const basicRules: Array<{ pgn: number; sentence: string; pcdin: boolean }> = [
+    const basicRules: { pgn: number; sentence: string; pcdin: boolean }[] = [
       { pgn: 128267, sentence: 'DBT', pcdin: false }, // Depth
       { pgn: 128259, sentence: 'VHW', pcdin: false }, // Speed
       { pgn: 130306, sentence: 'MWV', pcdin: false }, // Wind

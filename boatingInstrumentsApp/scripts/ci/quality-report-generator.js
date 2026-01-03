@@ -18,19 +18,19 @@ class QualityReportGenerator {
         outputDir: path.join(__dirname, '../../coverage/reports'),
         formats: ['json', 'html', 'markdown', 'junit'],
         includeArtifacts: process.env.CI_INCLUDE_ARTIFACTS !== 'false',
-        includeCharts: process.env.CI_INCLUDE_CHARTS !== 'false'
+        includeCharts: process.env.CI_INCLUDE_CHARTS !== 'false',
       },
       distribution: {
         uploadToCI: process.env.CI === 'true',
         generateBadges: process.env.CI_GENERATE_BADGES !== 'false',
-        publishToPages: process.env.CI_PUBLISH_PAGES === 'true'
+        publishToPages: process.env.CI_PUBLISH_PAGES === 'true',
       },
       retention: {
         keepReports: parseInt(process.env.CI_KEEP_REPORTS || '30'), // days
-        maxReports: parseInt(process.env.CI_MAX_REPORTS || '50')
-      }
+        maxReports: parseInt(process.env.CI_MAX_REPORTS || '50'),
+      },
     };
-    
+
     this.reportData = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'test',
@@ -39,7 +39,7 @@ class QualityReportGenerator {
       performance: null,
       marineSafety: null,
       tests: null,
-      quality: null
+      quality: null,
     };
   }
 
@@ -56,7 +56,7 @@ class QualityReportGenerator {
       pullRequest: process.env.GITHUB_PR_NUMBER || process.env.PULL_REQUEST || null,
       actor: process.env.GITHUB_ACTOR || process.env.BUILD_USER || 'unknown',
       repository: process.env.GITHUB_REPOSITORY || 'unknown',
-      workflow: process.env.GITHUB_WORKFLOW || 'quality-gates'
+      workflow: process.env.GITHUB_WORKFLOW || 'quality-gates',
     };
   }
 
@@ -77,7 +77,7 @@ class QualityReportGenerator {
    */
   async generateReports() {
     console.log('📊 Generating comprehensive quality reports...');
-    
+
     try {
       // Ensure reports directory exists
       if (!fs.existsSync(this.config.reports.outputDir)) {
@@ -110,9 +110,8 @@ class QualityReportGenerator {
         success: true,
         reports: generatedReports,
         distribution: distributionPackage,
-        outputDir: this.config.reports.outputDir
+        outputDir: this.config.reports.outputDir,
       };
-
     } catch (error) {
       console.error(`❌ Failed to generate quality reports: ${error.message}`);
       throw error;
@@ -125,16 +124,16 @@ class QualityReportGenerator {
   async collectReportData() {
     // Collect coverage data
     await this.collectCoverageData();
-    
+
     // Collect test results
     await this.collectTestResults();
-    
+
     // Collect performance data
     await this.collectPerformanceData();
-    
+
     // Collect marine safety data
     await this.collectMarineSafetyData();
-    
+
     // Collect quality gate results
     await this.collectQualityGateResults();
   }
@@ -146,7 +145,7 @@ class QualityReportGenerator {
     const coverageFiles = [
       path.join(__dirname, '../../coverage/coverage-summary.json'),
       path.join(__dirname, '../../coverage/lcov-report/coverage-summary.json'),
-      path.join(__dirname, '../../coverage/jest-coverage.json')
+      path.join(__dirname, '../../coverage/jest-coverage.json'),
     ];
 
     for (const file of coverageFiles) {
@@ -157,7 +156,7 @@ class QualityReportGenerator {
             summary: data.total || data,
             detailed: data,
             source: path.basename(file),
-            generatedAt: fs.statSync(file).mtime
+            generatedAt: fs.statSync(file).mtime,
           };
           break;
         } catch (error) {
@@ -178,7 +177,7 @@ class QualityReportGenerator {
     const testResultsFiles = [
       path.join(__dirname, '../../coverage/jest-results.json'),
       path.join(__dirname, '../../test-results.json'),
-      path.join(__dirname, '../../junit.xml')
+      path.join(__dirname, '../../junit.xml'),
     ];
 
     for (const file of testResultsFiles) {
@@ -190,7 +189,7 @@ class QualityReportGenerator {
               summary: this.extractTestSummary(data),
               detailed: data,
               source: path.basename(file),
-              generatedAt: fs.statSync(file).mtime
+              generatedAt: fs.statSync(file).mtime,
             };
           } else if (file.endsWith('.xml')) {
             // Parse JUnit XML (simplified)
@@ -198,7 +197,7 @@ class QualityReportGenerator {
             this.reportData.tests = {
               summary: this.parseJUnitXML(xmlContent),
               source: path.basename(file),
-              generatedAt: fs.statSync(file).mtime
+              generatedAt: fs.statSync(file).mtime,
             };
           }
           break;
@@ -219,19 +218,22 @@ class QualityReportGenerator {
   extractTestSummary(data) {
     if (data.testResults) {
       // Jest format
-      const passed = data.testResults.filter(t => t.status === 'passed').length;
-      const failed = data.testResults.filter(t => t.status === 'failed').length;
-      const skipped = data.testResults.filter(t => t.status === 'pending').length;
-      
+      const passed = data.testResults.filter((t) => t.status === 'passed').length;
+      const failed = data.testResults.filter((t) => t.status === 'failed').length;
+      const skipped = data.testResults.filter((t) => t.status === 'pending').length;
+
       return {
         total: data.testResults.length,
         passed,
         failed,
         skipped,
-        duration: data.testResults.reduce((sum, t) => sum + (t.perfStats?.end - t.perfStats?.start || 0), 0)
+        duration: data.testResults.reduce(
+          (sum, t) => sum + (t.perfStats?.end - t.perfStats?.start || 0),
+          0,
+        ),
       };
     }
-    
+
     return data.summary || data;
   }
 
@@ -240,22 +242,24 @@ class QualityReportGenerator {
    */
   parseJUnitXML(xmlContent) {
     // This is a simplified parser - in production, you'd use a proper XML parser
-    const testsuiteMatch = xmlContent.match(/testsuite[^>]*tests="(\d+)"[^>]*failures="(\d+)"[^>]*skipped="(\d+)"/);
-    
+    const testsuiteMatch = xmlContent.match(
+      /testsuite[^>]*tests="(\d+)"[^>]*failures="(\d+)"[^>]*skipped="(\d+)"/,
+    );
+
     if (testsuiteMatch) {
       const total = parseInt(testsuiteMatch[1]);
       const failures = parseInt(testsuiteMatch[2]);
       const skipped = parseInt(testsuiteMatch[3]);
-      
+
       return {
         total,
         passed: total - failures - skipped,
         failed: failures,
         skipped,
-        format: 'junit'
+        format: 'junit',
       };
     }
-    
+
     return { error: 'Failed to parse JUnit XML' };
   }
 
@@ -266,7 +270,7 @@ class QualityReportGenerator {
     const performanceFiles = [
       path.join(__dirname, '../../coverage/performance-results.json'),
       path.join(__dirname, '../../performance/benchmark-results.json'),
-      path.join(__dirname, '../../vendor/bench-results/latest.json')
+      path.join(__dirname, '../../vendor/bench-results/latest.json'),
     ];
 
     for (const file of performanceFiles) {
@@ -276,7 +280,7 @@ class QualityReportGenerator {
           this.reportData.performance = {
             metrics: data,
             source: path.basename(file),
-            generatedAt: fs.statSync(file).mtime
+            generatedAt: fs.statSync(file).mtime,
           };
           break;
         } catch (error) {
@@ -296,7 +300,7 @@ class QualityReportGenerator {
   async collectMarineSafetyData() {
     const safetyFiles = [
       path.join(__dirname, '../../coverage/marine-safety-metrics.json'),
-      path.join(__dirname, '../../coverage/marine-safety-coverage.json')
+      path.join(__dirname, '../../coverage/marine-safety-coverage.json'),
     ];
 
     for (const file of safetyFiles) {
@@ -306,7 +310,7 @@ class QualityReportGenerator {
           this.reportData.marineSafety = {
             metrics: data,
             source: path.basename(file),
-            generatedAt: fs.statSync(file).mtime
+            generatedAt: fs.statSync(file).mtime,
           };
           break;
         } catch (error) {
@@ -326,7 +330,7 @@ class QualityReportGenerator {
   async collectQualityGateResults() {
     const qualityFiles = [
       path.join(__dirname, 'quality-gates-report.json'),
-      path.join(__dirname, '../../coverage/reports/quality-gates-report.json')
+      path.join(__dirname, '../../coverage/reports/quality-gates-report.json'),
     ];
 
     for (const file of qualityFiles) {
@@ -336,7 +340,7 @@ class QualityReportGenerator {
           this.reportData.quality = {
             results: data,
             source: path.basename(file),
-            generatedAt: fs.statSync(file).mtime
+            generatedAt: fs.statSync(file).mtime,
           };
           break;
         } catch (error) {
@@ -355,7 +359,7 @@ class QualityReportGenerator {
    */
   async generateMultiFormatReports() {
     const reports = {};
-    
+
     for (const format of this.config.reports.formats) {
       try {
         switch (format) {
@@ -376,7 +380,7 @@ class QualityReportGenerator {
         console.error(`    ❌ Failed to generate ${format} report: ${error.message}`);
       }
     }
-    
+
     return reports;
   }
 
@@ -385,23 +389,23 @@ class QualityReportGenerator {
    */
   async generateJSONReport() {
     const reportPath = path.join(this.config.reports.outputDir, 'quality-report.json');
-    
+
     const report = {
       ...this.reportData,
       generated: {
         timestamp: new Date().toISOString(),
         generator: 'bmad-quality-report-generator',
-        version: '1.0.0'
-      }
+        version: '1.0.0',
+      },
     };
-    
+
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-    
+
     return {
       format: 'json',
       path: reportPath,
       size: fs.statSync(reportPath).size,
-      url: this.generateReportURL(reportPath)
+      url: this.generateReportURL(reportPath),
     };
   }
 
@@ -410,15 +414,15 @@ class QualityReportGenerator {
    */
   async generateHTMLReport() {
     const reportPath = path.join(this.config.reports.outputDir, 'quality-report.html');
-    
+
     const html = this.generateHTMLContent();
     fs.writeFileSync(reportPath, html);
-    
+
     return {
       format: 'html',
       path: reportPath,
       size: fs.statSync(reportPath).size,
-      url: this.generateReportURL(reportPath)
+      url: this.generateReportURL(reportPath),
     };
   }
 
@@ -428,7 +432,7 @@ class QualityReportGenerator {
   generateHTMLContent() {
     const status = this.reportData.quality?.results?.passed ? 'PASSED' : 'FAILED';
     const statusColor = this.reportData.quality?.results?.passed ? '#28a745' : '#dc3545';
-    
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -456,7 +460,9 @@ class QualityReportGenerator {
         <div class="header">
             <h1>🚢 BMad Autopilot - Quality Report</h1>
             <div class="status">${status}</div>
-            <div>Build: ${this.reportData.ci.buildNumber} | ${new Date(this.reportData.timestamp).toLocaleString()}</div>
+            <div>Build: ${this.reportData.ci.buildNumber} | ${new Date(
+      this.reportData.timestamp,
+    ).toLocaleString()}</div>
         </div>
 
         <div class="grid">
@@ -483,27 +489,36 @@ class QualityReportGenerator {
    * Generate coverage card HTML
    */
   generateCoverageCard() {
-    if (!this.reportData.coverage) return '<div class="card"><h3>📊 Coverage</h3><p>No coverage data available</p></div>';
-    
+    if (!this.reportData.coverage)
+      return '<div class="card"><h3>📊 Coverage</h3><p>No coverage data available</p></div>';
+
     const cov = this.reportData.coverage.summary;
     return `
       <div class="card">
         <h3>📊 Coverage Analysis</h3>
         <div class="metric">
           <span class="metric-name">Statements:</span>
-          <span class="metric-value ${cov.statements?.pct >= 70 ? 'passed' : 'failed'}">${cov.statements?.pct || 0}%</span>
+          <span class="metric-value ${cov.statements?.pct >= 70 ? 'passed' : 'failed'}">${
+      cov.statements?.pct || 0
+    }%</span>
         </div>
         <div class="metric">
           <span class="metric-name">Branches:</span>
-          <span class="metric-value ${cov.branches?.pct >= 70 ? 'passed' : 'failed'}">${cov.branches?.pct || 0}%</span>
+          <span class="metric-value ${cov.branches?.pct >= 70 ? 'passed' : 'failed'}">${
+      cov.branches?.pct || 0
+    }%</span>
         </div>
         <div class="metric">
           <span class="metric-name">Functions:</span>
-          <span class="metric-value ${cov.functions?.pct >= 70 ? 'passed' : 'failed'}">${cov.functions?.pct || 0}%</span>
+          <span class="metric-value ${cov.functions?.pct >= 70 ? 'passed' : 'failed'}">${
+      cov.functions?.pct || 0
+    }%</span>
         </div>
         <div class="metric">
           <span class="metric-name">Lines:</span>
-          <span class="metric-value ${cov.lines?.pct >= 70 ? 'passed' : 'failed'}">${cov.lines?.pct || 0}%</span>
+          <span class="metric-value ${cov.lines?.pct >= 70 ? 'passed' : 'failed'}">${
+      cov.lines?.pct || 0
+    }%</span>
         </div>
       </div>
     `;
@@ -513,8 +528,9 @@ class QualityReportGenerator {
    * Generate tests card HTML
    */
   generateTestsCard() {
-    if (!this.reportData.tests) return '<div class="card"><h3>🧪 Tests</h3><p>No test data available</p></div>';
-    
+    if (!this.reportData.tests)
+      return '<div class="card"><h3>🧪 Tests</h3><p>No test data available</p></div>';
+
     const tests = this.reportData.tests.summary;
     return `
       <div class="card">
@@ -529,7 +545,9 @@ class QualityReportGenerator {
         </div>
         <div class="metric">
           <span class="metric-name">Failed:</span>
-          <span class="metric-value ${tests.failed > 0 ? 'failed' : 'passed'}">${tests.failed || 0}</span>
+          <span class="metric-value ${tests.failed > 0 ? 'failed' : 'passed'}">${
+      tests.failed || 0
+    }</span>
         </div>
         <div class="metric">
           <span class="metric-name">Skipped:</span>
@@ -543,23 +561,30 @@ class QualityReportGenerator {
    * Generate performance card HTML
    */
   generatePerformanceCard() {
-    if (!this.reportData.performance) return '<div class="card"><h3>⚡ Performance</h3><p>No performance data available</p></div>';
-    
+    if (!this.reportData.performance)
+      return '<div class="card"><h3>⚡ Performance</h3><p>No performance data available</p></div>';
+
     const perf = this.reportData.performance.metrics;
     return `
       <div class="card">
         <h3>⚡ Performance Metrics</h3>
         <div class="metric">
           <span class="metric-name">Render Time:</span>
-          <span class="metric-value ${(perf.renderTime || 0) <= 16 ? 'passed' : 'failed'}">${perf.renderTime || 0}ms</span>
+          <span class="metric-value ${(perf.renderTime || 0) <= 16 ? 'passed' : 'failed'}">${
+      perf.renderTime || 0
+    }ms</span>
         </div>
         <div class="metric">
           <span class="metric-name">NMEA Latency:</span>
-          <span class="metric-value ${(perf.nmeaLatency || 0) <= 100 ? 'passed' : 'failed'}">${perf.nmeaLatency || 0}ms</span>
+          <span class="metric-value ${(perf.nmeaLatency || 0) <= 100 ? 'passed' : 'failed'}">${
+      perf.nmeaLatency || 0
+    }ms</span>
         </div>
         <div class="metric">
           <span class="metric-name">Memory Usage:</span>
-          <span class="metric-value ${(perf.memoryUsage || 0) <= 50 ? 'passed' : 'failed'}">${perf.memoryUsage || 0}MB</span>
+          <span class="metric-value ${(perf.memoryUsage || 0) <= 50 ? 'passed' : 'failed'}">${
+      perf.memoryUsage || 0
+    }MB</span>
         </div>
       </div>
     `;
@@ -569,19 +594,24 @@ class QualityReportGenerator {
    * Generate marine safety card HTML
    */
   generateMarineSafetyCard() {
-    if (!this.reportData.marineSafety) return '<div class="card"><h3>🛡️ Marine Safety</h3><p>No marine safety data available</p></div>';
-    
+    if (!this.reportData.marineSafety)
+      return '<div class="card"><h3>🛡️ Marine Safety</h3><p>No marine safety data available</p></div>';
+
     const safety = this.reportData.marineSafety.metrics;
     return `
       <div class="card">
         <h3>🛡️ Marine Safety Compliance</h3>
         <div class="metric">
           <span class="metric-name">Crash-Free Rate:</span>
-          <span class="metric-value ${(safety.crashFreeRate || 0) >= 0.995 ? 'passed' : 'failed'}">${((safety.crashFreeRate || 0) * 100).toFixed(1)}%</span>
+          <span class="metric-value ${
+            (safety.crashFreeRate || 0) >= 0.995 ? 'passed' : 'failed'
+          }">${((safety.crashFreeRate || 0) * 100).toFixed(1)}%</span>
         </div>
         <div class="metric">
           <span class="metric-name">Uptime:</span>
-          <span class="metric-value ${(safety.uptime || 0) >= 0.999 ? 'passed' : 'failed'}">${((safety.uptime || 0) * 100).toFixed(2)}%</span>
+          <span class="metric-value ${(safety.uptime || 0) >= 0.999 ? 'passed' : 'failed'}">${(
+      (safety.uptime || 0) * 100
+    ).toFixed(2)}%</span>
         </div>
         <div class="metric">
           <span class="metric-name">Data Accuracy:</span>
@@ -596,15 +626,15 @@ class QualityReportGenerator {
    */
   async generateMarkdownReport() {
     const reportPath = path.join(this.config.reports.outputDir, 'quality-report.md');
-    
+
     const markdown = this.generateMarkdownContent();
     fs.writeFileSync(reportPath, markdown);
-    
+
     return {
       format: 'markdown',
       path: reportPath,
       size: fs.statSync(reportPath).size,
-      url: this.generateReportURL(reportPath)
+      url: this.generateReportURL(reportPath),
     };
   }
 
@@ -613,7 +643,7 @@ class QualityReportGenerator {
    */
   generateMarkdownContent() {
     const status = this.reportData.quality?.results?.passed ? '✅ PASSED' : '❌ FAILED';
-    
+
     let markdown = `# 🚢 BMad Autopilot - Quality Report\n\n`;
     markdown += `**Status:** ${status}  \n`;
     markdown += `**Build:** ${this.reportData.ci.buildNumber}  \n`;
@@ -627,9 +657,15 @@ class QualityReportGenerator {
       const cov = this.reportData.coverage.summary;
       markdown += `| Metric | Coverage | Status |\n`;
       markdown += `|--------|----------|--------|\n`;
-      markdown += `| Statements | ${cov.statements?.pct || 0}% | ${cov.statements?.pct >= 70 ? '✅' : '❌'} |\n`;
-      markdown += `| Branches | ${cov.branches?.pct || 0}% | ${cov.branches?.pct >= 70 ? '✅' : '❌'} |\n`;
-      markdown += `| Functions | ${cov.functions?.pct || 0}% | ${cov.functions?.pct >= 70 ? '✅' : '❌'} |\n`;
+      markdown += `| Statements | ${cov.statements?.pct || 0}% | ${
+        cov.statements?.pct >= 70 ? '✅' : '❌'
+      } |\n`;
+      markdown += `| Branches | ${cov.branches?.pct || 0}% | ${
+        cov.branches?.pct >= 70 ? '✅' : '❌'
+      } |\n`;
+      markdown += `| Functions | ${cov.functions?.pct || 0}% | ${
+        cov.functions?.pct >= 70 ? '✅' : '❌'
+      } |\n`;
       markdown += `| Lines | ${cov.lines?.pct || 0}% | ${cov.lines?.pct >= 70 ? '✅' : '❌'} |\n\n`;
     }
 
@@ -649,17 +685,27 @@ class QualityReportGenerator {
       const perf = this.reportData.performance.metrics;
       markdown += `| Metric | Value | Threshold | Status |\n`;
       markdown += `|--------|-------|-----------|--------|\n`;
-      markdown += `| Render Time | ${perf.renderTime || 0}ms | ≤16ms | ${(perf.renderTime || 0) <= 16 ? '✅' : '❌'} |\n`;
-      markdown += `| NMEA Latency | ${perf.nmeaLatency || 0}ms | ≤100ms | ${(perf.nmeaLatency || 0) <= 100 ? '✅' : '❌'} |\n`;
-      markdown += `| Memory Usage | ${perf.memoryUsage || 0}MB | ≤50MB | ${(perf.memoryUsage || 0) <= 50 ? '✅' : '❌'} |\n\n`;
+      markdown += `| Render Time | ${perf.renderTime || 0}ms | ≤16ms | ${
+        (perf.renderTime || 0) <= 16 ? '✅' : '❌'
+      } |\n`;
+      markdown += `| NMEA Latency | ${perf.nmeaLatency || 0}ms | ≤100ms | ${
+        (perf.nmeaLatency || 0) <= 100 ? '✅' : '❌'
+      } |\n`;
+      markdown += `| Memory Usage | ${perf.memoryUsage || 0}MB | ≤50MB | ${
+        (perf.memoryUsage || 0) <= 50 ? '✅' : '❌'
+      } |\n\n`;
     }
 
     // Marine safety section
     if (this.reportData.marineSafety) {
       markdown += `## 🛡️ Marine Safety Compliance\n\n`;
       const safety = this.reportData.marineSafety.metrics;
-      markdown += `- **Crash-Free Rate:** ${((safety.crashFreeRate || 0) * 100).toFixed(1)}% ${(safety.crashFreeRate || 0) >= 0.995 ? '✅' : '❌'}\n`;
-      markdown += `- **System Uptime:** ${((safety.uptime || 0) * 100).toFixed(2)}% ${(safety.uptime || 0) >= 0.999 ? '✅' : '❌'}\n`;
+      markdown += `- **Crash-Free Rate:** ${((safety.crashFreeRate || 0) * 100).toFixed(1)}% ${
+        (safety.crashFreeRate || 0) >= 0.995 ? '✅' : '❌'
+      }\n`;
+      markdown += `- **System Uptime:** ${((safety.uptime || 0) * 100).toFixed(2)}% ${
+        (safety.uptime || 0) >= 0.999 ? '✅' : '❌'
+      }\n`;
       markdown += `- **Data Accuracy:** ${((safety.dataAccuracy || 0) * 100).toFixed(1)}% ✅\n\n`;
     }
 
@@ -674,15 +720,15 @@ class QualityReportGenerator {
    */
   async generateJUnitReport() {
     const reportPath = path.join(this.config.reports.outputDir, 'quality-report-junit.xml');
-    
+
     const xml = this.generateJUnitXML();
     fs.writeFileSync(reportPath, xml);
-    
+
     return {
       format: 'junit',
       path: reportPath,
       size: fs.statSync(reportPath).size,
-      url: this.generateReportURL(reportPath)
+      url: this.generateReportURL(reportPath),
     };
   }
 
@@ -700,12 +746,14 @@ class QualityReportGenerator {
       totalTests++;
       const cov = this.reportData.coverage.summary;
       const coveragePassed = (cov.statements?.pct || 0) >= 70;
-      
+
       if (!coveragePassed) failures++;
-      
+
       testcases += `    <testcase classname="QualityGates" name="CoverageThresholds" time="0.1">\n`;
       if (!coveragePassed) {
-        testcases += `      <failure message="Coverage below threshold">${JSON.stringify(cov)}</failure>\n`;
+        testcases += `      <failure message="Coverage below threshold">${JSON.stringify(
+          cov,
+        )}</failure>\n`;
       }
       testcases += `    </testcase>\n`;
     }
@@ -715,12 +763,14 @@ class QualityReportGenerator {
       totalTests++;
       const perf = this.reportData.performance.metrics;
       const perfPassed = (perf.renderTime || 0) <= 16 && (perf.nmeaLatency || 0) <= 100;
-      
+
       if (!perfPassed) failures++;
-      
+
       testcases += `    <testcase classname="QualityGates" name="PerformanceThresholds" time="0.1">\n`;
       if (!perfPassed) {
-        testcases += `      <failure message="Performance below threshold">${JSON.stringify(perf)}</failure>\n`;
+        testcases += `      <failure message="Performance below threshold">${JSON.stringify(
+          perf,
+        )}</failure>\n`;
       }
       testcases += `    </testcase>\n`;
     }
@@ -762,12 +812,15 @@ ${testcases}  </testsuite>
       // Quality badge
       if (this.reportData.quality) {
         const passed = this.reportData.quality.results.passed;
-        const badge = this.generateBadgeSVG('quality', passed ? 'passing' : 'failing', passed ? 'brightgreen' : 'red');
+        const badge = this.generateBadgeSVG(
+          'quality',
+          passed ? 'passing' : 'failing',
+          passed ? 'brightgreen' : 'red',
+        );
         fs.writeFileSync(path.join(badgesDir, 'quality.svg'), badge);
       }
 
       console.log('    🏆 Generated badges');
-
     } catch (error) {
       console.warn(`    ⚠️ Failed to generate badges: ${error.message}`);
     }
@@ -783,11 +836,11 @@ ${testcases}  </testsuite>
       yellow: '#dfb317',
       orange: '#fe7d37',
       red: '#e05d44',
-      blue: '#007ec6'
+      blue: '#007ec6',
     };
 
     const actualColor = colorMap[color] || color;
-    
+
     return `<svg xmlns="http://www.w3.org/2000/svg" width="104" height="20">
   <linearGradient id="b" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
@@ -815,27 +868,27 @@ ${testcases}  </testsuite>
    */
   async createDistributionPackage(reports) {
     const packagePath = path.join(this.config.reports.outputDir, 'distribution-package.json');
-    
+
     const packageInfo = {
       timestamp: new Date().toISOString(),
       build: this.reportData.ci,
       reports,
       artifacts: {
         badges: fs.existsSync(path.join(this.config.reports.outputDir, 'badges')),
-        charts: false // Placeholder for chart generation
+        charts: false, // Placeholder for chart generation
       },
       distribution: {
         ciArtifacts: this.config.distribution.uploadToCI,
-        githubPages: this.config.distribution.publishToPages
-      }
+        githubPages: this.config.distribution.publishToPages,
+      },
     };
-    
+
     fs.writeFileSync(packagePath, JSON.stringify(packageInfo, null, 2));
-    
+
     return {
       packagePath,
       reports: Object.keys(reports).length,
-      size: this.calculateDirectorySize(this.config.reports.outputDir)
+      size: this.calculateDirectorySize(this.config.reports.outputDir),
     };
   }
 
@@ -847,7 +900,7 @@ ${testcases}  </testsuite>
       const relativePath = path.relative(this.config.reports.outputDir, reportPath);
       return `${process.env.GITHUB_PAGES_URL}/reports/${relativePath}`;
     }
-    
+
     return `file://${reportPath}`;
   }
 
@@ -856,13 +909,13 @@ ${testcases}  </testsuite>
    */
   calculateDirectorySize(dirPath) {
     let totalSize = 0;
-    
+
     if (fs.existsSync(dirPath)) {
       const files = fs.readdirSync(dirPath, { withFileTypes: true });
-      
+
       for (const file of files) {
         const fullPath = path.join(dirPath, file.name);
-        
+
         if (file.isDirectory()) {
           totalSize += this.calculateDirectorySize(fullPath);
         } else {
@@ -870,7 +923,7 @@ ${testcases}  </testsuite>
         }
       }
     }
-    
+
     return totalSize;
   }
 
@@ -879,18 +932,19 @@ ${testcases}  </testsuite>
    */
   async cleanupOldReports() {
     try {
-      const reports = fs.readdirSync(this.config.reports.outputDir)
-        .filter(file => file.startsWith('quality-report'))
-        .map(file => ({
+      const reports = fs
+        .readdirSync(this.config.reports.outputDir)
+        .filter((file) => file.startsWith('quality-report'))
+        .map((file) => ({
           name: file,
           path: path.join(this.config.reports.outputDir, file),
-          mtime: fs.statSync(path.join(this.config.reports.outputDir, file)).mtime
+          mtime: fs.statSync(path.join(this.config.reports.outputDir, file)).mtime,
         }))
         .sort((a, b) => b.mtime - a.mtime);
 
       // Remove old reports beyond retention limit
       const toDelete = reports.slice(this.config.retention.maxReports);
-      
+
       for (const report of toDelete) {
         fs.unlinkSync(report.path);
         console.log(`    🗑️ Deleted old report: ${report.name}`);
@@ -899,7 +953,6 @@ ${testcases}  </testsuite>
       if (toDelete.length > 0) {
         console.log(`    ♻️ Cleaned up ${toDelete.length} old reports`);
       }
-
     } catch (error) {
       console.warn(`    ⚠️ Failed to cleanup old reports: ${error.message}`);
     }

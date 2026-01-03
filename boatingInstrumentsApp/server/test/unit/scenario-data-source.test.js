@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Scenario Data Source
- * 
- * Epic 10.5 - Test Coverage & Quality  
+ *
+ * Epic 10.5 - Test Coverage & Quality
  * AC1: Unit test coverage for data source components with mocked inputs
  */
 
@@ -22,7 +22,7 @@ describe('ScenarioDataSource', () => {
     config = {
       scenarioName: 'basic-navigation',
       loop: false,
-      speed: 1.0
+      speed: 1.0,
     };
 
     mockScenarioData = {
@@ -34,8 +34,8 @@ describe('ScenarioDataSource', () => {
           duration: 5000,
           messages: [
             { type: 'GPRMC', interval: 1000 },
-            { type: 'GPGGA', interval: 1000 }
-          ]
+            { type: 'GPGGA', interval: 1000 },
+          ],
         },
         {
           name: 'sailing',
@@ -43,10 +43,10 @@ describe('ScenarioDataSource', () => {
           messages: [
             { type: 'GPRMC', interval: 1000 },
             { type: 'GPGGA', interval: 1000 },
-            { type: 'VWVWR', interval: 2000 }
-          ]
-        }
-      ]
+            { type: 'VWVWR', interval: 2000 },
+          ],
+        },
+      ],
     };
 
     fs.readFile = jest.fn();
@@ -58,7 +58,7 @@ describe('ScenarioDataSource', () => {
   afterEach(() => {
     jest.clearAllMocks();
     // Clean up any running timers
-    scenarioDataSource.scenarioTimers.forEach(timer => clearTimeout(timer));
+    scenarioDataSource.scenarioTimers.forEach((timer) => clearTimeout(timer));
     scenarioDataSource.scenarioTimers = [];
   });
 
@@ -76,7 +76,7 @@ describe('ScenarioDataSource', () => {
         messagesGenerated: 0,
         startTime: null,
         phasesCompleted: 0,
-        currentIteration: 1
+        currentIteration: 1,
       });
     });
 
@@ -99,7 +99,7 @@ describe('ScenarioDataSource', () => {
       expect(fs.readFile).toHaveBeenCalledWith(
         expect.stringContaining('basic-navigation.yaml'),
         'utf8',
-        expect.any(Function)
+        expect.any(Function),
       );
       expect(yaml.load).toHaveBeenCalledWith(yamlContent);
       expect(scenarioDataSource.scenario).toEqual(mockScenarioData);
@@ -126,13 +126,13 @@ describe('ScenarioDataSource', () => {
 
       const errorSpy = jest.fn();
       scenarioDataSource.on('error', errorSpy);
-      
+
       try {
         await scenarioDataSource.loadScenario();
       } catch (error) {
         // Expected to throw
       }
-      
+
       expect(errorSpy).toHaveBeenCalledWith(expect.any(Error));
     });
 
@@ -196,28 +196,28 @@ describe('ScenarioDataSource', () => {
 
     test('should generate GPRMC messages', () => {
       const gprmc = scenarioDataSource.generateGPRMC();
-      
+
       expect(gprmc).toMatch(/^\$GPRMC,/);
       expect(gprmc).toMatch(/\*[0-9A-F]{2}$/); // Should have checksum
     });
 
     test('should generate GPGGA messages', () => {
       const gpgga = scenarioDataSource.generateGPGGA();
-      
+
       expect(gpgga).toMatch(/^\$GPGGA,/);
       expect(gpgga).toMatch(/\*[0-9A-F]{2}$/); // Should have checksum
     });
 
     test('should generate wind messages (VWVWR)', () => {
       const wind = scenarioDataSource.generateVWVWR();
-      
+
       expect(wind).toMatch(/^\$VWVWR,/);
       expect(wind).toMatch(/\*[0-9A-F]{2}$/); // Should have checksum
     });
 
     test('should generate depth messages (DPT)', () => {
       const depth = scenarioDataSource.generateDPT();
-      
+
       expect(depth).toMatch(/^\$..DPT,/);
       expect(depth).toMatch(/\*[0-9A-F]{2}$/); // Should have checksum
     });
@@ -225,7 +225,7 @@ describe('ScenarioDataSource', () => {
     test('should calculate NMEA checksum correctly', () => {
       const sentence = 'GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W';
       const checksum = scenarioDataSource.calculateNMEAChecksum(sentence);
-      
+
       expect(checksum).toMatch(/^[0-9A-F]{2}$/);
       expect(checksum).toHaveLength(2);
     });
@@ -246,9 +246,11 @@ describe('ScenarioDataSource', () => {
 
       setTimeout(() => {
         expect(scenarioDataSource.currentPhase).toBe('startup');
-        expect(phaseSpy).toHaveBeenCalledWith(expect.objectContaining({
-          name: 'startup'
-        }));
+        expect(phaseSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: 'startup',
+          }),
+        );
         done();
       }, 100);
     });
@@ -322,7 +324,7 @@ describe('ScenarioDataSource', () => {
 
     test('should handle stop when not running', async () => {
       await scenarioDataSource.stop();
-      
+
       // Should not throw and should call stop again
       await expect(scenarioDataSource.stop()).resolves.toBeUndefined();
     });
@@ -368,7 +370,7 @@ describe('ScenarioDataSource', () => {
 
       // Verify speed factor is applied
       expect(fastSource.config.speed).toBe(2.0);
-      
+
       fastSource.stop();
     });
 

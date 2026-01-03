@@ -12,15 +12,15 @@
  */
 
 import { log } from '../../../utils/logging/logger';
-// Errors and warnings ALWAYS show regardless of logging toggle
-const error = console.error.bind(console);
-const warn = console.warn.bind(console);
 
 import { useNmeaStore } from '../../../store/nmeaStore';
 import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import type { BinaryPgnFrame } from '../connection/PureConnectionManager';
 import { pgnParser } from '../pgnParser';
+// Errors and warnings ALWAYS show regardless of logging toggle
+const error = console.error.bind(console);
+const warn = console.warn.bind(console);
 
 export interface UpdateResult {
   updated: boolean;
@@ -295,7 +295,7 @@ export class PureStoreUpdater {
             } else if (source === 1 || source === 2) {
               // Source 1/2 = Outside/Inside air → weather sensor
               const weatherData: any = { timestamp };
-              
+
               if (envData.temperature !== undefined) {
                 weatherData.airTemperature = envData.temperature;
               }
@@ -459,13 +459,13 @@ export class PureStoreUpdater {
 
   /**
    * Apply sensor updates from NmeaSensorProcessor to NMEA Store v2.0
-   * 
+   *
    * ARCHITECTURE v2.0: NO MERGING - Each update passes through independently
    * - Each NMEA message → one metric update → immediate updateSensorData call
    * - No accumulation, no batching, no merging across updates
    * - SensorInstance handles versioning, history, and change detection
    * - Version counters only increment when values actually change
-   * 
+   *
    * WHY NO MERGING:
    * - Battery XDR sends 4 separate messages (V/I/C/P) that should trigger 4 separate updates
    * - Merging causes: "fields: Array(3)" instead of "fields: Array(1)"

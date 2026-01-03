@@ -1,6 +1,6 @@
 /**
  * Integration Tests for API Workflow
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC2: API workflow testing - Complete scenario execution via REST endpoints from external tools
  */
@@ -14,19 +14,19 @@ describe('API Workflow Integration Tests', () => {
 
   beforeEach(async () => {
     bridge = new UnifiedNMEABridge();
-    
+
     // Start bridge in scenario mode to enable API
     const config = {
       mode: 'scenario',
       scenarioName: 'basic-navigation',
-      speed: 1.0
+      speed: 1.0,
     };
 
     await bridge.start(config);
     apiApp = bridge.controlAPI.app;
-    
+
     // Wait for API to be ready
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 
   afterEach(async () => {
@@ -38,17 +38,13 @@ describe('API Workflow Integration Tests', () => {
   describe('Complete Scenario Workflow', () => {
     test('should execute full scenario lifecycle via API', async () => {
       // 1. Check API health
-      const healthResponse = await request(apiApp)
-        .get('/api/health')
-        .expect(200);
+      const healthResponse = await request(apiApp).get('/api/health').expect(200);
 
       expect(healthResponse.body.status).toBe('healthy');
       expect(healthResponse.body.simulator).toBe(true);
 
       // 2. Get available scenarios
-      const scenariosResponse = await request(apiApp)
-        .get('/api/scenarios')
-        .expect(200);
+      const scenariosResponse = await request(apiApp).get('/api/scenarios').expect(200);
 
       expect(scenariosResponse.body.scenarios).toBeInstanceOf(Array);
       expect(scenariosResponse.body.scenarios.length).toBeGreaterThan(0);
@@ -60,9 +56,9 @@ describe('API Workflow Integration Tests', () => {
           name: 'coastal-sailing',
           parameters: {
             windSpeed: 15,
-            waveHeight: 2.5
+            waveHeight: 2.5,
           },
-          duration: 30000
+          duration: 30000,
         })
         .expect(200);
 
@@ -73,11 +69,9 @@ describe('API Workflow Integration Tests', () => {
       const sessionId = startResponse.body.sessionId;
 
       // 4. Monitor scenario execution
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const statusResponse = await request(apiApp)
-        .get('/api/status')
-        .expect(200);
+      const statusResponse = await request(apiApp).get('/api/status').expect(200);
 
       expect(statusResponse.body.simulator.isRunning).toBe(true);
       expect(statusResponse.body.performance.messagesPerSecond).toBeGreaterThan(0);
@@ -86,7 +80,7 @@ describe('API Workflow Integration Tests', () => {
       const injectResponse = await request(apiApp)
         .post('/api/inject-data')
         .send({
-          sentence: '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47'
+          sentence: '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47',
         })
         .expect(200);
 
@@ -94,16 +88,12 @@ describe('API Workflow Integration Tests', () => {
       expect(injectResponse.body.injected).toBe(1);
 
       // 6. Stop the scenario
-      const stopResponse = await request(apiApp)
-        .post('/api/scenarios/stop')
-        .expect(200);
+      const stopResponse = await request(apiApp).post('/api/scenarios/stop').expect(200);
 
       expect(stopResponse.body.success).toBe(true);
 
       // 7. Verify scenario stopped
-      const finalStatusResponse = await request(apiApp)
-        .get('/api/status')
-        .expect(200);
+      const finalStatusResponse = await request(apiApp).get('/api/status').expect(200);
 
       // Should still be running but with different scenario or stopped
       expect(finalStatusResponse.body.simulator.isRunning).toBeDefined();
@@ -114,30 +104,21 @@ describe('API Workflow Integration Tests', () => {
 
       // Start multiple scenarios concurrently (should queue/replace)
       operations.push(
-        request(apiApp)
-          .post('/api/scenarios/start')
-          .send({ name: 'basic-navigation' })
+        request(apiApp).post('/api/scenarios/start').send({ name: 'basic-navigation' }),
       );
 
       operations.push(
-        request(apiApp)
-          .post('/api/scenarios/start')
-          .send({ name: 'coastal-sailing' })
+        request(apiApp).post('/api/scenarios/start').send({ name: 'coastal-sailing' }),
       );
 
       // Get status while starting scenarios
-      operations.push(
-        request(apiApp)
-          .get('/api/status')
-      );
+      operations.push(request(apiApp).get('/api/status'));
 
       // Inject data while operations are running
       operations.push(
-        request(apiApp)
-          .post('/api/inject-data')
-          .send({
-            sentence: '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A'
-          })
+        request(apiApp).post('/api/inject-data').send({
+          sentence: '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A',
+        }),
       );
 
       // Execute all operations concurrently
@@ -151,9 +132,7 @@ describe('API Workflow Integration Tests', () => {
       });
 
       // Verify system is still stable
-      const healthCheck = await request(apiApp)
-        .get('/api/health')
-        .expect(200);
+      const healthCheck = await request(apiApp).get('/api/health').expect(200);
 
       expect(healthCheck.body.status).toBe('healthy');
     }, 30000);
@@ -168,9 +147,7 @@ describe('API Workflow Integration Tests', () => {
         .expect(200);
 
       // 2. Get baseline performance metrics
-      const baselineResponse = await request(apiApp)
-        .get('/api/performance')
-        .expect(200);
+      const baselineResponse = await request(apiApp).get('/api/performance').expect(200);
 
       const baselineMetrics = baselineResponse.body;
       expect(baselineMetrics.messagesPerSecond).toBeGreaterThan(0);
@@ -182,30 +159,26 @@ describe('API Workflow Integration Tests', () => {
           type: 'connection_lost',
           parameters: {
             duration: 5000,
-            protocols: ['tcp', 'websocket']
-          }
+            protocols: ['tcp', 'websocket'],
+          },
         })
         .expect(200);
 
       expect(connectionErrorResponse.body.success).toBe(true);
 
       // 4. Monitor performance during error
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const errorMetricsResponse = await request(apiApp)
-        .get('/api/performance')
-        .expect(200);
+      const errorMetricsResponse = await request(apiApp).get('/api/performance').expect(200);
 
       // System should still be operational
       expect(errorMetricsResponse.body.messagesPerSecond).toBeGreaterThanOrEqual(0);
 
       // 5. Wait for error simulation to complete
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       // 6. Verify recovery
-      const recoveryResponse = await request(apiApp)
-        .get('/api/performance')
-        .expect(200);
+      const recoveryResponse = await request(apiApp).get('/api/performance').expect(200);
 
       expect(recoveryResponse.body.messagesPerSecond).toBeGreaterThan(0);
 
@@ -216,45 +189,42 @@ describe('API Workflow Integration Tests', () => {
           type: 'malformed_data',
           parameters: {
             corruptionRate: 0.1,
-            duration: 3000
-          }
+            duration: 3000,
+          },
         })
         .expect(200);
 
       // 8. System should handle corruption gracefully
-      await new Promise(resolve => setTimeout(resolve, 4000));
+      await new Promise((resolve) => setTimeout(resolve, 4000));
 
-      const finalMetricsResponse = await request(apiApp)
-        .get('/api/performance')
-        .expect(200);
+      const finalMetricsResponse = await request(apiApp).get('/api/performance').expect(200);
 
       expect(finalMetricsResponse.body.messagesPerSecond).toBeGreaterThanOrEqual(0);
     }, 30000);
 
     test('should handle error simulation with external monitoring', async () => {
       let performanceHistory = [];
-      
+
       // Start monitoring
       const startMonitoring = async () => {
         for (let i = 0; i < 10; i++) {
           try {
-            const response = await request(apiApp)
-              .get('/api/performance');
-            
+            const response = await request(apiApp).get('/api/performance');
+
             if (response.status === 200) {
               performanceHistory.push({
                 timestamp: Date.now(),
-                metrics: response.body
+                metrics: response.body,
               });
             }
           } catch (error) {
             performanceHistory.push({
               timestamp: Date.now(),
-              error: error.message
+              error: error.message,
             });
           }
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       };
 
@@ -262,7 +232,7 @@ describe('API Workflow Integration Tests', () => {
       const monitoringPromise = startMonitoring();
 
       // Execute error simulation workflow
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       await request(apiApp)
         .post('/api/simulate-error')
@@ -270,8 +240,8 @@ describe('API Workflow Integration Tests', () => {
           type: 'high_latency',
           parameters: {
             latencyMs: 500,
-            duration: 5000
-          }
+            duration: 5000,
+          },
         })
         .expect(200);
 
@@ -280,12 +250,12 @@ describe('API Workflow Integration Tests', () => {
 
       // Analyze performance history
       expect(performanceHistory.length).toBeGreaterThan(5);
-      
-      const validMetrics = performanceHistory.filter(entry => entry.metrics);
+
+      const validMetrics = performanceHistory.filter((entry) => entry.metrics);
       expect(validMetrics.length).toBeGreaterThan(3);
 
       // Verify metrics were collected throughout the test
-      const timestamps = validMetrics.map(entry => entry.timestamp);
+      const timestamps = validMetrics.map((entry) => entry.timestamp);
       const timeSpan = Math.max(...timestamps) - Math.min(...timestamps);
       expect(timeSpan).toBeGreaterThan(8000); // Should span at least 8 seconds
     }, 25000);
@@ -299,13 +269,11 @@ describe('API Workflow Integration Tests', () => {
         '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47',
         '$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39',
         '$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75',
-        '$VWVWR,084,L,02.6,N,01.3,M,04.7,K*54'
+        '$VWVWR,084,L,02.6,N,01.3,M,04.7,K*54',
       ];
 
       // 2. Get initial message count
-      const initialStatus = await request(apiApp)
-        .get('/api/status')
-        .expect(200);
+      const initialStatus = await request(apiApp).get('/api/status').expect(200);
 
       const initialMessageCount = initialStatus.body.performance.totalMessages || 0;
 
@@ -313,7 +281,7 @@ describe('API Workflow Integration Tests', () => {
       const bulkInjectResponse = await request(apiApp)
         .post('/api/inject-data')
         .send({
-          messages: bulkNmeaData
+          messages: bulkNmeaData,
         })
         .expect(200);
 
@@ -321,11 +289,9 @@ describe('API Workflow Integration Tests', () => {
       expect(bulkInjectResponse.body.injected).toBe(bulkNmeaData.length);
 
       // 4. Verify message count increased
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const postInjectStatus = await request(apiApp)
-        .get('/api/status')
-        .expect(200);
+      const postInjectStatus = await request(apiApp).get('/api/status').expect(200);
 
       // Should have processed the injected messages
       expect(postInjectStatus.body.simulator.isRunning).toBe(true);
@@ -334,7 +300,7 @@ describe('API Workflow Integration Tests', () => {
       const invalidDataResponse = await request(apiApp)
         .post('/api/inject-data')
         .send({
-          sentence: 'invalid nmea data without proper format'
+          sentence: 'invalid nmea data without proper format',
         })
         .expect(400);
 
@@ -344,14 +310,14 @@ describe('API Workflow Integration Tests', () => {
       const mixedData = [
         '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A', // valid
         'invalid data', // invalid
-        '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47' // valid
+        '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47', // valid
       ];
 
       const mixedResponse = await request(apiApp)
         .post('/api/inject-data')
         .send({
           messages: mixedData,
-          skipInvalid: true
+          skipInvalid: true,
         })
         .expect(200);
 
@@ -372,7 +338,7 @@ describe('API Workflow Integration Tests', () => {
 
         const streamInterval = setInterval(async () => {
           const nmeaMessage = `$GPRMC,${Date.now()},A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A`;
-          
+
           try {
             const response = await request(apiApp)
               .post('/api/inject-data')
@@ -382,13 +348,13 @@ describe('API Workflow Integration Tests', () => {
               streamingData.push({
                 timestamp: Date.now(),
                 message: nmeaMessage,
-                response: response.body
+                response: response.body,
               });
             }
           } catch (error) {
             streamingData.push({
               timestamp: Date.now(),
-              error: error.message
+              error: error.message,
             });
           }
 
@@ -409,7 +375,7 @@ describe('API Workflow Integration Tests', () => {
             if (response.status === 200) {
               performanceData.push({
                 timestamp: Date.now(),
-                metrics: response.body
+                metrics: response.body,
               });
             }
           } catch (error) {
@@ -428,17 +394,18 @@ describe('API Workflow Integration Tests', () => {
 
       // Validate streaming results
       expect(streamingData.length).toBeGreaterThan(30); // Should have sent many messages
-      
-      const successfulMessages = streamingData.filter(entry => entry.response?.success);
+
+      const successfulMessages = streamingData.filter((entry) => entry.response?.success);
       expect(successfulMessages.length).toBeGreaterThan(25); // Most should succeed
 
       // Validate performance remained stable
       expect(performanceResults.length).toBeGreaterThan(5);
-      
-      const avgMessageRate = performanceResults
-        .map(entry => entry.metrics.messagesPerSecond)
-        .reduce((a, b) => a + b, 0) / performanceResults.length;
-      
+
+      const avgMessageRate =
+        performanceResults
+          .map((entry) => entry.metrics.messagesPerSecond)
+          .reduce((a, b) => a + b, 0) / performanceResults.length;
+
       expect(avgMessageRate).toBeGreaterThan(5); // Should maintain reasonable throughput
     }, 15000);
   });
@@ -453,7 +420,7 @@ describe('API Workflow Integration Tests', () => {
           .post('/api/scenarios/start')
           .send({
             name: 'basic-navigation',
-            parameters: { sessionId: `test-session-${i}` }
+            parameters: { sessionId: `test-session-${i}` },
           })
           .expect(200);
 
@@ -461,25 +428,18 @@ describe('API Workflow Integration Tests', () => {
       }
 
       // Verify sessions are tracked
-      const statusResponse = await request(apiApp)
-        .get('/api/status')
-        .expect(200);
+      const statusResponse = await request(apiApp).get('/api/status').expect(200);
 
       expect(statusResponse.body.sessions.active).toBeGreaterThanOrEqual(1);
       expect(statusResponse.body.sessions.total).toBeGreaterThanOrEqual(3);
 
       // Stop sessions individually
       for (const sessionId of sessions.slice(0, 2)) {
-        await request(apiApp)
-          .post('/api/scenarios/stop')
-          .send({ sessionId })
-          .expect(200);
+        await request(apiApp).post('/api/scenarios/stop').send({ sessionId }).expect(200);
       }
 
       // Verify session cleanup
-      const finalStatusResponse = await request(apiApp)
-        .get('/api/status')
-        .expect(200);
+      const finalStatusResponse = await request(apiApp).get('/api/status').expect(200);
 
       expect(finalStatusResponse.body.sessions.active).toBeGreaterThanOrEqual(0);
     }, 25000);

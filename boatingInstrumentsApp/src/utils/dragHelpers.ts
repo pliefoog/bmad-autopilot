@@ -1,6 +1,6 @@
 /**
  * Drag-and-Drop Helper Functions
- * 
+ *
  * Utility functions for calculating drag positions, hover indices,
  * and managing drag state during widget reordering.
  */
@@ -10,9 +10,9 @@ import { DRAG_CONFIG } from '../config/dragConfig';
 
 /**
  * Calculate which grid cell is being hovered over during drag
- * 
+ *
  * @param absoluteX - Absolute X coordinate on screen
- * @param absoluteY - Absolute Y coordinate on screen  
+ * @param absoluteY - Absolute Y coordinate on screen
  * @param gridState - Current responsive grid configuration
  * @param pageIndex - Current page index
  * @returns Grid index (0-based) or -1 if outside grid
@@ -27,16 +27,11 @@ export function calculateHoverIndex(
   const { cellWidth, cellHeight, containerWidth, containerHeight } = layout;
 
   // Calculate position relative to page
-  const relativeX = absoluteX - (pageIndex * containerWidth);
+  const relativeX = absoluteX - pageIndex * containerWidth;
   const relativeY = absoluteY;
 
   // Check if outside grid bounds
-  if (
-    relativeX < 0 ||
-    relativeX > containerWidth ||
-    relativeY < 0 ||
-    relativeY > containerHeight
-  ) {
+  if (relativeX < 0 || relativeX > containerWidth || relativeY < 0 || relativeY > containerHeight) {
     return -1;
   }
 
@@ -55,7 +50,7 @@ export function calculateHoverIndex(
 
 /**
  * Calculate which page is being hovered based on edge zones
- * 
+ *
  * @param absoluteX - Absolute X coordinate on screen
  * @param currentPage - Current page index
  * @param totalPages - Total number of pages
@@ -86,7 +81,7 @@ export function calculateTargetPage(
 /**
  * Check if drag movement exceeds minimum threshold
  * Prevents accidental reordering from tiny movements
- * 
+ *
  * @param translationX - Horizontal translation
  * @param translationY - Vertical translation
  * @returns true if movement exceeds threshold
@@ -98,7 +93,7 @@ export function isDragSignificant(translationX: number, translationY: number): b
 
 /**
  * Calculate absolute widget position from page layout
- * 
+ *
  * @param widgetIndex - Widget index within page
  * @param gridState - Current responsive grid configuration
  * @param pageIndex - Page index

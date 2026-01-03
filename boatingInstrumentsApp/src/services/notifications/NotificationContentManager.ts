@@ -714,7 +714,7 @@ export class NotificationContentManager {
     totalNotifications: number;
     averageResponseTime: number;
     responseTypeDistribution: Record<string, number>;
-    mostCommonActions: Array<{ action: string; count: number }>;
+    mostCommonActions: { action: string; count: number }[];
   } {
     const totalNotifications = this.history.length;
 

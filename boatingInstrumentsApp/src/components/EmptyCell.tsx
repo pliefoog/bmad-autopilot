@@ -1,6 +1,6 @@
 /**
  * EmptyCell - Placeholder for empty grid slots
- * 
+ *
  * Use this when you want an explicit empty space in a grid layout.
  * Example: Leave a slot open for future metrics or create visual spacing.
  */

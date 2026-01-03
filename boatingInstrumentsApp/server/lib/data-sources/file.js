@@ -1,9 +1,9 @@
 /**
  * File Data Source
- * 
+ *
  * Streams NMEA data from recorded files with configurable playback rate
  * and loop support. Maintains timing and message ordering.
- * 
+ *
  * Extracted from nmea-websocket-bridge-enhanced.js for Epic 10.3
  */
 
@@ -24,7 +24,7 @@ class FileDataSource extends EventEmitter {
       currentLine: 0,
       messagesStreamed: 0,
       startTime: null,
-      loopCount: 0
+      loopCount: 0,
     };
   }
 
@@ -47,15 +47,15 @@ class FileDataSource extends EventEmitter {
   async loadFile() {
     return new Promise((resolve, reject) => {
       this.emit('status', `Loading file: ${this.config.filePath}`);
-      
+
       try {
         const fileContent = fs.readFileSync(this.config.filePath, 'utf8');
-        
+
         // Parse NMEA sentences from file
         this.nmeaLines = fileContent
           .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0 && (line.startsWith('$') || line.startsWith('!')));
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0 && (line.startsWith('$') || line.startsWith('!')));
 
         this.stats.totalLines = this.nmeaLines.length;
         this.currentLineIndex = 0;
@@ -65,15 +65,19 @@ class FileDataSource extends EventEmitter {
           return;
         }
 
-        this.emit('status', `Loaded ${this.nmeaLines.length} NMEA sentences from ${path.basename(this.config.filePath)}`);
-        
+        this.emit(
+          'status',
+          `Loaded ${this.nmeaLines.length} NMEA sentences from ${path.basename(
+            this.config.filePath,
+          )}`,
+        );
+
         // Show sample message
         if (this.nmeaLines.length > 0) {
           this.emit('status', `Sample: ${this.nmeaLines[0].substring(0, 50)}...`);
         }
 
         resolve();
-        
       } catch (error) {
         reject(new Error(`Failed to load file: ${error.message}`));
       }
@@ -88,10 +92,13 @@ class FileDataSource extends EventEmitter {
 
     this.isPlaying = true;
     this.stats.startTime = Date.now();
-    
+
     const intervalMs = 1000 / this.config.rate;
-    
-    this.emit('status', `Starting playback at ${this.config.rate} messages/second (${intervalMs}ms interval)`);
+
+    this.emit(
+      'status',
+      `Starting playback at ${this.config.rate} messages/second (${intervalMs}ms interval)`,
+    );
     this.emit('status', `Loop mode: ${this.config.loop ? 'Enabled' : 'Disabled'}`);
 
     this.playbackTimer = setInterval(() => {
@@ -127,7 +134,10 @@ class FileDataSource extends EventEmitter {
     // Log progress periodically (every 50 messages to avoid spam)
     if (this.stats.messagesStreamed % 50 === 0) {
       const progress = Math.round((this.currentLineIndex / this.nmeaLines.length) * 100);
-      this.emit('status', `Progress: ${progress}% (${this.currentLineIndex}/${this.nmeaLines.length})`);
+      this.emit(
+        'status',
+        `Progress: ${progress}% (${this.currentLineIndex}/${this.nmeaLines.length})`,
+      );
     }
   }
 
@@ -154,9 +164,10 @@ class FileDataSource extends EventEmitter {
    * Get current status
    */
   getStatus() {
-    const progress = this.stats.totalLines > 0 
-      ? Math.round((this.currentLineIndex / this.stats.totalLines) * 100) 
-      : 0;
+    const progress =
+      this.stats.totalLines > 0
+        ? Math.round((this.currentLineIndex / this.stats.totalLines) * 100)
+        : 0;
 
     return {
       type: 'file',
@@ -166,7 +177,7 @@ class FileDataSource extends EventEmitter {
       rate: this.config.rate,
       loop: this.config.loop,
       progress: progress,
-      stats: this.stats
+      stats: this.stats,
     };
   }
 
@@ -177,10 +188,13 @@ class FileDataSource extends EventEmitter {
     if (position < 0 || position >= this.nmeaLines.length) {
       throw new Error(`Invalid seek position: ${position}`);
     }
-    
+
     this.currentLineIndex = position;
     this.stats.currentLine = position + 1;
-    this.emit('status', `Seeked to position ${position} (${Math.round((position / this.nmeaLines.length) * 100)}%)`);
+    this.emit(
+      'status',
+      `Seeked to position ${position} (${Math.round((position / this.nmeaLines.length) * 100)}%)`,
+    );
   }
 
   /**
@@ -192,12 +206,12 @@ class FileDataSource extends EventEmitter {
     }
 
     this.config.rate = newRate;
-    
+
     if (this.isPlaying) {
       this.stopPlayback();
       this.startPlayback();
     }
-    
+
     this.emit('status', `Playback rate changed to ${newRate} messages/second`);
   }
 }

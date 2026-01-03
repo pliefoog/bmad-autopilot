@@ -4,19 +4,19 @@ import type { SensorType } from '../types/SensorData';
  * ============================================================================
  * THEME WIDGET - System Theme Control (Non-Sensor Widget)
  * ============================================================================
- * 
+ *
  * **PURPOSE:**
  * Provides theme mode selection and brightness control. Unlike sensor widgets,
  * this is a utility widget with interactive controls, not metric displays.
- * 
+ *
  * **ARCHITECTURE:**
  * Uses TemplatedWidget with custom JSX children (not MetricCells). Demonstrates
  * that TemplatedWidget can render ANY React elements, not just sensor metrics.
- * 
+ *
  * **HUMAN:**
  * This widget lets you switch between day/night/red-night/auto modes and
  * adjust brightness. Works on all platforms with platform-specific controls.
- * 
+ *
  * **AI AGENT:**
  * Non-sensor widget pattern:
  * - No sensor subscriptions (sensorInstance={undefined})
@@ -24,7 +24,7 @@ import type { SensorType } from '../types/SensorData';
  * - Custom JSX children instead of MetricCells
  * - Platform-specific conditional rendering (web vs native)
  * - Theme store interaction (not nmeaStore)
- * 
+ *
  * Refactored from 358 lines (UnifiedWidgetGrid) to ~200 lines (TemplatedWidget).
  */
 
@@ -54,7 +54,7 @@ interface ThemeWidgetProps {
 
 /**
  * Theme Button Component
- * 
+ *
  * **AI AGENT:**
  * Extracted component for theme mode buttons. Shows selected state with
  * inverted colors (background vs foreground swap).
@@ -73,7 +73,7 @@ const ThemeButton: React.FC<{
   };
 }> = ({ mode, currentMode, icon, onPress, theme, borderStyle }) => {
   const isActive = mode === currentMode;
-  
+
   return (
     <TouchableOpacity
       style={[
@@ -89,18 +89,14 @@ const ThemeButton: React.FC<{
       ]}
       onPress={onPress}
     >
-      <Ionicons 
-        name={icon} 
-        size={32} 
-        color={isActive ? theme.surface : theme.text} 
-      />
+      <Ionicons name={icon} size={32} color={isActive ? theme.surface : theme.text} />
     </TouchableOpacity>
   );
 };
 
 /**
  * Brightness Control Component
- * 
+ *
  * **AI AGENT:**
  * Brightness slider with +/- buttons. Double-tap brightness bar to max.
  */
@@ -112,17 +108,17 @@ const BrightnessControl: React.FC<{
   setBrightnessToMax: () => void;
   theme: any;
   unadjustedColors: any;
-}> = ({ 
-  brightness, 
-  nativeBrightnessControl, 
-  increaseBrightness, 
-  decreaseBrightness, 
+}> = ({
+  brightness,
+  nativeBrightnessControl,
+  increaseBrightness,
+  decreaseBrightness,
   setBrightnessToMax,
   theme,
-  unadjustedColors 
+  unadjustedColors,
 }) => {
   const lastTapRef = React.useRef<number>(0);
-  
+
   const handleBrightnessBarPress = React.useCallback(() => {
     const now = Date.now();
     const DOUBLE_PRESS_DELAY = 300;
@@ -134,7 +130,7 @@ const BrightnessControl: React.FC<{
       lastTapRef.current = now;
     }
   }, [setBrightnessToMax]);
-  
+
   return (
     <Pressable style={styles.brightnessSection} onPress={handleBrightnessBarPress}>
       <View style={styles.brightnessControls}>
@@ -150,15 +146,20 @@ const BrightnessControl: React.FC<{
           />
         </TouchableOpacity>
 
-        <View style={[styles.brightnessBar, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View 
+        <View
+          style={[
+            styles.brightnessBar,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
+          <View
             style={[
-              styles.brightnessFill, 
-              { 
+              styles.brightnessFill,
+              {
                 width: `${brightness * 100}%`,
-                backgroundColor: unadjustedColors.primary 
-              }
-            ]} 
+                backgroundColor: unadjustedColors.primary,
+              },
+            ]}
           />
         </View>
 
@@ -180,7 +181,7 @@ const BrightnessControl: React.FC<{
 
 /**
  * Native Control Toggle Component (Mobile Only)
- * 
+ *
  * **AI AGENT:**
  * Platform-specific component. Only renders on iOS/Android, not web.
  * Toggles between app-controlled vs OS-controlled brightness.
@@ -193,7 +194,7 @@ const NativeControlToggle: React.FC<{
   if (Platform.OS === 'web') {
     return <View />;
   }
-  
+
   return (
     <TouchableOpacity style={styles.nativeToggle} onPress={toggleNativeControl}>
       <View style={styles.nativeToggleContent}>
@@ -211,7 +212,7 @@ const NativeControlToggle: React.FC<{
 
 /**
  * ThemeWidget Renderer
- * 
+ *
  * **RENDERING ALGORITHM:**
  * 1. Subscribe to theme store (mode, brightness, colors)
  * 2. Create stable callbacks for theme actions
@@ -283,68 +284,69 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"
       sensorInstance={null}
-      sensorType={"battery" as SensorType}
+      sensorType={'battery' as SensorType}
       widgetId="theme"
     >
-      {[
-        <ThemeButton
-          key="day"
-          mode="day"
-          currentMode={mode}
-          icon="sunny"
-          onPress={handleDayPress}
-          theme={theme}
-          borderStyle={{
-            borderLeftWidth: 1,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderRightWidth: 1,
-          }}
-        />,
-        <ThemeButton
-          key="night"
-          mode="night"
-          currentMode={mode}
-          icon="moon"
-          onPress={handleNightPress}
-          theme={theme}
-          borderStyle={{
-            borderLeftWidth: 1,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderRightWidth: 0,
-          }}
-        />,
-        <ThemeButton
-          key="red"
-          mode="red-night"
-          currentMode={mode}
-          icon="eye"
-          onPress={handleRedPress}
-          theme={theme}
-          borderStyle={{
-            borderLeftWidth: 1,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderRightWidth: 1,
-          }}
-        />,
-        <ThemeButton
-          key="auto"
-          mode="auto"
-          currentMode={mode}
-          icon="time"
-          onPress={handleAutoPress}
-          theme={theme}
-          borderStyle={{
-            borderLeftWidth: 1,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderRightWidth: 0,
-          }}
-        />,
-        BrightnessControl ? (
-          <BrightnessControl
+      {
+        [
+          <ThemeButton
+            key="day"
+            mode="day"
+            currentMode={mode}
+            icon="sunny"
+            onPress={handleDayPress}
+            theme={theme}
+            borderStyle={{
+              borderLeftWidth: 1,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderRightWidth: 1,
+            }}
+          />,
+          <ThemeButton
+            key="night"
+            mode="night"
+            currentMode={mode}
+            icon="moon"
+            onPress={handleNightPress}
+            theme={theme}
+            borderStyle={{
+              borderLeftWidth: 1,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderRightWidth: 0,
+            }}
+          />,
+          <ThemeButton
+            key="red"
+            mode="red-night"
+            currentMode={mode}
+            icon="eye"
+            onPress={handleRedPress}
+            theme={theme}
+            borderStyle={{
+              borderLeftWidth: 1,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderRightWidth: 1,
+            }}
+          />,
+          <ThemeButton
+            key="auto"
+            mode="auto"
+            currentMode={mode}
+            icon="time"
+            onPress={handleAutoPress}
+            theme={theme}
+            borderStyle={{
+              borderLeftWidth: 1,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderRightWidth: 0,
+            }}
+          />,
+          BrightnessControl ? (
+            <BrightnessControl
               key="brightness"
               brightness={brightness}
               nativeBrightnessControl={nativeBrightnessControl}
@@ -353,21 +355,22 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
               setBrightnessToMax={setBrightnessToMax}
               theme={theme}
               unadjustedColors={unadjustedColors}
-          />
-        ) : (
-          <View key="brightness-placeholder" />
-        ),
-        NativeControlToggle ? (
-          <NativeControlToggle
+            />
+          ) : (
+            <View key="brightness-placeholder" />
+          ),
+          NativeControlToggle ? (
+            <NativeControlToggle
               key="native-toggle"
               nativeBrightnessControl={nativeBrightnessControl}
               toggleNativeControl={toggleNativeControl}
               theme={theme}
-          />
-        ) : (
-          <View key="native-toggle-placeholder" />
-        )
-      ] as React.ReactElement[]}
+            />
+          ) : (
+            <View key="native-toggle-placeholder" />
+          ),
+        ] as React.ReactElement[]
+      }
     </TemplatedWidget>
   );
 };

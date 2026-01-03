@@ -33,20 +33,14 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   // Clean sensor data access - NMEA Store v2.0 with SensorInstance
-  const autopilotInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.autopilot?.[0]
-  );
-  const compassInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.compass?.[0]
-  );
+  const autopilotInstance = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]);
+  const compassInstance = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]);
 
   // Subscribe to timestamps to trigger re-renders (SensorInstance is mutable)
   const _autopilotTimestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp
+    (state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp,
   );
-  const _compassTimestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.compass?.[0]?.timestamp
-  );
+  const _compassTimestamp = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.timestamp);
 
   // Autopilot service instance
   const commandManager = useRef<AutopilotCommandManager | null>(null);
@@ -96,16 +90,15 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
 
   // Extract metrics from SensorInstance
   // Priority: autopilot.actualHeading → compass.magneticHeading → compass.trueHeading
-  const currentHeading = (
-    autopilotInstance?.getMetric('actualHeading')?.si_value ??
+  const currentHeading = (autopilotInstance?.getMetric('actualHeading')?.si_value ??
     compassInstance?.getMetric('magneticHeading')?.si_value ??
     compassInstance?.getMetric('trueHeading')?.si_value ??
-    0
-  ) as number;
+    0) as number;
   const mode = autopilotInstance?.getMetric('mode')?.si_value ?? 'STANDBY';
   const engaged = autopilotInstance?.getMetric('engaged')?.si_value ?? false;
   const active = autopilotInstance?.getMetric('active')?.si_value ?? false;
-  const targetHeading = (autopilotInstance?.getMetric('targetHeading')?.si_value ?? currentHeading) as number;
+  const targetHeading = (autopilotInstance?.getMetric('targetHeading')?.si_value ??
+    currentHeading) as number;
 
   // Haptic feedback for all interactions
   const triggerHaptic = useCallback(() => {

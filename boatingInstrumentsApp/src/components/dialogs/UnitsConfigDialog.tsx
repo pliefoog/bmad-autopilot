@@ -96,7 +96,7 @@ interface PresentationPreset {
  */
 function buildPresetsFromStore(): PresentationPreset[] {
   const regionMetadata = getRegionMetadata();
-  
+
   // Example values for preview (could be made dynamic in future)
   const examplesByRegion: Record<MarineRegion, { category: string; value: string }[]> = {
     eu: [
@@ -219,7 +219,9 @@ const unitsFormSchema = z.object({
   power: z.string().optional(),
   rpm: z.string().optional(),
   // GPS-specific settings (managed via settingsStore, not presentationStore)
-  coordinateFormat: z.enum(['decimal_degrees', 'degrees_minutes', 'degrees_minutes_seconds', 'utm']).optional(),
+  coordinateFormat: z
+    .enum(['decimal_degrees', 'degrees_minutes', 'degrees_minutes_seconds', 'utm'])
+    .optional(),
   timezone: z.string().optional(),
 });
 
@@ -230,12 +232,12 @@ type UnitsFormData = z.infer<typeof unitsFormSchema>;
 export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  
+
   const [timezoneExpanded, setTimezoneExpanded] = useState(false);
 
   const presentationStore = usePresentationStore();
   const { setPresentationForCategory, selectedPresentations } = presentationStore;
-  
+
   const { gps, setGpsSetting } = useSettingsStore();
 
   // === INITIAL STATE ===
@@ -290,7 +292,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
             setPresentationForCategory(key, data[key]!);
           }
         });
-        
+
         // Save GPS settings to settingsStore
         if (data.coordinateFormat) {
           setGpsSetting('coordinateFormat', data.coordinateFormat);

@@ -2,10 +2,10 @@
 
 /**
  * Enhanced NMEA Bridge Simulator
- * 
+ *
  * Multi-protocol server supporting TCP, UDP, and WebSocket connections
  * for marine instrument development and testing WITHOUT physical hardware.
- * 
+ *
  * Features:
  * - TCP Server on port 2000 (WiFi bridge simulation)
  * - UDP Server on port 2000 (high-frequency data)
@@ -14,7 +14,7 @@
  * - Algorithmic NMEA data generation
  * - Scenario-based data streaming
  * - Backward compatibility with existing bridge
- * 
+ *
  * Usage:
  *   node nmea-bridge-simulator.js [--scenario basic-navigation] [--bridge-mode nmea0183|nmea2000]
  */
@@ -43,14 +43,14 @@ class NMEABridgeSimulator {
     this.clients = new Map();
     this.bridgeMode = 'nmea0183'; // Default to NMEA 0183 bridge mode
     this.scenario = null;
-  this.strictScenario = false; // Enforce YAML-only values when true
-  this.scenarioTimers = [];
-  this.scenarioFunctions = new Map();
+    this.strictScenario = false; // Enforce YAML-only values when true
+    this.scenarioTimers = [];
+    this.scenarioFunctions = new Map();
     this.dataGenerators = new Map();
     this.isRunning = false;
     this.messageInterval = null;
     this.scenarioSpeed = 1.0; // Speed multiplier for scenario time progression
-    
+
     // Recording playback
     this.recordingData = null;
     this.playbackStartTime = null;
@@ -58,10 +58,10 @@ class NMEABridgeSimulator {
     this.playbackLoop = false;
     this.playbackMode = 'global'; // 'global' or 'per-client'
     this.currentMessageIndex = 0;
-    
+
     // Per-client playback tracking
     this.clientPlaybacks = new Map(); // clientId -> playback state
-    
+
     // Autopilot state
     this.autopilotState = {
       mode: 'STANDBY',
@@ -69,43 +69,43 @@ class NMEABridgeSimulator {
       active: false,
       targetHeading: 180,
       currentHeading: 175,
-      rudderPosition: 0
+      rudderPosition: 0,
     };
-    
+
     // Performance monitoring
     this.stats = {
       messagesPerSecond: 0,
       totalMessages: 0,
       connectedClients: 0,
-      memoryUsage: 0
+      memoryUsage: 0,
     };
-    
+
     console.log('🌐 NMEA Bridge Simulator Started');
     console.log(`📡 Mode: ${this.bridgeMode.toUpperCase()}`);
   }
-  
+
   /**
    * Display essential network connection information
    */
   displayNetworkInfo() {
     const os = require('os');
     const networkInterfaces = os.networkInterfaces();
-    
+
     // Find the primary network interface
     let primaryIP = 'localhost';
-    Object.keys(networkInterfaces).forEach(interfaceName => {
+    Object.keys(networkInterfaces).forEach((interfaceName) => {
       const interfaces = networkInterfaces[interfaceName];
-      interfaces.forEach(iface => {
+      interfaces.forEach((iface) => {
         if (iface.family === 'IPv4' && !iface.internal && primaryIP === 'localhost') {
           primaryIP = iface.address;
         }
       });
     });
-    
+
     console.log(`   Ports: TCP/UDP :${TCP_PORT} | WebSocket :${WS_PORT}`);
     console.log(`🔗 Hosts: localhost, ${primaryIP}`);
   }
-  
+
   /**
    * Start all protocol servers
    */
@@ -113,46 +113,45 @@ class NMEABridgeSimulator {
     try {
       this.bridgeMode = config.bridgeMode || 'nmea0183';
       this.scenarioSpeed = config.speed || 1.0; // Apply speed to scenario progression
-      
+
       // Start TCP server
       await this.startTCPServer();
-      
+
       // Start UDP server
       await this.startUDPServer();
-      
+
       // Start WebSocket server on port 2000 (unified port)
       await this.startWebSocketServer();
-      
+
       // Display network connection information
       this.displayNetworkInfo();
-      
+
       // Load scenario if specified
       if (config.scenario) {
         await this.loadScenario(config.scenario);
         // Enforce strict scenario behavior when a scenario is loaded
         this.strictScenario = true;
       }
-      
+
       // Load recording if specified
       if (config.recording) {
         await this.loadRecording(config.recording, config.speed, config.loop, config.playbackMode);
       }
-      
+
       // Start data generation
-  this.startDataGeneration();
-      
+      this.startDataGeneration();
+
       this.isRunning = true;
       console.log('✅ Ready | Press Ctrl+C to stop');
-      
+
       // Start performance monitoring
       this.startPerformanceMonitoring();
-      
     } catch (error) {
       console.error('❌ Failed to start simulator:', error.message);
       process.exit(1);
     }
   }
-  
+
   /**
    * Start TCP server on port 2000
    */
@@ -161,155 +160,158 @@ class NMEABridgeSimulator {
       this.tcpServer = net.createServer((socket) => {
         const clientId = `tcp-${socket.remoteAddress}:${socket.remotePort}`;
         console.log(`📱 TCP client connected: ${clientId}`);
-        
+
         this.clients.set(clientId, {
           type: 'tcp',
           socket: socket,
-          connected: true
+          connected: true,
         });
-        
+
         // Start per-client playback if in per-client mode
         if (this.playbackMode === 'per-client' && this.recordingData) {
           this.startClientPlayback(clientId);
         }
-        
+
         socket.on('data', (data) => {
           this.handleClientMessage(clientId, data.toString());
         });
-        
+
         socket.on('close', () => {
           console.log(`📱 TCP client disconnected: ${clientId}`);
           this.stopClientPlayback(clientId);
           this.clients.delete(clientId);
         });
-        
+
         socket.on('error', (err) => {
           console.error(`❌ TCP client error ${clientId}:`, err.message);
           this.stopClientPlayback(clientId);
           this.clients.delete(clientId);
         });
       });
-      
+
       this.tcpServer.listen(TCP_PORT, BIND_HOST, () => {
         // TCP server ready (silent)
         resolve();
       });
-      
+
       this.tcpServer.on('error', (err) => {
         console.error(`❌ TCP server error:`, err.message);
         reject(err);
       });
     });
   }
-  
+
   /**
    * Start UDP server on port 2000
    */
   async startUDPServer() {
     return new Promise((resolve, reject) => {
       this.udpServer = dgram.createSocket('udp4');
-      
+
       this.udpServer.on('message', (message, remote) => {
         const clientId = `udp-${remote.address}:${remote.port}`;
-        
+
         if (!this.clients.has(clientId)) {
           console.log(`📱 UDP client connected: ${clientId}`);
           this.clients.set(clientId, {
             type: 'udp',
             remote: remote,
-            connected: true
+            connected: true,
           });
-          
+
           // Start per-client playback if in per-client mode
           if (this.playbackMode === 'per-client' && this.recordingData) {
             this.startClientPlayback(clientId);
           }
         }
-        
+
         this.handleClientMessage(clientId, message.toString());
       });
-      
+
       this.udpServer.on('listening', () => {
         // UDP server ready (silent)
         resolve();
       });
-      
+
       this.udpServer.on('error', (err) => {
         console.error(`❌ UDP server error:`, err.message);
         reject(err);
       });
-      
+
       this.udpServer.bind(UDP_PORT, BIND_HOST);
     });
   }
-  
+
   /**
    * Start WebSocket server on port 8080
    */
   async startWebSocketServer() {
     return new Promise((resolve, reject) => {
       this.wsServer = new WebSocket.Server({ port: WS_PORT, host: BIND_HOST });
-      
+
       this.wsServer.on('listening', () => {
         // WebSocket server ready (silent)
         resolve();
       });
-      
+
       this.wsServer.on('connection', (ws, req) => {
         const clientId = `ws-${req.socket.remoteAddress}:${req.socket.remotePort}`;
         console.log(`📱 WebSocket client connected: ${clientId}`);
-        
+
         this.clients.set(clientId, {
           type: 'websocket',
           socket: ws,
-          connected: true
+          connected: true,
         });
-        
+
         // Start per-client playback if in per-client mode
         if (this.playbackMode === 'per-client' && this.recordingData) {
           this.startClientPlayback(clientId);
         }
-        
+
         // Physical WiFi bridges don't send connection status - they just start sending NMEA data
-        
+
         // Physical WiFi bridges typically don't accept WebSocket commands
         // They just stream NMEA data continuously
         ws.on('message', (message) => {
-          console.log(`📡 WebSocket message from ${clientId} (ignored - bridges are read-only):`, message.toString());
+          console.log(
+            `📡 WebSocket message from ${clientId} (ignored - bridges are read-only):`,
+            message.toString(),
+          );
         });
-        
+
         ws.on('close', () => {
           console.log(`📱 WebSocket client disconnected: ${clientId}`);
           this.stopClientPlayback(clientId);
           this.clients.delete(clientId);
         });
-        
+
         ws.on('error', (err) => {
           console.error(`❌ WebSocket client error ${clientId}:`, err.message);
           this.stopClientPlayback(clientId);
           this.clients.delete(clientId);
         });
       });
-      
+
       this.wsServer.on('error', (err) => {
         console.error(`❌ WebSocket server error:`, err.message);
         reject(err);
       });
     });
   }
-  
+
   /**
    * Handle incoming client messages
    */
   handleClientMessage(clientId, message) {
     console.log(`📡 Message from ${clientId}: ${message.trim().substring(0, 50)}...`);
-    
+
     // Check if it's an autopilot command
     if (this.isAutopilotCommand(message)) {
       this.processAutopilotCommand(message, clientId);
     }
   }
-  
+
   /**
    * Handle WebSocket specific messages
    */
@@ -319,15 +321,17 @@ class NMEABridgeSimulator {
         // Already connected, send status
         const client = this.clients.get(clientId);
         if (client && client.socket) {
-          client.socket.send(JSON.stringify({
-            type: 'connection',
-            status: 'connected',
-            bridgeMode: this.bridgeMode,
-            simulator: true
-          }));
+          client.socket.send(
+            JSON.stringify({
+              type: 'connection',
+              status: 'connected',
+              bridgeMode: this.bridgeMode,
+              simulator: true,
+            }),
+          );
         }
         break;
-        
+
       case 'disconnect':
         console.log(`🔌 WebSocket client ${clientId} requested disconnect`);
         const wsClient = this.clients.get(clientId);
@@ -335,17 +339,17 @@ class NMEABridgeSimulator {
           wsClient.socket.close();
         }
         break;
-        
+
       case 'autopilot-command':
         console.log(`🎮 Autopilot command from ${clientId}: ${data.command}`);
         this.processAutopilotCommand(data.command, clientId);
         break;
-        
+
       default:
         console.log(`⚠️  Unknown WebSocket message type from ${clientId}: ${data.type}`);
     }
   }
-  
+
   /**
    * Check if message is an autopilot command
    */
@@ -354,15 +358,15 @@ class NMEABridgeSimulator {
     if (message.startsWith('$PCDIN,')) {
       return true;
     }
-    
+
     // NMEA 2000 bridge mode: Native PGN messages (simplified check)
     if (this.bridgeMode === 'nmea2000' && message.includes('PGN')) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   /**
    * Process autopilot commands
    */
@@ -375,15 +379,14 @@ class NMEABridgeSimulator {
         // Parse native NMEA 2000 PGN
         this.parseNMEA2000PGN(command);
       }
-      
+
       // Broadcast autopilot status update to all clients
       this.broadcastAutopilotStatus();
-      
     } catch (error) {
       console.error(`❌ Error processing autopilot command: ${error.message}`);
     }
   }
-  
+
   /**
    * Parse $PCDIN encapsulated NMEA 2000 PGN
    */
@@ -393,14 +396,14 @@ class NMEABridgeSimulator {
     const parts = pcdin.split(',');
     if (parts.length >= 2) {
       const pgn = parts[1];
-      
+
       switch (pgn) {
         case '01F112': // Autopilot Control PGN (example)
           this.autopilotState.engaged = !this.autopilotState.engaged;
           this.autopilotState.active = this.autopilotState.engaged;
           console.log(`🎮 Autopilot ${this.autopilotState.engaged ? 'ENGAGED' : 'DISENGAGED'}`);
           break;
-          
+
         case '01F113': // Heading adjustment (example)
           // Parse heading adjustment from command
           this.autopilotState.targetHeading = (this.autopilotState.targetHeading + 1) % 360;
@@ -409,7 +412,7 @@ class NMEABridgeSimulator {
       }
     }
   }
-  
+
   /**
    * Parse native NMEA 2000 PGN
    */
@@ -418,18 +421,18 @@ class NMEABridgeSimulator {
     console.log(`🎮 Processing NMEA 2000 PGN: ${pgn}`);
     // Implementation would depend on specific PGN format
   }
-  
+
   /**
    * Load JSON recording file with timing data
    */
   async loadRecording(recordingFile, speed = 1.0, loop = false, playbackMode = 'global') {
     try {
       // Handle both absolute and relative paths
-      const recordingPath = path.isAbsolute(recordingFile) 
-        ? recordingFile 
+      const recordingPath = path.isAbsolute(recordingFile)
+        ? recordingFile
         : path.resolve(process.cwd(), recordingFile);
       console.log(`📼 Loading recording: ${recordingFile}`);
-      
+
       let fileData;
       if (recordingFile.endsWith('.gz')) {
         const zlib = require('zlib');
@@ -438,17 +441,20 @@ class NMEABridgeSimulator {
       } else {
         fileData = fs.readFileSync(recordingPath, 'utf8');
       }
-      
+
       this.recordingData = JSON.parse(fileData);
       this.playbackSpeed = speed;
       this.playbackLoop = loop;
       this.playbackMode = playbackMode;
       this.currentMessageIndex = 0;
-      
+
       console.log(`✅ Loaded ${this.recordingData.messages.length} messages from recording`);
-      console.log(`📊 Duration: ${this.recordingData.metadata.duration.toFixed(1)}s, Speed: ${speed}x, Loop: ${loop}`);
+      console.log(
+        `📊 Duration: ${this.recordingData.metadata.duration.toFixed(
+          1,
+        )}s, Speed: ${speed}x, Loop: ${loop}`,
+      );
       console.log(`🎭 Playback Mode: ${playbackMode.toUpperCase()}`);
-      
     } catch (error) {
       console.error(`❌ Failed to load recording: ${error.message}`);
       throw error;
@@ -479,7 +485,7 @@ class NMEABridgeSimulator {
 
       // Initialize start time for scenario data generation
       this.startTime = Date.now();
-      
+
       // Generate NMEA data at individual message frequencies (not hardcoded 10Hz)
       // GPS at 5Hz = 200ms, Depth at 2Hz = 500ms, etc.
       this.messageInterval = setInterval(() => {
@@ -497,12 +503,12 @@ class NMEABridgeSimulator {
       console.error('❌ No recording data available for playback');
       return;
     }
-    
+
     this.playbackStartTime = Date.now();
     this.currentMessageIndex = 0;
-    
+
     console.log(`🎬 Starting recording playback (${this.recordingData.messages.length} messages)`);
-    
+
     // Schedule the first message
     this.scheduleNextRecordingMessage();
   }
@@ -521,9 +527,9 @@ class NMEABridgeSimulator {
         return;
       }
     }
-    
+
     const message = this.recordingData.messages[this.currentMessageIndex];
-    
+
     // Calculate delay until this message should be sent
     let delay;
     if (this.currentMessageIndex === 0) {
@@ -535,7 +541,7 @@ class NMEABridgeSimulator {
       const interval = (message.relative_time - prevMessage.relative_time) * 1000;
       delay = Math.max(1, interval / this.playbackSpeed); // Minimum 1ms delay
     }
-    
+
     setTimeout(() => {
       // Safety check for message structure
       if (!message) {
@@ -544,21 +550,24 @@ class NMEABridgeSimulator {
         this.scheduleNextRecordingMessage();
         return;
       }
-      
+
       // Check different possible message field names in recording format
       const nmeaMessage = message.message || message.sentence || message.data || message.raw;
-      
+
       if (!nmeaMessage) {
-        console.warn('⚠️ No NMEA message found in recording entry:', JSON.stringify(message, null, 2));
+        console.warn(
+          '⚠️ No NMEA message found in recording entry:',
+          JSON.stringify(message, null, 2),
+        );
         this.currentMessageIndex++;
         this.scheduleNextRecordingMessage();
         return;
       }
-      
+
       // Broadcast the recorded NMEA message
       this.broadcastMessage(nmeaMessage);
       this.stats.totalMessages++;
-      
+
       // Schedule next message
       this.currentMessageIndex++;
       this.scheduleNextRecordingMessage();
@@ -576,12 +585,12 @@ class NMEABridgeSimulator {
     const playbackState = {
       startTime: Date.now(),
       currentIndex: 0,
-      timeoutId: null
+      timeoutId: null,
     };
 
     this.clientPlaybacks.set(clientId, playbackState);
     console.log(`🎬 Starting per-client playback for ${clientId}`);
-    
+
     this.scheduleNextClientMessage(clientId);
   }
 
@@ -607,7 +616,7 @@ class NMEABridgeSimulator {
     }
 
     const message = this.recordingData.messages[playbackState.currentIndex];
-    
+
     // Calculate delay until this message should be sent (same logic as global playback)
     let delay;
     if (playbackState.currentIndex === 0) {
@@ -623,7 +632,7 @@ class NMEABridgeSimulator {
     playbackState.timeoutId = setTimeout(() => {
       // Send message to specific client
       this.sendMessageToClient(clientId, message.message);
-      
+
       // Schedule next message
       playbackState.currentIndex++;
       this.scheduleNextClientMessage(clientId);
@@ -649,20 +658,26 @@ class NMEABridgeSimulator {
             client.socket.write(formattedMessage);
           }
           break;
-          
+
         case 'udp':
           if (client.remote && this.udpServer) {
-            this.udpServer.send(Buffer.from(formattedMessage), client.remote.port, client.remote.address);
+            this.udpServer.send(
+              Buffer.from(formattedMessage),
+              client.remote.port,
+              client.remote.address,
+            );
           }
           break;
-          
+
         case 'websocket':
           if (client.socket && client.socket.readyState === WebSocket.OPEN) {
-            client.socket.send(JSON.stringify({
-              type: 'nmea',
-              data: formattedMessage,
-              timestamp: Date.now()
-            }));
+            client.socket.send(
+              JSON.stringify({
+                type: 'nmea',
+                data: formattedMessage,
+                timestamp: Date.now(),
+              }),
+            );
           }
           break;
       }
@@ -681,10 +696,10 @@ class NMEABridgeSimulator {
       console.warn('⚠️ Invalid message passed to ensureNMEAFormat:', message);
       return '';
     }
-    
+
     // Remove any existing line terminators
     let cleanMessage = message.replace(/\r?\n/g, '');
-    
+
     // Add proper NMEA line terminator
     return cleanMessage + '\r\n';
   }
@@ -700,34 +715,34 @@ class NMEABridgeSimulator {
       console.log(`🛑 Stopped playback for client ${clientId}`);
     }
   }
-  
+
   /**
    * Generate and broadcast NMEA data
    */
   generateAndBroadcastNMEAData() {
     const messages = [];
-    
+
     // Generate basic NMEA sentences
     messages.push(this.generateDepthSentence());
-    messages.push(this.generateSpeedSentence());        // VTG - Speed Over Ground
-    messages.push(this.generateWaterSpeedSentence());   // VHW - Speed Through Water
+    messages.push(this.generateSpeedSentence()); // VTG - Speed Over Ground
+    messages.push(this.generateWaterSpeedSentence()); // VHW - Speed Through Water
     messages.push(this.generateWindSentence());
     messages.push(this.generateGPSSentence());
     messages.push(this.generateRMCSentence());
     messages.push(this.generateZDASentence());
-    
+
     // Add tank and battery XDR sentences
     messages.push(...this.generateTankXDRSentences());
     messages.push(...this.generateBatteryXDRSentences());
-    
+
     // Add autopilot status
     messages.push(this.generateAutopilotSentence());
-    
+
     // Broadcast to all clients
-    messages.forEach(message => {
+    messages.forEach((message) => {
       this.broadcastMessage(message);
     });
-    
+
     this.stats.totalMessages += messages.length;
   }
 
@@ -753,7 +768,7 @@ class NMEABridgeSimulator {
     const shouldSend = (messageType, frequencyHz) => {
       const intervalMs = 1000 / frequencyHz;
       const lastTime = this.lastBroadcastTimes[messageType] || 0;
-      return (now - lastTime) >= intervalMs;
+      return now - lastTime >= intervalMs;
     };
 
     // Check each message type individually
@@ -769,8 +784,8 @@ class NMEABridgeSimulator {
     }
 
     if (timing.speed && shouldSend('speed', timing.speed)) {
-      messages.push(this.generateSpeedSentence());        // VTG - Speed Over Ground
-      messages.push(this.generateWaterSpeedSentence());   // VHW - Speed Through Water
+      messages.push(this.generateSpeedSentence()); // VTG - Speed Over Ground
+      messages.push(this.generateWaterSpeedSentence()); // VHW - Speed Through Water
       this.lastBroadcastTimes.speed = now;
     }
 
@@ -812,7 +827,8 @@ class NMEABridgeSimulator {
     }
 
     // Always include autopilot status for now (if not multi-instance scenario)
-    if (!this.isMultiInstanceScenario() && shouldSend('autopilot', 1)) { // 1Hz for autopilot
+    if (!this.isMultiInstanceScenario() && shouldSend('autopilot', 1)) {
+      // 1Hz for autopilot
       messages.push(this.generateAutopilotSentence());
       this.lastBroadcastTimes.autopilot = now;
     }
@@ -823,24 +839,26 @@ class NMEABridgeSimulator {
     }
 
     // Broadcast messages that are due
-    messages.forEach(message => {
+    messages.forEach((message) => {
       this.broadcastMessage(message);
     });
-    
+
     this.stats.totalMessages += messages.length;
   }
-  
+
   /**
    * Generate depth sentence (configurable format)
    */
   generateDepthSentence() {
     const depthData = this.scenario?.data?.depth || {};
     let depthMeters = depthData.currentValue;
-    
+
     // Provide default depth if no scenario data (for basic operation)
     if (depthMeters === undefined || !Number.isFinite(depthMeters)) {
       if (this.strictScenario) {
-        throw new Error('Scenario missing depth.currentValue. Ensure YAML functions update this value and timing is defined.');
+        throw new Error(
+          'Scenario missing depth.currentValue. Ensure YAML functions update this value and timing is defined.',
+        );
       }
       // Generate realistic varying depth for demonstration
       depthMeters = 15.0 + Math.sin(Date.now() * 0.0001) * 5.0; // 10-20 meters
@@ -848,7 +866,7 @@ class NMEABridgeSimulator {
 
     // Default to DBT, but allow configuration
     const depthFormat = this.scenario?.parameters?.depth_format || 'DBT';
-    
+
     switch (depthFormat.toLowerCase()) {
       case 'dpt':
         return this.generateDPTSentence(depthMeters);
@@ -868,7 +886,9 @@ class NMEABridgeSimulator {
     const depthFathoms = depthMeters / 1.8288; // Convert meters to fathoms (1 fathom = 1.8288 meters)
 
     // Correct DBT format: $xxDBT,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
-    const sentence = `$IIDBT,${depthFeet.toFixed(2)},f,${depthMeters.toFixed(2)},M,${depthFathoms.toFixed(2)},F`;
+    const sentence = `$IIDBT,${depthFeet.toFixed(2)},f,${depthMeters.toFixed(
+      2,
+    )},M,${depthFathoms.toFixed(2)},F`;
     return this.addChecksum(sentence);
   }
 
@@ -885,7 +905,7 @@ class NMEABridgeSimulator {
     // Field 3: Range scale currently displayed (user-selected, e.g. 0-20m, 0-50m)
     // Leave empty if not explicitly configured - most sounders don't report this
     const rangeScale = this.scenario?.parameters?.sonar?.range_scale || ''; // Usually empty
-    
+
     const sentence = `$IIDPT,${depthMeters.toFixed(2)},${offset.toFixed(1)},${rangeScale}`;
     return this.addChecksum(sentence);
   }
@@ -897,12 +917,14 @@ class NMEABridgeSimulator {
     // For DBK, subtract keel offset from transducer depth
     const keelOffset = this.scenario?.parameters?.vessel?.keel_offset || 1.8; // Default keel depth
     const depthBelowKeel = Math.max(0, depthMeters - keelOffset);
-    
+
     const depthFeet = depthBelowKeel / 0.3048; // Convert meters to feet
     const depthFathoms = depthBelowKeel * 0.546667; // Convert meters to fathoms
 
     // DBK format: $xxDBK,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F
-    const sentence = `$IIDBK,${depthFeet.toFixed(2)},f,${depthBelowKeel.toFixed(2)},M,${depthFathoms.toFixed(2)},F`;
+    const sentence = `$IIDBK,${depthFeet.toFixed(2)},f,${depthBelowKeel.toFixed(
+      2,
+    )},M,${depthFathoms.toFixed(2)},F`;
     return this.addChecksum(sentence);
   }
 
@@ -912,12 +934,13 @@ class NMEABridgeSimulator {
   generateWaterTemperatureSentence() {
     // Simulate realistic water temperature (seasonal variation)
     const baseTemp = 18.5; // Celsius - typical lake temperature
-    const seasonalVariation = Math.sin((Date.now() / (1000 * 60 * 60 * 24 * 365)) * 2 * Math.PI) * 8; // ±8°C seasonal
+    const seasonalVariation =
+      Math.sin((Date.now() / (1000 * 60 * 60 * 24 * 365)) * 2 * Math.PI) * 8; // ±8°C seasonal
     const dailyVariation = Math.sin((Date.now() / (1000 * 60 * 60 * 24)) * 2 * Math.PI) * 2; // ±2°C daily
     const randomVariation = (Math.random() - 0.5) * 1.0; // ±0.5°C random
-    
+
     const waterTemp = baseTemp + seasonalVariation + dailyVariation + randomVariation;
-    
+
     // MTW format: $xxMTW,<temperature>,C*hh
     const sentence = `$IIMTW,${waterTemp.toFixed(1)},C`;
     return this.addChecksum(sentence);
@@ -930,24 +953,24 @@ class NMEABridgeSimulator {
    */
   generateMDASentence(atmosphericData) {
     const { pressure, temperature, humidity, dewPoint } = atmosphericData;
-    
+
     // Convert Pascals to bars (1 bar = 100000 Pa)
     const pressureBars = pressure ? (pressure / 100000).toFixed(5) : '';
     const pressureInHg = pressure ? (pressure / 3386.39).toFixed(3) : '';
-    
+
     // Temperature in Celsius
     const airTempC = temperature !== undefined ? temperature.toFixed(2) : '';
-    
+
     // Humidity percentage
     const relHumid = humidity !== undefined ? Math.round(humidity) : '';
-    
+
     // Dew point in Celsius
     const dewPointC = dewPoint !== undefined ? dewPoint.toFixed(2) : '';
-    
+
     // MDA format: $IIMDA,<p_inHg>,I,<p_bars>,B,<air_temp>,C,<water_temp>,C,<rel_humid>,<abs_humid>,<dew_point>,C,<wind_dir_true>,T,<wind_dir_mag>,M,<wind_speed_kts>,N,<wind_speed_ms>,M
     // Leave water temp (field 7) and wind fields (13-20) empty - handled by other sentences
     const sentence = `$IIMDA,${pressureInHg},I,${pressureBars},B,${airTempC},C,,C,${relHumid},,${dewPointC},C,,T,,M,,N,,M`;
-    
+
     return this.addChecksum(sentence);
   }
 
@@ -960,10 +983,10 @@ class NMEABridgeSimulator {
     // Convert Pascals to bars (1 bar = 100000 Pa)
     const pressureBars = (pressurePa / 100000).toFixed(5);
     const pressureInHg = (pressurePa / 3386.39).toFixed(3);
-    
+
     // MMB format: $IIMMB,<p_bars>,B,<p_inHg>,I
     const sentence = `$IIMMB,${pressureBars},B,${pressureInHg},I`;
-    
+
     return this.addChecksum(sentence);
   }
 
@@ -973,21 +996,25 @@ class NMEABridgeSimulator {
   generateSpeedSentence() {
     const speedData = this.scenario?.data?.speed || {};
     let speedKnots = speedData.currentValue;
-    
+
     if (this.strictScenario && (speedKnots === undefined || !Number.isFinite(speedKnots))) {
-      throw new Error('Scenario missing speed.currentValue. Ensure YAML functions update this value and timing is defined.');
+      throw new Error(
+        'Scenario missing speed.currentValue. Ensure YAML functions update this value and timing is defined.',
+      );
     }
-    
+
     // Provide default speed if no scenario data (for basic operation)
     if (speedKnots === undefined || !Number.isFinite(speedKnots)) {
       // Generate realistic varying speed for demonstration
       speedKnots = 6.5 + Math.sin(Date.now() * 0.0001) * 2.0; // 4.5-8.5 knots
     }
-    
+
     const speedKmh = speedKnots * 1.852; // Convert knots to km/h
     const course = this.autopilotState.currentHeading || 0; // Default to 0 degrees if undefined
 
-    const sentence = `$IIVTG,${course.toFixed(1)},T,,M,${speedKnots.toFixed(1)},N,${speedKmh.toFixed(1)},K,A`;
+    const sentence = `$IIVTG,${course.toFixed(1)},T,,M,${speedKnots.toFixed(
+      1,
+    )},N,${speedKmh.toFixed(1)},K,A`;
     return this.addChecksum(sentence);
   }
 
@@ -997,22 +1024,24 @@ class NMEABridgeSimulator {
   generateWaterSpeedSentence() {
     const speedData = this.scenario?.data?.speed || {};
     let stwKnots = speedData.currentValue || 0;
-    
+
     if (this.strictScenario && (stwKnots === undefined || !Number.isFinite(stwKnots))) {
       throw new Error('Scenario missing speed.currentValue for STW calculation.');
     }
-    
+
     // For sailboats, STW is typically slightly different from SOG due to current/leeway
     // Apply a small random variation to simulate current effects
     const currentEffect = (Math.random() - 0.5) * 0.4; // ±0.2 knots current effect
     stwKnots = Math.max(0, stwKnots + currentEffect);
-    
+
     const stwKmh = stwKnots * 1.852; // Convert knots to km/h
     const heading = this.autopilotState.currentHeading || 0;
 
     // VHW format: $xxVHW,x.x,T,x.x,M,x.x,N,x.x,K*hh
     // Heading (true), Heading (magnetic), Speed (knots), Speed (km/h)
-    const sentence = `$IIVHW,${heading.toFixed(1)},T,,M,${stwKnots.toFixed(1)},N,${stwKmh.toFixed(1)},K`;
+    const sentence = `$IIVHW,${heading.toFixed(1)},T,,M,${stwKnots.toFixed(1)},N,${stwKmh.toFixed(
+      1,
+    )},K`;
     return this.addChecksum(sentence);
   }
 
@@ -1025,12 +1054,16 @@ class NMEABridgeSimulator {
     const windSpeedData = windData.speed || {};
     let windAngle = windAngleData.currentValue;
     let windSpeedKnots = windSpeedData.currentValue;
-    
+
     if (this.strictScenario && (windAngle === undefined || !Number.isFinite(windAngle))) {
-      throw new Error('Scenario missing wind.angle.currentValue. Ensure YAML functions update this value and timing is defined.');
+      throw new Error(
+        'Scenario missing wind.angle.currentValue. Ensure YAML functions update this value and timing is defined.',
+      );
     }
     if (this.strictScenario && (windSpeedKnots === undefined || !Number.isFinite(windSpeedKnots))) {
-      throw new Error('Scenario missing wind.speed.currentValue. Ensure YAML functions update this value and timing is defined.');
+      throw new Error(
+        'Scenario missing wind.speed.currentValue. Ensure YAML functions update this value and timing is defined.',
+      );
     }
 
     // Provide default wind if no scenario data (for basic operation)
@@ -1046,7 +1079,7 @@ class NMEABridgeSimulator {
     // Safety check: Normalize wind angle to NMEA 0-360° range
     windAngle = windAngle % 360;
     if (windAngle < 0) windAngle += 360;
-    
+
     // Warn about extreme values (debugging)
     if (windAngle > 360 || windAngle < 0) {
       console.warn(`⚠️  Wind angle out of range: ${windAngle}°, normalizing...`);
@@ -1055,7 +1088,7 @@ class NMEABridgeSimulator {
     const sentence = `$IIMWV,${windAngle.toFixed(1)},R,${windSpeedKnots.toFixed(1)},N,A`;
     return this.addChecksum(sentence);
   }
-  
+
   /**
    * Generate GPS sentence (GGA)
    */
@@ -1064,7 +1097,10 @@ class NMEABridgeSimulator {
 
     // Strict mode: require GPS values to be provided/generated by scenario
     if (this.strictScenario) {
-      const gpsData = (this.scenario && this.scenario.data && this.scenario.data.gps) ? this.scenario.data.gps : null;
+      const gpsData =
+        this.scenario && this.scenario.data && this.scenario.data.gps
+          ? this.scenario.data.gps
+          : null;
       if (!gpsData) {
         throw new Error('Scenario missing data.gps configuration.');
       }
@@ -1082,7 +1118,11 @@ class NMEABridgeSimulator {
       if (!lon) missing.push('data.gps.longitude');
       if (!lonHemisphere) missing.push('data.gps.lonHemisphere');
       if (missing.length) {
-        throw new Error(`Scenario GPS fields missing: ${missing.join(', ')}. Define via YAML functions or explicit values.`);
+        throw new Error(
+          `Scenario GPS fields missing: ${missing.join(
+            ', ',
+          )}. Define via YAML functions or explicit values.`,
+        );
       }
     } else {
       // Non-strict legacy fallback
@@ -1139,13 +1179,15 @@ class NMEABridgeSimulator {
 
     // Speed over ground (knots) and course over ground (true)
     const sog = this.scenario?.data?.speed?.currentValue ?? 0;
-    const cog = (this.autopilotState.currentHeading || 0);
+    const cog = this.autopilotState.currentHeading || 0;
 
     // Status A=valid, V=warning
     const status = 'A';
 
     // Magnetic variation unknown -> leave blank fields
-    const sentence = `$IIRMC,${time},${status},${lat},${latHemisphere},${lon},${lonHemisphere},${Number(sog).toFixed(1)},${Number(cog).toFixed(1)},${date},,,A`;
+    const sentence = `$IIRMC,${time},${status},${lat},${latHemisphere},${lon},${lonHemisphere},${Number(
+      sog,
+    ).toFixed(1)},${Number(cog).toFixed(1)},${date},,,A`;
     return this.addChecksum(sentence);
   }
 
@@ -1178,7 +1220,7 @@ class NMEABridgeSimulator {
     const sentence = `$IIZDA,${t},${dd},${mm},${fullYear},,,`;
     return this.addChecksum(sentence);
   }
-  
+
   /**
    * Generate autopilot sentence
    */
@@ -1186,12 +1228,18 @@ class NMEABridgeSimulator {
     if (this.bridgeMode === 'nmea0183') {
       // Encapsulate in $PCDIN for NMEA 0183 bridge mode
       const pgn = '01F204'; // Autopilot status PGN (example)
-      const data = `00,${this.autopilotState.engaged ? 'FF' : '00'},${Math.floor(this.autopilotState.targetHeading).toString(16).padStart(2, '0')},00,00,00,00`;
+      const data = `00,${this.autopilotState.engaged ? 'FF' : '00'},${Math.floor(
+        this.autopilotState.targetHeading,
+      )
+        .toString(16)
+        .padStart(2, '0')},00,00,00,00`;
       const sentence = `$PCDIN,${pgn},${data}`;
       return this.addChecksum(sentence);
     } else {
       // Native NMEA 2000 format (simplified)
-      return `PGN:126208,Data:${this.autopilotState.engaged ? '1' : '0'},${this.autopilotState.targetHeading}`;
+      return `PGN:126208,Data:${this.autopilotState.engaged ? '1' : '0'},${
+        this.autopilotState.targetHeading
+      }`;
     }
   }
 
@@ -1201,22 +1249,22 @@ class NMEABridgeSimulator {
   generateTankXDRSentences() {
     const messages = [];
     const currentTime = Date.now();
-    
+
     // Generate fuel tank data (oscillating around 85%)
     const fuelLevel = 0.85 + Math.sin(currentTime * 0.0001) * 0.1; // 75-95%
     const fuelSentence = `$GPXDR,P,${fuelLevel.toFixed(3)},P,FUEL_0`;
     messages.push(this.addChecksum(fuelSentence));
-    
+
     // Generate fresh water tank data (oscillating around 60%)
-    const waterLevel = 0.60 + Math.sin(currentTime * 0.0002) * 0.15; // 45-75%
+    const waterLevel = 0.6 + Math.sin(currentTime * 0.0002) * 0.15; // 45-75%
     const waterSentence = `$GPXDR,P,${waterLevel.toFixed(3)},P,WATR_0`;
     messages.push(this.addChecksum(waterSentence));
-    
+
     // Generate waste water tank data (slowly increasing)
-    const wasteLevel = 0.25 + (currentTime % 600000) / 600000 * 0.4; // 25-65% over 10 minutes
+    const wasteLevel = 0.25 + ((currentTime % 600000) / 600000) * 0.4; // 25-65% over 10 minutes
     const wasteSentence = `$GPXDR,P,${wasteLevel.toFixed(3)},P,WATR_1`;
     messages.push(this.addChecksum(wasteSentence));
-    
+
     return messages;
   }
 
@@ -1226,17 +1274,17 @@ class NMEABridgeSimulator {
   generateBatteryXDRSentences() {
     const messages = [];
     const currentTime = Date.now();
-    
+
     // Generate battery voltage (oscillating around 12.5V)
     const voltage = 12.5 + Math.sin(currentTime * 0.0003) * 0.3; // 12.2-12.8V
     const voltageSentence = `$GPXDR,V,${voltage.toFixed(1)},V,BAT_0`;
     messages.push(this.addChecksum(voltageSentence));
-    
+
     // Generate battery current (varies with usage)
     const current = 5.0 + Math.sin(currentTime * 0.0005) * 2.0; // 3-7A
     const currentSentence = `$GPXDR,I,${current.toFixed(1)},A,BAT_0`;
     messages.push(this.addChecksum(currentSentence));
-    
+
     return messages;
   }
 
@@ -1263,7 +1311,10 @@ class NMEABridgeSimulator {
         const context = { ...config, currentTime };
         return scenarioFunction(context);
       } catch (error) {
-        console.error(`Error executing scenario function ${functionName} for ${dataPath}:`, error.message);
+        console.error(
+          `Error executing scenario function ${functionName} for ${dataPath}:`,
+          error.message,
+        );
         console.error('Context:', JSON.stringify(context, null, 2));
         return null;
       }
@@ -1275,26 +1326,26 @@ class NMEABridgeSimulator {
         const time = currentTime / 1000;
         const radians = 2 * Math.PI * (config.frequency || 0.1) * time;
         return (config.base || 0) + (config.amplitude || 1) * Math.sin(radians);
-      
+
       case 'gaussian':
         const u1 = Math.random();
         const u2 = Math.random();
         const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
         const value = (config.mean || 0) + z0 * (config.std_dev || 1);
         return Math.max(config.min || -Infinity, Math.min(config.max || Infinity, value));
-      
+
       case 'linear_decline':
         const timeSeconds = currentTime / 1000;
         return Math.max(0, (config.start || 0) + (config.rate || 0) * timeSeconds);
-      
+
       case 'linear_increase':
         const timeSecondsInc = currentTime / 1000;
         const val = (config.start || 0) + (config.rate || 0) * timeSecondsInc;
-        return (typeof config.max !== 'undefined') ? Math.min(config.max, val) : val;
-      
+        return typeof config.max !== 'undefined' ? Math.min(config.max, val) : val;
+
       case 'constant':
         return config.value || 0;
-      
+
       default:
         console.warn(`Unknown data type: ${config.type}`);
         return 0;
@@ -1306,13 +1357,13 @@ class NMEABridgeSimulator {
    */
   generateEngineRPMSentences() {
     const messages = [];
-    
+
     if (!this.scenario || !this.scenario.data || !this.scenario.data.engine_rpm) {
       return messages;
     }
 
     const engineData = this.scenario.data.engine_rpm;
-    
+
     // Generate RPM sentence for each engine instance
     Object.entries(engineData).forEach(([engineKey, config], index) => {
       const rpm = this.getScenarioDataValue(`engine_rpm.${engineKey}`, config);
@@ -1332,14 +1383,14 @@ class NMEABridgeSimulator {
   generateMultiBatteryXDRSentences() {
     const messages = [];
     const currentTime = Date.now();
-    
+
     if (!this.scenario || !this.scenario.data || !this.scenario.data.battery_voltage) {
       // Fallback to original single battery
       return this.generateBatteryXDRSentences();
     }
 
     const batteryData = this.scenario.data.battery_voltage;
-    
+
     // Generate voltage sentence for each battery instance
     Object.entries(batteryData).forEach(([batteryKey, config], index) => {
       const voltage = this.getScenarioDataValue(`battery_voltage.${batteryKey}`, config);
@@ -1358,7 +1409,7 @@ class NMEABridgeSimulator {
    */
   generateYAMLDefinedSentences(currentTime, shouldSend) {
     const messages = [];
-    
+
     if (!this.scenario?.sentences || !Array.isArray(this.scenario.sentences)) {
       return messages;
     }
@@ -1366,12 +1417,12 @@ class NMEABridgeSimulator {
     // Process each sentence definition
     this.scenario.sentences.forEach((sentenceDef, index) => {
       const sentenceKey = `yaml_sentence_${index}`;
-      
+
       // Check if this sentence should be sent based on its frequency
       if (sentenceDef.frequency && shouldSend(sentenceKey, sentenceDef.frequency)) {
         const generatedSentences = this.generateYAMLSentence(sentenceDef);
         messages.push(...generatedSentences);
-        
+
         // Update timing for this specific sentence
         if (!this.lastBroadcastTimes) {
           this.lastBroadcastTimes = {};
@@ -1388,7 +1439,7 @@ class NMEABridgeSimulator {
    */
   generateYAMLSentence(sentenceDef) {
     const messages = [];
-    
+
     switch (sentenceDef.type) {
       case 'XDR_BATTERY':
         messages.push(...this.generateYAMLBatterySentence(sentenceDef));
@@ -1415,7 +1466,7 @@ class NMEABridgeSimulator {
   generateYAMLBatterySentence(sentenceDef) {
     const messages = [];
     const instance = sentenceDef.instance || 0;
-    
+
     // Get battery data for this instance
     if (!this.scenario?.data?.battery_voltage) {
       return messages;
@@ -1429,40 +1480,44 @@ class NMEABridgeSimulator {
 
     const [batteryKey, batteryConfig] = batteryEntries[instance];
     const voltage = this.getScenarioDataValue(`battery_voltage.${batteryKey}`, batteryConfig);
-    
+
     if (voltage !== null) {
       const batteryId = `BAT_${instance}`;
-      
+
       // 1. Voltage XDR sentence
       const voltageSentence = `$IIXDR,U,${voltage.toFixed(1)},V,${batteryId}`;
       messages.push(this.addChecksum(voltageSentence));
-      
+
       // 2. Current (AMP) XDR sentence - calculate realistic current based on voltage
       const current = this.calculateBatteryCurrent(voltage, instance, batteryConfig);
       const currentSentence = `$IIXDR,I,${current.toFixed(1)},A,${batteryId}`;
       messages.push(this.addChecksum(currentSentence));
-      
+
       // 3. Temperature (TMP) XDR sentence - battery temperature
       const temperature = this.calculateBatteryTemperature(voltage, instance);
       const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${batteryId}_TMP`;
       messages.push(this.addChecksum(tempSentence));
-      
+
       // 4. State of Charge (SOC) XDR sentence - percentage
       const soc = this.calculateBatterySOC(voltage, instance);
       const socSentence = `$IIXDR,P,${soc.toFixed(0)},P,${batteryId}_SOC`;
       messages.push(this.addChecksum(socSentence));
-      
+
       // 5. Nominal Voltage (NOM) XDR sentence - rated voltage
       const nominalVoltage = this.getBatteryNominalVoltage(instance);
       const nomSentence = `$IIXDR,U,${nominalVoltage.toFixed(1)},V,${batteryId}_NOM`;
       messages.push(this.addChecksum(nomSentence));
-      
+
       // 6. Battery Chemistry (CHEM) XDR sentence - battery type
       const chemistry = this.getBatteryChemistry(instance);
       const chemSentence = `$IIXDR,G,${chemistry},,${batteryId}_CHEM`;
       messages.push(this.addChecksum(chemSentence));
-      
-      console.log(`🔋 Generated comprehensive battery data for ${batteryId}: V=${voltage.toFixed(1)}V, I=${current.toFixed(1)}A, SOC=${soc.toFixed(0)}%, T=${temperature.toFixed(1)}°C`);
+
+      console.log(
+        `🔋 Generated comprehensive battery data for ${batteryId}: V=${voltage.toFixed(
+          1,
+        )}V, I=${current.toFixed(1)}A, SOC=${soc.toFixed(0)}%, T=${temperature.toFixed(1)}°C`,
+      );
     }
 
     return messages;
@@ -1474,33 +1529,37 @@ class NMEABridgeSimulator {
   calculateBatteryCurrent(voltage, instance, batteryConfig) {
     const currentTime = Date.now();
     const timeSeconds = (currentTime / 1000) % 3600; // Hour cycle
-    
+
     // Different current profiles for different battery types
     const batteryProfiles = [
-      { // House battery - moderate cycling
+      {
+        // House battery - moderate cycling
         baseLoad: -8.5,
         chargingCurrent: 15,
-        chargingVoltage: 13.8
+        chargingVoltage: 13.8,
       },
-      { // Engine battery - minimal load, alternator charging
+      {
+        // Engine battery - minimal load, alternator charging
         baseLoad: -1.2,
         chargingCurrent: 25,
-        chargingVoltage: 14.2
+        chargingVoltage: 14.2,
       },
-      { // Thruster battery - high current capability
+      {
+        // Thruster battery - high current capability
         baseLoad: -2.0,
         chargingCurrent: 40,
-        chargingVoltage: 13.6
+        chargingVoltage: 13.6,
       },
-      { // Backup/Windlass battery
+      {
+        // Backup/Windlass battery
         baseLoad: -0.8,
         chargingCurrent: 12,
-        chargingVoltage: 13.4
-      }
+        chargingVoltage: 13.4,
+      },
     ];
-    
+
     const profile = batteryProfiles[instance % batteryProfiles.length];
-    
+
     // Determine if charging (voltage above charging threshold)
     if (voltage > profile.chargingVoltage - 0.5) {
       // Charging - positive current with some variation
@@ -1519,11 +1578,11 @@ class NMEABridgeSimulator {
   calculateBatteryTemperature(voltage, instance) {
     const currentTime = Date.now();
     const ambientTemp = 22 + Math.sin(currentTime * 0.0001) * 5; // 17-27°C ambient
-    
+
     // Battery generates heat when charging/discharging heavily
     const thermalOffset = Math.abs(voltage - 12.6) * 2; // Heat from charging/deep discharge
     const instanceOffset = instance * 0.5; // Slight variation between batteries
-    
+
     return ambientTemp + thermalOffset + instanceOffset + (Math.random() - 0.5) * 1;
   }
 
@@ -1537,32 +1596,32 @@ class NMEABridgeSimulator {
       { voltage: 12.5, soc: 90 },
       { voltage: 12.42, soc: 80 },
       { voltage: 12.32, soc: 70 },
-      { voltage: 12.20, soc: 60 },
+      { voltage: 12.2, soc: 60 },
       { voltage: 12.06, soc: 50 },
       { voltage: 11.9, soc: 40 },
       { voltage: 11.75, soc: 30 },
       { voltage: 11.58, soc: 20 },
       { voltage: 11.31, soc: 10 },
-      { voltage: 10.5, soc: 0 }
+      { voltage: 10.5, soc: 0 },
     ];
-    
+
     // Handle voltages above 12.6V (charging) - cap at 100%
     if (voltage >= 12.6) {
       return 100;
     }
-    
+
     // Linear interpolation between voltage points
     for (let i = 0; i < voltageSOCMap.length - 1; i++) {
       const current = voltageSOCMap[i];
       const next = voltageSOCMap[i + 1];
-      
+
       if (voltage >= next.voltage) {
         const ratio = (voltage - next.voltage) / (current.voltage - next.voltage);
         const soc = next.soc + ratio * (current.soc - next.soc);
         return Math.max(0, Math.min(100, soc)); // Ensure 0-100% range
       }
     }
-    
+
     return 0; // Below minimum voltage
   }
 
@@ -1572,11 +1631,11 @@ class NMEABridgeSimulator {
   getBatteryNominalVoltage(instance) {
     const nominalVoltages = [
       12.0, // House battery - standard 12V
-      12.0, // Engine battery - standard 12V  
+      12.0, // Engine battery - standard 12V
       12.0, // Thruster battery - standard 12V
-      12.0  // Backup battery - standard 12V
+      12.0, // Backup battery - standard 12V
     ];
-    
+
     return nominalVoltages[instance % nominalVoltages.length];
   }
 
@@ -1585,22 +1644,22 @@ class NMEABridgeSimulator {
    */
   getBatteryChemistry(instance) {
     const chemistries = [
-      'AGM',     // House battery - AGM deep cycle
-      'WET',     // Engine battery - wet cell starter
+      'AGM', // House battery - AGM deep cycle
+      'WET', // Engine battery - wet cell starter
       'LiFePO4', // Thruster battery - lithium for high current
-      'GEL'      // Backup battery - gel maintenance-free
+      'GEL', // Backup battery - gel maintenance-free
     ];
-    
+
     return chemistries[instance % chemistries.length];
   }
 
   /**
-   * Generate tank XDR sentence from YAML definition  
+   * Generate tank XDR sentence from YAML definition
    */
   generateYAMLTankSentence(sentenceDef) {
     const messages = [];
     const instance = sentenceDef.instance || 0;
-    
+
     if (!this.scenario?.data?.tank_levels) {
       return messages;
     }
@@ -1613,7 +1672,7 @@ class NMEABridgeSimulator {
 
     const [tankKey, tankConfig] = tankEntries[instance];
     const level = this.getScenarioDataValue(`tank_levels.${tankKey}`, tankConfig);
-    
+
     if (level !== null) {
       // Generate tank XDR sentence: $IIXDR,P,<level>,P,<tankKey>*hh
       const tankSentence = `$IIXDR,P,${level.toFixed(1)},P,${tankKey}`;
@@ -1629,7 +1688,7 @@ class NMEABridgeSimulator {
   generateYAMLTemperatureSentence(sentenceDef) {
     const messages = [];
     const instance = sentenceDef.instance || 1; // Temp instances often start at 1
-    
+
     if (!this.scenario?.data?.temperature) {
       return messages;
     }
@@ -1637,14 +1696,14 @@ class NMEABridgeSimulator {
     // Find temperature configuration for this instance
     const tempEntries = Object.entries(this.scenario.data.temperature);
     const tempIndex = instance - 1; // Convert to 0-based index
-    
+
     if (tempIndex < 0 || tempIndex >= tempEntries.length) {
       return messages;
     }
 
     const [tempKey, tempConfig] = tempEntries[tempIndex];
     const temperature = this.getScenarioDataValue(`temperature.${tempKey}`, tempConfig);
-    
+
     if (temperature !== null) {
       // Generate temperature XDR sentence with custom label
       const label = sentenceDef.label || tempKey;
@@ -1661,7 +1720,7 @@ class NMEABridgeSimulator {
   generateYAMLRPMSentence(sentenceDef) {
     const messages = [];
     const instance = sentenceDef.instance || 0;
-    
+
     if (!this.scenario?.data?.engine_rpm) {
       return messages;
     }
@@ -1674,7 +1733,7 @@ class NMEABridgeSimulator {
 
     const [engineKey, engineConfig] = engineEntries[instance];
     const rpm = this.getScenarioDataValue(`engine_rpm.${engineKey}`, engineConfig);
-    
+
     if (rpm !== null) {
       // Generate RPM sentence: $IIRPM,S,<instance>,<rpm>,A,*hh
       const rpmSentence = `$IIRPM,S,${instance},${rpm.toFixed(0)},A,`;
@@ -1689,21 +1748,21 @@ class NMEABridgeSimulator {
    */
   generateMultiTankXDRSentences() {
     const messages = [];
-    
+
     if (!this.scenario || !this.scenario.data || !this.scenario.data.tank_levels) {
       // Fallback to original tank sentences
       return this.generateTankXDRSentences();
     }
 
     const tankData = this.scenario.data.tank_levels;
-    
+
     // Generate level sentence for each tank instance
     Object.entries(tankData).forEach(([tankKey, config], index) => {
       const level = this.getScenarioDataValue(`tank_levels.${tankKey}`, config);
       if (level !== null) {
         // Tank key IS the identifier (e.g., FUEL_0, WATR_2, WAST_4, BALL_5)
         let tankId = tankKey;
-        
+
         // $IIXDR,V,<level>,P,<tank_id>*hh (level as percentage 0-1)
         const levelSentence = `$IIXDR,V,${(level / 100).toFixed(3)},P,${tankId}`;
         messages.push(this.addChecksum(levelSentence));
@@ -1718,13 +1777,13 @@ class NMEABridgeSimulator {
    */
   generateTemperatureXDRSentences() {
     const messages = [];
-    
+
     if (!this.scenario || !this.scenario.data || !this.scenario.data.temperature) {
       return messages;
     }
 
     const tempData = this.scenario.data.temperature;
-    
+
     // Generate temperature sentence for each sensor with unique instances
     let instanceCounter = 0;
     Object.entries(tempData).forEach(([tempKey, config]) => {
@@ -1747,7 +1806,7 @@ class NMEABridgeSimulator {
           // Generic temperature sensor
           label = `TEMP_${instanceCounter}`;
         }
-        
+
         // $IIXDR,C,<temp>,C,<label>*hh (Yacht Devices format)
         const tempSentence = `$IIXDR,C,${temperature.toFixed(1)},C,${label}`;
         messages.push(this.addChecksum(tempSentence));
@@ -1756,7 +1815,7 @@ class NMEABridgeSimulator {
 
     return messages;
   }
-  
+
   /**
    * Add NMEA checksum
    */
@@ -1767,14 +1826,14 @@ class NMEABridgeSimulator {
     }
     return `${sentence}*${checksum.toString(16).toUpperCase().padStart(2, '0')}\r\n`;
   }
-  
+
   /**
    * Broadcast message to all clients
    */
   broadcastMessage(message) {
     // Format once for efficiency when broadcasting to multiple clients
     const formattedMessage = this.ensureNMEAFormat(message);
-    
+
     this.clients.forEach((client, clientId) => {
       try {
         switch (client.type) {
@@ -1783,13 +1842,17 @@ class NMEABridgeSimulator {
               client.socket.write(formattedMessage);
             }
             break;
-            
+
           case 'udp':
             if (client.remote && this.udpServer) {
-              this.udpServer.send(Buffer.from(formattedMessage), client.remote.port, client.remote.address);
+              this.udpServer.send(
+                Buffer.from(formattedMessage),
+                client.remote.port,
+                client.remote.address,
+              );
             }
             break;
-            
+
           case 'websocket':
             if (client.socket && client.socket.readyState === WebSocket.OPEN) {
               // Send raw NMEA data like physical WiFi bridges
@@ -1803,7 +1866,7 @@ class NMEABridgeSimulator {
       }
     });
   }
-  
+
   /**
    * Broadcast autopilot status update
    */
@@ -1811,16 +1874,20 @@ class NMEABridgeSimulator {
     const statusMessage = {
       type: 'autopilot-status',
       data: this.autopilotState,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     this.clients.forEach((client, clientId) => {
-      if (client.type === 'websocket' && client.socket && client.socket.readyState === WebSocket.OPEN) {
+      if (
+        client.type === 'websocket' &&
+        client.socket &&
+        client.socket.readyState === WebSocket.OPEN
+      ) {
         client.socket.send(JSON.stringify(statusMessage));
       }
     });
   }
-  
+
   /**
    * Load scenario configuration
    */
@@ -1833,7 +1900,14 @@ class NMEABridgeSimulator {
           ? scenarioName
           : path.join(__dirname, '..', scenarioName);
       } else {
-        scenarioPath = path.join(__dirname, '..', '..', 'marine-assets', 'test-scenarios', `${scenarioName}.yml`);
+        scenarioPath = path.join(
+          __dirname,
+          '..',
+          '..',
+          'marine-assets',
+          'test-scenarios',
+          `${scenarioName}.yml`,
+        );
       }
 
       if (!fs.existsSync(scenarioPath)) {
@@ -1846,13 +1920,12 @@ class NMEABridgeSimulator {
       console.log(`📋 Loaded scenario: ${this.scenario.name || scenarioName}`);
       // Validate immediately so we fail-fast before starting
       this.validateScenarioConfig();
-      
     } catch (error) {
       console.error(`❌ Error loading scenario ${scenarioName}:`, error.message);
       throw error;
     }
   }
-  
+
   /**
    * Start performance monitoring
    */
@@ -1860,13 +1933,15 @@ class NMEABridgeSimulator {
     setInterval(() => {
       this.stats.connectedClients = this.clients.size;
       this.stats.memoryUsage = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-      
+
       // Calculate messages per second
       const currentMessages = this.stats.totalMessages;
       this.stats.messagesPerSecond = Math.max(0, currentMessages - (this.lastMessageCount || 0));
       this.lastMessageCount = currentMessages;
-      
-      console.log(`📊 Stats: ${this.stats.connectedClients} clients, ${this.stats.messagesPerSecond} msg/s, ${this.stats.memoryUsage}MB RAM`);
+
+      console.log(
+        `📊 Stats: ${this.stats.connectedClients} clients, ${this.stats.messagesPerSecond} msg/s, ${this.stats.memoryUsage}MB RAM`,
+      );
     }, 1000);
   }
 
@@ -1953,7 +2028,7 @@ class NMEABridgeSimulator {
     // Compile functions
     this.compileScenarioFunctions();
     // Clear any existing timers
-    this.scenarioTimers.forEach(t => clearInterval(t));
+    this.scenarioTimers.forEach((t) => clearInterval(t));
     this.scenarioTimers = [];
 
     const nowMs = () => Date.now();
@@ -1995,7 +2070,8 @@ class NMEABridgeSimulator {
       startTimer(timing.depth, () => {
         try {
           const val = fn(buildCtx(this.scenario.data.depth));
-          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          if (!Number.isFinite(val))
+            throw new Error(`Function '${type}' returned non-numeric value`);
           this.scenario.data.depth.currentValue = val;
         } catch (err) {
           console.error(`❌ depth generator error: ${err.message}`);
@@ -2005,7 +2081,8 @@ class NMEABridgeSimulator {
       // Seed initial value immediately to satisfy strict mode
       try {
         const seedVal = fn(buildCtx(this.scenario.data.depth));
-        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        if (!Number.isFinite(seedVal))
+          throw new Error(`Function '${type}' returned non-numeric value`);
         this.scenario.data.depth.currentValue = seedVal;
       } catch (err) {
         console.error(`❌ depth generator seed error: ${err.message}`);
@@ -2021,7 +2098,8 @@ class NMEABridgeSimulator {
       startTimer(timing.wind, () => {
         try {
           const val = fn(buildCtx(this.scenario.data.wind.speed));
-          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          if (!Number.isFinite(val))
+            throw new Error(`Function '${type}' returned non-numeric value`);
           this.scenario.data.wind.speed.currentValue = val;
         } catch (err) {
           console.error(`❌ wind.speed generator error: ${err.message}`);
@@ -2031,7 +2109,8 @@ class NMEABridgeSimulator {
       // Seed initial wind speed
       try {
         const seedVal = fn(buildCtx(this.scenario.data.wind.speed));
-        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        if (!Number.isFinite(seedVal))
+          throw new Error(`Function '${type}' returned non-numeric value`);
         this.scenario.data.wind.speed.currentValue = seedVal;
       } catch (err) {
         console.error(`❌ wind.speed generator seed error: ${err.message}`);
@@ -2047,7 +2126,8 @@ class NMEABridgeSimulator {
       startTimer(timing.wind, () => {
         try {
           const val = fn(buildCtx(this.scenario.data.wind.angle));
-          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          if (!Number.isFinite(val))
+            throw new Error(`Function '${type}' returned non-numeric value`);
           this.scenario.data.wind.angle.currentValue = val;
         } catch (err) {
           console.error(`❌ wind.angle generator error: ${err.message}`);
@@ -2057,7 +2137,8 @@ class NMEABridgeSimulator {
       // Seed initial wind angle
       try {
         const seedVal = fn(buildCtx(this.scenario.data.wind.angle));
-        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        if (!Number.isFinite(seedVal))
+          throw new Error(`Function '${type}' returned non-numeric value`);
         this.scenario.data.wind.angle.currentValue = seedVal;
       } catch (err) {
         console.error(`❌ wind.angle generator seed error: ${err.message}`);
@@ -2074,10 +2155,13 @@ class NMEABridgeSimulator {
         try {
           const ctx = buildCtx(this.scenario.data.speed);
           if (ctx.windSpeed === undefined) {
-            throw new Error(`Missing dependency 'windSpeed' for speed generator (ensure wind.speed is defined and generating first)`);
+            throw new Error(
+              `Missing dependency 'windSpeed' for speed generator (ensure wind.speed is defined and generating first)`,
+            );
           }
           const val = fn(ctx);
-          if (!Number.isFinite(val)) throw new Error(`Function '${type}' returned non-numeric value`);
+          if (!Number.isFinite(val))
+            throw new Error(`Function '${type}' returned non-numeric value`);
           this.scenario.data.speed.currentValue = val;
         } catch (err) {
           console.error(`❌ speed generator error: ${err.message}`);
@@ -2088,10 +2172,13 @@ class NMEABridgeSimulator {
       try {
         const ctx = buildCtx(this.scenario.data.speed);
         if (ctx.windSpeed === undefined) {
-          throw new Error(`Missing dependency 'windSpeed' for speed generator (ensure wind.speed is defined and generating first)`);
+          throw new Error(
+            `Missing dependency 'windSpeed' for speed generator (ensure wind.speed is defined and generating first)`,
+          );
         }
         const seedVal = fn(ctx);
-        if (!Number.isFinite(seedVal)) throw new Error(`Function '${type}' returned non-numeric value`);
+        if (!Number.isFinite(seedVal))
+          throw new Error(`Function '${type}' returned non-numeric value`);
         this.scenario.data.speed.currentValue = seedVal;
       } catch (err) {
         console.error(`❌ speed generator seed error: ${err.message}`);
@@ -2105,13 +2192,17 @@ class NMEABridgeSimulator {
       if (!node.type) throw new Error('data.gps.type is required');
       const fn = this.scenarioFunctions.get(node.type);
       if (!fn) {
-        throw new Error(`functions.${node.type} not defined. Strict mode forbids implicit GPS generators.`);
+        throw new Error(
+          `functions.${node.type} not defined. Strict mode forbids implicit GPS generators.`,
+        );
       }
       startTimer(timing.gps, () => {
         try {
           const result = fn(buildCtx(node));
           if (!result || typeof result !== 'object') {
-            throw new Error(`GPS function '${node.type}' must return an object with time, date, latitude, latHemisphere, longitude, lonHemisphere`);
+            throw new Error(
+              `GPS function '${node.type}' must return an object with time, date, latitude, latHemisphere, longitude, lonHemisphere`,
+            );
           }
           Object.assign(node, result);
         } catch (err) {
@@ -2123,7 +2214,9 @@ class NMEABridgeSimulator {
       try {
         const result = fn(buildCtx(node));
         if (!result || typeof result !== 'object') {
-          throw new Error(`GPS function '${node.type}' must return an object with time, date, latitude, latHemisphere, longitude, lonHemisphere`);
+          throw new Error(
+            `GPS function '${node.type}' must return an object with time, date, latitude, latHemisphere, longitude, lonHemisphere`,
+          );
         }
         Object.assign(node, result);
       } catch (err) {
@@ -2132,20 +2225,20 @@ class NMEABridgeSimulator {
       }
     }
   }
-  
+
   /**
    * Graceful shutdown
    */
   async shutdown() {
     console.log('\n🛑 Shutting down Enhanced NMEA Bridge Simulator...');
-    
+
     this.isRunning = false;
-    
+
     // Clear intervals
     if (this.messageInterval) {
       clearInterval(this.messageInterval);
     }
-    
+
     // Close all client connections
     this.clients.forEach((client, clientId) => {
       try {
@@ -2158,20 +2251,20 @@ class NMEABridgeSimulator {
         console.error(`❌ Error closing client ${clientId}:`, error.message);
       }
     });
-    
+
     // Close servers
     if (this.tcpServer) {
       this.tcpServer.close();
     }
-    
+
     if (this.udpServer) {
       this.udpServer.close();
     }
-    
+
     if (this.wsServer) {
       this.wsServer.close();
     }
-    
+
     console.log('✅ Simulator stopped');
     process.exit(0);
   }
@@ -2181,7 +2274,7 @@ class NMEABridgeSimulator {
 function parseArguments() {
   const args = process.argv.slice(2);
   const config = {};
-  
+
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--scenario':
@@ -2227,7 +2320,7 @@ Examples:
         break;
     }
   }
-  
+
   return config;
 }
 
@@ -2235,23 +2328,26 @@ Examples:
 if (require.main === module) {
   const config = parseArguments();
   const simulator = new NMEABridgeSimulator();
-  
+
   // Initialize and start BMAD Integration API
   let bmadApi = null;
   try {
     const { SimulatorControlAPI } = require('./simulator-control-api');
     bmadApi = new SimulatorControlAPI(simulator);
-    
+
     // Start Simulator Control API server
-    bmadApi.start().then(() => {
-      // API ready message handled by start() method
-    }).catch((error) => {
-      console.error('❌ Failed to start Control API:', error.message);
-    });
+    bmadApi
+      .start()
+      .then(() => {
+        // API ready message handled by start() method
+      })
+      .catch((error) => {
+        console.error('❌ Failed to start Control API:', error.message);
+      });
   } catch (error) {
     console.warn('⚠️  BMAD Integration API not available:', error.message);
   }
-  
+
   // Graceful shutdown handling
   process.on('SIGINT', async () => {
     if (bmadApi) {
@@ -2259,14 +2355,14 @@ if (require.main === module) {
     }
     simulator.shutdown();
   });
-  
+
   process.on('SIGTERM', async () => {
     if (bmadApi) {
       await bmadApi.stop();
     }
     simulator.shutdown();
   });
-  
+
   // Start the simulator
   simulator.start(config).catch((error) => {
     console.error('❌ Failed to start simulator:', error);

@@ -2,23 +2,23 @@
 
 /**
  * Unified NMEA Bridge Tool
- * 
+ *
  * Single entry point consolidating three operational modes:
  * - Live Mode: Connect to hardware NMEA WiFi bridge
- * - File Mode: Playback NMEA data from recorded files  
+ * - File Mode: Playback NMEA data from recorded files
  * - Scenario Mode: Generate synthetic NMEA data from scenarios
- * 
+ *
  * Features:
  * - Multi-protocol server support (TCP:2000, UDP:2000, WebSocket:8080)
  * - Simulator Control API (port 9090) for external tools
  * - Mode-based data source abstraction
  * - Performance optimized for 500+ msg/sec, <100MB RAM
- * 
+ *
  * Usage:
  *   Live Mode:    node nmea-bridge.js --live <host> <port>
  *   File Mode:    node nmea-bridge.js --file <path> [--rate <n>] [--loop]
  *   Scenario Mode: node nmea-bridge.js --scenario <name> [--loop] [--speed <n>]
- * 
+ *
  * Epic 10.3 - Tool Consolidation & Unified CLI
  */
 
@@ -43,12 +43,12 @@ class UnifiedNMEABridge {
     this.controlAPI = new SimulatorControlAPI(this);
     this.isRunning = false;
     this.startTime = null;
-    
+
     // Properties expected by SimulatorControlAPI (will be set after protocol servers start)
     this.clients = new Map();
     this.stats = {
       totalMessages: 0,
-      messagesPerSecond: 0
+      messagesPerSecond: 0,
     };
   }
 
@@ -58,13 +58,17 @@ class UnifiedNMEABridge {
   validateScenarioExists(scenarioName) {
     // If it's already a path (contains slashes), check if it exists directly
     if (scenarioName.includes('/') || scenarioName.includes('\\')) {
-      const marineAssetsPath = path.join(__dirname, '../../marine-assets/test-scenarios', scenarioName);
+      const marineAssetsPath = path.join(
+        __dirname,
+        '../../marine-assets/test-scenarios',
+        scenarioName,
+      );
       if (fs.existsSync(`${marineAssetsPath}.yml`) || fs.existsSync(`${marineAssetsPath}.yaml`)) {
         return true;
       }
       return fs.existsSync(path.resolve(scenarioName));
     }
-    
+
     // Check for YAML files in common scenario locations
     const possiblePaths = [
       // Local scenarios directory
@@ -81,7 +85,7 @@ class UnifiedNMEABridge {
         return true;
       }
     }
-    
+
     // Recursively search subdirectories in marine-assets/test-scenarios
     const marineAssetsDir = path.join(__dirname, '../../marine-assets/test-scenarios');
     if (fs.existsSync(marineAssetsDir)) {
@@ -94,7 +98,13 @@ class UnifiedNMEABridge {
     }
 
     // Check built-in scenarios (legacy JS-based scenarios)
-    const builtInScenarios = ['basic-navigation', 'coastal-sailing', 'autopilot-engagement', 'multi-equipment-detection', 'electrical-widget-validation'];
+    const builtInScenarios = [
+      'basic-navigation',
+      'coastal-sailing',
+      'autopilot-engagement',
+      'multi-equipment-detection',
+      'electrical-widget-validation',
+    ];
     return builtInScenarios.includes(scenarioName);
   }
 
@@ -103,25 +113,25 @@ class UnifiedNMEABridge {
    */
   findScenarioInSubdirectories(baseDir, scenarioName) {
     const entries = fs.readdirSync(baseDir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       if (entry.isDirectory()) {
         const subDirPath = path.join(baseDir, entry.name);
         // Check for scenario file in this subdirectory
         const ymlPath = path.join(subDirPath, `${scenarioName}.yml`);
         const yamlPath = path.join(subDirPath, `${scenarioName}.yaml`);
-        
+
         if (fs.existsSync(ymlPath) || fs.existsSync(yamlPath)) {
           return true;
         }
-        
+
         // Recurse into subdirectory
         if (this.findScenarioInSubdirectories(subDirPath, scenarioName)) {
           return true;
         }
       }
     }
-    
+
     return false;
   }
 
@@ -135,17 +145,17 @@ class UnifiedNMEABridge {
     console.error('  • autopilot-engagement     - Complete autopilot workflow');
     console.error('  • multi-equipment-detection - Multi-instance equipment testing');
     console.error('  • electrical-widget-validation - Multi-battery electrical system testing');
-    
+
     // Recursively discover all scenario files
     const scenariosDir = path.join(__dirname, '..', '..', 'marine-assets', 'test-scenarios');
     if (fs.existsSync(scenariosDir)) {
       try {
         const scenarios = this.discoverAllScenarios(scenariosDir, scenariosDir);
-        
+
         if (scenarios.length > 0) {
           console.error('');
           console.error('File-based scenarios (use path format: folder/name):');
-          scenarios.sort().forEach(scenario => {
+          scenarios.sort().forEach((scenario) => {
             console.error(`  • ${scenario}`);
           });
         }
@@ -160,13 +170,13 @@ class UnifiedNMEABridge {
    */
   discoverAllScenarios(currentDir, baseDir) {
     const scenarios = [];
-    
+
     try {
       const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(currentDir, entry.name);
-        
+
         if (entry.isDirectory()) {
           // Recurse into subdirectories
           const subScenarios = this.discoverAllScenarios(fullPath, baseDir);
@@ -181,7 +191,7 @@ class UnifiedNMEABridge {
     } catch (error) {
       // Ignore errors reading directory
     }
-    
+
     return scenarios;
   }
 
@@ -190,14 +200,14 @@ class UnifiedNMEABridge {
    */
   parseArguments() {
     const args = process.argv.slice(2);
-    
+
     if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
       this.showHelp();
       process.exit(0);
     }
 
     const mode = args[0];
-    
+
     switch (mode) {
       case '--live':
         return this.parseLiveMode(args.slice(1));
@@ -228,7 +238,7 @@ class UnifiedNMEABridge {
       mode: 'live',
       host: args[0],
       port: parseInt(args[1]),
-      options: this.parseCommonOptions(args.slice(2))
+      options: this.parseCommonOptions(args.slice(2)),
     };
   }
 
@@ -249,13 +259,13 @@ class UnifiedNMEABridge {
     }
 
     const options = this.parseCommonOptions(args.slice(1));
-    
+
     return {
       mode: 'file',
       filePath: path.resolve(filePath),
       rate: options.rate || 10,
       loop: options.loop || false,
-      options
+      options,
     };
   }
 
@@ -270,7 +280,7 @@ class UnifiedNMEABridge {
     }
 
     const scenarioName = args[0];
-    
+
     // Validate scenario exists before starting servers
     if (!this.validateScenarioExists(scenarioName)) {
       console.error(`❌ Scenario not found: ${scenarioName}`);
@@ -288,7 +298,7 @@ class UnifiedNMEABridge {
       loop: options.loop || false,
       speed: options.speed || 1.0,
       bridgeMode: options.bridgeMode || 'nmea0183',
-      options
+      options,
     };
   }
 
@@ -303,7 +313,7 @@ class UnifiedNMEABridge {
     }
 
     const scenarioPath = args[0];
-    
+
     // Check if file exists
     if (!fs.existsSync(scenarioPath)) {
       console.error(`❌ Scenario file not found: ${scenarioPath}`);
@@ -312,7 +322,7 @@ class UnifiedNMEABridge {
 
     return {
       mode: 'validate',
-      scenarioPath: path.resolve(scenarioPath)
+      scenarioPath: path.resolve(scenarioPath),
     };
   }
 
@@ -321,7 +331,7 @@ class UnifiedNMEABridge {
    */
   parseCommonOptions(args) {
     const options = {};
-    
+
     for (let i = 0; i < args.length; i++) {
       switch (args[i]) {
         case '--bridge-mode':
@@ -393,29 +403,32 @@ class UnifiedNMEABridge {
   async validateScenario(scenarioPath) {
     const Ajv = require('ajv');
     const yaml = require('js-yaml');
-    
+
     try {
       console.log(`\n📋 Validating scenario: ${path.basename(scenarioPath)}`);
       console.log(`📂 Path: ${scenarioPath}\n`);
-      
+
       // Load schema
-      const schemaPath = path.join(__dirname, '../../marine-assets/test-scenarios/scenario.schema.json');
+      const schemaPath = path.join(
+        __dirname,
+        '../../marine-assets/test-scenarios/scenario.schema.json',
+      );
       if (!fs.existsSync(schemaPath)) {
         console.error(`❌ Schema file not found: ${schemaPath}`);
         process.exit(1);
       }
-      
+
       const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
-      
+
       // Load scenario YAML
       const scenarioContent = fs.readFileSync(scenarioPath, 'utf8');
       const scenario = yaml.load(scenarioContent);
-      
+
       // Validate with Ajv
       const ajv = new Ajv({ allErrors: true, verbose: true });
       const validate = ajv.compile(schema);
       const valid = validate(scenario);
-      
+
       if (valid) {
         console.log('✅ Scenario is VALID');
         console.log(`\n📊 Summary:`);
@@ -423,32 +436,32 @@ class UnifiedNMEABridge {
         console.log(`   • Category: ${scenario.category}`);
         console.log(`   • Duration: ${scenario.duration}s`);
         console.log(`   • Version: ${scenario.version}`);
-        
+
         if (scenario.bridge_mode) {
           console.log(`   • Bridge Mode: ${scenario.bridge_mode}`);
         }
-        
+
         if (scenario.sensors) {
           console.log(`   • Sensors: ${scenario.sensors.length}`);
           const sensorTypes = {};
-          scenario.sensors.forEach(s => {
+          scenario.sensors.forEach((s) => {
             sensorTypes[s.type] = (sensorTypes[s.type] || 0) + 1;
           });
           Object.entries(sensorTypes).forEach(([type, count]) => {
             console.log(`      - ${type}: ${count}`);
           });
         }
-        
+
         if (scenario.data) {
           console.log(`   • Uses legacy 'data' format (consider migrating to 'sensors')`);
         }
-        
+
         console.log('\n✅ Validation passed!\n');
         process.exit(0);
       } else {
         console.error('❌ Scenario is INVALID\n');
         console.error('Validation errors:\n');
-        
+
         validate.errors.forEach((err, idx) => {
           console.error(`${idx + 1}. ${err.instancePath || '/'}`);
           console.error(`   ${err.message}`);
@@ -457,10 +470,9 @@ class UnifiedNMEABridge {
           }
           console.error('');
         });
-        
+
         process.exit(1);
       }
-      
     } catch (error) {
       console.error('❌ Validation failed with error:\n');
       console.error(error.message);
@@ -478,17 +490,17 @@ class UnifiedNMEABridge {
   async start() {
     try {
       this.config = this.parseArguments();
-      
+
       // Handle validate mode separately (doesn't need servers)
       if (this.config.mode === 'validate') {
         return await this.validateScenario(this.config.scenarioPath);
       }
-      
+
       console.log(`🚀 Starting NMEA Bridge in ${this.config.mode} mode...`);
-      
+
       // Initialize data source
       await this.initializeDataSource(this.config);
-      
+
       // Start protocol servers
       const serverConfig = {
         server: {
@@ -496,28 +508,28 @@ class UnifiedNMEABridge {
             tcp: 2000,
             udp: 2000,
             websocket: 8080,
-            api: 9090
+            api: 9090,
           },
           maxClients: 50,
           timeoutMs: 30000,
-          bindHost: '0.0.0.0'
-        }
+          bindHost: '0.0.0.0',
+        },
       };
-      
+
       await this.protocolServers.start(serverConfig);
-      
+
       // Reference the protocol servers' clients map for control API compatibility
       this.clients = this.protocolServers.clients;
-      
+
       // Start control API
       await this.controlAPI.start();
-      
+
       // Start data source
       await this.dataSource.start();
-      
+
       this.isRunning = true;
       this.startTime = Date.now();
-      
+
       console.log('✅ NMEA Bridge ready!');
       console.log(`📡 Mode: ${this.config.mode.toUpperCase()}`);
       console.log('🌐 Protocol Servers:');
@@ -525,11 +537,10 @@ class UnifiedNMEABridge {
       console.log('   • UDP: localhost:2000');
       console.log('   • WebSocket: localhost:8080');
       console.log('🔧 Control API: localhost:9090');
-      
+
       // Setup graceful shutdown
       process.on('SIGINT', () => this.shutdown());
       process.on('SIGTERM', () => this.shutdown());
-      
     } catch (error) {
       console.error('❌ Failed to start NMEA Bridge:', error.message);
       if (this.config?.options?.verbose) {
@@ -544,26 +555,25 @@ class UnifiedNMEABridge {
    */
   async shutdown() {
     if (!this.isRunning) return;
-    
+
     console.log('\n🛑 Shutting down NMEA Bridge...');
-    
+
     try {
       if (this.dataSource) {
         await this.dataSource.stop();
       }
-      
+
       if (this.controlAPI) {
         await this.controlAPI.stop();
       }
-      
+
       if (this.protocolServers) {
         await this.protocolServers.stop();
       }
-      
+
       this.isRunning = false;
       console.log('✅ NMEA Bridge stopped gracefully');
       process.exit(0);
-      
     } catch (error) {
       console.error('❌ Error during shutdown:', error.message);
       process.exit(1);
@@ -639,7 +649,7 @@ More info: https://github.com/pliefoog/bmad-autopilot/tree/master/docs
       isRunning: this.isRunning,
       uptime: this.isRunning ? Date.now() - this.startTime : 0,
       dataSource: this.dataSource?.getStatus() || null,
-      protocolServers: this.protocolServers?.getStatus() || null
+      protocolServers: this.protocolServers?.getStatus() || null,
     };
   }
 }

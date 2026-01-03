@@ -141,7 +141,9 @@ export class SensorInstance<T extends SensorData = SensorData> {
       if (field.valueType === 'number') {
         if (typeof fieldValue !== 'number') {
           throw new Error(
-            `[PARSER BUG] Expected number for ${this.sensorType}[${this.instance}].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
+            `[PARSER BUG] Expected number for ${this.sensorType}[${
+              this.instance
+            }].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
           );
         }
         // Allow NaN (sentinel for "no valid reading"), reject Infinity (parser bug)
@@ -153,7 +155,9 @@ export class SensorInstance<T extends SensorData = SensorData> {
       } else if (field.valueType === 'string') {
         if (typeof fieldValue !== 'string') {
           throw new Error(
-            `[PARSER BUG] Expected string for ${this.sensorType}[${this.instance}].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
+            `[PARSER BUG] Expected string for ${this.sensorType}[${
+              this.instance
+            }].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
           );
         }
         // Enum validation for picker fields
@@ -163,14 +167,18 @@ export class SensorInstance<T extends SensorData = SensorData> {
           );
           if (!isValidEnum) {
             throw new Error(
-              `[PARSER BUG] Invalid enum value '${fieldValue}' for ${this.sensorType}[${this.instance}].${fieldName}. Valid options: ${JSON.stringify(field.options)}`,
+              `[PARSER BUG] Invalid enum value '${fieldValue}' for ${this.sensorType}[${
+                this.instance
+              }].${fieldName}. Valid options: ${JSON.stringify(field.options)}`,
             );
           }
         }
       } else if (field.valueType === 'boolean') {
         if (typeof fieldValue !== 'boolean') {
           throw new Error(
-            `[PARSER BUG] Expected boolean for ${this.sensorType}[${this.instance}].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
+            `[PARSER BUG] Expected boolean for ${this.sensorType}[${
+              this.instance
+            }].${fieldName}, got ${typeof fieldValue}: ${JSON.stringify(fieldValue)}`,
           );
         }
       }
@@ -187,10 +195,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
           if (field.valueType === 'number') {
             // Get unitType for this field
             const unitType = this._metricUnitTypes.get(fieldName);
-            
+
             // Get forceTimezone from field config (for datetime fields)
             const forceTimezone = 'forceTimezone' in field ? field.forceTimezone : undefined;
-            
+
             // Create minimal MetricValue with optional unitType and forceTimezone
             const metric = unitType
               ? new MetricValue(fieldValue, now, unitType, forceTimezone)
@@ -213,7 +221,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
               now,
               thresholds,
               previousState,
-              staleThreshold
+              staleThreshold,
             );
 
             this._alarmStates.set(fieldName, newState);
@@ -226,7 +234,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
               value: fieldValue,
             }));
             this._addStringToHistory(fieldName, fieldValue, now);
-            
+
             // Increment per-metric version for string values too
             const currentMetricVersion = this._metricVersions.get(fieldName) ?? 0;
             this._metricVersions.set(fieldName, currentMetricVersion + 1);
@@ -242,7 +250,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     }
 
     this.timestamp = now;
-    
+
     // Increment sensor-level version if any metric changed
     if (hasChanges) {
       this._version++;
@@ -302,7 +310,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Only for compass sensors with heading history
    * Formula: ROT (°/min) = (Δheading / Δt_seconds) × 60
    * Handles 359°→0° wrap-around
-   * 
+   *
    * @returns Calculated ROT in degrees per minute, or null if insufficient data
    */
   private _calculateROT(): number | null {
@@ -352,7 +360,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Calculate true wind if hardware values are stale or missing
    * Only for wind sensors with apparent wind data
    * Requires GPS (SOG, COG) and compass (heading) data
-   * 
+   *
    * @param gpsInstance GPS sensor instance for SOG/COG
    * @param compassInstance Compass sensor instance for heading
    */
@@ -417,7 +425,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     const sogMetric = gpsInstance.getMetric('speedOverGround');
     const cogMetric = gpsInstance.getMetric('courseOverGround');
-    const headingMetric = compassInstance.getMetric('magneticHeading') ?? compassInstance.getMetric('trueHeading');
+    const headingMetric =
+      compassInstance.getMetric('magneticHeading') ?? compassInstance.getMetric('trueHeading');
 
     log.wind('Checking GPS/compass data', () => ({
       hasSOG: !!sogMetric,
@@ -436,7 +445,11 @@ export class SensorInstance<T extends SensorData = SensorData> {
       }));
       return;
     }
-    if (sogMetric.si_value === null || cogMetric.si_value === null || headingMetric.si_value === null) {
+    if (
+      sogMetric.si_value === null ||
+      cogMetric.si_value === null ||
+      headingMetric.si_value === null
+    ) {
       log.wind('SOG, COG, or heading is null - calculation requires valid values', () => ({
         sog: sogMetric?.si_value,
         cog: cogMetric?.si_value,
@@ -497,7 +510,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    *
    * Returns the latest history point with cached display values.
    * Widgets should access formattedValue, unit, etc. as properties.
-   * 
+   *
    * Special handling:
    * - rateOfTurn: Returns hardware value if fresh (<1s), otherwise calculates from heading
    *
@@ -512,36 +525,37 @@ export class SensorInstance<T extends SensorData = SensorData> {
       const [, baseField, statType] = statMatch;
       const buffer = this._history.get(baseField);
       if (!buffer) return undefined;
-      
+
       // Get all history points from buffer
       const historyData = buffer.getAll();
       if (historyData.length === 0) return undefined;
-      
+
       // Extract SI values from history points for min/max/avg calculation
       // NOTE: We use si_value (not display value) because MetricValue will convert to display units
       const siValues = historyData
-        .map(point => point.value.si_value)
+        .map((point) => point.value.si_value)
         .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
-      
+
       if (siValues.length === 0) return undefined;
-      
+
       // Calculate stat from SI values
       let statValue: number;
       if (statType === 'min') {
         statValue = Math.min(...siValues);
       } else if (statType === 'max') {
         statValue = Math.max(...siValues);
-      } else { // avg
+      } else {
+        // avg
         statValue = siValues.reduce((sum, v) => sum + v, 0) / siValues.length;
       }
-      
+
       // Create MetricValue for the stat (same unitType as base field)
       const unitType = this._metricUnitTypes.get(baseField);
       const now = Date.now();
       const metric = unitType
         ? new MetricValue(statValue, now, unitType)
         : new MetricValue(statValue, now);
-      
+
       // Convert to HistoryPoint format
       return {
         si_value: statValue,
@@ -552,7 +566,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         timestamp: now,
       };
     }
-    
+
     // Virtual metric: utcDate from utcTime timestamp (GPS sensor only)
     if (fieldName === 'utcDate' && this.sensorType === 'gps') {
       const utcTimeBuffer = this._history.get('utcTime');
@@ -563,12 +577,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
           const unitType = this._metricUnitTypes.get('utcDate');
           const fields = getDataFields(this.sensorType);
           const dateField = fields.find((f) => f.key === 'utcDate');
-          const forceTimezone = dateField && 'forceTimezone' in dateField ? dateField.forceTimezone : undefined;
-          
+          const forceTimezone =
+            dateField && 'forceTimezone' in dateField ? dateField.forceTimezone : undefined;
+
           const metric = unitType
             ? new MetricValue(latest.si_value, latest.timestamp, unitType, forceTimezone)
             : new MetricValue(latest.si_value, latest.timestamp, undefined, forceTimezone);
-          
+
           // Convert MetricValue to HistoryPoint
           return {
             si_value: latest.si_value,
@@ -591,7 +606,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       // Check if we have fresh hardware ROT (less than 1 second old)
       if (buffer) {
         const latest = buffer.getLatest();
-        if (latest && latest.si_value !== null && (now - latest.timestamp) < 1000) {
+        if (latest && latest.si_value !== null && now - latest.timestamp < 1000) {
           return latest; // Use hardware value
         }
       }
@@ -603,7 +618,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         const metric = unitType
           ? new MetricValue(calculatedROT, now, unitType)
           : new MetricValue(calculatedROT, now);
-        
+
         // Convert MetricValue to HistoryPoint (on-demand, not stored in history)
         return {
           si_value: calculatedROT,
@@ -693,7 +708,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         metric.timestamp,
         thresholds,
         previousState,
-        staleThreshold
+        staleThreshold,
       );
 
       this._alarmStates.set(metricKey, newState);
@@ -733,7 +748,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       for (const point of allPoints) {
         const historyPoint = point.value;
         const metric = new MetricValue(historyPoint.si_value, historyPoint.timestamp, unitType);
-        
+
         // Update display values
         historyPoint.value = metric.getDisplayValue();
         historyPoint.unit = metric.getUnit();
@@ -784,13 +799,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
     buffer.add(
       {
         si_value: metric.si_value,
-        value: metric.getDisplayValue(unitType),  // Pass unitType explicitly
+        value: metric.getDisplayValue(unitType), // Pass unitType explicitly
         formattedValue: metric.getFormattedValue(unitType),
         formattedValueWithUnit: metric.getFormattedValueWithUnit(unitType),
         unit: metric.getUnit(unitType),
         timestamp: metric.timestamp,
       },
-      metric.timestamp
+      metric.timestamp,
     );
   }
 
@@ -817,7 +832,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         unit: '',
         timestamp,
       },
-      timestamp
+      timestamp,
     );
   }
 
@@ -835,7 +850,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     const values = history
       .map((p) => p.si_value)
       .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
-    
+
     if (values.length === 0) return undefined;
 
     const min = Math.min(...values);
@@ -847,13 +862,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
   /**
    * Get formatted session statistics for a metric
-   * 
+   *
    * Calculates min/max/avg from history and formats in user's selected units.
    * On-demand calculation - only computes when called.
-   * 
+   *
    * @param metricKey - Metric field name
    * @returns Object with formatted min/max/avg or undefined
-   * 
+   *
    * @example
    * ```typescript
    * const stats = depthInstance.getFormattedSessionStats('depth');
@@ -863,12 +878,14 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * console.log(stats.unit);               // "ft"
    * ```
    */
-  getFormattedSessionStats(metricKey: string): {
-    formattedMinValue: string;
-    formattedMaxValue: string;
-    formattedAvgValue: string;
-    unit: string;
-  } | undefined {
+  getFormattedSessionStats(metricKey: string):
+    | {
+        formattedMinValue: string;
+        formattedMaxValue: string;
+        formattedAvgValue: string;
+        unit: string;
+      }
+    | undefined {
     const stats = this.getSessionStats(metricKey);
     if (!stats) return undefined;
 
@@ -899,13 +916,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
   /**
    * Get display-value session statistics for a metric (numeric, for charting)
-   * 
+   *
    * Returns min/max/avg in user's selected display units as numbers (not formatted strings).
    * Used by TrendLine for Y-axis range calculation.
-   * 
+   *
    * @param metricKey - Metric field name
    * @returns Object with numeric min/max/avg in display units or undefined
-   * 
+   *
    * @example
    * ```typescript
    * const stats = depthInstance.getDisplayValueStats('depth');
@@ -914,12 +931,14 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * console.log(stats.unit); // "ft"
    * ```
    */
-  getDisplayValueStats(metricKey: string): {
-    min: number;
-    max: number;
-    avg: number;
-    unit: string;
-  } | undefined {
+  getDisplayValueStats(metricKey: string):
+    | {
+        min: number;
+        max: number;
+        avg: number;
+        unit: string;
+      }
+    | undefined {
     const history = this.getHistoryForMetric(metricKey);
     if (history.length === 0) return undefined;
 
@@ -927,7 +946,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     const values = history
       .map((p) => p.value)
       .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
-    
+
     if (values.length === 0) return undefined;
 
     const min = Math.min(...values);
@@ -958,9 +977,9 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Get sensor-level version counter (NEW: Architecture v2.0)
    * Increments whenever any metric value changes
    * Used for coarse-grained subscriptions (entire sensor)
-   * 
+   *
    * @returns Current sensor version number
-   * 
+   *
    * @example
    * ```typescript
    * const depthInstance = useNmeaStore(
@@ -977,10 +996,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Get per-metric version counter (NEW: Architecture v2.0)
    * Increments only when specific metric changes
    * Used for fine-grained subscriptions (single metric)
-   * 
+   *
    * @param metricKey - Metric field name
    * @returns Current metric version number or 0 if metric not found
-   * 
+   *
    * @example
    * ```typescript
    * const useMetric = (sensorType, instance, metricKey) => {
@@ -1004,7 +1023,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       const [, baseMetric] = statMatch;
       // Use base metric's version (e.g., depth.min → depth version)
       // This ensures virtual metrics trigger updates when the base metric changes
-      // 
+      //
       // TODO: Potential optimization - cache calculated virtual metrics
       //   Current: Re-renders on EVERY base metric update (even if min/max unchanged)
       //   Trade-off: Extra renders vs. complexity (acceptable for <10 Hz updates)
@@ -1032,5 +1051,3 @@ export class SensorInstance<T extends SensorData = SensorData> {
     }));
   }
 }
-
-

@@ -24,11 +24,11 @@ interface IOSNotifications {
     data?: any;
     criticalAlert?: boolean;
     interruptionLevel?: 'passive' | 'active' | 'timeSensitive' | 'critical';
-    actions?: Array<{
+    actions?: {
       id: string;
       title: string;
       options?: string[];
-    }>;
+    }[];
   }): Promise<void>;
 
   cancelNotification(id: string): Promise<void>;
@@ -38,14 +38,14 @@ interface IOSNotifications {
   getBadgeCount(): Promise<number>;
 
   registerNotificationCategories(
-    categories: Array<{
+    categories: {
       id: string;
-      actions: Array<{
+      actions: {
         id: string;
         title: string;
         options?: string[];
-      }>;
-    }>,
+      }[];
+    }[],
   ): Promise<void>;
 }
 
@@ -75,11 +75,11 @@ interface AndroidNotifications {
     vibrationPattern?: number[];
     priority?: 'min' | 'low' | 'default' | 'high' | 'max';
     data?: any;
-    actions?: Array<{
+    actions?: {
       id: string;
       title: string;
       icon?: string;
-    }>;
+    }[];
     ongoing?: boolean;
     autoCancel?: boolean;
   }): Promise<void>;

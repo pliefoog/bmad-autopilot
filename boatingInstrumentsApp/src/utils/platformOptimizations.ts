@@ -372,7 +372,7 @@ export type DesktopPowerState = 'active' | 'idle' | 'sleep';
 export class DesktopOptimizationManager {
   private powerState: DesktopPowerState = 'active';
   private preventSleep: boolean = false;
-  private listeners: Array<(state: DesktopPowerState) => void> = [];
+  private listeners: ((state: DesktopPowerState) => void)[] = [];
 
   /**
    * Prevent system sleep (for active navigation)
@@ -515,7 +515,7 @@ export interface ThermalConfig {
  */
 export class ThermalManager {
   private thermalState: ThermalState = ThermalState.NOMINAL;
-  private listeners: Array<(config: ThermalConfig) => void> = [];
+  private listeners: ((config: ThermalConfig) => void)[] = [];
 
   /**
    * Start thermal monitoring

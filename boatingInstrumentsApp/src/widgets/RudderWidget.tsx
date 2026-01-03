@@ -13,86 +13,83 @@ interface RudderWidgetProps {
 
 /**
  * RudderWidget - Registry-First Declarative Implementation with SVG Visualization
- * 
+ *
  * **Before (313 lines):**
  * - Manual metric extraction from autopilot sensor
  * - Manual display value creation and formatting
  * - Manual alarm state extraction
  * - Complex TouchableOpacity container with styling
  * - Manual separator and layout management
- * 
+ *
  * **After (~110 lines):**
  * - Pure declarative configuration for metrics
  * - Auto-fetch via MetricCell
  * - TemplatedWidget handles layout
  * - SVG RudderIndicator component preserved (unique to rudder)
- * 
+ *
  * **Layout:** 2Rx1C primary (rudderAngle) + Custom secondary (SVG visualization)
- * 
+ *
  * **Unique Features:**
  * - SVG rudder indicator with boat outline
  * - Visual feedback for angle (color-coded: green=0°, yellow>20°, red>30°)
  * - Port/Starboard labels
  */
-export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(
-  ({ id }) => {
+export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id }) => {
+  const theme = useTheme();
 
-    const theme = useTheme();
+  // Extract instance number from widget ID
+  const instanceNumber = useMemo(() => {
+    const match = id.match(/rudder-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [id]);
 
-    // Extract instance number from widget ID
-    const instanceNumber = useMemo(() => {
-      const match = id.match(/rudder-(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    }, [id]);
+  // Get sensor instance (rudder data comes from autopilot sensor)
+  const autopilotInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.autopilot?.[instanceNumber],
+  );
 
-    // Get sensor instance (rudder data comes from autopilot sensor)
-    const autopilotInstance = useNmeaStore(
-      (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]
-    );
+  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]?.timestamp,
+  );
 
-    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-    const _timestamp = useNmeaStore(
-      (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]?.timestamp
-    );
+  // Get rudder angle for visualization
+  const rudderAngle = (autopilotInstance?.getMetric('rudderAngle')?.si_value as number) ?? 0;
 
-    // Get rudder angle for visualization
-    const rudderAngle = autopilotInstance?.getMetric('rudderAngle')?.si_value as number ?? 0;
+  return (
+    <TemplatedWidget
+      template="2Rx1C-SEP-NONE"
+      sensorInstance={autopilotInstance}
+      sensorType="autopilot"
+      testID={`rudder-widget-${instanceNumber}`}
+    >
+      {/* Primary Grid: Rudder Angle */}
+      <PrimaryMetricCell metricKey="rudderAngle" />
 
-    return (
-      <TemplatedWidget
-        template="2Rx1C-SEP-NONE"
-        sensorInstance={autopilotInstance}
-        sensorType="autopilot"
-        testID={`rudder-widget-${instanceNumber}`}
-      >
-        {/* Primary Grid: Rudder Angle */}
-        <PrimaryMetricCell metricKey="rudderAngle" />
-
-        {/* Secondary: Custom SVG Visualization */}
-        <View style={{ alignItems: 'center', marginTop: 16, paddingBottom: 8 }}>
-          <RudderIndicator angle={rudderAngle} theme={theme} />
-          <Text
-            style={{
-              fontSize: 11,
-              fontWeight: '600',
-              textAlign: 'center',
-              marginTop: 8,
-              color: theme.textSecondary,
-            }}
-          >
-            {Math.abs(rudderAngle) > 30
-              ? 'EXTREME ANGLE'
-              : Math.abs(rudderAngle) > 20
-              ? 'High Angle'
-              : rudderAngle === 0
-              ? 'Centered'
-              : 'Normal'}
-          </Text>
-        </View>
-      </TemplatedWidget>
-    );
-  },
-);
+      {/* Secondary: Custom SVG Visualization */}
+      <View style={{ alignItems: 'center', marginTop: 16, paddingBottom: 8 }}>
+        <RudderIndicator angle={rudderAngle} theme={theme} />
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: '600',
+            textAlign: 'center',
+            marginTop: 8,
+            color: theme.textSecondary,
+          }}
+        >
+          {Math.abs(rudderAngle) > 30
+            ? 'EXTREME ANGLE'
+            : Math.abs(rudderAngle) > 20
+            ? 'High Angle'
+            : rudderAngle === 0
+            ? 'Centered'
+            : 'Normal'}
+        </Text>
+      </View>
+    </TemplatedWidget>
+  );
+});
 
 /**
  * RudderIndicator - SVG visualization of rudder position
@@ -193,4 +190,3 @@ const RudderIndicator: React.FC<RudderIndicatorProps> = ({ angle, theme }) => {
 RudderWidget.displayName = 'RudderWidget';
 
 export default RudderWidget;
-

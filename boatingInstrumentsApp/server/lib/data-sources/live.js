@@ -1,9 +1,9 @@
 /**
  * Live Data Source
- * 
+ *
  * Connects to hardware NMEA WiFi bridge via TCP connection
  * and streams real-time marine instrument data.
- * 
+ *
  * Extracted from nmea-websocket-bridge-enhanced.js for Epic 10.3
  */
 
@@ -23,7 +23,7 @@ class LiveDataSource extends EventEmitter {
     this.stats = {
       messagesReceived: 0,
       connectionTime: null,
-      lastMessage: null
+      lastMessage: null,
     };
   }
 
@@ -33,16 +33,19 @@ class LiveDataSource extends EventEmitter {
   async start() {
     return new Promise((resolve, reject) => {
       this.emit('status', `Connecting to ${this.config.host}:${this.config.port}...`);
-      
+
       this.tcpSocket = new net.Socket();
-      
+
       // Connection successful
       this.tcpSocket.on('connect', () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.stats.connectionTime = Date.now();
-        
-        this.emit('status', `Connected to NMEA WiFi bridge at ${this.config.host}:${this.config.port}`);
+
+        this.emit(
+          'status',
+          `Connected to NMEA WiFi bridge at ${this.config.host}:${this.config.port}`,
+        );
         resolve();
       });
 
@@ -51,9 +54,9 @@ class LiveDataSource extends EventEmitter {
         const nmeaData = data.toString().trim();
         if (nmeaData) {
           // Split multiple NMEA sentences if received together
-          const sentences = nmeaData.split('\n').filter(line => line.trim().length > 0);
-          
-          sentences.forEach(sentence => {
+          const sentences = nmeaData.split('\n').filter((line) => line.trim().length > 0);
+
+          sentences.forEach((sentence) => {
             if (sentence.startsWith('$') || sentence.startsWith('!')) {
               this.stats.messagesReceived++;
               this.stats.lastMessage = Date.now();
@@ -67,7 +70,7 @@ class LiveDataSource extends EventEmitter {
       this.tcpSocket.on('close', () => {
         this.isConnected = false;
         this.emit('status', 'Connection to NMEA bridge closed');
-        
+
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.scheduleReconnect();
         } else {
@@ -104,11 +107,16 @@ class LiveDataSource extends EventEmitter {
   scheduleReconnect() {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * this.reconnectAttempts;
-    
-    this.emit('status', `Reconnecting in ${delay/1000}s (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-    
+
+    this.emit(
+      'status',
+      `Reconnecting in ${delay / 1000}s (attempt ${this.reconnectAttempts}/${
+        this.maxReconnectAttempts
+      })`,
+    );
+
     this.reconnectTimer = setTimeout(() => {
-      this.start().catch(error => {
+      this.start().catch((error) => {
         console.error('Reconnection failed:', error.message);
       });
     }, delay);
@@ -142,7 +150,7 @@ class LiveDataSource extends EventEmitter {
       host: this.config.host,
       port: this.config.port,
       stats: this.stats,
-      reconnectAttempts: this.reconnectAttempts
+      reconnectAttempts: this.reconnectAttempts,
     };
   }
 }

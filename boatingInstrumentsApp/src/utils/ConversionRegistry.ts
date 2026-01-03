@@ -222,8 +222,8 @@ class ConversionRegistryService {
         forceTimezone === 'utc'
           ? { forceUTC: true }
           : category === 'time'
-            ? { timezoneOffset: this.getTimezoneOffset(settings.gps.timezone) }
-            : { timezoneOffset: this.getTimezoneOffset(settings.shipTime.timezone) };
+          ? { timezoneOffset: this.getTimezoneOffset(settings.gps.timezone) }
+          : { timezoneOffset: this.getTimezoneOffset(settings.shipTime.timezone) };
 
       // Format using datetime formatters
       if (category === 'time') {

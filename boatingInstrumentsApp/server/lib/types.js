@@ -2,7 +2,7 @@
 
 /**
  * Type definitions and interfaces for NMEA Bridge Simulator components
- * 
+ *
  * Defines the common interface contracts that all simulator components must implement
  * for consistent lifecycle management and dependency injection.
  */
@@ -29,7 +29,7 @@
  * @property {Object} server - Server configuration
  * @property {Object} server.ports - Port configuration
  * @property {number} server.ports.tcp - TCP server port
- * @property {number} server.ports.udp - UDP server port  
+ * @property {number} server.ports.udp - UDP server port
  * @property {number} server.ports.websocket - WebSocket server port
  * @property {number} server.ports.api - API server port
  * @property {number} server.maxClients - Maximum concurrent clients
@@ -91,7 +91,7 @@ const SimulatorComponent = {
    */
   getMetrics() {
     throw new Error('getMetrics() method must be implemented');
-  }
+  },
 };
 
 module.exports = {
@@ -100,5 +100,5 @@ module.exports = {
   ComponentStatus: {},
   ComponentMetrics: {},
   SimulatorConfig: {},
-  NMEAMessage: {}
+  NMEAMessage: {},
 };

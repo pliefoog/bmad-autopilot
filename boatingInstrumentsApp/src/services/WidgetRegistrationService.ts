@@ -64,7 +64,7 @@ export interface CalculatedField {
   calculate: (sensors: SensorValueMap) => number | null;
 
   /** List of sensor dependencies that trigger recalculation */
-  dependencies: Array<{ sensorType: SensorType; metricName: string }>;
+  dependencies: { sensorType: SensorType; metricName: string }[];
 
   /** Cached value */
   cachedValue?: number | null;

@@ -67,7 +67,7 @@ export class AutopilotSafetyManager {
   private monitoringIntervals: ReturnType<typeof setInterval>[] = [];
   private lastKnownHeading?: number;
   private lastManualOverrideCheck = 0;
-  private commandHistory: Array<{ timestamp: number; success: boolean; responseTime: number }> = [];
+  private commandHistory: { timestamp: number; success: boolean; responseTime: number }[] = [];
 
   constructor() {
     this.healthMetrics = {

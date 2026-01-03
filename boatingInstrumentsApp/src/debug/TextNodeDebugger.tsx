@@ -31,9 +31,13 @@ export const TextNodeDebugger: React.FC = () => {
       </Text>
 
       {/* Potentially unsafe patterns */}
-      <View><Text>Safe in View: {numericValue}</Text></View>
+      <View>
+        <Text>Safe in View: {numericValue}</Text>
+      </View>
 
-      <View><Text>Unsafe period: {period}</Text></View>
+      <View>
+        <Text>Unsafe period: {period}</Text>
+      </View>
     </View>
   );
 };

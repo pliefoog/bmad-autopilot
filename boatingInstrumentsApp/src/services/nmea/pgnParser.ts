@@ -315,9 +315,13 @@ export class PgnParser {
    * Bytes 4-5: Humidity (0.004%, little-endian, unsigned) - OPTIONAL
    * Bytes 6-7: Pressure (100 Pa, little-endian, unsigned) - OPTIONAL
    */
-  public parseTemperaturePgn(
-    data: string,
-  ): { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } | null {
+  public parseTemperaturePgn(data: string): {
+    temperature?: number;
+    humidity?: number;
+    pressure?: number;
+    instance: number;
+    source: number;
+  } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 4) return null;
 
@@ -326,7 +330,13 @@ export class PgnParser {
     // Temperature source (byte 1) - identifies location/type of temperature sensor
     const source = bytes[1] || 0;
 
-    const result: { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } = {
+    const result: {
+      temperature?: number;
+      humidity?: number;
+      pressure?: number;
+      instance: number;
+      source: number;
+    } = {
       instance: source, // Use source as instance for temperature differentiation
       source,
     };
@@ -356,7 +366,11 @@ export class PgnParser {
     }
 
     // Return null if no valid fields parsed
-    if (result.temperature === undefined && result.humidity === undefined && result.pressure === undefined) {
+    if (
+      result.temperature === undefined &&
+      result.humidity === undefined &&
+      result.pressure === undefined
+    ) {
       return null;
     }
 
@@ -371,16 +385,26 @@ export class PgnParser {
    * Bytes 4-5: Humidity (0.004%, little-endian, unsigned)
    * Bytes 6-7: Pressure (1 hPa = 100 Pa, little-endian, unsigned)
    */
-  public parseEnvironmentalPgn(
-    data: string,
-  ): { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } | null {
+  public parseEnvironmentalPgn(data: string): {
+    temperature?: number;
+    humidity?: number;
+    pressure?: number;
+    instance: number;
+    source: number;
+  } | null {
     const bytes = this.hexStringToBytes(data);
     if (bytes.length < 8) return null;
 
     const instance = bytes[0] || 0;
     const source = bytes[1] || 1; // Default to outside air
 
-    const result: { temperature?: number; humidity?: number; pressure?: number; instance: number; source: number } = {
+    const result: {
+      temperature?: number;
+      humidity?: number;
+      pressure?: number;
+      instance: number;
+      source: number;
+    } = {
       instance,
       source,
     };
@@ -404,7 +428,11 @@ export class PgnParser {
     }
 
     // Return null if no valid fields
-    if (result.temperature === undefined && result.humidity === undefined && result.pressure === undefined) {
+    if (
+      result.temperature === undefined &&
+      result.humidity === undefined &&
+      result.pressure === undefined
+    ) {
       return null;
     }
 

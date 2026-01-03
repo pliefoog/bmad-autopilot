@@ -31,7 +31,7 @@ export const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({
       borderRadius: size / 2,
       backgroundColor: disabled ? theme.interactiveDisabled : theme.interactive,
     }),
-    [size, disabled, theme.interactiveDisabled, theme.interactive]
+    [size, disabled, theme.interactiveDisabled, theme.interactive],
   );
 
   return (

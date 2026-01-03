@@ -658,11 +658,13 @@ export class PureConnectionManager {
     // Schedule reconnection attempt
     this.reconnectTimeout = setTimeout(async () => {
       this.reconnectTimeout = null;
-      
+
       // Only reconnect if still disconnected/error and not manually disconnected
-      if ((this.connectionState === 'disconnected' || this.connectionState === 'error') && 
-          !this.manualDisconnect && 
-          this.currentConfig) {
+      if (
+        (this.connectionState === 'disconnected' || this.connectionState === 'error') &&
+        !this.manualDisconnect &&
+        this.currentConfig
+      ) {
         await this.connect(this.currentConfig);
       }
     }, this.RECONNECT_INTERVAL);

@@ -50,10 +50,10 @@ export interface TooltipProps {
   /**
    * Optional related help topics (shows as links)
    */
-  relatedTopics?: Array<{
+  relatedTopics?: {
     title: string;
     onPress: () => void;
-  }>;
+  }[];
 
   /**
    * Test ID for automated testing

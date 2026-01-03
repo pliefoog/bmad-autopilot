@@ -12,29 +12,28 @@ interface TemperatureWidgetProps {
 
 /**
  * Temperature Widget - Registry-First Declarative Implementation
- * 
+ *
  * **Before (253 lines):**
  * - Manual metric extraction (value, location, units, name)
  * - Manual display value creation
  * - Manual alarm state extraction
  * - Manual stale detection with interval
  * - UnifiedWidgetGrid setup
- * 
+ *
  * **After (~75 lines):**
  * - Pure configuration
  * - Auto-fetch everything
  * - TemplatedWidget handles layout
  * - MetricCells handle display
  * - TrendLine self-subscribes
- * 
+ *
  * **Layout:** 2Rx1C primary (temp value + TrendLine) + 2Rx1C secondary (location + instance)
- * 
+ *
  * **Multi-Instance Support:**
  * Supports multiple temperature sensors (seawater, engine, cabin, exhaust, etc.)
  * Instance number extracted from widget ID (e.g., "temp-0", "temperature-1")
  */
 export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({ id }) => {
-
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {
     const match = id.match(/temp(?:erature)?-(\d+)/);
@@ -43,12 +42,12 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
 
   // Get SensorInstance - single source of truth
   const temperatureSensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.temperature?.[instanceNumber]
+    (state) => state.nmeaData.sensors.temperature?.[instanceNumber],
   );
 
   // Subscribe to timestamp to trigger re-renders when data changes
   const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp
+    (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp,
   );
 
   return (
@@ -60,7 +59,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
     >
       {/* Primary Grid: Current temperature + trend visualization */}
       <PrimaryMetricCell metricKey="value" />
-      
+
       {/* TrendLine: Auto-fetch pattern via SensorContext */}
       <TrendLine
         metricKey="value"
@@ -73,7 +72,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
         showTimeLabels
         strokeWidth={2}
       />
-      
+
       {/* Secondary Grid: Sensor metadata (name now in header) */}
       <SecondaryMetricCell metricKey="location" />
     </TemplatedWidget>

@@ -86,11 +86,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
-      style={[
-        styles.helpButton,
-        pressed && styles.pressed,
-        style,
-      ]}
+      style={[styles.helpButton, pressed && styles.pressed, style]}
       hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
       accessible={true}
       accessibilityRole="button"

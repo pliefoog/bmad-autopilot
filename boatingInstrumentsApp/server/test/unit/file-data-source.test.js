@@ -1,6 +1,6 @@
 /**
  * Unit Tests for File Data Source
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC1: Unit test coverage for data source components with mocked inputs
  */
@@ -21,13 +21,13 @@ describe('FileDataSource', () => {
     config = {
       filePath: '/path/to/test.nmea',
       rate: 100, // messages per second
-      loop: false
+      loop: false,
     };
 
     mockNmeaData = [
       '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A',
       '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47',
-      '$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39'
+      '$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39',
     ].join('\n');
 
     fs.readFile = jest.fn();
@@ -55,7 +55,7 @@ describe('FileDataSource', () => {
         currentLine: 0,
         messagesStreamed: 0,
         startTime: null,
-        loopCount: 0
+        loopCount: 0,
       });
     });
   });
@@ -68,11 +68,7 @@ describe('FileDataSource', () => {
 
       await fileDataSource.loadFile();
 
-      expect(fs.readFile).toHaveBeenCalledWith(
-        config.filePath,
-        'utf8', 
-        expect.any(Function)
-      );
+      expect(fs.readFile).toHaveBeenCalledWith(config.filePath, 'utf8', expect.any(Function));
       expect(fileDataSource.nmeaLines).toHaveLength(3);
       expect(fileDataSource.stats.totalLines).toBe(3);
     });
@@ -168,7 +164,7 @@ describe('FileDataSource', () => {
     test('should respect playback rate', (done) => {
       const fastConfig = { ...config, rate: 1000 }; // 1000 msg/sec
       const fastSource = new FileDataSource(fastConfig);
-      
+
       fs.readFile.mockImplementation((filePath, encoding, callback) => {
         callback(null, mockNmeaData);
       });
@@ -203,7 +199,7 @@ describe('FileDataSource', () => {
     test('should loop when loop is enabled', async () => {
       const loopConfig = { ...config, loop: true };
       const loopSource = new FileDataSource(loopConfig);
-      
+
       fs.readFile.mockImplementation((filePath, encoding, callback) => {
         callback(null, mockNmeaData);
       });
@@ -243,7 +239,7 @@ describe('FileDataSource', () => {
 
     test('should handle stop when not playing', async () => {
       await fileDataSource.stop();
-      
+
       // Should not throw and should call stop again
       await expect(fileDataSource.stop()).resolves.toBeUndefined();
     });

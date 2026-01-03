@@ -168,10 +168,10 @@ export function VirtualizedList<T>({
  * Useful for grouped data (e.g., alarms by date, waypoints by route)
  */
 export interface VirtualizedSectionListProps<T> {
-  sections: Array<{
+  sections: {
     title: string;
     data: T[];
-  }>;
+  }[];
   itemHeight: number;
   sectionHeaderHeight: number;
   renderItem: (item: T, index: number, sectionIndex: number) => React.ReactNode;
@@ -201,7 +201,7 @@ export function VirtualizedSectionList<T>({
 
   // Flatten sections into single array with metadata
   const flatData = useMemo(() => {
-    const items: Array<{
+    const items: {
       type: 'header' | 'item';
       sectionIndex: number;
       itemIndex?: number;
@@ -209,7 +209,7 @@ export function VirtualizedSectionList<T>({
       title?: string;
       offset: number;
       height: number;
-    }> = [];
+    }[] = [];
 
     let currentOffset = 0;
 

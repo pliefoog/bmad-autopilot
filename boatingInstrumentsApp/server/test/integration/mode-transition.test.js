@@ -1,6 +1,6 @@
 /**
  * Integration Tests for Mode Transitions
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC2: Mode transition testing - Live → File → Scenario mode switching with data continuity validation
  */
@@ -16,13 +16,13 @@ describe('Mode Transition Integration Tests', () => {
   beforeEach(() => {
     bridge = new UnifiedNMEABridge();
     mockDataCollection = [];
-    
+
     // Mock data collection for continuity validation
     bridge.on('data', (message) => {
       mockDataCollection.push({
         message,
         timestamp: Date.now(),
-        mode: bridge.mode
+        mode: bridge.mode,
       });
     });
   });
@@ -40,7 +40,7 @@ describe('Mode Transition Integration Tests', () => {
       const liveConfig = {
         mode: 'live',
         host: '192.168.1.10',
-        port: 10110
+        port: 10110,
       };
 
       // Mock live connection to avoid actual network calls
@@ -55,7 +55,7 @@ describe('Mode Transition Integration Tests', () => {
         mode: 'file',
         filePath: path.join(__dirname, '../fixtures/test-nmea.txt'),
         rate: 100,
-        loop: false
+        loop: false,
       };
 
       await bridge.switchMode(fileConfig);
@@ -64,10 +64,10 @@ describe('Mode Transition Integration Tests', () => {
 
       // Validate data continuity - no gaps in message flow
       expect(mockDataCollection.length).toBeGreaterThan(0);
-      
+
       // Check for mode transition markers
       const modeTransitions = mockDataCollection.filter(
-        (entry, index) => index > 0 && entry.mode !== mockDataCollection[index - 1].mode
+        (entry, index) => index > 0 && entry.mode !== mockDataCollection[index - 1].mode,
       );
       expect(modeTransitions.length).toBe(1);
       expect(modeTransitions[0].mode).toBe('file');
@@ -78,7 +78,7 @@ describe('Mode Transition Integration Tests', () => {
       const liveConfig = {
         mode: 'live',
         host: '192.168.1.10',
-        port: 10110
+        port: 10110,
       };
 
       jest.spyOn(bridge, 'connectToLiveSource').mockResolvedValue();
@@ -92,7 +92,7 @@ describe('Mode Transition Integration Tests', () => {
       const fileConfig = {
         mode: 'file',
         filePath: path.join(__dirname, '../fixtures/test-nmea.txt'),
-        rate: 100
+        rate: 100,
       };
 
       await bridge.switchMode(fileConfig);
@@ -101,7 +101,7 @@ describe('Mode Transition Integration Tests', () => {
       expect(bridge.protocolServers.tcpServer?.address()?.port).toBe(initialTcpPort);
       expect(bridge.protocolServers.udpServer?.address()?.port).toBe(initialUdpPort);
       expect(bridge.protocolServers.wsServer?.address()?.port).toBe(initialWsPort);
-      
+
       // Validate client connections remain active
       expect(bridge.protocolServers.clients.size).toBeGreaterThanOrEqual(0);
     }, 30000);
@@ -113,7 +113,7 @@ describe('Mode Transition Integration Tests', () => {
       const testFilePath = path.join(__dirname, '../fixtures/transition-test.nmea');
       const testNmeaData = [
         '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A',
-        '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47'
+        '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47',
       ].join('\n');
 
       if (!fs.existsSync(path.dirname(testFilePath))) {
@@ -126,21 +126,21 @@ describe('Mode Transition Integration Tests', () => {
         mode: 'file',
         filePath: testFilePath,
         rate: 50,
-        loop: false
+        loop: false,
       };
 
       await bridge.start(fileConfig);
       expect(bridge.mode).toBe('file');
 
       // Wait for some file processing
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Transition to scenario mode
       const scenarioConfig = {
         mode: 'scenario',
         scenarioName: 'basic-navigation',
         speed: 1.5,
-        loop: true
+        loop: true,
       };
 
       await bridge.switchMode(scenarioConfig);
@@ -150,7 +150,7 @@ describe('Mode Transition Integration Tests', () => {
 
       // Validate message generation starts immediately
       const preTransitionCount = mockDataCollection.length;
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       expect(mockDataCollection.length).toBeGreaterThan(preTransitionCount);
 
       // Cleanup
@@ -163,7 +163,7 @@ describe('Mode Transition Integration Tests', () => {
       // Start in file mode with valid file
       const testFilePath = path.join(__dirname, '../fixtures/error-test.nmea');
       const testNmeaData = '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A';
-      
+
       if (!fs.existsSync(path.dirname(testFilePath))) {
         fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
       }
@@ -172,7 +172,7 @@ describe('Mode Transition Integration Tests', () => {
       const fileConfig = {
         mode: 'file',
         filePath: testFilePath,
-        rate: 10
+        rate: 10,
       };
 
       await bridge.start(fileConfig);
@@ -181,7 +181,7 @@ describe('Mode Transition Integration Tests', () => {
       // Attempt transition to scenario with invalid scenario
       const invalidScenarioConfig = {
         mode: 'scenario',
-        scenarioName: 'non-existent-scenario'
+        scenarioName: 'non-existent-scenario',
       };
 
       // Should handle error gracefully and maintain file mode
@@ -208,7 +208,7 @@ describe('Mode Transition Integration Tests', () => {
       const liveConfig = {
         mode: 'live',
         host: '192.168.1.10',
-        port: 10110
+        port: 10110,
       };
 
       jest.spyOn(bridge, 'connectToLiveSource').mockResolvedValue();
@@ -220,7 +220,7 @@ describe('Mode Transition Integration Tests', () => {
         mode: 'scenario',
         scenarioName: 'coastal-sailing',
         speed: 2.0,
-        loop: false
+        loop: false,
       };
 
       await bridge.switchMode(scenarioConfig);
@@ -229,8 +229,8 @@ describe('Mode Transition Integration Tests', () => {
       expect(bridge.dataSource.config.speed).toBe(2.0);
 
       // Validate immediate scenario execution
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      expect(mockDataCollection.some(entry => entry.mode === 'scenario')).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      expect(mockDataCollection.some((entry) => entry.mode === 'scenario')).toBe(true);
     }, 30000);
   });
 
@@ -239,7 +239,7 @@ describe('Mode Transition Integration Tests', () => {
       const performanceMetrics = {
         messageRates: [],
         memoryUsage: [],
-        transitionTimes: []
+        transitionTimes: [],
       };
 
       // Helper to collect performance metrics
@@ -270,12 +270,12 @@ describe('Mode Transition Integration Tests', () => {
       const scenarioConfig = {
         mode: 'scenario',
         scenarioName: 'basic-navigation',
-        speed: 1.0
+        speed: 1.0,
       };
 
       await bridge.start(scenarioConfig);
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Run for 5 seconds
-      
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Run for 5 seconds
+
       const scenarioResults = scenarioMetrics();
       expect(scenarioResults.messageRate).toBeGreaterThan(10); // Min 10 msg/sec
       expect(scenarioResults.memoryDelta).toBeLessThan(50 * 1024 * 1024); // <50MB memory increase
@@ -283,8 +283,10 @@ describe('Mode Transition Integration Tests', () => {
       // Test file mode transition performance
       const fileMetrics = collectMetrics();
       const testFilePath = path.join(__dirname, '../fixtures/perf-test.nmea');
-      const testData = Array(1000).fill('$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A').join('\n');
-      
+      const testData = Array(1000)
+        .fill('$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A')
+        .join('\n');
+
       if (!fs.existsSync(path.dirname(testFilePath))) {
         fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
       }
@@ -293,18 +295,20 @@ describe('Mode Transition Integration Tests', () => {
       const fileConfig = {
         mode: 'file',
         filePath: testFilePath,
-        rate: 100 // 100 msg/sec
+        rate: 100, // 100 msg/sec
       };
 
       await bridge.switchMode(fileConfig);
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Run for 3 seconds
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // Run for 3 seconds
 
       const fileResults = fileMetrics();
       expect(fileResults.messageRate).toBeGreaterThan(50); // Should achieve >50 msg/sec
       expect(fileResults.duration).toBeLessThan(2000); // Transition should be <2 seconds
 
       // Validate overall performance consistency
-      const avgMessageRate = performanceMetrics.messageRates.reduce((a, b) => a + b, 0) / performanceMetrics.messageRates.length;
+      const avgMessageRate =
+        performanceMetrics.messageRates.reduce((a, b) => a + b, 0) /
+        performanceMetrics.messageRates.length;
       const maxMemoryUsage = Math.max(...performanceMetrics.memoryUsage);
       const maxTransitionTime = Math.max(...performanceMetrics.transitionTimes);
 

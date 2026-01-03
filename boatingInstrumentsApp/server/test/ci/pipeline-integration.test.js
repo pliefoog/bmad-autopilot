@@ -1,6 +1,6 @@
 /**
  * CI/CD Pipeline Integration Tests
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC5: CI/CD pipeline integration - Test automation with quality gates and reporting
  */
@@ -17,7 +17,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
   describe('Test Suite Execution', () => {
     test('should execute all unit tests successfully', async () => {
       const result = await runTestSuite('unit');
-      
+
       console.log(`Unit Test Results:
         - Exit Code: ${result.exitCode}
         - Tests Run: ${result.testsRun}
@@ -33,7 +33,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should execute all integration tests successfully', async () => {
       const result = await runTestSuite('integration');
-      
+
       console.log(`Integration Test Results:
         - Exit Code: ${result.exitCode}
         - Tests Run: ${result.testsRun}
@@ -49,7 +49,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should execute performance tests successfully', async () => {
       const result = await runTestSuite('performance');
-      
+
       console.log(`Performance Test Results:
         - Exit Code: ${result.exitCode}
         - Tests Run: ${result.testsRun}
@@ -67,7 +67,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
   describe('Quality Gate Validation', () => {
     test('should meet code coverage quality gate (90%+)', async () => {
       const coverageReport = await generateCoverageReport();
-      
+
       console.log(`Coverage Report:
         - Line Coverage: ${coverageReport.lines.percent}%
         - Function Coverage: ${coverageReport.functions.percent}%
@@ -86,13 +86,23 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should meet performance quality gate (Epic 7 targets)', async () => {
       const performanceReport = await validatePerformanceTargets();
-      
+
       console.log(`Performance Quality Gate:
-        - Throughput Target: ${performanceReport.throughput.met ? 'PASS' : 'FAIL'} (${performanceReport.throughput.actual} >= 500 msg/sec)
-        - Memory Target: ${performanceReport.memory.met ? 'PASS' : 'FAIL'} (${performanceReport.memory.actual}MB <= 100MB)
-        - Concurrency Target: ${performanceReport.concurrency.met ? 'PASS' : 'FAIL'} (${performanceReport.concurrency.actual} >= 50 connections)
-        - API Response Target: ${performanceReport.apiResponse.met ? 'PASS' : 'FAIL'} (${performanceReport.apiResponse.actual}ms <= 100ms)
-        - CPU Target: ${performanceReport.cpu.met ? 'PASS' : 'FAIL'} (${performanceReport.cpu.actual}% <= 25%)`);
+        - Throughput Target: ${performanceReport.throughput.met ? 'PASS' : 'FAIL'} (${
+        performanceReport.throughput.actual
+      } >= 500 msg/sec)
+        - Memory Target: ${performanceReport.memory.met ? 'PASS' : 'FAIL'} (${
+        performanceReport.memory.actual
+      }MB <= 100MB)
+        - Concurrency Target: ${performanceReport.concurrency.met ? 'PASS' : 'FAIL'} (${
+        performanceReport.concurrency.actual
+      } >= 50 connections)
+        - API Response Target: ${performanceReport.apiResponse.met ? 'PASS' : 'FAIL'} (${
+        performanceReport.apiResponse.actual
+      }ms <= 100ms)
+        - CPU Target: ${performanceReport.cpu.met ? 'PASS' : 'FAIL'} (${
+        performanceReport.cpu.actual
+      }% <= 25%)`);
 
       expect(performanceReport.throughput.met).toBe(true);
       expect(performanceReport.memory.met).toBe(true);
@@ -105,7 +115,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should meet legacy compatibility quality gate', async () => {
       const compatibilityReport = await validateLegacyCompatibility();
-      
+
       console.log(`Legacy Compatibility Quality Gate:
         - Scenario Compatibility: ${compatibilityReport.scenarios.passed}/${compatibilityReport.scenarios.total} PASS
         - Protocol Compatibility: ${compatibilityReport.protocols.passed}/${compatibilityReport.protocols.total} PASS
@@ -124,7 +134,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
   describe('Test Reporting and Artifacts', () => {
     test('should generate JUnit XML test reports for CI integration', async () => {
       const junitReport = await generateJUnitReport();
-      
+
       console.log(`JUnit Report Generated:
         - File Path: ${junitReport.filePath}
         - Total Tests: ${junitReport.totalTests}
@@ -145,7 +155,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should generate code coverage reports in multiple formats', async () => {
       const coverageArtifacts = await generateCoverageArtifacts();
-      
+
       console.log(`Coverage Artifacts Generated:
         - HTML Report: ${coverageArtifacts.html.exists ? 'YES' : 'NO'}
         - Cobertura XML: ${coverageArtifacts.cobertura.exists ? 'YES' : 'NO'}
@@ -165,7 +175,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should generate performance benchmark reports', async () => {
       const performanceArtifacts = await generatePerformanceBenchmarks();
-      
+
       console.log(`Performance Benchmarks Generated:
         - Benchmark Report: ${performanceArtifacts.benchmark.exists ? 'YES' : 'NO'}
         - Trend Analysis: ${performanceArtifacts.trends.exists ? 'YES' : 'NO'}
@@ -176,7 +186,9 @@ describe('CI/CD Pipeline Integration Tests', () => {
       expect(performanceArtifacts.regression.exists).toBe(true);
 
       // Validate benchmark report format
-      const benchmarkContent = JSON.parse(fs.readFileSync(performanceArtifacts.benchmark.path, 'utf8'));
+      const benchmarkContent = JSON.parse(
+        fs.readFileSync(performanceArtifacts.benchmark.path, 'utf8'),
+      );
       expect(benchmarkContent.timestamp).toBeDefined();
       expect(benchmarkContent.metrics).toBeDefined();
       expect(benchmarkContent.metrics.throughput).toBeDefined();
@@ -187,7 +199,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
   describe('Pipeline Configuration Validation', () => {
     test('should validate package.json test scripts for CI execution', async () => {
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      
+
       console.log(`Package.json Scripts:
         - test: ${packageJson.scripts.test ? 'DEFINED' : 'MISSING'}
         - test:unit: ${packageJson.scripts['test:unit'] ? 'DEFINED' : 'MISSING'}
@@ -209,7 +221,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
       // Validate jest configuration
       const jestConfig = require(jestConfigPath);
-      
+
       console.log(`Jest Configuration:
         - Coverage Enabled: ${jestConfig.collectCoverage ? 'YES' : 'NO'}
         - Coverage Threshold: ${jestConfig.coverageThreshold ? 'DEFINED' : 'MISSING'}
@@ -224,7 +236,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
     test('should generate GitHub Actions workflow configuration', async () => {
       const workflowConfig = await generateGitHubActionsWorkflow();
-      
+
       console.log(`GitHub Actions Workflow:
         - File Path: ${workflowConfig.filePath}
         - Jobs Defined: ${workflowConfig.jobs.length}
@@ -243,28 +255,38 @@ describe('CI/CD Pipeline Integration Tests', () => {
 
   async function runTestSuite(suiteType) {
     return new Promise((resolve) => {
-      const testPattern = suiteType === 'unit' ? 'server/test/unit/**/*.test.js' :
-                         suiteType === 'integration' ? 'server/test/integration/**/*.test.js' :
-                         suiteType === 'performance' ? 'server/test/performance/**/*.test.js' :
-                         'server/test/**/*.test.js';
+      const testPattern =
+        suiteType === 'unit'
+          ? 'server/test/unit/**/*.test.js'
+          : suiteType === 'integration'
+          ? 'server/test/integration/**/*.test.js'
+          : suiteType === 'performance'
+          ? 'server/test/performance/**/*.test.js'
+          : 'server/test/**/*.test.js';
 
       const child = spawn('npm', ['test', '--', '--testPathPattern=' + testPattern, '--coverage'], {
         cwd: path.join(projectRoot, 'boatingInstrumentsApp'),
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
 
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (data) => { stdout += data.toString(); });
-      child.stderr.on('data', (data) => { stderr += data.toString(); });
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
 
       child.on('exit', (code) => {
         // Parse test results from stdout
         const testsRunMatch = stdout.match(/Tests:\s+(\d+)\s+total/);
         const testsPassedMatch = stdout.match(/(\d+)\s+passed/);
         const testsFailedMatch = stdout.match(/(\d+)\s+failed/);
-        const coverageMatch = stdout.match(/All files[^\|]*\|[^\|]*\|[^\|]*\|[^\|]*\|\s*(\d+\.?\d*)/);
+        const coverageMatch = stdout.match(
+          /All files[^\|]*\|[^\|]*\|[^\|]*\|[^\|]*\|\s*(\d+\.?\d*)/,
+        );
 
         resolve({
           exitCode: code,
@@ -275,7 +297,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
           durationMs: 30000, // Simulated duration
           targetsMetCount: 5, // Simulated performance targets met
           totalTargets: 5,
-          regressionDetected: false
+          regressionDetected: false,
         });
       });
 
@@ -293,7 +315,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
       lines: { percent: 92.5, covered: 850, total: 920 },
       functions: { percent: 88.2, covered: 120, total: 136 },
       branches: { percent: 85.7, covered: 180, total: 210 },
-      statements: { percent: 91.8, covered: 830, total: 904 }
+      statements: { percent: 91.8, covered: 830, total: 904 },
     };
   }
 
@@ -304,7 +326,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
       memory: { met: true, actual: 85, target: 100 },
       concurrency: { met: true, actual: 65, target: 50 },
       apiResponse: { met: true, actual: 75, target: 100 },
-      cpu: { met: true, actual: 20, target: 25 }
+      cpu: { met: true, actual: 20, target: 25 },
     };
   }
 
@@ -314,7 +336,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
       scenarios: { passed: 5, total: 5 },
       protocols: { passed: 3, total: 3 },
       dataFormats: { passed: 8, total: 8 },
-      api: { passed: 12, total: 12 }
+      api: { passed: 12, total: 12 },
     };
   }
 
@@ -348,7 +370,7 @@ describe('CI/CD Pipeline Integration Tests', () => {
       filePath: junitPath,
       totalTests: 68,
       testSuites: 4,
-      fileSizeKB: Math.round(junitContent.length / 1024)
+      fileSizeKB: Math.round(junitContent.length / 1024),
     };
   }
 
@@ -368,48 +390,64 @@ describe('CI/CD Pipeline Integration Tests', () => {
     fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
 
     // HTML Report
-    fs.writeFileSync(htmlPath, `<!DOCTYPE html>
+    fs.writeFileSync(
+      htmlPath,
+      `<!DOCTYPE html>
 <html><head><title>Coverage Report</title></head>
 <body><h1>Coverage Report</h1>
 <p>Lines: ${coverageReport?.lines?.percent || 92.5}%</p>
 <p>Functions: ${coverageReport?.functions?.percent || 88.2}%</p>
 <div>server/lib/ coverage details</div>
-</body></html>`);
+</body></html>`,
+    );
 
     // Cobertura XML
-    fs.writeFileSync(coberturaPath, `<?xml version="1.0"?>
+    fs.writeFileSync(
+      coberturaPath,
+      `<?xml version="1.0"?>
 <coverage version="1.0" timestamp="1640995200000">
   <sources><source>server/lib/</source></sources>
   <packages>
     <package name="server.lib" line-rate="0.925" branch-rate="0.857">
     </package>
   </packages>
-</coverage>`);
+</coverage>`,
+    );
 
     // LCOV Info
-    fs.writeFileSync(lcovPath, `SF:server/lib/LiveDataSource.js
+    fs.writeFileSync(
+      lcovPath,
+      `SF:server/lib/LiveDataSource.js
 FN:10,connect
 FNF:5
 FNH:5
 LF:50
 LH:46
-end_of_record`);
+end_of_record`,
+    );
 
     // JSON Summary
-    fs.writeFileSync(jsonPath, JSON.stringify({
-      total: coverageReport || {
-        lines: { percent: 92.5 },
-        functions: { percent: 88.2 },
-        branches: { percent: 85.7 },
-        statements: { percent: 91.8 }
-      }
-    }, null, 2));
+    fs.writeFileSync(
+      jsonPath,
+      JSON.stringify(
+        {
+          total: coverageReport || {
+            lines: { percent: 92.5 },
+            functions: { percent: 88.2 },
+            branches: { percent: 85.7 },
+            statements: { percent: 91.8 },
+          },
+        },
+        null,
+        2,
+      ),
+    );
 
     return {
       html: { exists: true, path: htmlPath },
       cobertura: { exists: true, path: coberturaPath },
       lcov: { exists: true, path: lcovPath },
-      json: { exists: true, path: jsonPath }
+      json: { exists: true, path: jsonPath },
     };
   }
 
@@ -424,43 +462,64 @@ end_of_record`);
     const regressionPath = path.join(reportDir, 'regression-analysis.json');
 
     // Benchmark Report
-    fs.writeFileSync(benchmarkPath, JSON.stringify({
-      timestamp: new Date().toISOString(),
-      metrics: {
-        throughput: { value: 650, unit: 'msg/sec', target: 500 },
-        memory: { value: 85, unit: 'MB', target: 100 },
-        concurrency: { value: 65, unit: 'connections', target: 50 },
-        apiResponse: { value: 75, unit: 'ms', target: 100 },
-        cpu: { value: 20, unit: '%', target: 25 }
-      }
-    }, null, 2));
+    fs.writeFileSync(
+      benchmarkPath,
+      JSON.stringify(
+        {
+          timestamp: new Date().toISOString(),
+          metrics: {
+            throughput: { value: 650, unit: 'msg/sec', target: 500 },
+            memory: { value: 85, unit: 'MB', target: 100 },
+            concurrency: { value: 65, unit: 'connections', target: 50 },
+            apiResponse: { value: 75, unit: 'ms', target: 100 },
+            cpu: { value: 20, unit: '%', target: 25 },
+          },
+        },
+        null,
+        2,
+      ),
+    );
 
     // Trends Analysis
-    fs.writeFileSync(trendsPath, JSON.stringify({
-      trends: {
-        throughput: [620, 635, 650, 645, 650],
-        memory: [88, 85, 87, 84, 85],
-        responseTime: [80, 78, 75, 77, 75]
-      },
-      analysis: {
-        throughputTrend: 'improving',
-        memoryTrend: 'stable',
-        responseTrend: 'improving'
-      }
-    }, null, 2));
+    fs.writeFileSync(
+      trendsPath,
+      JSON.stringify(
+        {
+          trends: {
+            throughput: [620, 635, 650, 645, 650],
+            memory: [88, 85, 87, 84, 85],
+            responseTime: [80, 78, 75, 77, 75],
+          },
+          analysis: {
+            throughputTrend: 'improving',
+            memoryTrend: 'stable',
+            responseTrend: 'improving',
+          },
+        },
+        null,
+        2,
+      ),
+    );
 
     // Regression Analysis
-    fs.writeFileSync(regressionPath, JSON.stringify({
-      regressionDetected: false,
-      baseline: { throughput: 600, memory: 90, responseTime: 85 },
-      current: { throughput: 650, memory: 85, responseTime: 75 },
-      improvements: ['throughput', 'memory', 'responseTime']
-    }, null, 2));
+    fs.writeFileSync(
+      regressionPath,
+      JSON.stringify(
+        {
+          regressionDetected: false,
+          baseline: { throughput: 600, memory: 90, responseTime: 85 },
+          current: { throughput: 650, memory: 85, responseTime: 75 },
+          improvements: ['throughput', 'memory', 'responseTime'],
+        },
+        null,
+        2,
+      ),
+    );
 
     return {
       benchmark: { exists: true, path: benchmarkPath },
       trends: { exists: true, path: trendsPath },
-      regression: { exists: true, path: regressionPath }
+      regression: { exists: true, path: regressionPath },
     };
   }
 
@@ -471,13 +530,20 @@ end_of_record`);
     }
 
     const compatibilityPath = path.join(reportDir, 'compatibility-report.json');
-    
-    fs.writeFileSync(compatibilityPath, JSON.stringify(compatibilityReport || {
-      scenarios: { passed: 5, total: 5 },
-      protocols: { passed: 3, total: 3 },
-      dataFormats: { passed: 8, total: 8 },
-      api: { passed: 12, total: 12 }
-    }, null, 2));
+
+    fs.writeFileSync(
+      compatibilityPath,
+      JSON.stringify(
+        compatibilityReport || {
+          scenarios: { passed: 5, total: 5 },
+          protocols: { passed: 3, total: 3 },
+          dataFormats: { passed: 8, total: 8 },
+          api: { passed: 12, total: 12 },
+        },
+        null,
+        2,
+      ),
+    );
 
     return { path: compatibilityPath };
   }
@@ -555,7 +621,7 @@ jobs:
       filePath: workflowPath,
       jobs: ['test', 'quality-gate'],
       totalSteps: 11,
-      qualityGates: 4
+      qualityGates: 4,
     };
   }
 });

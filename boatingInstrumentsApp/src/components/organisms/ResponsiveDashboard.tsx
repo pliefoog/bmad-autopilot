@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, Platform, Text, ActivityIndicator, Animated as RNAnimated } from 'react-native';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Platform,
+  Text,
+  ActivityIndicator,
+  Animated as RNAnimated,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -59,112 +67,122 @@ interface DraggableWidgetProps {
   dragScale: Animated.SharedValue<number>;
   dragElevation: Animated.SharedValue<number>;
   touchOffset: { x: number; y: number } | null;
-  onLongPressStart: (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => void;
-  onDragMove: (translateX: number, translateY: number, absoluteX: number, absoluteY: number) => void;
+  onLongPressStart: (
+    widgetId: string,
+    index: number,
+    pageIndex: number,
+    touchX: number,
+    touchY: number,
+  ) => void;
+  onDragMove: (
+    translateX: number,
+    translateY: number,
+    absoluteX: number,
+    absoluteY: number,
+  ) => void;
   onDragEnd: (translateX: number, translateY: number, absoluteX: number, absoluteY: number) => void;
 }
 
-const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
-  widgetId,
-  index,
-  pageIndex,
-  position,
-  WidgetComponent,
-  instanceNumber,
-  isBeingDragged,
-  isDragging,
-  dragX,
-  dragY,
-  dragScale,
-  dragElevation,
-  touchOffset,
-  onLongPressStart,
-  onDragMove,
-  onDragEnd,
-}) => {
-  // Long press gesture activates drag mode
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
-    .onStart((event) => {
-      runOnJS(onLongPressStart)(widgetId, index, pageIndex, event.x, event.y);
-    });
+const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(
+  ({
+    widgetId,
+    index,
+    pageIndex,
+    position,
+    WidgetComponent,
+    instanceNumber,
+    isBeingDragged,
+    isDragging,
+    dragX,
+    dragY,
+    dragScale,
+    dragElevation,
+    touchOffset,
+    onLongPressStart,
+    onDragMove,
+    onDragEnd,
+  }) => {
+    // Long press gesture activates drag mode
+    const longPressGesture = Gesture.LongPress()
+      .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
+      .onStart((event) => {
+        runOnJS(onLongPressStart)(widgetId, index, pageIndex, event.x, event.y);
+      });
 
-  // Pan gesture for dragging (always enabled, checks isBeingDragged internally)
-  const panGesture = Gesture.Pan()
-    .runOnJS(true)
-    .onUpdate((event) => {
-      if (isBeingDragged) {
-        runOnJS(onDragMove)(
-          event.translationX,
-          event.translationY,
-          event.absoluteX,
-          event.absoluteY,
-        );
+    // Pan gesture for dragging (always enabled, checks isBeingDragged internally)
+    const panGesture = Gesture.Pan()
+      .runOnJS(true)
+      .onUpdate((event) => {
+        if (isBeingDragged) {
+          runOnJS(onDragMove)(
+            event.translationX,
+            event.translationY,
+            event.absoluteX,
+            event.absoluteY,
+          );
+        }
+      })
+      .onEnd((event) => {
+        if (isBeingDragged) {
+          runOnJS(onDragEnd)(
+            event.translationX,
+            event.translationY,
+            event.absoluteX,
+            event.absoluteY,
+          );
+        }
+      });
+
+    // Combine gestures: long press can trigger while panning
+    const combinedGesture = Gesture.Simultaneous(longPressGesture, panGesture);
+
+    // Animated style for dragged widget
+    const animatedStyle = useAnimatedStyle(() => {
+      if (!isBeingDragged) {
+        return {};
       }
-    })
-    .onEnd((event) => {
-      if (isBeingDragged) {
-        runOnJS(onDragEnd)(
-          event.translationX,
-          event.translationY,
-          event.absoluteX,
-          event.absoluteY,
-        );
-      }
-    });
 
-  // Combine gestures: long press can trigger while panning
-  const combinedGesture = Gesture.Simultaneous(longPressGesture, panGesture);
+      // Apply touch offset so the point where user pressed stays under cursor
+      const offsetX = touchOffset ? touchOffset.x : 0;
+      const offsetY = touchOffset ? touchOffset.y : 0;
 
-  // Animated style for dragged widget
-  const animatedStyle = useAnimatedStyle(() => {
-    if (!isBeingDragged) {
-      return {};
-    }
+      return {
+        transform: [
+          { translateX: dragX.value - offsetX },
+          { translateY: dragY.value - offsetY },
+          { scale: dragScale.value },
+        ],
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: dragElevation.value,
+        zIndex: 999, // Bring to front
+      };
+    }, [isBeingDragged, touchOffset]);
 
-    // Apply touch offset so the point where user pressed stays under cursor
-    const offsetX = touchOffset ? touchOffset.x : 0;
-    const offsetY = touchOffset ? touchOffset.y : 0;
-
-    return {
-      transform: [
-        { translateX: dragX.value - offsetX },
-        { translateY: dragY.value - offsetY },
-        { scale: dragScale.value },
-      ],
-      shadowOpacity: 0.4,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: dragElevation.value,
-      zIndex: 999, // Bring to front
-    };
-  }, [isBeingDragged, touchOffset]);
-
-  return (
-    <GestureDetector gesture={combinedGesture}>
-      <Animated.View
-        style={[
-          styles.widgetContainer,
-          {
-            position: 'absolute',
-            left: position.x,
-            top: position.y,
-            width: position.width,
-            height: position.height,
-            opacity: isBeingDragged ? DRAG_CONFIG.DRAGGED_WIDGET_OPACITY : 1,
-          },
-          animatedStyle,
-        ]}
-        testID={`widget-${widgetId}`}
-      >
-        <WidgetComponent
-          id={widgetId}
-          instanceNumber={instanceNumber}
-        />
-      </Animated.View>
-    </GestureDetector>
-  );
-});
+    return (
+      <GestureDetector gesture={combinedGesture}>
+        <Animated.View
+          style={[
+            styles.widgetContainer,
+            {
+              position: 'absolute',
+              left: position.x,
+              top: position.y,
+              width: position.width,
+              height: position.height,
+              opacity: isBeingDragged ? DRAG_CONFIG.DRAGGED_WIDGET_OPACITY : 1,
+            },
+            animatedStyle,
+          ]}
+          testID={`widget-${widgetId}`}
+        >
+          <WidgetComponent id={widgetId} instanceNumber={instanceNumber} />
+        </Animated.View>
+      </GestureDetector>
+    );
+  },
+);
 
 DraggableWidget.displayName = 'DraggableWidget';
 
@@ -366,7 +384,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const handleLongPressStart = useCallback(
     (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => {
       console.log('[DRAG] Long press start:', { widgetId, index, pageIndex, touchX, touchY });
-      
+
       dragHaptics.onLift();
 
       setDragState({
@@ -379,7 +397,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       });
 
       // Animate widget lift
-      dragScale.value = withSpring(DRAG_CONFIG.DRAGGED_WIDGET_SCALE, DRAG_CONFIG.DROP_SPRING_CONFIG);
+      dragScale.value = withSpring(
+        DRAG_CONFIG.DRAGGED_WIDGET_SCALE,
+        DRAG_CONFIG.DROP_SPRING_CONFIG,
+      );
       dragElevation.value = withTiming(DRAG_CONFIG.DRAGGED_WIDGET_ELEVATION);
 
       logger.dragDrop('Widget lifted', () => ({ widgetId, index, pageIndex, touchX, touchY }));
@@ -403,18 +424,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       console.log('[DRAG] Updated shared values:', dragX.value, dragY.value);
 
       // Calculate hover index (which cell is being hovered over)
-      const hoverIndex = calculateHoverIndex(
-        absoluteX,
-        absoluteY,
-        responsiveGrid,
-        currentPage,
-      );
+      const hoverIndex = calculateHoverIndex(absoluteX, absoluteY, responsiveGrid, currentPage);
 
       // Update placeholder if hovering over different position
       if (hoverIndex !== -1 && hoverIndex !== dragState.placeholderIndex) {
         if (isDragSignificant(translationX, translationY)) {
           console.log('[DRAG] Update placeholder:', dragState.placeholderIndex, '→', hoverIndex);
-          setDragState(prev => ({ ...prev, placeholderIndex: hoverIndex }));
+          setDragState((prev) => ({ ...prev, placeholderIndex: hoverIndex }));
         }
       }
     },
@@ -436,12 +452,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       lastDragEndTime.current = now;
 
       // Calculate final drop position
-      const dropIndex = calculateHoverIndex(
-        absoluteX,
-        absoluteY,
-        responsiveGrid,
-        currentPage,
-      );
+      const dropIndex = calculateHoverIndex(absoluteX, absoluteY, responsiveGrid, currentPage);
 
       // Only reorder if moved to different position and movement was significant
       if (
@@ -451,7 +462,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       ) {
         useWidgetStore.getState().reorderWidget(dragState.sourceIndex!, dropIndex);
         dragHaptics.onDrop();
-        
+
         logger.dragDrop('Widget dropped', () => ({
           widgetId: dragState.widgetId,
           fromIndex: dragState.sourceIndex,
@@ -477,7 +488,17 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
       dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
     },
-    [dragState.isDragging, dragState.widgetId, dragState.sourceIndex, dragX, dragY, dragScale, dragElevation, responsiveGrid, currentPage],
+    [
+      dragState.isDragging,
+      dragState.widgetId,
+      dragState.sourceIndex,
+      dragX,
+      dragY,
+      dragScale,
+      dragElevation,
+      responsiveGrid,
+      currentPage,
+    ],
   );
 
   /**
@@ -547,10 +568,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           const threshold = 50;
           const velocityThreshold = 500;
 
-          if (
-            Math.abs(translationX) > threshold ||
-            Math.abs(velocityX) > velocityThreshold
-          ) {
+          if (Math.abs(translationX) > threshold || Math.abs(velocityX) > velocityThreshold) {
             if (translationX > 0 || velocityX > 0) {
               runOnJS(navigateToPreviousPage)();
             } else {
@@ -564,7 +582,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Handle swipe gestures for page navigation (AC 8) - OLD CODE REMOVED
   // Migrated to new Gesture API above (pageSwipeGesture)
-  
+
   // Handle keyboard navigation (AC 18)
   const handleKeyPress = useCallback(
     (event: any) => {
@@ -686,7 +704,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }
 
       // Extract instance number from widget ID (e.g., "depth-0" -> 0)
-      const instanceNumber = widgetId.includes('-') 
+      const instanceNumber = widgetId.includes('-')
         ? parseInt(widgetId.split('-').pop() || '0', 10)
         : 0;
 
@@ -737,7 +755,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const renderPage = useCallback(
     (pageLayout: PageLayout, pageIndex: number) => {
       const isPageVisible = pageIndex === currentPage;
-      
+
       return (
         <WidgetVisibilityProvider
           key={`page-${pageIndex}`}
@@ -760,7 +778,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           >
             {/* Widget grid - positioned via calculateGridPositions (row-by-row, left-to-right) */}
             <View style={styles.gridContainer}>
-              {pageLayout.widgets.map((widgetId, index) => renderWidget(widgetId, index, pageLayout))}
+              {pageLayout.widgets.map((widgetId, index) =>
+                renderWidget(widgetId, index, pageLayout),
+              )}
             </View>
           </View>
         </WidgetVisibilityProvider>
@@ -772,7 +792,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Wait for grid to be ready (gives stores time to initialize on first render)
   if (responsiveGrid.isLoading) {
     return (
-      <View style={[styles.container, styles.emptyStateContainer, { backgroundColor: theme.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.emptyStateContainer,
+          { backgroundColor: theme.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={theme.text} />
         <Text style={[styles.emptyStateText, { color: theme.textSecondary, marginTop: 16 }]}>
           Initializing...

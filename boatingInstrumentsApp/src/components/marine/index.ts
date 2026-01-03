@@ -17,18 +17,18 @@
  */
 
 // Component exports
-export { default as DigitalDisplay } from './DigitalDisplay';
-export { default as AnalogGauge } from './AnalogGauge';
-export { default as LinearBar } from './LinearBar';
-export { default as StatusIndicator } from './StatusIndicator';
-export { default as MarineButton } from './MarineButton';
-
 // Import components for convenience object
 import DigitalDisplay from './DigitalDisplay';
 import AnalogGauge from './AnalogGauge';
 import LinearBar from './LinearBar';
 import StatusIndicator from './StatusIndicator';
 import MarineButton from './MarineButton';
+
+export { default as DigitalDisplay } from './DigitalDisplay';
+export { default as AnalogGauge } from './AnalogGauge';
+export { default as LinearBar } from './LinearBar';
+export { default as StatusIndicator } from './StatusIndicator';
+export { default as MarineButton } from './MarineButton';
 
 // Type exports for component props
 export type { DigitalDisplayProps } from './DigitalDisplay';

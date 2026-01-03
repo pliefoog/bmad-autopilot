@@ -648,7 +648,10 @@ export class NmeaSensorProcessor {
           data: {
             name: 'GPS Receiver',
             speedOverGround: fields.speed_knots,
-            courseOverGround: fields.track_true !== null && !isNaN(fields.track_true) ? fields.track_true : undefined,
+            courseOverGround:
+              fields.track_true !== null && !isNaN(fields.track_true)
+                ? fields.track_true
+                : undefined,
             timestamp: timestamp,
           },
         });
@@ -1462,7 +1465,7 @@ export class NmeaSensorProcessor {
     // XDR format: Each measurement has 4 fields (type, value, units, identifier)
     // Message can contain multiple measurements: field_1...field_4, field_5...field_8, etc.
 
-    const updates: Array<{ sensorType: string; instance: number; data: any }> = [];
+    const updates: { sensorType: string; instance: number; data: any }[] = [];
     const errors: string[] = [];
 
     // Calculate number of measurements (4 fields per measurement)
@@ -1493,7 +1496,9 @@ export class NmeaSensorProcessor {
           const instance = parseInt(batteryMatch[1], 10);
           const suffix = batteryMatch[2]; // undefined for BAT_XX, or NOM/CAP/CHEM/TMP/SOC
 
-          log.battery(`XDR Battery match: identifier="${identifier}", type="${measurementType}", units="${units}", value="${measurementValue}", suffix="${suffix}"`);
+          log.battery(
+            `XDR Battery match: identifier="${identifier}", type="${measurementType}", units="${units}", value="${measurementValue}", suffix="${suffix}"`,
+          );
 
           if (!isNaN(instance)) {
             // Create battery data object for THIS MEASUREMENT ONLY (no accumulation)
@@ -1585,7 +1590,9 @@ export class NmeaSensorProcessor {
                 continue;
               }
             } else {
-              log.battery(`❌ Battery XDR unmatched: type="${measurementType}", units="${units}", value="${measurementValue}"`);
+              log.battery(
+                `❌ Battery XDR unmatched: type="${measurementType}", units="${units}", value="${measurementValue}"`,
+              );
             }
           }
         }
@@ -1599,12 +1606,18 @@ export class NmeaSensorProcessor {
           `XDR Engine check: identifier="${identifier}", tempMatch=${!!engineTempMatch}, type="${measurementType}", units="${units}", value="${measurementValue}"`,
         );
 
-        if (engineTempMatch && measurementType === 'C' && (units === 'F' || units === 'C' || units === 'c')) {
+        if (
+          engineTempMatch &&
+          measurementType === 'C' &&
+          (units === 'F' || units === 'C' || units === 'c')
+        ) {
           const instance = parseInt(engineTempMatch[1], 10); // ENGINE#0 -> instance 0
           let temperature = parseFloat(measurementValue);
 
           log.engine(
-            `🔍 XDR Engine Temp MATCHED: instance=${instance}, temp=${temperature}, units=${units}, isNaN=${isNaN(temperature)}`,
+            `🔍 XDR Engine Temp MATCHED: instance=${instance}, temp=${temperature}, units=${units}, isNaN=${isNaN(
+              temperature,
+            )}`,
           );
 
           if (!isNaN(temperature) && !isNaN(instance)) {
@@ -1716,7 +1729,11 @@ export class NmeaSensorProcessor {
 
         // Engine hours (G=generic or N=numeric, H=hours, ENGINE#X_HOURS or ENGINE_X_HOURS)
         const engineHoursMatch = identifier.match(/^ENGINE[#_](\d+)_HOURS$/);
-        if (engineHoursMatch && (measurementType === 'G' || measurementType === 'N') && units === 'H') {
+        if (
+          engineHoursMatch &&
+          (measurementType === 'G' || measurementType === 'N') &&
+          units === 'H'
+        ) {
           const instance = parseInt(engineHoursMatch[1], 10); // ENGINE#0_HOURS -> instance 0
           const hours = parseFloat(measurementValue);
 
@@ -1741,7 +1758,7 @@ export class NmeaSensorProcessor {
       // Check if this is a tank level measurement
       // Supports:
       // - V (volume) with L (liters) - absolute volume
-      // - P (pressure/percentage) with P (percent) - percentage format  
+      // - P (pressure/percentage) with P (percent) - percentage format
       // - V (volume) with % - legacy percentage format
       if (
         ((measurementType === 'V' && (units === 'L' || units === '%')) ||
@@ -1752,7 +1769,7 @@ export class NmeaSensorProcessor {
         if (tankMatch) {
           const [, tankTypeStr, instanceStr] = tankMatch;
           const instance = parseInt(instanceStr, 10);
-          let rawValue = parseFloat(measurementValue);
+          const rawValue = parseFloat(measurementValue);
 
           // Keep percentage as 0-100 (no conversion needed)
           // XDR sends percentage directly, we store as percentage

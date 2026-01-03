@@ -11,22 +11,21 @@ interface WindWidgetProps {
 
 /**
  * Wind Widget - Registry-First Declarative Implementation
- * 
+ *
  * **Before (366 lines):**
  * - State management for AWA/TWA toggle
  * - Manual metric extraction
  * - Manual compass rendering logic
  * - Manual display value creation
- * 
+ *
  * **After (~30 lines):**
  * - Pure configuration
  * - Auto-fetch everything
  * - Uses 2Rx1C-SEP-2Rx1C template (simple vertical)
- * 
+ *
  * **Layout:** 2Rx1C primary (SPD, DIR) + 2Rx1C secondary (TWS, TWD)
  */
 export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id }) => {
-
   // Extract instance number from widget ID
   const instanceNumber = useMemo(() => {
     const match = id.match(/wind-(\d+)/);
@@ -34,13 +33,11 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id }) => {
   }, [id]);
 
   // Get SensorInstance - single source of truth
-  const windSensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.wind?.[instanceNumber]
-  );
+  const windSensorInstance = useNmeaStore((state) => state.nmeaData.sensors.wind?.[instanceNumber]);
 
   // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
   const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.wind?.[instanceNumber]?.timestamp
+    (state) => state.nmeaData.sensors.wind?.[instanceNumber]?.timestamp,
   );
 
   return (
@@ -53,11 +50,10 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id }) => {
       {/* Primary Grid: 2x1 apparent wind */}
       <PrimaryMetricCell metricKey="speed" />
       <PrimaryMetricCell metricKey="direction" />
-      
+
       {/* Secondary Grid: 2x1 true wind */}
       <SecondaryMetricCell metricKey="trueSpeed" />
       <SecondaryMetricCell metricKey="trueDirection" />
     </TemplatedWidget>
   );
 });
-

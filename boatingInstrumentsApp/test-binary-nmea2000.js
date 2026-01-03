@@ -2,7 +2,7 @@
 
 /**
  * Test Binary NMEA 2000 WebSocket Connection
- * 
+ *
  * Connects to WebSocket server and captures binary frames from NMEA 2000 mode.
  * Verifies that proper binary PGN frames are being transmitted (not PCDIN text).
  */
@@ -24,7 +24,7 @@ ws.on('open', () => {
   console.log('✅ Connected to WebSocket server');
   console.log('📡 Listening for binary NMEA 2000 frames...');
   console.log('');
-  
+
   // Close after 5 seconds
   setTimeout(() => {
     ws.close();
@@ -33,25 +33,25 @@ ws.on('open', () => {
 
 ws.on('message', (data) => {
   frameCount++;
-  
+
   if (Buffer.isBuffer(data)) {
     // Binary frame received!
     binaryFrameCount++;
-    
+
     // Parse CAN frame
     if (data.length >= 5) {
       const canId = data.readUInt32BE(0);
       const dataLength = data.readUInt8(4);
       const payload = data.slice(5, 5 + dataLength);
-      
+
       // Extract PGN from CAN ID
       const priority = (canId >> 26) & 0x07;
       const dataPage = (canId >> 24) & 0x01;
-      const pduFormat = (canId >> 16) & 0xFF;
-      const pduSpecific = (canId >> 8) & 0xFF;
-      const source = canId & 0xFF;
+      const pduFormat = (canId >> 16) & 0xff;
+      const pduSpecific = (canId >> 8) & 0xff;
+      const source = canId & 0xff;
       const pgn = (dataPage << 16) | (pduFormat << 8) | pduSpecific;
-      
+
       // Decode PGN name
       const pgnNames = {
         128267: 'Water Depth',
@@ -64,13 +64,15 @@ ws.on('message', (data) => {
         127488: 'Engine Rapid Update',
         127489: 'Engine Dynamic',
         127508: 'Battery Status',
-        127505: 'Fluid Level'
+        127505: 'Fluid Level',
       };
-      
+
       const pgnName = pgnNames[pgn] || 'Unknown';
-      
+
       console.log(`📦 Binary Frame #${binaryFrameCount}:`);
-      console.log(`   PGN: ${pgn} (0x${pgn.toString(16).toUpperCase().padStart(5, '0')}) - ${pgnName}`);
+      console.log(
+        `   PGN: ${pgn} (0x${pgn.toString(16).toUpperCase().padStart(5, '0')}) - ${pgnName}`,
+      );
       console.log(`   Source: ${source} (0x${source.toString(16).toUpperCase().padStart(2, '0')})`);
       console.log(`   Priority: ${priority}`);
       console.log(`   Data Length: ${dataLength} bytes`);
@@ -94,7 +96,7 @@ ws.on('close', () => {
   console.log(`   Binary Frames: ${binaryFrameCount} ✅`);
   console.log(`   Text Frames: ${textFrameCount} ${textFrameCount > 0 ? '⚠️' : '✅'}`);
   console.log('');
-  
+
   if (binaryFrameCount > 0 && textFrameCount === 0) {
     console.log('✅ SUCCESS: Pure binary NMEA 2000 mode confirmed!');
     console.log('   NO PCDIN encapsulation detected.');

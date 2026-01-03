@@ -1,6 +1,6 @@
 /**
  * Drag-and-Drop Haptic Feedback
- * 
+ *
  * Provides tactile feedback for drag gestures on supported devices.
  * Gracefully falls back to no-op on web platform.
  */

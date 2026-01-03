@@ -1,6 +1,6 @@
 /**
  * Unit Tests for Simulator Control API
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC1: API routes validated with request/response schemas and error handling
  */
@@ -30,10 +30,10 @@ describe('SimulatorControlAPI', () => {
         stats: {
           messagesPerSecond: 100,
           totalMessages: 1000,
-          activeConnections: 5
-        }
+          activeConnections: 5,
+        },
       })),
-      clients: new Map()
+      clients: new Map(),
     };
 
     // Mock scenario engine
@@ -43,8 +43,8 @@ describe('SimulatorControlAPI', () => {
       getAvailableScenarios: jest.fn(() => [
         'basic-navigation',
         'coastal-sailing',
-        'autopilot-engagement'
-      ])
+        'autopilot-engagement',
+      ]),
     };
 
     ScenarioEngine.mockImplementation(() => mockScenarioEngine);
@@ -80,14 +80,12 @@ describe('SimulatorControlAPI', () => {
 
   describe('Health Check Endpoint', () => {
     test('GET /api/health should return healthy status', async () => {
-      const response = await request(api.app)
-        .get('/api/health')
-        .expect(200);
+      const response = await request(api.app).get('/api/health').expect(200);
 
       expect(response.body).toMatchObject({
         status: 'healthy',
         simulator: true,
-        version: '1.0.0'
+        version: '1.0.0',
       });
       expect(response.body.uptime).toBeGreaterThanOrEqual(0);
     });
@@ -95,9 +93,7 @@ describe('SimulatorControlAPI', () => {
     test('should reflect simulator running state', async () => {
       mockSimulator.isRunning = false;
 
-      const response = await request(api.app)
-        .get('/api/health')
-        .expect(200);
+      const response = await request(api.app).get('/api/health').expect(200);
 
       expect(response.body.simulator).toBe(false);
     });
@@ -108,7 +104,7 @@ describe('SimulatorControlAPI', () => {
       test('should start scenario successfully', async () => {
         const scenarioData = {
           name: 'basic-navigation',
-          phases: ['startup', 'sailing']
+          phases: ['startup', 'sailing'],
         };
 
         mockScenarioEngine.loadScenario.mockResolvedValue(scenarioData);
@@ -118,24 +114,24 @@ describe('SimulatorControlAPI', () => {
           .send({
             name: 'basic-navigation',
             parameters: { speed: 1.0 },
-            duration: 30000
+            duration: 30000,
           })
           .expect(200);
 
         expect(response.body).toMatchObject({
           success: true,
           scenario: expect.objectContaining({
-            name: 'basic-navigation'
+            name: 'basic-navigation',
           }),
-          sessionId: expect.any(String)
+          sessionId: expect.any(String),
         });
 
         expect(mockScenarioEngine.loadScenario).toHaveBeenCalledWith(
           expect.stringContaining('basic-navigation.yml'),
           expect.objectContaining({
             id: 'basic-navigation',
-            parameters: { speed: 1.0 }
-          })
+            parameters: { speed: 1.0 },
+          }),
         );
       });
 
@@ -143,7 +139,7 @@ describe('SimulatorControlAPI', () => {
         const response = await request(api.app)
           .post('/api/scenarios/start')
           .send({
-            parameters: { speed: 1.0 }
+            parameters: { speed: 1.0 },
           })
           .expect(400);
 
@@ -151,14 +147,12 @@ describe('SimulatorControlAPI', () => {
       });
 
       test('should handle scenario loading errors', async () => {
-        mockScenarioEngine.loadScenario.mockRejectedValue(
-          new Error('Scenario not found')
-        );
+        mockScenarioEngine.loadScenario.mockRejectedValue(new Error('Scenario not found'));
 
         const response = await request(api.app)
           .post('/api/scenarios/start')
           .send({
-            name: 'non-existent-scenario'
+            name: 'non-existent-scenario',
           })
           .expect(500);
 
@@ -168,21 +162,21 @@ describe('SimulatorControlAPI', () => {
       test('should apply default parameters', async () => {
         mockScenarioEngine.loadScenario.mockResolvedValue({
           name: 'basic-navigation',
-          phases: []
+          phases: [],
         });
 
         await request(api.app)
           .post('/api/scenarios/start')
           .send({
-            name: 'basic-navigation'
+            name: 'basic-navigation',
           })
           .expect(200);
 
         expect(mockScenarioEngine.loadScenario).toHaveBeenCalledWith(
           expect.any(String),
           expect.objectContaining({
-            parameters: {}
-          })
+            parameters: {},
+          }),
         );
       });
     });
@@ -193,18 +187,16 @@ describe('SimulatorControlAPI', () => {
         api.currentSession = {
           id: 'test-session',
           scenario: { name: 'basic-navigation' },
-          startTime: Date.now()
+          startTime: Date.now(),
         };
 
         mockScenarioEngine.stopScenario.mockResolvedValue();
 
-        const response = await request(api.app)
-          .post('/api/scenarios/stop')
-          .expect(200);
+        const response = await request(api.app).post('/api/scenarios/stop').expect(200);
 
         expect(response.body).toMatchObject({
           success: true,
-          message: 'Scenario stopped successfully'
+          message: 'Scenario stopped successfully',
         });
 
         expect(mockScenarioEngine.stopScenario).toHaveBeenCalled();
@@ -214,9 +206,7 @@ describe('SimulatorControlAPI', () => {
       test('should handle case when no scenario is running', async () => {
         api.currentSession = null;
 
-        const response = await request(api.app)
-          .post('/api/scenarios/stop')
-          .expect(400);
+        const response = await request(api.app).post('/api/scenarios/stop').expect(400);
 
         expect(response.body.error).toBe('No scenario is currently running');
       });
@@ -224,21 +214,15 @@ describe('SimulatorControlAPI', () => {
 
     describe('GET /api/scenarios', () => {
       test('should list available scenarios', async () => {
-        const scenarios = [
-          'basic-navigation',
-          'coastal-sailing',
-          'autopilot-engagement'
-        ];
+        const scenarios = ['basic-navigation', 'coastal-sailing', 'autopilot-engagement'];
 
         mockScenarioEngine.getAvailableScenarios.mockReturnValue(scenarios);
 
-        const response = await request(api.app)
-          .get('/api/scenarios')
-          .expect(200);
+        const response = await request(api.app).get('/api/scenarios').expect(200);
 
         expect(response.body).toEqual({
           scenarios: scenarios,
-          total: scenarios.length
+          total: scenarios.length,
         });
       });
     });
@@ -252,13 +236,13 @@ describe('SimulatorControlAPI', () => {
         const response = await request(api.app)
           .post('/api/inject-data')
           .send({
-            message: nmeaMessage
+            message: nmeaMessage,
           })
           .expect(200);
 
         expect(response.body).toMatchObject({
           success: true,
-          injected: 1
+          injected: 1,
         });
 
         expect(mockSimulator.broadcastMessage).toHaveBeenCalledWith(nmeaMessage);
@@ -267,19 +251,19 @@ describe('SimulatorControlAPI', () => {
       test('should inject multiple NMEA messages', async () => {
         const messages = [
           '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A',
-          '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47'
+          '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47',
         ];
 
         const response = await request(api.app)
           .post('/api/inject-data')
           .send({
-            messages: messages
+            messages: messages,
           })
           .expect(200);
 
         expect(response.body).toMatchObject({
           success: true,
-          injected: 2
+          injected: 2,
         });
 
         expect(mockSimulator.broadcastMessage).toHaveBeenCalledTimes(2);
@@ -289,7 +273,7 @@ describe('SimulatorControlAPI', () => {
         const response = await request(api.app)
           .post('/api/inject-data')
           .send({
-            message: 'invalid nmea message'
+            message: 'invalid nmea message',
           })
           .expect(400);
 
@@ -297,10 +281,7 @@ describe('SimulatorControlAPI', () => {
       });
 
       test('should require message data', async () => {
-        const response = await request(api.app)
-          .post('/api/inject-data')
-          .send({})
-          .expect(400);
+        const response = await request(api.app).post('/api/inject-data').send({}).expect(400);
 
         expect(response.body.error).toBe('Message or messages array is required');
       });
@@ -316,15 +297,15 @@ describe('SimulatorControlAPI', () => {
             type: 'connection',
             parameters: {
               duration: 5000,
-              affectedClients: 'all'
-            }
+              affectedClients: 'all',
+            },
           })
           .expect(200);
 
         expect(response.body).toMatchObject({
           success: true,
           errorType: 'connection',
-          message: expect.stringContaining('Connection error simulation started')
+          message: expect.stringContaining('Connection error simulation started'),
         });
       });
 
@@ -335,14 +316,14 @@ describe('SimulatorControlAPI', () => {
             type: 'data-corruption',
             parameters: {
               corruptionRate: 0.1,
-              duration: 10000
-            }
+              duration: 10000,
+            },
           })
           .expect(200);
 
         expect(response.body).toMatchObject({
           success: true,
-          errorType: 'data-corruption'
+          errorType: 'data-corruption',
         });
       });
 
@@ -350,7 +331,7 @@ describe('SimulatorControlAPI', () => {
         const response = await request(api.app)
           .post('/api/simulate-error')
           .send({
-            type: 'unknown-error'
+            type: 'unknown-error',
           })
           .expect(400);
 
@@ -361,7 +342,7 @@ describe('SimulatorControlAPI', () => {
         const response = await request(api.app)
           .post('/api/simulate-error')
           .send({
-            parameters: {}
+            parameters: {},
           })
           .expect(400);
 
@@ -373,33 +354,29 @@ describe('SimulatorControlAPI', () => {
   describe('Status and Monitoring Endpoints', () => {
     describe('GET /api/status', () => {
       test('should return comprehensive status information', async () => {
-        const response = await request(api.app)
-          .get('/api/status')
-          .expect(200);
+        const response = await request(api.app).get('/api/status').expect(200);
 
         expect(response.body).toMatchObject({
           simulator: expect.objectContaining({
             isRunning: true,
-            mode: 'scenario'
+            mode: 'scenario',
           }),
           performance: expect.objectContaining({
             messagesPerSecond: expect.any(Number),
             memoryUsage: expect.any(Number),
-            uptime: expect.any(Number)
+            uptime: expect.any(Number),
           }),
           sessions: expect.objectContaining({
             active: expect.any(Number),
-            total: expect.any(Number)
-          })
+            total: expect.any(Number),
+          }),
         });
       });
     });
 
     describe('GET /api/performance', () => {
       test('should return performance metrics', async () => {
-        const response = await request(api.app)
-          .get('/api/performance')
-          .expect(200);
+        const response = await request(api.app).get('/api/performance').expect(200);
 
         expect(response.body).toMatchObject({
           messagesPerSecond: expect.any(Number),
@@ -408,7 +385,7 @@ describe('SimulatorControlAPI', () => {
           cpuUtilization: expect.any(Number),
           activeConnections: expect.any(Number),
           uptime: expect.any(Number),
-          totalMessages: expect.any(Number)
+          totalMessages: expect.any(Number),
         });
       });
     });
@@ -433,7 +410,7 @@ describe('SimulatorControlAPI', () => {
       const response = await request(api.app)
         .post('/api/scenarios/start')
         .send({
-          name: 'basic-navigation'
+          name: 'basic-navigation',
         })
         .expect(500);
 
@@ -446,18 +423,14 @@ describe('SimulatorControlAPI', () => {
     test('should track API request metrics', async () => {
       const initialRequests = api.performanceMetrics.totalRequests || 0;
 
-      await request(api.app)
-        .get('/api/health')
-        .expect(200);
+      await request(api.app).get('/api/health').expect(200);
 
       // Performance monitoring should update metrics
       expect(api.performanceMetrics.startTime).toBeDefined();
     });
 
     test('should calculate uptime correctly', async () => {
-      const response = await request(api.app)
-        .get('/api/performance')
-        .expect(200);
+      const response = await request(api.app).get('/api/performance').expect(200);
 
       expect(response.body.uptime).toBeGreaterThan(0);
     });
@@ -467,7 +440,7 @@ describe('SimulatorControlAPI', () => {
     test('should create unique session IDs', async () => {
       mockScenarioEngine.loadScenario.mockResolvedValue({
         name: 'basic-navigation',
-        phases: []
+        phases: [],
       });
 
       const response1 = await request(api.app)
@@ -490,7 +463,7 @@ describe('SimulatorControlAPI', () => {
       const session = {
         id: sessionId,
         scenario: { name: 'basic-navigation' },
-        startTime: Date.now()
+        startTime: Date.now(),
       };
 
       api.activeSessions.set(sessionId, session);

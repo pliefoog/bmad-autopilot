@@ -5,7 +5,7 @@
 
 /**
  * Calculate true wind speed and direction from apparent wind and vessel motion
- * 
+ *
  * @param aws Apparent Wind Speed in knots (from wind sensor)
  * @param awa Apparent Wind Angle in degrees relative to bow (from wind sensor)
  * @param sog Speed Over Ground in knots (from GPS)

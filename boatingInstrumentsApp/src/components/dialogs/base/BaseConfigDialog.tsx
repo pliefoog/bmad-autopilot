@@ -117,10 +117,7 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
           {/* Action Button (Right) or Spacer */}
           {actionButton ? (
             <TouchableOpacity
-              style={[
-                styles.headerButton,
-                actionButton.disabled && styles.headerButtonDisabled,
-              ]}
+              style={[styles.headerButton, actionButton.disabled && styles.headerButtonDisabled]}
               onPress={actionButton.onPress}
               disabled={actionButton.disabled}
               accessibilityLabel={actionButton.label}

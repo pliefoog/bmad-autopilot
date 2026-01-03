@@ -129,7 +129,7 @@ export class HelpContentProvider {
     }
 
     const searchTerms = query.toLowerCase().trim().split(/\s+/);
-    const results: Array<HelpSearchResult & { score: number }> = [];
+    const results: (HelpSearchResult & { score: number })[] = [];
 
     this.content.forEach((content) => {
       let score = 0;

@@ -8,18 +8,18 @@ import { PerformanceRegressionDetector } from '../src/services/performance/Perfo
 
 async function captureV23Baseline() {
   console.log('📊 Starting v2.3 Performance Baseline Capture...');
-  
+
   // Get monitor instance
   const monitor = PerformanceMonitor.getInstance();
-  
+
   // Start monitoring
   console.log('🔄 Starting performance monitoring...');
   monitor.startMonitoring();
-  
+
   // Wait for initial metrics to stabilize
   console.log('⏳ Waiting for metrics to stabilize (10 seconds)...');
-  await new Promise(resolve => setTimeout(resolve, 10000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
   // Get current performance metrics
   const metrics = monitor.getMetrics();
   console.log('📈 Current Performance Metrics:');
@@ -28,26 +28,28 @@ async function captureV23Baseline() {
   console.log(`  Render Time: ${metrics.renderTime.toFixed(2)} ms`);
   console.log(`  Average FPS: ${metrics.averageFPS.toFixed(1)}`);
   console.log(`  Peak Memory: ${metrics.peakMemoryMB.toFixed(1)} MB`);
-  
+
   // Generate performance report
   const report = monitor.getReport();
   console.log('\n📋 Performance Report:');
   console.log(`  Performance Score: ${report.score.toFixed(1)}/100`);
   console.log(`  Violations: ${report.violations.length}`);
-  
+
   if (report.violations.length > 0) {
     console.log('\n⚠️  Performance Violations:');
-    report.violations.forEach(violation => {
-      console.log(`    ${violation.metric}: ${violation.actual} (expected: ${violation.expected}) - ${violation.severity}`);
+    report.violations.forEach((violation) => {
+      console.log(
+        `    ${violation.metric}: ${violation.actual} (expected: ${violation.expected}) - ${violation.severity}`,
+      );
     });
   }
-  
+
   // Capture baseline for regression detection
   try {
     console.log('\n💾 Capturing baseline for regression detection...');
     const baseline = await PerformanceRegressionDetector.captureBaseline('v2.3.0');
     console.log(`✅ Baseline captured successfully at ${baseline.timestamp}`);
-    
+
     // Display baseline summary
     console.log('\n📊 Baseline Summary:');
     console.log(`  Platform: ${baseline.platform}`);
@@ -55,21 +57,20 @@ async function captureV23Baseline() {
     console.log(`  Average FPS: ${baseline.metrics.averageFPS.toFixed(1)}`);
     console.log(`  Peak Memory: ${baseline.metrics.peakMemoryMB.toFixed(1)} MB`);
     console.log(`  Average Render Time: ${baseline.metrics.averageRenderTimeMs.toFixed(2)} ms`);
-    
   } catch (error) {
     console.error('❌ Failed to capture baseline:', error.message);
   }
-  
+
   // Stop monitoring
   monitor.stopMonitoring();
-  
+
   console.log('\n✅ v2.3 Baseline Performance Capture Complete!');
   console.log('📂 Results saved for regression detection in future versions.');
-  
+
   return {
     metrics,
     report,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 

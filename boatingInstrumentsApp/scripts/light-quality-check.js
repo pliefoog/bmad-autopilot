@@ -18,7 +18,7 @@ class LightQualityChecker {
       performance: null,
       coverage: null,
       marine_safety: null,
-      overall: false
+      overall: false,
     };
     this.verbose = process.argv.includes('--verbose');
   }
@@ -31,10 +31,10 @@ class LightQualityChecker {
 
   async runCommand(command, description, timeout = 60000) {
     this.log(`Starting: ${description}`, 'info');
-    
+
     try {
       const startTime = Date.now();
-      
+
       // Run with limited memory and timeout
       const result = execSync(command, {
         encoding: 'utf8',
@@ -43,13 +43,13 @@ class LightQualityChecker {
         maxBuffer: 1024 * 1024, // 1MB buffer limit
         env: {
           ...process.env,
-          NODE_OPTIONS: '--max-old-space-size=2048' // Limit to 2GB
-        }
+          NODE_OPTIONS: '--max-old-space-size=2048', // Limit to 2GB
+        },
       });
-      
+
       const duration = Date.now() - startTime;
       this.log(`Completed: ${description} (${duration}ms)`, 'info');
-      
+
       return { success: true, output: result, duration };
     } catch (error) {
       this.log(`Failed: ${description} - ${error.message}`, 'error');
@@ -65,9 +65,9 @@ class LightQualityChecker {
 
   async checkPerformanceValidation() {
     const result = await this.runCommand(
-      'npm run test:performance-validation', 
-      'Performance threshold validation', 
-      45000
+      'npm run test:performance-validation',
+      'Performance threshold validation',
+      45000,
     );
     this.results.performance = result.success;
     return result.success;
@@ -77,11 +77,11 @@ class LightQualityChecker {
     // Skip full coverage check and just validate configuration exists
     this.log('Skipping full coverage check (too resource-intensive)', 'warn');
     this.log('Validating coverage configuration instead...', 'info');
-    
+
     try {
       const configPath = path.join(process.cwd(), 'jest.config.js');
       const configExists = fs.existsSync(configPath);
-      
+
       if (configExists) {
         this.log('Jest configuration exists', 'info');
         this.results.coverage = true;
@@ -102,8 +102,8 @@ class LightQualityChecker {
     // Run only marine safety tests without full coverage
     const result = await this.runCommand(
       'jest __tests__/tier1-unit/marine-safety-performance.test.ts --runInBand',
-      'Marine safety validation', 
-      30000
+      'Marine safety validation',
+      30000,
     );
     this.results.marine_safety = result.success;
     return result.success;
@@ -111,12 +111,12 @@ class LightQualityChecker {
 
   async generateSummaryReport() {
     const reportPath = path.join(process.cwd(), 'coverage/quality-summary.json');
-    
+
     const report = {
       timestamp: new Date().toISOString(),
       checks: this.results,
-      overall_pass: Object.values(this.results).every(r => r === true || r === null),
-      recommendations: this.generateRecommendations()
+      overall_pass: Object.values(this.results).every((r) => r === true || r === null),
+      recommendations: this.generateRecommendations(),
     };
 
     try {
@@ -131,7 +131,7 @@ class LightQualityChecker {
 
   generateRecommendations() {
     const recommendations = [];
-    
+
     if (!this.results.lint) {
       recommendations.push('Fix linting errors before proceeding with development');
     }
@@ -157,7 +157,7 @@ class LightQualityChecker {
       { name: 'Linting', fn: () => this.checkLinting() },
       { name: 'Performance', fn: () => this.checkPerformanceValidation() },
       { name: 'Coverage', fn: () => this.checkCoverageLight() },
-      { name: 'Marine Safety', fn: () => this.checkMarineSafety() }
+      { name: 'Marine Safety', fn: () => this.checkMarineSafety() },
     ];
 
     let allPassed = true;
@@ -168,10 +168,9 @@ class LightQualityChecker {
         if (!passed) {
           allPassed = false;
         }
-        
+
         // Small delay between steps to allow memory cleanup
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (error) {
         this.log(`Critical error in ${step.name}: ${error.message}`, 'error');
         allPassed = false;
@@ -179,14 +178,14 @@ class LightQualityChecker {
     }
 
     const report = await this.generateSummaryReport();
-    
+
     console.log('\n========================================================');
     console.log(`🚢 Marine Quality Check Complete: ${allPassed ? '✅ PASSED' : '❌ FAILED'}`);
     console.log('========================================================');
-    
+
     if (!allPassed) {
       console.log('\n⚠️ Issues Found:');
-      report.recommendations.forEach(rec => console.log(`  - ${rec}`));
+      report.recommendations.forEach((rec) => console.log(`  - ${rec}`));
     }
 
     return allPassed;
@@ -196,7 +195,7 @@ class LightQualityChecker {
 // Main execution
 async function main() {
   const checker = new LightQualityChecker();
-  
+
   try {
     const success = await checker.runAllChecks();
     process.exit(success ? 0 : 1);

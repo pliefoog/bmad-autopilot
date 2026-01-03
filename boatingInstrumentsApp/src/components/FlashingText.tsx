@@ -23,20 +23,20 @@ import type { AlarmLevel } from '../types/AlarmTypes';
 export interface FlashingTextProps {
   /** Text content to display */
   children: React.ReactNode;
-  
+
   /** Alarm level: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL */
   alarmLevel: AlarmLevel;
-  
+
   /** Base text style (color, fontSize, etc.) */
   style?: TextStyle;
-  
+
   /** Whether flashing is enabled globally (can be disabled in settings) */
   flashingEnabled?: boolean;
 }
 
 /**
  * FlashingText Component
- * 
+ *
  * Renders text with alarm-appropriate flashing animation.
  */
 export const FlashingText: React.FC<FlashingTextProps> = ({
@@ -94,11 +94,7 @@ export const FlashingText: React.FC<FlashingTextProps> = ({
     };
   }, [alarmLevel, flashingEnabled, opacity]);
 
-  return (
-    <Animated.Text style={[style, { opacity }]}>
-      {children}
-    </Animated.Text>
-  );
+  return <Animated.Text style={[style, { opacity }]}>{children}</Animated.Text>;
 };
 
 export default FlashingText;

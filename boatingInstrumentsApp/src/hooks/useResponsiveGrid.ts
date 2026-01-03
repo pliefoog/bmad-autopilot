@@ -67,9 +67,7 @@ export interface ResponsiveGridState {
  * Hook for responsive grid calculations with platform-specific densities
  * Implements AC 1-5: Responsive Grid System requirements
  */
-export const useResponsiveGrid = (
-  headerHeight: number = 60,
-): ResponsiveGridState => {
+export const useResponsiveGrid = (headerHeight: number = 60): ResponsiveGridState => {
   const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
   const [isLoading, setIsLoading] = useState(true);
 
@@ -102,8 +100,8 @@ export const useResponsiveGrid = (
   // Note: No footer exists, pagination overlays bottom row
   const availableSpace = useMemo(() => {
     return {
-      width: dimensions.width,  // Full width (no horizontal padding)
-      height: dimensions.height - headerHeight,  // Only subtract header height
+      width: dimensions.width, // Full width (no horizontal padding)
+      height: dimensions.height - headerHeight, // Only subtract header height
     };
   }, [dimensions, headerHeight]);
 
@@ -173,8 +171,6 @@ export const calculatePages = <T>(
     totalPages: pages.length,
   };
 };
-
-
 
 /**
  * Check if device is touch-enabled for AC 16: Touch Interaction support

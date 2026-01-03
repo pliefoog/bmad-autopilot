@@ -129,7 +129,7 @@ export const usePresentationStore = create<PresentationSettings>()(
   persist(
     (set, get) => ({
       // Initial state - use international as default region
-      selectedPresentations: REGION_DEFAULTS['international'] as Record<DataCategory, string>,
+      selectedPresentations: REGION_DEFAULTS.international as Record<DataCategory, string>,
       marineRegion: 'international',
 
       // Actions
@@ -166,7 +166,10 @@ export const usePresentationStore = create<PresentationSettings>()(
         const { marineRegion } = get();
         const regionDefaults = REGION_DEFAULTS[marineRegion];
         // Start with international as base, then apply region overrides
-        const resetPresentations = { ...REGION_DEFAULTS['international'] } as Record<DataCategory, string>;
+        const resetPresentations = { ...REGION_DEFAULTS.international } as Record<
+          DataCategory,
+          string
+        >;
 
         // Apply current region defaults
         Object.entries(regionDefaults).forEach(([category, presentationId]) => {
@@ -317,16 +320,16 @@ export function getRegionMetadata(): RegionMetadata[] {
 
 /**
  * Validate that REGION_DEFAULTS contains all required DataCategory entries
- * 
+ *
  * Called on startup in dev mode to catch configuration gaps.
  * Returns array of issues found, empty array if valid.
- * 
+ *
  * @returns Array of validation error messages
  */
 export function validateRegionDefaults(): string[] {
   const issues: string[] = [];
   const regions: MarineRegion[] = ['eu', 'us', 'uk', 'international'];
-  
+
   // All DataCategories that should have regional defaults
   const requiredCategories: DataCategory[] = [
     'depth',
@@ -382,7 +385,7 @@ export function validateAndLogConfiguration(): void {
     const issues = validateRegionDefaults();
     if (issues.length > 0) {
       console.warn('⚠️ PresentationStore Configuration Issues:');
-      issues.forEach(issue => console.warn('  ' + issue));
+      issues.forEach((issue) => console.warn('  ' + issue));
     }
     // else {
     //   console.log('✅ PresentationStore: All regional presets validated successfully');

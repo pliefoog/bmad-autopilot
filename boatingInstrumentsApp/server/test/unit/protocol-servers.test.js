@@ -1,6 +1,6 @@
 /**
  * Unit Tests for Protocol Servers
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC1: Protocol servers tested for connection handling, message broadcasting, client management
  */
@@ -28,8 +28,8 @@ describe('ProtocolServers', () => {
         tcpPort: 2000,
         udpPort: 2000,
         wsPort: 8080,
-        maxClients: 50
-      }
+        maxClients: 50,
+      },
     };
 
     // Mock TCP server
@@ -37,22 +37,22 @@ describe('ProtocolServers', () => {
       listen: jest.fn((port, callback) => setTimeout(callback, 10)),
       close: jest.fn((callback) => setTimeout(callback, 10)),
       on: jest.fn(),
-      address: jest.fn(() => ({ port: 2000 }))
+      address: jest.fn(() => ({ port: 2000 })),
     };
 
-    // Mock UDP server  
+    // Mock UDP server
     mockUDPServer = {
       bind: jest.fn((port, callback) => setTimeout(callback, 10)),
       close: jest.fn((callback) => setTimeout(callback, 10)),
       on: jest.fn(),
-      address: jest.fn(() => ({ port: 2000 }))
+      address: jest.fn(() => ({ port: 2000 })),
     };
 
     // Mock WebSocket server
     mockWSServer = {
       on: jest.fn(),
       close: jest.fn((callback) => setTimeout(callback, 10)),
-      address: jest.fn(() => ({ port: 8080 }))
+      address: jest.fn(() => ({ port: 8080 })),
     };
 
     net.createServer.mockReturnValue(mockTCPServer);
@@ -83,7 +83,7 @@ describe('ProtocolServers', () => {
         activeConnections: 0,
         totalConnections: 0,
         lastSecondMessages: 0,
-        lastSecondTime: expect.any(Number)
+        lastSecondTime: expect.any(Number),
       });
     });
 
@@ -110,7 +110,7 @@ describe('ProtocolServers', () => {
       expect(net.createServer).toHaveBeenCalled();
       expect(mockTCPServer.listen).toHaveBeenCalledWith(
         config.server.tcpPort,
-        expect.any(Function)
+        expect.any(Function),
       );
       expect(mockTCPServer.on).toHaveBeenCalledWith('connection', expect.any(Function));
     });
@@ -119,10 +119,7 @@ describe('ProtocolServers', () => {
       await protocolServers.start(config);
 
       expect(dgram.createSocket).toHaveBeenCalledWith('udp4');
-      expect(mockUDPServer.bind).toHaveBeenCalledWith(
-        config.server.udpPort,
-        expect.any(Function)
-      );
+      expect(mockUDPServer.bind).toHaveBeenCalledWith(config.server.udpPort, expect.any(Function));
       expect(mockUDPServer.on).toHaveBeenCalledWith('message', expect.any(Function));
     });
 
@@ -130,7 +127,7 @@ describe('ProtocolServers', () => {
       await protocolServers.start(config);
 
       expect(WebSocket.Server).toHaveBeenCalledWith({
-        port: config.server.wsPort
+        port: config.server.wsPort,
       });
       expect(mockWSServer.on).toHaveBeenCalledWith('connection', expect.any(Function));
     });
@@ -139,7 +136,7 @@ describe('ProtocolServers', () => {
       await protocolServers.start(config);
 
       await expect(protocolServers.start(config)).rejects.toThrow(
-        'Protocol servers are already running'
+        'Protocol servers are already running',
       );
     });
 
@@ -171,7 +168,7 @@ describe('ProtocolServers', () => {
       // Add mock clients
       const mockTCPClient = { socket: { destroy: jest.fn() }, type: 'tcp' };
       const mockWSClient = { socket: { close: jest.fn() }, type: 'websocket' };
-      
+
       protocolServers.clients.set('tcp-1', mockTCPClient);
       protocolServers.clients.set('ws-1', mockWSClient);
 
@@ -183,13 +180,15 @@ describe('ProtocolServers', () => {
     });
 
     test('should handle errors during client cleanup gracefully', async () => {
-      const mockClient = { 
-        socket: { 
-          destroy: jest.fn(() => { throw new Error('Close error'); })
-        }, 
-        type: 'tcp' 
+      const mockClient = {
+        socket: {
+          destroy: jest.fn(() => {
+            throw new Error('Close error');
+          }),
+        },
+        type: 'tcp',
       };
-      
+
       protocolServers.clients.set('error-client', mockClient);
 
       // Should not throw despite client cleanup error
@@ -205,10 +204,10 @@ describe('ProtocolServers', () => {
     test('should broadcast message to all clients', () => {
       const mockTCPSocket = { write: jest.fn() };
       const mockWSSocket = { send: jest.fn(), state: WebSocket.OPEN };
-      
+
       const tcpClient = { socket: mockTCPSocket, type: 'tcp' };
       const wsClient = { socket: mockWSSocket, type: 'websocket' };
-      
+
       protocolServers.clients.set('tcp-1', tcpClient);
       protocolServers.clients.set('ws-1', wsClient);
 
@@ -222,21 +221,21 @@ describe('ProtocolServers', () => {
 
     test('should handle UDP broadcasts correctly', () => {
       const message = '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A';
-      
+
       mockUDPServer.send = jest.fn();
       protocolServers.broadcastMessage(message);
 
       expect(mockUDPServer.send).toHaveBeenCalledWith(
         Buffer.from(message + '\n'),
         config.server.udpPort,
-        '255.255.255.255'
+        '255.255.255.255',
       );
     });
 
     test('should skip closed WebSocket connections', () => {
       const mockWSSocket = { send: jest.fn(), state: WebSocket.CLOSED };
       const wsClient = { socket: mockWSSocket, type: 'websocket' };
-      
+
       protocolServers.clients.set('ws-closed', wsClient);
 
       const message = 'test message';
@@ -246,15 +245,17 @@ describe('ProtocolServers', () => {
     });
 
     test('should handle client broadcast errors gracefully', () => {
-      const mockTCPSocket = { 
-        write: jest.fn(() => { throw new Error('Send error'); })
+      const mockTCPSocket = {
+        write: jest.fn(() => {
+          throw new Error('Send error');
+        }),
       };
-      
+
       const tcpClient = { socket: mockTCPSocket, type: 'tcp' };
       protocolServers.clients.set('error-client', tcpClient);
 
       const message = 'test message';
-      
+
       // Should not throw despite client error
       expect(() => protocolServers.broadcastMessage(message)).not.toThrow();
     });
@@ -270,7 +271,7 @@ describe('ProtocolServers', () => {
         remoteAddress: '192.168.1.100',
         remotePort: 45678,
         on: jest.fn(),
-        write: jest.fn()
+        write: jest.fn(),
       };
 
       protocolServers.handleTCPConnection(mockSocket);
@@ -289,11 +290,11 @@ describe('ProtocolServers', () => {
       const mockSocket = {
         _socket: {
           remoteAddress: '192.168.1.101',
-          remotePort: 45679
+          remotePort: 45679,
         },
         on: jest.fn(),
         send: jest.fn(),
-        state: WebSocket.OPEN
+        state: WebSocket.OPEN,
       };
 
       protocolServers.handleWebSocketConnection(mockSocket);
@@ -311,7 +312,7 @@ describe('ProtocolServers', () => {
     test('should enforce maximum client limit', () => {
       const limitedConfig = {
         ...config,
-        server: { ...config.server, maxClients: 2 }
+        server: { ...config.server, maxClients: 2 },
       };
 
       protocolServers.config = limitedConfig;
@@ -322,7 +323,7 @@ describe('ProtocolServers', () => {
           remoteAddress: `192.168.1.${100 + i}`,
           remotePort: 45678 + i,
           on: jest.fn(),
-          write: jest.fn()
+          write: jest.fn(),
         };
         protocolServers.handleTCPConnection(mockSocket);
       }
@@ -335,7 +336,7 @@ describe('ProtocolServers', () => {
         remotePort: 45680,
         on: jest.fn(),
         write: jest.fn(),
-        end: jest.fn()
+        end: jest.fn(),
       };
 
       protocolServers.handleTCPConnection(extraSocket);
@@ -349,17 +350,17 @@ describe('ProtocolServers', () => {
         remoteAddress: '192.168.1.100',
         remotePort: 45678,
         on: jest.fn(),
-        write: jest.fn()
+        write: jest.fn(),
       };
 
       protocolServers.handleTCPConnection(mockSocket);
-      
+
       const clientId = `${mockSocket.remoteAddress}:${mockSocket.remotePort}`;
       expect(protocolServers.clients.has(clientId)).toBe(true);
       expect(protocolServers.stats.activeConnections).toBe(1);
 
       // Simulate client disconnection
-      const closeHandler = mockSocket.on.mock.calls.find(call => call[0] === 'close')[1];
+      const closeHandler = mockSocket.on.mock.calls.find((call) => call[0] === 'close')[1];
       closeHandler();
 
       expect(protocolServers.clients.has(clientId)).toBe(false);
@@ -375,7 +376,7 @@ describe('ProtocolServers', () => {
       expect(status.servers).toEqual({
         tcp: { running: false, port: null },
         udp: { running: false, port: null },
-        websocket: { running: false, port: null }
+        websocket: { running: false, port: null },
       });
       expect(status.stats).toEqual(protocolServers.stats);
     });
@@ -403,7 +404,7 @@ describe('ProtocolServers', () => {
 
     test('should update messages per second calculation', () => {
       const initialTime = protocolServers.stats.lastSecondTime;
-      
+
       // Simulate messages over time
       for (let i = 0; i < 5; i++) {
         protocolServers.broadcastMessage('test message');

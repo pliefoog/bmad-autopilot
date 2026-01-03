@@ -255,7 +255,7 @@ export function getHelpContent(helpId: string): HelpContent | undefined {
 /**
  * Get related help topics for a given help ID
  */
-export function getRelatedTopics(helpId: string): Array<{ id: string; title: string }> {
+export function getRelatedTopics(helpId: string): { id: string; title: string }[] {
   const content = HELP_CONTENT[helpId];
   if (!content || !content.relatedTopics) {
     return [];

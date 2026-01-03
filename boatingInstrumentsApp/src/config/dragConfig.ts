@@ -1,6 +1,6 @@
 /**
  * Drag and Drop Configuration
- * 
+ *
  * Central configuration for widget drag-and-drop behavior.
  * All timing, sizing, and animation constants in one place.
  */

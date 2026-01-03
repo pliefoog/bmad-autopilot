@@ -1,9 +1,9 @@
 /**
  * NMEA Bridge Simulator Scenario Engine
- * 
+ *
  * Implements progressive state management, YAML configuration parsing,
  * and mathematical data generation functions for test scenarios.
- * 
+ *
  * Supports AC5, AC7: YAML Configuration Schema and Validation,
  * Scenario Engine with Progressive State Management
  */
@@ -130,25 +130,24 @@ export class ScenarioEngine {
   async loadScenario(scenarioPath: string): Promise<Scenario> {
     try {
       console.log(`📋 Loading scenario: ${scenarioPath}`);
-      
+
       // Read YAML file
       const yamlContent = fs.readFileSync(scenarioPath, 'utf8');
       const config = yaml.load(yamlContent) as ScenarioConfig;
-      
+
       // Validate against JSON schema
       const validation = this.validator.validateScenario(config);
       if (!validation.valid) {
         throw new Error(`Scenario validation failed: ${validation.errors.join(', ')}`);
       }
-      
+
       // Create scenario instance
       const scenario = new Scenario(config, this.stateManager);
-      
+
       console.log(`✅ Scenario loaded: ${config.name} (${config.duration}s)`);
       this.currentScenario = scenario;
-      
+
       return scenario;
-      
     } catch (error) {
       console.error(`❌ Failed to load scenario ${scenarioPath}:`, error);
       throw error;
@@ -214,9 +213,9 @@ export class Scenario {
     this.startTime = Date.now();
     this.currentPhaseIndex = 0;
     this.phaseStartTime = 0;
-    
+
     console.log(`🚀 Starting scenario: ${this.config.name}`);
-    
+
     // Initialize first phase
     await this.transitionToPhase(0);
   }
@@ -233,7 +232,7 @@ export class Scenario {
    */
   getProgress(): number {
     if (!this.startTime) return 0;
-    
+
     const elapsed = (Date.now() - this.startTime) / 1000;
     return Math.min(elapsed / this.config.duration, 1.0);
   }
@@ -245,7 +244,7 @@ export class Scenario {
     const currentPhase = this.getCurrentPhase();
     const elapsed = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
     const phaseElapsed = elapsed - this.phaseStartTime;
-    
+
     return {
       currentPhase,
       phaseIndex: this.currentPhaseIndex,
@@ -255,7 +254,7 @@ export class Scenario {
       phaseProgress: Math.min(phaseElapsed / currentPhase.duration, 1.0),
       scenarioProgress: this.getProgress(),
       isComplete: this.getProgress() >= 1.0,
-      parameters: this.config.parameters || {}
+      parameters: this.config.parameters || {},
     };
   }
 
@@ -270,15 +269,15 @@ export class Scenario {
 
     this.currentPhaseIndex = phaseIndex;
     const phase = this.config.phases[phaseIndex];
-    
+
     const elapsed = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
     this.phaseStartTime = elapsed;
-    
+
     console.log(`🔄 Phase transition: ${phase.phase} (${phase.duration}s)`);
-    
+
     // Update state manager
     this.stateManager.setCurrentPhase(phase);
-    
+
     // Schedule phase events
     if (phase.events) {
       for (const event of phase.events) {
@@ -287,7 +286,7 @@ export class Scenario {
         }, event.time * 1000);
       }
     }
-    
+
     // Schedule next phase transition
     setTimeout(() => {
       this.transitionToPhase(phaseIndex + 1);
@@ -308,18 +307,18 @@ export class Scenario {
   generateMessages(parameters: any): NMEAMessage[] {
     const state = this.getState();
     const messages: NMEAMessage[] = [];
-    
+
     // Generate messages based on current phase and data configuration
     if (this.config.data.depth) {
       const depthValue = this.generateDataValue('depth', this.config.data.depth, state);
       messages.push(this.createDepthMessage(depthValue));
     }
-    
+
     if (this.config.data.speed) {
       const speedValue = this.generateDataValue('speed', this.config.data.speed, state);
       messages.push(this.createSpeedMessage(speedValue));
     }
-    
+
     return messages;
   }
 
@@ -328,23 +327,24 @@ export class Scenario {
    */
   private generateDataValue(dataType: string, config: DataSource, state: ScenarioState): number {
     const currentTime = state.elapsedTime;
-    
+
     switch (config.type) {
       case 'sine_wave':
-        return (config.base || 0) + 
-               (config.amplitude || 1) * 
-               Math.sin(2 * Math.PI * (config.frequency || 0.1) * currentTime);
-        
+        return (
+          (config.base || 0) +
+          (config.amplitude || 1) * Math.sin(2 * Math.PI * (config.frequency || 0.1) * currentTime)
+        );
+
       case 'gaussian':
         return this.generateGaussian(config.mean || 0, config.std_dev || 1, config.min, config.max);
-        
+
       case 'random_walk':
         // Implement random walk
         return (config.start || 0) + (Math.random() - 0.5) * 2 * (config.step_size || 1);
-        
+
       case 'constant':
         return config.base || 0;
-        
+
       default:
         console.warn(`Unknown data type: ${config.type}`);
         return 0;
@@ -359,12 +359,12 @@ export class Scenario {
     const u = 0.5 - Math.random();
     const v = 0.5 - Math.random();
     const normal = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-    
+
     let value = mean + stdDev * normal;
-    
+
     if (min !== undefined) value = Math.max(min, value);
     if (max !== undefined) value = Math.min(max, value);
-    
+
     return value;
   }
 
@@ -373,12 +373,14 @@ export class Scenario {
    */
   private createDepthMessage(depth: number): NMEAMessage {
     const depthMeters = depth * 0.3048; // Convert feet to meters
-    const sentence = `$SDDBT,${depth.toFixed(1)},f,${depthMeters.toFixed(1)},M,${(depth/6).toFixed(1)},F`;
-    
+    const sentence = `$SDDBT,${depth.toFixed(1)},f,${depthMeters.toFixed(1)},M,${(
+      depth / 6
+    ).toFixed(1)},F`;
+
     return {
       sentence: sentence + '*' + this.calculateChecksum(sentence),
       timestamp: Date.now(),
-      source: 'scenario-engine'
+      source: 'scenario-engine',
     };
   }
 
@@ -387,11 +389,11 @@ export class Scenario {
    */
   private createSpeedMessage(speed: number): NMEAMessage {
     const sentence = `$SDVHW,,,,,${speed.toFixed(1)},N,${(speed * 1.852).toFixed(1)},K`;
-    
+
     return {
       sentence: sentence + '*' + this.calculateChecksum(sentence),
       timestamp: Date.now(),
-      source: 'scenario-engine'
+      source: 'scenario-engine',
     };
   }
 
@@ -400,15 +402,15 @@ export class Scenario {
    */
   private calculateChecksum(sentence: string): string {
     let checksum = 0;
-    
+
     // Start after $ and end before *
     const start = sentence.indexOf('$') + 1;
     const end = sentence.indexOf('*') > -1 ? sentence.indexOf('*') : sentence.length;
-    
+
     for (let i = start; i < end; i++) {
       checksum ^= sentence.charCodeAt(i);
     }
-    
+
     return checksum.toString(16).toUpperCase().padStart(2, '0');
   }
 }
@@ -446,7 +448,7 @@ export class MessageScheduler {
   }
 
   clearAll(): void {
-    this.timers.forEach(timer => clearTimeout(timer));
+    this.timers.forEach((timer) => clearTimeout(timer));
     this.timers = [];
   }
 }
@@ -460,10 +462,16 @@ export class ScenarioValidator {
 
   constructor() {
     this.ajv = new Ajv({ allErrors: true });
-    
+
     // Load JSON schema
     try {
-      const schemaPath = path.join(__dirname, '..', 'vendor', 'test-scenarios', 'scenario.schema.json');
+      const schemaPath = path.join(
+        __dirname,
+        '..',
+        'vendor',
+        'test-scenarios',
+        'scenario.schema.json',
+      );
       this.schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
     } catch (error) {
       console.warn('⚠️  Could not load scenario schema, validation disabled');
@@ -475,19 +483,19 @@ export class ScenarioValidator {
       return {
         valid: true,
         errors: [],
-        warnings: ['Schema validation disabled - schema not found']
+        warnings: ['Schema validation disabled - schema not found'],
       };
     }
 
     const validate = this.ajv.compile(this.schema);
     const valid = validate(config);
-    
-    const errors = validate.errors ? 
-      validate.errors.map(err => `${err.instancePath}: ${err.message}`) : 
-      [];
-    
+
+    const errors = validate.errors
+      ? validate.errors.map((err) => `${err.instancePath}: ${err.message}`)
+      : [];
+
     const warnings: string[] = [];
-    
+
     // Additional validation logic
     if (config.phases) {
       const totalPhaseDuration = config.phases.reduce((sum, phase) => sum + phase.duration, 0);
@@ -499,7 +507,7 @@ export class ScenarioValidator {
     return {
       valid: valid && errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }

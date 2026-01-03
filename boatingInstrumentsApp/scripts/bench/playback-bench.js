@@ -14,13 +14,24 @@ let sampleMs = 500;
 // parse optional flags
 for (let i = 3; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--csv' && argv[i + 1]) { csvPath = argv[++i]; }
-  else if (a === '--sampleMs' && argv[i + 1]) { sampleMs = Number(argv[++i]); }
+  if (a === '--csv' && argv[i + 1]) {
+    csvPath = argv[++i];
+  } else if (a === '--sampleMs' && argv[i + 1]) {
+    sampleMs = Number(argv[++i]);
+  }
 }
 
-const raw = fs.readFileSync(file, 'utf8').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+const raw = fs
+  .readFileSync(file, 'utf8')
+  .split(/\r?\n/)
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-console.log(`Bench: file=${file} rate=${rate} msg/sec duration=${durationSec}s lines=${raw.length} csv=${csvPath || 'none'} sampleMs=${sampleMs}`);
+console.log(
+  `Bench: file=${file} rate=${rate} msg/sec duration=${durationSec}s lines=${raw.length} csv=${
+    csvPath || 'none'
+  } sampleMs=${sampleMs}`,
+);
 
 let count = 0;
 let idx = 0;
@@ -33,7 +44,9 @@ let lastTime = Date.now();
 
 const sendInterval = setInterval(() => {
   const s = raw[idx++ % raw.length];
-  try { parseNmeaSentence(s); } catch (e) {}
+  try {
+    parseNmeaSentence(s);
+  } catch (e) {}
   count++;
 }, intervalMs);
 
@@ -44,7 +57,16 @@ const sampleTimer = setInterval(() => {
   const deltaMs = now - lastTime;
   const cpuUserMs = cpu.user / 1000; // microseconds -> ms
   const cpuSystemMs = cpu.system / 1000;
-  samples.push({ ts: new Date().toISOString(), deltaMs, cpuUserMs, cpuSystemMs, rss: mem.rss, heapUsed: mem.heapUsed, heapTotal: mem.heapTotal, count });
+  samples.push({
+    ts: new Date().toISOString(),
+    deltaMs,
+    cpuUserMs,
+    cpuSystemMs,
+    rss: mem.rss,
+    heapUsed: mem.heapUsed,
+    heapTotal: mem.heapTotal,
+    count,
+  });
   lastCpu = process.cpuUsage();
   lastTime = now;
 }, sampleMs);
@@ -57,8 +79,18 @@ setTimeout(() => {
   console.log('Bench result:', summary);
   if (csvPath) {
     const header = 'ts,deltaMs,cpuUserMs,cpuSystemMs,rss,heapUsed,heapTotal,count\n';
-    const rows = samples.map(s => `${s.ts},${s.deltaMs},${s.cpuUserMs},${s.cpuSystemMs},${s.rss},${s.heapUsed},${s.heapTotal},${s.count}`).join('\n');
-    try { fs.writeFileSync(csvPath, header + rows); console.log('Wrote CSV to', csvPath); } catch (e) { console.warn('CSV write failed', e.message); }
+    const rows = samples
+      .map(
+        (s) =>
+          `${s.ts},${s.deltaMs},${s.cpuUserMs},${s.cpuSystemMs},${s.rss},${s.heapUsed},${s.heapTotal},${s.count}`,
+      )
+      .join('\n');
+    try {
+      fs.writeFileSync(csvPath, header + rows);
+      console.log('Wrote CSV to', csvPath);
+    } catch (e) {
+      console.warn('CSV write failed', e.message);
+    }
   }
   process.exit(0);
 }, durationSec * 1000);

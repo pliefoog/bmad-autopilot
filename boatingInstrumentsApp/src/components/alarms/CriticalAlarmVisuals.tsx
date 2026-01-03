@@ -111,10 +111,7 @@ const FlashingAnimation: React.FC<FlashingAnimationProps> = ({ level, children, 
     };
   }, [level, enabled, opacity]);
 
-  const containerStyle = React.useMemo(
-    () => ({ opacity: enabled ? undefined : 1 }),
-    [enabled]
-  );
+  const containerStyle = React.useMemo(() => ({ opacity: enabled ? undefined : 1 }), [enabled]);
 
   return (
     <Animated.View style={[{ opacity: enabled ? opacity : undefined }, containerStyle]}>

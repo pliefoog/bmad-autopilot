@@ -25,10 +25,10 @@ class FlakyTestDetector {
         network: /ECONNREFUSED|ENOTFOUND|network|connection/i,
         timing: /timing|race condition|setTimeout|setInterval/i,
         resource: /EMFILE|ENOMEM|resource|memory/i,
-        simulator: /simulator|nmea.*bridge|websocket.*connect/i
-      }
+        simulator: /simulator|nmea.*bridge|websocket.*connect/i,
+      },
     };
-    
+
     this.testHistory = this.loadTestHistory();
   }
 
@@ -46,7 +46,7 @@ class FlakyTestDetector {
     return {
       runs: [],
       testStats: {},
-      lastCleanup: Date.now()
+      lastCleanup: Date.now(),
     };
   }
 
@@ -59,15 +59,15 @@ class FlakyTestDetector {
       if (this.testHistory.runs.length > 100) {
         this.testHistory.runs = this.testHistory.runs.slice(-100);
       }
-      
+
       // Cleanup old test stats (keep tests with recent activity)
-      const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days
+      const cutoffTime = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days
       for (const [testName, stats] of Object.entries(this.testHistory.testStats)) {
         if (stats.lastSeen < cutoffTime) {
           delete this.testHistory.testStats[testName];
         }
       }
-      
+
       this.testHistory.lastCleanup = Date.now();
       fs.writeFileSync(this.config.historyFile, JSON.stringify(this.testHistory, null, 2));
     } catch (error) {
@@ -86,7 +86,7 @@ class FlakyTestDetector {
       pattern: 'unknown',
       confidence: 0,
       error: error ? error.toString() : '',
-      output: output ? output.toString() : ''
+      output: output ? output.toString() : '',
     };
 
     const fullText = `${analysis.error} ${analysis.output}`.toLowerCase();
@@ -125,7 +125,7 @@ class FlakyTestDetector {
       timing: 0.95,
       resource: 0.7,
       simulator: 0.85,
-      historical: 0.9
+      historical: 0.9,
     };
 
     let baseScore = patternScores[pattern] || 0.5;
@@ -149,7 +149,7 @@ class FlakyTestDetector {
         totalExecutions: 0,
         averageExecutionTime: 0,
         lastSeen: Date.now(),
-        firstSeen: Date.now()
+        firstSeen: Date.now(),
       };
     }
 
@@ -164,10 +164,9 @@ class FlakyTestDetector {
     }
 
     if (executionTime !== null) {
-      stats.averageExecutionTime = (
-        (stats.averageExecutionTime * (stats.totalExecutions - 1) + executionTime) / 
-        stats.totalExecutions
-      );
+      stats.averageExecutionTime =
+        (stats.averageExecutionTime * (stats.totalExecutions - 1) + executionTime) /
+        stats.totalExecutions;
     }
   }
 
@@ -199,14 +198,14 @@ class FlakyTestDetector {
         executionTime,
         success: result.success,
         exitCode: result.exitCode,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       this.testHistory.runs.push(execution);
 
       if (result.success) {
         console.log(`✅ Tests passed on attempt ${attempt}`);
-        
+
         // Update stats for successful tests
         if (result.testResults) {
           for (const testResult of result.testResults) {
@@ -219,7 +218,7 @@ class FlakyTestDetector {
           success: true,
           attempts: attempt,
           totalTime: Date.now() - startTime,
-          executionId
+          executionId,
         };
       }
 
@@ -227,10 +226,16 @@ class FlakyTestDetector {
       lastError = result.error;
       lastOutput = result.output;
 
-      const analysis = this.analyzeFailure(`${testCommand} ${testArgs.join(' ')}`, lastError, lastOutput);
-      
+      const analysis = this.analyzeFailure(
+        `${testCommand} ${testArgs.join(' ')}`,
+        lastError,
+        lastOutput,
+      );
+
       console.log(`❌ Tests failed on attempt ${attempt}:`);
-      console.log(`   Pattern: ${analysis.pattern} (confidence: ${(analysis.confidence * 100).toFixed(1)}%)`);
+      console.log(
+        `   Pattern: ${analysis.pattern} (confidence: ${(analysis.confidence * 100).toFixed(1)}%)`,
+      );
       console.log(`   Flaky: ${analysis.isFlaky ? 'Yes' : 'No'}`);
 
       // Update stats for failed tests
@@ -243,18 +248,26 @@ class FlakyTestDetector {
       // Decide whether to retry
       if (attempt < this.config.maxRetries) {
         if (analysis.isFlaky && analysis.confidence > 0.7) {
-          console.log(`🔄 Retrying due to detected flaky failure (confidence: ${(analysis.confidence * 100).toFixed(1)}%)`);
-          
+          console.log(
+            `🔄 Retrying due to detected flaky failure (confidence: ${(
+              analysis.confidence * 100
+            ).toFixed(1)}%)`,
+          );
+
           // Wait before retry
           if (this.config.retryDelay > 0) {
             console.log(`⏸️ Waiting ${this.config.retryDelay}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, this.config.retryDelay));
+            await new Promise((resolve) => setTimeout(resolve, this.config.retryDelay));
           }
-          
+
           attempt++;
           continue;
         } else {
-          console.log(`🚫 Not retrying - failure doesn't appear flaky (confidence: ${(analysis.confidence * 100).toFixed(1)}%)`);
+          console.log(
+            `🚫 Not retrying - failure doesn't appear flaky (confidence: ${(
+              analysis.confidence * 100
+            ).toFixed(1)}%)`,
+          );
           break;
         }
       }
@@ -272,7 +285,7 @@ class FlakyTestDetector {
       attempts: attempt,
       error: lastError,
       output: lastOutput,
-      executionId
+      executionId,
     };
   }
 
@@ -284,7 +297,7 @@ class FlakyTestDetector {
       const testProcess = spawn(command, args, {
         cwd: options.cwd || process.cwd(),
         env: { ...process.env, ...options.env },
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe'],
       });
 
       let stdout = '';
@@ -317,7 +330,7 @@ class FlakyTestDetector {
           exitCode: code,
           output: stdout,
           error: stderr,
-          testResults
+          testResults,
         });
       });
 
@@ -327,7 +340,7 @@ class FlakyTestDetector {
           exitCode: -1,
           output: stdout,
           error: error.message,
-          testResults: null
+          testResults: null,
         });
       });
 
@@ -345,21 +358,27 @@ class FlakyTestDetector {
    */
   parseJestOutput(output) {
     const testResults = [];
-    
+
     // This is a simplified parser - real implementation would use Jest's JSON reporter
-    const testLines = output.split('\n').filter(line => 
-      line.includes('✓') || line.includes('✗') || line.includes('PASS') || line.includes('FAIL')
-    );
+    const testLines = output
+      .split('\n')
+      .filter(
+        (line) =>
+          line.includes('✓') ||
+          line.includes('✗') ||
+          line.includes('PASS') ||
+          line.includes('FAIL'),
+      );
 
     for (const line of testLines) {
       if (line.includes('✓') || line.includes('✗')) {
         const testName = line.replace(/[✓✗]/g, '').trim();
         const passed = line.includes('✓');
-        
+
         testResults.push({
           name: testName,
           passed,
-          duration: null // Would be extracted from detailed Jest output
+          duration: null, // Would be extracted from detailed Jest output
         });
       }
     }
@@ -372,11 +391,12 @@ class FlakyTestDetector {
    */
   async generateFlakyTestReport() {
     const flakyTests = [];
-    
+
     for (const [testName, stats] of Object.entries(this.testHistory.testStats)) {
-      if (stats.totalExecutions >= 3) { // Minimum executions for flaky analysis
+      if (stats.totalExecutions >= 3) {
+        // Minimum executions for flaky analysis
         const successRate = stats.successes / stats.totalExecutions;
-        
+
         if (successRate < 1.0 && successRate >= this.config.flakyThreshold) {
           flakyTests.push({
             testName,
@@ -385,7 +405,7 @@ class FlakyTestDetector {
             failures: stats.failures,
             averageExecutionTime: Math.round(stats.averageExecutionTime),
             lastSeen: new Date(stats.lastSeen).toISOString(),
-            recommendation: this.getRecommendation(successRate, stats)
+            recommendation: this.getRecommendation(successRate, stats),
           });
         }
       }
@@ -395,13 +415,13 @@ class FlakyTestDetector {
       generatedAt: new Date().toISOString(),
       totalFlakyTests: flakyTests.length,
       flakyThreshold: this.config.flakyThreshold * 100,
-      tests: flakyTests.sort((a, b) => parseFloat(a.successRate) - parseFloat(b.successRate))
+      tests: flakyTests.sort((a, b) => parseFloat(a.successRate) - parseFloat(b.successRate)),
     };
 
     try {
       fs.writeFileSync(this.config.reportFile, JSON.stringify(report, null, 2));
       console.log(`📊 Generated flaky test report: ${this.config.reportFile}`);
-      
+
       if (flakyTests.length > 0) {
         console.log(`⚠️ Found ${flakyTests.length} potentially flaky tests`);
         console.log('Top 3 flakiest tests:');
@@ -441,19 +461,19 @@ if (require.main === module) {
         case 'run':
           const testCommand = process.argv[3] || 'npm';
           const testArgs = process.argv.slice(4);
-          
+
           if (!testCommand) {
             throw new Error('Test command is required');
           }
 
           const result = await detector.executeWithRetry(testCommand, testArgs, {
             timeout: parseInt(process.env.CI_TEST_TIMEOUT || '300000'),
-            cwd: path.join(__dirname, '../..')
+            cwd: path.join(__dirname, '../..'),
           });
 
           console.log('\n📊 Final Result:');
           console.log(JSON.stringify(result, null, 2));
-          
+
           if (!result.success) {
             process.exit(1);
           }
@@ -483,7 +503,9 @@ if (require.main === module) {
           console.log('Environment Variables:');
           console.log('  CI_MAX_RETRIES      - Maximum retry attempts (default: 3)');
           console.log('  CI_RETRY_DELAY      - Delay between retries in ms (default: 5000)');
-          console.log('  CI_FLAKY_THRESHOLD  - Success rate threshold for flaky tests (default: 0.8)');
+          console.log(
+            '  CI_FLAKY_THRESHOLD  - Success rate threshold for flaky tests (default: 0.8)',
+          );
           console.log('  CI_TEST_TIMEOUT     - Test execution timeout in ms (default: 300000)');
           process.exit(1);
       }

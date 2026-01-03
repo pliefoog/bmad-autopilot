@@ -1,15 +1,18 @@
-module.exports = function(api) {
+module.exports = function (api) {
   api.cache(true);
-  
+
   const config = {
     presets: [
-      ['babel-preset-expo', { 
-        jsxRuntime: 'automatic',
-        web: { 
-          // Disable hermes transform which might be causing issues
-          unstable_transformProfile: undefined
-        } 
-      }]
+      [
+        'babel-preset-expo',
+        {
+          jsxRuntime: 'automatic',
+          web: {
+            // Disable hermes transform which might be causing issues
+            unstable_transformProfile: undefined,
+          },
+        },
+      ],
     ],
     plugins: [
       [
@@ -19,7 +22,7 @@ module.exports = function(api) {
           alias: {
             '@': './src',
             '@core': './src/core',
-            '@mobile': './src/mobile',  
+            '@mobile': './src/mobile',
             '@desktop': './src/desktop',
             '@widgets': './src/widgets',
             '@services': './src/services',
@@ -39,12 +42,15 @@ module.exports = function(api) {
       },
       web: {
         presets: [
-          ['@babel/preset-env', {
-            targets: {
-              browsers: ['last 2 versions', 'ie >= 11'],
+          [
+            '@babel/preset-env',
+            {
+              targets: {
+                browsers: ['last 2 versions', 'ie >= 11'],
+              },
+              modules: 'commonjs', // Force CommonJS to avoid ESM issues
             },
-            modules: 'commonjs', // Force CommonJS to avoid ESM issues
-          }]
+          ],
         ],
         plugins: [
           // Transform import.meta for web builds

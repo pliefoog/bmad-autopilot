@@ -1,6 +1,6 @@
 /**
  * Jest Test Setup
- * 
+ *
  * Global test configuration and polyfills for React Native environment
  */
 

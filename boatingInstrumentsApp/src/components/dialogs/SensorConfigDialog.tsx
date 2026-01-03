@@ -767,7 +767,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   value={String(currentValue ?? '')}
                   onChangeText={(text) => {
                     const num = parseFloat(text);
-                    
+
                     // Strict validation: allow NaN (no valid reading), reject Infinity
                     if (!Number.isNaN(num) && !Number.isFinite(num)) {
                       // Reject Infinity (parser bug)
@@ -776,7 +776,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                     // Apply min/max clamping if defined
                     let finalValue = num;
-                    if (!Number.isNaN(num) && field.valueType === 'number' && 'min' in field && 'max' in field) {
+                    if (
+                      !Number.isNaN(num) &&
+                      field.valueType === 'number' &&
+                      'min' in field &&
+                      'max' in field
+                    ) {
                       if (field.min !== undefined && num < field.min) finalValue = field.min;
                       if (field.max !== undefined && num > field.max) finalValue = field.max;
                     }

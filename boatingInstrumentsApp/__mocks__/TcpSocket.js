@@ -1,12 +1,14 @@
 // WebSocket-based TCP Socket replacement for web
 export const createConnection = (options, connectListener) => {
   console.log('[Web WebSocket TCP] Connection attempted:', options);
-  
+
   // Default WebSocket connection settings - safe for web environment
-  const wsHost = (typeof process !== 'undefined' && process.env?.REACT_NATIVE_WEBSOCKET_HOST) || 'localhost';
-  const wsPort = (typeof process !== 'undefined' && process.env?.REACT_NATIVE_WEBSOCKET_PORT) || '8080';
+  const wsHost =
+    (typeof process !== 'undefined' && process.env?.REACT_NATIVE_WEBSOCKET_HOST) || 'localhost';
+  const wsPort =
+    (typeof process !== 'undefined' && process.env?.REACT_NATIVE_WEBSOCKET_PORT) || '8080';
   const wsUrl = `ws://${wsHost}:${wsPort}`;
-  
+
   console.log(`[Web WebSocket TCP] Connecting to NMEA Bridge Simulator at ${wsUrl}`);
 
   const mockSocket = {
@@ -14,7 +16,7 @@ export const createConnection = (options, connectListener) => {
     _ws: null,
     _connected: false,
 
-    on: function(event, listener) {
+    on: function (event, listener) {
       console.log('[Web WebSocket TCP] Event listener added:', event);
       if (!this._listeners[event]) {
         this._listeners[event] = [];
@@ -29,18 +31,18 @@ export const createConnection = (options, connectListener) => {
       return this;
     },
 
-    _initializeWebSocket: function() {
+    _initializeWebSocket: function () {
       try {
         console.log(`[Web WebSocket TCP] Creating WebSocket connection to ${wsUrl}`);
         console.log(`[Web WebSocket TCP] Original connection options:`, options);
         this._ws = new WebSocket(wsUrl);
-        
+
         this._ws.onopen = () => {
           console.log('[Web WebSocket TCP] Connected to NMEA Bridge Simulator');
           this._connected = true;
           this._emit('connect');
         };
-        
+
         this._ws.onmessage = (event) => {
           try {
             // Try to parse as JSON first (for compatibility with older bridge servers)
@@ -60,27 +62,26 @@ export const createConnection = (options, connectListener) => {
             }
           }
         };
-        
+
         this._ws.onclose = () => {
           console.log('[Web WebSocket TCP] WebSocket connection closed');
           this._connected = false;
           this._emit('close');
         };
-        
+
         this._ws.onerror = (error) => {
           console.error('[Web WebSocket TCP] WebSocket error:', error);
           this._emit('error', error);
         };
-        
       } catch (error) {
         console.error('[Web WebSocket TCP] Failed to initialize WebSocket:', error);
         setTimeout(() => this._emit('error', error), 10);
       }
     },
 
-    _emit: function(event, ...args) {
+    _emit: function (event, ...args) {
       const listeners = this._listeners[event] || [];
-      listeners.forEach(listener => {
+      listeners.forEach((listener) => {
         try {
           listener(...args);
         } catch (error) {
@@ -89,15 +90,17 @@ export const createConnection = (options, connectListener) => {
       });
     },
 
-    write: function(data) {
+    write: function (data) {
       console.log('[Web WebSocket TCP] Write:', data);
       if (this._ws && this._connected) {
         try {
           // Send autopilot commands as JSON
-          this._ws.send(JSON.stringify({
-            type: 'autopilot_command',
-            data: data
-          }));
+          this._ws.send(
+            JSON.stringify({
+              type: 'autopilot_command',
+              data: data,
+            }),
+          );
           return true;
         } catch (error) {
           console.error('[Web WebSocket TCP] Failed to send data:', error);
@@ -109,7 +112,7 @@ export const createConnection = (options, connectListener) => {
       }
     },
 
-    destroy: function() {
+    destroy: function () {
       console.log('[Web WebSocket TCP] Socket destroyed');
       if (this._ws) {
         this._ws.close();
@@ -118,7 +121,7 @@ export const createConnection = (options, connectListener) => {
       this._connected = false;
     },
 
-    connect: function(port, host, callback) {
+    connect: function (port, host, callback) {
       console.log(`[Web WebSocket TCP] Connect called with ${host}:${port}`);
       // Note: We ignore the provided host/port and use WebSocket endpoint
       if (callback) {

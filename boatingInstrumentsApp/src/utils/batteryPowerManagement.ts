@@ -177,7 +177,7 @@ export interface BatteryState {
  * Battery usage tracker for estimating runtime
  */
 export class BatteryUsageTracker {
-  private samples: Array<{ level: number; timestamp: number }> = [];
+  private samples: { level: number; timestamp: number }[] = [];
   private maxSamples = 10;
 
   /**

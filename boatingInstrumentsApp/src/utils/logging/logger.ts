@@ -137,10 +137,9 @@ export const log = {
   widgetRegistration: (msg: string, dataFn?: () => any) =>
     log.debug('widget.registration', msg, dataFn),
   widgetRendering: (msg: string, dataFn?: () => any) => log.debug('widget.rendering', msg, dataFn),
-  
+
   // Drag-and-drop convenience method
   dragDrop: (msg: string, dataFn?: () => any) => log.debug('drag.drop', msg, dataFn),
-
 
   // Store convenience methods
   storeUpdate: (msg: string, dataFn?: () => any) => log.debug('store.updates', msg, dataFn),

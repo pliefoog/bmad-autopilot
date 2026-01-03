@@ -1,9 +1,9 @@
 /**
  * Timezone-aware datetime formatters for ConversionRegistry
- * 
+ *
  * Converts Unix timestamp (milliseconds) to formatted date/time strings
  * with timezone offset support.
- * 
+ *
  * **Architecture:**
  * - formatTime(): Converts timestamp to time string (24h/12h/compact)
  * - formatDate(): Converts timestamp to date string (nautical/ISO/US/EU/UK)
@@ -13,12 +13,12 @@
 
 export interface DateTimeOptions {
   timezoneOffset?: number; // Hours from UTC (-12 to +14)
-  forceUTC?: boolean;      // Force UTC display (overrides offset)
+  forceUTC?: boolean; // Force UTC display (overrides offset)
 }
 
 /**
  * Format timestamp as time string
- * 
+ *
  * @param timestamp - Unix timestamp in milliseconds
  * @param format - Time format ID (time_24h_full, time_12h, etc.)
  * @param options - Timezone options
@@ -27,7 +27,7 @@ export interface DateTimeOptions {
 export function formatTime(
   timestamp: number,
   format: string,
-  options: DateTimeOptions = {}
+  options: DateTimeOptions = {},
 ): { formatted: string; unitLabel: string } {
   // Determine effective timezone offset
   let offset = 0;
@@ -39,15 +39,15 @@ export function formatTime(
     // Auto-detect device timezone
     offset = -new Date().getTimezoneOffset() / 60;
   }
-  
+
   // Apply timezone offset
   const adjustedTime = new Date(timestamp + offset * 3600000);
-  
+
   // Extract time components
   const hours = adjustedTime.getUTCHours();
   const minutes = adjustedTime.getUTCMinutes();
   const seconds = adjustedTime.getUTCSeconds();
-  
+
   let formatted: string;
   switch (format) {
     case 'time_24h_full':
@@ -72,16 +72,16 @@ export function formatTime(
     default:
       formatted = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }
-  
+
   // Generate unit label
   const unitLabel = offset === 0 ? 'UTC' : `UTC${offset >= 0 ? '+' : ''}${offset}`;
-  
+
   return { formatted, unitLabel };
 }
 
 /**
  * Format timestamp as date string
- * 
+ *
  * @param timestamp - Unix timestamp in milliseconds
  * @param format - Date format ID (nautical_date, iso_date, etc.)
  * @param options - Timezone options
@@ -90,7 +90,7 @@ export function formatTime(
 export function formatDate(
   timestamp: number,
   format: string,
-  options: DateTimeOptions = {}
+  options: DateTimeOptions = {},
 ): { formatted: string; unitLabel: string } {
   // Apply timezone offset (same logic as formatTime)
   let offset = 0;
@@ -101,17 +101,30 @@ export function formatDate(
   } else {
     offset = -new Date().getTimezoneOffset() / 60;
   }
-  
+
   const adjustedTime = new Date(timestamp + offset * 3600000);
-  
+
   const year = adjustedTime.getUTCFullYear();
   const month = adjustedTime.getUTCMonth();
   const day = adjustedTime.getUTCDate();
   const dayOfWeek = adjustedTime.getUTCDay();
-  
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
+
   let formatted: string;
   switch (format) {
     case 'nautical_date':
@@ -132,9 +145,9 @@ export function formatDate(
     default:
       formatted = `${dayNames[dayOfWeek]} ${monthNames[month]} ${pad(day)}, ${year}`;
   }
-  
+
   const unitLabel = offset === 0 ? 'UTC' : `UTC${offset >= 0 ? '+' : ''}${offset}`;
-  
+
   return { formatted, unitLabel };
 }
 

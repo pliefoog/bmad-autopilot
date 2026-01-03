@@ -2,13 +2,13 @@
 
 /**
  * NMEA Recording Validation Utility
- * 
+ *
  * Validates NMEA recording files against the format specification.
  * Supports both JSON and compressed JSON.gz files.
- * 
+ *
  * Usage:
  *   node server/validate-recording.js <file-path> [--strict] [--repair] [--verbose]
- *   
+ *
  * Examples:
  *   node server/validate-recording.js server/recordings/navigation/basic.json
  *   node server/validate-recording.js server/recordings/engine/*.json --strict
@@ -21,12 +21,21 @@ const zlib = require('zlib');
 
 // Validation configuration
 const REQUIRED_METADATA_FIELDS = [
-  'name', 'description', 'duration', 'message_count', 
-  'created', 'version', 'bridge_mode'
+  'name',
+  'description',
+  'duration',
+  'message_count',
+  'created',
+  'version',
+  'bridge_mode',
 ];
 
 const REQUIRED_MESSAGE_FIELDS = [
-  'timestamp', 'relative_time', 'sentence', 'sentence_type', 'sequence'
+  'timestamp',
+  'relative_time',
+  'sentence',
+  'sentence_type',
+  'sequence',
 ];
 
 const SUPPORTED_BRIDGE_MODES = ['nmea0183', 'nmea2000'];
@@ -51,7 +60,7 @@ class RecordingValidator {
   async loadRecording(filePath) {
     try {
       let data;
-      
+
       if (filePath.endsWith('.json.gz')) {
         if (this.verbose) console.log(`Reading compressed file: ${filePath}`);
         const compressed = fs.readFileSync(filePath);
@@ -62,8 +71,9 @@ class RecordingValidator {
       }
 
       const recording = JSON.parse(data.toString());
-      if (this.verbose) console.log(`Parsed recording with ${recording.messages?.length || 0} messages`);
-      
+      if (this.verbose)
+        console.log(`Parsed recording with ${recording.messages?.length || 0} messages`);
+
       return recording;
     } catch (error) {
       throw new Error(`Failed to load recording: ${error.message}`);
@@ -80,18 +90,18 @@ class RecordingValidator {
 
     try {
       const recording = await this.loadRecording(filePath);
-      
+
       // Core structure validation
       this.validateStructure(recording);
-      
+
       // Metadata validation
       this.validateMetadata(recording.metadata, recording);
-      
+
       // Messages validation
       if (recording.messages) {
         this.validateMessages(recording.messages, recording.metadata);
       }
-      
+
       // Cross-validation between metadata and messages
       this.validateConsistency(recording);
 
@@ -100,16 +110,15 @@ class RecordingValidator {
         errors: this.errors,
         warnings: this.warnings,
         repaired: this.repaired,
-        recording: recording
+        recording: recording,
       };
-
     } catch (error) {
       this.errors.push(`Validation failed: ${error.message}`);
       return {
         valid: false,
         errors: this.errors,
         warnings: this.warnings,
-        repaired: this.repaired
+        repaired: this.repaired,
       };
     }
   }
@@ -164,11 +173,19 @@ class RecordingValidator {
     }
 
     if (metadata.bridge_mode && !SUPPORTED_BRIDGE_MODES.includes(metadata.bridge_mode)) {
-      this.errors.push(`Unsupported bridge mode: ${metadata.bridge_mode}. Must be one of: ${SUPPORTED_BRIDGE_MODES.join(', ')}`);
+      this.errors.push(
+        `Unsupported bridge mode: ${
+          metadata.bridge_mode
+        }. Must be one of: ${SUPPORTED_BRIDGE_MODES.join(', ')}`,
+      );
     }
 
     if (metadata.version && !SUPPORTED_FORMAT_VERSIONS.includes(metadata.version)) {
-      this.warnings.push(`Unsupported format version: ${metadata.version}. Supported: ${SUPPORTED_FORMAT_VERSIONS.join(', ')}`);
+      this.warnings.push(
+        `Unsupported format version: ${
+          metadata.version
+        }. Supported: ${SUPPORTED_FORMAT_VERSIONS.join(', ')}`,
+      );
     }
 
     // Validate ISO-8601 timestamp
@@ -205,7 +222,7 @@ class RecordingValidator {
 
     // Check timestamp ordering
     this.validateTimestampOrdering(messages);
-    
+
     // Check sequence uniqueness
     this.validateSequenceNumbers(messages);
   }
@@ -306,7 +323,9 @@ class RecordingValidator {
       // NMEA 0183 sentence
       const actualType = sentence.substring(3, 6); // Extract sentence type
       if (actualType !== sentenceType) {
-        this.warnings.push(`${msgPrefix} Sentence type mismatch: expected ${sentenceType}, found ${actualType}`);
+        this.warnings.push(
+          `${msgPrefix} Sentence type mismatch: expected ${sentenceType}, found ${actualType}`,
+        );
       }
     } else if (sentence.startsWith('$PCDIN')) {
       // NMEA 2000 PGN - validate PGN number if provided
@@ -314,7 +333,9 @@ class RecordingValidator {
         // This is correct for generic PGN type
       } else {
         // Could be specific PGN number
-        this.warnings.push(`${msgPrefix} NMEA 2000 sentence type should typically be 'PGN' for generic or specific PGN number`);
+        this.warnings.push(
+          `${msgPrefix} NMEA 2000 sentence type should typically be 'PGN' for generic or specific PGN number`,
+        );
       }
     }
   }
@@ -329,13 +350,17 @@ class RecordingValidator {
 
       if (prevMsg.timestamp && currentMsg.timestamp) {
         if (currentMsg.timestamp < prevMsg.timestamp) {
-          this.errors.push(`Non-monotonic timestamp at message ${i}: ${currentMsg.timestamp} < ${prevMsg.timestamp}`);
+          this.errors.push(
+            `Non-monotonic timestamp at message ${i}: ${currentMsg.timestamp} < ${prevMsg.timestamp}`,
+          );
         }
       }
 
       if (prevMsg.relative_time !== undefined && currentMsg.relative_time !== undefined) {
         if (currentMsg.relative_time < prevMsg.relative_time) {
-          this.errors.push(`Non-monotonic relative_time at message ${i}: ${currentMsg.relative_time} < ${prevMsg.relative_time}`);
+          this.errors.push(
+            `Non-monotonic relative_time at message ${i}: ${currentMsg.relative_time} < ${prevMsg.relative_time}`,
+          );
         }
       }
     }
@@ -373,8 +398,10 @@ class RecordingValidator {
     if (metadata && messages) {
       // Check message count consistency
       if (metadata.message_count !== undefined && metadata.message_count !== messages.length) {
-        this.errors.push(`Message count mismatch: metadata says ${metadata.message_count}, but found ${messages.length} messages`);
-        
+        this.errors.push(
+          `Message count mismatch: metadata says ${metadata.message_count}, but found ${messages.length} messages`,
+        );
+
         if (this.repair) {
           metadata.message_count = messages.length;
           this.repaired.push(`Updated message_count to ${messages.length}`);
@@ -385,14 +412,18 @@ class RecordingValidator {
       if (metadata.duration !== undefined && messages.length > 1) {
         const firstTime = messages[0].relative_time || 0;
         const lastTime = messages[messages.length - 1].relative_time;
-        
+
         if (lastTime !== undefined) {
           const actualDuration = lastTime - firstTime;
           const tolerance = Math.max(1.0, actualDuration * 0.01); // 1% tolerance or 1 second
-          
+
           if (Math.abs(metadata.duration - actualDuration) > tolerance) {
-            this.warnings.push(`Duration mismatch: metadata says ${metadata.duration}s, but messages span ${actualDuration.toFixed(3)}s`);
-            
+            this.warnings.push(
+              `Duration mismatch: metadata says ${
+                metadata.duration
+              }s, but messages span ${actualDuration.toFixed(3)}s`,
+            );
+
             if (this.repair) {
               metadata.duration = parseFloat(actualDuration.toFixed(3));
               this.repaired.push(`Updated duration to ${metadata.duration}s`);
@@ -407,7 +438,7 @@ class RecordingValidator {
 // CLI interface
 async function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0 || args.includes('--help')) {
     console.log(`
 NMEA Recording Validation Utility
@@ -429,11 +460,11 @@ Examples:
     process.exit(0);
   }
 
-  const files = args.filter(arg => !arg.startsWith('--'));
+  const files = args.filter((arg) => !arg.startsWith('--'));
   const options = {
     strict: args.includes('--strict'),
     repair: args.includes('--repair'),
-    verbose: args.includes('--verbose')
+    verbose: args.includes('--verbose'),
   };
 
   const validator = new RecordingValidator(options);
@@ -444,8 +475,8 @@ Examples:
 
   for (const filePattern of files) {
     // Handle glob patterns (basic implementation)
-    const filesToProcess = filePattern.includes('*') 
-      ? require('glob').sync(filePattern) 
+    const filesToProcess = filePattern.includes('*')
+      ? require('glob').sync(filePattern)
       : [filePattern];
 
     for (const filePath of filesToProcess) {
@@ -458,7 +489,7 @@ Examples:
       console.log(`\n🔍 Validating: ${filePath}`);
 
       const result = await validator.validate(filePath);
-      
+
       if (result.valid) {
         console.log(`✅ Valid`);
         validFiles++;
@@ -468,20 +499,20 @@ Examples:
 
       if (result.errors.length > 0) {
         console.log(`\n❌ Errors (${result.errors.length}):`);
-        result.errors.forEach(error => console.log(`   ${error}`));
+        result.errors.forEach((error) => console.log(`   ${error}`));
         totalErrors += result.errors.length;
       }
 
       if (result.warnings.length > 0) {
         console.log(`\n⚠️  Warnings (${result.warnings.length}):`);
-        result.warnings.forEach(warning => console.log(`   ${warning}`));
+        result.warnings.forEach((warning) => console.log(`   ${warning}`));
         totalWarnings += result.warnings.length;
       }
 
       if (result.repaired.length > 0) {
         console.log(`\n🔧 Repairs (${result.repaired.length}):`);
-        result.repaired.forEach(repair => console.log(`   ${repair}`));
-        
+        result.repaired.forEach((repair) => console.log(`   ${repair}`));
+
         if (options.repair) {
           // Save repaired file
           const outputPath = filePath.replace(/\.json(\.gz)?$/, '.repaired.json');
@@ -522,18 +553,18 @@ try {
           const basePattern = path.basename(pattern);
           const files = fs.readdirSync(dir);
           return files
-            .filter(file => file.match(basePattern.replace('*', '.*')))
-            .map(file => path.join(dir, file));
+            .filter((file) => file.match(basePattern.replace('*', '.*')))
+            .map((file) => path.join(dir, file));
         }
         return [pattern];
-      }
-    }
+      },
+    },
   };
 }
 
 // Run CLI if called directly
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('❌ Validation failed:', error.message);
     process.exit(1);
   });

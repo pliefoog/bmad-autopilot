@@ -12,24 +12,24 @@ import { useMetric } from '../hooks/useMetric';
 
 /**
  * SecondaryMetricCell Props
- * 
+ *
  * **Registry-First Auto-Fetch Pattern:**
  * Only requires metricKey - everything else auto-fetched from context.
- * 
+ *
  * **Virtual Metrics Support (Dot Notation):**
  * Identical to PrimaryMetricCell - supports computed statistics:
  * - `metricKey="depth"` → current depth value
  * - `metricKey="depth.min"` → MIN DEPTH (session minimum)
  * - `metricKey="depth.max"` → MAX DEPTH (session maximum)
  * - `metricKey="pressure.avg"` → AVG PRESSURE (session average)
- * 
+ *
  * Virtual metrics calculated in SensorInstance.getMetric() from history buffer.
  */
 interface SecondaryMetricCellProps {
-  /** 
+  /**
    * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
    * Must match field key in SensorConfigRegistry
-   * 
+   *
    * **Supports virtual stat metrics:**
    * - 'depth.min' - minimum depth from session stats
    * - 'depth.max' - maximum depth from session stats
@@ -56,16 +56,16 @@ interface SecondaryMetricCellProps {
 
 /**
  * SecondaryMetricCell - Registry-first auto-fetch secondary metric display with virtual metrics
- * 
+ *
  * **Auto-Fetch Pattern:**
  * Same as PrimaryMetricCell but with smaller, inline styling for secondary metrics.
  * Fully supports virtual stat metrics with dot notation.
- * 
+ *
  * **Virtual Metrics (Dot Notation):**
  * - Component strips `.stat` suffix for registry lookup
  * - Calls `sensorInstance.getMetric(metricKey)` which handles calculation
  * - Adds stat prefix to mnemonic: "DEPTH" → "MIN DEPTH"
- * 
+ *
  * **For AI Agents:**
  * Secondary cells display less critical metrics in bottom section of widgets.
  * Use for session stats, metadata, or auxiliary measurements.
@@ -84,39 +84,45 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 
   // Get sensor context for type and instance information
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
-  
+
   // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
   // MUST be called unconditionally (Rules of Hooks)
   // Pass defaults when sensorInstance doesn't exist, hook will return null
   const subscribedMetric = useMetric(
     sensorType || 'depth', // Safe default
     sensorInstance?.instance ?? 0, // Safe default
-    metricKey
+    metricKey,
   );
-  
+
   // Fallback to context-based metric access if subscription not available
   // (happens when sensor doesn't exist yet or subscription returns null)
   const contextMetric = sensorInstance?.getMetric(metricKey);
-  
+
   // Use subscribed metric only if sensorInstance exists, otherwise fallback
-  const metricValue = (sensorInstance && subscribedMetric) ? {
-    formattedValue: subscribedMetric.formattedValue,
-    formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
-    unit: subscribedMetric.unit,
-    si_value: subscribedMetric.si_value,
-    value: subscribedMetric.value,
-    timestamp: subscribedMetric.timestamp,
-  } : contextMetric;
-  
+  const metricValue =
+    sensorInstance && subscribedMetric
+      ? {
+          formattedValue: subscribedMetric.formattedValue,
+          formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
+          unit: subscribedMetric.unit,
+          si_value: subscribedMetric.si_value,
+          value: subscribedMetric.value,
+          timestamp: subscribedMetric.timestamp,
+        }
+      : contextMetric;
+
   // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
   const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');
-  
+
   // Auto-fetch field configuration from registry (use base field name)
   const fieldConfig = useMemo(() => {
     try {
       return getSensorField(sensorType, baseMetricKey);
     } catch (error) {
-      console.error(`SecondaryMetricCell: Invalid metricKey "${baseMetricKey}" for sensor "${sensorType}"`, error);
+      console.error(
+        `SecondaryMetricCell: Invalid metricKey "${baseMetricKey}" for sensor "${sensorType}"`,
+        error,
+      );
       return null;
     }
   }, [sensorType, baseMetricKey]);
@@ -131,7 +137,7 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     }
     return baseMnemonic;
   }, [fieldConfig?.mnemonic, baseMetricKey, metricKey]);
-  
+
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {
     if (fieldConfig?.valueType === 'string') {
@@ -144,19 +150,19 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
     // This includes virtual stat metrics (depth_min, depth_max, etc.)
     return metricValue?.formattedValue ?? '---';
   }, [fieldConfig?.valueType, sensorInstance, metricKey, metricValue?.formattedValue]);
-  
+
   // Get unit: prefer from MetricValue (when data exists), fallback to registry category
   const unit = useMemo(() => {
     // String fields don't have units
     if (fieldConfig?.valueType === 'string') {
       return '';
     }
-    
+
     // If metricValue has a unit (data exists), use it
     if (metricValue?.unit) {
       return metricValue.unit;
     }
-    
+
     // If no data but field has unitType, get unit from ConversionRegistry
     if (fieldConfig?.unitType) {
       try {
@@ -166,12 +172,13 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
         return '';
       }
     }
-    
+
     return '';
   }, [fieldConfig?.valueType, fieldConfig?.unitType, metricValue?.unit]);
-  
+
   // Use alarm state from subscription if available, otherwise from context
-  const alarmLevel: AlarmLevel = subscribedMetric?.alarmState ?? sensorInstance?.getAlarmState(metricKey) ?? 0;
+  const alarmLevel: AlarmLevel =
+    subscribedMetric?.alarmState ?? sensorInstance?.getAlarmState(metricKey) ?? 0;
 
   const displayValue = value;
 

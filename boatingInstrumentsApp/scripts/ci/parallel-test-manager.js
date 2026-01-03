@@ -20,7 +20,7 @@ class ParallelTestManager {
       ports: {
         websocket: 8080,
         api: 9090,
-        tcp: 2000
+        tcp: 2000,
       },
       maxParallelSessions: parseInt(process.env.CI_PARALLEL_JOBS || '4'),
       sessionTimeout: parseInt(process.env.CI_TEST_TIMEOUT || '300000'), // 5 minutes
@@ -33,15 +33,15 @@ class ParallelTestManager {
   async allocatePortsForSession(sessionId) {
     const sessionNumber = this.testSessions.size;
     const ports = {
-      websocket: this.baseConfig.ports.websocket + (sessionNumber * 10),
-      api: this.baseConfig.ports.api + (sessionNumber * 10),
-      tcp: this.baseConfig.ports.tcp + (sessionNumber * 10)
+      websocket: this.baseConfig.ports.websocket + sessionNumber * 10,
+      api: this.baseConfig.ports.api + sessionNumber * 10,
+      tcp: this.baseConfig.ports.tcp + sessionNumber * 10,
     };
 
     // Verify ports are available
     const net = require('net');
     for (const [service, port] of Object.entries(ports)) {
-      if (!await this.isPortAvailable(port)) {
+      if (!(await this.isPortAvailable(port))) {
         throw new Error(`Port ${port} for ${service} is not available for session ${sessionId}`);
       }
     }
@@ -53,12 +53,12 @@ class ParallelTestManager {
   async isPortAvailable(port) {
     return new Promise((resolve) => {
       const server = net.createServer();
-      
+
       server.listen(port, () => {
         server.once('close', () => resolve(true));
         server.close();
       });
-      
+
       server.on('error', () => resolve(false));
     });
   }
@@ -68,7 +68,9 @@ class ParallelTestManager {
    */
   async startTestSession(sessionId, testSpec) {
     if (this.testSessions.size >= this.baseConfig.maxParallelSessions) {
-      throw new Error(`Maximum parallel sessions (${this.baseConfig.maxParallelSessions}) exceeded`);
+      throw new Error(
+        `Maximum parallel sessions (${this.baseConfig.maxParallelSessions}) exceeded`,
+      );
     }
 
     console.log(`🔄 Starting parallel test session: ${sessionId}`);
@@ -81,12 +83,12 @@ class ParallelTestManager {
       // Start simulator for this session
       const simulatorManager = new SimulatorLifecycleManager();
       const simulatorResult = await simulatorManager.startSimulator(
-        testSpec.scenario || 'basic-navigation', 
-        { 
+        testSpec.scenario || 'basic-navigation',
+        {
           ports,
           duration: testSpec.duration,
-          loop: testSpec.loop 
-        }
+          loop: testSpec.loop,
+        },
       );
 
       // Prepare test environment
@@ -98,14 +100,14 @@ class ParallelTestManager {
         NMEA_API_PORT: ports.api.toString(),
         NMEA_TCP_PORT: ports.tcp.toString(),
         TEST_SESSION_ID: sessionId,
-        JEST_WORKER_ID: sessionId
+        JEST_WORKER_ID: sessionId,
       };
 
       // Run tests
       const testProcess = spawn('npm', ['run', testSpec.testCommand || 'test'], {
         cwd: path.join(__dirname, '../..'),
         env: testEnv,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe'],
       });
 
       const session = {
@@ -114,7 +116,7 @@ class ParallelTestManager {
         simulatorManager,
         testProcess,
         startTime: Date.now(),
-        spec: testSpec
+        spec: testSpec,
       };
 
       this.testSessions.set(sessionId, session);
@@ -132,7 +134,7 @@ class ParallelTestManager {
         clearTimeout(timeoutId);
         session.exitCode = code;
         console.log(`✅ Test session ${sessionId} completed with exit code: ${code}`);
-        
+
         // Keep session record for reporting but stop simulator
         await simulatorManager.stopSimulator();
       });
@@ -142,9 +144,8 @@ class ParallelTestManager {
         sessionId,
         ports,
         simulatorPid: simulatorResult.pid,
-        testPid: testProcess.pid
+        testPid: testProcess.pid,
       };
-
     } catch (error) {
       console.error(`❌ Failed to start test session ${sessionId}: ${error.message}`);
       await this.cleanupSession(sessionId);
@@ -172,7 +173,7 @@ class ParallelTestManager {
       // Stop test process
       if (session.testProcess && !session.testProcess.killed) {
         session.testProcess.kill('SIGTERM');
-        
+
         // Force kill after 5 seconds
         setTimeout(() => {
           if (!session.testProcess.killed) {
@@ -193,13 +194,12 @@ class ParallelTestManager {
       session.endTime = Date.now();
       session.duration = session.endTime - session.startTime;
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         sessionId,
         duration: session.duration,
-        exitCode: session.exitCode
+        exitCode: session.exitCode,
       };
-
     } catch (error) {
       console.error(`❌ Error stopping test session ${sessionId}: ${error.message}`);
       return { success: false, error: error.message };
@@ -211,7 +211,7 @@ class ParallelTestManager {
    */
   async stopAllSessions() {
     console.log(`🛑 Stopping all ${this.testSessions.size} active test sessions...`);
-    
+
     const results = [];
     for (const sessionId of this.testSessions.keys()) {
       try {
@@ -233,24 +233,26 @@ class ParallelTestManager {
    */
   getSessionsStatus() {
     const sessions = [];
-    
+
     for (const [sessionId, session] of this.testSessions.entries()) {
       sessions.push({
         id: sessionId,
         ports: session.ports,
         startTime: session.startTime,
-        duration: session.endTime ? (session.endTime - session.startTime) : (Date.now() - session.startTime),
+        duration: session.endTime
+          ? session.endTime - session.startTime
+          : Date.now() - session.startTime,
         exitCode: session.exitCode,
         spec: session.spec,
-        running: !session.endTime
+        running: !session.endTime,
       });
     }
 
     return {
-      activeSessions: sessions.filter(s => s.running).length,
-      completedSessions: sessions.filter(s => !s.running).length,
+      activeSessions: sessions.filter((s) => s.running).length,
+      completedSessions: sessions.filter((s) => !s.running).length,
       totalSessions: sessions.length,
-      sessions
+      sessions,
     };
   }
 
@@ -278,10 +280,12 @@ if (require.main === module) {
           const testSpec = {
             scenario: process.argv[4] || 'basic-navigation',
             testCommand: process.argv[5] || 'test',
-            duration: process.argv.includes('--duration') ? parseInt(process.argv[process.argv.indexOf('--duration') + 1]) : null,
-            loop: process.argv.includes('--loop')
+            duration: process.argv.includes('--duration')
+              ? parseInt(process.argv[process.argv.indexOf('--duration') + 1])
+              : null,
+            loop: process.argv.includes('--loop'),
           };
-          
+
           const result = await manager.startTestSession(sessionId, testSpec);
           console.log(JSON.stringify(result, null, 2));
           break;
@@ -304,9 +308,15 @@ if (require.main === module) {
 
         default:
           console.log(`Usage: ${process.argv[1]} <start|stop|status> [options]`);
-          console.log('  start <sessionId> <scenario> <testCommand>  - Start parallel test session');
-          console.log('  stop <sessionId|all>                        - Stop specific or all sessions');
-          console.log('  status                                       - Get status of all sessions');
+          console.log(
+            '  start <sessionId> <scenario> <testCommand>  - Start parallel test session',
+          );
+          console.log(
+            '  stop <sessionId|all>                        - Stop specific or all sessions',
+          );
+          console.log(
+            '  status                                       - Get status of all sessions',
+          );
           console.log('');
           console.log('Options:');
           console.log('  --duration <ms>   - Run for specified duration');

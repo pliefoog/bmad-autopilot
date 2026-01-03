@@ -15,61 +15,53 @@ interface WeatherWidgetProps {
  * Primary: Pressure, Air Temp, Humidity, Dew Point (all with MetricValue formatting)
  * Secondary: Pressure & Temperature trend charts (5-minute history)
  * Supports multi-instance weather stations (instance extracted from widget ID)
- * 
+ *
  * **Marine Weather Context:**
  * Barometric pressure trends indicate approaching weather systems:
  * - Rapid drop (>3 hPa/hr): Storm approaching
  * - Steady rise: Weather clearing
  * - Stable: Current conditions persisting
  */
-export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(
-  ({ id }) => {
+export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id }) => {
+  // Extract instance number from widget ID (e.g., "weather-0" → 0)
+  const instanceNumber = useMemo(() => {
+    const match = id.match(/weather-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [id]);
 
-    // Extract instance number from widget ID (e.g., "weather-0" → 0)
-    const instanceNumber = useMemo(() => {
-      const match = id.match(/weather-(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    }, [id]);
+  const weatherInstance = useNmeaStore(
+    (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0],
+  );
 
-    const weatherInstance = useNmeaStore(
-      (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0]
-    );
+  // Subscribe to timestamp to trigger re-renders when data changes
+  const _timestamp = useNmeaStore(
+    (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0]?.timestamp,
+  );
 
-    // Subscribe to timestamp to trigger re-renders when data changes
-    const _timestamp = useNmeaStore(
-      (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0]?.timestamp
-    );
+  return (
+    <TemplatedWidget
+      template="2Rx2C-SEP-2Rx2C-WIDE"
+      sensorInstance={weatherInstance}
+      sensorType="weather"
+      testID={id}
+    >
+      {/* Primary Grid: Weather metrics in 2x2 layout */}
+      <PrimaryMetricCell metricKey="pressure" />
+      <PrimaryMetricCell metricKey="airTemperature" />
+      <PrimaryMetricCell metricKey="humidity" />
+      <PrimaryMetricCell metricKey="dewPoint" />
 
-    return (
-      <TemplatedWidget
-        template="2Rx2C-SEP-2Rx2C-WIDE"
-        sensorInstance={weatherInstance}
-        sensorType="weather"
-        testID={id}
-      >
-        {/* Primary Grid: Weather metrics in 2x2 layout */}
-        <PrimaryMetricCell metricKey="pressure" />
-        <PrimaryMetricCell metricKey="airTemperature" />
-        <PrimaryMetricCell metricKey="humidity" />
-        <PrimaryMetricCell metricKey="dewPoint" />
-        
-        {/* Secondary Grid: Trend visualizations (full-width) */}
-        <TrendLine 
-          metricKey="pressure"
-          timeWindowMs={300000}
-          showXAxis={true}
-          showYAxis={true}
-        />
-        <TrendLine 
-          metricKey="airTemperature"
-          timeWindowMs={300000}
-          showXAxis={true}
-          showYAxis={true}
-        />
-      </TemplatedWidget>
-    );
-  },
-);
+      {/* Secondary Grid: Trend visualizations (full-width) */}
+      <TrendLine metricKey="pressure" timeWindowMs={300000} showXAxis={true} showYAxis={true} />
+      <TrendLine
+        metricKey="airTemperature"
+        timeWindowMs={300000}
+        showXAxis={true}
+        showYAxis={true}
+      />
+    </TemplatedWidget>
+  );
+});
 
 WeatherWidget.displayName = 'WeatherWidget';
 

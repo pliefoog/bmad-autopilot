@@ -63,12 +63,14 @@ wss.on('connection', (ws, req) => {
       console.log('✅ Connected to WiFi bridge');
 
       // Notify browser
-      ws.send(JSON.stringify({
-        type: 'connection',
-        status: 'connected',
-        host: WIFI_BRIDGE_HOST,
-        port: WIFI_BRIDGE_PORT,
-      }));
+      ws.send(
+        JSON.stringify({
+          type: 'connection',
+          status: 'connected',
+          host: WIFI_BRIDGE_HOST,
+          port: WIFI_BRIDGE_PORT,
+        }),
+      );
     });
 
     tcpSocket.on('data', (data) => {
@@ -76,31 +78,37 @@ wss.on('connection', (ws, req) => {
       const nmeaData = data.toString();
       console.log(`📡 NMEA → Browser: ${nmeaData.trim().substring(0, 50)}...`);
 
-      ws.send(JSON.stringify({
-        type: 'nmea',
-        data: nmeaData,
-        timestamp: Date.now(),
-      }));
+      ws.send(
+        JSON.stringify({
+          type: 'nmea',
+          data: nmeaData,
+          timestamp: Date.now(),
+        }),
+      );
     });
 
     tcpSocket.on('error', (err) => {
       isConnecting = false;
       console.error(`❌ WiFi bridge error: ${err.message}`);
 
-      ws.send(JSON.stringify({
-        type: 'error',
-        message: err.message,
-      }));
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          message: err.message,
+        }),
+      );
     });
 
     tcpSocket.on('close', () => {
       isConnecting = false;
       console.log('🔌 WiFi bridge connection closed');
 
-      ws.send(JSON.stringify({
-        type: 'connection',
-        status: 'disconnected',
-      }));
+      ws.send(
+        JSON.stringify({
+          type: 'connection',
+          status: 'disconnected',
+        }),
+      );
 
       // Auto-reconnect after 5 seconds
       setTimeout(() => {
@@ -135,10 +143,12 @@ wss.on('connection', (ws, req) => {
             console.log(`🎮 Autopilot command → WiFi bridge: ${data.command}`);
             tcpSocket.write(data.command);
           } else {
-            ws.send(JSON.stringify({
-              type: 'error',
-              message: 'Not connected to WiFi bridge',
-            }));
+            ws.send(
+              JSON.stringify({
+                type: 'error',
+                message: 'Not connected to WiFi bridge',
+              }),
+            );
           }
           break;
 

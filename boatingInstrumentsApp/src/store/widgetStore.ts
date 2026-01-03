@@ -33,12 +33,18 @@ interface WidgetActions {
   setEnableWidgetAutoRemoval: (enabled: boolean) => void;
   cleanupExpiredWidgetsWithConfig: () => void;
   resetAppToDefaults: () => Promise<void>;
-  
+
   // Drag-and-drop actions
   reorderWidget: (fromIndex: number, toIndex: number) => void;
   insertPlaceholder: (index: number) => void;
   removePlaceholder: () => void;
-  moveWidgetCrossPage: (widgetId: string, fromPageIndex: number, toPageIndex: number, toPosition: number, widgetsPerPage: number) => void;
+  moveWidgetCrossPage: (
+    widgetId: string,
+    fromPageIndex: number,
+    toPageIndex: number,
+    toPosition: number,
+    widgetsPerPage: number,
+  ) => void;
 }
 
 type WidgetStore = WidgetState & WidgetActions;
@@ -111,7 +117,7 @@ export const useWidgetStore = create<WidgetStore>()(
 
           // STEP 2: Add widgets for newly detected instances
           const existingWidgetIds = new Set(widgets.map((w) => w.id));
-          
+
           const instancesToAdd = detectedInstances.filter(
             (inst) => toAdd.has(inst.id) && !existingWidgetIds.has(inst.id),
           );
@@ -121,11 +127,14 @@ export const useWidgetStore = create<WidgetStore>()(
           let widgetsModified = false;
           detectedInstances.forEach((instance) => {
             if (instance.widgetConfig && existingWidgetIds.has(instance.id)) {
-              const existingWidget = widgets.find(w => w.id === instance.id);
-              if (existingWidget && !existingWidget.settings?.customDefinition && 
-                  instance.widgetConfig.settings?.customDefinition) {
+              const existingWidget = widgets.find((w) => w.id === instance.id);
+              if (
+                existingWidget &&
+                !existingWidget.settings?.customDefinition &&
+                instance.widgetConfig.settings?.customDefinition
+              ) {
                 // Replace the widget entirely (don't mutate)
-                const widgetIndex = widgets.findIndex(w => w.id === instance.id);
+                const widgetIndex = widgets.findIndex((w) => w.id === instance.id);
                 if (widgetIndex !== -1) {
                   widgets[widgetIndex] = {
                     ...instance.widgetConfig,
@@ -136,7 +145,7 @@ export const useWidgetStore = create<WidgetStore>()(
               }
             }
           });
-          
+
           // Only proceed if we added widgets or modified existing ones
           if (instancesToAdd.length === 0 && !widgetsModified) {
             return;
@@ -311,7 +320,7 @@ export const useWidgetStore = create<WidgetStore>()(
           if (!currentDashboard) return;
 
           const newWidgets = [...currentDashboard.widgets];
-          
+
           // Validate indices
           if (fromIndex < 0 || fromIndex >= newWidgets.length) return;
           if (toIndex < 0 || toIndex >= newWidgets.length) return;
@@ -319,7 +328,7 @@ export const useWidgetStore = create<WidgetStore>()(
 
           // Remove from source
           const [removed] = newWidgets.splice(fromIndex, 1);
-          
+
           // Insert at target
           newWidgets.splice(toIndex, 0, removed);
 
@@ -428,9 +437,7 @@ export const useWidgetStore = create<WidgetStore>()(
           dashboard: {
             ...state.dashboard,
             // CRITICAL: Filter out placeholder before persisting
-            widgets: state.dashboard.widgets.filter(
-              (w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID,
-            ),
+            widgets: state.dashboard.widgets.filter((w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID),
           },
           widgetExpirationTimeout: state.widgetExpirationTimeout,
           enableWidgetAutoRemoval: state.enableWidgetAutoRemoval,

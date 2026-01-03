@@ -1,6 +1,6 @@
 /**
  * Unit Tests for Live Data Source
- * 
+ *
  * Epic 10.5 - Test Coverage & Quality
  * AC1: Unit test coverage for data source components with mocked inputs
  */
@@ -20,7 +20,7 @@ describe('LiveDataSource', () => {
   beforeEach(() => {
     config = {
       host: '192.168.1.10',
-      port: 10110
+      port: 10110,
     };
 
     mockSocket = new EventEmitter();
@@ -53,7 +53,7 @@ describe('LiveDataSource', () => {
       expect(liveDataSource.stats).toEqual({
         messagesReceived: 0,
         connectionTime: null,
-        lastMessage: null
+        lastMessage: null,
       });
     });
   });
@@ -138,7 +138,7 @@ describe('LiveDataSource', () => {
       const sentence1 = '$GPRMC,123519,A,4807.038,N,01131.000,E,000.0,360.0,230394,003.1,W*6A';
       const sentence2 = '$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47';
       const multipleData = sentence1 + '\n' + sentence2 + '\n';
-      
+
       mockSocket.emit('data', Buffer.from(multipleData));
 
       expect(dataSpy).toHaveBeenCalledTimes(2);
@@ -199,9 +199,11 @@ describe('LiveDataSource', () => {
       mockSocket.emit('close');
 
       setTimeout(() => {
-        expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({
-          message: 'Maximum reconnection attempts reached'
-        }));
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: 'Maximum reconnection attempts reached',
+          }),
+        );
         done();
       }, 10);
     });

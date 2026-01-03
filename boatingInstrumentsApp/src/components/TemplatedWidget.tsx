@@ -307,7 +307,7 @@ const GridSectionRenderer: React.FC<GridSectionRendererProps> = ({
   const gridBorderWidth = debugLayout ? DEBUG_GRID_BORDER : 0;
   const cellBorderWidth = debugLayout ? DEBUG_CELL_BORDER : 0;
 
-  let availableWidth = widgetWidth - GRID_PADDING * 2 - gridBorderWidth * 2; // Width inside gridContainer minus grid borders
+  const availableWidth = widgetWidth - GRID_PADDING * 2 - gridBorderWidth * 2; // Width inside gridContainer minus grid borders
 
   const colGap = 8;
 

@@ -165,7 +165,7 @@ interface StringField extends BaseFieldConfig {
   min?: never; // No numeric constraints
   max?: never;
   uiType: 'textInput' | 'picker' | null;
-  options?: Array<{ label: string; value: string; default?: boolean }>; // For picker type
+  options?: { label: string; value: string; default?: boolean }[]; // For picker type
 }
 
 /**
@@ -1284,7 +1284,8 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         unitType: 'angularVelocity',
         uiType: 'numericInput',
         iostate: 'readOnly',
-        helpText: 'Rate of turn in degrees per minute (calculated from heading if not provided by hardware)',
+        helpText:
+          'Rate of turn in degrees per minute (calculated from heading if not provided by hardware)',
       },
     ],
 
@@ -2189,20 +2190,20 @@ export function getSmartDefaults(
 
 /**
  * Validate that all fields have required mnemonic property
- * 
+ *
  * **Registry-First Architecture Requirement:**
  * All sensor fields MUST have a mnemonic for auto-fetch display cells.
  * This validation runs at module initialization to enforce the constraint.
- * 
+ *
  * **For AI Agents:**
  * If this throws, a field is missing its mnemonic property.
  * Mnemonics are short 2-5 character codes (VLT, RPM, TMP, etc.)
- * 
+ *
  * @throws Error if any field is missing mnemonic property
  */
 function validateSensorRegistry(): void {
   const errors: string[] = [];
-  
+
   for (const [sensorType, config] of Object.entries(SENSOR_CONFIG_REGISTRY)) {
     for (const field of config.fields) {
       if (!field.mnemonic) {
@@ -2210,11 +2211,11 @@ function validateSensorRegistry(): void {
       }
     }
   }
-  
+
   if (errors.length > 0) {
     throw new Error(
       `SensorConfigRegistry validation failed:\n${errors.join('\n')}\n\n` +
-      `All fields must have a 'mnemonic' property for registry-first widget architecture.`
+        `All fields must have a 'mnemonic' property for registry-first widget architecture.`,
     );
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Alarm Types - Core alarm level definitions and visual states
- * 
+ *
  * Defines the 4-level numeric alarm system with priority-based evaluation:
  * 0 = NONE: Normal operation
  * 1 = STALE: Data too old to trust (visual warning only, no sound)
@@ -13,10 +13,10 @@
  * Uses numeric values for performance and storage efficiency
  */
 export const enum AlarmLevel {
-  NONE = 0,      // Normal operation
-  STALE = 1,     // Data too old to trust
-  WARNING = 2,   // Warning threshold breached
-  CRITICAL = 3   // Critical threshold breached
+  NONE = 0, // Normal operation
+  STALE = 1, // Data too old to trust
+  WARNING = 2, // Warning threshold breached
+  CRITICAL = 3, // Critical threshold breached
 }
 
 /**
@@ -37,5 +37,5 @@ export const ALARM_VISUAL_STATES: Record<AlarmLevel, AlarmVisualState> = {
   [AlarmLevel.NONE]: { color: 'normal', flash: false, sound: false },
   [AlarmLevel.STALE]: { color: 'normal', flash: true, sound: false },
   [AlarmLevel.WARNING]: { color: 'orange', flash: false, sound: true },
-  [AlarmLevel.CRITICAL]: { color: 'red', flash: true, sound: true }
+  [AlarmLevel.CRITICAL]: { color: 'red', flash: true, sound: true },
 };

@@ -40,7 +40,7 @@ export class SimulatorTestClient {
   private currentPort: number = 0;
   private websocket: WebSocket | null = null;
   private wsPort: number = 8080;
-  private messageBuffer: Array<{ type: string; data: string; timestamp: number }> = [];
+  private messageBuffer: { type: string; data: string; timestamp: number }[] = [];
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private isMockMode: boolean = false;
@@ -400,7 +400,7 @@ export class SimulatorTestClient {
    */
   getRealtimeMessages(
     maxMessages: number = 10,
-  ): Array<{ type: string; data: string; timestamp: number }> {
+  ): { type: string; data: string; timestamp: number }[] {
     return this.messageBuffer.slice(-maxMessages);
   }
 

@@ -113,15 +113,13 @@ class InstanceDetectionService {
   private readonly EVENT_THROTTLE_MS = 100; // Max 10 events/sec per sensor instance
 
   // Callback system for instance updates
-  private instanceCallbacks: Array<
-    (instances: {
-      engines: DetectedInstance[];
-      batteries: DetectedInstance[];
-      tanks: DetectedInstance[];
-      temperatures: DetectedInstance[];
-      instruments: DetectedInstance[];
-    }) => void
-  > = [];
+  private instanceCallbacks: ((instances: {
+    engines: DetectedInstance[];
+    batteries: DetectedInstance[];
+    tanks: DetectedInstance[];
+    temperatures: DetectedInstance[];
+    instruments: DetectedInstance[];
+  }) => void)[] = [];
 
   // Runtime management tracking
   private runtimeMetrics: RuntimeMetrics = {

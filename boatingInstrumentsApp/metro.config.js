@@ -16,7 +16,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === '../../App' && context.originModulePath.includes('expo/AppEntry')) {
     return context.resolveRequest(context, '../../index', platform);
   }
-  
+
   // Use default resolution for all other modules
   return context.resolveRequest(context, moduleName, platform);
 };
@@ -66,7 +66,5 @@ config.resolver = {
     /.*\/node_modules\/.*\.mjs$/,
   ],
 };
-
-
 
 module.exports = config;

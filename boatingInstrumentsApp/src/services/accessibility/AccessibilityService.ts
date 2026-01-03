@@ -31,7 +31,7 @@ export interface AccessibilityState {
 export type AnnouncementPriority = 'polite' | 'assertive';
 
 class AccessibilityServiceClass {
-  private listeners: Array<() => void> = [];
+  private listeners: (() => void)[] = [];
   private state: AccessibilityState = {
     screenReaderEnabled: false,
     reduceMotionEnabled: false,

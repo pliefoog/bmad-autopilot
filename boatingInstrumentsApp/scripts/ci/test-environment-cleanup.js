@@ -19,40 +19,21 @@ class TestEnvironmentCleanup {
     this.config = {
       timeouts: {
         gracefulShutdown: 10000,
-        forceKill: 5000
+        forceKill: 5000,
       },
       processes: {
-        patterns: [
-          'nmea-bridge-simulator',
-          'jest',
-          'expo',
-          '@expo/cli',
-          'metro'
-        ]
+        patterns: ['nmea-bridge-simulator', 'jest', 'expo', '@expo/cli', 'metro'],
       },
       ports: {
         ranges: [
-          { start: 8080, end: 8090 },  // WebSocket ports
-          { start: 9090, end: 9100 },  // API ports
-          { start: 2000, end: 2010 },  // TCP ports
-        ]
+          { start: 8080, end: 8090 }, // WebSocket ports
+          { start: 9090, end: 9100 }, // API ports
+          { start: 2000, end: 2010 }, // TCP ports
+        ],
       },
       directories: {
-        temp: [
-          'coverage/',
-          'tmp/',
-          '.tmp/',
-          'node_modules/.cache/',
-          '.expo/',
-          '.metro-cache/'
-        ],
-        preserve: [
-          'node_modules/',
-          '.git/',
-          'src/',
-          'app/',
-          '__tests__/'
-        ]
+        temp: ['coverage/', 'tmp/', '.tmp/', 'node_modules/.cache/', '.expo/', '.metro-cache/'],
+        preserve: ['node_modules/', '.git/', 'src/', 'app/', '__tests__/'],
       },
       files: {
         cleanup: [
@@ -62,17 +43,17 @@ class TestEnvironmentCleanup {
           '*.log',
           '*.pid',
           '.coverage-tmp*',
-          'jest-results*.json'
-        ]
-      }
+          'jest-results*.json',
+        ],
+      },
     };
-    
+
     this.stats = {
       processesKilled: 0,
       portsFreed: 0,
       filesDeleted: 0,
       directoriesCleared: 0,
-      errors: []
+      errors: [],
     };
   }
 
@@ -100,26 +81,25 @@ class TestEnvironmentCleanup {
       await this.verifyCleanup();
 
       const duration = Date.now() - startTime;
-      
+
       console.log(`✅ Cleanup completed successfully in ${duration}ms`);
       this.printCleanupSummary();
-      
-      return { 
-        success: true, 
-        duration,
-        stats: this.stats 
-      };
 
+      return {
+        success: true,
+        duration,
+        stats: this.stats,
+      };
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(`❌ Cleanup failed after ${duration}ms: ${error.message}`);
       this.stats.errors.push(error.message);
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         duration,
         error: error.message,
-        stats: this.stats 
+        stats: this.stats,
       };
     }
   }
@@ -134,7 +114,10 @@ class TestEnvironmentCleanup {
       try {
         // Find processes matching pattern
         const { stdout } = await execAsync(`pgrep -f "${pattern}"`);
-        const pids = stdout.trim().split('\n').filter(pid => pid);
+        const pids = stdout
+          .trim()
+          .split('\n')
+          .filter((pid) => pid);
 
         for (const pid of pids) {
           await this.stopProcess(pid, pattern);
@@ -162,7 +145,7 @@ class TestEnvironmentCleanup {
       await execAsync(`kill -TERM ${pid}`);
 
       // Wait for graceful shutdown
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Check if process still exists
       try {
@@ -175,7 +158,6 @@ class TestEnvironmentCleanup {
       }
 
       this.stats.processesKilled++;
-
     } catch (error) {
       this.stats.errors.push(`Error stopping process ${pid}: ${error.message}`);
     }
@@ -190,7 +172,10 @@ class TestEnvironmentCleanup {
         try {
           // Find process using port (macOS/Linux compatible)
           const { stdout } = await execAsync(`lsof -ti:${port} 2>/dev/null || true`);
-          const pids = stdout.trim().split('\n').filter(pid => pid);
+          const pids = stdout
+            .trim()
+            .split('\n')
+            .filter((pid) => pid);
 
           for (const pid of pids) {
             await this.stopProcess(pid, `port-${port}`);
@@ -212,7 +197,7 @@ class TestEnvironmentCleanup {
     // Check for simulator configuration files that might indicate port usage
     const configFiles = [
       path.join(__dirname, 'simulator-ports.json'),
-      path.join(__dirname, '../..', '.vscode/simulator-status.json')
+      path.join(__dirname, '../..', '.vscode/simulator-status.json'),
     ];
 
     for (const configFile of configFiles) {
@@ -237,7 +222,10 @@ class TestEnvironmentCleanup {
   async freePort(port, service) {
     try {
       const { stdout } = await execAsync(`lsof -ti:${port} 2>/dev/null || true`);
-      const pids = stdout.trim().split('\n').filter(pid => pid);
+      const pids = stdout
+        .trim()
+        .split('\n')
+        .filter((pid) => pid);
 
       for (const pid of pids) {
         console.log(`  🔓 Freeing port ${port} (${service}) from PID ${pid}`);
@@ -270,19 +258,21 @@ class TestEnvironmentCleanup {
    */
   async cleanupDirectory(dirPath) {
     const fullPath = path.resolve(dirPath);
-    
+
     try {
       if (fs.existsSync(fullPath)) {
         console.log(`  📁 Cleaning directory: ${dirPath}`);
-        
+
         if (dirPath.endsWith('coverage/') || dirPath.endsWith('.cache/')) {
           // For cache directories, remove contents but keep directory
-          const { stdout } = await execAsync(`find "${fullPath}" -type f -delete 2>/dev/null || true`);
+          const { stdout } = await execAsync(
+            `find "${fullPath}" -type f -delete 2>/dev/null || true`,
+          );
         } else {
           // For temp directories, remove entire directory
           await execAsync(`rm -rf "${fullPath}"`);
         }
-        
+
         this.stats.directoriesCleared++;
       }
     } catch (error) {
@@ -296,13 +286,17 @@ class TestEnvironmentCleanup {
   async cleanupFilePattern(pattern) {
     try {
       const searchDirs = [__dirname, path.join(__dirname, '../..')];
-      
+
       for (const searchDir of searchDirs) {
-        console.log(`  🗑️ Cleaning files matching: ${pattern} in ${path.relative(process.cwd(), searchDir)}`);
-        
+        console.log(
+          `  🗑️ Cleaning files matching: ${pattern} in ${path.relative(process.cwd(), searchDir)}`,
+        );
+
         if (pattern.includes('*')) {
           // Handle glob patterns
-          const { stdout } = await execAsync(`find "${searchDir}" -maxdepth 2 -name "${pattern}" -type f -delete 2>/dev/null || true`);
+          const { stdout } = await execAsync(
+            `find "${searchDir}" -maxdepth 2 -name "${pattern}" -type f -delete 2>/dev/null || true`,
+          );
         } else {
           // Handle specific files
           const filePath = path.join(searchDir, pattern);
@@ -346,7 +340,6 @@ class TestEnvironmentCleanup {
       delete process.env.JEST_WORKER_ID;
 
       console.log('  ♻️ Environment variables reset');
-
     } catch (error) {
       this.stats.errors.push(`Error resetting application state: ${error.message}`);
     }
@@ -388,7 +381,7 @@ class TestEnvironmentCleanup {
 
     if (verificationErrors.length > 0) {
       console.warn('⚠️ Verification warnings:');
-      verificationErrors.forEach(error => console.warn(`  - ${error}`));
+      verificationErrors.forEach((error) => console.warn(`  - ${error}`));
       this.stats.errors.push(...verificationErrors);
     } else {
       console.log('✅ Cleanup verification passed');
@@ -404,11 +397,11 @@ class TestEnvironmentCleanup {
     console.log(`  Ports freed: ${this.stats.portsFreed}`);
     console.log(`  Files deleted: ${this.stats.filesDeleted}`);
     console.log(`  Directories cleared: ${this.stats.directoriesCleared}`);
-    
+
     if (this.stats.errors.length > 0) {
       console.log(`  Errors: ${this.stats.errors.length}`);
       console.log('  Error details:');
-      this.stats.errors.forEach(error => console.log(`    - ${error}`));
+      this.stats.errors.forEach((error) => console.log(`    - ${error}`));
     } else {
       console.log('  Errors: 0');
     }
@@ -419,31 +412,30 @@ class TestEnvironmentCleanup {
    */
   async quickCleanup() {
     console.log('⚡ Performing quick cleanup for CI...');
-    
+
     try {
       // Kill simulator processes quickly
       await execAsync('pkill -f nmea-bridge-simulator || true');
-      
+
       // Free up standard ports
       for (const port of [8080, 9090, 2000]) {
         await execAsync(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`);
       }
-      
+
       // Remove key files
       const filesToRemove = [
         path.join(__dirname, 'simulator-ports.json'),
-        path.join(__dirname, '../..', '.vscode/simulator-status.json')
+        path.join(__dirname, '../..', '.vscode/simulator-status.json'),
       ];
-      
+
       for (const file of filesToRemove) {
         if (fs.existsSync(file)) {
           fs.unlinkSync(file);
         }
       }
-      
+
       console.log('✅ Quick cleanup completed');
       return { success: true };
-      
     } catch (error) {
       console.error(`❌ Quick cleanup failed: ${error.message}`);
       return { success: false, error: error.message };
@@ -459,28 +451,28 @@ if (require.main === module) {
   async function handleCommand() {
     try {
       let result;
-      
+
       switch (command) {
         case 'full':
           result = await cleanup.performCleanup();
           break;
-          
+
         case 'quick':
           result = await cleanup.quickCleanup();
           break;
-          
+
         case 'processes':
           await cleanup.stopAllProcesses();
           cleanup.printCleanupSummary();
           result = { success: true };
           break;
-          
+
         case 'ports':
           await cleanup.freeUpPorts();
           cleanup.printCleanupSummary();
           result = { success: true };
           break;
-          
+
         case 'files':
           await cleanup.cleanupFiles();
           cleanup.printCleanupSummary();

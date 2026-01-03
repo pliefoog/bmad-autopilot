@@ -404,12 +404,12 @@ export function useSlideAnimation(
  * ```
  */
 export function createParallelAnimation(
-  animations: Array<{
+  animations: {
     value: Animated.Value;
     toValue: number;
     duration?: number;
     easing?: (value: number) => number;
-  }>,
+  }[],
 ): Animated.CompositeAnimation {
   const animatedValues = animations.map(({ value, toValue, duration, easing }) =>
     Animated.timing(value, {
@@ -443,13 +443,13 @@ export function createParallelAnimation(
  * ```
  */
 export function createSequenceAnimation(
-  animations: Array<{
+  animations: {
     value: Animated.Value;
     toValue: number;
     duration?: number;
     easing?: (value: number) => number;
     delay?: number;
-  }>,
+  }[],
 ): Animated.CompositeAnimation {
   const animatedValues = animations.map(({ value, toValue, duration, easing, delay }) => {
     const anim = Animated.timing(value, {

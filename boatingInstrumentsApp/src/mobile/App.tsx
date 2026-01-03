@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
 });
 
 // Wrap in StrictMode for development to catch side effects and unsafe patterns
-export default __DEV__ 
+export default __DEV__
   ? () => (
       <StrictMode>
         <App />

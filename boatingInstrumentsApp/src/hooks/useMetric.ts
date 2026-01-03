@@ -120,7 +120,7 @@ export function useMetric(
       }
     },
     // Shallow equality - only re-render if version number changes
-    (prev, next) => prev === next
+    (prev, next) => prev === next,
   );
 
   // Fetch metric data when version changes (memoized)
@@ -245,10 +245,7 @@ export function useMetrics(
  * );
  * ```
  */
-export function useSensorVersion(
-  sensorType: SensorType,
-  instance: number,
-): number | null {
+export function useSensorVersion(sensorType: SensorType, instance: number): number | null {
   return useNmeaStore((state) => {
     try {
       if (!state?.nmeaData?.sensors) return null;

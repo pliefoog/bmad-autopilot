@@ -4,7 +4,7 @@ module.exports = {
   setupFilesAfterEnv: [
     '<rootDir>/__tests__/setup.ts',
     '<rootDir>/__tests__/setup-test-environment.ts',
-    '<rootDir>/src/test-utils/performance-monitor-setup.ts'
+    '<rootDir>/src/test-utils/performance-monitor-setup.ts',
   ],
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|react-native-tcp-socket|react-native-udp|@react-native-async-storage|react-native-vector-icons|@sentry|zustand|react-native-svg|react-native-sound|expo-brightness|expo-modules-core|react-native-gesture-handler)/)',
@@ -113,39 +113,51 @@ module.exports = {
   coverageDirectory: 'coverage',
   collectCoverage: false, // Enable via CLI flag for traceability reports
   coverageReporters: [
-    'json-summary', 
-    'text', 
+    'json-summary',
+    'text',
     'lcov',
-    ['text', { 'file': 'coverage/coverage-summary.txt' }],
-    ['json', { 'file': 'coverage/coverage-final.json' }]
+    ['text', { file: 'coverage/coverage-summary.txt' }],
+    ['json', { file: 'coverage/coverage-final.json' }],
   ],
-  
+
   // Story 11.7: VS Code Test Explorer Integration - Professional Test Reporting
   reporters: [
     'default',
     // AC1: Professional Test Documentation Display with PURPOSE/REQUIREMENT/METHOD headers
-    ['<rootDir>/src/testing/jest-reporters/professional-test-documentation-reporter.js', {
-      outputFile: 'coverage/vscode-test-explorer.json',
-      traceabilityFile: 'coverage/requirement-traceability.json'
-    }],
+    [
+      '<rootDir>/src/testing/jest-reporters/professional-test-documentation-reporter.js',
+      {
+        outputFile: 'coverage/vscode-test-explorer.json',
+        traceabilityFile: 'coverage/requirement-traceability.json',
+      },
+    ],
     // AC2: Real-Time Coverage Visualization with marine safety focus areas
-    ['<rootDir>/src/testing/jest-reporters/real-time-marine-coverage-reporter.js', {
-      updateInterval: 50, // <100ms latency requirement
-      outputFile: 'coverage/vscode-coverage-overlay.json'
-    }],
+    [
+      '<rootDir>/src/testing/jest-reporters/real-time-marine-coverage-reporter.js',
+      {
+        updateInterval: 50, // <100ms latency requirement
+        outputFile: 'coverage/vscode-coverage-overlay.json',
+      },
+    ],
     // AC3: Simulator Connection Status Integration
-    ['<rootDir>/src/testing/jest-reporters/simulator-status-integration.js', {
-      discoveryPorts: [9090, 8080],
-      discoveryTimeout: 5000,
-      healthCheckInterval: 10000
-    }],
+    [
+      '<rootDir>/src/testing/jest-reporters/simulator-status-integration.js',
+      {
+        discoveryPorts: [9090, 8080],
+        discoveryTimeout: 5000,
+        healthCheckInterval: 10000,
+      },
+    ],
     // AC4: Performance Monitoring Integration with threshold violations
-    ['<rootDir>/src/testing/jest-reporters/performance-monitoring-integration.js', {
-      renderThreshold: 16, // 60fps requirement
-      memoryThreshold: 50, // MB increase limit
-      dataLatencyThreshold: 100 // NMEA → widget update limit
-    }]
+    [
+      '<rootDir>/src/testing/jest-reporters/performance-monitoring-integration.js',
+      {
+        renderThreshold: 16, // 60fps requirement
+        memoryThreshold: 50, // MB increase limit
+        dataLatencyThreshold: 100, // NMEA → widget update limit
+      },
+    ],
   ],
-  
+
   testResultsProcessor: undefined, // Can be configured for custom result processing
 };

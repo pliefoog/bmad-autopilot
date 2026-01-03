@@ -27,16 +27,16 @@ ws.on('open', () => {
 ws.on('message', (data) => {
   messageCount++;
   const message = data.toString().trim();
-  
+
   // Filter for PCDIN messages
   if (message.startsWith('$PCDIN')) {
     pcdinCount++;
-    
+
     // Parse PCDIN message
     const parts = message.split(',');
     const pgnHex = parts[1];
     const pgnDec = parseInt(pgnHex, 16);
-    
+
     let pgnType = 'Unknown';
     switch (pgnDec) {
       case 127488:
@@ -52,12 +52,12 @@ ws.on('message', (data) => {
         pgnType = 'Fluid Level';
         break;
     }
-    
+
     console.log(`[${new Date().toLocaleTimeString()}] PCDIN #${pcdinCount}`);
     console.log(`  PGN: ${pgnDec} (0x${pgnHex}) - ${pgnType}`);
     console.log(`  Data: ${message}`);
     console.log('');
-    
+
     lastPcdinMessages.push({ time: new Date(), message, pgn: pgnDec });
     if (lastPcdinMessages.length > 10) {
       lastPcdinMessages.shift();
@@ -76,7 +76,7 @@ ws.on('close', () => {
   console.log(`Statistics:`);
   console.log(`  Total messages: ${messageCount}`);
   console.log(`  PCDIN messages: ${pcdinCount}`);
-  
+
   if (pcdinCount === 0) {
     console.log('\n⚠️  No PCDIN messages received!');
     console.log('   Make sure your scenario file includes PCDIN sentences.');
@@ -88,14 +88,14 @@ process.on('SIGINT', () => {
   console.log('\n\n📊 Final Statistics:');
   console.log(`  Total messages: ${messageCount}`);
   console.log(`  PCDIN messages: ${pcdinCount}`);
-  
+
   if (lastPcdinMessages.length > 0) {
     console.log('\n📝 Last PCDIN messages:');
     lastPcdinMessages.forEach((msg, idx) => {
       console.log(`  ${idx + 1}. PGN ${msg.pgn}: ${msg.message.substring(0, 60)}...`);
     });
   }
-  
+
   console.log('\n👋 Goodbye!\n');
   ws.close();
   process.exit(0);

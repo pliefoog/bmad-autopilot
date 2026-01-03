@@ -9,6 +9,9 @@
 
 import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
 
+// Import SensorInstance type for new storage pattern
+import type { SensorInstance } from './SensorInstance';
+
 // NMEA 0183 Autopilot Support:
 // - RSA: Rudder Sensor Angle (rudder position)
 // - APB: Autopilot Sentence B (navigation to waypoint)
@@ -280,9 +283,6 @@ export type SensorType =
   | 'autopilot'
   | 'navigation'
   | 'weather';
-
-// Import SensorInstance type for new storage pattern
-import type { SensorInstance } from './SensorInstance';
 
 // Main sensors data structure
 // NEW: Stores SensorInstance class instances instead of plain objects

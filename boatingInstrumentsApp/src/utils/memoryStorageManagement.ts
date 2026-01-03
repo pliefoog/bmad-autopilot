@@ -20,6 +20,9 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 
+// Import React for hooks
+import React from 'react';
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -86,7 +89,7 @@ export const STORAGE_CONFIG = {
  * Use in components that create long-lived subscriptions
  */
 export class CleanupTracker {
-  private cleanupFunctions: Array<() => void> = [];
+  private cleanupFunctions: (() => void)[] = [];
 
   /**
    * Register cleanup function
@@ -468,8 +471,8 @@ export class TimeSeriesBuffer<T> {
 
     // Get all recent data and separate old from recent
     const recentArray = this.recentData.toArray();
-    const oldPoints: Array<{ timestamp: number; value: T }> = [];
-    const stillRecentPoints: Array<{ timestamp: number; value: T }> = [];
+    const oldPoints: { timestamp: number; value: T }[] = [];
+    const stillRecentPoints: { timestamp: number; value: T }[] = [];
 
     // Separate data into old (to decimate) and still recent (to keep)
     for (const point of recentArray) {
@@ -495,14 +498,14 @@ export class TimeSeriesBuffer<T> {
   /**
    * Get all data points (recent + old)
    */
-  getAll(): Array<{ timestamp: number; value: T }> {
+  getAll(): { timestamp: number; value: T }[] {
     return [...this.oldData.toArray(), ...this.recentData.toArray()];
   }
 
   /**
    * Get data in time range
    */
-  getRange(startTime: number, endTime: number): Array<{ timestamp: number; value: T }> {
+  getRange(startTime: number, endTime: number): { timestamp: number; value: T }[] {
     return this.getAll().filter(
       (point) => point.timestamp >= startTime && point.timestamp <= endTime,
     );
@@ -530,7 +533,7 @@ export class TimeSeriesBuffer<T> {
    * Get data for chart rendering
    * Returns all data points in the time window (no downsampling)
    */
-  getForChart(pixelWidth: number, timeWindowMs?: number): Array<{ timestamp: number; value: T }> {
+  getForChart(pixelWidth: number, timeWindowMs?: number): { timestamp: number; value: T }[] {
     // Return all raw data points - no sampling/decimation
     return timeWindowMs ? this.getRange(Date.now() - timeWindowMs, Date.now()) : this.getAll();
   }
@@ -538,20 +541,20 @@ export class TimeSeriesBuffer<T> {
   /**
    * Get data within time window (optimized for widgets)
    * More efficient than getForChart for simple time-windowed queries
-   * 
+   *
    * @param timeWindowMs - Time window in milliseconds from now
    * @returns Array of data points within window
    */
-  getInWindow(timeWindowMs: number): Array<{ timestamp: number; value: T }> {
+  getInWindow(timeWindowMs: number): { timestamp: number; value: T }[] {
     const now = Date.now();
     const startTime = now - timeWindowMs;
-    
+
     // Optimization: Only scan recent data if window is small
     if (timeWindowMs <= this.recentThresholdMs) {
       // Fast path: only recent data needs scanning
       return this.recentData.toArray().filter((point) => point.timestamp >= startTime);
     }
-    
+
     // Full path: scan both buffers
     return this.getRange(startTime, now);
   }
@@ -629,7 +632,7 @@ export interface StorageInfo {
  */
 export class StorageMonitor {
   private storageInfo: StorageInfo | null = null;
-  private listeners: Array<(info: StorageInfo) => void> = [];
+  private listeners: ((info: StorageInfo) => void)[] = [];
 
   /**
    * Check storage usage
@@ -779,6 +782,3 @@ export function useStorageMonitor(): StorageInfo | null {
 
   return storageInfo;
 }
-
-// Import React for hooks
-import React from 'react';

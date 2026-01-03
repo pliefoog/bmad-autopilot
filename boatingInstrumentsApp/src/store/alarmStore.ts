@@ -448,7 +448,7 @@ export const useAlarmStore = create<AlarmStore>()(
       {
         name: 'alarm-store',
         version: STORAGE_VERSION,
-        
+
         partialize: (state) => ({
           thresholds: state.thresholds,
           settings: state.settings,

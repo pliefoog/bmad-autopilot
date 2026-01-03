@@ -1,6 +1,6 @@
 /**
  * NMEA Scenario Schema Validator
- * 
+ *
  * Defines and validates the structure of scenario YAML files
  * to ensure consistency across all test scenarios.
  */
@@ -13,37 +13,42 @@ class ScenarioSchemaValidator {
    */
   static validate(scenario) {
     const errors = [];
-    
+
     // Required top-level fields
     if (!scenario.name || typeof scenario.name !== 'string') {
       errors.push('Missing or invalid required field: name (string)');
     }
-    
+
     if (!scenario.description || typeof scenario.description !== 'string') {
       errors.push('Missing or invalid required field: description (string)');
     }
-    
-    if (!scenario.bridge_mode || !['nmea0183', 'nmea2000', 'hybrid'].includes(scenario.bridge_mode)) {
-      errors.push('Missing or invalid required field: bridge_mode (must be: nmea0183, nmea2000, or hybrid)');
+
+    if (
+      !scenario.bridge_mode ||
+      !['nmea0183', 'nmea2000', 'hybrid'].includes(scenario.bridge_mode)
+    ) {
+      errors.push(
+        'Missing or invalid required field: bridge_mode (must be: nmea0183, nmea2000, or hybrid)',
+      );
     }
-    
+
     // Optional but recommended fields
     if (scenario.version && typeof scenario.version !== 'string') {
       errors.push('Invalid field: version (must be string, e.g., "1.0")');
     }
-    
+
     if (scenario.category && typeof scenario.category !== 'string') {
       errors.push('Invalid field: category (must be string)');
     }
-    
+
     if (scenario.duration && typeof scenario.duration !== 'number') {
       errors.push('Invalid field: duration (must be number in milliseconds)');
     }
-    
+
     if (scenario.message_rate && typeof scenario.message_rate !== 'number') {
       errors.push('Invalid field: message_rate (must be number in Hz)');
     }
-    
+
     // Validate nmea_sentences array
     if (scenario.nmea_sentences) {
       if (!Array.isArray(scenario.nmea_sentences)) {
@@ -54,18 +59,18 @@ class ScenarioSchemaValidator {
         });
       }
     }
-    
+
     // Check for deprecated field names
     if (scenario.sentences) {
       errors.push('Deprecated field: "sentences" should be renamed to "nmea_sentences"');
     }
-    
+
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
-  
+
   /**
    * Validate an individual NMEA sentence definition
    * @param {Object} sentence - Sentence definition object
@@ -74,35 +79,35 @@ class ScenarioSchemaValidator {
    */
   static validateSentence(sentence, index, errors) {
     const prefix = `nmea_sentences[${index}]`;
-    
+
     // Required fields
     if (!sentence.type || typeof sentence.type !== 'string') {
       errors.push(`${prefix}: Missing or invalid required field: type (string)`);
     }
-    
+
     // Optional fields with type checking
     if (sentence.frequency !== undefined && typeof sentence.frequency !== 'number') {
       errors.push(`${prefix}: Invalid field: frequency (must be number in Hz)`);
     }
-    
+
     if (sentence.interval_ms !== undefined && typeof sentence.interval_ms !== 'number') {
       errors.push(`${prefix}: Invalid field: interval_ms (must be number in milliseconds)`);
     }
-    
+
     if (sentence.enabled !== undefined && typeof sentence.enabled !== 'boolean') {
       errors.push(`${prefix}: Invalid field: enabled (must be boolean)`);
     }
-    
+
     // Check for conflicting fields
     if (sentence.frequency && sentence.interval_ms) {
       errors.push(`${prefix}: Cannot specify both frequency and interval_ms (use only one)`);
     }
-    
+
     // Validate fields object if present
     if (sentence.fields && typeof sentence.fields !== 'object') {
       errors.push(`${prefix}: Invalid field: fields (must be object)`);
     }
-    
+
     // Validate subtypes array if present
     if (sentence.subtypes) {
       if (!Array.isArray(sentence.subtypes)) {
@@ -116,7 +121,7 @@ class ScenarioSchemaValidator {
       }
     }
   }
-  
+
   /**
    * Get the schema documentation as a string
    * @returns {string} Schema documentation

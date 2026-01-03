@@ -2,20 +2,20 @@
 
 /**
  * NMEA Bridge Simulator - Main Orchestrator
- * 
+ *
  * Multi-protocol server orchestrator supporting TCP, UDP, and WebSocket connections
  * for marine instrument development and testing WITHOUT physical hardware.
- * 
+ *
  * Features:
  * - Modular component architecture with dependency injection
  * - TCP/UDP/WebSocket server management via ProtocolServers component
- * - NMEA sentence generation via NmeaGenerator component  
+ * - NMEA sentence generation via NmeaGenerator component
  * - High-precision message scheduling via MessageScheduler component
  * - Recording playback management via SessionRecorder component
  * - Scenario-based data streaming with parameter injection
  * - Bidirectional autopilot command processing
  * - Performance monitoring and metrics collection
- * 
+ *
  * Usage:
  *   node simulator-main.js [--scenario basic-navigation] [--bridge-mode nmea0183|nmea2000]
  *   node simulator-main.js --recording path/to/recording.json [--speed 2.0] [--loop]
@@ -39,24 +39,24 @@ const DEFAULT_CONFIG = {
       tcp: 2000,
       udp: 2000,
       websocket: 8080,
-      api: 9090
+      api: 9090,
     },
     maxClients: 50,
     timeoutMs: 30000,
-    bindHost: '0.0.0.0'
+    bindHost: '0.0.0.0',
   },
   nmea: {
     messageInterval: 1000,
-    bridgeMode: 'nmea0183'
+    bridgeMode: 'nmea0183',
   },
   scenarios: {
-    speed: 1.0
+    speed: 1.0,
   },
   recording: {
     speed: 1.0,
     loop: false,
-    mode: 'global'
-  }
+    mode: 'global',
+  },
 };
 
 class NMEABridgeSimulator {
@@ -67,14 +67,14 @@ class NMEABridgeSimulator {
     this.messageScheduler = new MessageScheduler();
     this.sessionRecorder = new SessionRecorder();
     this.controlAPI = new SimulatorControlAPI(this);
-    
+
     // Configuration and state
     this.config = { ...DEFAULT_CONFIG };
     this.isRunning = false;
     this.scenario = null;
     this.scenarioFunctions = new Map();
     this.strictScenario = false;
-    
+
     // Autopilot state (shared across components)
     this.autopilotState = {
       mode: 'STANDBY',
@@ -82,9 +82,9 @@ class NMEABridgeSimulator {
       active: false,
       targetHeading: 180,
       currentHeading: 175,
-      rudderPosition: 0
+      rudderPosition: 0,
     };
-    
+
     // Performance monitoring
     this.stats = {
       messagesPerSecond: 0,
@@ -92,7 +92,7 @@ class NMEABridgeSimulator {
       connectedClients: 0,
       memoryUsage: 0,
       uptime: 0,
-      startTime: null
+      startTime: null,
     };
 
     // Bind message handlers
@@ -123,10 +123,10 @@ class NMEABridgeSimulator {
     try {
       // Start all components in dependency order
       await this.startComponents();
-      
+
       // Configure component interactions
       this.setupComponentInteractions();
-      
+
       // Handle scenario or recording setup
       if (config.recording) {
         await this.setupRecordingPlayback(config);
@@ -139,7 +139,6 @@ class NMEABridgeSimulator {
       this.isRunning = true;
       console.log('✅ NMEA Bridge Simulator started successfully');
       console.log('📊 Use Ctrl+C to stop the simulator');
-      
     } catch (error) {
       console.error('❌ Failed to start simulator:', error.message);
       await this.shutdown();
@@ -160,12 +159,12 @@ class NMEABridgeSimulator {
 
     // Stop components in reverse dependency order
     await this.stopComponents();
-    
+
     // Clear state
     this.scenario = null;
     this.scenarioFunctions.clear();
     this.stats.startTime = null;
-    
+
     console.log('✅ NMEA Bridge Simulator shut down complete');
   }
 
@@ -175,14 +174,14 @@ class NMEABridgeSimulator {
    */
   async startComponents() {
     console.log('🚀 Starting simulator components...');
-    
+
     // Start components in dependency order
     await this.sessionRecorder.start(this.config);
     await this.nmeaGenerator.start(this.config);
     await this.messageScheduler.start(this.config);
     await this.protocolServers.start(this.config);
     await this.controlAPI.start(this.config.server.ports.api);
-    
+
     console.log('✅ All components started');
   }
 
@@ -192,14 +191,14 @@ class NMEABridgeSimulator {
    */
   async stopComponents() {
     const stopPromises = [];
-    
+
     // Stop in reverse order
     stopPromises.push(this.controlAPI.stop());
     stopPromises.push(this.protocolServers.stop());
     stopPromises.push(this.messageScheduler.stop());
     stopPromises.push(this.nmeaGenerator.stop());
     stopPromises.push(this.sessionRecorder.stop());
-    
+
     await Promise.all(stopPromises);
     console.log('✅ All components stopped');
   }
@@ -212,15 +211,15 @@ class NMEABridgeSimulator {
     // Protocol servers -> message handling
     this.protocolServers.registerMessageHandler('message', this.handleClientMessage);
     this.protocolServers.registerMessageHandler('connection', this.handleConnectionEvent);
-    
+
     // Message scheduler -> generation and broadcasting
     this.messageScheduler.setMessageGenerator(this.generateMessages);
     this.messageScheduler.setMessageBroadcaster(this.broadcastMessage);
-    
+
     // Session recorder -> message broadcasting
     this.sessionRecorder.setMessageBroadcaster(this.broadcastMessage);
     this.sessionRecorder.setClientMessageCallback(this.sendClientMessage);
-    
+
     // NMEA generator -> autopilot state
     this.nmeaGenerator.setAutopilotState(this.autopilotState);
   }
@@ -231,28 +230,27 @@ class NMEABridgeSimulator {
    */
   async setupRecordingPlayback(config) {
     console.log('📼 Setting up recording playback...');
-    
+
     try {
       await this.sessionRecorder.loadRecording(
         config.recording,
         config.speed || 1.0,
         config.loop || false,
-        config.playbackMode || 'global'
+        config.playbackMode || 'global',
       );
-      
+
       if (config.playbackMode === 'global') {
         const playbackConfig = this.sessionRecorder.startGlobalPlayback();
         if (playbackConfig) {
           this.messageScheduler.scheduleRecordingPlayback(
             playbackConfig.messages,
             playbackConfig.speed,
-            playbackConfig.loop
+            playbackConfig.loop,
           );
         }
       } else {
         console.log('📱 Per-client playback mode: waiting for client connections');
       }
-      
     } catch (error) {
       console.error('❌ Failed to setup recording playback:', error.message);
       throw error;
@@ -265,22 +263,21 @@ class NMEABridgeSimulator {
    */
   async setupScenarioGeneration(config) {
     console.log('🎭 Setting up scenario generation...');
-    
+
     try {
       await this.loadScenario(config.scenario);
       this.initializeScenarioRuntime();
-      
+
       // Pass scenario data to generator
       this.nmeaGenerator.setScenario(this.scenario, this.scenarioFunctions, this.strictScenario);
-      
+
       // Start scheduled generation with scenario timing
       const timing = this.scenario?.timing;
       this.messageScheduler.startScheduledGeneration(timing);
-      
+
       if (config.scenarioSpeed) {
         this.messageScheduler.setScenarioSpeed(config.scenarioSpeed);
       }
-      
     } catch (error) {
       console.error('❌ Failed to setup scenario generation:', error.message);
       throw error;
@@ -293,7 +290,7 @@ class NMEABridgeSimulator {
    */
   async setupBasicGeneration() {
     console.log('🔧 Setting up basic NMEA generation...');
-    
+
     // Start basic scheduled generation
     this.messageScheduler.startScheduledGeneration();
   }
@@ -304,7 +301,7 @@ class NMEABridgeSimulator {
    */
   handleClientMessage(clientId, message) {
     console.log(`📡 Message from ${clientId}: ${message.trim().substring(0, 50)}...`);
-    
+
     // Check if it's an autopilot command
     if (this.isAutopilotCommand(message)) {
       this.processAutopilotCommand(message, clientId);
@@ -328,18 +325,18 @@ class NMEABridgeSimulator {
               playbackConfig.messages,
               playbackConfig.speed,
               playbackConfig.loop,
-              playbackConfig.clientCallback
+              playbackConfig.clientCallback,
             );
           }
         }
         break;
-        
+
       case 'disconnect':
         this.stats.connectedClients = Math.max(0, this.stats.connectedClients - 1);
         this.sessionRecorder.stopClientPlayback(clientId);
         this.messageScheduler.stopClientPlayback(clientId);
         break;
-        
+
       case 'error':
         console.warn(`⚠️ Client error for ${clientId}:`, error?.message || 'Unknown error');
         this.stats.connectedClients = Math.max(0, this.stats.connectedClients - 1);
@@ -392,12 +389,12 @@ class NMEABridgeSimulator {
     if (message.startsWith('$PCDIN,')) {
       return true;
     }
-    
+
     // NMEA 2000 bridge mode: Native PGN messages (simplified check)
     if (this.config.nmea.bridgeMode === 'nmea2000' && message.includes('PGN')) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -414,10 +411,9 @@ class NMEABridgeSimulator {
         // Parse native NMEA 2000 PGN
         this.parseNMEA2000PGN(command);
       }
-      
+
       // Broadcast autopilot status update to all clients
       this.broadcastAutopilotStatus();
-      
     } catch (error) {
       console.error(`❌ Error processing autopilot command: ${error.message}`);
     }
@@ -433,14 +429,14 @@ class NMEABridgeSimulator {
     const parts = pcdin.split(',');
     if (parts.length >= 2) {
       const pgn = parts[1];
-      
+
       switch (pgn) {
         case '01F112': // Autopilot Control PGN (example)
           this.autopilotState.engaged = !this.autopilotState.engaged;
           this.autopilotState.active = this.autopilotState.engaged;
           console.log(`🎮 Autopilot ${this.autopilotState.engaged ? 'ENGAGED' : 'DISENGAGED'}`);
           break;
-          
+
         case '01F113': // Heading adjustment (example)
           // Parse heading adjustment from command
           this.autopilotState.targetHeading = (this.autopilotState.targetHeading + 1) % 360;
@@ -468,9 +464,9 @@ class NMEABridgeSimulator {
     const statusMessage = JSON.stringify({
       type: 'autopilot-status',
       data: this.autopilotState,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     // Broadcast to WebSocket clients only (for status updates)
     // This would need protocol server enhancement to target specific protocols
     this.broadcastMessage(statusMessage);
@@ -482,19 +478,19 @@ class NMEABridgeSimulator {
    */
   async loadScenario(scenarioName) {
     const scenarioPath = this.findScenarioFile(scenarioName);
-    
+
     if (!fs.existsSync(scenarioPath)) {
       throw new Error(`Scenario file not found: ${scenarioPath}`);
     }
 
     console.log(`🎭 Loading scenario: ${scenarioName}`);
-    
+
     const yamlContent = fs.readFileSync(scenarioPath, 'utf8');
     this.scenario = yaml.load(yamlContent);
-    
+
     // Validate scenario structure
     this.validateScenario(this.scenario);
-    
+
     console.log(`✅ Scenario loaded: ${this.scenario.name || scenarioName}`);
   }
 
@@ -507,7 +503,7 @@ class NMEABridgeSimulator {
       path.join(__dirname, 'vendor', 'test-scenarios', `${scenarioName}.yml`),
       path.join(__dirname, 'vendor', 'test-scenarios', scenarioName),
       path.join(process.cwd(), `${scenarioName}.yml`),
-      path.join(process.cwd(), scenarioName)
+      path.join(process.cwd(), scenarioName),
     ];
 
     for (const scenarioPath of scenarioPaths) {
@@ -547,7 +543,7 @@ class NMEABridgeSimulator {
     }
 
     console.log('🔧 Initializing scenario runtime...');
-    
+
     // Compile scenario functions
     for (const [name, functionCode] of Object.entries(this.scenario.functions)) {
       try {
@@ -559,7 +555,7 @@ class NMEABridgeSimulator {
         throw new Error(`Failed to compile function '${name}': ${error.message}`);
       }
     }
-    
+
     console.log(`✅ Scenario runtime initialized (${this.scenarioFunctions.size} functions)`);
   }
 
@@ -570,12 +566,14 @@ class NMEABridgeSimulator {
   displayNetworkInfo() {
     const os = require('os');
     const interfaces = os.networkInterfaces();
-    
+
     console.log('🔗 Network Servers:');
-    Object.keys(interfaces).forEach(name => {
-      interfaces[name].forEach(iface => {
+    Object.keys(interfaces).forEach((name) => {
+      interfaces[name].forEach((iface) => {
         if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`📡 ${name}: TCP:${iface.address}:${this.config.server.ports.tcp}, UDP:${this.config.server.ports.udp}, WS:${this.config.server.ports.websocket}`);
+          console.log(
+            `📡 ${name}: TCP:${iface.address}:${this.config.server.ports.tcp}, UDP:${this.config.server.ports.udp}, WS:${this.config.server.ports.websocket}`,
+          );
         }
       });
     });
@@ -588,9 +586,10 @@ class NMEABridgeSimulator {
   mergeConfig(defaultConfig, userConfig) {
     const merged = { ...defaultConfig };
     for (const [key, value] of Object.entries(userConfig)) {
-      merged[key] = typeof value === 'object' && value !== null && !Array.isArray(value) 
-        ? { ...defaultConfig[key], ...value } 
-        : value;
+      merged[key] =
+        typeof value === 'object' && value !== null && !Array.isArray(value)
+          ? { ...defaultConfig[key], ...value }
+          : value;
     }
     return merged;
   }
@@ -603,14 +602,14 @@ class NMEABridgeSimulator {
       protocolServers: this.protocolServers.getStatus(),
       nmeaGenerator: this.nmeaGenerator.getStatus(),
       messageScheduler: this.messageScheduler.getStatus(),
-      sessionRecorder: this.sessionRecorder.getStatus()
+      sessionRecorder: this.sessionRecorder.getStatus(),
     };
 
     const componentMetrics = {
       protocolServers: this.protocolServers.getMetrics(),
       nmeaGenerator: this.nmeaGenerator.getMetrics(),
       messageScheduler: this.messageScheduler.getMetrics(),
-      sessionRecorder: this.sessionRecorder.getMetrics()
+      sessionRecorder: this.sessionRecorder.getMetrics(),
     };
 
     // Update main stats
@@ -625,7 +624,7 @@ class NMEABridgeSimulator {
       components: componentStatuses,
       metrics: componentMetrics,
       autopilot: this.autopilotState,
-      scenario: this.scenario ? { name: this.scenario.name, loaded: true } : { loaded: false }
+      scenario: this.scenario ? { name: this.scenario.name, loaded: true } : { loaded: false },
     };
   }
 }
@@ -636,7 +635,7 @@ class NMEABridgeSimulator {
 function parseArguments() {
   const args = process.argv.slice(2);
   const config = {};
-  
+
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--scenario':
@@ -658,11 +657,13 @@ function parseArguments() {
         config.playbackMode = args[++i];
         break;
       case '--help':
-        console.log('NMEA Bridge Simulator\nUsage: node simulator-main.js [options]\nOptions: --scenario <name>, --recording <file>, --speed <num>, --loop, --help');
+        console.log(
+          'NMEA Bridge Simulator\nUsage: node simulator-main.js [options]\nOptions: --scenario <name>, --recording <file>, --speed <num>, --loop, --help',
+        );
         process.exit(0);
     }
   }
-  
+
   return config;
 }
 
@@ -699,7 +700,7 @@ async function main() {
 
 // Run if called directly
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('❌ Unhandled error:', error.message);
     process.exit(1);
   });

@@ -2,11 +2,11 @@
 
 /**
  * Session Recorder Component
- * 
+ *
  * Manages recording file loading, playback control, and session management.
  * Supports both JSON and binary recording formats with compression.
  * Handles global and per-client playback modes with configurable speed and looping.
- * 
+ *
  * Implements SimulatorComponent interface for lifecycle management.
  */
 
@@ -20,7 +20,7 @@ class SessionRecorder {
     this.config = null;
     this.isRunning = false;
     this.startTime = null;
-    
+
     // Recording data and playback state
     this.recordingData = null;
     this.playbackSpeed = 1.0;
@@ -28,21 +28,21 @@ class SessionRecorder {
     this.playbackMode = 'global'; // 'global' or 'per-client'
     this.currentMessageIndex = 0;
     this.playbackStartTime = null;
-    
+
     // Per-client playback tracking
     this.clientPlaybacks = new Map(); // clientId -> playback state
-    
+
     // Callback handlers for message delivery
     this.messageBroadcastCallback = null;
     this.clientMessageCallback = null;
-    
+
     // Performance stats
     this.stats = {
       messagesPlayed: 0,
       playbackErrors: 0,
       activePlaybacks: 0,
       recordingDuration: 0,
-      totalRecordingMessages: 0
+      totalRecordingMessages: 0,
     };
   }
 
@@ -58,7 +58,7 @@ class SessionRecorder {
     this.config = config;
     this.startTime = Date.now();
     this.isRunning = true;
-    
+
     console.log('✅ Session Recorder started');
   }
 
@@ -67,18 +67,18 @@ class SessionRecorder {
    */
   async stop() {
     console.log('🔌 Shutting down session recorder...');
-    
+
     // Stop all active playbacks
     this.stopAllPlaybacks();
-    
+
     // Clear recording data
     this.recordingData = null;
     this.currentMessageIndex = 0;
     this.playbackStartTime = null;
-    
+
     this.isRunning = false;
     this.startTime = null;
-    
+
     console.log('✅ Session Recorder stopped');
   }
 
@@ -91,7 +91,7 @@ class SessionRecorder {
       running: this.isRunning,
       state: this.isRunning ? 'running' : 'stopped',
       error: null,
-      uptime: this.startTime ? Date.now() - this.startTime : 0
+      uptime: this.startTime ? Date.now() - this.startTime : 0,
     };
   }
 
@@ -113,8 +113,8 @@ class SessionRecorder {
         playbackSpeed: this.playbackSpeed,
         playbackLoop: this.playbackLoop,
         playbackErrors: this.stats.playbackErrors,
-        currentMessageIndex: this.currentMessageIndex
-      }
+        currentMessageIndex: this.currentMessageIndex,
+      },
     };
   }
 
@@ -144,17 +144,17 @@ class SessionRecorder {
   async loadRecording(recordingFile, speed = 1.0, loop = false, playbackMode = 'global') {
     try {
       // Handle both absolute and relative paths
-      const recordingPath = path.isAbsolute(recordingFile) 
-        ? recordingFile 
+      const recordingPath = path.isAbsolute(recordingFile)
+        ? recordingFile
         : path.resolve(process.cwd(), recordingFile);
-      
+
       console.log(`📼 Loading recording: ${recordingFile}`);
-      
+
       // Check if file exists
       if (!fs.existsSync(recordingPath)) {
         throw new Error(`Recording file not found: ${recordingPath}`);
       }
-      
+
       let fileData;
       if (recordingFile.endsWith('.gz')) {
         // Handle compressed files
@@ -164,7 +164,7 @@ class SessionRecorder {
         // Handle uncompressed files
         fileData = fs.readFileSync(recordingPath, 'utf8');
       }
-      
+
       // Parse JSON recording data
       this.recordingData = JSON.parse(fileData);
       this.playbackSpeed = Math.max(0.1, Math.min(10.0, speed)); // Clamp between 0.1x and 10x
@@ -172,20 +172,22 @@ class SessionRecorder {
       this.playbackMode = playbackMode;
       this.currentMessageIndex = 0;
       this.playbackStartTime = null;
-      
+
       // Validate recording format
       if (!this.recordingData.messages || !Array.isArray(this.recordingData.messages)) {
         throw new Error('Invalid recording format: missing messages array');
       }
-      
+
       // Update stats
       this.stats.totalRecordingMessages = this.recordingData.messages.length;
       this.stats.recordingDuration = this.recordingData.metadata?.duration || 0;
-      
+
       console.log(`✅ Loaded ${this.recordingData.messages.length} messages from recording`);
-      console.log(`📊 Duration: ${this.stats.recordingDuration.toFixed(1)}s, Speed: ${speed}x, Loop: ${loop}`);
+      console.log(
+        `📊 Duration: ${this.stats.recordingDuration.toFixed(1)}s, Speed: ${speed}x, Loop: ${loop}`,
+      );
       console.log(`🎭 Playback Mode: ${playbackMode.toUpperCase()}`);
-      
+
       return true;
     } catch (error) {
       console.error(`❌ Failed to load recording: ${error.message}`);
@@ -200,7 +202,9 @@ class SessionRecorder {
    * @returns {boolean}
    */
   isRecordingLoaded() {
-    return !!this.recordingData && this.recordingData.messages && this.recordingData.messages.length > 0;
+    return (
+      !!this.recordingData && this.recordingData.messages && this.recordingData.messages.length > 0
+    );
   }
 
   /**
@@ -212,23 +216,25 @@ class SessionRecorder {
       console.error('❌ No recording data available for global playback');
       return false;
     }
-    
+
     if (this.playbackMode !== 'global') {
       console.warn('⚠️ Playback mode is not set to global');
       return false;
     }
-    
+
     this.playbackStartTime = Date.now();
     this.currentMessageIndex = 0;
     this.stats.activePlaybacks = 1;
-    
-    console.log(`🎬 Starting global recording playback (${this.recordingData.messages.length} messages)`);
-    
+
+    console.log(
+      `🎬 Starting global recording playback (${this.recordingData.messages.length} messages)`,
+    );
+
     // Return the recording data and playback parameters for the scheduler
     return {
       messages: this.recordingData.messages,
       speed: this.playbackSpeed,
-      loop: this.playbackLoop
+      loop: this.playbackLoop,
     };
   }
 
@@ -242,32 +248,32 @@ class SessionRecorder {
       console.error('❌ No recording data available for client playback');
       return false;
     }
-    
+
     if (this.playbackMode !== 'per-client') {
       console.warn('⚠️ Playback mode is not set to per-client');
       return false;
     }
-    
+
     // Stop existing playback for this client if any
     this.stopClientPlayback(clientId);
-    
+
     const playbackState = {
       startTime: Date.now(),
       currentIndex: 0,
-      active: true
+      active: true,
     };
-    
+
     this.clientPlaybacks.set(clientId, playbackState);
     this.stats.activePlaybacks = this.clientPlaybacks.size;
-    
+
     console.log(`🎬 Starting per-client playback for ${clientId}`);
-    
+
     // Return the recording data and playback parameters for the scheduler
     return {
       messages: this.recordingData.messages,
       speed: this.playbackSpeed,
       loop: this.playbackLoop,
-      clientCallback: this.clientMessageCallback
+      clientCallback: this.clientMessageCallback,
     };
   }
 
@@ -290,18 +296,18 @@ class SessionRecorder {
    */
   stopAllPlaybacks() {
     console.log('🛑 Stopping all active playbacks...');
-    
+
     // Stop global playback
     if (this.playbackStartTime) {
       this.playbackStartTime = null;
       this.currentMessageIndex = 0;
     }
-    
+
     // Stop all client playbacks
     for (const clientId of this.clientPlaybacks.keys()) {
       this.stopClientPlayback(clientId);
     }
-    
+
     this.stats.activePlaybacks = 0;
     console.log('✅ All playbacks stopped');
   }
@@ -314,7 +320,7 @@ class SessionRecorder {
     if (!this.isRecordingLoaded()) {
       return 0;
     }
-    
+
     return Math.round((this.currentMessageIndex / this.recordingData.messages.length) * 100);
   }
 
@@ -328,22 +334,23 @@ class SessionRecorder {
         elapsed: 0,
         remaining: 0,
         total: this.stats.recordingDuration,
-        progress: 0
+        progress: 0,
       };
     }
-    
+
     const elapsed = (Date.now() - this.playbackStartTime) / 1000; // seconds
     const adjustedElapsed = elapsed * this.playbackSpeed;
     const remaining = Math.max(0, this.stats.recordingDuration - adjustedElapsed);
-    const progress = this.stats.recordingDuration > 0 
-      ? Math.min(100, (adjustedElapsed / this.stats.recordingDuration) * 100)
-      : 0;
-    
+    const progress =
+      this.stats.recordingDuration > 0
+        ? Math.min(100, (adjustedElapsed / this.stats.recordingDuration) * 100)
+        : 0;
+
     return {
       elapsed: adjustedElapsed,
       remaining,
       total: this.stats.recordingDuration,
-      progress
+      progress,
     };
   }
 
@@ -373,10 +380,10 @@ class SessionRecorder {
     if (mode !== 'global' && mode !== 'per-client') {
       throw new Error('Invalid playback mode. Must be "global" or "per-client"');
     }
-    
+
     // Stop all current playbacks when changing mode
     this.stopAllPlaybacks();
-    
+
     this.playbackMode = mode;
     console.log(`🎭 Playback mode set to ${mode.toUpperCase()}`);
   }
@@ -389,13 +396,13 @@ class SessionRecorder {
     if (!this.recordingData) {
       return null;
     }
-    
+
     return {
       ...this.recordingData.metadata,
       messageCount: this.recordingData.messages.length,
       playbackSpeed: this.playbackSpeed,
       playbackLoop: this.playbackLoop,
-      playbackMode: this.playbackMode
+      playbackMode: this.playbackMode,
     };
   }
 
@@ -408,9 +415,9 @@ class SessionRecorder {
     try {
       const fileData = fs.readFileSync(recordingPath, 'utf8');
       const recordingData = JSON.parse(fileData);
-      
+
       const issues = [];
-      
+
       // Check required fields
       if (!recordingData.messages) {
         issues.push('Missing messages array');
@@ -419,31 +426,31 @@ class SessionRecorder {
       } else if (recordingData.messages.length === 0) {
         issues.push('Messages array is empty');
       }
-      
+
       // Check message format
       if (recordingData.messages && recordingData.messages.length > 0) {
         const sampleMessage = recordingData.messages[0];
         if (!sampleMessage.relative_time && sampleMessage.relative_time !== 0) {
           issues.push('Messages missing relative_time field');
         }
-        
+
         const messageFields = ['message', 'sentence', 'data', 'raw'];
-        if (!messageFields.some(field => sampleMessage[field])) {
+        if (!messageFields.some((field) => sampleMessage[field])) {
           issues.push('Messages missing NMEA data field (message/sentence/data/raw)');
         }
       }
-      
+
       // Check metadata
       if (!recordingData.metadata) {
         issues.push('Missing metadata section');
       }
-      
+
       return {
         valid: issues.length === 0,
         issues,
         messageCount: recordingData.messages?.length || 0,
         duration: recordingData.metadata?.duration || 0,
-        metadata: recordingData.metadata || {}
+        metadata: recordingData.metadata || {},
       };
     } catch (error) {
       return {
@@ -451,7 +458,7 @@ class SessionRecorder {
         issues: [`Failed to parse recording: ${error.message}`],
         messageCount: 0,
         duration: 0,
-        metadata: {}
+        metadata: {},
       };
     }
   }
@@ -464,7 +471,7 @@ class SessionRecorder {
     if (!this.playbackStartTime || this.stats.messagesPlayed === 0) {
       return 0;
     }
-    
+
     const uptimeSeconds = (Date.now() - this.playbackStartTime) / 1000;
     return uptimeSeconds > 0 ? Math.round(this.stats.messagesPlayed / uptimeSeconds) : 0;
   }
@@ -478,16 +485,16 @@ class SessionRecorder {
     if (!recordingEntry) {
       return null;
     }
-    
+
     // Check different possible message field names in recording format
     const messageFields = ['message', 'sentence', 'data', 'raw'];
-    
+
     for (const field of messageFields) {
       if (recordingEntry[field] && typeof recordingEntry[field] === 'string') {
         return recordingEntry[field];
       }
     }
-    
+
     return null;
   }
 }

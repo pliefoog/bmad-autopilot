@@ -18,15 +18,15 @@ interface StatMetricCellProps {
 
 /**
  * StatMetricCell - Display session statistics (MIN/MAX/AVG)
- * 
+ *
  * Similar to SecondaryMetricCell but shows session stats instead of current value.
- * 
+ *
  * **Auto-Fetch Pattern:**
  * 1. Uses SensorContext to get sensor instance
  * 2. Fetches session stats from nmeaStore
  * 3. Converts to display units using ConversionRegistry
  * 4. Formats for display
- * 
+ *
  * **Display Format:**
  * - Label: "MIN" / "MAX" / "AVG" (uppercase, 10pt)
  * - Value: stat value (24pt, monospace, bold)
@@ -42,10 +42,10 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
   testID,
 }) => {
   const theme = useTheme();
-  
+
   // Auto-fetch sensor data from context
   const { sensorInstance, sensorType } = useSensorContext(sensorKey);
-  
+
   // Get session stats from store
   const stats = useNmeaStore(
     (state) => {
@@ -56,9 +56,9 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
       if (!a && !b) return true;
       if (!a || !b) return false;
       return a.min === b.min && a.max === b.max && a.avg === b.avg;
-    }
+    },
   );
-  
+
   // Auto-fetch field configuration from registry
   const fieldConfig = useMemo(() => {
     try {
@@ -67,10 +67,10 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
       return null;
     }
   }, [sensorType, metricKey]);
-  
+
   // Extract stat value based on type
   const statValue = stats?.[statType] ?? null;
-  
+
   // Get unit from ConversionRegistry
   const unit = useMemo(() => {
     if (!fieldConfig?.unitType) return '';
@@ -80,15 +80,15 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
       return '';
     }
   }, [fieldConfig?.unitType]);
-  
+
   // Convert SI value to display value and format
   const displayValue = useMemo(() => {
     if (statValue === null) return '---';
-    
+
     if (!fieldConfig?.unitType) {
       return statValue.toFixed(1);
     }
-    
+
     try {
       const converted = ConversionRegistry.convertToDisplay(fieldConfig.unitType, statValue);
       const precision = ConversionRegistry.getPrecision(fieldConfig.unitType);
@@ -97,12 +97,24 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
       return statValue.toFixed(1);
     }
   }, [statValue, fieldConfig?.unitType]);
-  
+
   // Dynamic font sizes based on cell dimensions
-  const labelFontSize = Math.min(cellWidth ? cellWidth * 0.15 : 10, cellHeight ? cellHeight * 0.15 : 10, 10);
-  const valueFontSize = Math.min(cellWidth ? cellWidth * 0.35 : 24, cellHeight ? cellHeight * 0.35 : 24, 24);
-  const unitFontSize = Math.min(cellWidth ? cellWidth * 0.15 : 10, cellHeight ? cellHeight * 0.15 : 10, 10);
-  
+  const labelFontSize = Math.min(
+    cellWidth ? cellWidth * 0.15 : 10,
+    cellHeight ? cellHeight * 0.15 : 10,
+    10,
+  );
+  const valueFontSize = Math.min(
+    cellWidth ? cellWidth * 0.35 : 24,
+    cellHeight ? cellHeight * 0.35 : 24,
+    24,
+  );
+  const unitFontSize = Math.min(
+    cellWidth ? cellWidth * 0.15 : 10,
+    cellHeight ? cellHeight * 0.15 : 10,
+    10,
+  );
+
   return (
     <View
       style={[
@@ -130,7 +142,7 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
       >
         {statType.toUpperCase()}
       </Text>
-      
+
       {/* Stat Value */}
       <Text
         style={[
@@ -145,7 +157,7 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
       >
         {displayValue}
       </Text>
-      
+
       {/* Unit */}
       {unit && (
         <Text

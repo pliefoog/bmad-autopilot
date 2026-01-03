@@ -636,7 +636,7 @@ export class AlarmConfigurationManager {
     alarmsByLevel: Record<string, number>;
     averageResponseTime: number;
     falsePositiveRate: number;
-    mostFrequentAlarms: Array<{ type: string; count: number }>;
+    mostFrequentAlarms: { type: string; count: number }[];
   } {
     const cutoffTime = Date.now() - timeRangeMs;
     const recentAlarms = this.alarmHistory.filter((entry) => entry.triggeredAt >= cutoffTime);

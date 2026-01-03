@@ -22,7 +22,7 @@ class CIPipelineQualityGates {
       performance: null,
       marineSafety: null,
       qualityScore: 0,
-      passed: false
+      passed: false,
     };
   }
 
@@ -36,26 +36,26 @@ class CIPipelineQualityGates {
         generateReports: process.env.CI_GENERATE_REPORTS !== 'false',
         uploadArtifacts: process.env.CI_UPLOAD_ARTIFACTS !== 'false',
         slackWebhook: process.env.CI_SLACK_WEBHOOK || null,
-        emailNotifications: process.env.CI_EMAIL_NOTIFICATIONS || null
+        emailNotifications: process.env.CI_EMAIL_NOTIFICATIONS || null,
       },
       coverage: {
         enforceThresholds: true,
         generateLcovReport: true,
         generateHtmlReport: process.env.CI !== 'true', // Skip HTML in CI
-        failBuildOnViolation: true
+        failBuildOnViolation: true,
       },
       performance: {
         enforceThresholds: true,
         trackRegression: true,
         baselineFile: path.join(__dirname, '../performance/baseline-metrics.json'),
-        regressionThreshold: 0.1 // 10% regression tolerance
+        regressionThreshold: 0.1, // 10% regression tolerance
       },
       marineSafety: {
         enforceCompliance: true,
         requireCrashFreeRate: 0.995, // 99.5%
         maxLatency: 100, // 100ms NMEA sentence to widget update
-        minUptime: 0.999 // 99.9% uptime requirement
-      }
+        minUptime: 0.999, // 99.9% uptime requirement
+      },
     };
 
     try {
@@ -89,7 +89,7 @@ class CIPipelineQualityGates {
       global: { statements: 70, branches: 70, functions: 70, lines: 70 },
       widgets: { statements: 85, branches: 85, functions: 85, lines: 85 },
       services: { statements: 80, branches: 80, functions: 80, lines: 80 },
-      integration: { statements: 90, branches: 90, functions: 90, lines: 90 }
+      integration: { statements: 90, branches: 90, functions: 90, lines: 90 },
     };
   }
 
@@ -111,7 +111,7 @@ class CIPipelineQualityGates {
       rendering: { maxTime: 16, unit: 'ms' },
       latency: { maxTime: 100, unit: 'ms' },
       memory: { maxUsage: 50, unit: 'MB' },
-      crashFreeRate: { minimum: 99.5, unit: '%' }
+      crashFreeRate: { minimum: 99.5, unit: '%' },
     };
   }
 
@@ -151,10 +151,10 @@ class CIPipelineQualityGates {
 
       // Step 7: Determine overall quality gate status
       this.calculateQualityScore();
-      
+
       const duration = Date.now() - startTime;
       console.log(`\n✅ Quality gates completed in ${duration}ms`);
-      
+
       if (this.results.passed) {
         console.log('🎉 All quality gates PASSED!');
         return this.createSuccessResult(duration);
@@ -162,7 +162,6 @@ class CIPipelineQualityGates {
         console.log('❌ Quality gates FAILED!');
         return this.createFailureResult(duration);
       }
-
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(`💥 Quality gates pipeline failed: ${error.message}`);
@@ -176,13 +175,15 @@ class CIPipelineQualityGates {
   async runCoverageAnalysis() {
     try {
       const coverageCommand = [
-        'npm', 'run', 'test:coverage:thresholds',
-        '--', 
+        'npm',
+        'run',
+        'test:coverage:thresholds',
+        '--',
         '--passWithNoTests',
         '--ci',
         '--coverage',
         '--watchAll=false',
-        '--testResultsProcessor=<rootDir>/src/test-utils/ci-test-processor.js'
+        '--testResultsProcessor=<rootDir>/src/test-utils/ci-test-processor.js',
       ];
 
       if (this.config.coverage.generateLcovReport) {
@@ -194,16 +195,15 @@ class CIPipelineQualityGates {
       }
 
       console.log('  Running: ' + coverageCommand.join(' '));
-      
+
       const result = execSync(coverageCommand.join(' '), {
         cwd: path.join(__dirname, '../..'),
         stdio: ['ignore', 'pipe', 'pipe'],
-        maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
       });
 
       console.log('  ✅ Coverage analysis completed');
       return { success: true, output: result.toString() };
-
     } catch (error) {
       console.error('  ❌ Coverage analysis failed');
       throw new Error(`Coverage analysis failed: ${error.message}`);
@@ -216,11 +216,11 @@ class CIPipelineQualityGates {
   validateCoverageThresholds() {
     const coverageFiles = [
       path.join(__dirname, '../../coverage/coverage-summary.json'),
-      path.join(__dirname, '../../coverage/jest-coverage.json')
+      path.join(__dirname, '../../coverage/jest-coverage.json'),
     ];
 
     let coverageData = null;
-    
+
     for (const file of coverageFiles) {
       if (fs.existsSync(file)) {
         try {
@@ -244,7 +244,7 @@ class CIPipelineQualityGates {
     for (const [category, thresholds] of Object.entries(this.thresholds)) {
       const categoryData = this.extractCategoryData(coverageData, category);
       const categoryResult = this.validateCategoryThresholds(category, categoryData, thresholds);
-      
+
       if (!categoryResult.passed) {
         violations.push(...categoryResult.violations);
       }
@@ -252,7 +252,11 @@ class CIPipelineQualityGates {
       totalScore += categoryResult.score;
       categoryCount++;
 
-      console.log(`  📊 ${category}: ${categoryResult.score.toFixed(1)}% (${categoryResult.passed ? '✅' : '❌'})`);
+      console.log(
+        `  📊 ${category}: ${categoryResult.score.toFixed(1)}% (${
+          categoryResult.passed ? '✅' : '❌'
+        })`,
+      );
     }
 
     this.results.coverage = {
@@ -260,13 +264,13 @@ class CIPipelineQualityGates {
       score: totalScore / categoryCount,
       violations,
       totalCategories: categoryCount,
-      categoriesPassed: categoryCount - violations.filter(v => v.category).length
+      categoriesPassed: categoryCount - violations.filter((v) => v.category).length,
     };
 
     if (violations.length > 0) {
       console.log(`  ❌ Coverage violations found: ${violations.length}`);
-      violations.forEach(v => console.log(`    - ${v.message}`));
-      
+      violations.forEach((v) => console.log(`    - ${v.message}`));
+
       if (this.config.coverage.failBuildOnViolation) {
         this.violations.push(...violations);
       }
@@ -287,7 +291,7 @@ class CIPipelineQualityGates {
     const patterns = {
       widgets: /\/widgets\/|\/components\/.*Widget/,
       services: /\/services\//,
-      integration: /integration|e2e/
+      integration: /integration|e2e/,
     };
 
     const pattern = patterns[category];
@@ -296,8 +300,9 @@ class CIPipelineQualityGates {
     }
 
     // Aggregate coverage for files matching pattern
-    const matchingFiles = Object.entries(coverageData.files || {})
-      .filter(([path]) => pattern.test(path));
+    const matchingFiles = Object.entries(coverageData.files || {}).filter(([path]) =>
+      pattern.test(path),
+    );
 
     if (matchingFiles.length === 0) {
       return coverageData.total || coverageData;
@@ -317,7 +322,7 @@ class CIPipelineQualityGates {
       statements: { pct: aggregate.statements / fileCount },
       branches: { pct: aggregate.branches / fileCount },
       functions: { pct: aggregate.functions / fileCount },
-      lines: { pct: aggregate.lines / fileCount }
+      lines: { pct: aggregate.lines / fileCount },
     };
   }
 
@@ -338,7 +343,7 @@ class CIPipelineQualityGates {
           metric,
           actual: actual.toFixed(1),
           threshold,
-          message: `${category} ${metric} coverage ${actual.toFixed(1)}% < ${threshold}% threshold`
+          message: `${category} ${metric} coverage ${actual.toFixed(1)}% < ${threshold}% threshold`,
         });
       }
     }
@@ -346,7 +351,7 @@ class CIPipelineQualityGates {
     return {
       passed: violations.length === 0,
       score: scores.reduce((sum, score) => sum + score, 0) / scores.length,
-      violations
+      violations,
     };
   }
 
@@ -362,7 +367,7 @@ class CIPipelineQualityGates {
       const result = execSync(performanceCommand, {
         cwd: path.join(__dirname, '../..'),
         stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 60000 // 60 seconds timeout
+        timeout: 60000, // 60 seconds timeout
       });
 
       // Check for performance regression
@@ -370,25 +375,24 @@ class CIPipelineQualityGates {
 
       this.results.performance = {
         passed: true,
-        message: 'Performance validation passed'
+        message: 'Performance validation passed',
       };
 
       console.log('  ✅ Performance validation passed');
-
     } catch (error) {
       const errorMessage = error.stdout ? error.stdout.toString() : error.message;
-      
+
       this.results.performance = {
         passed: false,
-        error: errorMessage
+        error: errorMessage,
       };
 
       console.error('  ❌ Performance validation failed');
-      
+
       if (this.config.performance.enforceThresholds) {
         this.violations.push({
           type: 'performance',
-          message: `Performance validation failed: ${errorMessage}`
+          message: `Performance validation failed: ${errorMessage}`,
         });
       }
     }
@@ -406,28 +410,28 @@ class CIPipelineQualityGates {
     try {
       const baseline = JSON.parse(fs.readFileSync(this.config.performance.baselineFile, 'utf-8'));
       const currentMetricsFile = path.join(__dirname, '../../coverage/performance-results.json');
-      
+
       if (!fs.existsSync(currentMetricsFile)) {
         console.warn('  ⚠️ No current performance metrics found');
         return;
       }
 
       const current = JSON.parse(fs.readFileSync(currentMetricsFile, 'utf-8'));
-      
+
       // Compare key metrics
       const regressions = [];
-      
+
       for (const [metric, baselineValue] of Object.entries(baseline)) {
         const currentValue = current[metric];
         if (currentValue && typeof baselineValue === 'number') {
           const regression = (currentValue - baselineValue) / baselineValue;
-          
+
           if (regression > this.config.performance.regressionThreshold) {
             regressions.push({
               metric,
               baseline: baselineValue,
               current: currentValue,
-              regression: (regression * 100).toFixed(1)
+              regression: (regression * 100).toFixed(1),
             });
           }
         }
@@ -435,21 +439,22 @@ class CIPipelineQualityGates {
 
       if (regressions.length > 0) {
         console.log('  ⚠️ Performance regressions detected:');
-        regressions.forEach(r => {
-          console.log(`    - ${r.metric}: ${r.current} vs ${r.baseline} baseline (+${r.regression}%)`);
+        regressions.forEach((r) => {
+          console.log(
+            `    - ${r.metric}: ${r.current} vs ${r.baseline} baseline (+${r.regression}%)`,
+          );
         });
-        
+
         if (this.config.performance.trackRegression) {
           this.violations.push({
             type: 'performance-regression',
             regressions,
-            message: `Performance regression detected in ${regressions.length} metrics`
+            message: `Performance regression detected in ${regressions.length} metrics`,
           });
         }
       } else {
         console.log('  ✅ No performance regressions detected');
       }
-
     } catch (error) {
       console.warn(`  ⚠️ Failed to check performance regression: ${error.message}`);
     }
@@ -467,7 +472,7 @@ class CIPipelineQualityGates {
       const result = execSync(marineSafetyCommand, {
         cwd: path.join(__dirname, '../..'),
         stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 120000 // 2 minutes timeout
+        timeout: 120000, // 2 minutes timeout
       });
 
       // Validate marine safety metrics
@@ -475,25 +480,24 @@ class CIPipelineQualityGates {
 
       this.results.marineSafety = {
         passed: true,
-        message: 'Marine safety compliance validated'
+        message: 'Marine safety compliance validated',
       };
 
       console.log('  ✅ Marine safety compliance validated');
-
     } catch (error) {
       const errorMessage = error.stdout ? error.stdout.toString() : error.message;
-      
+
       this.results.marineSafety = {
         passed: false,
-        error: errorMessage
+        error: errorMessage,
       };
 
       console.error('  ❌ Marine safety compliance failed');
-      
+
       if (this.config.marineSafety.enforceCompliance) {
         this.violations.push({
           type: 'marine-safety',
-          message: `Marine safety compliance failed: ${errorMessage}`
+          message: `Marine safety compliance failed: ${errorMessage}`,
         });
       }
     }
@@ -504,7 +508,7 @@ class CIPipelineQualityGates {
    */
   async validateMarineSafetyMetrics() {
     const metricsFile = path.join(__dirname, '../../coverage/marine-safety-metrics.json');
-    
+
     if (!fs.existsSync(metricsFile)) {
       console.warn('  ⚠️ No marine safety metrics found');
       return;
@@ -520,7 +524,9 @@ class CIPipelineQualityGates {
           metric: 'crashFreeRate',
           actual: (metrics.crashFreeRate * 100).toFixed(2) + '%',
           required: (this.config.marineSafety.requireCrashFreeRate * 100).toFixed(1) + '%',
-          message: `Crash-free rate ${(metrics.crashFreeRate * 100).toFixed(2)}% below required ${(this.config.marineSafety.requireCrashFreeRate * 100).toFixed(1)}%`
+          message: `Crash-free rate ${(metrics.crashFreeRate * 100).toFixed(2)}% below required ${(
+            this.config.marineSafety.requireCrashFreeRate * 100
+          ).toFixed(1)}%`,
         });
       }
 
@@ -530,18 +536,17 @@ class CIPipelineQualityGates {
           metric: 'nmeaLatency',
           actual: metrics.averageNmeaLatency + 'ms',
           required: '<= ' + this.config.marineSafety.maxLatency + 'ms',
-          message: `NMEA latency ${metrics.averageNmeaLatency}ms exceeds maximum ${this.config.marineSafety.maxLatency}ms`
+          message: `NMEA latency ${metrics.averageNmeaLatency}ms exceeds maximum ${this.config.marineSafety.maxLatency}ms`,
         });
       }
 
       if (violations.length > 0) {
         console.log('  ⚠️ Marine safety violations:');
-        violations.forEach(v => console.log(`    - ${v.message}`));
+        violations.forEach((v) => console.log(`    - ${v.message}`));
         this.violations.push(...violations);
       } else {
         console.log('  ✅ All marine safety metrics within thresholds');
       }
-
     } catch (error) {
       console.warn(`  ⚠️ Failed to validate marine safety metrics: ${error.message}`);
     }
@@ -599,12 +604,12 @@ class CIPipelineQualityGates {
         ci: {
           buildNumber: process.env.GITHUB_RUN_NUMBER || process.env.BUILD_NUMBER || 'unknown',
           commitHash: process.env.GITHUB_SHA || 'unknown',
-          branch: process.env.GITHUB_REF_NAME || 'unknown'
+          branch: process.env.GITHUB_REF_NAME || 'unknown',
         },
         results: this.results,
         violations: this.violations,
         configuration: this.config,
-        thresholds: this.thresholds
+        thresholds: this.thresholds,
       };
 
       // Write JSON report
@@ -618,7 +623,6 @@ class CIPipelineQualityGates {
       console.log(`  📄 Quality reports generated:`);
       console.log(`    - JSON: ${jsonReportPath}`);
       console.log(`    - Markdown: ${markdownReportPath}`);
-
     } catch (error) {
       console.error(`  ❌ Failed to generate reports: ${error.message}`);
     }
@@ -630,7 +634,7 @@ class CIPipelineQualityGates {
   generateMarkdownSummary(report) {
     const status = report.results.passed ? '✅ PASSED' : '❌ FAILED';
     const score = report.results.qualityScore.toFixed(1);
-    
+
     let markdown = `# Quality Gates Report\n\n`;
     markdown += `**Status:** ${status}\n`;
     markdown += `**Score:** ${score}%\n`;
@@ -643,10 +647,10 @@ class CIPipelineQualityGates {
       markdown += `- **Score:** ${report.results.coverage.score.toFixed(1)}%\n`;
       markdown += `- **Status:** ${report.results.coverage.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
       markdown += `- **Categories:** ${report.results.coverage.categoriesPassed}/${report.results.coverage.totalCategories} passed\n\n`;
-      
+
       if (report.results.coverage.violations.length > 0) {
         markdown += `### Coverage Violations\n\n`;
-        report.results.coverage.violations.forEach(v => {
+        report.results.coverage.violations.forEach((v) => {
           markdown += `- **${v.category} ${v.metric}:** ${v.actual}% < ${v.threshold}% threshold\n`;
         });
         markdown += '\n';
@@ -656,7 +660,9 @@ class CIPipelineQualityGates {
     // Performance results
     if (report.results.performance) {
       markdown += `## ⚡ Performance Validation\n\n`;
-      markdown += `- **Status:** ${report.results.performance.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
+      markdown += `- **Status:** ${
+        report.results.performance.passed ? '✅ PASSED' : '❌ FAILED'
+      }\n`;
       if (report.results.performance.error) {
         markdown += `- **Error:** ${report.results.performance.error}\n`;
       }
@@ -666,7 +672,9 @@ class CIPipelineQualityGates {
     // Marine safety results
     if (report.results.marineSafety) {
       markdown += `## 🛡️ Marine Safety Compliance\n\n`;
-      markdown += `- **Status:** ${report.results.marineSafety.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
+      markdown += `- **Status:** ${
+        report.results.marineSafety.passed ? '✅ PASSED' : '❌ FAILED'
+      }\n`;
       if (report.results.marineSafety.error) {
         markdown += `- **Error:** ${report.results.marineSafety.error}\n`;
       }
@@ -707,35 +715,36 @@ class CIPipelineQualityGates {
     try {
       const status = this.results.passed ? 'PASSED ✅' : 'FAILED ❌';
       const color = this.results.passed ? 'good' : 'danger';
-      
+
       const payload = {
         text: `Quality Gates ${status}`,
-        attachments: [{
-          color,
-          fields: [
-            {
-              title: 'Quality Score',
-              value: `${this.results.qualityScore.toFixed(1)}%`,
-              short: true
-            },
-            {
-              title: 'Build',
-              value: process.env.GITHUB_RUN_NUMBER || 'unknown',
-              short: true
-            },
-            {
-              title: 'Violations',
-              value: this.violations.length.toString(),
-              short: true
-            }
-          ]
-        }]
+        attachments: [
+          {
+            color,
+            fields: [
+              {
+                title: 'Quality Score',
+                value: `${this.results.qualityScore.toFixed(1)}%`,
+                short: true,
+              },
+              {
+                title: 'Build',
+                value: process.env.GITHUB_RUN_NUMBER || 'unknown',
+                short: true,
+              },
+              {
+                title: 'Violations',
+                value: this.violations.length.toString(),
+                short: true,
+              },
+            ],
+          },
+        ],
       };
 
       // In a real implementation, you'd use fetch or axios to send to Slack
       console.log('  📢 Slack notification prepared (webhook integration required)');
       console.log('     Payload:', JSON.stringify(payload, null, 2));
-
     } catch (error) {
       console.error(`  ❌ Failed to send Slack notification: ${error.message}`);
     }
@@ -752,7 +761,7 @@ class CIPipelineQualityGates {
       qualityScore: this.results.qualityScore,
       results: this.results,
       violations: [],
-      ciRecommendation: 'Continue with deployment pipeline'
+      ciRecommendation: 'Continue with deployment pipeline',
     };
   }
 
@@ -767,7 +776,7 @@ class CIPipelineQualityGates {
       qualityScore: this.results.qualityScore,
       results: this.results,
       violations: this.violations,
-      ciRecommendation: 'Block deployment, fix quality violations'
+      ciRecommendation: 'Block deployment, fix quality violations',
     };
 
     if (this.config.ci.failOnViolation) {
@@ -789,7 +798,7 @@ class CIPipelineQualityGates {
       results: this.results,
       violations: this.violations,
       ciRecommendation: 'Fix pipeline errors, retry quality gates',
-      exitCode: 1
+      exitCode: 1,
     };
   }
 
@@ -798,7 +807,7 @@ class CIPipelineQualityGates {
    */
   mergeDeep(target, source) {
     const result = { ...target };
-    
+
     for (const key in source) {
       if (source[key] instanceof Object && key in result && result[key] instanceof Object) {
         result[key] = this.mergeDeep(result[key], source[key]);
@@ -806,7 +815,7 @@ class CIPipelineQualityGates {
         result[key] = source[key];
       }
     }
-    
+
     return result;
   }
 }
@@ -819,12 +828,12 @@ if (require.main === module) {
   async function handleCommand() {
     try {
       let result;
-      
+
       switch (command) {
         case 'run':
           result = await qualityGates.executeQualityGates();
           console.log('\n📋 Final Result:', JSON.stringify(result, null, 2));
-          
+
           if (!result.success && qualityGates.config.ci.failOnViolation) {
             process.exit(result.exitCode || 1);
           }
@@ -837,8 +846,14 @@ if (require.main === module) {
 
         case 'validate-config':
           console.log('✅ Configuration is valid');
-          console.log(`Coverage thresholds loaded: ${Object.keys(qualityGates.thresholds).length} categories`);
-          console.log(`CI features enabled: ${Object.keys(qualityGates.config.ci).filter(k => qualityGates.config.ci[k]).length}`);
+          console.log(
+            `Coverage thresholds loaded: ${Object.keys(qualityGates.thresholds).length} categories`,
+          );
+          console.log(
+            `CI features enabled: ${
+              Object.keys(qualityGates.config.ci).filter((k) => qualityGates.config.ci[k]).length
+            }`,
+          );
           break;
 
         default:

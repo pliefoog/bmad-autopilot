@@ -156,7 +156,7 @@ export class SmartAlarmManager {
 
   // Performance monitoring
   private stats!: SmartAlarmStats;
-  private processingQueue: Array<{ alarm: Alarm; startTime: number }> = [];
+  private processingQueue: { alarm: Alarm; startTime: number }[] = [];
 
   // Timers and intervals
   private contextUpdateTimer?: NodeJS.Timeout;
