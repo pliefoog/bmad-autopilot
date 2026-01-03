@@ -58,7 +58,8 @@ interface DraggableWidgetProps {
   dragY: Animated.SharedValue<number>;
   dragScale: Animated.SharedValue<number>;
   dragElevation: Animated.SharedValue<number>;
-  onLongPressStart: (widgetId: string, index: number, pageIndex: number) => void;
+  touchOffset: { x: number; y: number } | null;
+  onLongPressStart: (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => void;
   onDragMove: (translateX: number, translateY: number, absoluteX: number, absoluteY: number) => void;
   onDragEnd: (translateX: number, translateY: number, absoluteX: number, absoluteY: number) => void;
 }
@@ -76,6 +77,7 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
   dragY,
   dragScale,
   dragElevation,
+  touchOffset,
   onLongPressStart,
   onDragMove,
   onDragEnd,
@@ -83,8 +85,8 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
   // Long press gesture activates drag mode
   const longPressGesture = Gesture.LongPress()
     .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
-    .onStart(() => {
-      runOnJS(onLongPressStart)(widgetId, index, pageIndex);
+    .onStart((event) => {
+      runOnJS(onLongPressStart)(widgetId, index, pageIndex, event.x, event.y);
     });
 
   // Pan gesture for dragging (always enabled, checks isBeingDragged internally)
@@ -120,10 +122,14 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
       return {};
     }
 
+    // Apply touch offset so the point where user pressed stays under cursor
+    const offsetX = touchOffset ? touchOffset.x : 0;
+    const offsetY = touchOffset ? touchOffset.y : 0;
+
     return {
       transform: [
-        { translateX: dragX.value },
-        { translateY: dragY.value },
+        { translateX: dragX.value - offsetX },
+        { translateY: dragY.value - offsetY },
         { scale: dragScale.value },
       ],
       shadowOpacity: 0.4,
@@ -132,7 +138,7 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
       elevation: dragElevation.value,
       zIndex: 999, // Bring to front
     };
-  }, [isBeingDragged]);
+  }, [isBeingDragged, touchOffset]);
 
   return (
     <GestureDetector gesture={combinedGesture}>
@@ -205,11 +211,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     sourceIndex: number | null;
     sourcePageIndex: number | null;
     isDragging: boolean;
+    touchOffset: { x: number; y: number } | null;
   }>({
     widgetId: null,
     sourceIndex: null,
     sourcePageIndex: null,
     isDragging: false,
+    touchOffset: null,
   });
 
   // Shared values for drag animations (Reanimated)
@@ -354,8 +362,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
    * Handle long press start - activates drag mode
    */
   const handleLongPressStart = useCallback(
-    (widgetId: string, index: number, pageIndex: number) => {
-      console.log('[DRAG] Long press start:', { widgetId, index, pageIndex });
+    (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => {
+      console.log('[DRAG] Long press start:', { widgetId, index, pageIndex, touchX, touchY });
       
       dragHaptics.onLift();
 
@@ -364,13 +372,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         sourceIndex: index,
         sourcePageIndex: pageIndex,
         isDragging: true,
+        touchOffset: { x: touchX, y: touchY },
       });
 
       // Animate widget lift
       dragScale.value = withSpring(DRAG_CONFIG.DRAGGED_WIDGET_SCALE, DRAG_CONFIG.DROP_SPRING_CONFIG);
       dragElevation.value = withTiming(DRAG_CONFIG.DRAGGED_WIDGET_ELEVATION);
 
-      logger.dragDrop('Widget lifted', () => ({ widgetId, index, pageIndex }));
+      logger.dragDrop('Widget lifted', () => ({ widgetId, index, pageIndex, touchX, touchY }));
     },
     [dragScale, dragElevation],
   );
@@ -456,6 +465,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         sourceIndex: null,
         sourcePageIndex: null,
         isDragging: false,
+        touchOffset: null,
       });
 
       // Animate back to normal
@@ -481,6 +491,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       sourceIndex: null,
       sourcePageIndex: null,
       isDragging: false,
+      touchOffset: null,
     });
 
     // Animate back to original position
@@ -669,6 +680,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           dragY={dragY}
           dragScale={dragScale}
           dragElevation={dragElevation}
+          touchOffset={isBeingDragged ? dragState.touchOffset : null}
           onLongPressStart={handleLongPressStart}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
