@@ -267,6 +267,9 @@ export const useWidgetStore = create<WidgetStore>()(
             // Always keep system widgets
             if (widget.isSystemWidget) return true;
 
+            // Skip placeholder widget (used during drag-and-drop)
+            if (widget.type === 'placeholder') return true;
+
             // Get widget type registration
             const registration = widgetRegistrationService.getWidgetRegistration(widget.type);
             if (!registration) {

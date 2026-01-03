@@ -103,6 +103,7 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'pin',
       'close',
       'close-outline',
+      'checkmark-circle',
       'checkmark-circle-outline',
       'refresh-outline',
       'remove',

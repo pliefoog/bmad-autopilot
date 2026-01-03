@@ -91,12 +91,16 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Drag state management - simplified store-based approach
   const [dragState, setDragState] = useState<{
     draggedWidget: WidgetConfig | null; // Widget being dragged (removed from array)
-    sourceIndex: number | null;
+    sourceIndex: number;
     isDragging: boolean;
+    currentHoverIndex: number; // Track which index mouse is hovering over
+    longPressActivated: boolean; // Track if long press threshold met
   }>({
     draggedWidget: null,
-    sourceIndex: null,
+    sourceIndex: -1,
     isDragging: false,
+    currentHoverIndex: -1,
+    longPressActivated: false,
   });
 
   // Floating widget position for drag overlay
@@ -236,7 +240,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // ========================================
 
   /**
-   * Handle long press start - activates drag mode
+   * Handle long press - swap widget with placeholder and start drag tracking
    */
   const handleLongPressStart = useCallback(
     (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => {
@@ -251,154 +255,126 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         return;
       }
 
-      // Calculate initial floating position (widget's grid position)
-      const pageLayout = pageLayouts[pageIndex];
-      const cellPosition = pageLayout?.cells[index];
-      if (!cellPosition) {
-        console.error('[DRAG] Failed to get cell position');
-        return;
-      }
-
       setDragState({
+        isDragging: true,
         draggedWidget: removedWidget,
         sourceIndex: index,
-        isDragging: true,
+        currentHoverIndex: index,
+        longPressActivated: true,
       });
 
-      setFloatingPos({
-        x: cellPosition.x,
-        y: cellPosition.y,
-      });
-
-      logger.dragDrop('Widget lifted', () => ({ widgetId, index, pageIndex, touchX, touchY }));
+      console.log('[DRAG] Widget swapped with placeholder:', { widgetId, index });
     },
-    [pageLayouts],
+    [],
   );
 
   /**
-   * Handle drag move - update floating position and placeholder
+   * Handle drag move - calculate hover index and log changes
    */
   const handleDragMove = useCallback(
-    (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
-      if (!dragState.isDragging || !floatingPos) return;
+    (
+      translationX: number,
+      translationY: number,
+      absoluteX: number,
+      absoluteY: number,
+    ) => {
+      // Only process if long press was activated
+      if (!dragState.longPressActivated) return;
 
-      console.log('[DRAG] Move:', { translationX, translationY, absoluteX, absoluteY });
+      console.log('[DRAG] Pan move:', { absoluteX, absoluteY, longPressActivated: dragState.longPressActivated });
 
-      // Update floating widget position (follows cursor)
-      setFloatingPos({
-        x: floatingPos.x + translationX,
-        y: floatingPos.y + translationY,
-      });
+      // Calculate hover index from absolute mouse position
+      const hoverIndex = calculateHoverIndex(
+        absoluteX,
+        absoluteY,
+        responsiveGrid,
+        currentPage,
+      );
 
-      // Calculate hover index (which cell is being hovered over)
-      const hoverIndex = calculateHoverIndex(absoluteX, absoluteY, responsiveGrid, currentPage);
+      // Log when hover index changes
+      if (hoverIndex !== -1 && hoverIndex !== dragState.currentHoverIndex) {
+        console.log('[DRAG] Hover index changed:', {
+          from: dragState.currentHoverIndex,
+          to: hoverIndex,
+          mouseX: absoluteX,
+          mouseY: absoluteY,
+          currentPage,
+        });
 
-      // Update placeholder position if hovering over different cell
-      if (hoverIndex !== -1 && isDragSignificant(translationX, translationY)) {
-        console.log('[DRAG] Move placeholder to index:', hoverIndex);
-        useWidgetStore.getState().insertPlaceholder(hoverIndex);
+        setDragState((prev) => ({ ...prev, currentHoverIndex: hoverIndex }));
       }
     },
-    [dragState.isDragging, floatingPos, responsiveGrid, currentPage],
+    [dragState.longPressActivated, dragState.currentHoverIndex, responsiveGrid, currentPage],
   );
 
   /**
-   * Handle drag end - complete reorder by replacing placeholder with widget
+   * Handle drag end - restore widget
    */
-  const handleDragEnd = useCallback(
-    (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
-      if (!dragState.isDragging || !dragState.draggedWidget) return;
+  const handleDragEnd = useCallback(() => {
+    if (!dragState.longPressActivated || !dragState.draggedWidget) return;
 
-      // Debounce: prevent double-trigger from rapid gestures
-      const now = Date.now();
-      if (now - lastDragEndTime.current < DRAG_CONFIG.DRAG_END_DEBOUNCE) {
-        return;
-      }
-      lastDragEndTime.current = now;
+    console.log('[DRAG] Drag ended, restoring widget');
 
-      // Replace placeholder with dragged widget
-      useWidgetStore.getState().finishDrag(dragState.draggedWidget);
-
-      // Haptic feedback
-      if (isDragSignificant(translationX, translationY)) {
-        dragHaptics.onDrop();
-      } else {
-        dragHaptics.onCancel();
-      }
-
-      // Reset drag state
-      setDragState({
-        draggedWidget: null,
-        sourceIndex: null,
-        isDragging: false,
-      });
-      setFloatingPos(null);
-
-      logger.dragDrop('Widget dropped', () => ({
-        widgetId: dragState.draggedWidget!.id,
-      }));
-    },
-    [dragState.isDragging, dragState.draggedWidget],
-  );
-
-  /**
-   * Cancel drag (Escape key or widget unmounted) - return widget to original position
-   */
-  const handleDragCancel = useCallback(() => {
-    if (!dragState.isDragging || !dragState.draggedWidget) return;
-
-    dragHaptics.onCancel();
-
-    // Replace placeholder with dragged widget (returns to last placeholder position)
+    // Put widget back at placeholder position
     useWidgetStore.getState().finishDrag(dragState.draggedWidget);
 
-    // Reset drag state
     setDragState({
-      draggedWidget: null,
-      sourceIndex: null,
       isDragging: false,
+      draggedWidget: null,
+      sourceIndex: -1,
+      currentHoverIndex: -1,
+      longPressActivated: false,
     });
-    setFloatingPos(null);
-
-    logger.dragDrop('Drag cancelled', () => ({ widgetId: dragState.draggedWidget!.id }));
-  }, [dragState.isDragging, dragState.draggedWidget]);
-
-  // Escape key cancels drag (web only)
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && dragState.isDragging) {
-        handleDragCancel();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dragState.isDragging, handleDragCancel]);
-
-  // Cancel drag if dragged widget no longer exists (safety check)
-  useEffect(() => {
-    if (dragState.isDragging && dragState.draggedWidget) {
-      const widgetExists = widgets.some((w) => w.id === dragState.draggedWidget!.id);
-      if (!widgetExists) {
-        handleDragCancel();
-      }
-    }
-  }, [widgets, dragState.isDragging, dragState.draggedWidget, handleDragCancel]);
+  }, [dragState.longPressActivated, dragState.draggedWidget]);
 
   // ========================================
-  // PAGE SWIPE GESTURE (New Gesture API)
+  // GESTURE HANDLERS
   // ========================================
 
   /**
-   * Page swipe gesture - disabled during widget drag
+   * Global drag tracking gesture - always active, processes when longPressActivated
+   */
+  const dragTrackingGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .onBegin(() => {
+          console.log('[DRAG] Pan gesture onBegin fired', { longPressActivated: dragState.longPressActivated });
+        })
+        .onUpdate((event) => {
+          console.log('[DRAG] Pan gesture onUpdate fired', { 
+            longPressActivated: dragState.longPressActivated,
+            absoluteX: event.absoluteX,
+            absoluteY: event.absoluteY 
+          });
+          
+          if (dragState.longPressActivated) {
+            runOnJS(handleDragMove)(
+              event.translationX,
+              event.translationY,
+              event.absoluteX,
+              event.absoluteY,
+            );
+          }
+        })
+        .onEnd(() => {
+          console.log('[DRAG] Pan gesture onEnd fired');
+          if (dragState.longPressActivated) {
+            runOnJS(handleDragEnd)();
+          }
+        }),
+    [dragState.longPressActivated, handleDragMove, handleDragEnd],
+  );
+
+  /**
+   * Page swipe gesture - disabled during drag
    */
   const pageSwipeGesture = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX([-10, 10]) // Only activate if horizontal movement > 10px
-        .failOffsetY([-5, 5]) // Fail if vertical movement detected
+        .activeOffsetX([-10, 10])
+        .failOffsetY([-5, 5])
+        .enabled(totalPages > 1 && !dragState.longPressActivated)
         .onEnd((event) => {
           const { translationX, velocityX } = event;
           const threshold = 50;
@@ -411,9 +387,16 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               runOnJS(navigateToNextPage)();
             }
           }
-        })
-        .enabled(totalPages > 1 && !dragState.isDragging), // Disable during drag
-    [totalPages, dragState.isDragging, navigateToNextPage, navigateToPreviousPage],
+        }),
+    [totalPages, dragState.longPressActivated, navigateToNextPage, navigateToPreviousPage],
+  );
+
+  /**
+   * Combined: drag tracking takes priority over page swipe
+   */
+  const combinedGesture = useMemo(
+    () => Gesture.Exclusive(dragTrackingGesture, pageSwipeGesture),
+    [dragTrackingGesture, pageSwipeGesture],
   );
 
   // Handle swipe gestures for page navigation (AC 8) - OLD CODE REMOVED
@@ -464,10 +447,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         return null;
       }
 
-      // Skip rendering the dragged widget - it's in the floating overlay
-      if (dragState.isDragging && dragState.draggedWidget?.id === widgetId) {
-        return null;
-      }
+      // Widgets render normally from store array (includes placeholder)
 
       // Find the widget config from store
       const widgetConfig = widgets.find((w) => w.id === widgetId);
@@ -494,16 +474,39 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         ? parseInt(widgetId.split('-').pop() || '0', 10)
         : 0;
 
-      // Long press gesture activates drag mode
+      // Long press gesture to activate drag mode
       const longPressGesture = Gesture.LongPress()
         .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
         .onStart((event) => {
           runOnJS(handleLongPressStart)(widgetId, index, pageLayout.pageIndex, event.x, event.y);
         });
 
-      // Render widget with gesture detector for long press (no drag animation here)
+      // Pan gesture tracks movement - works simultaneously with long press
+      const panGesture = Gesture.Pan()
+        .runOnJS(true)
+        .onUpdate((event) => {
+          // Only process if long press activated
+          if (dragState.longPressActivated) {
+            runOnJS(handleDragMove)(
+              event.translationX,
+              event.translationY,
+              event.absoluteX,
+              event.absoluteY,
+            );
+          }
+        })
+        .onEnd(() => {
+          if (dragState.longPressActivated) {
+            runOnJS(handleDragEnd)();
+          }
+        });
+
+      // Simultaneous: Pan listens from the start, processes after long press
+      const widgetGesture = Gesture.Simultaneous(longPressGesture, panGesture);
+
+      // Render widget with gesture detector
       return (
-        <GestureDetector key={`${widgetId}-${pageLayout.pageIndex}`} gesture={longPressGesture}>
+        <GestureDetector key={`${widgetId}-${pageLayout.pageIndex}`} gesture={widgetGesture}>
           <View
             style={[
               styles.widgetContainer,
@@ -522,7 +525,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </GestureDetector>
       );
     },
-    [widgets, widgetComponents, dragState, handleLongPressStart],
+    [widgets, widgetComponents, dragState.longPressActivated, handleLongPressStart, handleDragMove, handleDragEnd],
   );
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
@@ -610,7 +613,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }`}
     >
       {/* Main dashboard area - AC 11: Header-Dashboard-Footer Hierarchy */}
-      <GestureDetector gesture={pageSwipeGesture}>
+      <GestureDetector gesture={combinedGesture}>
         <Animated.View style={styles.dashboardArea}>
           <ScrollView
             ref={scrollViewRef}
@@ -648,61 +651,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         />
       </View>
 
-      {/* Floating dragged widget overlay */}
-      {dragState.isDragging && dragState.draggedWidget && floatingPos && (() => {
-        const widgetConfig = dragState.draggedWidget;
-        const WidgetComponent = widgetComponents[widgetConfig.type];
-        
-        if (!WidgetComponent) {
-          return null;
-        }
-
-        // Extract instance number from widget ID
-        const instanceNumber = widgetConfig.id.includes('-')
-          ? parseInt(widgetConfig.id.split('-').pop() || '0', 10)
-          : 0;
-
-        // Pan gesture for dragging the floating overlay
-        const panGesture = Gesture.Pan()
-          .runOnJS(true)
-          .onUpdate((event) => {
-            runOnJS(handleDragMove)(
-              event.translationX,
-              event.translationY,
-              event.absoluteX,
-              event.absoluteY,
-            );
-          })
-          .onEnd((event) => {
-            runOnJS(handleDragEnd)(
-              event.translationX,
-              event.translationY,
-              event.absoluteX,
-              event.absoluteY,
-            );
-          });
-
-        return (
-          <GestureDetector gesture={panGesture}>
-            <View
-              style={[
-                styles.floatingOverlay,
-                {
-                  left: floatingPos.x,
-                  top: floatingPos.y,
-                  width: responsiveGrid.layout.cellWidth,
-                  height: responsiveGrid.layout.cellHeight,
-                  opacity: DRAG_CONFIG.DRAGGED_WIDGET_OPACITY,
-                },
-              ]}
-              pointerEvents="box-only"
-              testID="floating-dragged-widget"
-            >
-              <WidgetComponent id={widgetConfig.id} instanceNumber={instanceNumber} />
-            </View>
-          </GestureDetector>
-        );
-      })()}
+      {/* TODO: Add floating overlay in next step */}
     </View>
   );
 };

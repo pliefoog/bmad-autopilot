@@ -127,7 +127,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   const handleHamburgerPress = () => {
-    console.log('[HeaderBar] Hamburger menu button pressed');
+    console.log('[1] Button pressed, setting visible=true');
     setShowHamburgerMenu(true);
   };
 

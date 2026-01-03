@@ -6,10 +6,10 @@ import {
   Modal,
   StyleSheet,
   ScrollView,
-  Animated,
   Dimensions,
   Platform,
   SafeAreaView,
+  Pressable,
 } from 'react-native';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
@@ -49,108 +49,51 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 }) => {
   const theme = useTheme();
   const menuWidth = Math.min(screenWidth * 0.8, MAX_MENU_WIDTH);
-  const { slideAnimation, fadeAnimation, animateIn, animateOut } = useMenuState(visible, menuWidth);
   const { resetAppToDefaults } = useWidgetStore();
   const [showFeatureFlags, setShowFeatureFlags] = useState(false);
-
-  // Log menu state for debugging
-  // React.useEffect(() => {
-  //   console.log('[HamburgerMenu] Visibility changed:', visible);
-  // }, [visible]);
-
-  // Custom action handlers
-  const actionHandlers = {
-    openConnectionSettings: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowConnectionSettings?.());
-      });
-    },
-    openDisplayThemeSettings: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowDisplayThemeSettings?.());
-      });
-    },
-    openUnitsConfig: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowUnitsDialog?.());
-      });
-    },
-    openLayoutSettings: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowLayoutSettings?.());
-      });
-    },
-    openAlarmHistory: () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowAlarmHistory?.());
-      });
-    },
-    performFactoryReset: async () => {
-      animateOut(() => {
-        onClose();
-        requestAnimationFrame(() => onShowFactoryResetDialog?.());
-      });
-    },
-    // Backwards compatibility - redirect to new name
-    resetAppToDefaults: async () => {
-      await actionHandlers.performFactoryReset();
-    },
-    openFeatureFlags: () => {
-      // Trigger close animation, then open feature flags
-      animateOut(() => {
-        onClose();
-        setTimeout(() => setShowFeatureFlags(true), 0);
-      });
-    },
-    openAlarmConfiguration: () => {
-      logger.alarm('HamburgerMenu: openAlarmConfiguration called', {
-        hasCallback: !!onShowAlarmConfiguration,
-      });
-      // Trigger close animation, then open alarm configuration
-      animateOut(() => {
-        logger.alarm('HamburgerMenu: Menu animation complete, closing menu');
-        onClose();
-        if (onShowAlarmConfiguration) {
-          logger.alarm('HamburgerMenu: Calling onShowAlarmConfiguration callback');
-          requestAnimationFrame(() => onShowAlarmConfiguration());
-        } else {
-          logger.alarm('HamburgerMenu: ERROR - No onShowAlarmConfiguration callback!');
-        }
-      });
-    },
-  };
-
-  // Handle menu close with animation
-  const handleClose = useCallback(() => {
-    animateOut(() => {
-      onClose();
-    });
-  }, [animateOut, onClose]);
-
-  // Handle overlay tap
-  const handleOverlayPress = useCallback(() => {
-    handleClose();
-  }, [handleClose]);
-
-  // Prevent menu panel tap from closing
-  const handleMenuPress = useCallback((event: any) => {
-    event.stopPropagation();
-  }, []);
 
   // Get menu sections from configuration
   const { sections, devSections } = menuConfiguration;
   const showDevTools = __DEV__ || process.env.NODE_ENV === 'development';
 
-  React.useEffect(() => {
-    if (visible) {
-      animateIn();
-    }
-  }, [visible, animateIn]);
+  // Custom action handlers
+  const actionHandlers = {
+    openConnectionSettings: () => {
+      onClose();
+      requestAnimationFrame(() => onShowConnectionSettings?.());
+    },
+    openDisplayThemeSettings: () => {
+      onClose();
+      requestAnimationFrame(() => onShowDisplayThemeSettings?.());
+    },
+    openUnitsConfig: () => {
+      onClose();
+      requestAnimationFrame(() => onShowUnitsDialog?.());
+    },
+    openLayoutSettings: () => {
+      onClose();
+      requestAnimationFrame(() => onShowLayoutSettings?.());
+    },
+    openAlarmHistory: () => {
+      onClose();
+      requestAnimationFrame(() => onShowAlarmHistory?.());
+    },
+    performFactoryReset: async () => {
+      onClose();
+      requestAnimationFrame(() => onShowFactoryResetDialog?.());
+    },
+    resetAppToDefaults: async () => {
+      await actionHandlers.performFactoryReset();
+    },
+    openFeatureFlags: () => {
+      onClose();
+      setTimeout(() => setShowFeatureFlags(true), 0);
+    },
+    openAlarmConfiguration: () => {
+      onClose();
+      requestAnimationFrame(() => onShowAlarmConfiguration?.());
+    },
+  };
 
   return (
     <>
@@ -159,35 +102,19 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         transparent
         visible={visible}
         animationType="none"
-        statusBarTranslucent
-        onRequestClose={handleClose}
+        onRequestClose={onClose}
       >
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={handleOverlayPress}>
-          <Animated.View
-            style={[
-              styles.overlayBackground,
-              {
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                opacity: fadeAnimation,
-              },
-            ]}
-          />
-
-          <Animated.View
+        <View style={styles.overlay}>
+          <View
             style={[
               styles.menuContainer,
               {
                 backgroundColor: theme.surface,
                 width: menuWidth,
-                transform: [{ translateX: slideAnimation }],
               },
             ]}
           >
-            <TouchableOpacity
-              style={styles.menuContent}
-              activeOpacity={1}
-              onPress={handleMenuPress}
-            >
+            <View style={styles.menuContent}>
               <SafeAreaView style={styles.safeArea}>
                 <ScrollView
                   style={styles.scrollContainer}
@@ -198,7 +125,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   <View style={[styles.header, { borderBottomColor: theme.border }]}>
                     <TouchableOpacity
                       style={styles.closeButton}
-                      onPress={handleClose}
+                      onPress={onClose}
                       testID="hamburger-menu-close"
                     >
                       <View style={[styles.closeIcon, { backgroundColor: theme.textSecondary }]} />
@@ -210,7 +137,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                     <MenuSection
                       key={section.id}
                       section={section}
-                      onItemPress={handleClose}
+                      onItemPress={onClose}
                       actionHandlers={actionHandlers}
                     />
                   ))}
@@ -219,15 +146,17 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   {showDevTools && devSections ? (
                     <DevToolsSection
                       sections={devSections}
-                      onItemPress={handleClose}
+                      onItemPress={onClose}
                       actionHandlers={actionHandlers}
                     />
                   ) : null}
                 </ScrollView>
               </SafeAreaView>
-            </TouchableOpacity>
-          </Animated.View>
-        </TouchableOpacity>
+            </View>
+          </View>
+          
+          <Pressable style={styles.overlayBackground} onPress={onClose} />
+        </View>
       </Modal>
 
       {/* Feature Flags Developer Menu - Always rendered so state persists */}
@@ -242,15 +171,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   overlayBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   menuContainer: {
-    flex: 1,
-    maxWidth: MAX_MENU_WIDTH,
+    width: MAX_MENU_WIDTH,
     shadowColor: '#000',
     shadowOffset: {
       width: 2,
