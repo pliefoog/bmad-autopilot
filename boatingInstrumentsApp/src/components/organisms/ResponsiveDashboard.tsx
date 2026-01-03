@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, Animated, Platform, Text, ActivityIndicator } from 'react-native';
-import {
-  PanGestureHandler,
-  State,
-  PanGestureHandlerGestureEvent,
-} from 'react-native-gesture-handler';
+import { View, ScrollView, StyleSheet, Platform, Text, ActivityIndicator } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useResponsiveGrid, type ResponsiveGridState } from '../../hooks/useResponsiveGrid';
@@ -17,6 +20,9 @@ import {
 import { log as logger } from '../../utils/logging/logger';
 import { WidgetVisibilityProvider } from '../../contexts/WidgetVisibilityContext';
 import { DEFAULT_CUSTOM_WIDGETS } from '../../config/defaultCustomWidgets';
+import { DRAG_CONFIG } from '../../config/dragConfig';
+import { dragHaptics } from '../../utils/dragHaptics';
+import { calculateHoverIndex, isDragSignificant } from '../../utils/dragHelpers';
 
 // Import widget components
 import { DepthWidget } from '../../widgets/DepthWidget';
@@ -70,6 +76,28 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Local page state management
   const [currentPage, setCurrentPage] = useState(0);
   const [isAnimatingPageTransition, setIsAnimatingPageTransition] = useState(false);
+
+  // Drag state management
+  const [dragState, setDragState] = useState<{
+    widgetId: string | null;
+    sourceIndex: number | null;
+    sourcePageIndex: number | null;
+    isDragging: boolean;
+  }>({
+    widgetId: null,
+    sourceIndex: null,
+    sourcePageIndex: null,
+    isDragging: false,
+  });
+
+  // Shared values for drag animations (Reanimated)
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const dragScale = useSharedValue(1);
+  const dragElevation = useSharedValue(2);
+
+  // Debounce drag end to prevent rapid triggers
+  const lastDragEndTime = useRef(0);
 
   // Animation values for page transitions (AC 10)
   const scrollViewRef = useRef<ScrollView>(null);

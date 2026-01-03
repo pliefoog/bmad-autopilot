@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { log } from '../utils/logging/logger';
 import type { DetectedWidgetInstance } from '../services/WidgetRegistrationService';
+import { DRAG_CONFIG } from '../config/dragConfig';
 
 // System widgets that must always be present and never expire
 const SYSTEM_WIDGETS = [{ id: 'theme', type: 'theme', title: 'Theme' }];
@@ -32,6 +33,12 @@ interface WidgetActions {
   setEnableWidgetAutoRemoval: (enabled: boolean) => void;
   cleanupExpiredWidgetsWithConfig: () => void;
   resetAppToDefaults: () => Promise<void>;
+  
+  // Drag-and-drop actions
+  reorderWidget: (fromIndex: number, toIndex: number) => void;
+  insertPlaceholder: (index: number) => void;
+  removePlaceholder: () => void;
+  moveWidgetCrossPage: (widgetId: string, fromPageIndex: number, toPageIndex: number, toPosition: number, widgetsPerPage: number) => void;
 }
 
 type WidgetStore = WidgetState & WidgetActions;
@@ -290,11 +297,141 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
         },
+
+        // ========================================
+        // DRAG-AND-DROP ACTIONS
+        // ========================================
+
+        /**
+         * Reorder widget within array (simple array splice)
+         * Array index = display order (left-to-right, top-to-bottom)
+         */
+        reorderWidget: (fromIndex: number, toIndex: number) => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return;
+
+          const newWidgets = [...currentDashboard.widgets];
+          
+          // Validate indices
+          if (fromIndex < 0 || fromIndex >= newWidgets.length) return;
+          if (toIndex < 0 || toIndex >= newWidgets.length) return;
+          if (fromIndex === toIndex) return;
+
+          // Remove from source
+          const [removed] = newWidgets.splice(fromIndex, 1);
+          
+          // Insert at target
+          newWidgets.splice(toIndex, 0, removed);
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
+
+          log.dragDrop('Widget reordered', () => ({
+            widgetId: removed.id,
+            fromIndex,
+            toIndex,
+          }));
+        },
+
+        /**
+         * Insert placeholder for drag preview (iOS-style reflow)
+         * Placeholder shows where widget will drop
+         */
+        insertPlaceholder: (index: number) => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return;
+
+          // Remove existing placeholder first (prevents duplicates)
+          const withoutPlaceholder = currentDashboard.widgets.filter(
+            (w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID,
+          );
+
+          // Insert new placeholder at index
+          const newWidgets = [...withoutPlaceholder];
+          newWidgets.splice(index, 0, {
+            id: DRAG_CONFIG.PLACEHOLDER_ID,
+            type: 'placeholder',
+            title: '',
+            settings: {},
+          });
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
+        },
+
+        /**
+         * Remove placeholder (after drag ends or cancels)
+         */
+        removePlaceholder: () => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return;
+
+          const newWidgets = currentDashboard.widgets.filter(
+            (w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID,
+          );
+
+          // Only update if placeholder existed
+          if (newWidgets.length === currentDashboard.widgets.length) return;
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
+        },
+
+        /**
+         * Move widget across pages (Phase 2: Cross-page dragging)
+         * Converts page + position to absolute index, then reorders
+         */
+        moveWidgetCrossPage: (
+          widgetId: string,
+          fromPageIndex: number,
+          toPageIndex: number,
+          toPosition: number,
+          widgetsPerPage: number,
+        ) => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return;
+
+          // Find widget's current index
+          const fromIndex = currentDashboard.widgets.findIndex((w) => w.id === widgetId);
+          if (fromIndex === -1) return;
+
+          // Calculate target absolute index
+          const toIndex = toPageIndex * widgetsPerPage + toPosition;
+
+          // Use existing reorder logic
+          get().reorderWidget(fromIndex, toIndex);
+
+          log.dragDrop('Widget moved cross-page', () => ({
+            widgetId,
+            fromPage: fromPageIndex,
+            toPage: toPageIndex,
+            fromIndex,
+            toIndex,
+          }));
+        },
       }),
       {
         name: 'widget-store',
         partialize: (state) => ({
-          dashboard: state.dashboard,
+          dashboard: {
+            ...state.dashboard,
+            // CRITICAL: Filter out placeholder before persisting
+            widgets: state.dashboard.widgets.filter(
+              (w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID,
+            ),
+          },
           widgetExpirationTimeout: state.widgetExpirationTimeout,
           enableWidgetAutoRemoval: state.enableWidgetAutoRemoval,
         }),
