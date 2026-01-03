@@ -91,6 +91,11 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
   // Pan gesture for dragging (only active after long press)
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
+      // Update shared values on UI thread for smooth animation
+      dragX.value = event.translationX;
+      dragY.value = event.translationY;
+      
+      // Call JS handler for placeholder logic
       runOnJS(onDragMove)(
         event.translationX,
         event.translationY,
@@ -377,8 +382,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
       if (!dragState.isDragging) return;
 
-      dragX.value = translationX;
-      dragY.value = translationY;
+      // Note: dragX/dragY are updated directly in gesture on UI thread for smooth animation
+      // This handler only manages placeholder insertion logic
 
       // Calculate hover index (which cell is being hovered over)
       const hoverIndex = calculateHoverIndex(
@@ -395,7 +400,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         }
       }
     },
-    [dragState, dragX, dragY, responsiveGrid, currentPage],
+    [dragState, responsiveGrid, currentPage],
   );
 
   /**
