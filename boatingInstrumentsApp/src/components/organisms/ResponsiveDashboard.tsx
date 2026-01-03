@@ -418,7 +418,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         }
       }
     },
-    [dragState, dragX, dragY, responsiveGrid, currentPage],
+    [dragState.isDragging, dragState.placeholderIndex, dragX, dragY, responsiveGrid, currentPage],
   );
 
   /**
@@ -477,7 +477,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
       dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
     },
-    [dragState, dragX, dragY, dragScale, dragElevation, responsiveGrid, currentPage],
+    [dragState.isDragging, dragState.widgetId, dragState.sourceIndex, dragX, dragY, dragScale, dragElevation, responsiveGrid, currentPage],
   );
 
   /**
@@ -504,7 +504,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
 
     logger.dragDrop('Drag cancelled', () => ({ widgetId: dragState.widgetId }));
-  }, [dragState, dragScale, dragElevation, dragX, dragY]);
+  }, [dragState.isDragging, dragScale, dragElevation, dragX, dragY]);
 
   // Escape key cancels drag (web only)
   useEffect(() => {
@@ -528,7 +528,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         handleDragCancel();
       }
     }
-  }, [widgets, dragState, handleDragCancel]);
+  }, [widgets, dragState.isDragging, dragState.widgetId, handleDragCancel]);
 
   // ========================================
   // PAGE SWIPE GESTURE (New Gesture API)
