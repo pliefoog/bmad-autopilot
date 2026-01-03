@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, Platform, Text, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, Platform, Text, ActivityIndicator, Animated as RNAnimated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -43,8 +43,6 @@ import CustomWidget from '../../widgets/CustomWidget';
 
 interface ResponsiveDashboardProps {
   headerHeight?: number;
-  onWidgetPress?: (widgetId: string) => void;
-  onWidgetLongPress?: (widgetId: string) => void;
   testID?: string;
 }
 
@@ -57,11 +55,10 @@ interface ResponsiveDashboardProps {
  * - AC 6-10: Pagination System with dots, navigation, and persistence
  * - AC 11-15: Layout Integration with performance optimization
  * - AC 16-20: Cross-Platform Compatibility with touch, mouse, and keyboard
+ * - Drag-and-Drop: Long press (800ms) to drag widgets, reorder within page
  */
 export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   headerHeight = 60,
-  onWidgetPress,
-  onWidgetLongPress,
   testID = 'responsive-dashboard',
 }) => {
   const theme = useTheme();
@@ -101,7 +98,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
   // Animation values for page transitions (AC 10)
   const scrollViewRef = useRef<ScrollView>(null);
-  const pageAnimatedValue = useRef(new Animated.Value(0)).current;
+  const pageAnimatedValue = useRef(new RNAnimated.Value(0)).current;
   const [scrollViewWidth, setScrollViewWidth] = useState(0);
   const handleScrollViewLayout = useCallback((event: any) => {
     const width = event?.nativeEvent?.layout?.width ?? 0;
@@ -460,6 +457,42 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Render individual widget
   const renderWidget = useCallback(
     (widgetId: string, index: number, pageLayout: PageLayout) => {
+      const position = pageLayout.cells[index];
+      if (!position) {
+        return null;
+      }
+
+      // ========================================
+      // PLACEHOLDER RENDERING
+      // ========================================
+      if (widgetId === DRAG_CONFIG.PLACEHOLDER_ID) {
+        return (
+          <View
+            key="drag-placeholder"
+            style={[
+              styles.widgetContainer,
+              {
+                position: 'absolute',
+                left: position.x,
+                top: position.y,
+                width: position.width,
+                height: position.height,
+                borderWidth: 2,
+                borderStyle: 'dashed',
+                borderColor: theme.colors.primary,
+                backgroundColor: 'transparent',
+                borderRadius: 8,
+              },
+            ]}
+            testID="drag-placeholder"
+          />
+        );
+      }
+
+      // ========================================
+      // NORMAL WIDGET RENDERING
+      // ========================================
+
       // Find the widget config from store
       const widgetConfig = widgets.find((w) => w.id === widgetId);
       if (!widgetConfig) {
@@ -480,39 +513,110 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         return null;
       }
 
-      const position = pageLayout.cells[index];
-      if (!position) {
-        return null;
-      }
-
       // Extract instance number from widget ID (e.g., "depth-0" -> 0)
       const instanceNumber = widgetId.includes('-') 
         ? parseInt(widgetId.split('-').pop() || '0', 10)
         : 0;
 
+      // Check if this widget is being dragged
+      const isBeingDragged = dragState.isDragging && dragState.widgetId === widgetId;
+
+      // ========================================
+      // GESTURE SETUP
+      // ========================================
+
+      // Long press gesture activates drag mode
+      const longPressGesture = Gesture.LongPress()
+        .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
+        .onStart(() => {
+          runOnJS(handleLongPressStart)(widgetId, index, pageLayout.pageIndex);
+        })
+        .enabled(!dragState.isDragging); // Disable if already dragging
+
+      // Pan gesture for dragging (only active after long press)
+      const panGesture = Gesture.Pan()
+        .onUpdate((event) => {
+          runOnJS(handleDragMove)(
+            event.translationX,
+            event.translationY,
+            event.absoluteX,
+            event.absoluteY,
+          );
+        })
+        .onEnd((event) => {
+          runOnJS(handleDragEnd)(
+            event.translationX,
+            event.translationY,
+            event.absoluteX,
+            event.absoluteY,
+          );
+        })
+        .enabled(isBeingDragged); // Only active when this widget is being dragged
+
+      // Combine gestures: long press enables pan
+      const combinedGesture = Gesture.Race(longPressGesture, panGesture);
+
+      // ========================================
+      // ANIMATED STYLE (for dragged widget)
+      // ========================================
+
+      const animatedStyle = useAnimatedStyle(() => {
+        if (!isBeingDragged) {
+          return {};
+        }
+
+        return {
+          transform: [
+            { translateX: dragX.value },
+            { translateY: dragY.value },
+            { scale: dragScale.value },
+          ],
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: dragElevation.value,
+          zIndex: 999, // Bring to front
+        };
+      }, [isBeingDragged]);
+
       return (
-        <View
-          key={`${widgetId}-${pageLayout.pageIndex}`}
-          style={[
-            styles.widgetContainer,
-            {
-              position: 'absolute',
-              left: position.x,
-              top: position.y,
-              width: position.width,
-              height: position.height,
-            },
-          ]}
-          testID={`widget-${widgetId}`}
-        >
-          <WidgetComponent
-            id={widgetId}
-            instanceNumber={instanceNumber}
-          />
-        </View>
+        <GestureDetector gesture={combinedGesture} key={`${widgetId}-${pageLayout.pageIndex}`}>
+          <Animated.View
+            style={[
+              styles.widgetContainer,
+              {
+                position: 'absolute',
+                left: position.x,
+                top: position.y,
+                width: position.width,
+                height: position.height,
+                opacity: isBeingDragged ? DRAG_CONFIG.DRAGGED_WIDGET_OPACITY : 1,
+              },
+              animatedStyle,
+            ]}
+            testID={`widget-${widgetId}`}
+          >
+            <WidgetComponent
+              id={widgetId}
+              instanceNumber={instanceNumber}
+            />
+          </Animated.View>
+        </GestureDetector>
       );
     },
-    [widgets, widgetComponents, onWidgetPress, onWidgetLongPress],
+    [
+      widgets,
+      widgetComponents,
+      theme,
+      dragState,
+      dragX,
+      dragY,
+      dragScale,
+      dragElevation,
+      handleLongPressStart,
+      handleDragMove,
+      handleDragEnd,
+    ],
   );
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
@@ -592,16 +696,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }`}
     >
       {/* Main dashboard area - AC 11: Header-Dashboard-Footer Hierarchy */}
-      <PanGestureHandler
-        onHandlerStateChange={handleSwipeGesture}
-        enabled={totalPages > 1} // Only enable swipe when multiple pages
-      >
+      <GestureDetector gesture={pageSwipeGesture}>
         <Animated.View style={styles.dashboardArea}>
           <ScrollView
             ref={scrollViewRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
+            scrollEnabled={!dragState.isDragging} // Disable scroll during widget drag
             onLayout={handleScrollViewLayout}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -614,7 +716,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             {pageLayouts.map((pageLayout) => renderPage(pageLayout, pageLayout.pageIndex))}
           </ScrollView>
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
 
       {/* Pagination dots - AC 6: Page Indicator Dots (Overlays bottom of widgets) */}
       {/* {logger.layout('Rendering pagination:', () => ({
