@@ -224,29 +224,204 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     }
   }, [currentPage, navigateToPage]);
 
-  // Handle swipe gestures for page navigation (AC 8)
-  const handleSwipeGesture = useCallback(
-    (event: PanGestureHandlerGestureEvent) => {
-      const { translationX, velocityX, state } = event.nativeEvent;
+  // ========================================
+  // DRAG-AND-DROP HANDLERS
+  // ========================================
 
-      if (state === State.END) {
-        const threshold = 50; // Minimum swipe distance
-        const velocityThreshold = 500; // Minimum swipe velocity
+  /**
+   * Handle long press start - activates drag mode
+   */
+  const handleLongPressStart = useCallback(
+    (widgetId: string, index: number, pageIndex: number) => {
+      dragHaptics.onLift();
 
-        if (Math.abs(translationX) > threshold || Math.abs(velocityX) > velocityThreshold) {
-          if (translationX > 0 || velocityX > 0) {
-            // Swipe right - previous page
-            navigateToPreviousPage();
-          } else {
-            // Swipe left - next page
-            navigateToNextPage();
-          }
+      setDragState({
+        widgetId,
+        sourceIndex: index,
+        sourcePageIndex: pageIndex,
+        isDragging: true,
+      });
+
+      // Animate widget lift
+      dragScale.value = withSpring(DRAG_CONFIG.DRAGGED_WIDGET_SCALE, DRAG_CONFIG.DROP_SPRING_CONFIG);
+      dragElevation.value = withTiming(DRAG_CONFIG.DRAGGED_WIDGET_ELEVATION);
+
+      logger.dragDrop('Widget lifted', () => ({ widgetId, index, pageIndex }));
+    },
+    [dragScale, dragElevation],
+  );
+
+  /**
+   * Handle drag move - update position and placeholder
+   */
+  const handleDragMove = useCallback(
+    (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
+      if (!dragState.isDragging) return;
+
+      dragX.value = translationX;
+      dragY.value = translationY;
+
+      // Calculate hover index (which cell is being hovered over)
+      const hoverIndex = calculateHoverIndex(
+        absoluteX,
+        absoluteY,
+        responsiveGrid,
+        currentPage,
+      );
+
+      // Insert placeholder if hovering over different position
+      if (hoverIndex !== -1 && hoverIndex !== dragState.sourceIndex) {
+        if (isDragSignificant(translationX, translationY)) {
+          useWidgetStore.getState().insertPlaceholder(hoverIndex);
         }
       }
     },
-    [navigateToNextPage, navigateToPreviousPage],
+    [dragState, dragX, dragY, responsiveGrid, currentPage],
   );
 
+  /**
+   * Handle drag end - complete reorder or cancel
+   */
+  const handleDragEnd = useCallback(
+    (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
+      if (!dragState.isDragging || !dragState.widgetId) return;
+
+      // Debounce: prevent double-trigger from rapid gestures
+      const now = Date.now();
+      if (now - lastDragEndTime.current < DRAG_CONFIG.DRAG_END_DEBOUNCE) {
+        return;
+      }
+      lastDragEndTime.current = now;
+
+      // Calculate final drop position
+      const dropIndex = calculateHoverIndex(
+        absoluteX,
+        absoluteY,
+        responsiveGrid,
+        currentPage,
+      );
+
+      // Only reorder if moved to different position and movement was significant
+      if (
+        dropIndex !== -1 &&
+        dropIndex !== dragState.sourceIndex &&
+        isDragSignificant(translationX, translationY)
+      ) {
+        useWidgetStore.getState().reorderWidget(dragState.sourceIndex!, dropIndex);
+        dragHaptics.onDrop();
+        
+        logger.dragDrop('Widget dropped', () => ({
+          widgetId: dragState.widgetId,
+          fromIndex: dragState.sourceIndex,
+          toIndex: dropIndex,
+        }));
+      } else {
+        dragHaptics.onCancel();
+      }
+
+      // Remove placeholder and reset state
+      useWidgetStore.getState().removePlaceholder();
+
+      setDragState({
+        widgetId: null,
+        sourceIndex: null,
+        sourcePageIndex: null,
+        isDragging: false,
+      });
+
+      // Animate back to normal
+      dragScale.value = withSpring(1, DRAG_CONFIG.DROP_SPRING_CONFIG);
+      dragElevation.value = withTiming(2);
+      dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
+      dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
+    },
+    [dragState, dragX, dragY, dragScale, dragElevation, responsiveGrid, currentPage],
+  );
+
+  /**
+   * Cancel drag (Escape key or widget unmounted)
+   */
+  const handleDragCancel = useCallback(() => {
+    if (!dragState.isDragging) return;
+
+    useWidgetStore.getState().removePlaceholder();
+    dragHaptics.onCancel();
+
+    setDragState({
+      widgetId: null,
+      sourceIndex: null,
+      sourcePageIndex: null,
+      isDragging: false,
+    });
+
+    // Animate back to original position
+    dragScale.value = withSpring(1, DRAG_CONFIG.DROP_SPRING_CONFIG);
+    dragElevation.value = withTiming(2);
+    dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
+    dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
+
+    logger.dragDrop('Drag cancelled', () => ({ widgetId: dragState.widgetId }));
+  }, [dragState, dragScale, dragElevation, dragX, dragY]);
+
+  // Escape key cancels drag (web only)
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && dragState.isDragging) {
+        handleDragCancel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [dragState.isDragging, handleDragCancel]);
+
+  // Cancel drag if dragged widget no longer exists (safety check)
+  useEffect(() => {
+    if (dragState.isDragging && dragState.widgetId) {
+      const widgetExists = widgets.some((w) => w.id === dragState.widgetId);
+      if (!widgetExists) {
+        handleDragCancel();
+      }
+    }
+  }, [widgets, dragState, handleDragCancel]);
+
+  // ========================================
+  // PAGE SWIPE GESTURE (New Gesture API)
+  // ========================================
+
+  /**
+   * Page swipe gesture - disabled during widget drag
+   */
+  const pageSwipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-10, 10]) // Only activate if horizontal movement > 10px
+        .failOffsetY([-5, 5]) // Fail if vertical movement detected
+        .onEnd((event) => {
+          const { translationX, velocityX } = event;
+          const threshold = 50;
+          const velocityThreshold = 500;
+
+          if (
+            Math.abs(translationX) > threshold ||
+            Math.abs(velocityX) > velocityThreshold
+          ) {
+            if (translationX > 0 || velocityX > 0) {
+              runOnJS(navigateToPreviousPage)();
+            } else {
+              runOnJS(navigateToNextPage)();
+            }
+          }
+        })
+        .enabled(totalPages > 1 && !dragState.isDragging), // Disable during drag
+    [totalPages, dragState.isDragging, navigateToNextPage, navigateToPreviousPage],
+  );
+
+  // Handle swipe gestures for page navigation (AC 8) - OLD CODE REMOVED
+  // Migrated to new Gesture API above (pageSwipeGesture)
+  
   // Handle keyboard navigation (AC 18)
   const handleKeyPress = useCallback(
     (event: any) => {
