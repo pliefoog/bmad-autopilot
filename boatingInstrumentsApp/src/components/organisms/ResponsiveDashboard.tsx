@@ -97,11 +97,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const pageLayoutsRef = useRef<PageLayout[]>([]); // For hit detection
   const responsiveGridRef = useRef<ResponsiveGridState>(responsiveGrid); // For hover calculation
 
-  // Floating widget position for drag overlay
-  const [floatingPos, setFloatingPos] = useState<{ x: number; y: number } | null>(null);
-
-  // Debounce drag end to prevent rapid triggers
-  const lastDragEndTime = useRef(0);
+  // Floating widget overlay position (updated during drag)
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
 
   // Animation values for page transitions (AC 10)
   const scrollViewRef = useRef<ScrollView>(null);
@@ -205,6 +203,17 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     responsiveGridRef.current = responsiveGrid;
   }, [pageLayouts, responsiveGrid]);
 
+  // Animated style for floating widget overlay
+  const floatingStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+    ],
+    opacity: isDragging ? 0.6 : 0,
+    width: responsiveGrid.layout.cellWidth,
+    height: responsiveGrid.layout.cellHeight,
+  }));
+
   // Page navigation functions
   const navigateToPage = useCallback(
     (page: number) => {
@@ -259,6 +268,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       draggedWidgetRef.current = removedWidget;
       lastMovedIndexRef.current = index; // Start at source position
       
+      // Set initial floating position
+      translateX.value = touchX - responsiveGrid.layout.cellWidth / 2;
+      translateY.value = touchY - responsiveGrid.layout.cellHeight / 2;
+      
       // Update state to disable scroll
       setIsDragging(true);
 
@@ -305,6 +318,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       const pan = Gesture.Pan()
         .runOnJS(true)
         .onUpdate((event) => {
+          // Move floating widget with pointer
+          const cellWidth = responsiveGridRef.current.layout.cellWidth;
+          const cellHeight = responsiveGridRef.current.layout.cellHeight;
+          translateX.value = event.absoluteX - cellWidth / 2;
+          translateY.value = event.absoluteY - cellHeight / 2;
+
           // Calculate which widget index is being hovered
           const hoverIndex = calculateHoverIndex(
             event.absoluteX,
@@ -558,7 +577,29 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         />
       </View>
 
-      {/* TODO: Add floating overlay in next step */}
+      {/* Floating widget overlay during drag */}
+      {isDragging && draggedWidgetRef.current && (
+        <Animated.View
+          style={[styles.floatingOverlay, floatingStyle]}
+          pointerEvents="none"
+        >
+          {(() => {
+            const WidgetComponent = widgetComponents[draggedWidgetRef.current.type];
+            if (!WidgetComponent) return null;
+            
+            const instanceNumber = draggedWidgetRef.current.id.includes('-')
+              ? parseInt(draggedWidgetRef.current.id.split('-').pop() || '0', 10)
+              : 0;
+            
+            return (
+              <WidgetComponent 
+                id={draggedWidgetRef.current.id} 
+                instanceNumber={instanceNumber}
+              />
+            );
+          })()}
+        </Animated.View>
+      )}
     </View>
   );
 };
