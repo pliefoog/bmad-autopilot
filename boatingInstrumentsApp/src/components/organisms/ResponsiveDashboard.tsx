@@ -598,6 +598,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       // PLACEHOLDER RENDERING
       // ========================================
       if (widgetId === DRAG_CONFIG.PLACEHOLDER_ID) {
+        console.log('[DRAG] Rendering placeholder, theme:', theme);
         return (
           <View
             key="drag-placeholder"
@@ -611,7 +612,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 height: position.height,
                 borderWidth: 2,
                 borderStyle: 'dashed',
-                borderColor: theme.colors.primary,
+                borderColor: theme?.colors?.primary || '#007AFF',
                 backgroundColor: 'transparent',
                 borderRadius: 8,
               },
