@@ -85,32 +85,34 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(({
     .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
     .onStart(() => {
       runOnJS(onLongPressStart)(widgetId, index, pageIndex);
-    })
-    .enabled(!isDragging); // Disable if already dragging
+    });
 
-  // Pan gesture for dragging (only active after long press)
+  // Pan gesture for dragging (always enabled, checks isBeingDragged internally)
   const panGesture = Gesture.Pan()
     .runOnJS(true)
     .onUpdate((event) => {
-      runOnJS(onDragMove)(
-        event.translationX,
-        event.translationY,
-        event.absoluteX,
-        event.absoluteY,
-      );
+      if (isBeingDragged) {
+        runOnJS(onDragMove)(
+          event.translationX,
+          event.translationY,
+          event.absoluteX,
+          event.absoluteY,
+        );
+      }
     })
     .onEnd((event) => {
-      runOnJS(onDragEnd)(
-        event.translationX,
-        event.translationY,
-        event.absoluteX,
-        event.absoluteY,
-      );
-    })
-    .enabled(isBeingDragged); // Only active when this widget is being dragged
+      if (isBeingDragged) {
+        runOnJS(onDragEnd)(
+          event.translationX,
+          event.translationY,
+          event.absoluteX,
+          event.absoluteY,
+        );
+      }
+    });
 
-  // Combine gestures: long press enables pan
-  const combinedGesture = Gesture.Race(longPressGesture, panGesture);
+  // Combine gestures: long press can trigger while panning
+  const combinedGesture = Gesture.Simultaneous(longPressGesture, panGesture);
 
   // Animated style for dragged widget
   const animatedStyle = useAnimatedStyle(() => {
@@ -353,6 +355,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
    */
   const handleLongPressStart = useCallback(
     (widgetId: string, index: number, pageIndex: number) => {
+      console.log('[DRAG] Long press start:', { widgetId, index, pageIndex });
+      
       dragHaptics.onLift();
 
       setDragState({
@@ -378,9 +382,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     (translationX: number, translationY: number, absoluteX: number, absoluteY: number) => {
       if (!dragState.isDragging) return;
 
+      console.log('[DRAG] Move:', { translationX, translationY, absoluteX, absoluteY });
+
       // Update shared values with spring animation for smooth follow
       dragX.value = withSpring(translationX, { mass: 0.5 });
       dragY.value = withSpring(translationY, { mass: 0.5 });
+
+      console.log('[DRAG] Updated shared values:', dragX.value, dragY.value);
 
       // Calculate hover index (which cell is being hovered over)
       const hoverIndex = calculateHoverIndex(
