@@ -109,28 +109,26 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(
         runOnJS(onLongPressStart)(widgetId, index, pageIndex, event.x, event.y);
       });
 
-    // Pan gesture for dragging (always enabled, checks isBeingDragged internally)
+    // Pan gesture for dragging - always calls handlers, they check drag state internally
     const panGesture = Gesture.Pan()
       .runOnJS(true)
       .onUpdate((event) => {
-        if (isBeingDragged) {
-          runOnJS(onDragMove)(
-            event.translationX,
-            event.translationY,
-            event.absoluteX,
-            event.absoluteY,
-          );
-        }
+        // Always call handler - it checks dragState.isDragging internally
+        runOnJS(onDragMove)(
+          event.translationX,
+          event.translationY,
+          event.absoluteX,
+          event.absoluteY,
+        );
       })
       .onEnd((event) => {
-        if (isBeingDragged) {
-          runOnJS(onDragEnd)(
-            event.translationX,
-            event.translationY,
-            event.absoluteX,
-            event.absoluteY,
-          );
-        }
+        // Always call handler - it checks dragState.isDragging internally
+        runOnJS(onDragEnd)(
+          event.translationX,
+          event.translationY,
+          event.absoluteX,
+          event.absoluteY,
+        );
       });
 
     // Combine gestures: long press can trigger while panning
@@ -142,14 +140,12 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(
         return {};
       }
 
-      // Apply touch offset so the point where user pressed stays under cursor
-      const offsetX = touchOffset ? touchOffset.x : 0;
-      const offsetY = touchOffset ? touchOffset.y : 0;
-
+      // dragX/dragY are translation values (relative movement from start)
+      // We apply them directly as the widget moves relative to its initial position
       return {
         transform: [
-          { translateX: dragX.value - offsetX },
-          { translateY: dragY.value - offsetY },
+          { translateX: dragX.value },
+          { translateY: dragY.value },
           { scale: dragScale.value },
         ],
         shadowOpacity: 0.4,
@@ -158,7 +154,7 @@ const DraggableWidget: React.FC<DraggableWidgetProps> = React.memo(
         elevation: dragElevation.value,
         zIndex: 999, // Bring to front
       };
-    }, [isBeingDragged, touchOffset]);
+    }, [isBeingDragged]);
 
     return (
       <GestureDetector gesture={combinedGesture}>
@@ -417,9 +413,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       console.log('[DRAG] Move:', { translationX, translationY, absoluteX, absoluteY });
 
-      // Update shared values with spring animation for smooth follow
-      dragX.value = withSpring(translationX, { mass: 0.5 });
-      dragY.value = withSpring(translationY, { mass: 0.5 });
+      // Update shared values directly - no spring animation on every frame for smooth tracking
+      dragX.value = translationX;
+      dragY.value = translationY;
 
       console.log('[DRAG] Updated shared values:', dragX.value, dragY.value);
 
@@ -472,21 +468,24 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         dragHaptics.onCancel();
       }
 
-      // Reset state (no need to remove placeholder - it's render-only)
-      setDragState({
-        widgetId: null,
-        sourceIndex: null,
-        sourcePageIndex: null,
-        isDragging: false,
-        touchOffset: null,
-        placeholderIndex: null,
-      });
-
-      // Animate back to normal
+      // Animate back to normal first, THEN reset state
+      // This ensures spring animation completes while widget is still in drag mode
       dragScale.value = withSpring(1, DRAG_CONFIG.DROP_SPRING_CONFIG);
       dragElevation.value = withTiming(2);
       dragX.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
       dragY.value = withSpring(0, DRAG_CONFIG.DROP_SPRING_CONFIG);
+
+      // Delay state reset until animation completes (spring takes ~300ms to settle)
+      setTimeout(() => {
+        setDragState({
+          widgetId: null,
+          sourceIndex: null,
+          sourcePageIndex: null,
+          isDragging: false,
+          touchOffset: null,
+          placeholderIndex: null,
+        });
+      }, 300);
     },
     [
       dragState.isDragging,
@@ -658,30 +657,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }
 
       // ========================================
-      // HIDE WIDGET AT SOURCE POSITION
-      // ========================================
-      if (isSourcePosition && dragState.isDragging) {
-        return (
-          <View
-            key={`hidden-${widgetId}`}
-            style={[
-              styles.widgetContainer,
-              {
-                position: 'absolute',
-                left: position.x,
-                top: position.y,
-                width: position.width,
-                height: position.height,
-                opacity: 0,
-              },
-            ]}
-          />
-        );
-      }
-
-      // ========================================
       // NORMAL WIDGET RENDERING
       // ========================================
+      // Note: We render DraggableWidget for all widgets, including the one being dragged.
+      // The DraggableWidget component handles making it translucent and animated when isBeingDragged=true.
 
       // Find the widget config from store
       const widgetConfig = widgets.find((w) => w.id === widgetId);
