@@ -23,8 +23,8 @@ export function calculateHoverIndex(
   gridState: ResponsiveGridState,
   pageIndex: number,
 ): number {
-  const { layout, cols, rows } = gridState;
-  const { cellWidth, cellHeight, containerWidth, containerHeight } = layout;
+  const { layout } = gridState;
+  const { cellWidth, cellHeight, containerWidth, containerHeight, cols, rows } = layout;
 
   // Calculate position relative to page
   const relativeX = absoluteX - pageIndex * containerWidth;
@@ -44,8 +44,14 @@ export function calculateHoverIndex(
     return -1;
   }
 
-  // Convert to linear index
-  return row * cols + col;
+  // Convert to linear index within this page
+  const indexInPage = row * cols + col;
+  
+  // Calculate widgets per page
+  const widgetsPerPage = cols * rows;
+  
+  // Convert to global widget array index by adding page offset
+  return pageIndex * widgetsPerPage + indexInPage;
 }
 
 /**

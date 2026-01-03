@@ -39,7 +39,8 @@ interface WidgetActions {
   insertPlaceholder: (index: number) => void;
   removePlaceholder: () => void;
   startDrag: (widgetId: string, sourceIndex: number) => WidgetConfig | null;
-  finishDrag: (draggedWidget: WidgetConfig) => void;
+  movePlaceholder: (targetIndex: number) => void;
+  finishDrag: (draggedWidget: WidgetConfig, targetIndex?: number) => void;
   moveWidgetCrossPage: (
     widgetId: string,
     fromPageIndex: number,
@@ -344,11 +345,11 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          log.dragDrop('Widget reordered', () => ({
+          console.log('[DRAG] Widget reordered:', {
             widgetId: removed.id,
             fromIndex,
             toIndex,
-          }));
+          });
         },
 
         /**
@@ -430,27 +431,40 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          log.dragDrop('Drag started', () => ({ widgetId, sourceIndex }));
+          console.log('[DRAG] Drag started:', { widgetId, sourceIndex });
           return widget;
         },
 
         /**
-         * Finish drag - replace placeholder with dragged widget
+         * Move placeholder to new index during drag
          */
-        finishDrag: (draggedWidget: WidgetConfig) => {
+        movePlaceholder: (targetIndex: number) => {
           const currentDashboard = get().dashboard;
           if (!currentDashboard) return;
 
           const placeholderIdx = currentDashboard.widgets.findIndex(
             (w) => w.id === DRAG_CONFIG.PLACEHOLDER_ID,
           );
-          if (placeholderIdx === -1) {
-            log.dragDrop('⚠️ No placeholder found during finish drag', () => ({}));
-            return;
-          }
+          if (placeholderIdx === -1) return;
 
-          const newWidgets = [...currentDashboard.widgets];
-          newWidgets[placeholderIdx] = draggedWidget;
+          // Don't move if already at target
+          if (placeholderIdx === targetIndex) return;
+
+          // Remove placeholder from current position
+          const newWidgets = currentDashboard.widgets.filter(
+            (w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID,
+          );
+
+          // Adjust target index if placeholder was before it (array shifted down after removal)
+          const adjustedTarget = placeholderIdx < targetIndex ? targetIndex - 1 : targetIndex;
+
+          // Insert placeholder at adjusted target position
+          newWidgets.splice(adjustedTarget, 0, {
+            id: DRAG_CONFIG.PLACEHOLDER_ID,
+            type: 'placeholder',
+            title: '',
+            settings: {},
+          });
 
           set({
             dashboard: {
@@ -459,10 +473,52 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          log.dragDrop('Drag finished', () => ({
+          console.log('[DRAG] Placeholder moved:', { 
+            from: placeholderIdx, 
+            to: targetIndex,
+            adjustedTo: adjustedTarget 
+          });
+        },
+
+        /**
+         * Finish drag - replace placeholder with dragged widget at target index
+         * If targetIndex provided, removes placeholder and inserts widget at exact position
+         * If no targetIndex, just replaces placeholder in place
+         */
+        finishDrag: (draggedWidget: WidgetConfig, targetIndex?: number) => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return;
+
+          const newWidgets = [...currentDashboard.widgets];
+          const placeholderIdx = newWidgets.findIndex(
+            (w) => w.id === DRAG_CONFIG.PLACEHOLDER_ID,
+          );
+          
+          if (placeholderIdx === -1) {
+            console.log('[DRAG] ⚠️ No placeholder found during finish drag');
+            return;
+          }
+
+          // Remove placeholder
+          newWidgets.splice(placeholderIdx, 1);
+
+          // If targetIndex provided, insert at exact position (no adjustment needed)
+          // Otherwise insert back where placeholder was
+          const insertIndex = targetIndex !== undefined ? targetIndex : placeholderIdx;
+          newWidgets.splice(insertIndex, 0, draggedWidget);
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
+
+          console.log('[DRAG] Drag finished:', {
             widgetId: draggedWidget.id,
-            finalIndex: placeholderIdx,
-          }));
+            placeholderWasAt: placeholderIdx,
+            insertedAt: insertIndex,
+          });
         },
 
         /**
@@ -489,13 +545,13 @@ export const useWidgetStore = create<WidgetStore>()(
           // Use existing reorder logic
           get().reorderWidget(fromIndex, toIndex);
 
-          log.dragDrop('Widget moved cross-page', () => ({
+          console.log('[DRAG] Widget moved cross-page:', {
             widgetId,
             fromPage: fromPageIndex,
             toPage: toPageIndex,
             fromIndex,
             toIndex,
-          }));
+          });
         },
       }),
       {

@@ -88,16 +88,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [isAnimatingPageTransition, setIsAnimatingPageTransition] = useState(false);
 
-  // Drag state management - simplified store-based approach
-  const [dragState, setDragState] = useState<{
-    draggedWidget: WidgetConfig | null; // Widget being dragged (removed from array)
-    sourceIndex: number;
-    isDragging: boolean;
-  }>({
-    draggedWidget: null,
-    sourceIndex: -1,
-    isDragging: false,
-  });
+  // Drag state - only used to disable scroll during drag
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Refs for gesture callbacks to prevent closure issues and useMemo recreation
+  const draggedWidgetRef = useRef<WidgetConfig | null>(null);
+  const lastMovedIndexRef = useRef(-1); // Prevents duplicate movePlaceholder calls
+  const pageLayoutsRef = useRef<PageLayout[]>([]); // For hit detection
+  const responsiveGridRef = useRef<ResponsiveGridState>(responsiveGrid); // For hover calculation
 
   // Floating widget position for drag overlay
   const [floatingPos, setFloatingPos] = useState<{ x: number; y: number } | null>(null);
@@ -201,6 +199,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     responsiveGrid.layout.cellHeight,
   ]);
 
+  // Update pageLayouts ref whenever it changes (must be after pageLayouts is calculated)
+  useEffect(() => {
+    pageLayoutsRef.current = pageLayouts;
+    responsiveGridRef.current = responsiveGrid;
+  }, [pageLayouts, responsiveGrid]);
+
   // Page navigation functions
   const navigateToPage = useCallback(
     (page: number) => {
@@ -251,15 +255,89 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         return;
       }
 
-      setDragState({
-        isDragging: true,
-        draggedWidget: removedWidget,
-        sourceIndex: index,
-      });
+      // Update refs for gesture callbacks
+      draggedWidgetRef.current = removedWidget;
+      lastMovedIndexRef.current = index; // Start at source position
+      
+      // Update state to disable scroll
+      setIsDragging(true);
 
       console.log('[DRAG] Widget swapped with placeholder:', { widgetId, index });
     },
     [],
+  );
+
+  // Dashboard-level long press gesture with hit detection
+  const dashboardGesture = useMemo(
+    () => {
+      const longPress = Gesture.LongPress()
+        .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
+        .runOnJS(true)
+        .onStart((event) => {
+          // Hit detection: find which widget was pressed
+          const touchX = event.x;
+          const touchY = event.y;
+          
+          // Find the page layout for current page (use ref to avoid closure issues)
+          const pageLayout = pageLayoutsRef.current[currentPage];
+          if (!pageLayout) return;
+
+          // Check each widget cell to see if touch is inside
+          for (let i = 0; i < pageLayout.widgets.length; i++) {
+            const widgetId = pageLayout.widgets[i];
+            const cell = pageLayout.cells[i];
+            if (!cell) continue;
+
+            // Check if touch is within this widget's bounds
+            if (
+              touchX >= cell.x &&
+              touchX <= cell.x + cell.width &&
+              touchY >= cell.y &&
+              touchY <= cell.y + cell.height
+            ) {
+              console.log('[DRAG] Hit detected on widget:', { widgetId, index: i, touchX, touchY });
+              handleLongPressStart(widgetId, i, currentPage, touchX, touchY);
+              break;
+            }
+          }
+        });
+
+      const pan = Gesture.Pan()
+        .runOnJS(true)
+        .onUpdate((event) => {
+          // Calculate which widget index is being hovered
+          const hoverIndex = calculateHoverIndex(
+            event.absoluteX,
+            event.absoluteY,
+            responsiveGridRef.current,
+            currentPage,
+          );
+
+          // Track hover index without modifying store (prevents re-render interruption)
+          if (hoverIndex !== -1 && hoverIndex !== lastMovedIndexRef.current) {
+            console.log('[DRAG] Hovering over index:', hoverIndex);
+            lastMovedIndexRef.current = hoverIndex;
+          }
+        })
+        .onEnd(() => {
+          if (draggedWidgetRef.current) {
+            const finalIndex = lastMovedIndexRef.current;
+            console.log('[DRAG] Dropped at final position:', finalIndex);
+            
+            // finishDrag will remove placeholder and insert widget at exact finalIndex
+            useWidgetStore.getState().finishDrag(draggedWidgetRef.current, finalIndex);
+            
+            // Reset
+            draggedWidgetRef.current = null;
+            lastMovedIndexRef.current = -1;
+            setIsDragging(false);
+          }
+        });
+
+      // Simultaneous: both gestures active, long press activates drag, pan tracks movement
+      return Gesture.Simultaneous(longPress, pan);
+    },
+    [currentPage, handleLongPressStart],
   );
 
   // Handle keyboard navigation (AC 18)
@@ -334,18 +412,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         ? parseInt(widgetId.split('-').pop() || '0', 10)
         : 0;
 
-      // Long press gesture to activate drag mode
-      const longPressGesture = Gesture.LongPress()
-        .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
-        .onStart((event) => {
-          runOnJS(handleLongPressStart)(widgetId, index, pageLayout.pageIndex, event.x, event.y);
-        });
-
-      // Render widget with gesture detector
+      // Render widget (gesture is on dashboard container, not individual widgets)
       return (
-        <GestureDetector key={`${widgetId}-${pageLayout.pageIndex}`} gesture={longPressGesture}>
-          <View
-            style={[
+        <View
+          key={`${widgetId}-${pageLayout.pageIndex}`}
+          style={[
               styles.widgetContainer,
               {
                 position: 'absolute',
@@ -358,11 +429,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             testID={`widget-${widgetId}`}
           >
             <WidgetComponent id={widgetId} instanceNumber={instanceNumber} />
-          </View>
-        </GestureDetector>
+        </View>
       );
     },
-    [widgets, widgetComponents, dragState, handleLongPressStart],
+    [widgets, widgetComponents, isDragging, handleLongPressStart],
   );
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
@@ -450,13 +520,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }`}
     >
       {/* Main dashboard area - AC 11: Header-Dashboard-Footer Hierarchy */}
-      <View style={styles.dashboardArea}>
+      <GestureDetector gesture={dashboardGesture}>
+        <View style={styles.dashboardArea}>
           <ScrollView
             ref={scrollViewRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={!dragState.isDragging} // Disable scroll during widget drag
+            scrollEnabled={!isDragging} // Disable scroll during widget drag
             onLayout={handleScrollViewLayout}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -468,7 +539,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           >
             {pageLayouts.map((pageLayout) => renderPage(pageLayout, pageLayout.pageIndex))}
           </ScrollView>
-      </View>
+        </View>
+      </GestureDetector>
 
       {/* Pagination dots - AC 6: Page Indicator Dots (Overlays bottom of widgets) */}
       {/* {logger.layout('Rendering pagination:', () => ({
