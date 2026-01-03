@@ -38,6 +38,8 @@ interface WidgetActions {
   reorderWidget: (fromIndex: number, toIndex: number) => void;
   insertPlaceholder: (index: number) => void;
   removePlaceholder: () => void;
+  startDrag: (widgetId: string, sourceIndex: number) => WidgetConfig | null;
+  finishDrag: (draggedWidget: WidgetConfig) => void;
   moveWidgetCrossPage: (
     widgetId: string,
     fromPageIndex: number,
@@ -396,6 +398,68 @@ export const useWidgetStore = create<WidgetStore>()(
               widgets: newWidgets,
             },
           });
+        },
+
+        /**
+         * Start drag - remove widget from array, insert placeholder at source position
+         * Returns the removed widget for tracking
+         */
+        startDrag: (widgetId: string, sourceIndex: number) => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return null;
+
+          const widget = currentDashboard.widgets[sourceIndex];
+          if (!widget || widget.id !== widgetId) return null;
+
+          // Remove dragged widget, insert placeholder at same position
+          const newWidgets = currentDashboard.widgets.filter((w) => w.id !== widgetId);
+          newWidgets.splice(sourceIndex, 0, {
+            id: DRAG_CONFIG.PLACEHOLDER_ID,
+            type: 'placeholder',
+            title: '',
+            settings: {},
+          });
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
+
+          log.dragDrop('Drag started', () => ({ widgetId, sourceIndex }));
+          return widget;
+        },
+
+        /**
+         * Finish drag - replace placeholder with dragged widget
+         */
+        finishDrag: (draggedWidget: WidgetConfig) => {
+          const currentDashboard = get().dashboard;
+          if (!currentDashboard) return;
+
+          const placeholderIdx = currentDashboard.widgets.findIndex(
+            (w) => w.id === DRAG_CONFIG.PLACEHOLDER_ID,
+          );
+          if (placeholderIdx === -1) {
+            log.dragDrop('⚠️ No placeholder found during finish drag', () => ({}));
+            return;
+          }
+
+          const newWidgets = [...currentDashboard.widgets];
+          newWidgets[placeholderIdx] = draggedWidget;
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
+
+          log.dragDrop('Drag finished', () => ({
+            widgetId: draggedWidget.id,
+            finalIndex: placeholderIdx,
+          }));
         },
 
         /**

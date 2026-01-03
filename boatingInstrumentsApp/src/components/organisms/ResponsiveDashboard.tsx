@@ -48,6 +48,7 @@ import { TemperatureWidget } from '../../widgets/TemperatureWidget';
 import { WeatherWidget } from '../../widgets/WeatherWidget';
 import { RudderWidget } from '../../widgets/RudderWidget';
 import CustomWidget from '../../widgets/CustomWidget';
+import { PlaceholderWidget } from '../../widgets/PlaceholderWidget';
 
 // ========================================
 // DRAGGABLE WIDGET COMPONENT
@@ -277,6 +278,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       temperature: TemperatureWidget,
       weather: WeatherWidget,
       rudder: RudderWidget,
+      placeholder: PlaceholderWidget, // Drag-and-drop placeholder
       // Dynamically add all custom widget types
       ...customWidgetMappings,
     };
