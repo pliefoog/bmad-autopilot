@@ -212,12 +212,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     sourcePageIndex: number | null;
     isDragging: boolean;
     touchOffset: { x: number; y: number } | null;
+    placeholderIndex: number | null; // LOCAL placeholder position, not in widget array
   }>({
     widgetId: null,
     sourceIndex: null,
     sourcePageIndex: null,
     isDragging: false,
     touchOffset: null,
+    placeholderIndex: null,
   });
 
   // Shared values for drag animations (Reanimated)
@@ -373,6 +375,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         sourcePageIndex: pageIndex,
         isDragging: true,
         touchOffset: { x: touchX, y: touchY },
+        placeholderIndex: index, // Start with placeholder at source position
       });
 
       // Animate widget lift
@@ -407,10 +410,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         currentPage,
       );
 
-      // Insert placeholder if hovering over different position
-      if (hoverIndex !== -1 && hoverIndex !== dragState.sourceIndex) {
+      // Update placeholder if hovering over different position
+      if (hoverIndex !== -1 && hoverIndex !== dragState.placeholderIndex) {
         if (isDragSignificant(translationX, translationY)) {
-          useWidgetStore.getState().insertPlaceholder(hoverIndex);
+          console.log('[DRAG] Update placeholder:', dragState.placeholderIndex, '→', hoverIndex);
+          setDragState(prev => ({ ...prev, placeholderIndex: hoverIndex }));
         }
       }
     },
@@ -457,15 +461,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         dragHaptics.onCancel();
       }
 
-      // Remove placeholder and reset state
-      useWidgetStore.getState().removePlaceholder();
-
+      // Reset state (no need to remove placeholder - it's render-only)
       setDragState({
         widgetId: null,
         sourceIndex: null,
         sourcePageIndex: null,
         isDragging: false,
         touchOffset: null,
+        placeholderIndex: null,
       });
 
       // Animate back to normal
@@ -483,7 +486,6 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const handleDragCancel = useCallback(() => {
     if (!dragState.isDragging) return;
 
-    useWidgetStore.getState().removePlaceholder();
     dragHaptics.onCancel();
 
     setDragState({
@@ -492,6 +494,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       sourcePageIndex: null,
       isDragging: false,
       touchOffset: null,
+      placeholderIndex: null,
     });
 
     // Animate back to original position
@@ -605,14 +608,17 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         return null;
       }
 
+      const isActiveWidget = dragState.isDragging && dragState.widgetId === widgetId;
+      const isSourcePosition = dragState.isDragging && index === dragState.sourceIndex;
+      const isPlaceholderPosition = dragState.isDragging && index === dragState.placeholderIndex;
+
       // ========================================
-      // PLACEHOLDER RENDERING
+      // PLACEHOLDER RENDERING (at hover position)
       // ========================================
-      if (widgetId === DRAG_CONFIG.PLACEHOLDER_ID) {
-        console.log('[DRAG] Rendering placeholder, theme:', theme);
+      if (isPlaceholderPosition && !isSourcePosition) {
         return (
           <View
-            key="drag-placeholder"
+            key={`placeholder-${index}`}
             style={[
               styles.widgetContainer,
               {
@@ -624,11 +630,33 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 borderWidth: 2,
                 borderStyle: 'dashed',
                 borderColor: theme?.colors?.primary || '#007AFF',
-                backgroundColor: 'transparent',
+                backgroundColor: 'rgba(0, 122, 255, 0.1)',
                 borderRadius: 8,
               },
             ]}
             testID="drag-placeholder"
+          />
+        );
+      }
+
+      // ========================================
+      // HIDE WIDGET AT SOURCE POSITION
+      // ========================================
+      if (isSourcePosition && dragState.isDragging) {
+        return (
+          <View
+            key={`hidden-${widgetId}`}
+            style={[
+              styles.widgetContainer,
+              {
+                position: 'absolute',
+                left: position.x,
+                top: position.y,
+                width: position.width,
+                height: position.height,
+                opacity: 0,
+              },
+            ]}
           />
         );
       }
