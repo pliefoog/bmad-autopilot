@@ -441,7 +441,7 @@ function createCustomWidgetConfig(
  * **ARCHITECTURE:**
  * - Primary sensor: depth (for depth metric)
  * - Additional sensor: gps (for speed metric)
- * - Template: 2Rx2C-SEP-NONE (4 cells in 2×2 grid, no secondary section)
+ * - Template: 4Rx2C-NONE (4 cells in 2×2 grid, no secondary section)
  * 
  * **WHY THIS DESIGN:**
  * Sailors need quick glance at two critical metrics. Simple 2×2 layout
@@ -464,7 +464,7 @@ export const SAILING_DASHBOARD_DEFINITION: CustomWidgetDefinition = {
   multiInstance: false,
   
   grid: {
-    template: '2Rx2C-SEP-NONE',
+    template: '4Rx2C-NONE',
     
     primarySensor: {
       type: 'depth',
@@ -590,7 +590,7 @@ export const WEATHER_STATION_DEFINITION: CustomWidgetDefinition = {
  * **ARCHITECTURE:**
  * - Primary sensor: engine (instance 0)
  * - Additional sensor: engine (instance 1)
- * - Template: 2Rx2C-SEP-NONE (4 cells, no secondary)
+ * - Template: 4Rx2C-NONE (4 cells, no secondary)
  * 
  * **CELL LAYOUT:**
  * ```
@@ -624,7 +624,7 @@ export const DUAL_ENGINE_MONITOR_DEFINITION: CustomWidgetDefinition = {
   multiInstance: false,
   
   grid: {
-    template: '2Rx2C-SEP-NONE',
+    template: '4Rx2C-NONE',
     
     primarySensor: {
       type: 'engine',
@@ -771,7 +771,7 @@ export const CUSTOM_T1_DEFINITION: CustomWidgetDefinition = {
   
   // Modern grid format (prefer this)
   grid: {
-    template: '2Rx1C-SEP-NONE',
+    template: '2Rx1C-SEP-2Rx1C', // 2 rows × 1 column (vertical stack)
     primarySensor: {
       type: 'depth',
       instance: 0,
@@ -783,6 +783,8 @@ export const CUSTOM_T1_DEFINITION: CustomWidgetDefinition = {
     cells: [
       { metricKey: 'depth' },
       { sensorKey: 'gps', metricKey: 'speedOverGround' },
+      { empty: true }, // Secondary section (row 1)
+      { empty: true }, // Secondary section (row 2)
     ],
   },
 };
@@ -815,11 +817,29 @@ export function customWidgetToRegistration(definition: CustomWidgetDefinition): 
   const requiredSensors: SensorDependency[] = [];
   const optionalSensors: SensorDependency[] = [];
   
+  // Helper to find first metricKey for a sensor from cells
+  const findMetricForSensor = (sensorType: string): string => {
+    if (!definition.grid?.cells) return '';
+    
+    for (const cell of definition.grid.cells) {
+      // Primary sensor cells have no sensorKey (implicit)
+      if (!cell.sensorKey && sensorType === definition.grid?.primarySensor?.type) {
+        return cell.metricKey || '';
+      }
+      // Additional sensor cells have explicit sensorKey
+      if (cell.sensorKey === sensorType) {
+        return cell.metricKey || '';
+      }
+    }
+    return '';
+  };
+  
   // Add primary sensor
   if (definition.grid?.primarySensor) {
+    const metricName = findMetricForSensor(definition.grid.primarySensor.type);
     const dep: SensorDependency = {
       sensorType: definition.grid.primarySensor.type,
-      metricName: '', // Will be populated from cells
+      metricName, // Extract from cells
       instance: definition.grid.primarySensor.instance,
       required: definition.grid.primarySensor.required ?? true,
       label: definition.name,
@@ -834,9 +854,10 @@ export function customWidgetToRegistration(definition: CustomWidgetDefinition): 
   
   // Add additional sensors
   definition.grid?.additionalSensors?.forEach(sensor => {
+    const metricName = findMetricForSensor(sensor.type);
     const dep: SensorDependency = {
       sensorType: sensor.type,
-      metricName: '',
+      metricName, // Extract from cells
       instance: sensor.instance,
       required: sensor.required ?? false,
       label: `${definition.name} - ${sensor.type}`,

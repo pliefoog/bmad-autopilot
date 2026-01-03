@@ -37,6 +37,7 @@
  */
 
 import React from 'react';
+import { TrendLine } from '../components/TrendLine';
 
 /**
  * Component Registry Type
@@ -71,8 +72,8 @@ export type WidgetComponentRegistry = {
  * 4. Use in definition: `{ component: 'MyComponent', props: {...} }`
  */
 export const WIDGET_COMPONENT_REGISTRY: WidgetComponentRegistry = {
-  // TODO: Import and register components as they're created
-  // 'TrendLine': TrendLine,
+  TrendLine: TrendLine,
+  // TODO: Add more components as they're created
   // 'RudderIndicator': RudderIndicator,
   // 'GaugeDisplay': GaugeDisplay,
   // 'CompassRose': CompassRose,

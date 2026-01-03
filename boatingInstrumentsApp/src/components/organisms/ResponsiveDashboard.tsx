@@ -16,6 +16,7 @@ import {
 } from '../../utils/layoutUtils';
 import { log as logger } from '../../utils/logging/logger';
 import { WidgetVisibilityProvider } from '../../contexts/WidgetVisibilityContext';
+import { DEFAULT_CUSTOM_WIDGETS } from '../../config/defaultCustomWidgets';
 
 // Import widget components
 import { DepthWidget } from '../../widgets/DepthWidget';
@@ -80,8 +81,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   }, []);
 
   // Widget component mapping - memoized to prevent recreation on every render
-  const widgetComponents = React.useMemo(
-    () => ({
+  const widgetComponents = React.useMemo(() => {
+    // Build custom widget mappings dynamically from definitions
+    const customWidgetMappings = DEFAULT_CUSTOM_WIDGETS.reduce((acc, definition) => {
+      acc[definition.id] = CustomWidget;
+      return acc;
+    }, {} as Record<string, React.ComponentType<any>>);
+
+    return {
       depth: DepthWidget,
       speed: SpeedWidget,
       wind: WindWidget,
@@ -96,10 +103,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       temperature: TemperatureWidget,
       weather: WeatherWidget,
       rudder: RudderWidget,
-      customT1: CustomWidget, // Custom T1 Widget
-    }),
-    [],
-  );
+      // Dynamically add all custom widget types
+      ...customWidgetMappings,
+    };
+  }, []);
 
   // Update scroll position when page changes (AC 9: Page State Persistence)
   useEffect(() => {
@@ -252,7 +259,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     (widgetId: string, index: number, pageLayout: PageLayout) => {
       // Find the widget config from store
       const widgetConfig = widgets.find((w) => w.id === widgetId);
-      if (!widgetConfig) return null;
+      if (!widgetConfig) {
+        return null;
+      }
 
       // Use widget TYPE to look up component
       const WidgetComponent = widgetComponents[widgetConfig.type];
@@ -269,7 +278,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }
 
       const position = pageLayout.cells[index];
-      if (!position) return null;
+      if (!position) {
+        return null;
+      }
 
       // Extract instance number from widget ID (e.g., "depth-0" -> 0)
       const instanceNumber = widgetId.includes('-') 

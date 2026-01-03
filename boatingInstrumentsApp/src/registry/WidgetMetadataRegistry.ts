@@ -195,7 +195,7 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     id: 'engine',
     type: 'multi-instance',
     title: 'Engine',
-    icon: 'car-outline',
+    icon: 'settings-outline',
     category: 'engine',
     description: 'Engine parameters and performance data',
     maxInstances: 8,
@@ -346,6 +346,52 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     icon: 'color-palette-outline',
     category: 'navigation',
     description: 'Theme mode and brightness controls',
+  },
+
+  // Custom Widgets (definition-driven)
+  sailingDash: {
+    id: 'sailingDash',
+    type: 'single',
+    title: 'Sailing Dashboard',
+    icon: 'extension-puzzle-outline',
+    category: 'navigation',
+    description: 'Essential sailing metrics: Depth and Speed Over Ground',
+  },
+
+  weatherStation: {
+    id: 'weatherStation',
+    type: 'single',
+    title: 'Weather Station',
+    icon: 'extension-puzzle-outline',
+    category: 'environment',
+    description: 'Comprehensive weather data display',
+  },
+
+  dualEngineMonitor: {
+    id: 'dualEngineMonitor',
+    type: 'single',
+    title: 'Twin Engine Monitor',
+    icon: 'extension-puzzle-outline',
+    category: 'engine',
+    description: 'Side-by-side engine comparison',
+  },
+
+  crossPlatformDemo: {
+    id: 'crossPlatformDemo',
+    type: 'single',
+    title: 'Platform Demo',
+    icon: 'extension-puzzle-outline',
+    category: 'navigation',
+    description: 'Cross-platform component showcase',
+  },
+
+  customT1: {
+    id: 'customT1',
+    type: 'single',
+    title: 'Custom T1',
+    icon: 'extension-puzzle-outline',
+    category: 'navigation',
+    description: 'Legacy custom widget',
   },
 };
 

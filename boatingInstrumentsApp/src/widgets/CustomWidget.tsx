@@ -29,21 +29,21 @@
  * 3. Generate children array from grid.cells:
  *    - MetricCellDef → PrimaryMetricCell | SecondaryMetricCell
  *    - ComponentCellDef → Component from registry
- *    - EmptyCellDef → Empty View
+ *    - EmptyCellDef → EmptyCell
  * 4. Pass to TemplatedWidget with correct template
  */
 
 import React, { useMemo } from 'react';
-import { View, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
+import EmptyCell from '../components/EmptyCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
 import { getWidgetComponent } from '../registry/WidgetComponentRegistry';
 import { getGridTemplate } from '../registry/GridTemplateRegistry';
 import type { CustomWidgetDefinition, CellDefinition } from '../config/defaultCustomWidgets';
-import type { SensorType } from '../types/SensorData';
 
 interface CustomWidgetProps {
   id: string;
@@ -51,37 +51,21 @@ interface CustomWidgetProps {
 }
 
 /**
- * Dynamic Sensor Subscription Hook
- * 
- * **AI AGENT:**
- * Generates dynamic sensor subscriptions based on definition. Handles:
- * - Primary sensor subscription
- * - Additional sensors array
- * - Instance resolution (literal vs first-available)
- * - Stable selector memoization
- * 
-/**
  * Cell Renderer
  * 
- * **AI AGENT:**
  * Converts CellDefinition to React element. Handles 3 cell types:
  * 1. MetricCellDef → PrimaryMetricCell | SecondaryMetricCell
  * 2. ComponentCellDef → Dynamic component from registry
- * 3. EmptyCellDef → Empty View for layout
- * 
- * **CONDITIONAL RENDERING:**
- * ComponentCellDef.condition.platform filters by OS. Cell only renders
- * if current platform matches condition array.
+ * 3. EmptyCellDef → EmptyCell for layout
  */
 function renderCell(
   cell: CellDefinition,
   index: number,
-  sensorKey: string | undefined,
   isPrimary: boolean,
 ): React.ReactElement {
   // EmptyCellDef: Filler cell for layout
   if ('empty' in cell && cell.empty) {
-    return <View key={`empty-${index}`} />;
+    return <EmptyCell key={`empty-${index}`} />;
   }
   
   // ComponentCellDef: Custom component from registry
@@ -90,14 +74,14 @@ function renderCell(
     if (cell.condition?.platform) {
       const currentPlatform = Platform.OS as 'ios' | 'android' | 'web';
       if (!cell.condition.platform.includes(currentPlatform)) {
-        return <View key={`hidden-${index}`} />;
+        return <EmptyCell key={`hidden-${index}`} />;
       }
     }
     
     const Component = getWidgetComponent(cell.component);
     if (!Component) {
       console.warn(`[CustomWidget] Component "${cell.component}" not found in registry`);
-      return <View key={`missing-${index}`} />;
+      return <EmptyCell key={`missing-${index}`} />;
     }
     
     return (
@@ -110,10 +94,12 @@ function renderCell(
     );
   }
   
-  // MetricCellDef: Standard metric display (type narrowing)
+  // MetricCellDef: Standard metric display
   if ('metricKey' in cell) {
     const metricKey = cell.metricKey;
-    const cellSensorKey = cell.sensorKey || sensorKey;
+    // Use explicit sensorKey only if cell specifies it (for additional sensors)
+    // Primary sensor cells leave sensorKey undefined to use implicit context sensor
+    const cellSensorKey = cell.sensorKey;
     const cellType = cell.cellType || (isPrimary ? 'primary' : 'secondary');
     
     if (cellType === 'primary') {
@@ -135,72 +121,36 @@ function renderCell(
     }
   }
   
-  // EmptyCellDef: Return empty view
-  return <View key={`empty-${index}`} />;
+  // Fallback: Empty cell
+  return <EmptyCell key={`empty-${index}`} />;
 }
 
 /**
  * CustomWidget Renderer
  * 
- * **RENDERING ALGORITHM:**
- * 1. Get definition from widgetStore
- * 2. Validate grid configuration
- * 3. Subscribe to sensors dynamically
- * 4. Determine primary/secondary split from template
- * 5. Generate children from grid.cells[]
- * 6. Pass to TemplatedWidget
+ * Renders widgets dynamically from CustomWidgetDefinition
  */
 export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
-
   // Get custom widget definition from widget settings
   const widgetConfig = useWidgetStore((state) =>
-    state.dashboard?.widgets?.find((w) => w.id === id),
+    state.dashboard?.widgets?.find((w) => w.id === id)
   );
 
   const definition = useMemo(() => {
     return widgetConfig?.settings?.customDefinition as CustomWidgetDefinition | undefined;
   }, [widgetConfig]);
 
-  /**
-   * Dynamic Sensor Subscriptions
-   * 
-   * **CRITICAL:** ALL hooks must be called BEFORE any conditional returns.
-   * React hooks rules require hooks to be called in the same order every render.
-   * 
-   * **LIMITATION:** React hooks rules prevent truly dynamic subscriptions.
-   * Currently supports up to 3 sensors total:
-   * - 1 primary sensor
-   * - 2 additional sensors
-   * 
-   * **Why:** Can't call useNmeaStore in a loop (hooks must be unconditional).
-   * 
-   * **Future:** Refactor to render prop pattern or context-based subscription
-   * if more than 3 sensors are needed for a single custom widget.
-   * 
-   * **AI AGENT NOTE:** This is intentional technical debt. Most custom widgets
-   * need 1-2 sensors. If you encounter a definition with 4+ sensors, you'll
-   * need to refactor this section.
-   */
+  // Dynamic Sensor Subscriptions (all hooks BEFORE any conditional returns)
   const primarySensorType = definition?.grid?.primarySensor?.type;
   const primaryInstance = definition?.grid?.primarySensor?.instance ?? 0;
   
   const primarySensor = useNmeaStore(
     (state) => primarySensorType ? state.nmeaData.sensors[primarySensorType]?.[primaryInstance] : undefined
   );
-  
-  // Additional sensor support (max 2 additional sensors = 3 total)
-  const additionalSensor1 = useNmeaStore(
-    (state) => {
-      const sensor = definition?.grid?.additionalSensors?.[0];
-      return sensor ? state.nmeaData.sensors[sensor.type]?.[sensor.instance ?? 0] : undefined;
-    }
-  );
-  
-  const additionalSensor2 = useNmeaStore(
-    (state) => {
-      const sensor = definition?.grid?.additionalSensors?.[1];
-      return sensor ? state.nmeaData.sensors[sensor.type]?.[sensor.instance ?? 0] : undefined;
-    }
+
+  // Subscribe to timestamp to trigger re-renders when sensor data actually changes
+  const _timestamp = useNmeaStore(
+    (state) => primarySensorType ? state.nmeaData.sensors[primarySensorType]?.[primaryInstance]?.timestamp : undefined
   );
 
   // Build additional sensors array for TemplatedWidget
@@ -215,13 +165,8 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, insta
   }, [definition]);
 
   // Determine primary/secondary split from GridTemplateRegistry
-  // Template defines exact cell counts: primary = rows × cols, secondary = rows × cols
   const gridTemplate = definition?.grid?.template ? getGridTemplate(definition.grid.template) : null;
   const primaryCellCount = gridTemplate ? gridTemplate.primaryGrid.rows * gridTemplate.primaryGrid.columns : 0;
-  const secondaryCellCount = gridTemplate?.secondaryGrid
-    ? gridTemplate.secondaryGrid.rows * gridTemplate.secondaryGrid.columns
-    : 0;
-  const totalExpectedCells = primaryCellCount + secondaryCellCount;
 
   // Generate children from cells
   const children = useMemo(() => {
@@ -229,35 +174,40 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(({ id, insta
     
     return definition.grid.cells.map((cell, index) => {
       const isPrimary = index < primaryCellCount;
-      const defaultSensorKey = primarySensorType;
-      
-      return renderCell(cell, index, defaultSensorKey, isPrimary);
+      return renderCell(cell, index, isPrimary);
     });
-  }, [definition?.grid?.cells, primaryCellCount, primarySensorType]);
+  }, [definition?.grid?.cells, primaryCellCount]);
 
-  // Render nothing if no definition or grid configuration (AFTER all hooks)
+  // Validation (AFTER all hooks)
   if (!definition?.grid) {
-    console.warn('[CustomWidget] No grid configuration found for widget:', id);
+    console.error(`[CustomWidget] RENDER BLOCKED - No grid configuration found for widget: ${id}`);
     return null;
   }
   
-  // Validate cell count matches template
-  if (definition.grid.cells.length !== totalExpectedCells) {
-    console.warn(
-      `[CustomWidget] Cell count mismatch for widget ${id}:`,
-      `expected ${totalExpectedCells} cells (${primaryCellCount} primary + ${secondaryCellCount} secondary)`,
-      `but definition has ${definition.grid.cells.length} cells`
-    );
+  if (!primarySensorType) {
+    console.error(`[CustomWidget] RENDER BLOCKED - No primary sensor type defined for widget: ${id}`);
+    return null;
+  }
+
+  if (!gridTemplate) {
+    console.error(`[CustomWidget] RENDER BLOCKED - Invalid template "${definition.grid.template}" for widget: ${id}`);
+    return null;
+  }
+
+  if (children.length === 0) {
+    console.error(`[CustomWidget] RENDER BLOCKED - No children generated for widget: ${id}`);
+    return null;
   }
 
   return (
     <TemplatedWidget
       template={definition.grid.template}
       sensorInstance={primarySensor}
-      sensorType={primarySensorType!}
+      sensorType={primarySensorType}
+      widgetId={definition.id}
       additionalSensors={additionalSensors}
     >
-      {children as React.ReactElement | React.ReactElement[]}
+      {children}
     </TemplatedWidget>
   );
 });

@@ -84,10 +84,12 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'partly-sunny-outline',
       'water-outline',
       'thermometer-outline',
+      'boat-outline',
       // Multi-instance devices
       'car-outline',
       'battery-charging-outline',
       'cube-outline',
+      'hardware-chip-outline',
       // Alarm configuration icons
       'arrow-down-outline',
       'arrow-forward-outline',
@@ -113,6 +115,7 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'notifications-outline',
       'warning-outline',
       'color-palette-outline',
+      'extension-puzzle-outline',
       // Menu and navigation
       'menu-outline',
       'home-outline',
