@@ -94,6 +94,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Refs for gesture callbacks to prevent closure issues and useMemo recreation
   const draggedWidgetRef = useRef<WidgetConfig | null>(null);
   const lastMovedIndexRef = useRef(-1); // Prevents duplicate movePlaceholder calls
+  const lastPlaceholderUpdateRef = useRef(0); // Throttles placeholder movement
+  const initialTouchOffsetRef = useRef({ x: 0, y: 0 }); // Touch offset within widget
   const pageLayoutsRef = useRef<PageLayout[]>([]); // For hit detection
   const responsiveGridRef = useRef<ResponsiveGridState>(responsiveGrid); // For hover calculation
 
@@ -268,9 +270,19 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       draggedWidgetRef.current = removedWidget;
       lastMovedIndexRef.current = index; // Start at source position
       
-      // Set initial floating position
-      translateX.value = touchX - responsiveGrid.layout.cellWidth / 2;
-      translateY.value = touchY - responsiveGrid.layout.cellHeight / 2;
+      // Calculate touch offset within the widget cell
+      const pageLayout = pageLayoutsRef.current[pageIndex];
+      const cell = pageLayout?.cells[index];
+      if (cell) {
+        initialTouchOffsetRef.current = {
+          x: touchX - cell.x,
+          y: touchY - cell.y,
+        };
+      }
+      
+      // Set initial floating position (maintain touch offset + 5px shift)
+      translateX.value = touchX - initialTouchOffsetRef.current.x + 5;
+      translateY.value = touchY - initialTouchOffsetRef.current.y + 5;
       
       // Update state to disable scroll
       setIsDragging(true);
@@ -318,11 +330,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       const pan = Gesture.Pan()
         .runOnJS(true)
         .onUpdate((event) => {
-          // Move floating widget with pointer
-          const cellWidth = responsiveGridRef.current.layout.cellWidth;
-          const cellHeight = responsiveGridRef.current.layout.cellHeight;
-          translateX.value = event.absoluteX - cellWidth / 2;
-          translateY.value = event.absoluteY - cellHeight / 2;
+          // Move floating widget maintaining touch offset within widget (+5px shift)
+          translateX.value = event.absoluteX - initialTouchOffsetRef.current.x + 5;
+          translateY.value = event.absoluteY - initialTouchOffsetRef.current.y + 5;
 
           // Calculate which widget index is being hovered
           const hoverIndex = calculateHoverIndex(
@@ -332,7 +342,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             currentPage,
           );
 
-          // Track hover index without modifying store (prevents re-render interruption)
+          // Track hover index (store update causes gesture interruption)
           if (hoverIndex !== -1 && hoverIndex !== lastMovedIndexRef.current) {
             console.log('[DRAG] Hovering over index:', hoverIndex);
             lastMovedIndexRef.current = hoverIndex;
@@ -343,7 +353,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             const finalIndex = lastMovedIndexRef.current;
             console.log('[DRAG] Dropped at final position:', finalIndex);
             
-            // finishDrag will remove placeholder and insert widget at exact finalIndex
+            // Pass finalIndex so finishDrag moves placeholder there and replaces it
             useWidgetStore.getState().finishDrag(draggedWidgetRef.current, finalIndex);
             
             // Reset
