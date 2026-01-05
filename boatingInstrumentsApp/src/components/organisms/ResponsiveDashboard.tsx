@@ -145,6 +145,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const currentPageRef = useRef(0);
   const totalPagesRef = useRef(0);
   const panStartedRef = useRef(false);
+  const isDraggingRef = useRef(false);
   const [isNearEdge, setIsNearEdge] = useState({ left: false, right: false });
 
   // Floating widget overlay position (updated during drag)
@@ -390,8 +391,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       translateX.value = touchX - initialTouchOffsetRef.current.x + 5;
       translateY.value = touchY - initialTouchOffsetRef.current.y + 5;
       
-      // Update state to disable scroll
-      setIsDragging(true);
+      // Track drag state with ref (no re-render during gesture)
+      isDraggingRef.current = true;
 
       logger.dragDrop('[DRAG] Widget swapped with placeholder', () => ({ widgetId, index }));
     },
@@ -471,8 +472,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               draggedWidgetRef.current = null;
               lastMovedIndexRef.current = -1;
               panStartedRef.current = false;
-              setIsDragging(false);
-              setIsNearEdge({ left: false, right: false });
+              isDraggingRef.current = false;
+              
+              // Defer state changes to prevent re-render during gesture
+              requestAnimationFrame(() => {
+                setIsDragging(false);
+                setIsNearEdge({ left: false, right: false });
+              });
             }
           }
         });
@@ -521,8 +527,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             }));
           })(event.absoluteX, effectiveScrollViewWidth, edgeThreshold, isNearLeft, isNearRight, currentPageRef.current, totalPagesRef.current);
           
-          // Update edge state for visual indicators (state triggers React re-render)
-          runOnJS(setIsNearEdge)({ left: isNearLeft, right: isNearRight });
+          // Skip visual state updates during drag to prevent re-renders
+          // Visual indicators will sync after gesture completes
           
           // Start edge timer if near edge, clear if moved away
           if (isNearLeft || isNearRight) {
@@ -652,6 +658,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             draggedWidgetRef.current = null;
             lastMovedIndexRef.current = -1;
             panStartedRef.current = false;
+            isDraggingRef.current = false;
             
             // Defer ALL state changes to next frame to allow gesture cleanup
             runOnJS(() => {
