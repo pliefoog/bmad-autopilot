@@ -459,8 +459,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             if (!edgeTimerRef.current) {
               // Capture direction as string to avoid closure capture bug
               const direction = isNearLeft ? 'left' : 'right';
+              logger.dragDrop('[TIMER] Starting edge timer', () => ({ direction, delay: 500 }));
               runOnJS((dir: string) => {
                 edgeTimerRef.current = setTimeout(() => {
+                  logger.dragDrop('[TIMER] Timer fired, navigating', () => ({ direction: dir }));
                   if (dir === 'left') {
                     navigateToPreviousPage();
                   } else {
@@ -468,14 +470,19 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                   }
                   edgeTimerRef.current = null;
                 }, 500);
+                logger.dragDrop('[TIMER] Timer created', () => ({ timerId: edgeTimerRef.current }));
               })(direction);
+            } else {
+              logger.dragDrop('[TIMER] Timer already running', () => ({ timerId: edgeTimerRef.current }));
             }
           } else {
             if (edgeTimerRef.current) {
+              logger.dragDrop('[TIMER] Clearing timer', () => ({ timerId: edgeTimerRef.current }));
               runOnJS(() => {
                 if (edgeTimerRef.current) {
                   clearTimeout(edgeTimerRef.current);
                   edgeTimerRef.current = null;
+                  logger.dragDrop('[TIMER] Timer cleared', () => ({}));
                 }
               })();
             }
