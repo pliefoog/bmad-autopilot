@@ -899,7 +899,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </View>
       );
     },
-    [widgets, widgetComponents, isDragging, handleLongPressStart],
+    [widgets, widgetComponents, isDragging],
   );
 
   // Render page content (AC 2: Dynamic Layout Algorithm)
