@@ -1,5 +1,103 @@
 # GitHub Copilot Instructions - BMad Autopilot
 
+## 🔴 MANDATORY DOCUMENTATION REQUIREMENT (NON-NEGOTIABLE)
+
+**Every source file that is touched MUST be updated with comprehensive documentation.**
+
+This is a **HARD REQUIREMENT** - no exceptions.
+
+### Documentation Standards
+
+**File-Level Documentation (Required for all modified files):**
+```typescript
+/**
+ * FileName - Brief one-line description
+ * 
+ * Purpose:
+ * - Primary responsibility of this file
+ * - Secondary responsibilities
+ * 
+ * Key Features:
+ * - Feature 1: Brief explanation
+ * - Feature 2: Brief explanation
+ * 
+ * Critical Implementation Details:
+ * - Detail 1: Why this approach was chosen
+ * - Detail 2: Bug fixes and their history
+ * - Detail 3: Performance considerations
+ * 
+ * Dependencies:
+ * - Dependency 1: How it's used
+ * - Dependency 2: What it provides
+ * 
+ * Related Files:
+ * - File 1: Relationship explanation
+ * - File 2: Data flow connection
+ */
+```
+
+**Function/Method Documentation (Required for all non-trivial functions):**
+```typescript
+/**
+ * Brief description of what function does
+ * 
+ * Implementation Notes:
+ * - Why this approach was chosen
+ * - Any gotchas or edge cases
+ * - Performance characteristics
+ * 
+ * Bug Fix History (if applicable):
+ * - Date: What was broken and how it was fixed
+ * 
+ * @param param1 - What this parameter controls
+ * @param param2 - Constraints or validation rules
+ * @returns What is returned and in what format
+ */
+```
+
+**Inline Comments (Required for complex logic):**
+- Explain WHY, not WHAT (code shows what, comments show why)
+- Document bug fixes with date and explanation
+- Flag performance optimizations and their rationale
+- Explain React Native specific workarounds
+- Document memory management strategies
+
+**AI Agent Readability:**
+- Use clear section headers with dashes or equals signs
+- Document data flow with ASCII diagrams when helpful
+- Explain architectural decisions and tradeoffs
+- Link to related files and their relationships
+- Include examples for non-obvious patterns
+
+**Human Readability:**
+- Use plain language, avoid jargon where possible
+- Break complex logic into well-documented chunks
+- Provide context for why code exists
+- Document lessons learned from bugs
+- Include testing recommendations
+
+### Enforcement
+
+**Before committing ANY code change:**
+1. ✅ File has comprehensive header documentation
+2. ✅ All modified functions have purpose comments
+3. ✅ Complex logic sections have inline explanations
+4. ✅ Bug fixes document what was broken and how it was fixed
+5. ✅ Performance optimizations explain the reasoning
+6. ✅ React Native workarounds explain the platform-specific issue
+
+**If documentation is missing or inadequate:**
+- DO NOT commit the code
+- Add comprehensive documentation first
+- Ensure both humans and AI agents can understand the code without external context
+
+This requirement applies to:
+- ✅ New files (full documentation required)
+- ✅ Modified files (update existing docs + document changes)
+- ✅ Bug fixes (document what was broken and the fix)
+- ✅ Refactors (explain why old approach was replaced)
+- ✅ Performance optimizations (document measurements and reasoning)
+
 ## Critical React Hooks Rules (MUST FOLLOW)
 
 **⚠️ Rules of Hooks - Unconditional Execution (Jan 2025):**
