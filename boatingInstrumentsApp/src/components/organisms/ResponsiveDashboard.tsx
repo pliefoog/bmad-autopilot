@@ -439,6 +439,30 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               break;
             }
           }
+        })
+        .onFinalize(() => {
+          // CRITICAL: This fires when long press ends, even if pan never started
+          // Handles "cancel drag" scenario: long press but no movement
+          logger.dragDrop('[DRAG] Long press finalized', () => ({ 
+            hasDraggedWidget: !!draggedWidgetRef.current 
+          }));
+          
+          if (draggedWidgetRef.current) {
+            // Pan gesture never activated, restore widget to placeholder position
+            runOnJS(() => {
+              logger.dragDrop('[DRAG] Restoring widget (no pan)', () => ({
+                widgetId: draggedWidgetRef.current?.id
+              }));
+              
+              if (draggedWidgetRef.current) {
+                useWidgetStore.getState().finishDrag(draggedWidgetRef.current, undefined);
+                draggedWidgetRef.current = null;
+                lastMovedIndexRef.current = -1;
+                setIsDragging(false);
+                setIsNearEdge({ left: false, right: false });
+              }
+            })();
+          }
         });
 
       const pan = Gesture.Pan()
