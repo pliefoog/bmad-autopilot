@@ -271,7 +271,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
    */
   const handleLongPressStart = useCallback(
     (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => {
-      console.log('[DRAG] Long press start:', { widgetId, index, pageIndex, touchX, touchY });
+      logger.dragDrop('[DRAG] Long press start', () => ({ widgetId, index, pageIndex, touchX, touchY }));
 
       dragHaptics.onLift();
 
@@ -306,7 +306,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       // Update state to disable scroll
       setIsDragging(true);
 
-      console.log('[DRAG] Widget swapped with placeholder:', { widgetId, index });
+      logger.dragDrop('[DRAG] Widget swapped with placeholder', () => ({ widgetId, index }));
     },
     [],
   );
@@ -339,7 +339,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               touchY >= cell.y &&
               touchY <= cell.y + cell.height
             ) {
-              console.log('[DRAG] Hit detected on widget:', { widgetId, index: i, touchX, touchY });
+              logger.dragDrop('[DRAG] Hit detected on widget', () => ({ widgetId, index: i, touchX, touchY }));
               handleLongPressStart(widgetId, i, currentPage, touchX, touchY);
               break;
             }
@@ -385,7 +385,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
           // Track hover index (store update causes gesture interruption)
           if (hoverIndex !== -1 && hoverIndex !== lastMovedIndexRef.current) {
-            console.log('[DRAG] Hovering over index:', hoverIndex);
+            logger.dragDrop('[DRAG] Hovering over index', () => ({ hoverIndex }));
             lastMovedIndexRef.current = hoverIndex;
           }
         })
@@ -401,7 +401,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             const sourcePage = sourcePageRef.current;
             const targetPage = currentPage;
             
-            console.log('[DRAG] Dropped at final position:', { finalIndex, sourcePage, targetPage });
+            logger.dragDrop('[DRAG] Dropped at final position', () => ({ finalIndex, sourcePage, targetPage }));
             
             // Check if this is a cross-page drag
             if (sourcePage !== targetPage) {
