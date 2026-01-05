@@ -532,16 +532,28 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               logger.dragDrop('[TIMER] Starting edge timer', () => ({ direction, delay: 500 }));
               runOnJS((dir: string) => {
                 edgeTimerRef.current = setTimeout(() => {
-                  logger.dragDrop('[TIMER] Timer fired, navigating', () => ({ direction: dir }));
-                  // Use requestAnimationFrame to defer navigation until next frame
-                  // This prevents DOM changes while gesture is actively tracking
-                  requestAnimationFrame(() => {
-                    if (dir === 'left') {
-                      navigateToPreviousPage();
-                    } else {
-                      navigateToNextPage();
-                    }
-                  });
+                  logger.dragDrop('[TIMER] Timer fired, scrolling', () => ({ direction: dir }));
+                  
+                  // CRITICAL: Don't use navigateToPage during drag - it changes React state
+                  // which causes re-renders and breaks gesture tracking.
+                  // Instead, scroll imperatively and update only the ref
+                  const newPage = dir === 'left' 
+                    ? Math.max(0, currentPageRef.current - 1)
+                    : Math.min(totalPagesRef.current - 1, currentPageRef.current + 1);
+                  
+                  if (newPage !== currentPageRef.current && scrollViewRef.current) {
+                    // Update ref for gesture calculations (no re-render)
+                    currentPageRef.current = newPage;
+                    
+                    // Scroll imperatively (no state change)
+                    scrollViewRef.current.scrollTo({
+                      x: newPage * effectiveScrollViewWidth,
+                      animated: true,
+                    });
+                    
+                    logger.dragDrop('[TIMER] Scrolled to page', () => ({ newPage }));
+                  }
+                  
                   edgeTimerRef.current = null;
                 }, 500);
                 logger.dragDrop('[TIMER] Timer created', () => ({ timerId: edgeTimerRef.current }));
@@ -635,12 +647,21 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               runOnJS(useWidgetStore.getState().finishDrag)(draggedWidgetRef.current, targetIndex);
             }
             
-            // Reset
+            // Reset and sync state after gesture completes
+            const widgetToReset = draggedWidgetRef.current;
             draggedWidgetRef.current = null;
             lastMovedIndexRef.current = -1;
             panStartedRef.current = false;
-            runOnJS(setIsDragging)(false);
-            runOnJS(setIsNearEdge)({ left: false, right: false });
+            
+            // Defer ALL state changes to next frame to allow gesture cleanup
+            runOnJS(() => {
+              requestAnimationFrame(() => {
+                // Sync page state with ref (in case we scrolled during drag)
+                setCurrentPage(currentPageRef.current);
+                setIsDragging(false);
+                setIsNearEdge({ left: false, right: false });
+              });
+            })();
           } else {
             logger.dragDrop('[DRAG] onEnd called but no dragged widget', () => ({}));
           }
