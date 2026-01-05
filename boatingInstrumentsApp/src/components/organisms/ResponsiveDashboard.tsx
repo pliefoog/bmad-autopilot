@@ -533,11 +533,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               runOnJS((dir: string) => {
                 edgeTimerRef.current = setTimeout(() => {
                   logger.dragDrop('[TIMER] Timer fired, navigating', () => ({ direction: dir }));
-                  if (dir === 'left') {
-                    navigateToPreviousPage();
-                  } else {
-                    navigateToNextPage();
-                  }
+                  // Small delay to allow gesture to fully finalize before DOM changes
+                  setTimeout(() => {
+                    if (dir === 'left') {
+                      navigateToPreviousPage();
+                    } else {
+                      navigateToNextPage();
+                    }
+                  }, 50);
                   edgeTimerRef.current = null;
                 }, 500);
                 logger.dragDrop('[TIMER] Timer created', () => ({ timerId: edgeTimerRef.current }));
