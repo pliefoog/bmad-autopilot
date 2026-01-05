@@ -104,7 +104,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null); // For page transition animation cleanup
   const edgeTimerRef = useRef<NodeJS.Timeout | null>(null); // For edge-triggered auto-scroll
   const sourcePageRef = useRef(0); // Track source page for cross-page drag detection
-  const isNearEdgeRef = useRef({ left: false, right: false }); // Edge proximity tracking
+  const currentPageRef = useRef(0); // Track current page for gesture callbacks (avoids stale closure)
+  const [isNearEdge, setIsNearEdge] = useState({ left: false, right: false }); // Edge proximity state for indicators
 
   // Floating widget overlay position (updated during drag)
   const translateX = useSharedValue(0);
@@ -211,6 +212,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     pageLayoutsRef.current = pageLayouts;
     responsiveGridRef.current = responsiveGrid;
   }, [pageLayouts, responsiveGrid]);
+
+  // Update currentPageRef when currentPage changes (for gesture callbacks)
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   // Animated style for floating widget overlay
   const floatingStyle = useAnimatedStyle(() => ({
@@ -355,23 +361,35 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
           // Edge detection for cross-page auto-scroll
           const edgeThreshold = scrollViewWidth * 0.15; // 15% of screen width
-          const isNearLeft = event.absoluteX < edgeThreshold && currentPage > 0;
-          const isNearRight = event.absoluteX > scrollViewWidth - edgeThreshold && currentPage < totalPages - 1;
+          const isNearLeft = event.absoluteX < edgeThreshold && currentPageRef.current > 0;
+          const isNearRight = event.absoluteX > scrollViewWidth - edgeThreshold && currentPageRef.current < totalPages - 1;
           
-          isNearEdgeRef.current = { left: isNearLeft, right: isNearRight };
+          // Update edge state for visual indicators
+          runOnJS(setIsNearEdge)({ left: isNearLeft, right: isNearRight });
           
           // Start edge timer if near edge, clear if moved away
           if (isNearLeft || isNearRight) {
             if (!edgeTimerRef.current) {
-              edgeTimerRef.current = setTimeout(() => {
-                runOnJS(isNearLeft ? navigateToPreviousPage : navigateToNextPage)();
-                edgeTimerRef.current = null;
-              }, 500);
+              const direction = isNearLeft ? 'left' : 'right';
+              runOnJS((dir: string) => {
+                edgeTimerRef.current = setTimeout(() => {
+                  if (dir === 'left') {
+                    navigateToPreviousPage();
+                  } else {
+                    navigateToNextPage();
+                  }
+                  edgeTimerRef.current = null;
+                }, 500);
+              })(direction);
             }
           } else {
             if (edgeTimerRef.current) {
-              clearTimeout(edgeTimerRef.current);
-              edgeTimerRef.current = null;
+              runOnJS(() => {
+                if (edgeTimerRef.current) {
+                  clearTimeout(edgeTimerRef.current);
+                  edgeTimerRef.current = null;
+                }
+              })();
             }
           }
 
@@ -380,7 +398,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             event.absoluteX,
             event.absoluteY,
             responsiveGridRef.current,
-            currentPage,
+            currentPageRef.current,
           );
 
           // Track hover index (store update causes gesture interruption)
@@ -399,7 +417,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           if (draggedWidgetRef.current) {
             const finalIndex = lastMovedIndexRef.current;
             const sourcePage = sourcePageRef.current;
-            const targetPage = currentPage;
+            const targetPage = currentPageRef.current;
             
             logger.dragDrop('[DRAG] Dropped at final position', () => ({ finalIndex, sourcePage, targetPage }));
             
@@ -425,6 +443,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             draggedWidgetRef.current = null;
             lastMovedIndexRef.current = -1;
             runOnJS(setIsDragging)(false);
+            runOnJS(setIsNearEdge)({ left: false, right: false });
           }
         });
 
@@ -696,13 +715,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       {/* Edge zone indicators for cross-page drag */}
       {isDragging ? (
-        isNearEdgeRef.current.left && currentPage > 0 ? (
+        isNearEdge.left && currentPage > 0 ? (
           <Animated.View style={styles.leftEdgeIndicator} pointerEvents="none" />
         ) : null
       ) : null}
       
       {isDragging ? (
-        isNearEdgeRef.current.right && currentPage < totalPages - 1 ? (
+        isNearEdge.right && currentPage < totalPages - 1 ? (
           <Animated.View style={styles.rightEdgeIndicator} pointerEvents="none" />
         ) : null
       ) : null}
