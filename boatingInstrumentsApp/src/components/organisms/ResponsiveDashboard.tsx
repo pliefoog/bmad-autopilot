@@ -541,7 +541,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             const sourcePage = sourcePageRef.current;
             const targetPage = currentPageRef.current;
             
-            logger.dragDrop('[DRAG] Dropped at final position', () => ({ finalIndex, sourcePage, targetPage }));
+            logger.dragDrop('[DRAG] Dropped at final position', () => ({ 
+              finalIndex, 
+              sourcePage, 
+              targetPage,
+              isCrossPage: sourcePage !== targetPage,
+            }));
             
             // Check if this is a cross-page drag
             if (sourcePage !== targetPage) {
@@ -564,9 +569,16 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 widgetsPerPage
               );
             } else {
-              // Same page reorder
+              // Same page reorder or cancel
               // If finalIndex is -1 (no hover detected), pass undefined to use placeholder position
               const targetIndex = finalIndex >= 0 ? finalIndex : undefined;
+              
+              logger.dragDrop('[DRAG] Same-page finish', () => ({ 
+                finalIndex,
+                targetIndex,
+                willRestore: targetIndex === undefined
+              }));
+              
               runOnJS(useWidgetStore.getState().finishDrag)(draggedWidgetRef.current, targetIndex);
             }
             
@@ -575,6 +587,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             lastMovedIndexRef.current = -1;
             runOnJS(setIsDragging)(false);
             runOnJS(setIsNearEdge)({ left: false, right: false });
+          } else {
+            logger.dragDrop('[DRAG] onEnd called but no dragged widget', () => ({}));
           }
         });
 
