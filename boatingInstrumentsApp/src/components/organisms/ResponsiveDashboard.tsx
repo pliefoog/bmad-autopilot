@@ -520,16 +520,18 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Cancel drag on orientation change
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', () => {
-      if (isDragging) {
+      // Check isDragging at callback time (not closure capture)
+      if (draggedWidgetRef.current !== null) {
         // Cancel drag and restore widget
         useWidgetStore.getState().removePlaceholder();
         draggedWidgetRef.current = null;
         setIsDragging(false);
+        setIsNearEdge({ left: false, right: false });
       }
     });
     
     return () => subscription?.remove();
-  }, [isDragging]);
+  }, []); // Empty deps - listener persists for component lifetime
 
   // Render individual widget
   // Now simplified: widgets come from store array (includes placeholder during drag)
