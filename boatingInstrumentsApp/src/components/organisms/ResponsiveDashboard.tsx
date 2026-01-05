@@ -319,16 +319,18 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   );
 
   const navigateToNextPage = useCallback(() => {
-    if (currentPage < totalPages - 1) {
-      navigateToPage(currentPage + 1);
+    // Use refs to avoid stale closure in gesture handlers
+    if (currentPageRef.current < totalPagesRef.current - 1) {
+      navigateToPage(currentPageRef.current + 1);
     }
-  }, [currentPage, totalPages, navigateToPage]);
+  }, [navigateToPage]);
 
   const navigateToPreviousPage = useCallback(() => {
-    if (currentPage > 0) {
-      navigateToPage(currentPage - 1);
+    // Use refs to avoid stale closure in gesture handlers
+    if (currentPageRef.current > 0) {
+      navigateToPage(currentPageRef.current - 1);
     }
-  }, [currentPage, navigateToPage]);
+  }, [navigateToPage]);
 
   // ========================================
   // DRAG-AND-DROP HANDLERS
