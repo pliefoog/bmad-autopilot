@@ -411,6 +411,21 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           const isNearLeft = event.absoluteX < edgeThreshold && currentPageRef.current > 0;
           const isNearRight = event.absoluteX > scrollViewWidth - edgeThreshold && currentPageRef.current < totalPages - 1;
           
+          // Debug logging for edge detection
+          runOnJS((x: number, width: number, threshold: number, left: boolean, right: boolean, page: number, total: number) => {
+            logger.dragDrop('[EDGE] Detection', () => ({
+              absoluteX: x,
+              scrollViewWidth: width,
+              edgeThreshold: threshold,
+              leftZone: `0 - ${threshold}`,
+              rightZone: `${width - threshold} - ${width}`,
+              isNearLeft: left,
+              isNearRight: right,
+              currentPage: page,
+              totalPages: total,
+            }));
+          })(event.absoluteX, scrollViewWidth, edgeThreshold, isNearLeft, isNearRight, currentPageRef.current, totalPages);
+          
           // Update edge state for visual indicators (state triggers React re-render)
           runOnJS(setIsNearEdge)({ left: isNearLeft, right: isNearRight });
           
