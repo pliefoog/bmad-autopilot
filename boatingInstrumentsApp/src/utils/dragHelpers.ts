@@ -26,8 +26,9 @@ export function calculateHoverIndex(
   const { layout } = gridState;
   const { cellWidth, cellHeight, containerWidth, containerHeight, cols, rows } = layout;
 
-  // Calculate position relative to page
-  const relativeX = absoluteX - pageIndex * containerWidth;
+  // absoluteX and absoluteY are screen coordinates (not scroll-adjusted)
+  // They're always relative to the visible viewport, regardless of which page is showing
+  const relativeX = absoluteX;
   const relativeY = absoluteY;
 
   // Check if outside grid bounds
