@@ -399,20 +399,35 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     [],
   );
 
-  // Dashboard-level long press gesture with hit detection
+  // Dashboard-level drag gesture with activation delay
+  // ARCHITECTURE: Single Pan gesture with minDuration/minDistance replaces
+  // Gesture.Simultaneous(longPress, pan) to avoid pointer capture issues
   const dashboardGesture = useMemo(
     () => {
-      const longPress = Gesture.LongPress()
-        .minDuration(DRAG_CONFIG.LONG_PRESS_DURATION)
+      // Track if drag has been activated (after duration + hit detection)
+      const dragActivatedRef = { current: false };
+      const hitDetectionDoneRef = { current: false };
+      
+      const pan = Gesture.Pan()
+        .minDistance(5) // Small movement required to distinguish from tap
         .runOnJS(true)
-        .onStart((event) => {
+        .onBegin((event) => {
+          // Reset activation state
+          dragActivatedRef.current = false;
+          hitDetectionDoneRef.current = false;
+          
           // Hit detection: find which widget was pressed
           const touchX = event.x;
           const touchY = event.y;
           
           // Find the page layout for current page (use ref to avoid closure issues)
-          const pageLayout = pageLayoutsRef.current[currentPage];
-          if (!pageLayout) return;
+          const pageLayout = pageLayoutsRef.current[currentPageRef.current];
+          if (!pageLayout) {
+            logger.dragDrop('[DRAG] No page layout found', () => ({ 
+              currentPage: currentPageRef.current 
+            }));
+            return;
+          }
 
           // Check each widget cell to see if touch is inside
           for (let i = 0; i < pageLayout.widgets.length; i++) {
@@ -429,7 +444,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             ) {
               // Convert page-relative index to global array index
               const widgetsPerPage = responsiveGrid.layout.cols * responsiveGrid.layout.rows;
-              const globalIndex = currentPage * widgetsPerPage + i;
+              const globalIndex = currentPageRef.current * widgetsPerPage + i;
               
               logger.dragDrop('[DRAG] Hit detected on widget', () => ({ 
                 widgetId, 
@@ -438,54 +453,27 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 touchX, 
                 touchY 
               }));
-              handleLongPressStart(widgetId, globalIndex, currentPage, touchX, touchY);
+              
+              hitDetectionDoneRef.current = true;
+              
+              // Schedule drag activation after delay (simulates long press)
+              runOnJS((wid: string, idx: number, page: number, tx: number, ty: number) => {
+                setTimeout(() => {
+                  // Only activate if pan is still active (hasn't ended)
+                  if (hitDetectionDoneRef.current) {
+                    dragActivatedRef.current = true;
+                    handleLongPressStart(wid, idx, page, tx, ty);
+                  }
+                }, DRAG_CONFIG.LONG_PRESS_DURATION);
+              })(widgetId, globalIndex, currentPageRef.current, touchX, touchY);
+              
               break;
             }
           }
         })
-        .onFinalize(() => {
-          // CRITICAL: This fires when long press ends, even if pan never started
-          // Handles "cancel drag" scenario: long press but no movement
-          // Only restore if pan never started (panStartedRef is false)
-          // AND draggedWidgetRef is still set (pan.onEnd didn't clean up yet)
-          
-          const hasDraggedWidget = !!draggedWidgetRef.current;
-          const panStarted = panStartedRef.current;
-          
-          logger.dragDrop('[DRAG] Long press finalized', () => ({ 
-            hasDraggedWidget,
-            panStarted
-          }));
-          
-          // Only restore if:
-          // 1. We have a dragged widget (drag was initiated)
-          // 2. Pan never started (cancel-drag scenario)
-          // If panStarted is true, pan.onEnd will handle cleanup
-          if (hasDraggedWidget && !panStarted) {
-            // Pan gesture never activated, restore widget to placeholder position
-            logger.dragDrop('[DRAG] Restoring widget (no pan)', () => ({
-              widgetId: draggedWidgetRef.current?.id
-            }));
-            
-            if (draggedWidgetRef.current) {
-              useWidgetStore.getState().finishDrag(draggedWidgetRef.current, undefined);
-              draggedWidgetRef.current = null;
-              lastMovedIndexRef.current = -1;
-              panStartedRef.current = false;
-              isDraggingRef.current = false;
-              
-              // Defer state changes to prevent re-render during gesture
-              requestAnimationFrame(() => {
-                setIsDragging(false);
-                setIsNearEdge({ left: false, right: false });
-              });
-            }
-          }
-        });
-
-      const pan = Gesture.Pan()
-        .runOnJS(true)
         .onUpdate((event) => {
+          // Only handle updates if drag has been activated
+          if (!dragActivatedRef.current) return;
           // Track that pan has started (prevents cleanup in longPress.onFinalize)
           // Set this in onUpdate (not onBegin) so we only mark as started when actually dragging
           if (!panStartedRef.current) {
@@ -595,6 +583,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           }
         })
         .onEnd(() => {
+          // Only handle end if drag was activated
+          if (!dragActivatedRef.current) {
+            logger.dragDrop('[DRAG] onEnd called but drag never activated', () => ({}));
+            // Reset tracking refs
+            hitDetectionDoneRef.current = false;
+            return;
+          }
+          
           // Clear edge timer
           if (edgeTimerRef.current) {
             clearTimeout(edgeTimerRef.current);
@@ -659,6 +655,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             lastMovedIndexRef.current = -1;
             panStartedRef.current = false;
             isDraggingRef.current = false;
+            dragActivatedRef.current = false;
+            hitDetectionDoneRef.current = false;
             
             // Defer ALL state changes to next frame to allow gesture cleanup
             runOnJS(() => {
@@ -671,13 +669,39 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             })();
           } else {
             logger.dragDrop('[DRAG] onEnd called but no dragged widget', () => ({}));
+            // Reset tracking even if no widget
+            dragActivatedRef.current = false;
+            hitDetectionDoneRef.current = false;
+          }
+        })
+        .onFinalize(() => {
+          // Handle cancel: drag was started but never completed
+          // This fires when gesture ends without onEnd (e.g., cancelled)
+          if (dragActivatedRef.current && draggedWidgetRef.current) {
+            logger.dragDrop('[DRAG] Cancelled - restoring widget', () => ({
+              widgetId: draggedWidgetRef.current?.id
+            }));
+            
+            useWidgetStore.getState().finishDrag(draggedWidgetRef.current, undefined);
+            draggedWidgetRef.current = null;
+            lastMovedIndexRef.current = -1;
+            panStartedRef.current = false;
+            isDraggingRef.current = false;
+            dragActivatedRef.current = false;
+            hitDetectionDoneRef.current = false;
+            
+            // Defer state changes
+            requestAnimationFrame(() => {
+              setIsDragging(false);
+              setIsNearEdge({ left: false, right: false });
+            });
           }
         });
 
-      // Simultaneous: both gestures active, long press activates drag, pan tracks movement
-      return Gesture.Simultaneous(longPress, pan);
+      // Single Pan gesture with activation delay replaces Gesture.Simultaneous
+      return pan;
     },
-    [currentPage, handleLongPressStart],
+    [handleLongPressStart],
   );
 
   // Handle keyboard navigation (AC 18) - with proper cleanup
