@@ -50,6 +50,10 @@ const DEBUG_FLAGS: Record<string, boolean> = {
   'widget.rendering': false,
   widget: false, // Parent category
 
+  // Drag-and-drop categories
+  'drag.drop': false,
+  drag: false, // Parent category
+
   // Store categories
   'store.updates': false,
   'store.initialization': false,
