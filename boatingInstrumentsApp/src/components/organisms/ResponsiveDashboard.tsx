@@ -359,14 +359,22 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
    */
   // Setup visual feedback immediately on press (no placeholder insertion)
   const setupFloatingWidget = useCallback(
-    (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => {
-      logger.dragDrop('[DRAG] Setting up floating widget', () => ({ widgetId, index, pageIndex }));
+    (widgetId: string, pageRelativeIndex: number, pageIndex: number, touchX: number, touchY: number, cell: any) => {
+      logger.dragDrop('[DRAG] Setting up floating widget', () => ({ 
+        widgetId, 
+        pageRelativeIndex, 
+        pageIndex,
+        touchX,
+        touchY,
+        cellX: cell.x,
+        cellY: cell.y
+      }));
 
       // Get widget data without removing from array yet
       const widgets = useWidgetStore.getState().dashboard.widgets;
       const widget = widgets.find(w => w.id === widgetId);
       if (!widget) {
-        console.error('[DRAG] Failed to setup floating widget - widget not found', { widgetId, index, totalWidgets: widgets.length });
+        console.error('[DRAG] Failed to setup floating widget - widget not found', { widgetId, pageRelativeIndex, totalWidgets: widgets.length });
         return;
       }
 
@@ -374,19 +382,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       draggedWidgetRef.current = widget;
       
       // Calculate touch offset within the widget cell
-      const pageLayout = pageLayoutsRef.current[pageIndex];
-      
-      // Use page-relative index (not global index) to find cell
-      const widgetsPerPage = responsiveGrid.layout.cols * responsiveGrid.layout.rows;
-      const pageRelativeIndex = index % widgetsPerPage;
-      const cell = pageLayout?.cells[pageRelativeIndex];
-      
-      if (cell) {
-        initialTouchOffsetRef.current = {
-          x: touchX - cell.x,
-          y: touchY - cell.y,
-        };
-      }
+      initialTouchOffsetRef.current = {
+        x: touchX - cell.x,
+        y: touchY - cell.y,
+      };
       
       // Set initial floating position (maintain touch offset + 5px shift)
       translateX.value = touchX - initialTouchOffsetRef.current.x + 5;
@@ -395,7 +394,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       // Set isDragging to render floating widget (safe - only happens once at start)
       setIsDragging(true);
       
-      logger.dragDrop('[DRAG] Floating widget ready', () => ({ widgetId }));
+      logger.dragDrop('[DRAG] Floating widget ready', () => ({ 
+        widgetId,
+        initialOffset: initialTouchOffsetRef.current,
+        floatingPosition: { x: translateX.value, y: translateY.value }
+      }));
     },
     [],
   );
@@ -481,13 +484,16 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 pageIndex: i, 
                 globalIndex,
                 touchX, 
-                touchY 
+                touchY,
+                cellX: cell.x,
+                cellY: cell.y 
               }));
               
               hitDetectionDoneRef.current = true;
               
               // Set up floating widget immediately for visual feedback
-              runOnJS(setupFloatingWidget)(widgetId, globalIndex, currentPageRef.current, touchX, touchY);
+              // Pass page-relative index (i) and cell for accurate positioning
+              runOnJS(setupFloatingWidget)(widgetId, i, currentPageRef.current, touchX, touchY, cell);
               
               // Schedule drag activation after delay (inserts placeholder)
               runOnJS(() => {
