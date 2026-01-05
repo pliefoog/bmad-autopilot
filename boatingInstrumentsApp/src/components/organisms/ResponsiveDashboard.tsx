@@ -392,6 +392,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       translateX.value = touchX - initialTouchOffsetRef.current.x + 5;
       translateY.value = touchY - initialTouchOffsetRef.current.y + 5;
       
+      // Set isDragging to render floating widget (safe - only happens once at start)
+      setIsDragging(true);
+      
       logger.dragDrop('[DRAG] Floating widget ready', () => ({ widgetId }));
     },
     [],
@@ -548,8 +551,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             }));
           })(event.absoluteX, effectiveScrollViewWidth, edgeThreshold, isNearLeft, isNearRight, currentPageRef.current, totalPagesRef.current);
           
-          // Skip visual state updates during drag to prevent re-renders
-          // Visual indicators will sync after gesture completes
+          // Update edge indicators (safe once per frame during drag)
+          runOnJS(setIsNearEdge)({ left: isNearLeft, right: isNearRight });
           
           // Start edge timer if near edge, clear if moved away
           if (isNearLeft || isNearRight) {
