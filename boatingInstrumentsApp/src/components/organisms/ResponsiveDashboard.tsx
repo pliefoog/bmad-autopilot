@@ -363,9 +363,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       logger.dragDrop('[DRAG] Setting up floating widget', () => ({ widgetId, index, pageIndex }));
 
       // Get widget data without removing from array yet
-      const widget = useWidgetStore.getState().instanceWidgets[index];
+      const widgetArray = useWidgetStore.getState().instanceWidgets;
+      const widget = widgetArray.find(w => w.id === widgetId);
       if (!widget) {
-        console.error('[DRAG] Failed to setup floating widget - widget not found');
+        console.error('[DRAG] Failed to setup floating widget - widget not found', { widgetId, index });
         return;
       }
 
@@ -374,7 +375,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       
       // Calculate touch offset within the widget cell
       const pageLayout = pageLayoutsRef.current[pageIndex];
-      const cell = pageLayout?.cells[index];
+      
+      // Use page-relative index (not global index) to find cell
+      const widgetsPerPage = responsiveGrid.layout.cols * responsiveGrid.layout.rows;
+      const pageRelativeIndex = index % widgetsPerPage;
+      const cell = pageLayout?.cells[pageRelativeIndex];
+      
       if (cell) {
         initialTouchOffsetRef.current = {
           x: touchX - cell.x,
