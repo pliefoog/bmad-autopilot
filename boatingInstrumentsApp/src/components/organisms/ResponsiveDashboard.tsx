@@ -446,27 +446,34 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           // CRITICAL: This fires when long press ends, even if pan never started
           // Handles "cancel drag" scenario: long press but no movement
           // Only restore if pan never started (panStartedRef is false)
+          // AND draggedWidgetRef is still set (pan.onEnd didn't clean up yet)
+          
+          const hasDraggedWidget = !!draggedWidgetRef.current;
+          const panStarted = panStartedRef.current;
+          
           logger.dragDrop('[DRAG] Long press finalized', () => ({ 
-            hasDraggedWidget: !!draggedWidgetRef.current,
-            panStarted: panStartedRef.current
+            hasDraggedWidget,
+            panStarted
           }));
           
-          if (draggedWidgetRef.current && !panStartedRef.current) {
+          // Only restore if:
+          // 1. We have a dragged widget (drag was initiated)
+          // 2. Pan never started (cancel-drag scenario)
+          // If panStarted is true, pan.onEnd will handle cleanup
+          if (hasDraggedWidget && !panStarted) {
             // Pan gesture never activated, restore widget to placeholder position
-            runOnJS(() => {
-              logger.dragDrop('[DRAG] Restoring widget (no pan)', () => ({
-                widgetId: draggedWidgetRef.current?.id
-              }));
-              
-              if (draggedWidgetRef.current) {
-                useWidgetStore.getState().finishDrag(draggedWidgetRef.current, undefined);
-                draggedWidgetRef.current = null;
-                lastMovedIndexRef.current = -1;
-                panStartedRef.current = false;
-                setIsDragging(false);
-                setIsNearEdge({ left: false, right: false });
-              }
-            })();
+            logger.dragDrop('[DRAG] Restoring widget (no pan)', () => ({
+              widgetId: draggedWidgetRef.current?.id
+            }));
+            
+            if (draggedWidgetRef.current) {
+              useWidgetStore.getState().finishDrag(draggedWidgetRef.current, undefined);
+              draggedWidgetRef.current = null;
+              lastMovedIndexRef.current = -1;
+              panStartedRef.current = false;
+              setIsDragging(false);
+              setIsNearEdge({ left: false, right: false });
+            }
           }
         });
 
