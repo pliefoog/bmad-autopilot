@@ -539,6 +539,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               const widgetsPerPage = responsiveGrid.layout.cols * responsiveGrid.layout.rows;
               const positionInPage = finalIndex % widgetsPerPage;
               
+              logger.dragDrop('[DRAG] Cross-page move calculation', () => ({
+                finalIndex,
+                widgetsPerPage,
+                positionInPage,
+                calculatedTargetIndex: targetPage * widgetsPerPage + positionInPage,
+              }));
+              
               runOnJS(useWidgetStore.getState().moveWidgetCrossPage)(
                 draggedWidgetRef.current.id,
                 sourcePage,
