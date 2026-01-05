@@ -294,12 +294,22 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Previous bug: setTimeout without ref caused state updates on unmounted component.
   const navigateToPage = useCallback(
     (page: number) => {
-      if (page >= 0 && page < totalPages) {
+      // Use ref to avoid stale closure - totalPages might be 0 at callback creation time
+      logger.dragDrop('[NAV] navigateToPage called', () => ({ 
+        requestedPage: page, 
+        totalPages: totalPagesRef.current,
+        willNavigate: page >= 0 && page < totalPagesRef.current
+      }));
+      
+      if (page >= 0 && page < totalPagesRef.current) {
         // Avoid redundant state churn if already on this page
         setCurrentPage((prev) => {
           if (prev === page) {
+            logger.dragDrop('[NAV] Already on page, skipping', () => ({ page }));
             return prev;
           }
+          
+          logger.dragDrop('[NAV] Changing page', () => ({ from: prev, to: page }));
           
           // Clear any existing animation timer to prevent multiple timers
           if (animationTimerRef.current) {
@@ -313,9 +323,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           }, 300);
           return page;
         });
+      } else {
+        logger.dragDrop('[NAV] Page out of bounds, blocked', () => ({ 
+          page, 
+          totalPages: totalPagesRef.current 
+        }));
       }
     },
-    [totalPages],
+    [], // No dependencies - uses ref instead
   );
 
   const navigateToNextPage = useCallback(() => {
