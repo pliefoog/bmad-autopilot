@@ -357,25 +357,20 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   /**
    * Handle long press - swap widget with placeholder and start drag tracking
    */
-  const handleLongPressStart = useCallback(
+  // Setup visual feedback immediately on press (no placeholder insertion)
+  const setupFloatingWidget = useCallback(
     (widgetId: string, index: number, pageIndex: number, touchX: number, touchY: number) => {
-      logger.dragDrop('[DRAG] Long press start', () => ({ widgetId, index, pageIndex, touchX, touchY }));
+      logger.dragDrop('[DRAG] Setting up floating widget', () => ({ widgetId, index, pageIndex }));
 
-      dragHaptics.onLift();
-
-      // Track source page for cross-page drag detection
-      sourcePageRef.current = pageIndex;
-
-      // Remove widget from array, insert placeholder at source
-      const removedWidget = useWidgetStore.getState().startDrag(widgetId, index);
-      if (!removedWidget) {
-        console.error('[DRAG] Failed to start drag - widget not found');
+      // Get widget data without removing from array yet
+      const widget = useWidgetStore.getState().instanceWidgets[index];
+      if (!widget) {
+        console.error('[DRAG] Failed to setup floating widget - widget not found');
         return;
       }
 
-      // Update refs for gesture callbacks
-      draggedWidgetRef.current = removedWidget;
-      lastMovedIndexRef.current = index; // Start at source position
+      // Set draggedWidgetRef for floating widget rendering
+      draggedWidgetRef.current = widget;
       
       // Calculate touch offset within the widget cell
       const pageLayout = pageLayoutsRef.current[pageIndex];
@@ -391,10 +386,36 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       translateX.value = touchX - initialTouchOffsetRef.current.x + 5;
       translateY.value = touchY - initialTouchOffsetRef.current.y + 5;
       
+      logger.dragDrop('[DRAG] Floating widget ready', () => ({ widgetId }));
+    },
+    [],
+  );
+
+  // Activate drag after long press delay (insert placeholder, enable drag logic)
+  const activateDrag = useCallback(
+    (widgetId: string, index: number, pageIndex: number) => {
+      logger.dragDrop('[DRAG] Activating drag (inserting placeholder)', () => ({ widgetId, index }));
+
+      dragHaptics.onLift();
+
+      // Track source page for cross-page drag detection
+      sourcePageRef.current = pageIndex;
+
+      // NOW remove widget from array and insert placeholder
+      const removedWidget = useWidgetStore.getState().startDrag(widgetId, index);
+      if (!removedWidget) {
+        console.error('[DRAG] Failed to activate drag - widget not found');
+        return;
+      }
+
+      // Update draggedWidgetRef with the actual removed widget (may have different reference)
+      draggedWidgetRef.current = removedWidget;
+      lastMovedIndexRef.current = index; // Start at source position
+      
       // Track drag state with ref (no re-render during gesture)
       isDraggingRef.current = true;
 
-      logger.dragDrop('[DRAG] Widget swapped with placeholder', () => ({ widgetId, index }));
+      logger.dragDrop('[DRAG] Placeholder inserted', () => ({ widgetId, index }));
     },
     [],
   );
@@ -457,15 +478,15 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               hitDetectionDoneRef.current = true;
               
               // Set up floating widget immediately for visual feedback
-              runOnJS(handleLongPressStart)(widgetId, globalIndex, currentPageRef.current, touchX, touchY);
+              runOnJS(setupFloatingWidget)(widgetId, globalIndex, currentPageRef.current, touchX, touchY);
               
-              // Schedule drag activation after delay (simulates long press)
+              // Schedule drag activation after delay (inserts placeholder)
               runOnJS(() => {
                 setTimeout(() => {
                   // Only activate if pan is still active (hasn't ended)
                   if (hitDetectionDoneRef.current) {
                     dragActivatedRef.current = true;
-                    logger.dragDrop('[DRAG] Drag activated after delay', () => ({ widgetId }));
+                    activateDrag(widgetId, globalIndex, currentPageRef.current);
                   }
                 }, DRAG_CONFIG.LONG_PRESS_DURATION);
               })();
@@ -681,10 +702,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           }
         })
         .onFinalize(() => {
-          // Handle cancel: drag was started but never completed
-          // This fires when gesture ends without onEnd (e.g., cancelled)
+          // Handle cancel scenarios:
+          // 1. Drag activated but not completed: restore placeholder
+          // 2. Never activated (released before 500ms): just clear floating widget
+          
           if (dragActivatedRef.current && draggedWidgetRef.current) {
-            logger.dragDrop('[DRAG] Cancelled - restoring widget', () => ({
+            // Drag was activated (placeholder inserted), need to restore
+            logger.dragDrop('[DRAG] Cancelled after activation - restoring widget', () => ({
               widgetId: draggedWidgetRef.current?.id
             }));
             
@@ -701,13 +725,23 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               setIsDragging(false);
               setIsNearEdge({ left: false, right: false });
             });
+          } else if (hitDetectionDoneRef.current && draggedWidgetRef.current) {
+            // Never activated (released before 500ms), just clear floating widget
+            logger.dragDrop('[DRAG] Cancelled before activation - clearing floating widget', () => ({
+              widgetId: draggedWidgetRef.current?.id
+            }));
+            
+            draggedWidgetRef.current = null;
+            hitDetectionDoneRef.current = false;
+            
+            // No placeholder was inserted, so no need to call finishDrag
           }
         });
 
       // Single Pan gesture with activation delay replaces Gesture.Simultaneous
       return pan;
     },
-    [handleLongPressStart],
+    [setupFloatingWidget, activateDrag],
   );
 
   // Handle keyboard navigation (AC 18) - with proper cleanup
