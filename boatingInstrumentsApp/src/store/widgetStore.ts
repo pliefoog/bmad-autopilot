@@ -87,7 +87,10 @@ export const useWidgetStore = create<WidgetStore>()(
         currentWidgetIds: new Set(SYSTEM_WIDGETS.map((w) => w.id)),
 
         updateInstanceWidgets: (detectedInstances) => {
-          // Guard: Block sensor updates during active drag to prevent race conditions
+          // RACE CONDITION PREVENTION (Jan 2026):
+          // Block sensor updates during active drag to prevent corruption of placeholder position.
+          // Without this guard, NMEA sensor updates at 2Hz can insert new widgets mid-drag,
+          // causing placeholder to shift unexpectedly and widgets to drop at wrong locations.
           if (get().dashboard.widgets.some(w => w.id === DRAG_CONFIG.PLACEHOLDER_ID)) {
             return;
           }
@@ -481,8 +484,19 @@ export const useWidgetStore = create<WidgetStore>()(
         },
 
         /**
-         * Move widget across pages (Phase 2: Cross-page dragging)
+         * Move widget across pages (Jan 2026: Cross-page dragging)
          * Converts page + position to absolute index, then reorders
+         * 
+         * BOUNDS CHECKING (Critical Fix):
+         * - Validates toPageIndex ≤ maxAllowedPage (prevents multiple empty pages)
+         * - Clamps toIndex to prevent array overflow when dropping beyond last widget
+         * - maxAllowedPage = Math.floor(widgets.length / widgetsPerPage) ensures max one empty page
+         * 
+         * Example: 10 widgets, 6 per page:
+         *   - Page 0: widgets[0-5]
+         *   - Page 1: widgets[6-9] + 2 empty slots
+         *   - Page 2 (maxAllowed): all empty slots OK
+         *   - Page 3+: BLOCKED (would create second empty page)
          */
         moveWidgetCrossPage: (
           widgetId: string,

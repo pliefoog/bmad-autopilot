@@ -71,6 +71,34 @@ interface ResponsiveDashboardProps {
  * - AC 11-15: Layout Integration with performance optimization
  * - AC 16-20: Cross-Platform Compatibility with touch, mouse, and keyboard
  * - Drag-and-Drop: Long press (800ms) to drag widgets, reorder within page
+ * 
+ * Cross-Page Drag-and-Drop (Jan 2026 Implementation):
+ * -------------------------------------------------------
+ * Enables dragging widgets between dashboard pages with the following features:
+ * 
+ * 1. Edge-Triggered Auto-Scroll:
+ *    - Detects when drag enters 15% edge zones (left/right)
+ *    - Triggers page transition after 500ms hover delay
+ *    - Visual blue indicators show active edge zones
+ *    - Prevents multiple empty pages (max one beyond last populated)
+ * 
+ * 2. Memory Leak Prevention:
+ *    - All timers properly cleared on drag end and unmount
+ *    - Refs nulled to release large objects
+ *    - Animated values stopped and listeners removed
+ *    - Orientation change listener persists without re-subscription
+ * 
+ * 3. React Native Best Practices:
+ *    - All hooks unconditional at top level (no violations)
+ *    - Ternary rendering prevents text node leaks
+ *    - runOnJS() wraps all store calls from gestures
+ *    - State-based edge indicators for reactivity
+ *    - currentPageRef prevents stale closure issues
+ * 
+ * 4. Race Condition Prevention:
+ *    - Sensor updates blocked during drag (placeholder guard)
+ *    - Direction captured as string to avoid timer closure capture
+ *    - currentPageRef synced via useEffect for accurate page tracking
  */
 export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   headerHeight = 60,
@@ -100,12 +128,20 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const pageLayoutsRef = useRef<PageLayout[]>([]); // For hit detection
   const responsiveGridRef = useRef<ResponsiveGridState>(responsiveGrid); // For hover calculation
   
-  // Cross-page drag refs
-  const animationTimerRef = useRef<NodeJS.Timeout | null>(null); // For page transition animation cleanup
-  const edgeTimerRef = useRef<NodeJS.Timeout | null>(null); // For edge-triggered auto-scroll
-  const sourcePageRef = useRef(0); // Track source page for cross-page drag detection
-  const currentPageRef = useRef(0); // Track current page for gesture callbacks (avoids stale closure)
-  const [isNearEdge, setIsNearEdge] = useState({ left: false, right: false }); // Edge proximity state for indicators
+  // Cross-page drag refs and state
+  // --------------------------------
+  // These enable cross-page widget dragging while preventing memory leaks and stale closures:
+  // 
+  // - animationTimerRef: Tracks page transition animation timeout for cleanup
+  // - edgeTimerRef: Tracks edge-hover timeout for auto-scroll cleanup
+  // - sourcePageRef: Records page where drag started (for cross-page detection)
+  // - currentPageRef: Synced with currentPage state to avoid stale closure in gestures
+  // - isNearEdge: State (not ref!) to trigger React re-renders for visual indicators
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const edgeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sourcePageRef = useRef(0);
+  const currentPageRef = useRef(0);
+  const [isNearEdge, setIsNearEdge] = useState({ left: false, right: false });
 
   // Floating widget overlay position (updated during drag)
   const translateX = useSharedValue(0);
@@ -230,6 +266,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   }));
 
   // Page navigation functions
+  // -------------------------
+  // MEMORY LEAK FIX (Jan 2026): Uses animationTimerRef for proper timer cleanup.
+  // Previous bug: setTimeout without ref caused state updates on unmounted component.
   const navigateToPage = useCallback(
     (page: number) => {
       if (page >= 0 && page < totalPages) {
@@ -239,7 +278,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             return prev;
           }
           
-          // Clear any existing animation timer
+          // Clear any existing animation timer to prevent multiple timers
           if (animationTimerRef.current) {
             clearTimeout(animationTimerRef.current);
           }
@@ -360,16 +399,25 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           translateY.value = event.absoluteY - initialTouchOffsetRef.current.y + 5;
 
           // Edge detection for cross-page auto-scroll
+          // ------------------------------------------
+          // CRITICAL: Uses currentPageRef (not currentPage) to avoid stale closure.
+          // Detects when drag enters 15% edge zones and triggers page transition after 500ms.
+          // 
+          // Bug Fix History:
+          // - Used currentPage: gesture closure captured stale value after auto-scroll
+          // - Used isNearLeft/Right in timer callback: captured at timer creation time
+          // - Solution: currentPageRef synced via useEffect, direction passed as string
           const edgeThreshold = scrollViewWidth * 0.15; // 15% of screen width
           const isNearLeft = event.absoluteX < edgeThreshold && currentPageRef.current > 0;
           const isNearRight = event.absoluteX > scrollViewWidth - edgeThreshold && currentPageRef.current < totalPages - 1;
           
-          // Update edge state for visual indicators
+          // Update edge state for visual indicators (state triggers React re-render)
           runOnJS(setIsNearEdge)({ left: isNearLeft, right: isNearRight });
           
           // Start edge timer if near edge, clear if moved away
           if (isNearLeft || isNearRight) {
             if (!edgeTimerRef.current) {
+              // Capture direction as string to avoid closure capture bug
               const direction = isNearLeft ? 'left' : 'right';
               runOnJS((dir: string) => {
                 edgeTimerRef.current = setTimeout(() => {
@@ -454,6 +502,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   );
 
   // Handle keyboard navigation (AC 18) - with proper cleanup
+  // ----------------------------------------------------------
+  // MEMORY LEAK FIX (Jan 2026): Moved from inline callback to useEffect with cleanup.
+  // Previous bug: No removeEventListener, causing memory leak on unmount.
   useEffect(() => {
     if (Platform.OS === 'web') {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -492,6 +543,17 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   );
 
   // Comprehensive cleanup on unmount - prevents memory leaks
+  // ---------------------------------------------------------
+  // CRITICAL: Consolidates all cleanup to prevent 9 identified memory leaks:
+  // 1. animationTimerRef - page transition timer
+  // 2. edgeTimerRef - auto-scroll timer
+  // 3. draggedWidgetRef - large widget object
+  // 4. pageLayoutsRef - array of layout objects
+  // 5. scrollViewRef - ScrollView component reference
+  // 6. pageAnimatedValue - RN Animated value with listeners
+  // 7. translateX - Reanimated shared value
+  // 8. translateY - Reanimated shared value
+  // 9. (keyboard listener cleanup handled in separate useEffect)
   useEffect(() => {
     return () => {
       // Clear all timers
@@ -518,6 +580,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   }, [pageAnimatedValue, translateX, translateY]);
 
   // Cancel drag on orientation change
+  // ----------------------------------
+  // OPTIMIZATION (Jan 2026): Empty deps array prevents unnecessary re-subscription.
+  // Previous bug: isDragging dependency caused listener to be removed/re-added on every drag state change.
+  // Fix: Check drag state via draggedWidgetRef at callback time (always fresh).
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', () => {
       // Check isDragging at callback time (not closure capture)
@@ -716,6 +782,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       </View>
 
       {/* Edge zone indicators for cross-page drag */}
+      {/* ------------------------------------------ */}
+      {/* REACTIVITY FIX: Uses state (not ref) to trigger re-renders. */}
+      {/* TERNARY PATTERN: Prevents double-&& text node leaks per copilot-instructions. */}
       {isDragging ? (
         isNearEdge.left && currentPage > 0 ? (
           <Animated.View style={styles.leftEdgeIndicator} pointerEvents="none" />
