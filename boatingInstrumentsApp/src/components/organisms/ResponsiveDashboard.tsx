@@ -206,7 +206,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // Uses widget store array order as source of truth (array index = display position)
   const { pageLayouts, totalPages } = React.useMemo(() => {
     // Don't calculate layouts while loading (prevents accessing uninitialized stores)
-    if (responsiveGrid.isLoading || widgets.length === 0) {
+    if (responsiveGrid.isLoading) {
+      logger.layout('[LAYOUT] Grid still loading, skipping layout calculation', () => ({}));
+      return { pageLayouts: [], totalPages: 0 };
+    }
+    
+    if (widgets.length === 0) {
+      logger.layout('[LAYOUT] No widgets, skipping layout calculation', () => ({}));
       return { pageLayouts: [], totalPages: 0 };
     }
 
