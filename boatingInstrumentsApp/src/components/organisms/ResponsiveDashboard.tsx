@@ -424,8 +424,18 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               touchY >= cell.y &&
               touchY <= cell.y + cell.height
             ) {
-              logger.dragDrop('[DRAG] Hit detected on widget', () => ({ widgetId, index: i, touchX, touchY }));
-              handleLongPressStart(widgetId, i, currentPage, touchX, touchY);
+              // Convert page-relative index to global array index
+              const widgetsPerPage = responsiveGrid.layout.cols * responsiveGrid.layout.rows;
+              const globalIndex = currentPage * widgetsPerPage + i;
+              
+              logger.dragDrop('[DRAG] Hit detected on widget', () => ({ 
+                widgetId, 
+                pageIndex: i, 
+                globalIndex,
+                touchX, 
+                touchY 
+              }));
+              handleLongPressStart(widgetId, globalIndex, currentPage, touchX, touchY);
               break;
             }
           }
