@@ -333,9 +333,12 @@ export class WidgetRegistrationService {
     // Set flag to prevent store updates during cleanup
     this.isCleaningUp = true;
 
+    // Save handler reference before clearing it
+    const handler = this.sensorUpdateHandler;
+
     import('../store/nmeaStore').then(({ useNmeaStore }) => {
       const store = useNmeaStore.getState();
-      store.sensorEventEmitter.removeListener('sensorUpdate', this.sensorUpdateHandler);
+      store.sensorEventEmitter.removeListener('sensorUpdate', handler);
     });
 
     this.sensorUpdateHandler = null;

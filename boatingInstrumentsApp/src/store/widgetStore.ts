@@ -506,14 +506,42 @@ export const useWidgetStore = create<WidgetStore>()(
           widgetsPerPage: number,
         ) => {
           const currentDashboard = get().dashboard;
-          if (!currentDashboard) return;
+          if (!currentDashboard) {
+            console.log('[DRAG] No dashboard found');
+            return;
+          }
 
-          // Find widget's current index
-          const fromIndex = currentDashboard.widgets.findIndex((w) => w.id === widgetId);
-          if (fromIndex === -1) return;
+          console.log('[DRAG] moveWidgetCrossPage called:', {
+            widgetId,
+            fromPage: fromPageIndex,
+            toPage: toPageIndex,
+            toPosition,
+            widgetsPerPage,
+            totalWidgets: currentDashboard.widgets.length,
+          });
+
+          // CRITICAL: Remove placeholder first (it's in the array from drag start)
+          const newWidgets = [...currentDashboard.widgets];
+          const placeholderIdx = newWidgets.findIndex((w) => w.id === DRAG_CONFIG.PLACEHOLDER_ID);
+          
+          if (placeholderIdx === -1) {
+            console.warn('[DRAG] No placeholder found during cross-page move');
+            return;
+          }
+          
+          console.log('[DRAG] Found placeholder at index:', placeholderIdx);
+          newWidgets.splice(placeholderIdx, 1); // Remove placeholder
+
+          // Find the widget in the array (without placeholder)
+          const draggedWidget = currentDashboard.widgets.find((w) => w.id === widgetId);
+          if (!draggedWidget) {
+            console.warn('[DRAG] Widget not found:', widgetId);
+            return;
+          }
 
           // Prevent multiple empty pages - allow max one empty page beyond last populated
-          const maxAllowedPage = Math.ceil(currentDashboard.widgets.length / widgetsPerPage);
+          // Use newWidgets.length since we removed placeholder
+          const maxAllowedPage = Math.ceil(newWidgets.length / widgetsPerPage);
           if (toPageIndex > maxAllowedPage) {
             console.warn('[DRAG] Cannot drop on empty page:', { toPageIndex, maxAllowedPage });
             return;
@@ -521,17 +549,25 @@ export const useWidgetStore = create<WidgetStore>()(
 
           // Calculate target absolute index with bounds checking
           const calculatedIndex = toPageIndex * widgetsPerPage + toPosition;
-          const toIndex = Math.min(calculatedIndex, currentDashboard.widgets.length);
+          const toIndex = Math.min(calculatedIndex, newWidgets.length);
 
-          // Use existing reorder logic
-          get().reorderWidget(fromIndex, toIndex);
+          // Insert widget at target position
+          newWidgets.splice(toIndex, 0, draggedWidget);
+
+          set({
+            dashboard: {
+              ...currentDashboard,
+              widgets: newWidgets,
+            },
+          });
 
           console.log('[DRAG] Widget moved cross-page:', {
             widgetId,
             fromPage: fromPageIndex,
             toPage: toPageIndex,
-            fromIndex,
-            toIndex,
+            placeholderWasAt: placeholderIdx,
+            insertedAt: toIndex,
+            totalWidgets: newWidgets.length,
           });
         },
       }),
