@@ -472,12 +472,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       const pan = Gesture.Pan()
         .runOnJS(true)
-        .onBegin(() => {
-          // Track that pan has started (prevents cleanup in longPress.onFinalize)
-          panStartedRef.current = true;
-          logger.dragDrop('[DRAG] Pan started', () => ({}));
-        })
         .onUpdate((event) => {
+          // Track that pan has started (prevents cleanup in longPress.onFinalize)
+          // Set this in onUpdate (not onBegin) so we only mark as started when actually dragging
+          if (!panStartedRef.current) {
+            panStartedRef.current = true;
+            logger.dragDrop('[DRAG] Pan started', () => ({}));
+          }
+          
           // Move floating widget maintaining touch offset within widget (+5px shift)
           translateX.value = event.absoluteX - initialTouchOffsetRef.current.x + 5;
           translateY.value = event.absoluteY - initialTouchOffsetRef.current.y + 5;
