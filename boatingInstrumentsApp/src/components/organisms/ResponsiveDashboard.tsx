@@ -472,18 +472,21 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           }
         })
         .onUpdate((event) => {
-          // Only handle updates if drag has been activated
+          // Always update floating widget position for visual feedback
+          // even before drag activates (provides immediate visual response)
+          if (hitDetectionDoneRef.current) {
+            translateX.value = event.absoluteX - initialTouchOffsetRef.current.x + 5;
+            translateY.value = event.absoluteY - initialTouchOffsetRef.current.y + 5;
+          }
+          
+          // Only handle drag logic if activated after delay
           if (!dragActivatedRef.current) return;
-          // Track that pan has started (prevents cleanup in longPress.onFinalize)
-          // Set this in onUpdate (not onBegin) so we only mark as started when actually dragging
+          
+          // Track that pan has started (prevents cleanup in onFinalize)
           if (!panStartedRef.current) {
             panStartedRef.current = true;
             logger.dragDrop('[DRAG] Pan started', () => ({}));
           }
-          
-          // Move floating widget maintaining touch offset within widget (+5px shift)
-          translateX.value = event.absoluteX - initialTouchOffsetRef.current.x + 5;
-          translateY.value = event.absoluteY - initialTouchOffsetRef.current.y + 5;
 
           // Edge detection for cross-page auto-scroll
           // ------------------------------------------
