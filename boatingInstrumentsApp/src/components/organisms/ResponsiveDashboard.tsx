@@ -533,14 +533,15 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               runOnJS((dir: string) => {
                 edgeTimerRef.current = setTimeout(() => {
                   logger.dragDrop('[TIMER] Timer fired, navigating', () => ({ direction: dir }));
-                  // Small delay to allow gesture to fully finalize before DOM changes
-                  setTimeout(() => {
+                  // Use requestAnimationFrame to defer navigation until next frame
+                  // This prevents DOM changes while gesture is actively tracking
+                  requestAnimationFrame(() => {
                     if (dir === 'left') {
                       navigateToPreviousPage();
                     } else {
                       navigateToNextPage();
                     }
-                  }, 50);
+                  });
                   edgeTimerRef.current = null;
                 }, 500);
                 logger.dragDrop('[TIMER] Timer created', () => ({ timerId: edgeTimerRef.current }));
@@ -607,13 +608,19 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 calculatedTargetIndex: targetPage * widgetsPerPage + positionInPage,
               }));
               
-              runOnJS(useWidgetStore.getState().moveWidgetCrossPage)(
-                draggedWidgetRef.current,
-                sourcePage,
-                targetPage,
-                positionInPage,
-                widgetsPerPage
-              );
+              // Defer store update to next frame to allow gesture cleanup
+              const widget = draggedWidgetRef.current;
+              runOnJS(() => {
+                requestAnimationFrame(() => {
+                  useWidgetStore.getState().moveWidgetCrossPage(
+                    widget,
+                    sourcePage,
+                    targetPage,
+                    positionInPage,
+                    widgetsPerPage
+                  );
+                });
+              })();
             } else {
               // Same page reorder or cancel
               // If finalIndex is -1 (no hover detected), pass undefined to use placeholder position
