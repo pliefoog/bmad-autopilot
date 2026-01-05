@@ -363,10 +363,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       logger.dragDrop('[DRAG] Setting up floating widget', () => ({ widgetId, index, pageIndex }));
 
       // Get widget data without removing from array yet
-      const widgetArray = useWidgetStore.getState().instanceWidgets;
-      const widget = widgetArray.find(w => w.id === widgetId);
+      const widgets = useWidgetStore.getState().dashboard.widgets;
+      const widget = widgets.find(w => w.id === widgetId);
       if (!widget) {
-        console.error('[DRAG] Failed to setup floating widget - widget not found', { widgetId, index });
+        console.error('[DRAG] Failed to setup floating widget - widget not found', { widgetId, index, totalWidgets: widgets.length });
         return;
       }
 
