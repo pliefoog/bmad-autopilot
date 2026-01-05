@@ -547,7 +547,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               }));
               
               runOnJS(useWidgetStore.getState().moveWidgetCrossPage)(
-                draggedWidgetRef.current.id,
+                draggedWidgetRef.current,
                 sourcePage,
                 targetPage,
                 positionInPage,

@@ -41,7 +41,7 @@ interface WidgetActions {
   startDrag: (widgetId: string, sourceIndex: number) => WidgetConfig | null;
   finishDrag: (draggedWidget: WidgetConfig, targetIndex?: number) => void;
   moveWidgetCrossPage: (
-    widgetId: string,
+    draggedWidget: WidgetConfig,
     fromPageIndex: number,
     toPageIndex: number,
     toPosition: number,
@@ -499,7 +499,7 @@ export const useWidgetStore = create<WidgetStore>()(
          *   - Page 3+: BLOCKED (would create second empty page)
          */
         moveWidgetCrossPage: (
-          widgetId: string,
+          draggedWidget: WidgetConfig,
           fromPageIndex: number,
           toPageIndex: number,
           toPosition: number,
@@ -512,7 +512,7 @@ export const useWidgetStore = create<WidgetStore>()(
           }
 
           console.log('[DRAG] moveWidgetCrossPage called:', {
-            widgetId,
+            widgetId: draggedWidget.id,
             fromPage: fromPageIndex,
             toPage: toPageIndex,
             toPosition,
@@ -532,13 +532,6 @@ export const useWidgetStore = create<WidgetStore>()(
           console.log('[DRAG] Found placeholder at index:', placeholderIdx);
           newWidgets.splice(placeholderIdx, 1); // Remove placeholder
 
-          // Find the widget in the array (without placeholder)
-          const draggedWidget = currentDashboard.widgets.find((w) => w.id === widgetId);
-          if (!draggedWidget) {
-            console.warn('[DRAG] Widget not found:', widgetId);
-            return;
-          }
-
           // Prevent multiple empty pages - allow max one empty page beyond last populated
           // Use newWidgets.length since we removed placeholder
           const maxAllowedPage = Math.ceil(newWidgets.length / widgetsPerPage);
@@ -551,7 +544,7 @@ export const useWidgetStore = create<WidgetStore>()(
           const calculatedIndex = toPageIndex * widgetsPerPage + toPosition;
           const toIndex = Math.min(calculatedIndex, newWidgets.length);
 
-          // Insert widget at target position
+          // Insert widget at target position (same as finishDrag pattern)
           newWidgets.splice(toIndex, 0, draggedWidget);
 
           set({
@@ -562,7 +555,7 @@ export const useWidgetStore = create<WidgetStore>()(
           });
 
           console.log('[DRAG] Widget moved cross-page:', {
-            widgetId,
+            widgetId: draggedWidget.id,
             fromPage: fromPageIndex,
             toPage: toPageIndex,
             placeholderWasAt: placeholderIdx,
