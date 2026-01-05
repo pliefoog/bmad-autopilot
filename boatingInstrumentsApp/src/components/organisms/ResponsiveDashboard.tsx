@@ -137,12 +137,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // - sourcePageRef: Records page where drag started (for cross-page detection)
   // - currentPageRef: Synced with currentPage state to avoid stale closure in gestures
   // - totalPagesRef: Synced with totalPages to avoid stale closure in edge detection
+  // - panStartedRef: Tracks if pan gesture activated (prevents double-cleanup in onFinalize)
   // - isNearEdge: State (not ref!) to trigger React re-renders for visual indicators
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const edgeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sourcePageRef = useRef(0);
   const currentPageRef = useRef(0);
   const totalPagesRef = useRef(0);
+  const panStartedRef = useRef(false);
   const [isNearEdge, setIsNearEdge] = useState({ left: false, right: false });
 
   // Floating widget overlay position (updated during drag)
@@ -443,11 +445,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         .onFinalize(() => {
           // CRITICAL: This fires when long press ends, even if pan never started
           // Handles "cancel drag" scenario: long press but no movement
+          // Only restore if pan never started (panStartedRef is false)
           logger.dragDrop('[DRAG] Long press finalized', () => ({ 
-            hasDraggedWidget: !!draggedWidgetRef.current 
+            hasDraggedWidget: !!draggedWidgetRef.current,
+            panStarted: panStartedRef.current
           }));
           
-          if (draggedWidgetRef.current) {
+          if (draggedWidgetRef.current && !panStartedRef.current) {
             // Pan gesture never activated, restore widget to placeholder position
             runOnJS(() => {
               logger.dragDrop('[DRAG] Restoring widget (no pan)', () => ({
@@ -458,6 +462,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
                 useWidgetStore.getState().finishDrag(draggedWidgetRef.current, undefined);
                 draggedWidgetRef.current = null;
                 lastMovedIndexRef.current = -1;
+                panStartedRef.current = false;
                 setIsDragging(false);
                 setIsNearEdge({ left: false, right: false });
               }
@@ -467,6 +472,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       const pan = Gesture.Pan()
         .runOnJS(true)
+        .onBegin(() => {
+          // Track that pan has started (prevents cleanup in longPress.onFinalize)
+          panStartedRef.current = true;
+          logger.dragDrop('[DRAG] Pan started', () => ({}));
+        })
         .onUpdate((event) => {
           // Move floating widget maintaining touch offset within widget (+5px shift)
           translateX.value = event.absoluteX - initialTouchOffsetRef.current.x + 5;
@@ -609,6 +619,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             // Reset
             draggedWidgetRef.current = null;
             lastMovedIndexRef.current = -1;
+            panStartedRef.current = false;
             runOnJS(setIsDragging)(false);
             runOnJS(setIsNearEdge)({ left: false, right: false });
           } else {
