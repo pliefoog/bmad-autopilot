@@ -136,11 +136,13 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   // - edgeTimerRef: Tracks edge-hover timeout for auto-scroll cleanup
   // - sourcePageRef: Records page where drag started (for cross-page detection)
   // - currentPageRef: Synced with currentPage state to avoid stale closure in gestures
+  // - totalPagesRef: Synced with totalPages to avoid stale closure in edge detection
   // - isNearEdge: State (not ref!) to trigger React re-renders for visual indicators
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const edgeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sourcePageRef = useRef(0);
   const currentPageRef = useRef(0);
+  const totalPagesRef = useRef(0);
   const [isNearEdge, setIsNearEdge] = useState({ left: false, right: false });
 
   // Floating widget overlay position (updated during drag)
@@ -268,6 +270,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
+
+  // Update totalPagesRef when totalPages changes (for gesture callbacks)
+  // CRITICAL: Prevents stale closure capturing totalPages=0 from initial mount
+  useEffect(() => {
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
 
   // Animated style for floating widget overlay
   const floatingStyle = useAnimatedStyle(() => ({
@@ -423,9 +431,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           // - Used isNearLeft/Right in timer callback: captured at timer creation time
           // - Solution: currentPageRef synced via useEffect, direction passed as string
           // - Jan 2026: Added fallback to responsiveGrid width when ScrollView layout doesn't fire
+          // - Jan 2026: Use totalPagesRef to avoid stale closure capturing totalPages=0
           const edgeThreshold = effectiveScrollViewWidth * 0.15; // 15% of screen width
           const isNearLeft = event.absoluteX < edgeThreshold && currentPageRef.current > 0;
-          const isNearRight = event.absoluteX > effectiveScrollViewWidth - edgeThreshold && currentPageRef.current < totalPages - 1;
+          const isNearRight = event.absoluteX > effectiveScrollViewWidth - edgeThreshold && currentPageRef.current < totalPagesRef.current - 1;
           
           // Debug logging for edge detection
           runOnJS((x: number, width: number, threshold: number, left: boolean, right: boolean, page: number, total: number) => {
@@ -440,7 +449,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               currentPage: page,
               totalPages: total,
             }));
-          })(event.absoluteX, effectiveScrollViewWidth, edgeThreshold, isNearLeft, isNearRight, currentPageRef.current, totalPages);
+          })(event.absoluteX, effectiveScrollViewWidth, edgeThreshold, isNearLeft, isNearRight, currentPageRef.current, totalPagesRef.current);
           
           // Update edge state for visual indicators (state triggers React re-render)
           runOnJS(setIsNearEdge)({ left: isNearLeft, right: isNearRight });
