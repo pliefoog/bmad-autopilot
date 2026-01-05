@@ -565,7 +565,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               );
             } else {
               // Same page reorder
-              runOnJS(useWidgetStore.getState().finishDrag)(draggedWidgetRef.current, finalIndex);
+              // If finalIndex is -1 (no hover detected), pass undefined to use placeholder position
+              const targetIndex = finalIndex >= 0 ? finalIndex : undefined;
+              runOnJS(useWidgetStore.getState().finishDrag)(draggedWidgetRef.current, targetIndex);
             }
             
             // Reset
