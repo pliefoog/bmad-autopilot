@@ -7,6 +7,7 @@ import {
   Text,
   ActivityIndicator,
   Animated as RNAnimated,
+  Dimensions,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -98,6 +99,12 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const initialTouchOffsetRef = useRef({ x: 0, y: 0 }); // Touch offset within widget
   const pageLayoutsRef = useRef<PageLayout[]>([]); // For hit detection
   const responsiveGridRef = useRef<ResponsiveGridState>(responsiveGrid); // For hover calculation
+  
+  // Cross-page drag refs
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null); // For page transition animation cleanup
+  const edgeTimerRef = useRef<NodeJS.Timeout | null>(null); // For edge-triggered auto-scroll
+  const sourcePageRef = useRef(0); // Track source page for cross-page drag detection
+  const isNearEdgeRef = useRef({ left: false, right: false }); // Edge proximity tracking
 
   // Floating widget overlay position (updated during drag)
   const translateX = useSharedValue(0);
@@ -225,8 +232,17 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           if (prev === page) {
             return prev;
           }
+          
+          // Clear any existing animation timer
+          if (animationTimerRef.current) {
+            clearTimeout(animationTimerRef.current);
+          }
+          
           setIsAnimatingPageTransition(true);
-          setTimeout(() => setIsAnimatingPageTransition(false), 300);
+          animationTimerRef.current = setTimeout(() => {
+            setIsAnimatingPageTransition(false);
+            animationTimerRef.current = null;
+          }, 300);
           return page;
         });
       }
@@ -369,10 +385,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     [currentPage, handleLongPressStart],
   );
 
-  // Handle keyboard navigation (AC 18)
-  const handleKeyPress = useCallback(
-    (event: any) => {
-      if (Platform.OS === 'web') {
+  // Handle keyboard navigation (AC 18) - with proper cleanup
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleKeyDown = (event: KeyboardEvent) => {
         switch (event.key) {
           case 'ArrowLeft':
             navigateToPreviousPage();
@@ -380,12 +396,15 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           case 'ArrowRight':
             navigateToNextPage();
             break;
-          // REMOVED: Manual widget addition keyboard shortcut
         }
-      }
-    },
-    [navigateToNextPage, navigateToPreviousPage],
-  );
+      };
+      
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [navigateToNextPage, navigateToPreviousPage]);
 
   // Handle scroll for page detection
   const handleScroll = useCallback(
@@ -403,6 +422,46 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     },
     [scrollViewWidth, currentPage, totalPages, navigateToPage, pageAnimatedValue],
   );
+
+  // Comprehensive cleanup on unmount - prevents memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timers
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current);
+      }
+      if (edgeTimerRef.current) {
+        clearTimeout(edgeTimerRef.current);
+      }
+      
+      // Null out refs holding large objects
+      draggedWidgetRef.current = null;
+      pageLayoutsRef.current = [];
+      scrollViewRef.current = null;
+      
+      // Stop animated value
+      pageAnimatedValue.stopAnimation();
+      pageAnimatedValue.removeAllListeners();
+      
+      // Cancel running Reanimated animations
+      translateX.value = 0;
+      translateY.value = 0;
+    };
+  }, [pageAnimatedValue, translateX, translateY]);
+
+  // Cancel drag on orientation change
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', () => {
+      if (isDragging) {
+        // Cancel drag and restore widget
+        useWidgetStore.getState().removePlaceholder();
+        draggedWidgetRef.current = null;
+        setIsDragging(false);
+      }
+    });
+    
+    return () => subscription?.remove();
+  }, [isDragging]);
 
   // Render individual widget
   // Now simplified: widgets come from store array (includes placeholder during drag)
@@ -536,9 +595,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     <View
       style={[styles.container, { backgroundColor: theme.background }]}
       testID={testID}
-      // AC 18: Keyboard Navigation support
+      // AC 18: Keyboard Navigation support (handled via useEffect)
       {...(Platform.OS === 'web' && {
-        onKeyDown: handleKeyPress,
         tabIndex: 0,
       })}
       // AC 19: Accessibility support
