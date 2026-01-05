@@ -396,8 +396,14 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       
       logger.dragDrop('[DRAG] Floating widget ready', () => ({ 
         widgetId,
+        touchPoint: { x: touchX, y: touchY },
+        cellPosition: { x: cell.x, y: cell.y },
         initialOffset: initialTouchOffsetRef.current,
-        floatingPosition: { x: translateX.value, y: translateY.value }
+        floatingPosition: { 
+          x: touchX - initialTouchOffsetRef.current.x + 5, 
+          y: touchY - initialTouchOffsetRef.current.y + 5 
+        },
+        formula: `touch(${touchX}) - offset(${initialTouchOffsetRef.current.x}) + 5 = ${touchX - initialTouchOffsetRef.current.x + 5}`
       }));
     },
     [],
@@ -450,8 +456,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           hitDetectionDoneRef.current = false;
           
           // Hit detection: find which widget was pressed
-          const touchX = event.x;
-          const touchY = event.y;
+          // Use absoluteX/absoluteY for screen coordinates (consistent with onUpdate)
+          const touchX = event.absoluteX;
+          const touchY = event.absoluteY;
           
           // Find the page layout for current page (use ref to avoid closure issues)
           const pageLayout = pageLayoutsRef.current[currentPageRef.current];
