@@ -39,7 +39,6 @@ interface WidgetActions {
   insertPlaceholder: (index: number) => void;
   removePlaceholder: () => void;
   startDrag: (widgetId: string, sourceIndex: number) => WidgetConfig | null;
-  movePlaceholder: (targetIndex: number) => void;
   finishDrag: (draggedWidget: WidgetConfig, targetIndex?: number) => void;
   moveWidgetCrossPage: (
     widgetId: string,
@@ -88,6 +87,11 @@ export const useWidgetStore = create<WidgetStore>()(
         currentWidgetIds: new Set(SYSTEM_WIDGETS.map((w) => w.id)),
 
         updateInstanceWidgets: (detectedInstances) => {
+          // Guard: Block sensor updates during active drag to prevent race conditions
+          if (get().dashboard.widgets.some(w => w.id === DRAG_CONFIG.PLACEHOLDER_ID)) {
+            return;
+          }
+          
           // Set-based widget diffing for efficient updates
           // Guard: Don't process if no instances detected
           if (detectedInstances.length === 0) {
@@ -436,51 +440,6 @@ export const useWidgetStore = create<WidgetStore>()(
         },
 
         /**
-         * Move placeholder to new index during drag
-         */
-        movePlaceholder: (targetIndex: number) => {
-          const currentDashboard = get().dashboard;
-          if (!currentDashboard) return;
-
-          const placeholderIdx = currentDashboard.widgets.findIndex(
-            (w) => w.id === DRAG_CONFIG.PLACEHOLDER_ID,
-          );
-          if (placeholderIdx === -1) return;
-
-          // Don't move if already at target
-          if (placeholderIdx === targetIndex) return;
-
-          // Remove placeholder from current position
-          const newWidgets = currentDashboard.widgets.filter(
-            (w) => w.id !== DRAG_CONFIG.PLACEHOLDER_ID,
-          );
-
-          // Adjust target index if placeholder was before it (array shifted down after removal)
-          const adjustedTarget = placeholderIdx < targetIndex ? targetIndex - 1 : targetIndex;
-
-          // Insert placeholder at adjusted target position
-          newWidgets.splice(adjustedTarget, 0, {
-            id: DRAG_CONFIG.PLACEHOLDER_ID,
-            type: 'placeholder',
-            title: '',
-            settings: {},
-          });
-
-          set({
-            dashboard: {
-              ...currentDashboard,
-              widgets: newWidgets,
-            },
-          });
-
-          console.log('[DRAG] Placeholder moved:', { 
-            from: placeholderIdx, 
-            to: targetIndex,
-            adjustedTo: adjustedTarget 
-          });
-        },
-
-        /**
          * Finish drag - replace placeholder with dragged widget at target index
          * If targetIndex provided, removes placeholder and inserts widget at exact position
          * If no targetIndex, just replaces placeholder in place
@@ -539,8 +498,16 @@ export const useWidgetStore = create<WidgetStore>()(
           const fromIndex = currentDashboard.widgets.findIndex((w) => w.id === widgetId);
           if (fromIndex === -1) return;
 
-          // Calculate target absolute index
-          const toIndex = toPageIndex * widgetsPerPage + toPosition;
+          // Prevent multiple empty pages - allow max one empty page beyond last populated
+          const maxAllowedPage = Math.ceil(currentDashboard.widgets.length / widgetsPerPage);
+          if (toPageIndex > maxAllowedPage) {
+            console.warn('[DRAG] Cannot drop on empty page:', { toPageIndex, maxAllowedPage });
+            return;
+          }
+
+          // Calculate target absolute index with bounds checking
+          const calculatedIndex = toPageIndex * widgetsPerPage + toPosition;
+          const toIndex = Math.min(calculatedIndex, currentDashboard.widgets.length);
 
           // Use existing reorder logic
           get().reorderWidget(fromIndex, toIndex);

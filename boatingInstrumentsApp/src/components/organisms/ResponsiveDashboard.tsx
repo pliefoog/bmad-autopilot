@@ -275,6 +275,9 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
       dragHaptics.onLift();
 
+      // Track source page for cross-page drag detection
+      sourcePageRef.current = pageIndex;
+
       // Remove widget from array, insert placeholder at source
       const removedWidget = useWidgetStore.getState().startDrag(widgetId, index);
       if (!removedWidget) {
@@ -350,6 +353,28 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           translateX.value = event.absoluteX - initialTouchOffsetRef.current.x + 5;
           translateY.value = event.absoluteY - initialTouchOffsetRef.current.y + 5;
 
+          // Edge detection for cross-page auto-scroll
+          const edgeThreshold = scrollViewWidth * 0.15; // 15% of screen width
+          const isNearLeft = event.absoluteX < edgeThreshold && currentPage > 0;
+          const isNearRight = event.absoluteX > scrollViewWidth - edgeThreshold && currentPage < totalPages - 1;
+          
+          isNearEdgeRef.current = { left: isNearLeft, right: isNearRight };
+          
+          // Start edge timer if near edge, clear if moved away
+          if (isNearLeft || isNearRight) {
+            if (!edgeTimerRef.current) {
+              edgeTimerRef.current = setTimeout(() => {
+                runOnJS(isNearLeft ? navigateToPreviousPage : navigateToNextPage)();
+                edgeTimerRef.current = null;
+              }, 500);
+            }
+          } else {
+            if (edgeTimerRef.current) {
+              clearTimeout(edgeTimerRef.current);
+              edgeTimerRef.current = null;
+            }
+          }
+
           // Calculate which widget index is being hovered
           const hoverIndex = calculateHoverIndex(
             event.absoluteX,
@@ -365,17 +390,41 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
           }
         })
         .onEnd(() => {
+          // Clear edge timer
+          if (edgeTimerRef.current) {
+            clearTimeout(edgeTimerRef.current);
+            edgeTimerRef.current = null;
+          }
+          
           if (draggedWidgetRef.current) {
             const finalIndex = lastMovedIndexRef.current;
-            console.log('[DRAG] Dropped at final position:', finalIndex);
+            const sourcePage = sourcePageRef.current;
+            const targetPage = currentPage;
             
-            // Pass finalIndex so finishDrag moves placeholder there and replaces it
-            useWidgetStore.getState().finishDrag(draggedWidgetRef.current, finalIndex);
+            console.log('[DRAG] Dropped at final position:', { finalIndex, sourcePage, targetPage });
+            
+            // Check if this is a cross-page drag
+            if (sourcePage !== targetPage) {
+              // Cross-page move
+              const widgetsPerPage = responsiveGrid.layout.cols * responsiveGrid.layout.rows;
+              const positionInPage = finalIndex % widgetsPerPage;
+              
+              runOnJS(useWidgetStore.getState().moveWidgetCrossPage)(
+                draggedWidgetRef.current.id,
+                sourcePage,
+                targetPage,
+                positionInPage,
+                widgetsPerPage
+              );
+            } else {
+              // Same page reorder
+              runOnJS(useWidgetStore.getState().finishDrag)(draggedWidgetRef.current, finalIndex);
+            }
             
             // Reset
             draggedWidgetRef.current = null;
             lastMovedIndexRef.current = -1;
-            setIsDragging(false);
+            runOnJS(setIsDragging)(false);
           }
         });
 
@@ -645,6 +694,19 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         />
       </View>
 
+      {/* Edge zone indicators for cross-page drag */}
+      {isDragging ? (
+        isNearEdgeRef.current.left && currentPage > 0 ? (
+          <Animated.View style={styles.leftEdgeIndicator} pointerEvents="none" />
+        ) : null
+      ) : null}
+      
+      {isDragging ? (
+        isNearEdgeRef.current.right && currentPage < totalPages - 1 ? (
+          <Animated.View style={styles.rightEdgeIndicator} pointerEvents="none" />
+        ) : null
+      ) : null}
+
       {/* Floating widget overlay during drag */}
       {isDragging && draggedWidgetRef.current && (
         <Animated.View
@@ -711,6 +773,24 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
+  },
+  leftEdgeIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 50,
+    backgroundColor: 'rgba(0, 122, 255, 0.3)',
+    zIndex: 999,
+  },
+  rightEdgeIndicator: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 50,
+    backgroundColor: 'rgba(0, 122, 255, 0.3)',
+    zIndex: 999,
   },
   emptyStateContainer: {
     flex: 1,
