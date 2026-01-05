@@ -456,16 +456,19 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
               
               hitDetectionDoneRef.current = true;
               
+              // Set up floating widget immediately for visual feedback
+              runOnJS(handleLongPressStart)(widgetId, globalIndex, currentPageRef.current, touchX, touchY);
+              
               // Schedule drag activation after delay (simulates long press)
-              runOnJS((wid: string, idx: number, page: number, tx: number, ty: number) => {
+              runOnJS(() => {
                 setTimeout(() => {
                   // Only activate if pan is still active (hasn't ended)
                   if (hitDetectionDoneRef.current) {
                     dragActivatedRef.current = true;
-                    handleLongPressStart(wid, idx, page, tx, ty);
+                    logger.dragDrop('[DRAG] Drag activated after delay', () => ({ widgetId }));
                   }
                 }, DRAG_CONFIG.LONG_PRESS_DURATION);
-              })(widgetId, globalIndex, currentPageRef.current, touchX, touchY);
+              })();
               
               break;
             }
