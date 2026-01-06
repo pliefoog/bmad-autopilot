@@ -84,14 +84,10 @@ const DashboardContent: React.FC = () => {
       {/* Persistent hamburger overlay - only visible when header hidden */}
       <PersistentHamburger />
       
-      {/* Absolutely positioned container keeps dashboard above safe area */}
+      {/* Dashboard fills remaining space - header pushes it down naturally when visible */}
       <View
         style={{
-          position: 'absolute',
-          top: headerHeight,
-          left: 0,
-          right: 0,
-          bottom: insets.bottom,
+          flex: 1,
         }}
       >
         <ResponsiveDashboard headerHeight={headerHeight} />
