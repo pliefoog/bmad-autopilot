@@ -139,8 +139,8 @@ const App = () => {
     showAlarmConfigDialog ||
     showTestSwitchDialog;
   
-  // Enable auto-hide header with smart timing
-  useAutoHideHeader(isAnyDialogOpen);
+  // TEMPORARILY DISABLED - Enable auto-hide header with smart timing
+  // useAutoHideHeader(isAnyDialogOpen);
 
   // Onboarding system integration
   const {
