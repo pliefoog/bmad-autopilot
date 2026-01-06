@@ -19,12 +19,10 @@ import { useNmeaStore } from '../store/nmeaStore';
  * @param isAnyDialogOpen - Whether any modal dialog is currently visible
  */
 export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
-  const { 
-    hideHeader, 
-    isHeaderVisible, 
-    autoHideEnabled, 
-    lastHeaderInteraction 
-  } = useUIStore();
+  const hideHeader = useUIStore((state) => state.hideHeader);
+  const isHeaderVisible = useUIStore((state) => state.isHeaderVisible);
+  const autoHideEnabled = useUIStore((state) => state.autoHideEnabled);
+  const lastHeaderInteraction = useUIStore((state) => state.lastHeaderInteraction);
   
   const connectionStatus = useNmeaStore((state) => state.connectionStatus);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -53,7 +51,7 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
     
     // Don't auto-hide if:
     // - Feature disabled by user
-    // - Screen is large (>= 1000px height)
+    // - Screen is large (>= 1800px height)
     // - Not connected with active data
     // - Any dialog is open
     // - Header already hidden
@@ -85,15 +83,10 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
         timerRef.current = null;
       }
     };
-  }, [
-    // Note: connectionStatus intentionally NOT in deps - checked in effect body
-    // Including it causes infinite loop as store updates on every NMEA message
-    shouldAutoHide,
-    isAnyDialogOpen,
-    isHeaderVisible,
-    lastHeaderInteraction,
-    hideHeader,
-  ]);
+    // Only re-run when header becomes visible or dialogs close
+    // DO NOT include hideHeader, lastHeaderInteraction, or connectionStatus
+    // to avoid infinite loops from store updates
+  }, [shouldAutoHide, isAnyDialogOpen, isHeaderVisible]);
   
   // Cleanup on unmount
   useEffect(() => {
