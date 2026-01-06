@@ -72,6 +72,8 @@ export const PersistentHamburger: React.FC = () => {
             backgroundColor: theme.surface,
             borderColor: theme.border,
             shadowColor: '#000',
+            // @ts-ignore - Web-specific CSS for better shadow rendering
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2)',
           },
         ]}
         onPress={showHeader}
