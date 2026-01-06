@@ -17,9 +17,11 @@ import { useWidgetStore } from '../store/widgetStore';
 import { useAlarmStore } from '../store/alarmStore';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { useToast } from '../hooks/useToast';
+import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
 import ResponsiveDashboard from '../components/organisms/ResponsiveDashboard';
 import { DashboardLayoutProvider, useDashboardLayout } from '../contexts/DashboardLayoutContext';
-import HeaderBar from '../components/HeaderBar';
+import HeaderBar, { HEADER_HEIGHT } from '../components/HeaderBar';
+import { PersistentHamburger } from '../components/PersistentHamburger';
 import { ToastContainer } from '../components/toast';
 import { AlarmBanner } from '../widgets/AlarmBanner';
 import { ConnectionConfigDialog } from '../components/dialogs/ConnectionConfigDialog';
@@ -43,6 +45,7 @@ import {
   getCurrentConnectionConfig,
   initializeConnection,
 } from '../services/connectionDefaults';
+import { useUIStore } from '../store/uiStore';
 
 const STORAGE_KEY = 'nmea-connection-config';
 
@@ -55,6 +58,10 @@ const STORAGE_KEY = 'nmea-connection-config';
 const DashboardContent: React.FC = () => {
   const { updateLayout } = useDashboardLayout();
   const insets = useSafeAreaInsets();
+  const isHeaderVisible = useUIStore((state) => state.isHeaderVisible);
+  
+  // Calculate header height based on visibility
+  const headerHeight = isHeaderVisible ? HEADER_HEIGHT : 0;
 
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) => {
@@ -74,17 +81,20 @@ const DashboardContent: React.FC = () => {
 
   return (
     <View style={styles.contentArea} onLayout={handleLayout}>
+      {/* Persistent hamburger overlay - only visible when header hidden */}
+      <PersistentHamburger />
+      
       {/* Absolutely positioned container keeps dashboard above safe area */}
       <View
         style={{
           position: 'absolute',
-          top: 0,
+          top: headerHeight,
           left: 0,
           right: 0,
           bottom: insets.bottom,
         }}
       >
-        <ResponsiveDashboard />
+        <ResponsiveDashboard headerHeight={headerHeight} />
       </View>
     </View>
   );
@@ -120,6 +130,21 @@ const App = () => {
     isRecording: boolean;
     startTime?: Date;
   }>({ isRecording: false });
+  
+  // Track if any dialog is open (prevents auto-hide)
+  const isAnyDialogOpen = 
+    showAutopilotControl ||
+    showConnectionDialog ||
+    showUnitsDialog ||
+    showFactoryResetDialog ||
+    showLayoutSettingsDialog ||
+    showDisplayThemeDialog ||
+    showAlarmHistoryDialog ||
+    showAlarmConfigDialog ||
+    showTestSwitchDialog;
+  
+  // Enable auto-hide header with smart timing
+  useAutoHideHeader(isAnyDialogOpen);
 
   // Onboarding system integration
   const {
