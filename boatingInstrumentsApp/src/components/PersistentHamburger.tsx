@@ -112,11 +112,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     zIndex: 999,
-    // Strong elevation for floating above widgets
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8, // Android
+    // Pronounced floating effect - large diffuse shadow
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 12, // Android
   },
   hamburgerIcon: {
     fontSize: 24,
