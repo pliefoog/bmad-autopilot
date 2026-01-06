@@ -67,8 +67,8 @@ export const PersistentHamburger: React.FC = () => {
         style={[
           styles.hamburgerButton,
           {
-            top: insets.top + 24,
-            left: 16,
+            top: insets.top + 60,
+            left: 60,
             backgroundColor: theme.surface,
             borderColor: theme.border,
             shadowColor: '#000',
@@ -88,8 +88,8 @@ export const PersistentHamburger: React.FC = () => {
           style={[
             styles.hintContainer,
             {
-              top: insets.top + 80,
-              left: 30,
+              top: insets.top + 116,
+              left: 74,
             },
             hintStyle,
           ]}
