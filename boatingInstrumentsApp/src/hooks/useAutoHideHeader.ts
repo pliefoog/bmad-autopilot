@@ -30,8 +30,9 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get screen dimensions to determine if auto-hide should be active
+  // Enable on laptops/tablets (< 1800px), disable on large desktop monitors
   const screenHeight = Dimensions.get('window').height;
-  const shouldAutoHide = autoHideEnabled && screenHeight < 1000;
+  const shouldAutoHide = autoHideEnabled && screenHeight < 1800;
   
   useEffect(() => {
     // Clear any existing timer
