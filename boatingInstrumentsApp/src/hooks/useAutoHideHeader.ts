@@ -86,8 +86,9 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
       }
     };
   }, [
+    // Note: connectionStatus intentionally NOT in deps - checked in effect body
+    // Including it causes infinite loop as store updates on every NMEA message
     shouldAutoHide,
-    connectionStatus,
     isAnyDialogOpen,
     isHeaderVisible,
     lastHeaderInteraction,
