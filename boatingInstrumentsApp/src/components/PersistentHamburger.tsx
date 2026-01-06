@@ -67,8 +67,11 @@ export const PersistentHamburger: React.FC = () => {
         style={[
           styles.hamburgerButton,
           {
-            top: insets.top + 10,
+            top: insets.top + 12,
             left: 16,
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
+            shadowColor: '#000',
           },
         ]}
         onPress={showHeader}
@@ -85,8 +88,8 @@ export const PersistentHamburger: React.FC = () => {
           style={[
             styles.hintContainer,
             {
-              top: insets.top + 50,
-              left: 24,
+              top: insets.top + 68,
+              left: 30,
             },
             hintStyle,
           ]}
@@ -102,16 +105,22 @@ export const PersistentHamburger: React.FC = () => {
 const styles = StyleSheet.create({
   hamburgerButton: {
     position: 'absolute',
-    width: 44,
-    height: 44,
+    width: 52,
+    height: 52,
+    borderRadius: 26, // Circular - nautical porthole aesthetic
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
     zIndex: 999,
+    // Subtle elevation for floating effect
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3, // Android
   },
   hamburgerIcon: {
     fontSize: 24,
-    fontWeight: 'normal',
-    opacity: 0.4, // Semi-translucent
+    fontWeight: '600', // Slightly bolder for better visibility
   },
   hintContainer: {
     position: 'absolute',
@@ -122,7 +131,7 @@ const styles = StyleSheet.create({
     zIndex: 998,
   },
   hintChevron: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
 });
