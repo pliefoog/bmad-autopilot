@@ -40,6 +40,16 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
       timerRef.current = null;
     }
     
+    // Debug logging
+    console.log('[AUTO-HIDE] Conditions check:', {
+      shouldAutoHide,
+      autoHideEnabled,
+      screenHeight,
+      connectionStatus,
+      isAnyDialogOpen,
+      isHeaderVisible,
+    });
+    
     // Don't auto-hide if:
     // - Feature disabled by user
     // - Screen is large (>= 1000px height)
@@ -50,6 +60,7 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
         connectionStatus !== 'connected' || 
         isAnyDialogOpen || 
         !isHeaderVisible) {
+      console.log('[AUTO-HIDE] Not hiding - conditions not met');
       return;
     }
     
@@ -57,8 +68,11 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
     const timeSinceInteraction = Date.now() - lastHeaderInteraction;
     const remainingTime = Math.max(0, 5000 - timeSinceInteraction);
     
+    console.log('[AUTO-HIDE] Setting timer:', { timeSinceInteraction, remainingTime });
+    
     // Set timer to hide header after remaining time
     timerRef.current = setTimeout(() => {
+      console.log('[AUTO-HIDE] Hiding header now');
       hideHeader();
       timerRef.current = null;
     }, remainingTime);
