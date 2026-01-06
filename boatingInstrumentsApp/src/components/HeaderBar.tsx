@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,23 @@ import {
   AccessibilityInfo,
   Platform,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore, ConnectionStatus } from '../store/nmeaStore';
+import { useUIStore } from '../store/uiStore';
 import { HamburgerMenu } from './organisms/HamburgerMenu';
 import { Ionicons } from '@expo/vector-icons';
+
+/**
+ * Header height constant (44px visual + 1px border)
+ * Exported for use in layout calculations
+ */
+export const HEADER_HEIGHT = 45;
 
 interface HeaderBarProps {
   onShowConnectionSettings?: () => void;
@@ -54,6 +67,30 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { connectionStatus } = useNmeaStore();
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const styles = createStyles(theme);
+  
+  // Subscribe to header visibility state
+  const { isHeaderVisible, showHeader } = useUIStore();
+  
+  // Animated values for height and opacity
+  const headerHeight = useSharedValue(45);
+  const headerOpacity = useSharedValue(1);
+  
+  // Animate header visibility
+  useEffect(() => {
+    headerHeight.value = withTiming(isHeaderVisible ? 45 : 0, {
+      duration: 300,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+    });
+    headerOpacity.value = withTiming(isHeaderVisible ? 1 : 0, {
+      duration: 150,
+    });
+  }, [isHeaderVisible, headerHeight, headerOpacity]);
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: headerHeight.value,
+    opacity: headerOpacity.value,
+    overflow: 'hidden',
+  }));
 
   const getStatusColor = (status: ConnectionStatus): string => {
     switch (status) {
@@ -128,12 +165,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const handleHamburgerPress = () => {
     console.log('[1] Button pressed, setting visible=true');
+    // Mark interaction time when opening menu
+    showHeader();
     setShowHamburgerMenu(true);
   };
 
   return (
     <>
-      <View style={styles.headerContainer} testID="header-container">
+      <Animated.View style={[styles.headerContainer, animatedStyle]} testID="header-container">
         {/* Left: Hamburger Menu Icon */}
         <TouchableOpacity
           style={styles.hamburgerButton}
@@ -195,7 +234,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             </View>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Hamburger Menu Modal */}
       <HamburgerMenu
