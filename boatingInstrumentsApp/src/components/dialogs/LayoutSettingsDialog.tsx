@@ -22,6 +22,7 @@ import { useWidgetStore } from '../../store/widgetStore';
 import { useUIStore } from '../../store/uiStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection, PlatformSettingsRow } from '../settings';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 interface LayoutSettingsDialogProps {
   visible: boolean;
@@ -30,7 +31,8 @@ interface LayoutSettingsDialogProps {
 
 export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
   // Widget store settings
   const {
@@ -210,7 +212,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
 /**
  * Create styles with theme integration
  */
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     timeoutContainer: {
       marginTop: 16,
@@ -220,14 +222,18 @@ const createStyles = (theme: ThemeColors) =>
       borderTopColor: theme.border,
     },
     timeoutLabel: {
-      fontSize: 16,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      lineHeight: platformTokens.typography.body.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.textSecondary,
       marginBottom: 12,
     },
     hintText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontWeight: platformTokens.typography.caption.fontWeight,
+      lineHeight: platformTokens.typography.caption.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.textSecondary,
       fontStyle: 'italic',
       marginTop: 12,
@@ -254,10 +260,11 @@ const createStyles = (theme: ThemeColors) =>
       borderColor: theme.interactive,
     },
     timeoutOptionText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.label.fontSize,
+      fontWeight: platformTokens.typography.label.fontWeight,
+      lineHeight: platformTokens.typography.label.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
-      fontWeight: '500',
     },
     timeoutOptionTextActive: {
       color: '#FFFFFF',
