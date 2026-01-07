@@ -268,8 +268,11 @@ export const platformTypography = {
     caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
   },
   android: {
-    // Roboto family
-    fontFamily: 'Roboto',
+    // Sans-serif family (Roboto on Android native, generic sans-serif on web)
+    fontFamily: Platform.select({
+      android: 'Roboto',
+      default: 'sans-serif',
+    }),
     title: { fontSize: 22, fontWeight: '500' as const, lineHeight: 28 }, // Material title-large
     sectionHeader: { fontSize: 16, fontWeight: '500' as const, lineHeight: 24 }, // Material title-medium
     label: { fontSize: 14, fontWeight: '500' as const, lineHeight: 20 }, // Material label-large
