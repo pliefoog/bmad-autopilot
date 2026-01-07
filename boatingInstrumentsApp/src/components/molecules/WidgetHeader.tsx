@@ -15,6 +15,7 @@ interface WidgetHeaderProps {
   titleStyle?: TextStyle;
   subtitleStyle?: TextStyle;
   testID?: string;
+  headerHeight?: number; // Dynamic height from TemplatedWidget for scaling
 }
 
 const WidgetHeader: React.FC<WidgetHeaderProps> = ({
@@ -27,9 +28,22 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   titleStyle,
   subtitleStyle,
   testID,
+  headerHeight = 40, // Default fallback
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  
+  // Calculate responsive sizes based on header height
+  // Icon: 50% of header height, clamped 16-28px
+  const iconSize = Math.max(16, Math.min(28, headerHeight * 0.5));
+  // Title: 32.5% of header height, clamped 11-18px
+  const titleFontSize = Math.max(11, Math.min(18, headerHeight * 0.325));
+  // Subtitle: 30% of header height, clamped 10-16px
+  const subtitleFontSize = Math.max(10, Math.min(16, headerHeight * 0.3));
+  
+  const styles = useMemo(
+    () => createStyles(theme, titleFontSize, subtitleFontSize),
+    [theme, titleFontSize, subtitleFontSize]
+  );
 
   return (
     <View style={[styles.container, style]} testID={testID}>
@@ -37,7 +51,7 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
         {iconName && (
           <UniversalIcon
             name={iconName}
-            size={20}
+            size={iconSize}
             color={theme.iconPrimary}
             style={styles.icon}
             testID={testID ? `${testID}-icon` : undefined}
@@ -72,7 +86,7 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, titleFontSize: number, subtitleFontSize: number) =>
   StyleSheet.create({
     container: {
       flexDirection: 'row',
@@ -101,12 +115,12 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
     },
     title: {
-      fontSize: 13,
+      fontSize: titleFontSize,
       fontWeight: '600',
       color: theme.text,
     },
     subtitle: {
-      fontSize: 12,
+      fontSize: subtitleFontSize,
       color: theme.textSecondary,
       marginTop: 2,
     },

@@ -228,6 +228,7 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
           <WidgetHeader
             title={headerTitle}
             iconName={widgetMetadata.icon}
+            headerHeight={headerFooterHeight}
             testID={testID ? `${testID}-header` : undefined}
           />
         )}

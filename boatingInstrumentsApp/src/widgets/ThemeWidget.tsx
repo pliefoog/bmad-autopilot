@@ -58,6 +58,7 @@ interface ThemeWidgetProps {
  * **AI AGENT:**
  * Extracted component for theme mode buttons. Shows selected state with
  * inverted colors (background vs foreground swap).
+ * Icon size scales with cell height (40% of height, clamped 20-48px)
  */
 const ThemeButton: React.FC<{
   mode: 'day' | 'night' | 'red-night' | 'auto';
@@ -71,8 +72,11 @@ const ThemeButton: React.FC<{
     borderBottomWidth: number;
     borderRightWidth: number;
   };
-}> = ({ mode, currentMode, icon, onPress, theme, borderStyle }) => {
+  cellHeight?: number; // Injected by TemplatedWidget
+}> = ({ mode, currentMode, icon, onPress, theme, borderStyle, cellHeight = 80 }) => {
   const isActive = mode === currentMode;
+  // Calculate icon size: 40% of cell height, clamped between 20-48px
+  const iconSize = Math.max(20, Math.min(48, cellHeight * 0.4));
 
   return (
     <TouchableOpacity
@@ -89,7 +93,7 @@ const ThemeButton: React.FC<{
       ]}
       onPress={onPress}
     >
-      <Ionicons name={icon} size={32} color={isActive ? theme.surface : theme.text} />
+      <Ionicons name={icon} size={iconSize} color={isActive ? theme.surface : theme.text} />
     </TouchableOpacity>
   );
 };
@@ -99,6 +103,7 @@ const ThemeButton: React.FC<{
  *
  * **AI AGENT:**
  * Brightness slider with +/- buttons. Double-tap brightness bar to max.
+ * Icon sizes scale with cell height.
  */
 const BrightnessControl: React.FC<{
   brightness: number;
@@ -108,6 +113,7 @@ const BrightnessControl: React.FC<{
   setBrightnessToMax: () => void;
   theme: any;
   unadjustedColors: any;
+  cellHeight?: number; // Injected by TemplatedWidget
 }> = ({
   brightness,
   nativeBrightnessControl,
@@ -116,8 +122,15 @@ const BrightnessControl: React.FC<{
   setBrightnessToMax,
   theme,
   unadjustedColors,
+  cellHeight = 80,
 }) => {
   const lastTapRef = React.useRef<number>(0);
+  // Calculate icon size: 25% of cell height, clamped between 16-28px
+  const iconSize = Math.max(16, Math.min(28, cellHeight * 0.25));
+  // Button size scales with icon
+  const buttonSize = iconSize * 2;
+  // Border width scales with button size (5% of button size, min 1, max 3)
+  const borderWidth = Math.max(1, Math.min(3, buttonSize * 0.05));
 
   const handleBrightnessBarPress = React.useCallback(() => {
     const now = Date.now();
@@ -135,13 +148,21 @@ const BrightnessControl: React.FC<{
     <Pressable style={styles.brightnessSection} onPress={handleBrightnessBarPress}>
       <View style={styles.brightnessControls}>
         <TouchableOpacity
-          style={styles.brightnessButton}
+          style={[
+            styles.brightnessButton, 
+            { 
+              width: buttonSize, 
+              height: buttonSize, 
+              borderRadius: buttonSize / 2,
+              borderWidth,
+            }
+          ]}
           onPress={decreaseBrightness}
           disabled={brightness <= 0.1}
         >
           <Ionicons
             name="remove"
-            size={20}
+            size={iconSize}
             color={brightness <= 0.1 ? unadjustedColors.textSecondary : unadjustedColors.text}
           />
         </TouchableOpacity>
@@ -164,13 +185,21 @@ const BrightnessControl: React.FC<{
         </View>
 
         <TouchableOpacity
-          style={styles.brightnessButton}
+          style={[
+            styles.brightnessButton, 
+            { 
+              width: buttonSize, 
+              height: buttonSize, 
+              borderRadius: buttonSize / 2,
+              borderWidth,
+            }
+          ]}
           onPress={increaseBrightness}
           disabled={brightness >= 1.0}
         >
           <Ionicons
             name="add"
-            size={20}
+            size={iconSize}
             color={brightness >= 1.0 ? unadjustedColors.textSecondary : unadjustedColors.text}
           />
         </TouchableOpacity>
@@ -185,25 +214,32 @@ const BrightnessControl: React.FC<{
  * **AI AGENT:**
  * Platform-specific component. Only renders on iOS/Android, not web.
  * Toggles between app-controlled vs OS-controlled brightness.
+ * Icon size scales with cell height.
  */
 const NativeControlToggle: React.FC<{
   nativeBrightnessControl: boolean;
   toggleNativeControl: () => void;
   theme: any;
-}> = ({ nativeBrightnessControl, toggleNativeControl, theme }) => {
+  cellHeight?: number; // Injected by TemplatedWidget
+}> = ({ nativeBrightnessControl, toggleNativeControl, theme, cellHeight = 80 }) => {
   if (Platform.OS === 'web') {
     return <View />;
   }
+
+  // Calculate icon size: 20% of cell height, clamped between 12-20px
+  const iconSize = Math.max(12, Math.min(20, cellHeight * 0.2));
+  // Text size scales proportionally
+  const fontSize = Math.max(10, Math.min(14, cellHeight * 0.15));
 
   return (
     <TouchableOpacity style={styles.nativeToggle} onPress={toggleNativeControl}>
       <View style={styles.nativeToggleContent}>
         <Ionicons
           name={nativeBrightnessControl ? 'phone-portrait' : 'phone-portrait-outline'}
-          size={16}
+          size={iconSize}
           color={theme.text}
         />
-        <Text style={[styles.nativeToggleText, { color: theme.textSecondary }]}>Native</Text>
+        <Text style={[styles.nativeToggleText, { color: theme.textSecondary, fontSize }]}>Native</Text>
       </View>
       <ThemedSwitch value={nativeBrightnessControl} onValueChange={toggleNativeControl} />
     </TouchableOpacity>
@@ -229,6 +265,9 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
   const brightness = useThemeStore((state) => state.brightness);
   const nativeBrightnessControl = useThemeStore((state) => state.nativeBrightnessControl);
   const unadjustedColors = useThemeStore((state) => state.colors);
+
+  // Track cellHeight from TemplatedWidget injection
+  const cellHeightRef = React.useRef<number>(80); // Default fallback
 
   const renderCount = React.useRef(0);
   renderCount.current++;
@@ -280,6 +319,22 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
     }
   }, []);
 
+  // Helper component to capture cellHeight from TemplatedWidget
+  const ThemeButtonWithHeight = ({ cellHeight, ...props }: any) => {
+    cellHeightRef.current = cellHeight || 80;
+    return <ThemeButton {...props} cellHeight={cellHeight} />;
+  };
+
+  const BrightnessControlWithHeight = ({ cellHeight, ...props }: any) => {
+    cellHeightRef.current = cellHeight || 80;
+    return <BrightnessControl {...props} cellHeight={cellHeight} />;
+  };
+
+  const NativeControlToggleWithHeight = ({ cellHeight, ...props }: any) => {
+    cellHeightRef.current = cellHeight || 80;
+    return <NativeControlToggle {...props} cellHeight={cellHeight} />;
+  };
+
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"
@@ -289,7 +344,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
     >
       {
         [
-          <ThemeButton
+          <ThemeButtonWithHeight
             key="day"
             mode="day"
             currentMode={mode}
@@ -303,7 +358,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
               borderRightWidth: 1,
             }}
           />,
-          <ThemeButton
+          <ThemeButtonWithHeight
             key="night"
             mode="night"
             currentMode={mode}
@@ -317,7 +372,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
               borderRightWidth: 0,
             }}
           />,
-          <ThemeButton
+          <ThemeButtonWithHeight
             key="red"
             mode="red-night"
             currentMode={mode}
@@ -331,7 +386,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
               borderRightWidth: 1,
             }}
           />,
-          <ThemeButton
+          <ThemeButtonWithHeight
             key="auto"
             mode="auto"
             currentMode={mode}
@@ -346,7 +401,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
             }}
           />,
           BrightnessControl ? (
-            <BrightnessControl
+            <BrightnessControlWithHeight
               key="brightness"
               brightness={brightness}
               nativeBrightnessControl={nativeBrightnessControl}
@@ -360,7 +415,7 @@ const ThemeWidgetComponent: React.FC<ThemeWidgetProps> = ({ id, instanceNumber =
             <View key="brightness-placeholder" />
           ),
           NativeControlToggle ? (
-            <NativeControlToggle
+            <NativeControlToggleWithHeight
               key="native-toggle"
               nativeBrightnessControl={nativeBrightnessControl}
               toggleNativeControl={toggleNativeControl}
@@ -398,10 +453,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   brightnessButton: {
-    width: 40,
-    height: 40,
-    borderWidth: 2,
-    borderRadius: 20,
+    // Width, height, borderRadius, and borderWidth now set dynamically in component
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -431,7 +483,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nativeToggleText: {
-    fontSize: 12,
+    // Font size now set dynamically in component
     marginLeft: 8,
   },
 });

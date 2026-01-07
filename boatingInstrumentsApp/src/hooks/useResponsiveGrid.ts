@@ -19,11 +19,11 @@ const BREAKPOINTS = {
  */
 const GRID_DENSITY = {
   phone: {
-    portrait: { cols: 1, rows: 1 }, // 1×1 grid
+    portrait: { cols: 2, rows: 3 }, // 2×3 grid (6 widgets per page)
     landscape: { cols: 2, rows: 1 }, // 2×1 grid
   },
   tablet: {
-    portrait: { cols: 2, rows: 3 }, // 2×2 grid (4 widgets)
+    portrait: { cols: 2, rows: 3 }, // 2×3 grid (6 widgets)
     landscape: { cols: 3, rows: 2 }, // 3×2 grid (6 widgets)
   },
   desktop: {

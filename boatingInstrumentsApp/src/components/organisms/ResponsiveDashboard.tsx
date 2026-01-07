@@ -207,6 +207,10 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     }
   }, [currentPage, scrollViewWidth, isAnimatingPageTransition]);
 
+  // Determine if we should use pagination or single-column vertical scroll
+  // Pagination disabled for single-column grids (small phones in portrait)
+  const shouldUsePagination = responsiveGrid.layout.cols > 1;
+
   // Calculate layout constraints and page layouts - memoized for performance
   // Uses widget store array order as source of truth (array index = display position)
   const { pageLayouts, totalPages } = React.useMemo(() => {
@@ -244,12 +248,28 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
 
     // Use widget IDs from store array - ORDER MATTERS: array[0] = top-left, array[n] = bottom-right
     const widgetIds = widgets.map((w) => w.id);
-    const layouts = calculatePageLayouts(widgetIds, constraints);
+    
+    // For single-column layouts, create one page with all widgets (vertical scroll)
+    // For multi-column layouts, use pagination
+    const layouts = shouldUsePagination 
+      ? calculatePageLayouts(widgetIds, constraints)
+      : [{
+          pageIndex: 0,
+          widgets: widgetIds,
+          cells: widgetIds.map((_, idx) => ({
+            x: 0,
+            y: idx * (constraints.cellHeight + constraints.gap),
+            width: constraints.cellWidth,
+            height: constraints.cellHeight,
+          })),
+        }];
+    
     logger.layout('Calculated pages:', () => ({
       totalWidgets: widgetIds.length,
       totalPages: layouts.length,
       cols: responsiveGrid.layout.cols,
       rows: responsiveGrid.layout.rows,
+      shouldUsePagination,
     }));
     return { pageLayouts: layouts, totalPages: layouts.length };
   }, [
@@ -261,6 +281,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     responsiveGrid.layout.rows,
     responsiveGrid.layout.cellWidth,
     responsiveGrid.layout.cellHeight,
+    shouldUsePagination,
   ]);
 
   // Update pageLayouts ref whenever it changes (must be after pageLayouts is calculated)
@@ -932,6 +953,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
     (pageLayout: PageLayout, pageIndex: number) => {
       const isPageVisible = pageIndex === currentPage;
 
+      // Calculate dynamic height for vertical scroll mode (single column)
+      const pageHeight = shouldUsePagination
+        ? responsiveGrid.layout.containerHeight
+        : pageLayout.widgets.length * (responsiveGrid.layout.cellHeight + (responsiveGrid.layout.cols > 1 ? 0 : 8));
+
       return (
         <WidgetVisibilityProvider
           key={`page-${pageIndex}`}
@@ -943,8 +969,8 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
             style={[
               styles.pageContainer,
               {
-                width: scrollViewWidth,
-                height: responsiveGrid.layout.containerHeight,
+                width: shouldUsePagination ? scrollViewWidth : responsiveGrid.layout.containerWidth,
+                height: pageHeight,
                 // Hide off-screen pages but keep them mounted to prevent hook order issues
                 opacity: isPageVisible ? 1 : 0,
                 pointerEvents: isPageVisible ? 'auto' : 'none',
@@ -962,7 +988,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         </WidgetVisibilityProvider>
       );
     },
-    [scrollViewWidth, responsiveGrid.layout.containerHeight, renderWidget, currentPage],
+    [scrollViewWidth, responsiveGrid.layout.containerHeight, responsiveGrid.layout.containerWidth, responsiveGrid.layout.cellHeight, responsiveGrid.layout.cols, renderWidget, currentPage, shouldUsePagination],
   );
 
   // Wait for grid to be ready (gives stores time to initialize on first render)
@@ -1012,15 +1038,16 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
         <View style={styles.dashboardArea}>
           <ScrollView
             ref={scrollViewRef}
-            horizontal
-            pagingEnabled
+            horizontal={shouldUsePagination}
+            pagingEnabled={shouldUsePagination}
             showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={!shouldUsePagination}
             scrollEnabled={!isDragging} // Disable scroll during widget drag
             onLayout={handleScrollViewLayout}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollViewContent}
+            contentContainerStyle={shouldUsePagination ? styles.scrollViewContent : styles.scrollViewContentVertical}
             testID="dashboard-scroll-view"
             // AC 19: Accessibility
             accessible={false} // Let individual widgets be accessible
@@ -1031,20 +1058,18 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       </GestureDetector>
 
       {/* Pagination dots - AC 6: Page Indicator Dots (Overlays bottom of widgets) */}
-      {/* {logger.layout('Rendering pagination:', () => ({
-        currentPage,
-        totalPages,
-        navigateToPage: !!navigateToPage,
-      }))} */}
-      <View style={styles.paginationOverlay}>
-        <PaginationDots
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPagePress={navigateToPage}
-          animatedValue={pageAnimatedValue}
-          testID="dashboard-pagination"
-        />
-      </View>
+      {/* Only show pagination dots when using pagination (multi-column grids) */}
+      {shouldUsePagination ? (
+        <View style={styles.paginationOverlay}>
+          <PaginationDots
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPagePress={navigateToPage}
+            animatedValue={pageAnimatedValue}
+            testID="dashboard-pagination"
+          />
+        </View>
+      ) : null}
 
       {/* Edge zone indicators for cross-page drag */}
       {/* ------------------------------------------ */}
@@ -1101,6 +1126,9 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexDirection: 'row',
+  },
+  scrollViewContentVertical: {
+    flexDirection: 'column',
   },
   paginationOverlay: {
     position: 'absolute',
