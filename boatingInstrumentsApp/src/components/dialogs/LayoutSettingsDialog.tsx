@@ -107,7 +107,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
         style={styles.section}
       >
         <PlatformSettingsRow
-          label="Auto-hide after inactivity"
+          label="Auto-hide"
           control={
             <PlatformToggle
               value={autoHideEnabled}
@@ -123,7 +123,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
         {autoHideEnabled && (
           <View style={styles.timeoutContainer}>
             <Text style={styles.timeoutLabel}>
-              Hide after: {selectedHeaderTimeout} {selectedHeaderTimeout === 1 ? 'second' : 'seconds'}
+              After {selectedHeaderTimeout} {selectedHeaderTimeout === 1 ? 'second' : 'seconds'} of inactivity
             </Text>
             <View style={styles.timeoutOptions}>
               {headerTimeoutOptions.map((option, index) => (
@@ -164,7 +164,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
         style={styles.section}
       >
         <PlatformSettingsRow
-          label="Remove widgets without data"
+          label="Remove inactive widgets"
           control={
             <PlatformToggle
               value={enableWidgetAutoRemoval}
@@ -180,7 +180,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
         {enableWidgetAutoRemoval && (
           <View style={styles.timeoutContainer}>
             <Text style={styles.timeoutLabel}>
-              Remove after: {selectedWidgetTimeout} {selectedWidgetTimeout === 1 ? 'minute' : 'minutes'}
+              After {selectedWidgetTimeout} {selectedWidgetTimeout === 1 ? 'minute' : 'minutes'} without data
             </Text>
             <View style={styles.timeoutOptions}>
               {widgetTimeoutOptions.map((option, index) => (
