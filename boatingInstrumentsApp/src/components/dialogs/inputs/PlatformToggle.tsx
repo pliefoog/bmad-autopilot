@@ -31,8 +31,8 @@ export interface PlatformToggleProps {
   /** Change handler */
   onValueChange: (value: boolean) => void;
 
-  /** Accessible label text */
-  label: string;
+  /** Accessible label text (optional - for accessibility only, not displayed) */
+  label?: string;
 
   /** Disabled state */
   disabled?: boolean;

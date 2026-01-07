@@ -101,7 +101,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
           <PlatformToggle
             value={autoHideEnabled}
             onValueChange={setAutoHideEnabled}
-            label="Auto-hide"
             testID="auto-hide-toggle"
           />
         </View>
@@ -149,7 +148,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
           <PlatformToggle
             value={enableWidgetAutoRemoval}
             onValueChange={setEnableWidgetAutoRemoval}
-            label="Remove inactive widgets"
             testID="auto-remove-toggle"
           />
         </View>
