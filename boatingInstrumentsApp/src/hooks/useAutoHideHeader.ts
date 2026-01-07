@@ -12,7 +12,7 @@ import { useNmeaStore } from '../store/nmeaStore';
  * Trigger Conditions:
  * - Auto-hide enabled in settings
  * - NMEA connection established
- * - 5 seconds of idle time
+ * - Configurable idle timeout (default 5 seconds)
  * - No dialogs open
  * - Screen height < 1800px (laptops/tablets)
  * 
@@ -21,6 +21,7 @@ import { useNmeaStore } from '../store/nmeaStore';
 export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
   const isHeaderVisible = useUIStore((state) => state.isHeaderVisible);
   const autoHideEnabled = useUIStore((state) => state.autoHideEnabled);
+  const autoHideTimeoutMs = useUIStore((state) => state.autoHideTimeoutMs);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -44,7 +45,7 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
       return;
     }
     
-    // Set timer to hide header after 5 seconds
+    // Set timer to hide header after configured timeout
     // Get fresh values from store when timer fires (not from closure)
     timerRef.current = setTimeout(() => {
       const { hideHeader } = useUIStore.getState();
@@ -56,7 +57,7 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
       }
       
       timerRef.current = null;
-    }, 5000);
+    }, autoHideTimeoutMs);
     
     // Cleanup
     return () => {
@@ -66,5 +67,6 @@ export const useAutoHideHeader = (isAnyDialogOpen: boolean = false) => {
       }
     };
     // CRITICAL: Minimal deps - only UI state that should trigger timer reset
-  }, [shouldEnableAutoHide, isAnyDialogOpen, isHeaderVisible]);
+    // autoHideTimeoutMs changes trigger new timer with updated duration
+  }, [shouldEnableAutoHide, isAnyDialogOpen, isHeaderVisible, autoHideTimeoutMs]);
 };

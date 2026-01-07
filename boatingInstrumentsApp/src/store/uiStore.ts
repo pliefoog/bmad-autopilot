@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * 
  * Features:
  * - Auto-hide header for immersive instrument view
+ * - Configurable timeout for auto-hide behavior
  * - User preference persistence
  * - Activity tracking for smart re-hide timing
  */
@@ -21,6 +22,7 @@ interface UIState {
   
   // User preferences
   autoHideEnabled: boolean;
+  autoHideTimeoutMs: number; // Configurable timeout in milliseconds
   hasSeenHint: boolean;
   
   // Actions
@@ -28,6 +30,7 @@ interface UIState {
   hideHeader: () => void;
   toggleHeader: () => void;
   setAutoHideEnabled: (enabled: boolean) => void;
+  setAutoHideTimeout: (timeoutMs: number) => void;
   markHintSeen: () => void;
 }
 
@@ -38,6 +41,7 @@ export const useUIStore = create<UIState>()(
       isHeaderVisible: true,
       lastHeaderInteraction: Date.now(),
       autoHideEnabled: true,
+      autoHideTimeoutMs: 5000, // Default 5 seconds
       hasSeenHint: false,
       
       // Show header and mark interaction time
@@ -58,6 +62,9 @@ export const useUIStore = create<UIState>()(
       // Update auto-hide preference
       setAutoHideEnabled: (enabled: boolean) => set({ autoHideEnabled: enabled }),
       
+      // Update auto-hide timeout
+      setAutoHideTimeout: (timeoutMs: number) => set({ autoHideTimeoutMs: timeoutMs }),
+      
       // Mark that user has seen the hint animation
       markHintSeen: () => set({ hasSeenHint: true }),
     }),
@@ -67,6 +74,7 @@ export const useUIStore = create<UIState>()(
       // Only persist user preferences, not runtime state
       partialize: (state) => ({
         autoHideEnabled: state.autoHideEnabled,
+        autoHideTimeoutMs: state.autoHideTimeoutMs,
         hasSeenHint: state.hasSeenHint,
       }),
     }

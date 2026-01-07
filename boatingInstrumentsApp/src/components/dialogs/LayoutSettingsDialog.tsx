@@ -19,6 +19,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
+import { useUIStore } from '../../store/uiStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection, PlatformSettingsRow } from '../settings';
@@ -33,6 +34,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
   const theme = useTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
+  // Widget store settings
   const {
     resetLayoutToAutoDiscovery,
     enableWidgetAutoRemoval,
@@ -41,14 +43,30 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
     setWidgetExpirationTimeout,
   } = useWidgetStore();
 
+  // UI store settings (header auto-hide)
+  const autoHideEnabled = useUIStore((state) => state.autoHideEnabled);
+  const setAutoHideEnabled = useUIStore((state) => state.setAutoHideEnabled);
+  const autoHideTimeoutMs = useUIStore((state) => state.autoHideTimeoutMs);
+  const setAutoHideTimeout = useUIStore((state) => state.setAutoHideTimeout);
+
   const dashboardConfig = useWidgetStore((state) => state.dashboard);
 
-  const timeoutMinutes = Math.round(widgetExpirationTimeout / 60000);
-  const [selectedTimeout, setSelectedTimeout] = React.useState(timeoutMinutes);
+  // Widget removal timeout state
+  const widgetTimeoutMinutes = Math.round(widgetExpirationTimeout / 60000);
+  const [selectedWidgetTimeout, setSelectedWidgetTimeout] = React.useState(widgetTimeoutMinutes);
 
-  const handleTimeoutChange = (minutes: number) => {
-    setSelectedTimeout(minutes);
+  // Header auto-hide timeout state
+  const headerTimeoutSeconds = Math.round(autoHideTimeoutMs / 1000);
+  const [selectedHeaderTimeout, setSelectedHeaderTimeout] = React.useState(headerTimeoutSeconds);
+
+  const handleWidgetTimeoutChange = (minutes: number) => {
+    setSelectedWidgetTimeout(minutes);
     setWidgetExpirationTimeout(minutes * 60000);
+  };
+
+  const handleHeaderTimeoutChange = (seconds: number) => {
+    setSelectedHeaderTimeout(seconds);
+    setAutoHideTimeout(seconds * 1000);
   };
 
   const handleResetLayout = () => {
@@ -56,7 +74,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
     onClose();
   };
 
-  const timeoutOptions = [
+  const widgetTimeoutOptions = [
     { label: '1 min', value: 1 },
     { label: '2 min', value: 2 },
     { label: '5 min', value: 5 },
@@ -65,8 +83,21 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
     { label: '1 hour', value: 60 },
   ];
 
-  const [focusedIndex, setFocusedIndex] = React.useState(
-    timeoutOptions.findIndex((opt) => opt.value === selectedTimeout),
+  const headerTimeoutOptions = [
+    { label: '3 sec', value: 3 },
+    { label: '5 sec', value: 5 },
+    { label: '10 sec', value: 10 },
+    { label: '15 sec', value: 15 },
+    { label: '30 sec', value: 30 },
+    { label: '1 min', value: 60 },
+  ];
+
+  const [focusedWidgetIndex, setFocusedWidgetIndex] = React.useState(
+    widgetTimeoutOptions.findIndex((opt) => opt.value === selectedWidgetTimeout),
+  );
+
+  const [focusedHeaderIndex, setFocusedHeaderIndex] = React.useState(
+    headerTimeoutOptions.findIndex((opt) => opt.value === selectedHeaderTimeout),
   );
 
   return (
@@ -106,10 +137,66 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
         )}
       </PlatformSettingsSection>
 
-      {/* Widget Lifecycle Section */}
-      <PlatformSettingsSection title="Widget Lifecycle">
+      {/* Header Auto-Hide Section */}
+      <PlatformSettingsSection title="Header Auto-Hide">
+        <PlatformSettingsRow
+          label="Auto-hide header menu"
+          subtitle="Hides header bar after inactivity for immersive view"
+          control={
+            <Switch
+              value={autoHideEnabled}
+              onValueChange={setAutoHideEnabled}
+              trackColor={{ false: theme.border, true: theme.primary }}
+              thumbColor={theme.surface}
+            />
+          }
+          isFirst
+          isLast={!autoHideEnabled}
+        />
+
+        {autoHideEnabled && (
+          <View style={styles.timeoutContainer}>
+            <Text style={styles.timeoutLabel}>
+              Hide after: {selectedHeaderTimeout} {selectedHeaderTimeout === 1 ? 'second' : 'seconds'}
+            </Text>
+            <View style={styles.timeoutOptions}>
+              {headerTimeoutOptions.map((option, index) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.timeoutOption,
+                    selectedHeaderTimeout === option.value && styles.timeoutOptionActive,
+                    focusedHeaderIndex === index && styles.timeoutOptionFocused,
+                  ]}
+                  onPress={() => {
+                    handleHeaderTimeoutChange(option.value);
+                    setFocusedHeaderIndex(index);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.timeoutOptionText,
+                      selectedHeaderTimeout === option.value && styles.timeoutOptionTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.hintText}>
+              Tap top of screen to reveal header when hidden
+            </Text>
+          </View>
+        )}
+      </PlatformSettingsSection>
+
+      {/* Widget Auto-Removal Section */}
+      <PlatformSettingsSection title="Widget Auto-Removal">
         <PlatformSettingsRow
           label="Auto-remove stale widgets"
+          subtitle="Removes widgets when sensor data stops"
           control={
             <Switch
               value={enableWidgetAutoRemoval}
@@ -125,27 +212,27 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
         {enableWidgetAutoRemoval && (
           <View style={styles.timeoutContainer}>
             <Text style={styles.timeoutLabel}>
-              Expiration timeout: {selectedTimeout} {selectedTimeout === 1 ? 'minute' : 'minutes'}
+              Remove after: {selectedWidgetTimeout} {selectedWidgetTimeout === 1 ? 'minute' : 'minutes'}
             </Text>
             <View style={styles.timeoutOptions}>
-              {timeoutOptions.map((option, index) => (
+              {widgetTimeoutOptions.map((option, index) => (
                 <TouchableOpacity
                   key={option.value}
                   style={[
                     styles.timeoutOption,
-                    selectedTimeout === option.value && styles.timeoutOptionActive,
-                    focusedIndex === index && styles.timeoutOptionFocused,
+                    selectedWidgetTimeout === option.value && styles.timeoutOptionActive,
+                    focusedWidgetIndex === index && styles.timeoutOptionFocused,
                   ]}
                   onPress={() => {
-                    handleTimeoutChange(option.value);
-                    setFocusedIndex(index);
+                    handleWidgetTimeoutChange(option.value);
+                    setFocusedWidgetIndex(index);
                   }}
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[
                       styles.timeoutOptionText,
-                      selectedTimeout === option.value && styles.timeoutOptionTextActive,
+                      selectedWidgetTimeout === option.value && styles.timeoutOptionTextActive,
                     ]}
                   >
                     {option.label}
@@ -156,17 +243,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
           </View>
         )}
       </PlatformSettingsSection>
-
-      {/* Close Button */}
-      <View style={styles.closeButtonContainer}>
-        <PlatformButton
-          title="Done"
-          variant="primary"
-          onPress={onClose}
-          fullWidth
-          testID="done-button"
-        />
-      </View>
     </BaseConfigDialog>
   );
 };
@@ -212,6 +288,13 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.textSecondary,
       marginBottom: 12,
     },
+    hintText: {
+      fontSize: 14,
+      fontFamily: 'sans-serif',
+      color: theme.textSecondary,
+      fontStyle: 'italic',
+      marginTop: 12,
+    },
     timeoutOptions: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -241,8 +324,5 @@ const createStyles = (theme: ThemeColors) =>
     },
     timeoutOptionTextActive: {
       color: '#FFFFFF',
-    },
-    closeButtonContainer: {
-      marginTop: 24,
     },
   });
