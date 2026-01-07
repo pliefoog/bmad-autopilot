@@ -378,16 +378,21 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
                     : 'UDP'}
                 </Text>
               </View>
-            </>
-          )}
 
-          {connectionStatus === 'connected' && (
-            <View style={styles.statRow}>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Messages</Text>
-              <Text style={[styles.statValue, { color: theme.text }]}>
-                {nmeaData.messageCount.toLocaleString()}
-              </Text>
-            </View>
+              <View style={styles.statRow}>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Mode</Text>
+                <Text style={[styles.statValue, { color: theme.text }]}>
+                  {isConnected && nmeaData.messageFormat ? nmeaData.messageFormat : '-'}
+                </Text>
+              </View>
+
+              <View style={styles.statRow}>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Messages</Text>
+                <Text style={[styles.statValue, { color: theme.text }]}>
+                  {isConnected ? nmeaData.messageCount.toLocaleString() : '-'}
+                </Text>
+              </View>
+            </>
           )}
         </View>
       </View>

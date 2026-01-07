@@ -43,6 +43,7 @@ export interface NmeaData {
   sensors: SensorsData; // Now stores SensorInstance<T> instances
   timestamp: number;
   messageCount: number;
+  messageFormat?: 'NMEA 0183' | 'NMEA 2000'; // Last detected message format
 }
 
 /**
@@ -193,6 +194,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
     },
     timestamp: Date.now(),
     messageCount: 0,
+    messageFormat: undefined,
   },
   alarms: [],
   lastError: undefined,
@@ -218,6 +220,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
     sensorType: T,
     instance: number,
     data: Partial<SensorData>,
+    messageFormat?: 'NMEA 0183' | 'NMEA 2000',
   ) => {
     // CRITICAL: Throttle updates to prevent infinite loop
     // React throws "Maximum update depth exceeded" after ~50 nested setState calls
@@ -321,6 +324,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
         },
         timestamp: now,
         messageCount: state.nmeaData.messageCount + 1,
+        messageFormat: messageFormat || state.nmeaData.messageFormat,
       };
 
       // Throttled alarm evaluation

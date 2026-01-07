@@ -88,6 +88,9 @@ export class PureStoreUpdater {
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
     try {
+      // Detect message format (NMEA 0183 vs NMEA 2000)
+      const messageFormat = this.detectMessageFormat(parsedMessage);
+
       // Process message using new NmeaSensorProcessor
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
 
@@ -104,9 +107,9 @@ export class PureStoreUpdater {
         };
       }
 
-      // Apply sensor updates to store
+      // Apply sensor updates to store (with messageFormat)
       if (result.updates && result.updates.length > 0) {
-        return this.applySensorUpdates(result.updates, options);
+        return this.applySensorUpdates(result.updates, options, messageFormat);
       }
       return {
         updated: false,
@@ -138,7 +141,8 @@ export class PureStoreUpdater {
       const updates = this.parseBinaryPgnToUpdates(frame);
 
       if (updates.length > 0) {
-        return this.applySensorUpdates(updates, options);
+        // Binary frames are always NMEA 2000
+        return this.applySensorUpdates(updates, options, 'NMEA 2000');
       }
 
       return {
@@ -471,7 +475,11 @@ export class PureStoreUpdater {
    * - Merging causes: "fields: Array(3)" instead of "fields: Array(1)"
    * - Each metric should update independently to trigger fine-grained subscriptions
    */
-  private applySensorUpdates(updates: SensorUpdate[], options: UpdateOptions = {}): UpdateResult {
+  private applySensorUpdates(
+    updates: SensorUpdate[],
+    options: UpdateOptions = {},
+    messageFormat?: 'NMEA 0183' | 'NMEA 2000',
+  ): UpdateResult {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
@@ -536,7 +544,7 @@ export class PureStoreUpdater {
           }));
         }
 
-        useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data);
+        useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data, messageFormat);
         updatedFields.push(fieldKey);
         anyUpdated = true;
 
@@ -604,6 +612,21 @@ export class PureStoreUpdater {
    */
   clearThrottling(): void {
     this.lastUpdateTimes.clear();
+  }
+
+  /**
+   * Detect message format based on parsed message
+   */
+  private detectMessageFormat(parsedMessage: ParsedNmeaMessage): 'NMEA 0183' | 'NMEA 2000' {
+    // Detect NMEA format from message type
+    // NMEA 2000: PCDIN, BINARY, or PGN-related message types
+    // NMEA 0183: Standard sentence types (DBT, VHW, MWV, etc.)
+    const isNmea2000 = 
+      parsedMessage.messageType === 'PCDIN' || 
+      parsedMessage.messageType === 'BINARY' ||
+      parsedMessage.messageType.startsWith('PGN');
+    
+    return isNmea2000 ? 'NMEA 2000' : 'NMEA 0183';
   }
 }
 
