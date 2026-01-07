@@ -21,7 +21,7 @@ import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
 import ResponsiveDashboard from '../components/organisms/ResponsiveDashboard';
 import { DashboardLayoutProvider, useDashboardLayout } from '../contexts/DashboardLayoutContext';
 import HeaderBar, { HEADER_HEIGHT } from '../components/HeaderBar';
-import { PersistentHamburger } from '../components/PersistentHamburger';
+
 import { ToastContainer } from '../components/toast';
 import { AlarmBanner } from '../widgets/AlarmBanner';
 import { ConnectionConfigDialog } from '../components/dialogs/ConnectionConfigDialog';
@@ -79,10 +79,28 @@ const DashboardContent: React.FC = () => {
     [insets.bottom, updateLayout],
   );
 
+  const showHeader = useUIStore((state) => state.showHeader);
+  const isHeaderVisible = useUIStore((state) => state.isHeaderVisible);
+
   return (
     <View style={styles.contentArea} onLayout={handleLayout}>
-      {/* Persistent hamburger overlay - only visible when header hidden */}
-      <PersistentHamburger />
+      {/* Invisible tap zone at top - shows header when tapped */}
+      {!isHeaderVisible && (
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 80, // Tap zone height
+            zIndex: 100,
+          }}
+          onPress={showHeader}
+          activeOpacity={1} // No visual feedback
+          accessibilityLabel="Show menu"
+          accessibilityHint="Tap to show the header menu"
+        />
+      )}
       
       {/* Dashboard fills remaining space - header pushes it down naturally when visible */}
       <View
