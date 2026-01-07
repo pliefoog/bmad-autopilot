@@ -12,16 +12,18 @@
  *
  * **Architecture:**
  * - Uses BaseConfigDialog for consistent Modal structure
- * - No action button (contains embedded PlatformButton controls)
+ * - Uses PlatformToggle for theme-aware toggles
+ * - No action button (auto-saves all changes)
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useUIStore } from '../../store/uiStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection, PlatformSettingsRow } from '../settings';
+import { PlatformToggle } from './inputs/PlatformToggle';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 
 interface LayoutSettingsDialogProps {
@@ -100,16 +102,18 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
       testID="layout-settings-dialog"
     >
       {/* Header Auto-Hide Section */}
-      <PlatformSettingsSection title="Header Auto-Hide">
+      <PlatformSettingsSection 
+        title="Header Visibility" 
+        style={styles.section}
+      >
         <PlatformSettingsRow
-          label="Auto-hide header menu"
-          subtitle="Hides header bar after inactivity for immersive view"
+          label="Auto-hide after inactivity"
           control={
-            <Switch
+            <PlatformToggle
               value={autoHideEnabled}
               onValueChange={setAutoHideEnabled}
-              trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={theme.surface}
+              label="Auto-hide header"
+              testID="auto-hide-toggle"
             />
           }
           isFirst
@@ -155,16 +159,18 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
       </PlatformSettingsSection>
 
       {/* Widget Auto-Removal Section */}
-      <PlatformSettingsSection title="Widget Auto-Removal">
+      <PlatformSettingsSection 
+        title="Widget Lifecycle" 
+        style={styles.section}
+      >
         <PlatformSettingsRow
-          label="Auto-remove stale widgets"
-          subtitle="Removes widgets when sensor data stops"
+          label="Remove widgets without data"
           control={
-            <Switch
+            <PlatformToggle
               value={enableWidgetAutoRemoval}
               onValueChange={setEnableWidgetAutoRemoval}
-              trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={theme.surface}
+              label="Auto-remove stale widgets"
+              testID="auto-remove-toggle"
             />
           }
           isFirst
@@ -214,12 +220,16 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
  */
 const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
+    section: {
+      marginBottom: 0,
+    },
     timeoutContainer: {
-      marginTop: 16,
-      paddingTop: 16,
       paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 16,
       borderTopWidth: 1,
       borderTopColor: theme.border,
+      backgroundColor: theme.surface,
     },
     timeoutLabel: {
       fontSize: platformTokens.typography.body.fontSize,
