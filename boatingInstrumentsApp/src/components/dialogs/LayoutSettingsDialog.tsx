@@ -17,12 +17,11 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useUIStore } from '../../store/uiStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
-import { PlatformSettingsSection, PlatformSettingsRow } from '../settings';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 
@@ -86,14 +85,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
     { label: '1 min', value: 60 },
   ];
 
-  const [focusedWidgetIndex, setFocusedWidgetIndex] = React.useState(
-    widgetTimeoutOptions.findIndex((opt) => opt.value === selectedWidgetTimeout),
-  );
-
-  const [focusedHeaderIndex, setFocusedHeaderIndex] = React.useState(
-    headerTimeoutOptions.findIndex((opt) => opt.value === selectedHeaderTimeout),
-  );
-
   return (
     <BaseConfigDialog
       visible={visible}
@@ -101,106 +92,86 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
       onClose={onClose}
       testID="layout-settings-dialog"
     >
-      {/* Header Auto-Hide Section */}
-      <PlatformSettingsSection 
-        title="Header Visibility" 
-        style={styles.section}
-      >
-        <PlatformSettingsRow
-          label="Auto-hide"
-          control={
-            <PlatformToggle
-              value={autoHideEnabled}
-              onValueChange={setAutoHideEnabled}
-              label="Auto-hide header"
-              testID="auto-hide-toggle"
-            />
-          }
-          isFirst
-          isLast={!autoHideEnabled}
-        />
+      {/* App Header Card */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>App Header</Text>
+        
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Auto-hide</Text>
+          <PlatformToggle
+            value={autoHideEnabled}
+            onValueChange={setAutoHideEnabled}
+            label="Auto-hide"
+            testID="auto-hide-toggle"
+          />
+        </View>
 
         {autoHideEnabled && (
-          <View style={styles.timeoutContainer}>
-            <Text style={styles.timeoutLabel}>
-              After {selectedHeaderTimeout} {selectedHeaderTimeout === 1 ? 'second' : 'seconds'} of inactivity
-            </Text>
-            <View style={styles.timeoutOptions}>
-              {headerTimeoutOptions.map((option, index) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.timeoutOption,
-                    selectedHeaderTimeout === option.value && styles.timeoutOptionActive,
-                    focusedHeaderIndex === index && styles.timeoutOptionFocused,
-                  ]}
-                  onPress={() => {
-                    handleHeaderTimeoutChange(option.value);
-                    setFocusedHeaderIndex(index);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text
+          <>
+            <View style={styles.settingGroup}>
+              <Text style={styles.groupLabel}>Inactivity timeout</Text>
+              <View style={styles.optionGrid}>
+                {headerTimeoutOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
                     style={[
-                      styles.timeoutOptionText,
-                      selectedHeaderTimeout === option.value && styles.timeoutOptionTextActive,
+                      styles.optionButton,
+                      selectedHeaderTimeout === option.value && styles.optionButtonActive,
                     ]}
+                    onPress={() => handleHeaderTimeoutChange(option.value)}
+                    activeOpacity={0.7}
                   >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.optionButtonText,
+                        selectedHeaderTimeout === option.value && styles.optionButtonTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <Text style={styles.hintText}>
               Tap top of screen to reveal header when hidden
             </Text>
-          </View>
+          </>
         )}
-      </PlatformSettingsSection>
+      </View>
 
-      {/* Widget Auto-Removal Section */}
-      <PlatformSettingsSection 
-        title="Widget Lifecycle" 
-        style={styles.section}
-      >
-        <PlatformSettingsRow
-          label="Remove inactive widgets"
-          control={
-            <PlatformToggle
-              value={enableWidgetAutoRemoval}
-              onValueChange={setEnableWidgetAutoRemoval}
-              label="Auto-remove stale widgets"
-              testID="auto-remove-toggle"
-            />
-          }
-          isFirst
-          isLast={!enableWidgetAutoRemoval}
-        />
+      {/* Widget Lifecycle Card */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Widget Lifecycle</Text>
+        
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Remove inactive widgets</Text>
+          <PlatformToggle
+            value={enableWidgetAutoRemoval}
+            onValueChange={setEnableWidgetAutoRemoval}
+            label="Remove inactive widgets"
+            testID="auto-remove-toggle"
+          />
+        </View>
 
         {enableWidgetAutoRemoval && (
-          <View style={styles.timeoutContainer}>
-            <Text style={styles.timeoutLabel}>
-              After {selectedWidgetTimeout} {selectedWidgetTimeout === 1 ? 'minute' : 'minutes'} without data
-            </Text>
-            <View style={styles.timeoutOptions}>
-              {widgetTimeoutOptions.map((option, index) => (
+          <View style={styles.settingGroup}>
+            <Text style={styles.groupLabel}>Inactivity timeout</Text>
+            <View style={styles.optionGrid}>
+              {widgetTimeoutOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   style={[
-                    styles.timeoutOption,
-                    selectedWidgetTimeout === option.value && styles.timeoutOptionActive,
-                    focusedWidgetIndex === index && styles.timeoutOptionFocused,
+                    styles.optionButton,
+                    selectedWidgetTimeout === option.value && styles.optionButtonActive,
                   ]}
-                  onPress={() => {
-                    handleWidgetTimeoutChange(option.value);
-                    setFocusedWidgetIndex(index);
-                  }}
+                  onPress={() => handleWidgetTimeoutChange(option.value)}
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[
-                      styles.timeoutOptionText,
-                      selectedWidgetTimeout === option.value && styles.timeoutOptionTextActive,
+                      styles.optionButtonText,
+                      selectedWidgetTimeout === option.value && styles.optionButtonTextActive,
                     ]}
                   >
                     {option.label}
@@ -210,7 +181,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
             </View>
           </View>
         )}
-      </PlatformSettingsSection>
+      </View>
     </BaseConfigDialog>
   );
 };
@@ -220,63 +191,95 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
  */
 const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
-    section: {
-      marginBottom: 0,
-    },
-    timeoutContainer: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 16,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
+    card: {
       backgroundColor: theme.surface,
+      borderRadius: platformTokens.borderRadius.card,
+      padding: 20,
+      marginBottom: 16,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+        },
+        web: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      }),
     },
-    timeoutLabel: {
-      fontSize: platformTokens.typography.body.fontSize,
-      fontWeight: platformTokens.typography.body.fontWeight,
-      lineHeight: platformTokens.typography.body.lineHeight,
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
       fontFamily: platformTokens.typography.fontFamily,
-      color: theme.textSecondary,
-      marginBottom: 12,
+      color: theme.text,
+      marginBottom: 16,
     },
-    hintText: {
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontWeight: platformTokens.typography.caption.fontWeight,
-      lineHeight: platformTokens.typography.caption.lineHeight,
-      fontFamily: platformTokens.typography.fontFamily,
-      color: theme.textSecondary,
-      fontStyle: 'italic',
-      marginTop: 12,
-    },
-    timeoutOptions: {
+    settingRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: 44,
     },
-    timeoutOption: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
-      backgroundColor: theme.background,
-      borderWidth: 1,
-      borderColor: theme.border,
-    },
-    timeoutOptionActive: {
-      backgroundColor: theme.primary,
-      borderColor: theme.primary,
-    },
-    timeoutOptionFocused: {
-      borderWidth: 4,
-      borderColor: theme.interactive,
-    },
-    timeoutOptionText: {
+    settingLabel: {
       fontSize: platformTokens.typography.label.fontSize,
       fontWeight: platformTokens.typography.label.fontWeight,
       lineHeight: platformTokens.typography.label.lineHeight,
       fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
+      flex: 1,
     },
-    timeoutOptionTextActive: {
+    settingGroup: {
+      marginTop: 20,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    groupLabel: {
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: '500',
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.textSecondary,
+      marginBottom: 12,
+    },
+    optionGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    optionButton: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 20,
+      backgroundColor: theme.background,
+      borderWidth: 2,
+      borderColor: theme.border,
+      minWidth: 70,
+      alignItems: 'center',
+    },
+    optionButtonActive: {
+      backgroundColor: theme.primary,
+      borderColor: theme.primary,
+    },
+    optionButtonText: {
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: '600',
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.text,
+    },
+    optionButtonTextActive: {
       color: '#FFFFFF',
+    },
+    hintText: {
+      fontSize: platformTokens.typography.hint.fontSize,
+      fontWeight: platformTokens.typography.hint.fontWeight,
+      lineHeight: platformTokens.typography.hint.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
+      fontStyle: platformTokens.typography.hint.fontStyle,
+      color: theme.textSecondary,
+      marginTop: 12,
     },
   });

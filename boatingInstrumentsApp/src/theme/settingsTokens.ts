@@ -89,6 +89,12 @@ export const settingsTokens = {
       fontWeight: '400' as const,
       lineHeight: 16,
     },
+    hint: {
+      fontSize: 12,
+      fontWeight: '400' as const,
+      lineHeight: 16,
+      fontStyle: 'italic' as const,
+    },
   },
 
   /**
@@ -96,6 +102,7 @@ export const settingsTokens = {
    */
   borderRadius: {
     modal: 12, // Modal container corners
+    card: 12, // Settings card/section corners
     button: 8, // Button corners
     input: 6, // Input field corners
     badge: 4, // Small badges/tags
@@ -266,6 +273,7 @@ export const platformTypography = {
     label: { fontSize: 14, fontWeight: '500' as const, lineHeight: 20 },
     body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
     caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
+    hint: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16, fontStyle: 'italic' as const },
   },
   android: {
     // Sans-serif family (Roboto on Android native, generic sans-serif on web)
@@ -278,6 +286,7 @@ export const platformTypography = {
     label: { fontSize: 14, fontWeight: '500' as const, lineHeight: 20 }, // Material label-large
     body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 }, // Material body-medium
     caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 }, // Material body-small
+    hint: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16, fontStyle: 'italic' as const },
   },
   tv: {
     // 2x scale for 10-foot viewing
@@ -290,6 +299,7 @@ export const platformTypography = {
     label: { fontSize: 20, fontWeight: '500' as const, lineHeight: 28 },
     body: { fontSize: 20, fontWeight: '400' as const, lineHeight: 28 },
     caption: { fontSize: 18, fontWeight: '400' as const, lineHeight: 24 },
+    hint: { fontSize: 18, fontWeight: '400' as const, lineHeight: 24, fontStyle: 'italic' as const },
   },
 } as const;
 

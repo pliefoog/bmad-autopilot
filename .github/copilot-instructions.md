@@ -744,6 +744,141 @@ curl -X POST http://localhost:9090/api/inject-data \
   -d '{"sentence": "$IIDPT,5.2,0.0,M*3E"}'
 ```
 
+## Settings Dialog UI Language (Jan 2025)
+
+**Mandatory pattern for all settings dialogs** - consistent, minimalistic, card-based layout:
+
+### Card-Based Architecture
+```tsx
+// ✅ CORRECT - Card per section with clear visual separation
+<BaseConfigDialog title="Dialog Name" visible={visible} onClose={onClose}>
+  <View style={styles.card}>
+    <Text style={styles.sectionTitle}>Section Name</Text>
+    
+    <View style={styles.settingRow}>
+      <Text style={styles.settingLabel}>Setting Action</Text>
+      <PlatformToggle value={value} onValueChange={setValue} label="Setting Action" />
+    </View>
+    
+    {/* When toggle enabled, show options */}
+    {value && (
+      <View style={styles.settingGroup}>
+        <Text style={styles.groupLabel}>Option Category</Text>
+        <View style={styles.optionGrid}>
+          {/* Option buttons */}
+        </View>
+      </View>
+    )}
+    
+    <Text style={styles.hintText}>Additional context hint</Text>
+  </View>
+</BaseConfigDialog>
+
+// ❌ WRONG - Using PlatformSettingsSection (not card-based)
+<PlatformSettingsSection title="Header Auto-Hide">
+  <PlatformSettingsRow label="Auto-hide header menu" />
+</PlatformSettingsSection>
+```
+
+### Information Hierarchy - Minimalistic Storytelling
+```
+1. Section Title (Bold, prominent) → Category being configured
+   Example: "App Header", "Widget Lifecycle", "Connection"
+   
+2. Setting Label (Left of control) → Action being enabled/disabled
+   Example: "Auto-hide", "Remove inactive widgets"
+   DO NOT repeat label text next to toggle component
+   
+3. Group Label (When options appear) → What options configure
+   Example: "Inactivity timeout", "Retry interval"
+   
+4. Selected Option → Clearly visible (primary color background)
+   Example: "5 sec", "10 min", "Custom"
+   
+5. Hint Text (Italic, secondary color) → Additional context
+   Example: "Tap top of screen to reveal header when hidden"
+```
+
+### Theme Integration (CRITICAL)
+```tsx
+// Card styling with platform-specific shadows
+card: {
+  backgroundColor: theme.surface,
+  borderRadius: platformTokens.borderRadius.card,  // 12px
+  padding: 20,
+  marginBottom: 16,
+  ...Platform.select({
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, 
+           shadowOpacity: 0.1, shadowRadius: 8 },
+    android: { elevation: 2 },
+    web: { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
+  }),
+},
+
+// Section title - Bold, hierarchical
+sectionTitle: {
+  fontSize: 18,
+  fontWeight: '700',
+  fontFamily: platformTokens.typography.fontFamily,
+  color: theme.text,
+  marginBottom: 16,
+},
+
+// Hint text - Use theme hint style
+hintText: {
+  fontSize: platformTokens.typography.hint.fontSize,
+  fontWeight: platformTokens.typography.hint.fontWeight,
+  lineHeight: platformTokens.typography.hint.lineHeight,
+  fontFamily: platformTokens.typography.fontFamily,
+  fontStyle: platformTokens.typography.hint.fontStyle,  // 'italic'
+  color: theme.textSecondary,
+  marginTop: 12,
+},
+```
+
+### Anti-Patterns to AVOID
+❌ **Redundant text**: "Auto-hide after inactivity" label + "Auto-hide header" toggle label  
+✅ **Minimalistic**: "Auto-hide" label (toggle has no separate label)
+
+❌ **Dynamic detail text**: "Hide after: 5 seconds" (changes with selection)  
+✅ **Static group label + visible selection**: "Inactivity timeout" + "5 sec" button highlighted
+
+❌ **Repeating information**: Section "Header Visibility" + Label "Header auto-hide"  
+✅ **Complementary**: Section "App Header" + Label "Auto-hide"
+
+❌ **Mixing UI patterns**: Some sections use cards, others use PlatformSettingsSection  
+✅ **Consistent**: All sections use card-based layout
+
+### Example: Perfect Dialog Structure
+```tsx
+// App Header card
+<View style={styles.card}>
+  <Text style={styles.sectionTitle}>App Header</Text>
+  
+  <View style={styles.settingRow}>
+    <Text style={styles.settingLabel}>Auto-hide</Text>
+    <PlatformToggle value={autoHide} onValueChange={setAutoHide} label="Auto-hide" />
+  </View>
+  
+  {autoHide && (
+    <>
+      <View style={styles.settingGroup}>
+        <Text style={styles.groupLabel}>Inactivity timeout</Text>
+        <View style={styles.optionGrid}>
+          {/* Pill buttons: 3 sec, 5 sec, 10 sec... */}
+        </View>
+      </View>
+      <Text style={styles.hintText}>Tap top of screen to reveal header when hidden</Text>
+    </>
+  )}
+</View>
+```
+
+**Narrative reads naturally top-to-bottom:**
+"App Header > Auto-hide > Inactivity timeout > 5 sec > (hint about revealing)"
+
+Each level adds **new information** without repeating previous context.
+
 ## Communication Preferences
 
 **✅ DO:**
