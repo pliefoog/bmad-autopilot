@@ -80,7 +80,6 @@ const DashboardContent: React.FC = () => {
   );
 
   const showHeader = useUIStore((state) => state.showHeader);
-  const isHeaderVisible = useUIStore((state) => state.isHeaderVisible);
 
   return (
     <View style={styles.contentArea} onLayout={handleLayout}>
