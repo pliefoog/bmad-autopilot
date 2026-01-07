@@ -20,10 +20,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useUIStore } from '../../store/uiStore';
-import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection, PlatformSettingsRow } from '../settings';
-import { PlatformButton } from './inputs/PlatformButton';
 
 interface LayoutSettingsDialogProps {
   visible: boolean;
@@ -36,7 +34,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
 
   // Widget store settings
   const {
-    resetLayoutToAutoDiscovery,
     enableWidgetAutoRemoval,
     setEnableWidgetAutoRemoval,
     widgetExpirationTimeout,
@@ -48,8 +45,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
   const setAutoHideEnabled = useUIStore((state) => state.setAutoHideEnabled);
   const autoHideTimeoutMs = useUIStore((state) => state.autoHideTimeoutMs);
   const setAutoHideTimeout = useUIStore((state) => state.setAutoHideTimeout);
-
-  const dashboardConfig = useWidgetStore((state) => state.dashboard);
 
   // Widget removal timeout state
   const widgetTimeoutMinutes = Math.round(widgetExpirationTimeout / 60000);
@@ -67,11 +62,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
   const handleHeaderTimeoutChange = (seconds: number) => {
     setSelectedHeaderTimeout(seconds);
     setAutoHideTimeout(seconds * 1000);
-  };
-
-  const handleResetLayout = () => {
-    resetLayoutToAutoDiscovery();
-    onClose();
   };
 
   const widgetTimeoutOptions = [
@@ -107,36 +97,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
       onClose={onClose}
       testID="layout-settings-dialog"
     >
-      {/* Layout Mode Section */}
-      <PlatformSettingsSection title="Layout Mode">
-        <View style={styles.infoBox}>
-          <UniversalIcon
-            name="information-circle-outline"
-            size={24}
-            color={theme.primary}
-            style={styles.infoIcon}
-          />
-          <Text style={styles.infoText}>
-            {dashboardConfig?.userPositioned
-              ? 'Custom layout active. Long-press widgets to rearrange.'
-              : 'Auto-discovery mode: widgets appear automatically based on NMEA data.'}
-          </Text>
-        </View>
-
-        {dashboardConfig?.userPositioned && (
-          <View style={styles.resetButtonContainer}>
-            <PlatformButton
-              title="Reset to Auto Layout"
-              variant="danger"
-              onPress={handleResetLayout}
-              icon="refresh"
-              fullWidth
-              testID="reset-layout-button"
-            />
-          </View>
-        )}
-      </PlatformSettingsSection>
-
       {/* Header Auto-Hide Section */}
       <PlatformSettingsSection title="Header Auto-Hide">
         <PlatformSettingsRow
@@ -252,29 +212,6 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
  */
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    infoBox: {
-      flexDirection: 'row',
-      backgroundColor: theme.background,
-      borderRadius: 8,
-      padding: 16,
-      marginBottom: 16,
-      borderWidth: 1,
-      borderColor: theme.primary,
-    },
-    infoIcon: {
-      marginRight: 12,
-      marginTop: 2,
-    },
-    infoText: {
-      flex: 1,
-      fontSize: 16,
-      fontFamily: 'sans-serif',
-      color: theme.text,
-      lineHeight: 24,
-    },
-    resetButtonContainer: {
-      marginTop: 16,
-    },
     timeoutContainer: {
       marginTop: 16,
       paddingTop: 16,
