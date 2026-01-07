@@ -342,8 +342,8 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontSize: 18,
       fontWeight: '600',
       fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 6,
-      marginTop: 8,
+      marginBottom: 8,
+      marginTop: 20,
     },
     sectionSubtitle: {
       fontSize: platformTokens.typography.body.fontSize,
@@ -352,7 +352,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       lineHeight: platformTokens.typography.body.lineHeight,
     },
     field: {
-      marginBottom: 16,
+      marginBottom: 20,
     },
     label: {
       fontSize: platformTokens.typography.body.fontSize,
@@ -370,7 +370,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       padding: 16,
       borderRadius: 8,
       borderWidth: 1,
-      marginBottom: 16,
+      marginBottom: 20,
     },
     infoText: {
       fontSize: platformTokens.typography.body.fontSize,

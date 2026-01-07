@@ -449,7 +449,7 @@ ThresholdEditor.displayName = 'ThresholdEditor';
 const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     container: {
-      marginVertical: 8,
+      marginVertical: 12,
     },
     containerError: {
       opacity: 0.9,

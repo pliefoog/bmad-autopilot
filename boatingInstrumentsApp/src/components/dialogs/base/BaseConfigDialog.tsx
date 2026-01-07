@@ -196,7 +196,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     },
     scrollContent: {
       paddingHorizontal: 20,
-      paddingTop: 0,
-      paddingBottom: 20,
+      paddingTop: 24,
+      paddingBottom: 32,
     },
   });

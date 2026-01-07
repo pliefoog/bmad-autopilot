@@ -263,7 +263,7 @@ const createStyles = (theme: ThemeColors, columns: number, platformTokens: Retur
 
   return StyleSheet.create({
     container: {
-      marginVertical: 8,
+      marginVertical: 16,
     },
     header: {
       flexDirection: 'row',

@@ -511,20 +511,20 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontSize: 18,
       fontWeight: '600',
       fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 8,
-      marginTop: 4,
+      marginBottom: 12,
+      marginTop: 8,
     },
     hint: {
       fontSize: platformTokens.typography.caption.fontSize,
       fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 12,
+      marginBottom: 16,
       lineHeight: platformTokens.typography.caption.lineHeight,
     },
     presetRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 12,
-      marginTop: 12,
+      marginTop: 16,
     },
     presetChip: {
       paddingHorizontal: 16,
@@ -559,7 +559,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     },
     divider: {
       height: 1,
-      marginVertical: 20,
+      marginVertical: 28,
     },
     lockHintBox: {
       padding: 12,
@@ -573,7 +573,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       lineHeight: platformTokens.typography.caption.lineHeight,
     },
     categorySection: {
-      marginBottom: 20,
+      marginBottom: 24,
     },
     categoryTitle: {
       fontSize: 15,
