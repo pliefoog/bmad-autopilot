@@ -35,7 +35,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
 import { getPlatformTokens } from '../../../theme/settingsTokens';
@@ -154,6 +154,9 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
   StyleSheet.create({
     container: {
       flex: 1,
+      maxHeight: Dimensions.get('window').height,
+      maxWidth: Dimensions.get('window').width,
+      width: '100%',
     },
     header: {
       flexDirection: 'row',

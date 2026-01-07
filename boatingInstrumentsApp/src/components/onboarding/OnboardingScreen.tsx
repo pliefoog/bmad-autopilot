@@ -4,10 +4,10 @@
  *
  * Provides a 5-screen walkthrough covering:
  * 1. Welcome & app introduction
- * 2. Connection setup guidance
- * 3. Widget customization overview
- * 4. Alarm configuration importance
- * 5. Accessibility features
+ * 2. Smart widget auto-discovery
+ * 3. Alarm configuration importance
+ * 4. Display themes for marine conditions
+ * 5. Connection setup (optional)
  */
 
 import React, { useState, useMemo } from 'react';
@@ -23,7 +23,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { ConnectionConfigDialog } from '../dialogs/ConnectionConfigDialog';
-import { getConnectionDefaults } from '../../services/connectionDefaults';
+import { getConnectionDefaults, connectNmea, disconnectNmea } from '../../services/connectionDefaults';
+import { useNmeaStore } from '../../store/nmeaStore';
 
 interface OnboardingScreenProps {
   visible: boolean;
@@ -31,14 +32,14 @@ interface OnboardingScreenProps {
   onSkip: () => void;
 }
 
-type OnboardingStep = 'welcome' | 'connection' | 'widgets' | 'alarms' | 'accessibility';
+type OnboardingStep = 'welcome' | 'widgets' | 'alarms' | 'themes' | 'connection';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   'welcome',
-  'connection',
   'widgets',
   'alarms',
-  'accessibility',
+  'themes',
+  'connection',
 ];
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
@@ -52,6 +53,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { width } = Dimensions.get('window');
+  
+  // Subscribe to connection status to detect auto-connect
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
+  const isConnected = connectionStatus === 'connected';
 
   const currentStep = ONBOARDING_STEPS[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
@@ -59,23 +64,41 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   const progress = ((currentStepIndex + 1) / ONBOARDING_STEPS.length) * 100;
 
   // Connection handlers for onboarding Step 2
-  const handleConnect = (config: {
+  const handleConnect = async (config: {
     ip: string;
     port: number;
     protocol: 'tcp' | 'udp' | 'websocket';
   }) => {
-    // Test connection successful
-    setConnectionTested(true);
-    setShowConnectionDialog(false);
+    // Actually establish the connection (not just set flag)
+    try {
+      const success = await connectNmea({
+        ip: config.ip,
+        port: config.port,
+        protocol: config.protocol as 'tcp' | 'udp' | 'websocket',
+      });
+      
+      if (success) {
+        setConnectionTested(true);
+        setShowConnectionDialog(false);
+      }
+    } catch (error) {
+      console.error('[Wizard] Connection failed:', error);
+      // Dialog stays open so user can try again
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnectNmea();
+      // Clear the connectionTested flag so user must reconnect to proceed
+      setConnectionTested(false);
+    } catch (error) {
+      console.error('[Wizard] Disconnect failed:', error);
+    }
   };
 
   const handleNext = () => {
-    // Step 2 (connection) requires connection test before proceeding
-    if (currentStep === 'connection' && !connectionTested) {
-      // Block progression - user must test connection first
-      return;
-    }
-
+    // Connection is optional - users can proceed without it and set up later
     if (isLastStep) {
       onComplete();
     } else {
@@ -97,6 +120,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     switch (currentStep) {
       case 'welcome':
         return <WelcomeStep styles={styles} />;
+      case 'widgets':
+        return <WidgetsStep styles={styles} />;
+      case 'alarms':
+        return <AlarmsStep styles={styles} />;
+      case 'themes':
+        return <ThemesStep styles={styles} />;
       case 'connection':
         return (
           <ConnectionStep
@@ -107,12 +136,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             onConnect={handleConnect}
           />
         );
-      case 'widgets':
-        return <WidgetsStep styles={styles} />;
-      case 'alarms':
-        return <AlarmsStep styles={styles} />;
-      case 'accessibility':
-        return <AccessibilityStep styles={styles} />;
       default:
         return null;
     }
@@ -171,10 +194,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
               styles.nextButton,
               { backgroundColor: theme.primary },
               isFirstStep && styles.footerButtonFull,
-              // Disable Next button on connection step until connection tested
-              currentStep === 'connection' && !connectionTested && styles.footerButtonDisabled,
             ]}
-            disabled={currentStep === 'connection' && !connectionTested}
             accessibilityLabel={isLastStep ? 'Complete onboarding' : 'Continue to next step'}
             accessibilityRole="button"
           >
@@ -191,6 +211,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             visible={showConnectionDialog}
             onClose={() => setShowConnectionDialog(false)}
             onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
             currentConfig={getConnectionDefaults()}
             isEmbedded={true}
           />
@@ -262,22 +283,27 @@ const ConnectionStep: React.FC<ConnectionStepProps> = ({
   onConnect,
 }) => {
   const theme = useTheme();
+  // Subscribe to connection status to show when auto-connected
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
+  const isConnected = connectionStatus === 'connected';
+  const showSuccess = connectionTested || isConnected;
+  
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
         <Ionicons
-          name={connectionTested ? 'checkmark-circle' : 'wifi-outline'}
+          name="wifi-outline"
           size={80}
-          color={connectionTested ? theme.success : theme.primary}
+          color={theme.primary}
         />
       </View>
       <Text style={[styles.stepTitle, { color: theme.text }]}>Connect to Your Boat</Text>
       <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
-        Connect to your marine WiFi bridge to receive real-time NMEA 0183 and NMEA 2000 data from
-        your boat's instruments.
+        Connect to your marine WiFi bridge to receive real-time NMEA data from your boat's
+        instruments. You can skip this step and configure your connection later from the settings menu.
       </Text>
 
-      {!showDialog && !connectionTested ? (
+      {!showDialog && !showSuccess ? (
         <>
           <View style={styles.instructionList}>
             <InstructionItem
@@ -300,7 +326,7 @@ const ConnectionStep: React.FC<ConnectionStepProps> = ({
             />
             <InstructionItem
               number="4"
-              text="Test connection to proceed"
+              text="Test connection or skip to configure later"
               theme={theme}
               styles={styles}
             />
@@ -317,13 +343,16 @@ const ConnectionStep: React.FC<ConnectionStepProps> = ({
           </TouchableOpacity>
         </>
       ) : null}
-      {connectionTested && (
-        <View style={[styles.successBanner, { backgroundColor: theme.success + '20' }]}>
-          <Ionicons name="checkmark-circle" size={32} color={theme.success} />
-          <Text style={[styles.successText, { color: theme.success }]}>
-            Connection tested successfully! You can now proceed to the next step.
+      {showSuccess && (
+        <TouchableOpacity
+          style={[styles.changeSettingsButton, { borderColor: theme.border }]}
+          onPress={() => setShowDialog(true)}
+        >
+          <Ionicons name="settings-outline" size={20} color={theme.text} />
+          <Text style={[styles.changeSettingsText, { color: theme.text }]}>
+            Change Connection Settings
           </Text>
-        </View>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -336,19 +365,24 @@ const WidgetsStep: React.FC<StepProps> = ({ styles }) => {
       <View style={styles.iconContainer}>
         <Ionicons name="grid-outline" size={80} color={theme.primary} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.text }]}>Customize Your Display</Text>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>Smart Dashboard</Text>
       <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
-        Add and arrange marine instrument widgets to create your perfect dashboard. Monitor depth,
-        speed, wind, GPS, heading, and more.
+        Widgets automatically appear as NMEA sensors are detected from your boat's network in the
+        order data is received. They dynamically scale to fit your screen size and orientation -
+        from phone to tablet to desktop.
       </Text>
       <View style={styles.widgetGrid}>
         <WidgetPreview icon="water-outline" label="Depth" theme={theme} styles={styles} />
         <WidgetPreview icon="speedometer-outline" label="Speed" theme={theme} styles={styles} />
         <WidgetPreview icon="navigate-outline" label="Wind" theme={theme} styles={styles} />
         <WidgetPreview icon="location-outline" label="GPS" theme={theme} styles={styles} />
+        <WidgetPreview icon="speedometer-outline" label="Engine" theme={theme} styles={styles} />
+        <WidgetPreview icon="battery-half-outline" label="Battery" theme={theme} styles={styles} />
+        <WidgetPreview icon="compass-outline" label="Compass" theme={theme} styles={styles} />
+        <WidgetPreview icon="water-outline" label="Tanks" theme={theme} styles={styles} />
       </View>
-      <Text style={[styles.tipText, { color: theme.warning }]}>
-        💡 Tap widgets to expand, long-press to pin important ones
+      <Text style={[styles.tipText, { color: theme.primary }]}>
+        ✨ Long-press any widget header to drag and rearrange your dashboard
       </Text>
     </View>
   );
@@ -363,81 +397,77 @@ const AlarmsStep: React.FC<StepProps> = ({ styles }) => {
       </View>
       <Text style={[styles.stepTitle, { color: theme.text }]}>Marine Safety Alarms</Text>
       <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
-        Configure critical alarms to alert you of dangerous conditions. The app monitors depth,
-        engine temperature, battery voltage, and more.
+        Configure warning and critical alarm thresholds for numerical metrics like depth, speed,
+        temperature, and battery voltage. Each threshold triggers distinct visual and audio alerts.
       </Text>
       <View style={styles.alarmList}>
         <AlarmItem
           icon="water-outline"
-          title="Shallow Water"
-          description="Alerts when depth falls below your minimum"
+          title="Warning: Yellow border + Morse U"
+          description="Early warning before reaching critical threshold"
           theme={theme}
           styles={styles}
         />
         <AlarmItem
           icon="flame-outline"
-          title="Engine Overheat"
-          description="Warns of dangerous coolant temperatures"
+          title="Critical: Red border + Rapid pulse"
+          description="Immediate attention required - flashing display"
           theme={theme}
           styles={styles}
         />
         <AlarmItem
-          icon="compass-outline"
-          title="Autopilot Failure"
-          description="Critical alert for autopilot disconnection"
+          icon="time-outline"
+          title="Stale: Grayed out + No audio"
+          description="Data too old to trust - check sensor connection"
           theme={theme}
           styles={styles}
         />
       </View>
-      <Text style={[styles.warningText, { color: theme.error }]}>
-        ⚠️ Critical alarms cannot be disabled for safety
+      <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+        💡 Audio alarms follow ISO 9692 maritime conventions - rapid pulse, morse U, warble patterns
       </Text>
     </View>
   );
 };
 
-const AccessibilityStep: React.FC<StepProps> = ({ styles }) => {
+const ThemesStep: React.FC<StepProps> = ({ styles }) => {
   const theme = useTheme();
   return (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="accessibility-outline" size={80} color={theme.success} />
+        <Ionicons name="color-palette-outline" size={80} color={theme.primary} />
       </View>
-      <Text style={[styles.stepTitle, { color: theme.text }]}>Accessible for Everyone</Text>
+      <Text style={[styles.stepTitle, { color: theme.text }]}>Built for Marine Conditions</Text>
       <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
-        Comprehensive accessibility features ensure everyone can use the app safely, including
-        support for screen readers, high contrast, and marine conditions.
+        Choose the perfect display mode for your conditions. Dark mode for night sailing, bright
+        mode for daylight, or red-night vision to preserve night adaptation.
       </Text>
       <View style={styles.accessibilityList}>
-        <AccessibilityFeature
-          icon="volume-high-outline"
-          title="Screen Reader Support"
-          description="VoiceOver and TalkBack compatible"
+        <ThemeFeature
+          icon="moon-outline"
+          title="Dark Mode"
+          description="Easy on eyes for night sailing"
           theme={theme}
           styles={styles}
         />
-        <AccessibilityFeature
-          icon="contrast-outline"
-          title="High Contrast Mode"
-          description="Enhanced visibility in all conditions"
+        <ThemeFeature
+          icon="sunny-outline"
+          title="Light Mode"
+          description="Clear visibility in bright sunlight"
           theme={theme}
           styles={styles}
         />
-        <AccessibilityFeature
-          icon="text-outline"
-          title="Large Text Support"
-          description="Scalable fonts for readability"
-          theme={theme}
-          styles={styles}
-        />
-        <AccessibilityFeature
-          icon="hand-left-outline"
-          title="Marine Touch Targets"
-          description="Large buttons for wet hands & gloves"
+        <ThemeFeature
+          icon="eye-outline"
+          title="Red-Night Vision"
+          description="Preserves night vision adaptation"
           theme={theme}
           styles={styles}
         />
       </View>
+      <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+        💡 Switch themes anytime from the Theme Widget!
+      </Text>
     </View>
   );
 };
@@ -507,7 +537,7 @@ const AlarmItem: React.FC<AlarmItemProps> = ({ icon, title, description, theme, 
   </View>
 );
 
-interface AccessibilityFeatureProps {
+interface ThemeFeatureProps {
   icon: string;
   title: string;
   description: string;
@@ -515,7 +545,7 @@ interface AccessibilityFeatureProps {
   styles: ReturnType<typeof createStyles>;
 }
 
-const AccessibilityFeature: React.FC<AccessibilityFeatureProps> = ({
+const ThemeFeature: React.FC<ThemeFeatureProps> = ({
   icon,
   title,
   description,
@@ -523,7 +553,7 @@ const AccessibilityFeature: React.FC<AccessibilityFeatureProps> = ({
   styles,
 }) => (
   <View style={[styles.accessibilityFeature, { backgroundColor: theme.surface }]}>
-    <Ionicons name={icon as any} size={24} color={theme.success} />
+    <Ionicons name={icon as any} size={24} color={theme.primary} />
     <View style={styles.accessibilityContent}>
       <Text style={[styles.accessibilityTitle, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.accessibilityDescription, { color: theme.textSecondary }]}>
@@ -643,6 +673,7 @@ const createStyles = (theme: ThemeColors) =>
       justifyContent: 'center',
       gap: 16,
       marginBottom: 24,
+      maxWidth: 500,
     },
     widgetPreview: {
       width: 120,
@@ -775,6 +806,21 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 16,
       fontWeight: '600',
       lineHeight: 22,
+    },
+    changeSettingsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginTop: 16,
+      gap: 8,
+    },
+    changeSettingsText: {
+      fontSize: 16,
+      fontWeight: '500',
     },
     nextButtonText: {
       color: theme.surface,

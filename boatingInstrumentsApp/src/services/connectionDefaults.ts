@@ -7,6 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { NmeaService, NmeaServiceConfig } from './nmea/NmeaService';
 
+const STORAGE_KEY = 'nmea-connection-config';
+const MANUAL_DISCONNECT_KEY = 'nmea-manual-disconnect';
+
 export interface ConnectionConfig {
   ip: string;
   port: number;
@@ -75,7 +78,7 @@ export const getConnectionDescription = (): string => {
  */
 export const loadConnectionSettings = async (): Promise<ConnectionConfig> => {
   try {
-    const saved = await AsyncStorage.getItem('nmea-connection-config');
+    const saved = await AsyncStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       const defaults = getConnectionDefaults();
@@ -103,7 +106,7 @@ export const saveConnectionSettings = async (config: ConnectionConfig): Promise<
   };
 
   try {
-    await AsyncStorage.setItem('nmea-connection-config', JSON.stringify(settingsData));
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settingsData));
   } catch (error) {
     console.error('[Connection] Failed to save settings:', error);
   }
@@ -116,6 +119,13 @@ export const connectNmea = async (
   config: ConnectionConfig,
   saveSettings: boolean = true,
 ): Promise<boolean> => {
+  // Clear manual disconnect flag when user explicitly connects
+  try {
+    await AsyncStorage.removeItem(MANUAL_DISCONNECT_KEY);
+  } catch (error) {
+    console.error('Failed to clear manual disconnect flag:', error);
+  }
+
   // Save settings if requested
   if (saveSettings) {
     await saveConnectionSettings(config);
@@ -137,7 +147,14 @@ export const connectNmea = async (
 /**
  * Disconnect from NMEA source
  */
-export const disconnectNmea = (): void => {
+export const disconnectNmea = async (): Promise<void> => {
+  // Set manual disconnect flag to prevent auto-reconnect
+  try {
+    await AsyncStorage.setItem(MANUAL_DISCONNECT_KEY, 'true');
+  } catch (error) {
+    console.error('Failed to set manual disconnect flag:', error);
+  }
+
   NmeaService.getInstance().stop();
 };
 
@@ -173,8 +190,20 @@ export const getCurrentConnectionConfig = (): ConnectionConfig | null => {
 
 /**
  * Initialize connection with saved/default settings
+ * Only auto-connects if user hasn't manually disconnected
  */
 export const initializeConnection = async (): Promise<void> => {
+  // Check if user manually disconnected
+  try {
+    const manuallyDisconnected = await AsyncStorage.getItem(MANUAL_DISCONNECT_KEY);
+    if (manuallyDisconnected === 'true') {
+      console.log('[ConnectionDefaults] Skipping auto-connect - user manually disconnected');
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to check manual disconnect flag:', error);
+  }
+
   const config = await loadConnectionSettings();
 
   // Attempt to connect in background (don't save during initialization)

@@ -74,11 +74,11 @@ const WebToggle: React.FC<{
     outputRange: [trackColor, color],
   });
 
-  // Scale dimensions based on glove mode
-  const trackWidth = gloveMode ? 60 : 51;
-  const trackHeight = gloveMode ? 36 : 31;
-  const thumbSize = gloveMode ? 32 : 27;
-  const thumbTranslate = gloveMode ? 26 : 22;
+  // Scale dimensions based on glove mode (compact by default for web)
+  const trackWidth = gloveMode ? 60 : 44;
+  const trackHeight = gloveMode ? 36 : 24;
+  const thumbSize = gloveMode ? 32 : 20;
+  const thumbTranslate = gloveMode ? 26 : 20;
 
   const thumbTranslateX = animatedValue.interpolate({
     inputRange: [0, 1],
@@ -179,7 +179,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return (
       <View style={styles.container} testID={testID}>
-        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+        {label && <Text style={[styles.label, { color: labelColor }]}>{label}</Text>}
         <Switch
           value={value}
           onValueChange={handleValueChange}
@@ -199,7 +199,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   // Use custom toggle for web
   return (
     <View style={styles.container} testID={testID}>
-      <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+      {label && <Text style={[styles.label, { color: labelColor }]}>{label}</Text>}
       <WebToggle
         value={value}
         onValueChange={handleValueChange}
@@ -227,9 +227,6 @@ const createStyles = (
     container: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: settingsTokens.spacing.sm,
-      minHeight: tvMode ? platformTokens.touchTarget : settingsTokens.touchTargets.phone,
       // TV focus border
       ...(tvMode &&
         focused && {
@@ -237,6 +234,7 @@ const createStyles = (
           borderColor: theme.interactive,
           borderRadius: 8,
           paddingHorizontal: 12,
+          paddingVertical: settingsTokens.spacing.sm,
         }),
     },
 

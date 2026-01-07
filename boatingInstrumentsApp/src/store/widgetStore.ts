@@ -278,15 +278,15 @@ export const useWidgetStore = create<WidgetStore>()(
             // Skip placeholder widget (used during drag-and-drop)
             if (widget.type === 'placeholder') return true;
 
-            // Get widget type registration
+            // Determine timeout (per-widget or global default)
             const registration = widgetRegistrationService.getWidgetRegistration(widget.type);
             if (!registration) {
               console.warn(`⚠️ No registration found for widget type: ${widget.type}`);
               return true; // Keep unknown widget types
             }
 
-            // Determine timeout (per-widget or global default)
-            const timeout = registration.expirationTimeout ?? state.widgetExpirationTimeout;
+            // Use user-configured timeout when auto-removal is enabled, fall back to widget-specific timeout
+            const timeout = state.widgetExpirationTimeout;
 
             // Parse instance from widget settings (e.g., engine-0 has instance: 0)
             const instance = widget.settings?.instance ?? 0;
@@ -296,15 +296,28 @@ export const useWidgetStore = create<WidgetStore>()(
               const targetInstance = dep.instance ?? instance;
               const sensorData = nmeaState.nmeaData.sensors[dep.sensorType]?.[targetInstance];
 
-              if (!sensorData) return false; // Sensor not found
+              if (!sensorData) {
+                // console.log(`⏱️ [cleanupExpiredWidgets] ${widget.id}: No sensorData for ${dep.sensorType}[${targetInstance}]`);
+                return false; // Sensor not found
+              }
 
               // Use getMetric to access data from MetricValue
               const metric = sensorData.getMetric?.(dep.metricName);
-              if (!metric) return false; // No metric found
+              if (!metric) {
+                // console.log(`⏱️ [cleanupExpiredWidgets] ${widget.id}: No metric ${dep.metricName} in ${dep.sensorType}[${targetInstance}]`);
+                return false; // No metric found
+              }
 
               const sensorTimestamp = sensorData.timestamp || 0;
               const age = now - sensorTimestamp;
-              return age <= timeout + GRACE_PERIOD; // Fresh enough
+              const isFresh = age <= timeout + GRACE_PERIOD;
+              
+              // Log for engine widgets when debugging
+              if (widget.type === 'engine') {
+                console.log(`⏱️ [cleanupExpiredWidgets] ${widget.id}: ${dep.sensorType}[${targetInstance}].${dep.metricName} age=${(age/1000).toFixed(1)}s, timeout=${(timeout/1000).toFixed(1)}s, fresh=${isFresh}`);
+              }
+              
+              return isFresh; // Fresh enough
             });
 
             return allRequiredFresh;

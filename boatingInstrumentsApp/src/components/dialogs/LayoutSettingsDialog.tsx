@@ -94,15 +94,19 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
     >
       {/* App Header Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>App Header</Text>
-        
         <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Auto-hide</Text>
-          <PlatformToggle
-            value={autoHideEnabled}
-            onValueChange={setAutoHideEnabled}
-            testID="auto-hide-toggle"
-          />
+          <View style={styles.titleContainer}>
+            <Text style={styles.sectionTitle}>Header</Text>
+            <Text style={styles.titleSeparator}> - </Text>
+            <Text style={styles.settingLabel}>Auto-hide</Text>
+          </View>
+          <View style={styles.toggleWrapper}>
+            <PlatformToggle
+              value={autoHideEnabled}
+              onValueChange={setAutoHideEnabled}
+              testID="auto-hide-toggle"
+            />
+          </View>
         </View>
 
         {autoHideEnabled && (
@@ -141,15 +145,19 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
 
       {/* Widget Lifecycle Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Widget Lifecycle</Text>
-        
         <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Remove inactive widgets</Text>
-          <PlatformToggle
-            value={enableWidgetAutoRemoval}
-            onValueChange={setEnableWidgetAutoRemoval}
-            testID="auto-remove-toggle"
-          />
+          <View style={styles.titleContainer}>
+            <Text style={styles.sectionTitle}>Widget</Text>
+            <Text style={styles.titleSeparator}> - </Text>
+            <Text style={styles.settingLabel}>Auto-remove</Text>
+          </View>
+          <View style={styles.toggleWrapper}>
+            <PlatformToggle
+              value={enableWidgetAutoRemoval}
+              onValueChange={setEnableWidgetAutoRemoval}
+              testID="auto-remove-toggle"
+            />
+          </View>
         </View>
 
         {enableWidgetAutoRemoval && (
@@ -192,8 +200,8 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     card: {
       backgroundColor: theme.surface,
       borderRadius: platformTokens.borderRadius.card,
-      padding: 20,
-      marginBottom: 16,
+      padding: 8,
+      marginBottom: 8,
       ...Platform.select({
         ios: {
           shadowColor: '#000',
@@ -210,17 +218,33 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       }),
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 15,
       fontWeight: '700',
       fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
-      marginBottom: 16,
+    },
+    titleSeparator: {
+      fontSize: 15,
+      fontWeight: '400',
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.textSecondary,
+    },
+    titleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexShrink: 1,
+    },
+    toggleWrapper: {
+      flexShrink: 0,
+      marginLeft: 8,
     },
     settingRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      minHeight: 44,
+      flexWrap: 'wrap',
+      gap: 8,
+      paddingVertical: 4,
     },
     settingLabel: {
       fontSize: platformTokens.typography.label.fontSize,
@@ -231,7 +255,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       flex: 1,
     },
     settingGroup: {
-      marginTop: 20,
+      marginTop: 16,
       paddingTop: 16,
       borderTopWidth: 1,
       borderTopColor: theme.border,
@@ -246,16 +270,16 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     optionGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 12,
+      gap: 8,
     },
     optionButton: {
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 16,
       backgroundColor: theme.background,
       borderWidth: 2,
       borderColor: theme.border,
-      minWidth: 70,
+      minWidth: 60,
       alignItems: 'center',
     },
     optionButtonActive: {

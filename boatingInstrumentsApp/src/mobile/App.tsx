@@ -429,7 +429,7 @@ const App = () => {
 
   const handleConnectionDisconnect = async () => {
     try {
-      disconnectNmea();
+      await disconnectNmea();
       // Status LED shows connection state - no toast needed
     } catch (error) {
       console.error('Failed to disconnect:', error);
