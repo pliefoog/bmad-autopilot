@@ -38,6 +38,7 @@ import React, { useMemo } from 'react';
 import { Modal, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
+import { getPlatformTokens } from '../../../theme/settingsTokens';
 
 export interface BaseConfigDialogProps {
   /** Controls modal visibility */
@@ -79,7 +80,8 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
   testID,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
   return (
     <Modal
@@ -148,7 +150,7 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
 
 // === STYLES ===
 
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -174,20 +176,20 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.5,
     },
     headerButtonText: {
-      fontSize: 16,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
     },
     headerTitle: {
       fontSize: 20,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
       flex: 1,
       textAlign: 'center',
     },
     actionButtonText: {
-      fontSize: 16,
+      fontSize: platformTokens.typography.body.fontSize,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     scrollView: {
       flex: 1,

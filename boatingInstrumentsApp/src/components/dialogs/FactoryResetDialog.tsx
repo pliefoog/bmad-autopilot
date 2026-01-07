@@ -19,6 +19,7 @@ import { useTheme, ThemeColors } from '../../store/themeStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
 import { UniversalIcon } from '../atoms/UniversalIcon';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 interface FactoryResetDialogProps {
   visible: boolean;
@@ -32,7 +33,8 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   onCancel,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
   const handleConfirm = async () => {
     // For mobile platforms, use React Native Alert instead of the modal
@@ -151,7 +153,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
 /**
  * Create styles with theme integration
  */
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     warningBox: {
       flexDirection: 'row',
@@ -169,16 +171,19 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
     },
     warningTitle: {
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: platformTokens.typography.title.fontSize,
+      fontWeight: platformTokens.typography.title.fontWeight,
+      lineHeight: platformTokens.typography.title.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.error,
       marginBottom: 8,
     },
     warningDescription: {
-      fontSize: 16,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      lineHeight: platformTokens.typography.body.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
-      lineHeight: 24,
     },
     bulletList: {
       gap: 12,
@@ -188,17 +193,19 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'flex-start',
     },
     bullet: {
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
       marginRight: 12,
       minWidth: 16,
     },
     bulletText: {
       flex: 1,
-      fontSize: 16,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      lineHeight: platformTokens.typography.body.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
-      lineHeight: 24,
     },
   });

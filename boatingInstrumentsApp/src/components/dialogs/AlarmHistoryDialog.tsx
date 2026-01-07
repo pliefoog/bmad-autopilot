@@ -19,6 +19,7 @@ import { useAlarmStore } from '../../store/alarmStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 interface AlarmHistoryDialogProps {
   visible: boolean;
@@ -31,7 +32,8 @@ interface AlarmHistoryDialogProps {
  */
 export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
   const alarmStore = useAlarmStore();
 
   const handleClearHistory = () => {
@@ -83,7 +85,7 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({ visible,
 /**
  * Create styles with theme integration
  */
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     infoBox: {
       flexDirection: 'row',
@@ -99,9 +101,10 @@ const createStyles = (theme: ThemeColors) =>
     },
     infoText: {
       flex: 1,
-      fontSize: 16,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      lineHeight: platformTokens.typography.body.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
-      lineHeight: 24,
     },
   });

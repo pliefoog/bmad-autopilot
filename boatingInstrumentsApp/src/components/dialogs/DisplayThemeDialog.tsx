@@ -18,6 +18,7 @@ import { useTheme, ThemeColors } from '../../store/themeStore';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { PlatformSettingsSection } from '../settings';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 interface DisplayThemeDialogProps {
   visible: boolean;
@@ -26,7 +27,8 @@ interface DisplayThemeDialogProps {
 
 export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
   return (
     <BaseConfigDialog
@@ -62,7 +64,7 @@ export const DisplayThemeDialog: React.FC<DisplayThemeDialogProps> = ({ visible,
 /**
  * Create styles with theme integration
  */
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     infoBox: {
       flexDirection: 'row',
@@ -78,9 +80,10 @@ const createStyles = (theme: ThemeColors) =>
     },
     infoText: {
       flex: 1,
-      fontSize: 16,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontWeight: platformTokens.typography.body.fontWeight,
+      lineHeight: platformTokens.typography.body.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
       color: theme.text,
-      lineHeight: 24,
     },
   });

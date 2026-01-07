@@ -16,6 +16,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, Platform, Animated } from 'react-native';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
+import { getPlatformTokens } from '../../../theme/settingsTokens';
 
 export interface ThresholdEditorProps {
   /** Display label for the threshold */
@@ -83,7 +84,8 @@ export const ThresholdEditor: React.FC<ThresholdEditorProps> = React.memo(
     testID,
   }) => {
     const theme = useTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
+    const platformTokens = getPlatformTokens();
+    const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
     // Calculate step from decimals
     const step = useMemo(() => Math.pow(10, -formatSpec.decimals), [formatSpec.decimals]);
@@ -444,7 +446,7 @@ export const ThresholdEditor: React.FC<ThresholdEditorProps> = React.memo(
 
 ThresholdEditor.displayName = 'ThresholdEditor';
 
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     container: {
       marginVertical: 8,
@@ -453,10 +455,10 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.9,
     },
     label: {
-      fontSize: 14,
+      fontSize: platformTokens.typography.body.fontSize,
       fontWeight: '600',
       marginBottom: 8,
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     labelDisabled: {
       opacity: 0.5,
@@ -486,27 +488,27 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 16,
       fontWeight: '500',
       textAlign: 'center',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     inputDisabled: {
       opacity: 0.5,
     },
     unit: {
-      fontSize: 14,
+      fontSize: platformTokens.typography.body.fontSize,
       fontWeight: '500',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
       minWidth: 40,
       textAlign: 'left',
     },
     errorText: {
-      fontSize: 12,
+      fontSize: platformTokens.typography.caption.fontSize,
       marginTop: 4,
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     accelerationText: {
-      fontSize: 12,
+      fontSize: platformTokens.typography.caption.fontSize,
       marginTop: 4,
       textAlign: 'center',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
   });

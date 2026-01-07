@@ -23,6 +23,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
+import { getPlatformTokens } from '../../../theme/settingsTokens';
 
 export interface FormSectionProps {
   /** Unique ID for this section (used for persistence) */
@@ -76,7 +77,8 @@ export const FormSection: React.FC<FormSectionProps> = React.memo(
     testID,
   }) => {
     const theme = useTheme();
-    const styles = useMemo(() => createStyles(theme, columns), [theme, columns]);
+    const platformTokens = getPlatformTokens();
+    const styles = useMemo(() => createStyles(theme, columns, platformTokens), [theme, columns, platformTokens]);
 
     const [collapsed, setCollapsed] = useState(defaultCollapsed);
     const [persistenceLoaded, setPersistenceLoaded] = useState(false);
@@ -256,7 +258,7 @@ const getColumnCount = (columns: number): number => {
   }
 };
 
-const createStyles = (theme: ThemeColors, columns: number) => {
+const createStyles = (theme: ThemeColors, columns: number, platformTokens: ReturnType<typeof getPlatformTokens>) => {
   const columnCount = getColumnCount(columns);
 
   return StyleSheet.create({
@@ -275,14 +277,14 @@ const createStyles = (theme: ThemeColors, columns: number) => {
       flex: 1,
     },
     title: {
-      fontSize: 16,
+      fontSize: platformTokens.typography.body.fontSize,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     subtitle: {
-      fontSize: 12,
+      fontSize: platformTokens.typography.caption.fontSize,
       marginTop: 4,
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     errorBadge: {
       minWidth: 20,
@@ -293,9 +295,9 @@ const createStyles = (theme: ThemeColors, columns: number) => {
       paddingHorizontal: 6,
     },
     errorBadgeText: {
-      fontSize: 12,
+      fontSize: platformTokens.typography.caption.fontSize,
       fontWeight: '700',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     content: {
       borderLeftWidth: 2,
@@ -328,8 +330,8 @@ const createStyles = (theme: ThemeColors, columns: number) => {
       gap: 4,
     },
     errorText: {
-      fontSize: 12,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
     },
     skeletonContainer: {
       gap: 16,

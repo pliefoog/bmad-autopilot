@@ -36,6 +36,7 @@ import {
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { useFormState } from '../../hooks/useFormState';
 import { useSettingsStore } from '../../store/settingsStore';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 /**
  * Units Configuration Dialog Props
@@ -231,7 +232,8 @@ type UnitsFormData = z.infer<typeof unitsFormSchema>;
 
 export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
   const [timezoneExpanded, setTimezoneExpanded] = useState(false);
 
@@ -503,20 +505,20 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
 
 // === STYLES ===
 
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     sectionTitle: {
       fontSize: 18,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 8,
       marginTop: 4,
     },
     hint: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 12,
-      lineHeight: 18,
+      lineHeight: platformTokens.typography.caption.lineHeight,
     },
     presetRow: {
       flexDirection: 'row',
@@ -531,8 +533,8 @@ const createStyles = (theme: ThemeColors) =>
       borderWidth: 2,
     },
     presetText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
     },
     previewBox: {
       marginTop: 12,
@@ -541,8 +543,8 @@ const createStyles = (theme: ThemeColors) =>
       borderWidth: 1,
     },
     previewLabel: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 4,
       fontWeight: '600',
     },
@@ -552,8 +554,8 @@ const createStyles = (theme: ThemeColors) =>
       gap: 12,
     },
     previewText: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
     },
     divider: {
       height: 1,
@@ -565,10 +567,10 @@ const createStyles = (theme: ThemeColors) =>
       marginBottom: 16,
     },
     lockHintText: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       textAlign: 'center',
-      lineHeight: 18,
+      lineHeight: platformTokens.typography.caption.lineHeight,
     },
     categorySection: {
       marginBottom: 20,
@@ -576,7 +578,7 @@ const createStyles = (theme: ThemeColors) =>
     categoryTitle: {
       fontSize: 15,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 12,
     },
     unitsGrid: {
@@ -593,7 +595,7 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'center',
     },
     unitText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
     },
   });

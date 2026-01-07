@@ -27,6 +27,7 @@ import { PlatformTextInput } from './inputs/PlatformTextInput';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { useFormState } from '../../hooks/useFormState';
 import { getConnectionDefaults } from '../../services/connectionDefaults';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 
 /**
  * Connection Configuration Dialog Props
@@ -96,7 +97,8 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   shouldEnableConnectButton,
 }) => {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const platformTokens = getPlatformTokens();
+  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
   const defaults = getConnectionDefaults();
   const connectionStatus = useNmeaStore((state) => state.connectionStatus);
   const isConnected = connectionStatus === 'connected';
@@ -334,35 +336,35 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   );
 };
 
-const createStyles = (theme: ThemeColors) =>
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     sectionTitle: {
       fontSize: 18,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 6,
       marginTop: 8,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 16,
-      lineHeight: 20,
+      lineHeight: platformTokens.typography.body.lineHeight,
     },
     field: {
       marginBottom: 16,
     },
     label: {
-      fontSize: 14,
+      fontSize: platformTokens.typography.body.fontSize,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 8,
     },
     hint: {
-      fontSize: 13,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       marginTop: 8,
-      lineHeight: 18,
+      lineHeight: platformTokens.typography.caption.lineHeight,
     },
     infoBox: {
       padding: 16,
@@ -371,10 +373,10 @@ const createStyles = (theme: ThemeColors) =>
       marginBottom: 16,
     },
     infoText: {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       textAlign: 'center',
-      lineHeight: 20,
+      lineHeight: platformTokens.typography.body.lineHeight,
     },
     statusBox: {
       flexDirection: 'row',
@@ -389,7 +391,7 @@ const createStyles = (theme: ThemeColors) =>
     statusText: {
       fontSize: 15,
       fontWeight: '600',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     resetButton: {
       flexDirection: 'row',
@@ -404,11 +406,11 @@ const createStyles = (theme: ThemeColors) =>
     resetButtonText: {
       fontSize: 15,
       fontWeight: '500',
-      fontFamily: 'sans-serif',
+      fontFamily: platformTokens.typography.fontFamily,
     },
     keyboardHint: {
-      fontSize: 12,
-      fontFamily: 'sans-serif',
+      fontSize: platformTokens.typography.caption.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
       textAlign: 'center',
       marginTop: 8,
       fontStyle: 'italic',
