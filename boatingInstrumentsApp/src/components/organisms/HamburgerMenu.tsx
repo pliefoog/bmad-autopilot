@@ -11,14 +11,13 @@ import {
   SafeAreaView,
   Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { log as logger } from '../../utils/logging/logger';
-import { MenuSection } from '../molecules/MenuSection';
-import { DevToolsSection } from '../molecules/DevToolsSection';
+import { MenuItem } from '../molecules/MenuItem';
 import { useMenuState } from '../../hooks/useMenuState';
-import { menuConfiguration } from '../../config/menuConfiguration';
-import { FeatureFlagsMenu } from '../developer/FeatureFlagsMenu';
+import { menuItems } from '../../config/menuConfiguration';
 
 interface HamburgerMenuProps {
   visible: boolean;
@@ -50,11 +49,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const theme = useTheme();
   const menuWidth = Math.min(screenWidth * 0.8, MAX_MENU_WIDTH);
   const { resetAppToDefaults } = useWidgetStore();
-  const [showFeatureFlags, setShowFeatureFlags] = useState(false);
 
-  // Get menu sections from configuration
-  const { sections, devSections } = menuConfiguration;
-  const showDevTools = __DEV__ || process.env.NODE_ENV === 'development';
+  // Filter menu items (show dev items only in dev builds)
+  const visibleItems = menuItems.filter(item => !item.devOnly || __DEV__);
 
   // Custom action handlers
   const actionHandlers = {
@@ -84,10 +81,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     },
     resetAppToDefaults: async () => {
       await actionHandlers.performFactoryReset();
-    },
-    openFeatureFlags: () => {
-      onClose();
-      setTimeout(() => setShowFeatureFlags(true), 0);
     },
     openAlarmConfiguration: () => {
       onClose();
@@ -128,28 +121,34 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       onPress={onClose}
                       testID="hamburger-menu-close"
                     >
-                      <View style={[styles.closeIcon, { backgroundColor: theme.textSecondary }]} />
+                      <Ionicons name="close" size={24} color={theme.textSecondary} />
                     </TouchableOpacity>
                   </View>
 
-                  {/* Primary Navigation Sections */}
-                  {sections.map((section) => (
-                    <MenuSection
-                      key={section.id}
-                      section={section}
-                      onItemPress={onClose}
-                      actionHandlers={actionHandlers}
-                    />
-                  ))}
-
-                  {/* Development Tools Section */}
-                  {showDevTools && devSections ? (
-                    <DevToolsSection
-                      sections={devSections}
-                      onItemPress={onClose}
-                      actionHandlers={actionHandlers}
-                    />
-                  ) : null}
+                  {/* Flat Menu Items */}
+                  <View style={styles.menuItems}>
+                    {visibleItems.map((item, index) => (
+                      <React.Fragment key={item.id}>
+                        {item.isDividerBefore && (
+                          <View
+                            style={[
+                              styles.divider,
+                              { backgroundColor: theme.border },
+                            ]}
+                          />
+                        )}
+                        <MenuItem
+                          item={item}
+                          onPress={() => {
+                            const handler = actionHandlers[item.action as keyof typeof actionHandlers];
+                            if (handler) {
+                              handler();
+                            }
+                          }}
+                        />
+                      </React.Fragment>
+                    ))}
+                  </View>
                 </ScrollView>
               </SafeAreaView>
             </View>
@@ -158,9 +157,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
           <Pressable style={styles.overlayBackground} onPress={onClose} />
         </View>
       </Modal>
-
-      {/* Feature Flags Developer Menu - Always rendered so state persists */}
-      <FeatureFlagsMenu visible={showFeatureFlags} onClose={() => setShowFeatureFlags(false)} />
     </>
   );
 };
@@ -202,17 +198,19 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    height: 44, // Match HeaderBar height (Apple HIG standard)
     borderBottomWidth: 1,
   },
   closeButton: {
     padding: 8,
     borderRadius: 20,
   },
-  closeIcon: {
-    width: 20,
-    height: 2,
-    borderRadius: 1,
-    transform: [{ rotate: '45deg' }],
+  menuItems: {
+    paddingTop: 8,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 12,
+    marginHorizontal: 16,
   },
 });

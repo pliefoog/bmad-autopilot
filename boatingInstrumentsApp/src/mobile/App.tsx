@@ -35,7 +35,6 @@ import { DisplayThemeDialog } from '../components/dialogs/DisplayThemeDialog';
 import { initializeWidgetSystem } from '../services/initializeWidgetSystem';
 import { AlarmHistoryDialog } from '../components/dialogs/AlarmHistoryDialog';
 import { SensorConfigDialog } from '../components/dialogs/SensorConfigDialog';
-import TestSwitchDialog from '../components/dialogs/TestSwitchDialog';
 import { MemoryMonitor } from '../components/MemoryMonitor';
 import {
   getConnectionDefaults,
@@ -136,7 +135,6 @@ const App = () => {
   const [alarmConfigSensor, setAlarmConfigSensor] = useState<
     'depth' | 'temperature' | 'engine' | 'battery' | undefined
   >(undefined);
-  const [showTestSwitchDialog, setShowTestSwitchDialog] = useState(false);
 
   // Navigation session state
   const [navigationSession, setNavigationSession] = useState<{
@@ -153,8 +151,7 @@ const App = () => {
     showLayoutSettingsDialog ||
     showDisplayThemeDialog ||
     showAlarmHistoryDialog ||
-    showAlarmConfigDialog ||
-    showTestSwitchDialog;
+    showAlarmConfigDialog;
   
   // Enable auto-hide header with smart timing
   useAutoHideHeader(isAnyDialogOpen);
@@ -526,30 +523,8 @@ const App = () => {
             sensorType={alarmConfigSensor}
           />
 
-          <TestSwitchDialog
-            visible={showTestSwitchDialog}
-            onClose={() => setShowTestSwitchDialog(false)}
-          />
-
           {/* Memory Monitor - DISABLED: Causing infinite render loop */}
           {/* <MemoryMonitor position="bottom-right" updateInterval={1000} /> */}
-
-          {/* Temporary Test Button - Floating */}
-          <TouchableOpacity
-            onPress={() => setShowTestSwitchDialog(true)}
-            style={{
-              position: 'absolute',
-              bottom: 120,
-              right: 20,
-              backgroundColor: theme.interactive,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-              zIndex: 9999,
-            }}
-          >
-            <Text style={{ color: theme.onColor, fontWeight: '600' }}>TEST SWITCH</Text>
-          </TouchableOpacity>
         </View>
       </DashboardLayoutProvider>
     </SafeAreaView>

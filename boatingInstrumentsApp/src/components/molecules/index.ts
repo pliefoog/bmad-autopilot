@@ -12,8 +12,6 @@ export { default as WidgetHeader } from './WidgetHeader';
 
 // Hamburger Menu Components
 export { MenuItem } from './MenuItem';
-export { MenuSection } from './MenuSection';
-export { DevToolsSection } from './DevToolsSection';
 
 // Legacy exports - to be migrated to atomic design
 // export { default as ModalContainer } from './ModalContainer';

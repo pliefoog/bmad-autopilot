@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 import type { MenuItem as MenuItemType } from '../../config/menuConfiguration';
 
@@ -27,7 +28,12 @@ export const MenuItem: React.FC<MenuItemProps> = ({ item, onPress }) => {
     >
       <View style={styles.content}>
         <View style={styles.leftSection}>
-          <Text style={styles.icon}>{item.icon}</Text>
+          <Ionicons
+            name={item.icon as any}
+            size={20}
+            color={item.disabled ? theme.iconDisabled : theme.iconSecondary}
+            style={styles.icon}
+          />
           <Text style={[styles.label, { color: item.disabled ? theme.textSecondary : theme.text }]}>
             {item.label}
           </Text>
@@ -62,10 +68,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   icon: {
-    fontSize: 20,
     marginRight: 12,
-    width: 24,
-    textAlign: 'center',
+    width: 20,
   },
   label: {
     fontSize: 16,
