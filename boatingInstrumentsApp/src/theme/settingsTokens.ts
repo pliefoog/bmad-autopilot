@@ -383,6 +383,7 @@ export function getPlatformTokens() {
       ? platformTypography.ios
       : platformTypography.android,
     spacing: isTV ? platformSpacing.tv : isTablet ? platformSpacing.tablet : platformSpacing.phone,
+    borderRadius: settingsTokens.borderRadius,
     touchTarget: isTV ? touchTargets.tv : isTablet ? touchTargets.tablet : touchTargets.phone,
     animations: isTV
       ? platformAnimations.tv
