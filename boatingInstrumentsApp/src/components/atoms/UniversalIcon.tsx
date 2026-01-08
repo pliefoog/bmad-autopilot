@@ -113,6 +113,7 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'grid-outline',
       'alert-circle-outline',
       'wifi-outline',
+      'information-circle',
       'information-circle-outline',
       'notifications-outline',
       'warning-outline',
