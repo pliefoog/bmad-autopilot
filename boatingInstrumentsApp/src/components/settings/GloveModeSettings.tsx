@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ThemedSwitch } from '../atoms/ThemedSwitch';
+import { PlatformToggle } from '../dialogs/inputs/PlatformToggle';
 import { useTheme } from '../../store/themeStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { marineTouchService } from '../../services/marine/MarineTouchService';
@@ -35,7 +35,7 @@ export const GloveModeSettings: React.FC = () => {
             Enhanced touch targets and gesture tolerances for wearing gloves at sea
           </Text>
         </View>
-        <ThemedSwitch value={gloveMode} onValueChange={handleToggle} />
+        <PlatformToggle value={gloveMode} onValueChange={handleToggle} />
       </View>
 
       {gloveMode && (

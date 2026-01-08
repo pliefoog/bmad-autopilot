@@ -64,6 +64,12 @@ const DEBUG_FLAGS: Record<string, boolean> = {
   'performance.network': false,
   performance: false, // Parent category
 
+  // Connection categories
+  'connection.tcp': false,
+  'connection.udp': false,
+  'connection.websocket': false,
+  connection: false, // Parent category
+
   // UI categories
   'ui.interaction': false,
   'ui.layout': false,
@@ -152,6 +158,12 @@ export const log = {
   // Performance convenience methods
   perfRender: (msg: string, dataFn?: () => any) => log.debug('performance.render', msg, dataFn),
   perfNetwork: (msg: string, dataFn?: () => any) => log.debug('performance.network', msg, dataFn),
+
+  // Connection convenience methods
+  connection: (msg: string, dataFn?: () => any) => log.debug('connection', msg, dataFn),
+  connectionTcp: (msg: string, dataFn?: () => any) => log.debug('connection.tcp', msg, dataFn),
+  connectionUdp: (msg: string, dataFn?: () => any) => log.debug('connection.udp', msg, dataFn),
+  connectionWebSocket: (msg: string, dataFn?: () => any) => log.debug('connection.websocket', msg, dataFn),
 
   // UI convenience methods
   uiInteraction: (msg: string, dataFn?: () => any) => log.debug('ui.interaction', msg, dataFn),

@@ -947,6 +947,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 label=""
                 value={formData.enabled}
                 onValueChange={handleEnabledChange}
+                scale={0.75}
               />
             </View>
 

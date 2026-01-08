@@ -206,16 +206,24 @@ export const useWidgetStore = create<WidgetStore>()(
           );
           cleanupWidgetSystem();
 
-          // Step 2: Clear localStorage (fail silently if not available)
+          // Step 2: Clear all AsyncStorage keys (including onboarding flag)
+          try {
+            const AsyncStorage = await import('@react-native-async-storage/async-storage');
+            await AsyncStorage.default.clear();
+          } catch (error) {
+            console.warn('Failed to clear AsyncStorage during factory reset:', error);
+          }
+
+          // Step 3: Clear localStorage (fail silently if not available)
           try {
             if (typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.removeItem('widget-store');
+              window.localStorage.clear();
             }
           } catch {
             // localStorage not available or blocked - continue without error
           }
 
-          // Step 3: Create clean dashboard with only system widgets
+          // Step 4: Create clean dashboard with only system widgets
           const now = Date.now();
           const systemWidgets = SYSTEM_WIDGETS.map((sw) => ({
             id: sw.id,
@@ -230,7 +238,7 @@ export const useWidgetStore = create<WidgetStore>()(
             widgets: systemWidgets,
           };
 
-          // Step 4: Reset state synchronously (no delay)
+          // Step 5: Reset state synchronously (no delay)
           set({
             dashboard: resetDashboard,
             widgetExpirationTimeout: 300000,
@@ -238,7 +246,7 @@ export const useWidgetStore = create<WidgetStore>()(
             currentWidgetIds: new Set(SYSTEM_WIDGETS.map((w) => w.id)),
           });
 
-          // Step 5: Reinitialize widget system immediately (synchronous)
+          // Step 6: Reinitialize widget system immediately (synchronous)
           // Use Promise.resolve().then() to defer to next microtask but keep it fast
           await Promise.resolve();
           initializeWidgetSystem();

@@ -457,6 +457,7 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
                 value={formData.useTcp}
                 onValueChange={(value) => updateField('useTcp', value)}
                 testID="connection-protocol-toggle"
+                scale={0.75}
               />
             </View>
             <Text style={[styles.hint, { color: theme.textSecondary }]}>

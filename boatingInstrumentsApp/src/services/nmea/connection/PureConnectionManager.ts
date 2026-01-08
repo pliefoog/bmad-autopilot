@@ -12,6 +12,7 @@
  */
 
 import { Platform, NativeModules } from 'react-native';
+import { log } from '@/utils/logging/logger';
 
 /**
  * Lazy-load TCP socket module
@@ -25,8 +26,8 @@ function getTcpSocket() {
   // Check if native module is available
 
   if (!NativeModules.TcpSockets && !NativeModules.TcpSocket) {
-    console.error(
-      '[getTcpSocket] ⚠️ Native TCP socket module not found! The library may not be properly linked.',
+    log.connection(
+      '[getTcpSocket] Native TCP socket module not found - library may not be properly linked',
     );
     // Continue anyway - the JS module might still work
   }
@@ -44,11 +45,11 @@ function getTcpSocket() {
     } else if (TcpSocketModule.default && typeof TcpSocketModule.default === 'function') {
       return TcpSocketModule.default;
     } else {
-      console.error('[getTcpSocket] Could not find Socket constructor in module exports');
+      log.connection('[getTcpSocket] Could not find Socket constructor in module exports');
       return null;
     }
   } catch (error) {
-    console.error('[getTcpSocket] Error loading TCP socket module:', error);
+    log.connection('[getTcpSocket] Error loading TCP socket module', () => ({ error }));
     return null;
   }
 }
@@ -63,7 +64,7 @@ function getUdpSocket() {
     const UdpSocketModule = require('react-native-udp');
     return UdpSocketModule.default || UdpSocketModule;
   } catch (error) {
-    console.warn('[ConnectionManager] UDP socket module not available:', error);
+    log.connection('[ConnectionManager] UDP socket module not available', () => ({ error }));
     return null;
   }
 }
@@ -209,7 +210,7 @@ export class PureConnectionManager {
             break;
         }
       } catch (error) {
-        console.warn('[ConnectionManager] Error during disconnect:', error);
+        log.connection('[ConnectionManager] Error during disconnect', () => ({ error }));
       }
 
       this.activeConnection = null;
@@ -302,7 +303,7 @@ export class PureConnectionManager {
     const TcpSocket = getTcpSocket();
 
     if (!TcpSocket) {
-      console.error('[ConnectionManager] TCP Socket is null - not available on this platform');
+      log.connection('[ConnectionManager] TCP Socket not available on this platform');
       throw new Error('TCP not supported in this environment');
     }
 
@@ -311,7 +312,7 @@ export class PureConnectionManager {
     try {
       TcpModule = require('react-native-tcp-socket');
     } catch (e) {
-      console.warn('[ConnectionManager] Could not require full module:', e);
+      log.connection('[ConnectionManager] Could not require full TCP module', () => ({ error: e }));
     }
 
     return new Promise((resolve, reject) => {
@@ -329,11 +330,11 @@ export class PureConnectionManager {
               host: config.ip,
             });
           } catch (connectError: any) {
-            console.error('[ConnectionManager] TcpModule.connect() threw error:', {
+            log.connection('[ConnectionManager] TcpModule.connect() threw error', () => ({
               message: connectError?.message,
               type: connectError?.constructor?.name,
               nativeModuleAvailable: !!NativeModules.TcpSockets || !!NativeModules.TcpSocket,
-            });
+            }));
             throw new Error(
               `Native TCP module not properly linked. Error: ${
                 connectError?.message || 'unknown'
@@ -353,10 +354,10 @@ export class PureConnectionManager {
               timeout: this.CONNECTION_TIMEOUT,
             });
           } catch (createError: any) {
-            console.error('[ConnectionManager] TcpModule.createConnection() threw error:', {
+            log.connection('[ConnectionManager] TcpModule.createConnection() threw error', () => ({
               message: createError?.message,
               type: createError?.constructor?.name,
-            });
+            }));
             throw new Error(
               `Native TCP module not properly linked. Error: ${createError?.message || 'unknown'}`,
             );
@@ -372,9 +373,9 @@ export class PureConnectionManager {
           try {
             socket = new TcpSocket();
           } catch (constructorError) {
-            console.error(
-              '[ConnectionManager] Error calling TcpSocket constructor:',
-              constructorError,
+            log.connection(
+              '[ConnectionManager] Error calling TcpSocket constructor',
+              () => ({ error: constructorError }),
             );
             throw new Error(
               'Failed to create TCP socket instance: ' +
@@ -389,13 +390,12 @@ export class PureConnectionManager {
           }
 
           if (typeof socket.connect !== 'function') {
-            console.error(
-              '[ConnectionManager] Socket methods:',
-              socket ? Object.getOwnPropertyNames(socket) : [],
-            );
-            console.error(
-              '[ConnectionManager] Socket prototype:',
-              socket ? Object.getOwnPropertyNames(Object.getPrototypeOf(socket)) : [],
+            log.connection(
+              '[ConnectionManager] Socket has no connect method',
+              () => ({
+                methods: socket ? Object.getOwnPropertyNames(socket) : [],
+                prototype: socket ? Object.getOwnPropertyNames(Object.getPrototypeOf(socket)) : [],
+              }),
             );
             throw new Error('TCP socket instance has no connect method');
           }
@@ -438,7 +438,12 @@ export class PureConnectionManager {
         });
 
         socket.on('error', (error: Error) => {
-          console.error('[ConnectionManager] TCP error:', error);
+          // Connection errors are expected (especially after factory reset with default config)
+          log.connection('[ConnectionManager] TCP connection error', () => ({
+            message: error.message,
+            host: config.host,
+            port: config.port,
+          }));
           this.handleError(`TCP connection failed: ${error.message}`);
           reject(error);
         });
@@ -471,7 +476,10 @@ export class PureConnectionManager {
 
         socket.bind(config.port, (err: Error) => {
           if (err) {
-            console.error('[ConnectionManager] UDP bind error:', err);
+            log.connection('[ConnectionManager] UDP bind error', () => ({
+              message: err.message,
+              port: config.port,
+            }));
             this.handleError(`UDP bind failed: ${err.message}`);
             reject(err);
             return;
@@ -490,7 +498,10 @@ export class PureConnectionManager {
         });
 
         socket.on('error', (error: Error) => {
-          console.error('[ConnectionManager] UDP error:', error);
+          log.connection('[ConnectionManager] UDP error', () => ({
+            message: error.message,
+            port: config.port,
+          }));
           this.handleError(`UDP error: ${error.message}`);
           reject(error);
         });
@@ -545,7 +556,8 @@ export class PureConnectionManager {
         }
       }
     } catch (error) {
-      console.error('[ConnectionManager] Error processing binary data:', error);
+      log.connection('[ConnectionManager] Error processing binary data', () => ({ error }));
+      // Don't propagate error - just skip this chunk
     }
   }
 
@@ -557,7 +569,9 @@ export class PureConnectionManager {
     try {
       const view = new DataView(buffer);
       if (buffer.byteLength < 5) {
-        console.warn('[ConnectionManager] Binary frame too short:', buffer.byteLength);
+        log.connection('[ConnectionManager] Binary frame too short', () => ({
+          byteLength: buffer.byteLength,
+        }));
         return null;
       }
 
@@ -577,7 +591,10 @@ export class PureConnectionManager {
       // Extract data length and payload
       const dataLength = view.getUint8(4);
       if (buffer.byteLength < 5 + dataLength) {
-        console.warn('[ConnectionManager] Binary frame data truncated');
+        log.connection('[ConnectionManager] Binary frame data truncated', () => ({
+          expected: 5 + dataLength,
+          actual: buffer.byteLength,
+        }));
         return null;
       }
 
@@ -585,7 +602,7 @@ export class PureConnectionManager {
 
       return { pgn, source, priority, data };
     } catch (error) {
-      console.error('[ConnectionManager] Error parsing binary frame:', error);
+      log.connection('[ConnectionManager] Error parsing binary frame', () => ({ error }));
       return null;
     }
   }

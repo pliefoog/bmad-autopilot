@@ -34,7 +34,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemeStore } from '../store/themeStore';
 import * as Brightness from 'expo-brightness';
 import { TemplatedWidget } from '../components/TemplatedWidget';
-import { ThemedSwitch } from '../components/atoms/ThemedSwitch';
+import { PlatformToggle } from '../components/dialogs/inputs/PlatformToggle';
 
 // Theme-specific logging that can be toggled via showThemeLogging()
 const log = (...args: any[]) => {
@@ -230,6 +230,8 @@ const NativeControlToggle: React.FC<{
   const iconSize = Math.max(12, Math.min(20, cellHeight * 0.2));
   // Text size scales proportionally
   const fontSize = Math.max(10, Math.min(14, cellHeight * 0.15));
+  // Toggle scale: native iOS Switch is 31px tall, scale to fit ~40% of cell height
+  const toggleScale = Math.max(0.6, Math.min(1.0, (cellHeight * 0.4) / 31));
 
   return (
     <TouchableOpacity style={styles.nativeToggle} onPress={toggleNativeControl}>
@@ -241,7 +243,11 @@ const NativeControlToggle: React.FC<{
         />
         <Text style={[styles.nativeToggleText, { color: theme.textSecondary, fontSize }]}>Native</Text>
       </View>
-      <ThemedSwitch value={nativeBrightnessControl} onValueChange={toggleNativeControl} />
+      <PlatformToggle 
+        value={nativeBrightnessControl} 
+        onValueChange={toggleNativeControl}
+        scale={toggleScale}
+      />
     </TouchableOpacity>
   );
 };
@@ -471,7 +477,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 0,
     borderWidth: 0,
     width: '100%',

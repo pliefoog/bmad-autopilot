@@ -42,11 +42,15 @@ export interface PlatformToggleProps {
 
   /** Test ID for testing */
   testID?: string;
+
+  /** Scale factor for responsive sizing (default: 1.0 = native iOS size 51×31) */
+  scale?: number;
 }
 
 /**
  * Custom Web Toggle Component
  * Used when Platform.OS === 'web'
+ * Baseline dimensions match native iOS Switch (51×31 points)
  */
 const WebToggle: React.FC<{
   value: boolean;
@@ -57,7 +61,8 @@ const WebToggle: React.FC<{
   thumbColor: string;
   testID: string;
   gloveMode: boolean;
-}> = ({ value, onValueChange, disabled, color, trackColor, thumbColor, testID, gloveMode }) => {
+  scale: number; // Scale factor (1.0 = native iOS size)
+}> = ({ value, onValueChange, disabled, color, trackColor, thumbColor, testID, gloveMode, scale }) => {
   const animatedValue = React.useRef(new Animated.Value(value ? 1 : 0)).current;
   const [isHovered, setIsHovered] = React.useState(false);
 
@@ -74,15 +79,26 @@ const WebToggle: React.FC<{
     outputRange: [trackColor, color],
   });
 
-  // Scale dimensions based on glove mode (compact by default for web)
-  const trackWidth = gloveMode ? 60 : 44;
-  const trackHeight = gloveMode ? 36 : 24;
-  const thumbSize = gloveMode ? 32 : 20;
-  const thumbTranslate = gloveMode ? 26 : 20;
+  // Native iOS Switch dimensions: 51×31 points (track), 27 points (thumb)
+  // Glove mode adds 18% to touch targets (marine usage)
+  const BASE_TRACK_WIDTH = 51;
+  const BASE_TRACK_HEIGHT = 31;
+  const BASE_THUMB_SIZE = 27;
+  const BASE_THUMB_TRAVEL = 20; // Distance thumb travels
+
+  // Apply glove mode scaling (1.18x) and custom scale factor
+  const gloveFactor = gloveMode ? 1.18 : 1.0;
+  const finalScale = scale * gloveFactor;
+
+  const trackWidth = BASE_TRACK_WIDTH * finalScale;
+  const trackHeight = BASE_TRACK_HEIGHT * finalScale;
+  const thumbSize = BASE_THUMB_SIZE * finalScale;
+  const thumbTravel = BASE_THUMB_TRAVEL * finalScale;
+  const thumbPadding = 2 * finalScale;
 
   const thumbTranslateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [2, thumbTranslate],
+    outputRange: [thumbPadding, thumbTravel],
   });
 
   const handlePress = () => {
@@ -147,6 +163,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   disabled = false,
   focused = false,
   testID = 'platform-toggle',
+  scale = 1.0, // Default to native iOS size
 }) => {
   const theme = useTheme();
   const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
@@ -180,18 +197,20 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
     return (
       <View style={styles.container} testID={testID}>
         {label && <Text style={[styles.label, { color: labelColor }]}>{label}</Text>}
-        <Switch
-          value={value}
-          onValueChange={handleValueChange}
-          disabled={disabled}
-          trackColor={{
-            false: trackColorOff,
-            true: trackColorOn,
-          }}
-          thumbColor={thumbColor}
-          ios_backgroundColor={trackColorOff}
-          testID={`${testID}-switch`}
-        />
+        <View style={{ transform: [{ scale }] }}>
+          <Switch
+            value={value}
+            onValueChange={handleValueChange}
+            disabled={disabled}
+            trackColor={{
+              false: trackColorOff,
+              true: trackColorOn,
+            }}
+            thumbColor={thumbColor}
+            ios_backgroundColor={trackColorOff}
+            testID={`${testID}-switch`}
+          />
+        </View>
       </View>
     );
   }
@@ -208,6 +227,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
         trackColor={trackColorOff}
         thumbColor={thumbColor}
         gloveMode={gloveMode}
+        scale={scale}
         testID={`${testID}-switch`}
       />
     </View>

@@ -105,6 +105,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
               value={autoHideEnabled}
               onValueChange={setAutoHideEnabled}
               testID="auto-hide-toggle"
+              scale={0.75}
             />
           </View>
         </View>
@@ -156,6 +157,7 @@ export const LayoutSettingsDialog: React.FC<LayoutSettingsDialogProps> = ({ visi
               value={enableWidgetAutoRemoval}
               onValueChange={setEnableWidgetAutoRemoval}
               testID="auto-remove-toggle"
+              scale={0.75}
             />
           </View>
         </View>
@@ -242,8 +244,6 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      flexWrap: 'wrap',
-      gap: 8,
       paddingVertical: 4,
     },
     settingLabel: {
