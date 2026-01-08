@@ -1608,9 +1608,64 @@ export function getPresentationsForRegion(
 /**
  * Get display label for configuration UI showing symbol with pattern
  * Examples: "kts (xxx.x)", "°C (xx.x)", "m (xxx)"
+ * For time/date formats, shows actual formatted example with current time/date
  * Use this in settings/configuration interfaces for clarity
  */
 export function getPresentationConfigLabel(presentation: Presentation): string {
+  // Special handling for time formats - show actual formatted time
+  if (presentation.id.startsWith('time_')) {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    
+    switch (presentation.id) {
+      case 'time_24h_full':
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      case 'time_24h':
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      case 'time_12h': {
+        const hours12 = hours % 12 || 12;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      }
+      case 'time_12h_full': {
+        const hours12 = hours % 12 || 12;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm}`;
+      }
+      case 'time_compact':
+        return `${hours.toString().padStart(2, '0')}.${minutes.toString().padStart(2, '0')}`;
+      default:
+        return presentation.name;
+    }
+  }
+  
+  // Special handling for date formats - show actual formatted date
+  if (presentation.id.includes('_date')) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    switch (presentation.id) {
+      case 'nautical_date':
+        return `${dayNames[now.getDay()]} ${monthNames[month - 1]} ${day.toString().padStart(2, '0')}, ${year}`;
+      case 'iso_date':
+        return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      case 'us_date':
+        return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+      case 'eu_date':
+        return `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+      case 'uk_date':
+        return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+      default:
+        return presentation.name;
+    }
+  }
+
   // For units with same symbol but different regions (e.g., US vs Imperial gallons)
   // show the full name to distinguish them
   const hasRegionVariant =
