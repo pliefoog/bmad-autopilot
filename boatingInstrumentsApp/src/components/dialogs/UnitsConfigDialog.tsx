@@ -114,12 +114,6 @@ function buildPresetsFromStore(): PresentationPreset[] {
       { category: 'Pressure', value: '29.92 inHg' },
       { category: 'Volume', value: '22 gal' },
     ],
-    international: [
-      { category: 'Depth', value: '5.2 m' },
-      { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013 mbar' },
-      { category: 'Volume', value: '83 L' },
-    ],
   };
 
   const presets: PresentationPreset[] = regionMetadata.map((region) => ({
@@ -175,7 +169,7 @@ const CATEGORIES: CategoryConfig[] = [
 // === ZOD SCHEMA ===
 
 const unitsFormSchema = z.object({
-  preset: z.enum(['eu', 'us', 'uk', 'international', 'custom']),
+  preset: z.enum(['eu', 'us', 'uk', 'custom']),
   // Category presentation IDs (strings matching formatSpec IDs)
   depth: z.string().optional(),
   speed: z.string().optional(),

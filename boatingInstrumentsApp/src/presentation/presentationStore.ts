@@ -18,11 +18,11 @@ export interface PresentationSettings {
   selectedPresentations: Record<DataCategory, string>;
 
   // User's marine region preference (affects defaults)
-  marineRegion: 'eu' | 'us' | 'uk' | 'international';
+  marineRegion: 'eu' | 'us' | 'uk';
 
   // Actions
   setPresentationForCategory: (category: DataCategory, presentationId: string) => void;
-  setMarineRegion: (region: 'eu' | 'us' | 'uk' | 'international') => void;
+  setMarineRegion: (region: 'eu' | 'us' | 'uk') => void;
   resetToDefaults: () => void;
 
   // Getters (computed from state)
@@ -32,7 +32,7 @@ export interface PresentationSettings {
 // Region-specific defaults (override above for specific regions)
 // EXPORTED as single source of truth for preset configurations
 export const REGION_DEFAULTS: Record<
-  'eu' | 'us' | 'uk' | 'international',
+  'eu' | 'us' | 'uk',
   Partial<Record<DataCategory, string>>
 > = {
   eu: {
@@ -101,36 +101,14 @@ export const REGION_DEFAULTS: Record<
     angularVelocity: 'deg_per_min_0',
     percentage: 'pct_0',
   },
-  international: {
-    depth: 'm_1',
-    speed: 'kts_1',
-    wind: 'wind_kts_1',
-    temperature: 'c_1',
-    atmospheric_pressure: 'hpa_1',
-    mechanical_pressure: 'bar_1',
-    angle: 'deg_0',
-    coordinates: 'dd_6',
-    voltage: 'v_2',
-    current: 'a_2',
-    volume: 'l_0',
-    time: 'h_1',
-    distance: 'nm_1',
-    capacity: 'ah_0',
-    flowRate: 'lph_1',
-    frequency: 'hz_1',
-    power: 'kw_1',
-    rpm: 'rpm_0',
-    angularVelocity: 'deg_per_min_0',
-    percentage: 'pct_0',
-  },
 };
 
 export const usePresentationStore = create<PresentationSettings>()(
   persist(
     (set, get) => ({
-      // Initial state - use international as default region
-      selectedPresentations: REGION_DEFAULTS.international as Record<DataCategory, string>,
-      marineRegion: 'international',
+      // Initial state - use EU as default region
+      selectedPresentations: REGION_DEFAULTS.eu as Record<DataCategory, string>,
+      marineRegion: 'eu',
 
       // Actions
       setPresentationForCategory: (category: DataCategory, presentationId: string) => {
@@ -142,7 +120,7 @@ export const usePresentationStore = create<PresentationSettings>()(
         }));
       },
 
-      setMarineRegion: (region: 'eu' | 'us' | 'uk' | 'international') => {
+      setMarineRegion: (region: 'eu' | 'us' | 'uk') => {
         set((state) => {
           // Update region and apply region defaults
           const regionDefaults = REGION_DEFAULTS[region];
@@ -165,8 +143,8 @@ export const usePresentationStore = create<PresentationSettings>()(
       resetToDefaults: () => {
         const { marineRegion } = get();
         const regionDefaults = REGION_DEFAULTS[marineRegion];
-        // Start with international as base, then apply region overrides
-        const resetPresentations = { ...REGION_DEFAULTS.international } as Record<
+        // Start with EU as base, then apply region overrides
+        const resetPresentations = { ...REGION_DEFAULTS.eu } as Record<
           DataCategory,
           string
         >;
@@ -280,7 +258,7 @@ export function usePresentationReset() {
 
 // ===== REGION METADATA =====
 
-export type MarineRegion = 'eu' | 'us' | 'uk' | 'international';
+export type MarineRegion = 'eu' | 'us' | 'uk';
 
 export interface RegionMetadata {
   id: MarineRegion;
@@ -295,23 +273,18 @@ export function getRegionMetadata(): RegionMetadata[] {
   return [
     {
       id: 'eu',
-      name: 'Nautical (EU)',
+      name: 'EU',
       description: 'European sailing standard',
     },
     {
       id: 'uk',
-      name: 'Nautical (UK)',
+      name: 'UK',
       description: 'British sailing standard',
     },
     {
       id: 'us',
-      name: 'Nautical (USA)',
+      name: 'USA',
       description: 'US sailing standard',
-    },
-    {
-      id: 'international',
-      name: 'International',
-      description: 'SI/Metric maritime standard',
     },
   ];
 }
