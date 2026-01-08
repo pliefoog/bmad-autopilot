@@ -97,6 +97,7 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
       'chevron-back-outline',
       'chevron-forward-outline',
       'chevron-down-outline',
+      'chevron-up-outline',
       'volume-high-outline',
       // UI elements
       'add',

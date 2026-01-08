@@ -214,7 +214,7 @@ export const FormSection: React.FC<FormSectionProps> = React.memo(
 
           {/* Chevron icon */}
           <UniversalIcon
-            name={collapsed ? 'chevron-down' : 'chevron-up'}
+            name={collapsed ? 'chevron-down-outline' : 'chevron-up-outline'}
             size={20}
             color={theme.textSecondary}
           />

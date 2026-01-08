@@ -488,7 +488,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
               {showAdvanced ? 'Hide' : 'Show'} Advanced Units
             </Text>
             <UniversalIcon
-              name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+              name={showAdvanced ? 'chevron-up-outline' : 'chevron-down-outline'}
               size={20}
               color={theme.interactive}
             />
