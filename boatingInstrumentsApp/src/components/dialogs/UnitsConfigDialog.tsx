@@ -238,23 +238,26 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
   const [timezoneExpanded, setTimezoneExpanded] = useState(false);
 
   const presentationStore = usePresentationStore();
-  const { setPresentationForCategory, setMarineRegion, selectedPresentations } = presentationStore;
+  const { setPresentationForCategory, setMarineRegion, selectedPresentations, marineRegion } = presentationStore;
 
   const { gps, setGpsSetting } = useSettingsStore();
 
   // === INITIAL STATE ===
 
   const initialFormData = useMemo((): UnitsFormData => {
-    // Detect current preset
-    let detectedPreset: string = 'custom';
-    for (const preset of PRESETS) {
-      if (preset.id === 'custom') continue;
-      const matches = Object.entries(preset.presentations).every(
+    // Use marineRegion from store (already persisted)
+    // Only fallback to detection if user has customized individual units
+    let detectedPreset: string = marineRegion;
+    
+    // Check if current selections match the stored region preset
+    const regionPreset = PRESETS.find((p) => p.id === marineRegion);
+    if (regionPreset) {
+      const matches = Object.entries(regionPreset.presentations).every(
         ([cat, presId]) => selectedPresentations[cat as DataCategory] === presId,
       );
-      if (matches) {
-        detectedPreset = preset.id;
-        break;
+      // If selections don't match region preset, user has customized
+      if (!matches) {
+        detectedPreset = 'custom';
       }
     }
 
@@ -281,7 +284,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       coordinateFormat: gps.coordinateFormat,
       timezone: gps.timezone,
     };
-  }, [selectedPresentations, gps.coordinateFormat, gps.timezone]);
+  }, [selectedPresentations, marineRegion, gps.coordinateFormat, gps.timezone]);
 
   // === FORM STATE ===
 
