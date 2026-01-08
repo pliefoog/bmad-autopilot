@@ -18,7 +18,7 @@
 
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { UniversalIcon } from '../../atoms/UniversalIcon';
+import { UniversalIcon } from '../atoms/UniversalIcon';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import {
