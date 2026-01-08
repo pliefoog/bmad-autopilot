@@ -225,15 +225,15 @@ class ConversionRegistryService {
           ? { timezoneOffset: this.getTimezoneOffset(settings.gps.timezone) }
           : { timezoneOffset: this.getTimezoneOffset(settings.shipTime.timezone) };
 
-      // Format using datetime formatters
+      // Format using datetime formatters with presentation ID (not old settingsStore formats)
       if (category === 'time') {
-        const timeFormat = settings.gps.timeFormat;
-        const result = formatTime(value, timeFormat, timezoneOptions);
+        const timeFormat = presentation.id; // Use presentation ID (e.g., 'time_24h_full')
+        const result = formatTime(value, timeFormat as any, timezoneOptions);
         return includeUnit ? `${result.formatted} ${result.unitLabel}` : result.formatted;
       } else {
         // category === 'date'
-        const dateFormat = settings.gps.dateFormat;
-        const result = formatDate(value, dateFormat, timezoneOptions);
+        const dateFormat = presentation.id; // Use presentation ID (e.g., 'eu_date')
+        const result = formatDate(value, dateFormat as any, timezoneOptions);
         return includeUnit ? `${result.formatted} ${result.unitLabel}` : result.formatted;
       }
     }
