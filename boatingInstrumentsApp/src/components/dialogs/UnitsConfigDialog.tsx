@@ -425,8 +425,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
         <View style={[styles.infoBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <UniversalIcon name="information-circle" size={20} color={theme.interactive} />
           <Text style={[styles.infoText, { color: theme.text }]}>
-            Using <Text style={{ fontWeight: '600' }}>{currentPreset?.name}</Text> preset.
-            Switch to Custom to modify individual units.
+            Select <Text style={{ fontWeight: '600' }}>Custom</Text> to fully customize units and formatting for each metric.
           </Text>
         </View>
       ) : (
