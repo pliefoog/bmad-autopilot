@@ -228,11 +228,13 @@ class ConversionRegistryService {
       // Format using datetime formatters with presentation ID (not old settingsStore formats)
       if (category === 'time') {
         const timeFormat = presentation.id; // Use presentation ID (e.g., 'time_24h_full')
+        log.app('Formatting time', () => ({ format: timeFormat, value, timezoneOptions }));
         const result = formatTime(value, timeFormat as any, timezoneOptions);
         return includeUnit ? `${result.formatted} ${result.unitLabel}` : result.formatted;
       } else {
         // category === 'date'
         const dateFormat = presentation.id; // Use presentation ID (e.g., 'eu_date')
+        log.app('Formatting date', () => ({ format: dateFormat, value, timezoneOptions }));
         const result = formatDate(value, dateFormat as any, timezoneOptions);
         return includeUnit ? `${result.formatted} ${result.unitLabel}` : result.formatted;
       }
