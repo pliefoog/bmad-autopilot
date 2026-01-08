@@ -84,7 +84,7 @@ export const REGION_DEFAULTS: Record<
     speed: 'kts_1',
     wind: 'bf_0',
     temperature: 'c_1',
-    atmospheric_pressure: 'inhg_2',
+    atmospheric_pressure: 'hpa_1',
     mechanical_pressure: 'bar_1',
     angle: 'deg_0',
     coordinates: 'dms_1',

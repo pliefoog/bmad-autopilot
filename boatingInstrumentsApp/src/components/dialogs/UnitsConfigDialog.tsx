@@ -105,7 +105,7 @@ function buildPresetsFromStore(): PresentationPreset[] {
     uk: [
       { category: 'Depth', value: '3.0 fth' },
       { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013 mbar' },
+      { category: 'Pressure', value: '1013 hPa' },
       { category: 'Volume', value: '22 gal' },
     ],
     us: [
