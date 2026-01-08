@@ -332,6 +332,8 @@ export function validateRegionDefaults(): string[] {
     'current',
     'volume',
     'time',
+    'date',
+    'duration',
     'distance',
     'capacity',
     'flowRate',
