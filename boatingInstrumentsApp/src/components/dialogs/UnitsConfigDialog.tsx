@@ -367,9 +367,9 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
    * Handle dialog close
    * Saves immediately if form is dirty (bypasses debounce).
    */
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
     if (isDirty) {
-      saveNow(); // Immediate save on close
+      await saveNow(); // Await save completion before closing
     }
     onClose();
   }, [isDirty, saveNow, onClose]);
