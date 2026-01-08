@@ -70,8 +70,6 @@ interface UnitsConfigDialogProps {
 interface CategoryConfig {
   key: DataCategory;
   name: string;
-  iconName: string;
-  defaultCollapsed?: boolean; // Collapse less common categories
 }
 
 // === PRESET DEFINITIONS (LOADED FROM STORE) ===
@@ -98,43 +96,31 @@ interface PresentationPreset {
 function buildPresetsFromStore(): PresentationPreset[] {
   const regionMetadata = getRegionMetadata();
 
-  // Example values for preview (could be made dynamic in future)
+  // Example values for preview (representative samples for each region)
   const examplesByRegion: Record<MarineRegion, { category: string; value: string }[]> = {
     eu: [
       { category: 'Depth', value: '5.2 m' },
-      { category: 'Speed', value: '6.8 kts' },
-      { category: 'Wind', value: '12.5 kts' },
       { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013.2 mbar' },
-      { category: 'Distance', value: '2.4 NM' },
-      { category: 'Volume', value: '83.0 L' },
+      { category: 'Pressure', value: '1013 mbar' },
+      { category: 'Volume', value: '83 L' },
     ],
     uk: [
       { category: 'Depth', value: '3.0 fth' },
-      { category: 'Speed', value: '6.8 kts' },
-      { category: 'Wind', value: '12.5 kts' },
       { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013.2 mbar' },
-      { category: 'Distance', value: '2.4 NM' },
-      { category: 'Volume', value: '22.0 gal' },
+      { category: 'Pressure', value: '1013 mbar' },
+      { category: 'Volume', value: '22 gal' },
     ],
     us: [
       { category: 'Depth', value: '17.1 ft' },
-      { category: 'Speed', value: '6.8 kts' },
-      { category: 'Wind', value: '12.5 kts' },
       { category: 'Temperature', value: '65.3°F' },
       { category: 'Pressure', value: '29.92 inHg' },
-      { category: 'Distance', value: '2.4 NM' },
-      { category: 'Volume', value: '22.0 gal' },
+      { category: 'Volume', value: '22 gal' },
     ],
     international: [
       { category: 'Depth', value: '5.2 m' },
-      { category: 'Speed', value: '6.8 kts' },
-      { category: 'Wind', value: '12.5 kts' },
       { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013.2 mbar' },
-      { category: 'Distance', value: '2.4 NM' },
-      { category: 'Volume', value: '83.0 L' },
+      { category: 'Pressure', value: '1013 mbar' },
+      { category: 'Volume', value: '83 L' },
     ],
   };
 
@@ -164,41 +150,31 @@ const PRESETS = buildPresetsFromStore();
 // === CATEGORY DEFINITIONS ===
 
 const CATEGORIES: CategoryConfig[] = [
-  { key: 'depth', name: 'Depth', iconName: 'arrow-down-outline' },
-  { key: 'speed', name: 'Speed', iconName: 'arrow-forward-outline' },
-  { key: 'wind', name: 'Wind', iconName: 'cloud-outline' },
-  { key: 'temperature', name: 'Temperature', iconName: 'thermometer-outline' },
-  { key: 'pressure', name: 'Pressure', iconName: 'speedometer-outline', defaultCollapsed: true },
-  { key: 'angle', name: 'Angle', iconName: 'angle-outline', defaultCollapsed: true },
-  { key: 'coordinates', name: 'GPS Position', iconName: 'navigate-outline' },
-  { key: 'voltage', name: 'Voltage', iconName: 'cellular-outline' },
-  { key: 'current', name: 'Current', iconName: 'flash-outline', defaultCollapsed: true },
-  { key: 'volume', name: 'Volume (Tanks)', iconName: 'cube-outline' },
-  { key: 'time', name: 'Time', iconName: 'time-outline', defaultCollapsed: true },
-  { key: 'date', name: 'Date', iconName: 'calendar-outline', defaultCollapsed: true },
-  { key: 'duration', name: 'Duration', iconName: 'timer-outline', defaultCollapsed: true },
-  {
-    key: 'distance',
-    name: 'Distance',
-    iconName: 'arrows-horizontal-outline',
-    defaultCollapsed: true,
-  },
-  {
-    key: 'capacity',
-    name: 'Battery Capacity',
-    iconName: 'battery-charging-outline',
-    defaultCollapsed: true,
-  },
-  { key: 'flowRate', name: 'Flow Rate', iconName: 'water-outline', defaultCollapsed: true },
-  { key: 'frequency', name: 'Frequency (AC)', iconName: 'radio-outline', defaultCollapsed: true },
-  { key: 'power', name: 'Power', iconName: 'flash-outline', defaultCollapsed: true },
-  { key: 'rpm', name: 'RPM', iconName: 'speedometer-outline' },
+  { key: 'depth', name: 'Depth' },
+  { key: 'speed', name: 'Speed' },
+  { key: 'wind', name: 'Wind' },
+  { key: 'temperature', name: 'Temperature' },
+  { key: 'pressure', name: 'Pressure' },
+  { key: 'angle', name: 'Angle' },
+  { key: 'coordinates', name: 'GPS Position' },
+  { key: 'voltage', name: 'Voltage' },
+  { key: 'current', name: 'Current' },
+  { key: 'volume', name: 'Volume (Tanks)' },
+  { key: 'time', name: 'Time' },
+  { key: 'date', name: 'Date' },
+  { key: 'duration', name: 'Duration' },
+  { key: 'distance', name: 'Distance' },
+  { key: 'capacity', name: 'Battery Capacity' },
+  { key: 'flowRate', name: 'Flow Rate' },
+  { key: 'frequency', name: 'Frequency (AC)' },
+  { key: 'power', name: 'Power' },
+  { key: 'rpm', name: 'RPM' },
 ];
 
 // === ZOD SCHEMA ===
 
 const unitsFormSchema = z.object({
-  preset: z.enum(['nautical_eu', 'nautical_uk', 'nautical_us', 'custom']),
+  preset: z.enum(['eu', 'us', 'uk', 'international', 'custom']),
   // Category presentation IDs (strings matching formatSpec IDs)
   depth: z.string().optional(),
   speed: z.string().optional(),
@@ -234,8 +210,6 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
   const theme = useTheme();
   const platformTokens = getPlatformTokens();
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
-
-  const [timezoneExpanded, setTimezoneExpanded] = useState(false);
 
   const presentationStore = usePresentationStore();
   const { setPresentationForCategory, setMarineRegion, selectedPresentations, marineRegion } = presentationStore;
