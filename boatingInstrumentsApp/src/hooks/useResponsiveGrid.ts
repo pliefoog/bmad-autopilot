@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dimensions, Platform } from 'react-native';
+import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Platform breakpoints based on UI Architecture v2.3 specification
  * Extended for 4K+ displays
+ * Note: Phone breakpoint increased to 900 to accommodate modern phones in landscape
+ * (e.g., iPhone 14: 844pt wide in landscape)
  */
 const BREAKPOINTS = {
-  phone: 480, // ≤480px width
-  tablet: 1024, // 481px-1024px width
+  phone: 900, // ≤900px width (includes phones in landscape)
+  tablet: 1024, // 901px-1024px width
   desktop: 1920, // 1025px-1920px width (Full HD)
   largeDesktop: 1921, // >1920px width (4K+)
 } as const;
@@ -19,8 +22,8 @@ const BREAKPOINTS = {
  */
 const GRID_DENSITY = {
   phone: {
-    portrait: { cols: 2, rows: 3 }, // 2×3 grid (6 widgets per page)
-    landscape: { cols: 2, rows: 1 }, // 2×1 grid
+    portrait: { cols: 2, rows: 3 }, // 2×4 grid (8 widgets per page)
+    landscape: { cols: 3, rows: 1 }, // 4×2 grid (8 widgets per page)
   },
   tablet: {
     portrait: { cols: 2, rows: 3 }, // 2×3 grid (6 widgets)
@@ -60,27 +63,61 @@ export interface ResponsiveGridState {
   screenWidth: number;
   screenHeight: number;
   layout: GridLayout;
-  isLoading: boolean;
+  isLoading: boolean; // True during initial render to prevent accessing uninitialized stores
+  frameOffset: { x: number; y: number; right: number }; // Safe area frame offset from screen edges
 }
 
 /**
  * Hook for responsive grid calculations with platform-specific densities
  * Implements AC 1-5: Responsive Grid System requirements
+ * @param headerHeight Height of the header to subtract from available space
  */
-export const useResponsiveGrid = (headerHeight: number = 60): ResponsiveGridState => {
-  const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
+export const useResponsiveGrid = (
+  headerHeight: number = 60
+): ResponsiveGridState => {
+  // Use safe area insets - these directly provide padding values for all edges
+  const safeAreaInsets = useSafeAreaInsets();
+  
+  // Track screen dimensions
+  const [screenDimensions, setScreenDimensions] = useState(() => Dimensions.get('window'));
+  
+  // Calculate available space by subtracting insets from screen dimensions
+  // NOTE: We subtract left/right/bottom but NOT top - header handles top safe area
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>(() => {
+    const screen = Dimensions.get('window');
+    return {
+      width: screen.width - safeAreaInsets.left - safeAreaInsets.right,
+      height: screen.height - safeAreaInsets.bottom, // Only subtract bottom (home indicator)
+    };
+  });
   const [isLoading, setIsLoading] = useState(true);
 
-  // AC 4: Real-time adaptation to screen rotation and window resize events
+  // Update dimensions when safe area insets change OR when screen rotates
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setDimensions(window);
-    });
+    const updateDimensions = () => {
+      const newScreenDimensions = Dimensions.get('window');
+      setScreenDimensions(newScreenDimensions);
+      
+      setDimensions({
+        width: newScreenDimensions.width - safeAreaInsets.left - safeAreaInsets.right,
+        height: newScreenDimensions.height - safeAreaInsets.bottom, // Only subtract bottom (home indicator)
+      });
+    };
 
-    // Mark as loaded after first render - gives stores time to initialize
+    // Update on mount and when insets change
+    updateDimensions();
+
+    // Also listen for Dimensions change events (rotation, split-screen, etc.)
+    const subscription = Dimensions.addEventListener('change', updateDimensions);
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [safeAreaInsets.top, safeAreaInsets.right, safeAreaInsets.bottom, safeAreaInsets.left]);
+
+  // Mark as loaded after first render - gives stores time to initialize
+  useEffect(() => {
     setIsLoading(false);
-
-    return () => subscription?.remove();
   }, []);
 
   // Determine current platform based on screen width
@@ -97,11 +134,12 @@ export const useResponsiveGrid = (headerHeight: number = 60): ResponsiveGridStat
   }, [dimensions.width, dimensions.height]);
 
   // Calculate available space for dashboard content
-  // Note: No footer exists, pagination overlays bottom row
+  // useSafeAreaFrame already provides dimensions AFTER safe areas (notch, home indicator)
+  // Only subtract header height, NOT bottomInset (would be double-accounting)
   const availableSpace = useMemo(() => {
     return {
-      width: dimensions.width, // Full width (no horizontal padding)
-      height: dimensions.height - headerHeight, // Only subtract header height
+      width: dimensions.width,
+      height: dimensions.height - headerHeight,
     };
   }, [dimensions, headerHeight]);
 
@@ -146,6 +184,11 @@ export const useResponsiveGrid = (headerHeight: number = 60): ResponsiveGridStat
     screenHeight: dimensions.height,
     layout,
     isLoading,
+    frameOffset: { 
+      x: safeAreaInsets.left,     // Left notch padding
+      y: 0,                        // No top padding - header handles top safe area
+      right: safeAreaInsets.right, // Right notch padding
+    },
   };
 };
 

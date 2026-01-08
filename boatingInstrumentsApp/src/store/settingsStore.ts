@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, devtools } from 'zustand/middleware';
+import { persist, devtools, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // Theme compliance validation moved to development-only environment
 
 export type ThemeMode = 'day' | 'night' | 'red-night' | 'auto';
@@ -553,6 +554,7 @@ export const useSettingsStore = create<SettingsStore>()(
       }),
       {
         name: 'settings-store',
+        storage: createJSONStorage(() => AsyncStorage),
         // Persist everything except developer settings which should reset
         partialize: (state) => {
           const { developer, ...persistedState } = state;

@@ -8,9 +8,9 @@ import {
   ScrollView,
   Dimensions,
   Platform,
-  SafeAreaView,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';

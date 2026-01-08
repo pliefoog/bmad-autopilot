@@ -13,7 +13,7 @@
  * - Confirms via platform-native Alert on mobile platforms
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
@@ -36,9 +36,12 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   const platformTokens = getPlatformTokens();
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
-  const handleConfirm = async () => {
-    // For mobile platforms, use React Native Alert instead of the modal
-    if (Platform.OS !== 'web') {
+  // On mobile platforms, show native Alert immediately when visible becomes true
+  useEffect(() => {
+    if (visible && Platform.OS !== 'web') {
+      // Call onCancel first to reset parent state, then show Alert
+      onCancel();
+      
       Alert.alert(
         'Factory Reset Confirmation',
         'This will completely restore the app to its initial state:\n\n' +
@@ -53,7 +56,6 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
           {
             text: 'Cancel',
             style: 'cancel',
-            onPress: onCancel,
           },
           {
             text: 'Factory Reset',
@@ -61,16 +63,22 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
             onPress: onConfirm,
           },
         ],
-        { cancelable: true, onDismiss: onCancel },
+        { cancelable: true },
       );
-      return;
     }
+  }, [visible, onConfirm, onCancel]);
 
-    // For web and modal display, proceed with the action
+  // For web, use modal with button
+  const handleConfirm = async () => {
     await onConfirm();
   };
 
-  // Use BaseConfigDialog with destructive action button
+  // On mobile, don't render the modal (Alert is shown instead)
+  if (Platform.OS !== 'web') {
+    return null;
+  }
+
+  // Use BaseConfigDialog with destructive action button (web only)
   return (
     <BaseConfigDialog
       visible={visible}

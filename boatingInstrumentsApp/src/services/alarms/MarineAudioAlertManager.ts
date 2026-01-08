@@ -53,13 +53,17 @@ export const SOUND_PATTERNS: SoundPatternMetadata[] = [
   },
 ];
 
-// Conditionally import expo-av only on mobile platforms
-let Audio: any = null;
+// Conditionally import expo-audio only on mobile platforms
+let setAudioModeAsync: any = null;
+let useAudioPlayer: any = null;
 if (Platform.OS === 'ios' || Platform.OS === 'android') {
   try {
-    Audio = require('expo-av').Audio;
+    // expo-av deprecated in SDK 54, replaced by expo-audio
+    const expoAudio = require('expo-audio');
+    setAudioModeAsync = expoAudio.setAudioModeAsync;
+    useAudioPlayer = expoAudio.useAudioPlayer;
   } catch (error) {
-    console.warn('MarineAudioAlertManager: expo-av not available on this platform');
+    console.warn('MarineAudioAlertManager: expo-audio not available on this platform');
   }
 }
 
@@ -175,13 +179,13 @@ export class MarineAudioAlertManager {
    */
   private async initializeIOSAudio(): Promise<void> {
     try {
-      if (!Audio) {
-        console.warn('MarineAudioAlertManager: expo-av Audio not available');
+      if (!setAudioModeAsync) {
+        console.warn('MarineAudioAlertManager: expo-audio Audio not available');
         return;
       }
 
-      // Configure expo-av audio mode for iOS alarms
-      await Audio.setAudioModeAsync({
+      // Configure expo-audio mode for iOS alarms
+      await setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true, // Critical: play alarms even in silent mode
         staysActiveInBackground: true,
@@ -198,13 +202,13 @@ export class MarineAudioAlertManager {
    */
   private async initializeAndroidAudio(): Promise<void> {
     try {
-      if (!Audio) {
-        console.warn('MarineAudioAlertManager: expo-av Audio not available');
+      if (!setAudioModeAsync) {
+        console.warn('MarineAudioAlertManager: expo-audio Audio not available');
         return;
       }
 
-      // Configure expo-av audio mode for Android alarms
-      await Audio.setAudioModeAsync({
+      // Configure expo-audio mode for Android alarms
+      await setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
@@ -292,7 +296,7 @@ export class MarineAudioAlertManager {
             this.gainNodes.delete(alarmType.toString());
           }
         } else if (Platform.OS === 'ios' || Platform.OS === 'android') {
-          // Stop expo-av Sound object
+          // Stop expo-audio Sound object
           try {
             if (activeSound.stopAsync) {
               await activeSound.stopAsync();
@@ -592,7 +596,7 @@ export class MarineAudioAlertManager {
         // Use React Native Sound or Expo AV for mobile platforms
         // This requires additional setup with sound libraries
 
-        // Example with expo-av:
+        // Example with expo-audio:
         // const { sound } = await Audio.Sound.createAsync(
         //   { uri: filename },
         //   {
@@ -679,7 +683,7 @@ export class MarineAudioAlertManager {
   }
 
   /**
-   * Generate alarm sound for iOS/Android using expo-av
+   * Generate alarm sound for iOS/Android using expo-audio
    */
   private async generateMobileAudioAlarm(
     alarmType: CriticalAlarmType,
@@ -687,9 +691,9 @@ export class MarineAudioAlertManager {
     escalationLevel: AlarmEscalationLevel,
   ): Promise<boolean> {
     try {
-      if (!Audio) {
+      if (!useAudioPlayer) {
         console.error(
-          'MarineAudioAlertManager: expo-av Audio not available for mobile alarm generation',
+          'MarineAudioAlertManager: expo-audio Audio not available for mobile alarm generation',
         );
         return false;
       }

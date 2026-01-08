@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, devtools } from 'zustand/middleware';
+import { persist, devtools, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { log } from '../utils/logging/logger';
 import type { DetectedWidgetInstance } from '../services/WidgetRegistrationService';
 import { DRAG_CONFIG } from '../config/dragConfig';
@@ -312,11 +313,6 @@ export const useWidgetStore = create<WidgetStore>()(
               const age = now - sensorTimestamp;
               const isFresh = age <= timeout + GRACE_PERIOD;
               
-              // Log for engine widgets when debugging
-              if (widget.type === 'engine') {
-                console.log(`⏱️ [cleanupExpiredWidgets] ${widget.id}: ${dep.sensorType}[${targetInstance}].${dep.metricName} age=${(age/1000).toFixed(1)}s, timeout=${(timeout/1000).toFixed(1)}s, fresh=${isFresh}`);
-              }
-              
               return isFresh; // Fresh enough
             });
 
@@ -579,6 +575,7 @@ export const useWidgetStore = create<WidgetStore>()(
       }),
       {
         name: 'widget-store',
+        storage: createJSONStorage(() => AsyncStorage),
         partialize: (state) => ({
           dashboard: {
             ...state.dashboard,

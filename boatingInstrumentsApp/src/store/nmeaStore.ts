@@ -118,7 +118,7 @@ let lastAlarmEvaluation = 0;
 
 // Update throttle to prevent infinite loops from rapid setState calls
 // React has a limit of ~50 nested updates before throwing "Maximum update depth exceeded"
-const UPDATE_THROTTLE_MS = 10; // Allow max 100 updates/second per sensor
+const UPDATE_THROTTLE_MS = 100; // Allow max 10 updates/second per sensor (prevent infinite loop in iOS StrictMode)
 const lastUpdateTime = new Map<string, number>(); // Track last update per sensor instance
 
 /**

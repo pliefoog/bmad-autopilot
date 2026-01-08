@@ -17,9 +17,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { ConnectionConfigDialog } from '../dialogs/ConnectionConfigDialog';

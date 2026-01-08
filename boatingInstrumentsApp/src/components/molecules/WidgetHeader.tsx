@@ -58,12 +58,19 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
           />
         )}
         <View style={styles.titleContainer}>
-          <Text style={[styles.title, titleStyle]} testID={testID ? `${testID}-title` : undefined}>
+          <Text 
+            style={[styles.title, titleStyle]} 
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            testID={testID ? `${testID}-title` : undefined}
+          >
             {title}
           </Text>
           {subtitle && (
             <Text
               style={[styles.subtitle, subtitleStyle]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
               testID={testID ? `${testID}-subtitle` : undefined}
             >
               {subtitle}

@@ -16,10 +16,12 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
+  useAnimatedRef,
 } from 'react-native-reanimated';
 import { useTheme } from '../../store/themeStore';
 import { useWidgetStore } from '../../store/widgetStore';
 import { useResponsiveGrid, type ResponsiveGridState } from '../../hooks/useResponsiveGrid';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PaginationDots } from '../molecules/PaginationDots';
 import {
   calculatePageLayouts,
@@ -107,7 +109,11 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const theme = useTheme();
 
   // Responsive grid system (AC 1-5)
+  // useSafeAreaFrame provides all safe area dimensions - no need to pass insets
   const responsiveGrid: ResponsiveGridState = useResponsiveGrid(headerHeight);
+  
+  // Get safe area insets for pagination positioning (bottom varies: 34px portrait, 21px landscape)
+  const safeAreaInsets = useSafeAreaInsets();
 
   // Widget store integration - use actual widget array (must be called before any conditional returns)
   const dashboard = useWidgetStore((state) => state.dashboard);
@@ -153,7 +159,7 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
   const translateY = useSharedValue(0);
 
   // Animation values for page transitions (AC 10)
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useAnimatedRef<Animated.ScrollView>();
   const pageAnimatedValue = useRef(new RNAnimated.Value(0)).current;
   const [scrollViewWidth, setScrollViewWidth] = useState(0);
   const handleScrollViewLayout = useCallback((event: any) => {
@@ -1034,33 +1040,47 @@ export const ResponsiveDashboard: React.FC<ResponsiveDashboardProps> = ({
       }`}
     >
       {/* Main dashboard area - AC 11: Header-Dashboard-Footer Hierarchy */}
-      <GestureDetector gesture={dashboardGesture}>
-        <View style={styles.dashboardArea}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal={shouldUsePagination}
-            pagingEnabled={shouldUsePagination}
-            showsHorizontalScrollIndicator={false}
-            showsVerticalScrollIndicator={!shouldUsePagination}
-            scrollEnabled={!isDragging} // Disable scroll during widget drag
-            onLayout={handleScrollViewLayout}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            style={styles.scrollView}
-            contentContainerStyle={shouldUsePagination ? styles.scrollViewContent : styles.scrollViewContentVertical}
-            testID="dashboard-scroll-view"
-            // AC 19: Accessibility
-            accessible={false} // Let individual widgets be accessible
-          >
-            {pageLayouts.map((pageLayout) => renderPage(pageLayout, pageLayout.pageIndex))}
-          </ScrollView>
-        </View>
-      </GestureDetector>
+      {/* Apply safe area frame offset to position content correctly */}
+      <View style={[
+        styles.dashboardArea,
+        {
+          paddingLeft: responsiveGrid.frameOffset.x,
+          paddingRight: responsiveGrid.frameOffset.right,
+          paddingTop: responsiveGrid.frameOffset.y,
+        }
+      ]}>
+        <Animated.ScrollView
+          ref={scrollViewRef}
+          horizontal={shouldUsePagination}
+          pagingEnabled={shouldUsePagination}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={!shouldUsePagination}
+          scrollEnabled={!isDragging} // Disable scroll during widget drag
+          onLayout={handleScrollViewLayout}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.scrollView}
+          contentContainerStyle={shouldUsePagination ? styles.scrollViewContent : styles.scrollViewContentVertical}
+          testID="dashboard-scroll-view"
+          // AC 19: Accessibility
+          accessible={false} // Let individual widgets be accessible
+        >
+          {pageLayouts.map((pageLayout) => renderPage(pageLayout, pageLayout.pageIndex))}
+        </Animated.ScrollView>
+        
+        {/* Gesture overlay for drag-and-drop (plain View for StrictMode compatibility) */}
+        <GestureDetector gesture={dashboardGesture}>
+          <View
+            style={StyleSheet.absoluteFill}
+            pointerEvents={isDragging ? 'auto' : 'box-none'}
+          />
+        </GestureDetector>
+      </View>
 
       {/* Pagination dots - AC 6: Page Indicator Dots (Overlays bottom of widgets) */}
       {/* Only show pagination dots when using pagination (multi-column grids) */}
       {shouldUsePagination ? (
-        <View style={styles.paginationOverlay}>
+        <View style={[styles.paginationOverlay, { bottom: safeAreaInsets.bottom }]}>
           <PaginationDots
             currentPage={currentPage}
             totalPages={totalPages}
@@ -1132,7 +1152,7 @@ const styles = StyleSheet.create({
   },
   paginationOverlay: {
     position: 'absolute',
-    bottom: 0,
+    // bottom: dynamic via safeAreaInsets.bottom (34px portrait, 21px landscape)
     left: 0,
     right: 0,
     zIndex: 10,

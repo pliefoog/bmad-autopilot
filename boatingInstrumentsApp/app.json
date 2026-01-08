@@ -29,7 +29,8 @@
         {
           "android": {
             "enableProguardInReleaseBuilds": false,
-            "enableShrinkResourcesInReleaseBuilds": false
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "enableMinifyInReleaseBuilds": false
           }
         }
       ]
@@ -42,8 +43,19 @@
       "supportsTablet": true,
       "requireFullScreen": false,
       "infoPlist": {
-        "UISupportedDevices": ["iPad"],
-        "UIDeviceFamily": [2]
+        "UIDeviceFamily": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "extra": {
+      "router": {
+        "root": "./app"
+      },
+      "eas": {
+        "projectId": "86632359-95a0-46b6-8e37-0616b37b3ec8"
       }
     }
   }

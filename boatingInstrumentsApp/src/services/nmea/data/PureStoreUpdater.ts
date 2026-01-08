@@ -41,6 +41,11 @@ export class PureStoreUpdater {
   // Throttling management
   private lastUpdateTimes: Map<string, number> = new Map();
   private readonly DEFAULT_THROTTLE_MS = 1000; // 1 second default throttling
+  
+  // Global message-level throttling to prevent iOS "Maximum update depth exceeded"
+  // iOS processes messages faster than web, causing too many rapid store updates
+  private lastMessageProcessTime = 0;
+  private readonly MESSAGE_THROTTLE_MS = 50; // Minimum 50ms between message processing
 
   // Update statistics
   private updateCount = 0;
@@ -88,6 +93,19 @@ export class PureStoreUpdater {
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
     try {
+      // CRITICAL: Global message-level throttling for iOS
+      // Prevents "Maximum update depth exceeded" by spacing out message processing
+      const now = Date.now();
+      if (now - this.lastMessageProcessTime < this.MESSAGE_THROTTLE_MS) {
+        return {
+          updated: false,
+          throttled: true,
+          batchedFields: [],
+          reason: `Message throttled (${now - this.lastMessageProcessTime}ms since last)`,
+        };
+      }
+      this.lastMessageProcessTime = now;
+
       // Detect message format (NMEA 0183 vs NMEA 2000)
       const messageFormat = this.detectMessageFormat(parsedMessage);
 

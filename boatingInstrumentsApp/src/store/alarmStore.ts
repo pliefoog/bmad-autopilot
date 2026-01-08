@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, devtools } from 'zustand/middleware';
+import { persist, devtools, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CriticalAlarmType } from '../services/alarms/types';
 import { AlarmLevel } from '../types/AlarmTypes';
 
@@ -447,6 +448,7 @@ export const useAlarmStore = create<AlarmStore>()(
       }),
       {
         name: 'alarm-store',
+        storage: createJSONStorage(() => AsyncStorage),
         version: STORAGE_VERSION,
 
         partialize: (state) => ({

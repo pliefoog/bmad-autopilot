@@ -4,7 +4,6 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "postinstall": "node scripts/fix-workspace-modules.js",
     "android": "expo run:android",
     "android:clean": "bash scripts/android-clean-build.sh",
     "android:rebuild": "bash scripts/android-rebuild.sh",
@@ -57,7 +56,7 @@
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "expo": "^54.0.20",
-    "expo-av": "~16.0.8",
+    "expo-audio": "~1.1.1",
     "expo-brightness": "^14.0.7",
     "expo-dev-client": "~6.0.19",
     "expo-haptics": "^15.0.8",

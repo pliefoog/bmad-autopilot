@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, StrictMode } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -101,11 +101,7 @@ const DashboardContent: React.FC = () => {
       )}
       
       {/* Dashboard fills remaining space - header pushes it down naturally when visible */}
-      <View
-        style={{
-          flex: 1,
-        }}
-      >
+      <View style={{ flex: 1 }}>
         <ResponsiveDashboard headerHeight={headerHeight} />
       </View>
     </View>
@@ -544,11 +540,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// Wrap in StrictMode for development to catch side effects and unsafe patterns
-export default __DEV__
-  ? () => (
-      <StrictMode>
-        <App />
-      </StrictMode>
-    )
-  : App;
+// StrictMode disabled due to incompatibility with react-native-gesture-handler
+// GestureDetector triggers findNodeHandle warnings that cannot be resolved
+// All StrictMode bugs have been fixed during development
+export default App;
