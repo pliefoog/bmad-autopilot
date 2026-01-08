@@ -122,13 +122,9 @@ interface SettingsState {
 
   gps: {
     coordinateFormat: 'decimal_degrees' | 'degrees_minutes' | 'degrees_minutes_seconds' | 'utm';
-    dateFormat: 'iso_date' | 'us_date' | 'eu_date' | 'uk_date' | 'nautical_date';
-    timeFormat: 'time_24h_full' | 'time_24h' | 'time_12h_full' | 'time_12h' | 'time_compact';
     timezone: string; // Timezone ID from MARITIME_TIMEZONES
   };
   shipTime: {
-    dateFormat: 'iso_date' | 'us_date' | 'eu_date' | 'uk_date' | 'nautical_date';
-    timeFormat: 'time_24h_full' | 'time_24h' | 'time_12h_full' | 'time_12h' | 'time_compact';
     timezone: string; // Timezone ID from MARITIME_TIMEZONES
   };
   display: {
@@ -212,13 +208,9 @@ const defaultSettings: SettingsState = {
   },
   gps: {
     coordinateFormat: 'degrees_minutes',
-    dateFormat: 'nautical_date',
-    timeFormat: 'time_24h_full',
     timezone: 'utc',
   },
   shipTime: {
-    dateFormat: 'nautical_date',
-    timeFormat: 'time_24h_full',
     timezone: 'local_device',
   },
   display: {
