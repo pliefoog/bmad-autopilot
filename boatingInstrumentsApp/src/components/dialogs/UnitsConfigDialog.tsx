@@ -16,8 +16,9 @@
  * - Current: ~580 lines (includes form state, validation, auto-save, 19 categories, 4 presets)
  */
 
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { UniversalIcon } from '../../atoms/UniversalIcon';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import {
@@ -61,10 +62,12 @@ interface UnitsConfigDialogProps {
 /**
  * Category Configuration
  * Defines display properties for each unit category
+ * isAdvanced: true = collapsed by default for cleaner mobile UX
  */
 interface CategoryConfig {
   key: DataCategory;
   name: string;
+  isAdvanced?: boolean; // Hide in collapsed view (progressive disclosure)
 }
 
 // === PRESET DEFINITIONS (LOADED FROM STORE) ===
@@ -145,25 +148,28 @@ const PRESETS = buildPresetsFromStore();
 // === CATEGORY DEFINITIONS ===
 
 const CATEGORIES: CategoryConfig[] = [
+  // Essential marine categories (always visible)
   { key: 'depth', name: 'Depth' },
   { key: 'speed', name: 'Speed' },
   { key: 'wind', name: 'Wind' },
   { key: 'temperature', name: 'Temperature' },
-  { key: 'pressure', name: 'Pressure' },
-  { key: 'angle', name: 'Angle' },
   { key: 'coordinates', name: 'GPS Position' },
-  { key: 'voltage', name: 'Voltage' },
-  { key: 'current', name: 'Current' },
   { key: 'volume', name: 'Volume (Tanks)' },
-  { key: 'time', name: 'Time' },
-  { key: 'date', name: 'Date' },
-  { key: 'duration', name: 'Duration' },
-  { key: 'distance', name: 'Distance' },
-  { key: 'capacity', name: 'Battery Capacity' },
-  { key: 'flowRate', name: 'Flow Rate' },
-  { key: 'frequency', name: 'Frequency (AC)' },
-  { key: 'power', name: 'Power' },
-  { key: 'rpm', name: 'RPM' },
+  
+  // Advanced categories (collapsed by default for cleaner mobile UX)
+  { key: 'pressure', name: 'Pressure', isAdvanced: true },
+  { key: 'angle', name: 'Angle', isAdvanced: true },
+  { key: 'voltage', name: 'Voltage', isAdvanced: true },
+  { key: 'current', name: 'Current', isAdvanced: true },
+  { key: 'time', name: 'Time', isAdvanced: true },
+  { key: 'date', name: 'Date', isAdvanced: true },
+  { key: 'duration', name: 'Duration', isAdvanced: true },
+  { key: 'distance', name: 'Distance', isAdvanced: true },
+  { key: 'capacity', name: 'Battery Capacity', isAdvanced: true },
+  { key: 'flowRate', name: 'Flow Rate', isAdvanced: true },
+  { key: 'frequency', name: 'Frequency (AC)', isAdvanced: true },
+  { key: 'power', name: 'Power', isAdvanced: true },
+  { key: 'rpm', name: 'RPM', isAdvanced: true },
 ];
 
 // === ZOD SCHEMA ===
@@ -205,6 +211,9 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
   const theme = useTheme();
   const platformTokens = getPlatformTokens();
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
+
+  // Progressive disclosure: collapse advanced categories by default for cleaner mobile UX
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const presentationStore = usePresentationStore();
   const { setPresentationForCategory, setMarineRegion, selectedPresentations, marineRegion } = presentationStore;
@@ -417,65 +426,127 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       {/* Section divider */}
       <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-      {/* Locked mode hint */}
-      {formData.preset !== 'custom' && (
-        <View style={[styles.lockHintBox, { backgroundColor: `${theme.textSecondary}08` }]}>
-          <Text style={[styles.lockHintText, { color: theme.textSecondary }]}>
-            💡 Switch to Custom preset to modify individual units
+      {/* Smart context-aware hint */}
+      {formData.preset !== 'custom' ? (
+        <View style={[styles.infoBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <UniversalIcon name="information-circle" size={20} color={theme.interactive} />
+          <Text style={[styles.infoText, { color: theme.text }]}>
+            Using <Text style={{ fontWeight: '600' }}>{currentPreset?.name}</Text> preset.
+            Switch to Custom to modify individual units.
           </Text>
         </View>
+      ) : (
+        <>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Essential Units</Text>
+          
+          {/* Essential categories - always visible */}
+          {CATEGORIES.filter((cat) => !cat.isAdvanced).map((category) => {
+            const presentations = PRESENTATIONS[category.key]?.presentations || [];
+            const selectedPresId = formData[category.key];
+
+            return (
+              <View key={category.key} style={styles.categorySection}>
+                <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+
+                <View style={styles.unitsGrid}>
+                  {presentations.map((pres) => (
+                    <TouchableOpacity
+                      key={pres.id}
+                      style={[
+                        styles.unitButton,
+                        { backgroundColor: theme.surface, borderColor: theme.border },
+                        selectedPresId === pres.id && {
+                          borderColor: theme.interactive,
+                          backgroundColor: `${theme.interactive}15`,
+                        },
+                      ]}
+                      onPress={() => handleUnitSelect(category.key, pres.id)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selectedPresId === pres.id }}
+                      accessibilityLabel={getPresentationConfigLabel(pres)}
+                    >
+                      <Text
+                        style={[
+                          styles.unitText,
+                          { color: theme.textSecondary },
+                          selectedPresId === pres.id && {
+                            color: theme.text,
+                            fontWeight: '600',
+                          },
+                        ]}
+                      >
+                        {getPresentationConfigLabel(pres)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Advanced categories - collapsible */}
+          <TouchableOpacity
+            style={styles.advancedToggle}
+            onPress={() => setShowAdvanced(!showAdvanced)}
+            accessibilityRole="button"
+            accessibilityLabel={showAdvanced ? 'Hide advanced units' : 'Show advanced units'}
+          >
+            <Text style={[styles.advancedToggleText, { color: theme.interactive }]}>
+              {showAdvanced ? 'Hide' : 'Show'} Advanced Units
+            </Text>
+            <UniversalIcon
+              name={showAdvanced ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color={theme.interactive}
+            />
+          </TouchableOpacity>
+
+          {showAdvanced &&
+            CATEGORIES.filter((cat) => cat.isAdvanced).map((category) => {
+              const presentations = PRESENTATIONS[category.key]?.presentations || [];
+              const selectedPresId = formData[category.key];
+
+              return (
+                <View key={category.key} style={styles.categorySection}>
+                  <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+
+                  <View style={styles.unitsGrid}>
+                    {presentations.map((pres) => (
+                      <TouchableOpacity
+                        key={pres.id}
+                        style={[
+                          styles.unitButton,
+                          { backgroundColor: theme.surface, borderColor: theme.border },
+                          selectedPresId === pres.id && {
+                            borderColor: theme.interactive,
+                            backgroundColor: `${theme.interactive}15`,
+                          },
+                        ]}
+                        onPress={() => handleUnitSelect(category.key, pres.id)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: selectedPresId === pres.id }}
+                        accessibilityLabel={getPresentationConfigLabel(pres)}
+                      >
+                        <Text
+                          style={[
+                            styles.unitText,
+                            { color: theme.textSecondary },
+                            selectedPresId === pres.id && {
+                              color: theme.text,
+                              fontWeight: '600',
+                            },
+                          ]}
+                        >
+                          {getPresentationConfigLabel(pres)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+        </>
       )}
-
-      {/* Individual Category Sections */}
-      {CATEGORIES.map((category) => {
-        const presentations = PRESENTATIONS[category.key]?.presentations || [];
-        const selectedPresId = formData[category.key];
-        const isCustomMode = formData.preset === 'custom';
-
-        return (
-          <View key={category.key} style={styles.categorySection}>
-            <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
-
-            <View style={styles.unitsGrid}>
-              {presentations.map((pres) => (
-                <TouchableOpacity
-                  key={pres.id}
-                  style={[
-                    styles.unitButton,
-                    { backgroundColor: theme.surface, borderColor: theme.border },
-                    selectedPresId === pres.id && {
-                      borderColor: theme.interactive,
-                      backgroundColor: `${theme.interactive}15`,
-                    },
-                    !isCustomMode && { opacity: 0.5 },
-                  ]}
-                  onPress={() => isCustomMode && handleUnitSelect(category.key, pres.id)}
-                  disabled={!isCustomMode}
-                  accessibilityRole="radio"
-                  accessibilityState={{
-                    checked: selectedPresId === pres.id,
-                    disabled: !isCustomMode,
-                  }}
-                  accessibilityLabel={getPresentationConfigLabel(pres)}
-                >
-                  <Text
-                    style={[
-                      styles.unitText,
-                      { color: theme.textSecondary },
-                      selectedPresId === pres.id && {
-                        color: theme.text,
-                        fontWeight: '600',
-                      },
-                    ]}
-                  >
-                    {getPresentationConfigLabel(pres)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        );
-      })}
     </BaseConfigDialog>
   );
 };
@@ -536,18 +607,36 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     },
     divider: {
       height: 1,
-      marginVertical: 28,
+      marginVertical: 24,
     },
-    lockHintBox: {
+    infoBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
       padding: 12,
       borderRadius: 8,
-      marginBottom: 16,
+      borderWidth: 1,
+      marginBottom: 24,
     },
-    lockHintText: {
+    infoText: {
+      flex: 1,
       fontSize: platformTokens.typography.caption.fontSize,
       fontFamily: platformTokens.typography.fontFamily,
-      textAlign: 'center',
       lineHeight: platformTokens.typography.caption.lineHeight,
+    },
+    advancedToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingVertical: 16,
+      marginTop: 8,
+      marginBottom: 16,
+    },
+    advancedToggleText: {
+      fontSize: platformTokens.typography.body.fontSize,
+      fontFamily: platformTokens.typography.fontFamily,
+      fontWeight: '600',
     },
     categorySection: {
       marginBottom: 24,
