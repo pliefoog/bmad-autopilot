@@ -184,7 +184,16 @@ export const usePresentationStore = create<PresentationSettings>()(
         getItem: async (name: string) => {
           try {
             const value = await AsyncStorage.getItem(name);
-            return value ? JSON.parse(value) : null;
+            if (value) {
+              const parsed = JSON.parse(value);
+              // Migration: Convert old 'international' region to 'eu'
+              if (parsed.state?.marineRegion === 'international') {
+                parsed.state.marineRegion = 'eu';
+                console.log('[PresentationStore] Migrated international region to eu');
+              }
+              return parsed;
+            }
+            return null;
           } catch (error) {
             console.warn('[PresentationStore] Failed to load settings:', error);
             return null;
@@ -301,7 +310,7 @@ export function getRegionMetadata(): RegionMetadata[] {
  */
 export function validateRegionDefaults(): string[] {
   const issues: string[] = [];
-  const regions: MarineRegion[] = ['eu', 'us', 'uk', 'international'];
+  const regions: MarineRegion[] = ['eu', 'us', 'uk'];
 
   // All DataCategories that should have regional defaults
   const requiredCategories: DataCategory[] = [
