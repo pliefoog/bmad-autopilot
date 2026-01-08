@@ -238,7 +238,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
   const [timezoneExpanded, setTimezoneExpanded] = useState(false);
 
   const presentationStore = usePresentationStore();
-  const { setPresentationForCategory, selectedPresentations } = presentationStore;
+  const { setPresentationForCategory, setMarineRegion, selectedPresentations } = presentationStore;
 
   const { gps, setGpsSetting } = useSettingsStore();
 
@@ -288,6 +288,11 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
   const { formData, updateField, updateFields, reset, isDirty, saveNow } =
     useFormState<UnitsFormData>(initialFormData, {
       onSave: (data) => {
+        // Save the marine region if a preset is selected (not custom)
+        if (data.preset && data.preset !== 'custom') {
+          setMarineRegion(data.preset as MarineRegion);
+        }
+
         // Apply all category selections to presentation store
         CATEGORIES.forEach(({ key }) => {
           if (data[key]) {
