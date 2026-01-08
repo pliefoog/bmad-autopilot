@@ -13,12 +13,11 @@
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
  * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
  * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
- *
- * Original: 470 lines | Refactored: 537 lines (14% increase due to Zod schema + preset preview feature)
+ * - Current: ~580 lines (includes form state, validation, auto-save, 19 categories, 4 presets)
  */
 
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useMemo, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import {
@@ -28,11 +27,7 @@ import {
   MarineRegion,
 } from '../../presentation/presentationStore';
 import { DataCategory } from '../../presentation/categories';
-import {
-  PRESENTATIONS,
-  Presentation,
-  getPresentationConfigLabel,
-} from '../../presentation/presentations';
+import { PRESENTATIONS, getPresentationConfigLabel } from '../../presentation/presentations';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { useFormState } from '../../hooks/useFormState';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -404,7 +399,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       </View>
 
       {/* Preset Preview */}
-      {currentPreset && currentPreset.examples.length > 0 ? (
+      {currentPreset?.examples.length > 0 && (
         <View
           style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}
         >
@@ -417,7 +412,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
             ))}
           </View>
         </View>
-      ) : null}
+      )}
 
       {/* Section divider */}
       <View style={[styles.divider, { backgroundColor: theme.border }]} />
