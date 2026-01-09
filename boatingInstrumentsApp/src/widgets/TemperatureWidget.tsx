@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { TrendLine } from '../components/TrendLine';
-import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
@@ -32,6 +31,8 @@ interface TemperatureWidgetProps {
  * **Multi-Instance Support:**
  * Supports multiple temperature sensors (seawater, engine, cabin, exhaust, etc.)
  * Instance number extracted from widget ID (e.g., "temp-0", "temperature-1")
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -40,21 +41,11 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Get SensorInstance - single source of truth
-  const temperatureSensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.temperature?.[instanceNumber],
-  );
-
-  // Subscribe to timestamp to trigger re-renders when data changes
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.temperature?.[instanceNumber]?.timestamp,
-  );
-
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
-      sensorInstance={temperatureSensorInstance}
       sensorType="temperature"
+      instanceNumber={instanceNumber}
       testID={`temperature-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Current temperature + trend visualization */}
