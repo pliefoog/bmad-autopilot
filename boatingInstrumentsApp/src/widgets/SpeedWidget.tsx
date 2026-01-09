@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
@@ -48,6 +47,8 @@ interface SpeedWidgetProps {
  * - Primary sensor (speed): NO sensorKey needed - `<PrimaryMetricCell metricKey="throughWater" />`
  * - Additional sensor (gps): MUST use sensorKey - `<PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround" />`
  * - Virtual metrics work with both: `sensorKey="gps" metricKey="speedOverGround.max"`
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -56,21 +57,11 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Get primary sensor instance (speed)
-  const speedSensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.speed?.[instanceNumber],
-  );
-
-  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.speed?.[instanceNumber]?.timestamp,
-  );
-
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"
-      sensorInstance={speedSensorInstance}
       sensorType="speed"
+      instanceNumber={instanceNumber}
       additionalSensors={[{ sensorType: 'gps', instance: instanceNumber }]}
       testID={`speed-widget-${instanceNumber}`}
     >
