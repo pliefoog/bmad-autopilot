@@ -113,7 +113,18 @@ export function useMetric(
         // Defensive: return early if store not ready
         if (!state || !state.nmeaData || !state.nmeaData.sensors) return -1;
         const sensor = state.nmeaData.sensors[sensorType]?.[instance];
-        return sensor?.getMetricVersion(metricKey) ?? -1;
+        const ver = sensor?.getMetricVersion(metricKey) ?? -1;
+        
+        // DEBUG: Log GPS time subscription checks (only for utcTime to reduce noise)
+        if (sensorType === 'gps' && metricKey === 'utcTime' && ver > 0) {
+          log.gps(`🔄 useMetric subscription check`, () => ({
+            metricKey,
+            version: ver,
+            timestamp: new Date().toISOString().split('T')[1],
+          }));
+        }
+        
+        return ver;
       } catch (error) {
         // Handle any store access errors during initialization
         return -1;
