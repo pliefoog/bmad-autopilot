@@ -402,11 +402,6 @@ export class WidgetRegistrationService {
     affectedWidgets.forEach((registration) => {
       const instanceKey = `${registration.widgetType}-${instance}`;
 
-      // Early exit: If widget already detected, skip entirely (sensorData updates not needed for widget detection)
-      if (this.detectedInstances.has(instanceKey)) {
-        return; // Already detected, no need to update
-      }
-
       // Build sensor value map for this widget type
       const sensorValueMap = this.buildSensorValueMap(registration, instance, allSensors);
 
@@ -414,16 +409,16 @@ export class WidgetRegistrationService {
       const canCreate = this.canCreateWidget(registration.widgetType, sensorValueMap);
 
       if (canCreate) {
-        // Calculate any derived fields
-        const calculatedFields = this.calculateFields(registration, sensorValueMap);
+        // Check if this is a new instance (not already in detectedInstances)
+        const isNewInstance = !this.detectedInstances.has(instanceKey);
 
-        // Create full widget config by calling registration.createWidget()
+        // Always update detected instance (even if already exists)
+        // This ensures widgetStore always has the complete list of active widgets
+        const calculatedFields = this.calculateFields(registration, sensorValueMap);
         const widgetConfig = registration.createWidget(instance, sensorValueMap);
 
-        // Create or update detected instance
-        const instanceKey = `${registration.widgetType}-${instance}`;
         const detectedInstance: DetectedWidgetInstance = {
-          id: instanceKey, // Add id field: widgetType-instance
+          id: instanceKey,
           widgetType: registration.widgetType,
           instance,
           title: registration.displayName,
@@ -431,10 +426,9 @@ export class WidgetRegistrationService {
           priority: registration.priority ?? 100,
           sensorData: sensorValueMap,
           calculatedFields,
-          widgetConfig, // ⭐ Include full config - preserves customDefinition for CustomWidget
+          widgetConfig,
         };
 
-        const isNewInstance = !this.detectedInstances.has(instanceKey);
         this.detectedInstances.set(instanceKey, detectedInstance);
 
         if (isNewInstance) {
@@ -443,10 +437,15 @@ export class WidgetRegistrationService {
             console.log(`✅ Detected new widget instance: ${instanceKey}`);
           }
         }
+      } else if (this.detectedInstances.has(instanceKey)) {
+        // Widget no longer meets requirements - remove from detection
+        this.detectedInstances.delete(instanceKey);
+        hasNewInstances = true; // Trigger store update to remove widget
+        console.log(`❌ Widget removed (requirements not met): ${instanceKey}`);
       }
     });
 
-    // Only update widgetStore if new instances were detected
+    // Update widgetStore whenever instances change (new widgets OR requirements change)
     if (hasNewInstances) {
       this.updateWidgetStore();
     }
