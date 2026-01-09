@@ -53,7 +53,7 @@ config.transformer = {
   getTransformOptions: async () => ({
     transform: {
       experimentalImportSupport: false,
-      inlineRequires: false,
+      inlineRequires: true, // MEMORY OPTIMIZATION: Reduce bundle size
     },
   }),
 };
@@ -66,5 +66,16 @@ config.resolver = {
     /.*\/node_modules\/.*\.mjs$/,
   ],
 };
+
+// MEMORY OPTIMIZATION: Limit concurrent worker processes to reduce memory usage
+config.maxWorkers = 2; // Instead of default (all CPU cores)
+
+// MEMORY OPTIMIZATION: Configure file-based cache
+const FileStore = require('metro-cache').FileStore;
+config.cacheStores = [
+  new FileStore({
+    root: require('path').join(__dirname, '.metro-cache'),
+  }),
+];
 
 module.exports = config;

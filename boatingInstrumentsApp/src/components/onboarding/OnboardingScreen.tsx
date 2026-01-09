@@ -205,7 +205,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Embedded Connection Dialog - Only shows on Step 2 */}
+        {/* Connection Dialog - Shows on Step 2 */}
         {currentStep === 'connection' && showConnectionDialog ? (
           <ConnectionConfigDialog
             visible={showConnectionDialog}
@@ -213,7 +213,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
             currentConfig={getConnectionDefaults()}
-            isEmbedded={true}
           />
         ) : null}
       </SafeAreaView>

@@ -39,9 +39,6 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
   // On mobile platforms, show native Alert immediately when visible becomes true
   useEffect(() => {
     if (visible && Platform.OS !== 'web') {
-      // Call onCancel first to reset parent state, then show Alert
-      onCancel();
-      
       Alert.alert(
         'Factory Reset Confirmation',
         'This will completely restore the app to its initial state:\n\n' +
@@ -56,6 +53,7 @@ export const FactoryResetDialog: React.FC<FactoryResetDialogProps> = ({
           {
             text: 'Cancel',
             style: 'cancel',
+            onPress: onCancel,
           },
           {
             text: 'Factory Reset',

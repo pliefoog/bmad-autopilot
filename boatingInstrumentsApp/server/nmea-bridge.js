@@ -9,7 +9,7 @@
  * - Scenario Mode: Generate synthetic NMEA data from scenarios
  *
  * Features:
- * - Multi-protocol server support (TCP:2000, UDP:2000, WebSocket:8080)
+ * - Multi-protocol server support (TCP:2000, UDP:10110, WebSocket:8080)
  * - Simulator Control API (port 9090) for external tools
  * - Mode-based data source abstraction
  * - Performance optimized for 500+ msg/sec, <100MB RAM
@@ -506,7 +506,7 @@ class UnifiedNMEABridge {
         server: {
           ports: {
             tcp: 2000,
-            udp: 2000,
+            udp: 10110,  // NMEA 0183 standard multicast port
             websocket: 8080,
             api: 9090,
           },
@@ -534,7 +534,7 @@ class UnifiedNMEABridge {
       console.log(`📡 Mode: ${this.config.mode.toUpperCase()}`);
       console.log('🌐 Protocol Servers:');
       console.log('   • TCP: localhost:2000');
-      console.log('   • UDP: localhost:2000');
+      console.log('   • UDP: localhost:10110 (NMEA 0183 standard)');
       console.log('   • WebSocket: localhost:8080');
       console.log('🔧 Control API: localhost:9090');
 
@@ -632,7 +632,7 @@ EXAMPLES:
 
 PROTOCOL SERVERS:
   TCP: localhost:2000            Standard NMEA TCP connection
-  UDP: localhost:2000            High-frequency data streaming
+  UDP: localhost:10110           High-frequency data streaming (NMEA 0183 standard)
   WebSocket: localhost:8080      Browser-compatible connection
   Control API: localhost:9090    External tool control
 

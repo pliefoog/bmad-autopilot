@@ -30,55 +30,49 @@ export interface WidgetUpdateConfig {
  * Default widget update configurations by widget type
  */
 export const WIDGET_UPDATE_CONFIGS: Record<string, WidgetUpdateConfig> = {
-  // High-frequency updates (real-time feel)
+  // NO THROTTLING - All sensors update immediately
   speed: {
-    throttleMs: 100,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 2, // 2% change triggers update
+    significantChangePercent: 0,
   },
   depth: {
-    throttleMs: 200,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 5, // 5% change
+    significantChangePercent: 0,
   },
   wind: {
-    throttleMs: 150,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 3,
+    significantChangePercent: 0,
   },
-
-  // Medium-frequency updates
   compass: {
-    throttleMs: 100,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 1, // 1 degree change
+    significantChangePercent: 0,
   },
   gps: {
-    throttleMs: 500,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 0.0001, // Lat/lon precision
+    significantChangePercent: 0,
   },
-
-  // Low-frequency updates (slow-changing data)
   battery: {
-    throttleMs: 1000,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 1,
+    significantChangePercent: 0,
   },
   tanks: {
-    throttleMs: 2000,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 2,
+    significantChangePercent: 0,
   },
   engine: {
-    throttleMs: 200,
+    throttleMs: 0,
     trailing: true,
-    significantChangePercent: 5,
+    significantChangePercent: 0,
   },
-
-  // Static/rare updates
   autopilot: {
-    throttleMs: 500,
+    throttleMs: 0,
     trailing: true,
     significantChangePercent: 0,
   },
@@ -99,45 +93,10 @@ export function useOptimizedWidgetValue<T extends number | string | null>(
 
   const updateValue = useCallback(
     (newValue: T) => {
-      const now = Date.now();
-      const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
-
-      // Check if enough time has passed
-      if (timeSinceLastUpdate < config.throttleMs) {
-        // Schedule trailing update if configured
-        if (config.trailing && !pendingUpdateRef.current) {
-          pendingUpdateRef.current = setTimeout(() => {
-            setDisplayValue(newValue);
-            lastValueRef.current = newValue;
-            lastUpdateTimeRef.current = Date.now();
-            pendingUpdateRef.current = null;
-          }, config.throttleMs - timeSinceLastUpdate);
-        }
-        return;
-      }
-
-      // Check for significant change
-      if (typeof newValue === 'number' && typeof lastValueRef.current === 'number') {
-        const percentChange = Math.abs(
-          ((newValue - lastValueRef.current) / (lastValueRef.current || 1)) * 100,
-        );
-
-        if (config.significantChangePercent && percentChange < config.significantChangePercent) {
-          // Insignificant change, skip update
-          return;
-        }
-      }
-
-      // Update immediately
+      // NO THROTTLING - Update immediately
       setDisplayValue(newValue);
       lastValueRef.current = newValue;
-      lastUpdateTimeRef.current = now;
-
-      // Clear any pending update
-      if (pendingUpdateRef.current) {
-        clearTimeout(pendingUpdateRef.current);
-        pendingUpdateRef.current = null;
-      }
+      lastUpdateTimeRef.current = Date.now();
     },
     [config],
   );

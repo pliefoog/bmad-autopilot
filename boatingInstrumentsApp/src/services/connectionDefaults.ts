@@ -49,15 +49,19 @@ export const getConnectionDefaults = (): ConnectionConfig => {
   if (typeof window !== 'undefined' && Platform.OS === 'web') {
     return {
       ip: getSuggestedNetworkHost(), // Smart suggestion based on current access
-      port: 8080, // WebSocket for web
+      port: 8080, // WebSocket standard port (browser security requires WS)
       protocol: 'websocket',
     };
   }
 
   // Mobile platforms (iOS/Android)
+  // Typical NMEA bridge ports:
+  // - TCP: 2000 (SignalK, OpenCPN, many WiFi bridges)
+  // - UDP: 10110 (NMEA 0183 multicast standard)
+  // - WebSocket: 8080 (SignalK, modern bridges)
   return {
     ip: getSuggestedNetworkHost(), // Smart suggestion for mobile
-    port: 2000, // TCP for mobile
+    port: 2000, // TCP port 2000 is most common for NMEA bridges
     protocol: 'tcp',
   };
 };

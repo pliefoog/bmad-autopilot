@@ -501,6 +501,60 @@
 			}
 		},
 		{
+			"label": "Start Web Dev Server (Safari - RECOMMENDED)",
+			"type": "shell",
+			"comment": "Starts web dev server and opens in Safari instead of Chrome. Saves ~4.6GB RAM by avoiding Chromium competition with VS Code.",
+			"command": "npm",
+			"args": [
+				"run",
+				"web:safari"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"env": {
+					"EXPO_ROUTER_APP_ROOT": "./app"
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Web Dev Server (Low Memory)",
+			"type": "shell",
+			"comment": "Memory-optimized web dev server with 2 workers instead of all CPU cores. Saves ~400MB RAM.",
+			"command": "npm",
+			"args": [
+				"run",
+				"web:lowmem"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp",
+				"env": {
+					"EXPO_ROUTER_APP_ROOT": "./app"
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Stop Web Dev Server",
 			"type": "shell",
 			"command": "pkill",
@@ -515,6 +569,50 @@
 				"focus": false,
 				"panel": "shared",
 				"showReuseMessage": false,
+				"clear": false
+			}
+		},
+		{
+			"label": "Clean Metro Cache",
+			"type": "shell",
+			"comment": "Clears Metro bundler and Node.js caches to free up memory and fix potential issues",
+			"command": "npm",
+			"args": [
+				"run",
+				"clean:cache"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Clean All Build Artifacts",
+			"type": "shell",
+			"comment": "Nuclear option: clears all caches and build artifacts (iOS, Android, Metro)",
+			"command": "npm",
+			"args": [
+				"run",
+				"clean:all"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/boatingInstrumentsApp"
+			},
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
 				"clear": false
 			}
 		},
@@ -536,11 +634,47 @@
 			}
 		},
 		{
+			"label": "Start Full Web Development Stack (Safari - RECOMMENDED)",
+			"comment": "Full dev stack with Safari instead of Chrome. Saves ~4.6GB RAM.",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start NMEA Bridge: Single Engine Scenario (Default)",
+				"Start Web Dev Server (Safari - RECOMMENDED)"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
 			"label": "Start Full Dev Stack + Coastal Sailing",
 			"dependsOrder": "parallel",
 			"dependsOn": [
 				"Start NMEA Bridge: Coastal Sailing",
 				"Start Web Dev Server"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Full Dev Stack + Coastal Sailing (Safari - RECOMMENDED)",
+			"comment": "Full coastal sailing dev stack with Safari. Saves ~4.6GB RAM.",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start NMEA Bridge: Coastal Sailing",
+				"Start Web Dev Server (Safari - RECOMMENDED)"
 			],
 			"group": "build",
 			"presentation": {

@@ -38,6 +38,7 @@ import { SensorConfigDialog } from '../components/dialogs/SensorConfigDialog';
 import { MemoryMonitor } from '../components/MemoryMonitor';
 import {
   getConnectionDefaults,
+  loadConnectionSettings,
   connectNmea,
   disconnectNmea,
   shouldEnableConnectButton,
@@ -166,6 +167,17 @@ const App = () => {
   useEffect(() => {
     initializeNmeaStore();
     log.app('NMEA Store v3 initialized');
+  }, []);
+
+  // Load saved connection settings on mount
+  useEffect(() => {
+    const loadSavedSettings = async () => {
+      const savedConfig = await loadConnectionSettings();
+      setIp(savedConfig.ip);
+      setPort(savedConfig.port.toString());
+      setProtocol(savedConfig.protocol);
+    };
+    loadSavedSettings();
   }, []);
 
   // Memory profiling: Start on mount (Chrome/Edge only)
@@ -393,9 +405,13 @@ const App = () => {
     port: number;
     protocol: 'tcp' | 'udp' | 'websocket';
   }) => {
+    console.log('[App] handleConnectionConnect received config:', config);
+    
     setIp(config.ip);
     setPort(config.port.toString());
     setProtocol(config.protocol as 'tcp' | 'udp');
+
+    console.log('[App] Calling connectNmea with protocol:', config.protocol);
 
     try {
       const success = await connectNmea({

@@ -461,7 +461,10 @@ export class PureConnectionManager {
   }
 
   /**
-   * Connect via UDP
+   * Connect via UDP Multicast
+   * 
+   * Industry standard: NMEA 0183 uses multicast group 239.2.1.1:10110
+   * Clients join the multicast group to receive data - no registration needed.
    */
   private async connectUDP(config: ConnectionConfig): Promise<boolean> {
     const UdpSocket = getUdpSocket();
@@ -470,19 +473,47 @@ export class PureConnectionManager {
       throw new Error('UDP not supported in this environment');
     }
 
+    // NMEA 0183 UDP Multicast Standard (Amendment 3.01)
+    const NMEA_MULTICAST_ADDR = '239.2.1.1';
+    const NMEA_MULTICAST_PORT = 10110;
+
     return new Promise((resolve, reject) => {
       try {
-        const socket = UdpSocket.createSocket('udp4');
+        const socket = UdpSocket.createSocket({
+          type: 'udp4',
+          reuseAddr: true,  // Allow multiple clients to bind to same port
+        });
 
-        socket.bind(config.port, (err: Error) => {
+        // Bind to the multicast port to receive multicast messages
+        socket.bind(NMEA_MULTICAST_PORT, (err: Error) => {
           if (err) {
             log.connection('[ConnectionManager] UDP bind error', () => ({
               message: err.message,
-              port: config.port,
+              port: NMEA_MULTICAST_PORT,
             }));
             this.handleError(`UDP bind failed: ${err.message}`);
             reject(err);
             return;
+          }
+
+          log.connection('[ConnectionManager] UDP socket bound to multicast port', () => ({
+            port: NMEA_MULTICAST_PORT,
+            multicastAddr: NMEA_MULTICAST_ADDR,
+          }));
+
+          // Join the NMEA multicast group
+          // This tells the network stack to receive packets sent to this multicast address
+          try {
+            socket.addMembership(NMEA_MULTICAST_ADDR);
+            log.connection('[ConnectionManager] Joined UDP multicast group', () => ({
+              group: NMEA_MULTICAST_ADDR,
+              port: NMEA_MULTICAST_PORT,
+            }));
+          } catch (membershipErr) {
+            log.connection('[ConnectionManager] Failed to join multicast group', () => ({
+              message: membershipErr.message,
+            }));
+            // Continue anyway - might work without explicit membership on some networks
           }
 
           this.activeConnection = socket;
@@ -493,7 +524,11 @@ export class PureConnectionManager {
           resolve(true);
         });
 
-        socket.on('message', (data: Buffer) => {
+        socket.on('message', (data: Buffer, remote: { address: string; port: number }) => {
+          log.connection('[ConnectionManager] UDP message received', () => ({
+            bytes: data.length,
+            from: `${remote.address}:${remote.port}`,
+          }));
           this.handleDataReceived(data.toString());
         });
 

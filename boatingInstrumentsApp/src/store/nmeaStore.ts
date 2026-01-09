@@ -116,11 +116,6 @@ interface NmeaStore {
 const ALARM_EVALUATION_THROTTLE_MS = 1000;
 let lastAlarmEvaluation = 0;
 
-// Update throttle to prevent infinite loops from rapid setState calls
-// React has a limit of ~50 nested updates before throwing "Maximum update depth exceeded"
-const UPDATE_THROTTLE_MS = 100; // Allow max 10 updates/second per sensor (prevent infinite loop in iOS StrictMode)
-const lastUpdateTime = new Map<string, number>(); // Track last update per sensor instance
-
 /**
  * Evaluate alarms from all sensor instances
  * SensorInstance provides getAlarmState(metricKey) returning numeric 0|1|2|3
@@ -204,7 +199,20 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
   sensorEventEmitter: new EventEmitter(),
 
   // Connection management
-  setConnectionStatus: (status: ConnectionStatus) => set({ connectionStatus: status }),
+  setConnectionStatus: (status: ConnectionStatus) => 
+    set((state) => {
+      // Reset message counter when transitioning to 'connected'
+      if (status === 'connected' && state.connectionStatus !== 'connected') {
+        return {
+          connectionStatus: status,
+          nmeaData: {
+            ...state.nmeaData,
+            messageCount: 0,
+          },
+        };
+      }
+      return { connectionStatus: status };
+    }),
   setLastError: (err?: string) => set({ lastError: err }),
   setDebugMode: (enabled: boolean) => set({ debugMode: enabled }),
 
@@ -222,17 +230,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
     data: Partial<SensorData>,
     messageFormat?: 'NMEA 0183' | 'NMEA 2000',
   ) => {
-    // CRITICAL: Throttle updates to prevent infinite loop
-    // React throws "Maximum update depth exceeded" after ~50 nested setState calls
-    const sensorKey = `${sensorType}.${instance}`;
     const now = Date.now();
-    const lastUpdate = lastUpdateTime.get(sensorKey) || 0;
-
-    if (now - lastUpdate < UPDATE_THROTTLE_MS) {
-      // Too soon since last update - drop this update
-      return;
-    }
-    lastUpdateTime.set(sensorKey, now);
 
     // Skip empty updates
     if (!data || Object.keys(data).length === 0) {
@@ -304,14 +302,9 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
       }
     }
 
-    // ARCHITECTURE v2.0: Check if we need to notify subscribers
-    // Skip set() if no changes AND not a new instance - prevents infinite loops
-    // Version counter already tracks changes, so subscribers only react to version changes
-    if (!hasChanges && !needsStoreUpdate) {
-      return;
-    }
-
-    // Values changed or new instance - update store
+    // FORCE UPDATE: Always update store to ensure React subscribers are notified
+    // Even if values seem unchanged, timestamp and version counters need to propagate
+    // No throttling - update on EVERY NMEA message
     set((state) => {
       const newNmeaData = {
         ...state.nmeaData,
@@ -327,12 +320,9 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
         messageFormat: messageFormat || state.nmeaData.messageFormat,
       };
 
-      // Throttled alarm evaluation
-      let alarms = state.alarms;
-      if (now - lastAlarmEvaluation > ALARM_EVALUATION_THROTTLE_MS) {
-        alarms = evaluateAlarms(newNmeaData.sensors);
-        lastAlarmEvaluation = now;
-      }
+      // Evaluate alarms on every update (no throttling)
+      const alarms = evaluateAlarms(newNmeaData.sensors);
+      lastAlarmEvaluation = now;
 
       return {
         nmeaData: newNmeaData,

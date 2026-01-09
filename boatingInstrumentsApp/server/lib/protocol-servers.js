@@ -14,6 +14,11 @@ const dgram = require('dgram');
 const WebSocket = require('ws');
 const { SimulatorComponent } = require('./types');
 
+// NMEA 0183 Industry Standard UDP Multicast
+// RFC reference: NMEA 0183 Amendment 3.01
+const NMEA_MULTICAST_ADDR = '239.2.1.1';  // Industry standard multicast group
+const NMEA_MULTICAST_PORT = 10110;        // Industry standard UDP port
+
 class ProtocolServers {
   constructor() {
     this.tcpServer = null;
@@ -198,6 +203,23 @@ class ProtocolServers {
     // Detect if message is binary NMEA 2000 frame (Buffer) or text NMEA 0183 (string)
     const isBinary = Buffer.isBuffer(message);
 
+    // Send to UDP multicast group (no client tracking needed)
+    if (this.udpServer) {
+      try {
+        const udpMessage = isBinary ? message : message + '\r\n';
+        this.udpServer.send(udpMessage, NMEA_MULTICAST_PORT, NMEA_MULTICAST_ADDR, (err) => {
+          if (err) {
+            console.warn('Warning: UDP multicast send failed:', err.message);
+          }
+        });
+        successCount++;
+      } catch (error) {
+        console.warn('Warning: UDP multicast error:', error.message);
+        errorCount++;
+      }
+    }
+
+    // Send to TCP and WebSocket clients
     for (const [clientId, client] of this.clients) {
       try {
         if (client.type === 'tcp' && client.socket && !client.socket.destroyed) {
@@ -205,13 +227,6 @@ class ProtocolServers {
             client.socket.write(message); // Binary frame
           } else {
             client.socket.write(message + '\r\n'); // Text sentence
-          }
-          successCount++;
-        } else if (client.type === 'udp' && client.remote) {
-          if (isBinary) {
-            this.udpServer.send(message, client.remote.port, client.remote.address);
-          } else {
-            this.udpServer.send(message + '\r\n', client.remote.port, client.remote.address);
           }
           successCount++;
         } else if (
@@ -275,13 +290,21 @@ class ProtocolServers {
    */
   async startUDPServer() {
     return new Promise((resolve, reject) => {
-      this.udpServer = dgram.createSocket('udp4');
+      this.udpServer = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 
-      this.udpServer.on('message', this.handleUDPMessage);
+      // No longer need to handle incoming UDP messages for client registration
+      // Multicast clients join the group directly
 
       this.udpServer.on('listening', () => {
+        // Configure for multicast broadcasting
+        this.udpServer.setBroadcast(true);
+        this.udpServer.setMulticastTTL(128);
+        
         console.log(
-          `✅ UDP server listening on ${this.config.server.bindHost}:${this.config.server.ports.udp}`,
+          `✅ UDP server broadcasting to multicast ${NMEA_MULTICAST_ADDR}:${NMEA_MULTICAST_PORT}`,
+        );
+        console.log(
+          `   (Industry standard NMEA 0183 UDP multicast - RFC Amendment 3.01)`,
         );
         resolve();
       });
@@ -291,7 +314,8 @@ class ProtocolServers {
         reject(err);
       });
 
-      this.udpServer.bind(this.config.server.ports.udp, this.config.server.bindHost);
+      // Bind to any available port - we're only sending, not receiving
+      this.udpServer.bind();
     });
   }
 
@@ -358,26 +382,14 @@ class ProtocolServers {
   }
 
   /**
-   * Handle UDP message
+   * Handle UDP message (not used with multicast - clients don't send to server)
    * @private
    */
   handleUDPMessage(message, remote) {
-    const clientId = `udp-${remote.address}:${remote.port}`;
-
-    if (!this.clients.has(clientId)) {
-      console.log(`📱 UDP client connected: ${clientId}`);
-      this.clients.set(clientId, {
-        type: 'udp',
-        remote: remote,
-        connected: true,
-        connectedAt: new Date(),
-      });
-
-      this.stats.totalConnections++;
-      this.notifyConnectionHandler('connect', clientId);
-    }
-
-    this.handleClientMessage(clientId, message.toString());
+    // With multicast, clients join the group and only receive data
+    // No client registration or tracking needed
+    // This method kept for compatibility but should not be called
+    console.log(`📱 Unexpected UDP message from ${remote.address}:${remote.port}`);
   }
 
   /**

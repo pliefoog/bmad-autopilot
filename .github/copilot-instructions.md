@@ -598,6 +598,233 @@ log.depth('Processing depth', () => ({
 
 ## Development Workflows
 
+### Build Instructions
+
+#### Development Builds
+
+**Web (Primary Development Platform):**
+```bash
+# 1. Install dependencies
+cd boatingInstrumentsApp && npm install
+
+# 2. Start web development server
+npm run web
+# Opens at http://localhost:8081
+# Hot reload enabled - changes apply immediately
+# No rebuild required for code changes
+```
+
+**iOS (Requires macOS):**
+```bash
+# 1. Install dependencies
+cd boatingInstrumentsApp && npm install
+
+# 2a. Build and run on SIMULATOR (default)
+npx expo run:ios
+# Automatically handles CocoaPods installation
+# Starts Metro bundler
+# Installs app on iOS simulator
+# Enables Fast Refresh for live updates
+
+# 2b. Build and run on PHYSICAL DEVICE
+npx expo run:ios --device
+# Automatically handles CocoaPods installation
+# Lists all connected iOS devices
+# Select device from list
+# Requires Apple Developer account (free or paid)
+# Requires device to be trusted in Xcode
+
+# CRITICAL: First-time app install will fail with "profile has not been explicitly trusted"
+# After build completes, trust the developer profile on device:
+# Settings → General → VPN & Device Management → Developer App → Trust "[Your Apple ID]"
+# Then you need to manually start Metro bundler (see below)
+
+# CRITICAL: Start Metro bundler after build completes
+# The build command may exit without keeping Metro running, so start it manually:
+npx expo start
+# Metro will serve the JS bundle to the device
+# Keep this terminal running while developing
+# Device should auto-connect if on same WiFi network
+
+# MANUAL CONFIGURATION (if auto-discovery fails):
+# iOS requires Expo protocol scheme for manual configuration
+# 1. Find Mac's IP: ifconfig | grep "inet " | grep -v 127.0.0.1
+# 2. Shake device → "Configure Bundler"
+# 3. Enter: exp://192.168.1.X:8081 (replace X with your Mac's IP)
+# IMPORTANT: Use exp:// not http:// - iOS requires Expo protocol scheme
+
+# RECOMMENDED: Use tunneling if network discovery fails
+# If device can't discover Metro (common with firewalls, multiple networks):
+npm install -g @expo/ngrok
+npx expo start --tunnel
+# This creates a public URL that works from any network
+# Device will automatically connect via tunnel
+# Slower than local but more reliable for complex network setups
+
+# Alternative: Specify device by name
+npx expo run:ios --device "John's iPhone"
+
+# Alternative: List available devices first
+xcrun xctrace list devices
+
+# IMPORTANT: Physical Device Requirements
+# - Connect iPhone/iPad via USB cable
+# - Trust computer on device (popup when first connected)
+# - Enable Developer Mode: Settings → Privacy & Security → Developer Mode (iOS 16+)
+# - Apple ID signed in to Xcode: Xcode → Settings → Accounts
+# - Automatic signing: Xcode will create free provisioning profile
+# - Device must be on same WiFi network as dev machine for hot reload
+
+# Note: After installing new native modules (e.g., NetInfo):
+# - Just rebuild with npx expo run:ios (handles CocoaPods automatically)
+# - DO NOT run npx pod-install separately (deprecated)
+```
+
+**Android (All Platforms):**
+```bash
+# 1. Install dependencies
+cd boatingInstrumentsApp && npm install
+
+# 2. Build and run development build
+npx expo run:android
+# Automatically starts Metro bundler
+# Installs app on connected device/emulator
+# Enables Fast Refresh for live updates
+
+# Alternative: List devices
+adb devices
+
+# Note: After installing new native modules (e.g., NetInfo):
+# - Rebuild with npx expo run:android (Gradle handles native deps)
+```
+
+**Development Build Notes:**
+- Web: Instant refresh, no native modules (TCP/UDP unavailable)
+- iOS/Android: Requires rebuild after native module changes
+- Metro bundler serves JS code (shared across iOS/Android)
+- Fast Refresh applies code changes without losing app state
+
+#### Production Builds
+
+**Web (Static Site):**
+```bash
+# 1. Build optimized production bundle
+cd boatingInstrumentsApp && npm run build:web
+# Outputs to boatingInstrumentsApp/web-build/
+# Minified, tree-shaken, optimized assets
+
+# 2. Test production build locally
+npx serve web-build
+# Opens at http://localhost:3000
+
+# 3. Deploy to hosting (examples)
+# Netlify: Drag web-build folder to Netlify drop zone
+# Vercel: vercel web-build
+# GitHub Pages: Copy web-build/* to gh-pages branch
+```
+
+**iOS (App Store / TestFlight):**
+```bash
+# Prerequisites:
+# - Apple Developer account ($99/year)
+# - EAS CLI: npm install -g eas-cli
+# - eas.json configured (already in repo)
+
+# 1. Login to Expo account
+eas login
+
+# 2. Configure iOS bundle identifier (first time only)
+eas build:configure
+
+# 3. Build production iOS app (.ipa)
+eas build --platform ios --profile production
+# Builds on Expo servers (no local Xcode required)
+# Takes 10-20 minutes
+# Downloads .ipa file when complete
+
+# 4. Submit to App Store
+eas submit --platform ios --latest
+# Prompts for Apple ID credentials
+# Uploads to App Store Connect
+# Submit for review in App Store Connect dashboard
+
+# Alternative: Build for TestFlight (internal testing)
+eas build --platform ios --profile preview
+```
+
+**Android (Google Play / APK):**
+```bash
+# Prerequisites:
+# - Google Play Developer account ($25 one-time)
+# - EAS CLI: npm install -g eas-cli
+# - eas.json configured (already in repo)
+
+# 1. Login to Expo account
+eas login
+
+# 2. Configure Android package name (first time only)
+eas build:configure
+
+# 3. Build production Android app (.aab)
+eas build --platform android --profile production
+# Builds Android App Bundle for Play Store
+# Takes 10-20 minutes
+# Downloads .aab file when complete
+
+# 4. Submit to Google Play
+eas submit --platform android --latest
+# Uploads to Google Play Console
+# Submit for review in Play Console dashboard
+
+# Alternative: Build APK for direct distribution
+eas build --platform android --profile preview
+# Downloads .apk file for sideloading
+```
+
+**Production Build Notes:**
+- Web: Static files, can host anywhere (Netlify, Vercel, S3)
+- iOS: Requires Apple Developer account, uses App Store Connect
+- Android: Requires Google Play Developer account, uses Play Console
+- EAS Build: Cloud build service (free tier: 30 builds/month)
+- Local builds: Possible with `npx expo prebuild` but not recommended
+
+**iOS UDP Multicast Networking (NMEA 239.2.1.1:10110):**
+- **Requires Paid Apple Developer Program** ($99/year) for multicast entitlement
+- **Free "Personal Team" accounts cannot use multicast** - build will fail with provisioning profile error
+- Entitlement location: `ios/easyNAVpro/easyNAVpro.entitlements`
+- Currently commented out for free account compatibility
+- **Alternatives for Free Accounts:**
+  - TCP: Host 192.168.1.X, Port 2000 (direct device connection)
+  - WebSocket: Host localhost, Port 8080 (nmea-bridge simulator)
+- **Android:** No multicast restrictions - UDP multicast works on all accounts
+- **To Enable iOS Multicast:**
+  1. Upgrade to paid Apple Developer Program
+  2. Uncomment `com.apple.developer.networking.multicast` in entitlements file
+  3. Rebuild with `npx expo run:ios --device`
+  4. Multicast implementation verified in `PureConnectionManager.ts` (socket.addMembership)
+
+**Build Profiles** (eas.json):
+- `production`: App Store/Play Store releases (optimized, signed)
+- `preview`: TestFlight/internal testing (development signing)
+- `development`: Local development builds (debugging enabled)
+
+**First-Time Setup:**
+```bash
+# Install EAS CLI globally
+npm install -g eas-cli
+
+# Login (create account at expo.dev if needed)
+eas login
+
+# Initialize project (already done in this repo)
+eas build:configure
+
+# Generate app signing credentials (iOS/Android)
+# Follow prompts - EAS manages certificates automatically
+eas build --platform ios
+eas build --platform android
+```
+
 ### Start Development Environment
 
 **Use VS Code Tasks (Ctrl+Shift+P → Tasks: Run Task):**

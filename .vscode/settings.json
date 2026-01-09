@@ -10,7 +10,11 @@
   },
   "github.copilot.chat.agent.autoFix": true,
   "chat.tools.autoApprove": false,
-  
+
+  // MEMORY OPTIMIZATION: Reduce TypeScript server memory from 3GB to 2GB each
+  "typescript.tsserver.maxTsServerMemory": 2048,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+
   // Story 11.7: VS Code Test Explorer Integration - Professional Test Tooling
   "jest.rootPath": "./boatingInstrumentsApp",
   "jest.runMode": {
@@ -22,14 +26,14 @@
     "partially-covered": "rgba(255, 152, 0, 0.2)"
   },
   "jest.enable": true,
-  
-  // AC1: Professional Test Documentation Display in Test Explorer
-  "testing.openTesting": "openOnTestStart",
-  "testing.followRunningTest": true,
+
+  // AC1: Professional Test Documentation Display in Test Explorer (OPTIMIZED: only when explicitly running tests)
+  "testing.openTesting": "neverOpen",
+  "testing.followRunningTest": false,
   "testing.defaultGutterClickAction": "run",
   "testing.showAllMessages": true,
-  
-  // AC2: Real-time Coverage Visualization with marine safety focus
+
+  // AC2: Real-time Coverage Visualization (OPTIMIZED: on-demand only to save memory)
   "coverage-gutters.coverageFileNames": [
     "lcov.info",
     "cov.xml",
@@ -37,35 +41,63 @@
     "jacoco.xml",
     "coverage/vscode-coverage-overlay.json"
   ],
-  "coverage-gutters.showLineCoverage": true,
-  "coverage-gutters.showBranchCoverage": true,
+  "coverage-gutters.showLineCoverage": false,
+  "coverage-gutters.showBranchCoverage": false,
   "coverage-gutters.highlightDark": "rgba(255, 0, 0, 0.3)",
   "coverage-gutters.highlightLight": "rgba(255, 0, 0, 0.2)",
-  
-  // AC3: Simulator Connection Status in Test Explorer UI  
+
+  // AC3: Simulator Connection Status in Test Explorer UI
   "testing.gutterEnabled": true,
-  
-  // AC4: Performance Monitoring Integration with threshold warnings
-  "jest.debugMode": true,
-  "jest.enableInlineErrorMessages": true,
+
+  // AC4: Performance Monitoring Integration (OPTIMIZED: debug mode disabled for memory)
+  "jest.debugMode": false,
+  "jest.enableInlineErrorMessages": false,
   "jest.showTerminalOnLaunch": false,
-  
+  "jest.autoRun": "off",
+
   // AC5: Development Workflow Enhancement - Test categorization and execution
   "testing.saveBeforeTest": true,
+  "testing.automaticallyOpenTestResults": "neverOpen",
   "files.associations": {
     "*.test.ts": "typescript",
     "*.integration.test.ts": "typescript",
     "*.e2e.test.ts": "typescript"
   },
-  
+
   // Marine domain-specific test execution indicators
   "workbench.colorCustomizations": {
     "testing.iconFailed": "#ff6b6b",
-    "testing.iconErrored": "#ffa500", 
+    "testing.iconErrored": "#ffa500",
     "testing.iconPassed": "#51cf66",
     "testing.iconQueued": "#74c0fc",
     "testing.iconSkipped": "#868e96",
     "testing.iconUnset": "#adb5bd"
   },
-  "testing.automaticallyOpenTestResults": "openOnTestStart"
+
+  // MEMORY OPTIMIZATION: Reduce file watching overhead
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/**": true,
+    "**/build/**": true,
+    "**/dist/**": true,
+    "**/.metro-cache/**": true,
+    "**/ios/build/**": true,
+    "**/ios/Pods/**": true,
+    "**/android/build/**": true
+  },
+
+  // MEMORY OPTIMIZATION: Reduce search indexing
+  "search.followSymlinks": false,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/ios/Pods": true,
+    "**/ios/build": true,
+    "**/.metro-cache": true
+  },
+
+  // MEMORY OPTIMIZATION: Git performance
+  "git.untrackedChanges": "hidden",
+  "git.autorefresh": false
 }

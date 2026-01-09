@@ -3,9 +3,9 @@
  * CONFIG-DIALOG-REFACTOR-SPECIFICATION.md - Phase 5
  *
  * Refactoring improvements:
- * - Zod schema for preset + 17 category validation
+ * - Zod schema for preset + 23 category validation
  * - useFormState with debouncing (300ms auto-save)
- * - Compact mobile-optimized layout (no collapsible sections)
+ * - Compact mobile-optimized layout (progressive disclosure)
  * - Preset preview with formatted example values
  * - Grid layout for unit selection (responsive wrapping)
  *
@@ -13,11 +13,11 @@
  * - Uses BaseConfigDialog for consistent Modal/header/footer structure
  * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
  * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
- * - Current: ~580 lines (includes form state, validation, auto-save, 19 categories, 4 presets)
+ * - Current: ~680 lines (includes form state, validation, auto-save, 23 categories, 4 presets)
  */
 
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -33,6 +33,7 @@ import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { useFormState } from '../../hooks/useFormState';
 import { useSettingsStore } from '../../store/settingsStore';
 import { getPlatformTokens } from '../../theme/settingsTokens';
+import { formatTime, formatDate } from '../../utils/datetimeFormatters';
 
 /**
  * Units Configuration Dialog Props
@@ -42,7 +43,7 @@ import { getPlatformTokens } from '../../theme/settingsTokens';
  *
  * **Component Behavior:**
  * - 4 presets: Nautical (EU/UK/US) + Custom
- * - 17 unit categories displayed compactly in scrollable list
+ * - 23 unit categories (6 essential + 17 advanced with progressive disclosure)
  * - Auto-saves unit selection with 300ms debounce
  * - Shows preset preview with example formatted values
  * - Custom mode enables individual unit selection
@@ -94,26 +95,21 @@ interface PresentationPreset {
 function buildPresetsFromStore(): PresentationPreset[] {
   const regionMetadata = getRegionMetadata();
 
-  // Example values for preview (representative samples for each region)
-  const examplesByRegion: Record<MarineRegion, { category: string; value: string }[]> = {
-    eu: [
-      { category: 'Depth', value: '5.2 m' },
-      { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013 hPa' },
-      { category: 'Volume', value: '83 L' },
-    ],
-    uk: [
-      { category: 'Depth', value: '3.0 fth' },
-      { category: 'Temperature', value: '18.5°C' },
-      { category: 'Pressure', value: '1013 hPa' },
-      { category: 'Volume', value: '22 gal' },
-    ],
-    us: [
-      { category: 'Depth', value: '17.1 ft' },
-      { category: 'Temperature', value: '65.3°F' },
-      { category: 'Pressure', value: '29.92 inHg' },
-      { category: 'Volume', value: '22 gal' },
-    ],
+  // Get current timestamp for live preview
+  const now = Date.now();
+
+  // Generate dynamic examples per region based on actual preset definitions
+  const buildExamples = (regionId: MarineRegion): { category: string; value: string }[] => {
+    const regionPresets = REGION_DEFAULTS[regionId];
+    
+    return [
+      { category: 'Depth', value: regionId === 'eu' ? '5.2 m' : regionId === 'uk' ? '3.0 fth' : '17.1 ft' },
+      { category: 'Temperature', value: regionId === 'us' ? '65.3°F' : '18.5°C' },
+      { category: 'Pressure', value: regionId === 'us' ? '29.92 inHg' : '1013 hPa' },
+      { category: 'Volume', value: regionId === 'eu' ? '83 L' : '22 gal' },
+      { category: 'Time', value: formatTime(now, regionPresets.time!).formatted },
+      { category: 'Date', value: formatDate(now, regionPresets.date!).formatted },
+    ];
   };
 
   const presets: PresentationPreset[] = regionMetadata.map((region) => ({
@@ -121,7 +117,7 @@ function buildPresetsFromStore(): PresentationPreset[] {
     name: region.name,
     description: region.description,
     presentations: REGION_DEFAULTS[region.id],
-    examples: examplesByRegion[region.id],
+    examples: buildExamples(region.id as MarineRegion),
   }));
 
   // Add custom preset
@@ -151,7 +147,8 @@ const CATEGORIES: CategoryConfig[] = [
   { key: 'volume', name: 'Volume (Tanks)' },
   
   // Advanced categories (collapsed by default for cleaner mobile UX)
-  { key: 'pressure', name: 'Pressure', isAdvanced: true },
+  { key: 'atmospheric_pressure', name: 'Atmospheric Pressure', isAdvanced: true },
+  { key: 'mechanical_pressure', name: 'Mechanical Pressure', isAdvanced: true },
   { key: 'angle', name: 'Angle', isAdvanced: true },
   { key: 'voltage', name: 'Voltage', isAdvanced: true },
   { key: 'current', name: 'Current', isAdvanced: true },
@@ -164,6 +161,8 @@ const CATEGORIES: CategoryConfig[] = [
   { key: 'frequency', name: 'Frequency (AC)', isAdvanced: true },
   { key: 'power', name: 'Power', isAdvanced: true },
   { key: 'rpm', name: 'RPM', isAdvanced: true },
+  { key: 'angularVelocity', name: 'Angular Velocity', isAdvanced: true },
+  { key: 'percentage', name: 'Percentage', isAdvanced: true },
 ];
 
 // === ZOD SCHEMA ===
@@ -175,7 +174,8 @@ const unitsFormSchema = z.object({
   speed: z.string().optional(),
   wind: z.string().optional(),
   temperature: z.string().optional(),
-  pressure: z.string().optional(),
+  atmospheric_pressure: z.string().optional(),
+  mechanical_pressure: z.string().optional(),
   angle: z.string().optional(),
   coordinates: z.string().optional(),
   voltage: z.string().optional(),
@@ -190,6 +190,8 @@ const unitsFormSchema = z.object({
   frequency: z.string().optional(),
   power: z.string().optional(),
   rpm: z.string().optional(),
+  angularVelocity: z.string().optional(),
+  percentage: z.string().optional(),
   // GPS-specific settings (managed via settingsStore, not presentationStore)
   coordinateFormat: z
     .enum(['decimal_degrees', 'degrees_minutes', 'degrees_minutes_seconds', 'utm'])
@@ -239,19 +241,24 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       speed: selectedPresentations.speed,
       wind: selectedPresentations.wind,
       temperature: selectedPresentations.temperature,
-      pressure: selectedPresentations.pressure,
+      atmospheric_pressure: selectedPresentations.atmospheric_pressure,
+      mechanical_pressure: selectedPresentations.mechanical_pressure,
       angle: selectedPresentations.angle,
       coordinates: selectedPresentations.coordinates,
       voltage: selectedPresentations.voltage,
       current: selectedPresentations.current,
       volume: selectedPresentations.volume,
       time: selectedPresentations.time,
+      date: selectedPresentations.date,
+      duration: selectedPresentations.duration,
       distance: selectedPresentations.distance,
       capacity: selectedPresentations.capacity,
       flowRate: selectedPresentations.flowRate,
       frequency: selectedPresentations.frequency,
       power: selectedPresentations.power,
       rpm: selectedPresentations.rpm,
+      angularVelocity: selectedPresentations.angularVelocity,
+      percentage: selectedPresentations.percentage,
       // GPS settings from settingsStore
       coordinateFormat: gps.coordinateFormat,
       timezone: gps.timezone,
@@ -298,7 +305,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
 
   /**
    * Handle preset selection
-   * Applies preset unit configuration to all 17 categories, or switches to Custom mode.
+   * Applies preset unit configuration to all 23 categories, or switches to Custom mode.
    */
   const handlePresetSelect = useCallback(
     (presetId: string) => {
@@ -362,75 +369,67 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       onClose={handleClose}
       testID="units-config-dialog"
     >
-      {/* Preset Selector */}
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Preset</Text>
-      <Text style={[styles.hint, { color: theme.textSecondary }]}>
-        Choose a standard preset or customize individual units
-      </Text>
-
-      <View style={styles.presetRow}>
-        {PRESETS.map((preset) => (
-          <TouchableOpacity
-            key={preset.id}
-            style={[
-              styles.presetChip,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-              formData.preset === preset.id && {
-                borderColor: theme.interactive,
-                backgroundColor: `${theme.interactive}15`,
-              },
-            ]}
-            onPress={() => handlePresetSelect(preset.id)}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: formData.preset === preset.id }}
-            accessibilityLabel={`${preset.name}: ${preset.description}`}
-          >
-            <Text
-              style={[
-                styles.presetText,
-                { color: theme.textSecondary },
-                formData.preset === preset.id && {
-                  color: theme.text,
-                  fontWeight: '600',
-                },
-              ]}
-            >
-              {preset.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Preset Preview */}
-      {currentPreset?.examples.length > 0 && (
-        <View
-          style={[styles.previewBox, { backgroundColor: theme.surface, borderColor: theme.border }]}
-        >
-          <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>Preview:</Text>
-          <View style={styles.previewRow}>
-            {currentPreset.examples.map((ex, idx) => (
-              <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
-                {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
-              </Text>
-            ))}
+      {/* Compact Card: Preset Selection */}
+      <View style={styles.card}>
+        <View style={styles.settingRow}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.sectionTitle}>Preset</Text>
           </View>
         </View>
-      )}
 
-      {/* Section divider */}
-      <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-      {/* Smart context-aware hint */}
-      {formData.preset !== 'custom' ? (
-        <View style={[styles.infoBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <UniversalIcon name="information-circle" size={20} color={theme.interactive} />
-          <Text style={[styles.infoText, { color: theme.text }]}>
-            Select <Text style={{ fontWeight: '600' }}>Custom</Text> to fully customize units and formatting for each metric.
-          </Text>
+        <View style={styles.presetRow}>
+          {PRESETS.map((preset) => (
+            <TouchableOpacity
+              key={preset.id}
+              style={[
+                styles.presetChip,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+                formData.preset === preset.id && {
+                  borderColor: theme.interactive,
+                  backgroundColor: `${theme.interactive}15`,
+                },
+              ]}
+              onPress={() => handlePresetSelect(preset.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: formData.preset === preset.id }}
+              accessibilityLabel={`${preset.name}: ${preset.description}`}
+            >
+              <Text
+                style={[
+                  styles.presetText,
+                  { color: theme.textSecondary },
+                  formData.preset === preset.id && {
+                    color: theme.text,
+                    fontWeight: '600',
+                  },
+                ]}
+              >
+                {preset.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      ) : (
+
+        {/* Inline Preview - only for non-custom presets */}
+        {currentPreset?.examples.length > 0 && formData.preset !== 'custom' && (
+          <View style={styles.previewInline}>
+            <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>Preview:</Text>
+            <View style={styles.previewRow}>
+              {currentPreset.examples.map((ex, idx) => (
+                <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
+                  {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Progressive Disclosure: Only show unit selections in Custom mode */}
+      {formData.preset === 'custom' && (
         <>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Essential Units</Text>
+          <View style={styles.card}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Essential Units</Text>
           
           {/* Essential categories - always visible */}
           {CATEGORIES.filter((cat) => !cat.isAdvanced).map((category) => {
@@ -476,26 +475,28 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
               </View>
             );
           })}
+          </View>
 
-          {/* Advanced categories - collapsible */}
-          <TouchableOpacity
-            style={styles.advancedToggle}
-            onPress={() => setShowAdvanced(!showAdvanced)}
-            accessibilityRole="button"
-            accessibilityLabel={showAdvanced ? 'Hide advanced units' : 'Show advanced units'}
-          >
-            <Text style={[styles.advancedToggleText, { color: theme.interactive }]}>
-              {showAdvanced ? 'Hide' : 'Show'} Advanced Units
-            </Text>
-            <UniversalIcon
-              name={showAdvanced ? 'chevron-up-outline' : 'chevron-down-outline'}
-              size={20}
-              color={theme.interactive}
-            />
-          </TouchableOpacity>
+          {/* Advanced Units Card - separate card for advanced options */}
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.advancedToggle}
+              onPress={() => setShowAdvanced(!showAdvanced)}
+              accessibilityRole="button"
+              accessibilityLabel={showAdvanced ? 'Hide advanced units' : 'Show advanced units'}
+            >
+              <Text style={[styles.advancedToggleText, { color: theme.interactive }]}>
+                {showAdvanced ? 'Hide' : 'Show'} Advanced Units
+              </Text>
+              <UniversalIcon
+                name={showAdvanced ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={20}
+                color={theme.interactive}
+              />
+            </TouchableOpacity>
 
-          {showAdvanced &&
-            CATEGORIES.filter((cat) => cat.isAdvanced).map((category) => {
+            {showAdvanced &&
+              CATEGORIES.filter((cat) => cat.isAdvanced).map((category) => {
               const presentations = PRESENTATIONS[category.key]?.presentations || [];
               const selectedPresId = formData[category.key];
 
@@ -538,6 +539,7 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
                 </View>
               );
             })}
+          </View>
         </>
       )}
     </BaseConfigDialog>
@@ -548,24 +550,42 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
 
 const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
+    card: {
+      backgroundColor: theme.surface,
+      borderRadius: platformTokens.borderRadius.card,
+      padding: 20,
+      marginBottom: 16,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+        },
+        android: { elevation: 2 },
+        web: { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
+      }),
+    },
+    settingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    titleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: '700',
       fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 12,
-      marginTop: 8,
-    },
-    hint: {
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 16,
-      lineHeight: platformTokens.typography.caption.lineHeight,
+      color: theme.text,
     },
     presetRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 12,
-      marginTop: 16,
     },
     presetChip: {
       paddingHorizontal: 16,
@@ -577,16 +597,17 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontSize: platformTokens.typography.body.fontSize,
       fontFamily: platformTokens.typography.fontFamily,
     },
-    previewBox: {
-      marginTop: 12,
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
+    previewInline: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
     },
     previewLabel: {
       fontSize: platformTokens.typography.caption.fontSize,
       fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 4,
+      color: theme.textSecondary,
+      marginBottom: 8,
       fontWeight: '600',
     },
     previewRow: {
@@ -598,33 +619,12 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontSize: platformTokens.typography.caption.fontSize,
       fontFamily: platformTokens.typography.fontFamily,
     },
-    divider: {
-      height: 1,
-      marginVertical: 24,
-    },
-    infoBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      marginBottom: 24,
-    },
-    infoText: {
-      flex: 1,
-      fontSize: platformTokens.typography.caption.fontSize,
-      fontFamily: platformTokens.typography.fontFamily,
-      lineHeight: platformTokens.typography.caption.lineHeight,
-    },
     advancedToggle: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
-      paddingVertical: 16,
-      marginTop: 8,
-      marginBottom: 16,
+      paddingVertical: 12,
     },
     advancedToggleText: {
       fontSize: platformTokens.typography.body.fontSize,
@@ -632,13 +632,14 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontWeight: '600',
     },
     categorySection: {
-      marginBottom: 24,
+      marginTop: 20,
     },
     categoryTitle: {
       fontSize: 15,
       fontWeight: '600',
       fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 12,
+      color: theme.text,
     },
     unitsGrid: {
       flexDirection: 'row',
