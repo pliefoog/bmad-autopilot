@@ -317,6 +317,11 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
     // Now that widgets don't subscribe (only TemplatedWidget + MetricCells do),
     // we can safely skip updates when nothing changed - fine-grained reactivity works!
     if (hasChanges) {
+      log.gps(`✅ Calling set() - hasChanges=true`, () => ({
+        sensorType,
+        instance,
+      }));
+      
       set((state) => {
         const newNmeaData = {
           ...state.nmeaData,
